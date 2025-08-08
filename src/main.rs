@@ -2,7 +2,7 @@ use std::num::NonZeroU16;
 use std::{collections::HashMap, rc::Rc};
 use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
-use llmcc::visit::{Visitor, print_ast};
+use llmcc::visit::{self, Visitor, dfs, print_ast};
 
 #[derive(Debug, Clone)]
 struct AstScope {
@@ -128,7 +128,13 @@ struct AstFileId {
 #[derive(Debug, Clone)]
 struct AstNodeFile {
     base: AstNodeBase,
-    file: AstFile,
+    // file: AstFile,
+}
+
+impl AstNodeFile {
+    fn new(base: AstNodeBase) -> Box<AstNodeFile> {
+        Box::new(AstNodeFile { base: base })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -196,9 +202,6 @@ impl AstKindNode {
             AstKindNode::IdentifierUse(node) => {
                 node.base.parent = Some(parent);
             }
-            // These node types typically do not have children.
-            // You can choose to ignore the call, return a Result, or panic.
-            // Here, we panic to indicate an invalid operation.
             AstKindNode::Text(node) => {
                 node.base.parent = Some(parent);
             }
@@ -231,9 +234,6 @@ impl AstKindNode {
             AstKindNode::IdentifierUse(_) => {
                 panic!("Cannot add child to a identifier node.");
             }
-            // These node types typically do not have children.
-            // You can choose to ignore the call, return a Result, or panic.
-            // Here, we panic to indicate an invalid operation.
             AstKindNode::Text(_) => {
                 panic!("Cannot add child to a Text node.");
             }
@@ -369,38 +369,6 @@ impl AstLanguage {
     }
 }
 
-// let mut stack = Vec::new();
-// let mut parent = root;
-// stack.append(root);
-// loop {
-//     let node = cursor.node();
-//     let token_id = node.kind_id();
-//     let field_id = cursor.field_id().unwrap_or(0);
-//     let kind = context.language.get_token_kind(token_id);
-
-//     let base = AstNodeBase {
-//         token_id,
-//         field_id,
-//         kind,
-//         start_pos: node.start_position().into(),
-//         end_pos: node.end_position().into(),
-//         start_byte: node.start_byte(),
-//         end_byte: node.end_byte(),
-//     };
-
-//     let ast_node = match kind {
-//         AstKind::Text => AstNodeText::new(),
-//         AstKind::File => AstNode::new(),
-//         AstKind::Scope => AstScope::new(),
-//         _ => AstNode::new(),
-//     }
-
-//     parent.add_child(ast_node);
-
-//     if !cursor.goto_first_child() {
-//         break;
-//     }
-
 #[derive(Debug)]
 struct AstBuilder {
     stack: Vec<AstKindNode>,
@@ -415,8 +383,19 @@ impl AstBuilder {
         }
     }
 
-    fn create_ast_node(base: &AstNodeBase, kind: AstKind) -> AstKindNode {
-        AstKindNode::Undefined
+    fn get_root(&self) -> Box<AstNodeRoot> {
+        assert!(!self.stack.is_empty());
+        match self.stack.last().unwrap() {
+            AstKindNode::Root(node) => node.clone(),
+            _ => panic!("shoud not happen"),
+        }
+    }
+
+    fn create_ast_node(base: AstNodeBase, kind: AstKind) -> AstKindNode {
+        match kind {
+            AstKind::File => AstKindNode::File(AstNodeFile::new(base)),
+            _ => AstKindNode::Undefined,
+        }
     }
 }
 
@@ -439,7 +418,7 @@ impl<'a> Visitor<'a> for AstBuilder {
             children: vec![],
         };
 
-        let ast_node = AstBuilder::create_ast_node(&base, kind);
+        let ast_node = AstBuilder::create_ast_node(base, kind);
 
         let parent = self.stack.last_mut().unwrap();
         parent.add_child(ast_node.clone());
@@ -465,11 +444,11 @@ impl<'a> Visitor<'a> for AstBuilder {
 
 fn build_tree(
     tree: &Tree,
-    context: &mut AstContext,
-) -> Result<AstNodeRoot, Box<dyn std::error::Error>> {
-    let mut root = AstNodeRoot::new();
-
-    return Ok(root);
+    context: Box<AstContext>,
+) -> Result<Box<AstNodeRoot>, Box<dyn std::error::Error>> {
+    let mut vistor = AstBuilder::new(context);
+    dfs(&tree, &mut vistor);
+    Ok(vistor.get_root())
 }
 
 fn main() {
