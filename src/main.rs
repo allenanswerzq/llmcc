@@ -227,4 +227,86 @@ struct AstContext {
 //     return Ok(parent);
 // }
 
-fn main() {}
+use std::convert::TryFrom;
+use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, IntoStaticStr};
+
+#[repr(u8)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumString,
+    EnumIter,
+    EnumVariantNames,
+    Display,
+    IntoStaticStr,
+)]
+#[strum(serialize_all = "snake_case")] // You can also use "camelCase", "kebab-case", etc.
+pub enum AstTokenRust {
+    #[strum(serialize = "AAAAAAAaa")]
+    Foo = 1,
+
+    Bar = 2,
+
+    Baz = 3,
+}
+
+// Implement numeric -> enum
+impl TryFrom<u8> for AstTokenRust {
+    type Error = &'static str;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(AstTokenRust::Foo),
+            2 => Ok(AstTokenRust::Bar),
+            3 => Ok(AstTokenRust::Baz),
+            _ => Err("Invalid number for AstTokenRust"),
+        }
+    }
+}
+
+// Implement enum -> numeric
+impl From<AstTokenRust> for u8 {
+    fn from(val: AstTokenRust) -> Self {
+        val as u8
+    }
+}
+
+fn main() {
+    // // Enum -> number
+    // let num: u8 = AstTokenRust::Foo.into();
+    // println!("Enum to number: {}", num);
+
+    // // Number -> enum
+    // let e = AstTokenRust::try_from(1).unwrap();
+    // println!("Number to enum: {}", e.to_string());
+
+    // // // Enum -> string
+    // // let s = e.to_string();
+    // // println!("Enum to string: {}", s);
+
+    // // // String -> enum
+    // // let e2: AstTokenRust = "foo".parse().unwrap();
+    // // println!("String to enum: {:?}", e2);
+    let source_code = "fn example() { let x = 42; }";
+
+    // Create a new parser
+    let mut parser = Parser::new();
+
+    // Set the language to Rust
+    parser
+        .set_language(&tree_sitter_rust::LANGUAGE.into())
+        .expect("Error loading Rust grammar");
+
+    // Parse the source code
+    let tree = parser.parse(source_code, None).unwrap();
+    let root = tree.root_node();
+
+    println!(
+        "Root node kind: {}\nStart: {:?}, End: {:?}",
+        root.kind(),
+        root.start_position(),
+        root.end_position(),
+    );
+}
