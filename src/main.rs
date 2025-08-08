@@ -1,6 +1,8 @@
 use std::{collections::HashMap, rc::Rc};
 use tree_sitter::{Node, Parser, Point, TreeCursor};
 
+use llmcc::visit::print_ast;
+
 #[derive(Debug, Clone)]
 struct AstScope {
     // The symbol defines this scope
@@ -164,11 +166,106 @@ enum AstKindNode {
 }
 
 #[derive(Debug)]
-struct AstLanguage {
-    // Language-specific mappings
-    // id <-> tree_sitter token enum mapping
-    // id --> AstKind mapping
+struct AstContext {
+    language: AstLanguage,
+    file: AstFile,
 }
+
+use std::convert::TryFrom;
+use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
+
+#[repr(u16)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumString,
+    EnumIter,
+    EnumVariantNames,
+    Display,
+    FromRepr,
+    IntoStaticStr,
+)]
+#[strum(serialize_all = "snake_case")]
+#[allow(non_snake_case)]
+pub enum AstTokenRust {
+    // source_file,157: 65535
+    // function_item,188: 65535
+    // fn,96: 65535
+    // identifier,1: 19
+    // parameters,210: 22
+    // (,4: 65535
+    // ),5: 65535
+    // block,293: 5
+    // {,8: 65535
+    // let_declaration,203: 65535
+    // let,101: 65535
+    // identifier,1: 24
+    // =,70: 65535
+    // integer_literal,127: 31
+    // ;,2: 65535
+    // },9: 65535
+    #[strum(serialize = "fn")]
+    Text_fn = 96,
+    #[strum(serialize = "(")]
+    Text_LPAREN = 4,
+    #[strum(serialize = ")")]
+    Text_RPAREN = 5,
+    #[strum(serialize = "{")]
+    Text_LBRACE = 8,
+    #[strum(serialize = "}}")]
+    Text_RBRACE = 9,
+    #[strum(serialize = "let")]
+    Text_let = 101,
+    #[strum(serialize = "=")]
+    Text_EQ = 70,
+    #[strum(serialize = ";")]
+    Text_SEMI = 2,
+    integer_literal = 127,
+    identifier = 1,
+    parameters = 210,
+    let_declaration = 203,
+    block = 293,
+    source_file = 157,
+    function_item = 188,
+}
+
+impl From<AstTokenRust> for AstKind {
+    /// Converts an `AstTokenRust` into its corresponding `AstKind`.
+    /// This mapping is based on the semantic meaning of the Tree-sitter token/node kind.
+    fn from(token: AstTokenRust) -> Self {
+        match token {
+            AstTokenRust::source_file => AstKind::File,
+            AstTokenRust::function_item => AstKind::Scope, // Functions define a new scope
+            AstTokenRust::block => AstKind::Scope,
+            AstTokenRust::let_declaration => AstKind::Internal, // Represents a declaration structure
+            AstTokenRust::parameters => AstKind::Internal, // Represents a structural part of a function
+
+            // Identifiers: context determines if it's a definition or use.
+            // For a generic mapping, we might default or refine later.
+            // Here, we'll make an assumption for simplicity.
+            AstTokenRust::identifier => AstKind::IdentifierUse,
+
+            // Literal values are typically leaves in the AST
+            AstTokenRust::integer_literal => AstKind::Leaf,
+
+            // Text tokens (keywords, punctuation)
+            AstTokenRust::Text_fn
+            | AstTokenRust::Text_LPAREN
+            | AstTokenRust::Text_RPAREN
+            | AstTokenRust::Text_LBRACE
+            | AstTokenRust::Text_RBRACE
+            | AstTokenRust::Text_let
+            | AstTokenRust::Text_EQ
+            | AstTokenRust::Text_SEMI => AstKind::Text,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct AstLanguage {}
 
 impl AstLanguage {
     fn new() -> Self {
@@ -176,14 +273,8 @@ impl AstLanguage {
     }
 
     fn get_token_kind(&self, token_id: u16) -> AstKind {
-        AstKind::Undefined
+        AstTokenRust::from_repr(token_id).unwrap().into()
     }
-}
-
-#[derive(Debug)]
-struct AstContext {
-    language: AstLanguage,
-    file: AstFile,
 }
 
 // fn build_tree(
@@ -227,52 +318,6 @@ struct AstContext {
 //     return Ok(parent);
 // }
 
-use std::convert::TryFrom;
-use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, IntoStaticStr};
-
-#[repr(u8)]
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    EnumString,
-    EnumIter,
-    EnumVariantNames,
-    Display,
-    IntoStaticStr,
-)]
-#[strum(serialize_all = "snake_case")] // You can also use "camelCase", "kebab-case", etc.
-pub enum AstTokenRust {
-    #[strum(serialize = "AAAAAAAaa")]
-    Foo = 1,
-
-    Bar = 2,
-
-    Baz = 3,
-}
-
-// Implement numeric -> enum
-impl TryFrom<u8> for AstTokenRust {
-    type Error = &'static str;
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            1 => Ok(AstTokenRust::Foo),
-            2 => Ok(AstTokenRust::Bar),
-            3 => Ok(AstTokenRust::Baz),
-            _ => Err("Invalid number for AstTokenRust"),
-        }
-    }
-}
-
-// Implement enum -> numeric
-impl From<AstTokenRust> for u8 {
-    fn from(val: AstTokenRust) -> Self {
-        val as u8
-    }
-}
-
 fn main() {
     // // Enum -> number
     // let num: u8 = AstTokenRust::Foo.into();
@@ -301,12 +346,5 @@ fn main() {
 
     // Parse the source code
     let tree = parser.parse(source_code, None).unwrap();
-    let root = tree.root_node();
-
-    println!(
-        "Root node kind: {}\nStart: {:?}, End: {:?}",
-        root.kind(),
-        root.start_position(),
-        root.end_position(),
-    );
+    print_ast(&tree);
 }

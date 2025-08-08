@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::num::NonZeroU16;
 use tree_sitter::{Parser, Tree, TreeCursor};
 
 pub trait Visitor<'a> {
@@ -42,16 +43,32 @@ pub fn bfs<'a, T: Visitor<'a>>(tree: &'a Tree, visitor: &mut T) {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+struct AstPrinter {}
+
+impl<'a> Visitor<'a> for AstPrinter {
+    fn visit_node(&mut self, cursor: &mut TreeCursor<'a>) {
+        let node = cursor.node();
+        let kind = node.kind();
+        let kind_id = node.kind_id();
+        let field_id = cursor.field_id().unwrap_or(NonZeroU16::new(65535).unwrap());
+        println!("{kind},{kind_id}: {field_id}");
+    }
+}
+
+pub fn print_ast(tree: &Tree) {
+    let mut vistor = AstPrinter::default();
+    dfs(&tree, &mut vistor);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// A simple Visitor implementation that collects the 'kind' (type) of each node visited.
     struct NodeKindCollector {
         pub kinds: Vec<String>,
     }
 
-    // We need to provide a lifetime for the implementation, even if it's not used.
     impl<'a> Visitor<'a> for NodeKindCollector {
         fn visit_node(&mut self, cursor: &mut TreeCursor<'a>) {
             self.kinds.push(cursor.node().kind().to_string());
