@@ -68,6 +68,7 @@ struct AstSymbol {
 
 #[derive(Debug, Clone)]
 struct AstNodeId {
+    base: AstNodeBase,
     name: String,
     mangled_name: String,
     symbol: Option<Box<AstSymbol>>,
@@ -97,22 +98,20 @@ struct AstNodeBase {
     end_pos: AstPoint,
     start_byte: usize,
     end_byte: usize,
+    parent: Option<AstKindNode>,
+    children: Vec<AstKindNode>,
 }
 
 #[derive(Debug, Clone)]
 struct AstNodeText {
     base: AstNodeBase,
     text: String,
-    parent: Box<AstNode>,
-    children: Vec<AstKindNode>,
 }
 
 #[derive(Debug, Clone)]
 struct AstNode {
     base: AstNodeBase,
     name: Option<AstNodeId>,
-    parent: Box<AstNode>,
-    children: Vec<AstKindNode>,
 }
 
 #[derive(Debug, Clone)]
@@ -128,11 +127,14 @@ struct AstFileId {
 
 #[derive(Debug, Clone)]
 struct AstNodeFile {
+    base: AstNodeBase,
     file: AstFile,
 }
 
 #[derive(Debug, Clone)]
-struct AstNodeLeaf {}
+struct AstNodeLeaf {
+    base: AstNodeBase,
+}
 
 #[derive(Debug, Clone)]
 struct AstFile {
@@ -140,7 +142,10 @@ struct AstFile {
 }
 
 #[derive(Debug, Clone)]
-struct AstNodeScope {}
+struct AstNodeScope {
+    base: AstNodeBase,
+    // scope: AstScope,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum AstKind {
@@ -170,10 +175,76 @@ enum AstKindNode {
     Scope(Box<AstNodeScope>),
     File(Box<AstNodeFile>),
     Leaf(Box<AstNodeLeaf>),
+    IdentifierUse(Box<AstNodeId>),
 }
 
 impl AstKindNode {
-    fn add_child(&mut self, child: &AstKindNode) {}
+    fn set_parent(&mut self, parent: AstKindNode) {
+        match self {
+            AstKindNode::Root(_) => {
+                panic!("Cannot set a parent to root node.");
+            }
+            AstKindNode::Internal(node) => {
+                node.base.parent = Some(parent);
+            }
+            AstKindNode::Scope(node) => {
+                node.base.parent = Some(parent);
+            }
+            AstKindNode::File(_) => {
+                panic!("Cannot set a parent to root node.");
+            }
+            AstKindNode::IdentifierUse(node) => {
+                node.base.parent = Some(parent);
+            }
+            // These node types typically do not have children.
+            // You can choose to ignore the call, return a Result, or panic.
+            // Here, we panic to indicate an invalid operation.
+            AstKindNode::Text(node) => {
+                node.base.parent = Some(parent);
+            }
+            AstKindNode::Leaf(node) => {
+                node.base.parent = Some(parent);
+            }
+            AstKindNode::Undefined => {
+                panic!("Cannot set a parent ton Undefined node.");
+            }
+        }
+    }
+
+    fn add_child(&mut self, child: AstKindNode) {
+        let mut child = child;
+        child.set_parent(self.clone());
+
+        match self {
+            AstKindNode::Root(node) => {
+                node.children.push(child);
+            }
+            AstKindNode::Internal(node) => {
+                node.base.children.push(child);
+            }
+            AstKindNode::Scope(node) => {
+                node.base.children.push(child);
+            }
+            AstKindNode::File(node) => {
+                node.base.children.push(child);
+            }
+            AstKindNode::IdentifierUse(_) => {
+                panic!("Cannot add child to a identifier node.");
+            }
+            // These node types typically do not have children.
+            // You can choose to ignore the call, return a Result, or panic.
+            // Here, we panic to indicate an invalid operation.
+            AstKindNode::Text(_) => {
+                panic!("Cannot add child to a Text node.");
+            }
+            AstKindNode::Leaf(_) => {
+                panic!("Cannot add child to a Leaf node.");
+            }
+            AstKindNode::Undefined => {
+                panic!("Cannot add child to an Undefined node.");
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -364,12 +435,14 @@ impl<'a> Visitor<'a> for AstBuilder {
             end_pos: node.end_position().into(),
             start_byte: node.start_byte(),
             end_byte: node.end_byte(),
+            parent: None,
+            children: vec![],
         };
 
         let ast_node = AstBuilder::create_ast_node(&base, kind);
 
         let parent = self.stack.last_mut().unwrap();
-        parent.add_child(&ast_node);
+        parent.add_child(ast_node.clone());
 
         // Push this node onto the stack if it can have children
         if node.child_count() > 0 {
