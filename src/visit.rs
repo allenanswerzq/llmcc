@@ -3,12 +3,33 @@ use std::num::NonZeroU16;
 use tree_sitter::{Parser, Tree, TreeCursor};
 
 pub trait Visitor<'a> {
+    /// Called when entering a node (before visiting children)
+    fn visit_enter_node(&mut self, cursor: &mut TreeCursor<'a>) {
+        // Default implementation - can be overridden
+    }
+
+    /// Called when visiting a node (main visitor method)
     fn visit_node(&mut self, cursor: &mut TreeCursor<'a>);
+
+    /// Called when left/visited a node
+    // fn finalize_node(&mut self, ast_node: &AstKindNode) {
+    //     // Default implementation - can be overridden
+    // }
+
+    /// Called when leaving a node (after visiting all children)
+    fn visit_leave_node(&mut self, cursor: &mut TreeCursor<'a>) {
+        // Default implementation - can be overridden
+    }
 }
 
 fn dfs_<'a, T: Visitor<'a>>(cursor: &mut TreeCursor<'a>, visitor: &mut T) {
+    // Enter the node
+    visitor.visit_enter_node(cursor);
+
+    // Visit the node
     visitor.visit_node(cursor);
 
+    // Visit children if any exist
     if cursor.goto_first_child() {
         loop {
             dfs_(cursor, visitor);
@@ -18,6 +39,9 @@ fn dfs_<'a, T: Visitor<'a>>(cursor: &mut TreeCursor<'a>, visitor: &mut T) {
         }
         cursor.goto_parent();
     }
+
+    // Leave the node
+    visitor.visit_leave_node(cursor);
 }
 
 pub fn dfs<'a, T: Visitor<'a>>(tree: &'a Tree, visitor: &mut T) {

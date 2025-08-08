@@ -1,7 +1,8 @@
+use std::num::NonZeroU16;
 use std::{collections::HashMap, rc::Rc};
-use tree_sitter::{Node, Parser, Point, TreeCursor};
+use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
-use llmcc::visit::print_ast;
+use llmcc::visit::{Visitor, print_ast};
 
 #[derive(Debug, Clone)]
 struct AstScope {
@@ -98,12 +99,12 @@ struct AstNodeBase {
     end_byte: usize,
 }
 
-// Terminal node, no children
 #[derive(Debug, Clone)]
 struct AstNodeText {
     base: AstNodeBase,
-    parent: Box<AstNode>,
     text: String,
+    parent: Box<AstNode>,
+    children: Vec<AstKindNode>,
 }
 
 #[derive(Debug, Clone)]
@@ -129,6 +130,9 @@ struct AstFileId {
 struct AstNodeFile {
     file: AstFile,
 }
+
+#[derive(Debug, Clone)]
+struct AstNodeLeaf {}
 
 #[derive(Debug, Clone)]
 struct AstFile {
@@ -159,10 +163,28 @@ enum AstKind {
 
 #[derive(Debug, Clone)]
 enum AstKindNode {
-    Text(AstNodeText),
-    Internal(AstNode),
-    Scope(AstNodeScope),
-    File(AstNodeFile),
+    Undefined,
+    Root(Box<AstNodeRoot>),
+    Text(Box<AstNodeText>),
+    Internal(Box<AstNode>),
+    Scope(Box<AstNodeScope>),
+    File(Box<AstNodeFile>),
+    Leaf(Box<AstNodeLeaf>),
+}
+
+impl AstKindNode {
+    fn add_child(&mut self, child: &AstKindNode) {}
+}
+
+#[derive(Debug, Clone)]
+struct AstNodeRoot {
+    children: Vec<AstKindNode>,
+}
+
+impl AstNodeRoot {
+    fn new() -> Self {
+        AstNodeRoot { children: vec![] }
+    }
 }
 
 #[derive(Debug)]
@@ -171,7 +193,6 @@ struct AstContext {
     file: AstFile,
 }
 
-use std::convert::TryFrom;
 use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
 
 #[repr(u16)]
@@ -277,46 +298,106 @@ impl AstLanguage {
     }
 }
 
-// fn build_tree(
-//     cursor: &mut TreeCursor,
-//     context: &mut AstContext,
-// ) -> Result<AstNode, Box<dyn std::error::Error>> {
-//     let mut root = AstRootNode::new();
-//     let mut stack = Vec::new();
-//     let mut parent = root;
-//     stack.append(root);
-//     loop {
-//         let node = cursor.node();
-//         let token_id = node.kind_id();
-//         let field_id = cursor.field_id().unwrap_or(0);
-//         let kind = context.language.get_token_kind(token_id);
+// let mut stack = Vec::new();
+// let mut parent = root;
+// stack.append(root);
+// loop {
+//     let node = cursor.node();
+//     let token_id = node.kind_id();
+//     let field_id = cursor.field_id().unwrap_or(0);
+//     let kind = context.language.get_token_kind(token_id);
 
-//         let base = AstNodeBase {
-//             token_id,
-//             field_id,
-//             kind,
-//             start_pos: node.start_position().into(),
-//             end_pos: node.end_position().into(),
-//             start_byte: node.start_byte(),
-//             end_byte: node.end_byte(),
-//         };
+//     let base = AstNodeBase {
+//         token_id,
+//         field_id,
+//         kind,
+//         start_pos: node.start_position().into(),
+//         end_pos: node.end_position().into(),
+//         start_byte: node.start_byte(),
+//         end_byte: node.end_byte(),
+//     };
 
-//         let ast_node = match kind {
-//             AstKind::Text => AstNodeText::new(),
-//             AstKind::File => AstNode::new(),
-//             AstKind::Scope => AstScope::new(),
-//             _ => AstNode::new(),
-//         }
-
-//         parent.add_child(ast_node);
-
-//         if !cursor.goto_first_child() {
-//             break;
-//         }
+//     let ast_node = match kind {
+//         AstKind::Text => AstNodeText::new(),
+//         AstKind::File => AstNode::new(),
+//         AstKind::Scope => AstScope::new(),
+//         _ => AstNode::new(),
 //     }
 
-//     return Ok(parent);
-// }
+//     parent.add_child(ast_node);
+
+//     if !cursor.goto_first_child() {
+//         break;
+//     }
+
+#[derive(Debug)]
+struct AstBuilder {
+    stack: Vec<AstKindNode>,
+    context: Box<AstContext>,
+}
+
+impl AstBuilder {
+    fn new(context: Box<AstContext>) -> Self {
+        Self {
+            stack: vec![AstKindNode::Root(Box::new(AstNodeRoot::new()))],
+            context: context,
+        }
+    }
+
+    fn create_ast_node(base: &AstNodeBase, kind: AstKind) -> AstKindNode {
+        AstKindNode::Undefined
+    }
+}
+
+impl<'a> Visitor<'a> for AstBuilder {
+    fn visit_node(&mut self, cursor: &mut TreeCursor<'a>) {
+        let node = cursor.node();
+        let token_id = node.kind_id();
+        let field_id = cursor.field_id().unwrap_or(NonZeroU16::new(65535).unwrap());
+        let kind = self.context.language.get_token_kind(token_id);
+
+        let base = AstNodeBase {
+            token_id,
+            field_id: field_id.into(),
+            kind,
+            start_pos: node.start_position().into(),
+            end_pos: node.end_position().into(),
+            start_byte: node.start_byte(),
+            end_byte: node.end_byte(),
+        };
+
+        let ast_node = AstBuilder::create_ast_node(&base, kind);
+
+        let parent = self.stack.last_mut().unwrap();
+        parent.add_child(&ast_node);
+
+        // Push this node onto the stack if it can have children
+        if node.child_count() > 0 {
+            self.stack.push(ast_node);
+        }
+    }
+
+    fn visit_leave_node(&mut self, cursor: &mut TreeCursor<'a>) {
+        let node = cursor.node();
+
+        // Pop the current node from the stack when we're done with it
+        if node.child_count() > 0 {
+            if let Some(completed_node) = self.stack.pop() {
+                // TODO: utilize this
+                // self.finalize_node(completed_node);
+            }
+        }
+    }
+}
+
+fn build_tree(
+    tree: &Tree,
+    context: &mut AstContext,
+) -> Result<AstNodeRoot, Box<dyn std::error::Error>> {
+    let mut root = AstNodeRoot::new();
+
+    return Ok(root);
+}
 
 fn main() {
     // // Enum -> number
