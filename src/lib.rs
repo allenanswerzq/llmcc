@@ -376,7 +376,11 @@ impl AstKindNode {
                 format!("text [{}] \"{}\"", node.base.id, node.text)
             }
             AstKindNode::Internal(node) => {
-                format!("internal [{}]", node.base.id)
+                format!(
+                    "internal [{}] ({})",
+                    node.base.id,
+                    node.base.parent.unwrap()
+                )
             }
             AstKindNode::Scope(node) => {
                 format!("scope [{}]", node.base.id)
@@ -385,7 +389,7 @@ impl AstKindNode {
                 format!("file [{}]", node.base.id)
             }
             AstKindNode::IdentifierUse(node) => {
-                format!("identifier_use [{}]", node.base.id)
+                format!("identifier_use [{}] '{}'", node.base.id, node.name)
             }
         }
     }
@@ -600,13 +604,29 @@ pub enum AstTokenRust {
     Text_EQ = 70,
     #[strum(serialize = ";")]
     Text_SEMI = 2,
+    #[strum(serialize = ":")]
+    Text_COLON = 11,
+    #[strum(serialize = ",")]
+    Text_COMMA = 83,
+    #[strum(serialize = "->")]
+    Text_ARROW = 85,
+
     integer_literal = 127,
     identifier = 1,
+    parameter = 213,
     parameters = 210,
     let_declaration = 203,
     block = 293,
     source_file = 157,
     function_item = 188,
+    mutable_specifier = 122,
+    expression_statement = 160,
+    assignment_expression = 251,
+    binary_expression = 250,
+    operator = 14,
+    call_expression = 256,
+    arguments = 257,
+    primitive_type = 32,
 }
 
 #[repr(u16)]
@@ -637,9 +657,18 @@ impl From<AstTokenRust> for AstKind {
             AstTokenRust::function_item => AstKind::Scope,
             AstTokenRust::block => AstKind::Scope,
             AstTokenRust::let_declaration => AstKind::Internal,
+            AstTokenRust::expression_statement => AstKind::Internal,
+            AstTokenRust::assignment_expression => AstKind::Internal,
+            AstTokenRust::binary_expression => AstKind::Internal,
+            AstTokenRust::operator => AstKind::Internal,
+            AstTokenRust::call_expression => AstKind::Internal,
+            AstTokenRust::arguments => AstKind::Internal,
+            AstTokenRust::primitive_type => AstKind::Internal,
             AstTokenRust::parameters => AstKind::Internal,
+            AstTokenRust::parameter => AstKind::Internal,
             AstTokenRust::identifier => AstKind::IdentifierUse,
             AstTokenRust::integer_literal => AstKind::Text,
+            AstTokenRust::mutable_specifier => AstKind::Text,
             AstTokenRust::Text_fn
             | AstTokenRust::Text_LPAREN
             | AstTokenRust::Text_RPAREN
@@ -647,6 +676,9 @@ impl From<AstTokenRust> for AstKind {
             | AstTokenRust::Text_RBRACE
             | AstTokenRust::Text_let
             | AstTokenRust::Text_EQ
+            | AstTokenRust::Text_ARROW
+            | AstTokenRust::Text_COLON
+            | AstTokenRust::Text_COMMA
             | AstTokenRust::Text_SEMI => AstKind::Text,
         }
     }
@@ -661,7 +693,9 @@ impl AstLanguage {
     }
 
     fn get_token_kind(&self, token_id: u16) -> AstKind {
-        AstTokenRust::from_repr(token_id).unwrap().into()
+        AstTokenRust::from_repr(token_id)
+            .expect(&format!("unknown token id: {}", token_id))
+            .into()
     }
 
     fn get_name_child<'a>(&self, node: &Node<'a>) -> Option<Node<'a>> {

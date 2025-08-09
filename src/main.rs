@@ -16,7 +16,18 @@ fn main() {
     // // // String -> enum
     // // let e2: AstTokenRust = "foo".parse().unwrap();
     // // println!("String to enum: {:?}", e2);
-    let source_code = "fn example() { let x = 42; }";
+    let source_code = r#"
+        fn foo(a: u16, b: u16) -> u16 {
+            let mut x = 0;
+            x = a + b;
+            x
+        }
+        fn main() {
+            let a = 1;
+            let b = 2;
+            foo(a, b);
+        }
+        "#;
 
     // Create a new parser
     let mut parser = Parser::new();
