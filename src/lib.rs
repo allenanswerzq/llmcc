@@ -20,7 +20,7 @@ struct AstArena<T> {
 impl<T: Default> AstArena<T> {
     fn new() -> Self {
         Self {
-            // NOTE: id 0 is resvered for root node
+            // NOTE: id 1 is resvered for root node
             nodes: vec![T::default()],
         }
     }
@@ -138,7 +138,7 @@ impl AstSymbol {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstNodeId {
     base: AstNodeBase,
     name: String,
@@ -187,7 +187,7 @@ struct AstNodeBase {
     children: Vec<usize>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstNodeText {
     base: AstNodeBase,
     text: String,
@@ -199,7 +199,7 @@ impl AstNodeText {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstNode {
     base: AstNodeBase,
     name: Option<AstKindNode>,
@@ -266,7 +266,7 @@ impl AstFileId {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstNodeFile {
     base: AstNodeBase,
     // file: AstFile,
@@ -331,7 +331,8 @@ impl Default for AstKind {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, EnumIter, EnumString)]
+#[strum(serialize_all = "snake_case")]
 pub enum AstKindNode {
     Undefined,
     Root(Box<AstNodeRoot>),
@@ -340,6 +341,12 @@ pub enum AstKindNode {
     Scope(Box<AstNodeScope>),
     File(Box<AstNodeFile>),
     IdentifierUse(Box<AstNodeId>),
+}
+
+impl std::fmt::Display for AstKindNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.format_node())
+    }
 }
 
 impl NodeTrait for AstKindNode {
@@ -359,6 +366,30 @@ impl Default for AstKindNode {
 }
 
 impl AstKindNode {
+    fn format_node(&self) -> String {
+        match self {
+            AstKindNode::Undefined => "undefined".into(),
+            AstKindNode::Root(node) => {
+                format!("root [{}]", node.id)
+            }
+            AstKindNode::Text(node) => {
+                format!("text [{}] \"{}\"", node.base.id, node.text)
+            }
+            AstKindNode::Internal(node) => {
+                format!("internal [{}]", node.base.id)
+            }
+            AstKindNode::Scope(node) => {
+                format!("scope [{}]", node.base.id)
+            }
+            AstKindNode::File(node) => {
+                format!("file [{}]", node.base.id)
+            }
+            AstKindNode::IdentifierUse(node) => {
+                format!("identifier_use [{}]", node.base.id)
+            }
+        }
+    }
+
     fn set_parent(&mut self, parent: usize) {
         match self {
             AstKindNode::Root(_) => {
@@ -472,8 +503,9 @@ impl AstKindNode {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AstNodeRoot {
+    id: usize,
     arena: Rc<RefCell<AstArena<AstKindNode>>>,
     children: Vec<usize>,
 }
@@ -481,6 +513,7 @@ pub struct AstNodeRoot {
 impl AstNodeRoot {
     fn new(arena: Rc<RefCell<AstArena<AstKindNode>>>) -> Self {
         Self {
+            id: 1,
             arena,
             children: vec![],
         }
@@ -500,9 +533,11 @@ impl AstTree {
     }
 }
 
+pub type AstTreeCursor<'a> = CursorGeneric<'a, AstTree, AstKindNode>;
+
 impl<'a> TreeTrait<'a> for AstTree {
     type Node = AstKindNode;
-    type Cursor = CursorGeneric<'a, AstTree, AstKindNode>;
+    type Cursor = AstTreeCursor<'a>;
 
     fn root_node(&'a self) -> Self::Node {
         self.root.clone()
@@ -782,6 +817,71 @@ impl<'a> Visitor<TreeCursor<'a>> for AstBuilder<'_> {
             }
         }
     }
+}
+
+#[derive(Debug)]
+struct AstPrinter<'a> {
+    context: &'a AstContext,
+    depth: usize,
+    output: String,
+}
+
+impl<'a> AstPrinter<'a> {
+    fn new(context: &'a AstContext) -> Self {
+        Self {
+            context,
+            depth: 0,
+            output: String::new(),
+        }
+    }
+
+    fn get_output(&self) -> &str {
+        &self.output
+    }
+
+    fn print_output(&self) {
+        println!("{}", self.output);
+    }
+}
+
+impl<'a> Visitor<AstTreeCursor<'a>> for AstPrinter<'a> {
+    fn visit_enter_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
+        let node = cursor.node();
+
+        self.output.push_str(&"  ".repeat(self.depth));
+        self.output.push('(');
+        self.output.push_str(&format!("{}", node));
+
+        if node.child_count() == 0 {
+            self.output.push(')');
+        } else {
+            self.output.push('\n');
+        }
+
+        self.depth += 1;
+    }
+
+    fn visit_leave_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
+        self.depth -= 1;
+        let node = cursor.node();
+
+        if node.child_count() > 0 {
+            self.output.push_str(&"  ".repeat(self.depth));
+            self.output.push(')');
+        }
+
+        if self.depth > 0 {
+            self.output.push('\n');
+        }
+    }
+
+    fn visit_node(&mut self, _cursor: &mut AstTreeCursor<'a>) {}
+}
+
+pub fn print_llmcc_ast(tree: &AstTree, context: &AstContext) {
+    let mut vistor = AstPrinter::new(context);
+    dfs(tree, &mut vistor);
+    vistor.print_output();
 }
 
 pub fn build_llmcc_ast(

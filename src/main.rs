@@ -31,5 +31,6 @@ fn main() {
     let mut context = AstContext::from_source(source_code.as_bytes());
     print_ast(&tree, &context);
     // println!("{}", tree.root_node().to_sexp());
-    let root = build_llmcc_ast(&tree, &mut context).unwrap();
+    let tree = build_llmcc_ast(&tree, &mut context).unwrap();
+    print_llmcc_ast(&tree, &context);
 }

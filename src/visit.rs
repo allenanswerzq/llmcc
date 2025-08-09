@@ -11,13 +11,13 @@ pub trait CursorTrait {
 
 pub trait TreeTrait<'a> {
     type Cursor: CursorTrait + 'a;
-    type Node: NodeTrait + 'a;
+    type Node: NodeTrait + Clone + 'a;
 
     fn root_node(&'a self) -> Self::Node;
     fn walk(&'a self) -> Self::Cursor;
 }
 
-pub trait NodeTrait {
+pub trait NodeTrait: Clone {
     fn get_child(&self, index: usize) -> Option<Box<Self>>;
     fn child_count(&self) -> usize;
 }
@@ -200,8 +200,8 @@ where
         }
     }
 
-    pub fn node(&self) -> Option<&Box<N>> {
-        self.current_node.as_ref()
+    pub fn node(&self) -> Box<N> {
+        self.current_node.as_ref().unwrap().clone()
     }
 
     pub fn depth(&self) -> usize {
