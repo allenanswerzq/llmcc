@@ -17,17 +17,18 @@ fn main() {
     // // let e2: AstTokenRust = "foo".parse().unwrap();
     // // println!("String to enum: {:?}", e2);
     let source_code = r#"
-        fn foo(a: u16, b: u16) -> u16 {
-            let mut x = 0;
-            x = a + b;
-            x
-        }
-        fn main() {
-            let a = 1;
-            let b = 2;
-            foo(a, b);
-        }
-        "#;
+fn foo(a: u16, b: u16) -> u16 {
+    let mut x = 0;
+    x = a + b;
+    x
+}
+fn main() {
+    let a = 1;
+    let b = 2;
+    foo(a, b);
+}
+        "#
+    .trim();
 
     // Create a new parser
     let mut parser = Parser::new();
@@ -40,8 +41,8 @@ fn main() {
     // Parse the source code
     let tree = parser.parse(source_code, None).unwrap();
     let mut context = AstContext::from_source(source_code.as_bytes());
-    print_ast(&tree, &context);
+    print_ast(&tree, &mut context);
     // println!("{}", tree.root_node().to_sexp());
     let tree = build_llmcc_ast(&tree, &mut context).unwrap();
-    print_llmcc_ast(&tree, &context);
+    print_llmcc_ast(&tree, &mut context);
 }

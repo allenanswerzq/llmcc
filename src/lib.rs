@@ -12,17 +12,19 @@ pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 pub use crate::visit::*;
 
+pub type AstArenaShare<T> = Rc<RefCell<AstArena<T>>>;
+
 #[derive(Debug, Default)]
 struct AstArena<T> {
     nodes: Vec<T>,
 }
 
 impl<T: Default> AstArena<T> {
-    fn new() -> Self {
-        Self {
-            // NOTE: id 1 is resvered for root node
+    fn new() -> AstArenaShare<T> {
+        // NOTE: id 1 is resvered for root node
+        Rc::new(RefCell::new(Self {
             nodes: vec![T::default()],
-        }
+        }))
     }
 
     fn add(&mut self, node: T) -> usize {
@@ -174,7 +176,7 @@ impl From<Point> for AstPoint {
 
 #[derive(Debug, Clone, Default)]
 struct AstNodeBase {
-    arena: Rc<RefCell<AstArena<AstKindNode>>>,
+    arena: AstArenaShare<AstKindNode>,
     id: usize,
     token_id: u16,
     field_id: u16,
@@ -349,16 +351,6 @@ impl std::fmt::Display for AstKindNode {
     }
 }
 
-impl NodeTrait for AstKindNode {
-    fn get_child(&self, index: usize) -> Option<Box<Self>> {
-        self.get_child(index)
-    }
-
-    fn child_count(&self) -> usize {
-        self.child_count()
-    }
-}
-
 impl Default for AstKindNode {
     fn default() -> Self {
         AstKindNode::Undefined
@@ -366,11 +358,43 @@ impl Default for AstKindNode {
 }
 
 impl AstKindNode {
+    fn get_id(&self) -> usize {
+        self.get_base().id
+    }
+
+    fn get_base(&self) -> &AstNodeBase {
+        match self {
+            AstKindNode::Undefined => {
+                panic!("shoud not happen")
+            }
+            AstKindNode::Root(node) => &node.base,
+            AstKindNode::Text(node) => &node.base,
+            AstKindNode::Internal(node) => &node.base,
+            AstKindNode::Scope(node) => &node.base,
+            AstKindNode::File(node) => &node.base,
+            AstKindNode::IdentifierUse(node) => &node.base,
+        }
+    }
+
+    fn get_base_mut(&mut self) -> &mut AstNodeBase {
+        match self {
+            AstKindNode::Undefined => {
+                panic!("shoud not happen")
+            }
+            AstKindNode::Root(node) => &mut node.base,
+            AstKindNode::Text(node) => &mut node.base,
+            AstKindNode::Internal(node) => &mut node.base,
+            AstKindNode::Scope(node) => &mut node.base,
+            AstKindNode::File(node) => &mut node.base,
+            AstKindNode::IdentifierUse(node) => &mut node.base,
+        }
+    }
+
     fn format_node(&self) -> String {
         match self {
             AstKindNode::Undefined => "undefined".into(),
             AstKindNode::Root(node) => {
-                format!("root [{}]", node.id)
+                format!("root [{}]", node.base.id)
             }
             AstKindNode::Text(node) => {
                 format!("text [{}] \"{}\"", node.base.id, node.text)
@@ -395,129 +419,31 @@ impl AstKindNode {
     }
 
     fn set_parent(&mut self, parent: usize) {
-        match self {
-            AstKindNode::Root(_) => {
-                panic!("cannot set a parent to root node.");
-            }
-            AstKindNode::Internal(node) => {
-                node.base.parent = Some(parent);
-            }
-            AstKindNode::Scope(node) => {
-                node.base.parent = Some(parent);
-            }
-            AstKindNode::File(node) => {
-                node.base.parent = Some(parent);
-            }
-            AstKindNode::IdentifierUse(node) => {
-                node.base.parent = Some(parent);
-            }
-            AstKindNode::Text(node) => {
-                node.base.parent = Some(parent);
-            }
-            AstKindNode::Undefined => {
-                panic!("cannot set a parent ton Undefined node.");
-            }
-        }
+        self.get_base_mut().parent = Some(parent);
     }
 
-    fn get_child(&self, index: usize) -> Option<Box<AstKindNode>> {
-        match self {
-            AstKindNode::Root(node) => {
-                let id = node.children.get(index).unwrap();
-                node.arena.borrow().get(*id).cloned().map(Box::new)
-            }
-            AstKindNode::Internal(node) => {
-                let id = node.base.children.get(index).unwrap();
-                node.base.arena.borrow().get(*id).cloned().map(Box::new)
-            }
-            AstKindNode::Scope(node) => {
-                let id = node.base.children.get(index).unwrap();
-                node.base.arena.borrow().get(*id).cloned().map(Box::new)
-            }
-            AstKindNode::File(node) => {
-                let id = node.base.children.get(index).unwrap();
-                node.base.arena.borrow().get(*id).cloned().map(Box::new)
-            }
-            AstKindNode::IdentifierUse(node) => {
-                let id = node.base.children.get(index).unwrap();
-                node.base.arena.borrow().get(*id).cloned().map(Box::new)
-            }
-            AstKindNode::Text(node) => {
-                let id = node.base.children.get(index).unwrap();
-                node.base.arena.borrow().get(*id).cloned().map(Box::new)
-            }
-            AstKindNode::Undefined => {
-                panic!("cannot set a parent ton Undefined node.");
-            }
-        }
-    }
-
-    fn get_id(&self) -> usize {
-        match self {
-            AstKindNode::Root(_) => 0,
-            AstKindNode::Internal(node) => node.base.id,
-            AstKindNode::Scope(node) => node.base.id,
-            AstKindNode::File(node) => node.base.id,
-            AstKindNode::IdentifierUse(node) => node.base.id,
-            AstKindNode::Text(node) => node.base.id,
-            AstKindNode::Undefined => {
-                panic!("cannot set a parent ton Undefined node.");
-            }
-        }
-    }
-
-    fn child_count(&self) -> usize {
-        match self {
-            AstKindNode::Root(node) => node.children.len(),
-            AstKindNode::Internal(node) => node.base.children.len(),
-            AstKindNode::Scope(node) => node.base.children.len(),
-            AstKindNode::File(node) => node.base.children.len(),
-            AstKindNode::IdentifierUse(node) => node.base.children.len(),
-            AstKindNode::Text(node) => node.base.children.len(),
-            AstKindNode::Undefined => {
-                panic!("cannot set a parent ton Undefined node.");
-            }
-        }
+    fn get_child(&self, index: usize) -> Option<usize> {
+        self.get_base().children.get(index).cloned()
     }
 
     fn add_child(&mut self, child: usize) {
-        match self {
-            AstKindNode::Root(node) => {
-                node.children.push(child);
-            }
-            AstKindNode::Internal(node) => {
-                node.base.children.push(child);
-            }
-            AstKindNode::Scope(node) => {
-                node.base.children.push(child);
-            }
-            AstKindNode::File(node) => {
-                node.base.children.push(child);
-            }
-            AstKindNode::IdentifierUse(_) => {
-                panic!("cannot add child to an Undefined node.");
-            }
-            AstKindNode::Text(_) => {
-                panic!("cannot add child to an Undefined node.");
-            }
-            AstKindNode::Undefined => {
-                panic!("cannot add child to an Undefined node.");
-            }
-        }
+        self.get_base_mut().children.push(child)
     }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct AstNodeRoot {
-    id: usize,
-    arena: Rc<RefCell<AstArena<AstKindNode>>>,
+    base: AstNodeBase,
+    arena: AstArenaShare<AstKindNode>,
     children: Vec<usize>,
 }
 
 impl AstNodeRoot {
-    fn new(arena: Rc<RefCell<AstArena<AstKindNode>>>) -> Self {
+    fn new(arena: AstArenaShare<AstKindNode>) -> Self {
+        let mut base = AstNodeBase::default();
+        base.id = 1;
         Self {
-            id: 1,
+            base,
             arena,
             children: vec![],
         }
@@ -537,26 +463,23 @@ impl AstTree {
     }
 }
 
-pub type AstTreeCursor<'a> = CursorGeneric<'a, AstTree, AstKindNode>;
-
-impl<'a> TreeTrait<'a> for AstTree {
-    type Node = AstKindNode;
-    type Cursor = AstTreeCursor<'a>;
-
-    fn root_node(&'a self) -> Self::Node {
-        self.root.clone()
+impl NodeTrait for AstKindNode {
+    fn get_child(&self, index: usize) -> Option<usize> {
+        self.get_child(index)
     }
 
-    fn walk(&'a self) -> Self::Cursor {
-        Self::Cursor::new(self)
+    fn child_count(&self) -> usize {
+        self.child_count()
     }
 }
+
+pub type AstTreeCursor<'a> = CursorGeneric<'a, AstKindNode>;
 
 #[derive(Debug)]
 pub struct AstContext {
     language: AstLanguage,
     file: AstFile,
-    arena: Rc<RefCell<AstArena<AstKindNode>>>,
+    arena: AstArenaShare<AstKindNode>,
 }
 
 impl AstContext {
@@ -564,7 +487,7 @@ impl AstContext {
         AstContext {
             language: AstLanguage::new(),
             file: AstFile::new_source(source.to_vec()),
-            arena: Rc::new(RefCell::new(AstArena::new())),
+            arena: AstArena::new(),
         }
     }
 }
@@ -711,23 +634,24 @@ impl AstLanguage {
 struct AstBuilder<'a> {
     stack: Vec<usize>,
     context: &'a mut AstContext,
+    arena: AstArenaShare<AstKindNode>,
 }
 
 impl<'a> AstBuilder<'a> {
-    fn new(context: &'a mut AstContext) -> Self {
-        let arena = context.arena.clone();
-        let root = AstKindNode::Root(Box::new(AstNodeRoot::new(arena)));
-        let root_id = context.arena.borrow_mut().add(root);
+    fn new(context: &'a mut AstContext, arena: AstArenaShare<AstKindNode>) -> Self {
+        let root = AstKindNode::Root(Box::new(AstNodeRoot::new(arena.clone())));
+        let root_id = arena.borrow_mut().add(root);
         Self {
             stack: vec![root_id],
             context: context,
+            arena,
         }
     }
 
     fn root_node(&self) -> Box<AstNodeRoot> {
         assert!(!self.stack.is_empty());
         let id = self.stack[self.stack.len() - 1];
-        let node = self.context.arena.borrow().get(id).cloned().unwrap();
+        let node = self.arena.borrow().get(id).cloned().unwrap();
         match node {
             AstKindNode::Root(node) => node.clone(),
             _ => panic!("should not happen"),
@@ -751,12 +675,11 @@ impl<'a> AstBuilder<'a> {
         match kind {
             AstKind::File => {
                 let file = AstKindNode::File(Box::new(AstNodeFile::new(base)));
-                self.context.arena.borrow_mut().add(file)
+                self.arena.borrow_mut().add(file)
             }
             AstKind::Text => {
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
-                self.context
-                    .arena
+                self.arena
                     .borrow_mut()
                     .add(AstKindNode::Text(Box::new(AstNodeText::new(
                         base,
@@ -764,15 +687,14 @@ impl<'a> AstBuilder<'a> {
                     ))))
             }
             AstKind::Internal => {
-                let node_id = self.context.arena.borrow().get_next_id();
+                let node_id = self.arena.borrow().get_next_id();
                 let name = self.step_to_name_child(node, node_id);
-                self.context
-                    .arena
+                self.arena
                     .borrow_mut()
                     .add(AstKindNode::Internal(Box::new(AstNode::new(base, name))))
             }
             AstKind::Scope => {
-                let mut arena = self.context.arena.borrow_mut();
+                let mut arena = self.arena.borrow_mut();
                 let node_id = arena.get_next_id();
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let symbol = AstSymbol::new(base.token_id, text.unwrap());
@@ -781,7 +703,7 @@ impl<'a> AstBuilder<'a> {
                 arena.add(AstKindNode::Scope(Box::new(AstNodeScope::new(base, scope))))
             }
             AstKind::IdentifierUse => {
-                let mut arena = self.context.arena.borrow_mut();
+                let mut arena = self.arena.borrow_mut();
                 let node_id = arena.get_next_id();
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let text = text.unwrap();
@@ -801,7 +723,7 @@ impl<'a> AstBuilder<'a> {
         let kind = self.context.language.get_token_kind(token_id);
 
         AstNodeBase {
-            arena: self.context.arena.clone(),
+            arena: self.arena.clone(),
             id,
             token_id,
             field_id: field_id.into(),
@@ -823,13 +745,13 @@ impl<'a> Visitor<TreeCursor<'a>> for AstBuilder<'_> {
         let field_id = cursor.field_id().unwrap_or(NonZeroU16::new(65535).unwrap());
         let kind = self.context.language.get_token_kind(token_id);
 
-        let id = self.context.arena.borrow().get_next_id();
+        let id = self.arena.borrow().get_next_id();
         let base = self.create_base_node(&node, id, field_id.into());
         let child = self.create_ast_node(base, kind, &node);
         debug_assert!(id == child);
 
         let parent = self.stack[self.stack.len() - 1];
-        let mut arena_mut = self.context.arena.borrow_mut();
+        let mut arena_mut = self.arena.borrow_mut();
         arena_mut.get_mut(parent).unwrap().add_child(child);
         arena_mut.get_mut(child).unwrap().set_parent(parent);
 
@@ -845,7 +767,7 @@ impl<'a> Visitor<TreeCursor<'a>> for AstBuilder<'_> {
         // Pop the current node from the stack when we're done with it
         if node.child_count() > 0 {
             if let Some(_completed_node) = self.stack.pop() {
-                // let mut arena_mut = self.context.arena.borrow_mut();
+                // let mut arena_mut = self.arena.borrow_mut();
                 // arena_mut.get_mut(completed_node).unwrap().add_child(child);
                 // self.finalize_node(&completed_node);
             }
@@ -884,7 +806,14 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstPrinter<'a> {
 
         self.output.push_str(&"  ".repeat(self.depth));
         self.output.push('(');
-        self.output.push_str(&format!("{}", node));
+        let base = node.get_base();
+        let text = self.context.file.get_text(base.start_byte, base.end_byte);
+        if let Some(mut text) = text {
+            text = text.replace("\n", "");
+            self.output.push_str(&format!("{} |{}|", node, text));
+        } else {
+            self.output.push_str(&format!("{}", node));
+        }
 
         if node.child_count() == 0 {
             self.output.push(')');
@@ -912,9 +841,13 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstPrinter<'a> {
     fn visit_node(&mut self, _cursor: &mut AstTreeCursor<'a>) {}
 }
 
-pub fn print_llmcc_ast(tree: &AstTree, context: &AstContext) {
+pub fn print_llmcc_ast(_tree: &AstTree, context: &AstContext) {
+    let arena = AstArena::new();
+    let mut arena = arena.borrow_mut();
+
     let mut vistor = AstPrinter::new(context);
-    dfs(tree, &mut vistor);
+    let mut cursor = AstTreeCursor::new(&mut *arena);
+    dfs(&mut cursor, &mut vistor);
     vistor.print_output();
 }
 
@@ -922,7 +855,9 @@ pub fn build_llmcc_ast(
     tree: &Tree,
     context: &mut AstContext,
 ) -> Result<AstTree, Box<dyn std::error::Error>> {
-    let mut vistor = AstBuilder::new(context);
-    dfs(tree, &mut vistor);
+    let arena = AstArena::new();
+    let mut vistor = AstBuilder::new(context, arena);
+    let mut cursor = tree.walk();
+    dfs(&mut cursor, &mut vistor);
     Ok(AstTree::new(vistor.root_node()))
 }

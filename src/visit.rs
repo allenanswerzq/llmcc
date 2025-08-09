@@ -1,7 +1,8 @@
-use std::collections::VecDeque;
-use tree_sitter::{Node as TsNode, Tree, TreeCursor};
+use std::cell::RefCell;
+use std::collections::HashMap;
+use tree_sitter::{Node, Tree, TreeCursor};
 
-use crate::{AstContext, AstKindNode};
+use crate::{AstArena, AstContext};
 
 pub trait CursorTrait {
     fn goto_first_child(&mut self) -> bool;
@@ -9,16 +10,8 @@ pub trait CursorTrait {
     fn goto_parent(&mut self) -> bool;
 }
 
-pub trait TreeTrait<'a> {
-    type Cursor: CursorTrait + 'a;
-    type Node: NodeTrait + Clone + 'a;
-
-    fn root_node(&'a self) -> Self::Node;
-    fn walk(&'a self) -> Self::Cursor;
-}
-
-pub trait NodeTrait: Clone {
-    fn get_child(&self, index: usize) -> Option<Box<Self>>;
+pub trait NodeTrait {
+    fn get_child(&self, index: usize) -> Option<usize>;
     fn child_count(&self) -> usize;
 }
 
@@ -36,29 +29,7 @@ impl<'a> CursorTrait for TreeCursor<'a> {
     }
 }
 
-impl<'a> NodeTrait for TsNode<'a> {
-    fn get_child(&self, index: usize) -> Option<Box<Self>> {
-        self.child(index).map(Box::new)
-    }
-    fn child_count(&self) -> usize {
-        self.child_count()
-    }
-}
-
-impl<'a> TreeTrait<'a> for Tree {
-    type Cursor = TreeCursor<'a>;
-    type Node = TsNode<'a>;
-
-    fn root_node(&'a self) -> Self::Node {
-        self.root_node()
-    }
-
-    fn walk(&'a self) -> Self::Cursor {
-        self.root_node().walk()
-    }
-}
-
-pub trait Visitor<C: CursorTrait> {
+pub trait Visitor<C> {
     fn visit_enter_node(&mut self, _c: &mut C) {}
     fn visit_node(&mut self, _c: &mut C) {}
     // fn finalize_node(&mut self, _t: &AstKindNode) {}
@@ -86,13 +57,12 @@ where
     visitor.visit_leave_node(cursor);
 }
 
-pub fn dfs<'a, T, V>(tree: &'a T, visitor: &mut V)
+pub fn dfs<T, V>(cursor: &mut T, visitor: &mut V)
 where
-    T: TreeTrait<'a>,
-    V: Visitor<T::Cursor>,
+    T: CursorTrait,
+    V: Visitor<T>,
 {
-    let mut cursor = tree.walk();
-    dfs_(&mut cursor, visitor);
+    dfs_(cursor, visitor);
 }
 
 #[derive(Debug)]
@@ -169,39 +139,49 @@ impl<'a> Visitor<TreeCursor<'a>> for AstPrinter<'a> {
     fn visit_node(&mut self, _cursor: &mut TreeCursor<'a>) {}
 }
 
-pub fn print_ast(tree: &Tree, context: &AstContext) {
+pub fn print_ast(tree: &Tree, context: &mut AstContext) {
     let mut vistor = AstPrinter::new(context);
-    dfs(tree, &mut vistor);
+    let mut cursor = tree.walk();
+    dfs(&mut cursor, &mut vistor);
     vistor.print_output();
 }
 
 #[derive(Debug)]
-pub struct CursorGeneric<'cursor, T, N>
-where
-    T: TreeTrait<'cursor, Node = N>,
-    N: NodeTrait + 'cursor,
-{
-    tree: &'cursor T,
+pub struct CursorGeneric<'a, T> {
+    arena: &'a mut AstArena<T>,
     path: Vec<usize>,
-    current_node: Option<Box<N>>,
+    current_node: usize,
+    parent_node: Option<usize>,
 }
 
-impl<'cursor, T, N> CursorGeneric<'cursor, T, N>
+impl<'a, T> CursorGeneric<'a, T>
 where
-    T: TreeTrait<'cursor, Node = N>,
-    N: NodeTrait + 'cursor,
+    T: NodeTrait + Default,
 {
-    pub fn new(tree: &'cursor T) -> Self {
-        let root = tree.root_node();
+    pub fn new(arena: &'a mut AstArena<T>) -> Self {
         Self {
-            tree,
+            arena,
             path: vec![],
-            current_node: Some(Box::new(root)),
+            current_node: 1, // Start at root (id 1)
+            parent_node: None,
         }
     }
 
-    pub fn node(&self) -> Box<N> {
-        self.current_node.as_ref().unwrap().clone()
+    pub fn node(&mut self) -> &mut T {
+        let id = self.current_node;
+        self.arena.get_mut(id).unwrap()
+    }
+
+    pub fn node_ref(&self) -> &T {
+        self.arena.get(self.current_node).unwrap()
+    }
+
+    pub fn current_node_id(&self) -> usize {
+        self.current_node
+    }
+
+    pub fn parent_node_id(&self) -> Option<usize> {
+        self.parent_node
     }
 
     pub fn depth(&self) -> usize {
@@ -216,36 +196,52 @@ where
         &self.path
     }
 
-    // Get node at a specific path from root
-    fn get_node_at_path(&self, path: &[usize]) -> Option<Box<N>> {
-        let root = Box::new(self.tree.root_node());
-        if path.is_empty() {
-            return Some(root);
-        }
-
-        let mut current = root;
-        for &index in path {
-            current = current.get_child(index)?;
-        }
-        Some(current)
+    pub fn parent(&self) -> Option<&T> {
+        self.parent_node.and_then(|id| self.arena.get(id))
     }
 
-    fn update_current_node(&mut self) {
-        self.current_node = self.get_node_at_path(&self.path);
+    pub fn parent_mut(&mut self) -> Option<&mut T> {
+        if let Some(parent_id) = self.parent_node {
+            self.arena.get_mut(parent_id)
+        } else {
+            None
+        }
+    }
+
+    fn get_node_at_path(&self, path: &[usize]) -> Option<usize> {
+        if path.is_empty() {
+            return Some(1); // Root node ID
+        }
+
+        let mut current_id = 1; // Start at root
+        for &index in path {
+            if let Some(node) = self.arena.get(current_id) {
+                if let Some(child_id) = node.get_child(index) {
+                    current_id = child_id;
+                } else {
+                    return None;
+                }
+            } else {
+                return None;
+            }
+        }
+        Some(current_id)
     }
 }
 
-impl<'cursor, T, N> CursorTrait for CursorGeneric<'cursor, T, N>
+impl<'a, T> CursorTrait for CursorGeneric<'a, T>
 where
-    T: TreeTrait<'cursor, Node = N>,
-    N: NodeTrait + 'cursor,
+    T: NodeTrait + Default,
 {
     fn goto_first_child(&mut self) -> bool {
-        if let Some(ref node) = self.current_node {
+        if let Some(node) = self.arena.get(self.current_node) {
             if node.child_count() > 0 {
-                self.path.push(0);
-                self.update_current_node();
-                return true;
+                if let Some(child_id) = node.get_child(0) {
+                    self.path.push(0);
+                    self.parent_node = Some(self.current_node);
+                    self.current_node = child_id;
+                    return true;
+                }
             }
         }
         false
@@ -253,34 +249,48 @@ where
 
     fn goto_next_sibling(&mut self) -> bool {
         if self.path.is_empty() {
-            return false;
+            return false; // Already at root, no siblings
         }
 
         let last_index = self.path.len() - 1;
         let current_index = self.path[last_index];
         let next_index = current_index + 1;
 
-        let parent_path = &self.path[..last_index];
-        if let Some(parent) = self.get_node_at_path(parent_path) {
-            if next_index < parent.child_count() {
-                self.path[last_index] = next_index;
-                self.update_current_node();
-                true
-            } else {
-                false
+        // Use parent_node directly
+        if let Some(parent_id) = self.parent_node {
+            if let Some(parent) = self.arena.get(parent_id) {
+                if next_index < parent.child_count() {
+                    if let Some(next_sibling_id) = parent.get_child(next_index) {
+                        self.path[last_index] = next_index;
+                        self.current_node = next_sibling_id;
+                        return true;
+                    }
+                }
             }
-        } else {
-            false
         }
+        false
     }
 
     fn goto_parent(&mut self) -> bool {
         if !self.path.is_empty() {
             self.path.pop();
-            self.update_current_node();
-            true
-        } else {
-            false
+
+            // Calculate new parent_node
+            let new_parent = if self.path.len() >= 1 {
+                // Find the parent of our new current node
+                self.get_node_at_path(&self.path[..self.path.len().saturating_sub(1)])
+            } else {
+                // Moving to root, so no parent
+                None
+            };
+
+            // Move to parent
+            if let Some(parent_id) = self.parent_node {
+                self.current_node = parent_id;
+                self.parent_node = new_parent;
+                return true;
+            }
         }
+        false
     }
 }
