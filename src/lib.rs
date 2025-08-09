@@ -15,12 +15,12 @@ pub use crate::visit::*;
 pub type AstArenaShare<T> = Rc<RefCell<AstArena<T>>>;
 
 #[derive(Debug, Default)]
-struct AstArena<T> {
+pub struct AstArena<T> {
     nodes: Vec<T>,
 }
 
 impl<T: Default> AstArena<T> {
-    fn new() -> AstArenaShare<T> {
+    pub fn new() -> AstArenaShare<T> {
         // NOTE: id 1 is resvered for root node
         Rc::new(RefCell::new(Self {
             nodes: vec![T::default()],
@@ -469,7 +469,7 @@ impl NodeTrait for AstKindNode {
     }
 
     fn child_count(&self) -> usize {
-        self.child_count()
+        self.get_base().children.len()
     }
 }
 
@@ -841,8 +841,7 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstPrinter<'a> {
     fn visit_node(&mut self, _cursor: &mut AstTreeCursor<'a>) {}
 }
 
-pub fn print_llmcc_ast(_tree: &AstTree, context: &AstContext) {
-    let arena = AstArena::new();
+pub fn print_llmcc_ast(_tree: &AstTree, context: &AstContext, arena: AstArenaShare<AstKindNode>) {
     let mut arena = arena.borrow_mut();
 
     let mut vistor = AstPrinter::new(context);
@@ -854,8 +853,8 @@ pub fn print_llmcc_ast(_tree: &AstTree, context: &AstContext) {
 pub fn build_llmcc_ast(
     tree: &Tree,
     context: &mut AstContext,
+    arena: AstArenaShare<AstKindNode>,
 ) -> Result<AstTree, Box<dyn std::error::Error>> {
-    let arena = AstArena::new();
     let mut vistor = AstBuilder::new(context, arena);
     let mut cursor = tree.walk();
     dfs(&mut cursor, &mut vistor);
