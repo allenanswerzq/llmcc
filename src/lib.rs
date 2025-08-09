@@ -1,24 +1,69 @@
 mod lang;
 pub mod visit;
 
+use std::cell::RefCell;
 use std::hash::{DefaultHasher, Hasher};
 use std::num::NonZeroU16;
-use std::vec;
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, sync::Arc};
+use std::{panic, vec};
+
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 pub use crate::visit::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default)]
+struct AstArena<T> {
+    nodes: Vec<T>,
+}
+
+impl<T: Default> AstArena<T> {
+    fn new() -> Self {
+        Self {
+            nodes: vec![T::default()],
+        }
+    }
+
+    fn add(&mut self, node: T) -> usize {
+        self.nodes.push(node);
+        self.nodes.len() - 1
+    }
+
+    fn get(&self, index: usize) -> Option<&T> {
+        self.nodes.get(index)
+    }
+
+    fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.nodes.get_mut(index)
+    }
+
+    fn get_next_id(&self) -> usize {
+        self.nodes.len()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 struct AstScope {
     // The symbol defines this scope
-    owner: Option<Box<AstSymbol>>,
+    owner: Box<AstSymbol>,
     // Base scopes,
     bases: Vec<Box<AstScope>>,
     // all symbols in this scope
     symbols: HashMap<String, AstSymbol>,
     // The ast node owns this scope
-    root: AstNodeScope,
+    ast_node: Option<usize>,
+}
+
+impl AstScope {
+    fn new(owner: Box<AstSymbol>) -> AstScope {
+        AstScope {
+            owner,
+            ..Default::default()
+        }
+    }
+
+    fn set_ast_node(&mut self, ast_node: usize) {
+        self.ast_node = Some(ast_node);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -31,9 +76,15 @@ struct AstField {
     value: u16,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstToken {
     value: u16,
+}
+
+impl AstToken {
+    fn new(id: u16) -> Self {
+        AstToken { value: id }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +92,7 @@ struct BasicBlock {
     _value: u16,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstSymbol {
     //
     token_id: AstToken,
@@ -54,7 +105,7 @@ struct AstSymbol {
     // The scope this symbol defines, if any (e.g., functions, classes)
     defines_scope: Option<Box<AstScope>>,
     // The scope where this symbol defined in,
-    parent_scope: AstScope,
+    parent_scope: Option<Box<AstScope>>,
     // The type of this symbol, if any
     type_of: Option<Box<AstSymbol>>,
     // The field this symbol belongs to, if any
@@ -66,9 +117,23 @@ struct AstSymbol {
     // The list of nested types inside this symbol
     nested_types: Vec<AstSymbol>,
     // The ast node defines this symbol,
-    defined: Option<Box<AstKindNode>>,
+    defined: Option<usize>,
     // The block defining this symbol,
     block: Option<Box<BasicBlock>>,
+}
+
+impl AstSymbol {
+    fn new(token_id: u16, name: String) -> Box<AstSymbol> {
+        Box::new(AstSymbol {
+            token_id: AstToken::new(token_id),
+            name,
+            ..Default::default()
+        })
+    }
+
+    fn set_defined(&mut self, defined: usize) {
+        self.defined = Some(defined);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -76,10 +141,21 @@ struct AstNodeId {
     base: AstNodeBase,
     name: String,
     mangled_name: String,
-    symbol: Option<Box<AstSymbol>>,
+    symbol: Box<AstSymbol>,
 }
 
-#[derive(Debug, Clone)]
+impl AstNodeId {
+    fn new(base: AstNodeBase, name: String, symbol: Box<AstSymbol>) -> Self {
+        Self {
+            base,
+            name,
+            mangled_name: "".into(),
+            symbol,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
 struct AstPoint {
     row: usize,
     col: usize,
@@ -94,8 +170,9 @@ impl From<Point> for AstPoint {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstNodeBase {
+    id: usize,
     token_id: u16,
     field_id: u16,
     kind: AstKind,
@@ -103,8 +180,8 @@ struct AstNodeBase {
     end_pos: AstPoint,
     start_byte: usize,
     end_byte: usize,
-    parent: Option<AstKindNode>,
-    children: Vec<AstKindNode>,
+    parent: Option<usize>,
+    children: Vec<usize>,
 }
 
 #[derive(Debug, Clone)]
@@ -114,15 +191,21 @@ struct AstNodeText {
 }
 
 impl AstNodeText {
-    fn new(base: AstNodeBase, text: String) -> Box<AstNodeText> {
-        Box::new(AstNodeText { base, text })
+    fn new(base: AstNodeBase, text: String) -> Self {
+        Self { base, text }
     }
 }
 
 #[derive(Debug, Clone)]
 struct AstNode {
     base: AstNodeBase,
-    name: Option<AstNodeId>,
+    name: Option<AstKindNode>,
+}
+
+impl AstNode {
+    fn new(base: AstNodeBase, name: Option<AstKindNode>) -> Self {
+        Self { base, name }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -187,14 +270,9 @@ struct AstNodeFile {
 }
 
 impl AstNodeFile {
-    fn new(base: AstNodeBase) -> Box<AstNodeFile> {
-        Box::new(AstNodeFile { base: base })
+    fn new(base: AstNodeBase) -> Self {
+        Self { base: base }
     }
-}
-
-#[derive(Debug, Clone)]
-struct AstNodeLeaf {
-    base: AstNodeBase,
 }
 
 #[derive(Debug, Clone)]
@@ -215,10 +293,16 @@ impl AstFile {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 struct AstNodeScope {
     base: AstNodeBase,
-    // scope: AstScope,
+    scope: AstScope,
+}
+
+impl AstNodeScope {
+    fn new(base: AstNodeBase, scope: AstScope) -> Self {
+        Self { base, scope }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -228,8 +312,6 @@ enum AstKind {
     File,
     Scope,
     Text,
-    TextBlcok,
-    Leaf,
     Internal,
     Comment,
     IdentifierUse,
@@ -240,23 +322,44 @@ enum AstKind {
     IdentifierFieldDef,
 }
 
+impl Default for AstKind {
+    fn default() -> Self {
+        AstKind::Undefined
+    }
+}
+
 #[derive(Debug, Clone)]
-enum AstKindNode {
+pub enum AstKindNode {
     Undefined,
     Root(Box<AstNodeRoot>),
     Text(Box<AstNodeText>),
     Internal(Box<AstNode>),
     Scope(Box<AstNodeScope>),
     File(Box<AstNodeFile>),
-    Leaf(Box<AstNodeLeaf>),
     IdentifierUse(Box<AstNodeId>),
 }
 
+impl NodeTrait for AstKindNode {
+    fn get_child(&self, index: usize) -> Option<&usize> {
+        self.get_child(index)
+    }
+
+    fn child_count(&self) -> usize {
+        self.child_count()
+    }
+}
+
+impl Default for AstKindNode {
+    fn default() -> Self {
+        AstKindNode::Undefined
+    }
+}
+
 impl AstKindNode {
-    fn set_parent(&mut self, parent: AstKindNode) {
+    fn set_parent(&mut self, parent: usize) {
         match self {
             AstKindNode::Root(_) => {
-                panic!("Cannot set a parent to root node.");
+                panic!("cannot set a parent to root node.");
             }
             AstKindNode::Internal(node) => {
                 node.base.parent = Some(parent);
@@ -264,8 +367,8 @@ impl AstKindNode {
             AstKindNode::Scope(node) => {
                 node.base.parent = Some(parent);
             }
-            AstKindNode::File(_) => {
-                panic!("Cannot set a parent to root node.");
+            AstKindNode::File(node) => {
+                node.base.parent = Some(parent);
             }
             AstKindNode::IdentifierUse(node) => {
                 node.base.parent = Some(parent);
@@ -273,19 +376,55 @@ impl AstKindNode {
             AstKindNode::Text(node) => {
                 node.base.parent = Some(parent);
             }
-            AstKindNode::Leaf(node) => {
-                node.base.parent = Some(parent);
-            }
             AstKindNode::Undefined => {
-                panic!("Cannot set a parent ton Undefined node.");
+                panic!("cannot set a parent ton Undefined node.");
             }
         }
     }
 
-    fn add_child(&mut self, child: AstKindNode) {
-        let mut child = child;
-        child.set_parent(self.clone());
+    fn get_child(&self, index: usize) -> Option<&usize> {
+        match self {
+            AstKindNode::Root(node) => node.children.get(index),
+            AstKindNode::Internal(node) => node.base.children.get(index),
+            AstKindNode::Scope(node) => node.base.children.get(index),
+            AstKindNode::File(node) => node.base.children.get(index),
+            AstKindNode::IdentifierUse(node) => node.base.children.get(index),
+            AstKindNode::Text(node) => node.base.children.get(index),
+            AstKindNode::Undefined => {
+                panic!("cannot set a parent ton Undefined node.");
+            }
+        }
+    }
 
+    fn get_id(&self) -> usize {
+        match self {
+            AstKindNode::Root(_) => 0,
+            AstKindNode::Internal(node) => node.base.id,
+            AstKindNode::Scope(node) => node.base.id,
+            AstKindNode::File(node) => node.base.id,
+            AstKindNode::IdentifierUse(node) => node.base.id,
+            AstKindNode::Text(node) => node.base.id,
+            AstKindNode::Undefined => {
+                panic!("cannot set a parent ton Undefined node.");
+            }
+        }
+    }
+
+    fn child_count(&self) -> usize {
+        match self {
+            AstKindNode::Root(node) => node.children.len(),
+            AstKindNode::Internal(node) => node.base.children.len(),
+            AstKindNode::Scope(node) => node.base.children.len(),
+            AstKindNode::File(node) => node.base.children.len(),
+            AstKindNode::IdentifierUse(node) => node.base.children.len(),
+            AstKindNode::Text(node) => node.base.children.len(),
+            AstKindNode::Undefined => {
+                panic!("cannot set a parent ton Undefined node.");
+            }
+        }
+    }
+
+    fn add_child(&mut self, child: usize) {
         match self {
             AstKindNode::Root(node) => {
                 node.children.push(child);
@@ -300,29 +439,52 @@ impl AstKindNode {
                 node.base.children.push(child);
             }
             AstKindNode::IdentifierUse(_) => {
-                panic!("Cannot add child to a identifier node.");
+                panic!("cannot add child to a identifier node.");
             }
             AstKindNode::Text(_) => {
-                panic!("Cannot add child to a Text node.");
-            }
-            AstKindNode::Leaf(_) => {
-                panic!("Cannot add child to a Leaf node.");
+                panic!("cannot add child to a Text node.");
             }
             AstKindNode::Undefined => {
-                panic!("Cannot add child to an Undefined node.");
+                panic!("cannot add child to an Undefined node.");
             }
         }
     }
 }
 
 #[derive(Debug, Clone)]
-struct AstNodeRoot {
-    children: Vec<AstKindNode>,
+pub struct AstNodeRoot {
+    children: Vec<usize>,
 }
 
 impl AstNodeRoot {
-    fn new() -> Self {
-        AstNodeRoot { children: vec![] }
+    pub fn new() -> Self {
+        Self { children: vec![] }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AstTree {
+    root: AstKindNode,
+}
+
+impl AstTree {
+    fn new(root: AstNodeRoot) -> Self {
+        AstTree {
+            root: AstKindNode::Root(root),
+        }
+    }
+}
+
+impl<'a> TreeTrait<'a> for AstTree {
+    type Node = AstKindNode;
+    type Cursor = CursorGeneric<'a, AstTree, AstKindNode>;
+
+    fn root_node(&'a self) -> &'a Self::Node {
+        &self.root
+    }
+
+    fn walk(&'a self) -> Self::Cursor {
+        Self::Cursor::new(self)
     }
 }
 
@@ -330,14 +492,16 @@ impl AstNodeRoot {
 pub struct AstContext {
     language: AstLanguage,
     file: AstFile,
+    arena: AstArena<AstKindNode>,
 }
 
 impl AstContext {
-    pub fn from_source(source: &[u8]) -> Box<AstContext> {
-        Box::new(AstContext {
+    pub fn from_source(source: &[u8]) -> AstContext {
+        AstContext {
             language: AstLanguage::new(),
             file: AstFile::new_source(source.to_vec()),
-        })
+            arena: AstArena::new(),
+        }
     }
 }
 
@@ -360,22 +524,6 @@ use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, In
 #[strum(serialize_all = "snake_case")]
 #[allow(non_snake_case)]
 pub enum AstTokenRust {
-    // source_file,157: 65535
-    // function_item,188: 65535
-    // fn,96: 65535
-    // identifier,1: 19
-    // parameters,210: 22
-    // (,4: 65535
-    // ),5: 65535
-    // block,293: 5
-    // {,8: 65535
-    // let_declaration,203: 65535
-    // let,101: 65535
-    // identifier,1: 24
-    // =,70: 65535
-    // integer_literal,127: 31
-    // ;,2: 65535
-    // },9: 65535
     #[strum(serialize = "fn")]
     Text_fn = 96,
     #[strum(serialize = "(")]
@@ -401,26 +549,37 @@ pub enum AstTokenRust {
     function_item = 188,
 }
 
+#[repr(u16)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumString,
+    EnumIter,
+    EnumVariantNames,
+    Display,
+    FromRepr,
+    IntoStaticStr,
+)]
+#[strum(serialize_all = "snake_case")]
+#[allow(non_snake_case)]
+pub enum AstFieldRust {
+    #[strum(serialize = "name")]
+    name = 19,
+}
+
 impl From<AstTokenRust> for AstKind {
-    /// Converts an `AstTokenRust` into its corresponding `AstKind`.
-    /// This mapping is based on the semantic meaning of the Tree-sitter token/node kind.
     fn from(token: AstTokenRust) -> Self {
         match token {
             AstTokenRust::source_file => AstKind::File,
-            AstTokenRust::function_item => AstKind::Scope, // Functions define a new scope
+            AstTokenRust::function_item => AstKind::Scope,
             AstTokenRust::block => AstKind::Scope,
-            AstTokenRust::let_declaration => AstKind::Internal, // Represents a declaration structure
-            AstTokenRust::parameters => AstKind::Internal, // Represents a structural part of a function
-
-            // Identifiers: context determines if it's a definition or use.
-            // For a generic mapping, we might default or refine later.
-            // Here, we'll make an assumption for simplicity.
+            AstTokenRust::let_declaration => AstKind::Internal,
+            AstTokenRust::parameters => AstKind::Internal,
             AstTokenRust::identifier => AstKind::IdentifierUse,
-
-            // Literal values are typically leaves in the AST
-            AstTokenRust::integer_literal => AstKind::Leaf,
-
-            // Text tokens (keywords, punctuation)
+            AstTokenRust::integer_literal => AstKind::Text,
             AstTokenRust::Text_fn
             | AstTokenRust::Text_LPAREN
             | AstTokenRust::Text_RPAREN
@@ -444,55 +603,110 @@ impl AstLanguage {
     fn get_token_kind(&self, token_id: u16) -> AstKind {
         AstTokenRust::from_repr(token_id).unwrap().into()
     }
+
+    fn get_name_child<'a>(&self, node: &Node<'a>) -> Option<Node<'a>> {
+        node.child_by_field_id(AstFieldRust::name as u16)
+    }
+
+    fn get_name_field_id(&self) -> u16 {
+        AstFieldRust::name as u16
+    }
 }
 
 #[derive(Debug)]
-struct AstBuilder {
-    stack: Vec<AstKindNode>,
-    context: Box<AstContext>,
+struct AstBuilder<'a> {
+    stack: Vec<usize>,
+    context: &'a mut AstContext,
 }
 
-impl AstBuilder {
-    fn new(context: Box<AstContext>) -> Self {
+impl<'a> AstBuilder<'a> {
+    fn new(context: &'a mut AstContext) -> Self {
+        let root = AstKindNode::Root(AstNodeRoot::new());
+        let root_id = context.arena.add(root);
         Self {
-            stack: vec![AstKindNode::Root(Box::new(AstNodeRoot::new()))],
+            stack: vec![root_id],
             context: context,
         }
     }
 
-    fn get_root(&self) -> Box<AstNodeRoot> {
+    fn root_node(&self) -> AstNodeRoot {
         assert!(!self.stack.is_empty());
-        match self.stack.last().unwrap() {
+        let id = self.stack[self.stack.len() - 1];
+        let node = self.context.arena.get(id).cloned().unwrap();
+        match node {
             AstKindNode::Root(node) => node.clone(),
-            _ => panic!("shoud not happen"),
+            _ => panic!("should not happen"),
         }
     }
 
-    fn get_text(&self, base: &AstNodeBase) -> Option<String> {
-        self.context.file.get_text(base.start_byte, base.end_byte)
+    fn step_to_name_child(&mut self, node: &Node, node_id: usize) -> Option<AstKindNode> {
+        let child = self.context.language.get_name_child(node)?;
+        let name_id = self.context.language.get_name_field_id();
+        let start = child.start_byte();
+        let end = child.end_byte();
+        let text = self.context.file.get_text(start, end).unwrap();
+        let base = self.create_base_node(&child, node_id, name_id);
+        let symbol = AstSymbol::new(node.kind_id(), text.clone());
+        let mut ast_node = AstNodeId::new(base, text.clone(), symbol);
+        ast_node.symbol.set_defined(node_id);
+        Some(AstKindNode::IdentifierUse(ast_node))
     }
 
-    fn create_ast_node(&self, base: AstNodeBase, kind: AstKind) -> AstKindNode {
+    fn create_ast_node(&mut self, base: AstNodeBase, kind: AstKind, node: &Node) -> usize {
         match kind {
-            AstKind::File => AstKindNode::File(AstNodeFile::new(base)),
-            AstKind::Text => {
-                let text = self.get_text(&base).unwrap();
-                AstKindNode::Text(AstNodeText::new(base, text))
+            AstKind::File => {
+                let file = AstKindNode::File(Box::new(AstNodeFile::new(base)));
+                self.context.arena.add(file)
             }
-            // AstKind::Internal => AstKindNode::Internal(AstNode::new(base))
-            _ => AstKindNode::Undefined,
+            AstKind::Text => {
+                let text = self.context.file.get_text(base.start_byte, base.end_byte);
+                self.context
+                    .arena
+                    .add(AstKindNode::Text(Box::new(AstNodeText::new(
+                        base,
+                        text.unwrap(),
+                    ))))
+            }
+            AstKind::Internal => {
+                let node_id = self.context.arena.get_next_id();
+                let name = self.step_to_name_child(node, node_id);
+                self.context
+                    .arena
+                    .add(AstKindNode::Internal(Box::new(AstNode::new(base, name))))
+            }
+            AstKind::Scope => {
+                let node_id = self.context.arena.get_next_id();
+                let text = self.context.file.get_text(base.start_byte, base.end_byte);
+                let symbol = AstSymbol::new(base.token_id, text.unwrap());
+                let mut scope = AstScope::new(symbol);
+                scope.ast_node = Some(node_id);
+                self.context
+                    .arena
+                    .add(AstKindNode::Scope(Box::new(AstNodeScope::new(base, scope))))
+            }
+            AstKind::IdentifierUse => {
+                let node_id = self.context.arena.get_next_id();
+                let text = self.context.file.get_text(base.start_byte, base.end_byte);
+                let text = text.unwrap();
+                let symbol = AstSymbol::new(base.token_id, text.clone());
+                let mut ast = AstNodeId::new(base, text, symbol);
+                ast.symbol.defined = Some(node_id);
+                self.context
+                    .arena
+                    .add(AstKindNode::IdentifierUse(Box::new(ast)))
+            }
+            _ => {
+                panic!("unknown kind: {:?}", node)
+            }
         }
     }
-}
 
-impl<'a> Visitor<'a> for AstBuilder {
-    fn visit_node(&mut self, cursor: &mut TreeCursor<'a>) {
-        let node = cursor.node();
+    fn create_base_node(&self, node: &Node, id: usize, field_id: u16) -> AstNodeBase {
         let token_id = node.kind_id();
-        let field_id = cursor.field_id().unwrap_or(NonZeroU16::new(65535).unwrap());
         let kind = self.context.language.get_token_kind(token_id);
 
-        let base = AstNodeBase {
+        AstNodeBase {
+            id,
             token_id,
             field_id: field_id.into(),
             kind,
@@ -502,12 +716,26 @@ impl<'a> Visitor<'a> for AstBuilder {
             end_byte: node.end_byte(),
             parent: None,
             children: vec![],
-        };
+        }
+    }
+}
 
-        let ast_node = self.create_ast_node(base, kind);
+impl<'a> Visitor<TreeCursor<'a>> for AstBuilder<'_> {
+    fn visit_node(&mut self, cursor: &mut TreeCursor<'a>) {
+        let node = cursor.node();
+        let token_id = node.kind_id();
+        let field_id = cursor.field_id().unwrap_or(NonZeroU16::new(65535).unwrap());
+        let kind = self.context.language.get_token_kind(token_id);
+        let id = self.context.arena.get_next_id();
+        let base = self.create_base_node(&node, id, field_id.into());
+        let ast_node = self.create_ast_node(base, kind, &node);
 
-        let parent = self.stack.last_mut().unwrap();
-        parent.add_child(ast_node.clone());
+        let parent = self.stack[self.stack.len() - 1];
+        self.context
+            .arena
+            .get_mut(parent)
+            .unwrap()
+            .add_child(ast_node);
 
         // Push this node onto the stack if it can have children
         if node.child_count() > 0 {
@@ -522,17 +750,17 @@ impl<'a> Visitor<'a> for AstBuilder {
         if node.child_count() > 0 {
             if let Some(completed_node) = self.stack.pop() {
                 // TODO: utilize this
-                // self.finalize_node(completed_node);
+                // self.finalize_node(&completed_node);
             }
         }
     }
 }
 
-fn build_tree(
+pub fn build_llmcc_ast(
     tree: &Tree,
-    context: Box<AstContext>,
-) -> Result<Box<AstNodeRoot>, Box<dyn std::error::Error>> {
+    context: &AstContext,
+) -> Result<AstTree, Box<dyn std::error::Error>> {
     let mut vistor = AstBuilder::new(context);
-    dfs(&tree, &mut vistor);
-    Ok(vistor.get_root())
+    dfs(tree, &mut vistor);
+    Ok(AstTree::new(vistor.root_node()))
 }

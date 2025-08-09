@@ -28,7 +28,8 @@ fn main() {
 
     // Parse the source code
     let tree = parser.parse(source_code, None).unwrap();
-    let ctx = AstContext::from_source(source_code.as_bytes());
-    print_ast(&tree, ctx);
+    let context = AstContext::from_source(source_code.as_bytes());
+    print_ast(&tree, &context);
     // println!("{}", tree.root_node().to_sexp());
+    let root = build_llmcc_ast(&tree, &context).unwrap();
 }
