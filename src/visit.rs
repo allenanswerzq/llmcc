@@ -1,5 +1,5 @@
 use std::collections::VecDeque;
-use tree_sitter::{Tree, TreeCursor};
+use tree_sitter::{Node as TsNode, Tree, TreeCursor};
 
 use crate::{AstContext, AstKindNode};
 
@@ -13,12 +13,12 @@ pub trait TreeTrait<'a> {
     type Cursor: CursorTrait + 'a;
     type Node: NodeTrait + 'a;
 
-    fn root_node(&'a self) -> &'a Self::Node;
+    fn root_node(&'a self) -> Self::Node;
     fn walk(&'a self) -> Self::Cursor;
 }
 
 pub trait NodeTrait {
-    fn get_child(&self, index: usize) -> Option<&usize>;
+    fn get_child(&self, index: usize) -> Option<Box<Self>>;
     fn child_count(&self) -> usize;
 }
 
@@ -36,8 +36,22 @@ impl<'a> CursorTrait for TreeCursor<'a> {
     }
 }
 
+impl<'a> NodeTrait for TsNode<'a> {
+    fn get_child(&self, index: usize) -> Option<Box<Self>> {
+        self.child(index).map(Box::new)
+    }
+    fn child_count(&self) -> usize {
+        self.child_count()
+    }
+}
+
 impl<'a> TreeTrait<'a> for Tree {
     type Cursor = TreeCursor<'a>;
+    type Node = TsNode<'a>;
+
+    fn root_node(&'a self) -> Self::Node {
+        self.root_node()
+    }
 
     fn walk(&'a self) -> Self::Cursor {
         self.root_node().walk()
@@ -47,7 +61,7 @@ impl<'a> TreeTrait<'a> for Tree {
 pub trait Visitor<C: CursorTrait> {
     fn visit_enter_node(&mut self, _c: &mut C) {}
     fn visit_node(&mut self, _c: &mut C) {}
-    fn finalize_node(&mut self, _t: &AstKindNode) {}
+    // fn finalize_node(&mut self, _t: &AstKindNode) {}
     fn visit_leave_node(&mut self, _c: &mut C) {}
 }
 
@@ -169,7 +183,7 @@ where
 {
     tree: &'cursor T,
     path: Vec<usize>,
-    current_node: Option<&'cursor N>,
+    current_node: Option<Box<N>>,
 }
 
 impl<'cursor, T, N> CursorGeneric<'cursor, T, N>
@@ -182,12 +196,12 @@ where
         Self {
             tree,
             path: vec![],
-            current_node: Some(root),
+            current_node: Some(Box::new(root)),
         }
     }
 
-    pub fn node(&self) -> Option<&N> {
-        self.current_node
+    pub fn node(&self) -> Option<&Box<N>> {
+        self.current_node.as_ref()
     }
 
     pub fn depth(&self) -> usize {
@@ -203,17 +217,16 @@ where
     }
 
     // Get node at a specific path from root
-    fn get_node_at_path(&self, path: &[usize]) -> Option<&'cursor N> {
+    fn get_node_at_path(&self, path: &[usize]) -> Option<Box<N>> {
+        let root = Box::new(self.tree.root_node());
         if path.is_empty() {
-            return Some(self.tree.root_node());
+            return Some(root);
         }
 
-        let mut current = self.tree.root_node();
-
+        let mut current = root;
         for &index in path {
             current = current.get_child(index)?;
         }
-
         Some(current)
     }
 
@@ -228,7 +241,7 @@ where
     N: NodeTrait + 'cursor,
 {
     fn goto_first_child(&mut self) -> bool {
-        if let Some(node) = self.current_node {
+        if let Some(ref node) = self.current_node {
             if node.child_count() > 0 {
                 self.path.push(0);
                 self.update_current_node();
@@ -240,7 +253,6 @@ where
 
     fn goto_next_sibling(&mut self) -> bool {
         if self.path.is_empty() {
-            // At root, no siblings
             return false;
         }
 
@@ -248,14 +260,15 @@ where
         let current_index = self.path[last_index];
         let next_index = current_index + 1;
 
-        // Get parent node to check sibling count
         let parent_path = &self.path[..last_index];
-        let parent = self.get_node_at_path(parent_path)?;
-
-        if next_index < parent.child_count() {
-            self.path[last_index] = next_index;
-            self.update_current_node();
-            true
+        if let Some(parent) = self.get_node_at_path(parent_path) {
+            if next_index < parent.child_count() {
+                self.path[last_index] = next_index;
+                self.update_current_node();
+                true
+            } else {
+                false
+            }
         } else {
             false
         }
