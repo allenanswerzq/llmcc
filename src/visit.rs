@@ -165,6 +165,10 @@ where
         }
     }
 
+    pub fn get_arena(&mut self) -> &mut AstArena<T> {
+        self.arena
+    }
+
     pub fn node(&mut self) -> &mut T {
         let id = self.current_node;
         self.arena.get_mut(id).unwrap()

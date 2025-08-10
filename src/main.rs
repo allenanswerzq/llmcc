@@ -46,4 +46,6 @@ fn main() {
     let arena = AstArena::new();
     let tree = build_llmcc_ast(&tree, &mut context, arena.clone()).unwrap();
     print_llmcc_ast(&tree, &mut context, arena.clone());
+    let stack = collect_llmcc_ast(&tree, &context, arena.clone());
+    bind_llmcc_ast(&tree, &context, arena.clone(), stack);
 }
