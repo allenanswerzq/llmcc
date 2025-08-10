@@ -1,3 +1,4 @@
+// pub mod block;
 mod lang;
 pub mod visit;
 
@@ -27,20 +28,20 @@ impl<T: Default> AstArena<T> {
         }))
     }
 
-    fn add(&mut self, node: T) -> usize {
+    pub fn add(&mut self, node: T) -> usize {
         self.nodes.push(node);
         self.nodes.len() - 1
     }
 
-    fn get(&self, index: usize) -> Option<&T> {
+    pub fn get(&self, index: usize) -> Option<&T> {
         self.nodes.get(index)
     }
 
-    fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
         self.nodes.get_mut(index)
     }
 
-    fn get_next_id(&self) -> usize {
+    pub fn get_next_id(&self) -> usize {
         self.nodes.len()
     }
 }
@@ -52,7 +53,7 @@ struct AstScope {
     // Base scopes,
     bases: Vec<Box<AstScope>>,
     // all symbols in this scope
-    symbols: HashMap<String, AstSymbol>,
+    symbols: HashMap<String, Box<AstSymbol>>,
     // The ast node owns this scope
     ast_node: Option<usize>,
 }
@@ -68,11 +69,36 @@ impl AstScope {
     fn set_ast_node(&mut self, ast_node: usize) {
         self.ast_node = Some(ast_node);
     }
+
+    fn add_symbol(&mut self, name: String, symbol: Box<AstSymbol>) {
+        self.symbols.insert(name, symbol);
+    }
 }
 
 #[derive(Debug, Clone)]
 struct AstScopeStack {
     scopes: Vec<AstScope>,
+}
+
+impl AstScopeStack {
+    fn new() -> Self {
+        Self { scopes: vec![] }
+    }
+
+    fn enter_scope(&mut self, scope: AstScope) {
+        self.scopes.push(scope)
+    }
+
+    fn leave_scope(&mut self) {
+        self.scopes.pop();
+    }
+
+    fn add_symbol(&mut self, symbol: &Box<AstSymbol>) {
+        self.scopes
+            .last_mut()
+            .unwrap()
+            .add_symbol(symbol.mangled_name.clone(), symbol.clone());
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -89,11 +115,6 @@ impl AstToken {
     fn new(id: u16) -> Self {
         AstToken { value: id }
     }
-}
-
-#[derive(Debug, Clone)]
-struct BasicBlock {
-    _value: u16,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -123,7 +144,7 @@ struct AstSymbol {
     // The ast node defines this symbol,
     defined: Option<usize>,
     // The block defining this symbol,
-    block: Option<Box<BasicBlock>>,
+    // block: Option<Box<BasicBlock>>,
 }
 
 impl AstSymbol {
@@ -143,19 +164,12 @@ impl AstSymbol {
 #[derive(Debug, Clone, Default)]
 struct AstNodeId {
     base: AstNodeBase,
-    name: String,
-    mangled_name: String,
     symbol: Box<AstSymbol>,
 }
 
 impl AstNodeId {
-    fn new(base: AstNodeBase, name: String, symbol: Box<AstSymbol>) -> Self {
-        Self {
-            base,
-            name,
-            mangled_name: "".into(),
-            symbol,
-        }
+    fn new(base: AstNodeBase, symbol: Box<AstSymbol>) -> Self {
+        Self { base, symbol }
     }
 }
 
@@ -204,11 +218,11 @@ impl AstNodeText {
 #[derive(Debug, Clone, Default)]
 struct AstNode {
     base: AstNodeBase,
-    name: Option<AstKindNode>,
+    name: Option<Box<AstNodeId>>,
 }
 
 impl AstNode {
-    fn new(base: AstNodeBase, name: Option<AstKindNode>) -> Self {
+    fn new(base: AstNodeBase, name: Option<Box<AstNodeId>>) -> Self {
         Self { base, name }
     }
 }
@@ -302,11 +316,12 @@ impl AstFile {
 struct AstNodeScope {
     base: AstNodeBase,
     scope: AstScope,
+    name: Option<Box<AstNodeId>>,
 }
 
 impl AstNodeScope {
-    fn new(base: AstNodeBase, scope: AstScope) -> Self {
-        Self { base, scope }
+    fn new(base: AstNodeBase, scope: AstScope, name: Option<Box<AstNodeId>>) -> Self {
+        Self { base, scope, name }
     }
 }
 
@@ -358,11 +373,11 @@ impl Default for AstKindNode {
 }
 
 impl AstKindNode {
-    fn get_id(&self) -> usize {
+    pub fn get_id(&self) -> usize {
         self.get_base().id
     }
 
-    fn get_base(&self) -> &AstNodeBase {
+    pub fn get_base(&self) -> &AstNodeBase {
         match self {
             AstKindNode::Undefined => {
                 panic!("shoud not happen")
@@ -376,7 +391,7 @@ impl AstKindNode {
         }
     }
 
-    fn get_base_mut(&mut self) -> &mut AstNodeBase {
+    pub fn get_base_mut(&mut self) -> &mut AstNodeBase {
         match self {
             AstKindNode::Undefined => {
                 panic!("shoud not happen")
@@ -413,7 +428,10 @@ impl AstKindNode {
                 format!("file [{}]", node.base.id)
             }
             AstKindNode::IdentifierUse(node) => {
-                format!("identifier_use [{}] '{}'", node.base.id, node.name)
+                format!(
+                    "identifier_use [{}] '{}', '{}'",
+                    node.base.id, node.symbol.name, node.symbol.mangled_name
+                )
             }
         }
     }
@@ -628,6 +646,13 @@ impl AstLanguage {
     fn get_name_field_id(&self) -> u16 {
         AstFieldRust::name as u16
     }
+
+    fn upgrade_identifier(&self, token_id: u16) -> Option<AstKind> {
+        if token_id == AstTokenRust::function_item as u16 {
+            return Some(AstKind::IdentifierDef);
+        }
+        None
+    }
 }
 
 #[derive(Debug)]
@@ -658,17 +683,17 @@ impl<'a> AstBuilder<'a> {
         }
     }
 
-    fn step_to_name_child(&mut self, node: &Node, node_id: usize) -> Option<AstKindNode> {
+    fn step_to_name_child(&mut self, node: &Node, node_id: usize) -> Option<Box<AstNodeId>> {
         let child = self.context.language.get_name_child(node)?;
         let name_id = self.context.language.get_name_field_id();
         let start = child.start_byte();
         let end = child.end_byte();
         let text = self.context.file.get_text(start, end).unwrap();
         let base = self.create_base_node(&child, node_id, name_id);
-        let symbol = AstSymbol::new(node.kind_id(), text.clone());
-        let mut ast_node = AstNodeId::new(base, text.clone(), symbol);
+        let symbol = AstSymbol::new(node.kind_id(), text);
+        let mut ast_node = AstNodeId::new(base, symbol);
         ast_node.symbol.set_defined(node_id);
-        Some(AstKindNode::IdentifierUse(Box::new(ast_node)))
+        Some(Box::new(ast_node))
     }
 
     fn create_ast_node(&mut self, base: AstNodeBase, kind: AstKind, node: &Node) -> usize {
@@ -694,21 +719,29 @@ impl<'a> AstBuilder<'a> {
                     .add(AstKindNode::Internal(Box::new(AstNode::new(base, name))))
             }
             AstKind::Scope => {
-                let mut arena = self.arena.borrow_mut();
+                let arena = self.arena.borrow();
                 let node_id = arena.get_next_id();
+                drop(arena);
+
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let symbol = AstSymbol::new(base.token_id, text.unwrap());
                 let mut scope = AstScope::new(symbol);
                 scope.ast_node = Some(node_id);
-                arena.add(AstKindNode::Scope(Box::new(AstNodeScope::new(base, scope))))
+
+                let name = self.step_to_name_child(node, node_id);
+
+                let mut arena = self.arena.borrow_mut();
+                arena.add(AstKindNode::Scope(Box::new(AstNodeScope::new(
+                    base, scope, name,
+                ))))
             }
             AstKind::IdentifierUse => {
                 let mut arena = self.arena.borrow_mut();
                 let node_id = arena.get_next_id();
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let text = text.unwrap();
-                let symbol = AstSymbol::new(base.token_id, text.clone());
-                let mut ast = AstNodeId::new(base, text, symbol);
+                let symbol = AstSymbol::new(base.token_id, text);
+                let mut ast = AstNodeId::new(base, symbol);
                 ast.symbol.defined = Some(node_id);
                 arena.add(AstKindNode::IdentifierUse(Box::new(ast)))
             }
@@ -859,4 +892,76 @@ pub fn build_llmcc_ast(
     let mut cursor = tree.walk();
     dfs(&mut cursor, &mut vistor);
     Ok(AstTree::new(vistor.root_node()))
+}
+
+#[derive(Debug)]
+struct AstSymbolBinder<'a> {
+    context: &'a AstContext,
+    scope_stack: AstScopeStack,
+}
+
+impl<'a> AstSymbolBinder<'a> {
+    fn new(context: &'a AstContext) -> Self {
+        Self {
+            context,
+            scope_stack: AstScopeStack::new(),
+        }
+    }
+
+    fn upgrade_identifier(&self, token_id: u16, name: &mut Box<AstNodeId>) {
+        let change_to = self.context.language.upgrade_identifier(token_id);
+        if let Some(change) = change_to {
+            name.base.kind = change;
+        }
+    }
+
+    fn mangled_name(&self, name: &mut Box<AstNodeId>) {}
+}
+
+impl<'a> Visitor<AstTreeCursor<'a>> for AstSymbolBinder<'a> {
+    fn visit_enter_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
+        let node = cursor.node();
+        match node {
+            AstKindNode::Scope(scope_node) => {
+                self.scope_stack.enter_scope(scope_node.scope.clone());
+            }
+            _ => {}
+        }
+    }
+
+    fn visit_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
+        let node = cursor.node();
+        let base = node.get_base();
+        let token_id = base.token_id;
+        match node {
+            AstKindNode::Scope(node) => {
+                if let Some(mut name) = node.name.as_mut() {
+                    self.upgrade_identifier(token_id, &mut name);
+                    self.mangled_name(&mut name);
+                    self.scope_stack.add_symbol(&name.symbol);
+                }
+            }
+            AstKindNode::Internal(node) => {
+                if let Some(mut name) = node.name.as_mut() {
+                    self.mangled_name(&mut name);
+                    self.scope_stack.add_symbol(&name.symbol);
+                }
+            }
+            AstKindNode::IdentifierUse(node) => {
+                self.mangled_name(node);
+                self.scope_stack.add_symbol(&node.symbol);
+            }
+            _ => {}
+        }
+    }
+
+    fn visit_leave_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
+        let node = cursor.node();
+        match node {
+            AstKindNode::Scope(_scope_node) => {
+                self.scope_stack.leave_scope();
+            }
+            _ => {}
+        }
+    }
 }

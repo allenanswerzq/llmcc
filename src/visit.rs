@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
 use tree_sitter::{Node, Tree, TreeCursor};
 
 use crate::{AstArena, AstContext};
