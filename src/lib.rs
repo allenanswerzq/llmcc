@@ -53,7 +53,7 @@ struct AstScope {
     // Parent index inside a scope stack
     parent: Option<usize>,
     // all symbols in this scope
-    symbols: HashMap<String, Box<AstSymbol>>,
+    symbols: HashMap<String, AstSymbol>,
     // The ast node owns this scope
     ast_node: Option<usize>,
 }
@@ -76,7 +76,7 @@ impl AstScope {
         self.ast_node = Some(ast_node);
     }
 
-    fn add_symbol(&mut self, name: String, symbol: Box<AstSymbol>) {
+    fn add_symbol(&mut self, name: String, symbol: AstSymbol) {
         self.symbols.insert(name, symbol);
     }
 }
@@ -120,7 +120,7 @@ impl<'a> AstScopeStack {
         }
     }
 
-    fn add_symbol(&mut self, arena: &mut AstArena<AstKindNode>, symbol: Box<AstSymbol>) {
+    fn add_symbol(&mut self, arena: &mut AstArena<AstKindNode>, symbol: AstSymbol) {
         let index = self.scopes[self.current_scope];
         let node = arena.get_mut(index).unwrap();
         let scope = node.get_scope_mut().unwrap();
@@ -140,7 +140,7 @@ impl<'a> AstScopeStack {
             let scope = node.get_scope_mut().unwrap();
 
             if let Some(sym) = scope.symbols.get(mangled_name) {
-                return Some(sym.clone());
+                return Some(Box::new(sym.clone()));
             }
             if current == 0 {
                 break;
@@ -180,9 +180,9 @@ struct AstSymbol {
     // The point from the source code
     origin: AstPoint,
     // The scope this symbol defines, if any (e.g., functions, classes)
-    defines_scope: Option<Box<AstScope>>,
-    // The scope where this symbol defined in,
-    parent_scope: Option<Box<AstScope>>,
+    // defines_scope: Option<Box<AstScope>>,
+    // The parent scope where this symbol defined in,
+    // parent_scope: Option<Box<AstScope>>,
     // The ast node defines this symbol,
     defined: Option<usize>,
     // The type of this symbol, if any
@@ -276,11 +276,11 @@ impl AstNodeText {
 #[derive(Debug, Clone, Default)]
 struct AstNode {
     base: AstNodeBase,
-    name: Option<Box<AstNodeId>>,
+    name: Option<usize>,
 }
 
 impl AstNode {
-    fn new(base: AstNodeBase, name: Option<Box<AstNodeId>>) -> Self {
+    fn new(base: AstNodeBase, name: Option<usize>) -> Self {
         Self { base, name }
     }
 }
@@ -374,11 +374,11 @@ impl AstFile {
 struct AstNodeScope {
     base: AstNodeBase,
     scope: AstScope,
-    name: Option<Box<AstNodeId>>,
+    name: Option<usize>,
 }
 
 impl AstNodeScope {
-    fn new(base: AstNodeBase, scope: AstScope, name: Option<Box<AstNodeId>>) -> Self {
+    fn new(base: AstNodeBase, scope: AstScope, name: Option<usize>) -> Self {
         Self { base, scope, name }
     }
 }
@@ -432,6 +432,21 @@ impl Default for AstKindNode {
 }
 
 impl AstKindNode {
+    pub fn child_by_field_id(
+        arena: &AstArena<AstKindNode>,
+        base: &AstNodeBase,
+        field_id: u16,
+    ) -> Option<usize> {
+        base.children
+            .iter()
+            .find(|&&i| {
+                arena
+                    .get(i)
+                    .map_or(false, |node| node.get_base().field_id == field_id)
+            })
+            .copied()
+    }
+
     pub fn get_id(&self) -> usize {
         self.get_base().id
     }
@@ -440,29 +455,6 @@ impl AstKindNode {
         match self {
             AstKindNode::Scope(node) => Some(&mut node.scope),
             _ => None,
-        }
-    }
-
-    pub fn get_name(&self) -> Option<&AstNodeId> {
-        match self {
-            _ => {
-                panic!("shoud not happen")
-            }
-            AstKindNode::Internal(node) => {
-                if let Some(ref id) = node.name.as_ref() {
-                    Some(id)
-                } else {
-                    None
-                }
-            }
-            AstKindNode::Scope(node) => {
-                if let Some(ref id) = node.name.as_ref() {
-                    Some(id)
-                } else {
-                    None
-                }
-            }
-            AstKindNode::Identifier(node) => Some(&*node),
         }
     }
 
@@ -477,6 +469,20 @@ impl AstKindNode {
             AstKindNode::Scope(node) => &node.base,
             AstKindNode::File(node) => &node.base,
             AstKindNode::Identifier(node) => &node.base,
+        }
+    }
+
+    pub fn get_symbol_mut(&mut self) -> Option<&mut AstSymbol> {
+        match self {
+            AstKindNode::Identifier(node) => Some(&mut node.symbol),
+            _ => None,
+        }
+    }
+
+    pub fn get_symbol_clone(&mut self) -> Option<AstSymbol> {
+        match self {
+            AstKindNode::Identifier(node) => Some(*node.symbol.clone()),
+            _ => None,
         }
     }
 
@@ -504,34 +510,14 @@ impl AstKindNode {
                 format!("text [{}] \"{}\"", node.base.id, node.text)
             }
             AstKindNode::Internal(node) => {
-                if let Some(name) = node.name.as_ref() {
-                    format!(
-                        "internal [{}] ({}), @{} {}",
-                        node.base.id,
-                        node.base.parent.unwrap(),
-                        name.base.kind,
-                        name.symbol.mangled_name,
-                    )
-                } else {
-                    format!(
-                        "internal [{}] ({})",
-                        node.base.id,
-                        node.base.parent.unwrap(),
-                    )
-                }
+                format!(
+                    "internal [{}] ({})",
+                    node.base.id,
+                    node.base.parent.unwrap()
+                )
             }
             AstKindNode::Scope(node) => {
-                if let Some(name) = node.name.as_ref() {
-                    format!(
-                        "scope [{}], @{}, {}, #{}",
-                        node.base.id,
-                        name.base.kind,
-                        name.symbol.mangled_name,
-                        node.scope.symbols.len()
-                    )
-                } else {
-                    format!("scope [{}], #{}", node.base.id, node.scope.symbols.len())
-                }
+                format!("scope [{}], {}", node.base.id, node.scope.symbols.len())
             }
             AstKindNode::File(node) => {
                 format!("file [{}]", node.base.id)
@@ -541,7 +527,8 @@ impl AstKindNode {
                 let type_of = &node.symbol.type_of;
                 let field_of = &node.symbol.field_of;
                 format!(
-                    "identifier [{}] '{}', '{}', @{:?}, ${:?}, %{:?}",
+                    "{} [{}] '{}', '{}', @{:?}, ${:?}, %{:?}",
+                    node.base.kind,
                     node.base.id,
                     node.symbol.name,
                     node.symbol.mangled_name,
@@ -757,49 +744,6 @@ impl AstLanguage {
             .into()
     }
 
-    fn create_base_node(
-        &self,
-        arena: AstArenaShare<AstKindNode>,
-        node: &Node,
-        id: usize,
-        field_id: u16,
-    ) -> AstNodeBase {
-        let token_id = node.kind_id();
-        let kind = self.get_token_kind(token_id);
-
-        AstNodeBase {
-            arena: arena,
-            id,
-            token_id,
-            field_id: field_id.into(),
-            kind,
-            start_pos: node.start_position().into(),
-            end_pos: node.end_position().into(),
-            start_byte: node.start_byte(),
-            end_byte: node.end_byte(),
-            parent: None,
-            children: vec![],
-        }
-    }
-
-    fn create_ast_node_id(
-        &self,
-        arena: AstArenaShare<AstKindNode>,
-        context: &AstContext,
-        child: &Node,
-        node: &Node,
-        node_id: usize,
-        field_id: u16,
-    ) -> Option<Box<AstNodeId>> {
-        let start = child.start_byte();
-        let end = child.end_byte();
-        let text = context.file.get_text(start, end).unwrap();
-        let base = self.create_base_node(arena, &child, node_id, field_id);
-        let symbol = AstSymbol::new(node.kind_id(), text);
-        let ast_node = AstNodeId::new(base, symbol);
-        Some(Box::new(ast_node))
-    }
-
     fn upgrade_identifier(&self, token_id: u16) -> Option<AstKind> {
         match AstTokenRust::from_repr(token_id) {
             Some(AstTokenRust::function_item)
@@ -811,30 +755,12 @@ impl AstLanguage {
         }
     }
 
-    fn step_to_name(
-        &self,
-        arena: AstArenaShare<AstKindNode>,
-        context: &AstContext,
-        node: &Node,
-        node_id: usize,
-    ) -> Option<Box<AstNodeId>> {
-        let token_id = node.kind_id();
+    fn step_to_name(&self, node: &AstKindNode) -> Option<u16> {
+        let token_id = node.get_base().token_id;
         match AstTokenRust::from_repr(token_id) {
-            Some(AstTokenRust::function_item) => {
-                let child = node.child_by_field_id(AstFieldRust::name as u16)?;
-                let field_id = AstFieldRust::name as u16;
-                self.create_ast_node_id(arena, context, &child, node, node_id, field_id)
-            }
-            Some(AstTokenRust::parameter) => {
-                let child = node.child_by_field_id(AstFieldRust::pattern as u16)?;
-                let field_id = AstFieldRust::pattern as u16;
-                self.create_ast_node_id(arena, context, &child, node, node_id, field_id)
-            }
-            Some(AstTokenRust::let_declaration) => {
-                let child = node.child_by_field_id(AstFieldRust::pattern as u16)?;
-                let field_id = AstFieldRust::pattern as u16;
-                self.create_ast_node_id(arena, context, &child, node, node_id, field_id)
-            }
+            Some(AstTokenRust::function_item) => Some(AstFieldRust::name as u16),
+            Some(AstTokenRust::parameter) => Some(AstFieldRust::pattern as u16),
+            Some(AstTokenRust::let_declaration) => Some(AstFieldRust::pattern as u16),
             _ => None,
         }
     }
@@ -876,10 +802,6 @@ impl<'a> AstBuilder<'a> {
     }
 
     fn create_ast_node(&mut self, base: AstNodeBase, kind: AstKind, node: &Node) -> usize {
-        let arena = self.arena.borrow();
-        let node_id = arena.get_next_id();
-        drop(arena);
-
         match kind {
             AstKind::File => {
                 let file = AstKindNode::File(Box::new(AstNodeFile::new(base)));
@@ -894,34 +816,23 @@ impl<'a> AstBuilder<'a> {
                         text.unwrap(),
                     ))))
             }
-            AstKind::Internal => {
-                let name = self.context.language.step_to_name(
-                    self.arena.clone(),
-                    &self.context,
-                    node,
-                    node_id,
-                );
-
-                self.arena
-                    .borrow_mut()
-                    .add(AstKindNode::Internal(Box::new(AstNode::new(base, name))))
-            }
+            AstKind::Internal => self
+                .arena
+                .borrow_mut()
+                .add(AstKindNode::Internal(Box::new(AstNode::new(base, None)))),
             AstKind::Scope => {
+                let arena = self.arena.borrow();
+                let node_id = arena.get_next_id();
+                drop(arena);
+
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let symbol = AstSymbol::new(base.token_id, text.unwrap());
                 let mut scope = AstScope::new(symbol);
                 scope.ast_node = Some(node_id);
 
-                let name = self.context.language.step_to_name(
-                    self.arena.clone(),
-                    &self.context,
-                    node,
-                    node_id,
-                );
-
                 let mut arena = self.arena.borrow_mut();
                 arena.add(AstKindNode::Scope(Box::new(AstNodeScope::new(
-                    base, scope, name,
+                    base, scope, None,
                 ))))
             }
             AstKind::IdentifierUse => {
@@ -1099,24 +1010,49 @@ impl<'a> AstSymbolCollector<'a> {
         collector
     }
 
-    fn upgrade_identifier_if_any(&self, token_id: u16, name: &mut Box<AstNodeId>) {
-        let change_to = self.context.language.upgrade_identifier(token_id);
-        if let Some(change) = change_to {
-            name.base.kind = change;
-            match change {
+    fn upgrade_identifier_if_any(
+        &self,
+        arena: &mut AstArena<AstKindNode>,
+        token_id: u16,
+        node_id: usize,
+        name: usize,
+    ) {
+        let upgrade_to = self.context.language.upgrade_identifier(token_id);
+        if let Some(upgrade) = upgrade_to {
+            let node = arena.get_mut(name).unwrap();
+            node.get_base_mut().kind = upgrade;
+            match upgrade {
                 AstKind::IdentifierDef
                 | AstKind::IdentifierFieldDef
                 | AstKind::IdentifierTypeDef => {
-                    // NOTE: defined by itself
-                    name.symbol.defined = Some(name.base.id);
+                    let symbol = node.get_symbol_mut().unwrap();
+                    // symbol.parent_scope = self.scope_stack.current_scope;
+                    symbol.defined = Some(node_id);
                 }
                 _ => {}
             }
         }
     }
 
-    fn mangled_name(&self, name: &mut Box<AstNodeId>) {
-        self.context.language.mangled_name(name, &self.scope_stack);
+    fn mangled_name(&self, arena: &mut AstArena<AstKindNode>, name: usize) {
+        // self.context.language.mangled_name(name, &self.scope_stack);
+    }
+
+    fn step_to_name(&self, cursor: &mut AstTreeCursor<'a>) {
+        let field_id = self.context.language.step_to_name(cursor.node());
+        let base = cursor.node().get_base().clone();
+        if let Some(field_id) = field_id {
+            let child = AstKindNode::child_by_field_id(cursor.get_arena(), &base, field_id);
+            match cursor.node() {
+                AstKindNode::Scope(node) => {
+                    node.name = Some(child.unwrap());
+                }
+                AstKindNode::Internal(node) => {
+                    node.name = Some(child.unwrap());
+                }
+                _ => {}
+            }
+        }
     }
 }
 
@@ -1134,26 +1070,27 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstSymbolCollector<'a> {
     }
 
     fn visit_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
-        let token_id = {
-            let node = cursor.node();
-            node.get_base().token_id
-        };
+        self.step_to_name(cursor);
 
+        let token_id = cursor.node().get_base().token_id;
+        let node_id = cursor.node().get_base().id;
         match cursor.node() {
             AstKindNode::Scope(node) => {
-                if let Some(name) = node.name.as_mut() {
-                    self.upgrade_identifier_if_any(token_id, name);
-                    self.mangled_name(name);
-                    let symbol = name.symbol.clone();
-                    self.scope_stack.add_symbol(cursor.get_arena(), symbol);
+                if let Some(name) = node.name {
+                    let arena = cursor.get_arena();
+                    self.upgrade_identifier_if_any(arena, token_id, node_id, name);
+                    self.mangled_name(arena, name);
+                    let symbol = arena.get_mut(name).unwrap().get_symbol_clone();
+                    self.scope_stack.add_symbol(arena, symbol.unwrap());
                 }
             }
             AstKindNode::Internal(node) => {
-                if let Some(name) = node.name.as_mut() {
-                    self.upgrade_identifier_if_any(token_id, name);
-                    self.mangled_name(name);
-                    let symbol = name.symbol.clone();
-                    self.scope_stack.add_symbol(cursor.get_arena(), symbol);
+                if let Some(name) = node.name {
+                    let arena = cursor.get_arena();
+                    self.upgrade_identifier_if_any(arena, token_id, node_id, name);
+                    self.mangled_name(arena, name);
+                    let symbol = arena.get_mut(name).unwrap().get_symbol_clone();
+                    self.scope_stack.add_symbol(arena, symbol.unwrap());
                 }
             }
             AstKindNode::Identifier(node) => {
@@ -1161,9 +1098,10 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstSymbolCollector<'a> {
                     AstKind::IdentifierDef
                     | AstKind::IdentifierFieldDef
                     | AstKind::IdentifierTypeDef => {
-                        self.mangled_name(node);
                         let symbol = node.symbol.clone();
-                        self.scope_stack.add_symbol(cursor.get_arena(), symbol);
+                        let arena = cursor.get_arena();
+                        self.mangled_name(arena, node_id);
+                        self.scope_stack.add_symbol(arena, *symbol);
                     }
                     AstKind::IdentifierUse
                     | AstKind::IdentifierTypeUse
