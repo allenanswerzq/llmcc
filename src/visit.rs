@@ -30,8 +30,8 @@ impl<'a> CursorTrait for TreeCursor<'a> {
 pub trait Visitor<C> {
     fn visit_enter_node(&mut self, _c: &mut C) {}
     fn visit_node(&mut self, _c: &mut C) {}
-    // fn finalize_node(&mut self, _t: &AstKindNode) {}
     fn visit_leave_node(&mut self, _c: &mut C) {}
+    // fn finalize_node(&mut self, _t: &AstKindNode) {}
 }
 
 fn dfs_<C, V>(cursor: &mut C, visitor: &mut V)

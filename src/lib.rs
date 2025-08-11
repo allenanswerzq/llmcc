@@ -120,12 +120,12 @@ impl<'a> AstScopeStack {
         }
     }
 
-    fn add_symbol(&mut self, arena: &mut AstArena<AstKindNode>, symbol: &Box<AstSymbol>) {
+    fn add_symbol(&mut self, arena: &mut AstArena<AstKindNode>, symbol: Box<AstSymbol>) {
         let index = self.scopes[self.current_scope];
         let node = arena.get_mut(index).unwrap();
         let scope = node.get_scope_mut().unwrap();
 
-        scope.add_symbol(symbol.mangled_name.clone(), symbol.clone());
+        scope.add_symbol(symbol.mangled_name.clone(), symbol);
     }
 
     fn lookup(
@@ -184,7 +184,7 @@ struct AstSymbol {
     // The scope where this symbol defined in,
     parent_scope: Option<Box<AstScope>>,
     // The ast node defines this symbol,
-    defined: Option<Box<AstSymbol>>,
+    defined: Option<usize>,
     // The type of this symbol, if any
     type_of: Option<Box<AstSymbol>>,
     // The field this symbol belongs to, if any
@@ -197,6 +197,16 @@ struct AstSymbol {
     nested_types: Vec<AstSymbol>,
     // The block defining this symbol,
     // block: Option<Box<BasicBlock>>,
+}
+
+impl std::fmt::Display for AstSymbol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "({:?}:{},{})",
+            self.token_id, self.name, self.mangled_name
+        )
+    }
 }
 
 impl AstSymbol {
@@ -433,6 +443,29 @@ impl AstKindNode {
         }
     }
 
+    pub fn get_name(&self) -> Option<&AstNodeId> {
+        match self {
+            _ => {
+                panic!("shoud not happen")
+            }
+            AstKindNode::Internal(node) => {
+                if let Some(ref id) = node.name.as_ref() {
+                    Some(id)
+                } else {
+                    None
+                }
+            }
+            AstKindNode::Scope(node) => {
+                if let Some(ref id) = node.name.as_ref() {
+                    Some(id)
+                } else {
+                    None
+                }
+            }
+            AstKindNode::Identifier(node) => Some(&*node),
+        }
+    }
+
     pub fn get_base(&self) -> &AstNodeBase {
         match self {
             AstKindNode::Undefined => {
@@ -471,23 +504,50 @@ impl AstKindNode {
                 format!("text [{}] \"{}\"", node.base.id, node.text)
             }
             AstKindNode::Internal(node) => {
-                format!(
-                    "internal [{}] ({})",
-                    node.base.id,
-                    node.base.parent.unwrap()
-                )
+                if let Some(name) = node.name.as_ref() {
+                    format!(
+                        "internal [{}] ({}), @{} {}",
+                        node.base.id,
+                        node.base.parent.unwrap(),
+                        name.base.kind,
+                        name.symbol.mangled_name,
+                    )
+                } else {
+                    format!(
+                        "internal [{}] ({})",
+                        node.base.id,
+                        node.base.parent.unwrap(),
+                    )
+                }
             }
             AstKindNode::Scope(node) => {
-                format!("scope [{}]", node.base.id)
+                if let Some(name) = node.name.as_ref() {
+                    format!(
+                        "scope [{}], @{}, {}, #{}",
+                        node.base.id,
+                        name.base.kind,
+                        name.symbol.mangled_name,
+                        node.scope.symbols.len()
+                    )
+                } else {
+                    format!("scope [{}], #{}", node.base.id, node.scope.symbols.len())
+                }
             }
             AstKindNode::File(node) => {
                 format!("file [{}]", node.base.id)
             }
             AstKindNode::Identifier(node) => {
-                let kind = node.base.kind.to_string();
+                let defined = node.symbol.defined;
+                let type_of = &node.symbol.type_of;
+                let field_of = &node.symbol.field_of;
                 format!(
-                    "{} [{}] '{}', '{}'",
-                    kind, node.base.id, node.symbol.name, node.symbol.mangled_name
+                    "identifier [{}] '{}', '{}', @{:?}, ${:?}, %{:?}",
+                    node.base.id,
+                    node.symbol.name,
+                    node.symbol.mangled_name,
+                    defined,
+                    type_of,
+                    field_of
                 )
             }
         }
@@ -1043,6 +1103,15 @@ impl<'a> AstSymbolCollector<'a> {
         let change_to = self.context.language.upgrade_identifier(token_id);
         if let Some(change) = change_to {
             name.base.kind = change;
+            match change {
+                AstKind::IdentifierDef
+                | AstKind::IdentifierFieldDef
+                | AstKind::IdentifierTypeDef => {
+                    // NOTE: defined by itself
+                    name.symbol.defined = Some(name.base.id);
+                }
+                _ => {}
+            }
         }
     }
 
@@ -1065,52 +1134,46 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstSymbolCollector<'a> {
     }
 
     fn visit_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
-        let (token_id, node) = {
+        let token_id = {
             let node = cursor.node();
-            (
-                node.get_base().token_id,
-                match node {
-                    AstKindNode::Scope(node) => Some(("scope", node.name.clone())),
-                    AstKindNode::Internal(node) => Some(("internal", node.name.clone())),
-                    AstKindNode::Identifier(node) => Some(("identifier", Some(node.clone()))),
-                    _ => None,
-                },
-            )
+            node.get_base().token_id
         };
 
-        // Now match on owned/cloned data
-        if let Some(("scope", mut name_opt)) = node {
-            if let Some(mut name) = name_opt.as_mut() {
-                self.upgrade_identifier_if_any(token_id, &mut name);
-                self.mangled_name(&mut name);
-                self.scope_stack
-                    .add_symbol(cursor.get_arena(), &name.symbol);
+        match cursor.node() {
+            AstKindNode::Scope(node) => {
+                if let Some(name) = node.name.as_mut() {
+                    self.upgrade_identifier_if_any(token_id, name);
+                    self.mangled_name(name);
+                    let symbol = name.symbol.clone();
+                    self.scope_stack.add_symbol(cursor.get_arena(), symbol);
+                }
             }
-        } else if let Some(("internal", mut name_opt)) = node {
-            if let Some(mut name) = name_opt.as_mut() {
-                self.upgrade_identifier_if_any(token_id, &mut name);
-                self.mangled_name(&mut name);
-                self.scope_stack
-                    .add_symbol(cursor.get_arena(), &name.symbol);
+            AstKindNode::Internal(node) => {
+                if let Some(name) = node.name.as_mut() {
+                    self.upgrade_identifier_if_any(token_id, name);
+                    self.mangled_name(name);
+                    let symbol = name.symbol.clone();
+                    self.scope_stack.add_symbol(cursor.get_arena(), symbol);
+                }
             }
-        } else if let Some(("identifier", mut name_opt)) = node {
-            if let Some(name) = name_opt.as_mut() {
-                match name.base.kind {
+            AstKindNode::Identifier(node) => {
+                match node.base.kind {
                     AstKind::IdentifierDef
                     | AstKind::IdentifierFieldDef
                     | AstKind::IdentifierTypeDef => {
-                        self.mangled_name(name);
-                        self.scope_stack
-                            .add_symbol(cursor.get_arena(), &name.symbol);
+                        self.mangled_name(node);
+                        let symbol = node.symbol.clone();
+                        self.scope_stack.add_symbol(cursor.get_arena(), symbol);
                     }
                     AstKind::IdentifierUse
                     | AstKind::IdentifierTypeUse
                     | AstKind::IdentifierFieldUse => {
-                        // Do nothing
+                        // Do nothing here in declaration pass
                     }
                     _ => unimplemented!(),
                 }
             }
+            _ => {} // Handle other node types
         }
     }
 
@@ -1145,7 +1208,7 @@ impl<'a> AstSymbolBinder<'a> {
         arena: &mut AstArena<AstKindNode>,
         name: &Box<AstSymbol>,
     ) -> Option<Box<AstSymbol>> {
-        self.scope_stack.lookup(arena, &name.mangled_name)
+        self.scope_stack.lookup(arena, &name.name)
     }
 }
 
@@ -1179,22 +1242,34 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstSymbolBinder<'a> {
             AstKind::IdentifierUse => {
                 if let Some(define) = self.resolve_symbol(cursor.get_arena(), &symbol) {
                     if let AstKindNode::Identifier(node) = cursor.node() {
-                        node.symbol.defined = Some(define);
+                        node.symbol.defined = Some(define.defined.unwrap());
+                    } else {
+                        unreachable!()
                     }
+                } else {
+                    panic!("cannot resolve use symbol: {}", symbol)
                 }
             }
             AstKind::IdentifierTypeUse => {
                 if let Some(type_of) = self.resolve_symbol(cursor.get_arena(), &symbol) {
                     if let AstKindNode::Identifier(node) = cursor.node() {
                         node.symbol.type_of = Some(type_of);
+                    } else {
+                        unreachable!()
                     }
+                } else {
+                    panic!("cannot resolve tyep use symbol: {}", symbol)
                 }
             }
             AstKind::IdentifierFieldUse => {
                 if let Some(field_of) = self.resolve_symbol(cursor.get_arena(), &symbol) {
                     if let AstKindNode::Identifier(node) = cursor.node() {
                         node.symbol.field_of = Some(field_of);
+                    } else {
+                        unreachable!()
                     }
+                } else {
+                    panic!("cannot resolve field symbol: {}", symbol)
                 }
             }
             _ => {}
