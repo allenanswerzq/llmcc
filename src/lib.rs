@@ -77,6 +77,7 @@ impl AstScope {
     }
 
     fn add_symbol(&mut self, name: String, symbol: AstSymbol) {
+        println!("add symbol: {}|", name);
         self.symbols.insert(name, symbol);
     }
 }
@@ -125,7 +126,8 @@ impl<'a> AstScopeStack {
         let node = arena.get_mut(index).unwrap();
         let scope = node.get_scope_mut().unwrap();
 
-        scope.add_symbol(symbol.mangled_name.clone(), symbol);
+        scope.add_symbol(symbol.name.clone(), symbol);
+        // scope.add_symbol(symbol.mangled_name.clone(), symbol);
     }
 
     fn lookup(
@@ -1144,7 +1146,7 @@ impl<'a> AstSymbolBinder<'a> {
     fn resolve_symbol(
         &self,
         arena: &mut AstArena<AstKindNode>,
-        name: &Box<AstSymbol>,
+        name: &AstSymbol,
     ) -> Option<Box<AstSymbol>> {
         self.scope_stack.lookup(arena, &name.name)
     }
@@ -1164,18 +1166,12 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstSymbolBinder<'a> {
     }
 
     fn visit_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
-        let kind;
-        let symbol;
-        {
-            let node_ref = cursor.node();
-            if let AstKindNode::Identifier(node) = node_ref {
-                kind = node.base.kind;
-                symbol = node.symbol.clone();
-            } else {
-                return;
-            }
+        let symbol = cursor.node().get_symbol_clone();
+        if symbol.is_none() {
+            return;
         }
-
+        let symbol = symbol.unwrap();
+        let kind = cursor.node().get_base().kind;
         match kind {
             AstKind::IdentifierUse => {
                 if let Some(define) = self.resolve_symbol(cursor.get_arena(), &symbol) {
@@ -1207,7 +1203,7 @@ impl<'a> Visitor<AstTreeCursor<'a>> for AstSymbolBinder<'a> {
                         unreachable!()
                     }
                 } else {
-                    panic!("cannot resolve field symbol: {}", symbol)
+                    panic!("cannot resolve field use symbol: {}", symbol)
                 }
             }
             _ => {}

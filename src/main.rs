@@ -1,21 +1,6 @@
 use llmcc::*;
 
 fn main() {
-    // // Enum -> number
-    // let num: u8 = AstTokenRust::Foo.into();
-    // println!("Enum to number: {}", num);
-
-    // // Number -> enum
-    // let e = AstTokenRust::try_from(1).unwrap();
-    // println!("Number to enum: {}", e.to_string());
-
-    // // // Enum -> string
-    // // let s = e.to_string();
-    // // println!("Enum to string: {}", s);
-
-    // // // String -> enum
-    // // let e2: AstTokenRust = "foo".parse().unwrap();
-    // // println!("String to enum: {:?}", e2);
     let source_code = r#"
 fn foo(a: u16, b: u16) -> u16 {
     let mut x = 0;
