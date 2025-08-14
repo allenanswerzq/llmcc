@@ -1,8 +1,9 @@
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ast_arena, ast_arena_mut};
-pub use crate::visit::*;
+use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ir_arena, ir_arena_mut};
+
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
-pub struct AstScope {
+pub struct Scope {
     // The symbol defines this scope
     pub owner: ArenaIdSymbol,
     // Parent scope ID
@@ -13,15 +14,15 @@ pub struct AstScope {
     pub ast_node: Option<ArenaIdNode>,
 }
 
-impl AstScope {
+impl Scope {
     pub fn new(owner: ArenaIdSymbol) -> ArenaIdScope {
-        let scope = AstScope {
+        let scope = Scope {
             owner,
             parent: None,
             symbols: HashMap::new(),
             ast_node: None,
         };
-        ast_arena_mut().add_scope(scope)
+        ir_arena_mut().add_scope(scope)
     }
 
     pub fn add_symbol(&mut self, name: String, symbol_id: ArenaIdSymbol) {
@@ -30,12 +31,12 @@ impl AstScope {
 }
 
 #[derive(Debug)]
-pub struct AstScopeStack {
+pub struct ScopeStack {
     scopes: Vec<ArenaIdScope>,
     current_scope: ArenaIdScope,
 }
 
-impl AstScopeStack {
+impl ScopeStack {
     fn new(root_scope: ArenaIdScope) -> Self {
         Self {
             scopes: vec![root_scope],
@@ -52,7 +53,7 @@ impl AstScopeStack {
     fn enter_scope(&mut self, scope_id: ArenaIdScope) {
         // Set parent relationship
         {
-            let mut arena = ast_arena_mut();
+            let mut arena = ir_arena_mut();
             if let Some(scope) = arena.get_scope_mut(scope_id) {
                 scope.parent = Some(self.current_scope);
             }
@@ -72,7 +73,7 @@ impl AstScopeStack {
     }
 
     fn add_symbol(&mut self, symbol_id: ArenaIdSymbol) {
-        let mut arena = ast_arena_mut();
+        let mut arena = ir_arena_mut();
 
         // Get the symbol name
         let symbol_name = if let Some(symbol) = arena.get_symbol(symbol_id) {
@@ -88,7 +89,7 @@ impl AstScopeStack {
     }
 
     fn lookup(&self, name: &str) -> Option<ArenaIdSymbol> {
-        let arena = ast_arena();
+        let arena = ir_arena();
         let mut current_scope_id = self.current_scope;
 
         loop {
@@ -113,33 +114,33 @@ impl AstScopeStack {
 }
 
 #[derive(Debug, Clone)]
-struct AstField {
+struct Field {
     value: u16,
 }
 
 #[derive(Debug, Clone, Default)]
-struct AstToken {
+struct Token {
     value: u16,
 }
 
-impl AstToken {
+impl Token {
     fn new(id: u16) -> Self {
-        AstToken { value: id }
+        Token { value: id }
     }
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct AstSymbol {
+pub struct Symbol {
     // Token identifier
-    pub token_id: AstToken,
+    pub token_id: Token,
     // The name of the symbol
     pub name: String,
     // full mangled name, used for resolve symbols overloads etc
     pub mangled_name: String,
     // The typed name, for different funcion with same name etcc
-    // pub typed_name: AstTypedName,
+    // pub typed_name: TypedName,
     // The point from the source code
-    pub origin: AstPoint,
+    // pub origin: Point,
     // The ast node that defines this symbol
     pub defined: Option<ArenaIdNode>,
     // The type of this symbol, if any
@@ -154,7 +155,7 @@ pub struct AstSymbol {
     pub nested_types: Vec<ArenaIdSymbol>,
 }
 
-impl std::fmt::Display for AstSymbol {
+impl std::fmt::Display for Symbol {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -164,13 +165,13 @@ impl std::fmt::Display for AstSymbol {
     }
 }
 
-impl AstSymbol {
+impl Symbol {
     fn new(token_id: u16, name: String) -> ArenaIdSymbol {
-        let symbol = AstSymbol {
-            token_id: AstToken::new(token_id),
+        let symbol = Symbol {
+            token_id: Token::new(token_id),
             name,
             ..Default::default()
         };
-        ast_arena_mut().add_symbol(symbol)
+        ir_arena_mut().add_symbol(symbol)
     }
 }

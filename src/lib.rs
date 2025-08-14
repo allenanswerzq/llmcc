@@ -1,19 +1,19 @@
 pub mod arena;
-pub mod block;
-pub mod lang;
-pub mod node;
+// pub mod block;
+pub mod ir;
+// pub mod lang;
 pub mod symbol;
-pub mod visit;
+// pub mod visit;
 
-use std::collections::HashMap;
-use std::hash::{DefaultHasher, Hasher};
-use std::num::NonZeroU16;
-use std::{panic, vec};
+// use std::collections::HashMap;
+// use std::hash::{DefaultHasher, Hasher};
+// use std::num::NonZeroU16;
+// use std::{panic, vec};
 
-pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
+// pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ast_arena, ast_arena_mut};
-pub use crate::visit::*;
+// use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ast_arena, ast_arena_mut};
+// pub use crate::visit::*;
 
 // pub type AstTreeCursor<'a> = CursorGeneric<'a, AstKindNode>;
 

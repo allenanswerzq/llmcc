@@ -1,3 +1,6 @@
+use crate::ir::IrKindNode;
+use crate::symbol::{Scope, Symbol};
+
 use std::sync::{Arc, LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -10,16 +13,16 @@ pub struct ArenaIdSymbol(pub usize);
 pub struct ArenaIdScope(pub usize);
 
 #[derive(Debug, Default)]
-pub struct AstArena<N, S, Sc> {
+pub struct Arena<N, S, Sc> {
     pub nodes: Vec<N>,
     pub symbols: Vec<S>,
     pub scopes: Vec<Sc>,
 }
 
-pub type AstArenaShare<N, S, Sc> = Arc<RwLock<AstArena<N, S, Sc>>>;
+pub type IrArena<N, S, Sc> = Arc<RwLock<Arena<N, S, Sc>>>;
 
-impl<N, S, Sc> AstArena<N, S, Sc> {
-    pub fn new() -> AstArenaShare<N, S, Sc> {
+impl<N, S, Sc> Arena<N, S, Sc> {
+    pub fn new() -> IrArena<N, S, Sc> {
         Arc::new(RwLock::new(Self {
             nodes: vec![],
             symbols: vec![],
@@ -70,15 +73,12 @@ impl<N, S, Sc> AstArena<N, S, Sc> {
     }
 }
 
-use crate::{AstKindNode, AstScope, AstSymbol};
+pub static IR_ARENA: LazyLock<IrArena<IrKindNode, Symbol, Scope>> = LazyLock::new(|| Arena::new());
 
-pub static AST_ARENA: LazyLock<AstArenaShare<AstKindNode, AstSymbol, AstScope>> =
-    LazyLock::new(|| AstArena::new());
-
-pub fn ast_arena() -> RwLockReadGuard<'static, AstArena<AstKindNode, AstSymbol, AstScope>> {
-    AST_ARENA.read().unwrap()
+pub fn ir_arena() -> RwLockReadGuard<'static, Arena<IrKindNode, Symbol, Scope>> {
+    IR_ARENA.read().unwrap()
 }
 
-pub fn ast_arena_mut() -> RwLockWriteGuard<'static, AstArena<AstKindNode, AstSymbol, AstScope>> {
-    AST_ARENA.write().unwrap()
+pub fn ir_arena_mut() -> RwLockWriteGuard<'static, Arena<IrKindNode, Symbol, Scope>> {
+    IR_ARENA.write().unwrap()
 }

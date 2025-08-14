@@ -3,15 +3,15 @@ use std::hash::{DefaultHasher, Hasher};
 use std::num::NonZeroU16;
 use std::{panic, vec};
 
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ast_arena, ast_arena_mut};
-use crate::visit::NodeTrait;
+use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ir_arena, ir_arena_mut};
+// use crate::visit::NodeTrait;
 use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
-use strum::{Display, EnumIter, EnumString, FromRepr};
+use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumIter, EnumString, FromRepr, Display)]
 #[strum(serialize_all = "snake_case")]
-pub enum AstKind {
+pub enum IrKind {
     Undefined,
     Error,
     File,
@@ -27,39 +27,38 @@ pub enum AstKind {
     IdentifierFieldDef,
 }
 
-impl Default for AstKind {
+impl Default for IrKind {
     fn default() -> Self {
-        AstKind::Undefined
+        IrKind::Undefined
     }
 }
 
 #[derive(Debug, Clone)]
-#[strum(serialize_all = "snake_case")]
-pub enum AstKindNode {
+pub enum IrKindNode {
     Undefined,
-    Root(Box<AstNodeRoot>),
-    Text(Box<AstNodeText>),
-    Internal(Box<AstNode>),
-    Scope(Box<AstNodeScope>),
-    File(Box<AstNodeFile>),
-    Identifier(Box<AstNodeId>),
+    Root(Box<IrNodeRoot>),
+    Text(Box<IrNodeText>),
+    Internal(Box<IrNode>),
+    Scope(Box<IrNodeScope>),
+    File(Box<IrNodeFile>),
+    Identifier(Box<IrNodeId>),
 }
 
-impl std::fmt::Display for AstKindNode {
+impl std::fmt::Display for IrKindNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.format_node())
     }
 }
 
-impl Default for AstKindNode {
+impl Default for IrKindNode {
     fn default() -> Self {
-        AstKindNode::Undefined
+        IrKindNode::Undefined
     }
 }
 
-impl AstKindNode {
+impl IrKindNode {
     pub fn child_by_field_id(&self, field_id: u16) -> Option<ArenaIdNode> {
-        let arena = ast_arena();
+        let arena = ir_arena();
         self.get_base()
             .children
             .iter()
@@ -77,74 +76,74 @@ impl AstKindNode {
 
     pub fn get_scope(&self) -> Option<ArenaIdScope> {
         match self {
-            AstKindNode::Scope(node) => Some(node.scope),
+            IrKindNode::Scope(node) => Some(node.scope),
             _ => None,
         }
     }
 
     pub fn get_symbol(&self) -> Option<ArenaIdSymbol> {
         match self {
-            AstKindNode::Identifier(node) => Some(node.symbol),
+            IrKindNode::Identifier(node) => Some(node.symbol),
             _ => None,
         }
     }
 
-    pub fn get_base(&self) -> &AstNodeBase {
+    pub fn get_base(&self) -> &IrNodeBase {
         match self {
-            AstKindNode::Undefined => {
+            IrKindNode::Undefined => {
                 panic!("should not happen")
             }
-            AstKindNode::Root(node) => &node.base,
-            AstKindNode::Text(node) => &node.base,
-            AstKindNode::Internal(node) => &node.base,
-            AstKindNode::Scope(node) => &node.base,
-            AstKindNode::File(node) => &node.base,
-            AstKindNode::Identifier(node) => &node.base,
+            IrKindNode::Root(node) => &node.base,
+            IrKindNode::Text(node) => &node.base,
+            IrKindNode::Internal(node) => &node.base,
+            IrKindNode::Scope(node) => &node.base,
+            IrKindNode::File(node) => &node.base,
+            IrKindNode::Identifier(node) => &node.base,
         }
     }
 
-    pub fn get_base_mut(&mut self) -> &mut AstNodeBase {
+    pub fn get_base_mut(&mut self) -> &mut IrNodeBase {
         match self {
-            AstKindNode::Undefined => {
+            IrKindNode::Undefined => {
                 panic!("should not happen")
             }
-            AstKindNode::Root(node) => &mut node.base,
-            AstKindNode::Text(node) => &mut node.base,
-            AstKindNode::Internal(node) => &mut node.base,
-            AstKindNode::Scope(node) => &mut node.base,
-            AstKindNode::File(node) => &mut node.base,
-            AstKindNode::Identifier(node) => &mut node.base,
+            IrKindNode::Root(node) => &mut node.base,
+            IrKindNode::Text(node) => &mut node.base,
+            IrKindNode::Internal(node) => &mut node.base,
+            IrKindNode::Scope(node) => &mut node.base,
+            IrKindNode::File(node) => &mut node.base,
+            IrKindNode::Identifier(node) => &mut node.base,
         }
     }
 
     fn format_node(&self) -> String {
         match self {
-            AstKindNode::Undefined => "undefined".into(),
-            AstKindNode::Root(node) => {
-                format!("root [{}]", node.base.id)
+            IrKindNode::Undefined => "undefined".into(),
+            IrKindNode::Root(node) => {
+                format!("root [{}]", node.base.arena_id)
             }
-            AstKindNode::Text(node) => {
-                format!("text [{}] \"{}\"", node.base.id, node.text)
+            IrKindNode::Text(node) => {
+                format!("text [{}] \"{}\"", node.base.arena_id, node.text)
             }
-            AstKindNode::Internal(node) => {
+            IrKindNode::Internal(node) => {
                 format!(
                     "internal [{}] (parent: {:?})",
-                    node.base.id, node.base.parent
+                    node.base.arena_id, node.base.parent
                 )
             }
-            AstKindNode::Scope(node) => {
-                let arena = ast_arena();
+            IrKindNode::Scope(node) => {
+                let arena = ir_arena();
                 let symbol_count = arena
                     .get_scope(node.scope)
                     .map(|s| s.symbols.len())
                     .unwrap_or(0);
-                format!("scope [{}], {} symbols", node.base.id, symbol_count)
+                format!("scope [{}], {} symbols", node.base.arena_id, symbol_count)
             }
-            AstKindNode::File(node) => {
-                format!("file [{}]", node.base.id)
+            IrKindNode::File(node) => {
+                format!("file [{}]", node.base.arena_id)
             }
-            AstKindNode::Identifier(node) => {
-                let arena = ast_arena();
+            IrKindNode::Identifier(node) => {
+                let arena = ir_arena();
                 let symbol = arena.get_symbol(node.symbol);
                 if let Some(sym) = symbol {
                     format!(
@@ -182,57 +181,57 @@ impl AstKindNode {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct AstNodeBase {
+pub struct IrNodeBase {
     pub arena_id: usize,
-    pub debug_id: usize,
+    pub debug_id: i64,
     pub token_id: u16,
     pub field_id: u16,
-    pub kind: AstKind,
-    pub start_pos: AstPoint,
-    pub end_pos: AstPoint,
+    pub kind: IrKind,
+    pub start_pos: IrPoint,
+    pub end_pos: IrPoint,
     pub start_byte: usize,
     pub end_byte: usize,
     pub parent: Option<ArenaIdNode>,
     pub children: Vec<ArenaIdNode>,
 }
 
-#[derive(Debug, Clone)]
-pub struct AstNode {
-    pub base: AstNodeBase,
-    pub name: Option<AstNodeId>,
+#[derive(Debug, Clone, Default)]
+pub struct IrNode {
+    pub base: IrNodeBase,
+    pub name: Option<IrNodeId>,
 }
 
-impl AstNode {
-    pub fn new_with_name(base: AstNodeBase, name: Option<AstNodeId>) -> ArenaIdNode {
+impl IrNode {
+    pub fn new_with_name(base: IrNodeBase, name: Option<IrNodeId>) -> ArenaIdNode {
         let internal = Self { base, name };
-        ast_arena_mut().add_node(AstKindNode::Internal(Box::new(internal)))
+        ir_arena_mut().add_node(IrKindNode::Internal(Box::new(internal)))
     }
 
-    pub fn new(base: AstNodeBase) -> ArenaIdNode {
+    pub fn new(base: IrNodeBase) -> ArenaIdNode {
         Self::new_with_name(base, None)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct AstNodeId {
-    pub base: AstNodeBase,
+pub struct IrNodeId {
+    pub base: IrNodeBase,
     pub symbol: ArenaIdSymbol,
 }
 
-impl AstNodeId {
-    pub fn new(base: AstNodeBase, symbol: ArenaIdSymbol) -> ArenaIdNode {
+impl IrNodeId {
+    pub fn new(base: IrNodeBase, symbol: ArenaIdSymbol) -> ArenaIdNode {
         let id = Self { base, symbol };
-        ast_arena_mut().add_node(AstKindNode::Identifier(Box::new(id)))
+        ir_arena_mut().add_node(IrKindNode::Identifier(Box::new(id)))
     }
 }
 
 #[derive(Debug, Clone, Default)]
-struct AstPoint {
-    row: usize,
-    col: usize,
+pub struct IrPoint {
+    pub row: usize,
+    pub col: usize,
 }
 
-impl From<Point> for AstPoint {
+impl From<Point> for IrPoint {
     fn from(point: Point) -> Self {
         Self {
             row: point.row,
@@ -242,33 +241,33 @@ impl From<Point> for AstPoint {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct AstNodeText {
-    pub base: AstNodeBase,
+pub struct IrNodeText {
+    pub base: IrNodeBase,
     pub text: String,
 }
 
-impl AstNodeText {
-    fn new(base: AstNodeBase, text: String) -> ArenaIdNode {
+impl IrNodeText {
+    pub fn new(base: IrNodeBase, text: String) -> ArenaIdNode {
         let text = Self { base, text };
-        ast_arena_mut().add_node(AstKindNode::Text(Box::new(text)))
+        ir_arena_mut().add_node(IrKindNode::Text(Box::new(text)))
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct AstNodeError {
-    pub error_place: AstPoint,
+pub struct IrNodeError {
+    pub error_place: IrPoint,
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct AstFileId {
+pub struct IrFileId {
     pub path: Option<String>,
     pub content: Option<Vec<u8>>,
     pub content_hash: u64,
 }
 
-impl AstFileId {
+impl IrFileId {
     pub fn new_path(path: String) -> Self {
-        AstFileId {
+        IrFileId {
             path: Some(path),
             content: None,
             content_hash: 0,
@@ -280,7 +279,7 @@ impl AstFileId {
         hasher.write(&content);
         let content_hash = hasher.finish();
 
-        AstFileId {
+        IrFileId {
             path: None,
             content: Some(content),
             content_hash,
@@ -308,15 +307,15 @@ impl AstFileId {
 }
 
 #[derive(Debug, Clone)]
-pub struct AstFile {
+pub struct IrFile {
     // TODO: add cache and all other stuff
-    pub file: AstFileId,
+    pub file: IrFileId,
 }
 
-impl AstFile {
+impl IrFile {
     fn new_source(source: Vec<u8>) -> Self {
-        AstFile {
-            file: AstFileId::new_content(source),
+        IrFile {
+            file: IrFileId::new_content(source),
         }
     }
 
@@ -326,49 +325,55 @@ impl AstFile {
 }
 
 #[derive(Debug, Clone)]
-pub struct AstNodeFile {
-    pub base: AstNodeBase,
-    pub file: AstFile,
+pub struct IrNodeFile {
+    pub base: IrNodeBase,
+    pub file: IrFile,
 }
 
-impl AstNodeFile {
-    pub fn new(base: AstNodeBase, file: AstFile) -> ArenaIdNode {
+impl IrNodeFile {
+    pub fn new(base: IrNodeBase, file: IrFile) -> ArenaIdNode {
         let file = Self { base, file };
-        ast_arena_mut().add_node(AstKindNode::File(Box::new(file)))
+        ir_arena_mut().add_node(IrKindNode::File(Box::new(file)))
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct AstNodeScope {
-    pub base: AstNodeBase,
+pub struct IrNodeScope {
+    pub base: IrNodeBase,
     pub scope: ArenaIdScope,
     pub name: Option<ArenaIdNode>,
 }
 
-impl AstNodeScope {
-    fn new(base: AstNodeBase, scope: ArenaIdScope, name: Option<ArenaIdNode>) -> ArenaIdNode {
+impl IrNodeScope {
+    fn new(base: IrNodeBase, scope: ArenaIdScope, name: Option<ArenaIdNode>) -> ArenaIdNode {
         let scope = Self { base, scope, name };
-        ast_arena_mut().add_node(AstKindNode::Scope(Box::new(scope)))
+        ir_arena_mut().add_node(IrKindNode::Scope(Box::new(scope)))
     }
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct AstNodeRoot {
+pub struct IrNodeRoot {
+    base: IrNodeBase,
     children: Vec<ArenaIdNode>,
 }
 
-impl AstNodeRoot {
+impl IrNodeRoot {
     fn new() -> Self {
-        Self { children: vec![] }
+        let mut base = IrNodeBase::default();
+        base.debug_id = -1;
+        Self {
+            base,
+            children: vec![],
+        }
     }
 }
 
-impl NodeTrait for AstKindNode {
-    fn get_child(&self, index: usize) -> Option<ArenaIdNode> {
-        self.get_child(index)
-    }
+// impl NodeTrait for IrKindNode {
+//     fn get_child(&self, index: usize) -> Option<ArenaIdNode> {
+//         self.get_child(index)
+//     }
 
-    fn child_count(&self) -> usize {
-        self.get_base().children.len()
-    }
-}
+//     fn child_count(&self) -> usize {
+//         self.get_base().children.len()
+//     }
+// }
