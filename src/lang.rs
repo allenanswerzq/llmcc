@@ -21,20 +21,20 @@ impl AstContext {
 }
 
 #[derive(Debug)]
-struct Language {}
+pub struct Language {}
 
 impl Language {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 
-    fn get_token_kind(&self, token_id: u16) -> IrKind {
+    pub fn get_token_kind(&self, token_id: u16) -> IrKind {
         AstTokenRust::from_repr(token_id)
             .expect(&format!("unknown token id: {}", token_id))
             .into()
     }
 
-    fn upgrade_identifier(&self, token_id: u16) -> Option<IrKind> {
+    pub fn upgrade_identifier(&self, token_id: u16) -> Option<IrKind> {
         match AstTokenRust::from_repr(token_id) {
             Some(AstTokenRust::function_item)
             | Some(AstTokenRust::parameter)
@@ -45,7 +45,7 @@ impl Language {
         }
     }
 
-    fn step_to_name(&self, node: &IrKindNode) -> Option<u16> {
+    pub fn step_to_name(&self, node: &IrKindNode) -> Option<u16> {
         let token_id = node.get_base().token_id;
         match AstTokenRust::from_repr(token_id) {
             Some(AstTokenRust::function_item) => Some(AstFieldRust::name as u16),
@@ -55,12 +55,12 @@ impl Language {
         }
     }
 
-    fn mangled_name(&self, name: &mut Box<IrNodeId>, scope_stack: &ScopeStack) {
+    pub fn mangled_name(&self, name: &mut Box<IrNodeId>, scope_stack: &ScopeStack) {
         // let plain = name.symbol.name.clone();
         // name.symbol.mangled_name = plain;
     }
 
-    fn add_builtin_symbol(&self, scope_stack: &mut ScopeStack) {}
+    pub fn add_builtin_symbol(&self, scope_stack: &mut ScopeStack) {}
 }
 
 #[repr(u16)]

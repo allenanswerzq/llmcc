@@ -3,12 +3,18 @@ use crate::symbol::{Scope, Symbol};
 
 use std::sync::{Arc, LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct ArenaIdNode(pub usize);
 
 impl From<ArenaIdNode> for usize {
     fn from(id: ArenaIdNode) -> Self {
         id.0
+    }
+}
+
+impl std::fmt::Display for ArenaIdNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
@@ -52,6 +58,10 @@ impl<N, S, Sc> Arena<N, S, Sc> {
         let id = ArenaIdScope(self.scopes.len());
         self.scopes.push(scope);
         id
+    }
+
+    pub fn get_next_node_id(&self) -> ArenaIdNode {
+        ArenaIdNode(self.nodes.len() - 1)
     }
 
     pub fn get_node(&self, id: ArenaIdNode) -> Option<&N> {

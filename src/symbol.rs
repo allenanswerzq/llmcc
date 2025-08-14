@@ -166,7 +166,7 @@ impl std::fmt::Display for Symbol {
 }
 
 impl Symbol {
-    fn new(token_id: u16, name: String) -> ArenaIdSymbol {
+    pub fn new(token_id: u16, name: String) -> ArenaIdSymbol {
         let symbol = Symbol {
             token_id: Token::new(token_id),
             name,

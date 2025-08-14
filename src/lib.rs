@@ -1,156 +1,15 @@
 pub mod arena;
 // pub mod block;
 pub mod ir;
+pub mod ir_builder;
 pub mod lang;
 pub mod symbol;
 pub mod visit;
 
 pub use lang::*;
-pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 pub use visit::*;
 
-// use std::collections::HashMap;
-// use std::hash::{DefaultHasher, Hasher};
-// use std::num::NonZeroU16;
-// use std::{panic, vec};
-
-// use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ast_arena, ast_arena_mut};
-// pub use crate::visit::*;
-
-// pub type AstTreeCursor<'a> = CursorGeneric<'a, AstKindNode>;
-
-// #[derive(Debug)]
-// struct AstBuilder<'a> {
-//     stack: Vec<usize>,
-//     context: &'a mut AstContext,
-//     arena: AstArenaShare<AstKindNode>,
-// }
-
-// impl<'a> AstBuilder<'a> {
-//     fn new(context: &'a mut AstContext, arena: AstArenaShare<AstKindNode>) -> Self {
-//         let root = AstKindNode::Root(Box::new(AstNodeRoot::new(arena.clone())));
-//         let root_id = arena.borrow_mut().add(root);
-//         Self {
-//             stack: vec![root_id],
-//             context: context,
-//             arena,
-//         }
-//     }
-
-//     fn root_node(&self) -> Box<AstNodeRoot> {
-//         assert!(!self.stack.is_empty());
-//         let id = self.stack[self.stack.len() - 1];
-//         let node = self.arena.borrow().get(id).cloned().unwrap();
-//         match node {
-//             AstKindNode::Root(node) => node.clone(),
-//             _ => panic!("should not happen"),
-//         }
-//     }
-
-//     fn create_ast_node(&mut self, base: AstNodeBase, kind: AstKind, node: &Node) -> usize {
-//         match kind {
-//             AstKind::File => {
-//                 let file = AstKindNode::File(Box::new(AstNodeFile::new(base)));
-//                 self.arena.borrow_mut().add(file)
-//             }
-//             AstKind::Text => {
-//                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
-//                 self.arena
-//                     .borrow_mut()
-//                     .add(AstKindNode::Text(Box::new(AstNodeText::new(
-//                         base,
-//                         text.unwrap(),
-//                     ))))
-//             }
-//             AstKind::Internal => self
-//                 .arena
-//                 .borrow_mut()
-//                 .add(AstKindNode::Internal(Box::new(AstNode::new(base, None)))),
-//             AstKind::Scope => {
-//                 let arena = self.arena.borrow();
-//                 let node_id = arena.get_next_id();
-//                 drop(arena);
-
-//                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
-//                 let symbol = AstSymbol::new(base.token_id, text.unwrap());
-//                 let mut scope = AstScope::new(symbol);
-//                 scope.ast_node = Some(node_id);
-
-//                 let mut arena = self.arena.borrow_mut();
-//                 arena.add(AstKindNode::Scope(Box::new(AstNodeScope::new(
-//                     base, scope, None,
-//                 ))))
-//             }
-//             AstKind::IdentifierUse => {
-//                 let mut arena = self.arena.borrow_mut();
-//                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
-//                 let text = text.unwrap();
-//                 let symbol = AstSymbol::new(base.token_id, text);
-//                 let ast = AstNodeId::new(base, symbol);
-//                 arena.add(AstKindNode::Identifier(Box::new(ast)))
-//             }
-//             _ => {
-//                 panic!("unknown kind: {:?}", node)
-//             }
-//         }
-//     }
-
-//     fn create_base_node(&self, node: &Node, id: usize, field_id: u16) -> AstNodeBase {
-//         let token_id = node.kind_id();
-//         let kind = self.context.language.get_token_kind(token_id);
-
-//         AstNodeBase {
-//             arena: self.arena.clone(),
-//             id,
-//             token_id,
-//             field_id: field_id.into(),
-//             kind,
-//             start_pos: node.start_position().into(),
-//             end_pos: node.end_position().into(),
-//             start_byte: node.start_byte(),
-//             end_byte: node.end_byte(),
-//             parent: None,
-//             children: vec![],
-//         }
-//     }
-// }
-
-// impl<'a> Visitor<TreeCursor<'a>> for AstBuilder<'_> {
-//     fn visit_node(&mut self, cursor: &mut TreeCursor<'a>) {
-//         let node = cursor.node();
-//         let token_id = node.kind_id();
-//         let field_id = cursor.field_id().unwrap_or(NonZeroU16::new(65535).unwrap());
-//         let kind = self.context.language.get_token_kind(token_id);
-
-//         let id = self.arena.borrow().get_next_id();
-//         let base = self.create_base_node(&node, id, field_id.into());
-//         let child = self.create_ast_node(base, kind, &node);
-//         debug_assert!(id == child);
-
-//         let parent = self.stack[self.stack.len() - 1];
-//         let mut arena_mut = self.arena.borrow_mut();
-//         arena_mut.get_mut(parent).unwrap().add_child(child);
-//         arena_mut.get_mut(child).unwrap().set_parent(parent);
-
-//         // Push this node onto the stack if it can have children
-//         if node.child_count() > 0 {
-//             self.stack.push(child);
-//         }
-//     }
-
-//     fn visit_leave_node(&mut self, cursor: &mut TreeCursor<'a>) {
-//         let node = cursor.node();
-
-//         // Pop the current node from the stack when we're done with it
-//         if node.child_count() > 0 {
-//             if let Some(_completed_node) = self.stack.pop() {
-//                 // let mut arena_mut = self.arena.borrow_mut();
-//                 // arena_mut.get_mut(completed_node).unwrap().add_child(child);
-//                 // self.finalize_node(&completed_node);
-//             }
-//         }
-//     }
-// }
+pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 // #[derive(Debug)]
 // struct AstPrinter<'a> {
@@ -232,7 +91,7 @@ pub use visit::*;
 //     context: &mut AstContext,
 //     arena: AstArenaShare<AstKindNode>,
 // ) -> Result<AstTree, Box<dyn std::error::Error>> {
-//     let mut vistor = AstBuilder::new(context, arena);
+//     let mut vistor = IrBuilder::new(context, arena);
 //     let mut cursor = tree.walk();
 //     dfs(&mut cursor, &mut vistor);
 //     Ok(AstTree::new(vistor.root_node()))
