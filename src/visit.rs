@@ -1,6 +1,9 @@
+use std::marker::PhantomData;
+
 use tree_sitter::{Node, Tree, TreeCursor};
 
-use crate::{AstArena, AstContext, arena::ArenaIdNode};
+use crate::arena::{ArenaIdNode, ir_arena, ir_arena_mut};
+use crate::lang::AstContext;
 
 pub trait CursorTrait {
     fn goto_first_child(&mut self) -> bool;
@@ -144,38 +147,34 @@ pub fn print_ast(tree: &Tree, context: &mut AstContext) {
     vistor.print_output();
 }
 
-#[derive(Debug)]
-pub struct CursorGeneric<'a, T> {
-    arena: &'a mut AstArena<T>,
-    path: Vec<usize>,
-    current_node: usize,
-    parent_node: Option<usize>,
-}
-
-impl<'a, T> CursorGeneric<'a, T>
+pub struct CursorGeneric<'a, F, T>
 where
     T: NodeTrait + Default,
+    F: FnMut(usize) -> Option<&'a mut T>,
 {
-    pub fn new(arena: &'a mut AstArena<T>) -> Self {
+    // Stack of (node_id, child_index) pairs representing the path from root
+    path_stack: Vec<(usize, usize)>,
+    current_node: usize,
+    arena_fn: F,
+    _marker: PhantomData<&'a T>,
+}
+
+impl<'a, F, T> CursorGeneric<'a, F, T>
+where
+    T: NodeTrait + Default,
+    F: FnMut(usize) -> Option<&'a mut T>,
+{
+    pub fn new(root: usize, arena_fn: F) -> Self {
         Self {
-            arena,
-            path: vec![],
-            current_node: 1, // Start at root (id 1)
-            parent_node: None,
+            path_stack: vec![],
+            current_node: root,
+            arena_fn,
+            _marker: PhantomData,
         }
     }
 
-    pub fn get_arena(&mut self) -> &mut AstArena<T> {
-        self.arena
-    }
-
-    pub fn node(&mut self) -> &mut T {
-        let id = self.current_node;
-        self.arena.get_mut(id).unwrap()
-    }
-
-    pub fn node_ref(&self) -> &T {
-        self.arena.get(self.current_node).unwrap()
+    pub fn node(&mut self) -> Option<&mut T> {
+        (self.arena_fn)(self.current_node)
     }
 
     pub fn current_node_id(&self) -> usize {
@@ -183,65 +182,34 @@ where
     }
 
     pub fn parent_node_id(&self) -> Option<usize> {
-        self.parent_node
+        self.path_stack.last().map(|(parent_id, _)| *parent_id)
     }
 
     pub fn depth(&self) -> usize {
-        self.path.len()
+        self.path_stack.len()
     }
 
     pub fn is_at_root(&self) -> bool {
-        self.path.is_empty()
+        self.path_stack.is_empty()
     }
 
-    pub fn current_path(&self) -> &[usize] {
-        &self.path
+    // Returns just the child indices for compatibility
+    pub fn current_path(&self) -> Vec<usize> {
+        self.path_stack.iter().map(|(_, index)| *index).collect()
     }
 
-    pub fn parent(&self) -> Option<&T> {
-        self.parent_node.and_then(|id| self.arena.get(id))
+    // Get the full path including node IDs (useful for debugging)
+    pub fn current_path_with_nodes(&self) -> &[(usize, usize)] {
+        &self.path_stack
     }
 
-    pub fn parent_mut(&mut self) -> Option<&mut T> {
-        if let Some(parent_id) = self.parent_node {
-            self.arena.get_mut(parent_id)
-        } else {
-            None
-        }
-    }
-
-    fn get_node_at_path(&self, path: &[usize]) -> Option<usize> {
-        if path.is_empty() {
-            return Some(1); // Root node ID
-        }
-
-        let mut current_id = 1; // Start at root
-        for &index in path {
-            if let Some(node) = self.arena.get(current_id) {
-                if let Some(child_id) = node.get_child(index) {
-                    current_id = child_id;
-                } else {
-                    return None;
-                }
-            } else {
-                return None;
-            }
-        }
-        Some(current_id)
-    }
-}
-
-impl<'a, T> CursorTrait for CursorGeneric<'a, T>
-where
-    T: NodeTrait + Default,
-{
     fn goto_first_child(&mut self) -> bool {
-        if let Some(node) = self.arena.get(self.current_node) {
+        if let Some(node) = (self.arena_fn)(self.current_node) {
             if node.child_count() > 0 {
                 if let Some(child_id) = node.get_child(0) {
-                    self.path.push(0);
-                    self.parent_node = Some(self.current_node);
-                    self.current_node = child_id;
+                    // Push current node and child index onto stack
+                    self.path_stack.push((self.current_node, 0));
+                    self.current_node = child_id.into();
                     return true;
                 }
             }
@@ -250,23 +218,23 @@ where
     }
 
     fn goto_next_sibling(&mut self) -> bool {
-        if self.path.is_empty() {
+        if self.path_stack.is_empty() {
             return false; // Already at root, no siblings
         }
 
-        let last_index = self.path.len() - 1;
-        let current_index = self.path[last_index];
+        // Get current parent and child index
+        let (parent_id, current_index) = self.path_stack[self.path_stack.len() - 1];
         let next_index = current_index + 1;
 
-        // Use parent_node directly
-        if let Some(parent_id) = self.parent_node {
-            if let Some(parent) = self.arena.get(parent_id) {
-                if next_index < parent.child_count() {
-                    if let Some(next_sibling_id) = parent.get_child(next_index) {
-                        self.path[last_index] = next_index;
-                        self.current_node = next_sibling_id;
-                        return true;
-                    }
+        // Check if parent has a next child
+        let n = self.path_stack.len() - 1;
+        if let Some(parent) = (self.arena_fn)(parent_id) {
+            if next_index < parent.child_count() {
+                if let Some(next_sibling_id) = parent.get_child(next_index) {
+                    // Update the child index in the stack
+                    self.path_stack[n].1 = next_index;
+                    self.current_node = next_sibling_id.into();
+                    return true;
                 }
             }
         }
@@ -274,25 +242,72 @@ where
     }
 
     fn goto_parent(&mut self) -> bool {
-        if !self.path.is_empty() {
-            self.path.pop();
+        if let Some((parent_id, _)) = self.path_stack.pop() {
+            self.current_node = parent_id;
+            return true;
+        }
+        false
+    }
 
-            // Calculate new parent_node
-            let new_parent = if self.path.len() >= 1 {
-                // Find the parent of our new current node
-                self.get_node_at_path(&self.path[..self.path.len().saturating_sub(1)])
-            } else {
-                // Moving to root, so no parent
-                None
-            };
-
-            // Move to parent
-            if let Some(parent_id) = self.parent_node {
-                self.current_node = parent_id;
-                self.parent_node = new_parent;
-                return true;
+    // Additional navigation methods for completeness
+    fn goto_child(&mut self, index: usize) -> bool {
+        if let Some(node) = (self.arena_fn)(self.current_node) {
+            if index < node.child_count() {
+                if let Some(child_id) = node.get_child(index) {
+                    self.path_stack.push((self.current_node, index));
+                    self.current_node = child_id.into();
+                    return true;
+                }
             }
         }
         false
+    }
+
+    fn goto_root(&mut self) {
+        if let Some((root_id, _)) = self.path_stack.first() {
+            let root_id = *root_id;
+            self.path_stack.clear();
+            self.current_node = root_id;
+        }
+    }
+
+    // Efficient sibling iteration
+    fn goto_previous_sibling(&mut self) -> bool {
+        if self.path_stack.is_empty() {
+            return false;
+        }
+
+        let (parent_id, current_index) = self.path_stack[self.path_stack.len() - 1];
+        if current_index > 0 {
+            let prev_index = current_index - 1;
+
+            let n = self.path_stack.len() - 1;
+            if let Some(parent) = (self.arena_fn)(parent_id) {
+                if let Some(prev_sibling_id) = parent.get_child(prev_index) {
+                    self.path_stack[n].1 = prev_index;
+                    self.current_node = prev_sibling_id.into();
+                    return true;
+                }
+            }
+        }
+        false
+    }
+}
+
+impl<'a, F, T> CursorTrait for CursorGeneric<'a, F, T>
+where
+    T: NodeTrait + Default,
+    F: FnMut(usize) -> Option<&'a mut T>,
+{
+    fn goto_first_child(&mut self) -> bool {
+        self.goto_first_child()
+    }
+
+    fn goto_next_sibling(&mut self) -> bool {
+        self.goto_next_sibling()
+    }
+
+    fn goto_parent(&mut self) -> bool {
+        self.goto_parent()
     }
 }

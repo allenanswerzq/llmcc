@@ -1,197 +1,23 @@
 pub mod arena;
 // pub mod block;
 pub mod ir;
-// pub mod lang;
+pub mod lang;
 pub mod symbol;
-// pub mod visit;
+pub mod visit;
+
+pub use lang::*;
+pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
+pub use visit::*;
 
 // use std::collections::HashMap;
 // use std::hash::{DefaultHasher, Hasher};
 // use std::num::NonZeroU16;
 // use std::{panic, vec};
 
-// pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
-
 // use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ast_arena, ast_arena_mut};
 // pub use crate::visit::*;
 
 // pub type AstTreeCursor<'a> = CursorGeneric<'a, AstKindNode>;
-
-// #[derive(Debug)]
-// pub struct AstContext {
-//     language: AstLanguage,
-//     file: AstFile,
-//     arena: AstArenaShare<AstKindNode>,
-// }
-
-// impl AstContext {
-//     pub fn from_source(source: &[u8]) -> AstContext {
-//         AstContext {
-//             language: AstLanguage::new(),
-//             file: AstFile::new_source(source.to_vec()),
-//             arena: AstArena::new(),
-//         }
-//     }
-// }
-
-// use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
-
-// #[repr(u16)]
-// #[derive(
-//     Debug,
-//     Clone,
-//     Copy,
-//     PartialEq,
-//     Eq,
-//     EnumString,
-//     EnumIter,
-//     EnumVariantNames,
-//     Display,
-//     FromRepr,
-//     IntoStaticStr,
-// )]
-// #[strum(serialize_all = "snake_case")]
-// #[allow(non_snake_case)]
-// pub enum AstTokenRust {
-//     #[strum(serialize = "fn")]
-//     Text_fn = 96,
-//     #[strum(serialize = "(")]
-//     Text_LPAREN = 4,
-//     #[strum(serialize = ")")]
-//     Text_RPAREN = 5,
-//     #[strum(serialize = "{")]
-//     Text_LBRACE = 8,
-//     #[strum(serialize = "}}")]
-//     Text_RBRACE = 9,
-//     #[strum(serialize = "let")]
-//     Text_let = 101,
-//     #[strum(serialize = "=")]
-//     Text_EQ = 70,
-//     #[strum(serialize = ";")]
-//     Text_SEMI = 2,
-//     #[strum(serialize = ":")]
-//     Text_COLON = 11,
-//     #[strum(serialize = ",")]
-//     Text_COMMA = 83,
-//     #[strum(serialize = "->")]
-//     Text_ARROW = 85,
-
-//     integer_literal = 127,
-//     identifier = 1,
-//     parameter = 213,
-//     parameters = 210,
-//     let_declaration = 203,
-//     block = 293,
-//     source_file = 157,
-//     function_item = 188,
-//     mutable_specifier = 122,
-//     expression_statement = 160,
-//     assignment_expression = 251,
-//     binary_expression = 250,
-//     operator = 14,
-//     call_expression = 256,
-//     arguments = 257,
-//     primitive_type = 32,
-// }
-
-// #[repr(u16)]
-// #[derive(
-//     Debug,
-//     Clone,
-//     Copy,
-//     PartialEq,
-//     Eq,
-//     EnumString,
-//     EnumIter,
-//     EnumVariantNames,
-//     Display,
-//     FromRepr,
-//     IntoStaticStr,
-// )]
-// #[strum(serialize_all = "snake_case")]
-// #[allow(non_snake_case)]
-// pub enum AstFieldRust {
-//     #[strum(serialize = "name")]
-//     name = 19,
-//     pattern = 24,
-// }
-
-// impl From<AstTokenRust> for AstKind {
-//     fn from(token: AstTokenRust) -> Self {
-//         match token {
-//             AstTokenRust::source_file => AstKind::File,
-//             AstTokenRust::function_item => AstKind::Scope,
-//             AstTokenRust::block => AstKind::Scope,
-//             AstTokenRust::let_declaration => AstKind::Internal,
-//             AstTokenRust::expression_statement => AstKind::Internal,
-//             AstTokenRust::assignment_expression => AstKind::Internal,
-//             AstTokenRust::binary_expression => AstKind::Internal,
-//             AstTokenRust::operator => AstKind::Internal,
-//             AstTokenRust::call_expression => AstKind::Internal,
-//             AstTokenRust::arguments => AstKind::Internal,
-//             AstTokenRust::primitive_type => AstKind::Internal,
-//             AstTokenRust::parameters => AstKind::Internal,
-//             AstTokenRust::parameter => AstKind::Internal,
-//             AstTokenRust::identifier => AstKind::IdentifierUse,
-//             AstTokenRust::integer_literal => AstKind::Text,
-//             AstTokenRust::mutable_specifier => AstKind::Text,
-//             AstTokenRust::Text_fn
-//             | AstTokenRust::Text_LPAREN
-//             | AstTokenRust::Text_RPAREN
-//             | AstTokenRust::Text_LBRACE
-//             | AstTokenRust::Text_RBRACE
-//             | AstTokenRust::Text_let
-//             | AstTokenRust::Text_EQ
-//             | AstTokenRust::Text_ARROW
-//             | AstTokenRust::Text_COLON
-//             | AstTokenRust::Text_COMMA
-//             | AstTokenRust::Text_SEMI => AstKind::Text,
-//         }
-//     }
-// }
-
-// #[derive(Debug)]
-// struct AstLanguage {}
-
-// impl AstLanguage {
-//     fn new() -> Self {
-//         Self {}
-//     }
-
-//     fn get_token_kind(&self, token_id: u16) -> AstKind {
-//         AstTokenRust::from_repr(token_id)
-//             .expect(&format!("unknown token id: {}", token_id))
-//             .into()
-//     }
-
-//     fn upgrade_identifier(&self, token_id: u16) -> Option<AstKind> {
-//         match AstTokenRust::from_repr(token_id) {
-//             Some(AstTokenRust::function_item)
-//             | Some(AstTokenRust::parameter)
-//             | Some(AstTokenRust::let_declaration) => {
-//                 return Some(AstKind::IdentifierDef);
-//             }
-//             _ => None,
-//         }
-//     }
-
-//     fn step_to_name(&self, node: &AstKindNode) -> Option<u16> {
-//         let token_id = node.get_base().token_id;
-//         match AstTokenRust::from_repr(token_id) {
-//             Some(AstTokenRust::function_item) => Some(AstFieldRust::name as u16),
-//             Some(AstTokenRust::parameter) => Some(AstFieldRust::pattern as u16),
-//             Some(AstTokenRust::let_declaration) => Some(AstFieldRust::pattern as u16),
-//             _ => None,
-//         }
-//     }
-
-//     fn mangled_name(&self, name: &mut Box<AstNodeId>, scope_stack: &AstScopeStack) {
-//         let plain = name.symbol.name.clone();
-//         name.symbol.mangled_name = plain;
-//     }
-
-//     fn add_builtin_symbol(&self, scope_stack: &mut AstScopeStack) {}
-// }
 
 // #[derive(Debug)]
 // struct AstBuilder<'a> {

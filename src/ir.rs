@@ -4,7 +4,7 @@ use std::num::NonZeroU16;
 use std::{panic, vec};
 
 use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ir_arena, ir_arena_mut};
-// use crate::visit::NodeTrait;
+use crate::visit::NodeTrait;
 use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
@@ -259,15 +259,15 @@ pub struct IrNodeError {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct IrFileId {
+pub struct FileId {
     pub path: Option<String>,
     pub content: Option<Vec<u8>>,
     pub content_hash: u64,
 }
 
-impl IrFileId {
+impl FileId {
     pub fn new_path(path: String) -> Self {
-        IrFileId {
+        FileId {
             path: Some(path),
             content: None,
             content_hash: 0,
@@ -279,7 +279,7 @@ impl IrFileId {
         hasher.write(&content);
         let content_hash = hasher.finish();
 
-        IrFileId {
+        FileId {
             path: None,
             content: Some(content),
             content_hash,
@@ -307,19 +307,19 @@ impl IrFileId {
 }
 
 #[derive(Debug, Clone)]
-pub struct IrFile {
+pub struct File {
     // TODO: add cache and all other stuff
-    pub file: IrFileId,
+    pub file: FileId,
 }
 
-impl IrFile {
-    fn new_source(source: Vec<u8>) -> Self {
-        IrFile {
-            file: IrFileId::new_content(source),
+impl File {
+    pub fn new_source(source: Vec<u8>) -> Self {
+        File {
+            file: FileId::new_content(source),
         }
     }
 
-    fn get_text(&self, start: usize, end: usize) -> Option<String> {
+    pub fn get_text(&self, start: usize, end: usize) -> Option<String> {
         self.file.get_text(start, end)
     }
 }
@@ -327,11 +327,11 @@ impl IrFile {
 #[derive(Debug, Clone)]
 pub struct IrNodeFile {
     pub base: IrNodeBase,
-    pub file: IrFile,
+    pub file: File,
 }
 
 impl IrNodeFile {
-    pub fn new(base: IrNodeBase, file: IrFile) -> ArenaIdNode {
+    pub fn new(base: IrNodeBase, file: File) -> ArenaIdNode {
         let file = Self { base, file };
         ir_arena_mut().add_node(IrKindNode::File(Box::new(file)))
     }
@@ -368,12 +368,12 @@ impl IrNodeRoot {
     }
 }
 
-// impl NodeTrait for IrKindNode {
-//     fn get_child(&self, index: usize) -> Option<ArenaIdNode> {
-//         self.get_child(index)
-//     }
+impl NodeTrait for IrKindNode {
+    fn get_child(&self, index: usize) -> Option<ArenaIdNode> {
+        self.get_child(index)
+    }
 
-//     fn child_count(&self) -> usize {
-//         self.get_base().children.len()
-//     }
-// }
+    fn child_count(&self) -> usize {
+        self.get_base().children.len()
+    }
+}

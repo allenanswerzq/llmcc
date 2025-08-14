@@ -6,6 +6,12 @@ use std::sync::{Arc, LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ArenaIdNode(pub usize);
 
+impl From<ArenaIdNode> for usize {
+    fn from(id: ArenaIdNode) -> Self {
+        id.0
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ArenaIdSymbol(pub usize);
 

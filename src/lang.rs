@@ -1,1 +1,178 @@
+use crate::{
+    ir::{File, IrKind, IrKindNode, IrNodeId},
+    symbol::ScopeStack,
+};
 
+use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
+
+#[derive(Debug)]
+pub struct AstContext {
+    pub language: Language,
+    pub file: File,
+}
+
+impl AstContext {
+    pub fn from_source(source: &[u8]) -> AstContext {
+        AstContext {
+            language: Language::new(),
+            file: File::new_source(source.to_vec()),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Language {}
+
+impl Language {
+    fn new() -> Self {
+        Self {}
+    }
+
+    fn get_token_kind(&self, token_id: u16) -> IrKind {
+        AstTokenRust::from_repr(token_id)
+            .expect(&format!("unknown token id: {}", token_id))
+            .into()
+    }
+
+    fn upgrade_identifier(&self, token_id: u16) -> Option<IrKind> {
+        match AstTokenRust::from_repr(token_id) {
+            Some(AstTokenRust::function_item)
+            | Some(AstTokenRust::parameter)
+            | Some(AstTokenRust::let_declaration) => {
+                return Some(IrKind::IdentifierDef);
+            }
+            _ => None,
+        }
+    }
+
+    fn step_to_name(&self, node: &IrKindNode) -> Option<u16> {
+        let token_id = node.get_base().token_id;
+        match AstTokenRust::from_repr(token_id) {
+            Some(AstTokenRust::function_item) => Some(AstFieldRust::name as u16),
+            Some(AstTokenRust::parameter) => Some(AstFieldRust::pattern as u16),
+            Some(AstTokenRust::let_declaration) => Some(AstFieldRust::pattern as u16),
+            _ => None,
+        }
+    }
+
+    fn mangled_name(&self, name: &mut Box<IrNodeId>, scope_stack: &ScopeStack) {
+        // let plain = name.symbol.name.clone();
+        // name.symbol.mangled_name = plain;
+    }
+
+    fn add_builtin_symbol(&self, scope_stack: &mut ScopeStack) {}
+}
+
+#[repr(u16)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumString,
+    EnumIter,
+    EnumVariantNames,
+    Display,
+    FromRepr,
+    IntoStaticStr,
+)]
+#[strum(serialize_all = "snake_case")]
+#[allow(non_snake_case)]
+pub enum AstTokenRust {
+    #[strum(serialize = "fn")]
+    Text_fn = 96,
+    #[strum(serialize = "(")]
+    Text_LPAREN = 4,
+    #[strum(serialize = ")")]
+    Text_RPAREN = 5,
+    #[strum(serialize = "{")]
+    Text_LBRACE = 8,
+    #[strum(serialize = "}}")]
+    Text_RBRACE = 9,
+    #[strum(serialize = "let")]
+    Text_let = 101,
+    #[strum(serialize = "=")]
+    Text_EQ = 70,
+    #[strum(serialize = ";")]
+    Text_SEMI = 2,
+    #[strum(serialize = ":")]
+    Text_COLON = 11,
+    #[strum(serialize = ",")]
+    Text_COMMA = 83,
+    #[strum(serialize = "->")]
+    Text_ARROW = 85,
+
+    integer_literal = 127,
+    identifier = 1,
+    parameter = 213,
+    parameters = 210,
+    let_declaration = 203,
+    block = 293,
+    source_file = 157,
+    function_item = 188,
+    mutable_specifier = 122,
+    expression_statement = 160,
+    assignment_expression = 251,
+    binary_expression = 250,
+    operator = 14,
+    call_expression = 256,
+    arguments = 257,
+    primitive_type = 32,
+}
+
+#[repr(u16)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    EnumString,
+    EnumIter,
+    EnumVariantNames,
+    Display,
+    FromRepr,
+    IntoStaticStr,
+)]
+#[strum(serialize_all = "snake_case")]
+#[allow(non_snake_case)]
+pub enum AstFieldRust {
+    #[strum(serialize = "name")]
+    name = 19,
+    pattern = 24,
+}
+
+impl From<AstTokenRust> for IrKind {
+    fn from(token: AstTokenRust) -> Self {
+        match token {
+            AstTokenRust::source_file => IrKind::File,
+            AstTokenRust::function_item => IrKind::Scope,
+            AstTokenRust::block => IrKind::Scope,
+            AstTokenRust::let_declaration => IrKind::Internal,
+            AstTokenRust::expression_statement => IrKind::Internal,
+            AstTokenRust::assignment_expression => IrKind::Internal,
+            AstTokenRust::binary_expression => IrKind::Internal,
+            AstTokenRust::operator => IrKind::Internal,
+            AstTokenRust::call_expression => IrKind::Internal,
+            AstTokenRust::arguments => IrKind::Internal,
+            AstTokenRust::primitive_type => IrKind::Internal,
+            AstTokenRust::parameters => IrKind::Internal,
+            AstTokenRust::parameter => IrKind::Internal,
+            AstTokenRust::identifier => IrKind::IdentifierUse,
+            AstTokenRust::integer_literal => IrKind::Text,
+            AstTokenRust::mutable_specifier => IrKind::Text,
+            AstTokenRust::Text_fn
+            | AstTokenRust::Text_LPAREN
+            | AstTokenRust::Text_RPAREN
+            | AstTokenRust::Text_LBRACE
+            | AstTokenRust::Text_RBRACE
+            | AstTokenRust::Text_let
+            | AstTokenRust::Text_EQ
+            | AstTokenRust::Text_ARROW
+            | AstTokenRust::Text_COLON
+            | AstTokenRust::Text_COMMA
+            | AstTokenRust::Text_SEMI => IrKind::Text,
+        }
+    }
+}
