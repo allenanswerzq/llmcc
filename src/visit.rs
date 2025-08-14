@@ -1,6 +1,6 @@
 use tree_sitter::{Node, Tree, TreeCursor};
 
-use crate::{AstArena, AstContext};
+use crate::{AstArena, AstContext, arena::ArenaIdNode};
 
 pub trait CursorTrait {
     fn goto_first_child(&mut self) -> bool;
@@ -9,7 +9,7 @@ pub trait CursorTrait {
 }
 
 pub trait NodeTrait {
-    fn get_child(&self, index: usize) -> Option<usize>;
+    fn get_child(&self, index: usize) -> Option<ArenaIdNode>;
     fn child_count(&self) -> usize;
 }
 
