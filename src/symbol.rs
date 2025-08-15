@@ -1,4 +1,4 @@
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ir_arena, ir_arena_mut};
+use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
 
 use std::collections::HashMap;
 
@@ -15,14 +15,14 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new(owner: ArenaIdSymbol) -> ArenaIdScope {
+    pub fn new(arena: &mut IrArena, owner: ArenaIdSymbol) -> ArenaIdScope {
         let scope = Scope {
             owner,
             parent: None,
             symbols: HashMap::new(),
             ast_node: None,
         };
-        ir_arena_mut().add_scope(scope)
+        arena.add_scope(scope)
     }
 
     pub fn add_symbol(&mut self, name: String, symbol_id: ArenaIdSymbol) {
@@ -50,10 +50,9 @@ impl ScopeStack {
         self.scopes.push(root_scope);
     }
 
-    fn enter_scope(&mut self, scope_id: ArenaIdScope) {
+    fn enter_scope(&mut self, arena: &mut IrArena, scope_id: ArenaIdScope) {
         // Set parent relationship
         {
-            let mut arena = ir_arena_mut();
             if let Some(scope) = arena.get_scope_mut(scope_id) {
                 scope.parent = Some(self.current_scope);
             }
@@ -72,9 +71,7 @@ impl ScopeStack {
         self.current_scope = self.scopes[self.scopes.len() - 1];
     }
 
-    fn add_symbol(&mut self, symbol_id: ArenaIdSymbol) {
-        let mut arena = ir_arena_mut();
-
+    fn add_symbol(&mut self, arena: &mut IrArena, symbol_id: ArenaIdSymbol) {
         // Get the symbol name
         let symbol_name = if let Some(symbol) = arena.get_symbol(symbol_id) {
             symbol.name.clone()
@@ -88,8 +85,7 @@ impl ScopeStack {
         }
     }
 
-    fn lookup(&self, name: &str) -> Option<ArenaIdSymbol> {
-        let arena = ir_arena();
+    fn lookup(&self, arena: &mut IrArena, name: &str) -> Option<ArenaIdSymbol> {
         let mut current_scope_id = self.current_scope;
 
         loop {
@@ -166,12 +162,12 @@ impl std::fmt::Display for Symbol {
 }
 
 impl Symbol {
-    pub fn new(token_id: u16, name: String) -> ArenaIdSymbol {
+    pub fn new(arena: &mut IrArena, token_id: u16, name: String) -> ArenaIdSymbol {
         let symbol = Symbol {
             token_id: Token::new(token_id),
             name,
             ..Default::default()
         };
-        ir_arena_mut().add_symbol(symbol)
+        arena.add_symbol(symbol)
     }
 }

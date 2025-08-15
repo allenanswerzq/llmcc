@@ -1,8 +1,6 @@
 use crate::ir::IrKindNode;
 use crate::symbol::{Scope, Symbol};
 
-use std::sync::{Arc, LazyLock, RwLock, RwLockReadGuard, RwLockWriteGuard};
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct ArenaIdNode(pub usize);
 
@@ -31,15 +29,13 @@ pub struct Arena<N, S, Sc> {
     pub scopes: Vec<Sc>,
 }
 
-pub type IrArena<N, S, Sc> = Arc<RwLock<Arena<N, S, Sc>>>;
-
 impl<N, S, Sc> Arena<N, S, Sc> {
-    pub fn new() -> IrArena<N, S, Sc> {
-        Arc::new(RwLock::new(Self {
+    pub fn new() -> Arena<N, S, Sc> {
+        Self {
             nodes: vec![],
             symbols: vec![],
             scopes: vec![],
-        }))
+        }
     }
 
     pub fn add_node(&mut self, node: N) -> ArenaIdNode {
@@ -88,13 +84,4 @@ impl<N, S, Sc> Arena<N, S, Sc> {
         self.scopes.get_mut(id.0)
     }
 }
-
-pub static IR_ARENA: LazyLock<IrArena<IrKindNode, Symbol, Scope>> = LazyLock::new(|| Arena::new());
-
-pub fn ir_arena() -> RwLockReadGuard<'static, Arena<IrKindNode, Symbol, Scope>> {
-    IR_ARENA.read().unwrap()
-}
-
-pub fn ir_arena_mut() -> RwLockWriteGuard<'static, Arena<IrKindNode, Symbol, Scope>> {
-    IR_ARENA.write().unwrap()
-}
+pub type IrArena = Arena<IrKindNode, Symbol, Scope>;

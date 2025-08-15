@@ -1,7 +1,7 @@
 use std::hash::{DefaultHasher, Hasher};
 use std::{panic, vec};
 
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, ir_arena, ir_arena_mut};
+use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
 use crate::visit::NodeTrait;
 use tree_sitter::Point;
 
@@ -42,12 +42,6 @@ pub enum IrKindNode {
     Identifier(Box<IrNodeId>),
 }
 
-impl std::fmt::Display for IrKindNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.format_node())
-    }
-}
-
 impl Default for IrKindNode {
     fn default() -> Self {
         IrKindNode::Undefined
@@ -55,8 +49,7 @@ impl Default for IrKindNode {
 }
 
 impl IrKindNode {
-    pub fn child_by_field_id(&self, field_id: u16) -> Option<ArenaIdNode> {
-        let arena = ir_arena();
+    pub fn child_by_field_id(&self, arena: &mut IrArena, field_id: u16) -> Option<ArenaIdNode> {
         self.get_base()
             .children
             .iter()
@@ -114,7 +107,7 @@ impl IrKindNode {
         }
     }
 
-    fn format_node(&self) -> String {
+    pub fn format_node(&self, arena: &mut IrArena) -> String {
         match self {
             IrKindNode::Undefined => "undefined".into(),
             IrKindNode::Root(node) => {
@@ -130,7 +123,6 @@ impl IrKindNode {
                 )
             }
             IrKindNode::Scope(node) => {
-                let arena = ir_arena();
                 let symbol_count = arena
                     .get_scope(node.scope)
                     .map(|s| s.symbols.len())
@@ -141,7 +133,6 @@ impl IrKindNode {
                 format!("file [{}]", node.base.arena_id)
             }
             IrKindNode::Identifier(node) => {
-                let arena = ir_arena();
                 let symbol = arena.get_symbol(node.symbol);
                 if let Some(sym) = symbol {
                     format!(
@@ -200,13 +191,17 @@ pub struct IrNodeInternal {
 }
 
 impl IrNodeInternal {
-    pub fn new_with_name(base: IrNodeBase, name: Option<IrNodeId>) -> ArenaIdNode {
+    pub fn new_with_name(
+        arena: &mut IrArena,
+        base: IrNodeBase,
+        name: Option<IrNodeId>,
+    ) -> ArenaIdNode {
         let internal = Self { base, name };
-        ir_arena_mut().add_node(IrKindNode::Internal(Box::new(internal)))
+        arena.add_node(IrKindNode::Internal(Box::new(internal)))
     }
 
-    pub fn new(base: IrNodeBase) -> ArenaIdNode {
-        Self::new_with_name(base, None)
+    pub fn new(arena: &mut IrArena, base: IrNodeBase) -> ArenaIdNode {
+        Self::new_with_name(arena, base, None)
     }
 }
 
@@ -217,9 +212,9 @@ pub struct IrNodeId {
 }
 
 impl IrNodeId {
-    pub fn new(base: IrNodeBase, symbol: ArenaIdSymbol) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena, base: IrNodeBase, symbol: ArenaIdSymbol) -> ArenaIdNode {
         let id = Self { base, symbol };
-        ir_arena_mut().add_node(IrKindNode::Identifier(Box::new(id)))
+        arena.add_node(IrKindNode::Identifier(Box::new(id)))
     }
 }
 
@@ -245,9 +240,9 @@ pub struct IrNodeText {
 }
 
 impl IrNodeText {
-    pub fn new(base: IrNodeBase, text: String) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena, base: IrNodeBase, text: String) -> ArenaIdNode {
         let text = Self { base, text };
-        ir_arena_mut().add_node(IrKindNode::Text(Box::new(text)))
+        arena.add_node(IrKindNode::Text(Box::new(text)))
     }
 }
 
@@ -329,9 +324,9 @@ pub struct IrNodeFile {
 }
 
 impl IrNodeFile {
-    pub fn new(base: IrNodeBase) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena, base: IrNodeBase) -> ArenaIdNode {
         let file = Self { base };
-        ir_arena_mut().add_node(IrKindNode::File(Box::new(file)))
+        arena.add_node(IrKindNode::File(Box::new(file)))
     }
 }
 
@@ -343,9 +338,14 @@ pub struct IrNodeScope {
 }
 
 impl IrNodeScope {
-    pub fn new(base: IrNodeBase, scope: ArenaIdScope, name: Option<ArenaIdNode>) -> ArenaIdNode {
+    pub fn new(
+        arena: &mut IrArena,
+        base: IrNodeBase,
+        scope: ArenaIdScope,
+        name: Option<ArenaIdNode>,
+    ) -> ArenaIdNode {
         let scope = Self { base, scope, name };
-        ir_arena_mut().add_node(IrKindNode::Scope(Box::new(scope)))
+        arena.add_node(IrKindNode::Scope(Box::new(scope)))
     }
 }
 
@@ -356,14 +356,14 @@ pub struct IrNodeRoot {
 }
 
 impl IrNodeRoot {
-    pub fn new() -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena) -> ArenaIdNode {
         let mut base = IrNodeBase::default();
         base.debug_id = -1;
         let root = Self {
             base,
             children: vec![],
         };
-        ir_arena_mut().add_node(IrKindNode::Root(Box::new(root)))
+        arena.add_node(IrKindNode::Root(Box::new(root)))
     }
 }
 

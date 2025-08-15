@@ -1,4 +1,4 @@
-use llmcc::*;
+use llmcc::{arena::ArenaIdNode, *};
 
 fn main() {
     let source_code = r#"
@@ -27,10 +27,11 @@ fn main() {
     let tree = parser.parse(source_code, None).unwrap();
     let mut context = AstContext::from_source(source_code.as_bytes());
     print_ast(&tree, &mut context);
-    // // println!("{}", tree.root_node().to_sexp());
-    // let arena = AstArena::new();
-    // let tree = build_llmcc_ast(&tree, &mut context, arena.clone()).unwrap();
-    // print_llmcc_ast(&tree, &mut context, arena.clone());
+
+    let mut arena = IrArena::new();
+    build_llmcc_ir(&tree, &mut context, &mut arena).unwrap();
+    print_llmcc_ir(ArenaIdNode(0), &mut context, &mut arena);
+
     // let stack = collect_llmcc_ast(&tree, &context, arena.clone());
     // print_llmcc_ast(&tree, &mut context, arena.clone());
     // bind_llmcc_ast(&tree, &context, arena.clone(), stack);

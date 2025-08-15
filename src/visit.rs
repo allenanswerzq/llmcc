@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use tree_sitter::{Node, Tree, TreeCursor};
 
-use crate::arena::{ArenaIdNode, ir_arena, ir_arena_mut};
+use crate::arena::{Arena, ArenaIdNode};
 use crate::lang::AstContext;
 
 pub trait CursorTrait {
@@ -147,41 +147,43 @@ pub fn print_ast(tree: &Tree, context: &mut AstContext) {
     vistor.print_output();
 }
 
-pub struct CursorGeneric<'a, F, T>
+pub struct CursorGeneric<'a, T, S, Sc>
 where
     T: NodeTrait + Default,
-    F: FnMut(usize) -> Option<&'a mut T>,
 {
     // Stack of (node_id, child_index) pairs representing the path from root
-    path_stack: Vec<(usize, usize)>,
-    current_node: usize,
-    arena_fn: F,
+    path_stack: Vec<(ArenaIdNode, usize)>,
+    current_node: ArenaIdNode,
+    arena: &'a mut Arena<T, S, Sc>,
     _marker: PhantomData<&'a T>,
 }
 
-impl<'a, F, T> CursorGeneric<'a, F, T>
+impl<'a, T, S, Sc> CursorGeneric<'a, T, S, Sc>
 where
     T: NodeTrait + Default,
-    F: FnMut(usize) -> Option<&'a mut T>,
 {
-    pub fn new(root: usize, arena_fn: F) -> Self {
+    pub fn new(root: ArenaIdNode, arena: &'a mut Arena<T, S, Sc>) -> Self {
         Self {
             path_stack: vec![],
             current_node: root,
-            arena_fn,
+            arena,
             _marker: PhantomData,
         }
     }
 
-    pub fn node(&mut self) -> Option<&mut T> {
-        (self.arena_fn)(self.current_node)
+    pub fn get_arena(&mut self) -> &mut Arena<T, S, Sc> {
+        self.arena
     }
 
-    pub fn current_node_id(&self) -> usize {
+    pub fn node(&mut self) -> &mut T {
+        self.arena.get_node_mut(self.current_node).unwrap()
+    }
+
+    pub fn current_node_id(&self) -> ArenaIdNode {
         self.current_node
     }
 
-    pub fn parent_node_id(&self) -> Option<usize> {
+    pub fn parent_node_id(&self) -> Option<ArenaIdNode> {
         self.path_stack.last().map(|(parent_id, _)| *parent_id)
     }
 
@@ -199,12 +201,12 @@ where
     }
 
     // Get the full path including node IDs (useful for debugging)
-    pub fn current_path_with_nodes(&self) -> &[(usize, usize)] {
+    pub fn current_path_with_nodes(&self) -> &[(ArenaIdNode, usize)] {
         &self.path_stack
     }
 
     fn goto_first_child(&mut self) -> bool {
-        if let Some(node) = (self.arena_fn)(self.current_node) {
+        if let Some(node) = self.arena.get_node_mut(self.current_node) {
             if node.child_count() > 0 {
                 if let Some(child_id) = node.get_child(0) {
                     // Push current node and child index onto stack
@@ -228,7 +230,7 @@ where
 
         // Check if parent has a next child
         let n = self.path_stack.len() - 1;
-        if let Some(parent) = (self.arena_fn)(parent_id) {
+        if let Some(parent) = self.arena.get_node_mut(parent_id) {
             if next_index < parent.child_count() {
                 if let Some(next_sibling_id) = parent.get_child(next_index) {
                     // Update the child index in the stack
@@ -251,7 +253,7 @@ where
 
     // Additional navigation methods for completeness
     fn goto_child(&mut self, index: usize) -> bool {
-        if let Some(node) = (self.arena_fn)(self.current_node) {
+        if let Some(node) = self.arena.get_node_mut(self.current_node) {
             if index < node.child_count() {
                 if let Some(child_id) = node.get_child(index) {
                     self.path_stack.push((self.current_node, index));
@@ -282,7 +284,7 @@ where
             let prev_index = current_index - 1;
 
             let n = self.path_stack.len() - 1;
-            if let Some(parent) = (self.arena_fn)(parent_id) {
+            if let Some(parent) = self.arena.get_node_mut(parent_id) {
                 if let Some(prev_sibling_id) = parent.get_child(prev_index) {
                     self.path_stack[n].1 = prev_index;
                     self.current_node = prev_sibling_id.into();
@@ -294,10 +296,9 @@ where
     }
 }
 
-impl<'a, F, T> CursorTrait for CursorGeneric<'a, F, T>
+impl<'a, T, S, Sc> CursorTrait for CursorGeneric<'a, T, S, Sc>
 where
     T: NodeTrait + Default,
-    F: FnMut(usize) -> Option<&'a mut T>,
 {
     fn goto_first_child(&mut self) -> bool {
         self.goto_first_child()

@@ -6,96 +6,12 @@ pub mod lang;
 pub mod symbol;
 pub mod visit;
 
+pub use arena::IrArena;
+pub use ir_builder::{build_llmcc_ir, print_llmcc_ir};
 pub use lang::*;
 pub use visit::*;
 
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
-
-// #[derive(Debug)]
-// struct AstPrinter<'a> {
-//     context: &'a AstContext,
-//     depth: usize,
-//     output: String,
-// }
-
-// impl<'a> AstPrinter<'a> {
-//     fn new(context: &'a AstContext) -> Self {
-//         Self {
-//             context,
-//             depth: 0,
-//             output: String::new(),
-//         }
-//     }
-
-//     fn get_output(&self) -> &str {
-//         &self.output
-//     }
-
-//     fn print_output(&self) {
-//         println!("{}", self.output);
-//     }
-// }
-
-// impl<'a> Visitor<AstTreeCursor<'a>> for AstPrinter<'a> {
-//     fn visit_enter_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
-//         let node = cursor.node();
-
-//         self.output.push_str(&"  ".repeat(self.depth));
-//         self.output.push('(');
-//         let base = node.get_base();
-//         let text = self.context.file.get_text(base.start_byte, base.end_byte);
-//         if let Some(mut text) = text {
-//             text = text.replace("\n", "");
-//             self.output.push_str(&format!("{} |{}|", node, text));
-//         } else {
-//             self.output.push_str(&format!("{}", node));
-//         }
-
-//         if node.child_count() == 0 {
-//             self.output.push(')');
-//         } else {
-//             self.output.push('\n');
-//         }
-
-//         self.depth += 1;
-//     }
-
-//     fn visit_leave_node(&mut self, cursor: &mut AstTreeCursor<'a>) {
-//         self.depth -= 1;
-//         let node = cursor.node();
-
-//         if node.child_count() > 0 {
-//             self.output.push_str(&"  ".repeat(self.depth));
-//             self.output.push(')');
-//         }
-
-//         if self.depth > 0 {
-//             self.output.push('\n');
-//         }
-//     }
-
-//     fn visit_node(&mut self, _cursor: &mut AstTreeCursor<'a>) {}
-// }
-
-// pub fn print_llmcc_ast(_tree: &AstTree, context: &AstContext, arena: AstArenaShare<AstKindNode>) {
-//     let mut arena = arena.borrow_mut();
-
-//     let mut vistor = AstPrinter::new(context);
-//     let mut cursor = AstTreeCursor::new(&mut *arena);
-//     dfs(&mut cursor, &mut vistor);
-//     vistor.print_output();
-// }
-
-// pub fn build_llmcc_ast(
-//     tree: &Tree,
-//     context: &mut AstContext,
-//     arena: AstArenaShare<AstKindNode>,
-// ) -> Result<AstTree, Box<dyn std::error::Error>> {
-//     let mut vistor = IrBuilder::new(context, arena);
-//     let mut cursor = tree.walk();
-//     dfs(&mut cursor, &mut vistor);
-//     Ok(AstTree::new(vistor.root_node()))
-// }
 
 // #[derive(Debug)]
 // struct AstSymbolCollector<'a> {
