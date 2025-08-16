@@ -1,11 +1,12 @@
+use std::cell::RefCell;
 use std::hash::{DefaultHasher, Hasher};
+use std::rc::Rc;
 use std::{panic, vec};
-
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
-use crate::visit::NodeTrait;
+use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use tree_sitter::Point;
 
-use strum_macros::{Display, EnumIter, EnumString, FromRepr};
+use crate::TreeTrait;
+use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumIter, EnumString, FromRepr, Display)]
 #[strum(serialize_all = "snake_case")]
@@ -34,12 +35,12 @@ impl Default for IrKind {
 #[derive(Debug, Clone)]
 pub enum IrKindNode {
     Undefined,
-    Root(Box<IrNodeRoot>),
-    Text(Box<IrNodeText>),
-    Internal(Box<IrNodeInternal>),
-    Scope(Box<IrNodeScope>),
-    File(Box<IrNodeFile>),
-    Identifier(Box<IrNodeId>),
+    Root(Rc<RefCell<IrNodeRoot>>),
+    Text(Rc<RefCell<IrNodeText>>),
+    Internal(Rc<RefCell<IrNodeInternal>>),
+    Scope(Rc<RefCell<IrNodeScope>>),
+    File(Rc<RefCell<IrNodeFile>>),
+    Identifier(Rc<RefCell<IrNodeId>>),
 }
 
 impl Default for IrKindNode {
@@ -67,43 +68,51 @@ impl IrKindNode {
 
     pub fn get_scope(&self) -> Option<ArenaIdScope> {
         match self {
-            IrKindNode::Scope(node) => Some(node.scope),
+            IrKindNode::Scope(node) => Some(node.borrow().scope),
             _ => None,
         }
     }
 
     pub fn get_symbol(&self) -> Option<ArenaIdSymbol> {
         match self {
-            IrKindNode::Identifier(node) => Some(node.symbol),
+            IrKindNode::Identifier(node) => Some(node.borrow().symbol),
             _ => None,
         }
     }
 
-    pub fn get_base(&self) -> &IrNodeBase {
+    pub fn children(&self, arena: &mut IrArena) -> Vec<IrKindNode> {
+        let base = self.get_base();
+        base.children
+            .iter()
+            .map(|child_id| arena.get_node(*child_id).cloned().unwrap())
+            .collect()
+    }
+
+    pub fn get_base(&self) -> IrNodeBase {
         match self {
             IrKindNode::Undefined => {
                 panic!("should not happen")
             }
-            IrKindNode::Root(node) => &node.base,
-            IrKindNode::Text(node) => &node.base,
-            IrKindNode::Internal(node) => &node.base,
-            IrKindNode::Scope(node) => &node.base,
-            IrKindNode::File(node) => &node.base,
-            IrKindNode::Identifier(node) => &node.base,
+            IrKindNode::Root(node) => node.borrow().base.clone(),
+            IrKindNode::Text(node) => node.borrow().base.clone(),
+            IrKindNode::Internal(node) => node.borrow().base.clone(),
+            IrKindNode::Scope(node) => node.borrow().base.clone(),
+            IrKindNode::File(node) => node.borrow().base.clone(),
+            IrKindNode::Identifier(node) => node.borrow().base.clone(),
         }
     }
 
-    pub fn get_base_mut(&mut self) -> &mut IrNodeBase {
+    pub fn set_new_base(&mut self, base: IrNodeBase) {
         match self {
             IrKindNode::Undefined => {
                 panic!("should not happen")
             }
-            IrKindNode::Root(node) => &mut node.base,
-            IrKindNode::Text(node) => &mut node.base,
-            IrKindNode::Internal(node) => &mut node.base,
-            IrKindNode::Scope(node) => &mut node.base,
-            IrKindNode::File(node) => &mut node.base,
-            IrKindNode::Identifier(node) => &mut node.base,
+            IrKindNode::Root(node) => node.borrow_mut().base = base,
+            IrKindNode::Text(node) => node.borrow_mut().base = base,
+            IrKindNode::Internal(node) => node.borrow_mut().base = base,
+            IrKindNode::Scope(node) => node.borrow_mut().base = base,
+            IrKindNode::File(node) => node.borrow_mut().base = base,
+            IrKindNode::Identifier(node) => node.borrow_mut().base = base,
         }
     }
 
@@ -111,45 +120,53 @@ impl IrKindNode {
         match self {
             IrKindNode::Undefined => "undefined".into(),
             IrKindNode::Root(node) => {
-                format!("root [{}]", node.base.arena_id)
+                format!("root:{}", node.borrow().base.arena_id)
             }
             IrKindNode::Text(node) => {
-                format!("text [{}] \"{}\"", node.base.arena_id, node.text)
+                format!(
+                    "text:{} \"{}\"",
+                    node.borrow().base.arena_id,
+                    node.borrow().text
+                )
             }
             IrKindNode::Internal(node) => {
                 format!(
-                    "internal [{}] (parent: {:?})",
-                    node.base.arena_id, node.base.parent
+                    "internal:{} >{}",
+                    node.borrow().base.arena_id,
+                    node.borrow().base.parent.unwrap()
                 )
             }
             IrKindNode::Scope(node) => {
                 let symbol_count = arena
-                    .get_scope(node.scope)
+                    .get_scope(node.borrow().scope)
                     .map(|s| s.symbols.len())
                     .unwrap_or(0);
-                format!("scope [{}], {} symbols", node.base.arena_id, symbol_count)
+                format!("scope:{}, #{}", node.borrow().base.arena_id, symbol_count)
             }
             IrKindNode::File(node) => {
-                format!("file [{}]", node.base.arena_id)
+                format!("file:{}", node.borrow().base.arena_id)
             }
             IrKindNode::Identifier(node) => {
-                let symbol = arena.get_symbol(node.symbol);
+                let symbol = arena.get_symbol(node.borrow().symbol);
                 if let Some(sym) = symbol {
+                    let defined = sym.defined.map_or("".into(), |id| id.to_string());
+                    let type_of = sym.type_of.map_or("".into(), |id| id.to_string());
+                    let field_of = sym.field_of.map_or("".into(), |id| id.to_string());
                     format!(
-                        "{} [{}] '{}', '{}', @{:?}, ${:?}, %{:?}",
-                        node.base.kind.to_string(),
-                        node.base.arena_id,
+                        "{}:{} ^{}, ^{}, ${}, @{}, %{}",
+                        node.borrow().base.kind.to_string(),
+                        node.borrow().base.arena_id,
                         sym.name,
                         sym.mangled_name,
-                        sym.defined,
-                        sym.type_of,
-                        sym.field_of
+                        defined,
+                        type_of,
+                        field_of
                     )
                 } else {
                     format!(
-                        "{} [{}] <invalid symbol>",
-                        node.base.kind.to_string(),
-                        node.base.arena_id
+                        "{}:{} <invalid symbol>",
+                        node.borrow().base.kind.to_string(),
+                        node.borrow().base.arena_id
                     )
                 }
             }
@@ -157,7 +174,9 @@ impl IrKindNode {
     }
 
     pub fn set_parent(&mut self, parent: ArenaIdNode) {
-        self.get_base_mut().parent = Some(parent);
+        let mut base = self.get_base();
+        base.parent = Some(parent);
+        self.set_new_base(base);
     }
 
     pub fn get_child(&self, index: usize) -> Option<ArenaIdNode> {
@@ -165,14 +184,15 @@ impl IrKindNode {
     }
 
     pub fn add_child(&mut self, child: ArenaIdNode) {
-        self.get_base_mut().children.push(child)
+        let mut base = self.get_base();
+        base.children.push(child);
+        self.set_new_base(base);
     }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct IrNodeBase {
     pub arena_id: ArenaIdNode,
-    pub debug_id: i64,
     pub token_id: u16,
     pub field_id: u16,
     pub kind: IrKind,
@@ -197,7 +217,7 @@ impl IrNodeInternal {
         name: Option<IrNodeId>,
     ) -> ArenaIdNode {
         let internal = Self { base, name };
-        arena.add_node(IrKindNode::Internal(Box::new(internal)))
+        arena.add_node(IrKindNode::Internal(Rc::new(RefCell::new(internal))))
     }
 
     pub fn new(arena: &mut IrArena, base: IrNodeBase) -> ArenaIdNode {
@@ -214,7 +234,7 @@ pub struct IrNodeId {
 impl IrNodeId {
     pub fn new(arena: &mut IrArena, base: IrNodeBase, symbol: ArenaIdSymbol) -> ArenaIdNode {
         let id = Self { base, symbol };
-        arena.add_node(IrKindNode::Identifier(Box::new(id)))
+        arena.add_node(IrKindNode::Identifier(Rc::new(RefCell::new(id))))
     }
 }
 
@@ -242,7 +262,7 @@ pub struct IrNodeText {
 impl IrNodeText {
     pub fn new(arena: &mut IrArena, base: IrNodeBase, text: String) -> ArenaIdNode {
         let text = Self { base, text };
-        arena.add_node(IrKindNode::Text(Box::new(text)))
+        arena.add_node(IrKindNode::Text(Rc::new(RefCell::new(text))))
     }
 }
 
@@ -326,7 +346,7 @@ pub struct IrNodeFile {
 impl IrNodeFile {
     pub fn new(arena: &mut IrArena, base: IrNodeBase) -> ArenaIdNode {
         let file = Self { base };
-        arena.add_node(IrKindNode::File(Box::new(file)))
+        arena.add_node(IrKindNode::File(Rc::new(RefCell::new(file))))
     }
 }
 
@@ -345,7 +365,7 @@ impl IrNodeScope {
         name: Option<ArenaIdNode>,
     ) -> ArenaIdNode {
         let scope = Self { base, scope, name };
-        arena.add_node(IrKindNode::Scope(Box::new(scope)))
+        arena.add_node(IrKindNode::Scope(Rc::new(RefCell::new(scope))))
     }
 }
 
@@ -357,22 +377,20 @@ pub struct IrNodeRoot {
 
 impl IrNodeRoot {
     pub fn new(arena: &mut IrArena) -> ArenaIdNode {
-        let mut base = IrNodeBase::default();
-        base.debug_id = -1;
+        let base = IrNodeBase::default();
         let root = Self {
             base,
             children: vec![],
         };
-        arena.add_node(IrKindNode::Root(Box::new(root)))
+        arena.add_node(IrKindNode::Root(Rc::new(RefCell::new(root))))
     }
 }
 
-impl NodeTrait for IrKindNode {
-    fn get_child(&self, index: usize) -> Option<ArenaIdNode> {
-        self.get_child(index)
-    }
+#[derive(Debug, Clone)]
+pub struct IrTree {}
 
-    fn child_count(&self) -> usize {
-        self.get_base().children.len()
-    }
+impl<'a> TreeTrait<'a> for IrTree {
+    type NodeType = IrKindNode;
+    type ScopeType = ArenaIdScope;
+    type ParentType = ArenaIdNode;
 }

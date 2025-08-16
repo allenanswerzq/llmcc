@@ -1,26 +1,28 @@
 use crate::ir::IrKindNode;
 use crate::symbol::{Scope, Symbol};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub struct ArenaIdNode(pub usize);
+macro_rules! make_id_type {
+    ($name:ident) => {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+        pub struct $name(pub usize);
 
-impl From<ArenaIdNode> for usize {
-    fn from(id: ArenaIdNode) -> Self {
-        id.0
-    }
+        impl From<$name> for usize {
+            fn from(id: $name) -> Self {
+                id.0
+            }
+        }
+
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+    };
 }
 
-impl std::fmt::Display for ArenaIdNode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ArenaIdSymbol(pub usize);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ArenaIdScope(pub usize);
+make_id_type!(ArenaIdNode);
+make_id_type!(ArenaIdSymbol);
+make_id_type!(ArenaIdScope);
 
 #[derive(Debug, Default)]
 pub struct Arena<N, S, Sc> {
@@ -57,7 +59,7 @@ impl<N, S, Sc> Arena<N, S, Sc> {
     }
 
     pub fn get_next_node_id(&self) -> ArenaIdNode {
-        ArenaIdNode(self.nodes.len() - 1)
+        ArenaIdNode(self.nodes.len())
     }
 
     pub fn get_node(&self, id: ArenaIdNode) -> Option<&N> {
@@ -84,4 +86,5 @@ impl<N, S, Sc> Arena<N, S, Sc> {
         self.scopes.get_mut(id.0)
     }
 }
+
 pub type IrArena = Arena<IrKindNode, Symbol, Scope>;

@@ -1,6 +1,6 @@
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
-
 use std::collections::HashMap;
+
+use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
 
 #[derive(Debug, Clone)]
 pub struct Scope {
@@ -37,20 +37,20 @@ pub struct ScopeStack {
 }
 
 impl ScopeStack {
-    fn new(root_scope: ArenaIdScope) -> Self {
+    pub fn new(root_scope: ArenaIdScope) -> Self {
         Self {
             scopes: vec![root_scope],
             current_scope: root_scope,
         }
     }
 
-    fn reset_stack(&mut self, root_scope: ArenaIdScope) {
+    pub fn reset_stack(&mut self, root_scope: ArenaIdScope) {
         self.current_scope = root_scope;
         self.scopes.clear();
         self.scopes.push(root_scope);
     }
 
-    fn enter_scope(&mut self, arena: &mut IrArena, scope_id: ArenaIdScope) {
+    pub fn enter_scope(&mut self, arena: &mut IrArena, scope_id: ArenaIdScope) {
         // Set parent relationship
         {
             if let Some(scope) = arena.get_scope_mut(scope_id) {
@@ -62,7 +62,7 @@ impl ScopeStack {
         self.current_scope = scope_id;
     }
 
-    fn leave_scope(&mut self) {
+    pub fn leave_scope(&mut self) {
         if self.scopes.len() <= 1 {
             panic!("already at root scope");
         }
@@ -71,7 +71,9 @@ impl ScopeStack {
         self.current_scope = self.scopes[self.scopes.len() - 1];
     }
 
-    fn add_symbol(&mut self, arena: &mut IrArena, symbol_id: ArenaIdSymbol) {
+    // pub fn find_or_add_symbol(&mut self, arena: &mut IrArena, symbol_id: ArenaIdSymbol) {}
+
+    pub fn add_symbol(&mut self, arena: &mut IrArena, symbol_id: ArenaIdSymbol) {
         // Get the symbol name
         let symbol_name = if let Some(symbol) = arena.get_symbol(symbol_id) {
             symbol.name.clone()
@@ -85,7 +87,7 @@ impl ScopeStack {
         }
     }
 
-    fn lookup(&self, arena: &mut IrArena, name: &str) -> Option<ArenaIdSymbol> {
+    pub fn lookup(&self, arena: &mut IrArena, name: &str) -> Option<ArenaIdSymbol> {
         let mut current_scope_id = self.current_scope;
 
         loop {
