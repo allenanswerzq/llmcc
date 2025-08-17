@@ -1,11 +1,11 @@
+use std::panic;
+
 use crate::{
     IrArena,
-    arena::{ArenaIdNode, ArenaIdScope},
+    arena::{NodeId, ScopeId},
     ir::{File, IrKind, IrKindNode, IrNodeId, IrTree},
     symbol::ScopeStack,
 };
-
-use crate::visit::Visitor;
 
 use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
 
@@ -38,33 +38,61 @@ impl Language {
             .into()
     }
 
-    pub fn upgrade_identifier(&self, token_id: u16) -> Option<IrKind> {
-        match AstTokenRust::from_repr(token_id) {
-            Some(AstTokenRust::function_item)
-            | Some(AstTokenRust::parameter)
-            | Some(AstTokenRust::let_declaration) => {
-                return Some(IrKind::IdentifierDef);
-            }
-            _ => None,
+    pub fn find_child_declaration(
+        &self,
+        arena: &mut IrArena,
+        scope_stack: &mut ScopeStack,
+        node: IrKindNode,
+    ) {
+        let children = node.children(arena);
+        for child in children {
+            self.find_declaration(arena, scope_stack, child);
         }
     }
 
-    pub fn step_to_name(&self, node: &IrKindNode) -> Option<u16> {
+    pub fn find_declaration(
+        &self,
+        arena: &mut IrArena,
+        scope_stack: &mut ScopeStack,
+        mut node: IrKindNode,
+    ) {
+        println!("{}", node.format_node(arena));
         let token_id = node.get_base().token_id;
-        match AstTokenRust::from_repr(token_id) {
-            Some(AstTokenRust::function_item) => Some(AstFieldRust::name as u16),
-            Some(AstTokenRust::parameter) => Some(AstFieldRust::pattern as u16),
-            Some(AstTokenRust::let_declaration) => Some(AstFieldRust::pattern as u16),
-            _ => None,
+        match AstTokenRust::from_repr(token_id).unwrap() {
+            AstTokenRust::source_file
+            | AstTokenRust::Text_ARROW
+            | AstTokenRust::Text_EQ
+            | AstTokenRust::Text_COMMA
+            | AstTokenRust::Text_LBRACE
+            | AstTokenRust::Text_LPAREN
+            | AstTokenRust::Text_RBRACE
+            | AstTokenRust::Text_RPAREN
+            | AstTokenRust::Text_SEMI
+            | AstTokenRust::Text_let
+            | AstTokenRust::Text_fn
+            | AstTokenRust::Text_COLON => {}
+            AstTokenRust::function_item => {
+                node.upgrade_identifier_to_def();
+                let name = node.unwrap_identifier(arena, AstFieldRust::name as u16);
+                let symbol = scope_stack.find_or_add(arena, name);
+
+                let sn = node.expect_scope();
+                sn.borrow_mut().symbol = Some(symbol);
+
+                // let symbol = self.arena.get_symbol_mut(symbol).unwrap();
+                // TODO:
+                // symbol.mangled_name =
+            }
+            _ => {
+                panic!(
+                    "unsupported {:?}",
+                    AstTokenRust::from_repr(token_id).unwrap()
+                )
+            }
         }
-    }
 
-    pub fn mangled_name(&self, name: &mut Box<IrNodeId>, scope_stack: &ScopeStack) {
-        // let plain = name.symbol.name.clone();
-        // name.symbol.mangled_name = plain;
+        self.find_child_declaration(arena, scope_stack, node);
     }
-
-    pub fn add_builtin_symbol(&self, scope_stack: &mut ScopeStack) {}
 }
 
 #[repr(u16)]
@@ -178,27 +206,5 @@ impl From<AstTokenRust> for IrKind {
             | AstTokenRust::Text_COMMA
             | AstTokenRust::Text_SEMI => IrKind::Text,
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct FunctionItemVisitor<'a> {
-    context: &'a AstContext,
-    arena: &'a mut IrArena,
-    scope_stack: &'a mut ScopeStack,
-}
-
-impl<'a> Visitor<'a, IrTree> for FunctionItemVisitor<'a> {
-    fn visit_node(&mut self, node: &mut IrKindNode, scope: &mut ArenaIdScope, parent: ArenaIdNode) {
-        node.upgrade_identifier_to_def();
-        let name = node.unwrap_identifier(self.arena, AstFieldRust::name as u16);
-        let symbol = self.scope_stack.find_or_add(self.arena, name);
-
-        let sn = node.expect_scope();
-        sn.borrow_mut().symbol = Some(symbol);
-
-        let symbol = self.arena.get_symbol_mut(symbol).unwrap();
-        // TODO:
-        // symbol.mangled_name =
     }
 }

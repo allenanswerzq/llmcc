@@ -6,7 +6,7 @@ use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use tree_sitter::Point;
 
 use crate::TreeTrait;
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
+use crate::arena::{IrArena, NodeId, ScopeId, SymbolId};
 use crate::lang::AstContext;
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumIter, EnumString, FromRepr, Display)]
@@ -51,7 +51,7 @@ impl Default for IrKindNode {
 }
 
 impl IrKindNode {
-    pub fn get_id(&self) -> ArenaIdNode {
+    pub fn get_id(&self) -> NodeId {
         self.get_base().arena_id
     }
 
@@ -148,23 +148,23 @@ impl IrKindNode {
         }
     }
 
-    pub fn set_parent(&mut self, parent: ArenaIdNode) {
+    pub fn set_parent(&mut self, parent: NodeId) {
         let mut base = self.get_base();
         base.parent = Some(parent);
         self.set_new_base(base);
     }
 
-    pub fn get_child(&self, index: usize) -> Option<ArenaIdNode> {
+    pub fn get_child(&self, index: usize) -> Option<NodeId> {
         self.get_base().children.get(index).copied()
     }
 
-    pub fn add_child(&mut self, child: ArenaIdNode) {
+    pub fn add_child(&mut self, child: NodeId) {
         let mut base = self.get_base();
         base.children.push(child);
         self.set_new_base(base);
     }
 
-    pub fn child_by_field_id(&self, arena: &mut IrArena, field_id: u16) -> Option<ArenaIdNode> {
+    pub fn child_by_field_id(&self, arena: &mut IrArena, field_id: u16) -> Option<NodeId> {
         self.get_base()
             .children
             .iter()
@@ -242,7 +242,7 @@ impl_getters! {
 
 #[derive(Debug, Clone, Default)]
 pub struct IrNodeBase {
-    pub arena_id: ArenaIdNode,
+    pub arena_id: NodeId,
     pub token_id: u16,
     pub field_id: u16,
     pub kind: IrKind,
@@ -250,8 +250,8 @@ pub struct IrNodeBase {
     pub end_pos: IrPoint,
     pub start_byte: usize,
     pub end_byte: usize,
-    pub parent: Option<ArenaIdNode>,
-    pub children: Vec<ArenaIdNode>,
+    pub parent: Option<NodeId>,
+    pub children: Vec<NodeId>,
 }
 
 #[derive(Debug, Clone)]
@@ -261,16 +261,12 @@ pub struct IrNodeInternal {
 }
 
 impl IrNodeInternal {
-    pub fn new_with_name(
-        arena: &mut IrArena,
-        base: IrNodeBase,
-        name: Option<IrNodeId>,
-    ) -> ArenaIdNode {
+    pub fn new_with_name(arena: &mut IrArena, base: IrNodeBase, name: Option<IrNodeId>) -> NodeId {
         let internal = Self { base, name };
         arena.add_node(IrKindNode::Internal(Rc::new(RefCell::new(internal))))
     }
 
-    pub fn new(arena: &mut IrArena, base: IrNodeBase) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena, base: IrNodeBase) -> NodeId {
         Self::new_with_name(arena, base, None)
     }
 }
@@ -278,12 +274,11 @@ impl IrNodeInternal {
 #[derive(Debug, Clone)]
 pub struct IrNodeId {
     pub base: IrNodeBase,
-    pub symbol: ArenaIdSymbol,
-    pub scope_stack: ScopeStack,
+    pub symbol: SymbolId,
 }
 
 impl IrNodeId {
-    pub fn new(arena: &mut IrArena, base: IrNodeBase, symbol: ArenaIdSymbol) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena, base: IrNodeBase, symbol: SymbolId) -> NodeId {
         let id = Self { base, symbol };
         arena.add_node(IrKindNode::Identifier(Rc::new(RefCell::new(id))))
     }
@@ -317,7 +312,7 @@ pub struct IrNodeText {
 }
 
 impl IrNodeText {
-    pub fn new(arena: &mut IrArena, base: IrNodeBase, text: String) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena, base: IrNodeBase, text: String) -> NodeId {
         let text = Self { base, text };
         arena.add_node(IrKindNode::Text(Rc::new(RefCell::new(text))))
     }
@@ -401,7 +396,7 @@ pub struct IrNodeFile {
 }
 
 impl IrNodeFile {
-    pub fn new(arena: &mut IrArena, base: IrNodeBase) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena, base: IrNodeBase) -> NodeId {
         let file = Self { base };
         arena.add_node(IrKindNode::File(Rc::new(RefCell::new(file))))
     }
@@ -410,17 +405,17 @@ impl IrNodeFile {
 #[derive(Debug, Clone)]
 pub struct IrNodeScope {
     pub base: IrNodeBase,
-    pub scope: ArenaIdScope,
-    pub symbol: Option<ArenaIdSymbol>,
+    pub scope: ScopeId,
+    pub symbol: Option<SymbolId>,
 }
 
 impl IrNodeScope {
     pub fn new(
         arena: &mut IrArena,
         base: IrNodeBase,
-        scope: ArenaIdScope,
-        symbol: Option<ArenaIdSymbol>,
-    ) -> ArenaIdNode {
+        scope: ScopeId,
+        symbol: Option<SymbolId>,
+    ) -> NodeId {
         let scope = Self {
             base,
             scope,
@@ -433,11 +428,11 @@ impl IrNodeScope {
 #[derive(Debug, Clone)]
 pub struct IrNodeRoot {
     pub base: IrNodeBase,
-    pub children: Vec<ArenaIdNode>,
+    pub children: Vec<NodeId>,
 }
 
 impl IrNodeRoot {
-    pub fn new(arena: &mut IrArena) -> ArenaIdNode {
+    pub fn new(arena: &mut IrArena) -> NodeId {
         let base = IrNodeBase::default();
         let root = Self {
             base,
@@ -452,6 +447,6 @@ pub struct IrTree {}
 
 impl<'a> TreeTrait<'a> for IrTree {
     type NodeType = IrKindNode;
-    type ScopeType = ArenaIdScope;
-    type ParentType = ArenaIdNode;
+    type ScopeType = ScopeId;
+    type ParentType = NodeId;
 }

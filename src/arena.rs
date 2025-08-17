@@ -20,9 +20,9 @@ macro_rules! make_id_type {
     };
 }
 
-make_id_type!(ArenaIdNode);
-make_id_type!(ArenaIdSymbol);
-make_id_type!(ArenaIdScope);
+make_id_type!(NodeId);
+make_id_type!(SymbolId);
+make_id_type!(ScopeId);
 
 #[derive(Debug, Default)]
 pub struct Arena<N, S, Sc> {
@@ -40,53 +40,53 @@ impl<N: Clone, S, Sc> Arena<N, S, Sc> {
         }
     }
 
-    pub fn add_node(&mut self, node: N) -> ArenaIdNode {
-        let id = ArenaIdNode(self.nodes.len());
+    pub fn add_node(&mut self, node: N) -> NodeId {
+        let id = NodeId(self.nodes.len());
         self.nodes.push(node);
         id
     }
 
-    pub fn add_symbol(&mut self, symbol: S) -> ArenaIdSymbol {
-        let id = ArenaIdSymbol(self.symbols.len());
+    pub fn add_symbol(&mut self, symbol: S) -> SymbolId {
+        let id = SymbolId(self.symbols.len());
         self.symbols.push(symbol);
         id
     }
 
-    pub fn add_scope(&mut self, scope: Sc) -> ArenaIdScope {
-        let id = ArenaIdScope(self.scopes.len());
+    pub fn add_scope(&mut self, scope: Sc) -> ScopeId {
+        let id = ScopeId(self.scopes.len());
         self.scopes.push(scope);
         id
     }
 
-    pub fn get_next_node_id(&self) -> ArenaIdNode {
-        ArenaIdNode(self.nodes.len())
+    pub fn get_next_node_id(&self) -> NodeId {
+        NodeId(self.nodes.len())
     }
 
-    pub fn get_node(&self, id: ArenaIdNode) -> Option<&N> {
+    pub fn get_node(&self, id: NodeId) -> Option<&N> {
         self.nodes.get(id.0)
     }
 
-    pub fn clone_node(&self, id: ArenaIdNode) -> Option<N> {
+    pub fn clone_node(&self, id: NodeId) -> Option<N> {
         self.nodes.get(id.0).cloned()
     }
 
-    pub fn get_node_mut(&mut self, id: ArenaIdNode) -> Option<&mut N> {
+    pub fn get_node_mut(&mut self, id: NodeId) -> Option<&mut N> {
         self.nodes.get_mut(id.0)
     }
 
-    pub fn get_symbol(&self, id: ArenaIdSymbol) -> Option<&S> {
+    pub fn get_symbol(&self, id: SymbolId) -> Option<&S> {
         self.symbols.get(id.0)
     }
 
-    pub fn get_symbol_mut(&mut self, id: ArenaIdSymbol) -> Option<&mut S> {
+    pub fn get_symbol_mut(&mut self, id: SymbolId) -> Option<&mut S> {
         self.symbols.get_mut(id.0)
     }
 
-    pub fn get_scope(&self, id: ArenaIdScope) -> Option<&Sc> {
+    pub fn get_scope(&self, id: ScopeId) -> Option<&Sc> {
         self.scopes.get(id.0)
     }
 
-    pub fn get_scope_mut(&mut self, id: ArenaIdScope) -> Option<&mut Sc> {
+    pub fn get_scope_mut(&mut self, id: ScopeId) -> Option<&mut Sc> {
         self.scopes.get_mut(id.0)
     }
 }

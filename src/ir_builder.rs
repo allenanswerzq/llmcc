@@ -1,7 +1,7 @@
 use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 use crate::{
-    arena::{ArenaIdNode, ArenaIdScope, IrArena},
+    arena::{IrArena, NodeId, ScopeId},
     ir::{
         IrKind, IrKindNode, IrNodeBase, IrNodeFile, IrNodeId, IrNodeInternal, IrNodeRoot,
         IrNodeScope, IrNodeText, IrTree,
@@ -28,7 +28,7 @@ impl<'a> IrBuilder<'a> {
         }
     }
 
-    fn create_ast_node(&mut self, base: IrNodeBase, kind: IrKind, node: &Node) -> ArenaIdNode {
+    fn create_ast_node(&mut self, base: IrNodeBase, kind: IrKind, node: &Node) -> NodeId {
         match kind {
             IrKind::File => IrNodeFile::new(self.arena, base),
             IrKind::Text => {
@@ -39,7 +39,7 @@ impl<'a> IrBuilder<'a> {
             IrKind::Scope => {
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let symbol = Symbol::new(self.arena, base.token_id, text.unwrap());
-                let scope = Scope::new(self.arena, symbol);
+                let scope = Scope::new(self.arena, Some(symbol));
                 let scope_node = IrNodeScope::new(self.arena, base, scope, None);
                 self.arena.get_scope_mut(scope).unwrap().ast_node = Some(scope_node);
                 scope_node
@@ -74,13 +74,31 @@ impl<'a> IrBuilder<'a> {
             children: vec![],
         }
     }
+
+    pub fn field_id_of(node: &Node) -> Option<u16> {
+        let parent = node.parent()?;
+        let mut cursor = parent.walk();
+
+        if cursor.goto_first_child() {
+            loop {
+                if cursor.node() == *node {
+                    return cursor.field_id().map(|id| id.get());
+                }
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+        }
+
+        None
+    }
 }
 
 impl<'a> Visitor<'a, Tree> for IrBuilder<'_> {
-    fn visit_node(&mut self, node: &mut Node<'a>, scope: &mut (), parent: ArenaIdNode) {
+    fn visit_node(&mut self, node: &mut Node<'a>, scope: &mut (), parent: NodeId) {
         let token_id = node.kind_id();
         let mut cursor = node.walk();
-        let field_id = cursor.field_id().unwrap_or(NonZeroU16::new(65535).unwrap());
+        let field_id = IrBuilder::field_id_of(&node).unwrap_or(65535);
         let kind = self.context.language.get_token_kind(token_id);
 
         let base = self.create_base_node(&node, field_id.into());
@@ -134,7 +152,7 @@ impl<'a> IrPrinter<'a> {
         println!("{}", self.output);
     }
 
-    fn visit_enter_node(&mut self, node: &IrKindNode, scope: &ArenaIdScope, parent: &ArenaIdNode) {
+    fn visit_enter_node(&mut self, node: &IrKindNode, scope: &ScopeId, parent: &NodeId) {
         let base = node.get_base();
         let text = self.context.file.get_text(base.start_byte, base.end_byte);
         self.output.push_str(&"  ".repeat(self.depth));
@@ -160,7 +178,7 @@ impl<'a> IrPrinter<'a> {
         self.depth += 1;
     }
 
-    fn visit_leave_node(&mut self, node: &IrKindNode, scope: &ArenaIdScope, parent: &ArenaIdNode) {
+    fn visit_leave_node(&mut self, node: &IrKindNode, scope: &ScopeId, parent: &NodeId) {
         self.depth -= 1;
         if node.get_base().children.len() > 0 {
             self.output.push_str(&"  ".repeat(self.depth));
@@ -174,7 +192,7 @@ impl<'a> IrPrinter<'a> {
 }
 
 impl<'a> Visitor<'a, IrTree> for IrPrinter<'a> {
-    fn visit_node(&mut self, node: &mut IrKindNode, scope: &mut ArenaIdScope, parent: ArenaIdNode) {
+    fn visit_node(&mut self, node: &mut IrKindNode, scope: &mut ScopeId, parent: NodeId) {
         self.visit_enter_node(&node, &scope, &parent);
 
         let children = node.children(self.arena);
@@ -186,27 +204,18 @@ impl<'a> Visitor<'a, IrTree> for IrPrinter<'a> {
     }
 }
 
-pub fn print_llmcc_ir(root: ArenaIdNode, context: &AstContext, arena: &mut IrArena) {
+pub fn print_llmcc_ir(root: NodeId, context: &AstContext, arena: &mut IrArena) {
     let mut root = arena.get_node(root).unwrap().clone();
     let mut vistor = IrPrinter::new(context, arena);
-    vistor.visit_node(&mut root, &mut ArenaIdScope(0), ArenaIdNode(0));
+    vistor.visit_node(&mut root, &mut ScopeId(0), NodeId(0));
     vistor.print_output();
 }
 
-#[derive(Debug)]
-struct IrFindDeclaration<'a> {
-    context: &'a AstContext,
-    arena: &'a mut IrArena,
-}
-
-impl<'a> IrFindDeclaration<'a> {
-    fn new(context: &'a AstContext, arena: &'a mut IrArena) -> Self {
-        Self { context, arena }
-    }
-}
-
-impl<'a> Visitor<'a, IrTree> for IrFindDeclaration<'a> {
-    fn visit_node(&mut self, node: &mut IrKindNode, scope: &mut ArenaIdScope, parent: ArenaIdNode) {
-        let to = node.get_base().token_id;
-    }
+pub fn find_declaration(root: NodeId, context: &AstContext, arena: &mut IrArena) {
+    let global_scope = Scope::new(arena, None);
+    let mut scope_stack = ScopeStack::new(global_scope);
+    let root = arena.get_node(root).unwrap().clone();
+    context
+        .language
+        .find_child_declaration(arena, &mut scope_stack, root);
 }

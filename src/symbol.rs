@@ -1,24 +1,24 @@
 use std::collections::HashMap;
 
 use crate::{
-    arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena},
+    arena::{IrArena, NodeId, ScopeId, SymbolId},
     ir::IrNodeIdPtr,
 };
 
 #[derive(Debug, Clone)]
 pub struct Scope {
     // The symbol defines this scope
-    pub owner: ArenaIdSymbol,
+    pub owner: Option<SymbolId>,
     // Parent scope ID
-    pub parent: Option<ArenaIdScope>,
+    pub parent: Option<ScopeId>,
     // all symbols in this scope
-    pub symbols: HashMap<String, ArenaIdSymbol>,
+    pub symbols: HashMap<String, SymbolId>,
     // The ast node owns this scope
-    pub ast_node: Option<ArenaIdNode>,
+    pub ast_node: Option<NodeId>,
 }
 
 impl Scope {
-    pub fn new(arena: &mut IrArena, owner: ArenaIdSymbol) -> ArenaIdScope {
+    pub fn new(arena: &mut IrArena, owner: Option<SymbolId>) -> ScopeId {
         let scope = Scope {
             owner,
             parent: None,
@@ -28,33 +28,32 @@ impl Scope {
         arena.add_scope(scope)
     }
 
-    pub fn add_symbol(&mut self, name: String, symbol_id: ArenaIdSymbol) {
+    pub fn add_symbol(&mut self, name: String, symbol_id: SymbolId) {
         self.symbols.insert(name, symbol_id);
     }
 }
 
 #[derive(Debug)]
 pub struct ScopeStack {
-    scopes: Vec<ArenaIdScope>,
-    current_scope: ArenaIdScope,
+    scopes: Vec<ScopeId>,
+    current_scope: ScopeId,
 }
 
 impl ScopeStack {
-    pub fn new(root_scope: ArenaIdScope) -> Self {
+    pub fn new(root_scope: ScopeId) -> Self {
         Self {
             scopes: vec![root_scope],
             current_scope: root_scope,
         }
     }
 
-    pub fn reset_stack(&mut self, root_scope: ArenaIdScope) {
+    pub fn reset_stack(&mut self, root_scope: ScopeId) {
         self.current_scope = root_scope;
         self.scopes.clear();
         self.scopes.push(root_scope);
     }
 
-    pub fn enter_scope(&mut self, arena: &mut IrArena, scope_id: ArenaIdScope) {
-        // Set parent relationship
+    pub fn enter_scope(&mut self, arena: &mut IrArena, scope_id: ScopeId) {
         {
             if let Some(scope) = arena.get_scope_mut(scope_id) {
                 scope.parent = Some(self.current_scope);
@@ -74,7 +73,7 @@ impl ScopeStack {
         self.current_scope = self.scopes[self.scopes.len() - 1];
     }
 
-    pub fn find_or_add(&mut self, arena: &mut IrArena, node: IrNodeIdPtr) -> ArenaIdSymbol {
+    pub fn find_or_add(&mut self, arena: &mut IrArena, node: IrNodeIdPtr) -> SymbolId {
         let name = node.borrow().get_symbol_name(arena);
         if let Some(id) = self.lookup(arena, &name) {
             id
@@ -85,21 +84,19 @@ impl ScopeStack {
         }
     }
 
-    pub fn add_symbol(&mut self, arena: &mut IrArena, symbol_id: ArenaIdSymbol) {
-        // Get the symbol name
+    pub fn add_symbol(&mut self, arena: &mut IrArena, symbol_id: SymbolId) {
         let symbol_name = if let Some(symbol) = arena.get_symbol(symbol_id) {
             symbol.name.clone()
         } else {
-            return; // Symbol not found
+            return;
         };
 
-        // Add to current scope
         if let Some(scope) = arena.get_scope_mut(self.current_scope) {
             scope.add_symbol(symbol_name, symbol_id);
         }
     }
 
-    pub fn lookup(&self, arena: &mut IrArena, name: &str) -> Option<ArenaIdSymbol> {
+    pub fn lookup(&self, arena: &mut IrArena, name: &str) -> Option<SymbolId> {
         let mut current_scope_id = self.current_scope;
 
         loop {
@@ -108,14 +105,13 @@ impl ScopeStack {
                     return Some(symbol_id);
                 }
 
-                // Move to parent scope
                 if let Some(parent_id) = scope.parent {
                     current_scope_id = parent_id;
                 } else {
-                    break; // No parent, we're at root
+                    break;
                 }
             } else {
-                break; // Scope not found
+                break;
             }
         }
 
@@ -152,17 +148,17 @@ pub struct Symbol {
     // The point from the source code
     // pub origin: Point,
     // The ast node that defines this symbol
-    // pub defined: Option<ArenaIdNode>,
+    pub defined: Option<NodeId>,
     // The type of this symbol, if any
-    pub type_of: Option<ArenaIdSymbol>,
+    pub type_of: Option<SymbolId>,
     // The field this symbol belongs to, if any
-    pub field_of: Option<ArenaIdSymbol>,
+    pub field_of: Option<SymbolId>,
     // The base this symbol derived from, if any
-    pub base_symbol: Option<ArenaIdSymbol>,
+    pub base_symbol: Option<SymbolId>,
     // All overloads for this symbol, if exists
-    pub overloads: Vec<ArenaIdSymbol>,
+    pub overloads: Vec<SymbolId>,
     // The list of nested types inside this symbol
-    pub nested_types: Vec<ArenaIdSymbol>,
+    pub nested_types: Vec<SymbolId>,
 }
 
 impl std::fmt::Display for Symbol {
@@ -176,7 +172,7 @@ impl std::fmt::Display for Symbol {
 }
 
 impl Symbol {
-    pub fn new(arena: &mut IrArena, token_id: u16, name: String) -> ArenaIdSymbol {
+    pub fn new(arena: &mut IrArena, token_id: u16, name: String) -> SymbolId {
         let symbol = Symbol {
             token_id: Token::new(token_id),
             name,
