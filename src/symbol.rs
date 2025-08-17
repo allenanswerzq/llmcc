@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
+use crate::{
+    arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena},
+    ir::IrNodeIdPtr,
+};
 
 #[derive(Debug, Clone)]
 pub struct Scope {
@@ -71,7 +74,16 @@ impl ScopeStack {
         self.current_scope = self.scopes[self.scopes.len() - 1];
     }
 
-    // pub fn find_or_add_symbol(&mut self, arena: &mut IrArena, symbol_id: ArenaIdSymbol) {}
+    pub fn find_or_add(&mut self, arena: &mut IrArena, node: IrNodeIdPtr) -> ArenaIdSymbol {
+        let name = node.borrow().get_symbol_name(arena);
+        if let Some(id) = self.lookup(arena, &name) {
+            id
+        } else {
+            let id = node.borrow().symbol;
+            self.add_symbol(arena, id);
+            id
+        }
+    }
 
     pub fn add_symbol(&mut self, arena: &mut IrArena, symbol_id: ArenaIdSymbol) {
         // Get the symbol name
@@ -140,7 +152,7 @@ pub struct Symbol {
     // The point from the source code
     // pub origin: Point,
     // The ast node that defines this symbol
-    pub defined: Option<ArenaIdNode>,
+    // pub defined: Option<ArenaIdNode>,
     // The type of this symbol, if any
     pub type_of: Option<ArenaIdSymbol>,
     // The field this symbol belongs to, if any

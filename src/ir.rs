@@ -7,6 +7,7 @@ use tree_sitter::Point;
 
 use crate::TreeTrait;
 use crate::arena::{ArenaIdNode, ArenaIdScope, ArenaIdSymbol, IrArena};
+use crate::lang::AstContext;
 
 #[derive(Debug, Clone, Copy, PartialEq, EnumIter, EnumString, FromRepr, Display)]
 #[strum(serialize_all = "snake_case")]
@@ -50,34 +51,8 @@ impl Default for IrKindNode {
 }
 
 impl IrKindNode {
-    pub fn child_by_field_id(&self, arena: &mut IrArena, field_id: u16) -> Option<ArenaIdNode> {
-        self.get_base()
-            .children
-            .iter()
-            .find(|&&node_id| {
-                arena
-                    .get_node(node_id)
-                    .map_or(false, |node| node.get_base().field_id == field_id)
-            })
-            .copied()
-    }
-
     pub fn get_id(&self) -> ArenaIdNode {
         self.get_base().arena_id
-    }
-
-    pub fn get_scope(&self) -> Option<ArenaIdScope> {
-        match self {
-            IrKindNode::Scope(node) => Some(node.borrow().scope),
-            _ => None,
-        }
-    }
-
-    pub fn get_symbol(&self) -> Option<ArenaIdSymbol> {
-        match self {
-            IrKindNode::Identifier(node) => Some(node.borrow().symbol),
-            _ => None,
-        }
     }
 
     pub fn children(&self, arena: &mut IrArena) -> Vec<IrKindNode> {
@@ -188,6 +163,81 @@ impl IrKindNode {
         base.children.push(child);
         self.set_new_base(base);
     }
+
+    pub fn child_by_field_id(&self, arena: &mut IrArena, field_id: u16) -> Option<ArenaIdNode> {
+        self.get_base()
+            .children
+            .iter()
+            .find(|&&node_id| {
+                arena
+                    .get_node(node_id)
+                    .map_or(false, |node| node.get_base().field_id == field_id)
+            })
+            .copied()
+    }
+
+    pub fn find_identifier(&self, arena: &mut IrArena, field_id: u16) -> Option<IrNodeIdPtr> {
+        let id = self.child_by_field_id(arena, field_id);
+        if let Some(id) = id {
+            Some(arena.clone_node(id).unwrap().expect_identifier())
+        } else {
+            None
+        }
+    }
+
+    pub fn unwrap_identifier(&self, arena: &mut IrArena, field_id: u16) -> IrNodeIdPtr {
+        self.find_identifier(arena, field_id).unwrap()
+    }
+
+    pub fn upgrade_identifier_to_def(&mut self) {
+        let mut base = self.get_base();
+        base.kind = IrKind::IdentifierDef;
+        self.set_new_base(base);
+    }
+}
+
+macro_rules! impl_getters {
+    ($($variant:ident => $type:ty),* $(,)?) => {
+        impl IrKindNode {
+            $(
+                paste::paste! {
+                    pub fn [<as_ $variant:lower>](&self) -> Option<&$type> {
+                        match self {
+                            IrKindNode::$variant(rc) => Some(rc),
+                            _ => None,
+                        }
+                    }
+
+                    pub fn [<into_ $variant:lower>](self) -> Option<$type> {
+                        match self {
+                            IrKindNode::$variant(rc) => Some(rc),
+                            _ => None,
+                        }
+                    }
+
+                    pub fn [<expect_ $variant:lower>](&self) -> $type {
+                        match self {
+                            IrKindNode::$variant(rc) => rc.clone(),
+                            _ => panic!("Expected {} variant", stringify!($variant)),
+                        }
+                    }
+
+                    pub fn [<is_ $variant:lower>](&self) -> bool {
+                        matches!(self, IrKindNode::$variant(_))
+                    }
+                }
+            )*
+        }
+    };
+}
+
+impl_getters! {
+    Root => Rc<RefCell<IrNodeRoot>>,
+    Text => Rc<RefCell<IrNodeText>>,
+    Internal => Rc<RefCell<IrNodeInternal>>,
+    Scope => Rc<RefCell<IrNodeScope>>,
+    File => Rc<RefCell<IrNodeFile>>,
+    Identifier => Rc<RefCell<IrNodeId>>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -229,6 +279,7 @@ impl IrNodeInternal {
 pub struct IrNodeId {
     pub base: IrNodeBase,
     pub symbol: ArenaIdSymbol,
+    pub scope_stack: ScopeStack,
 }
 
 impl IrNodeId {
@@ -236,7 +287,13 @@ impl IrNodeId {
         let id = Self { base, symbol };
         arena.add_node(IrKindNode::Identifier(Rc::new(RefCell::new(id))))
     }
+
+    pub fn get_symbol_name(&self, arena: &IrArena) -> String {
+        arena.get_symbol(self.symbol).unwrap().name.clone()
+    }
 }
+
+pub type IrNodeIdPtr = Rc<RefCell<IrNodeId>>;
 
 #[derive(Debug, Clone, Default)]
 pub struct IrPoint {
@@ -354,7 +411,7 @@ impl IrNodeFile {
 pub struct IrNodeScope {
     pub base: IrNodeBase,
     pub scope: ArenaIdScope,
-    pub name: Option<ArenaIdNode>,
+    pub symbol: Option<ArenaIdSymbol>,
 }
 
 impl IrNodeScope {
@@ -362,9 +419,13 @@ impl IrNodeScope {
         arena: &mut IrArena,
         base: IrNodeBase,
         scope: ArenaIdScope,
-        name: Option<ArenaIdNode>,
+        symbol: Option<ArenaIdSymbol>,
     ) -> ArenaIdNode {
-        let scope = Self { base, scope, name };
+        let scope = Self {
+            base,
+            scope,
+            symbol,
+        };
         arena.add_node(IrKindNode::Scope(Rc::new(RefCell::new(scope))))
     }
 }

@@ -1,7 +1,11 @@
 use crate::{
-    ir::{File, IrKind, IrKindNode, IrNodeId},
+    IrArena,
+    arena::{ArenaIdNode, ArenaIdScope},
+    ir::{File, IrKind, IrKindNode, IrNodeId, IrTree},
     symbol::ScopeStack,
 };
+
+use crate::visit::Visitor;
 
 use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
 
@@ -174,5 +178,27 @@ impl From<AstTokenRust> for IrKind {
             | AstTokenRust::Text_COMMA
             | AstTokenRust::Text_SEMI => IrKind::Text,
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct FunctionItemVisitor<'a> {
+    context: &'a AstContext,
+    arena: &'a mut IrArena,
+    scope_stack: &'a mut ScopeStack,
+}
+
+impl<'a> Visitor<'a, IrTree> for FunctionItemVisitor<'a> {
+    fn visit_node(&mut self, node: &mut IrKindNode, scope: &mut ArenaIdScope, parent: ArenaIdNode) {
+        node.upgrade_identifier_to_def();
+        let name = node.unwrap_identifier(self.arena, AstFieldRust::name as u16);
+        let symbol = self.scope_stack.find_or_add(self.arena, name);
+
+        let sn = node.expect_scope();
+        sn.borrow_mut().symbol = Some(symbol);
+
+        let symbol = self.arena.get_symbol_mut(symbol).unwrap();
+        // TODO:
+        // symbol.mangled_name =
     }
 }

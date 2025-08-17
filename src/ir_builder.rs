@@ -192,3 +192,21 @@ pub fn print_llmcc_ir(root: ArenaIdNode, context: &AstContext, arena: &mut IrAre
     vistor.visit_node(&mut root, &mut ArenaIdScope(0), ArenaIdNode(0));
     vistor.print_output();
 }
+
+#[derive(Debug)]
+struct IrFindDeclaration<'a> {
+    context: &'a AstContext,
+    arena: &'a mut IrArena,
+}
+
+impl<'a> IrFindDeclaration<'a> {
+    fn new(context: &'a AstContext, arena: &'a mut IrArena) -> Self {
+        Self { context, arena }
+    }
+}
+
+impl<'a> Visitor<'a, IrTree> for IrFindDeclaration<'a> {
+    fn visit_node(&mut self, node: &mut IrKindNode, scope: &mut ArenaIdScope, parent: ArenaIdNode) {
+        let to = node.get_base().token_id;
+    }
+}

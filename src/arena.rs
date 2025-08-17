@@ -31,7 +31,7 @@ pub struct Arena<N, S, Sc> {
     pub scopes: Vec<Sc>,
 }
 
-impl<N, S, Sc> Arena<N, S, Sc> {
+impl<N: Clone, S, Sc> Arena<N, S, Sc> {
     pub fn new() -> Arena<N, S, Sc> {
         Self {
             nodes: vec![],
@@ -64,6 +64,10 @@ impl<N, S, Sc> Arena<N, S, Sc> {
 
     pub fn get_node(&self, id: ArenaIdNode) -> Option<&N> {
         self.nodes.get(id.0)
+    }
+
+    pub fn clone_node(&self, id: ArenaIdNode) -> Option<N> {
+        self.nodes.get(id.0).cloned()
     }
 
     pub fn get_node_mut(&mut self, id: ArenaIdNode) -> Option<&mut N> {
