@@ -38,7 +38,8 @@ impl<'a> IrBuilder<'a> {
             IrKind::Internal => IrNodeInternal::new(self.arena, base),
             IrKind::Scope => {
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
-                let symbol = Symbol::new(self.arena, base.token_id, text.unwrap());
+                let id = self.arena.get_next_node_id();
+                let symbol = Symbol::new(self.arena, base.token_id, text.unwrap(), id);
                 let scope = Scope::new(self.arena, Some(symbol));
                 let scope_node = IrNodeScope::new(self.arena, base, scope, None);
                 self.arena.get_scope_mut(scope).unwrap().ast_node = Some(scope_node);
@@ -47,7 +48,8 @@ impl<'a> IrBuilder<'a> {
             IrKind::IdentifierUse => {
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let text = text.unwrap();
-                let symbol = Symbol::new(self.arena, base.token_id, text);
+                let id = self.arena.get_next_node_id();
+                let symbol = Symbol::new(self.arena, base.token_id, text, id);
                 IrNodeId::new(self.arena, base, symbol)
             }
             _ => {

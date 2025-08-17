@@ -188,12 +188,6 @@ impl IrKindNode {
     pub fn unwrap_identifier(&self, arena: &mut IrArena, field_id: u16) -> IrNodeIdPtr {
         self.find_identifier(arena, field_id).unwrap()
     }
-
-    pub fn upgrade_identifier_to_def(&mut self) {
-        let mut base = self.get_base();
-        base.kind = IrKind::IdentifierDef;
-        self.set_new_base(base);
-    }
 }
 
 macro_rules! impl_getters {
@@ -257,11 +251,11 @@ pub struct IrNodeBase {
 #[derive(Debug, Clone)]
 pub struct IrNodeInternal {
     pub base: IrNodeBase,
-    pub name: Option<IrNodeId>,
+    pub name: Option<NodeId>,
 }
 
 impl IrNodeInternal {
-    pub fn new_with_name(arena: &mut IrArena, base: IrNodeBase, name: Option<IrNodeId>) -> NodeId {
+    pub fn new_with_name(arena: &mut IrArena, base: IrNodeBase, name: Option<NodeId>) -> NodeId {
         let internal = Self { base, name };
         arena.add_node(IrKindNode::Internal(Rc::new(RefCell::new(internal))))
     }
@@ -285,6 +279,12 @@ impl IrNodeId {
 
     pub fn get_symbol_name(&self, arena: &IrArena) -> String {
         arena.get_symbol(self.symbol).unwrap().name.clone()
+    }
+
+    pub fn upgrade_identifier_to_def(&mut self, arena: &mut IrArena, owner: NodeId) {
+        self.base.kind = IrKind::IdentifierDef;
+        let symbol = arena.get_symbol_mut(self.symbol).unwrap();
+        symbol.owner = owner;
     }
 }
 
@@ -406,7 +406,7 @@ impl IrNodeFile {
 pub struct IrNodeScope {
     pub base: IrNodeBase,
     pub scope: ScopeId,
-    pub symbol: Option<SymbolId>,
+    pub name: Option<NodeId>,
 }
 
 impl IrNodeScope {
@@ -414,13 +414,9 @@ impl IrNodeScope {
         arena: &mut IrArena,
         base: IrNodeBase,
         scope: ScopeId,
-        symbol: Option<SymbolId>,
+        name: Option<NodeId>,
     ) -> NodeId {
-        let scope = Self {
-            base,
-            scope,
-            symbol,
-        };
+        let scope = Self { base, scope, name };
         arena.add_node(IrKindNode::Scope(Rc::new(RefCell::new(scope))))
     }
 }

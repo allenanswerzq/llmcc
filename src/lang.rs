@@ -4,7 +4,7 @@ use crate::{
     IrArena,
     arena::{NodeId, ScopeId},
     ir::{File, IrKind, IrKindNode, IrNodeId, IrTree},
-    symbol::ScopeStack,
+    symbol::{Scope, ScopeStack},
 };
 
 use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
@@ -56,10 +56,68 @@ impl Language {
         scope_stack: &mut ScopeStack,
         mut node: IrKindNode,
     ) {
-        println!("{}", node.format_node(arena));
         let token_id = node.get_base().token_id;
+        let scope_depth = scope_stack.scope_depth();
+
         match AstTokenRust::from_repr(token_id).unwrap() {
+            AstTokenRust::function_item => {
+                let name = node.unwrap_identifier(arena, AstFieldRust::name as u16);
+                name.borrow_mut()
+                    .upgrade_identifier_to_def(arena, node.get_id());
+                scope_stack.find_or_add(arena, name);
+
+                let sn = node.expect_scope();
+                sn.borrow_mut().name = Some(node.get_id());
+
+                // let symbol = self.arena.get_symbol_mut(symbol).unwrap();
+                // TODO:
+                // symbol.mangled_name =
+            }
+            AstTokenRust::let_declaration => {
+                let name = node.unwrap_identifier(arena, AstFieldRust::pattern as u16);
+                name.borrow_mut()
+                    .upgrade_identifier_to_def(arena, node.get_id());
+                scope_stack.find_or_add(arena, name.clone());
+
+                let internal = node.expect_internal();
+                internal.borrow_mut().name = Some(node.get_id());
+            }
+            AstTokenRust::block => {
+                let new_scope = Scope::new(arena, None);
+                scope_stack.enter_scope(arena, new_scope);
+            }
+            AstTokenRust::parameter => {
+                let name = node.unwrap_identifier(arena, AstFieldRust::pattern as u16);
+                name.borrow_mut()
+                    .upgrade_identifier_to_def(arena, node.get_id());
+                let symbol = scope_stack.find_or_add(arena, name);
+
+                let internal = node.expect_internal();
+                internal.borrow_mut().name = Some(node.get_id());
+            }
+            AstTokenRust::primitive_type => {}
+            AstTokenRust::identifier => {
+                let id = node.expect_identifier();
+                let symbol = scope_stack.find(arena, id.clone());
+                if let Some(found_id) = symbol {
+                    let owner = arena.get_symbol_mut(found_id).unwrap().owner;
+                    let symbol = arena.get_symbol_mut(id.borrow().symbol).unwrap();
+                    // this is a use of symbol, and its defined by another symbol
+                    symbol.defined = Some(owner);
+                } else {
+                    println!("not find symbol: {}", node.format_node(arena))
+                }
+            }
             AstTokenRust::source_file
+            | AstTokenRust::mutable_specifier
+            | AstTokenRust::parameters
+            | AstTokenRust::integer_literal
+            | AstTokenRust::expression_statement
+            | AstTokenRust::assignment_expression
+            | AstTokenRust::binary_expression
+            | AstTokenRust::operator
+            | AstTokenRust::call_expression
+            | AstTokenRust::arguments
             | AstTokenRust::Text_ARROW
             | AstTokenRust::Text_EQ
             | AstTokenRust::Text_COMMA
@@ -71,18 +129,6 @@ impl Language {
             | AstTokenRust::Text_let
             | AstTokenRust::Text_fn
             | AstTokenRust::Text_COLON => {}
-            AstTokenRust::function_item => {
-                node.upgrade_identifier_to_def();
-                let name = node.unwrap_identifier(arena, AstFieldRust::name as u16);
-                let symbol = scope_stack.find_or_add(arena, name);
-
-                let sn = node.expect_scope();
-                sn.borrow_mut().symbol = Some(symbol);
-
-                // let symbol = self.arena.get_symbol_mut(symbol).unwrap();
-                // TODO:
-                // symbol.mangled_name =
-            }
             _ => {
                 panic!(
                     "unsupported {:?}",
@@ -92,6 +138,7 @@ impl Language {
         }
 
         self.find_child_declaration(arena, scope_stack, node);
+        scope_stack.pop_until(scope_depth);
     }
 }
 

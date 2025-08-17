@@ -25,8 +25,8 @@ fn main() {
 
     let mut arena = IrArena::new();
     build_llmcc_ir(&tree, &mut context, &mut arena).unwrap();
-    print_llmcc_ir(NodeId(0), &mut context, &mut arena);
+    // print_llmcc_ir(NodeId(0), &mut context, &mut arena);
 
     find_declaration(NodeId(0), &context, &mut arena);
-    // print_llmcc_ir(NodeId(0), &mut context, &mut arena);
+    print_llmcc_ir(NodeId(0), &mut context, &mut arena);
 }

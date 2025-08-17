@@ -62,6 +62,10 @@ impl<N: Clone, S, Sc> Arena<N, S, Sc> {
         NodeId(self.nodes.len())
     }
 
+    pub fn get_next_symbol_id(&self) -> SymbolId {
+        SymbolId(self.symbols.len())
+    }
+
     pub fn get_node(&self, id: NodeId) -> Option<&N> {
         self.nodes.get(id.0)
     }

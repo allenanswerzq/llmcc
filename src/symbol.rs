@@ -47,6 +47,16 @@ impl ScopeStack {
         }
     }
 
+    pub fn scope_depth(&self) -> usize {
+        self.scopes.len()
+    }
+
+    pub fn pop_until(&mut self, depth: usize) {
+        while self.scope_depth() > depth {
+            self.leave_scope();
+        }
+    }
+
     pub fn reset_stack(&mut self, root_scope: ScopeId) {
         self.current_scope = root_scope;
         self.scopes.clear();
@@ -74,13 +84,20 @@ impl ScopeStack {
     }
 
     pub fn find_or_add(&mut self, arena: &mut IrArena, node: IrNodeIdPtr) -> SymbolId {
-        let name = node.borrow().get_symbol_name(arena);
-        if let Some(id) = self.lookup(arena, &name) {
+        if let Some(id) = self.lookup(arena, &node) {
             id
         } else {
             let id = node.borrow().symbol;
             self.add_symbol(arena, id);
             id
+        }
+    }
+
+    pub fn find(&mut self, arena: &mut IrArena, node: IrNodeIdPtr) -> Option<SymbolId> {
+        if let Some(id) = self.lookup(arena, &node) {
+            Some(id)
+        } else {
+            None
         }
     }
 
@@ -96,12 +113,13 @@ impl ScopeStack {
         }
     }
 
-    pub fn lookup(&self, arena: &mut IrArena, name: &str) -> Option<SymbolId> {
+    pub fn lookup(&self, arena: &mut IrArena, node: &IrNodeIdPtr) -> Option<SymbolId> {
+        let name = node.borrow().get_symbol_name(arena);
         let mut current_scope_id = self.current_scope;
 
         loop {
             if let Some(scope) = arena.get_scope(current_scope_id) {
-                if let Some(&symbol_id) = scope.symbols.get(name) {
+                if let Some(&symbol_id) = scope.symbols.get(&name) {
                     return Some(symbol_id);
                 }
 
@@ -137,6 +155,10 @@ impl Token {
 
 #[derive(Debug, Clone, Default)]
 pub struct Symbol {
+    // the node owner this sybmol,
+    pub owner: NodeId,
+    // the id where this symbol is stored at arena,
+    pub id: SymbolId,
     // Token identifier
     pub token_id: Token,
     // The name of the symbol
@@ -172,10 +194,13 @@ impl std::fmt::Display for Symbol {
 }
 
 impl Symbol {
-    pub fn new(arena: &mut IrArena, token_id: u16, name: String) -> SymbolId {
+    pub fn new(arena: &mut IrArena, token_id: u16, name: String, owner: NodeId) -> SymbolId {
+        let id = arena.get_next_symbol_id();
         let symbol = Symbol {
             token_id: Token::new(token_id),
             name,
+            id,
+            owner,
             ..Default::default()
         };
         arena.add_symbol(symbol)
