@@ -95,8 +95,7 @@ impl Language {
                 let internal = node.expect_internal();
                 internal.borrow_mut().name = Some(node.get_id());
             }
-            AstTokenRust::primitive_type => {}
-            AstTokenRust::identifier => {
+            AstTokenRust::primitive_type | AstTokenRust::identifier => {
                 let id = node.expect_identifier();
                 let symbol = scope_stack.find(arena, id.clone());
                 if let Some(found_id) = symbol {
@@ -235,7 +234,7 @@ impl From<AstTokenRust> for IrKind {
             AstTokenRust::operator => IrKind::Internal,
             AstTokenRust::call_expression => IrKind::Internal,
             AstTokenRust::arguments => IrKind::Internal,
-            AstTokenRust::primitive_type => IrKind::Internal,
+            AstTokenRust::primitive_type => IrKind::IdentifierUse,
             AstTokenRust::parameters => IrKind::Internal,
             AstTokenRust::parameter => IrKind::Internal,
             AstTokenRust::identifier => IrKind::IdentifierUse,
