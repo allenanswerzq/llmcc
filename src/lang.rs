@@ -3,7 +3,7 @@ use std::panic;
 use crate::{
     HirArena,
     arena::{NodeId, ScopeId},
-    ir::{File, HirKind, HirKindNode, HirNodeId, HirTree},
+    ir::{File, HirId, HirKind, HirKindNode, HirTree},
     symbol::{Scope, ScopeStack},
 };
 

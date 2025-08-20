@@ -1,98 +1,71 @@
-use crate::ir::HirKindNode;
-use crate::symbol::{Scope, Symbol};
-
-macro_rules! make_id_type {
-    ($name:ident) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-        pub struct $name(pub usize);
-
-        impl From<$name> for usize {
-            fn from(id: $name) -> Self {
-                id.0
-            }
+/// Simple adopted from the rustc_arena
+///
+#[macro_export]
+macro_rules! declare_arena {
+    ([$($name:ident : $ty:ty),* $(,)?]) => {
+        #[derive(Default)]
+        pub struct Arena<'tcx> {
+            $( pub $name : typed_arena::Arena<$ty>, )*
+            _marker: std::marker::PhantomData<&'tcx ()>,
         }
 
-        impl std::fmt::Display for $name {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{}", self.0)
+        pub trait ArenaAllocatable<'tcx>: Sized {
+            fn allocate_on(self, arena: &'tcx Arena<'tcx>) -> &'tcx Self;
+        }
+
+        $(
+            impl<'tcx> ArenaAllocatable<'tcx> for $ty {
+                #[inline]
+                fn allocate_on(self, arena: &'tcx Arena<'tcx>) -> &'tcx Self {
+                    arena.$name.alloc(self)
+                }
+            }
+        )*
+
+        impl<'tcx> Arena<'tcx> {
+            #[inline]
+            pub fn alloc<T: ArenaAllocatable<'tcx>>(&'tcx self, value: T) -> &'tcx T {
+                value.allocate_on(self)
             }
         }
     };
 }
 
-make_id_type!(NodeId);
-make_id_type!(SymbolId);
-make_id_type!(ScopeId);
+#[cfg(test)]
+mod tests {
+    #[derive(Debug, PartialEq)]
+    struct Foo(i32);
 
-#[derive(Debug, Default)]
-pub struct Arena<N, S, Sc> {
-    pub nodes: Vec<N>,
-    pub symbols: Vec<S>,
-    pub scopes: Vec<Sc>,
-}
+    #[derive(Debug, PartialEq)]
+    struct Bar(&'static str);
 
-impl<N: Clone, S, Sc> Arena<N, S, Sc> {
-    pub fn new() -> Arena<N, S, Sc> {
-        Self {
-            nodes: vec![],
-            symbols: vec![],
-            scopes: vec![],
-        }
+    // Declare an arena with two types:
+    declare_arena!([
+        foos: Foo,
+        bars: Bar,
+    ]);
+
+    #[test]
+    fn alloc_single_values() {
+        let arena = Arena::default();
+
+        let f = arena.alloc(Foo(1));
+        let b = arena.alloc(Bar("hello"));
+
+        assert_eq!(f, &Foo(1));
+        assert_eq!(b, &Bar("hello"));
     }
 
-    pub fn add_node(&mut self, node: N) -> NodeId {
-        let id = NodeId(self.nodes.len());
-        self.nodes.push(node);
-        id
-    }
+    #[test]
+    fn separate_pools_do_not_interfere() {
+        let arena = Arena::default();
 
-    pub fn add_symbol(&mut self, symbol: S) -> SymbolId {
-        let id = SymbolId(self.symbols.len());
-        self.symbols.push(symbol);
-        id
-    }
+        let f1 = arena.alloc(Foo(1));
+        let b1 = arena.alloc(Bar("x"));
+        let f2 = arena.alloc(Foo(2));
 
-    pub fn add_scope(&mut self, scope: Sc) -> ScopeId {
-        let id = ScopeId(self.scopes.len());
-        self.scopes.push(scope);
-        id
-    }
-
-    pub fn get_next_node_id(&self) -> NodeId {
-        NodeId(self.nodes.len())
-    }
-
-    pub fn get_next_symbol_id(&self) -> SymbolId {
-        SymbolId(self.symbols.len())
-    }
-
-    pub fn get_node(&self, id: NodeId) -> Option<&N> {
-        self.nodes.get(id.0)
-    }
-
-    pub fn clone_node(&self, id: NodeId) -> Option<N> {
-        self.nodes.get(id.0).cloned()
-    }
-
-    pub fn get_node_mut(&mut self, id: NodeId) -> Option<&mut N> {
-        self.nodes.get_mut(id.0)
-    }
-
-    pub fn get_symbol(&self, id: SymbolId) -> Option<&S> {
-        self.symbols.get(id.0)
-    }
-
-    pub fn get_symbol_mut(&mut self, id: SymbolId) -> Option<&mut S> {
-        self.symbols.get_mut(id.0)
-    }
-
-    pub fn get_scope(&self, id: ScopeId) -> Option<&Sc> {
-        self.scopes.get(id.0)
-    }
-
-    pub fn get_scope_mut(&mut self, id: ScopeId) -> Option<&mut Sc> {
-        self.scopes.get_mut(id.0)
+        assert_eq!(f1, &Foo(1));
+        assert_eq!(f2, &Foo(2));
+        assert_eq!(b1, &Bar("x"));
     }
 }
-
-pub type HirArena = Arena<HirKindNode, Symbol, Scope>;

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     arena::{HirArena, NodeId, ScopeId, SymbolId},
-    ir::HirNodeIdPtr,
+    ir::HirIdPtr,
 };
 
 #[derive(Debug, Clone)]
@@ -83,7 +83,7 @@ impl ScopeStack {
         self.current_scope = self.scopes[self.scopes.len() - 1];
     }
 
-    pub fn find_or_add(&mut self, arena: &mut HirArena, node: HirNodeIdPtr) -> SymbolId {
+    pub fn find_or_add(&mut self, arena: &mut HirArena, node: HirIdPtr) -> SymbolId {
         if let Some(id) = self.lookup(arena, &node) {
             id
         } else {
@@ -93,7 +93,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn find(&mut self, arena: &mut HirArena, node: HirNodeIdPtr) -> Option<SymbolId> {
+    pub fn find(&mut self, arena: &mut HirArena, node: HirIdPtr) -> Option<SymbolId> {
         if let Some(id) = self.lookup(arena, &node) {
             Some(id)
         } else {
@@ -113,7 +113,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn lookup(&self, arena: &mut HirArena, node: &HirNodeIdPtr) -> Option<SymbolId> {
+    pub fn lookup(&self, arena: &mut HirArena, node: &HirIdPtr) -> Option<SymbolId> {
         let name = node.borrow().get_symbol_name(arena);
         let mut current_scope_id = self.current_scope;
 
