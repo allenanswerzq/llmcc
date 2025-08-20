@@ -1,9 +1,9 @@
 use std::panic;
 
 use crate::{
-    IrArena,
+    HirArena,
     arena::{NodeId, ScopeId},
-    ir::{File, IrKind, IrKindNode, IrNodeId, IrTree},
+    ir::{File, HirKind, HirKindNode, HirNodeId, HirTree},
     symbol::{Scope, ScopeStack},
 };
 
@@ -32,7 +32,7 @@ impl Language {
         Self {}
     }
 
-    pub fn get_token_kind(&self, token_id: u16) -> IrKind {
+    pub fn get_token_kind(&self, token_id: u16) -> HirKind {
         AstTokenRust::from_repr(token_id)
             .expect(&format!("unknown token id: {}", token_id))
             .into()
@@ -40,9 +40,9 @@ impl Language {
 
     pub fn find_child_declaration(
         &self,
-        arena: &mut IrArena,
+        arena: &mut HirArena,
         scope_stack: &mut ScopeStack,
-        node: IrKindNode,
+        node: HirKindNode,
     ) {
         let children = node.children(arena);
         for child in children {
@@ -52,9 +52,9 @@ impl Language {
 
     pub fn find_declaration(
         &self,
-        arena: &mut IrArena,
+        arena: &mut HirArena,
         scope_stack: &mut ScopeStack,
-        mut node: IrKindNode,
+        mut node: HirKindNode,
     ) {
         let token_id = node.get_base().token_id;
         let scope_depth = scope_stack.scope_depth();
@@ -221,25 +221,25 @@ pub enum AstFieldRust {
     pattern = 24,
 }
 
-impl From<AstTokenRust> for IrKind {
+impl From<AstTokenRust> for HirKind {
     fn from(token: AstTokenRust) -> Self {
         match token {
-            AstTokenRust::source_file => IrKind::File,
-            AstTokenRust::function_item => IrKind::Scope,
-            AstTokenRust::block => IrKind::Scope,
-            AstTokenRust::let_declaration => IrKind::Internal,
-            AstTokenRust::expression_statement => IrKind::Internal,
-            AstTokenRust::assignment_expression => IrKind::Internal,
-            AstTokenRust::binary_expression => IrKind::Internal,
-            AstTokenRust::operator => IrKind::Internal,
-            AstTokenRust::call_expression => IrKind::Internal,
-            AstTokenRust::arguments => IrKind::Internal,
-            AstTokenRust::primitive_type => IrKind::IdentifierUse,
-            AstTokenRust::parameters => IrKind::Internal,
-            AstTokenRust::parameter => IrKind::Internal,
-            AstTokenRust::identifier => IrKind::IdentifierUse,
-            AstTokenRust::integer_literal => IrKind::Text,
-            AstTokenRust::mutable_specifier => IrKind::Text,
+            AstTokenRust::source_file => HirKind::File,
+            AstTokenRust::function_item => HirKind::Scope,
+            AstTokenRust::block => HirKind::Scope,
+            AstTokenRust::let_declaration => HirKind::Internal,
+            AstTokenRust::expression_statement => HirKind::Internal,
+            AstTokenRust::assignment_expression => HirKind::Internal,
+            AstTokenRust::binary_expression => HirKind::Internal,
+            AstTokenRust::operator => HirKind::Internal,
+            AstTokenRust::call_expression => HirKind::Internal,
+            AstTokenRust::arguments => HirKind::Internal,
+            AstTokenRust::primitive_type => HirKind::IdentifierUse,
+            AstTokenRust::parameters => HirKind::Internal,
+            AstTokenRust::parameter => HirKind::Internal,
+            AstTokenRust::identifier => HirKind::IdentifierUse,
+            AstTokenRust::integer_literal => HirKind::Text,
+            AstTokenRust::mutable_specifier => HirKind::Text,
             AstTokenRust::Text_fn
             | AstTokenRust::Text_LPAREN
             | AstTokenRust::Text_RPAREN
@@ -250,7 +250,7 @@ impl From<AstTokenRust> for IrKind {
             | AstTokenRust::Text_ARROW
             | AstTokenRust::Text_COLON
             | AstTokenRust::Text_COMMA
-            | AstTokenRust::Text_SEMI => IrKind::Text,
+            | AstTokenRust::Text_SEMI => HirKind::Text,
         }
     }
 }

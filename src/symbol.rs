@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    arena::{IrArena, NodeId, ScopeId, SymbolId},
-    ir::IrNodeIdPtr,
+    arena::{HirArena, NodeId, ScopeId, SymbolId},
+    ir::HirNodeIdPtr,
 };
 
 #[derive(Debug, Clone)]
@@ -18,7 +18,7 @@ pub struct Scope {
 }
 
 impl Scope {
-    pub fn new(arena: &mut IrArena, owner: Option<SymbolId>) -> ScopeId {
+    pub fn new(arena: &mut HirArena, owner: Option<SymbolId>) -> ScopeId {
         let scope = Scope {
             owner,
             parent: None,
@@ -63,7 +63,7 @@ impl ScopeStack {
         self.scopes.push(root_scope);
     }
 
-    pub fn enter_scope(&mut self, arena: &mut IrArena, scope_id: ScopeId) {
+    pub fn enter_scope(&mut self, arena: &mut HirArena, scope_id: ScopeId) {
         {
             if let Some(scope) = arena.get_scope_mut(scope_id) {
                 scope.parent = Some(self.current_scope);
@@ -83,7 +83,7 @@ impl ScopeStack {
         self.current_scope = self.scopes[self.scopes.len() - 1];
     }
 
-    pub fn find_or_add(&mut self, arena: &mut IrArena, node: IrNodeIdPtr) -> SymbolId {
+    pub fn find_or_add(&mut self, arena: &mut HirArena, node: HirNodeIdPtr) -> SymbolId {
         if let Some(id) = self.lookup(arena, &node) {
             id
         } else {
@@ -93,7 +93,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn find(&mut self, arena: &mut IrArena, node: IrNodeIdPtr) -> Option<SymbolId> {
+    pub fn find(&mut self, arena: &mut HirArena, node: HirNodeIdPtr) -> Option<SymbolId> {
         if let Some(id) = self.lookup(arena, &node) {
             Some(id)
         } else {
@@ -101,7 +101,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn add_symbol(&mut self, arena: &mut IrArena, symbol_id: SymbolId) {
+    pub fn add_symbol(&mut self, arena: &mut HirArena, symbol_id: SymbolId) {
         let symbol_name = if let Some(symbol) = arena.get_symbol(symbol_id) {
             symbol.name.clone()
         } else {
@@ -113,7 +113,7 @@ impl ScopeStack {
         }
     }
 
-    pub fn lookup(&self, arena: &mut IrArena, node: &IrNodeIdPtr) -> Option<SymbolId> {
+    pub fn lookup(&self, arena: &mut HirArena, node: &HirNodeIdPtr) -> Option<SymbolId> {
         let name = node.borrow().get_symbol_name(arena);
         let mut current_scope_id = self.current_scope;
 
@@ -194,7 +194,7 @@ impl std::fmt::Display for Symbol {
 }
 
 impl Symbol {
-    pub fn new(arena: &mut IrArena, token_id: u16, name: String, owner: NodeId) -> SymbolId {
+    pub fn new(arena: &mut HirArena, token_id: u16, name: String, owner: NodeId) -> SymbolId {
         let id = arena.get_next_symbol_id();
         let symbol = Symbol {
             token_id: Token::new(token_id),

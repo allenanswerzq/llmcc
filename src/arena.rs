@@ -1,4 +1,4 @@
-use crate::ir::IrKindNode;
+use crate::ir::HirKindNode;
 use crate::symbol::{Scope, Symbol};
 
 macro_rules! make_id_type {
@@ -95,4 +95,4 @@ impl<N: Clone, S, Sc> Arena<N, S, Sc> {
     }
 }
 
-pub type IrArena = Arena<IrKindNode, Symbol, Scope>;
+pub type HirArena = Arena<HirKindNode, Symbol, Scope>;

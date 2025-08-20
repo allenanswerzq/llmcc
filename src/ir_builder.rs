@@ -1,56 +1,53 @@
 use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 use crate::{
-    arena::{IrArena, NodeId, ScopeId},
+    arena::{HirArena, NodeId, ScopeId},
     ir::{
-        IrKind, IrKindNode, IrNodeBase, IrNodeFile, IrNodeId, IrNodeInternal, IrNodeRoot,
-        IrNodeScope, IrNodeText, IrTree,
+        HirKind, HirKindNode, HirNodeBase, HirNodeFile, HirNodeId, HirNodeInternal, HirNodeRoot,
+        HirNodeScope, HirNodeText, HirTree,
     },
     lang::AstContext,
     symbol::{Scope, ScopeStack, Symbol},
     visit::Visitor,
 };
 
-use std::num::NonZeroU16;
-use std::sync::atomic::{AtomicI64, Ordering};
-
 #[derive(Debug)]
-struct IrBuilder<'a> {
+struct HirBuilder<'a> {
     context: &'a mut AstContext,
-    arena: &'a mut IrArena,
+    arena: &'a mut HirArena,
 }
 
-impl<'a> IrBuilder<'a> {
-    fn new(context: &'a mut AstContext, arena: &'a mut IrArena) -> Self {
+impl<'a> HirBuilder<'a> {
+    fn new(context: &'a mut AstContext, arena: &'a mut HirArena) -> Self {
         Self {
             arena: arena,
             context: context,
         }
     }
 
-    fn create_ast_node(&mut self, base: IrNodeBase, kind: IrKind, node: &Node) -> NodeId {
+    fn create_ast_node(&mut self, base: HirNodeBase, kind: HirKind, node: &Node) -> NodeId {
         match kind {
-            IrKind::File => IrNodeFile::new(self.arena, base),
-            IrKind::Text => {
+            HirKind::File => HirNodeFile::new(self.arena, base),
+            HirKind::Text => {
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
-                IrNodeText::new(self.arena, base, text.unwrap())
+                HirNodeText::new(self.arena, base, text.unwrap())
             }
-            IrKind::Internal => IrNodeInternal::new(self.arena, base),
-            IrKind::Scope => {
+            HirKind::Internal => HirNodeInternal::new(self.arena, base),
+            HirKind::Scope => {
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let id = self.arena.get_next_node_id();
                 let symbol = Symbol::new(self.arena, base.token_id, text.unwrap(), id);
                 let scope = Scope::new(self.arena, Some(symbol));
-                let scope_node = IrNodeScope::new(self.arena, base, scope, None);
+                let scope_node = HirNodeScope::new(self.arena, base, scope, None);
                 self.arena.get_scope_mut(scope).unwrap().ast_node = Some(scope_node);
                 scope_node
             }
-            IrKind::IdentifierUse => {
+            HirKind::IdentifierUse => {
                 let text = self.context.file.get_text(base.start_byte, base.end_byte);
                 let text = text.unwrap();
                 let id = self.arena.get_next_node_id();
                 let symbol = Symbol::new(self.arena, base.token_id, text, id);
-                IrNodeId::new(self.arena, base, symbol)
+                HirNodeId::new(self.arena, base, symbol)
             }
             _ => {
                 panic!("unknown kind: {:?}", node)
@@ -58,12 +55,12 @@ impl<'a> IrBuilder<'a> {
         }
     }
 
-    fn create_base_node(&self, node: &Node, field_id: u16) -> IrNodeBase {
+    fn create_base_node(&self, node: &Node, field_id: u16) -> HirNodeBase {
         let token_id = node.kind_id();
         let kind = self.context.language.get_token_kind(token_id);
         let arena_id = self.arena.get_next_node_id();
 
-        IrNodeBase {
+        HirNodeBase {
             arena_id,
             token_id,
             field_id: field_id,
@@ -96,11 +93,11 @@ impl<'a> IrBuilder<'a> {
     }
 }
 
-impl<'a> Visitor<'a, Tree> for IrBuilder<'_> {
+impl<'a> Visitor<'a, Tree> for HirBuilder<'_> {
     fn visit_node(&mut self, node: &mut Node<'a>, scope: &mut (), parent: NodeId) {
         let token_id = node.kind_id();
         let mut cursor = node.walk();
-        let field_id = IrBuilder::field_id_of(&node).unwrap_or(65535);
+        let field_id = HirBuilder::field_id_of(&node).unwrap_or(65535);
         let kind = self.context.language.get_token_kind(token_id);
 
         let base = self.create_base_node(&node, field_id.into());
@@ -120,24 +117,24 @@ impl<'a> Visitor<'a, Tree> for IrBuilder<'_> {
 pub fn build_llmcc_ir(
     tree: &Tree,
     context: &mut AstContext,
-    arena: &mut IrArena,
+    arena: &mut HirArena,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let root = IrNodeRoot::new(arena);
-    let mut visitor = IrBuilder::new(context, arena);
+    let root = HirNodeRoot::new(arena);
+    let mut visitor = HirBuilder::new(context, arena);
     visitor.visit_node(&mut tree.root_node(), &mut (), root);
     Ok(())
 }
 
 #[derive(Debug)]
-struct IrPrinter<'a> {
+struct HirPrinter<'a> {
     context: &'a AstContext,
     depth: usize,
     output: String,
-    arena: &'a mut IrArena,
+    arena: &'a mut HirArena,
 }
 
-impl<'a> IrPrinter<'a> {
-    fn new(context: &'a AstContext, arena: &'a mut IrArena) -> Self {
+impl<'a> HirPrinter<'a> {
+    fn new(context: &'a AstContext, arena: &'a mut HirArena) -> Self {
         Self {
             context,
             depth: 0,
@@ -154,7 +151,7 @@ impl<'a> IrPrinter<'a> {
         println!("{}", self.output);
     }
 
-    fn visit_enter_node(&mut self, node: &IrKindNode, scope: &ScopeId, parent: &NodeId) {
+    fn visit_enter_node(&mut self, node: &HirKindNode, scope: &ScopeId, parent: &NodeId) {
         let base = node.get_base();
         let text = self.context.file.get_text(base.start_byte, base.end_byte);
         self.output.push_str(&"  ".repeat(self.depth));
@@ -180,7 +177,7 @@ impl<'a> IrPrinter<'a> {
         self.depth += 1;
     }
 
-    fn visit_leave_node(&mut self, node: &IrKindNode, scope: &ScopeId, parent: &NodeId) {
+    fn visit_leave_node(&mut self, node: &HirKindNode, scope: &ScopeId, parent: &NodeId) {
         self.depth -= 1;
         if node.get_base().children.len() > 0 {
             self.output.push_str(&"  ".repeat(self.depth));
@@ -193,8 +190,8 @@ impl<'a> IrPrinter<'a> {
     }
 }
 
-impl<'a> Visitor<'a, IrTree> for IrPrinter<'a> {
-    fn visit_node(&mut self, node: &mut IrKindNode, scope: &mut ScopeId, parent: NodeId) {
+impl<'a> Visitor<'a, HirTree> for HirPrinter<'a> {
+    fn visit_node(&mut self, node: &mut HirKindNode, scope: &mut ScopeId, parent: NodeId) {
         self.visit_enter_node(&node, &scope, &parent);
 
         let children = node.children(self.arena);
@@ -206,14 +203,14 @@ impl<'a> Visitor<'a, IrTree> for IrPrinter<'a> {
     }
 }
 
-pub fn print_llmcc_ir(root: NodeId, context: &AstContext, arena: &mut IrArena) {
+pub fn print_llmcc_ir(root: NodeId, context: &AstContext, arena: &mut HirArena) {
     let mut root = arena.get_node(root).unwrap().clone();
-    let mut vistor = IrPrinter::new(context, arena);
+    let mut vistor = HirPrinter::new(context, arena);
     vistor.visit_node(&mut root, &mut ScopeId(0), NodeId(0));
     vistor.print_output();
 }
 
-pub fn find_declaration(root: NodeId, context: &AstContext, arena: &mut IrArena) {
+pub fn find_declaration(root: NodeId, context: &AstContext, arena: &mut HirArena) {
     let global_scope = Scope::new(arena, None);
     let mut scope_stack = ScopeStack::new(global_scope);
     let root = arena.get_node(root).unwrap().clone();

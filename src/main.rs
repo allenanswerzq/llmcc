@@ -2,16 +2,16 @@ use llmcc::*;
 
 fn main() {
     let source_code = r#"
-fn foo(a: u16, b: u16) -> u16 {
-    let mut x = 0;
-    x = a + b;
-    x
-}
-fn main() {
-    let a = 1;
-    let b = 2;
-    foo(a, b);
-}
+        fn foo(a: u16, b: u16) -> u16 {
+            let mut x = 0;
+            x = a + b;
+            x
+        }
+        fn main() {
+            let a = 1;
+            let b = 2;
+            foo(a, b);
+        }
         "#
     .trim();
 
@@ -23,7 +23,7 @@ fn main() {
     let mut context = AstContext::from_source(source_code.as_bytes());
     print_ast(&tree, &mut context);
 
-    let mut arena = IrArena::new();
+    let mut arena = HirArena::new();
     build_llmcc_ir(&tree, &mut context, &mut arena).unwrap();
     // print_llmcc_ir(NodeId(0), &mut context, &mut arena);
 
