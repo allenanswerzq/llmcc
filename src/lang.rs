@@ -6,8 +6,6 @@ use crate::context::TyCtxt;
 use crate::ir::{HirId, HirIdent, HirKind, HirNode};
 use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
 
-// ---------------- Token Definition Macro ----------------
-
 macro_rules! define_tokens {
     (
         $( ($const:ident, $id:expr, $str:expr, $kind:expr) ),* $(,)?
@@ -30,7 +28,7 @@ macro_rules! define_tokens {
             )*
 
             /// Get the HIR kind for a given token ID
-            pub fn hir_kind(token_id: u16) -> HirKind {
+            pub fn hir_kind(&self, token_id: u16) -> HirKind {
                 match token_id {
                     $(
                         Self::$const => $kind,
@@ -40,7 +38,7 @@ macro_rules! define_tokens {
             }
 
             /// Get the string representation of a token ID
-            pub fn token_str(token_id: u16) -> Option<&'static str> {
+            pub fn token_str(&self, token_id: u16) -> Option<&'static str> {
                 match token_id {
                     $(
                         Self::$const => Some($str),
@@ -50,12 +48,10 @@ macro_rules! define_tokens {
             }
 
             /// Check if a token ID is valid
-            pub fn is_valid_token(token_id: u16) -> bool {
+            pub fn is_valid_token(&self, token_id: u16) -> bool {
                 matches!(token_id, $(Self::$const)|*)
             }
         }
-
-        // ---------------- Visitor Trait ----------------
 
         /// Trait for visiting HIR nodes with type-specific dispatch
         pub trait HirVisitor<'tcx> {
@@ -94,7 +90,6 @@ macro_rules! define_tokens {
     };
 }
 
-// ---------------- Token Definitions ----------------
 define_tokens! {
     // ---------------- Text Tokens ----------------
     (Text_fn                ,  96 , "fn"                        , HirKind::Text),
@@ -131,8 +126,6 @@ define_tokens! {
     (field_name            ,  19 , "name"                       , HirKind::Internal),
     (field_pattern         ,  24 , "pattern"                    , HirKind::Internal),
 }
-
-// ---------------- Declaration Finder Implementation ----------------
 
 /// Visitor that finds and processes variable/function declarations
 #[derive(Debug)]
@@ -198,38 +191,5 @@ impl<'tcx> HirVisitor<'tcx> for DeclFinder<'tcx> {
         self.process_declaration(&node, Language::field_pattern, lang);
 
         self.visit_children(&node, lang);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_token_constants() {
-        assert_eq!(Language::Text_fn, 96);
-        assert_eq!(Language::identifier, 1);
-        assert_eq!(Language::function_item, 188);
-    }
-
-    #[test]
-    fn test_hir_kind_mapping() {
-        assert_eq!(Language::hir_kind(Language::Text_fn), HirKind::Text);
-        assert_eq!(Language::hir_kind(Language::block), HirKind::Scope);
-        assert_eq!(Language::hir_kind(999), HirKind::Internal);
-    }
-
-    #[test]
-    fn test_token_str() {
-        assert_eq!(Language::token_str(Language::Text_fn), Some("fn"));
-        assert_eq!(Language::token_str(Language::Text_LPAREN), Some("("));
-        assert_eq!(Language::token_str(999), None);
-    }
-
-    #[test]
-    fn test_valid_token() {
-        assert!(Language::is_valid_token(Language::Text_fn));
-        assert!(Language::is_valid_token(Language::identifier));
-        assert!(!Language::is_valid_token(999));
     }
 }

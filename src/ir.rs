@@ -211,6 +211,19 @@ impl<'hir> HirScope<'hir> {
 }
 
 #[derive(Debug, Clone)]
+pub struct HirIdent<'hir> {
+    pub base: HirBase<'hir>,
+    pub name: String,
+}
+
+impl<'hir> HirIdent<'hir> {
+    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>, name: String) -> HirNode<'hir> {
+        let ident = Self { base, name };
+        HirNode::Ident(arena.alloc(ident))
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct HirFile<'hir> {
     pub base: HirBase<'hir>,
     pub file_path: String,
@@ -220,22 +233,5 @@ impl<'hir> HirFile<'hir> {
     pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>, file_path: String) -> HirNode<'hir> {
         let file = Self { base, file_path };
         HirNode::File(arena.alloc(file))
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct HirIdent<'hir> {
-    pub base: HirBase<'hir>,
-    pub name: String,
-}
-
-impl<'hir> HirIdent<'hir> {
-    pub fn new(
-        arena: &'hir Arena<'hir>,
-        base: HirBase<'hir>,
-        name: String,
-    ) -> &'hir HirIdent<'hir> {
-        let ident = Self { base, name };
-        arena.alloc(ident)
     }
 }
