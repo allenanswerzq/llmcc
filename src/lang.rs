@@ -1,212 +1,235 @@
-use std::panic;
-use std::{collections::HashMap, marker::PhantomData};
-use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
+use paste::paste;
+use std::cell::RefCell;
+use std::collections::HashMap;
 
 use crate::context::TyCtxt;
 use crate::ir::{HirId, HirIdent, HirKind, HirNode};
 use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
 
+// ---------------- Token Definition Macro ----------------
+
+macro_rules! define_tokens {
+    (
+        $( ($const:ident, $id:expr, $str:expr, $kind:expr) ),* $(,)?
+    ) => {
+        /// Language context for HIR processing
+        #[derive(Debug)]
+        pub struct Language<'tcx> {
+            pub ctx: &'tcx TyCtxt<'tcx>,
+        }
+
+        impl<'tcx> Language<'tcx> {
+            /// Create a new Language instance
+            pub fn new(ctx: &'tcx TyCtxt<'tcx>) -> Self {
+                Self { ctx }
+            }
+
+            // Generate token ID constants
+            $(
+                pub const $const: u16 = $id;
+            )*
+
+            /// Get the HIR kind for a given token ID
+            pub fn hir_kind(token_id: u16) -> HirKind {
+                match token_id {
+                    $(
+                        Self::$const => $kind,
+                    )*
+                    _ => HirKind::Internal,
+                }
+            }
+
+            /// Get the string representation of a token ID
+            pub fn token_str(token_id: u16) -> Option<&'static str> {
+                match token_id {
+                    $(
+                        Self::$const => Some($str),
+                    )*
+                    _ => None,
+                }
+            }
+
+            /// Check if a token ID is valid
+            pub fn is_valid_token(token_id: u16) -> bool {
+                matches!(token_id, $(Self::$const)|*)
+            }
+        }
+
+        // ---------------- Visitor Trait ----------------
+
+        /// Trait for visiting HIR nodes with type-specific dispatch
+        pub trait HirVisitor<'tcx> {
+            /// Visit a node, dispatching to the appropriate method based on token ID
+            fn visit_node(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+                match node.token_id() {
+                    $(
+                        Language::$const => paste::paste! { self.[<visit_ $const>](node, lang) },
+                    )*
+                    _ => self.visit_unknown(node, lang),
+                }
+            }
+
+            /// Visit all children of a node
+            fn visit_children(&mut self, node: &HirNode<'tcx>, lang: &mut Language<'tcx>) {
+                for id in node.children() {
+                    let child = lang.ctx.hir_node(*id);
+                    self.visit_node(child, lang);
+                }
+            }
+
+            /// Handle unknown/unrecognized token types
+            fn visit_unknown(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+                self.visit_children(&node, lang);
+            }
+
+            // Generate visit methods for each token type with visit_ prefix
+            $(
+                paste::paste! {
+                    fn [<visit_ $const>](&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+                        self.visit_children(&node, lang)
+                    }
+                }
+            )*
+        }
+    };
+}
+
+// ---------------- Token Definitions ----------------
+define_tokens! {
+    // ---------------- Text Tokens ----------------
+    (Text_fn                ,  96 , "fn"                        , HirKind::Text),
+    (Text_LPAREN            ,   4 , "("                         , HirKind::Text),
+    (Text_RPAREN            ,   5 , ")"                         , HirKind::Text),
+    (Text_LBRACE            ,   8 , "{"                         , HirKind::Text),
+    (Text_RBRACE            ,   9 , "}"                         , HirKind::Text),
+    (Text_let               , 101 , "let"                       , HirKind::Text),
+    (Text_EQ                ,  70 , "="                         , HirKind::Text),
+    (Text_SEMI              ,   2 , ";"                         , HirKind::Text),
+    (Text_COLON             ,  11 , ":"                         , HirKind::Text),
+    (Text_COMMA             ,  83 , ","                         , HirKind::Text),
+    (Text_ARROW             ,  85 , "->"                        , HirKind::Text),
+
+    // ---------------- Node Tokens ----------------
+    (integer_literal       , 127 , "integer_literal"            , HirKind::Text),
+    (identifier            ,   1 , "identifier"                 , HirKind::IdentUse),
+    (parameter             , 213 , "parameter"                  , HirKind::Internal),
+    (parameters            , 210 , "parameters"                 , HirKind::Internal),
+    (let_declaration       , 203 , "let_declaration"            , HirKind::Internal),
+    (block                 , 293 , "block"                      , HirKind::Scope),
+    (source_file           , 157 , "source_file"                , HirKind::File),
+    (function_item         , 188 , "function_item"              , HirKind::Scope),
+    (mutable_specifier     , 122 , "mutable_specifier"          , HirKind::Text),
+    (expression_statement  , 160 , "expression_statement"       , HirKind::Internal),
+    (assignment_expression , 251 , "assignment_expression"      , HirKind::Internal),
+    (binary_expression     , 250 , "binary_expression"          , HirKind::Internal),
+    (operator              ,  14 , "operator"                   , HirKind::Internal),
+    (call_expression       , 256 , "call_expression"            , HirKind::Internal),
+    (arguments             , 257 , "arguments"                  , HirKind::Internal),
+    (primitive_type        ,  32 , "primitive_type"             , HirKind::IdentUse),
+
+    // ---------------- Field IDs ----------------
+    (field_name            ,  19 , "name"                       , HirKind::Internal),
+    (field_pattern         ,  24 , "pattern"                    , HirKind::Internal),
+}
+
+// ---------------- Declaration Finder Implementation ----------------
+
+/// Visitor that finds and processes variable/function declarations
 #[derive(Debug)]
-pub struct Language<'tcx> {
-    ctx: &'tcx TyCtxt<'tcx>,
-    scope_stack: ScopeStack<'tcx>,
+pub struct DeclFinder<'tcx> {
+    pub scope_stack: ScopeStack<'tcx>,
 }
 
-impl<'tcx> Language<'tcx> {
-    pub fn new(ctx: &'tcx TyCtxt<'tcx>) -> Self {
-        Self {
-            ctx,
-            scope_stack: ScopeStack::new(&ctx.arena),
-        }
+impl<'tcx> DeclFinder<'tcx> {
+    /// Create a new DeclFinder with an empty scope stack
+    pub fn new(scope_stack: ScopeStack<'tcx>) -> Self {
+        Self { scope_stack }
     }
 
-    pub fn token_kind(&self, token_id: u16) -> HirKind {
-        AstTokenRust::from_repr(token_id)
-            .unwrap_or_else(|| panic!("unknown token {}", token_id))
-            .into()
+    /// Generate a unique mangled name for a symbol
+    fn generate_mangled_name(&self, base_name: &str, node_id: HirId) -> String {
+        format!("{}_{:x}", base_name, node_id.0)
     }
 
-    pub fn find_child_decl(&mut self, node: HirNode<'tcx>) {
-        let children = node.children();
-        for id in children {
-            let child = self.ctx.hir_node(*id);
-            self.find_decl(child);
-        }
-    }
+    /// Process a declaration by adding it to the current scope
+    fn process_declaration(
+        &mut self,
+        node: &HirNode<'tcx>,
+        field_id: u16,
+        lang: &Language<'tcx>,
+    ) -> SymId {
+        let ident = node.expect_ident_from_child(&lang.ctx, field_id);
+        let symbol = self.scope_stack.find_or_add(node.hir_id(), ident);
 
-    pub fn find_decl(&mut self, node: HirNode<'tcx>) {
-        let token_id = node.token_id();
-        let scope_depth = self.scope_stack.depth();
+        let mangled = self.generate_mangled_name(&ident.name, node.hir_id());
+        *symbol.mangled_name.borrow_mut() = mangled;
 
-        match AstTokenRust::from_repr(token_id).unwrap() {
-            AstTokenRust::function_item => {
-                let ident = node.expect_ident_from_child(&self.ctx, AstFieldRust::name as u16);
-                let sy = self.scope_stack.find_or_add(node.hir_id(), ident);
-                *sy.mangled_name.borrow_mut() = "aaaa".to_string();
-            }
-            AstTokenRust::let_declaration => {
-                let ident = node.expect_ident_from_child(&self.ctx, AstFieldRust::pattern as u16);
-                let sy = self.scope_stack.find_or_add(node.hir_id(), ident);
-            }
-            AstTokenRust::block => {
-                self.scope_stack.push_scope(node.hir_id());
-            }
-            AstTokenRust::parameter => {
-                let ident = node.expect_ident_from_child(&self.ctx, AstFieldRust::pattern as u16);
-                let sy = self.scope_stack.find_or_add(node.hir_id(), ident);
-            }
-            AstTokenRust::primitive_type | AstTokenRust::identifier => {
-                // let ident = node.expect_ident();
-                // let symbol = ctx.scope_stack.find(ident);
-                // if let Some(sym) = symbol {
-                //     sym.defined = Some(owner);
-                // } else {
-                // }
-            }
-            AstTokenRust::source_file
-            | AstTokenRust::mutable_specifier
-            | AstTokenRust::parameters
-            | AstTokenRust::integer_literal
-            | AstTokenRust::expression_statement
-            | AstTokenRust::assignment_expression
-            | AstTokenRust::binary_expression
-            | AstTokenRust::operator
-            | AstTokenRust::call_expression
-            | AstTokenRust::arguments
-            | AstTokenRust::Text_ARROW
-            | AstTokenRust::Text_EQ
-            | AstTokenRust::Text_COMMA
-            | AstTokenRust::Text_LBRACE
-            | AstTokenRust::Text_LPAREN
-            | AstTokenRust::Text_RBRACE
-            | AstTokenRust::Text_RPAREN
-            | AstTokenRust::Text_SEMI
-            | AstTokenRust::Text_let
-            | AstTokenRust::Text_fn
-            | AstTokenRust::Text_COLON => {}
-            _ => {
-                panic!(
-                    "unsupported {:?}",
-                    AstTokenRust::from_repr(token_id).unwrap()
-                )
-            }
-        }
-
-        self.find_child_decl(node);
-        self.scope_stack.pop_until(scope_depth);
+        symbol.id
     }
 }
 
-#[repr(u16)]
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    EnumString,
-    EnumIter,
-    EnumVariantNames,
-    Display,
-    FromRepr,
-    IntoStaticStr,
-)]
-#[strum(serialize_all = "snake_case")]
-#[allow(non_snake_case)]
-pub enum AstTokenRust {
-    #[strum(serialize = "fn")]
-    Text_fn = 96,
-    #[strum(serialize = "(")]
-    Text_LPAREN = 4,
-    #[strum(serialize = ")")]
-    Text_RPAREN = 5,
-    #[strum(serialize = "{")]
-    Text_LBRACE = 8,
-    #[strum(serialize = "}}")]
-    Text_RBRACE = 9,
-    #[strum(serialize = "let")]
-    Text_let = 101,
-    #[strum(serialize = "=")]
-    Text_EQ = 70,
-    #[strum(serialize = ";")]
-    Text_SEMI = 2,
-    #[strum(serialize = ":")]
-    Text_COLON = 11,
-    #[strum(serialize = ",")]
-    Text_COMMA = 83,
-    #[strum(serialize = "->")]
-    Text_ARROW = 85,
+impl<'tcx> HirVisitor<'tcx> for DeclFinder<'tcx> {
+    fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+        let depth = self.scope_stack.depth();
+        self.scope_stack.push_scope(node.hir_id());
 
-    integer_literal = 127,
-    identifier = 1,
-    parameter = 213,
-    parameters = 210,
-    let_declaration = 203,
-    block = 293,
-    source_file = 157,
-    function_item = 188,
-    mutable_specifier = 122,
-    expression_statement = 160,
-    assignment_expression = 251,
-    binary_expression = 250,
-    operator = 14,
-    call_expression = 256,
-    arguments = 257,
-    primitive_type = 32,
+        self.process_declaration(&node, Language::field_name, lang);
+
+        self.visit_children(&node, lang);
+        self.scope_stack.pop_until(depth);
+    }
+
+    fn visit_let_declaration(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+        self.process_declaration(&node, Language::field_pattern, lang);
+
+        self.visit_children(&node, lang);
+    }
+
+    fn visit_block(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+        let depth = self.scope_stack.depth();
+        self.scope_stack.push_scope(node.hir_id());
+
+        self.visit_children(&node, lang);
+
+        self.scope_stack.pop_until(depth);
+    }
+
+    fn visit_parameter(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+        self.process_declaration(&node, Language::field_pattern, lang);
+
+        self.visit_children(&node, lang);
+    }
 }
 
-#[repr(u16)]
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    EnumString,
-    EnumIter,
-    EnumVariantNames,
-    Display,
-    FromRepr,
-    IntoStaticStr,
-)]
-#[strum(serialize_all = "snake_case")]
-#[allow(non_snake_case)]
-pub enum AstFieldRust {
-    #[strum(serialize = "name")]
-    name = 19,
-    pattern = 24,
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-impl From<AstTokenRust> for HirKind {
-    fn from(token: AstTokenRust) -> Self {
-        match token {
-            AstTokenRust::source_file => HirKind::File,
-            AstTokenRust::function_item => HirKind::Scope,
-            AstTokenRust::block => HirKind::Scope,
-            AstTokenRust::let_declaration => HirKind::Internal,
-            AstTokenRust::expression_statement => HirKind::Internal,
-            AstTokenRust::assignment_expression => HirKind::Internal,
-            AstTokenRust::binary_expression => HirKind::Internal,
-            AstTokenRust::operator => HirKind::Internal,
-            AstTokenRust::call_expression => HirKind::Internal,
-            AstTokenRust::arguments => HirKind::Internal,
-            AstTokenRust::primitive_type => HirKind::IdentUse,
-            AstTokenRust::parameters => HirKind::Internal,
-            AstTokenRust::parameter => HirKind::Internal,
-            AstTokenRust::identifier => HirKind::IdentUse,
-            AstTokenRust::integer_literal => HirKind::Text,
-            AstTokenRust::mutable_specifier => HirKind::Text,
-            AstTokenRust::Text_fn
-            | AstTokenRust::Text_LPAREN
-            | AstTokenRust::Text_RPAREN
-            | AstTokenRust::Text_LBRACE
-            | AstTokenRust::Text_RBRACE
-            | AstTokenRust::Text_let
-            | AstTokenRust::Text_EQ
-            | AstTokenRust::Text_ARROW
-            | AstTokenRust::Text_COLON
-            | AstTokenRust::Text_COMMA
-            | AstTokenRust::Text_SEMI => HirKind::Text,
-        }
+    #[test]
+    fn test_token_constants() {
+        assert_eq!(Language::Text_fn, 96);
+        assert_eq!(Language::identifier, 1);
+        assert_eq!(Language::function_item, 188);
+    }
+
+    #[test]
+    fn test_hir_kind_mapping() {
+        assert_eq!(Language::hir_kind(Language::Text_fn), HirKind::Text);
+        assert_eq!(Language::hir_kind(Language::block), HirKind::Scope);
+        assert_eq!(Language::hir_kind(999), HirKind::Internal);
+    }
+
+    #[test]
+    fn test_token_str() {
+        assert_eq!(Language::token_str(Language::Text_fn), Some("fn"));
+        assert_eq!(Language::token_str(Language::Text_LPAREN), Some("("));
+        assert_eq!(Language::token_str(999), None);
+    }
+
+    #[test]
+    fn test_valid_token() {
+        assert!(Language::is_valid_token(Language::Text_fn));
+        assert!(Language::is_valid_token(Language::identifier));
+        assert!(!Language::is_valid_token(999));
     }
 }
