@@ -1,208 +1,179 @@
-use std::collections::HashMap;
+use std::cell::{Cell, RefCell};
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::{collections::HashMap, marker::PhantomData};
 
-use crate::{
-    arena::{HirArena, NodeId, ScopeId, SymbolId},
-    ir::HirIdPtr,
-};
+use crate::ir::{Arena, HirId, HirIdent};
 
-#[derive(Debug, Clone)]
-pub struct Scope {
-    // The symbol defines this scope
-    pub owner: Option<SymbolId>,
-    // Parent scope ID
-    pub parent: Option<ScopeId>,
-    // all symbols in this scope
-    pub symbols: HashMap<String, SymbolId>,
-    // The ast node owns this scope
-    pub ast_node: Option<NodeId>,
+static NEXT_SYMBOL_ID: AtomicU32 = AtomicU32::new(0);
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+pub struct SymId(pub u32);
+
+#[derive(Debug)]
+pub struct Scope<'tcx> {
+    pub symbol_defs: HashMap<SymId, &'tcx Symbol<'tcx>>,
+    pub symbol_map: HashMap<String, SymId>,
+    pub owner: HirId,
 }
 
-impl Scope {
-    pub fn new(arena: &mut HirArena, owner: Option<SymbolId>) -> ScopeId {
-        let scope = Scope {
+impl<'tcx> Scope<'tcx> {
+    pub fn new(owner: HirId) -> Self {
+        Self {
+            symbol_defs: HashMap::new(),
+            symbol_map: HashMap::new(),
             owner,
-            parent: None,
-            symbols: HashMap::new(),
-            ast_node: None,
-        };
-        arena.add_scope(scope)
+        }
     }
 
-    pub fn add_symbol(&mut self, name: String, symbol_id: SymbolId) {
-        self.symbols.insert(name, symbol_id);
+    pub fn insert_symbol(&mut self, name: String, symbol: &'tcx Symbol<'tcx>) -> SymId {
+        let sym_id = symbol.id;
+        self.symbol_defs.insert(sym_id, symbol);
+        self.symbol_map.insert(name, sym_id);
+        sym_id
+    }
+
+    pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
+        self.symbol_map.get(name).copied()
+    }
+
+    pub fn find_symbol(&self, name: &str) -> Option<&'tcx Symbol<'tcx>> {
+        self.symbol_map
+            .get(name)
+            .and_then(|sym_id| self.symbol_defs.get(sym_id))
+            .map(|s| &**s)
+    }
+
+    pub fn get_symbol(&self, sym_id: SymId) -> Option<&Symbol<'tcx>> {
+        self.symbol_defs.get(&sym_id).map(|s| &**s)
     }
 }
 
 #[derive(Debug)]
-pub struct ScopeStack {
-    scopes: Vec<ScopeId>,
-    current_scope: ScopeId,
+pub struct ScopeStack<'tcx> {
+    pub arena: &'tcx Arena<'tcx>,
+    pub scopes: Vec<Scope<'tcx>>,
 }
 
-impl ScopeStack {
-    pub fn new(root_scope: ScopeId) -> Self {
+impl<'tcx> ScopeStack<'tcx> {
+    pub fn new(arena: &'tcx Arena<'tcx>) -> Self {
         Self {
-            scopes: vec![root_scope],
-            current_scope: root_scope,
+            arena,
+            scopes: Vec::new(),
         }
     }
 
-    pub fn scope_depth(&self) -> usize {
+    pub fn depth(&self) -> usize {
         self.scopes.len()
     }
 
+    pub fn push_scope(&mut self, owner: HirId) {
+        self.scopes.push(Scope::new(owner));
+    }
+
+    pub fn pop_scope(&mut self) -> Option<Scope<'tcx>> {
+        self.scopes.pop()
+    }
+
     pub fn pop_until(&mut self, depth: usize) {
-        while self.scope_depth() > depth {
-            self.leave_scope();
+        while self.depth() > depth {
+            self.pop_scope();
         }
     }
 
-    pub fn reset_stack(&mut self, root_scope: ScopeId) {
-        self.current_scope = root_scope;
-        self.scopes.clear();
-        self.scopes.push(root_scope);
+    pub fn top(&self) -> Option<&Scope<'tcx>> {
+        self.scopes.last()
     }
 
-    pub fn enter_scope(&mut self, arena: &mut HirArena, scope_id: ScopeId) {
-        {
-            if let Some(scope) = arena.get_scope_mut(scope_id) {
-                scope.parent = Some(self.current_scope);
+    pub fn top_mut(&mut self) -> Option<&mut Scope<'tcx>> {
+        self.scopes.last_mut()
+    }
+
+    pub fn insert_symbol(
+        &mut self,
+        name: String,
+        symbol: &'tcx Symbol<'tcx>,
+    ) -> Result<SymId, &'static str> {
+        if let Some(scope) = self.scopes.last_mut() {
+            Ok(scope.insert_symbol(name, symbol))
+        } else {
+            Err("No scope available to insert symbol")
+        }
+    }
+
+    pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
+        for scope in self.scopes.iter().rev() {
+            if let Some(sym_id) = scope.find_symbol_id(name) {
+                return Some(sym_id);
             }
         }
-
-        self.scopes.push(scope_id);
-        self.current_scope = scope_id;
-    }
-
-    pub fn leave_scope(&mut self) {
-        if self.scopes.len() <= 1 {
-            panic!("already at root scope");
-        }
-
-        self.scopes.pop();
-        self.current_scope = self.scopes[self.scopes.len() - 1];
-    }
-
-    pub fn find_or_add(&mut self, arena: &mut HirArena, node: HirIdPtr) -> SymbolId {
-        if let Some(id) = self.lookup(arena, &node) {
-            id
-        } else {
-            let id = node.borrow().symbol;
-            self.add_symbol(arena, id);
-            id
-        }
-    }
-
-    pub fn find(&mut self, arena: &mut HirArena, node: HirIdPtr) -> Option<SymbolId> {
-        if let Some(id) = self.lookup(arena, &node) {
-            Some(id)
-        } else {
-            None
-        }
-    }
-
-    pub fn add_symbol(&mut self, arena: &mut HirArena, symbol_id: SymbolId) {
-        let symbol_name = if let Some(symbol) = arena.get_symbol(symbol_id) {
-            symbol.name.clone()
-        } else {
-            return;
-        };
-
-        if let Some(scope) = arena.get_scope_mut(self.current_scope) {
-            scope.add_symbol(symbol_name, symbol_id);
-        }
-    }
-
-    pub fn lookup(&self, arena: &mut HirArena, node: &HirIdPtr) -> Option<SymbolId> {
-        let name = node.borrow().get_symbol_name(arena);
-        let mut current_scope_id = self.current_scope;
-
-        loop {
-            if let Some(scope) = arena.get_scope(current_scope_id) {
-                if let Some(&symbol_id) = scope.symbols.get(&name) {
-                    return Some(symbol_id);
-                }
-
-                if let Some(parent_id) = scope.parent {
-                    current_scope_id = parent_id;
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-
         None
     }
-}
 
-#[derive(Debug, Clone)]
-struct Field {
-    value: u16,
-}
+    pub fn find(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol<'tcx>> {
+        let name = &ident.name;
+        for scope in self.scopes.iter().rev() {
+            if let Some(symbol) = scope.find_symbol(name) {
+                return Some(symbol);
+            }
+        }
+        None
+    }
 
-#[derive(Debug, Clone, Default)]
-struct Token {
-    value: u16,
-}
+    pub fn find_by_id(&self, sym_id: SymId) -> Option<&Symbol<'tcx>> {
+        for scope in self.scopes.iter().rev() {
+            if let Some(symbol) = scope.get_symbol(sym_id) {
+                return Some(symbol);
+            }
+        }
+        None
+    }
 
-impl Token {
-    fn new(id: u16) -> Self {
-        Token { value: id }
+    pub fn find_or_add(&mut self, id: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol<'tcx> {
+        if self.find(ident).is_some() {
+            return self.find(ident).unwrap();
+        }
+
+        let symbol = Symbol::new(self.arena, id, ident.name.clone());
+        self.insert_symbol(ident.name.clone(), symbol);
+        self.find(ident).unwrap()
     }
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct Symbol {
-    // the node owner this sybmol,
-    pub owner: NodeId,
-    // the id where this symbol is stored at arena,
-    pub id: SymbolId,
-    // Token identifier
-    pub token_id: Token,
-    // The name of the symbol
+#[derive(Debug)]
+pub struct Symbol<'tcx> {
+    pub id: SymId,
+    pub owner: HirId,
     pub name: String,
-    // full mangled name, used for resolve symbols overloads etc
-    pub mangled_name: String,
-    // The typed name, for different funcion with same name etcc
-    // pub typed_name: TypedName,
-    // The point from the source code
-    // pub origin: Point,
-    // The ast node that defines this symbol
-    pub defined: Option<NodeId>,
-    // The type of this symbol, if any
-    pub type_of: Option<SymbolId>,
-    // The field this symbol belongs to, if any
-    pub field_of: Option<SymbolId>,
-    // The base this symbol derived from, if any
-    pub base_symbol: Option<SymbolId>,
-    // All overloads for this symbol, if exists
-    pub overloads: Vec<SymbolId>,
-    // The list of nested types inside this symbol
-    pub nested_types: Vec<SymbolId>,
+    pub mangled_name: RefCell<String>,
+    pub defined: Cell<Option<HirId>>,
+    pub type_of: Cell<Option<SymId>>,
+    pub field_of: Cell<Option<SymId>>,
+    pub base_symbol: Cell<Option<SymId>>,
+    pub overloads: RefCell<Vec<SymId>>,
+    pub nested_types: RefCell<Vec<SymId>>,
+    ph: PhantomData<&'tcx ()>,
 }
 
-impl std::fmt::Display for Symbol {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "({:?}:{},{})",
-            self.token_id, self.name, self.mangled_name
-        )
-    }
-}
+impl<'tcx> Symbol<'tcx> {
+    pub fn new(arena: &'tcx Arena<'tcx>, owner: HirId, name: String) -> &'tcx Symbol<'tcx> {
+        let id = NEXT_SYMBOL_ID.load(Ordering::SeqCst);
+        let sym_id = SymId(id);
+        NEXT_SYMBOL_ID.store(id + 1, Ordering::SeqCst);
 
-impl Symbol {
-    pub fn new(arena: &mut HirArena, token_id: u16, name: String, owner: NodeId) -> SymbolId {
-        let id = arena.get_next_symbol_id();
         let symbol = Symbol {
-            token_id: Token::new(token_id),
-            name,
-            id,
+            id: sym_id,
             owner,
-            ..Default::default()
+            name: name.clone(),
+            mangled_name: RefCell::new(name),
+            defined: Cell::new(None),
+            type_of: Cell::new(None),
+            field_of: Cell::new(None),
+            base_symbol: Cell::new(None),
+            overloads: RefCell::new(Vec::new()),
+            nested_types: RefCell::new(Vec::new()),
+            ph: PhantomData,
         };
-        arena.add_symbol(symbol)
+
+        arena.alloc(symbol)
     }
 }

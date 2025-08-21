@@ -1,7 +1,9 @@
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
-use tree_sitter::Point;
+use tree_sitter::{Node, Point};
 
+use crate::context::TyCtxt;
 use crate::declare_arena;
+use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
 declare_arena!([
@@ -11,6 +13,7 @@ declare_arena!([
     hir_scope: HirScope<'tcx>,
     hir_file: HirFile<'tcx>,
     hir_ident: HirIdent<'tcx>,
+    symbol: Symbol<'tcx>,
 ]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
@@ -78,60 +81,84 @@ impl<'hir> HirNode<'hir> {
         self.kind() == kind
     }
 
+    pub fn field_id(&self) -> u16 {
+        self.base().unwrap().field_id
+    }
+
     /// Get children of this node
-    pub fn children(&self) -> &[HirNode<'hir>] {
+    pub fn children(&self) -> &[HirId] {
         self.base().map_or(&[], |base| &base.children)
     }
-}
 
-#[derive(Debug, Clone, Default)]
-pub struct HirBase<'hir> {
-    pub token_id: u16,
-    pub field_id: u16,
-    pub kind: HirKind,
-    pub start_pos: Point,
-    pub end_pos: Point,
-    pub start_byte: usize,
-    pub end_byte: usize,
-    pub children: Vec<HirNode<'hir>>,
-}
+    pub fn token_id(&self) -> u16 {
+        self.base().unwrap().node.kind_id()
+    }
 
-impl<'hir> HirBase<'hir> {
-    pub fn new(
-        token_id: u16,
+    pub fn hir_id(&self) -> HirId {
+        self.base().unwrap().hir_id
+    }
+
+    pub fn expect_ident_from_child(
+        &self,
+        ctx: &TyCtxt<'hir>,
         field_id: u16,
-        kind: HirKind,
-        start_pos: Point,
-        end_pos: Point,
-        start_byte: usize,
-        end_byte: usize,
-    ) -> Self {
-        Self {
-            token_id,
-            field_id,
-            kind,
-            start_pos,
-            end_pos,
-            start_byte,
-            end_byte,
-            children: Vec::new(),
+    ) -> &'hir HirIdent<'hir> {
+        self.children()
+            .iter()
+            .map(|id| ctx.hir_node(*id))
+            .find(|child| child.field_id() == field_id)
+            .map(|child| child.expect_ident())
+            .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
+    }
+}
+
+macro_rules! impl_getters {
+    ($($variant:ident => $type:ty),* $(,)?) => {
+        impl<'hir> HirNode<'hir> {
+            $(
+                paste::paste! {
+                    pub fn [<as_ $variant:lower>](&self) -> Option<$type> {
+                        match self {
+                            HirNode::$variant(r) => Some(r),
+                            _ => None,
+                        }
+                    }
+
+                    pub fn [<expect_ $variant:lower>](&self) -> $type {
+                        match self {
+                            HirNode::$variant(r) => r,
+                            _ => panic!("Expected {} variant", stringify!($variant)),
+                        }
+                    }
+
+                    pub fn [<is_ $variant:lower>](&self) -> bool {
+                        matches!(self, HirNode::$variant(_))
+                    }
+                }
+            )*
         }
-    }
+    };
+}
 
-    /// Add a child to this node
-    pub fn add_child(&mut self, child: HirNode<'hir>) {
-        self.children.push(child);
-    }
+impl_getters! {
+    Root => &'hir HirRoot<'hir>,
+    Text => &'hir HirText<'hir>,
+    Internal => &'hir HirInternal<'hir>,
+    Scope => &'hir HirScope<'hir>,
+    File => &'hir HirFile<'hir>,
+    Ident => &'hir HirIdent<'hir>,
+}
 
-    /// Get the text span covered by this node
-    pub fn span(&self) -> (usize, usize) {
-        (self.start_byte, self.end_byte)
-    }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+pub struct HirId(pub u32);
 
-    /// Get the line span covered by this node
-    pub fn line_span(&self) -> (usize, usize) {
-        (self.start_pos.row, self.end_pos.row)
-    }
+#[derive(Debug, Clone)]
+pub struct HirBase<'hir> {
+    pub hir_id: HirId,
+    pub node: Node<'hir>,
+    pub kind: HirKind,
+    pub field_id: u16,
+    pub children: Vec<HirId>,
 }
 
 #[derive(Debug, Clone)]
@@ -174,12 +201,11 @@ impl<'hir> HirInternal<'hir> {
 #[derive(Debug, Clone)]
 pub struct HirScope<'hir> {
     pub base: HirBase<'hir>,
-    pub scope_type: String,
 }
 
 impl<'hir> HirScope<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>, scope_type: String) -> HirNode<'hir> {
-        let scope = Self { base, scope_type };
+    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>) -> HirNode<'hir> {
+        let scope = Self { base };
         HirNode::Scope(arena.alloc(scope))
     }
 }
@@ -204,8 +230,12 @@ pub struct HirIdent<'hir> {
 }
 
 impl<'hir> HirIdent<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>, name: String) -> HirNode<'hir> {
+    pub fn new(
+        arena: &'hir Arena<'hir>,
+        base: HirBase<'hir>,
+        name: String,
+    ) -> &'hir HirIdent<'hir> {
         let ident = Self { base, name };
-        HirNode::Ident(arena.alloc(ident))
+        arena.alloc(ident)
     }
 }

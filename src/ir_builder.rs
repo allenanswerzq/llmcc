@@ -1,18 +1,32 @@
+use std::collections::HashMap;
+
 use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 use crate::ir::{
-    Arena, HirBase, HirFile, HirIdent, HirInternal, HirKind, HirNode, HirRoot, HirScope, HirText,
+    Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirRoot, HirScope,
+    HirText,
 };
+
+struct ParentedNode<'tcx> {
+    parent: HirId,
+    node: HirNode<'tcx>,
+}
 
 // #[derive(Debug)]
 struct HirBuilder<'tcx> {
-    // context: &'a mut AstContext,
+    context: &'tcx mut AstContext,
     arena: &'tcx Arena<'tcx>,
+    id: u32,
+    hir_map: HashMap<HirId, ParentedNode<'tcx>>,
 }
 
 impl<'tcx> HirBuilder<'tcx> {
     fn new(arena: &'tcx Arena<'tcx>) -> Self {
-        Self { arena }
+        Self {
+            arena,
+            id: 0,
+            hir_map: HashMap::new(),
+        }
     }
 
     fn create_hir(&mut self, base: HirBase<'tcx>, node: &Node, kind: HirKind) -> HirNode<'tcx> {
@@ -23,16 +37,7 @@ impl<'tcx> HirBuilder<'tcx> {
                 HirText::new(self.arena, base, "NONE".into())
             }
             HirKind::Internal => HirInternal::new(self.arena, base),
-            HirKind::Scope => {
-                HirText::new(self.arena, base, "NONE".into())
-                // let text = self.context.file.get_text(base.start_byte, base.end_byte);
-                // let id = self.arena.get_next_node_id();
-                // let symbol = Symbol::new(self.arena, base.token_id, "NONE".into(), id);
-                // let scope = Scope::new(self.arena, Some(symbol));
-                // let scope_node = HirScope::new(self.arena, base, scope, None);
-                // self.arena.get_scope_mut(scope).unwrap().ast_node = Some(scope_node);
-                // scope_node
-            }
+            HirKind::Scope => HirScope::new(self.arena, base),
             HirKind::IdentUse => {
                 HirText::new(self.arena, base, "NONE".into())
                 // let text = self.context.file.get_text(base.start_byte, base.end_byte);
@@ -47,11 +52,19 @@ impl<'tcx> HirBuilder<'tcx> {
         }
     }
 
-    fn create_base(&self, node: &Node, kind: HirKind) -> HirBase<'tcx> {
+    fn next_id(&mut self) -> HirId {
+        let ans = HirId(self.id);
+        self.id += 1;
+        ans
+    }
+
+    fn create_base(&mut self, node: &Node, kind: HirKind) -> HirBase<'tcx> {
         let token_id = node.kind_id();
         let field_id = self.field_id_of(&node).unwrap_or(65535);
+        let hir_id = self.next_id();
 
         HirBase {
+            hir_id,
             token_id,
             field_id: field_id,
             kind,
@@ -81,19 +94,19 @@ impl<'tcx> HirBuilder<'tcx> {
         None
     }
 
-    fn visit_node(&mut self, node: &mut Node<'tcx>) -> HirNode<'tcx> {
+    fn visit_node(&mut self, node: &mut Node<'tcx>, parent: HirId) -> HirId {
         let mut cursor = node.walk();
         let children: Vec<_> = node.children(&mut cursor).collect();
         let mut hir_children = vec![];
         for mut child in children {
-            hir_children.push(self.visit_node(&mut child));
+            hir_children.push(self.visit_node(&mut child, parent));
         }
-
         // let kind = self.context.language.get_token_kind(token_id);
         let kind = HirKind::Comment;
         let mut base = self.create_base(&node, kind);
         base.children = hir_children;
-        self.create_hir(base, &node, kind)
+        let node = self.create_hir(base, &node, kind);
+        base.hir_id
     }
 }
 

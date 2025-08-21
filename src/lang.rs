@@ -1,111 +1,67 @@
 use std::panic;
-
-use crate::{
-    HirArena,
-    arena::{NodeId, ScopeId},
-    ir::{File, HirId, HirKind, HirKindNode, HirTree},
-    symbol::{Scope, ScopeStack},
-};
-
+use std::{collections::HashMap, marker::PhantomData};
 use strum_macros::{Display, EnumIter, EnumString, EnumVariantNames, FromRepr, IntoStaticStr};
 
+use crate::context::TyCtxt;
+use crate::ir::{HirId, HirIdent, HirKind, HirNode};
+use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
+
 #[derive(Debug)]
-pub struct AstContext {
-    pub language: Language,
-    pub file: File,
+pub struct Language<'tcx> {
+    ctx: &'tcx TyCtxt<'tcx>,
+    scope_stack: ScopeStack<'tcx>,
 }
 
-impl AstContext {
-    pub fn from_source(source: &[u8]) -> AstContext {
-        AstContext {
-            language: Language::new(),
-            file: File::new_source(source.to_vec()),
+impl<'tcx> Language<'tcx> {
+    pub fn new(ctx: &'tcx TyCtxt<'tcx>) -> Self {
+        Self {
+            ctx,
+            scope_stack: ScopeStack::new(&ctx.arena),
         }
     }
-}
 
-#[derive(Debug)]
-pub struct Language {}
-
-impl Language {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn get_token_kind(&self, token_id: u16) -> HirKind {
+    pub fn token_kind(&self, token_id: u16) -> HirKind {
         AstTokenRust::from_repr(token_id)
-            .expect(&format!("unknown token id: {}", token_id))
+            .unwrap_or_else(|| panic!("unknown token {}", token_id))
             .into()
     }
 
-    pub fn find_child_declaration(
-        &self,
-        arena: &mut HirArena,
-        scope_stack: &mut ScopeStack,
-        node: HirKindNode,
-    ) {
-        let children = node.children(arena);
-        for child in children {
-            self.find_declaration(arena, scope_stack, child);
+    pub fn find_child_decl(&mut self, node: HirNode<'tcx>) {
+        let children = node.children();
+        for id in children {
+            let child = self.ctx.hir_node(*id);
+            self.find_decl(child);
         }
     }
 
-    pub fn find_declaration(
-        &self,
-        arena: &mut HirArena,
-        scope_stack: &mut ScopeStack,
-        mut node: HirKindNode,
-    ) {
-        let token_id = node.get_base().token_id;
-        let scope_depth = scope_stack.scope_depth();
+    pub fn find_decl(&mut self, node: HirNode<'tcx>) {
+        let token_id = node.token_id();
+        let scope_depth = self.scope_stack.depth();
 
         match AstTokenRust::from_repr(token_id).unwrap() {
             AstTokenRust::function_item => {
-                let name = node.unwrap_identifier(arena, AstFieldRust::name as u16);
-                name.borrow_mut()
-                    .upgrade_identifier_to_def(arena, node.get_id());
-                scope_stack.find_or_add(arena, name);
-
-                let sn = node.expect_scope();
-                sn.borrow_mut().name = Some(node.get_id());
-
-                // let symbol = self.arena.get_symbol_mut(symbol).unwrap();
-                // TODO:
-                // symbol.mangled_name =
+                let ident = node.expect_ident_from_child(&self.ctx, AstFieldRust::name as u16);
+                let sy = self.scope_stack.find_or_add(node.hir_id(), ident);
+                *sy.mangled_name.borrow_mut() = "aaaa".to_string();
             }
             AstTokenRust::let_declaration => {
-                let name = node.unwrap_identifier(arena, AstFieldRust::pattern as u16);
-                name.borrow_mut()
-                    .upgrade_identifier_to_def(arena, node.get_id());
-                scope_stack.find_or_add(arena, name.clone());
-
-                let internal = node.expect_internal();
-                internal.borrow_mut().name = Some(node.get_id());
+                let ident = node.expect_ident_from_child(&self.ctx, AstFieldRust::pattern as u16);
+                let sy = self.scope_stack.find_or_add(node.hir_id(), ident);
             }
             AstTokenRust::block => {
-                let new_scope = Scope::new(arena, None);
-                scope_stack.enter_scope(arena, new_scope);
+                self.scope_stack.push_scope(node.hir_id());
             }
             AstTokenRust::parameter => {
-                let name = node.unwrap_identifier(arena, AstFieldRust::pattern as u16);
-                name.borrow_mut()
-                    .upgrade_identifier_to_def(arena, node.get_id());
-                let symbol = scope_stack.find_or_add(arena, name);
-
-                let internal = node.expect_internal();
-                internal.borrow_mut().name = Some(node.get_id());
+                let ident = node.expect_ident_from_child(&self.ctx, AstFieldRust::pattern as u16);
+                let sy = self.scope_stack.find_or_add(node.hir_id(), ident);
             }
             AstTokenRust::primitive_type | AstTokenRust::identifier => {
-                let id = node.expect_identifier();
-                let symbol = scope_stack.find(arena, id.clone());
-                if let Some(found_id) = symbol {
-                    let owner = arena.get_symbol_mut(found_id).unwrap().owner;
-                    let symbol = arena.get_symbol_mut(id.borrow().symbol).unwrap();
-                    // this is a use of symbol, and its defined by another symbol
-                    symbol.defined = Some(owner);
-                } else {
-                    println!("not find symbol: {}", node.format_node(arena))
-                }
+                // let ident = node.expect_ident();
+                // let symbol = ctx.scope_stack.find(ident);
+                // if let Some(sym) = symbol {
+                //     sym.defined = Some(owner);
+                // } else {
+                // }
             }
             AstTokenRust::source_file
             | AstTokenRust::mutable_specifier
@@ -136,8 +92,8 @@ impl Language {
             }
         }
 
-        self.find_child_declaration(arena, scope_stack, node);
-        scope_stack.pop_until(scope_depth);
+        self.find_child_decl(node);
+        self.scope_stack.pop_until(scope_depth);
     }
 }
 
@@ -234,10 +190,10 @@ impl From<AstTokenRust> for HirKind {
             AstTokenRust::operator => HirKind::Internal,
             AstTokenRust::call_expression => HirKind::Internal,
             AstTokenRust::arguments => HirKind::Internal,
-            AstTokenRust::primitive_type => HirKind::IdentifierUse,
+            AstTokenRust::primitive_type => HirKind::IdentUse,
             AstTokenRust::parameters => HirKind::Internal,
             AstTokenRust::parameter => HirKind::Internal,
-            AstTokenRust::identifier => HirKind::IdentifierUse,
+            AstTokenRust::identifier => HirKind::IdentUse,
             AstTokenRust::integer_literal => HirKind::Text,
             AstTokenRust::mutable_specifier => HirKind::Text,
             AstTokenRust::Text_fn

@@ -1,5 +1,3 @@
-/// Simple adopted from the rustc_arena
-///
 #[macro_export]
 macro_rules! declare_arena {
     ([$($name:ident : $ty:ty),* $(,)?]) => {
@@ -7,6 +5,12 @@ macro_rules! declare_arena {
         pub struct Arena<'tcx> {
             $( pub $name : typed_arena::Arena<$ty>, )*
             _marker: std::marker::PhantomData<&'tcx ()>,
+        }
+
+        impl<'tcx> std::fmt::Debug for Arena<'tcx> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.debug_struct("Arena").finish()
+            }
         }
 
         pub trait ArenaAllocatable<'tcx>: Sized {
