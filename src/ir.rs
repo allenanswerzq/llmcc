@@ -1,7 +1,7 @@
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use tree_sitter::{Node, Point};
 
-use crate::context::TyCtxt;
+use crate::context::LangContext;
 use crate::declare_arena;
 use crate::symbol::Symbol;
 
@@ -100,7 +100,7 @@ impl<'hir> HirNode<'hir> {
 
     pub fn expect_ident_from_child(
         &self,
-        ctx: &TyCtxt<'hir>,
+        ctx: &LangContext<'hir>,
         field_id: u16,
     ) -> &'hir HirIdent<'hir> {
         self.children()
@@ -167,9 +167,8 @@ pub struct HirRoot<'hir> {
 }
 
 impl<'hir> HirRoot<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>) -> HirNode<'hir> {
-        let root = Self { base };
-        HirNode::Root(arena.alloc(root))
+    pub fn new(base: HirBase<'hir>) -> Self {
+        Self { base }
     }
 }
 
@@ -180,9 +179,8 @@ pub struct HirText<'hir> {
 }
 
 impl<'hir> HirText<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>, text: String) -> HirNode<'hir> {
-        let text = Self { base, text };
-        HirNode::Text(arena.alloc(text))
+    pub fn new(base: HirBase<'hir>, text: String) -> Self {
+        Self { base, text }
     }
 }
 
@@ -192,9 +190,8 @@ pub struct HirInternal<'hir> {
 }
 
 impl<'hir> HirInternal<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>) -> HirNode<'hir> {
-        let internal = Self { base };
-        HirNode::Internal(arena.alloc(internal))
+    pub fn new(base: HirBase<'hir>) -> Self {
+        Self { base }
     }
 }
 
@@ -204,9 +201,8 @@ pub struct HirScope<'hir> {
 }
 
 impl<'hir> HirScope<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>) -> HirNode<'hir> {
-        let scope = Self { base };
-        HirNode::Scope(arena.alloc(scope))
+    pub fn new(base: HirBase<'hir>) -> Self {
+        Self { base }
     }
 }
 
@@ -217,9 +213,8 @@ pub struct HirIdent<'hir> {
 }
 
 impl<'hir> HirIdent<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>, name: String) -> HirNode<'hir> {
-        let ident = Self { base, name };
-        HirNode::Ident(arena.alloc(ident))
+    pub fn new(base: HirBase<'hir>, name: String) -> Self {
+        Self { base, name }
     }
 }
 
@@ -230,8 +225,7 @@ pub struct HirFile<'hir> {
 }
 
 impl<'hir> HirFile<'hir> {
-    pub fn new(arena: &'hir Arena<'hir>, base: HirBase<'hir>, file_path: String) -> HirNode<'hir> {
-        let file = Self { base, file_path };
-        HirNode::File(arena.alloc(file))
+    pub fn new(base: HirBase<'hir>, file_path: String) -> Self {
+        Self { base, file_path }
     }
 }

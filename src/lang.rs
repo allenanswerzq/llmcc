@@ -2,93 +2,10 @@ use paste::paste;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use crate::context::TyCtxt;
+use crate::context::LangContext;
+use crate::define_tokens;
 use crate::ir::{HirId, HirIdent, HirKind, HirNode};
 use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
-
-macro_rules! define_tokens {
-    (
-        $( ($const:ident, $id:expr, $str:expr, $kind:expr) ),* $(,)?
-    ) => {
-        /// Language context for HIR processing
-        #[derive(Debug)]
-        pub struct Language<'tcx> {
-            pub ctx: &'tcx TyCtxt<'tcx>,
-        }
-
-        impl<'tcx> Language<'tcx> {
-            /// Create a new Language instance
-            pub fn new(ctx: &'tcx TyCtxt<'tcx>) -> Self {
-                Self { ctx }
-            }
-
-            // Generate token ID constants
-            $(
-                pub const $const: u16 = $id;
-            )*
-
-            /// Get the HIR kind for a given token ID
-            pub fn hir_kind(&self, token_id: u16) -> HirKind {
-                match token_id {
-                    $(
-                        Self::$const => $kind,
-                    )*
-                    _ => HirKind::Internal,
-                }
-            }
-
-            /// Get the string representation of a token ID
-            pub fn token_str(&self, token_id: u16) -> Option<&'static str> {
-                match token_id {
-                    $(
-                        Self::$const => Some($str),
-                    )*
-                    _ => None,
-                }
-            }
-
-            /// Check if a token ID is valid
-            pub fn is_valid_token(&self, token_id: u16) -> bool {
-                matches!(token_id, $(Self::$const)|*)
-            }
-        }
-
-        /// Trait for visiting HIR nodes with type-specific dispatch
-        pub trait HirVisitor<'tcx> {
-            /// Visit a node, dispatching to the appropriate method based on token ID
-            fn visit_node(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
-                match node.token_id() {
-                    $(
-                        Language::$const => paste::paste! { self.[<visit_ $const>](node, lang) },
-                    )*
-                    _ => self.visit_unknown(node, lang),
-                }
-            }
-
-            /// Visit all children of a node
-            fn visit_children(&mut self, node: &HirNode<'tcx>, lang: &mut Language<'tcx>) {
-                for id in node.children() {
-                    let child = lang.ctx.hir_node(*id);
-                    self.visit_node(child, lang);
-                }
-            }
-
-            /// Handle unknown/unrecognized token types
-            fn visit_unknown(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
-                self.visit_children(&node, lang);
-            }
-
-            // Generate visit methods for each token type with visit_ prefix
-            $(
-                paste::paste! {
-                    fn [<visit_ $const>](&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
-                        self.visit_children(&node, lang)
-                    }
-                }
-            )*
-        }
-    };
-}
 
 define_tokens! {
     // ---------------- Text Tokens ----------------
@@ -129,7 +46,7 @@ define_tokens! {
 
 /// Visitor that finds and processes variable/function declarations
 #[derive(Debug)]
-pub struct DeclFinder<'tcx> {
+struct DeclFinder<'tcx> {
     pub scope_stack: ScopeStack<'tcx>,
 }
 
@@ -162,7 +79,7 @@ impl<'tcx> DeclFinder<'tcx> {
 }
 
 impl<'tcx> HirVisitor<'tcx> for DeclFinder<'tcx> {
-    fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+    fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
         let depth = self.scope_stack.depth();
         self.scope_stack.push_scope(node.hir_id());
 
@@ -172,13 +89,13 @@ impl<'tcx> HirVisitor<'tcx> for DeclFinder<'tcx> {
         self.scope_stack.pop_until(depth);
     }
 
-    fn visit_let_declaration(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+    fn visit_let_declaration(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
         self.process_declaration(&node, Language::field_pattern, lang);
 
         self.visit_children(&node, lang);
     }
 
-    fn visit_block(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+    fn visit_block(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
         let depth = self.scope_stack.depth();
         self.scope_stack.push_scope(node.hir_id());
 
@@ -187,7 +104,7 @@ impl<'tcx> HirVisitor<'tcx> for DeclFinder<'tcx> {
         self.scope_stack.pop_until(depth);
     }
 
-    fn visit_parameter(&mut self, node: HirNode<'tcx>, lang: &mut Language<'tcx>) {
+    fn visit_parameter(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
         self.process_declaration(&node, Language::field_pattern, lang);
 
         self.visit_children(&node, lang);

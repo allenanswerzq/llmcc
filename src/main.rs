@@ -1,4 +1,5 @@
 use llmcc::*;
+use tree_sitter::Language;
 
 fn main() {
     let source_code = r#"
@@ -20,7 +21,7 @@ fn main() {
     parser.set_language(&lang).unwrap();
 
     let tree = parser.parse(source_code, None).unwrap();
-    let mut context = TyCtxt::from_source(source_code.as_bytes());
-    // print_ast(&tree, &mut context);
-    build_llmcc_ir(&tree, &mut context).unwrap();
+    let mut context = Context::from_source(source_code.as_bytes());
+    // print_ast(&tree, &context);
+    build_llmcc_ir(&tree, &mut context).unwrap()
 }
