@@ -2,7 +2,7 @@ use paste::paste;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use crate::context::LangContext;
+use crate::context::Context;
 use crate::define_tokens;
 use crate::ir::{HirId, HirIdent, HirKind, HirNode};
 use crate::symbol::{Scope, ScopeStack, SymId, Symbol};

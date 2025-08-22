@@ -7,6 +7,7 @@ mod lang;
 mod lang_def;
 mod symbol;
 
-pub use context::Context;
-pub use ir_builder::build_llmcc_ir;
+pub use context::{Context, GlobalCtxt};
+pub use ir::HirId;
+pub use ir_builder::{build_llmcc_ir, print_llmcc_ir};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

@@ -6,12 +6,12 @@ macro_rules! define_tokens {
         /// Language context for HIR processing
         #[derive(Debug)]
         pub struct Language<'tcx> {
-            pub ctx: &'tcx LangContext<'tcx>,
+            pub ctx: &'tcx Context<'tcx>,
         }
 
         impl<'tcx> Language<'tcx> {
             /// Create a new Language instance
-            pub fn new(ctx: &'tcx LangContext<'tcx>) -> Self {
+            pub fn new(ctx: &'tcx Context<'tcx>) -> Self {
                 Self { ctx }
             }
 

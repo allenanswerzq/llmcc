@@ -19,9 +19,10 @@ fn main() {
     let lang = tree_sitter_rust::LANGUAGE.into();
     let mut parser = Parser::new();
     parser.set_language(&lang).unwrap();
-
     let tree = parser.parse(source_code, None).unwrap();
-    let mut context = Context::from_source(source_code.as_bytes());
-    // print_ast(&tree, &context);
-    build_llmcc_ir(&tree, &mut context).unwrap()
+
+    let gcx = GlobalCtxt::from_source(source_code.as_bytes());
+    let tcx = gcx.create_context();
+    build_llmcc_ir(&tree, &tcx);
+    print_llmcc_ir(HirId(0), &tcx);
 }

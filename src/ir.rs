@@ -1,7 +1,7 @@
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use tree_sitter::{Node, Point};
 
-use crate::context::LangContext;
+use crate::context::Context;
 use crate::declare_arena;
 use crate::symbol::Symbol;
 
@@ -58,6 +58,12 @@ impl<'hir> Default for HirNode<'hir> {
 }
 
 impl<'hir> HirNode<'hir> {
+    pub fn format_node(&self, ctx: &Context<'hir>) -> String {
+        let id = self.hir_id();
+        let kind = self.kind();
+        format!("{}:{}", kind, id)
+    }
+
     /// Get the base information for any HIR node
     pub fn base(&self) -> Option<&HirBase<'hir>> {
         match self {
@@ -98,9 +104,25 @@ impl<'hir> HirNode<'hir> {
         self.base().unwrap().hir_id
     }
 
+    pub fn start_byte(&self) -> usize {
+        self.base().unwrap().node.start_byte()
+    }
+
+    pub fn end_byte(&self) -> usize {
+        self.base().unwrap().node.end_byte()
+    }
+
+    pub fn child_count(&self) -> usize {
+        self.children().len()
+    }
+
+    pub fn inner_ts_node(&self) -> Node<'hir> {
+        self.base().unwrap().node
+    }
+
     pub fn expect_ident_from_child(
         &self,
-        ctx: &LangContext<'hir>,
+        ctx: &Context<'hir>,
         field_id: u16,
     ) -> &'hir HirIdent<'hir> {
         self.children()
@@ -149,8 +171,14 @@ impl_getters! {
     Ident => &'hir HirIdent<'hir>,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
 pub struct HirId(pub u32);
+
+impl std::fmt::Display for HirId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct HirBase<'hir> {

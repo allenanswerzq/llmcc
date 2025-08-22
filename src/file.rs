@@ -64,4 +64,8 @@ impl File {
     pub fn get_text(&self, start: usize, end: usize) -> String {
         self.file.get_text(start, end).unwrap()
     }
+
+    pub fn opt_get_text(&self, start: usize, end: usize) -> Option<String> {
+        self.file.get_text(start, end)
+    }
 }

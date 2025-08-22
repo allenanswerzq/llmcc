@@ -108,24 +108,18 @@ impl<'tcx> HirBuilder<'tcx> {
         None
     }
 
-    fn build(
-        &mut self,
-        node: Node<'tcx>,
-        parent: HirId,
-        file: &File,
-        arena: &'tcx Arena<'tcx>,
-    ) -> HirId {
+    fn build(&mut self, node: Node<'tcx>, parent: HirId, ctx: &'tcx Context<'tcx>) -> HirId {
         let children: Vec<_> = node.children(&mut node.walk()).collect();
         let mut hirs = Vec::new();
         let hir_id = self.next_id();
         for child in children {
-            hirs.push(self.build(child, hir_id, file, arena));
+            hirs.push(self.build(child, hir_id, ctx));
         }
 
         let kind = Language::hir_kind(node.kind_id());
         let base = self.create_base(hir_id, node, kind, hirs);
         let hir_id = base.hir_id;
-        let node = self.create_hir(base, node, kind, file, arena);
+        let node = self.create_hir(base, node, kind, &ctx.file, &ctx.arena);
         self.hir_map.insert(hir_id, ParentedNode::new(parent, node));
         hir_id
     }
@@ -133,84 +127,131 @@ impl<'tcx> HirBuilder<'tcx> {
 
 pub fn build_llmcc_ir<'tcx>(
     tree: &'tcx Tree,
-    ctx: &'tcx mut Context<'tcx>,
+    ctx: &'tcx Context<'tcx>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = HirBuilder::new();
-    builder.build(tree.root_node(), HirId(0), &ctx.file, &ctx.arena);
-    ctx.hir_map = builder.hir_map;
+    builder.build(tree.root_node(), HirId(0), ctx);
+    *ctx.hir_map.borrow_mut() = builder.hir_map;
     Ok(())
 }
 
 #[derive(Debug)]
 struct HirPrinter<'tcx> {
-    context: &'tcx Context<'tcx>,
+    ctx: &'tcx Context<'tcx>,
     depth: usize,
-    output_ast: String,
-    output_hir: String,
+    ast: String,
+    hir: String,
 }
 
 impl<'tcx> HirPrinter<'tcx> {
-    fn new(context: &'tcx Context<'tcx>) -> Self {
+    fn new(ctx: &'tcx Context<'tcx>) -> Self {
         Self {
-            context,
+            ctx,
             depth: 0,
-            output_ast: String::new(),
-            output_hir: String::new(),
+            ast: String::new(),
+            hir: String::new(),
         }
     }
 
-    fn ouptut_ast(&self) -> &str {
-        &self.output_ast
+    pub fn field_name_of(&self, node: &Node) -> Option<String> {
+        let parent = node.parent()?;
+        let mut cursor = parent.walk();
+
+        if cursor.goto_first_child() {
+            loop {
+                if cursor.node() == *node {
+                    return cursor.field_name().map(|name| name.to_string());
+                }
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+        }
+
+        None
     }
 
-    fn output_hir(&self) -> &str {
-        &self.output_hir
+    fn format_ast(&mut self, node: &Node<'tcx>) {
+        let kind = node.kind();
+        let kind_id = node.kind_id();
+        let field_name = self.field_name_of(&node);
+        let start = node.start_byte();
+        let end = node.end_byte();
+
+        self.ast.push_str(&"  ".repeat(self.depth));
+        self.ast.push('(');
+        if let Some(field_name) = field_name {
+            self.ast.push_str(&format!("{}:{}", field_name, kind));
+        } else {
+            self.ast.push_str(&format!("{}", kind));
+        }
+        self.ast.push_str(&format!(" [{}]", kind_id));
+
+        if node.child_count() == 0 {
+            // For leaf nodes, include text content
+            let text = self.ctx.file.get_text(start, end);
+            self.ast.push_str(&format!(" \"{}\"", text));
+            self.ast.push(')');
+        } else {
+            self.ast.push('\n');
+        }
     }
 
-    fn format_ast(&mut self) {}
+    fn format_hir(&mut self, node: &HirNode<'tcx>) {
+        self.hir.push_str(&"  ".repeat(self.depth));
+        self.hir.push('(');
 
-    fn visit_enter_node(&mut self, node: &HirNode<'tcx>) {
-        let base = node.get_base();
-        let text = self.context.file.get_text(base.start_byte, base.end_byte);
-        self.output.push_str(&"  ".repeat(self.depth));
-        self.output.push('(');
+        let start = node.start_byte();
+        let end = node.end_byte();
+        let text = self.ctx.file.opt_get_text(start, end);
         if let Some(mut text) = text {
             text = text.split_whitespace().collect::<Vec<_>>().join(" ");
-            self.output.push_str(&format!(
+            self.hir.push_str(&format!(
                 "{}         |{}|",
-                node.format_node(self.arena),
+                node.format_node(self.ctx),
                 text
             ));
         } else {
-            self.output
-                .push_str(&format!("{}", node.format_node(self.arena)));
+            self.hir
+                .push_str(&format!("{}", node.format_node(self.ctx)));
         }
 
-        if base.children.len() == 0 {
-            self.output.push(')');
+        if node.child_count() == 0 {
+            self.hir.push(')');
         } else {
-            self.output.push('\n');
+            self.hir.push('\n');
         }
-
-        self.depth += 1;
     }
 
-    fn visit_leave_node(&mut self, node: &HirKindNode, scope: &ScopeId, parent: &NodeId) {
+    fn visit_node(&mut self, node: &HirNode<'tcx>) {
+        self.format_ast(&node.inner_ts_node());
+        self.format_hir(node);
+        self.depth += 1;
+
+        for id in node.children() {
+            let child = self.ctx.hir_node(*id);
+            self.visit_node(&child);
+        }
+
         self.depth -= 1;
-        if node.get_base().children.len() > 0 {
-            self.output.push_str(&"  ".repeat(self.depth));
-            self.output.push(')');
+        if node.child_count() > 0 {
+            self.ast.push_str(&"  ".repeat(self.depth));
+            self.ast.push(')');
+
+            self.hir.push_str(&"  ".repeat(self.depth));
+            self.hir.push(')');
         }
 
         if self.depth > 0 {
-            self.output.push('\n');
+            self.ast.push('\n');
+            self.hir.push('\n');
         }
     }
 }
 
-// pub fn print_llmcc_ir(root: NodeId, context: &AstContext, arena: &mut HirArena) {
-//     let mut root = arena.get_node(root).unwrap().clone();
-//     let mut vistor = HirPrinter::new(context, arena);
-//     vistor.visit_node(&mut root, &mut ScopeId(0), NodeId(0));
-//     vistor.print_output();
-// }
+pub fn print_llmcc_ir<'tcx>(root: HirId, ctx: &'tcx Context<'tcx>) {
+    let mut vistor = HirPrinter::new(ctx);
+    vistor.visit_node(&ctx.hir_node(root));
+    println!("{}\n", vistor.ast);
+    println!("{}\n", vistor.hir);
+}
