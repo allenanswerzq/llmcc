@@ -35,7 +35,6 @@ impl<'tcx> HirBuilder<'tcx> {
         let end = base.node.end_byte();
         match kind {
             HirKind::File => {
-                // file
                 let node = HirFile::new(base, "NONE".into());
                 HirNode::File(arena.alloc(node))
             }
@@ -45,17 +44,14 @@ impl<'tcx> HirBuilder<'tcx> {
                 HirNode::Text(arena.alloc(node))
             }
             HirKind::Internal => {
-                // internal
                 let node = HirInternal::new(base);
                 HirNode::Internal(arena.alloc(node))
             }
             HirKind::Scope => {
-                // scope
                 let node = HirScope::new(base);
                 HirNode::Scope(arena.alloc(node))
             }
             HirKind::IdentUse => {
-                // ident
                 let text = file.get_text(start, end);
                 let node = HirIdent::new(base, text);
                 HirNode::Ident(arena.alloc(node))
@@ -198,27 +194,35 @@ impl<'tcx> HirPrinter<'tcx> {
     }
 
     fn format_hir(&mut self, node: &HirNode<'tcx>) {
-        self.hir.push_str(&"  ".repeat(self.depth));
-        self.hir.push('(');
+        let indent = "  ".repeat(self.depth);
+        let label = format!("{}", node.format_node(self.ctx));
 
-        let start = node.start_byte();
-        let end = node.end_byte();
-        let text = self.ctx.file.opt_get_text(start, end);
-        if let Some(mut text) = text {
-            text = text.split_whitespace().collect::<Vec<_>>().join(" ");
-            self.hir.push_str(&format!(
-                "{}         |{}|",
-                node.format_node(self.ctx),
-                text
-            ));
-        } else {
-            self.hir
-                .push_str(&format!("{}", node.format_node(self.ctx)));
+        let snippet = self
+            .ctx
+            .file
+            .opt_get_text(node.start_byte(), node.end_byte())
+            .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "));
+
+        const SNIPPET_COL: usize = 60;
+        let mut line = format!("{}({}", indent, label);
+
+        if let Some(text) = snippet {
+            let padding = SNIPPET_COL.saturating_sub(line.len());
+            line.push_str(&" ".repeat(padding));
+            line.push('|');
+            let trunc = 70;
+            line.push_str(&text[..trunc.min(text.len())]);
+            if text.len() > trunc {
+                line.push_str("...");
+            }
+            line.push('|');
         }
 
         if node.child_count() == 0 {
-            self.hir.push(')');
-        } else {
+            line.push(')');
+        }
+        self.hir.push_str(&line);
+        if node.child_count() != 0 {
             self.hir.push('\n');
         }
     }

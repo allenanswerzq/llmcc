@@ -3,7 +3,7 @@ use tree_sitter::{Node, Point};
 
 use crate::context::Context;
 use crate::declare_arena;
-use crate::symbol::Symbol;
+use crate::symbol::{Scope, Symbol};
 
 // Declare the arena with all HIR types
 declare_arena!([
@@ -14,6 +14,7 @@ declare_arena!([
     hir_file: HirFile<'tcx>,
     hir_ident: HirIdent<'tcx>,
     symbol: Symbol<'tcx>,
+    scope: Scope<'tcx>,
 ]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
@@ -61,7 +62,15 @@ impl<'hir> HirNode<'hir> {
     pub fn format_node(&self, ctx: &Context<'hir>) -> String {
         let id = self.hir_id();
         let kind = self.kind();
-        format!("{}:{}", kind, id)
+        let mut f = format!("{}:{}", kind, id);
+
+        if let Some(def) = ctx.opt_defs(id) {
+            f.push_str(&format!("   d:{}", def.format_compact()));
+        } else if let Some(sym) = ctx.opt_uses(id) {
+            f.push_str(&format!("   u:{}", sym.format_compact()));
+        }
+
+        f
     }
 
     /// Get the base information for any HIR node

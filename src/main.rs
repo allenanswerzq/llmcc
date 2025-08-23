@@ -1,5 +1,4 @@
 use llmcc::*;
-use tree_sitter::Language;
 
 fn main() {
     let source_code = r#"
@@ -22,7 +21,10 @@ fn main() {
     let tree = parser.parse(source_code, None).unwrap();
 
     let gcx = GlobalCtxt::from_source(source_code.as_bytes());
-    let tcx = gcx.create_context();
-    build_llmcc_ir(&tree, &tcx);
-    print_llmcc_ir(HirId(0), &tcx);
+    let ctx = gcx.create_context();
+    build_llmcc_ir(&tree, &ctx);
+
+    let root = HirId(0);
+    resolve_symbols(root, &ctx);
+    print_llmcc_ir(root, &ctx);
 }
