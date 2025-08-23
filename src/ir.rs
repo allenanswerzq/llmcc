@@ -41,7 +41,7 @@ impl Default for HirKind {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum HirNode<'hir> {
     Undefined,
     Root(&'hir HirRoot<'hir>),
@@ -105,7 +105,7 @@ impl<'hir> HirNode<'hir> {
         self.base().map_or(&[], |base| &base.children)
     }
 
-    pub fn token_id(&self) -> u16 {
+    pub fn kind_id(&self) -> u16 {
         self.base().unwrap().node.kind_id()
     }
 

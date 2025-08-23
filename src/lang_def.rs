@@ -1,7 +1,7 @@
 #[macro_export]
 macro_rules! define_tokens {
     (
-        $( ($const:ident, $id:expr, $str:expr, $kind:expr) ),* $(,)?
+        $( ($const:ident, $id:expr, $str:expr, $kind:expr $(, $block:expr)? ) ),* $(,)?
     ) => {
         /// Language context for HIR processing
         #[derive(Debug)]
@@ -30,6 +30,16 @@ macro_rules! define_tokens {
                 }
             }
 
+            /// Get the Block kind for a given token ID
+            pub fn block_kind(token_id: u16) -> BlockKind {
+                match token_id {
+                    $(
+                        Self::$const => define_tokens!(@unwrap_block $($block)?),
+                    )*
+                    _ => BlockKind::Undefined,
+                }
+            }
+
             /// Get the string representation of a token ID
             pub fn token_str(token_id: u16) -> Option<&'static str> {
                 match token_id {
@@ -47,10 +57,10 @@ macro_rules! define_tokens {
         }
 
         /// Trait for visiting HIR nodes with type-specific dispatch
-        trait HirVisitor<'tcx> {
+        pub trait HirVisitor<'tcx> {
             /// Visit a node, dispatching to the appropriate method based on token ID
             fn visit_node(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-                match node.token_id() {
+                match node.kind_id() {
                     $(
                         Language::$const => paste::paste! { self.[<visit_ $const>](node, lang) },
                     )*
@@ -81,4 +91,8 @@ macro_rules! define_tokens {
             )*
         }
     };
+
+    // helper: expand to given block or default
+    (@unwrap_block $block:expr) => { $block };
+    (@unwrap_block) => { BlockKind::Undefined };
 }

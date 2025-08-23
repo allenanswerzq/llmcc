@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ops::Deref;
 
-use crate::block::{BasicBlock, BlockId};
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
 use crate::file::File;
 use crate::ir::{Arena, HirId, HirKind, HirNode};
 use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
@@ -25,7 +25,22 @@ impl<'tcx> Context<'tcx> {
     /// Get a HIR node by ID, panicking if not found
     pub fn hir_node(self, id: HirId) -> HirNode<'tcx> {
         self.opt_hir_node(id)
-            .unwrap_or_else(|| panic!("HIR node not found for id: {:?}", id))
+            .unwrap_or_else(|| panic!("hir node not found {}", id))
+    }
+
+    /// Get a HIR node by ID, returning None if not found
+    pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
+        self.gcx
+            .bb_map
+            .borrow()
+            .get(&id)
+            .map(|parented| parented.node.clone())
+    }
+
+    /// Get a HIR node by ID, panicking if not found
+    pub fn bb(self, id: BlockId) -> BasicBlock<'tcx> {
+        self.opt_bb(id)
+            .unwrap_or_else(|| panic!("basic block not found: {}", id))
     }
 
     /// Get the parent of a HIR node
@@ -42,19 +57,29 @@ impl<'tcx> Context<'tcx> {
         self.gcx.uses_map.borrow().get(&id).copied()
     }
 
-    /// Create a new symbol in the arena
-    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol<'tcx> {
-        self.gcx.arena.alloc(Symbol::new(owner, name))
-    }
-
     /// Get a symbol from the defs map
     pub fn opt_defs(self, id: HirId) -> Option<&'tcx Symbol<'tcx>> {
         self.gcx.defs_map.borrow().get(&id).copied()
     }
 
+    /// Get a symbol from the defs map
+    pub fn defs(self, id: HirId) -> &'tcx Symbol<'tcx> {
+        self.gcx
+            .defs_map
+            .borrow()
+            .get(&id)
+            .copied()
+            .unwrap_or_else(|| panic!("no defs: {}", id))
+    }
+
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
         self.gcx.scope_map.borrow().get(&owner).copied()
+    }
+
+    /// Create a new symbol in the arena
+    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol<'tcx> {
+        self.gcx.arena.alloc(Symbol::new(owner, name))
     }
 
     /// Find an existing scope or create a new one
@@ -188,6 +213,7 @@ pub struct GlobalCtxt<'tcx> {
     // HirId -> &Scope (scopes owned by this HIR node)
     pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
 
+    pub block_arena: BlockArena<'tcx>,
     // BlockId -> ParentedBlock
     pub bb_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
     //
@@ -203,6 +229,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
             defs_map: RefCell::new(HashMap::new()),
             uses_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
+            block_arena: BlockArena::default(),
             bb_map: RefCell::new(HashMap::new()),
         }
     }

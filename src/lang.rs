@@ -2,6 +2,7 @@ use paste::paste;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use crate::block::{BlockId, BlockKind};
 use crate::context::Context;
 use crate::define_tokens;
 use crate::ir::{HirId, HirIdent, HirKind, HirNode};
@@ -28,8 +29,8 @@ define_tokens! {
     (parameters            , 210 , "parameters"                 , HirKind::Internal),
     (let_declaration       , 203 , "let_declaration"            , HirKind::Internal),
     (block                 , 293 , "block"                      , HirKind::Scope),
-    (source_file           , 157 , "source_file"                , HirKind::File),
-    (function_item         , 188 , "function_item"              , HirKind::Scope),
+    (source_file           , 157 , "source_file"                , HirKind::File,                BlockKind::Root),
+    (function_item         , 188 , "function_item"              , HirKind::Scope,               BlockKind::Func),
     (mutable_specifier     , 122 , "mutable_specifier"          , HirKind::Text),
     (expression_statement  , 160 , "expression_statement"       , HirKind::Internal),
     (assignment_expression , 251 , "assignment_expression"      , HirKind::Internal),
