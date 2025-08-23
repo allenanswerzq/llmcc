@@ -70,6 +70,10 @@ impl<'hir> HirNode<'hir> {
             f.push_str(&format!("   u:{}", sym.format_compact()));
         }
 
+        if let Some(scope) = ctx.opt_scope(id) {
+            f.push_str(&format!("   s:{}", scope.format_compact()));
+        }
+
         f
     }
 

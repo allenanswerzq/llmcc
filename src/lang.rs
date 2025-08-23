@@ -79,11 +79,16 @@ impl<'tcx> DeclFinder<'tcx> {
 }
 
 impl<'tcx> HirVisitor<'tcx> for DeclFinder<'tcx> {
+    fn visit_source_file(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+        self.visit_block(node, lang);
+    }
+
     fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+        self.process_declaration(&node, Language::field_name, lang);
+
         let depth = self.scope_stack.depth();
         let scope = lang.ctx.find_or_add_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
-        self.process_declaration(&node, Language::field_name, lang);
         self.visit_children(&node, lang);
         self.scope_stack.pop_until(depth);
     }
@@ -118,16 +123,24 @@ impl<'tcx> SymbolBinder<'tcx> {
         scope_stack.push_scope(globals);
         Self { scope_stack }
     }
-}
 
-impl<'tcx> HirVisitor<'tcx> for SymbolBinder<'tcx> {
-    fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+    pub fn follow_scope_deeper(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
         let depth = self.scope_stack.depth();
         let scope = lang.ctx.find_or_add_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
 
         self.visit_children(&node, lang);
         self.scope_stack.pop_until(depth);
+    }
+}
+
+impl<'tcx> HirVisitor<'tcx> for SymbolBinder<'tcx> {
+    fn visit_source_file(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+        self.follow_scope_deeper(node, lang);
+    }
+
+    fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+        self.follow_scope_deeper(node, lang);
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
@@ -135,13 +148,7 @@ impl<'tcx> HirVisitor<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        let depth = self.scope_stack.depth();
-        let scope = lang.ctx.find_or_add_scope(node.hir_id());
-        self.scope_stack.push_scope(scope);
-
-        self.visit_children(&node, lang);
-
-        self.scope_stack.pop_until(depth);
+        self.follow_scope_deeper(node, lang);
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {

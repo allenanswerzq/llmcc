@@ -1,5 +1,6 @@
 mod arena;
 mod block;
+mod block_rel;
 mod context;
 mod file;
 mod ir;

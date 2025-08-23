@@ -1,8 +1,9 @@
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockRelation};
+use crate::block_rel::{BlockRelationMap, RelationBuilder};
 use crate::file::File;
 use crate::ir::{Arena, HirId, HirKind, HirNode};
 use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
@@ -216,7 +217,8 @@ pub struct GlobalCtxt<'tcx> {
     pub block_arena: BlockArena<'tcx>,
     // BlockId -> ParentedBlock
     pub bb_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
-    //
+    // BlockId -> RelatedBlock
+    pub related_map: BlockRelationMap,
 }
 
 impl<'tcx> GlobalCtxt<'tcx> {
@@ -231,6 +233,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
             scope_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
             bb_map: RefCell::new(HashMap::new()),
+            related_map: BlockRelationMap::new(),
         }
     }
 

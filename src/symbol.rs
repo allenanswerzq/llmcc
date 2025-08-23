@@ -23,6 +23,13 @@ pub struct Scope<'tcx> {
 }
 
 impl<'tcx> Scope<'tcx> {
+    pub fn format_compact(&self) -> String {
+        let symbol_defs = self.symbol_defs.borrow();
+        let symbol_map = self.symbol_map.borrow();
+
+        format!("{}/{}", self.owner, symbol_defs.len(),)
+    }
+
     pub fn new(owner: HirId) -> Self {
         Self {
             symbol_defs: RefCell::new(HashMap::new()),

@@ -174,23 +174,45 @@ impl<'tcx> HirPrinter<'tcx> {
         let start = node.start_byte();
         let end = node.end_byte();
 
-        self.ast.push_str(&"  ".repeat(self.depth));
-        self.ast.push('(');
+        let mut indent = "  ".repeat(self.depth);
+        let mut label = "".to_string();
         if let Some(field_name) = field_name {
-            self.ast.push_str(&format!("{}:{}", field_name, kind));
+            label.push_str(&format!("{}:{}", field_name, kind));
         } else {
-            self.ast.push_str(&format!("{}", kind));
+            label.push_str(&format!("{}", kind));
         }
-        self.ast.push_str(&format!(" [{}]", kind_id));
+        label.push_str(&format!(" [{}]", kind_id));
+
+        let snippet = self
+            .ctx
+            .file
+            .opt_get_text(node.start_byte(), node.end_byte())
+            .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "));
+
+        const SNIPPET_COL: usize = 60;
+        let mut line = format!("{}({}", indent, label);
+
+        if let Some(text) = snippet {
+            let padding = SNIPPET_COL.saturating_sub(line.len());
+            line.push_str(&" ".repeat(padding));
+            line.push('|');
+            let trunc = 70;
+            line.push_str(&text[..trunc.min(text.len())]);
+            if text.len() > trunc {
+                line.push_str("...");
+            }
+            line.push('|');
+        }
 
         if node.child_count() == 0 {
             // For leaf nodes, include text content
             let text = self.ctx.file.get_text(start, end);
-            self.ast.push_str(&format!(" \"{}\"", text));
-            self.ast.push(')');
+            line.push_str(&format!(" \"{}\"", text));
+            line.push(')');
         } else {
-            self.ast.push('\n');
+            line.push('\n');
         }
+        self.ast.push_str(&line);
     }
 
     fn format_hir(&mut self, node: &HirNode<'tcx>) {

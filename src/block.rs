@@ -41,15 +41,16 @@ pub enum BasicBlock<'blk> {
 
 impl<'blk> BasicBlock<'blk> {
     pub fn format_block(&self, ctx: &Context<'blk>) -> String {
-        let id = self.block_id();
+        let block_id = self.block_id();
+        let hir_id = self.node().hir_id();
         let kind = self.kind();
-        let mut f = format!("{}:{}", kind, id);
+        let mut f = format!("{}:{}", kind, block_id);
 
-        // if let Some(def) = ctx.opt_defs(id) {
-        //     f.push_str(&format!("   d:{}", def.format_compact()));
-        // } else if let Some(sym) = ctx.opt_uses(id) {
-        //     f.push_str(&format!("   u:{}", sym.format_compact()));
-        // }
+        if let Some(def) = ctx.opt_defs(hir_id) {
+            f.push_str(&format!("   d:{}", def.format_compact()));
+        } else if let Some(sym) = ctx.opt_uses(hir_id) {
+            f.push_str(&format!("   u:{}", sym.format_compact()));
+        }
 
         f
     }
@@ -76,7 +77,11 @@ impl<'blk> BasicBlock<'blk> {
     }
 
     /// Get the HIR node
-    pub fn node(&self) -> Option<&HirNode<'blk>> {
+    pub fn node(&self) -> &HirNode<'blk> {
+        self.base().map(|base| &base.node).unwrap()
+    }
+
+    pub fn opt_node(&self) -> Option<&HirNode<'blk>> {
         self.base().map(|base| &base.node)
     }
 
@@ -402,7 +407,7 @@ impl<'tcx> GraphPrinter<'tcx> {
         let indent = "  ".repeat(self.depth);
         let label = format!("{}", bb.format_block(self.ctx));
 
-        let node = bb.node().unwrap();
+        let node = bb.node();
         let snippet = self
             .ctx
             .file
