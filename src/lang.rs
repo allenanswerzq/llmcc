@@ -28,7 +28,7 @@ define_tokens! {
     (parameter             , 213 , "parameter"                  , HirKind::Internal),
     (parameters            , 210 , "parameters"                 , HirKind::Internal),
     (let_declaration       , 203 , "let_declaration"            , HirKind::Internal),
-    (block                 , 293 , "block"                      , HirKind::Scope),
+    (block                 , 293 , "block"                      , HirKind::Scope,               BlockKind::Scope),
     (source_file           , 157 , "source_file"                , HirKind::File,                BlockKind::Root),
     (function_item         , 188 , "function_item"              , HirKind::Scope,               BlockKind::Func),
     (mutable_specifier     , 122 , "mutable_specifier"          , HirKind::Text),
@@ -36,7 +36,7 @@ define_tokens! {
     (assignment_expression , 251 , "assignment_expression"      , HirKind::Internal),
     (binary_expression     , 250 , "binary_expression"          , HirKind::Internal),
     (operator              ,  14 , "operator"                   , HirKind::Internal),
-    (call_expression       , 256 , "call_expression"            , HirKind::Internal),
+    (call_expression       , 256 , "call_expression"            , HirKind::Internal,            BlockKind::Stmt),
     (arguments             , 257 , "arguments"                  , HirKind::Internal),
     (primitive_type        ,  32 , "primitive_type"             , HirKind::IdentUse),
 
@@ -67,7 +67,7 @@ impl<'tcx> DeclFinder<'tcx> {
         field_id: u16,
         lang: &Language<'tcx>,
     ) -> SymId {
-        let ident = node.expect_ident_from_child(&lang.ctx, field_id);
+        let ident = node.expect_ident_child_by_field(&lang.ctx, field_id);
         let symbol = self.scope_stack.find_or_add(node.hir_id(), ident);
 
         let mangled = self.generate_mangled_name(&ident.name, node.hir_id());
@@ -78,7 +78,7 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 }
 
-impl<'tcx> HirVisitor<'tcx> for DeclFinder<'tcx> {
+impl<'tcx> AstVisitor<'tcx> for DeclFinder<'tcx> {
     fn visit_source_file(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
         self.visit_block(node, lang);
     }
@@ -134,7 +134,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 }
 
-impl<'tcx> HirVisitor<'tcx> for SymbolBinder<'tcx> {
+impl<'tcx> AstVisitor<'tcx> for SymbolBinder<'tcx> {
     fn visit_source_file(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
         self.follow_scope_deeper(node, lang);
     }

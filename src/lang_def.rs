@@ -21,8 +21,8 @@ macro_rules! define_tokens {
             )*
 
             /// Get the HIR kind for a given token ID
-            pub fn hir_kind(token_id: u16) -> HirKind {
-                match token_id {
+            pub fn hir_kind(kind_id: u16) -> HirKind {
+                match kind_id {
                     $(
                         Self::$const => $kind,
                     )*
@@ -31,8 +31,8 @@ macro_rules! define_tokens {
             }
 
             /// Get the Block kind for a given token ID
-            pub fn block_kind(token_id: u16) -> BlockKind {
-                match token_id {
+            pub fn block_kind(kind_id: u16) -> BlockKind {
+                match kind_id {
                     $(
                         Self::$const => define_tokens!(@unwrap_block $($block)?),
                     )*
@@ -41,8 +41,8 @@ macro_rules! define_tokens {
             }
 
             /// Get the string representation of a token ID
-            pub fn token_str(token_id: u16) -> Option<&'static str> {
-                match token_id {
+            pub fn token_str(kind_id: u16) -> Option<&'static str> {
+                match kind_id {
                     $(
                         Self::$const => Some($str),
                     )*
@@ -51,13 +51,13 @@ macro_rules! define_tokens {
             }
 
             /// Check if a token ID is valid
-            pub fn is_valid_token(token_id: u16) -> bool {
-                matches!(token_id, $(Self::$const)|*)
+            pub fn is_valid_token(kind_id: u16) -> bool {
+                matches!(kind_id, $(Self::$const)|*)
             }
         }
 
         /// Trait for visiting HIR nodes with type-specific dispatch
-        pub trait HirVisitor<'tcx> {
+        pub trait AstVisitor<'tcx> {
             /// Visit a node, dispatching to the appropriate method based on token ID
             fn visit_node(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
                 match node.kind_id() {
@@ -81,7 +81,7 @@ macro_rules! define_tokens {
                 self.visit_children(&node, lang);
             }
 
-            // Generate visit methods for each token type with visit_ prefix
+            // Generactx: &'tcx Context<'tcxte visit methods for each token type with visit_ prefix
             $(
                 paste::paste! {
                     fn [<visit_ $const>](&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {

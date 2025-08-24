@@ -5,6 +5,7 @@ use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use crate::context::{Context, ParentedBlock};
 use crate::ir::HirNode;
 use crate::lang::Language;
+use crate::visit::HirVisitor;
 use crate::{HirId, declare_arena};
 
 declare_arena!([
@@ -12,6 +13,7 @@ declare_arena!([
     blk_func: BlockFunc<'tcx>,
     blk_class: BlockClass<'tcx>,
     blk_impl: BlockImpl<'tcx>,
+    blk_stmt: BlockStmt<'tcx>,
 ]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
@@ -20,8 +22,10 @@ pub enum BlockKind {
     Undefined,
     Root,
     Func,
+    Stmt,
     Class,
     Impl,
+    Scope,
 }
 
 impl Default for BlockKind {
@@ -35,8 +39,10 @@ pub enum BasicBlock<'blk> {
     Undefined,
     Root(&'blk BlockRoot<'blk>),
     Func(&'blk BlockFunc<'blk>),
+    Stmt(&'blk BlockStmt<'blk>),
     Class(&'blk BlockClass<'blk>),
     Impl(&'blk BlockImpl<'blk>),
+    Block,
 }
 
 impl<'blk> BasicBlock<'blk> {
@@ -58,11 +64,12 @@ impl<'blk> BasicBlock<'blk> {
     /// Get the base block information regardless of variant
     pub fn base(&self) -> Option<&BlockBase<'blk>> {
         match self {
-            BasicBlock::Undefined => None,
+            BasicBlock::Undefined | BasicBlock::Block => None,
             BasicBlock::Root(block) => Some(&block.base),
             BasicBlock::Func(block) => Some(&block.base),
             BasicBlock::Class(block) => Some(&block.base),
             BasicBlock::Impl(block) => Some(&block.base),
+            BasicBlock::Stmt(block) => Some(&block.base),
         }
     }
 
@@ -193,6 +200,7 @@ pub struct BlockFunc<'blk> {
     pub name: String,
     pub parameters: Option<BlockId>,
     pub returns: Option<BlockId>,
+    pub stmts: Option<Vec<BlockId>>,
 }
 
 impl<'blk> BlockFunc<'blk> {
@@ -202,6 +210,7 @@ impl<'blk> BlockFunc<'blk> {
             name,
             parameters: None,
             returns: None,
+            stmts: None,
         }
     }
 
@@ -214,6 +223,27 @@ impl<'blk> BlockFunc<'blk> {
         let base = BlockBase::new(id, node, BlockKind::Func, children);
         let name = ctx.defs(node.hir_id()).name.clone();
         Self::new(base, name)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockStmt<'blk> {
+    pub base: BlockBase<'blk>,
+}
+
+impl<'blk> BlockStmt<'blk> {
+    pub fn new(base: BlockBase<'blk>) -> Self {
+        Self { base }
+    }
+
+    pub fn from_hir(
+        ctx: &'blk Context<'blk>,
+        id: BlockId,
+        node: HirNode<'blk>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Stmt, children);
+        Self::new(base)
     }
 }
 
@@ -296,15 +326,19 @@ impl<'blk> BlockImpl<'blk> {
 
 #[derive(Debug)]
 struct GraphBuilder<'tcx> {
+    ctx: &'tcx Context<'tcx>,
     id: u32,
     bb_map: HashMap<BlockId, ParentedBlock<'tcx>>,
+    children_stack: Vec<Vec<BlockId>>,
 }
 
 impl<'tcx> GraphBuilder<'tcx> {
-    fn new() -> Self {
+    fn new(ctx: &'tcx Context<'tcx>) -> Self {
         Self {
+            ctx,
             id: 0,
             bb_map: HashMap::new(),
+            children_stack: Vec::new(),
         }
     }
 
@@ -315,7 +349,7 @@ impl<'tcx> GraphBuilder<'tcx> {
     }
 
     fn create_block(
-        &mut self,
+        &self,
         id: BlockId,
         node: HirNode<'tcx>,
         kind: BlockKind,
@@ -336,6 +370,10 @@ impl<'tcx> GraphBuilder<'tcx> {
                 let block = BlockClass::from_hir(ctx, id, node, children);
                 BasicBlock::Class(arena.alloc(block))
             }
+            BlockKind::Stmt => {
+                let stmt = BlockStmt::from_hir(ctx, id, node, children);
+                BasicBlock::Stmt(arena.alloc(stmt))
+            }
             BlockKind::Impl => {
                 todo!()
                 // let block = BlockImpl::from_hir(ctx, id, node);
@@ -347,42 +385,61 @@ impl<'tcx> GraphBuilder<'tcx> {
         }
     }
 
-    fn build(
-        &mut self,
-        node: HirNode<'tcx>,
-        parent: BlockId,
-        ctx: &'tcx Context<'tcx>,
-    ) -> Option<BlockId> {
-        let children = node.children();
-        let mut blks = Vec::new();
-        let blk_id = self.next_id();
-        for child_id in children {
-            let child = ctx.hir_node(*child_id);
-            if let Some(block_id) = self.build(child, blk_id, ctx) {
-                blks.push(block_id);
-            }
-        }
+    fn build_block(&mut self, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
+        let id = self.next_id();
+        let block_kind = Language::block_kind(node.kind_id());
+        assert_ne!(block_kind, BlockKind::Undefined);
 
-        let kind = Language::block_kind(node.kind_id());
-        if kind != BlockKind::Undefined {
-            let block = self.create_block(blk_id, node, kind, ctx, blks);
-            self.bb_map
-                .insert(blk_id, ParentedBlock::new(parent, block));
-            Some(blk_id)
+        let children = if recursive {
+            self.children_stack.push(Vec::new());
+            self.visit_children(node, id);
+
+            let children = self.children_stack.pop().unwrap();
+            children
         } else {
-            self.id -= 1;
-            None
+            Vec::new()
+        };
+
+        let block = self.create_block(id, node, block_kind, &self.ctx, children);
+        self.bb_map.insert(id, ParentedBlock::new(parent, block));
+        self.children_stack.last_mut().unwrap().push(id);
+    }
+}
+
+impl<'tcx> HirVisitor<'tcx> for GraphBuilder<'tcx> {
+    fn ctx(&self) -> &'tcx Context<'tcx> {
+        self.ctx
+    }
+
+    fn visit_file(&mut self, node: HirNode<'tcx>, parent: BlockId) {
+        self.children_stack.push(Vec::new());
+        self.build_block(node, parent, true);
+    }
+
+    fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
+        if Language::block_kind(node.kind_id()) != BlockKind::Undefined {
+            self.build_block(node, parent, false);
+        } else {
+            self.visit_children(node, parent);
+        }
+    }
+
+    fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
+        if Language::block_kind(node.kind_id()) == BlockKind::Func {
+            self.build_block(node, parent, true);
+        } else {
+            self.visit_children(node, parent);
         }
     }
 }
 
-pub fn build_llmcc_code_graph<'tcx>(
+pub fn build_llmcc_graph<'tcx>(
     root: HirId,
     ctx: &'tcx Context<'tcx>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = GraphBuilder::new();
+    let mut builder = GraphBuilder::new(ctx);
     let root = ctx.hir_node(root);
-    builder.build(root, BlockId(0), ctx);
+    builder.visit_node(root, BlockId(0));
     *ctx.bb_map.borrow_mut() = builder.bb_map;
     Ok(())
 }

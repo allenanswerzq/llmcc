@@ -35,7 +35,7 @@ impl<'tcx> Context<'tcx> {
             .bb_map
             .borrow()
             .get(&id)
-            .map(|parented| parented.node.clone())
+            .map(|parented| parented.block.clone())
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -181,17 +181,17 @@ impl<'tcx> ParentedNode<'tcx> {
 #[derive(Debug, Clone)]
 pub struct ParentedBlock<'tcx> {
     pub parent: BlockId,
-    pub node: BasicBlock<'tcx>,
+    pub block: BasicBlock<'tcx>,
 }
 
 impl<'tcx> ParentedBlock<'tcx> {
-    pub fn new(parent: BlockId, node: BasicBlock<'tcx>) -> Self {
-        Self { parent, node }
+    pub fn new(parent: BlockId, block: BasicBlock<'tcx>) -> Self {
+        Self { parent, block }
     }
 
     /// Get a reference to the wrapped node
     pub fn block(&self) -> &BasicBlock<'tcx> {
-        &self.node
+        &self.block
     }
 
     /// Get the parent ID

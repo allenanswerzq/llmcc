@@ -28,6 +28,6 @@ fn main() {
     resolve_symbols(root, &ctx);
     print_llmcc_ir(root, &ctx);
 
-    build_llmcc_code_graph(root, &ctx);
+    build_llmcc_graph(root, &ctx);
     print_llmcc_graph(BlockId(0), &ctx);
 }

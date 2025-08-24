@@ -133,17 +133,38 @@ impl<'hir> HirNode<'hir> {
         self.base().unwrap().node
     }
 
-    pub fn expect_ident_from_child(
-        &self,
-        ctx: &Context<'hir>,
-        field_id: u16,
-    ) -> &'hir HirIdent<'hir> {
+    pub fn opt_child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
         self.children()
             .iter()
             .map(|id| ctx.hir_node(*id))
             .find(|child| child.field_id() == field_id)
+    }
+
+    pub fn child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> HirNode<'hir> {
+        self.opt_child_by_field(ctx, field_id)
+            .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
+    }
+
+    pub fn expect_ident_child_by_field(
+        &self,
+        ctx: &Context<'hir>,
+        field_id: u16,
+    ) -> &'hir HirIdent<'hir> {
+        self.opt_child_by_field(ctx, field_id)
             .map(|child| child.expect_ident())
             .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
+    }
+
+    pub fn opt_child_by_kind(&self, ctx: &Context<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
+        self.children()
+            .iter()
+            .map(|id| ctx.hir_node(*id))
+            .find(|child| child.kind_id() == kind_id)
+    }
+
+    pub fn child_by_kind(&self, ctx: &Context<'hir>, kind_id: u16) -> HirNode<'hir> {
+        self.opt_child_by_kind(ctx, kind_id)
+            .unwrap_or_else(|| panic!("no child with kind_id {}", kind_id))
     }
 }
 
