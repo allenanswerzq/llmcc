@@ -36,7 +36,7 @@ define_tokens! {
     (assignment_expression , 251 , "assignment_expression"      , HirKind::Internal),
     (binary_expression     , 250 , "binary_expression"          , HirKind::Internal),
     (operator              ,  14 , "operator"                   , HirKind::Internal),
-    (call_expression       , 256 , "call_expression"            , HirKind::Internal,            BlockKind::Stmt),
+    (call_expression       , 256 , "call_expression"            , HirKind::Internal,            BlockKind::Call),
     (arguments             , 257 , "arguments"                  , HirKind::Internal),
     (primitive_type        ,  32 , "primitive_type"             , HirKind::IdentUse),
 
@@ -47,6 +47,7 @@ define_tokens! {
 
 #[derive(Debug)]
 struct DeclFinder<'tcx> {
+    pub ctx: &'tcx Context<'tcx>,
     pub scope_stack: ScopeStack<'tcx>,
 }
 
@@ -54,66 +55,66 @@ impl<'tcx> DeclFinder<'tcx> {
     pub fn new(ctx: &'tcx Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scope_stack = ScopeStack::new(&ctx.arena);
         scope_stack.push_scope(globals);
-        Self { scope_stack }
+        Self { ctx, scope_stack }
     }
 
     fn generate_mangled_name(&self, base_name: &str, node_id: HirId) -> String {
         format!("{}_{:x}", base_name, node_id.0)
     }
 
-    fn process_declaration(
-        &mut self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-        lang: &Language<'tcx>,
-    ) -> SymId {
-        let ident = node.expect_ident_child_by_field(&lang.ctx, field_id);
+    fn process_declaration(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
+        let ident = node.expect_ident_child_by_field(&self.ctx, field_id);
         let symbol = self.scope_stack.find_or_add(node.hir_id(), ident);
 
         let mangled = self.generate_mangled_name(&ident.name, node.hir_id());
         *symbol.mangled_name.borrow_mut() = mangled;
 
-        lang.ctx.insert_def(node.hir_id(), symbol);
+        self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
     }
 }
 
 impl<'tcx> AstVisitor<'tcx> for DeclFinder<'tcx> {
-    fn visit_source_file(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.visit_block(node, lang);
+    fn ctx(&self) -> &'tcx Context<'tcx> {
+        self.ctx
     }
 
-    fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.process_declaration(&node, Language::field_name, lang);
+    fn visit_source_file(&mut self, node: HirNode<'tcx>) {
+        self.visit_block(node);
+    }
+
+    fn visit_function_item(&mut self, node: HirNode<'tcx>) {
+        self.process_declaration(&node, Language::field_name);
 
         let depth = self.scope_stack.depth();
-        let scope = lang.ctx.find_or_add_scope(node.hir_id());
+        let scope = self.ctx.find_or_add_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
-        self.visit_children(&node, lang);
+        self.visit_children(&node);
         self.scope_stack.pop_until(depth);
     }
 
-    fn visit_let_declaration(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.process_declaration(&node, Language::field_pattern, lang);
-        self.visit_children(&node, lang);
+    fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
+        self.process_declaration(&node, Language::field_pattern);
+        self.visit_children(&node);
     }
 
-    fn visit_block(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+    fn visit_block(&mut self, node: HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
-        let scope = lang.ctx.find_or_add_scope(node.hir_id());
+        let scope = self.ctx.find_or_add_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
-        self.visit_children(&node, lang);
+        self.visit_children(&node);
         self.scope_stack.pop_until(depth);
     }
 
-    fn visit_parameter(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.process_declaration(&node, Language::field_pattern, lang);
-        self.visit_children(&node, lang);
+    fn visit_parameter(&mut self, node: HirNode<'tcx>) {
+        self.process_declaration(&node, Language::field_pattern);
+        self.visit_children(&node);
     }
 }
 
 #[derive(Debug)]
 struct SymbolBinder<'tcx> {
+    pub ctx: &'tcx Context<'tcx>,
     pub scope_stack: ScopeStack<'tcx>,
 }
 
@@ -121,50 +122,54 @@ impl<'tcx> SymbolBinder<'tcx> {
     pub fn new(ctx: &'tcx Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scope_stack = ScopeStack::new(&ctx.arena);
         scope_stack.push_scope(globals);
-        Self { scope_stack }
+        Self { ctx, scope_stack }
     }
 
-    pub fn follow_scope_deeper(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+    pub fn follow_scope_deeper(&mut self, node: HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
-        let scope = lang.ctx.find_or_add_scope(node.hir_id());
+        let scope = self.ctx.find_or_add_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
 
-        self.visit_children(&node, lang);
+        self.visit_children(&node);
         self.scope_stack.pop_until(depth);
     }
 }
 
 impl<'tcx> AstVisitor<'tcx> for SymbolBinder<'tcx> {
-    fn visit_source_file(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.follow_scope_deeper(node, lang);
+    fn ctx(&self) -> &'tcx Context<'tcx> {
+        self.ctx
     }
 
-    fn visit_function_item(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.follow_scope_deeper(node, lang);
+    fn visit_source_file(&mut self, node: HirNode<'tcx>) {
+        self.follow_scope_deeper(node);
     }
 
-    fn visit_let_declaration(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.visit_children(&node, lang);
+    fn visit_function_item(&mut self, node: HirNode<'tcx>) {
+        self.follow_scope_deeper(node);
     }
 
-    fn visit_block(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.follow_scope_deeper(node, lang);
+    fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
+        self.visit_children(&node);
     }
 
-    fn visit_parameter(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-        self.visit_children(&node, lang);
+    fn visit_block(&mut self, node: HirNode<'tcx>) {
+        self.follow_scope_deeper(node);
     }
 
-    fn visit_identifier(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+    fn visit_parameter(&mut self, node: HirNode<'tcx>) {
+        self.visit_children(&node);
+    }
+
+    fn visit_identifier(&mut self, node: HirNode<'tcx>) {
         let id = node.hir_id();
-        if lang.ctx.opt_uses(id).is_none() {
+        if self.ctx.opt_uses(id).is_none() {
             // if this ident does have a symbol before
             let ident = node.expect_ident();
             if let Some(def_sym) = self.scope_stack.find(ident) {
-                let use_sym = lang.ctx.new_symbol(node.hir_id(), ident.name.clone());
+                let use_sym = self.ctx.new_symbol(node.hir_id(), ident.name.clone());
                 use_sym.defined.set(Some(def_sym.owner));
 
-                lang.ctx.insert_use(id, use_sym);
+                self.ctx.insert_use(id, use_sym);
             } else {
                 println!("not find ident: {}", ident.name);
             }
@@ -174,12 +179,11 @@ impl<'tcx> AstVisitor<'tcx> for SymbolBinder<'tcx> {
 
 pub fn resolve_symbols<'tcx>(root: HirId, ctx: &'tcx Context<'tcx>) {
     let node = ctx.hir_node(root);
-    let lang = Language::new(ctx);
     let globals = ctx.find_or_add_scope(root);
 
     let mut decl_finder = DeclFinder::new(ctx, globals);
-    decl_finder.visit_node(node.clone(), &lang);
+    decl_finder.visit_node(node.clone());
 
     let mut symbol_binder = SymbolBinder::new(ctx, globals);
-    symbol_binder.visit_node(node, &lang);
+    symbol_binder.visit_node(node);
 }

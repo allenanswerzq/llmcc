@@ -14,6 +14,7 @@ declare_arena!([
     blk_class: BlockClass<'tcx>,
     blk_impl: BlockImpl<'tcx>,
     blk_stmt: BlockStmt<'tcx>,
+    blk_call: BlockCall<'tcx>,
 ]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
@@ -23,6 +24,7 @@ pub enum BlockKind {
     Root,
     Func,
     Stmt,
+    Call,
     Class,
     Impl,
     Scope,
@@ -40,6 +42,7 @@ pub enum BasicBlock<'blk> {
     Root(&'blk BlockRoot<'blk>),
     Func(&'blk BlockFunc<'blk>),
     Stmt(&'blk BlockStmt<'blk>),
+    Call(&'blk BlockCall<'blk>),
     Class(&'blk BlockClass<'blk>),
     Impl(&'blk BlockImpl<'blk>),
     Block,
@@ -70,6 +73,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Class(block) => Some(&block.base),
             BasicBlock::Impl(block) => Some(&block.base),
             BasicBlock::Stmt(block) => Some(&block.base),
+            BasicBlock::Call(block) => Some(&block.base),
         }
     }
 
@@ -248,6 +252,27 @@ impl<'blk> BlockStmt<'blk> {
 }
 
 #[derive(Debug, Clone)]
+pub struct BlockCall<'blk> {
+    pub base: BlockBase<'blk>,
+}
+
+impl<'blk> BlockCall<'blk> {
+    pub fn new(base: BlockBase<'blk>) -> Self {
+        Self { base }
+    }
+
+    pub fn from_hir(
+        ctx: &'blk Context<'blk>,
+        id: BlockId,
+        node: HirNode<'blk>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Call, children);
+        Self::new(base)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct BlockClass<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
@@ -373,6 +398,10 @@ impl<'tcx> GraphBuilder<'tcx> {
             BlockKind::Stmt => {
                 let stmt = BlockStmt::from_hir(ctx, id, node, children);
                 BasicBlock::Stmt(arena.alloc(stmt))
+            }
+            BlockKind::Call => {
+                let stmt = BlockCall::from_hir(ctx, id, node, children);
+                BasicBlock::Call(arena.alloc(stmt))
             }
             BlockKind::Impl => {
                 todo!()

@@ -5,14 +5,12 @@ macro_rules! define_tokens {
     ) => {
         /// Language context for HIR processing
         #[derive(Debug)]
-        pub struct Language<'tcx> {
-            pub ctx: &'tcx Context<'tcx>,
-        }
+        pub struct Language {}
 
-        impl<'tcx> Language<'tcx> {
+        impl Language {
             /// Create a new Language instance
-            pub fn new(ctx: &'tcx Context<'tcx>) -> Self {
-                Self { ctx }
+            pub fn new() -> Self {
+                Self { }
             }
 
             // Generate token ID constants
@@ -58,34 +56,36 @@ macro_rules! define_tokens {
 
         /// Trait for visiting HIR nodes with type-specific dispatch
         pub trait AstVisitor<'tcx> {
+            fn ctx(&self) -> &'tcx Context<'tcx>;
+
             /// Visit a node, dispatching to the appropriate method based on token ID
-            fn visit_node(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
+            fn visit_node(&mut self, node: HirNode<'tcx>) {
                 match node.kind_id() {
                     $(
-                        Language::$const => paste::paste! { self.[<visit_ $const>](node, lang) },
+                        Language::$const => paste::paste! { self.[<visit_ $const>](node) },
                     )*
-                    _ => self.visit_unknown(node, lang),
+                    _ => self.visit_unknown(node),
                 }
             }
 
             /// Visit all children of a node
-            fn visit_children(&mut self, node: &HirNode<'tcx>, lang: &Language<'tcx>) {
+            fn visit_children(&mut self, node: &HirNode<'tcx>) {
                 for id in node.children() {
-                    let child = lang.ctx.hir_node(*id);
-                    self.visit_node(child, lang);
+                    let child = self.ctx().hir_node(*id);
+                    self.visit_node(child);
                 }
             }
 
             /// Handle unknown/unrecognized token types
-            fn visit_unknown(&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-                self.visit_children(&node, lang);
+            fn visit_unknown(&mut self, node: HirNode<'tcx>) {
+                self.visit_children(&node);
             }
 
             // Generactx: &'tcx Context<'tcxte visit methods for each token type with visit_ prefix
             $(
                 paste::paste! {
-                    fn [<visit_ $const>](&mut self, node: HirNode<'tcx>, lang: &Language<'tcx>) {
-                        self.visit_children(&node, lang)
+                    fn [<visit_ $const>](&mut self, node: HirNode<'tcx>) {
+                        self.visit_children(&node)
                     }
                 }
             )*
