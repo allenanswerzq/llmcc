@@ -1,6 +1,6 @@
 # llmcc
 
-> *"Prompts are the assembly language, models are the CPU."*
+*"Prompts are the modern assembly language, models are the modern CPU."*
 
 llmcc is a universal context builder for any language, any document.
 

@@ -1,0 +1,39 @@
+[workspace]
+resolver = "2"
+members = [
+    # "crates/llmcc",
+    "crates/llmcc-core",
+    "crates/llmcc-rust",
+]
+# default-members = ["crates/llmcc"]
+
+[workspace.package]
+publish = false
+edition = "2021"
+
+[workspace.dependencies]
+
+#
+# Workspace member crates
+#
+
+llmcc-core = { path = "crates/llmcc-core"}
+
+#
+# External crates
+#
+typed-arena = "2.0.2"
+tree-sitter = "0.25"
+tree-sitter-rust = "0.23"
+strum = "0.27"
+strum_macros = "0.27"
+paste = "1.0.15"
+regex = "1.11"
+
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "allow" }
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
