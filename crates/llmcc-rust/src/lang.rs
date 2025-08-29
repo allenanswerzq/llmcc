@@ -1,49 +1,9 @@
-use paste::paste;
-use std::cell::RefCell;
-use std::collections::HashMap;
+use llmcc_core::block::{BlockId, BlockKind};
+use llmcc_core::context::Context;
+use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode};
+use llmcc_core::symbol::{Scope, ScopeStack, SymId, Symbol};
 
-use crate::block::{BlockId, BlockKind};
-use crate::context::Context;
-use crate::define_tokens;
-use crate::ir::{HirId, HirIdent, HirKind, HirNode};
-use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
-
-define_tokens! {
-    // ---------------- Text Tokens ----------------
-    (Text_fn                ,  96 , "fn"                        , HirKind::Text),
-    (Text_LPAREN            ,   4 , "("                         , HirKind::Text),
-    (Text_RPAREN            ,   5 , ")"                         , HirKind::Text),
-    (Text_LBRACE            ,   8 , "{"                         , HirKind::Text),
-    (Text_RBRACE            ,   9 , "}"                         , HirKind::Text),
-    (Text_let               , 101 , "let"                       , HirKind::Text),
-    (Text_EQ                ,  70 , "="                         , HirKind::Text),
-    (Text_SEMI              ,   2 , ";"                         , HirKind::Text),
-    (Text_COLON             ,  11 , ":"                         , HirKind::Text),
-    (Text_COMMA             ,  83 , ","                         , HirKind::Text),
-    (Text_ARROW             ,  85 , "->"                        , HirKind::Text),
-
-    // ---------------- Node Tokens ----------------
-    (integer_literal       , 127 , "integer_literal"            , HirKind::Text),
-    (identifier            ,   1 , "identifier"                 , HirKind::IdentUse),
-    (parameter             , 213 , "parameter"                  , HirKind::Internal),
-    (parameters            , 210 , "parameters"                 , HirKind::Internal),
-    (let_declaration       , 203 , "let_declaration"            , HirKind::Internal),
-    (block                 , 293 , "block"                      , HirKind::Scope,               BlockKind::Scope),
-    (source_file           , 157 , "source_file"                , HirKind::File,                BlockKind::Root),
-    (function_item         , 188 , "function_item"              , HirKind::Scope,               BlockKind::Func),
-    (mutable_specifier     , 122 , "mutable_specifier"          , HirKind::Text),
-    (expression_statement  , 160 , "expression_statement"       , HirKind::Internal),
-    (assignment_expression , 251 , "assignment_expression"      , HirKind::Internal),
-    (binary_expression     , 250 , "binary_expression"          , HirKind::Internal),
-    (operator              ,  14 , "operator"                   , HirKind::Internal),
-    (call_expression       , 256 , "call_expression"            , HirKind::Internal,            BlockKind::Call),
-    (arguments             , 257 , "arguments"                  , HirKind::Internal),
-    (primitive_type        ,  32 , "primitive_type"             , HirKind::IdentUse),
-
-    // ---------------- Field IDs ----------------
-    (field_name            ,  19 , "name"                       , HirKind::Internal),
-    (field_pattern         ,  24 , "pattern"                    , HirKind::Internal),
-}
+use crate::token::{LanguageRust, AstVisitorRust};
 
 #[derive(Debug)]
 struct DeclFinder<'tcx> {
@@ -74,7 +34,7 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitor<'tcx> for DeclFinder<'tcx> {
+impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     fn ctx(&self) -> &'tcx Context<'tcx> {
         self.ctx
     }
@@ -84,7 +44,7 @@ impl<'tcx> AstVisitor<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, Language::field_name);
+        self.process_declaration(&node, LanguageRust::field_name);
 
         let depth = self.scope_stack.depth();
         let scope = self.ctx.find_or_add_scope(node.hir_id());
@@ -94,7 +54,7 @@ impl<'tcx> AstVisitor<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, Language::field_pattern);
+        self.process_declaration(&node, LanguageRust::field_pattern);
         self.visit_children(&node);
     }
 
@@ -107,7 +67,7 @@ impl<'tcx> AstVisitor<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, Language::field_pattern);
+        self.process_declaration(&node, LanguageRust::field_pattern);
         self.visit_children(&node);
     }
 }
@@ -135,7 +95,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitor<'tcx> for SymbolBinder<'tcx> {
+impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     fn ctx(&self) -> &'tcx Context<'tcx> {
         self.ctx
     }

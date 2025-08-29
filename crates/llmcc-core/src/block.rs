@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-use std::process::ChildStdout;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
+use std::{collections::HashMap, marker::PhantomData};
 
 use crate::context::{Context, ParentedBlock};
 use crate::ir::HirNode;
-use crate::lang::Language;
+use crate::lang_def::LanguageTrait;
 use crate::visit::HirVisitor;
 use crate::{HirId, declare_arena};
 
@@ -350,20 +349,22 @@ impl<'blk> BlockImpl<'blk> {
 }
 
 #[derive(Debug)]
-struct GraphBuilder<'tcx> {
+struct GraphBuilder<'tcx, Language> {
     ctx: &'tcx Context<'tcx>,
     id: u32,
     bb_map: HashMap<BlockId, ParentedBlock<'tcx>>,
     children_stack: Vec<Vec<BlockId>>,
+    ph: PhantomData<Language>,
 }
 
-impl<'tcx> GraphBuilder<'tcx> {
+impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     fn new(ctx: &'tcx Context<'tcx>) -> Self {
         Self {
             ctx,
             id: 0,
             bb_map: HashMap::new(),
             children_stack: Vec::new(),
+            ph: PhantomData,
         }
     }
 
@@ -435,7 +436,7 @@ impl<'tcx> GraphBuilder<'tcx> {
     }
 }
 
-impl<'tcx> HirVisitor<'tcx> for GraphBuilder<'tcx> {
+impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Language> {
     fn ctx(&self) -> &'tcx Context<'tcx> {
         self.ctx
     }
@@ -462,11 +463,11 @@ impl<'tcx> HirVisitor<'tcx> for GraphBuilder<'tcx> {
     }
 }
 
-pub fn build_llmcc_graph<'tcx>(
+pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     root: HirId,
     ctx: &'tcx Context<'tcx>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = GraphBuilder::new(ctx);
+    let mut builder = GraphBuilder::<L>::new(ctx);
     let root = ctx.hir_node(root);
     builder.visit_node(root, BlockId(0));
     *ctx.bb_map.borrow_mut() = builder.bb_map;

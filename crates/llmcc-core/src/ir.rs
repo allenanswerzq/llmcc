@@ -28,11 +28,6 @@ pub enum HirKind {
     Internal,
     Comment,
     IdentUse,
-    IdentTyUse,
-    IdentFieldUse,
-    IdentDef,
-    IdentTypeDef,
-    IdentFieldDef,
 }
 
 impl Default for HirKind {

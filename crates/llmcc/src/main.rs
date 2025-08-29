@@ -1,4 +1,4 @@
-use llmcc::*;
+use llmcc_rust::*;
 
 fn main() {
     let source_code = r#"
@@ -22,12 +22,12 @@ fn main() {
 
     let gcx = GlobalCtxt::from_source(source_code.as_bytes());
     let ctx = gcx.create_context();
-    build_llmcc_ir(&tree, &ctx);
+    build_llmcc_ir::<LanguageRust>(&tree, &ctx);
 
     let root = HirId(0);
     resolve_symbols(root, &ctx);
     print_llmcc_ir(root, &ctx);
 
-    build_llmcc_graph(root, &ctx);
+    build_llmcc_graph::<LanguageRust>(root, &ctx);
     print_llmcc_graph(BlockId(0), &ctx);
 }

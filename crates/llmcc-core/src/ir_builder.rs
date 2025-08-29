@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, marker::PhantomData};
 use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
 
 use crate::context::{Context, ParentedNode};
@@ -7,19 +7,21 @@ use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirRoot, HirScope,
     HirText,
 };
-use crate::lang::Language;
+use crate::lang_def::LanguageTrait;
 
 #[derive(Debug)]
-struct HirBuilder<'tcx> {
+struct HirBuilder<'tcx, Language> {
     id: u32,
     hir_map: HashMap<HirId, ParentedNode<'tcx>>,
+    ph: PhantomData<Language>,
 }
 
-impl<'tcx> HirBuilder<'tcx> {
+impl<'tcx, Language: LanguageTrait> HirBuilder<'tcx, Language> {
     fn new() -> Self {
         Self {
             id: 0,
             hir_map: HashMap::new(),
+            ph: PhantomData,
         }
     }
 
@@ -121,11 +123,11 @@ impl<'tcx> HirBuilder<'tcx> {
     }
 }
 
-pub fn build_llmcc_ir<'tcx>(
+pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     tree: &'tcx Tree,
     ctx: &'tcx Context<'tcx>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = HirBuilder::new();
+    let mut builder = HirBuilder::<L>::new();
     builder.build(tree.root_node(), HirId(0), ctx);
     *ctx.hir_map.borrow_mut() = builder.hir_map;
     Ok(())
