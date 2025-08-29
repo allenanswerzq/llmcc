@@ -1,3 +1,4 @@
+use llmcc_core::paste;
 use llmcc_core::define_tokens;
 use llmcc_core::ir::HirKind;
 use llmcc_core::block::BlockKind;

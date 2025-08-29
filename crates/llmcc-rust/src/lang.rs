@@ -1,7 +1,3 @@
-use paste::paste;
-use std::cell::RefCell;
-use std::collections::HashMap;
-
 use llmcc_core::block::{BlockId, BlockKind};
 use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode};
