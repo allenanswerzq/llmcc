@@ -1,7 +1,9 @@
+use once_cell::sync::Lazy;
 use proc_macro::TokenStream;
 use quote::quote;
 use regex::Regex;
 use std::collections::HashMap;
+use std::sync::RwLock;
 use syn::{parse_macro_input, LitStr};
 
 use llmcc_core::block::BlockKind;
@@ -20,6 +22,22 @@ struct Symbol {
     pub text: String,
     pub hir_kind: HirKind,
     pub block_kind: BlockKind,
+}
+
+impl Symbol {
+    fn make_ident(&self) -> Option<String> {
+        if self.name.contains("aux_sym_") {
+            None
+        } else {
+            Some(
+                self.name
+                    .replace("anon_sym_", "Text_")
+                    // .replace("aux_sym_", "")
+                    // .replace("sym_", "")
+                    .to_string(),
+            )
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -48,10 +66,6 @@ impl Language {
     }
 }
 
-// Global language registry
-use once_cell::sync::Lazy;
-use std::sync::RwLock;
-
 static LANGUAGE_REGISTRY: Lazy<RwLock<HashMap<String, Language>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
@@ -73,7 +87,6 @@ where
     registry.get_mut(name).map(f)
 }
 
-// Helper function to set symbol properties
 fn set_symbol_hir_kind(lang_name: &str, symbol_name: &str, hir_kind: HirKind) -> bool {
     get_language_mut(lang_name, |lang| {
         for symbol in lang.symbols.values_mut() {
@@ -100,14 +113,13 @@ fn set_symbol_block_kind(lang_name: &str, symbol_name: &str, block_kind: BlockKi
     .unwrap_or(false)
 }
 
-/// Parse tree-sitter parser.c file and generate Language struct
 #[proc_macro]
 pub fn parse_tree_sitter(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as LitStr);
     let file_content =
         std::fs::read_to_string(input.value()).expect("Failed to read parser.c file");
 
-    let lang_name = "rust";
+    let lang_name = "Rust";
     let language = parse_parser_c(lang_name, &file_content);
 
     // Register the language in the global registry
@@ -244,19 +256,6 @@ fn parse_field_identifiers(content: &str, language: &mut Language) {
     }
 }
 
-fn clean_symbol_name(name: &str) -> Option<String> {
-    if name.contains("aux_sym_") {
-        None
-    } else {
-        Some(
-            name.replace("anon_sym_", "Text_")
-                // .replace("aux_sym_", "")
-                .replace("sym_", "")
-                .to_string(),
-        )
-    }
-}
-
 fn generate_rust_code(language: &Language) -> TokenStream {
     let lang_name = &language.name;
     let version = language.version;
@@ -267,11 +266,12 @@ fn generate_rust_code(language: &Language) -> TokenStream {
         .symbols
         .iter()
         .map(|(id, symbol)| {
-            let const_name = proc_macro2::Ident::new(
-                &symbol.name.to_uppercase(),
-                proc_macro2::Span::call_site(),
-            );
-            quote! { pub const #const_name: u16 = #id; }
+            if let Some(ident) = symbol.make_ident() {
+                let const_name = proc_macro2::Ident::new(&ident, proc_macro2::Span::call_site());
+                quote! { pub const #const_name: u16 = #id; }
+            } else {
+                quote! {}
+            }
         })
         .collect();
 
@@ -280,15 +280,16 @@ fn generate_rust_code(language: &Language) -> TokenStream {
         .symbols
         .iter()
         .map(|(id, symbol)| {
-            let const_name = proc_macro2::Ident::new(
-                &symbol.name.to_uppercase(),
-                proc_macro2::Span::call_site(),
-            );
-            let hir_kind = proc_macro2::Ident::new(
-                &symbol.hir_kind.to_string(),
-                proc_macro2::Span::call_site(),
-            );
-            quote! { Self::#const_name => HirKind::#hir_kind, }
+            if let Some(ident) = symbol.make_ident() {
+                let const_name = proc_macro2::Ident::new(&ident, proc_macro2::Span::call_site());
+                let hir_kind = proc_macro2::Ident::new(
+                    &symbol.hir_kind.to_string(),
+                    proc_macro2::Span::call_site(),
+                );
+                quote! { Self::#const_name => HirKind::#hir_kind, }
+            } else {
+                quote! {}
+            }
         })
         .collect();
 
@@ -296,15 +297,16 @@ fn generate_rust_code(language: &Language) -> TokenStream {
         .symbols
         .iter()
         .map(|(id, symbol)| {
-            let const_name = proc_macro2::Ident::new(
-                &symbol.name.to_uppercase(),
-                proc_macro2::Span::call_site(),
-            );
-            let block_kind = proc_macro2::Ident::new(
-                &symbol.block_kind.to_string(),
-                proc_macro2::Span::call_site(),
-            );
-            quote! { Self::#const_name => BlockKind::#block_kind, }
+            if let Some(ident) = symbol.make_ident() {
+                let const_name = proc_macro2::Ident::new(&ident, proc_macro2::Span::call_site());
+                let block_kind = proc_macro2::Ident::new(
+                    &symbol.block_kind.to_string(),
+                    proc_macro2::Span::call_site(),
+                );
+                quote! { Self::#const_name => BlockKind::#block_kind, }
+            } else {
+                quote! {}
+            }
         })
         .collect();
 
@@ -312,12 +314,13 @@ fn generate_rust_code(language: &Language) -> TokenStream {
         .symbols
         .iter()
         .map(|(id, symbol)| {
-            let const_name = proc_macro2::Ident::new(
-                &symbol.name.to_uppercase(),
-                proc_macro2::Span::call_site(),
-            );
-            let token_str = &symbol.text;
-            quote! { Self::#const_name => Some(#token_str), }
+            if let Some(ident) = symbol.make_ident() {
+                let const_name = proc_macro2::Ident::new(&ident, proc_macro2::Span::call_site());
+                let token_str = &symbol.text;
+                quote! { Self::#const_name => Some(#token_str), }
+            } else {
+                quote! {}
+            }
         })
         .collect();
 
@@ -325,11 +328,12 @@ fn generate_rust_code(language: &Language) -> TokenStream {
         .symbols
         .iter()
         .map(|(_, symbol)| {
-            let const_name = proc_macro2::Ident::new(
-                &symbol.name.to_uppercase(),
-                proc_macro2::Span::call_site(),
-            );
-            quote! { Self::#const_name }
+            if let Some(ident) = symbol.make_ident() {
+                let const_name = proc_macro2::Ident::new(&ident, proc_macro2::Span::call_site());
+                quote! { Self::#const_name }
+            } else {
+                quote! {}
+            }
         })
         .collect();
 
