@@ -1,7 +1,11 @@
-use crate::ir::HirKind;
 use crate::block::BlockKind;
+use crate::ir::HirKind;
+
+use tree_sitter::{Parser, Tree};
 
 pub trait LanguageTrait {
+    // TODO: add gneral parse result struct
+    fn parse(text: impl AsRef<[u8]>) -> Option<Tree>;
     fn hir_kind(kind_id: u16) -> HirKind;
     fn block_kind(kind_id: u16) -> BlockKind;
     fn token_str(kind_id: u16) -> Option<&'static str>;
@@ -36,6 +40,14 @@ macro_rules! define_tokens {
             }
 
             impl LanguageTrait for [<Language $suffix>] {
+                /// Parse the text into a tree
+                fn parse(text: impl AsRef<[u8]>) -> Option<Tree> {
+                    let lang = [<tree_sitter_ $suffix:lower>]::LANGUAGE.into();
+                    let mut parser = Parser::new();
+                    parser.set_language(&lang).unwrap();
+                    parser.parse(text, None)
+                }
+
                 /// Get the HIR kind for a given token ID
                 fn hir_kind(kind_id: u16) -> HirKind {
                     match kind_id {
