@@ -3,7 +3,7 @@ use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode};
 use llmcc_core::symbol::{Scope, ScopeStack, SymId, Symbol};
 
-use crate::token::{LanguageRust, AstVisitorRust};
+use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
 struct DeclFinder<'tcx> {
@@ -44,7 +44,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, LanguageRust::field_name);
+        self.process_declaration(&node, LangRust::field_name);
 
         let depth = self.scope_stack.depth();
         let scope = self.ctx.find_or_add_scope(node.hir_id());
@@ -54,7 +54,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, LanguageRust::field_pattern);
+        self.process_declaration(&node, LangRust::field_pattern);
         self.visit_children(&node);
     }
 
@@ -67,7 +67,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, LanguageRust::field_pattern);
+        self.process_declaration(&node, LangRust::field_pattern);
         self.visit_children(&node);
     }
 }
