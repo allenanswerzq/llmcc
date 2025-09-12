@@ -25,10 +25,10 @@ macro_rules! define_tokens {
         crate::paste::paste! {
             /// Language context for HIR processing
             #[derive(Debug)]
-            pub struct [<Language $suffix>] {}
+            pub struct [<Lang $suffix>] {}
 
             #[allow(non_upper_case_globals)]
-            impl [<Language $suffix>] {
+            impl [<Lang $suffix>] {
                 /// Create a new Language instance
                 pub fn new() -> Self {
                     Self { }
@@ -39,7 +39,7 @@ macro_rules! define_tokens {
                 )*
             }
 
-            impl LanguageTrait for [<Language $suffix>] {
+            impl LanguageTrait for [<Lang $suffix>] {
                 /// Parse the text into a tree
                 fn parse(text: impl AsRef<[u8]>) -> Option<Tree> {
                     let lang = [<tree_sitter_ $suffix:lower>]::LANGUAGE.into();
@@ -92,7 +92,7 @@ macro_rules! define_tokens {
                 fn visit_node(&mut self, node: HirNode<'tcx>) {
                     match node.kind_id() {
                         $(
-                            [<Language $suffix>]::$const => paste::paste! { self.[<visit_ $const>](node) },
+                            [<Lang $suffix>]::$const => paste::paste! { self.[<visit_ $const>](node) },
                         )*
                         _ => self.visit_unknown(node),
                     }
