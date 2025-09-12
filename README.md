@@ -11,3 +11,7 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 ## design
 
 ![design](doc/design.svg)
+
+## run
+
+```cargo run -- tests/test.rs```

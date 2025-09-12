@@ -1,11 +1,13 @@
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::ops::Deref;
+use tree_sitter::Tree;
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockRelation};
 use crate::block_rel::{BlockRelationMap, RelationBuilder};
 use crate::file::File;
 use crate::ir::{Arena, HirId, HirKind, HirNode};
+use crate::lang_def::LanguageTrait;
 use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
 
 #[derive(Debug, Copy, Clone)]
@@ -200,10 +202,11 @@ impl<'tcx> ParentedBlock<'tcx> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GlobalCtxt<'tcx> {
     pub arena: Arena<'tcx>,
     pub file: File,
+    pub tree: Option<Tree>,
 
     // HirId -> ParentedNode
     pub hir_map: RefCell<HashMap<HirId, ParentedNode<'tcx>>>,
@@ -223,18 +226,29 @@ pub struct GlobalCtxt<'tcx> {
 
 impl<'tcx> GlobalCtxt<'tcx> {
     /// Create a new GlobalCtxt from source code
-    pub fn from_source(source: &[u8]) -> Self {
+    pub fn from_source<L: LanguageTrait>(source: &[u8]) -> Self {
         Self {
             arena: Arena::default(),
             file: File::new_source(source.to_vec()),
-            hir_map: RefCell::new(HashMap::new()),
-            defs_map: RefCell::new(HashMap::new()),
-            uses_map: RefCell::new(HashMap::new()),
-            scope_map: RefCell::new(HashMap::new()),
-            block_arena: BlockArena::default(),
-            bb_map: RefCell::new(HashMap::new()),
-            related_map: BlockRelationMap::new(),
+            tree: L::parse(source),
+            ..Default::default()
         }
+    }
+
+    /// Create a new GlobalCtxt from file
+    pub fn from_file<L: LanguageTrait>(file: String) -> std::io::Result<Self> {
+        let file = File::new_file(file)?;
+        let tree = L::parse(file.content());
+        Ok(Self {
+            arena: Arena::default(),
+            file,
+            tree,
+            ..Default::default()
+        })
+    }
+
+    pub fn tree(&'tcx self) -> Tree {
+        self.tree.as_ref().unwrap().clone()
     }
 
     /// Create a context that references this GlobalCtxt

@@ -4,19 +4,13 @@ use std::collections::{HashMap, HashSet};
 use crate::block::{BlockId, BlockRelation};
 
 /// Manages relationships between blocks in a clean, type-safe way
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct BlockRelationMap {
     /// BlockId -> (Relation -> Vec<BlockId>)
     relations: RefCell<HashMap<BlockId, HashMap<BlockRelation, Vec<BlockId>>>>,
 }
 
 impl BlockRelationMap {
-    pub fn new() -> Self {
-        Self {
-            relations: RefCell::new(HashMap::new()),
-        }
-    }
-
     /// Add a relationship between two blocks
     pub fn add_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
         let mut relations = self.relations.borrow_mut();
@@ -183,12 +177,6 @@ impl BlockRelationMap {
     /// Get the number of blocks with relationships
     pub fn len(&self) -> usize {
         self.relations.borrow().len()
-    }
-}
-
-impl Default for BlockRelationMap {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

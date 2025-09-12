@@ -1,4 +1,4 @@
-use std::hash::{DefaultHasher, Hasher};
+use std::hash::{DefaultHasher, Hash, Hasher};
 
 #[derive(Debug, Clone, Default)]
 pub struct FileId {
@@ -8,12 +8,18 @@ pub struct FileId {
 }
 
 impl FileId {
-    pub fn new_path(path: String) -> Self {
-        FileId {
+    pub fn new_path(path: String) -> std::io::Result<Self> {
+        let content = std::fs::read(&path)?;
+
+        let mut hasher = DefaultHasher::new();
+        content.hash(&mut hasher);
+        let content_hash = hasher.finish();
+
+        Ok(FileId {
             path: Some(path),
-            content: None,
-            content_hash: 0,
-        }
+            content: Some(content),
+            content_hash,
+        })
     }
 
     pub fn new_content(content: Vec<u8>) -> Self {
@@ -48,7 +54,7 @@ impl FileId {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct File {
     // TODO: add cache and all other stuff
     pub file: FileId,
@@ -59,6 +65,16 @@ impl File {
         File {
             file: FileId::new_content(source),
         }
+    }
+
+    pub fn new_file(file: String) -> std::io::Result<Self> {
+        Ok(File {
+            file: FileId::new_path(file)?,
+        })
+    }
+
+    pub fn content(&self) -> Vec<u8> {
+        self.file.content.as_ref().unwrap().to_vec()
     }
 
     pub fn get_text(&self, start: usize, end: usize) -> String {
