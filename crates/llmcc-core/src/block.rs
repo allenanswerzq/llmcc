@@ -1,11 +1,11 @@
-use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use std::{collections::HashMap, marker::PhantomData};
+use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::{Context, ParentedBlock};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
 use crate::visit::HirVisitor;
-use crate::{HirId, declare_arena};
+use crate::{declare_arena, HirId};
 
 declare_arena!([
     blk_root: BlockRoot<'tcx>,
@@ -537,7 +537,7 @@ impl<'tcx> GraphPrinter<'tcx> {
         self.depth -= 1;
         if bb.child_count() > 0 {
             self.graph.push_str(&"  ".repeat(self.depth));
-            self.graph.push(')');
+            self.graph.push_str(")\n");
         }
     }
 }
