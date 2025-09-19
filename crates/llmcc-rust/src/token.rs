@@ -26,7 +26,7 @@ define_tokens! {
     (parameters            , 210 , "parameters"                 , HirKind::Internal),
     (let_declaration       , 203 , "let_declaration"            , HirKind::Internal),
     (block                 , 293 , "block"                      , HirKind::Scope,               BlockKind::Scope),
-    (source_file           , 157 , "source_file"                , HirKind::File,                BlockKind::Root),
+    (source_file           , 157 , "source_file"                , HirKind::Scope,                BlockKind::Root),
     (function_item         , 188 , "function_item"              , HirKind::Scope,               BlockKind::Func),
     (mutable_specifier     , 122 , "mutable_specifier"          , HirKind::Text),
     (expression_statement  , 160 , "expression_statement"       , HirKind::Internal),
