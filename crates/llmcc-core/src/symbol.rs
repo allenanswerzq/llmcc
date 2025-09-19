@@ -171,7 +171,7 @@ pub struct Symbol<'tcx> {
     pub id: SymId,
     pub owner: HirId,
     pub name: String,
-    pub mangled_name: RefCell<String>,
+    pub fqn_name: RefCell<String>,
     // Which node defined this symbol
     pub defined: Cell<Option<HirId>>,
     pub type_of: Cell<Option<SymId>>,
@@ -192,7 +192,7 @@ impl<'tcx> Symbol<'tcx> {
             id: sym_id,
             owner,
             name: name.clone(),
-            mangled_name: RefCell::new(name),
+            fqn_name: RefCell::new(name),
             defined: Cell::new(None),
             type_of: Cell::new(None),
             field_of: Cell::new(None),

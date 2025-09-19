@@ -215,6 +215,7 @@ pub struct GlobalCtxt<'tcx> {
     // HirId -> &Symbol (uses/references)
     pub uses_map: RefCell<HashMap<HirId, &'tcx Symbol<'tcx>>>,
     // HirId -> &Scope (scopes owned by this HIR node)
+    // NOTE: the scopes also persisted inside the arena
     pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
 
     pub block_arena: BlockArena<'tcx>,
