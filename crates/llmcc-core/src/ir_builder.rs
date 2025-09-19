@@ -50,7 +50,7 @@ impl<'tcx, Language: LanguageTrait> HirBuilder<'tcx, Language> {
                 HirNode::Internal(arena.alloc(node))
             }
             HirKind::Scope => {
-                let node = HirScope::new(base);
+                let node = HirScope::new(base, None);
                 HirNode::Scope(arena.alloc(node))
             }
             HirKind::IdentUse => {

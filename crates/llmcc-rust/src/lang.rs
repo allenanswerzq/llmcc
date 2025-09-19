@@ -18,16 +18,34 @@ impl<'tcx> DeclFinder<'tcx> {
         Self { ctx, scope_stack }
     }
 
-    fn generate_mangled_name(&self, base_name: &str, node_id: HirId) -> String {
-        format!("{}_{:x}", base_name, node_id.0)
+    fn generate_fqn(&self, name: &str, node_id: HirId) -> String {
+        for scope in self.scope_stack.scopes.iter().rev() {
+            if let Some(_) = scope.find_symbol_id(name) {
+                // collect owners from current scope down to global
+                let mut owners = vec![];
+                for s in self.scope_stack.scopes.iter() {
+                    let hir = self.ctx.hir_node(s.owner).expect_scope();
+                    let owner_name = hir.owner_name();
+                    owners.push(owner_name);
+                    if s.owner == scope.owner {
+                        break;
+                    }
+                }
+                // owners.reverse();
+                owners.push(name.to_string());
+                return owners.join("::".into());
+            }
+        }
+
+        format!("{}_{:x}", name, node_id.0)
     }
 
     fn process_declaration(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
         let ident = node.expect_ident_child_by_field(&self.ctx, field_id);
         let symbol = self.scope_stack.find_or_add(node.hir_id(), ident);
 
-        let mangled = self.generate_mangled_name(&ident.name, node.hir_id());
-        *symbol.mangled_name.borrow_mut() = mangled;
+        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        *symbol.fqn_name.borrow_mut() = fqn;
 
         self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
@@ -126,11 +144,14 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             // if this ident does have a symbol before
             let ident = node.expect_ident();
             if let Some(def_sym) = self.scope_stack.find(ident) {
+                // if able to find under the current parsing stack
                 let use_sym = self.ctx.new_symbol(node.hir_id(), ident.name.clone());
                 use_sym.defined.set(Some(def_sym.owner));
 
                 self.ctx.insert_use(id, use_sym);
             } else {
+                // could be defined external
+                // self.ctx.add_unresolved_ident(id);
                 println!("not find ident: {}", ident.name);
             }
         }
