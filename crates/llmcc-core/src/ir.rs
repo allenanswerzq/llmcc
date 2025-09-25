@@ -255,16 +255,11 @@ impl<'hir> HirInternal<'hir> {
 #[derive(Debug, Clone)]
 pub struct HirScope<'hir> {
     pub base: HirBase<'hir>,
-    pub name: Option<String>,
 }
 
 impl<'hir> HirScope<'hir> {
-    pub fn new(base: HirBase<'hir>, name: Option<String>) -> Self {
-        Self { base, name }
-    }
-
-    pub fn owner_name(&self) -> String {
-        self.name.as_ref().unwrap_or(&".".to_string()).clone()
+    pub fn new(base: HirBase<'hir>) -> Self {
+        Self { base }
     }
 }
 
