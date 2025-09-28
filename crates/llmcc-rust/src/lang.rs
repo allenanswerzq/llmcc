@@ -18,16 +18,31 @@ impl<'tcx> DeclFinder<'tcx> {
         Self { ctx, scope_stack }
     }
 
-    fn generate_mangled_name(&self, base_name: &str, node_id: HirId) -> String {
-        format!("{}_{:x}", base_name, node_id.0)
-    }
+    // fn generate_fqn(&self, name: &str, node_id: HirId) -> String {
+    //     for scope in self.scope_stack.scopes.iter().rev() {
+    //         if let Some(_) = scope.find_symbol_id(name) {
+    //             // collect owners from current scope down to global
+    //             let mut owners = vec![];
+    //             for s in self.scope_stack.scopes.iter() {
+    //                 let hir = self.ctx.hir_node(s.owner).expect_scope();
+    //                 let owner_name = hir.owner_name();
+    //                 owners.push(owner_name);
+    //                 if s.owner == scope.owner {
+    //                     break;
+    //                 }
+    //             }
+    //             // owners.reverse();
+    //             owners.push(name.to_string());
+    //             return owners.join("::".into());
+    //         }
+    //     }
 
-    fn process_declaration(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
+    //     format!("{}_{:x}", name, node_id.0)
+    // }
+
+    fn process_decl(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
         let ident = node.expect_ident_child_by_field(&self.ctx, field_id);
-        let symbol = self.scope_stack.find_or_add(node.hir_id(), ident);
-
-        let mangled = self.generate_mangled_name(&ident.name, node.hir_id());
-        *symbol.mangled_name.borrow_mut() = mangled;
+        let symbol = self.scope_stack.find_or_add(node.hir_id(), ident, false);
 
         self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
@@ -44,30 +59,30 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, LangRust::field_name);
+        self.process_decl(&node, LangRust::field_name);
 
         let depth = self.scope_stack.depth();
-        let scope = self.ctx.find_or_add_scope(node.hir_id());
+        let scope = self.ctx.alloc_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
         self.visit_children(&node);
         self.scope_stack.pop_until(depth);
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, LangRust::field_pattern);
+        self.process_decl(&node, LangRust::field_pattern);
         self.visit_children(&node);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
-        let scope = self.ctx.find_or_add_scope(node.hir_id());
+        let scope = self.ctx.alloc_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
         self.visit_children(&node);
         self.scope_stack.pop_until(depth);
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.process_declaration(&node, LangRust::field_pattern);
+        self.process_decl(&node, LangRust::field_pattern);
         self.visit_children(&node);
     }
 }
@@ -87,7 +102,7 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     pub fn follow_scope_deeper(&mut self, node: HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
-        let scope = self.ctx.find_or_add_scope(node.hir_id());
+        let scope = self.ctx.alloc_scope(node.hir_id());
         self.scope_stack.push_scope(scope);
 
         self.visit_children(&node);
@@ -139,7 +154,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 
 pub fn resolve_symbols<'tcx>(root: HirId, ctx: &'tcx Context<'tcx>) {
     let node = ctx.hir_node(root);
-    let globals = ctx.find_or_add_scope(root);
+    let globals = ctx.alloc_scope(root);
 
     let mut decl_finder = DeclFinder::new(ctx, globals);
     decl_finder.visit_node(node.clone());

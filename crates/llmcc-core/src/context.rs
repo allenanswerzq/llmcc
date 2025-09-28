@@ -86,7 +86,7 @@ impl<'tcx> Context<'tcx> {
     }
 
     /// Find an existing scope or create a new one
-    pub fn find_or_add_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
+    pub fn alloc_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
         // Check if scope already exists
         if let Some(existing_scope) = self.opt_scope(owner) {
             return existing_scope;
