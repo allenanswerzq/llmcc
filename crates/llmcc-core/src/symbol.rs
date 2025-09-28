@@ -118,12 +118,16 @@ impl<'tcx> ScopeStack<'tcx> {
         &mut self,
         name: String,
         symbol: &'tcx Symbol<'tcx>,
+        global: bool,
     ) -> Result<SymId, &'static str> {
-        if let Some(scope) = self.scopes.last_mut() {
-            Ok(scope.insert_symbol(name, symbol))
+        let scope = if global {
+            self.scopes.get_mut(0).ok_or("no global scope exist")
         } else {
-            Err("No scope available to insert symbol")
-        }
+            self.scopes
+                .last_mut()
+                .ok_or("no scope available to insert symbol")
+        }?;
+        Ok(scope.insert_symbol(name, symbol))
     }
 
     pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
@@ -154,15 +158,30 @@ impl<'tcx> ScopeStack<'tcx> {
         None
     }
 
-    pub fn find_or_add(&mut self, id: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol<'tcx> {
-        if self.find(ident).is_some() {
-            return self.find(ident).unwrap();
+    pub fn find_or_add(
+        &mut self,
+        id: HirId,
+        ident: &HirIdent<'tcx>,
+        global: bool,
+    ) -> &'tcx Symbol<'tcx> {
+        let result = self.find(ident);
+        if let Some(sym) = result {
+            return sym;
         }
 
         let symbol = Symbol::new(id, ident.name.clone());
         let symbol = self.arena.alloc(symbol);
-        self.insert_symbol(ident.name.clone(), symbol);
+        self.insert_symbol(ident.name.clone(), symbol, global)
+            .unwrap();
         self.find(ident).unwrap()
+    }
+
+    pub fn find_or_add_local(&mut self, id: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol<'tcx> {
+        self.find_or_add(id, ident, false)
+    }
+
+    pub fn find_or_add_global(&mut self, id: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol<'tcx> {
+        self.find_or_add(id, ident, true)
     }
 }
 
