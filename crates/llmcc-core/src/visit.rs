@@ -1,8 +1,6 @@
+use crate::block::BlockId;
+use crate::ir::{HirKind, HirNode};
 use crate::Context;
-use crate::block::{BlockId, BlockKind};
-use crate::ir::{
-    HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirRoot, HirScope, HirText,
-};
 
 pub trait HirVisitor<'v> {
     fn ctx(&self) -> &'v Context<'v>;
@@ -35,7 +33,6 @@ pub trait HirVisitor<'v> {
     }
 
     fn visit_node(&mut self, node: HirNode<'v>, parent: BlockId) {
-        // println!("{}", node.format_node(self.ctx()));
         match node.kind() {
             HirKind::File => self.visit_file(node, parent),
             HirKind::Scope => self.visit_scope(node, parent),

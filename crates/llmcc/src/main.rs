@@ -1,18 +1,20 @@
 use llmcc_rust::*;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
     let input_file = &args[1];
 
     let gcx = GlobalCtxt::from_file::<LangRust>(input_file.clone()).unwrap();
     let ctx = gcx.create_context();
     let tree = gcx.tree();
-    build_llmcc_ir::<LangRust>(&tree, &ctx);
+    build_llmcc_ir::<LangRust>(&tree, &ctx)?;
 
     let root = HirId(0);
     resolve_symbols(root, &ctx);
     print_llmcc_ir(root, &ctx);
 
-    build_llmcc_graph::<LangRust>(root, &ctx);
+    build_llmcc_graph::<LangRust>(root, &ctx)?;
     print_llmcc_graph(BlockId(0), &ctx);
+
+    Ok(())
 }
