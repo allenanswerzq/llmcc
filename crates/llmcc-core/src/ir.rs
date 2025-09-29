@@ -27,7 +27,7 @@ pub enum HirKind {
     Text,
     Internal,
     Comment,
-    IdentUse,
+    Identifier,
 }
 
 impl Default for HirKind {
@@ -57,6 +57,7 @@ impl<'hir> HirNode<'hir> {
     pub fn format_node(&self, ctx: &Context<'hir>) -> String {
         let id = self.hir_id();
         let kind = self.kind();
+        let base = self.base().unwrap();
         let mut f = format!("{}:{}", kind, id);
 
         if let Some(def) = ctx.opt_defs(id) {
@@ -129,10 +130,7 @@ impl<'hir> HirNode<'hir> {
     }
 
     pub fn opt_child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
-        self.children()
-            .iter()
-            .map(|id| ctx.hir_node(*id))
-            .find(|child| child.field_id() == field_id)
+        self.base().unwrap().opt_child_by_field(ctx, field_id)
     }
 
     pub fn child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> HirNode<'hir> {
@@ -218,6 +216,26 @@ pub struct HirBase<'hir> {
     pub children: Vec<HirId>,
 }
 
+impl<'hir> HirBase<'hir> {
+    pub fn opt_child_by_fields(
+        &self,
+        ctx: &Context<'hir>,
+        fields_id: &[u16],
+    ) -> Option<HirNode<'hir>> {
+        self.children
+            .iter()
+            .map(|id| ctx.hir_node(*id))
+            .find(|child| fields_id.contains(&child.field_id()))
+    }
+
+    pub fn opt_child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+        self.children
+            .iter()
+            .map(|id| ctx.hir_node(*id))
+            .find(|child| child.field_id() == field_id)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct HirRoot<'hir> {
     pub base: HirBase<'hir>,
@@ -255,11 +273,20 @@ impl<'hir> HirInternal<'hir> {
 #[derive(Debug, Clone)]
 pub struct HirScope<'hir> {
     pub base: HirBase<'hir>,
+    pub ident: Option<&'hir HirIdent<'hir>>,
 }
 
 impl<'hir> HirScope<'hir> {
-    pub fn new(base: HirBase<'hir>) -> Self {
-        Self { base }
+    pub fn new(base: HirBase<'hir>, ident: Option<&'hir HirIdent<'hir>>) -> Self {
+        Self { base, ident }
+    }
+
+    pub fn owner_name(&self) -> String {
+        if let Some(id) = self.ident {
+            return id.name.clone();
+        } else {
+            "unamed_scope".to_string()
+        }
     }
 }
 

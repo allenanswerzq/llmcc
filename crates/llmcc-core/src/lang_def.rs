@@ -10,6 +10,8 @@ pub trait LanguageTrait {
     fn block_kind(kind_id: u16) -> BlockKind;
     fn token_str(kind_id: u16) -> Option<&'static str>;
     fn is_valid_token(kind_id: u16) -> bool;
+    fn name_field() -> u16;
+    fn type_field() -> u16;
 }
 
 #[macro_export]
@@ -81,6 +83,14 @@ macro_rules! define_tokens {
                 /// Check if a token ID is valid
                 fn is_valid_token(kind_id: u16) -> bool {
                     matches!(kind_id, $(Self::$const)|*)
+                }
+
+                fn name_field() -> u16 {
+                    Self::field_name
+                }
+
+                fn type_field() -> u16 {
+                    Self::field_type
                 }
             }
 
