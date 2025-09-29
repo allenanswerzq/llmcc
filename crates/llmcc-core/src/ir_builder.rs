@@ -30,11 +30,12 @@ impl<'tcx, Language: LanguageTrait> HirBuilder<'tcx, Language> {
         base: HirBase<'tcx>,
         node: Node,
         kind: HirKind,
-        file: &File,
-        arena: &'tcx Arena<'tcx>,
+        ctx: &'tcx Context<'tcx>,
     ) -> HirNode<'tcx> {
         let start = base.node.start_byte();
         let end = base.node.end_byte();
+        let file = &ctx.file;
+        let arena = &ctx.arena;
         match kind {
             HirKind::File => {
                 let node = HirFile::new(base, "NONE".into());
@@ -50,10 +51,19 @@ impl<'tcx, Language: LanguageTrait> HirBuilder<'tcx, Language> {
                 HirNode::Internal(arena.alloc(node))
             }
             HirKind::Scope => {
-                let node = HirScope::new(base);
-                HirNode::Scope(arena.alloc(node))
+                let ident = base.opt_child_by_fields(
+                    ctx,
+                    &vec![Language::name_field(), Language::type_field()],
+                );
+                if let Some(ident) = ident {
+                    let node = HirScope::new(base, ident.as_ident());
+                    HirNode::Scope(arena.alloc(node))
+                } else {
+                    let node = HirScope::new(base, None);
+                    HirNode::Scope(arena.alloc(node))
+                }
             }
-            HirKind::IdentUse => {
+            HirKind::Identifier => {
                 let text = file.get_text(start, end);
                 let node = HirIdent::new(base, text);
                 HirNode::Ident(arena.alloc(node))
@@ -94,7 +104,7 @@ impl<'tcx, Language: LanguageTrait> HirBuilder<'tcx, Language> {
 
         if cursor.goto_first_child() {
             loop {
-                if cursor.node() == *node {
+                if cursor.node().id() == node.id() {
                     return cursor.field_id().map(|id| id.get());
                 }
                 if !cursor.goto_next_sibling() {
@@ -117,8 +127,10 @@ impl<'tcx, Language: LanguageTrait> HirBuilder<'tcx, Language> {
         let kind = Language::hir_kind(node.kind_id());
         let base = self.create_base(hir_id, node, kind, hirs);
         let hir_id = base.hir_id;
-        let node = self.create_hir(base, node, kind, &ctx.file, &ctx.arena);
-        self.hir_map.insert(hir_id, ParentedNode::new(parent, node));
+        let node = self.create_hir(base, node, kind, &ctx);
+        ctx.hir_map
+            .borrow_mut()
+            .insert(hir_id, ParentedNode::new(parent, node));
         hir_id
     }
 }
@@ -129,7 +141,6 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = HirBuilder::<L>::new();
     builder.build(tree.root_node(), HirId(0), ctx);
-    *ctx.hir_map.borrow_mut() = builder.hir_map;
     Ok(())
 }
 
@@ -157,8 +168,26 @@ impl<'tcx> HirPrinter<'tcx> {
 
         if cursor.goto_first_child() {
             loop {
-                if cursor.node() == *node {
+                if cursor.node().id() == node.id() {
                     return cursor.field_name().map(|name| name.to_string());
+                }
+                if !cursor.goto_next_sibling() {
+                    break;
+                }
+            }
+        }
+
+        None
+    }
+
+    pub fn field_id_of(&self, node: &Node) -> Option<u16> {
+        let parent = node.parent()?;
+        let mut cursor = parent.walk();
+
+        if cursor.goto_first_child() {
+            loop {
+                if cursor.node().id() == node.id() {
+                    return cursor.field_id().map(|id| id.get());
                 }
                 if !cursor.goto_next_sibling() {
                     break;
@@ -176,10 +205,11 @@ impl<'tcx> HirPrinter<'tcx> {
         let start = node.start_byte();
         let end = node.end_byte();
 
-        let mut indent = "  ".repeat(self.depth);
+        let indent = "  ".repeat(self.depth);
         let mut label = "".to_string();
         if let Some(field_name) = field_name {
-            label.push_str(&format!("{}:{}", field_name, kind));
+            let field_id = self.field_id_of(&node).unwrap();
+            label.push_str(&format!("({}_{}):{}", field_name, field_id, kind));
         } else {
             label.push_str(&format!("{}", kind));
         }

@@ -18,34 +18,52 @@ impl<'tcx> DeclFinder<'tcx> {
         Self { ctx, scope_stack }
     }
 
-    // fn generate_fqn(&self, name: &str, node_id: HirId) -> String {
-    //     for scope in self.scope_stack.scopes.iter().rev() {
-    //         if let Some(_) = scope.find_symbol_id(name) {
-    //             // collect owners from current scope down to global
-    //             let mut owners = vec![];
-    //             for s in self.scope_stack.scopes.iter() {
-    //                 let hir = self.ctx.hir_node(s.owner).expect_scope();
-    //                 let owner_name = hir.owner_name();
-    //                 owners.push(owner_name);
-    //                 if s.owner == scope.owner {
-    //                     break;
-    //                 }
-    //             }
-    //             // owners.reverse();
-    //             owners.push(name.to_string());
-    //             return owners.join("::".into());
-    //         }
-    //     }
+    fn generate_fqn(&self, name: &str, node_id: HirId) -> String {
+        for scope in self.scope_stack.scopes.iter().rev() {
+            if let Some(_) = scope.find_symbol_id(name) {
+                let mut owners = vec![];
+                for s in self.scope_stack.scopes.iter() {
+                    let hir = self.ctx.hir_node(s.owner);
+                    match hir {
+                        HirNode::Scope(hir) => {
+                            let owner_name = hir.owner_name();
+                            owners.push(owner_name);
+                            if s.owner == scope.owner {
+                                break;
+                            }
+                        }
+                        HirNode::File(_node) => {}
+                        _ => {}
+                    }
+                }
+                owners.push(name.to_string());
+                owners.reverse();
+                return owners.join("::".into());
+            }
+        }
 
-    //     format!("{}_{:x}", name, node_id.0)
-    // }
+        format!("{}_{:x}", name, node_id.0)
+    }
 
     fn process_decl(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
         let ident = node.expect_ident_child_by_field(&self.ctx, field_id);
         let symbol = self.scope_stack.find_or_add(node.hir_id(), ident, false);
 
+        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        dbg!(&fqn);
+        *symbol.fqn_name.borrow_mut() = fqn;
+
         self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
+    }
+
+    /// Visit all children of a node in a new scope
+    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>) {
+        let depth = self.scope_stack.depth();
+        let scope = self.ctx.alloc_scope(node.hir_id());
+        self.scope_stack.push_scope(scope);
+        self.visit_children(&node);
+        self.scope_stack.pop_until(depth);
     }
 }
 
@@ -60,12 +78,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         self.process_decl(&node, LangRust::field_name);
-
-        let depth = self.scope_stack.depth();
-        let scope = self.ctx.alloc_scope(node.hir_id());
-        self.scope_stack.push_scope(scope);
-        self.visit_children(&node);
-        self.scope_stack.pop_until(depth);
+        self.visit_children_new_scope(&node);
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
@@ -74,16 +87,28 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
-        let depth = self.scope_stack.depth();
-        let scope = self.ctx.alloc_scope(node.hir_id());
-        self.scope_stack.push_scope(scope);
         self.visit_children(&node);
-        self.scope_stack.pop_until(depth);
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
         self.process_decl(&node, LangRust::field_pattern);
         self.visit_children(&node);
+    }
+
+    fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
+        self.visit_children_new_scope(&node);
+    }
+
+    fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
+        self.visit_children_new_scope(&node);
+    }
+
+    fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
+        self.visit_children_new_scope(&node);
+    }
+
+    fn visit_function_signature_item(&mut self, node: HirNode<'tcx>) {
+        // self.visit_children_new_scope(&node);
     }
 }
 

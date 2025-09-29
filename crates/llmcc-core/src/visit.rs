@@ -39,7 +39,7 @@ pub trait HirVisitor<'v> {
             HirKind::Text => self.visit_text(node, parent),
             HirKind::Internal => self.visit_internal(node, parent),
             HirKind::Undefined => self.visit_undefined(node, parent),
-            HirKind::IdentUse => self.visit_ident(node, parent),
+            HirKind::Identifier => self.visit_ident(node, parent),
             _ => {
                 todo!("{}", node.format_node(self.ctx()))
             }
