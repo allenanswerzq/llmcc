@@ -4,8 +4,12 @@ pub fn bar(x: i32) -> i32 { x + 1 }
 
 async fn baz() -> Result<(), ()> { Ok(()) }
 
-mod my_mod {
-    fn in_module() {}
+pub mod my_mod {
+    pub fn in_module() {}
+
+    pub mod nest {
+        pub fn in_nest_module() {}
+    }
 }
 
 struct Foo;
