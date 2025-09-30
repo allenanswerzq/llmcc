@@ -8,6 +8,7 @@ pub mod ir_builder;
 pub mod lang_def;
 pub mod symbol;
 pub mod visit;
+pub mod trie;
 
 pub use block::{build_llmcc_graph, print_llmcc_graph, BlockId};
 pub use context::{Context, GlobalCtxt};
