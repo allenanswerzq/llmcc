@@ -1,9 +1,73 @@
+use std::collections::HashMap;
+use std::marker::PhantomData;
+
 use llmcc_core::block::{BlockId, BlockKind};
 use llmcc_core::context::Context;
-use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode};
+use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
 use llmcc_core::symbol::{Scope, ScopeStack, SymId, Symbol};
 
 use crate::token::{AstVisitorRust, LangRust};
+
+// pub enum VisibiltyEnum {
+//     CRATE,
+//     PUBLIC,
+// }
+
+// pub struct TypedParams {
+//     /// identifier -> type
+//     params: HashMap<String, String>,
+// }
+
+// /// Given a hir scope node, parse everything into a function.
+// ///
+// /// This node can be a tree-sitter ast:
+// /// - function_item
+// /// -
+// ///
+// /// We should easily get info after parsting:
+// /// - func_name: simple, and fully qualified foo(u16,u16)->u32
+// /// - visibilty: public to others etcc
+// /// - return types:
+// /// - all declarations
+// pub struct Function<'hir> {
+//     ///
+//     visibilty: VisibiltyEnum,
+//     /// Simple name
+//     name: String,
+//     /// Fully Qualified name
+//     fqn_name: String,
+//     /// Parameters
+//     parameters: TypedParams,
+//     _ph: PhantomData<&'hir ()>,
+// }
+
+// impl<'hir> Function<'hir> {
+//     pub fn parse(ctx: &'hir Context<'hir>, node: &'hir HirNode<'hir>) -> Self {
+//         let name = node.expect_ident_child_by_field(ctx, LangRust::field_name);
+//         let params = node.child_by_field(ctx, LangRust::field_parameters);
+
+//         Self {
+//             visibilty: VisibiltyEnum::CRATE,
+//             name: name.name.clone(),
+//             fqn_name: name.name.clone(),
+//             parameters: TypedParams {
+//                 params: HashMap::new(),
+//             },
+//             _ph: PhantomData,
+//         }
+//     }
+// }
+
+// pub struct Struct {
+// }
+
+// ///
+// /// - f.method()
+// /// - foo()
+// /// - my_mod::func(u32)
+// pub struct CallExpr {
+// }
+
 
 #[derive(Debug)]
 struct DeclFinder<'tcx> {
@@ -42,11 +106,16 @@ impl<'tcx> DeclFinder<'tcx> {
             }
         }
 
-        format!("{}_{:x}", name, node_id.0)
+        unreachable!()
     }
 
     fn process_decl(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
-        let ident = node.expect_ident_child_by_field(&self.ctx, field_id);
+        let ident = node.child_by_field(&self.ctx, field_id);
+        if  ident.as_ident().is_none() {
+            print!("declaration without identifier: {:?}", node);
+            return SymId(0);
+        }
+        let ident = ident.expect_ident();
         let symbol = self.scope_stack.find_or_add(node.hir_id(), ident, false);
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
@@ -107,9 +176,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
         self.visit_children_new_scope(&node);
     }
 
-    fn visit_function_signature_item(&mut self, node: HirNode<'tcx>) {
-        // self.visit_children_new_scope(&node);
-    }
+    // fn visit_function_signature_item(&mut self, node: HirNode<'tcx>) {
+    //     // self.visit_children_new_scope(&node);
+    // }
 }
 
 #[derive(Debug)]

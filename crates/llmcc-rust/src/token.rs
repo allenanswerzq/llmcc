@@ -32,7 +32,7 @@ define_tokens! {
     (impl_item             , 193 , "impl_item"                  , HirKind::Scope,               BlockKind::Scope),
     (trait_item            , 194 , "trait_item"                 , HirKind::Scope,               BlockKind::Scope),
     (function_item         , 188 , "function_item"              , HirKind::Scope,               BlockKind::Func),
-    (function_signature_item , 189 , "function_signature_item"              , HirKind::Scope,               BlockKind::Func),
+    // (function_signature_item , 189 , "function_signature_item"              , HirKind::Scope,               BlockKind::Func),
     (mutable_specifier     , 122 , "mutable_specifier"          , HirKind::Text),
     (expression_statement  , 160 , "expression_statement"       , HirKind::Internal),
     (assignment_expression , 251 , "assignment_expression"      , HirKind::Internal),
@@ -46,4 +46,6 @@ define_tokens! {
     (field_name            ,  19 , "name"                       , HirKind::Internal),
     (field_type            ,  28 , "type"                       , HirKind::Internal),
     (field_pattern         ,  24 , "pattern"                    , HirKind::Internal),
+    (field_return_type     ,  25 , "return_type"                , HirKind::Internal),
+    (field_parameters      ,  22 , "parameters"                 , HirKind::Internal),
 }
