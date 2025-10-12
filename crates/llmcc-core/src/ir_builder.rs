@@ -116,7 +116,7 @@ impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
     fn extract_text(&self, base: &HirBase<'ctx>) -> String {
         let start = base.node.start_byte();
         let end = base.node.end_byte();
-        self.ctx.file.get_text(start, end)
+        self.ctx.file().get_text(start, end)
     }
 
     fn field_id_of(node: Node<'_>) -> Option<u16> {

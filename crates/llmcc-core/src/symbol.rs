@@ -314,15 +314,15 @@ mod tests {
             "module_a::module_b::struct_foo::fn_baz".into(),
         ));
 
-        let mut trie = SymbolTrie::default();
-        trie.insert_symbol(symbol_a);
-        trie.insert_symbol(symbol_b);
+        let registry = SymbolRegistry::default();
+        registry.insert(symbol_a);
+        registry.insert(symbol_b);
 
-        let suffix = trie.lookup_symbol_suffix(&["fn_bar"]);
+        let suffix = registry.lookup_suffix(&["fn_bar"]);
         assert_eq!(suffix.len(), 1);
         assert_eq!(suffix[0].id, symbol_a.id);
 
-        let exact = trie.lookup_symbol_exact(&["fn_baz", "struct_foo", "module_b", "module_a"]);
+        let exact = registry.lookup_suffix(&["fn_baz", "struct_foo", "module_b", "module_a"]);
         assert_eq!(exact.len(), 1);
         assert_eq!(exact[0].id, symbol_b.id);
     }

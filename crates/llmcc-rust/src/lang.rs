@@ -253,17 +253,20 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 }
 
-pub fn resolve_symbols<'tcx>(
+pub fn collect_symbols<'tcx>(
     root: HirId,
     ctx: Context<'tcx>,
-    globals: &'tcx SymbolRegistry<'tcx>,
+    registry: &'tcx SymbolRegistry<'tcx>,
 ) {
     let node = ctx.hir_node(root);
     let global_scope = ctx.alloc_scope(root);
+    let mut decl_finder = DeclFinder::new(ctx, global_scope, registry);
+    decl_finder.visit_node(node);
+}
 
-    let mut decl_finder = DeclFinder::new(ctx, global_scope, globals);
-    decl_finder.visit_node(node.clone());
-
-    let mut symbol_binder = SymbolBinder::new(ctx, global_scope, globals);
+pub fn bind_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, registry: &'tcx SymbolRegistry<'tcx>) {
+    let node = ctx.hir_node(root);
+    let global_scope = ctx.alloc_scope(root);
+    let mut symbol_binder = SymbolBinder::new(ctx, global_scope, registry);
     symbol_binder.visit_node(node);
 }

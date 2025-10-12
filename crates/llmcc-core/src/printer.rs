@@ -139,7 +139,7 @@ fn pad_snippet(line: &str, snippet: &str) -> String {
 }
 
 fn snippet_from_ctx(ctx: &Context<'_>, start: usize, end: usize) -> Option<String> {
-    ctx.file
+    ctx.file()
         .opt_get_text(start, end)
         .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
         .filter(|s| !s.is_empty())
