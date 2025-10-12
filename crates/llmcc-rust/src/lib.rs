@@ -1,6 +1,8 @@
-pub mod lang;
+mod bind;
+mod collect;
 pub mod token;
 
-pub use lang::{bind_symbols, collect_symbols};
+pub use crate::bind::bind_symbols;
+pub use crate::collect::collect_symbols;
 pub use llmcc_core::*;
 pub use token::LangRust;
