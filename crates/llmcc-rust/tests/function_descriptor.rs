@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use llmcc_rust::function::{FnVisibility, FunctionOwner};
+use llmcc_rust::function::{FnVisibility, FunctionOwner, TypeExpr};
 use llmcc_rust::{build_llmcc_ir, collect_symbols, GlobalCtxt, HirId, LangRust, SymbolRegistry};
 
 fn collect(source: &str) -> HashMap<String, llmcc_rust::function::FunctionDescriptor> {
@@ -48,12 +48,44 @@ fn captures_parameters_and_return_type() {
     let desc = map.get("transform").unwrap();
     assert_eq!(desc.parameters.len(), 2);
     assert_eq!(desc.parameters[0].pattern, "value");
-    assert_eq!(desc.parameters[0].ty.as_deref(), Some("i32"));
-    assert_eq!(desc.parameters[1].ty.as_deref(), Some("Option<&str>"));
-    assert_eq!(
-        desc.return_type.as_deref(),
-        Some("Result<i32, &'static str>")
-    );
+    assert_eq!(desc.parameters[1].pattern, "label");
+
+    let param0 = desc.parameters[0].ty.as_ref().expect("param0 type");
+    assert_path(param0, &["i32"]);
+
+    let param1 = desc.parameters[1].ty.as_ref().expect("param1 type");
+    let generics = assert_path(param1, &["Option"]);
+    assert_eq!(generics.len(), 1);
+    let inner = &generics[0];
+    match inner {
+        TypeExpr::Reference {
+            is_mut,
+            lifetime,
+            inner,
+        } => {
+            assert!(!is_mut);
+            assert!(lifetime.is_none());
+            assert_path(inner, &["str"]);
+        }
+        other => panic!("unexpected type: {other:?}"),
+    }
+
+    let return_type = desc.return_type.as_ref().expect("return type");
+    let generics = assert_path(return_type, &["Result"]);
+    assert_eq!(generics.len(), 2);
+    assert_path(&generics[0], &["i32"]);
+    match &generics[1] {
+        TypeExpr::Reference {
+            is_mut,
+            lifetime,
+            inner,
+        } => {
+            assert!(!is_mut);
+            assert_eq!(lifetime.as_deref(), Some("'static"));
+            assert_path(inner, &["str"]);
+        }
+        other => panic!("unexpected type: {other:?}"),
+    }
 }
 
 #[test]
@@ -183,8 +215,20 @@ fn captures_closure_return_types() {
     "#;
     let map = collect(source);
     let make_adder = map.get("make_adder").unwrap();
-    assert_eq!(
-        make_adder.return_type.as_deref(),
-        Some("impl Fn(i32) -> i32")
-    );
+    let return_type = make_adder.return_type.as_ref().expect("return type");
+    match return_type {
+        TypeExpr::ImplTrait { bounds } => assert_eq!(bounds, "impl Fn(i32) -> i32"),
+        other => panic!("unexpected return type: {other:?}"),
+    }
+}
+
+fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
+    match expr {
+        TypeExpr::Path { segments, generics } => {
+            let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
+            assert_eq!(segments, &expected_vec);
+            generics
+        }
+        other => panic!("expected path type, found {other:?}"),
+    }
 }

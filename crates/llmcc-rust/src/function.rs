@@ -15,7 +15,7 @@ pub enum FnVisibility {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionParameter {
     pub pattern: String,
-    pub ty: Option<String>,
+    pub ty: Option<TypeExpr>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -82,7 +82,7 @@ pub struct FunctionDescriptor {
     pub generics: Option<String>,
     pub where_clause: Option<String>,
     pub parameters: Vec<FunctionParameter>,
-    pub return_type: Option<String>,
+    pub return_type: Option<TypeExpr>,
     pub signature: String,
     pub fqn: String,
 }
@@ -125,9 +125,7 @@ impl FunctionDescriptor {
             .unwrap_or_default();
         let return_type = ts_node
             .child_by_field_name("return_type")
-            .map(|n| clean(&node_text(ctx, n)))
-            .map(|text| text.trim_start_matches("->").trim().to_string())
-            .filter(|s| !s.is_empty());
+            .map(|n| parse_return_type_node(ctx, n));
 
         let signature = {
             let body_start = ts_node
@@ -178,6 +176,40 @@ impl FnVisibility {
             }
         } else {
             FnVisibility::Private
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TypeExpr {
+    Path {
+        segments: Vec<String>,
+        generics: Vec<TypeExpr>,
+    },
+    Reference {
+        is_mut: bool,
+        lifetime: Option<String>,
+        inner: Box<TypeExpr>,
+    },
+    Tuple(Vec<TypeExpr>),
+    ImplTrait {
+        bounds: String,
+    },
+    Unknown(String),
+}
+
+impl TypeExpr {
+    pub fn path_segments(&self) -> Option<&[String]> {
+        match self {
+            TypeExpr::Path { segments, .. } => Some(segments),
+            _ => None,
+        }
+    }
+
+    pub fn generics(&self) -> Option<&[TypeExpr]> {
+        match self {
+            TypeExpr::Path { generics, .. } => Some(generics),
+            _ => None,
         }
     }
 }
@@ -248,8 +280,7 @@ fn parse_parameters<'tcx>(ctx: Context<'tcx>, params_node: Node<'tcx>) -> Vec<Fu
                     .unwrap_or_else(|| clean(&node_text(ctx, child)));
                 let ty = child
                     .child_by_field_name("type")
-                    .map(|n| clean(&node_text(ctx, n)))
-                    .filter(|s| !s.is_empty());
+                    .map(|n| parse_type_expr(ctx, n));
                 params.push(FunctionParameter { pattern, ty });
             }
             "self_parameter" => {
@@ -283,4 +314,162 @@ fn clean(text: &str) -> String {
         }
     }
     out.trim().to_string()
+}
+
+fn parse_type_expr<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+    match node.kind() {
+        "type_identifier" | "primitive_type" => TypeExpr::Path {
+            segments: clean(&node_text(ctx, node))
+                .split("::")
+                .map(|s| s.to_string())
+                .collect(),
+            generics: Vec::new(),
+        },
+        "scoped_type_identifier" => TypeExpr::Path {
+            segments: clean(&node_text(ctx, node))
+                .split("::")
+                .map(|s| s.to_string())
+                .collect(),
+            generics: Vec::new(),
+        },
+        "generic_type" => parse_generic_type(ctx, node),
+        "reference_type" => parse_reference_type(ctx, node),
+        "tuple_type" => {
+            let mut types = Vec::new();
+            let mut cursor = node.walk();
+            for child in node.named_children(&mut cursor) {
+                if is_type_node(child.kind()) {
+                    types.push(parse_type_expr(ctx, child));
+                }
+            }
+            TypeExpr::Tuple(types)
+        }
+        "impl_trait_type" => TypeExpr::ImplTrait {
+            bounds: clean(&node_text(ctx, node)),
+        },
+        _ => TypeExpr::Unknown(clean(&node_text(ctx, node))),
+    }
+}
+
+fn parse_return_type_node<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+    let mut expr_opt = None;
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        if expr_opt.is_none() && is_type_node(child.kind()) {
+            expr_opt = Some(parse_type_expr(ctx, child));
+        }
+    }
+
+    let mut expr = if let Some(expr) = expr_opt {
+        expr
+    } else if let Some(inner) = node.child_by_field_name("type") {
+        parse_type_expr(ctx, inner)
+    } else {
+        parse_type_expr(ctx, node)
+    };
+
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        if child.kind() == "type_arguments" {
+            let extra = parse_type_arguments(ctx, child);
+            if !extra.is_empty() {
+                if let TypeExpr::Path { generics, .. } = &mut expr {
+                    generics.extend(extra);
+                }
+            }
+        }
+    }
+
+    if let TypeExpr::Unknown(text) = &expr {
+        if text.starts_with("impl ") {
+            expr = TypeExpr::ImplTrait {
+                bounds: text.clone(),
+            };
+        }
+    }
+
+    expr
+}
+
+fn parse_generic_type<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+    let mut base_segments: Vec<String> = Vec::new();
+    let mut generics = Vec::new();
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        match child.kind() {
+            "type_identifier" | "scoped_type_identifier" => {
+                base_segments = clean(&node_text(ctx, child))
+                    .split("::")
+                    .map(|s| s.to_string())
+                    .collect();
+            }
+            "type_arguments" => {
+                generics = parse_type_arguments(ctx, child);
+            }
+            _ => {}
+        }
+    }
+    if base_segments.is_empty() {
+        base_segments = clean(&node_text(ctx, node))
+            .split("::")
+            .map(|s| s.to_string())
+            .collect();
+    }
+    TypeExpr::Path {
+        segments: base_segments,
+        generics,
+    }
+}
+
+fn parse_type_arguments<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> Vec<TypeExpr> {
+    let mut args = Vec::new();
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        match child.kind() {
+            "type_argument" => {
+                if let Some(inner) = child.child_by_field_name("type") {
+                    args.push(parse_type_expr(ctx, inner));
+                }
+            }
+            kind if is_type_node(kind) => {
+                args.push(parse_type_expr(ctx, child));
+            }
+            _ => {}
+        }
+    }
+    args
+}
+
+fn parse_reference_type<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+    let mut lifetime = None;
+    let mut is_mut = false;
+    let mut inner = None;
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        match child.kind() {
+            "lifetime" => lifetime = Some(clean(&node_text(ctx, child))),
+            "mutable_specifier" => is_mut = true,
+            kind if is_type_node(kind) => inner = Some(parse_type_expr(ctx, child)),
+            _ => {}
+        }
+    }
+    let inner = inner.unwrap_or_else(|| TypeExpr::Unknown(clean(&node_text(ctx, node))));
+    TypeExpr::Reference {
+        is_mut,
+        lifetime,
+        inner: Box::new(inner),
+    }
+}
+
+fn is_type_node(kind: &str) -> bool {
+    matches!(
+        kind,
+        "type_identifier"
+            | "scoped_type_identifier"
+            | "generic_type"
+            | "reference_type"
+            | "tuple_type"
+            | "primitive_type"
+            | "impl_trait_type"
+    )
 }
