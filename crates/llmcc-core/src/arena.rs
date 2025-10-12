@@ -100,4 +100,58 @@ mod tests {
 
         assert_eq!(foo, &Foo(5));
     }
+
+    struct Holder<'tcx> {
+        foo: &'tcx mut Foo,
+    }
+
+    impl<'tcx> Holder<'tcx> {
+        fn bump(&mut self) {
+            self.foo.0 += 1;
+        }
+
+        fn set_value(&mut self, value: i32) {
+            self.foo.0 = value;
+        }
+    }
+
+    fn increment(foo: &mut Foo) {
+        foo.0 += 1;
+    }
+
+    fn recursive_decrement(holder: &mut Holder<'_>, remaining: i32) {
+        if remaining <= 0 {
+            return;
+        }
+        holder.foo.0 -= 1;
+        recursive_decrement(holder, remaining - 1);
+    }
+
+    #[test]
+    fn alloc_mut_shared_through_holder() {
+        let arena = Arena::default();
+        let mut holder = Holder {
+            foo: arena.alloc_mut(Foo(10)),
+        };
+
+        holder.bump();
+        assert_eq!(holder.foo.0, 11);
+
+        holder.set_value(25);
+        assert_eq!(holder.foo.0, 25);
+    }
+
+    #[test]
+    fn alloc_mut_passed_to_functions() {
+        let arena = Arena::default();
+        let mut holder = Holder {
+            foo: arena.alloc_mut(Foo(3)),
+        };
+
+        increment(holder.foo);
+        assert_eq!(holder.foo.0, 4);
+
+        recursive_decrement(&mut holder, 2);
+        assert_eq!(holder.foo.0, 2);
+    }
 }

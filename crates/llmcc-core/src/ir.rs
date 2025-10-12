@@ -129,6 +129,10 @@ impl<'hir> HirNode<'hir> {
         self.base().unwrap().node
     }
 
+    pub fn parent(&self) -> Option<HirId> {
+        self.base().and_then(|base| base.parent)
+    }
+
     pub fn opt_child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
         self.base().unwrap().opt_child_by_field(ctx, field_id)
     }
@@ -210,6 +214,7 @@ impl std::fmt::Display for HirId {
 #[derive(Debug, Clone)]
 pub struct HirBase<'hir> {
     pub hir_id: HirId,
+    pub parent: Option<HirId>,
     pub node: Node<'hir>,
     pub kind: HirKind,
     pub field_id: u16,
