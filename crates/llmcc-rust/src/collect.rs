@@ -1,7 +1,10 @@
+use std::mem;
+
 use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirNode};
 use llmcc_core::symbol::{Scope, ScopeStack, SymId, SymbolRegistry};
 
+use crate::function::FunctionDescriptor;
 use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
@@ -9,6 +12,7 @@ struct DeclFinder<'tcx, 'reg> {
     ctx: Context<'tcx>,
     scope_stack: ScopeStack<'tcx>,
     registry: &'reg mut SymbolRegistry<'tcx>,
+    functions: Vec<FunctionDescriptor>,
 }
 
 impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
@@ -24,6 +28,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
             ctx,
             scope_stack,
             registry,
+            functions: Vec::new(),
         }
     }
 
@@ -55,20 +60,37 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
         unreachable!()
     }
 
+    fn take_functions(&mut self) -> Vec<FunctionDescriptor> {
+        mem::take(&mut self.functions)
+    }
+
     fn process_decl(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
         let ident = node.child_by_field(self.ctx, field_id);
         if ident.as_ident().is_none() {
-            print!("declaration without identifier: {:?}", node);
             return SymId(0);
         }
         let ident = ident.expect_ident();
         let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
 
-        let fqn = self.generate_fqn(&ident.name, node.hir_id());
-        dbg!(&fqn);
-        symbol.set_fqn(fqn, self.ctx.interner());
+        let descriptor = if node.kind_id() == LangRust::function_item {
+            FunctionDescriptor::from_hir(self.ctx, node)
+        } else {
+            None
+        };
+
+        let fqn = descriptor
+            .as_ref()
+            .map(|desc| desc.fqn.clone())
+            .unwrap_or_else(|| self.generate_fqn(&ident.name, node.hir_id()));
+
+        symbol.set_fqn(fqn.clone(), self.ctx.interner());
 
         self.registry.insert(symbol, self.ctx.interner());
+
+        if let Some(mut desc) = descriptor {
+            desc.set_fqn(fqn);
+            self.functions.push(desc);
+        }
 
         self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
@@ -124,9 +146,14 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
     }
 }
 
-pub fn collect_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, registry: &mut SymbolRegistry<'tcx>) {
+pub fn collect_symbols<'tcx>(
+    root: HirId,
+    ctx: Context<'tcx>,
+    registry: &mut SymbolRegistry<'tcx>,
+) -> Vec<FunctionDescriptor> {
     let node = ctx.hir_node(root);
     let global_scope = ctx.alloc_scope(root);
     let mut decl_finder = DeclFinder::new(ctx, global_scope, registry);
     decl_finder.visit_node(node);
+    decl_finder.take_functions()
 }

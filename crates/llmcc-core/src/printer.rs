@@ -112,13 +112,8 @@ fn render_node(node: &RenderNode, depth: usize, out: &mut Vec<String>) {
     }
 
     if node.children.is_empty() {
-        if node.snippet.is_some() {
-            out.push(line);
-            out.push(format!("{})", indent));
-        } else {
-            line.push(')');
-            out.push(line);
-        }
+        line.push(')');
+        out.push(line);
     } else {
         out.push(line);
         for child in &node.children {
