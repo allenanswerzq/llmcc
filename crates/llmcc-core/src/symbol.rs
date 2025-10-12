@@ -76,15 +76,13 @@ impl<'tcx> Scope<'tcx> {
 #[derive(Debug)]
 pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
-    registry: &'tcx SymbolRegistry<'tcx>,
     stack: Vec<&'tcx Scope<'tcx>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {
-    pub fn new(arena: &'tcx Arena<'tcx>, registry: &'tcx SymbolRegistry<'tcx>) -> Self {
+    pub fn new(arena: &'tcx Arena<'tcx>) -> Self {
         Self {
             arena,
-            registry,
             stack: Vec::new(),
         }
     }
@@ -113,10 +111,6 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &'tcx Scope<'tcx>> + '_ {
         self.stack.iter().copied()
-    }
-
-    pub fn registry(&self) -> &'tcx SymbolRegistry<'tcx> {
-        self.registry
     }
 
     fn scope_for_insertion(&mut self, global: bool) -> Result<&'tcx Scope<'tcx>, &'static str> {
@@ -151,20 +145,12 @@ impl<'tcx> ScopeStack<'tcx> {
             .and_then(|id| self.find_symbol_by_id(id))
     }
 
-    pub fn find_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = self.find_symbol_local(name) {
-            return Some(symbol);
-        }
-        let suffix = [name];
-        self.registry.lookup_suffix_once(&suffix)
-    }
-
     pub fn find_symbol_by_id(&self, id: SymId) -> Option<&'tcx Symbol> {
         self.iter().rev().find_map(|scope| scope.get_symbol(id))
     }
 
     pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
-        self.find_symbol(&ident.name)
+        self.find_symbol_local(&ident.name)
     }
 
     pub fn find_or_insert(
@@ -277,24 +263,24 @@ impl Symbol {
 
 #[derive(Debug, Default)]
 pub struct SymbolRegistry<'tcx> {
-    trie: RefCell<SymbolTrie<'tcx>>,
+    trie: SymbolTrie<'tcx>,
 }
 
 impl<'tcx> SymbolRegistry<'tcx> {
-    pub fn insert(&self, symbol: &'tcx Symbol) {
-        self.trie.borrow_mut().insert_symbol(symbol);
+    pub fn insert(&mut self, symbol: &'tcx Symbol) {
+        self.trie.insert_symbol(symbol);
     }
 
     pub fn lookup_suffix(&self, suffix: &[&str]) -> Vec<&'tcx Symbol> {
-        self.trie.borrow().lookup_symbol_suffix(suffix)
+        self.trie.lookup_symbol_suffix(suffix)
     }
 
     pub fn lookup_suffix_once(&self, suffix: &[&str]) -> Option<&'tcx Symbol> {
         self.lookup_suffix(suffix).into_iter().next()
     }
 
-    pub fn clear(&self) {
-        self.trie.borrow_mut().clear();
+    pub fn clear(&mut self) {
+        self.trie.clear();
     }
 }
 
@@ -314,7 +300,7 @@ mod tests {
             "module_a::module_b::struct_foo::fn_baz".into(),
         ));
 
-        let registry = SymbolRegistry::default();
+        let mut registry = SymbolRegistry::default();
         registry.insert(symbol_a);
         registry.insert(symbol_b);
 

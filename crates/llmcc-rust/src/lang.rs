@@ -65,21 +65,26 @@ use crate::token::{AstVisitorRust, LangRust};
 // }
 
 #[derive(Debug)]
-struct DeclFinder<'tcx> {
+struct DeclFinder<'tcx, 'reg> {
     pub ctx: Context<'tcx>,
     pub scope_stack: ScopeStack<'tcx>,
+    pub registry: &'reg mut SymbolRegistry<'tcx>,
 }
 
-impl<'tcx> DeclFinder<'tcx> {
+impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
     pub fn new(
         ctx: Context<'tcx>,
         global_scope: &'tcx Scope<'tcx>,
-        registry: &'tcx SymbolRegistry<'tcx>,
+        registry: &'reg mut SymbolRegistry<'tcx>,
     ) -> Self {
         let gcx = ctx.gcx;
-        let mut scope_stack = ScopeStack::new(&gcx.arena, registry);
+        let mut scope_stack = ScopeStack::new(&gcx.arena);
         scope_stack.push(global_scope);
-        Self { ctx, scope_stack }
+        Self {
+            ctx,
+            scope_stack,
+            registry,
+        }
     }
 
     fn generate_fqn(&self, name: &str, _node_id: HirId) -> String {
@@ -122,7 +127,7 @@ impl<'tcx> DeclFinder<'tcx> {
         dbg!(&fqn);
         *symbol.fqn_name.borrow_mut() = fqn;
 
-        self.scope_stack.registry().insert(symbol);
+        self.registry.insert(symbol);
 
         self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
@@ -138,7 +143,7 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
+impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
     fn ctx(&self) -> Context<'tcx> {
         self.ctx
     }
@@ -184,21 +189,26 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
 }
 
 #[derive(Debug)]
-struct SymbolBinder<'tcx> {
+struct SymbolBinder<'tcx, 'reg> {
     pub ctx: Context<'tcx>,
     pub scope_stack: ScopeStack<'tcx>,
+    pub registry: &'reg SymbolRegistry<'tcx>,
 }
 
-impl<'tcx> SymbolBinder<'tcx> {
+impl<'tcx, 'reg> SymbolBinder<'tcx, 'reg> {
     pub fn new(
         ctx: Context<'tcx>,
         global_scope: &'tcx Scope<'tcx>,
-        registry: &'tcx SymbolRegistry<'tcx>,
+        registry: &'reg SymbolRegistry<'tcx>,
     ) -> Self {
         let gcx = ctx.gcx;
-        let mut scope_stack = ScopeStack::new(&gcx.arena, registry);
+        let mut scope_stack = ScopeStack::new(&gcx.arena);
         scope_stack.push(global_scope);
-        Self { ctx, scope_stack }
+        Self {
+            ctx,
+            scope_stack,
+            registry,
+        }
     }
 
     pub fn follow_scope_deeper(&mut self, node: HirNode<'tcx>) {
@@ -211,7 +221,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
+impl<'tcx, 'reg> AstVisitorRust<'tcx> for SymbolBinder<'tcx, 'reg> {
     fn ctx(&self) -> Context<'tcx> {
         self.ctx
     }
@@ -239,12 +249,20 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     fn visit_identifier(&mut self, node: HirNode<'tcx>) {
         let id = node.hir_id();
         if self.ctx.opt_uses(id).is_none() {
-            // if this ident does have a symbol before
             let ident = node.expect_ident();
             if let Some(def_sym) = self.scope_stack.find_ident(ident) {
                 let use_sym = self.ctx.new_symbol(node.hir_id(), ident.name.clone());
                 use_sym.defined.set(Some(def_sym.owner));
+                self.ctx.insert_use(id, use_sym);
+                return;
+            }
 
+            if let Some(def_sym) = self
+                .registry
+                .lookup_suffix_once(&[ident.name.as_str()])
+            {
+                let use_sym = self.ctx.new_symbol(node.hir_id(), ident.name.clone());
+                use_sym.defined.set(Some(def_sym.owner));
                 self.ctx.insert_use(id, use_sym);
             } else {
                 println!("not find ident: {}", ident.name);
@@ -256,7 +274,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 pub fn collect_symbols<'tcx>(
     root: HirId,
     ctx: Context<'tcx>,
-    registry: &'tcx SymbolRegistry<'tcx>,
+    registry: &mut SymbolRegistry<'tcx>,
 ) {
     let node = ctx.hir_node(root);
     let global_scope = ctx.alloc_scope(root);
@@ -264,7 +282,7 @@ pub fn collect_symbols<'tcx>(
     decl_finder.visit_node(node);
 }
 
-pub fn bind_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, registry: &'tcx SymbolRegistry<'tcx>) {
+pub fn bind_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, registry: &SymbolRegistry<'tcx>) {
     let node = ctx.hir_node(root);
     let global_scope = ctx.alloc_scope(root);
     let mut symbol_binder = SymbolBinder::new(ctx, global_scope, registry);

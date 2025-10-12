@@ -8,12 +8,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let gcx = GlobalCtxt::from_files::<LangRust>(&files)?;
-    let registry = SymbolRegistry::default();
+    let mut registry = SymbolRegistry::default();
 
     for (index, _) in files.iter().enumerate() {
         let ctx = gcx.create_context(index);
-        build_llmcc_ir::<LangRust>(ctx.tree(), ctx)?;
-        collect_symbols(HirId(0), ctx, &registry);
+        let tree = ctx.tree();
+        build_llmcc_ir::<LangRust>(&tree, ctx)?;
+        collect_symbols(HirId(0), ctx, &mut registry);
     }
 
     for (index, path) in files.iter().enumerate() {
