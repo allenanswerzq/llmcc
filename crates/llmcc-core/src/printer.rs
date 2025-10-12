@@ -4,7 +4,7 @@ use crate::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
 const SNIPPET_COL: usize = 60;
-const TRUNCATE_COL: usize = 80;
+const TRUNCATE_COL: usize = 60;
 
 #[derive(Debug, Clone)]
 struct RenderNode {
@@ -112,8 +112,13 @@ fn render_node(node: &RenderNode, depth: usize, out: &mut Vec<String>) {
     }
 
     if node.children.is_empty() {
-        line.push(')');
-        out.push(line);
+        if node.snippet.is_some() {
+            out.push(line);
+            out.push(format!("{})", indent));
+        } else {
+            line.push(')');
+            out.push(line);
+        }
     } else {
         out.push(line);
         for child in &node.children {
@@ -139,7 +144,7 @@ fn pad_snippet(line: &str, snippet: &str) -> String {
 }
 
 fn snippet_from_ctx(ctx: &Context<'_>, start: usize, end: usize) -> Option<String> {
-    ctx.file
+    ctx.file()
         .opt_get_text(start, end)
         .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
         .filter(|s| !s.is_empty())
@@ -170,11 +175,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     fn node(label: &str, snippet: Option<&str>, children: Vec<RenderNode>) -> RenderNode {
-        RenderNode::new(
-            label.to_string(),
-            snippet.map(ToOwned::to_owned),
-            children,
-        )
+        RenderNode::new(label.to_string(), snippet.map(ToOwned::to_owned), children)
     }
 
     #[test]

@@ -1,25 +1,52 @@
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ops::Deref;
 use tree_sitter::Tree;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockRelation};
-use crate::block_rel::{BlockRelationMap, RelationBuilder};
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
+use crate::block_rel::BlockRelationMap;
 use crate::file::File;
-use crate::ir::{Arena, HirId, HirKind, HirNode};
+use crate::interner::{InternPool, InternedStr};
+use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
-use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
+use crate::symbol::{Scope, Symbol};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Context<'tcx> {
     pub gcx: &'tcx GlobalCtxt<'tcx>,
+    pub index: usize,
 }
 
 impl<'tcx> Context<'tcx> {
+    pub fn file(&self) -> &'tcx File {
+        &self.gcx.files[self.index]
+    }
+
+    pub fn tree(&self) -> &'tcx Tree {
+        &self.gcx.trees[self.index].as_ref().unwrap()
+    }
+
+    /// Access the shared string interner.
+    pub fn interner(&self) -> &InternPool {
+        &self.gcx.interner
+    }
+
+    /// Intern a string and return its symbol.
+    pub fn intern_str<S>(&self, value: S) -> InternedStr
+    where
+        S: AsRef<str>,
+    {
+        self.gcx.interner.intern(value)
+    }
+
+    /// Resolve an interned symbol into an owned string.
+    pub fn resolve_interned_owned(&self, symbol: InternedStr) -> Option<String> {
+        self.gcx.interner.resolve_owned(symbol)
+    }
+
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.gcx
-            .hir_map
+        self.gcx.hir_maps[self.index]
             .borrow()
             .get(&id)
             .map(|parented| parented.node.clone())
@@ -48,27 +75,25 @@ impl<'tcx> Context<'tcx> {
 
     /// Get the parent of a HIR node
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
-        self.gcx
-            .hir_map
+        self.gcx.hir_maps[self.index]
             .borrow()
             .get(&id)
             .and_then(|parented| parented.parent())
     }
 
     /// Get a symbol from the uses map
-    pub fn opt_uses(self, id: HirId) -> Option<&'tcx Symbol<'tcx>> {
-        self.gcx.uses_map.borrow().get(&id).copied()
+    pub fn opt_uses(self, id: HirId) -> Option<&'tcx Symbol> {
+        self.gcx.uses_maps[self.index].borrow().get(&id).copied()
     }
 
     /// Get a symbol from the defs map
-    pub fn opt_defs(self, id: HirId) -> Option<&'tcx Symbol<'tcx>> {
-        self.gcx.defs_map.borrow().get(&id).copied()
+    pub fn opt_defs(self, id: HirId) -> Option<&'tcx Symbol> {
+        self.gcx.defs_maps[self.index].borrow().get(&id).copied()
     }
 
     /// Get a symbol from the defs map
-    pub fn defs(self, id: HirId) -> &'tcx Symbol<'tcx> {
-        self.gcx
-            .defs_map
+    pub fn defs(self, id: HirId) -> &'tcx Symbol {
+        self.gcx.defs_maps[self.index]
             .borrow()
             .get(&id)
             .copied()
@@ -77,12 +102,16 @@ impl<'tcx> Context<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        self.gcx.scope_map.borrow().get(&owner).copied()
+        self.gcx.scope_maps[self.index]
+            .borrow()
+            .get(&owner)
+            .copied()
     }
 
     /// Create a new symbol in the arena
-    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol<'tcx> {
-        self.gcx.arena.alloc(Symbol::new(owner, name))
+    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
+        let key = self.gcx.interner.intern(&name);
+        self.gcx.arena.alloc(Symbol::new(owner, name, key))
     }
 
     /// Find an existing scope or create a new one
@@ -94,24 +123,32 @@ impl<'tcx> Context<'tcx> {
 
         // Create new scope
         let scope = self.gcx.arena.alloc(Scope::new(owner));
-        self.gcx.scope_map.borrow_mut().insert(owner, scope);
+        self.gcx.scope_maps[self.index]
+            .borrow_mut()
+            .insert(owner, scope);
         scope
     }
 
     /// Add a HIR node to the map
     pub fn insert_hir_node(self, id: HirId, node: HirNode<'tcx>) {
         let parented = ParentedNode::new(node);
-        self.gcx.hir_map.borrow_mut().insert(id, parented);
+        self.gcx.hir_maps[self.index]
+            .borrow_mut()
+            .insert(id, parented);
     }
 
     /// Add a symbol definition
-    pub fn insert_def(self, id: HirId, symbol: &'tcx Symbol<'tcx>) {
-        self.gcx.defs_map.borrow_mut().insert(id, symbol);
+    pub fn insert_def(self, id: HirId, symbol: &'tcx Symbol) {
+        self.gcx.defs_maps[self.index]
+            .borrow_mut()
+            .insert(id, symbol);
     }
 
     /// Add a symbol use
-    pub fn insert_use(self, id: HirId, symbol: &'tcx Symbol<'tcx>) {
-        self.gcx.uses_map.borrow_mut().insert(id, symbol);
+    pub fn insert_use(self, id: HirId, symbol: &'tcx Symbol) {
+        self.gcx.uses_maps[self.index]
+            .borrow_mut()
+            .insert(id, symbol);
     }
 
     /// Get all child nodes of a given parent
@@ -200,17 +237,18 @@ impl<'tcx> ParentedBlock<'tcx> {
 #[derive(Debug, Default)]
 pub struct GlobalCtxt<'tcx> {
     pub arena: Arena<'tcx>,
-    pub file: File,
-    pub tree: Option<Tree>,
+    pub interner: InternPool,
+    pub files: Vec<File>,
+    pub trees: Vec<Option<Tree>>,
 
     // HirId -> ParentedNode
-    pub hir_map: RefCell<HashMap<HirId, ParentedNode<'tcx>>>,
+    pub hir_maps: Vec<RefCell<HashMap<HirId, ParentedNode<'tcx>>>>,
     // HirId -> &Symbol (definitions)
-    pub defs_map: RefCell<HashMap<HirId, &'tcx Symbol<'tcx>>>,
+    pub defs_maps: Vec<RefCell<HashMap<HirId, &'tcx Symbol>>>,
     // HirId -> &Symbol (uses/references)
-    pub uses_map: RefCell<HashMap<HirId, &'tcx Symbol<'tcx>>>,
+    pub uses_maps: Vec<RefCell<HashMap<HirId, &'tcx Symbol>>>,
     // HirId -> &Scope (scopes owned by this HIR node)
-    pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
+    pub scope_maps: Vec<RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>>,
 
     pub block_arena: BlockArena<'tcx>,
     // BlockId -> ParentedBlock
@@ -221,53 +259,83 @@ pub struct GlobalCtxt<'tcx> {
 
 impl<'tcx> GlobalCtxt<'tcx> {
     /// Create a new GlobalCtxt from source code
-    pub fn from_source<L: LanguageTrait>(source: &[u8]) -> Self {
+    pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
+        let files: Vec<File> = sources
+            .iter()
+            .map(|src| File::new_source(src.clone()))
+            .collect();
+        let trees = sources.iter().map(|src| L::parse(src)).collect();
+        let count = files.len();
         Self {
             arena: Arena::default(),
-            file: File::new_source(source.to_vec()),
-            tree: L::parse(source),
-            ..Default::default()
+            interner: InternPool::default(),
+            files,
+            trees,
+            hir_maps: vec![RefCell::new(HashMap::new()); count],
+            defs_maps: vec![RefCell::new(HashMap::new()); count],
+            uses_maps: vec![RefCell::new(HashMap::new()); count],
+            scope_maps: vec![RefCell::new(HashMap::new()); count],
+            block_arena: BlockArena::default(),
+            bb_map: RefCell::new(HashMap::new()),
+            related_map: BlockRelationMap::default(),
         }
     }
 
-    /// Create a new GlobalCtxt from file
-    pub fn from_file<L: LanguageTrait>(file: String) -> std::io::Result<Self> {
-        let file = File::new_file(file)?;
-        let tree = L::parse(file.content());
+    /// Create a new GlobalCtxt from files
+    pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
+        let mut files = Vec::new();
+        let mut trees = Vec::new();
+        for path in paths {
+            let file = File::new_file(path.clone())?;
+            trees.push(L::parse(file.content()));
+            files.push(file);
+        }
+        let count = files.len();
         Ok(Self {
             arena: Arena::default(),
-            file,
-            tree,
-            ..Default::default()
+            interner: InternPool::default(),
+            files,
+            trees,
+            hir_maps: vec![RefCell::new(HashMap::new()); count],
+            defs_maps: vec![RefCell::new(HashMap::new()); count],
+            uses_maps: vec![RefCell::new(HashMap::new()); count],
+            scope_maps: vec![RefCell::new(HashMap::new()); count],
+            block_arena: BlockArena::default(),
+            bb_map: RefCell::new(HashMap::new()),
+            related_map: BlockRelationMap::default(),
         })
     }
 
-    pub fn tree(&'tcx self) -> Tree {
-        self.tree.as_ref().unwrap().clone()
-    }
-
-    /// Create a context that references this GlobalCtxt
-    pub fn create_context(&'tcx self) -> Context<'tcx> {
-        Context { gcx: self }
+    /// Create a context that references this GlobalCtxt for a specific file index
+    pub fn create_context(&'tcx self, index: usize) -> Context<'tcx> {
+        Context { gcx: self, index }
     }
 
     /// Get statistics about the maps
     pub fn stats(&self) -> GlobalCtxtStats {
         GlobalCtxtStats {
-            hir_nodes: self.hir_map.borrow().len(),
-            definitions: self.defs_map.borrow().len(),
-            uses: self.uses_map.borrow().len(),
-            scopes: self.scope_map.borrow().len(),
+            hir_nodes: self.hir_maps.iter().map(|map| map.borrow().len()).sum(),
+            definitions: self.defs_maps.iter().map(|map| map.borrow().len()).sum(),
+            uses: self.uses_maps.iter().map(|map| map.borrow().len()).sum(),
+            scopes: self.scope_maps.iter().map(|map| map.borrow().len()).sum(),
         }
     }
 
     /// Clear all maps (useful for testing)
     #[cfg(test)]
     pub fn clear(&self) {
-        self.hir_map.borrow_mut().clear();
-        self.defs_map.borrow_mut().clear();
-        self.uses_map.borrow_mut().clear();
-        self.scope_map.borrow_mut().clear();
+        for map in &self.hir_maps {
+            map.borrow_mut().clear();
+        }
+        for map in &self.defs_maps {
+            map.borrow_mut().clear();
+        }
+        for map in &self.uses_maps {
+            map.borrow_mut().clear();
+        }
+        for map in &self.scope_maps {
+            map.borrow_mut().clear();
+        }
     }
 }
 
