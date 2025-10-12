@@ -17,6 +17,10 @@ macro_rules! declare_arena {
             fn allocate_on(self, arena: &'tcx Arena<'tcx>) -> &'tcx Self;
         }
 
+        pub trait ArenaAllocatableMut<'tcx>: ArenaAllocatable<'tcx> {
+            fn allocate_on_mut(self, arena: &'tcx Arena<'tcx>) -> &'tcx mut Self;
+        }
+
         $(
             impl<'tcx> ArenaAllocatable<'tcx> for $ty {
                 #[inline]
@@ -26,10 +30,24 @@ macro_rules! declare_arena {
             }
         )*
 
+        $(
+            impl<'tcx> ArenaAllocatableMut<'tcx> for $ty {
+                #[inline]
+                fn allocate_on_mut(self, arena: &'tcx Arena<'tcx>) -> &'tcx mut Self {
+                    arena.$name.alloc(self)
+                }
+            }
+        )*
+
         impl<'tcx> Arena<'tcx> {
             #[inline]
             pub fn alloc<T: ArenaAllocatable<'tcx>>(&'tcx self, value: T) -> &'tcx T {
                 value.allocate_on(self)
+            }
+
+            #[inline]
+            pub fn alloc_mut<T: ArenaAllocatableMut<'tcx>>(&'tcx self, value: T) -> &'tcx mut T {
+                value.allocate_on_mut(self)
             }
         }
     };
@@ -71,5 +89,15 @@ mod tests {
         assert_eq!(f1, &Foo(1));
         assert_eq!(f2, &Foo(2));
         assert_eq!(b1, &Bar("x"));
+    }
+
+    #[test]
+    fn alloc_mut_allows_mutation() {
+        let arena = Arena::default();
+
+        let foo = arena.alloc_mut(Foo(1));
+        foo.0 = 5;
+
+        assert_eq!(foo, &Foo(5));
     }
 }
