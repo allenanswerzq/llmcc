@@ -9,18 +9,22 @@ use crate::lang_def::LanguageTrait;
 
 #[derive(Debug)]
 struct HirBuilder<'ctx, Language> {
-    ctx: &'ctx Context<'ctx>,
+    ctx: Context<'ctx>,
     next_id: u32,
     _language: PhantomData<Language>,
 }
 
 impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
-    fn new(ctx: &'ctx Context<'ctx>) -> Self {
+    fn new(ctx: Context<'ctx>) -> Self {
         Self {
             ctx,
             next_id: 0,
             _language: PhantomData,
         }
+    }
+
+    fn ctx(&self) -> Context<'ctx> {
+        self.ctx
     }
 
     fn build_node(&mut self, node: Node<'ctx>, parent: Option<HirId>) -> HirId {
@@ -31,8 +35,8 @@ impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
         let base = self.make_base(current_id, parent, node, kind, child_ids);
         let hir_node = self.make_hir_node(base, node, kind);
 
-        self.ctx
-            .hir_map
+        let ctx = self.ctx();
+        ctx.hir_map
             .borrow_mut()
             .insert(current_id, ParentedNode::new(hir_node));
 
@@ -80,25 +84,25 @@ impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
         match kind {
             HirKind::File => {
                 let file_node = HirFile::new(base, "NONE".into());
-                HirNode::File(self.ctx.arena.alloc(file_node))
+                HirNode::File(self.ctx.gcx.arena.alloc(file_node))
             }
             HirKind::Text => {
                 let text = self.extract_text(&base);
                 let text_node = HirText::new(base, text);
-                HirNode::Text(self.ctx.arena.alloc(text_node))
+                HirNode::Text(self.ctx.gcx.arena.alloc(text_node))
             }
             HirKind::Internal => {
                 let internal = HirInternal::new(base);
-                HirNode::Internal(self.ctx.arena.alloc(internal))
+                HirNode::Internal(self.ctx.gcx.arena.alloc(internal))
             }
             HirKind::Scope => {
                 let scope = self.make_scope(base);
-                HirNode::Scope(self.ctx.arena.alloc(scope))
+                HirNode::Scope(self.ctx.gcx.arena.alloc(scope))
             }
             HirKind::Identifier => {
                 let text = self.extract_text(&base);
                 let ident = HirIdent::new(base, text);
-                HirNode::Ident(self.ctx.arena.alloc(ident))
+                HirNode::Ident(self.ctx.gcx.arena.alloc(ident))
             }
             other => panic!("unsupported HIR kind for node {:?}", (other, ts_node)),
         }
@@ -107,7 +111,7 @@ impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
     fn make_scope(&self, base: HirBase<'ctx>) -> HirScope<'ctx> {
         let fields = [Language::name_field(), Language::type_field()];
         let ident = base
-            .opt_child_by_fields(self.ctx, &fields)
+            .opt_child_by_fields(self.ctx(), &fields)
             .map(|node| node.expect_ident());
         HirScope::new(base, ident)
     }
@@ -141,7 +145,7 @@ impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
 
 pub fn build_llmcc_ir<'ctx, L: LanguageTrait>(
     tree: &'ctx Tree,
-    ctx: &'ctx Context<'ctx>,
+    ctx: Context<'ctx>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = HirBuilder::<L>::new(ctx);
     builder.build_node(tree.root_node(), None);
@@ -150,14 +154,14 @@ pub fn build_llmcc_ir<'ctx, L: LanguageTrait>(
 
 #[derive(Debug)]
 struct HirPrinter<'tcx> {
-    ctx: &'tcx Context<'tcx>,
+    ctx: Context<'tcx>,
     depth: usize,
     ast: String,
     hir: String,
 }
 
 impl<'tcx> HirPrinter<'tcx> {
-    fn new(ctx: &'tcx Context<'tcx>) -> Self {
+    fn new(ctx: Context<'tcx>) -> Self {
         Self {
             ctx,
             depth: 0,
@@ -311,9 +315,10 @@ impl<'tcx> HirPrinter<'tcx> {
     }
 }
 
-pub fn print_llmcc_ir<'tcx>(root: HirId, ctx: &'tcx Context<'tcx>) {
+pub fn print_llmcc_ir<'tcx>(root: HirId, ctx: Context<'tcx>) {
     let mut vistor = HirPrinter::new(ctx);
-    vistor.visit_node(&ctx.hir_node(root));
+    let root_node = vistor.ctx.hir_node(root);
+    vistor.visit_node(&root_node);
     println!("{}\n", vistor.ast);
     println!("{}\n", vistor.hir);
 }

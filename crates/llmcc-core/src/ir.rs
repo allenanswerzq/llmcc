@@ -54,7 +54,7 @@ impl<'hir> Default for HirNode<'hir> {
 }
 
 impl<'hir> HirNode<'hir> {
-    pub fn format_node(&self, ctx: &Context<'hir>) -> String {
+    pub fn format_node(&self, ctx: Context<'hir>) -> String {
         let id = self.hir_id();
         let kind = self.kind();
         let base = self.base().unwrap();
@@ -133,18 +133,18 @@ impl<'hir> HirNode<'hir> {
         self.base().and_then(|base| base.parent)
     }
 
-    pub fn opt_child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_field(&self, ctx: Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
         self.base().unwrap().opt_child_by_field(ctx, field_id)
     }
 
-    pub fn child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> HirNode<'hir> {
+    pub fn child_by_field(&self, ctx: Context<'hir>, field_id: u16) -> HirNode<'hir> {
         self.opt_child_by_field(ctx, field_id)
             .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
     }
 
     pub fn expect_ident_child_by_field(
         &self,
-        ctx: &Context<'hir>,
+        ctx: Context<'hir>,
         field_id: u16,
     ) -> &'hir HirIdent<'hir> {
         self.opt_child_by_field(ctx, field_id)
@@ -152,14 +152,14 @@ impl<'hir> HirNode<'hir> {
             .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
     }
 
-    pub fn opt_child_by_kind(&self, ctx: &Context<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_kind(&self, ctx: Context<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
         self.children()
             .iter()
             .map(|id| ctx.hir_node(*id))
             .find(|child| child.kind_id() == kind_id)
     }
 
-    pub fn child_by_kind(&self, ctx: &Context<'hir>, kind_id: u16) -> HirNode<'hir> {
+    pub fn child_by_kind(&self, ctx: Context<'hir>, kind_id: u16) -> HirNode<'hir> {
         self.opt_child_by_kind(ctx, kind_id)
             .unwrap_or_else(|| panic!("no child with kind_id {}", kind_id))
     }
@@ -224,7 +224,7 @@ pub struct HirBase<'hir> {
 impl<'hir> HirBase<'hir> {
     pub fn opt_child_by_fields(
         &self,
-        ctx: &Context<'hir>,
+        ctx: Context<'hir>,
         fields_id: &[u16],
     ) -> Option<HirNode<'hir>> {
         self.children
@@ -233,7 +233,7 @@ impl<'hir> HirBase<'hir> {
             .find(|child| fields_id.contains(&child.field_id()))
     }
 
-    pub fn opt_child_by_field(&self, ctx: &Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_field(&self, ctx: Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
         self.children
             .iter()
             .map(|id| ctx.hir_node(*id))

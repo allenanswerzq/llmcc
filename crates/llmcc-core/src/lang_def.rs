@@ -96,7 +96,7 @@ macro_rules! define_tokens {
 
             /// Trait for visiting HIR nodes with type-specific dispatch
             pub trait [<AstVisitor $suffix>]<'tcx> {
-                fn ctx(&self) -> &'tcx Context<'tcx>;
+                fn ctx(&self) -> Context<'tcx>;
 
                 /// Visit a node, dispatching to the appropriate method based on token ID
                 fn visit_node(&mut self, node: HirNode<'tcx>) {

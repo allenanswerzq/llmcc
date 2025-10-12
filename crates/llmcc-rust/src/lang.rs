@@ -68,15 +68,14 @@ use crate::token::{AstVisitorRust, LangRust};
 // pub struct CallExpr {
 // }
 
-
 #[derive(Debug)]
 struct DeclFinder<'tcx> {
-    pub ctx: &'tcx Context<'tcx>,
+    pub ctx: Context<'tcx>,
     pub scope_stack: ScopeStack<'tcx>,
 }
 
 impl<'tcx> DeclFinder<'tcx> {
-    pub fn new(ctx: &'tcx Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
+    pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scope_stack = ScopeStack::new(&ctx.arena);
         scope_stack.push_scope(globals);
         Self { ctx, scope_stack }
@@ -110,8 +109,8 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 
     fn process_decl(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
-        let ident = node.child_by_field(&self.ctx, field_id);
-        if  ident.as_ident().is_none() {
+        let ident = node.child_by_field(self.ctx, field_id);
+        if ident.as_ident().is_none() {
             print!("declaration without identifier: {:?}", node);
             return SymId(0);
         }
@@ -137,7 +136,7 @@ impl<'tcx> DeclFinder<'tcx> {
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
-    fn ctx(&self) -> &'tcx Context<'tcx> {
+    fn ctx(&self) -> Context<'tcx> {
         self.ctx
     }
 
@@ -183,12 +182,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
 
 #[derive(Debug)]
 struct SymbolBinder<'tcx> {
-    pub ctx: &'tcx Context<'tcx>,
+    pub ctx: Context<'tcx>,
     pub scope_stack: ScopeStack<'tcx>,
 }
 
 impl<'tcx> SymbolBinder<'tcx> {
-    pub fn new(ctx: &'tcx Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
+    pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scope_stack = ScopeStack::new(&ctx.arena);
         scope_stack.push_scope(globals);
         Self { ctx, scope_stack }
@@ -205,7 +204,7 @@ impl<'tcx> SymbolBinder<'tcx> {
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
-    fn ctx(&self) -> &'tcx Context<'tcx> {
+    fn ctx(&self) -> Context<'tcx> {
         self.ctx
     }
 
@@ -246,7 +245,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 }
 
-pub fn resolve_symbols<'tcx>(root: HirId, ctx: &'tcx Context<'tcx>) {
+pub fn resolve_symbols<'tcx>(root: HirId, ctx: Context<'tcx>) {
     let node = ctx.hir_node(root);
     let globals = ctx.alloc_scope(root);
 

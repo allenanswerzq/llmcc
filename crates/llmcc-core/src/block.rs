@@ -48,7 +48,7 @@ pub enum BasicBlock<'blk> {
 }
 
 impl<'blk> BasicBlock<'blk> {
-    pub fn format_block(&self, ctx: &Context<'blk>) -> String {
+    pub fn format_block(&self, ctx: Context<'blk>) -> String {
         let block_id = self.block_id();
         let hir_id = self.node().hir_id();
         let kind = self.kind();
@@ -187,7 +187,7 @@ impl<'blk> BlockRoot<'blk> {
     }
 
     pub fn from_hir(
-        ctx: &'blk Context<'blk>,
+        _ctx: Context<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -218,7 +218,7 @@ impl<'blk> BlockFunc<'blk> {
     }
 
     pub fn from_hir(
-        ctx: &'blk Context<'blk>,
+        ctx: Context<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -240,7 +240,7 @@ impl<'blk> BlockStmt<'blk> {
     }
 
     pub fn from_hir(
-        ctx: &'blk Context<'blk>,
+        _ctx: Context<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -261,7 +261,7 @@ impl<'blk> BlockCall<'blk> {
     }
 
     pub fn from_hir(
-        ctx: &'blk Context<'blk>,
+        _ctx: Context<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -290,7 +290,7 @@ impl<'blk> BlockClass<'blk> {
     }
 
     pub fn from_hir(
-        ctx: &'blk Context<'blk>,
+        ctx: Context<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -328,7 +328,7 @@ impl<'blk> BlockImpl<'blk> {
     }
 
     pub fn from_hir(
-        ctx: &'blk Context<'blk>,
+        _ctx: Context<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -350,7 +350,7 @@ impl<'blk> BlockImpl<'blk> {
 
 #[derive(Debug)]
 struct GraphBuilder<'tcx, Language> {
-    ctx: &'tcx Context<'tcx>,
+    ctx: Context<'tcx>,
     id: u32,
     bb_map: HashMap<BlockId, ParentedBlock<'tcx>>,
     children_stack: Vec<Vec<BlockId>>,
@@ -358,7 +358,7 @@ struct GraphBuilder<'tcx, Language> {
 }
 
 impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
-    fn new(ctx: &'tcx Context<'tcx>) -> Self {
+    fn new(ctx: Context<'tcx>) -> Self {
         Self {
             ctx,
             id: 0,
@@ -366,6 +366,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             children_stack: Vec::new(),
             ph: PhantomData,
         }
+    }
+
+    fn ctx(&self) -> Context<'tcx> {
+        self.ctx
     }
 
     fn next_id(&mut self) -> BlockId {
@@ -379,10 +383,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         id: BlockId,
         node: HirNode<'tcx>,
         kind: BlockKind,
-        ctx: &'tcx Context<'tcx>,
         children: Vec<BlockId>,
     ) -> BasicBlock<'tcx> {
-        let arena = &ctx.block_arena;
+        let ctx = self.ctx();
+        let arena = &self.ctx.gcx.block_arena;
         match kind {
             BlockKind::Root => {
                 let block = BlockRoot::from_hir(ctx, id, node, children);
@@ -430,15 +434,15 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             Vec::new()
         };
 
-        let block = self.create_block(id, node, block_kind, &self.ctx, children);
+        let block = self.create_block(id, node, block_kind, children);
         self.bb_map.insert(id, ParentedBlock::new(parent, block));
         self.children_stack.last_mut().unwrap().push(id);
     }
 }
 
 impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Language> {
-    fn ctx(&self) -> &'tcx Context<'tcx> {
-        self.ctx
+    fn ctx(&self) -> Context<'tcx> {
+        self.ctx()
     }
 
     fn visit_file(&mut self, node: HirNode<'tcx>, parent: BlockId) {
@@ -465,7 +469,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     root: HirId,
-    ctx: &'tcx Context<'tcx>,
+    ctx: Context<'tcx>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut builder = GraphBuilder::<L>::new(ctx);
     let root = ctx.hir_node(root);
@@ -476,13 +480,13 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
 
 #[derive(Debug)]
 struct GraphPrinter<'tcx> {
-    ctx: &'tcx Context<'tcx>,
+    ctx: Context<'tcx>,
     depth: usize,
     graph: String,
 }
 
 impl<'tcx> GraphPrinter<'tcx> {
-    fn new(ctx: &'tcx Context<'tcx>) -> Self {
+    fn new(ctx: Context<'tcx>) -> Self {
         Self {
             ctx,
             depth: 0,
@@ -492,7 +496,7 @@ impl<'tcx> GraphPrinter<'tcx> {
 
     fn format_bb(&mut self, bb: &BasicBlock<'tcx>) {
         let indent = "  ".repeat(self.depth);
-        let label = format!("{}", bb.format_block(self.ctx));
+        let label = bb.format_block(self.ctx);
 
         let node = bb.node();
         let snippet = self
@@ -542,7 +546,7 @@ impl<'tcx> GraphPrinter<'tcx> {
     }
 }
 
-pub fn print_llmcc_graph<'tcx>(root: BlockId, ctx: &'tcx Context<'tcx>) {
+pub fn print_llmcc_graph<'tcx>(root: BlockId, ctx: Context<'tcx>) {
     let mut vistor = GraphPrinter::new(ctx);
     let root = ctx.bb(root);
     vistor.visit_node(&root);
