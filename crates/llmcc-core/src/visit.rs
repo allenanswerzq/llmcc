@@ -3,7 +3,7 @@ use crate::ir::{HirKind, HirNode};
 use crate::Context;
 
 pub trait HirVisitor<'v> {
-    fn ctx(&self) -> &'v Context<'v>;
+    fn ctx(&self) -> Context<'v>;
 
     fn visit_children(&mut self, node: HirNode<'v>, parent: BlockId) {
         let children = node.children();
