@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 use tree_sitter::{Node, Tree};
 
-use crate::context::{Context, ParentedNode};
+use crate::context::Context;
 use crate::ir::{
     HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
@@ -35,10 +35,7 @@ impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
         let base = self.make_base(current_id, parent, node, kind, child_ids);
         let hir_node = self.make_hir_node(base, node, kind);
 
-        let ctx = self.ctx();
-        ctx.hir_map
-            .borrow_mut()
-            .insert(current_id, ParentedNode::new(hir_node));
+        self.ctx.insert_hir_node(current_id, hir_node);
 
         current_id
     }
@@ -150,175 +147,4 @@ pub fn build_llmcc_ir<'ctx, L: LanguageTrait>(
     let mut builder = HirBuilder::<L>::new(ctx);
     builder.build_node(tree.root_node(), None);
     Ok(())
-}
-
-#[derive(Debug)]
-struct HirPrinter<'tcx> {
-    ctx: Context<'tcx>,
-    depth: usize,
-    ast: String,
-    hir: String,
-}
-
-impl<'tcx> HirPrinter<'tcx> {
-    fn new(ctx: Context<'tcx>) -> Self {
-        Self {
-            ctx,
-            depth: 0,
-            ast: String::new(),
-            hir: String::new(),
-        }
-    }
-
-    pub fn field_name_of(&self, node: &Node) -> Option<String> {
-        let parent = node.parent()?;
-        let mut cursor = parent.walk();
-
-        if cursor.goto_first_child() {
-            loop {
-                if cursor.node().id() == node.id() {
-                    return cursor.field_name().map(|name| name.to_string());
-                }
-                if !cursor.goto_next_sibling() {
-                    break;
-                }
-            }
-        }
-
-        None
-    }
-
-    pub fn field_id_of(&self, node: &Node) -> Option<u16> {
-        let parent = node.parent()?;
-        let mut cursor = parent.walk();
-
-        if cursor.goto_first_child() {
-            loop {
-                if cursor.node().id() == node.id() {
-                    return cursor.field_id().map(|id| id.get());
-                }
-                if !cursor.goto_next_sibling() {
-                    break;
-                }
-            }
-        }
-
-        None
-    }
-
-    fn format_ast(&mut self, node: &Node<'tcx>) {
-        let kind = node.kind();
-        let kind_id = node.kind_id();
-        let field_name = self.field_name_of(&node);
-        let start = node.start_byte();
-        let end = node.end_byte();
-
-        let indent = "  ".repeat(self.depth);
-        let mut label = "".to_string();
-        if let Some(field_name) = field_name {
-            let field_id = self.field_id_of(&node).unwrap();
-            label.push_str(&format!("({}_{}):{}", field_name, field_id, kind));
-        } else {
-            label.push_str(&format!("{}", kind));
-        }
-        label.push_str(&format!(" [{}]", kind_id));
-
-        let snippet = self
-            .ctx
-            .file
-            .opt_get_text(node.start_byte(), node.end_byte())
-            .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "));
-
-        const SNIPPET_COL: usize = 60;
-        let mut line = format!("{}({}", indent, label);
-
-        if let Some(text) = snippet {
-            let padding = SNIPPET_COL.saturating_sub(line.len());
-            line.push_str(&" ".repeat(padding));
-            line.push('|');
-            let trunc = 70;
-            line.push_str(&text[..trunc.min(text.len())]);
-            if text.len() > trunc {
-                line.push_str("...");
-            }
-            line.push('|');
-        }
-
-        if node.child_count() == 0 {
-            // For leaf nodes, include text content
-            let text = self.ctx.file.get_text(start, end);
-            line.push_str(&format!(" \"{}\"", text));
-            line.push(')');
-        } else {
-            line.push('\n');
-        }
-        self.ast.push_str(&line);
-    }
-
-    fn format_hir(&mut self, node: &HirNode<'tcx>) {
-        let indent = "  ".repeat(self.depth);
-        let label = format!("{}", node.format_node(self.ctx));
-
-        let snippet = self
-            .ctx
-            .file
-            .opt_get_text(node.start_byte(), node.end_byte())
-            .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "));
-
-        const SNIPPET_COL: usize = 60;
-        let mut line = format!("{}({}", indent, label);
-
-        if let Some(text) = snippet {
-            let padding = SNIPPET_COL.saturating_sub(line.len());
-            line.push_str(&" ".repeat(padding));
-            line.push('|');
-            let trunc = 70;
-            line.push_str(&text[..trunc.min(text.len())]);
-            if text.len() > trunc {
-                line.push_str("...");
-            }
-            line.push('|');
-        }
-
-        if node.child_count() == 0 {
-            line.push(')');
-        }
-        self.hir.push_str(&line);
-        if node.child_count() != 0 {
-            self.hir.push('\n');
-        }
-    }
-
-    fn visit_node(&mut self, node: &HirNode<'tcx>) {
-        self.format_ast(&node.inner_ts_node());
-        self.format_hir(node);
-        self.depth += 1;
-
-        for id in node.children() {
-            let child = self.ctx.hir_node(*id);
-            self.visit_node(&child);
-        }
-
-        self.depth -= 1;
-        if node.child_count() > 0 {
-            self.ast.push_str(&"  ".repeat(self.depth));
-            self.ast.push(')');
-
-            self.hir.push_str(&"  ".repeat(self.depth));
-            self.hir.push(')');
-        }
-
-        if self.depth > 0 {
-            self.ast.push('\n');
-            self.hir.push('\n');
-        }
-    }
-}
-
-pub fn print_llmcc_ir<'tcx>(root: HirId, ctx: Context<'tcx>) {
-    let mut vistor = HirPrinter::new(ctx);
-    let root_node = vistor.ctx.hir_node(root);
-    vistor.visit_node(&root_node);
-    println!("{}\n", vistor.ast);
-    println!("{}\n", vistor.hir);
 }

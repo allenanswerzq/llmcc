@@ -6,13 +6,15 @@ pub mod file;
 pub mod ir;
 pub mod ir_builder;
 pub mod lang_def;
+pub mod printer;
 pub mod symbol;
 pub mod visit;
 pub mod trie;
 
-pub use block::{build_llmcc_graph, print_llmcc_graph, BlockId};
+pub use block::{build_llmcc_graph, BlockId};
 pub use context::{Context, GlobalCtxt};
 pub use ir::HirId;
-pub use ir_builder::{build_llmcc_ir, print_llmcc_ir};
+pub use ir_builder::build_llmcc_ir;
+pub use printer::{print_llmcc_graph, print_llmcc_ir};
 pub use paste;
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

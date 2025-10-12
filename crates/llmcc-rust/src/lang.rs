@@ -76,7 +76,8 @@ struct DeclFinder<'tcx> {
 
 impl<'tcx> DeclFinder<'tcx> {
     pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scope_stack = ScopeStack::new(&ctx.arena);
+        let gcx = ctx.gcx;
+        let mut scope_stack = ScopeStack::new(&gcx.arena);
         scope_stack.push_scope(globals);
         Self { ctx, scope_stack }
     }
@@ -188,7 +189,8 @@ struct SymbolBinder<'tcx> {
 
 impl<'tcx> SymbolBinder<'tcx> {
     pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scope_stack = ScopeStack::new(&ctx.arena);
+        let gcx = ctx.gcx;
+        let mut scope_stack = ScopeStack::new(&gcx.arena);
         scope_stack.push_scope(globals);
         Self { ctx, scope_stack }
     }
