@@ -13,7 +13,7 @@ declare_arena!([
     hir_scope: HirScope<'tcx>,
     hir_file: HirFile<'tcx>,
     hir_ident: HirIdent<'tcx>,
-    symbol: Symbol<'tcx>,
+    symbol: Symbol,
     scope: Scope<'tcx>,
 ]);
 

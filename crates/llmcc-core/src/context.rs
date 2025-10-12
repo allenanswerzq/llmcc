@@ -56,17 +56,17 @@ impl<'tcx> Context<'tcx> {
     }
 
     /// Get a symbol from the uses map
-    pub fn opt_uses(self, id: HirId) -> Option<&'tcx Symbol<'tcx>> {
+    pub fn opt_uses(self, id: HirId) -> Option<&'tcx Symbol> {
         self.gcx.uses_map.borrow().get(&id).copied()
     }
 
     /// Get a symbol from the defs map
-    pub fn opt_defs(self, id: HirId) -> Option<&'tcx Symbol<'tcx>> {
+    pub fn opt_defs(self, id: HirId) -> Option<&'tcx Symbol> {
         self.gcx.defs_map.borrow().get(&id).copied()
     }
 
     /// Get a symbol from the defs map
-    pub fn defs(self, id: HirId) -> &'tcx Symbol<'tcx> {
+    pub fn defs(self, id: HirId) -> &'tcx Symbol {
         self.gcx
             .defs_map
             .borrow()
@@ -81,7 +81,7 @@ impl<'tcx> Context<'tcx> {
     }
 
     /// Create a new symbol in the arena
-    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol<'tcx> {
+    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
         self.gcx.arena.alloc(Symbol::new(owner, name))
     }
 
@@ -105,12 +105,12 @@ impl<'tcx> Context<'tcx> {
     }
 
     /// Add a symbol definition
-    pub fn insert_def(self, id: HirId, symbol: &'tcx Symbol<'tcx>) {
+    pub fn insert_def(self, id: HirId, symbol: &'tcx Symbol) {
         self.gcx.defs_map.borrow_mut().insert(id, symbol);
     }
 
     /// Add a symbol use
-    pub fn insert_use(self, id: HirId, symbol: &'tcx Symbol<'tcx>) {
+    pub fn insert_use(self, id: HirId, symbol: &'tcx Symbol) {
         self.gcx.uses_map.borrow_mut().insert(id, symbol);
     }
 
@@ -206,9 +206,9 @@ pub struct GlobalCtxt<'tcx> {
     // HirId -> ParentedNode
     pub hir_map: RefCell<HashMap<HirId, ParentedNode<'tcx>>>,
     // HirId -> &Symbol (definitions)
-    pub defs_map: RefCell<HashMap<HirId, &'tcx Symbol<'tcx>>>,
+    pub defs_map: RefCell<HashMap<HirId, &'tcx Symbol>>,
     // HirId -> &Symbol (uses/references)
-    pub uses_map: RefCell<HashMap<HirId, &'tcx Symbol<'tcx>>>,
+    pub uses_map: RefCell<HashMap<HirId, &'tcx Symbol>>,
     // HirId -> &Scope (scopes owned by this HIR node)
     pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
 

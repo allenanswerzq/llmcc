@@ -1,6 +1,5 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
-use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::ir::{Arena, HirId, HirIdent};
@@ -18,7 +17,7 @@ impl std::fmt::Display for SymId {
 
 #[derive(Debug, Clone)]
 pub struct Scope<'tcx> {
-    definitions: RefCell<HashMap<SymId, &'tcx Symbol<'tcx>>>,
+    definitions: RefCell<HashMap<SymId, &'tcx Symbol>>,
     lookup: RefCell<HashMap<String, SymId>>,
     owner: HirId,
 }
@@ -36,7 +35,7 @@ impl<'tcx> Scope<'tcx> {
         self.owner
     }
 
-    pub fn insert(&self, name: &str, symbol: &'tcx Symbol<'tcx>) -> SymId {
+    pub fn insert(&self, name: &str, symbol: &'tcx Symbol) -> SymId {
         let sym_id = symbol.id;
         self.definitions.borrow_mut().insert(sym_id, symbol);
         self.lookup.borrow_mut().insert(name.to_string(), sym_id);
@@ -47,13 +46,13 @@ impl<'tcx> Scope<'tcx> {
         self.lookup.borrow().get(name).copied()
     }
 
-    pub fn get_symbol(&self, sym_id: SymId) -> Option<&'tcx Symbol<'tcx>> {
-        self.definitions.borrow().get(&sym_id).copied()
+    pub fn get_symbol(&self, id: SymId) -> Option<&'tcx Symbol> {
+        self.definitions.borrow().get(&id).copied()
     }
 
     pub fn with_symbol<F, R>(&self, name: &str, f: F) -> Option<R>
     where
-        F: FnOnce(&Symbol<'tcx>) -> R,
+        F: FnOnce(&Symbol) -> R,
     {
         let id = self.get_id(name)?;
         self.with_symbol_by_id(id, f)
@@ -61,7 +60,7 @@ impl<'tcx> Scope<'tcx> {
 
     pub fn with_symbol_by_id<F, R>(&self, id: SymId, f: F) -> Option<R>
     where
-        F: FnOnce(&Symbol<'tcx>) -> R,
+        F: FnOnce(&Symbol) -> R,
     {
         let defs = self.definitions.borrow();
         defs.get(&id).map(|symbol| f(*symbol))
@@ -127,7 +126,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn insert_symbol(
         &mut self,
         name: &str,
-        symbol: &'tcx Symbol<'tcx>,
+        symbol: &'tcx Symbol,
         global: bool,
     ) -> Result<SymId, &'static str> {
         let scope = self.scope_for_insertion(global)?;
@@ -135,22 +134,20 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
-        self.stack.iter().rev().find_map(|scope| scope.get_id(name))
+        self.iter().rev().find_map(|scope| scope.get_id(name))
     }
 
-    pub fn find_symbol(&self, name: &str) -> Option<&'tcx Symbol<'tcx>> {
-        self.stack
-            .iter()
-            .rev()
-            .find_map(|scope| scope.get_id(name))
+    pub fn find_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+        self.find_symbol_id(name)
             .and_then(|id| self.find_symbol_by_id(id))
     }
 
-    pub fn find_symbol_by_id(&self, id: SymId) -> Option<&'tcx Symbol<'tcx>> {
-        self.stack
-            .iter()
-            .rev()
-            .find_map(|scope| scope.get_symbol(id))
+    pub fn find_symbol_by_id(&self, id: SymId) -> Option<&'tcx Symbol> {
+        self.iter().rev().find_map(|scope| scope.get_symbol(id))
+    }
+
+    pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
+        self.find_symbol(&ident.name)
     }
 
     pub fn find_or_insert(
@@ -158,7 +155,7 @@ impl<'tcx> ScopeStack<'tcx> {
         owner: HirId,
         ident: &HirIdent<'tcx>,
         global: bool,
-    ) -> &'tcx Symbol<'tcx> {
+    ) -> &'tcx Symbol {
         if let Some(symbol) = self.find_ident(ident) {
             return symbol;
         }
@@ -170,34 +167,22 @@ impl<'tcx> ScopeStack<'tcx> {
             .expect("symbol should be present after insertion")
     }
 
-    pub fn find_or_insert_local(
-        &mut self,
-        owner: HirId,
-        ident: &HirIdent<'tcx>,
-    ) -> &'tcx Symbol<'tcx> {
+    pub fn find_or_insert_local(&mut self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol {
         self.find_or_insert(owner, ident, false)
     }
 
-    pub fn find_or_insert_global(
-        &mut self,
-        owner: HirId,
-        ident: &HirIdent<'tcx>,
-    ) -> &'tcx Symbol<'tcx> {
+    pub fn find_or_insert_global(&mut self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol {
         self.find_or_insert(owner, ident, true)
     }
 
-    fn create_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol<'tcx> {
+    fn create_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol {
         let symbol = Symbol::new(owner, ident.name.clone());
         self.arena.alloc(symbol)
-    }
-
-    pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol<'tcx>> {
-        self.find_symbol(&ident.name)
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Symbol<'tcx> {
+pub struct Symbol {
     pub id: SymId,
     pub owner: HirId,
     pub name: String,
@@ -208,13 +193,12 @@ pub struct Symbol<'tcx> {
     pub base_symbol: Cell<Option<SymId>>,
     pub overloads: RefCell<Vec<SymId>>,
     pub nested_types: RefCell<Vec<SymId>>,
-    _marker: PhantomData<&'tcx ()>,
 }
 
-impl<'tcx> Symbol<'tcx> {
+impl Symbol {
     pub fn new(owner: HirId, name: String) -> Self {
-        let next = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
-        let sym_id = SymId(next);
+        let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
+        let sym_id = SymId(id);
 
         Self {
             id: sym_id,
@@ -227,8 +211,11 @@ impl<'tcx> Symbol<'tcx> {
             base_symbol: Cell::new(None),
             overloads: RefCell::new(Vec::new()),
             nested_types: RefCell::new(Vec::new()),
-            _marker: PhantomData,
         }
+    }
+
+    pub fn owner(&self) -> HirId {
+        self.owner
     }
 
     pub fn format_compact(&self) -> String {
