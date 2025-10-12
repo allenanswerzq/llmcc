@@ -52,7 +52,7 @@ impl<'tcx> Context<'tcx> {
             .hir_map
             .borrow()
             .get(&id)
-            .map(|parented| parented.parent)
+            .and_then(|parented| parented.parent())
     }
 
     /// Get a symbol from the uses map
@@ -99,8 +99,8 @@ impl<'tcx> Context<'tcx> {
     }
 
     /// Add a HIR node to the map
-    pub fn insert_hir_node(self, id: HirId, parent: HirId, node: HirNode<'tcx>) {
-        let parented = ParentedNode::new(parent, node);
+    pub fn insert_hir_node(self, id: HirId, node: HirNode<'tcx>) {
+        let parented = ParentedNode::new(node);
         self.gcx.hir_map.borrow_mut().insert(id, parented);
     }
 
@@ -116,17 +116,13 @@ impl<'tcx> Context<'tcx> {
 
     /// Get all child nodes of a given parent
     pub fn children_of(self, parent: HirId) -> Vec<(HirId, HirNode<'tcx>)> {
-        self.gcx
-            .hir_map
-            .borrow()
+        let Some(parent_node) = self.opt_hir_node(parent) else {
+            return Vec::new();
+        };
+        parent_node
+            .children()
             .iter()
-            .filter_map(|(&id, parented)| {
-                if parented.parent == parent {
-                    Some((id, parented.node.clone()))
-                } else {
-                    None
-                }
-            })
+            .map(|&child_id| (child_id, self.hir_node(child_id)))
             .collect()
     }
 
@@ -160,13 +156,12 @@ impl<'tcx> Deref for Context<'tcx> {
 
 #[derive(Debug, Clone)]
 pub struct ParentedNode<'tcx> {
-    pub parent: HirId,
     pub node: HirNode<'tcx>,
 }
 
 impl<'tcx> ParentedNode<'tcx> {
-    pub fn new(parent: HirId, node: HirNode<'tcx>) -> Self {
-        Self { parent, node }
+    pub fn new(node: HirNode<'tcx>) -> Self {
+        Self { node }
     }
 
     /// Get a reference to the wrapped node
@@ -175,8 +170,8 @@ impl<'tcx> ParentedNode<'tcx> {
     }
 
     /// Get the parent ID
-    pub fn parent(&self) -> HirId {
-        self.parent
+    pub fn parent(&self) -> Option<HirId> {
+        self.node.parent()
     }
 }
 
