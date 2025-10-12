@@ -78,21 +78,21 @@ impl<'tcx> DeclFinder<'tcx> {
     pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let gcx = ctx.gcx;
         let mut scope_stack = ScopeStack::new(&gcx.arena);
-        scope_stack.push_scope(globals);
+        scope_stack.push(globals);
         Self { ctx, scope_stack }
     }
 
     fn generate_fqn(&self, name: &str, node_id: HirId) -> String {
-        for scope in self.scope_stack.scopes.iter().rev() {
-            if let Some(_) = scope.find_symbol_id(name) {
+        for scope in self.scope_stack.iter().rev() {
+            if let Some(_) = scope.get_id(name) {
                 let mut owners = vec![];
-                for s in self.scope_stack.scopes.iter() {
-                    let hir = self.ctx.hir_node(s.owner);
+                for s in self.scope_stack.iter() {
+                    let hir = self.ctx.hir_node(s.owner());
                     match hir {
                         HirNode::Scope(hir) => {
                             let owner_name = hir.owner_name();
                             owners.push(owner_name);
-                            if s.owner == scope.owner {
+                            if s.owner() == scope.owner() {
                                 break;
                             }
                         }
@@ -116,7 +116,7 @@ impl<'tcx> DeclFinder<'tcx> {
             return SymId(0);
         }
         let ident = ident.expect_ident();
-        let symbol = self.scope_stack.find_or_add(node.hir_id(), ident, false);
+        let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         dbg!(&fqn);
@@ -130,7 +130,7 @@ impl<'tcx> DeclFinder<'tcx> {
     fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
         let scope = self.ctx.alloc_scope(node.hir_id());
-        self.scope_stack.push_scope(scope);
+        self.scope_stack.push(scope);
         self.visit_children(&node);
         self.scope_stack.pop_until(depth);
     }
@@ -191,14 +191,14 @@ impl<'tcx> SymbolBinder<'tcx> {
     pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let gcx = ctx.gcx;
         let mut scope_stack = ScopeStack::new(&gcx.arena);
-        scope_stack.push_scope(globals);
+        scope_stack.push(globals);
         Self { ctx, scope_stack }
     }
 
     pub fn follow_scope_deeper(&mut self, node: HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
         let scope = self.ctx.alloc_scope(node.hir_id());
-        self.scope_stack.push_scope(scope);
+        self.scope_stack.push(scope);
 
         self.visit_children(&node);
         self.scope_stack.pop_until(depth);
@@ -235,7 +235,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
         if self.ctx.opt_uses(id).is_none() {
             // if this ident does have a symbol before
             let ident = node.expect_ident();
-            if let Some(def_sym) = self.scope_stack.find(ident) {
+            if let Some(def_sym) = self.scope_stack.find_ident(ident) {
                 let use_sym = self.ctx.new_symbol(node.hir_id(), ident.name.clone());
                 use_sym.defined.set(Some(def_sym.owner));
 
