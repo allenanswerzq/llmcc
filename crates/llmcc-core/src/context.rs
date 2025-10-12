@@ -6,6 +6,7 @@ use tree_sitter::Tree;
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
+use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
 use crate::symbol::{Scope, Symbol};
@@ -23,6 +24,24 @@ impl<'tcx> Context<'tcx> {
 
     pub fn tree(&self) -> &'tcx Tree {
         &self.gcx.trees[self.index].as_ref().unwrap()
+    }
+
+    /// Access the shared string interner.
+    pub fn interner(&self) -> &InternPool {
+        &self.gcx.interner
+    }
+
+    /// Intern a string and return its symbol.
+    pub fn intern_str<S>(&self, value: S) -> InternedStr
+    where
+        S: AsRef<str>,
+    {
+        self.gcx.interner.intern(value)
+    }
+
+    /// Resolve an interned symbol into an owned string.
+    pub fn resolve_interned_owned(&self, symbol: InternedStr) -> Option<String> {
+        self.gcx.interner.resolve_owned(symbol)
     }
 
     /// Get a HIR node by ID, returning None if not found
@@ -91,7 +110,8 @@ impl<'tcx> Context<'tcx> {
 
     /// Create a new symbol in the arena
     pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
-        self.gcx.arena.alloc(Symbol::new(owner, name))
+        let key = self.gcx.interner.intern(&name);
+        self.gcx.arena.alloc(Symbol::new(owner, name, key))
     }
 
     /// Find an existing scope or create a new one
@@ -217,6 +237,7 @@ impl<'tcx> ParentedBlock<'tcx> {
 #[derive(Debug, Default)]
 pub struct GlobalCtxt<'tcx> {
     pub arena: Arena<'tcx>,
+    pub interner: InternPool,
     pub files: Vec<File>,
     pub trees: Vec<Option<Tree>>,
 
@@ -247,6 +268,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
         let count = files.len();
         Self {
             arena: Arena::default(),
+            interner: InternPool::default(),
             files,
             trees,
             hir_maps: vec![RefCell::new(HashMap::new()); count],
@@ -271,6 +293,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
         let count = files.len();
         Ok(Self {
             arena: Arena::default(),
+            interner: InternPool::default(),
             files,
             trees,
             hir_maps: vec![RefCell::new(HashMap::new()); count],

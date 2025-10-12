@@ -1,6 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
+use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirIdent};
 use crate::trie::SymbolTrie;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -19,7 +20,7 @@ impl std::fmt::Display for SymId {
 #[derive(Debug, Clone)]
 pub struct Scope<'tcx> {
     definitions: RefCell<HashMap<SymId, &'tcx Symbol>>,
-    lookup: RefCell<HashMap<String, SymId>>,
+    lookup: RefCell<HashMap<InternedStr, SymId>>,
     owner: HirId,
 }
 
@@ -36,26 +37,26 @@ impl<'tcx> Scope<'tcx> {
         self.owner
     }
 
-    pub fn insert(&self, name: &str, symbol: &'tcx Symbol) -> SymId {
+    pub fn insert(&self, key: InternedStr, symbol: &'tcx Symbol) -> SymId {
         let sym_id = symbol.id;
         self.definitions.borrow_mut().insert(sym_id, symbol);
-        self.lookup.borrow_mut().insert(name.to_string(), sym_id);
+        self.lookup.borrow_mut().insert(key, sym_id);
         sym_id
     }
 
-    pub fn get_id(&self, name: &str) -> Option<SymId> {
-        self.lookup.borrow().get(name).copied()
+    pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
+        self.lookup.borrow().get(&key).copied()
     }
 
     pub fn get_symbol(&self, id: SymId) -> Option<&'tcx Symbol> {
         self.definitions.borrow().get(&id).copied()
     }
 
-    pub fn with_symbol<F, R>(&self, name: &str, f: F) -> Option<R>
+    pub fn with_symbol<F, R>(&self, key: InternedStr, f: F) -> Option<R>
     where
         F: FnOnce(&Symbol) -> R,
     {
-        let id = self.get_id(name)?;
+        let id = self.get_id(key)?;
         self.with_symbol_by_id(id, f)
     }
 
@@ -76,13 +77,15 @@ impl<'tcx> Scope<'tcx> {
 #[derive(Debug)]
 pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
+    interner: &'tcx InternPool,
     stack: Vec<&'tcx Scope<'tcx>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {
-    pub fn new(arena: &'tcx Arena<'tcx>) -> Self {
+    pub fn new(arena: &'tcx Arena<'tcx>, interner: &'tcx InternPool) -> Self {
         Self {
             arena,
+            interner,
             stack: Vec::new(),
         }
     }
@@ -126,23 +129,33 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn insert_symbol(
         &mut self,
-        name: &str,
+        key: InternedStr,
         symbol: &'tcx Symbol,
         global: bool,
     ) -> Result<SymId, &'static str> {
         let scope = self.scope_for_insertion(global)?;
-        Ok(scope.insert(name, symbol))
+        Ok(scope.insert(key, symbol))
     }
 
     pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
-        self.iter().rev().find_map(|scope| scope.get_id(name))
+        let key = self.interner.intern(name);
+        self.find_symbol_id_by_key(key)
+    }
+
+    fn find_symbol_id_by_key(&self, key: InternedStr) -> Option<SymId> {
+        self.iter().rev().find_map(|scope| scope.get_id(key))
+    }
+
+    fn find_symbol_local_by_key(&self, key: InternedStr) -> Option<&'tcx Symbol> {
+        self.iter()
+            .rev()
+            .find_map(|scope| scope.get_id(key))
+            .and_then(|id| self.find_symbol_by_id(id))
     }
 
     fn find_symbol_local(&self, name: &str) -> Option<&'tcx Symbol> {
-        self.iter()
-            .rev()
-            .find_map(|scope| scope.get_id(name))
-            .and_then(|id| self.find_symbol_by_id(id))
+        let key = self.interner.intern(name);
+        self.find_symbol_local_by_key(key)
     }
 
     pub fn find_symbol_by_id(&self, id: SymId) -> Option<&'tcx Symbol> {
@@ -163,10 +176,11 @@ impl<'tcx> ScopeStack<'tcx> {
             return symbol;
         }
 
-        let symbol = self.create_symbol(owner, ident);
-        self.insert_symbol(&ident.name, symbol, global)
+        let key = self.interner.intern(&ident.name);
+        let symbol = self.create_symbol(owner, ident, key);
+        self.insert_symbol(key, symbol, global)
             .expect("failed to insert symbol");
-        self.find_ident_local(ident)
+        self.find_symbol_local_by_key(key)
             .expect("symbol should be present after insertion")
     }
 
@@ -178,8 +192,13 @@ impl<'tcx> ScopeStack<'tcx> {
         self.find_or_insert(owner, ident, true)
     }
 
-    fn create_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol {
-        let symbol = Symbol::new(owner, ident.name.clone());
+    fn create_symbol(
+        &self,
+        owner: HirId,
+        ident: &HirIdent<'tcx>,
+        key: InternedStr,
+    ) -> &'tcx Symbol {
+        let symbol = Symbol::new(owner, ident.name.clone(), key);
         self.arena.alloc(symbol)
     }
 
@@ -193,7 +212,9 @@ pub struct Symbol {
     pub id: SymId,
     pub owner: HirId,
     pub name: String,
+    pub name_key: InternedStr,
     pub fqn_name: RefCell<String>,
+    pub fqn_key: RefCell<InternedStr>,
     pub defined: Cell<Option<HirId>>,
     pub type_of: Cell<Option<SymId>>,
     pub field_of: Cell<Option<SymId>>,
@@ -203,15 +224,19 @@ pub struct Symbol {
 }
 
 impl Symbol {
-    pub fn new(owner: HirId, name: String) -> Self {
+    pub fn new(owner: HirId, name: String, name_key: InternedStr) -> Self {
         let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
         let sym_id = SymId(id);
+
+        let fqn_key = name_key;
 
         Self {
             id: sym_id,
             owner,
             name: name.clone(),
+            name_key,
             fqn_name: RefCell::new(name),
+            fqn_key: RefCell::new(fqn_key),
             defined: Cell::new(None),
             type_of: Cell::new(None),
             field_of: Cell::new(None),
@@ -259,6 +284,12 @@ impl Symbol {
 
         format!("{}->{} \"{}\"{}", self.id, self.owner, self.name, meta)
     }
+
+    pub fn set_fqn(&self, fqn: String, interner: &InternPool) {
+        let key = interner.intern(&fqn);
+        *self.fqn_name.borrow_mut() = fqn;
+        *self.fqn_key.borrow_mut() = key;
+    }
 }
 
 #[derive(Debug, Default)]
@@ -267,15 +298,15 @@ pub struct SymbolRegistry<'tcx> {
 }
 
 impl<'tcx> SymbolRegistry<'tcx> {
-    pub fn insert(&mut self, symbol: &'tcx Symbol) {
-        self.trie.insert_symbol(symbol);
+    pub fn insert(&mut self, symbol: &'tcx Symbol, interner: &InternPool) {
+        self.trie.insert_symbol(symbol, interner);
     }
 
-    pub fn lookup_suffix(&self, suffix: &[&str]) -> Vec<&'tcx Symbol> {
+    pub fn lookup_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.trie.lookup_symbol_suffix(suffix)
     }
 
-    pub fn lookup_suffix_once(&self, suffix: &[&str]) -> Option<&'tcx Symbol> {
+    pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
         self.lookup_suffix(suffix).into_iter().next()
     }
 
@@ -291,24 +322,36 @@ mod tests {
     #[test]
     fn symbol_trie_integration() {
         let arena: Arena = Arena::default();
-        let symbol_a = arena.alloc(Symbol::new(
-            HirId(1),
-            "module_a::module_b::struct_foo::fn_bar".into(),
-        ));
-        let symbol_b = arena.alloc(Symbol::new(
-            HirId(2),
-            "module_a::module_b::struct_foo::fn_baz".into(),
-        ));
+        let interner = InternPool::default();
+        let name_a = "fn_bar".to_string();
+        let name_b = "fn_baz".to_string();
+        let key_a = interner.intern(&name_a);
+        let key_b = interner.intern(&name_b);
+        let symbol_a = arena.alloc(Symbol::new(HirId(1), name_a.clone(), key_a));
+        let symbol_b = arena.alloc(Symbol::new(HirId(2), name_b.clone(), key_b));
+        symbol_a.set_fqn(
+            "module_a::module_b::struct_foo::fn_bar".to_string(),
+            &interner,
+        );
+        symbol_b.set_fqn(
+            "module_a::module_b::struct_foo::fn_baz".to_string(),
+            &interner,
+        );
 
         let mut registry = SymbolRegistry::default();
-        registry.insert(symbol_a);
-        registry.insert(symbol_b);
+        registry.insert(symbol_a, &interner);
+        registry.insert(symbol_b, &interner);
 
-        let suffix = registry.lookup_suffix(&["fn_bar"]);
+        let suffix = registry.lookup_suffix(&[key_a]);
         assert_eq!(suffix.len(), 1);
         assert_eq!(suffix[0].id, symbol_a.id);
 
-        let exact = registry.lookup_suffix(&["fn_baz", "struct_foo", "module_b", "module_a"]);
+        let exact = registry.lookup_suffix(&[
+            key_b,
+            interner.intern("struct_foo"),
+            interner.intern("module_b"),
+            interner.intern("module_a"),
+        ]);
         assert_eq!(exact.len(), 1);
         assert_eq!(exact[0].id, symbol_b.id);
     }

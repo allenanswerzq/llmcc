@@ -78,7 +78,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
         registry: &'reg mut SymbolRegistry<'tcx>,
     ) -> Self {
         let gcx = ctx.gcx;
-        let mut scope_stack = ScopeStack::new(&gcx.arena);
+        let mut scope_stack = ScopeStack::new(&gcx.arena, &gcx.interner);
         scope_stack.push(global_scope);
         Self {
             ctx,
@@ -88,8 +88,9 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
     }
 
     fn generate_fqn(&self, name: &str, _node_id: HirId) -> String {
+        let name_key = self.ctx.interner().intern(name);
         for scope in self.scope_stack.iter().rev() {
-            if let Some(_) = scope.get_id(name) {
+            if let Some(_) = scope.get_id(name_key) {
                 let mut owners = vec![];
                 for s in self.scope_stack.iter() {
                     let hir = self.ctx.hir_node(s.owner());
@@ -125,9 +126,9 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         dbg!(&fqn);
-        *symbol.fqn_name.borrow_mut() = fqn;
+        symbol.set_fqn(fqn, self.ctx.interner());
 
-        self.registry.insert(symbol);
+        self.registry.insert(symbol, self.ctx.interner());
 
         self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
@@ -202,7 +203,7 @@ impl<'tcx, 'reg> SymbolBinder<'tcx, 'reg> {
         registry: &'reg SymbolRegistry<'tcx>,
     ) -> Self {
         let gcx = ctx.gcx;
-        let mut scope_stack = ScopeStack::new(&gcx.arena);
+        let mut scope_stack = ScopeStack::new(&gcx.arena, &gcx.interner);
         scope_stack.push(global_scope);
         Self {
             ctx,
@@ -257,10 +258,8 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for SymbolBinder<'tcx, 'reg> {
                 return;
             }
 
-            if let Some(def_sym) = self
-                .registry
-                .lookup_suffix_once(&[ident.name.as_str()])
-            {
+            let ident_key = self.ctx.interner().intern(&ident.name);
+            if let Some(def_sym) = self.registry.lookup_suffix_once(&[ident_key]) {
                 let use_sym = self.ctx.new_symbol(node.hir_id(), ident.name.clone());
                 use_sym.defined.set(Some(def_sym.owner));
                 self.ctx.insert_use(id, use_sym);
@@ -271,11 +270,7 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for SymbolBinder<'tcx, 'reg> {
     }
 }
 
-pub fn collect_symbols<'tcx>(
-    root: HirId,
-    ctx: Context<'tcx>,
-    registry: &mut SymbolRegistry<'tcx>,
-) {
+pub fn collect_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, registry: &mut SymbolRegistry<'tcx>) {
     let node = ctx.hir_node(root);
     let global_scope = ctx.alloc_scope(root);
     let mut decl_finder = DeclFinder::new(ctx, global_scope, registry);

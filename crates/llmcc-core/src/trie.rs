@@ -1,17 +1,18 @@
 use std::collections::HashMap;
 
+use crate::interner::{InternPool, InternedStr};
 use crate::symbol::Symbol;
 
 #[derive(Debug, Default)]
 struct SymbolTrieNode<'tcx> {
-    children: HashMap<String, SymbolTrieNode<'tcx>>,
+    children: HashMap<InternedStr, SymbolTrieNode<'tcx>>,
     symbols: Vec<&'tcx Symbol>,
 }
 
 impl<'tcx> SymbolTrieNode<'tcx> {
-    fn child_mut(&mut self, segment: &str) -> &mut SymbolTrieNode<'tcx> {
+    fn child_mut(&mut self, key: InternedStr) -> &mut SymbolTrieNode<'tcx> {
         self.children
-            .entry(segment.to_string())
+            .entry(key)
             .or_insert_with(SymbolTrieNode::default)
     }
 
@@ -29,31 +30,32 @@ pub struct SymbolTrie<'tcx> {
 }
 
 impl<'tcx> SymbolTrie<'tcx> {
-    pub fn insert_symbol(&mut self, symbol: &'tcx Symbol) {
+    pub fn insert_symbol(&mut self, symbol: &'tcx Symbol, interner: &InternPool) {
         let fqn = symbol.fqn_name.borrow();
         if fqn.is_empty() {
             return;
         }
 
-        let segments: Vec<&str> = fqn
+        let segments: Vec<InternedStr> = fqn
             .split("::")
             .filter(|segment| !segment.is_empty())
+            .map(|segment| interner.intern(segment))
             .collect();
         if segments.is_empty() {
             return;
         }
 
         let mut node = &mut self.root;
-        for segment in segments.iter().rev() {
+        for segment in segments.iter().rev().copied() {
             node = node.child_mut(segment);
         }
         node.add_symbol(symbol);
     }
 
-    pub fn lookup_symbol_suffix(&self, suffix: &[&str]) -> Vec<&'tcx Symbol> {
+    pub fn lookup_symbol_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         let mut node = &self.root;
         for segment in suffix {
-            match node.children.get(*segment) {
+            match node.children.get(segment) {
                 Some(child) => node = child,
                 None => return Vec::new(),
             }
@@ -63,10 +65,10 @@ impl<'tcx> SymbolTrie<'tcx> {
         results
     }
 
-    pub fn lookup_symbol_exact(&self, suffix: &[&str]) -> Vec<&'tcx Symbol> {
+    pub fn lookup_symbol_exact(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         let mut node = &self.root;
         for segment in suffix {
-            match node.children.get(*segment) {
+            match node.children.get(segment) {
                 Some(child) => node = child,
                 None => return Vec::new(),
             }
@@ -94,24 +96,36 @@ mod tests {
     #[test]
     fn trie_inserts_and_resolves_suffix() {
         let arena: Arena = Arena::default();
-        let symbol_a = arena.alloc(Symbol::new(
-            HirId(1),
-            "module_a::module_b::struct_foo::fn_bar".into(),
-        ));
-        let symbol_b = arena.alloc(Symbol::new(
-            HirId(2),
-            "module_a::module_b::struct_foo::fn_baz".into(),
-        ));
+        let interner = InternPool::default();
+        let name_bar = "fn_bar".to_string();
+        let name_baz = "fn_baz".to_string();
+        let key_bar = interner.intern(&name_bar);
+        let key_baz = interner.intern(&name_baz);
+        let symbol_a = arena.alloc(Symbol::new(HirId(1), name_bar.clone(), key_bar));
+        let symbol_b = arena.alloc(Symbol::new(HirId(2), name_baz.clone(), key_baz));
+        symbol_a.set_fqn(
+            "module_a::module_b::struct_foo::fn_bar".to_string(),
+            &interner,
+        );
+        symbol_b.set_fqn(
+            "module_a::module_b::struct_foo::fn_baz".to_string(),
+            &interner,
+        );
 
         let mut trie = SymbolTrie::default();
-        trie.insert_symbol(symbol_a);
-        trie.insert_symbol(symbol_b);
+        trie.insert_symbol(symbol_a, &interner);
+        trie.insert_symbol(symbol_b, &interner);
 
-        let suffix = trie.lookup_symbol_suffix(&["fn_bar"]);
+        let suffix = trie.lookup_symbol_suffix(&[key_bar]);
         assert_eq!(suffix.len(), 1);
         assert_eq!(suffix[0].id, symbol_a.id);
 
-        let exact = trie.lookup_symbol_exact(&["fn_baz", "struct_foo", "module_b", "module_a"]);
+        let exact = trie.lookup_symbol_exact(&[
+            key_baz,
+            interner.intern("struct_foo"),
+            interner.intern("module_b"),
+            interner.intern("module_a"),
+        ]);
         assert_eq!(exact.len(), 1);
         assert_eq!(exact[0].id, symbol_b.id);
     }

@@ -1,5 +1,5 @@
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
-use tree_sitter::{Node, Point};
+use tree_sitter::Node;
 
 use crate::context::Context;
 use crate::declare_arena;
@@ -57,7 +57,6 @@ impl<'hir> HirNode<'hir> {
     pub fn format_node(&self, ctx: Context<'hir>) -> String {
         let id = self.hir_id();
         let kind = self.kind();
-        let base = self.base().unwrap();
         let mut f = format!("{}:{}", kind, id);
 
         if let Some(def) = ctx.opt_defs(id) {

@@ -1,7 +1,7 @@
 use crate::block::BlockKind;
 use crate::ir::HirKind;
 
-use tree_sitter::{Parser, Tree};
+use tree_sitter::Tree;
 
 pub trait LanguageTrait {
     // TODO: add gneral parse result struct

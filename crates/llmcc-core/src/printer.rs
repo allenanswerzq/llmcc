@@ -175,11 +175,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     fn node(label: &str, snippet: Option<&str>, children: Vec<RenderNode>) -> RenderNode {
-        RenderNode::new(
-            label.to_string(),
-            snippet.map(ToOwned::to_owned),
-            children,
-        )
+        RenderNode::new(label.to_string(), snippet.map(ToOwned::to_owned), children)
     }
 
     #[test]
