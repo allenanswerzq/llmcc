@@ -1,8 +1,9 @@
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU32, Ordering};
 
 use crate::ir::{Arena, HirId, HirIdent};
+use crate::trie::SymbolTrie;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 static NEXT_SYMBOL_ID: AtomicU32 = AtomicU32::new(1);
 
@@ -75,13 +76,15 @@ impl<'tcx> Scope<'tcx> {
 #[derive(Debug)]
 pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
+    registry: &'tcx SymbolRegistry<'tcx>,
     stack: Vec<&'tcx Scope<'tcx>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {
-    pub fn new(arena: &'tcx Arena<'tcx>) -> Self {
+    pub fn new(arena: &'tcx Arena<'tcx>, registry: &'tcx SymbolRegistry<'tcx>) -> Self {
         Self {
             arena,
+            registry,
             stack: Vec::new(),
         }
     }
@@ -112,6 +115,10 @@ impl<'tcx> ScopeStack<'tcx> {
         self.stack.iter().copied()
     }
 
+    pub fn registry(&self) -> &'tcx SymbolRegistry<'tcx> {
+        self.registry
+    }
+
     fn scope_for_insertion(&mut self, global: bool) -> Result<&'tcx Scope<'tcx>, &'static str> {
         if global {
             self.stack.get(0).copied().ok_or("no global scope exists")
@@ -137,9 +144,19 @@ impl<'tcx> ScopeStack<'tcx> {
         self.iter().rev().find_map(|scope| scope.get_id(name))
     }
 
-    pub fn find_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
-        self.find_symbol_id(name)
+    fn find_symbol_local(&self, name: &str) -> Option<&'tcx Symbol> {
+        self.iter()
+            .rev()
+            .find_map(|scope| scope.get_id(name))
             .and_then(|id| self.find_symbol_by_id(id))
+    }
+
+    pub fn find_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+        if let Some(symbol) = self.find_symbol_local(name) {
+            return Some(symbol);
+        }
+        let suffix = [name];
+        self.registry.lookup_suffix_once(&suffix)
     }
 
     pub fn find_symbol_by_id(&self, id: SymId) -> Option<&'tcx Symbol> {
@@ -156,14 +173,14 @@ impl<'tcx> ScopeStack<'tcx> {
         ident: &HirIdent<'tcx>,
         global: bool,
     ) -> &'tcx Symbol {
-        if let Some(symbol) = self.find_ident(ident) {
+        if let Some(symbol) = self.find_ident_local(ident) {
             return symbol;
         }
 
         let symbol = self.create_symbol(owner, ident);
         self.insert_symbol(&ident.name, symbol, global)
             .expect("failed to insert symbol");
-        self.find_ident(ident)
+        self.find_ident_local(ident)
             .expect("symbol should be present after insertion")
     }
 
@@ -178,6 +195,10 @@ impl<'tcx> ScopeStack<'tcx> {
     fn create_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol {
         let symbol = Symbol::new(owner, ident.name.clone());
         self.arena.alloc(symbol)
+    }
+
+    fn find_ident_local(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
+        self.find_symbol_local(&ident.name)
     }
 }
 
@@ -251,5 +272,58 @@ impl Symbol {
         };
 
         format!("{}->{} \"{}\"{}", self.id, self.owner, self.name, meta)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct SymbolRegistry<'tcx> {
+    trie: RefCell<SymbolTrie<'tcx>>,
+}
+
+impl<'tcx> SymbolRegistry<'tcx> {
+    pub fn insert(&self, symbol: &'tcx Symbol) {
+        self.trie.borrow_mut().insert_symbol(symbol);
+    }
+
+    pub fn lookup_suffix(&self, suffix: &[&str]) -> Vec<&'tcx Symbol> {
+        self.trie.borrow().lookup_symbol_suffix(suffix)
+    }
+
+    pub fn lookup_suffix_once(&self, suffix: &[&str]) -> Option<&'tcx Symbol> {
+        self.lookup_suffix(suffix).into_iter().next()
+    }
+
+    pub fn clear(&self) {
+        self.trie.borrow_mut().clear();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn symbol_trie_integration() {
+        let arena: Arena = Arena::default();
+        let symbol_a = arena.alloc(Symbol::new(
+            HirId(1),
+            "module_a::module_b::struct_foo::fn_bar".into(),
+        ));
+        let symbol_b = arena.alloc(Symbol::new(
+            HirId(2),
+            "module_a::module_b::struct_foo::fn_baz".into(),
+        ));
+
+        let mut trie = SymbolTrie::default();
+        trie.insert_symbol(symbol_a);
+        trie.insert_symbol(symbol_b);
+
+        let suffix = trie.lookup_symbol_suffix(&["fn_bar"]);
+        assert_eq!(suffix.len(), 1);
+        assert_eq!(suffix[0].id, symbol_a.id);
+
+        let exact = trie.lookup_symbol_exact(&["fn_baz", "struct_foo", "module_b", "module_a"]);
+        assert_eq!(exact.len(), 1);
+        assert_eq!(exact[0].id, symbol_b.id);
     }
 }

@@ -1,14 +1,15 @@
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::ops::Deref;
 use tree_sitter::Tree;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockRelation};
-use crate::block_rel::{BlockRelationMap, RelationBuilder};
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
+use crate::block_rel::BlockRelationMap;
 use crate::file::File;
 use crate::ir::{Arena, HirId, HirKind, HirNode};
 use crate::lang_def::LanguageTrait;
-use crate::symbol::{Scope, ScopeStack, SymId, Symbol};
+use crate::symbol::{Scope, Symbol};
+use crate::trie::SymbolTrie;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Context<'tcx> {
@@ -209,6 +210,7 @@ pub struct GlobalCtxt<'tcx> {
     pub defs_map: RefCell<HashMap<HirId, &'tcx Symbol>>,
     // HirId -> &Symbol (uses/references)
     pub uses_map: RefCell<HashMap<HirId, &'tcx Symbol>>,
+    pub globals: RefCell<SymbolTrie<'tcx>>,
     // HirId -> &Scope (scopes owned by this HIR node)
     pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
 
@@ -226,6 +228,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
             arena: Arena::default(),
             file: File::new_source(source.to_vec()),
             tree: L::parse(source),
+            globals: RefCell::new(SymbolTrie::default()),
             ..Default::default()
         }
     }
@@ -238,6 +241,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
             arena: Arena::default(),
             file,
             tree,
+            globals: RefCell::new(SymbolTrie::default()),
             ..Default::default()
         })
     }
@@ -268,6 +272,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
         self.defs_map.borrow_mut().clear();
         self.uses_map.borrow_mut().clear();
         self.scope_map.borrow_mut().clear();
+        self.globals.borrow_mut().clear();
     }
 }
 

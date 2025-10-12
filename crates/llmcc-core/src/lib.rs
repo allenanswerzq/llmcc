@@ -18,3 +18,4 @@ pub use ir_builder::build_llmcc_ir;
 pub use printer::{print_llmcc_graph, print_llmcc_ir};
 pub use paste;
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
+pub use symbol::SymbolRegistry;

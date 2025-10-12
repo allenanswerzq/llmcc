@@ -1,10 +1,6 @@
-use std::collections::HashMap;
-use std::marker::PhantomData;
-
-use llmcc_core::block::{BlockId, BlockKind};
 use llmcc_core::context::Context;
-use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
-use llmcc_core::symbol::{Scope, ScopeStack, SymId, Symbol};
+use llmcc_core::ir::{HirId, HirNode};
+use llmcc_core::symbol::{Scope, ScopeStack, SymId, SymbolRegistry};
 
 use crate::token::{AstVisitorRust, LangRust};
 
@@ -75,14 +71,18 @@ struct DeclFinder<'tcx> {
 }
 
 impl<'tcx> DeclFinder<'tcx> {
-    pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
+    pub fn new(
+        ctx: Context<'tcx>,
+        global_scope: &'tcx Scope<'tcx>,
+        registry: &'tcx SymbolRegistry<'tcx>,
+    ) -> Self {
         let gcx = ctx.gcx;
-        let mut scope_stack = ScopeStack::new(&gcx.arena);
-        scope_stack.push(globals);
+        let mut scope_stack = ScopeStack::new(&gcx.arena, registry);
+        scope_stack.push(global_scope);
         Self { ctx, scope_stack }
     }
 
-    fn generate_fqn(&self, name: &str, node_id: HirId) -> String {
+    fn generate_fqn(&self, name: &str, _node_id: HirId) -> String {
         for scope in self.scope_stack.iter().rev() {
             if let Some(_) = scope.get_id(name) {
                 let mut owners = vec![];
@@ -121,6 +121,8 @@ impl<'tcx> DeclFinder<'tcx> {
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         dbg!(&fqn);
         *symbol.fqn_name.borrow_mut() = fqn;
+
+        self.scope_stack.registry().insert(symbol);
 
         self.ctx.insert_def(node.hir_id(), symbol);
         symbol.id
@@ -188,10 +190,14 @@ struct SymbolBinder<'tcx> {
 }
 
 impl<'tcx> SymbolBinder<'tcx> {
-    pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
+    pub fn new(
+        ctx: Context<'tcx>,
+        global_scope: &'tcx Scope<'tcx>,
+        registry: &'tcx SymbolRegistry<'tcx>,
+    ) -> Self {
         let gcx = ctx.gcx;
-        let mut scope_stack = ScopeStack::new(&gcx.arena);
-        scope_stack.push(globals);
+        let mut scope_stack = ScopeStack::new(&gcx.arena, registry);
+        scope_stack.push(global_scope);
         Self { ctx, scope_stack }
     }
 
@@ -247,13 +253,17 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 }
 
-pub fn resolve_symbols<'tcx>(root: HirId, ctx: Context<'tcx>) {
+pub fn resolve_symbols<'tcx>(
+    root: HirId,
+    ctx: Context<'tcx>,
+    globals: &'tcx SymbolRegistry<'tcx>,
+) {
     let node = ctx.hir_node(root);
-    let globals = ctx.alloc_scope(root);
+    let global_scope = ctx.alloc_scope(root);
 
-    let mut decl_finder = DeclFinder::new(ctx, globals);
+    let mut decl_finder = DeclFinder::new(ctx, global_scope, globals);
     decl_finder.visit_node(node.clone());
 
-    let mut symbol_binder = SymbolBinder::new(ctx, globals);
+    let mut symbol_binder = SymbolBinder::new(ctx, global_scope, globals);
     symbol_binder.visit_node(node);
 }
