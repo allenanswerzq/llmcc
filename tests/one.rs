@@ -1,3 +1,17 @@
+const MAX: i32 = 10;
+
+static mut COUNTER: usize = 0;
+
+enum Status {
+    Ok = 200,
+    NotFound = 404,
+}
+
+pub struct Point<T> {
+    pub x: T,
+    y: T,
+}
+
 fn top_level() {}
 
 pub fn bar(x: i32) -> i32 {

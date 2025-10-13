@@ -1,30 +1,21 @@
 use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirNode};
-use llmcc_core::symbol::{Scope, ScopeStack, SymbolRegistry};
+use llmcc_core::symbol::{Scope, ScopeStack};
 
 use crate::token::AstVisitorRust;
 
 #[derive(Debug)]
-struct SymbolBinder<'tcx, 'reg> {
+struct SymbolBinder<'tcx> {
     ctx: Context<'tcx>,
     scope_stack: ScopeStack<'tcx>,
-    registry: &'reg SymbolRegistry<'tcx>,
 }
 
-impl<'tcx, 'reg> SymbolBinder<'tcx, 'reg> {
-    pub fn new(
-        ctx: Context<'tcx>,
-        global_scope: &'tcx Scope<'tcx>,
-        registry: &'reg SymbolRegistry<'tcx>,
-    ) -> Self {
+impl<'tcx> SymbolBinder<'tcx> {
+    pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let gcx = ctx.gcx;
         let mut scope_stack = ScopeStack::new(&gcx.arena, &gcx.interner);
-        scope_stack.push(global_scope);
-        Self {
-            ctx,
-            scope_stack,
-            registry,
-        }
+        scope_stack.push(globals);
+        Self { ctx, scope_stack }
     }
 
     fn follow_scope_deeper(&mut self, node: HirNode<'tcx>) {
@@ -37,7 +28,7 @@ impl<'tcx, 'reg> SymbolBinder<'tcx, 'reg> {
     }
 }
 
-impl<'tcx, 'reg> AstVisitorRust<'tcx> for SymbolBinder<'tcx, 'reg> {
+impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     fn ctx(&self) -> Context<'tcx> {
         self.ctx
     }
@@ -74,7 +65,7 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for SymbolBinder<'tcx, 'reg> {
             }
 
             let ident_key = self.ctx.interner().intern(&ident.name);
-            if let Some(def_sym) = self.registry.lookup_suffix_once(&[ident_key]) {
+            if let Some(def_sym) = self.scope_stack.lookup_global_suffix_once(&[ident_key]) {
                 let use_sym = self.ctx.new_symbol(node.hir_id(), ident.name.clone());
                 use_sym.defined.set(Some(def_sym.owner));
                 self.ctx.insert_use(id, use_sym);
@@ -85,9 +76,8 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for SymbolBinder<'tcx, 'reg> {
     }
 }
 
-pub fn bind_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, registry: &SymbolRegistry<'tcx>) {
+pub fn bind_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) {
     let node = ctx.hir_node(root);
-    let global_scope = ctx.alloc_scope(root);
-    let mut symbol_binder = SymbolBinder::new(ctx, global_scope, registry);
+    let mut symbol_binder = SymbolBinder::new(ctx, globals);
     symbol_binder.visit_node(node);
 }
