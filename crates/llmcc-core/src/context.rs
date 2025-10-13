@@ -307,8 +307,13 @@ impl<'tcx> GlobalCtxt<'tcx> {
     }
 
     /// Create a context that references this GlobalCtxt for a specific file index
-    pub fn create_context(&'tcx self, index: usize) -> Context<'tcx> {
+    pub fn file_context(&'tcx self, index: usize) -> Context<'tcx> {
         Context { gcx: self, index }
+    }
+
+    /// Back-compat alias for `file_context`.
+    pub fn create_context(&'tcx self, index: usize) -> Context<'tcx> {
+        self.file_context(index)
     }
 
     /// Get statistics about the maps

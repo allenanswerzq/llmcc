@@ -1,16 +1,19 @@
 use std::collections::HashMap;
 
-use llmcc_rust::function::{FnVisibility, FunctionOwner, TypeExpr};
-use llmcc_rust::{build_llmcc_ir, collect_symbols, GlobalCtxt, HirId, LangRust, SymbolRegistry};
+use llmcc_rust::{
+    build_llmcc_ir, collect_symbols, FnVisibility, FunctionOwner, GlobalCtxt, HirId, LangRust,
+    SymbolRegistry, TypeExpr,
+};
 
-fn collect(source: &str) -> HashMap<String, llmcc_rust::function::FunctionDescriptor> {
+fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let gcx = GlobalCtxt::from_sources::<LangRust>(&sources);
-    let ctx = gcx.create_context(0);
+    let ctx = gcx.file_context(0);
     let tree = ctx.tree();
     build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
     let mut registry = SymbolRegistry::default();
     collect_symbols(HirId(0), ctx, &mut registry)
+        .functions
         .into_iter()
         .map(|desc| (desc.fqn.clone(), desc))
         .collect()
@@ -18,7 +21,7 @@ fn collect(source: &str) -> HashMap<String, llmcc_rust::function::FunctionDescri
 
 #[test]
 fn detects_private_function() {
-    let map = collect("fn foo() {}\n");
+    let map = collect_functions("fn foo() {}\n");
     let foo = map.get("foo").expect("foo");
     assert_eq!(foo.visibility, FnVisibility::Private);
     assert!(foo.parameters.is_empty());
@@ -27,13 +30,13 @@ fn detects_private_function() {
 
 #[test]
 fn detects_public_visibility() {
-    let map = collect("pub fn foo() {}\n");
+    let map = collect_functions("pub fn foo() {}\n");
     assert_eq!(map.get("foo").unwrap().visibility, FnVisibility::Public);
 }
 
 #[test]
 fn detects_pub_crate_visibility() {
-    let map = collect("pub(crate) fn foo() {}\n");
+    let map = collect_functions("pub(crate) fn foo() {}\n");
     assert_eq!(map.get("foo").unwrap().visibility, FnVisibility::Crate);
 }
 
@@ -44,7 +47,7 @@ fn captures_parameters_and_return_type() {
             Ok(value)
         }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
     let desc = map.get("transform").unwrap();
     assert_eq!(desc.parameters.len(), 2);
     assert_eq!(desc.parameters[0].pattern, "value");
@@ -94,7 +97,7 @@ fn captures_async_const_and_unsafe_flags() {
         async unsafe fn perform() {}
         const fn build() -> i32 { 0 }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
 
     let perform = map.get("perform").unwrap();
     assert!(perform.is_async);
@@ -114,7 +117,7 @@ fn resolves_module_owner() {
             pub fn inner() {}
         }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
     let inner = map.get("outer::inner").unwrap();
     match &inner.owner {
         FunctionOwner::Free { modules } => assert_eq!(modules, &vec!["outer".to_string()]),
@@ -130,7 +133,7 @@ fn resolves_impl_method_owner() {
             fn method(&self, v: i32) -> i32 { v }
         }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
     let method = map.get("Foo::method").unwrap();
     match &method.owner {
         FunctionOwner::Impl {
@@ -154,7 +157,7 @@ fn resolves_trait_default_method() {
             fn provided(&self) {}
         }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
     let provided = map.get("MyTrait::provided").unwrap();
     match &provided.owner {
         FunctionOwner::Trait {
@@ -177,7 +180,7 @@ fn resolves_trait_impl_method() {
             fn required(&self) {}
         }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
     let required = map.get("Foo::required").unwrap();
     match &required.owner {
         FunctionOwner::Impl {
@@ -200,7 +203,7 @@ fn captures_generic_information() {
             if a >= b { a } else { b }
         }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
     let max = map.get("max").unwrap();
     assert_eq!(max.generics.as_deref(), Some("<T: Ord>"));
     assert_eq!(max.parameters.len(), 2);
@@ -213,7 +216,7 @@ fn captures_closure_return_types() {
             move |x| x + y
         }
     "#;
-    let map = collect(source);
+    let map = collect_functions(source);
     let make_adder = map.get("make_adder").unwrap();
     let return_type = make_adder.return_type.as_ref().expect("return type");
     match return_type {

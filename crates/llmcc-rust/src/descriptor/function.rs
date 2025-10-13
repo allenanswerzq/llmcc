@@ -4,6 +4,7 @@ use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
+/// Visibility as written in source for a function item.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FnVisibility {
     Private,
@@ -12,22 +13,25 @@ pub enum FnVisibility {
     Restricted(String),
 }
 
+/// Captured argument information (pattern plus optional type).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionParameter {
     pub pattern: String,
     pub ty: Option<TypeExpr>,
 }
 
+/// Tracks the logical owner of a function so we can rebuild fully-qualified names.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FunctionOwner {
-    Free {
-        modules: Vec<String>,
-    },
+    /// Free-standing functions defined inside modules (segments capture nested module path).
+    Free { modules: Vec<String> },
+    /// Methods inside `impl` blocks, optionally noting the trait they implement.
     Impl {
         modules: Vec<String>,
         self_ty: String,
         trait_name: Option<String>,
     },
+    /// Functions declared inside trait definitions (default methods).
     Trait {
         modules: Vec<String>,
         trait_name: String,
@@ -70,20 +74,34 @@ impl FunctionOwner {
     }
 }
 
+/// Rich metadata extracted for each Rust function encountered in the HIR.
 #[derive(Debug, Clone)]
 pub struct FunctionDescriptor {
+    /// HIR identifier for the function node.
     pub hir_id: HirId,
+    /// Short name as written in source (no qualification).
     pub name: String,
+    /// Module/impl/trait context owning the function.
     pub owner: FunctionOwner,
+    /// Visibility as declared (`pub`, `pub(crate)`, etc.).
     pub visibility: FnVisibility,
+    /// Whether the function is marked `async`.
     pub is_async: bool,
+    /// Whether the function is marked `const`.
     pub is_const: bool,
+    /// Whether the function is marked `unsafe`.
     pub is_unsafe: bool,
+    /// Generic parameter clause (`<T: Foo>`), if present.
     pub generics: Option<String>,
+    /// Optional `where` clause.
     pub where_clause: Option<String>,
+    /// Ordered function parameters.
     pub parameters: Vec<FunctionParameter>,
+    /// Parsed return type, if any.
     pub return_type: Option<TypeExpr>,
+    /// Textual signature up to (but not including) the body.
     pub signature: String,
+    /// Fully-qualified name derived from the owner chain.
     pub fqn: String,
 }
 
@@ -160,7 +178,7 @@ impl FunctionDescriptor {
 }
 
 impl FnVisibility {
-    fn from_header(header: &str) -> Self {
+    pub(crate) fn from_header(header: &str) -> Self {
         if let Some(index) = header.find("pub") {
             let rest = &header[index..];
             let compressed: String = rest.chars().filter(|c| !c.is_whitespace()).collect();
@@ -180,21 +198,25 @@ impl FnVisibility {
     }
 }
 
+/// Representation of Rust types encountered in signatures/fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeExpr {
+    /// A bare path with optional generic arguments (e.g. `Result<T, E>`).
     Path {
         segments: Vec<String>,
         generics: Vec<TypeExpr>,
     },
+    /// `&'a mut T` style references.
     Reference {
         is_mut: bool,
         lifetime: Option<String>,
         inner: Box<TypeExpr>,
     },
+    /// Tuple types such as `(A, B)`.
     Tuple(Vec<TypeExpr>),
-    ImplTrait {
-        bounds: String,
-    },
+    /// `impl Trait` sugar captured verbatim.
+    ImplTrait { bounds: String },
+    /// Fallback for nodes we do not yet model.
     Unknown(String),
 }
 
@@ -210,60 +232,6 @@ impl TypeExpr {
         match self {
             TypeExpr::Path { generics, .. } => Some(generics),
             _ => None,
-        }
-    }
-}
-
-impl FunctionOwner {
-    fn from_ts_node<'tcx>(ctx: Context<'tcx>, mut node: Node<'tcx>) -> Self {
-        let mut modules = VecDeque::new();
-        let mut impl_info: Option<(String, Option<String>)> = None;
-        let mut trait_name: Option<String> = None;
-
-        while let Some(parent) = node.parent() {
-            match parent.kind() {
-                "mod_item" => {
-                    if let Some(name_node) = parent.child_by_field_name("name") {
-                        modules.push_front(clean(&node_text(ctx, name_node)));
-                    }
-                }
-                "impl_item" => {
-                    let ty = parent
-                        .child_by_field_name("type")
-                        .map(|n| clean(&node_text(ctx, n)))
-                        .unwrap_or_else(|| "impl".to_string());
-                    let trait_name_text = parent
-                        .child_by_field_name("trait")
-                        .map(|n| clean(&node_text(ctx, n)));
-                    impl_info = Some((ty, trait_name_text));
-                }
-                "trait_item" => {
-                    if trait_name.is_none() {
-                        trait_name = parent
-                            .child_by_field_name("name")
-                            .map(|n| clean(&node_text(ctx, n)));
-                    }
-                }
-                _ => {}
-            }
-            node = parent;
-        }
-
-        let modules: Vec<String> = modules.into_iter().collect();
-
-        if let Some((self_ty, trait_impl)) = impl_info {
-            FunctionOwner::Impl {
-                modules,
-                self_ty,
-                trait_name: trait_impl,
-            }
-        } else if let Some(trait_name) = trait_name {
-            FunctionOwner::Trait {
-                modules,
-                trait_name,
-            }
-        } else {
-            FunctionOwner::Free { modules }
         }
     }
 }
@@ -295,28 +263,7 @@ fn parse_parameters<'tcx>(ctx: Context<'tcx>, params_node: Node<'tcx>) -> Vec<Fu
     params
 }
 
-fn node_text<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> String {
-    ctx.file().get_text(node.start_byte(), node.end_byte())
-}
-
-fn clean(text: &str) -> String {
-    let mut out = String::new();
-    let mut last_was_ws = false;
-    for ch in text.chars() {
-        if ch.is_whitespace() {
-            if !last_was_ws && !out.is_empty() {
-                out.push(' ');
-            }
-            last_was_ws = true;
-        } else {
-            out.push(ch);
-            last_was_ws = false;
-        }
-    }
-    out.trim().to_string()
-}
-
-fn parse_type_expr<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+pub(crate) fn parse_type_expr<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
     match node.kind() {
         "type_identifier" | "primitive_type" => TypeExpr::Path {
             segments: clean(&node_text(ctx, node))
@@ -349,46 +296,6 @@ fn parse_type_expr<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
         },
         _ => TypeExpr::Unknown(clean(&node_text(ctx, node))),
     }
-}
-
-fn parse_return_type_node<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
-    let mut expr_opt = None;
-    let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        if expr_opt.is_none() && is_type_node(child.kind()) {
-            expr_opt = Some(parse_type_expr(ctx, child));
-        }
-    }
-
-    let mut expr = if let Some(expr) = expr_opt {
-        expr
-    } else if let Some(inner) = node.child_by_field_name("type") {
-        parse_type_expr(ctx, inner)
-    } else {
-        parse_type_expr(ctx, node)
-    };
-
-    let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        if child.kind() == "type_arguments" {
-            let extra = parse_type_arguments(ctx, child);
-            if !extra.is_empty() {
-                if let TypeExpr::Path { generics, .. } = &mut expr {
-                    generics.extend(extra);
-                }
-            }
-        }
-    }
-
-    if let TypeExpr::Unknown(text) = &expr {
-        if text.starts_with("impl ") {
-            expr = TypeExpr::ImplTrait {
-                bounds: text.clone(),
-            };
-        }
-    }
-
-    expr
 }
 
 fn parse_generic_type<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
@@ -472,4 +379,119 @@ fn is_type_node(kind: &str) -> bool {
             | "primitive_type"
             | "impl_trait_type"
     )
+}
+
+fn parse_return_type_node<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+    let mut expr_opt = None;
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        if expr_opt.is_none() && is_type_node(child.kind()) {
+            expr_opt = Some(parse_type_expr(ctx, child));
+        }
+    }
+
+    let mut expr = if let Some(expr) = expr_opt {
+        expr
+    } else if let Some(inner) = node.child_by_field_name("type") {
+        parse_type_expr(ctx, inner)
+    } else {
+        parse_type_expr(ctx, node)
+    };
+
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        if child.kind() == "type_arguments" {
+            let extra = parse_type_arguments(ctx, child);
+            if !extra.is_empty() {
+                if let TypeExpr::Path { generics, .. } = &mut expr {
+                    generics.extend(extra);
+                }
+            }
+        }
+    }
+
+    if let TypeExpr::Unknown(text) = &expr {
+        if text.starts_with("impl ") {
+            expr = TypeExpr::ImplTrait {
+                bounds: text.clone(),
+            };
+        }
+    }
+
+    expr
+}
+
+fn clean(text: &str) -> String {
+    let mut out = String::new();
+    let mut last_was_ws = false;
+    for ch in text.chars() {
+        if ch.is_whitespace() {
+            if !last_was_ws && !out.is_empty() {
+                out.push(' ');
+            }
+            last_was_ws = true;
+        } else {
+            out.push(ch);
+            last_was_ws = false;
+        }
+    }
+    out.trim().to_string()
+}
+
+fn node_text<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> String {
+    ctx.file().get_text(node.start_byte(), node.end_byte())
+}
+
+impl FunctionOwner {
+    fn from_ts_node<'tcx>(ctx: Context<'tcx>, mut node: Node<'tcx>) -> Self {
+        let mut modules = VecDeque::new();
+        let mut impl_info: Option<(String, Option<String>)> = None;
+        let mut trait_name: Option<String> = None;
+
+        while let Some(parent) = node.parent() {
+            match parent.kind() {
+                "mod_item" => {
+                    if let Some(name_node) = parent.child_by_field_name("name") {
+                        modules.push_front(clean(&node_text(ctx, name_node)));
+                    }
+                }
+                "impl_item" => {
+                    let ty = parent
+                        .child_by_field_name("type")
+                        .map(|n| clean(&node_text(ctx, n)))
+                        .unwrap_or_else(|| "impl".to_string());
+                    let trait_name_text = parent
+                        .child_by_field_name("trait")
+                        .map(|n| clean(&node_text(ctx, n)));
+                    impl_info = Some((ty, trait_name_text));
+                }
+                "trait_item" => {
+                    if trait_name.is_none() {
+                        trait_name = parent
+                            .child_by_field_name("name")
+                            .map(|n| clean(&node_text(ctx, n)));
+                    }
+                }
+                _ => {}
+            }
+            node = parent;
+        }
+
+        let modules: Vec<String> = modules.into_iter().collect();
+
+        if let Some((self_ty, trait_impl)) = impl_info {
+            FunctionOwner::Impl {
+                modules,
+                self_ty,
+                trait_name: trait_impl,
+            }
+        } else if let Some(trait_name) = trait_name {
+            FunctionOwner::Trait {
+                modules,
+                trait_name,
+            }
+        } else {
+            FunctionOwner::Free { modules }
+        }
+    }
 }
