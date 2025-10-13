@@ -6,11 +6,10 @@ fn collect_structs(source: &str) -> Vec<StructDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
-    let tree = unit.tree();
-    build_llmcc_ir::<LangRust>(&tree, unit).expect("build HIR");
-    let root = unit.file_start_hir_id().expect("registered root id");
-    let globals = cc.alloc_scope(root);
-    collect_symbols(root, unit, globals).structs
+    build_llmcc_ir::<LangRust>(unit).expect("build HIR");
+
+    let globals = cc.create_globals();
+    collect_symbols(unit, globals).structs
 }
 
 #[test]

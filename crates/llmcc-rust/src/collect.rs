@@ -27,8 +27,7 @@ struct DeclFinder<'tcx> {
 
 impl<'tcx> DeclFinder<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let cc = unit.cc;
-        let mut scope_stack = ScopeStack::new(&cc.arena, &cc.interner);
+        let mut scope_stack = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
         scope_stack.push(globals);
         Self {
             unit,
