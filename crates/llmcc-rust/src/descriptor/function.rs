@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use llmcc_core::context::Context;
+use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
@@ -106,21 +106,21 @@ pub struct FunctionDescriptor {
 }
 
 impl FunctionDescriptor {
-    pub fn from_hir<'tcx>(ctx: Context<'tcx>, node: &HirNode<'tcx>) -> Option<Self> {
+    pub fn from_hir<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Self> {
         let ts_node = match node.inner_ts_node() {
             ts if ts.kind() == "function_item" => ts,
             _ => return None,
         };
 
         let name_node = ts_node.child_by_field_name("name")?;
-        let name = clean(&node_text(ctx, name_node));
-        let header_text = ctx
+        let name = clean(&node_text(unit, name_node));
+        let header_text = unit
             .file()
             .get_text(ts_node.start_byte(), name_node.start_byte());
         let fn_index = header_text.rfind("fn").unwrap_or_else(|| header_text.len());
         let header_clean = clean(&header_text[..fn_index]);
 
-        let owner = FunctionOwner::from_ts_node(ctx, ts_node);
+        let owner = FunctionOwner::from_ts_node(unit, ts_node);
         let visibility = FnVisibility::from_header(&header_clean);
         let is_async = header_clean
             .split_whitespace()
@@ -135,22 +135,22 @@ impl FunctionDescriptor {
             .child_by_field_name("body")
             .map(|body| body.start_byte())
             .unwrap_or_else(|| ts_node.end_byte());
-        let signature = clean(&ctx.file().get_text(ts_node.start_byte(), body_start));
+        let signature = clean(&unit.file().get_text(ts_node.start_byte(), body_start));
 
         let generics = ts_node
             .child_by_field_name("type_parameters")
-            .map(|n| clean(&node_text(ctx, n)));
+            .map(|n| clean(&node_text(unit, n)));
         let where_clause = ts_node
             .child_by_field_name("where_clause")
-            .map(|n| clean(&node_text(ctx, n)))
+            .map(|n| clean(&node_text(unit, n)))
             .or_else(|| extract_where_clause(&signature));
         let parameters = ts_node
             .child_by_field_name("parameters")
-            .map(|n| parse_parameters(ctx, n))
+            .map(|n| parse_parameters(unit, n))
             .unwrap_or_default();
         let return_type = ts_node
             .child_by_field_name("return_type")
-            .map(|n| parse_return_type_node(ctx, n));
+            .map(|n| parse_return_type_node(unit, n));
 
         let fqn = owner.fqn(&name);
 
@@ -245,7 +245,7 @@ impl TypeExpr {
     }
 }
 
-fn parse_parameters<'tcx>(ctx: Context<'tcx>, params_node: Node<'tcx>) -> Vec<FunctionParameter> {
+fn parse_parameters<'tcx>(unit: CompileUnit<'tcx>, params_node: Node<'tcx>) -> Vec<FunctionParameter> {
     let mut params = Vec::new();
     let mut cursor = params_node.walk();
     for child in params_node.named_children(&mut cursor) {
@@ -253,16 +253,16 @@ fn parse_parameters<'tcx>(ctx: Context<'tcx>, params_node: Node<'tcx>) -> Vec<Fu
             "parameter" => {
                 let pattern = child
                     .child_by_field_name("pattern")
-                    .map(|n| clean(&node_text(ctx, n)))
-                    .unwrap_or_else(|| clean(&node_text(ctx, child)));
+                    .map(|n| clean(&node_text(unit, n)))
+                    .unwrap_or_else(|| clean(&node_text(unit, child)));
                 let ty = child
                     .child_by_field_name("type")
-                    .map(|n| parse_type_expr(ctx, n));
+                    .map(|n| parse_type_expr(unit, n));
                 params.push(FunctionParameter { pattern, ty });
             }
             "self_parameter" => {
                 params.push(FunctionParameter {
-                    pattern: clean(&node_text(ctx, child)),
+                    pattern: clean(&node_text(unit, child)),
                     ty: None,
                 });
             }
@@ -272,61 +272,61 @@ fn parse_parameters<'tcx>(ctx: Context<'tcx>, params_node: Node<'tcx>) -> Vec<Fu
     params
 }
 
-pub(crate) fn parse_type_expr<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     match node.kind() {
         "type_identifier" | "primitive_type" => TypeExpr::Path {
-            segments: clean(&node_text(ctx, node))
+            segments: clean(&node_text(unit, node))
                 .split("::")
                 .map(|s| s.to_string())
                 .collect(),
             generics: Vec::new(),
         },
         "scoped_type_identifier" => TypeExpr::Path {
-            segments: clean(&node_text(ctx, node))
+            segments: clean(&node_text(unit, node))
                 .split("::")
                 .map(|s| s.to_string())
                 .collect(),
             generics: Vec::new(),
         },
-        "generic_type" => parse_generic_type(ctx, node),
-        "reference_type" => parse_reference_type(ctx, node),
+        "generic_type" => parse_generic_type(unit, node),
+        "reference_type" => parse_reference_type(unit, node),
         "tuple_type" => {
             let mut types = Vec::new();
             let mut cursor = node.walk();
             for child in node.named_children(&mut cursor) {
                 if is_type_node(child.kind()) {
-                    types.push(parse_type_expr(ctx, child));
+                    types.push(parse_type_expr(unit, child));
                 }
             }
             TypeExpr::Tuple(types)
         }
         "impl_trait_type" => TypeExpr::ImplTrait {
-            bounds: clean(&node_text(ctx, node)),
+            bounds: clean(&node_text(unit, node)),
         },
-        _ => TypeExpr::Unknown(clean(&node_text(ctx, node))),
+        _ => TypeExpr::Unknown(clean(&node_text(unit, node))),
     }
 }
 
-fn parse_generic_type<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     let mut base_segments: Vec<String> = Vec::new();
     let mut generics = Vec::new();
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         match child.kind() {
             "type_identifier" | "scoped_type_identifier" => {
-                base_segments = clean(&node_text(ctx, child))
+                base_segments = clean(&node_text(unit, child))
                     .split("::")
                     .map(|s| s.to_string())
                     .collect();
             }
             "type_arguments" => {
-                generics = parse_type_arguments(ctx, child);
+                generics = parse_type_arguments(unit, child);
             }
             _ => {}
         }
     }
     if base_segments.is_empty() {
-        base_segments = clean(&node_text(ctx, node))
+        base_segments = clean(&node_text(unit, node))
             .split("::")
             .map(|s| s.to_string())
             .collect();
@@ -337,18 +337,18 @@ fn parse_generic_type<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
     }
 }
 
-fn parse_type_arguments<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> Vec<TypeExpr> {
+fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<TypeExpr> {
     let mut args = Vec::new();
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         match child.kind() {
             "type_argument" => {
                 if let Some(inner) = child.child_by_field_name("type") {
-                    args.push(parse_type_expr(ctx, inner));
+                    args.push(parse_type_expr(unit, inner));
                 }
             }
             kind if is_type_node(kind) => {
-                args.push(parse_type_expr(ctx, child));
+                args.push(parse_type_expr(unit, child));
             }
             _ => {}
         }
@@ -356,20 +356,20 @@ fn parse_type_arguments<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> Vec<TypeE
     args
 }
 
-fn parse_reference_type<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+fn parse_reference_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     let mut lifetime = None;
     let mut is_mut = false;
     let mut inner = None;
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         match child.kind() {
-            "lifetime" => lifetime = Some(clean(&node_text(ctx, child))),
+            "lifetime" => lifetime = Some(clean(&node_text(unit, child))),
             "mutable_specifier" => is_mut = true,
-            kind if is_type_node(kind) => inner = Some(parse_type_expr(ctx, child)),
+            kind if is_type_node(kind) => inner = Some(parse_type_expr(unit, child)),
             _ => {}
         }
     }
-    let inner = inner.unwrap_or_else(|| TypeExpr::Unknown(clean(&node_text(ctx, node))));
+    let inner = inner.unwrap_or_else(|| TypeExpr::Unknown(clean(&node_text(unit, node))));
     TypeExpr::Reference {
         is_mut,
         lifetime,
@@ -390,27 +390,27 @@ fn is_type_node(kind: &str) -> bool {
     )
 }
 
-fn parse_return_type_node<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> TypeExpr {
+fn parse_return_type_node<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     let mut expr_opt = None;
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         if expr_opt.is_none() && is_type_node(child.kind()) {
-            expr_opt = Some(parse_type_expr(ctx, child));
+            expr_opt = Some(parse_type_expr(unit, child));
         }
     }
 
     let mut expr = if let Some(expr) = expr_opt {
         expr
     } else if let Some(inner) = node.child_by_field_name("type") {
-        parse_type_expr(ctx, inner)
+        parse_type_expr(unit, inner)
     } else {
-        parse_type_expr(ctx, node)
+        parse_type_expr(unit, node)
     };
 
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         if child.kind() == "type_arguments" {
-            let extra = parse_type_arguments(ctx, child);
+            let extra = parse_type_arguments(unit, child);
             if !extra.is_empty() {
                 if let TypeExpr::Path { generics, .. } = &mut expr {
                     generics.extend(extra);
@@ -447,12 +447,12 @@ fn clean(text: &str) -> String {
     out.trim().to_string()
 }
 
-fn node_text<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> String {
-    ctx.file().get_text(node.start_byte(), node.end_byte())
+fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
+    unit.file().get_text(node.start_byte(), node.end_byte())
 }
 
 impl FunctionOwner {
-    fn from_ts_node<'tcx>(ctx: Context<'tcx>, mut node: Node<'tcx>) -> Self {
+    fn from_ts_node<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Self {
         let mut modules = VecDeque::new();
         let mut impl_info: Option<(String, Option<String>)> = None;
         let mut trait_name: Option<String> = None;
@@ -461,24 +461,24 @@ impl FunctionOwner {
             match parent.kind() {
                 "mod_item" => {
                     if let Some(name_node) = parent.child_by_field_name("name") {
-                        modules.push_front(clean(&node_text(ctx, name_node)));
+                        modules.push_front(clean(&node_text(unit, name_node)));
                     }
                 }
                 "impl_item" => {
                     let ty = parent
                         .child_by_field_name("type")
-                        .map(|n| clean(&node_text(ctx, n)))
+                        .map(|n| clean(&node_text(unit, n)))
                         .unwrap_or_else(|| "impl".to_string());
                     let trait_name_text = parent
                         .child_by_field_name("trait")
-                        .map(|n| clean(&node_text(ctx, n)));
+                        .map(|n| clean(&node_text(unit, n)));
                     impl_info = Some((ty, trait_name_text));
                 }
                 "trait_item" => {
                     if trait_name.is_none() {
                         trait_name = parent
                             .child_by_field_name("name")
-                            .map(|n| clean(&node_text(ctx, n)));
+                            .map(|n| clean(&node_text(unit, n)));
                     }
                 }
                 _ => {}

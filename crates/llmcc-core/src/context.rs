@@ -12,23 +12,23 @@ use crate::lang_def::LanguageTrait;
 use crate::symbol::{Scope, Symbol};
 
 #[derive(Debug, Copy, Clone)]
-pub struct Context<'tcx> {
-    pub gcx: &'tcx GlobalCtxt<'tcx>,
+pub struct CompileUnit<'tcx> {
+    pub cc: &'tcx CompileCtxt<'tcx>,
     pub index: usize,
 }
 
-impl<'tcx> Context<'tcx> {
+impl<'tcx> CompileUnit<'tcx> {
     pub fn file(&self) -> &'tcx File {
-        &self.gcx.files[self.index]
+        &self.cc.files[self.index]
     }
 
     pub fn tree(&self) -> &'tcx Tree {
-        &self.gcx.trees[self.index].as_ref().unwrap()
+        &self.cc.trees[self.index].as_ref().unwrap()
     }
 
     /// Access the shared string interner.
     pub fn interner(&self) -> &InternPool {
-        &self.gcx.interner
+        &self.cc.interner
     }
 
     /// Intern a string and return its symbol.
@@ -36,35 +36,35 @@ impl<'tcx> Context<'tcx> {
     where
         S: AsRef<str>,
     {
-        self.gcx.interner.intern(value)
+        self.cc.interner.intern(value)
     }
 
     /// Resolve an interned symbol into an owned string.
     pub fn resolve_interned_owned(&self, symbol: InternedStr) -> Option<String> {
-        self.gcx.interner.resolve_owned(symbol)
+        self.cc.interner.resolve_owned(symbol)
     }
 
     pub fn reserve_hir_id(&self) -> HirId {
-        self.gcx.reserve_hir_id()
+        self.cc.reserve_hir_id()
     }
 
     pub fn register_file_start(&self) -> HirId {
-        let start = self.gcx.current_hir_id();
-        self.gcx.set_file_start(self.index, start);
+        let start = self.cc.current_hir_id();
+        self.cc.set_file_start(self.index, start);
         start
     }
 
     pub fn file_start_hir_id(&self) -> Option<HirId> {
-        self.gcx.file_start(self.index)
+        self.cc.file_start(self.index)
     }
 
     pub fn file_path(&self) -> Option<&str> {
-        self.gcx.file_path(self.index)
+        self.cc.file_path(self.index)
     }
 
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.gcx
+        self.cc
             .hir_map
             .borrow()
             .get(&id)
@@ -79,7 +79,7 @@ impl<'tcx> Context<'tcx> {
 
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
-        self.gcx
+        self.cc
             .bb_map
             .borrow()
             .get(&id)
@@ -94,7 +94,7 @@ impl<'tcx> Context<'tcx> {
 
     /// Get the parent of a HIR node
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
-        self.gcx
+        self.cc
             .hir_map
             .borrow()
             .get(&id)
@@ -103,17 +103,17 @@ impl<'tcx> Context<'tcx> {
 
     /// Get a symbol from the uses map
     pub fn opt_uses(self, id: HirId) -> Option<&'tcx Symbol> {
-        self.gcx.uses_map.borrow().get(&id).copied()
+        self.cc.uses_map.borrow().get(&id).copied()
     }
 
     /// Get a symbol from the defs map
     pub fn opt_defs(self, id: HirId) -> Option<&'tcx Symbol> {
-        self.gcx.defs_map.borrow().get(&id).copied()
+        self.cc.defs_map.borrow().get(&id).copied()
     }
 
     /// Get a symbol from the defs map
     pub fn defs(self, id: HirId) -> &'tcx Symbol {
-        self.gcx
+        self.cc
             .defs_map
             .borrow()
             .get(&id)
@@ -123,34 +123,34 @@ impl<'tcx> Context<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        self.gcx.scope_map.borrow().get(&owner).copied()
+        self.cc.scope_map.borrow().get(&owner).copied()
     }
 
     /// Create a new symbol in the arena
     pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
-        let key = self.gcx.interner.intern(&name);
-        self.gcx.arena.alloc(Symbol::new(owner, name, key))
+        let key = self.cc.interner.intern(&name);
+        self.cc.arena.alloc(Symbol::new(owner, name, key))
     }
 
     /// Find an existing scope or create a new one
     pub fn alloc_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.gcx.alloc_scope(owner)
+        self.cc.alloc_scope(owner)
     }
 
     /// Add a HIR node to the map
     pub fn insert_hir_node(self, id: HirId, node: HirNode<'tcx>) {
         let parented = ParentedNode::new(node);
-        self.gcx.hir_map.borrow_mut().insert(id, parented);
+        self.cc.hir_map.borrow_mut().insert(id, parented);
     }
 
     /// Add a symbol definition
     pub fn insert_def(self, id: HirId, symbol: &'tcx Symbol) {
-        self.gcx.defs_map.borrow_mut().insert(id, symbol);
+        self.cc.defs_map.borrow_mut().insert(id, symbol);
     }
 
     /// Add a symbol use
     pub fn insert_use(self, id: HirId, symbol: &'tcx Symbol) {
-        self.gcx.uses_map.borrow_mut().insert(id, symbol);
+        self.cc.uses_map.borrow_mut().insert(id, symbol);
     }
 
     /// Get all child nodes of a given parent
@@ -184,12 +184,12 @@ impl<'tcx> Context<'tcx> {
     }
 }
 
-impl<'tcx> Deref for Context<'tcx> {
-    type Target = GlobalCtxt<'tcx>;
+impl<'tcx> Deref for CompileUnit<'tcx> {
+    type Target = CompileCtxt<'tcx>;
 
     #[inline(always)]
     fn deref(&self) -> &Self::Target {
-        self.gcx
+        self.cc
     }
 }
 
@@ -237,7 +237,7 @@ impl<'tcx> ParentedBlock<'tcx> {
 }
 
 #[derive(Debug, Default)]
-pub struct GlobalCtxt<'tcx> {
+pub struct CompileCtxt<'tcx> {
     pub arena: Arena<'tcx>,
     pub interner: InternPool,
     pub files: Vec<File>,
@@ -261,8 +261,8 @@ pub struct GlobalCtxt<'tcx> {
     pub related_map: BlockRelationMap,
 }
 
-impl<'tcx> GlobalCtxt<'tcx> {
-    /// Create a new GlobalCtxt from source code
+impl<'tcx> CompileCtxt<'tcx> {
+    /// Create a new CompileCtxt from source code
     pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
         let files: Vec<File> = sources
             .iter()
@@ -287,7 +287,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
         }
     }
 
-    /// Create a new GlobalCtxt from files
+    /// Create a new CompileCtxt from files
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
         let mut files = Vec::new();
         let mut trees = Vec::new();
@@ -314,9 +314,9 @@ impl<'tcx> GlobalCtxt<'tcx> {
         })
     }
 
-    /// Create a context that references this GlobalCtxt for a specific file index
-    pub fn file_context(&'tcx self, index: usize) -> Context<'tcx> {
-        Context { gcx: self, index }
+    /// Create a context that references this CompileCtxt for a specific file index
+    pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
+        CompileUnit { cc: self, index }
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
@@ -378,7 +378,7 @@ impl<'tcx> GlobalCtxt<'tcx> {
     }
 }
 
-/// Statistics about GlobalCtxt contents
+/// Statistics about CompileCtxt contents
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GlobalCtxtStats {
     pub hir_nodes: usize,
@@ -391,7 +391,7 @@ impl std::fmt::Display for GlobalCtxtStats {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "GlobalCtxt Stats: {} HIR nodes, {} definitions, {} uses, {} scopes",
+            "CompileCtxt Stats: {} HIR nodes, {} definitions, {} uses, {} scopes",
             self.hir_nodes, self.definitions, self.uses, self.scopes
         )
     }

@@ -1,14 +1,14 @@
 use crate::block::BlockId;
 use crate::ir::{HirKind, HirNode};
-use crate::Context;
+use crate::CompileUnit;
 
 pub trait HirVisitor<'v> {
-    fn ctx(&self) -> Context<'v>;
+    fn unit(&self) -> CompileUnit<'v>;
 
     fn visit_children(&mut self, node: HirNode<'v>, parent: BlockId) {
         let children = node.children();
         for child_id in children {
-            let child = self.ctx().hir_node(*child_id);
+            let child = self.unit().hir_node(*child_id);
             self.visit_node(child, parent);
         }
     }
@@ -41,7 +41,7 @@ pub trait HirVisitor<'v> {
             HirKind::Undefined => self.visit_undefined(node, parent),
             HirKind::Identifier => self.visit_ident(node, parent),
             _ => {
-                todo!("{}", node.format_node(self.ctx()))
+                todo!("{}", node.format_node(self.unit()))
             }
         }
     }

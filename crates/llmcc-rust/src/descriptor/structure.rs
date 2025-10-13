@@ -1,4 +1,4 @@
-use llmcc_core::context::Context;
+use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
@@ -33,7 +33,7 @@ pub struct StructField {
 
 impl StructDescriptor {
     pub fn from_struct<'tcx>(
-        ctx: Context<'tcx>,
+        unit: CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         fqn: String,
     ) -> Option<Self> {
@@ -51,17 +51,17 @@ impl StructDescriptor {
         );
 
         let name_node = ts_node.child_by_field_name("name")?;
-        let name = clean(&node_text(ctx, name_node));
-        let header_text = ctx
+        let name = clean(&node_text(unit, name_node));
+        let header_text = unit
             .file()
             .get_text(ts_node.start_byte(), name_node.start_byte());
         let visibility = FnVisibility::from_header(&header_text);
 
         let generics = ts_node
             .child_by_field_name("type_parameters")
-            .map(|n| clean(&node_text(ctx, n)));
+            .map(|n| clean(&node_text(unit, n)));
 
-        let (fields, kind) = parse_struct_fields(ctx, ts_node);
+        let (fields, kind) = parse_struct_fields(unit, ts_node);
 
         Some(StructDescriptor {
             hir_id: node.hir_id(),
@@ -76,13 +76,13 @@ impl StructDescriptor {
 }
 
 fn parse_struct_fields<'tcx>(
-    ctx: Context<'tcx>,
+    unit: CompileUnit<'tcx>,
     node: Node<'tcx>,
 ) -> (Vec<StructField>, StructKind) {
     match node.kind() {
-        "field_declaration_list" => return (parse_named_fields(ctx, node), StructKind::Named),
+        "field_declaration_list" => return (parse_named_fields(unit, node), StructKind::Named),
         "tuple_field_declaration_list" | "ordered_field_declaration_list" => {
-            return (parse_tuple_fields(ctx, node), StructKind::Tuple)
+            return (parse_tuple_fields(unit, node), StructKind::Tuple)
         }
         _ => {}
     }
@@ -94,17 +94,17 @@ fn parse_struct_fields<'tcx>(
         if let Some(child) = node.child(i) {
             match child.kind() {
                 "field_declaration_list" => {
-                    return (parse_named_fields(ctx, child), StructKind::Named)
+                    return (parse_named_fields(unit, child), StructKind::Named)
                 }
                 "tuple_field_declaration_list" | "ordered_field_declaration_list" => {
-                    return (parse_tuple_fields(ctx, child), StructKind::Tuple)
+                    return (parse_tuple_fields(unit, child), StructKind::Tuple)
                 }
-                "field_declaration" => named.push(parse_named_field_node(ctx, child)),
+                "field_declaration" => named.push(parse_named_field_node(unit, child)),
                 "tuple_field_declaration" | "ordered_field_declaration" => {
-                    tuple.push(parse_tuple_field_node(ctx, child))
+                    tuple.push(parse_tuple_field_node(unit, child))
                 }
                 _ => {
-                    let (fields, kind) = parse_struct_fields(ctx, child);
+                    let (fields, kind) = parse_struct_fields(unit, child);
                     match kind {
                         StructKind::Named if !fields.is_empty() => {
                             return (fields, StructKind::Named)
@@ -129,24 +129,24 @@ fn parse_struct_fields<'tcx>(
     (Vec::new(), StructKind::Unit)
 }
 
-fn parse_named_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec<StructField> {
+fn parse_named_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -> Vec<StructField> {
     let mut fields = Vec::new();
     let mut cursor = list.walk();
     for child in list.named_children(&mut cursor) {
         if child.kind() == "field_declaration" {
             let name = child
                 .child_by_field_name("name")
-                .map(|n| clean(&node_text(ctx, n)));
+                .map(|n| clean(&node_text(unit, n)));
             let ty = child
                 .child_by_field_name("type")
-                .map(|n| parse_type_expr(ctx, n));
+                .map(|n| parse_type_expr(unit, n));
             fields.push(StructField { name, ty });
         }
     }
     fields
 }
 
-fn parse_tuple_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec<StructField> {
+fn parse_tuple_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -> Vec<StructField> {
     let mut fields = Vec::new();
     let mut cursor = list.walk();
     for child in list.children(&mut cursor) {
@@ -154,7 +154,7 @@ fn parse_tuple_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec<StructF
             "tuple_field_declaration" | "ordered_field_declaration" => {
                 let ty = child
                     .child_by_field_name("type")
-                    .map(|n| parse_type_expr(ctx, n))
+                    .map(|n| parse_type_expr(unit, n))
                     .or_else(|| {
                         // ordered_field_declaration may expose type nodes directly
                         child
@@ -166,7 +166,7 @@ fn parse_tuple_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec<StructF
                                 | "generic_type"
                                 | "tuple_type"
                                 | "reference_type"
-                                | "impl_trait_type" => Some(parse_type_expr(ctx, n)),
+                                | "impl_trait_type" => Some(parse_type_expr(unit, n)),
                                 _ => None,
                             })
                     });
@@ -175,7 +175,7 @@ fn parse_tuple_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec<StructF
             kind if is_type_kind(kind) => {
                 fields.push(StructField {
                     name: None,
-                    ty: Some(parse_type_expr(ctx, child)),
+                    ty: Some(parse_type_expr(unit, child)),
                 });
             }
             _ => {}
@@ -197,8 +197,8 @@ fn is_type_kind(kind: &str) -> bool {
     )
 }
 
-fn node_text<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> String {
-    ctx.file().get_text(node.start_byte(), node.end_byte())
+fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
+    unit.file().get_text(node.start_byte(), node.end_byte())
 }
 
 fn clean(text: &str) -> String {
@@ -218,19 +218,19 @@ fn clean(text: &str) -> String {
     out.trim().to_string()
 }
 
-fn parse_named_field_node<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> StructField {
+fn parse_named_field_node<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> StructField {
     let name = node
         .child_by_field_name("name")
-        .map(|n| clean(&node_text(ctx, n)));
+        .map(|n| clean(&node_text(unit, n)));
     let ty = node
         .child_by_field_name("type")
-        .map(|n| parse_type_expr(ctx, n));
+        .map(|n| parse_type_expr(unit, n));
     StructField { name, ty }
 }
 
-fn parse_tuple_field_node<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> StructField {
+fn parse_tuple_field_node<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> StructField {
     let ty = node
         .child_by_field_name("type")
-        .map(|n| parse_type_expr(ctx, n));
+        .map(|n| parse_type_expr(unit, n));
     StructField { name: None, ty }
 }

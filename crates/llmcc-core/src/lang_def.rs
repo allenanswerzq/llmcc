@@ -21,7 +21,7 @@ macro_rules! define_tokens {
         $( ($const:ident, $id:expr, $str:expr, $kind:expr $(, $block:expr)? ) ),* $(,)?
     ) => {
         use llmcc_core::lang_def::LanguageTrait;
-        use llmcc_core::context::Context;
+        use llmcc_core::context::CompileUnit;
         use llmcc_core::ir::HirNode;
 
         crate::paste::paste! {
@@ -96,7 +96,7 @@ macro_rules! define_tokens {
 
             /// Trait for visiting HIR nodes with type-specific dispatch
             pub trait [<AstVisitor $suffix>]<'tcx> {
-                fn ctx(&self) -> Context<'tcx>;
+                fn unit(&self) -> CompileUnit<'tcx>;
 
                 /// Visit a node, dispatching to the appropriate method based on token ID
                 fn visit_node(&mut self, node: HirNode<'tcx>) {
@@ -111,7 +111,7 @@ macro_rules! define_tokens {
                 /// Visit all children of a node
                 fn visit_children(&mut self, node: &HirNode<'tcx>) {
                     for id in node.children() {
-                        let child = self.ctx().hir_node(*id);
+                        let child = self.unit().hir_node(*id);
                         self.visit_node(child);
                     }
                 }
