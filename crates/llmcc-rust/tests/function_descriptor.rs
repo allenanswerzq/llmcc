@@ -225,6 +225,60 @@ fn captures_closure_return_types() {
     }
 }
 
+#[test]
+fn captures_where_clause_and_signature() {
+    let source = r#"
+        pub async fn compose<F>(f: F) -> impl Fn(i32) -> i32
+        where
+            F: Fn(i32) -> i32 + Clone,
+        {
+            move |x| f(f(f(f(x))))
+        }
+    "#;
+
+    let map = collect_functions(source);
+    let compose = map.get("compose").expect("compose function");
+    assert!(compose.is_async);
+    assert_eq!(
+        compose.where_clause.as_deref(),
+        Some("where F: Fn(i32) -> i32 + Clone")
+    );
+    assert!(
+        compose
+            .signature
+            .starts_with("pub async fn compose<F>(f: F) -> impl Fn(i32) -> i32"),
+        "unexpected signature: {}",
+        compose.signature
+    );
+    assert_eq!(compose.parameters.len(), 1);
+    assert_eq!(compose.parameters[0].pattern, "f");
+}
+
+#[test]
+fn resolves_deep_module_owner_chain() {
+    let source = r#"
+        mod a {
+            pub mod b {
+                pub mod c {
+                    pub fn leaf() {}
+                }
+            }
+        }
+    "#;
+
+    let map = collect_functions(source);
+    let leaf = map.get("a::b::c::leaf").expect("leaf function");
+    match &leaf.owner {
+        FunctionOwner::Free { modules } => {
+            assert_eq!(
+                modules,
+                &vec!["a".to_string(), "b".to_string(), "c".to_string()]
+            );
+        }
+        other => panic!("unexpected owner: {other:?}"),
+    }
+}
+
 fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
     match expr {
         TypeExpr::Path { segments, generics } => {
