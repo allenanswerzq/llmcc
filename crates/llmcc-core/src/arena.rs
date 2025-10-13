@@ -56,10 +56,10 @@ macro_rules! declare_arena {
 #[cfg(test)]
 mod tests {
     #[derive(Debug, PartialEq)]
-    struct Foo(i32);
+    pub struct Foo(i32);
 
     #[derive(Debug, PartialEq)]
-    struct Bar(&'static str);
+    pub struct Bar(&'static str);
 
     // Declare an arena with two types:
     declare_arena!([

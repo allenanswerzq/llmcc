@@ -11,14 +11,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut registry = SymbolRegistry::default();
 
     for (index, _) in files.iter().enumerate() {
-        let ctx = gcx.create_context(index);
+        let ctx = gcx.file_context(index);
         let tree = ctx.tree();
         build_llmcc_ir::<LangRust>(&tree, ctx)?;
-        collect_symbols(HirId(0), ctx, &mut registry);
+        let _ = collect_symbols(HirId(0), ctx, &mut registry);
     }
 
     for (index, path) in files.iter().enumerate() {
-        let ctx = gcx.create_context(index);
+        let ctx = gcx.file_context(index);
         bind_symbols(HirId(0), ctx, &registry);
 
         println!("== {} ==", path);
