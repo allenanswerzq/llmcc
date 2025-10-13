@@ -10,16 +10,14 @@ use crate::lang_def::LanguageTrait;
 #[derive(Debug)]
 struct HirBuilder<'ctx, Language> {
     ctx: Context<'ctx>,
-    _start_id: HirId,
     _language: PhantomData<Language>,
 }
 
 impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
     fn new(ctx: Context<'ctx>) -> Self {
-        let start = ctx.register_file_start();
+        ctx.register_file_start();
         Self {
             ctx,
-            _start_id: start,
             _language: PhantomData,
         }
     }

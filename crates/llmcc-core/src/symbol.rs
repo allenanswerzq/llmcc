@@ -1,5 +1,4 @@
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
 
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirIdent};
@@ -17,18 +16,17 @@ impl std::fmt::Display for SymId {
     }
 }
 
-#[derive(Debug, Clone)]
+/// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
+#[derive(Debug)]
 pub struct Scope<'tcx> {
-    definitions: RefCell<HashMap<SymId, &'tcx Symbol>>,
-    lookup: RefCell<HashMap<InternedStr, SymId>>,
+    trie: RefCell<SymbolTrie<'tcx>>,
     owner: HirId,
 }
 
 impl<'tcx> Scope<'tcx> {
     pub fn new(owner: HirId) -> Self {
         Self {
-            definitions: RefCell::new(HashMap::new()),
-            lookup: RefCell::new(HashMap::new()),
+            trie: RefCell::new(SymbolTrie::default()),
             owner,
         }
     }
@@ -37,40 +35,20 @@ impl<'tcx> Scope<'tcx> {
         self.owner
     }
 
-    pub fn insert(&self, key: InternedStr, symbol: &'tcx Symbol) -> SymId {
+    pub fn insert(&self, _key: InternedStr, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
         let sym_id = symbol.id;
-        self.definitions.borrow_mut().insert(sym_id, symbol);
-        self.lookup.borrow_mut().insert(key, sym_id);
+        self.trie.borrow_mut().insert_symbol(symbol, interner);
         sym_id
     }
 
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
-        self.lookup.borrow().get(&key).copied()
-    }
-
-    pub fn get_symbol(&self, id: SymId) -> Option<&'tcx Symbol> {
-        self.definitions.borrow().get(&id).copied()
-    }
-
-    pub fn with_symbol<F, R>(&self, key: InternedStr, f: F) -> Option<R>
-    where
-        F: FnOnce(&Symbol) -> R,
-    {
-        let id = self.get_id(key)?;
-        self.with_symbol_by_id(id, f)
-    }
-
-    pub fn with_symbol_by_id<F, R>(&self, id: SymId, f: F) -> Option<R>
-    where
-        F: FnOnce(&Symbol) -> R,
-    {
-        let defs = self.definitions.borrow();
-        defs.get(&id).map(|symbol| f(*symbol))
+        let hits = self.trie.borrow().lookup_symbol_suffix(&[key]);
+        hits.first().map(|symbol| symbol.id)
     }
 
     pub fn format_compact(&self) -> String {
-        let defs = self.definitions.borrow();
-        format!("{}/{}", self.owner, defs.len())
+        let count = self.trie.borrow().total_symbols();
+        format!("{}/{}", self.owner, count)
     }
 }
 
@@ -134,23 +112,23 @@ impl<'tcx> ScopeStack<'tcx> {
         global: bool,
     ) -> Result<SymId, &'static str> {
         let scope = self.scope_for_insertion(global)?;
-        Ok(scope.insert(key, symbol))
+        Ok(scope.insert(key, symbol, self.interner))
     }
 
     pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
         let key = self.interner.intern(name);
-        self.find_symbol_id_by_key(key)
-    }
-
-    fn find_symbol_id_by_key(&self, key: InternedStr) -> Option<SymId> {
         self.iter().rev().find_map(|scope| scope.get_id(key))
     }
 
     fn find_symbol_local_by_key(&self, key: InternedStr) -> Option<&'tcx Symbol> {
-        self.iter()
-            .rev()
-            .find_map(|scope| scope.get_id(key))
-            .and_then(|id| self.find_symbol_by_id(id))
+        self.iter().rev().find_map(|scope| {
+            scope
+                .trie
+                .borrow()
+                .lookup_symbol_suffix(&[key])
+                .into_iter()
+                .next()
+        })
     }
 
     fn find_symbol_local(&self, name: &str) -> Option<&'tcx Symbol> {
@@ -158,8 +136,15 @@ impl<'tcx> ScopeStack<'tcx> {
         self.find_symbol_local_by_key(key)
     }
 
-    pub fn find_symbol_by_id(&self, id: SymId) -> Option<&'tcx Symbol> {
-        self.iter().rev().find_map(|scope| scope.get_symbol(id))
+    pub fn lookup_global_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+        self.stack
+            .first()
+            .map(|scope| scope.trie.borrow().lookup_symbol_suffix(suffix))
+            .unwrap_or_default()
+    }
+
+    pub fn lookup_global_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.lookup_global_suffix(suffix).into_iter().next()
     }
 
     pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
@@ -207,19 +192,32 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 }
 
+/// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
 #[derive(Debug, Clone)]
 pub struct Symbol {
+    /// Monotonic identifier assigned when the symbol is created.
     pub id: SymId,
+    /// Owning HIR node that introduces the symbol (e.g. function, struct, module).
     pub owner: HirId,
+    /// Unqualified name exactly as written in source.
     pub name: String,
+    /// Interned key for `name`, used for fast lookup.
     pub name_key: InternedStr,
+    /// Fully qualified name cached as a string (updated as scopes are resolved).
     pub fqn_name: RefCell<String>,
+    /// Interned key for the fully qualified name.
     pub fqn_key: RefCell<InternedStr>,
+    /// HIR node where the symbol definition appears (`None` until resolved).
     pub defined: Cell<Option<HirId>>,
+    /// `SymId` of the type describing this symbol (e.g. variable type), if any.
     pub type_of: Cell<Option<SymId>>,
+    /// If this symbol is a field, the `SymId` of the aggregate that owns it.
     pub field_of: Cell<Option<SymId>>,
+    /// Base symbol the current one aliases or derives from (e.g. impl method base).
     pub base_symbol: Cell<Option<SymId>>,
+    /// Overloaded variants that share this name.
     pub overloads: RefCell<Vec<SymId>>,
+    /// Nested types declared inside this symbol's scope.
     pub nested_types: RefCell<Vec<SymId>>,
 }
 
@@ -289,70 +287,5 @@ impl Symbol {
         let key = interner.intern(&fqn);
         *self.fqn_name.borrow_mut() = fqn;
         *self.fqn_key.borrow_mut() = key;
-    }
-}
-
-#[derive(Debug, Default)]
-pub struct SymbolRegistry<'tcx> {
-    trie: SymbolTrie<'tcx>,
-}
-
-impl<'tcx> SymbolRegistry<'tcx> {
-    pub fn insert(&mut self, symbol: &'tcx Symbol, interner: &InternPool) {
-        self.trie.insert_symbol(symbol, interner);
-    }
-
-    pub fn lookup_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
-        self.trie.lookup_symbol_suffix(suffix)
-    }
-
-    pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.lookup_suffix(suffix).into_iter().next()
-    }
-
-    pub fn clear(&mut self) {
-        self.trie.clear();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn symbol_trie_integration() {
-        let arena: Arena = Arena::default();
-        let interner = InternPool::default();
-        let name_a = "fn_bar".to_string();
-        let name_b = "fn_baz".to_string();
-        let key_a = interner.intern(&name_a);
-        let key_b = interner.intern(&name_b);
-        let symbol_a = arena.alloc(Symbol::new(HirId(1), name_a.clone(), key_a));
-        let symbol_b = arena.alloc(Symbol::new(HirId(2), name_b.clone(), key_b));
-        symbol_a.set_fqn(
-            "module_a::module_b::struct_foo::fn_bar".to_string(),
-            &interner,
-        );
-        symbol_b.set_fqn(
-            "module_a::module_b::struct_foo::fn_baz".to_string(),
-            &interner,
-        );
-
-        let mut registry = SymbolRegistry::default();
-        registry.insert(symbol_a, &interner);
-        registry.insert(symbol_b, &interner);
-
-        let suffix = registry.lookup_suffix(&[key_a]);
-        assert_eq!(suffix.len(), 1);
-        assert_eq!(suffix[0].id, symbol_a.id);
-
-        let exact = registry.lookup_suffix(&[
-            key_b,
-            interner.intern("struct_foo"),
-            interner.intern("module_b"),
-            interner.intern("module_a"),
-        ]);
-        assert_eq!(exact.len(), 1);
-        assert_eq!(exact[0].id, symbol_b.id);
     }
 }

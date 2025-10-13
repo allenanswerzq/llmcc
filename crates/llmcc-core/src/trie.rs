@@ -86,6 +86,18 @@ impl<'tcx> SymbolTrie<'tcx> {
             self.collect_symbols(child, out);
         }
     }
+
+    pub fn total_symbols(&self) -> usize {
+        self.count_symbols(&self.root)
+    }
+
+    fn count_symbols(&self, node: &SymbolTrieNode<'tcx>) -> usize {
+        let mut total = node.symbols.len();
+        for child in node.children.values() {
+            total += self.count_symbols(child);
+        }
+        total
+    }
 }
 
 #[cfg(test)]
