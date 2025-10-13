@@ -4,7 +4,9 @@ use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirNode};
 use llmcc_core::symbol::{Scope, ScopeStack, SymId, SymbolRegistry};
 
-use crate::descriptor::{CallDescriptor, FunctionDescriptor, StructDescriptor, VariableDescriptor};
+use crate::descriptor::{
+    CallDescriptor, EnumDescriptor, FunctionDescriptor, StructDescriptor, VariableDescriptor,
+};
 use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
@@ -16,6 +18,7 @@ struct DeclFinder<'tcx, 'reg> {
     variables: Vec<VariableDescriptor>,
     calls: Vec<CallDescriptor>,
     structs: Vec<StructDescriptor>,
+    enums: Vec<EnumDescriptor>,
     function_stack: Vec<String>,
 }
 
@@ -36,6 +39,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
             variables: Vec::new(),
             calls: Vec::new(),
             structs: Vec::new(),
+            enums: Vec::new(),
             function_stack: Vec::new(),
         }
     }
@@ -81,6 +85,10 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
 
     fn take_structs(&mut self) -> Vec<StructDescriptor> {
         mem::take(&mut self.structs)
+    }
+
+    fn take_enums(&mut self) -> Vec<EnumDescriptor> {
+        mem::take(&mut self.enums)
     }
 
     fn process_decl(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
@@ -169,6 +177,25 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
         self.ctx.insert_def(node.hir_id(), symbol);
     }
 
+    fn process_enum_item(&mut self, node: &HirNode<'tcx>) {
+        let ident = node.child_by_field(self.ctx, LangRust::field_name);
+        let Some(ident) = ident.as_ident() else {
+            return;
+        };
+
+        let symbol = self.scope_stack.find_or_insert_global(node.hir_id(), ident);
+
+        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        symbol.set_fqn(fqn.clone(), self.ctx.interner());
+        self.registry.insert(symbol, self.ctx.interner());
+
+        if let Some(desc) = EnumDescriptor::from_enum(self.ctx, node, fqn.clone()) {
+            self.enums.push(desc);
+        }
+
+        self.ctx.insert_def(node.hir_id(), symbol);
+    }
+
     fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
         let scope = self.ctx.alloc_scope(node.hir_id());
@@ -240,6 +267,9 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
             "struct_item" => {
                 self.process_struct_item(&node);
             }
+            "enum_item" => {
+                self.process_enum_item(&node);
+            }
             _ => {}
         }
         self.visit_children(&node);
@@ -251,6 +281,7 @@ pub struct CollectionResult {
     pub variables: Vec<VariableDescriptor>,
     pub calls: Vec<CallDescriptor>,
     pub structs: Vec<StructDescriptor>,
+    pub enums: Vec<EnumDescriptor>,
 }
 
 pub fn collect_symbols<'tcx>(
@@ -267,5 +298,6 @@ pub fn collect_symbols<'tcx>(
         variables: decl_finder.take_variables(),
         calls: decl_finder.take_calls(),
         structs: decl_finder.take_structs(),
+        enums: decl_finder.take_enums(),
     }
 }

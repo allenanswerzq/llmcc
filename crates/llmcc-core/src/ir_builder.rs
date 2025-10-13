@@ -10,15 +10,16 @@ use crate::lang_def::LanguageTrait;
 #[derive(Debug)]
 struct HirBuilder<'ctx, Language> {
     ctx: Context<'ctx>,
-    next_id: u32,
+    _start_id: HirId,
     _language: PhantomData<Language>,
 }
 
 impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
     fn new(ctx: Context<'ctx>) -> Self {
+        let start = ctx.register_file_start();
         Self {
             ctx,
-            next_id: 0,
+            _start_id: start,
             _language: PhantomData,
         }
     }
@@ -41,9 +42,7 @@ impl<'ctx, Language: LanguageTrait> HirBuilder<'ctx, Language> {
     }
 
     fn reserve_id(&mut self) -> HirId {
-        let id = HirId(self.next_id);
-        self.next_id += 1;
-        id
+        self.ctx.reserve_hir_id()
     }
 
     fn collect_children(&mut self, node: Node<'ctx>, parent: HirId) -> Vec<HirId> {

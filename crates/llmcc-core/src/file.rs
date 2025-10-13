@@ -84,4 +84,8 @@ impl File {
     pub fn opt_get_text(&self, start: usize, end: usize) -> Option<String> {
         self.file.get_text(start, end)
     }
+
+    pub fn path(&self) -> Option<&str> {
+        self.file.path.as_deref()
+    }
 }

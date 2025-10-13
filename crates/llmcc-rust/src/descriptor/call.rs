@@ -1,3 +1,5 @@
+use std::mem;
+
 use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
@@ -31,12 +33,25 @@ pub enum CallTarget {
         method: String,
         generics: Vec<TypeExpr>,
     },
+    /// A chained sequence like `obj.f1().f2::<T>()` packed as a single call.
+    Chain {
+        base: String,
+        segments: Vec<ChainSegment>,
+    },
     /// Anything we could not recognise (stored verbatim).
     Unknown(String),
 }
 
-/// Lightweight view of each argument expression.
-#[derive(Debug, Clone)]
+/// Component of a chained call.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChainSegment {
+    pub method: String,
+    pub generics: Vec<TypeExpr>,
+    pub arguments: Vec<CallArgument>,
+}
+
+/// Lightweight view of call arguments.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CallArgument {
     pub text: String,
 }
@@ -53,10 +68,15 @@ impl CallDescriptor {
             .child_by_field_name("type_arguments")
             .map(|n| parse_type_arguments(ctx, n))
             .unwrap_or_default();
-        let target = match function_node {
-            Some(func) => parse_call_target(ctx, func, call_generics.clone()),
-            None => CallTarget::Unknown(clean(&node_text(ctx, ts_node))),
-        };
+
+        let target = function_node
+            .and_then(|func| parse_chain(ctx, func, call_generics.clone()))
+            .or_else(|| parse_chain(ctx, ts_node, call_generics.clone()))
+            .map(|(base, segments)| CallTarget::Chain { base, segments })
+            .unwrap_or_else(|| match function_node {
+                Some(func) => parse_call_target(ctx, func, call_generics.clone()),
+                None => CallTarget::Unknown(clean(&node_text(ctx, ts_node))),
+            });
 
         let arguments = ts_node
             .child_by_field_name("arguments")
@@ -115,7 +135,7 @@ fn parse_call_target<'tcx>(
         }
         "field_expression" => {
             let receiver = node
-                .child_by_field_name("argument")
+                .child_by_field_name("value")
                 .map(|n| clean(&node_text(ctx, n)))
                 .unwrap_or_else(|| clean(&node_text(ctx, node)));
             let method = node
@@ -147,6 +167,70 @@ fn parse_call_target<'tcx>(
     }
 }
 
+fn parse_chain<'tcx>(
+    ctx: Context<'tcx>,
+    mut node: Node<'tcx>,
+    call_generics: Vec<TypeExpr>,
+) -> Option<(String, Vec<ChainSegment>)> {
+    let mut segments = Vec::new();
+    let mut pending_generics = call_generics;
+    let mut pending_arguments = Vec::new();
+
+    loop {
+        match node.kind() {
+            "call_expression" => {
+                pending_generics = node
+                    .child_by_field_name("type_arguments")
+                    .map(|n| parse_type_arguments(ctx, n))
+                    .unwrap_or_default();
+                pending_arguments = node
+                    .child_by_field_name("arguments")
+                    .map(|args| parse_arguments(ctx, args))
+                    .unwrap_or_default();
+                let Some(function_node) = node.child_by_field_name("function") else {
+                    return None;
+                };
+                node = function_node;
+            }
+            "generic_function" => {
+                pending_generics = node
+                    .child_by_field_name("type_arguments")
+                    .map(|n| parse_type_arguments(ctx, n))
+                    .unwrap_or_default();
+                let Some(inner_function) = node.child_by_field_name("function") else {
+                    return None;
+                };
+                node = inner_function;
+            }
+            "field_expression" => {
+                let method = node
+                    .child_by_field_name("field")
+                    .map(|n| clean(&node_text(ctx, n)))
+                    .unwrap_or_default();
+                let generics = mem::take(&mut pending_generics);
+                let arguments = mem::take(&mut pending_arguments);
+                segments.push(ChainSegment {
+                    method,
+                    generics,
+                    arguments,
+                });
+                let Some(argument_node) = node.child_by_field_name("value") else {
+                    return None;
+                };
+                node = argument_node;
+            }
+            _ => {
+                if segments.len() < 2 {
+                    return None;
+                }
+                let base = clean(&node_text(ctx, node));
+                segments.reverse();
+                return Some((base, segments));
+            }
+        }
+    }
+}
+
 fn parse_type_arguments<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> Vec<TypeExpr> {
     let mut args = Vec::new();
     let mut cursor = node.walk();
@@ -161,6 +245,14 @@ fn parse_type_arguments<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> Vec<TypeE
                 args.push(parse_type_expr(ctx, child));
             }
             _ => {}
+        }
+    }
+    if args.is_empty() {
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            if is_type_node(child.kind()) {
+                args.push(parse_type_expr(ctx, child));
+            }
         }
     }
     args
