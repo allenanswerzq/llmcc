@@ -1,7 +1,7 @@
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use tree_sitter::Node;
 
-use crate::context::Context;
+use crate::context::CompileUnit;
 use crate::declare_arena;
 use crate::symbol::{Scope, Symbol};
 
@@ -54,18 +54,18 @@ impl<'hir> Default for HirNode<'hir> {
 }
 
 impl<'hir> HirNode<'hir> {
-    pub fn format_node(&self, ctx: Context<'hir>) -> String {
+    pub fn format_node(&self, unit: CompileUnit<'hir>) -> String {
         let id = self.hir_id();
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, id);
 
-        if let Some(def) = ctx.opt_defs(id) {
+        if let Some(def) = unit.opt_defs(id) {
             f.push_str(&format!("   d:{}", def.format_compact()));
-        } else if let Some(sym) = ctx.opt_uses(id) {
+        } else if let Some(sym) = unit.opt_uses(id) {
             f.push_str(&format!("   u:{}", sym.format_compact()));
         }
 
-        if let Some(scope) = ctx.opt_scope(id) {
+        if let Some(scope) = unit.opt_scope(id) {
             f.push_str(&format!("   s:{}", scope.format_compact()));
         }
 
@@ -132,34 +132,34 @@ impl<'hir> HirNode<'hir> {
         self.base().and_then(|base| base.parent)
     }
 
-    pub fn opt_child_by_field(&self, ctx: Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
-        self.base().unwrap().opt_child_by_field(ctx, field_id)
+    pub fn opt_child_by_field(&self, unit: CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+        self.base().unwrap().opt_child_by_field(unit, field_id)
     }
 
-    pub fn child_by_field(&self, ctx: Context<'hir>, field_id: u16) -> HirNode<'hir> {
-        self.opt_child_by_field(ctx, field_id)
+    pub fn child_by_field(&self, unit: CompileUnit<'hir>, field_id: u16) -> HirNode<'hir> {
+        self.opt_child_by_field(unit, field_id)
             .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
     }
 
     pub fn expect_ident_child_by_field(
         &self,
-        ctx: Context<'hir>,
+        unit: CompileUnit<'hir>,
         field_id: u16,
     ) -> &'hir HirIdent<'hir> {
-        self.opt_child_by_field(ctx, field_id)
+        self.opt_child_by_field(unit, field_id)
             .map(|child| child.expect_ident())
             .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
     }
 
-    pub fn opt_child_by_kind(&self, ctx: Context<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
         self.children()
             .iter()
-            .map(|id| ctx.hir_node(*id))
+            .map(|id| unit.hir_node(*id))
             .find(|child| child.kind_id() == kind_id)
     }
 
-    pub fn child_by_kind(&self, ctx: Context<'hir>, kind_id: u16) -> HirNode<'hir> {
-        self.opt_child_by_kind(ctx, kind_id)
+    pub fn child_by_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> HirNode<'hir> {
+        self.opt_child_by_kind(unit, kind_id)
             .unwrap_or_else(|| panic!("no child with kind_id {}", kind_id))
     }
 }
@@ -223,19 +223,19 @@ pub struct HirBase<'hir> {
 impl<'hir> HirBase<'hir> {
     pub fn opt_child_by_fields(
         &self,
-        ctx: Context<'hir>,
+        unit: CompileUnit<'hir>,
         fields_id: &[u16],
     ) -> Option<HirNode<'hir>> {
         self.children
             .iter()
-            .map(|id| ctx.hir_node(*id))
+            .map(|id| unit.hir_node(*id))
             .find(|child| fields_id.contains(&child.field_id()))
     }
 
-    pub fn opt_child_by_field(&self, ctx: Context<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_field(&self, unit: CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
         self.children
             .iter()
-            .map(|id| ctx.hir_node(*id))
+            .map(|id| unit.hir_node(*id))
             .find(|child| child.field_id() == field_id)
     }
 }

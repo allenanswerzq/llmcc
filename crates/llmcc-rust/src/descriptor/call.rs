@@ -1,6 +1,6 @@
 use std::mem;
 
-use llmcc_core::context::Context;
+use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
@@ -58,7 +58,7 @@ pub struct CallArgument {
 
 impl CallDescriptor {
     pub fn from_call<'tcx>(
-        ctx: Context<'tcx>,
+        unit: CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         enclosing_function: Option<String>,
     ) -> Self {
@@ -66,21 +66,21 @@ impl CallDescriptor {
         let function_node = ts_node.child_by_field_name("function");
         let call_generics = ts_node
             .child_by_field_name("type_arguments")
-            .map(|n| parse_type_arguments(ctx, n))
+            .map(|n| parse_type_arguments(unit, n))
             .unwrap_or_default();
 
         let target = function_node
-            .and_then(|func| parse_chain(ctx, func, call_generics.clone()))
-            .or_else(|| parse_chain(ctx, ts_node, call_generics.clone()))
+            .and_then(|func| parse_chain(unit, func, call_generics.clone()))
+            .or_else(|| parse_chain(unit, ts_node, call_generics.clone()))
             .map(|(base, segments)| CallTarget::Chain { base, segments })
             .unwrap_or_else(|| match function_node {
-                Some(func) => parse_call_target(ctx, func, call_generics.clone()),
-                None => CallTarget::Unknown(clean(&node_text(ctx, ts_node))),
+                Some(func) => parse_call_target(unit, func, call_generics.clone()),
+                None => CallTarget::Unknown(clean(&node_text(unit, ts_node))),
             });
 
         let arguments = ts_node
             .child_by_field_name("arguments")
-            .map(|args| parse_arguments(ctx, args))
+            .map(|args| parse_arguments(unit, args))
             .unwrap_or_default();
 
         CallDescriptor {
@@ -92,24 +92,24 @@ impl CallDescriptor {
     }
 }
 
-fn parse_arguments<'tcx>(ctx: Context<'tcx>, args_node: Node<'tcx>) -> Vec<CallArgument> {
+fn parse_arguments<'tcx>(unit: CompileUnit<'tcx>, args_node: Node<'tcx>) -> Vec<CallArgument> {
     let mut cursor = args_node.walk();
     args_node
         .named_children(&mut cursor)
         .map(|arg| CallArgument {
-            text: clean(&node_text(ctx, arg)),
+            text: clean(&node_text(unit, arg)),
         })
         .collect()
 }
 
 fn parse_call_target<'tcx>(
-    ctx: Context<'tcx>,
+    unit: CompileUnit<'tcx>,
     node: Node<'tcx>,
     call_generics: Vec<TypeExpr>,
 ) -> CallTarget {
     match node.kind() {
         "identifier" | "scoped_identifier" | "type_identifier" => {
-            let segments: Vec<String> = clean(&node_text(ctx, node))
+            let segments: Vec<String> = clean(&node_text(unit, node))
                 .split("::")
                 .map(|s| s.to_string())
                 .collect();
@@ -120,28 +120,28 @@ fn parse_call_target<'tcx>(
         }
         "generic_type" => {
             let base = node.child_by_field_name("type").unwrap_or(node);
-            let mut segments: Vec<String> = clean(&node_text(ctx, base))
+            let mut segments: Vec<String> = clean(&node_text(unit, base))
                 .split("::")
                 .map(|s| s.to_string())
                 .collect();
             if segments.is_empty() {
-                segments.push(clean(&node_text(ctx, base)));
+                segments.push(clean(&node_text(unit, base)));
             }
             let generics = node
                 .child_by_field_name("type_arguments")
-                .map(|args| parse_type_arguments(ctx, args))
+                .map(|args| parse_type_arguments(unit, args))
                 .unwrap_or(call_generics);
             CallTarget::Path { segments, generics }
         }
         "generic_function" => {
             let generics = node
                 .child_by_field_name("type_arguments")
-                .map(|args| parse_type_arguments(ctx, args))
+                .map(|args| parse_type_arguments(unit, args))
                 .unwrap_or_default();
             let inner = node
                 .child_by_field_name("function")
                 .unwrap_or(node.child(0).unwrap_or(node));
-            let mut target = parse_call_target(ctx, inner, call_generics);
+            let mut target = parse_call_target(unit, inner, call_generics);
             match &mut target {
                 CallTarget::Path { generics: g, .. } => *g = generics,
                 CallTarget::Method { generics: g, .. } => *g = generics,
@@ -152,15 +152,15 @@ fn parse_call_target<'tcx>(
         "field_expression" => {
             let receiver = node
                 .child_by_field_name("value")
-                .map(|n| clean(&node_text(ctx, n)))
-                .unwrap_or_else(|| clean(&node_text(ctx, node)));
+                .map(|n| clean(&node_text(unit, n)))
+                .unwrap_or_else(|| clean(&node_text(unit, node)));
             let method = node
                 .child_by_field_name("field")
-                .map(|n| clean(&node_text(ctx, n)))
+                .map(|n| clean(&node_text(unit, n)))
                 .unwrap_or_default();
             let generics = node
                 .child_by_field_name("type_arguments")
-                .map(|n| parse_type_arguments(ctx, n))
+                .map(|n| parse_type_arguments(unit, n))
                 .unwrap_or(call_generics);
             CallTarget::Method {
                 receiver,
@@ -169,7 +169,7 @@ fn parse_call_target<'tcx>(
             }
         }
         _ => {
-            let text = clean(&node_text(ctx, node));
+            let text = clean(&node_text(unit, node));
             if let Some((receiver, method)) = parse_method_from_text(&text) {
                 CallTarget::Method {
                     receiver,
@@ -184,7 +184,7 @@ fn parse_call_target<'tcx>(
 }
 
 fn parse_chain<'tcx>(
-    ctx: Context<'tcx>,
+    unit: CompileUnit<'tcx>,
     mut node: Node<'tcx>,
     call_generics: Vec<TypeExpr>,
 ) -> Option<(String, Vec<ChainSegment>)> {
@@ -197,11 +197,11 @@ fn parse_chain<'tcx>(
             "call_expression" => {
                 pending_generics = node
                     .child_by_field_name("type_arguments")
-                    .map(|n| parse_type_arguments(ctx, n))
+                    .map(|n| parse_type_arguments(unit, n))
                     .unwrap_or_default();
                 pending_arguments = node
                     .child_by_field_name("arguments")
-                    .map(|args| parse_arguments(ctx, args))
+                    .map(|args| parse_arguments(unit, args))
                     .unwrap_or_default();
                 let Some(function_node) = node.child_by_field_name("function") else {
                     return None;
@@ -211,7 +211,7 @@ fn parse_chain<'tcx>(
             "generic_function" => {
                 pending_generics = node
                     .child_by_field_name("type_arguments")
-                    .map(|n| parse_type_arguments(ctx, n))
+                    .map(|n| parse_type_arguments(unit, n))
                     .unwrap_or_default();
                 let Some(inner_function) = node.child_by_field_name("function") else {
                     return None;
@@ -221,7 +221,7 @@ fn parse_chain<'tcx>(
             "field_expression" => {
                 let method = node
                     .child_by_field_name("field")
-                    .map(|n| clean(&node_text(ctx, n)))
+                    .map(|n| clean(&node_text(unit, n)))
                     .unwrap_or_default();
                 let generics = mem::take(&mut pending_generics);
                 let arguments = mem::take(&mut pending_arguments);
@@ -239,7 +239,7 @@ fn parse_chain<'tcx>(
                 if segments.len() < 2 {
                     return None;
                 }
-                let base = clean(&node_text(ctx, node));
+                let base = clean(&node_text(unit, node));
                 segments.reverse();
                 return Some((base, segments));
             }
@@ -247,18 +247,18 @@ fn parse_chain<'tcx>(
     }
 }
 
-fn parse_type_arguments<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> Vec<TypeExpr> {
+fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<TypeExpr> {
     let mut args = Vec::new();
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         match child.kind() {
             "type_argument" => {
                 if let Some(inner) = child.child_by_field_name("type") {
-                    args.push(parse_type_expr(ctx, inner));
+                    args.push(parse_type_expr(unit, inner));
                 }
             }
             kind if is_type_node(kind) => {
-                args.push(parse_type_expr(ctx, child));
+                args.push(parse_type_expr(unit, child));
             }
             _ => {}
         }
@@ -267,7 +267,7 @@ fn parse_type_arguments<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> Vec<TypeE
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
             if is_type_node(child.kind()) {
-                args.push(parse_type_expr(ctx, child));
+                args.push(parse_type_expr(unit, child));
             }
         }
     }
@@ -287,8 +287,8 @@ fn is_type_node(kind: &str) -> bool {
     )
 }
 
-fn node_text<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> String {
-    ctx.file().get_text(node.start_byte(), node.end_byte())
+fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
+    unit.file().get_text(node.start_byte(), node.end_byte())
 }
 
 fn clean(text: &str) -> String {

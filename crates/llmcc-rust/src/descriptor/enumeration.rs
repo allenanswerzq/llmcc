@@ -1,4 +1,4 @@
-use llmcc_core::context::Context;
+use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
@@ -40,26 +40,26 @@ pub struct EnumDescriptor {
 }
 
 impl EnumDescriptor {
-    pub fn from_enum<'tcx>(ctx: Context<'tcx>, node: &HirNode<'tcx>, fqn: String) -> Option<Self> {
+    pub fn from_enum<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>, fqn: String) -> Option<Self> {
         let ts_node = match node.inner_ts_node() {
             ts if ts.kind() == "enum_item" => ts,
             _ => return None,
         };
 
         let name_node = ts_node.child_by_field_name("name")?;
-        let name = clean(&node_text(ctx, name_node));
-        let header_text = ctx
+        let name = clean(&node_text(unit, name_node));
+        let header_text = unit
             .file()
             .get_text(ts_node.start_byte(), name_node.start_byte());
         let visibility = FnVisibility::from_header(&header_text);
 
         let generics = ts_node
             .child_by_field_name("type_parameters")
-            .map(|n| clean(&node_text(ctx, n)));
+            .map(|n| clean(&node_text(unit, n)));
 
         let variants = ts_node
             .child_by_field_name("body")
-            .map(|body| parse_enum_variants(ctx, body))
+            .map(|body| parse_enum_variants(unit, body))
             .unwrap_or_default();
 
         Some(EnumDescriptor {
@@ -73,38 +73,38 @@ impl EnumDescriptor {
     }
 }
 
-fn parse_enum_variants<'tcx>(ctx: Context<'tcx>, body: Node<'tcx>) -> Vec<EnumVariant> {
+fn parse_enum_variants<'tcx>(unit: CompileUnit<'tcx>, body: Node<'tcx>) -> Vec<EnumVariant> {
     let mut variants = Vec::new();
     let mut cursor = body.walk();
     for child in body.named_children(&mut cursor) {
         if child.kind() == "enum_variant" {
-            variants.push(parse_enum_variant(ctx, child));
+            variants.push(parse_enum_variant(unit, child));
         }
     }
     variants
 }
 
-fn parse_enum_variant<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> EnumVariant {
+fn parse_enum_variant<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> EnumVariant {
     let name_node = node
         .child_by_field_name("name")
         .unwrap_or_else(|| node.child(0).unwrap_or(node));
-    let name = clean(&node_text(ctx, name_node));
+    let name = clean(&node_text(unit, name_node));
 
     let discriminant = node
         .child_by_field_name("value")
-        .map(|n| clean(&node_text(ctx, n)));
+        .map(|n| clean(&node_text(unit, n)));
 
     let (kind, fields) = match node.child_by_field_name("body") {
         Some(body) => match body.kind() {
             "field_declaration_list" => (
                 EnumVariantKind::Struct,
-                parse_named_variant_fields(ctx, body),
+                parse_named_variant_fields(unit, body),
             ),
             "ordered_field_declaration_list" | "tuple_field_declaration_list" => (
                 EnumVariantKind::Tuple,
-                parse_tuple_variant_fields(ctx, body),
+                parse_tuple_variant_fields(unit, body),
             ),
-            other => parse_variant_body(ctx, body, other),
+            other => parse_variant_body(unit, body, other),
         },
         None => (EnumVariantKind::Unit, Vec::new()),
     };
@@ -118,41 +118,41 @@ fn parse_enum_variant<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> EnumVariant
 }
 
 fn parse_variant_body<'tcx>(
-    ctx: Context<'tcx>,
+    unit: CompileUnit<'tcx>,
     body: Node<'tcx>,
     kind: &str,
 ) -> (EnumVariantKind, Vec<EnumVariantField>) {
     match kind {
         "field_declaration_list" => (
             EnumVariantKind::Struct,
-            parse_named_variant_fields(ctx, body),
+            parse_named_variant_fields(unit, body),
         ),
         "ordered_field_declaration_list" | "tuple_field_declaration_list" => (
             EnumVariantKind::Tuple,
-            parse_tuple_variant_fields(ctx, body),
+            parse_tuple_variant_fields(unit, body),
         ),
         _ => (EnumVariantKind::Unit, Vec::new()),
     }
 }
 
-fn parse_named_variant_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec<EnumVariantField> {
+fn parse_named_variant_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -> Vec<EnumVariantField> {
     let mut fields = Vec::new();
     let mut cursor = list.walk();
     for child in list.named_children(&mut cursor) {
         if child.kind() == "field_declaration" {
             let name = child
                 .child_by_field_name("name")
-                .map(|n| clean(&node_text(ctx, n)));
+                .map(|n| clean(&node_text(unit, n)));
             let ty = child
                 .child_by_field_name("type")
-                .map(|n| parse_type_expr(ctx, n));
+                .map(|n| parse_type_expr(unit, n));
             fields.push(EnumVariantField { name, ty });
         }
     }
     fields
 }
 
-fn parse_tuple_variant_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec<EnumVariantField> {
+fn parse_tuple_variant_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -> Vec<EnumVariantField> {
     let mut fields = Vec::new();
     let mut cursor = list.walk();
     for child in list.children(&mut cursor) {
@@ -160,18 +160,18 @@ fn parse_tuple_variant_fields<'tcx>(ctx: Context<'tcx>, list: Node<'tcx>) -> Vec
             "tuple_field_declaration" | "ordered_field_declaration" => {
                 let ty = child
                     .child_by_field_name("type")
-                    .map(|n| parse_type_expr(ctx, n))
+                    .map(|n| parse_type_expr(unit, n))
                     .or_else(|| {
                         child
                             .children(&mut child.walk())
-                            .find_map(|n| is_type_node(n.kind()).then(|| parse_type_expr(ctx, n)))
+                            .find_map(|n| is_type_node(n.kind()).then(|| parse_type_expr(unit, n)))
                     });
                 fields.push(EnumVariantField { name: None, ty });
             }
             kind if is_type_node(kind) => {
                 fields.push(EnumVariantField {
                     name: None,
-                    ty: Some(parse_type_expr(ctx, child)),
+                    ty: Some(parse_type_expr(unit, child)),
                 });
             }
             _ => {}
@@ -193,8 +193,8 @@ fn is_type_node(kind: &str) -> bool {
     )
 }
 
-fn node_text<'tcx>(ctx: Context<'tcx>, node: Node<'tcx>) -> String {
-    ctx.file().get_text(node.start_byte(), node.end_byte())
+fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
+    unit.file().get_text(node.start_byte(), node.end_byte())
 }
 
 fn clean(text: &str) -> String {

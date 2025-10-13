@@ -13,7 +13,7 @@ pub mod trie;
 pub mod visit;
 
 pub use block::{build_llmcc_graph, BlockId};
-pub use context::{Context, GlobalCtxt};
+pub use context::{CompileUnit, CompileCtxt};
 pub use ir::HirId;
 pub use ir_builder::build_llmcc_ir;
 pub use paste;

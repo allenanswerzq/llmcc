@@ -1,5 +1,5 @@
 use crate::block::{BasicBlock, BlockId};
-use crate::context::Context;
+use crate::context::CompileUnit;
 use crate::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
@@ -23,75 +23,76 @@ impl RenderNode {
     }
 }
 
-pub fn render_llmcc_ir<'tcx>(root: HirId, ctx: Context<'tcx>) -> (String, String) {
-    let hir_root = ctx.hir_node(root);
-    let ast_render = build_ast_render(hir_root.inner_ts_node(), ctx);
-    let hir_render = build_hir_render(&hir_root, ctx);
+pub fn render_llmcc_ir<'tcx>(root: HirId, unit: CompileUnit<'tcx>) -> (String, String) {
+    let hir_root = unit.hir_node(root);
+    let ast_render = build_ast_render(hir_root.inner_ts_node(), unit);
+    let hir_render = build_hir_render(&hir_root, unit);
     let ast = render_lines(&ast_render);
     let hir = render_lines(&hir_render);
     (ast, hir)
 }
 
-pub fn print_llmcc_ir<'tcx>(root: HirId, ctx: Context<'tcx>) {
-    let (ast, hir) = render_llmcc_ir(root, ctx);
+pub fn print_llmcc_ir<'tcx>(unit: CompileUnit<'tcx>) {
+    let root = unit.file_start_hir_id().unwrap();
+    let (ast, hir) = render_llmcc_ir(root, unit);
     println!("{}\n", ast);
     println!("{}\n", hir);
 }
 
-pub fn render_llmcc_graph<'tcx>(root: BlockId, ctx: Context<'tcx>) -> String {
-    let block = ctx.bb(root);
-    let render = build_block_render(&block, ctx);
+pub fn render_llmcc_graph<'tcx>(root: BlockId, unit: CompileUnit<'tcx>) -> String {
+    let block = unit.bb(root);
+    let render = build_block_render(&block, unit);
     render_lines(&render)
 }
 
-pub fn print_llmcc_graph<'tcx>(root: BlockId, ctx: Context<'tcx>) {
-    let graph = render_llmcc_graph(root, ctx);
+pub fn print_llmcc_graph<'tcx>(root: BlockId, unit: CompileUnit<'tcx>) {
+    let graph = render_llmcc_graph(root, unit);
     println!("{}\n", graph);
 }
 
-fn build_ast_render<'tcx>(node: Node<'tcx>, ctx: Context<'tcx>) -> RenderNode {
+fn build_ast_render<'tcx>(node: Node<'tcx>, unit: CompileUnit<'tcx>) -> RenderNode {
     let kind = node.kind();
     let kind_id = node.kind_id();
     let label = match field_info(node) {
         Some((name, field_id)) => format!("({name}_{field_id}):{kind} [{kind_id}]"),
         None => format!("{kind} [{kind_id}]"),
     };
-    let snippet = snippet_from_ctx(&ctx, node.start_byte(), node.end_byte());
+    let snippet = snippet_from_ctx(&unit, node.start_byte(), node.end_byte());
 
     let mut cursor = node.walk();
     let children = node
         .children(&mut cursor)
-        .map(|child| build_ast_render(child, ctx))
+        .map(|child| build_ast_render(child, unit))
         .collect();
 
     RenderNode::new(label, snippet, children)
 }
 
-fn build_hir_render<'tcx>(node: &HirNode<'tcx>, ctx: Context<'tcx>) -> RenderNode {
-    let label = node.format_node(ctx);
-    let snippet = snippet_from_ctx(&ctx, node.start_byte(), node.end_byte());
+fn build_hir_render<'tcx>(node: &HirNode<'tcx>, unit: CompileUnit<'tcx>) -> RenderNode {
+    let label = node.format_node(unit);
+    let snippet = snippet_from_ctx(&unit, node.start_byte(), node.end_byte());
     let children = node
         .children()
         .iter()
         .map(|id| {
-            let child = ctx.hir_node(*id);
-            build_hir_render(&child, ctx)
+            let child = unit.hir_node(*id);
+            build_hir_render(&child, unit)
         })
         .collect();
     RenderNode::new(label, snippet, children)
 }
 
-fn build_block_render<'tcx>(block: &BasicBlock<'tcx>, ctx: Context<'tcx>) -> RenderNode {
-    let label = block.format_block(ctx);
+fn build_block_render<'tcx>(block: &BasicBlock<'tcx>, unit: CompileUnit<'tcx>) -> RenderNode {
+    let label = block.format_block(unit);
     let snippet = block
         .opt_node()
-        .and_then(|n| snippet_from_ctx(&ctx, n.start_byte(), n.end_byte()));
+        .and_then(|n| snippet_from_ctx(&unit, n.start_byte(), n.end_byte()));
     let children = block
         .children()
         .iter()
         .map(|id| {
-            let child = ctx.bb(*id);
-            build_block_render(&child, ctx)
+            let child = unit.bb(*id);
+            build_block_render(&child, unit)
         })
         .collect();
     RenderNode::new(label, snippet, children)
@@ -138,8 +139,8 @@ fn pad_snippet(line: &str, snippet: &str) -> String {
     format!("{}|{}|", " ".repeat(padding), snippet)
 }
 
-fn snippet_from_ctx(ctx: &Context<'_>, start: usize, end: usize) -> Option<String> {
-    ctx.file()
+fn snippet_from_ctx(unit: &CompileUnit<'_>, start: usize, end: usize) -> Option<String> {
+    unit.file()
         .opt_get_text(start, end)
         .map(|text| text.split_whitespace().collect::<Vec<_>>().join(" "))
         .filter(|s| !s.is_empty())

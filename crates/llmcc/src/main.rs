@@ -7,27 +7,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let gcx = GlobalCtxt::from_files::<LangRust>(&files)?;
-    let globals = gcx.create_globals();
+    let cc = CompileCtxt::from_files::<LangRust>(&files)?;
+    let globals = cc.create_globals();
 
     for (index, _) in files.iter().enumerate() {
-        let ctx = gcx.file_context(index);
-        build_llmcc_ir::<LangRust>(&ctx.tree(), ctx)?;
+        let unit = cc.compile_unit(index);
+        build_llmcc_ir::<LangRust>(unit)?;
 
-        let root = ctx.file_start_hir_id().unwrap();
-        let _ = collect_symbols(root, ctx, globals);
+        collect_symbols(unit, globals);
     }
 
     for (index, path) in files.iter().enumerate() {
-        let ctx = gcx.file_context(index);
-        let root = ctx.file_start_hir_id().unwrap();
-        bind_symbols(root, ctx, globals);
+        let unit = cc.compile_unit(index);
+        bind_symbols(unit, globals);
 
         println!("== {} ==", path);
-        print_llmcc_ir(root, ctx);
+        print_llmcc_ir(unit);
 
-        build_llmcc_graph::<LangRust>(root, ctx)?;
-        print_llmcc_graph(BlockId(0), ctx);
+        build_llmcc_graph::<LangRust>(unit)?;
+        print_llmcc_graph(BlockId(0), unit);
     }
 
     Ok(())
