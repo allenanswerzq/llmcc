@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::ops::Deref;
 use tree_sitter::Tree;
@@ -42,6 +42,24 @@ impl<'tcx> Context<'tcx> {
     /// Resolve an interned symbol into an owned string.
     pub fn resolve_interned_owned(&self, symbol: InternedStr) -> Option<String> {
         self.gcx.interner.resolve_owned(symbol)
+    }
+
+    pub fn reserve_hir_id(&self) -> HirId {
+        self.gcx.reserve_hir_id()
+    }
+
+    pub fn register_file_start(&self) -> HirId {
+        let start = self.gcx.current_hir_id();
+        self.gcx.set_file_start(self.index, start);
+        start
+    }
+
+    pub fn file_start_hir_id(&self) -> Option<HirId> {
+        self.gcx.file_start(self.index)
+    }
+
+    pub fn file_path(&self) -> Option<&str> {
+        self.gcx.file_path(self.index)
     }
 
     /// Get a HIR node by ID, returning None if not found
@@ -240,6 +258,8 @@ pub struct GlobalCtxt<'tcx> {
     pub interner: InternPool,
     pub files: Vec<File>,
     pub trees: Vec<Option<Tree>>,
+    pub hir_next_id: Cell<u32>,
+    pub hir_start_ids: RefCell<Vec<Option<HirId>>>,
 
     // HirId -> ParentedNode
     pub hir_maps: Vec<RefCell<HashMap<HirId, ParentedNode<'tcx>>>>,
@@ -275,6 +295,8 @@ impl<'tcx> GlobalCtxt<'tcx> {
             defs_maps: vec![RefCell::new(HashMap::new()); count],
             uses_maps: vec![RefCell::new(HashMap::new()); count],
             scope_maps: vec![RefCell::new(HashMap::new()); count],
+            hir_next_id: Cell::new(0),
+            hir_start_ids: RefCell::new(vec![None; count]),
             block_arena: BlockArena::default(),
             bb_map: RefCell::new(HashMap::new()),
             related_map: BlockRelationMap::default(),
@@ -300,6 +322,8 @@ impl<'tcx> GlobalCtxt<'tcx> {
             defs_maps: vec![RefCell::new(HashMap::new()); count],
             uses_maps: vec![RefCell::new(HashMap::new()); count],
             scope_maps: vec![RefCell::new(HashMap::new()); count],
+            hir_next_id: Cell::new(0),
+            hir_start_ids: RefCell::new(vec![None; count]),
             block_arena: BlockArena::default(),
             bb_map: RefCell::new(HashMap::new()),
             related_map: BlockRelationMap::default(),
@@ -314,6 +338,31 @@ impl<'tcx> GlobalCtxt<'tcx> {
     /// Back-compat alias for `file_context`.
     pub fn create_context(&'tcx self, index: usize) -> Context<'tcx> {
         self.file_context(index)
+    }
+
+    pub fn reserve_hir_id(&self) -> HirId {
+        let id = self.hir_next_id.get();
+        self.hir_next_id.set(id + 1);
+        HirId(id)
+    }
+
+    pub fn current_hir_id(&self) -> HirId {
+        HirId(self.hir_next_id.get())
+    }
+
+    pub fn set_file_start(&self, index: usize, start: HirId) {
+        let mut starts = self.hir_start_ids.borrow_mut();
+        if index < starts.len() && starts[index].is_none() {
+            starts[index] = Some(start);
+        }
+    }
+
+    pub fn file_start(&self, index: usize) -> Option<HirId> {
+        self.hir_start_ids.borrow().get(index).and_then(|opt| *opt)
+    }
+
+    pub fn file_path(&self, index: usize) -> Option<&str> {
+        self.files.get(index).and_then(|file| file.path())
     }
 
     /// Get statistics about the maps
