@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use llmcc_rust::{
     build_llmcc_ir, collect_symbols, CallDescriptor, CallTarget, GlobalCtxt, HirId, LangRust,
-    SymbolRegistry,
+    SymbolRegistry, TypeExpr,
 };
 
 fn collect_calls(source: &str) -> Vec<CallDescriptor> {
@@ -54,9 +54,11 @@ fn captures_method_call() {
             generics,
         } => {
             assert_eq!(receiver, "value");
-            assert!(method.starts_with("compute"));
-            assert!(method.contains("::<usize>"));
-            assert!(generics.is_empty() || generics.len() == 1);
+            assert_eq!(method, "compute");
+            if generics.is_empty() {
+                panic!("expected method generics to capture usize");
+            }
+            assert_eq!(generics.len(), 1);
         }
         other => panic!("unexpected target: {other:?}"),
     }
@@ -153,4 +155,87 @@ fn captures_method_chain() {
         .expect("processor::handle call");
     assert_eq!(handle.arguments.len(), 1);
     assert_eq!(handle.arguments[0].text, "v");
+}
+
+#[test]
+fn captures_deep_nested_calls() {
+    let source = r#"
+        fn wrapper() {
+            let _ = outer(inner_a(inner_b(inner_c(inner_d(0)))));
+        }
+    "#;
+
+    let calls = collect_calls(source);
+    assert_eq!(calls.len(), 5);
+
+    let call_map: HashMap<_, _> = calls
+        .iter()
+        .filter_map(|call| match &call.target {
+            CallTarget::Path { segments, .. } => Some((segments.join("::"), call)),
+            _ => None,
+        })
+        .collect();
+
+    let outer = call_map.get("outer").expect("outer call");
+    assert_eq!(outer.arguments.len(), 1);
+    assert_eq!(
+        outer.arguments[0].text,
+        "inner_a(inner_b(inner_c(inner_d(0))))"
+    );
+
+    let inner_a = call_map.get("inner_a").expect("inner_a call");
+    assert_eq!(inner_a.arguments.len(), 1);
+    assert_eq!(inner_a.arguments[0].text, "inner_b(inner_c(inner_d(0)))");
+
+    let inner_b = call_map.get("inner_b").expect("inner_b call");
+    assert_eq!(inner_b.arguments.len(), 1);
+    assert_eq!(inner_b.arguments[0].text, "inner_c(inner_d(0))");
+
+    let inner_c = call_map.get("inner_c").expect("inner_c call");
+    assert_eq!(inner_c.arguments.len(), 1);
+    assert_eq!(inner_c.arguments[0].text, "inner_d(0)");
+
+    let inner_d = call_map.get("inner_d").expect("inner_d call");
+    assert_eq!(inner_d.arguments.len(), 1);
+    assert_eq!(inner_d.arguments[0].text, "0");
+}
+
+#[test]
+fn captures_generic_path_call() {
+    let source = r#"
+        fn wrapper() {
+            compute::apply::<Result<i32, i64>, (usize, usize)>(build_value(), 99);
+        }
+    "#;
+
+    let calls = collect_calls(source);
+    let apply = calls
+        .iter()
+        .find(|call| match &call.target {
+            CallTarget::Path { segments, .. } => segments.join("::") == "compute::apply",
+            _ => false,
+        })
+        .expect("compute::apply call");
+
+    match &apply.target {
+        CallTarget::Path { generics, .. } => {
+            assert_eq!(generics.len(), 2);
+            match &generics[0] {
+                TypeExpr::Path { segments, generics } => {
+                    assert_eq!(segments, &vec!["Result".to_string()]);
+                    assert_eq!(generics.len(), 2);
+                }
+                other => panic!("unexpected generic type: {other:?}"),
+            }
+            match &generics[1] {
+                TypeExpr::Tuple(items) => assert_eq!(items.len(), 2),
+                other => panic!("unexpected second generic argument: {other:?}"),
+            }
+        }
+        other => panic!("expected path target, found {other:?}"),
+    }
+
+    assert_eq!(apply.arguments.len(), 2);
+    assert_eq!(apply.arguments[0].text, "build_value()");
+    assert_eq!(apply.arguments[1].text, "99");
 }

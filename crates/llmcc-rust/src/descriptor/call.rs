@@ -133,6 +133,22 @@ fn parse_call_target<'tcx>(
                 .unwrap_or(call_generics);
             CallTarget::Path { segments, generics }
         }
+        "generic_function" => {
+            let generics = node
+                .child_by_field_name("type_arguments")
+                .map(|args| parse_type_arguments(ctx, args))
+                .unwrap_or_default();
+            let inner = node
+                .child_by_field_name("function")
+                .unwrap_or(node.child(0).unwrap_or(node));
+            let mut target = parse_call_target(ctx, inner, call_generics);
+            match &mut target {
+                CallTarget::Path { generics: g, .. } => *g = generics,
+                CallTarget::Method { generics: g, .. } => *g = generics,
+                _ => {}
+            }
+            target
+        }
         "field_expression" => {
             let receiver = node
                 .child_by_field_name("value")

@@ -131,12 +131,19 @@ impl FunctionDescriptor {
         let is_unsafe = header_clean
             .split_whitespace()
             .any(|token| token == "unsafe");
+        let body_start = ts_node
+            .child_by_field_name("body")
+            .map(|body| body.start_byte())
+            .unwrap_or_else(|| ts_node.end_byte());
+        let signature = clean(&ctx.file().get_text(ts_node.start_byte(), body_start));
+
         let generics = ts_node
             .child_by_field_name("type_parameters")
             .map(|n| clean(&node_text(ctx, n)));
         let where_clause = ts_node
             .child_by_field_name("where_clause")
-            .map(|n| clean(&node_text(ctx, n)));
+            .map(|n| clean(&node_text(ctx, n)))
+            .or_else(|| extract_where_clause(&signature));
         let parameters = ts_node
             .child_by_field_name("parameters")
             .map(|n| parse_parameters(ctx, n))
@@ -144,14 +151,6 @@ impl FunctionDescriptor {
         let return_type = ts_node
             .child_by_field_name("return_type")
             .map(|n| parse_return_type_node(ctx, n));
-
-        let signature = {
-            let body_start = ts_node
-                .child_by_field_name("body")
-                .map(|body| body.start_byte())
-                .unwrap_or_else(|| ts_node.end_byte());
-            clean(&ctx.file().get_text(ts_node.start_byte(), body_start))
-        };
 
         let fqn = owner.fqn(&name);
 
@@ -175,6 +174,16 @@ impl FunctionDescriptor {
     pub fn set_fqn(&mut self, fqn: String) {
         self.fqn = fqn;
     }
+}
+
+fn extract_where_clause(signature: &str) -> Option<String> {
+    let signature = signature.trim();
+    let idx = signature.find("where ")?;
+    let clause = signature[idx..].trim();
+    if clause.is_empty() {
+        return None;
+    }
+    Some(clause.trim_end_matches(',').to_string())
 }
 
 impl FnVisibility {
