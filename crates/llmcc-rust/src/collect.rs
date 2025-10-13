@@ -26,10 +26,10 @@ struct DeclFinder<'tcx> {
 }
 
 impl<'tcx> DeclFinder<'tcx> {
-    pub fn new(ctx: Context<'tcx>, global_scope: &'tcx Scope<'tcx>) -> Self {
+    pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let gcx = ctx.gcx;
         let mut scope_stack = ScopeStack::new(&gcx.arena, &gcx.interner);
-        scope_stack.push(global_scope);
+        scope_stack.push(globals);
         Self {
             ctx,
             scope_stack,
@@ -103,7 +103,6 @@ impl<'tcx> DeclFinder<'tcx> {
             .unwrap_or_else(|| self.generate_fqn(&ident.name, node.hir_id()));
 
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.scope_stack.register_local_symbol(symbol);
 
         if let Some(mut desc) = descriptor {
             desc.set_fqn(fqn.clone());
@@ -123,7 +122,6 @@ impl<'tcx> DeclFinder<'tcx> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.scope_stack.register_local_symbol(symbol);
 
         let variable =
             VariableDescriptor::from_let(self.ctx, node, ident.name.clone(), fqn.clone());
@@ -142,7 +140,6 @@ impl<'tcx> DeclFinder<'tcx> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.scope_stack.register_local_symbol(symbol);
 
         self.ctx.insert_def(node.hir_id(), symbol);
         Some(symbol.id)
@@ -158,7 +155,6 @@ impl<'tcx> DeclFinder<'tcx> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.scope_stack.register_global_symbol(symbol);
 
         let variable = match kind {
             "const_item" => {
@@ -187,7 +183,6 @@ impl<'tcx> DeclFinder<'tcx> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.scope_stack.register_global_symbol(symbol);
 
         if let Some(desc) = StructDescriptor::from_struct(self.ctx, node, fqn.clone()) {
             self.structs.push(desc);
@@ -206,7 +201,6 @@ impl<'tcx> DeclFinder<'tcx> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.scope_stack.register_global_symbol(symbol);
 
         if let Some(desc) = EnumDescriptor::from_enum(self.ctx, node, fqn.clone()) {
             self.enums.push(desc);
@@ -311,10 +305,10 @@ pub struct CollectionResult {
 pub fn collect_symbols<'tcx>(
     root: HirId,
     ctx: Context<'tcx>,
-    global_scope: &'tcx Scope<'tcx>,
+    globals: &'tcx Scope<'tcx>,
 ) -> CollectionResult {
     let node = ctx.hir_node(root);
-    let mut decl_finder = DeclFinder::new(ctx, global_scope);
+    let mut decl_finder = DeclFinder::new(ctx, globals);
     decl_finder.visit_node(node);
     CollectionResult {
         functions: decl_finder.take_functions(),

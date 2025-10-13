@@ -11,10 +11,10 @@ struct SymbolBinder<'tcx> {
 }
 
 impl<'tcx> SymbolBinder<'tcx> {
-    pub fn new(ctx: Context<'tcx>, global_scope: &'tcx Scope<'tcx>) -> Self {
+    pub fn new(ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let gcx = ctx.gcx;
         let mut scope_stack = ScopeStack::new(&gcx.arena, &gcx.interner);
-        scope_stack.push(global_scope);
+        scope_stack.push(globals);
         Self { ctx, scope_stack }
     }
 
@@ -76,8 +76,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 }
 
-pub fn bind_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, global_scope: &'tcx Scope<'tcx>) {
+pub fn bind_symbols<'tcx>(root: HirId, ctx: Context<'tcx>, globals: &'tcx Scope<'tcx>) {
     let node = ctx.hir_node(root);
-    let mut symbol_binder = SymbolBinder::new(ctx, global_scope);
+    let mut symbol_binder = SymbolBinder::new(ctx, globals);
     symbol_binder.visit_node(node);
 }

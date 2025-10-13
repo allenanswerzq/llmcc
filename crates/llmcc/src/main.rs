@@ -8,24 +8,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let gcx = GlobalCtxt::from_files::<LangRust>(&files)?;
+    let globals = gcx.create_globals();
 
     for (index, _) in files.iter().enumerate() {
         let ctx = gcx.file_context(index);
-        let tree = ctx.tree();
-        let global_scope = ctx.alloc_scope(HirId(0));
-        build_llmcc_ir::<LangRust>(&tree, ctx)?;
-        let _ = collect_symbols(HirId(0), ctx, global_scope);
+        build_llmcc_ir::<LangRust>(&ctx.tree(), ctx)?;
+
+        let root = ctx.file_start_hir_id().unwrap();
+        let _ = collect_symbols(root, ctx, globals);
     }
 
     for (index, path) in files.iter().enumerate() {
         let ctx = gcx.file_context(index);
-        let global_scope = ctx.alloc_scope(HirId(0));
-        bind_symbols(HirId(0), ctx, global_scope);
+        let root = ctx.file_start_hir_id().unwrap();
+        bind_symbols(root, ctx, globals);
 
         println!("== {} ==", path);
-        print_llmcc_ir(HirId(0), ctx);
+        print_llmcc_ir(root, ctx);
 
-        build_llmcc_graph::<LangRust>(HirId(0), ctx)?;
+        build_llmcc_graph::<LangRust>(root, ctx)?;
         print_llmcc_graph(BlockId(0), ctx);
     }
 

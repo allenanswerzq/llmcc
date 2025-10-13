@@ -46,10 +46,6 @@ impl<'tcx> Scope<'tcx> {
         hits.first().map(|symbol| symbol.id)
     }
 
-    pub fn register_symbol(&self, symbol: &'tcx Symbol, interner: &InternPool) {
-        self.trie.borrow_mut().insert_symbol(symbol, interner);
-    }
-
     pub fn format_compact(&self) -> String {
         let count = self.trie.borrow().total_symbols();
         format!("{}/{}", self.owner, count)
@@ -138,18 +134,6 @@ impl<'tcx> ScopeStack<'tcx> {
     fn find_symbol_local(&self, name: &str) -> Option<&'tcx Symbol> {
         let key = self.interner.intern(name);
         self.find_symbol_local_by_key(key)
-    }
-
-    pub fn register_local_symbol(&self, symbol: &'tcx Symbol) {
-        if let Some(scope) = self.stack.last() {
-            scope.register_symbol(symbol, self.interner);
-        }
-    }
-
-    pub fn register_global_symbol(&self, symbol: &'tcx Symbol) {
-        if let Some(scope) = self.stack.first() {
-            scope.register_symbol(symbol, self.interner);
-        }
     }
 
     pub fn lookup_global_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
@@ -303,47 +287,5 @@ impl Symbol {
         let key = interner.intern(&fqn);
         *self.fqn_name.borrow_mut() = fqn;
         *self.fqn_key.borrow_mut() = key;
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn symbol_trie_integration() {
-        let arena: Arena = Arena::default();
-        let interner = InternPool::default();
-        let name_a = "fn_bar".to_string();
-        let name_b = "fn_baz".to_string();
-        let key_a = interner.intern(&name_a);
-        let key_b = interner.intern(&name_b);
-        let symbol_a = arena.alloc(Symbol::new(HirId(1), name_a.clone(), key_a));
-        let symbol_b = arena.alloc(Symbol::new(HirId(2), name_b.clone(), key_b));
-        symbol_a.set_fqn(
-            "module_a::module_b::struct_foo::fn_bar".to_string(),
-            &interner,
-        );
-        symbol_b.set_fqn(
-            "module_a::module_b::struct_foo::fn_baz".to_string(),
-            &interner,
-        );
-
-        let scope = Scope::new(HirId(0));
-        scope.register_symbol(symbol_a, &interner);
-        scope.register_symbol(symbol_b, &interner);
-
-        let suffix = scope.trie.borrow().lookup_symbol_suffix(&[key_a]);
-        assert_eq!(suffix.len(), 1);
-        assert_eq!(suffix[0].id, symbol_a.id);
-
-        let exact = scope.trie.borrow().lookup_symbol_suffix(&[
-            key_b,
-            interner.intern("struct_foo"),
-            interner.intern("module_b"),
-            interner.intern("module_a"),
-        ]);
-        assert_eq!(exact.len(), 1);
-        assert_eq!(exact[0].id, symbol_b.id);
     }
 }

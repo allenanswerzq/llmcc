@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, GlobalCtxt, HirId, LangRust, TypeExpr, VariableDescriptor,
+    build_llmcc_ir, collect_symbols, GlobalCtxt, LangRust, TypeExpr, VariableDescriptor,
     VariableKind, VariableScope,
 };
 
@@ -11,8 +11,9 @@ fn collect_variables(source: &str) -> HashMap<String, VariableDescriptor> {
     let ctx = gcx.file_context(0);
     let tree = ctx.tree();
     build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
-    let global_scope = ctx.alloc_scope(HirId(0));
-    collect_symbols(HirId(0), ctx, global_scope)
+    let root = ctx.file_start_hir_id().expect("registered root id");
+    let globals = gcx.alloc_scope(root);
+    collect_symbols(root, ctx, globals)
         .variables
         .into_iter()
         .map(|desc| (desc.fqn.clone(), desc))
