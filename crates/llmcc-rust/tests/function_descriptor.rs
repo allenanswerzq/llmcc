@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, FnVisibility, FunctionOwner, GlobalCtxt, LangRust, TypeExpr,
+    build_llmcc_ir, collect_symbols, FnVisibility, FunctionOwner, CompileCtxt, LangRust, TypeExpr,
 };
 
 fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
-    let gcx = GlobalCtxt::from_sources::<LangRust>(&sources);
-    let ctx = gcx.file_context(0);
-    let tree = ctx.tree();
-    build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
-    let root = ctx.file_start_hir_id().expect("registered root id");
-    let globals = gcx.alloc_scope(root);
-    collect_symbols(root, ctx, globals)
+    let cc = CompileCtxt::from_sources::<LangRust>(&sources);
+    let unit = cc.compile_unit(0);
+    let tree = unit.tree();
+    build_llmcc_ir::<LangRust>(&tree, unit).expect("build HIR");
+    let root = unit.file_start_hir_id().expect("registered root id");
+    let globals = cc.alloc_scope(root);
+    collect_symbols(root, unit, globals)
         .functions
         .into_iter()
         .map(|desc| (desc.fqn.clone(), desc))

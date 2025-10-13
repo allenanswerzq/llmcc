@@ -1,11 +1,11 @@
 use std::{collections::HashMap, marker::PhantomData};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
-use crate::context::{Context, ParentedBlock};
+use crate::context::{CompileUnit, ParentedBlock};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
 use crate::visit::HirVisitor;
-use crate::{declare_arena, HirId};
+use crate::declare_arena;
 
 declare_arena!([
     blk_root: BlockRoot<'tcx>,
@@ -48,15 +48,15 @@ pub enum BasicBlock<'blk> {
 }
 
 impl<'blk> BasicBlock<'blk> {
-    pub fn format_block(&self, ctx: Context<'blk>) -> String {
+    pub fn format_block(&self, unit: CompileUnit<'blk>) -> String {
         let block_id = self.block_id();
         let hir_id = self.node().hir_id();
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, block_id);
 
-        if let Some(def) = ctx.opt_defs(hir_id) {
+        if let Some(def) = unit.opt_defs(hir_id) {
             f.push_str(&format!("   d:{}", def.format_compact()));
-        } else if let Some(sym) = ctx.opt_uses(hir_id) {
+        } else if let Some(sym) = unit.opt_uses(hir_id) {
             f.push_str(&format!("   u:{}", sym.format_compact()));
         }
 
@@ -187,7 +187,7 @@ impl<'blk> BlockRoot<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: Context<'blk>,
+        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -218,13 +218,13 @@ impl<'blk> BlockFunc<'blk> {
     }
 
     pub fn from_hir(
-        ctx: Context<'blk>,
+        unit: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Func, children);
-        let name = ctx.defs(node.hir_id()).name.clone();
+        let name = unit.defs(node.hir_id()).name.clone();
         Self::new(base, name)
     }
 }
@@ -240,7 +240,7 @@ impl<'blk> BlockStmt<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: Context<'blk>,
+        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -261,7 +261,7 @@ impl<'blk> BlockCall<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: Context<'blk>,
+        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -290,13 +290,13 @@ impl<'blk> BlockClass<'blk> {
     }
 
     pub fn from_hir(
-        ctx: Context<'blk>,
+        unit: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Class, children);
-        let name = ctx.defs(node.hir_id()).name.clone();
+        let name = unit.defs(node.hir_id()).name.clone();
         Self::new(base, name)
     }
 
@@ -328,7 +328,7 @@ impl<'blk> BlockImpl<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: Context<'blk>,
+        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -350,7 +350,7 @@ impl<'blk> BlockImpl<'blk> {
 
 #[derive(Debug)]
 struct GraphBuilder<'tcx, Language> {
-    ctx: Context<'tcx>,
+    unit: CompileUnit<'tcx>,
     id: u32,
     bb_map: HashMap<BlockId, ParentedBlock<'tcx>>,
     children_stack: Vec<Vec<BlockId>>,
@@ -358,9 +358,9 @@ struct GraphBuilder<'tcx, Language> {
 }
 
 impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
-    fn new(ctx: Context<'tcx>) -> Self {
+    fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {
-            ctx,
+            unit,
             id: 0,
             bb_map: HashMap::new(),
             children_stack: Vec::new(),
@@ -368,8 +368,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
-    fn ctx(&self) -> Context<'tcx> {
-        self.ctx
+    fn unit(&self) -> CompileUnit<'tcx> {
+        self.unit
     }
 
     fn next_id(&mut self) -> BlockId {
@@ -385,32 +385,32 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         kind: BlockKind,
         children: Vec<BlockId>,
     ) -> BasicBlock<'tcx> {
-        let ctx = self.ctx();
-        let arena = &self.ctx.gcx.block_arena;
+        let unit = self.unit();
+        let arena = &self.unit.cc.block_arena;
         match kind {
             BlockKind::Root => {
-                let block = BlockRoot::from_hir(ctx, id, node, children);
+                let block = BlockRoot::from_hir(unit, id, node, children);
                 BasicBlock::Root(arena.alloc(block))
             }
             BlockKind::Func => {
-                let block = BlockFunc::from_hir(ctx, id, node, children);
+                let block = BlockFunc::from_hir(unit, id, node, children);
                 BasicBlock::Func(arena.alloc(block))
             }
             BlockKind::Class => {
-                let block = BlockClass::from_hir(ctx, id, node, children);
+                let block = BlockClass::from_hir(unit, id, node, children);
                 BasicBlock::Class(arena.alloc(block))
             }
             BlockKind::Stmt => {
-                let stmt = BlockStmt::from_hir(ctx, id, node, children);
+                let stmt = BlockStmt::from_hir(unit, id, node, children);
                 BasicBlock::Stmt(arena.alloc(stmt))
             }
             BlockKind::Call => {
-                let stmt = BlockCall::from_hir(ctx, id, node, children);
+                let stmt = BlockCall::from_hir(unit, id, node, children);
                 BasicBlock::Call(arena.alloc(stmt))
             }
             BlockKind::Impl => {
                 todo!()
-                // let block = BlockImpl::from_hir(ctx, id, node);
+                // let block = BlockImpl::from_hir(unit, id, node);
                 // BasicBlock::Impl(arena.alloc(block))
             }
             _ => {
@@ -441,8 +441,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 }
 
 impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Language> {
-    fn ctx(&self) -> Context<'tcx> {
-        self.ctx()
+    fn unit(&self) -> CompileUnit<'tcx> {
+        self.unit()
     }
 
     fn visit_file(&mut self, node: HirNode<'tcx>, parent: BlockId) {
@@ -468,12 +468,12 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 }
 
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
-    root: HirId,
-    ctx: Context<'tcx>,
+    unit: CompileUnit<'tcx>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut builder = GraphBuilder::<L>::new(ctx);
-    let root = ctx.hir_node(root);
+    let root = unit.file_start_hir_id().unwrap();
+    let mut builder = GraphBuilder::<L>::new(unit);
+    let root = unit.hir_node(root);
     builder.visit_node(root, BlockId(0));
-    *ctx.bb_map.borrow_mut() = builder.bb_map;
+    *unit.bb_map.borrow_mut() = builder.bb_map;
     Ok(())
 }

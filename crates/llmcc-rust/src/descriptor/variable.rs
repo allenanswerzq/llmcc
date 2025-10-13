@@ -1,4 +1,4 @@
-use llmcc_core::context::Context;
+use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
 
@@ -40,7 +40,7 @@ pub struct VariableDescriptor {
 
 impl VariableDescriptor {
     pub(crate) fn from_let<'tcx>(
-        ctx: Context<'tcx>,
+        unit: CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         name: String,
         fqn: String,
@@ -48,7 +48,7 @@ impl VariableDescriptor {
         let ts_node = node.inner_ts_node();
         let ty = ts_node
             .child_by_field_name("type")
-            .map(|n| parse_type_expr(ctx, n));
+            .map(|n| parse_type_expr(unit, n));
         let is_mut = has_mutable_specifier(ts_node);
 
         VariableDescriptor {
@@ -63,7 +63,7 @@ impl VariableDescriptor {
     }
 
     pub(crate) fn from_const_item<'tcx>(
-        ctx: Context<'tcx>,
+        unit: CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         name: String,
         fqn: String,
@@ -71,7 +71,7 @@ impl VariableDescriptor {
         let ts_node = node.inner_ts_node();
         let ty = ts_node
             .child_by_field_name("type")
-            .map(|n| parse_type_expr(ctx, n));
+            .map(|n| parse_type_expr(unit, n));
 
         VariableDescriptor {
             hir_id: node.hir_id(),
@@ -85,7 +85,7 @@ impl VariableDescriptor {
     }
 
     pub(crate) fn from_static_item<'tcx>(
-        ctx: Context<'tcx>,
+        unit: CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         name: String,
         fqn: String,
@@ -93,7 +93,7 @@ impl VariableDescriptor {
         let ts_node = node.inner_ts_node();
         let ty = ts_node
             .child_by_field_name("type")
-            .map(|n| parse_type_expr(ctx, n));
+            .map(|n| parse_type_expr(unit, n));
         let is_mut = has_mutable_specifier(ts_node);
 
         VariableDescriptor {

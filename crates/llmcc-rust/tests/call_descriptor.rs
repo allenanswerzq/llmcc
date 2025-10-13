@@ -1,18 +1,18 @@
 use std::collections::HashMap;
 
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, CallDescriptor, CallTarget, GlobalCtxt, LangRust, TypeExpr,
+    build_llmcc_ir, collect_symbols, CallDescriptor, CallTarget, CompileCtxt, LangRust, TypeExpr,
 };
 
 fn collect_calls(source: &str) -> Vec<CallDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
-    let gcx = GlobalCtxt::from_sources::<LangRust>(&sources);
-    let ctx = gcx.file_context(0);
-    let tree = ctx.tree();
-    build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
-    let root = ctx.file_start_hir_id().expect("registered root id");
-    let globals = gcx.alloc_scope(root);
-    collect_symbols(root, ctx, globals).calls
+    let cc = CompileCtxt::from_sources::<LangRust>(&sources);
+    let unit = cc.compile_unit(0);
+    let tree = unit.tree();
+    build_llmcc_ir::<LangRust>(&tree, unit).expect("build HIR");
+    let root = unit.file_start_hir_id().expect("registered root id");
+    let globals = cc.alloc_scope(root);
+    collect_symbols(root, unit, globals).calls
 }
 
 #[test]
