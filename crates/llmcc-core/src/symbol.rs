@@ -207,19 +207,32 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 }
 
+/// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
 #[derive(Debug, Clone)]
 pub struct Symbol {
+    /// Monotonic identifier assigned when the symbol is created.
     pub id: SymId,
+    /// Owning HIR node that introduces the symbol (e.g. function, struct, module).
     pub owner: HirId,
+    /// Unqualified name exactly as written in source.
     pub name: String,
+    /// Interned key for `name`, used for fast lookup.
     pub name_key: InternedStr,
+    /// Fully qualified name cached as a string (updated as scopes are resolved).
     pub fqn_name: RefCell<String>,
+    /// Interned key for the fully qualified name.
     pub fqn_key: RefCell<InternedStr>,
+    /// HIR node where the symbol definition appears (`None` until resolved).
     pub defined: Cell<Option<HirId>>,
+    /// `SymId` of the type describing this symbol (e.g. variable type), if any.
     pub type_of: Cell<Option<SymId>>,
+    /// If this symbol is a field, the `SymId` of the aggregate that owns it.
     pub field_of: Cell<Option<SymId>>,
+    /// Base symbol the current one aliases or derives from (e.g. impl method base).
     pub base_symbol: Cell<Option<SymId>>,
+    /// Overloaded variants that share this name.
     pub overloads: RefCell<Vec<SymId>>,
+    /// Nested types declared inside this symbol's scope.
     pub nested_types: RefCell<Vec<SymId>>,
 }
 

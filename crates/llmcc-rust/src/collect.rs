@@ -9,6 +9,11 @@ use crate::descriptor::{
 };
 use crate::token::{AstVisitorRust, LangRust};
 
+
+/// For local resolve (single file) later, we only need to trace back to the scope stack using simple name
+/// If found, a symbol saves in the Scope struct in the closest stack.
+/// If not found, we need to use the full qualified name to resolve in the global system table, thus we need
+/// to save global and public level symbol saved in the global system table for later use.
 #[derive(Debug)]
 struct DeclFinder<'tcx, 'reg> {
     ctx: Context<'tcx>,
@@ -91,42 +96,65 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
         mem::take(&mut self.enums)
     }
 
-    fn process_decl(&mut self, node: &HirNode<'tcx>, field_id: u16) -> SymId {
-        let ident = node.child_by_field(self.ctx, field_id);
-        if ident.as_ident().is_none() {
-            return SymId(0);
-        }
-        let ident = ident.expect_ident();
+    fn process_function_item(&mut self, node: &HirNode<'tcx>) -> Option<String> {
+        let ident = node.child_by_field(self.ctx, LangRust::field_name);
+        let Some(ident) = ident.as_ident() else {
+            return None;
+        };
         let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
 
-        let descriptor = if node.kind_id() == LangRust::function_item {
-            FunctionDescriptor::from_hir(self.ctx, node)
-        } else {
-            None
-        };
-
+        let descriptor = FunctionDescriptor::from_hir(self.ctx, node);
         let fqn = descriptor
             .as_ref()
             .map(|desc| desc.fqn.clone())
-            .unwrap_or_else(|| self.generate_fqn(&ident.name, node.hir_id()));
+            .unwrap();
+            // .unwrap_or_else(|| self.generate_fqn(&ident.name, node.hir_id()));
+        dbg!(&fqn);
 
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-
         self.registry.insert(symbol, self.ctx.interner());
-
-        let ts_kind = node.inner_ts_node().kind();
 
         if let Some(mut desc) = descriptor {
             desc.set_fqn(fqn.clone());
             self.functions.push(desc);
-        } else if ts_kind == "let_declaration" {
-            let variable =
-                VariableDescriptor::from_let(self.ctx, node, ident.name.clone(), fqn.clone());
-            self.variables.push(variable);
         }
 
         self.ctx.insert_def(node.hir_id(), symbol);
-        symbol.id
+        Some(fqn)
+    }
+
+    fn process_let_declaration(&mut self, node: &HirNode<'tcx>) -> Option<SymId> {
+        let ident = node.child_by_field(self.ctx, LangRust::field_pattern);
+        let Some(ident) = ident.as_ident() else {
+            return None;
+        };
+        let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
+
+        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        symbol.set_fqn(fqn.clone(), self.ctx.interner());
+        self.registry.insert(symbol, self.ctx.interner());
+
+        let variable =
+            VariableDescriptor::from_let(self.ctx, node, ident.name.clone(), fqn.clone());
+        self.variables.push(variable);
+
+        self.ctx.insert_def(node.hir_id(), symbol);
+        Some(symbol.id)
+    }
+
+    fn process_parameter(&mut self, node: &HirNode<'tcx>) -> Option<SymId> {
+        let ident = node.child_by_field(self.ctx, LangRust::field_pattern);
+        let Some(ident) = ident.as_ident() else {
+            return None;
+        };
+        let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
+
+        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        symbol.set_fqn(fqn.clone(), self.ctx.interner());
+        self.registry.insert(symbol, self.ctx.interner());
+
+        self.ctx.insert_def(node.hir_id(), symbol);
+        Some(symbol.id)
     }
 
     fn process_const_like(&mut self, node: &HirNode<'tcx>, kind: &'static str) {
@@ -215,8 +243,8 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        self.process_decl(&node, LangRust::field_name);
-        if let Some(fqn) = self.functions.last().map(|f| f.fqn.clone()) {
+        let fqn = self.process_function_item(&node);
+        if let Some(fqn) = fqn {
             self.function_stack.push(fqn);
             self.visit_children_new_scope(&node);
             self.function_stack.pop();
@@ -226,7 +254,7 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        self.process_decl(&node, LangRust::field_pattern);
+        self.process_let_declaration(&node);
         self.visit_children(&node);
     }
 
@@ -235,7 +263,7 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.process_decl(&node, LangRust::field_pattern);
+        self.process_parameter(&node);
         self.visit_children(&node);
     }
 
@@ -258,20 +286,25 @@ impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
         self.visit_children(&node);
     }
 
-    fn visit_unknown(&mut self, node: HirNode<'tcx>) {
+    fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         let kind = node.inner_ts_node().kind();
-        match kind {
-            "const_item" | "static_item" => {
-                self.process_const_like(&node, kind);
-            }
-            "struct_item" => {
-                self.process_struct_item(&node);
-            }
-            "enum_item" => {
-                self.process_enum_item(&node);
-            }
-            _ => {}
-        }
+        self.process_const_like(&node, kind);
+    }
+
+    fn visit_static_item(&mut self, node: HirNode<'tcx>) {
+        let kind = node.inner_ts_node().kind();
+        self.process_const_like(&node, kind);
+    }
+
+    fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
+        self.process_struct_item(&node);
+    }
+
+    fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
+        self.process_enum_item(&node);
+    }
+
+    fn visit_unknown(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
     }
 }

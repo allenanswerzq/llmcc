@@ -335,11 +335,6 @@ impl<'tcx> GlobalCtxt<'tcx> {
         Context { gcx: self, index }
     }
 
-    /// Back-compat alias for `file_context`.
-    pub fn create_context(&'tcx self, index: usize) -> Context<'tcx> {
-        self.file_context(index)
-    }
-
     pub fn reserve_hir_id(&self) -> HirId {
         let id = self.hir_next_id.get();
         self.hir_next_id.set(id + 1);
