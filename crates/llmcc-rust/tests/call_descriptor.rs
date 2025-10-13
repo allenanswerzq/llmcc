@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use llmcc_rust::{
     build_llmcc_ir, collect_symbols, CallDescriptor, CallTarget, GlobalCtxt, HirId, LangRust,
-    SymbolRegistry, TypeExpr,
+    TypeExpr,
 };
 
 fn collect_calls(source: &str) -> Vec<CallDescriptor> {
@@ -11,8 +11,8 @@ fn collect_calls(source: &str) -> Vec<CallDescriptor> {
     let ctx = gcx.file_context(0);
     let tree = ctx.tree();
     build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
-    let mut registry = SymbolRegistry::default();
-    collect_symbols(HirId(0), ctx, &mut registry).calls
+    let global_scope = ctx.alloc_scope(HirId(0));
+    collect_symbols(HirId(0), ctx, global_scope).calls
 }
 
 #[test]

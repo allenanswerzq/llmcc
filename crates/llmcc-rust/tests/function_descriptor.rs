@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use llmcc_rust::{
     build_llmcc_ir, collect_symbols, FnVisibility, FunctionOwner, GlobalCtxt, HirId, LangRust,
-    SymbolRegistry, TypeExpr,
+    TypeExpr,
 };
 
 fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescriptor> {
@@ -11,8 +11,8 @@ fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescri
     let ctx = gcx.file_context(0);
     let tree = ctx.tree();
     build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
-    let mut registry = SymbolRegistry::default();
-    collect_symbols(HirId(0), ctx, &mut registry)
+    let global_scope = ctx.alloc_scope(HirId(0));
+    collect_symbols(HirId(0), ctx, global_scope)
         .functions
         .into_iter()
         .map(|desc| (desc.fqn.clone(), desc))

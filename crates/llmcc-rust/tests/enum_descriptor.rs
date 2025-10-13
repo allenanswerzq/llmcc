@@ -1,6 +1,6 @@
 use llmcc_rust::{
     build_llmcc_ir, collect_symbols, EnumDescriptor, EnumVariantKind, FnVisibility, GlobalCtxt,
-    HirId, LangRust, SymbolRegistry,
+    HirId, LangRust,
 };
 
 fn collect_enums(source: &str) -> Vec<EnumDescriptor> {
@@ -9,8 +9,8 @@ fn collect_enums(source: &str) -> Vec<EnumDescriptor> {
     let ctx = gcx.file_context(0);
     let tree = ctx.tree();
     build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
-    let mut registry = SymbolRegistry::default();
-    collect_symbols(HirId(0), ctx, &mut registry).enums
+    let global_scope = ctx.alloc_scope(HirId(0));
+    collect_symbols(HirId(0), ctx, global_scope).enums
 }
 
 #[test]

@@ -2,23 +2,21 @@ use std::mem;
 
 use llmcc_core::context::Context;
 use llmcc_core::ir::{HirId, HirNode};
-use llmcc_core::symbol::{Scope, ScopeStack, SymId, SymbolRegistry};
+use llmcc_core::symbol::{Scope, ScopeStack, SymId};
 
 use crate::descriptor::{
     CallDescriptor, EnumDescriptor, FunctionDescriptor, StructDescriptor, VariableDescriptor,
 };
 use crate::token::{AstVisitorRust, LangRust};
 
-
 /// For local resolve (single file) later, we only need to trace back to the scope stack using simple name
 /// If found, a symbol saves in the Scope struct in the closest stack.
 /// If not found, we need to use the full qualified name to resolve in the global system table, thus we need
 /// to save global and public level symbol saved in the global system table for later use.
 #[derive(Debug)]
-struct DeclFinder<'tcx, 'reg> {
+struct DeclFinder<'tcx> {
     ctx: Context<'tcx>,
     scope_stack: ScopeStack<'tcx>,
-    registry: &'reg mut SymbolRegistry<'tcx>,
     functions: Vec<FunctionDescriptor>,
     variables: Vec<VariableDescriptor>,
     calls: Vec<CallDescriptor>,
@@ -27,19 +25,14 @@ struct DeclFinder<'tcx, 'reg> {
     function_stack: Vec<String>,
 }
 
-impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
-    pub fn new(
-        ctx: Context<'tcx>,
-        global_scope: &'tcx Scope<'tcx>,
-        registry: &'reg mut SymbolRegistry<'tcx>,
-    ) -> Self {
+impl<'tcx> DeclFinder<'tcx> {
+    pub fn new(ctx: Context<'tcx>, global_scope: &'tcx Scope<'tcx>) -> Self {
         let gcx = ctx.gcx;
         let mut scope_stack = ScopeStack::new(&gcx.arena, &gcx.interner);
         scope_stack.push(global_scope);
         Self {
             ctx,
             scope_stack,
-            registry,
             functions: Vec::new(),
             variables: Vec::new(),
             calls: Vec::new(),
@@ -107,12 +100,10 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
         let fqn = descriptor
             .as_ref()
             .map(|desc| desc.fqn.clone())
-            .unwrap();
-            // .unwrap_or_else(|| self.generate_fqn(&ident.name, node.hir_id()));
-        dbg!(&fqn);
+            .unwrap_or_else(|| self.generate_fqn(&ident.name, node.hir_id()));
 
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.registry.insert(symbol, self.ctx.interner());
+        self.scope_stack.register_local_symbol(symbol);
 
         if let Some(mut desc) = descriptor {
             desc.set_fqn(fqn.clone());
@@ -132,7 +123,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.registry.insert(symbol, self.ctx.interner());
+        self.scope_stack.register_local_symbol(symbol);
 
         let variable =
             VariableDescriptor::from_let(self.ctx, node, ident.name.clone(), fqn.clone());
@@ -151,7 +142,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.registry.insert(symbol, self.ctx.interner());
+        self.scope_stack.register_local_symbol(symbol);
 
         self.ctx.insert_def(node.hir_id(), symbol);
         Some(symbol.id)
@@ -167,7 +158,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.registry.insert(symbol, self.ctx.interner());
+        self.scope_stack.register_global_symbol(symbol);
 
         let variable = match kind {
             "const_item" => {
@@ -196,7 +187,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.registry.insert(symbol, self.ctx.interner());
+        self.scope_stack.register_global_symbol(symbol);
 
         if let Some(desc) = StructDescriptor::from_struct(self.ctx, node, fqn.clone()) {
             self.structs.push(desc);
@@ -215,7 +206,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
 
         let fqn = self.generate_fqn(&ident.name, node.hir_id());
         symbol.set_fqn(fqn.clone(), self.ctx.interner());
-        self.registry.insert(symbol, self.ctx.interner());
+        self.scope_stack.register_global_symbol(symbol);
 
         if let Some(desc) = EnumDescriptor::from_enum(self.ctx, node, fqn.clone()) {
             self.enums.push(desc);
@@ -233,7 +224,7 @@ impl<'tcx, 'reg> DeclFinder<'tcx, 'reg> {
     }
 }
 
-impl<'tcx, 'reg> AstVisitorRust<'tcx> for DeclFinder<'tcx, 'reg> {
+impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     fn ctx(&self) -> Context<'tcx> {
         self.ctx
     }
@@ -320,11 +311,10 @@ pub struct CollectionResult {
 pub fn collect_symbols<'tcx>(
     root: HirId,
     ctx: Context<'tcx>,
-    registry: &mut SymbolRegistry<'tcx>,
+    global_scope: &'tcx Scope<'tcx>,
 ) -> CollectionResult {
     let node = ctx.hir_node(root);
-    let global_scope = ctx.alloc_scope(root);
-    let mut decl_finder = DeclFinder::new(ctx, global_scope, registry);
+    let mut decl_finder = DeclFinder::new(ctx, global_scope);
     decl_finder.visit_node(node);
     CollectionResult {
         functions: decl_finder.take_functions(),

@@ -8,18 +8,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let gcx = GlobalCtxt::from_files::<LangRust>(&files)?;
-    let mut registry = SymbolRegistry::default();
 
     for (index, _) in files.iter().enumerate() {
         let ctx = gcx.file_context(index);
         let tree = ctx.tree();
+        let global_scope = ctx.alloc_scope(HirId(0));
         build_llmcc_ir::<LangRust>(&tree, ctx)?;
-        let _ = collect_symbols(HirId(0), ctx, &mut registry);
+        let _ = collect_symbols(HirId(0), ctx, global_scope);
     }
 
     for (index, path) in files.iter().enumerate() {
         let ctx = gcx.file_context(index);
-        bind_symbols(HirId(0), ctx, &registry);
+        let global_scope = ctx.alloc_scope(HirId(0));
+        bind_symbols(HirId(0), ctx, global_scope);
 
         println!("== {} ==", path);
         print_llmcc_ir(HirId(0), ctx);

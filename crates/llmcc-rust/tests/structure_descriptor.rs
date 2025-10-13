@@ -1,6 +1,5 @@
 use llmcc_rust::{
     build_llmcc_ir, collect_symbols, GlobalCtxt, HirId, LangRust, StructDescriptor, StructKind,
-    SymbolRegistry,
 };
 
 fn collect_structs(source: &str) -> Vec<StructDescriptor> {
@@ -9,8 +8,8 @@ fn collect_structs(source: &str) -> Vec<StructDescriptor> {
     let ctx = gcx.file_context(0);
     let tree = ctx.tree();
     build_llmcc_ir::<LangRust>(&tree, ctx).expect("build HIR");
-    let mut registry = SymbolRegistry::default();
-    collect_symbols(HirId(0), ctx, &mut registry).structs
+    let global_scope = ctx.alloc_scope(HirId(0));
+    collect_symbols(HirId(0), ctx, global_scope).structs
 }
 
 #[test]
