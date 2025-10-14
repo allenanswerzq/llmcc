@@ -5,7 +5,7 @@ use llmcc_core::ir::{HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, ScopeStack, SymId, Symbol};
 
 use crate::descriptor::{
-    CallDescriptor, EnumDescriptor, FunctionDescriptor, StructDescriptor, TypeExpr,
+    CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
     VariableDescriptor,
 };
 use crate::descriptor::function::parse_type_expr;
@@ -84,7 +84,7 @@ impl<'tcx> DeclFinder<'tcx> {
         mem::take(&mut self.enums)
     }
 
-    fn create_symbol(
+    fn make_new_symbol(
         &mut self,
         node: &HirNode<'tcx>,
         field_id: u16,
@@ -92,25 +92,47 @@ impl<'tcx> DeclFinder<'tcx> {
     ) -> Option<(&'tcx Symbol, &'tcx HirIdent<'tcx>, String)> {
         let ident_node = node.child_by_field(self.unit, field_id);
         let ident = ident_node.as_ident()?;
-        let symbol = if global {
-            self.scopes.find_or_insert_global(node.hir_id(), ident)
-        } else {
-            self.scopes.find_or_insert_local(node.hir_id(), ident)
-        };
-        symbol.set_owner(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
-        symbol.set_fqn(fqn.clone(), self.unit.interner());
+        let interner = self.unit.interner();
+        let owner = node.hir_id();
+        let symbol =
+            self.scopes
+                .find_or_insert_with(owner, ident, global, |symbol| {
+                    symbol.set_owner(owner);
+                    symbol.set_fqn(fqn.clone(), interner);
+                });
         Some((symbol, ident, fqn))
     }
 
+    fn has_public_visibility(&self, node: &HirNode<'tcx>) -> bool {
+        let ts_node = node.inner_ts_node();
+        let Some(name_node) = ts_node.child_by_field_name("name") else {
+            return false;
+        };
+        let header = self
+            .unit
+            .file()
+            .opt_get_text(ts_node.start_byte(), name_node.start_byte())
+            .unwrap_or_default();
+
+        !matches!(FnVisibility::from_header(&header), FnVisibility::Private)
+    }
+
+    fn should_register_function_globally(&self, node: &HirNode<'tcx>) -> bool {
+        self.parent_symbol().is_none() || self.has_public_visibility(node)
+    }
+
+    fn should_register_type_globally(&self, node: &HirNode<'tcx>) -> bool {
+        self.parent_symbol().is_none() || self.has_public_visibility(node)
+    }
+
     fn process_function_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let register_globally = self.should_register_function_globally(node);
         let Some((symbol, _ident, fqn)) =
-            self.create_symbol(node, LangRust::field_name, false)
+            self.make_new_symbol(node, LangRust::field_name, register_globally)
         else {
             return None;
         };
-        dbg!(&fqn);
-        // dbg!(&self.scopes.symbols);
 
         if let Some(desc) = FunctionDescriptor::from_hir(self.unit, node, fqn.clone()) {
             self.functions.push(desc);
@@ -121,7 +143,7 @@ impl<'tcx> DeclFinder<'tcx> {
 
     fn process_let_declaration(&mut self, node: &HirNode<'tcx>) -> Option<SymId> {
         let Some((symbol, ident, fqn)) =
-            self.create_symbol(node, LangRust::field_pattern, false)
+            self.make_new_symbol(node, LangRust::field_pattern, false)
         else {
             return None;
         };
@@ -133,13 +155,13 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 
     fn process_parameter(&mut self, node: &HirNode<'tcx>) -> Option<SymId> {
-        self.create_symbol(node, LangRust::field_pattern, false)
+        self.make_new_symbol(node, LangRust::field_pattern, false)
             .map(|(symbol, _, _)| symbol.id)
     }
 
     fn process_const_like(&mut self, node: &HirNode<'tcx>, kind: &'static str) {
         let Some((_symbol, ident, fqn)) =
-            self.create_symbol(node, LangRust::field_name, true)
+            self.make_new_symbol(node, LangRust::field_name, true)
         else {
             return;
         };
@@ -164,12 +186,12 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 
     fn process_struct_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let register_globally = self.should_register_type_globally(node);
         let Some((symbol, _ident, fqn)) =
-            self.create_symbol(node, LangRust::field_name, true)
+            self.make_new_symbol(node, LangRust::field_name, register_globally)
         else {
             return None;
         };
-        dbg!(&fqn);
 
         if let Some(desc) = StructDescriptor::from_struct(self.unit, node, fqn.clone()) {
             self.structs.push(desc);
@@ -179,8 +201,9 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 
     fn process_enum_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let register_globally = self.should_register_type_globally(node);
         let Some((symbol, _ident, fqn)) =
-            self.create_symbol(node, LangRust::field_name, true)
+            self.make_new_symbol(node, LangRust::field_name, register_globally)
         else {
             return None;
         };
@@ -193,7 +216,7 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 
     fn process_mod_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.create_symbol(node, LangRust::field_name, true)
+        self.make_new_symbol(node, LangRust::field_name, true)
             .map(|(symbol, _ident, _)| symbol)
     }
 

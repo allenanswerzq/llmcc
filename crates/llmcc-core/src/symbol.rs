@@ -169,14 +169,37 @@ impl<'tcx> ScopeStack<'tcx> {
         ident: &HirIdent<'tcx>,
         global: bool,
     ) -> &'tcx Symbol {
-        if let Some(symbol) = self.find_ident_local(ident) {
-            return symbol;
+        self.find_or_insert_with(owner, ident, global, |_| {})
+    }
+
+    pub fn find_or_insert_with<F>(
+        &mut self,
+        owner: HirId,
+        ident: &HirIdent<'tcx>,
+        global: bool,
+        init: F,
+    ) -> &'tcx Symbol
+    where
+        F: FnOnce(&'tcx Symbol),
+    {
+        let key = self.interner.intern(&ident.name);
+
+        let symbol = if let Some(existing) = self.find_ident_local(ident) {
+            init(existing);
+            existing
+        } else {
+            let symbol = self.create_symbol(owner, ident, key);
+            init(symbol);
+            symbol
+        };
+
+        self.insert_symbol(key, symbol, false)
+            .expect("failed to insert symbol into scope");
+        if global {
+            self.insert_symbol(key, symbol, true)
+                .expect("failed to insert symbol into global scope");
         }
 
-        let key = self.interner.intern(&ident.name);
-        let symbol = self.create_symbol(owner, ident, key);
-        self.insert_symbol(key, symbol, global)
-            .expect("failed to insert symbol");
         self.find_symbol_local_by_key(key)
             .expect("symbol should be present after insertion")
     }
