@@ -1,5 +1,5 @@
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, EnumDescriptor, EnumVariantKind, FnVisibility, CompileCtxt,
+    build_llmcc_ir, collect_symbols, CompileCtxt, EnumDescriptor, EnumVariantKind, FnVisibility,
     LangRust,
 };
 

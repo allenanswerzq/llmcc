@@ -57,6 +57,7 @@ pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
     interner: &'tcx InternPool,
     stack: Vec<&'tcx Scope<'tcx>>,
+    symbols: Vec<Option<&'tcx Symbol>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {
@@ -65,6 +66,7 @@ impl<'tcx> ScopeStack<'tcx> {
             arena,
             interner,
             stack: Vec::new(),
+            symbols: Vec::new(),
         }
     }
 
@@ -73,10 +75,16 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn push(&mut self, scope: &'tcx Scope<'tcx>) {
+        self.push_with_symbol(scope, None);
+    }
+
+    pub fn push_with_symbol(&mut self, scope: &'tcx Scope<'tcx>, symbol: Option<&'tcx Symbol>) {
         self.stack.push(scope);
+        self.symbols.push(symbol);
     }
 
     pub fn pop(&mut self) -> Option<&'tcx Scope<'tcx>> {
+        self.symbols.pop();
         self.stack.pop()
     }
 
@@ -88,6 +96,10 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn top(&self) -> Option<&'tcx Scope<'tcx>> {
         self.stack.last().copied()
+    }
+
+    pub fn scoped_symbol(&self) -> Option<&'tcx Symbol> {
+        self.symbols.iter().rev().find_map(|symbol| *symbol)
     }
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &'tcx Scope<'tcx>> + '_ {

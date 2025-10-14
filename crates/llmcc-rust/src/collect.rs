@@ -1,71 +1,56 @@
 use std::mem;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirNode};
-use llmcc_core::symbol::{Scope, ScopeStack, SymId};
+use llmcc_core::ir::HirNode;
+use llmcc_core::symbol::{Scope, ScopeStack, SymId, Symbol};
 
 use crate::descriptor::{
     CallDescriptor, EnumDescriptor, FunctionDescriptor, StructDescriptor, VariableDescriptor,
 };
 use crate::token::{AstVisitorRust, LangRust};
 
-/// For local resolve (single file) later, we only need to trace back to the scope stack using simple name
-/// If found, a symbol saves in the Scope struct in the closest stack.
-/// If not found, we need to use the full qualified name to resolve in the global system table, thus we need
-/// to save global and public level symbol saved in the global system table for later use.
 #[derive(Debug)]
 struct DeclFinder<'tcx> {
     unit: CompileUnit<'tcx>,
-    scope_stack: ScopeStack<'tcx>,
+    scopes: ScopeStack<'tcx>,
     functions: Vec<FunctionDescriptor>,
     variables: Vec<VariableDescriptor>,
     calls: Vec<CallDescriptor>,
     structs: Vec<StructDescriptor>,
     enums: Vec<EnumDescriptor>,
-    function_stack: Vec<String>,
 }
 
 impl<'tcx> DeclFinder<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scope_stack = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
-        scope_stack.push(globals);
+        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
+        // TODO: make create a new symbol assoicate unit file name
+        scopes.push_with_symbol(globals, None);
         Self {
             unit,
-            scope_stack,
+            scopes,
             functions: Vec::new(),
             variables: Vec::new(),
             calls: Vec::new(),
             structs: Vec::new(),
             enums: Vec::new(),
-            function_stack: Vec::new(),
         }
     }
 
-    fn generate_fqn(&self, name: &str, _node_id: HirId) -> String {
-        let name_key = self.unit.interner().intern(name);
-        for scope in self.scope_stack.iter().rev() {
-            if let Some(_) = scope.get_id(name_key) {
-                let mut owners = vec![];
-                for s in self.scope_stack.iter() {
-                    let hir = self.unit.hir_node(s.owner());
-                    match hir {
-                        HirNode::Scope(hir) => {
-                            let owner_name = hir.owner_name();
-                            owners.push(owner_name);
-                            if s.owner() == scope.owner() {
-                                break;
-                            }
-                        }
-                        HirNode::File(_node) => {}
-                        _ => {}
-                    }
-                }
-                owners.push(name.to_string());
-                return owners.join("::".into());
-            }
-        }
+    fn parent_symbol(&self) -> Option<&'tcx Symbol> {
+        self.scopes.scoped_symbol()
+    }
 
-        unreachable!()
+    fn scoped_fqn(&self, _node: &HirNode<'tcx>, name: &str) -> String {
+        if let Some(parent) = self.parent_symbol() {
+            let parent_fqn = parent.fqn_name.borrow();
+            if parent_fqn.is_empty() {
+                name.to_string()
+            } else {
+                format!("{}::{}", parent_fqn.as_str(), name)
+            }
+        } else {
+            name.to_string()
+        }
     }
 
     fn take_functions(&mut self) -> Vec<FunctionDescriptor> {
@@ -88,28 +73,22 @@ impl<'tcx> DeclFinder<'tcx> {
         mem::take(&mut self.enums)
     }
 
-    fn process_function_item(&mut self, node: &HirNode<'tcx>) -> Option<String> {
+    fn process_function_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let ident = node.child_by_field(self.unit, LangRust::field_name);
         let Some(ident) = ident.as_ident() else {
             return None;
         };
-        let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
 
-        let descriptor = FunctionDescriptor::from_hir(self.unit, node);
-        let fqn = descriptor
-            .as_ref()
-            .map(|desc| desc.fqn.clone())
-            .unwrap_or_else(|| self.generate_fqn(&ident.name, node.hir_id()));
-
+        let symbol = self.scopes.find_or_insert_local(node.hir_id(), ident);
+        let fqn = self.scoped_fqn(node, &ident.name);
+        dbg!(&fqn);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
-        if let Some(mut desc) = descriptor {
-            desc.set_fqn(fqn.clone());
+        if let Some(desc) = FunctionDescriptor::from_hir(self.unit, node, fqn.clone()) {
             self.functions.push(desc);
         }
 
-        self.unit.insert_def(node.hir_id(), symbol);
-        Some(fqn)
+        Some(symbol)
     }
 
     fn process_let_declaration(&mut self, node: &HirNode<'tcx>) -> Option<SymId> {
@@ -117,16 +96,14 @@ impl<'tcx> DeclFinder<'tcx> {
         let Some(ident) = ident.as_ident() else {
             return None;
         };
-        let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
 
-        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        let symbol = self.scopes.find_or_insert_local(node.hir_id(), ident);
+        let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
-        let variable =
-            VariableDescriptor::from_let(self.unit, node, ident.name.clone(), fqn.clone());
-        self.variables.push(variable);
+        let var = VariableDescriptor::from_let(self.unit, node, ident.name.clone(), fqn.clone());
+        self.variables.push(var);
 
-        self.unit.insert_def(node.hir_id(), symbol);
         Some(symbol.id)
     }
 
@@ -135,12 +112,10 @@ impl<'tcx> DeclFinder<'tcx> {
         let Some(ident) = ident.as_ident() else {
             return None;
         };
-        let symbol = self.scope_stack.find_or_insert_local(node.hir_id(), ident);
 
-        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        let symbol = self.scopes.find_or_insert_local(node.hir_id(), ident);
+        let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
-
-        self.unit.insert_def(node.hir_id(), symbol);
         Some(symbol.id)
     }
 
@@ -150,15 +125,17 @@ impl<'tcx> DeclFinder<'tcx> {
             return;
         };
 
-        let symbol = self.scope_stack.find_or_insert_global(node.hir_id(), ident);
-
-        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
         let variable = match kind {
-            "const_item" => {
-                VariableDescriptor::from_const_item(self.unit, node, ident.name.clone(), fqn.clone())
-            }
+            "const_item" => VariableDescriptor::from_const_item(
+                self.unit,
+                node,
+                ident.name.clone(),
+                fqn.clone(),
+            ),
             "static_item" => VariableDescriptor::from_static_item(
                 self.unit,
                 node,
@@ -169,51 +146,67 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         self.variables.push(variable);
-        self.unit.insert_def(node.hir_id(), symbol);
     }
 
-    fn process_struct_item(&mut self, node: &HirNode<'tcx>) {
+    fn process_struct_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let ident = node.child_by_field(self.unit, LangRust::field_name);
         let Some(ident) = ident.as_ident() else {
-            return;
+            return None;
         };
 
-        let symbol = self.scope_stack.find_or_insert_global(node.hir_id(), ident);
-
-        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
         if let Some(desc) = StructDescriptor::from_struct(self.unit, node, fqn.clone()) {
             self.structs.push(desc);
         }
 
-        self.unit.insert_def(node.hir_id(), symbol);
+        Some(symbol)
     }
 
-    fn process_enum_item(&mut self, node: &HirNode<'tcx>) {
+    fn process_enum_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let ident = node.child_by_field(self.unit, LangRust::field_name);
         let Some(ident) = ident.as_ident() else {
-            return;
+            return None;
         };
 
-        let symbol = self.scope_stack.find_or_insert_global(node.hir_id(), ident);
-
-        let fqn = self.generate_fqn(&ident.name, node.hir_id());
+        let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
         if let Some(desc) = EnumDescriptor::from_enum(self.unit, node, fqn.clone()) {
             self.enums.push(desc);
         }
 
-        self.unit.insert_def(node.hir_id(), symbol);
+        Some(symbol)
     }
 
-    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>) {
-        let depth = self.scope_stack.depth();
+    fn process_mod_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let ident = node.child_by_field(self.unit, LangRust::field_name);
+        let Some(ident) = ident.as_ident() else {
+            return None;
+        };
+
+        let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        let fqn = self.scoped_fqn(node, &ident.name);
+        symbol.set_fqn(fqn, self.unit.interner());
+
+        Some(symbol)
+    }
+
+    fn visit_children_new_scope(
+        &mut self,
+        node: &HirNode<'tcx>,
+        scoped_symbol: Option<&'tcx Symbol>,
+    ) {
+        let depth = self.scopes.depth();
         let scope = self.unit.alloc_scope(node.hir_id());
-        self.scope_stack.push(scope);
+
+        let symbol = scoped_symbol.or_else(|| self.scopes.scoped_symbol());
+        self.scopes.push_with_symbol(scope, symbol);
         self.visit_children(&node);
-        self.scope_stack.pop_until(depth);
+        self.scopes.pop_until(depth);
     }
 }
 
@@ -223,17 +216,15 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
-        self.visit_block(node);
+        self.visit_children_new_scope(&node, None);
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        let fqn = self.process_function_item(&node);
-        if let Some(fqn) = fqn {
-            self.function_stack.push(fqn);
-            self.visit_children_new_scope(&node);
-            self.function_stack.pop();
+        let symbol = self.process_function_item(&node);
+        if let Some(symbol) = symbol {
+            self.visit_children_new_scope(&node, Some(symbol));
         } else {
-            self.visit_children_new_scope(&node);
+            self.visit_children(&node);
         }
     }
 
@@ -243,7 +234,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
-        self.visit_children(&node);
+        self.visit_children_new_scope(&node, None);
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
@@ -252,19 +243,22 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node);
+        let symbol = self.process_mod_item(&node);
+        self.visit_children_new_scope(&node, symbol);
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node);
+        self.visit_children_new_scope(&node, None);
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node);
+        self.visit_children_new_scope(&node, None);
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
-        let enclosing = self.function_stack.last().cloned();
+        let enclosing = self
+            .parent_symbol()
+            .map(|symbol| symbol.fqn_name.borrow().clone());
         let desc = CallDescriptor::from_call(self.unit, &node, enclosing);
         self.calls.push(desc);
         self.visit_children(&node);
@@ -281,11 +275,13 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
-        self.process_struct_item(&node);
+        let symbol = self.process_struct_item(&node);
+        self.visit_children_new_scope(&node, symbol);
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
-        self.process_enum_item(&node);
+        let symbol = self.process_enum_item(&node);
+        self.visit_children_new_scope(&node, symbol);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {

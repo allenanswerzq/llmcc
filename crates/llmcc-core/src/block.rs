@@ -2,10 +2,10 @@ use std::{collections::HashMap, marker::PhantomData};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::{CompileUnit, ParentedBlock};
+use crate::declare_arena;
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
 use crate::visit::HirVisitor;
-use crate::declare_arena;
 
 declare_arena!([
     blk_root: BlockRoot<'tcx>,

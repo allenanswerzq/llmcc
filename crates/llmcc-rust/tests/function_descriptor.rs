@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, FnVisibility, FunctionOwner, CompileCtxt, LangRust, TypeExpr,
+    build_llmcc_ir, collect_symbols, CompileCtxt, FnVisibility, LangRust, SymbolOwner, TypeExpr,
 };
 
 fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescriptor> {
@@ -119,7 +119,7 @@ fn resolves_module_owner() {
     let map = collect_functions(source);
     let inner = map.get("outer::inner").unwrap();
     match &inner.owner {
-        FunctionOwner::Free { modules } => assert_eq!(modules, &vec!["outer".to_string()]),
+        SymbolOwner::Module { modules } => assert_eq!(modules, &vec!["outer".to_string()]),
         other => panic!("unexpected owner: {other:?}"),
     }
 }
@@ -135,7 +135,7 @@ fn resolves_impl_method_owner() {
     let map = collect_functions(source);
     let method = map.get("Foo::method").unwrap();
     match &method.owner {
-        FunctionOwner::Impl {
+        SymbolOwner::Impl {
             modules,
             self_ty,
             trait_name,
@@ -159,7 +159,7 @@ fn resolves_trait_default_method() {
     let map = collect_functions(source);
     let provided = map.get("MyTrait::provided").unwrap();
     match &provided.owner {
-        FunctionOwner::Trait {
+        SymbolOwner::Trait {
             trait_name,
             modules,
         } => {
@@ -182,7 +182,7 @@ fn resolves_trait_impl_method() {
     let map = collect_functions(source);
     let required = map.get("Foo::required").unwrap();
     match &required.owner {
-        FunctionOwner::Impl {
+        SymbolOwner::Impl {
             modules,
             self_ty,
             trait_name,
@@ -268,7 +268,7 @@ fn resolves_deep_module_owner_chain() {
     let map = collect_functions(source);
     let leaf = map.get("a::b::c::leaf").expect("leaf function");
     match &leaf.owner {
-        FunctionOwner::Free { modules } => {
+        SymbolOwner::Module { modules } => {
             assert_eq!(
                 modules,
                 &vec!["a".to_string(), "b".to_string(), "c".to_string()]
