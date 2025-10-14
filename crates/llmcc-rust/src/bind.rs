@@ -64,7 +64,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             }
 
             let ident_key = self.unit.interner().intern(&ident.name);
-            if let Some(def_sym) = self.scope_stack.lookup_global_suffix_once(&[ident_key]) {
+            if let Some(def_sym) = self.scope_stack.find_global_suffix_once(&[ident_key]) {
                 let use_sym = self.unit.new_symbol(node.hir_id(), ident.name.clone());
                 use_sym.defined.set(Some(def_sym.owner()));
                 self.unit.insert_use(id, use_sym);

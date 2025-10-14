@@ -6,12 +6,12 @@ use llmcc_core::symbol::{Scope, ScopeStack, Symbol};
 
 use crate::descriptor::function::parse_type_expr;
 use crate::descriptor::{
-    CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
-    VariableDescriptor,
+    CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor,
+    StructDescriptor, TypeExpr, VariableDescriptor,
 };
 use crate::token::{AstVisitorRust, LangRust};
 
-/// DeclFinder:
+/// DeclCollector:
 /// For local resolve (single file) later, we only need to trace back to the scope stack using simple name
 /// If found, a symbol saves in the Scope struct in the closest stack.
 /// If not found, we need to use the full qualified name to resolve in the global system table, thus we need
@@ -20,7 +20,7 @@ use crate::token::{AstVisitorRust, LangRust};
 /// For any symbol, we first need to insert it into the local scope stack for local resolve, and also need to
 /// insert it to the globals if it's global or public level for global resolve.
 #[derive(Debug)]
-struct DeclFinder<'tcx> {
+struct DeclCollector<'tcx> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
     functions: Vec<FunctionDescriptor>,
@@ -30,7 +30,7 @@ struct DeclFinder<'tcx> {
     enums: Vec<EnumDescriptor>,
 }
 
-impl<'tcx> DeclFinder<'tcx> {
+impl<'tcx> DeclCollector<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
         // TODO: make create a new symbol assoicate unit file name
@@ -117,13 +117,22 @@ impl<'tcx> DeclFinder<'tcx> {
         !matches!(FnVisibility::from_header(&header), FnVisibility::Private)
     }
 
-    fn should_register_function_globally(&self, node: &HirNode<'tcx>) -> bool {
+    fn should_register_globally(&self, node: &HirNode<'tcx>) -> bool {
         self.parent_symbol().is_none() || self.has_public_visibility(node)
     }
 
-    fn should_register_type_globally(&self, node: &HirNode<'tcx>) -> bool {
-        self.parent_symbol().is_none() || self.has_public_visibility(node)
+    fn enum_variant_should_register_globally(&self, node: &HirNode<'tcx>) -> bool {
+        let mut parent_id = node.parent();
+        while let Some(id) = parent_id {
+            let parent = self.unit.hir_node(id);
+            if parent.kind_id() == LangRust::enum_item {
+                return self.should_register_globally(&parent);
+            }
+            parent_id = parent.parent();
+        }
+        true
     }
+
 
     fn visit_children_new_scope(
         &mut self,
@@ -140,7 +149,7 @@ impl<'tcx> DeclFinder<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
+impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn unit(&self) -> CompileUnit<'tcx> {
         self.unit
     }
@@ -150,7 +159,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        let register_globally = self.should_register_function_globally(&node);
+        let register_globally = self.should_register_globally(&node);
         if let Some((symbol, _ident, fqn)) =
             self.make_new_symbol(&node, LangRust::field_name, register_globally)
         {
@@ -179,7 +188,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.make_new_symbol(&node, LangRust::field_pattern, false);
+        let _ = self.make_new_symbol(&node, LangRust::field_pattern, false);
         self.visit_children(&node);
     }
 
@@ -204,7 +213,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
                     .map(|segment| self.unit.interner().intern(segment))
                     .collect();
 
-                if let Some(symbol) = self.scopes.lookup_global_suffix_once(&keys) {
+                if let Some(symbol) = self.scopes.find_global_suffix_once(&keys) {
                     symbol.set_owner(node.hir_id());
                     Some(symbol)
                 } else {
@@ -279,7 +288,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
-        let register_globally = self.should_register_type_globally(&node);
+        let register_globally = self.should_register_globally(&node);
         if let Some((symbol, _ident, fqn)) =
             self.make_new_symbol(&node, LangRust::field_name, register_globally)
         {
@@ -293,7 +302,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
-        let register_globally = self.should_register_type_globally(&node);
+        let register_globally = self.should_register_globally(&node);
         if let Some((symbol, _ident, fqn)) =
             self.make_new_symbol(&node, LangRust::field_name, register_globally)
         {
@@ -304,6 +313,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
         } else {
             self.visit_children(&node);
         }
+    }
+
+    fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
+        let register_globally = self.enum_variant_should_register_globally(&node);
+        let _ = self.make_new_symbol(&node, LangRust::field_name, register_globally);
+        self.visit_children(&node);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
@@ -343,7 +358,7 @@ pub fn collect_symbols<'tcx>(
 ) -> CollectionResult {
     let root = unit.file_start_hir_id().unwrap();
     let node = unit.hir_node(root);
-    let mut decl_finder = DeclFinder::new(unit, globals);
+    let mut decl_finder = DeclCollector::new(unit, globals);
     decl_finder.visit_node(node);
     CollectionResult {
         functions: decl_finder.take_functions(),

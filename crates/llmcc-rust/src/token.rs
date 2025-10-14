@@ -31,6 +31,8 @@ define_tokens! {
     (mod_item              , 173 , "mod_item"                   , HirKind::Scope,               BlockKind::Scope),
     (struct_item           , 176 , "struct_item"                , HirKind::Scope,               BlockKind::Scope),
     (enum_item             , 178 , "enum_item"                  , HirKind::Scope,               BlockKind::Scope),
+    (enum_variant_list     , 179 , "enum_variant_list"                  , HirKind::Internal),
+    (enum_variant          , 180 , "enum_variant"                  , HirKind::Identifier),
     (impl_item             , 193 , "impl_item"                  , HirKind::Scope,               BlockKind::Scope),
     (trait_item            , 194 , "trait_item"                 , HirKind::Scope,               BlockKind::Scope),
     (const_item            , 185 , "const_item"                 , HirKind::Internal),

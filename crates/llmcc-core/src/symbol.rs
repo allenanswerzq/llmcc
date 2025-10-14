@@ -148,15 +148,15 @@ impl<'tcx> ScopeStack<'tcx> {
         self.find_symbol_local_by_key(key)
     }
 
-    pub fn lookup_global_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+    pub fn find_global_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
             .map(|scope| scope.trie.borrow().lookup_symbol_suffix(suffix))
             .unwrap_or_default()
     }
 
-    pub fn lookup_global_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.lookup_global_suffix(suffix).into_iter().next()
+    pub fn find_global_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.find_global_suffix(suffix).into_iter().next()
     }
 
     pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {

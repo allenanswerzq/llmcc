@@ -1,5 +1,3 @@
-use std::process::Output;
-
 use llmcc_core::interner::{InternPool, InternedStr};
 use llmcc_core::ir::HirKind;
 use llmcc_core::symbol::{Scope, ScopeStack};
@@ -46,10 +44,10 @@ impl<'tcx> Fixture<'tcx> {
     }
 
     fn module_scope(&self, name: &str) -> &'tcx Scope<'tcx> {
-        let mut stack = self.scope_stack();
+        let stack = self.scope_stack();
         let key = self.intern(name);
         let symbol = stack
-            .lookup_global_suffix_once(&[key])
+            .find_global_suffix_once(&[key])
             .unwrap_or_else(|| panic!("module {name} not registered in globals"));
         self.unit
             .opt_scope(symbol.owner())
@@ -102,7 +100,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
     let param_key = fixture.intern("param");
     let local_key = fixture.intern("local");
 
-    let mut scope_stack = fixture.scope_stack();
+    let scope_stack = fixture.scope_stack();
 
     assert!(
         fixture.globals.get_id(outer_key).is_some(),
@@ -118,13 +116,13 @@ fn inserts_symbols_for_local_and_global_resolution() {
     );
     assert!(
         scope_stack
-            .lookup_global_suffix_once(&[foo_method_key, foo_key])
+            .find_global_suffix_once(&[foo_method_key, foo_key])
             .is_some(),
         "public method on public type should be globally resolvable"
     );
     assert!(
         scope_stack
-            .lookup_global_suffix_once(&[foo_private_method_key, foo_key])
+            .find_global_suffix_once(&[foo_private_method_key, foo_key])
             .is_none(),
         "private method on public type should stay local"
     );
@@ -134,7 +132,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
     );
     assert!(
         scope_stack
-            .lookup_global_suffix_once(&[bar_method_key, bar_key])
+            .find_global_suffix_once(&[bar_method_key, bar_key])
             .is_none(),
         "methods on private struct should not be exported globally"
     );
@@ -144,7 +142,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
     );
 
     let global_symbol = scope_stack
-        .lookup_global_suffix_once(&[inner_key, outer_key])
+        .find_global_suffix_once(&[inner_key, outer_key])
         .expect("global lookup for outer::inner");
     assert_eq!(global_symbol.fqn_name.borrow().as_str(), "outer::inner");
 
@@ -216,13 +214,12 @@ fn module_struct_visibility() {
 
     let fixture = build_fixture(source);
 
-    let outer_key = fixture.intern("outer");
     let foo_key = fixture.intern("Foo");
     let create_key = fixture.intern("create");
     let bar_key = fixture.intern("Bar");
     let hidden_key = fixture.intern("hidden");
 
-    let mut scope_stack = fixture.scope_stack();
+    let scope_stack = fixture.scope_stack();
 
     assert!(
         fixture.globals.get_id(foo_key).is_some(),
@@ -230,7 +227,7 @@ fn module_struct_visibility() {
     );
     assert!(
         scope_stack
-            .lookup_global_suffix_once(&[create_key, foo_key])
+            .find_global_suffix_once(&[create_key, foo_key])
             .is_some(),
         "public method on exported struct should be globally accessible"
     );
@@ -240,7 +237,7 @@ fn module_struct_visibility() {
     );
     assert!(
         scope_stack
-            .lookup_global_suffix_once(&[hidden_key, bar_key])
+            .find_global_suffix_once(&[hidden_key, bar_key])
             .is_none(),
         "private method should not be globally accessible"
     );
@@ -254,4 +251,169 @@ fn module_struct_visibility() {
         module_scope.get_id(foo_key).is_some(),
         "module scope should contain public struct as well"
     );
+}
+
+#[test]
+fn module_enum_visibility() {
+    let source = r#"
+        mod outer {
+            pub enum Visible {
+                A,
+            }
+
+            enum Hidden {
+                B,
+            }
+        }
+    "#;
+
+    let fixture = build_fixture(source);
+
+    let outer_scope = fixture.module_scope("outer");
+    let visible_key = fixture.intern("Visible");
+    let hidden_key = fixture.intern("Hidden");
+    let variant_a_key = fixture.intern("A");
+    let variant_b_key = fixture.intern("B");
+
+    let scope_stack = fixture.scope_stack();
+    let outer_key = fixture.intern("outer");
+
+    assert!(
+        fixture.globals.get_id(visible_key).is_some(),
+        "public enum inside module should be exported"
+    );
+    assert!(
+        fixture.globals.get_id(hidden_key).is_none(),
+        "private enum inside module should not be exported"
+    );
+    assert!(
+        scope_stack
+            .find_global_suffix_once(&[visible_key, outer_key])
+            .is_some(),
+        "public enum should be globally discoverable via module suffix"
+    );
+    assert!(
+        scope_stack
+            .find_global_suffix_once(&[hidden_key, outer_key])
+            .is_none(),
+        "private enum should not appear in global lookups"
+    );
+
+    assert!(
+        outer_scope.get_id(visible_key).is_some(),
+        "module scope should contain public enum"
+    );
+    assert!(
+        outer_scope.get_id(hidden_key).is_some(),
+        "module scope should retain private enum"
+    );
+
+    let visible_desc = fixture
+        .result
+        .enums
+        .iter()
+        .find(|desc| desc.name == "Visible")
+        .expect("visible enum descriptor");
+    let visible_scope = fixture
+        .unit
+        .opt_scope(visible_desc.hir_id)
+        .expect("scope for visible enum");
+    assert!(
+        visible_scope.get_id(variant_a_key).is_some(),
+        "enum scope should store public variant"
+    );
+
+    let hidden_desc = fixture
+        .result
+        .enums
+        .iter()
+        .find(|desc| desc.name == "Hidden")
+        .expect("hidden enum descriptor");
+    let hidden_scope = fixture
+        .unit
+        .opt_scope(hidden_desc.hir_id)
+        .expect("scope for hidden enum");
+    assert!(
+        hidden_scope.get_id(variant_b_key).is_some(),
+        "enum scope should store private variant"
+    );
+
+    assert!(
+        scope_stack
+            .find_global_suffix_once(&[variant_a_key, visible_key, outer_key])
+            .is_some(),
+        "public variant should be globally discoverable"
+    );
+    assert!(
+        scope_stack
+            .find_global_suffix_once(&[variant_b_key, hidden_key, outer_key])
+            .is_none(),
+        "private variant should not be globally discoverable"
+    );
+}
+
+#[test]
+fn enum_variant_symbols_are_registered() {
+    let source = r#"
+        pub enum Status {
+            Ok,
+            NotFound,
+        }
+
+        enum PrivateStatus {
+            Hidden,
+        }
+    "#;
+
+    let fixture = build_fixture(source);
+
+    let status_key = fixture.intern("Status");
+    let ok_key = fixture.intern("Ok");
+    let not_found_key = fixture.intern("NotFound");
+    let private_status_key = fixture.intern("PrivateStatus");
+    let hidden_key = fixture.intern("Hidden");
+
+    let scope_stack = fixture.scope_stack();
+
+    assert!(fixture.globals.get_id(status_key).is_some());
+    assert!(scope_stack
+        .find_global_suffix_once(&[ok_key, status_key])
+        .is_some());
+    assert!(scope_stack
+        .find_global_suffix_once(&[not_found_key, status_key])
+        .is_some());
+
+    assert!(fixture.globals.get_id(private_status_key).is_some());
+    assert!(scope_stack
+        .find_global_suffix_once(&[hidden_key, private_status_key])
+        .is_none());
+
+    let status_scope = fixture
+        .unit
+        .opt_scope(
+            fixture
+                .result
+                .enums
+                .iter()
+                .find(|desc| desc.name == "Status")
+                .expect("status enum descriptor")
+                .hir_id,
+        )
+        .expect("scope for status enum");
+    assert!(status_scope.get_id(ok_key).is_some());
+    assert!(status_scope.get_id(not_found_key).is_some());
+
+    let private_scope = fixture
+        .unit
+        .opt_scope(
+            fixture
+                .result
+                .enums
+                .iter()
+                .find(|desc| desc.name == "PrivateStatus")
+                .expect("private enum descriptor")
+                .hir_id,
+        )
+        .expect("scope for private enum");
+    assert!(private_scope.get_id(hidden_key).is_some());
 }
