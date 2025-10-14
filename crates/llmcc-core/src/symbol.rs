@@ -260,7 +260,7 @@ impl Symbol {
         self.owner.get()
     }
 
-    pub fn set_onwer(&self, owner: HirId) {
+    pub fn set_owner(&self, owner: HirId) {
         self.owner.set(owner);
     }
 

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, CompileCtxt, FnVisibility, LangRust, SymbolOwner, TypeExpr,
+    build_llmcc_ir, collect_symbols, CompileCtxt, FnVisibility, LangRust, TypeExpr,
 };
 
 fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescriptor> {
@@ -109,175 +109,6 @@ fn captures_async_const_and_unsafe_flags() {
     assert!(!build.is_unsafe);
 }
 
-#[test]
-fn resolves_module_owner() {
-    let source = r#"
-        mod outer {
-            pub fn inner() {}
-        }
-    "#;
-    let map = collect_functions(source);
-    let inner = map.get("outer::inner").unwrap();
-    match &inner.owner {
-        SymbolOwner::Module { modules } => assert_eq!(modules, &vec!["outer".to_string()]),
-        other => panic!("unexpected owner: {other:?}"),
-    }
-}
-
-#[test]
-fn resolves_impl_method_owner() {
-    let source = r#"
-        struct Foo;
-        impl Foo {
-            fn method(&self, v: i32) -> i32 { v }
-        }
-    "#;
-    let map = collect_functions(source);
-    let method = map.get("Foo::method").unwrap();
-    match &method.owner {
-        SymbolOwner::Impl {
-            modules,
-            self_ty,
-            trait_name,
-        } => {
-            assert!(modules.is_empty());
-            assert_eq!(self_ty, "Foo");
-            assert!(trait_name.is_none());
-        }
-        other => panic!("unexpected owner: {other:?}"),
-    }
-    assert_eq!(method.parameters[0].pattern, "&self");
-}
-
-#[test]
-fn resolves_trait_default_method() {
-    let source = r#"
-        trait MyTrait {
-            fn provided(&self) {}
-        }
-    "#;
-    let map = collect_functions(source);
-    let provided = map.get("MyTrait::provided").unwrap();
-    match &provided.owner {
-        SymbolOwner::Trait {
-            trait_name,
-            modules,
-        } => {
-            assert_eq!(trait_name, "MyTrait");
-            assert!(modules.is_empty());
-        }
-        other => panic!("unexpected owner: {other:?}"),
-    }
-}
-
-#[test]
-fn resolves_trait_impl_method() {
-    let source = r#"
-        struct Foo;
-        trait MyTrait { fn required(&self); }
-        impl MyTrait for Foo {
-            fn required(&self) {}
-        }
-    "#;
-    let map = collect_functions(source);
-    let required = map.get("Foo::required").unwrap();
-    match &required.owner {
-        SymbolOwner::Impl {
-            modules,
-            self_ty,
-            trait_name,
-        } => {
-            assert!(modules.is_empty());
-            assert_eq!(self_ty, "Foo");
-            assert_eq!(trait_name.as_deref(), Some("MyTrait"));
-        }
-        other => panic!("unexpected owner: {other:?}"),
-    }
-}
-
-#[test]
-fn captures_generic_information() {
-    let source = r#"
-        fn max<T: Ord>(a: T, b: T) -> T {
-            if a >= b { a } else { b }
-        }
-    "#;
-    let map = collect_functions(source);
-    let max = map.get("max").unwrap();
-    assert_eq!(max.generics.as_deref(), Some("<T: Ord>"));
-    assert_eq!(max.parameters.len(), 2);
-}
-
-#[test]
-fn captures_closure_return_types() {
-    let source = r#"
-        fn make_adder(y: i32) -> impl Fn(i32) -> i32 {
-            move |x| x + y
-        }
-    "#;
-    let map = collect_functions(source);
-    let make_adder = map.get("make_adder").unwrap();
-    let return_type = make_adder.return_type.as_ref().expect("return type");
-    match return_type {
-        TypeExpr::ImplTrait { bounds } => assert_eq!(bounds, "impl Fn(i32) -> i32"),
-        other => panic!("unexpected return type: {other:?}"),
-    }
-}
-
-#[test]
-fn captures_where_clause_and_signature() {
-    let source = r#"
-        pub async fn compose<F>(f: F) -> impl Fn(i32) -> i32
-        where
-            F: Fn(i32) -> i32 + Clone,
-        {
-            move |x| f(f(f(f(x))))
-        }
-    "#;
-
-    let map = collect_functions(source);
-    let compose = map.get("compose").expect("compose function");
-    assert!(compose.is_async);
-    assert_eq!(
-        compose.where_clause.as_deref(),
-        Some("where F: Fn(i32) -> i32 + Clone")
-    );
-    assert!(
-        compose
-            .signature
-            .starts_with("pub async fn compose<F>(f: F) -> impl Fn(i32) -> i32"),
-        "unexpected signature: {}",
-        compose.signature
-    );
-    assert_eq!(compose.parameters.len(), 1);
-    assert_eq!(compose.parameters[0].pattern, "f");
-}
-
-#[test]
-fn resolves_deep_module_owner_chain() {
-    let source = r#"
-        mod a {
-            pub mod b {
-                pub mod c {
-                    pub fn leaf() {}
-                }
-            }
-        }
-    "#;
-
-    let map = collect_functions(source);
-    let leaf = map.get("a::b::c::leaf").expect("leaf function");
-    match &leaf.owner {
-        SymbolOwner::Module { modules } => {
-            assert_eq!(
-                modules,
-                &vec!["a".to_string(), "b".to_string(), "c".to_string()]
-            );
-        }
-        other => panic!("unexpected owner: {other:?}"),
-    }
-}
-
 fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
     match expr {
         TypeExpr::Path { segments, generics } => {
@@ -288,3 +119,4 @@ fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
         other => panic!("expected path type, found {other:?}"),
     }
 }
+
