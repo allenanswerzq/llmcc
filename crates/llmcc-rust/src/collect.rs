@@ -5,8 +5,10 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, SymId, Symbol};
 
 use crate::descriptor::{
-    CallDescriptor, EnumDescriptor, FunctionDescriptor, StructDescriptor, VariableDescriptor,
+    CallDescriptor, EnumDescriptor, FunctionDescriptor, StructDescriptor, TypeExpr,
+    VariableDescriptor,
 };
+use crate::descriptor::function::parse_type_expr;
 use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
@@ -82,6 +84,7 @@ impl<'tcx> DeclFinder<'tcx> {
         let symbol = self.scopes.find_or_insert_local(node.hir_id(), ident);
         let fqn = self.scoped_fqn(node, &ident.name);
         dbg!(&fqn);
+        // dbg!(&self.scopes.symbols);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
         if let Some(desc) = FunctionDescriptor::from_hir(self.unit, node, fqn.clone()) {
@@ -156,6 +159,7 @@ impl<'tcx> DeclFinder<'tcx> {
 
         let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
         let fqn = self.scoped_fqn(node, &ident.name);
+        dbg!(&fqn);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
         if let Some(desc) = StructDescriptor::from_struct(self.unit, node, fqn.clone()) {
@@ -192,6 +196,29 @@ impl<'tcx> DeclFinder<'tcx> {
         let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn, self.unit.interner());
 
+        Some(symbol)
+    }
+
+    fn process_impl_item(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let type_node = node.opt_child_by_field(self.unit, LangRust::field_type)?;
+        let segments = impl_type_segments(self.unit, &type_node)?;
+        if segments.is_empty() {
+            return None;
+        }
+
+        let keys: Vec<_> = segments
+            .iter()
+            .map(|segment| self.unit.interner().intern(segment))
+            .collect();
+
+        if let Some(symbol) = self.scopes.lookup_global_suffix_once(&keys) {
+            return Some(symbol);
+        }
+
+        let name = segments.last().cloned().unwrap_or_default();
+        let fqn = segments.join("::");
+        let symbol = self.unit.new_symbol(node.hir_id(), name);
+        symbol.set_fqn(fqn, self.unit.interner());
         Some(symbol)
     }
 
@@ -248,7 +275,8 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node, None);
+        let symbol = self.process_impl_item(&node);
+        self.visit_children_new_scope(&node, symbol);
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
@@ -286,6 +314,24 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclFinder<'tcx> {
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
+    }
+}
+
+fn impl_type_segments<'tcx>(
+    unit: CompileUnit<'tcx>,
+    type_node: &HirNode<'tcx>,
+) -> Option<Vec<String>> {
+    let ts_node = type_node.inner_ts_node();
+    let expr = parse_type_expr(unit, ts_node);
+    extract_path_segments(&expr)
+}
+
+fn extract_path_segments(expr: &TypeExpr) -> Option<Vec<String>> {
+    match expr {
+        TypeExpr::Path { segments, .. } => Some(segments.clone()),
+        TypeExpr::Reference { inner, .. } => extract_path_segments(inner),
+        TypeExpr::Tuple(items) if items.len() == 1 => extract_path_segments(&items[0]),
+        _ => None,
     }
 }
 

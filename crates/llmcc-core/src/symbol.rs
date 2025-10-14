@@ -57,7 +57,7 @@ pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
     interner: &'tcx InternPool,
     stack: Vec<&'tcx Scope<'tcx>>,
-    symbols: Vec<Option<&'tcx Symbol>>,
+    pub symbols: Vec<Option<&'tcx Symbol>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {

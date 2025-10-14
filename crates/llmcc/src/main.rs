@@ -17,16 +17,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         collect_symbols(unit, globals);
     }
 
-    for (index, path) in files.iter().enumerate() {
-        let unit = cc.compile_unit(index);
-        bind_symbols(unit, globals);
+    // for (index, path) in files.iter().enumerate() {
+    //     let unit = cc.compile_unit(index);
+    //     bind_symbols(unit, globals);
 
-        println!("== {} ==", path);
-        print_llmcc_ir(unit);
+    //     println!("== {} ==", path);
+    //     print_llmcc_ir(unit);
 
-        build_llmcc_graph::<LangRust>(unit)?;
-        print_llmcc_graph(BlockId(0), unit);
-    }
+    //     build_llmcc_graph::<LangRust>(unit)?;
+    //     print_llmcc_graph(BlockId(0), unit);
+    // }
 
     Ok(())
 }
