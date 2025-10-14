@@ -319,7 +319,13 @@ impl Symbol {
             format!(" ({})", info.join(" "))
         };
 
-        format!("{}->{} \"{}\"{}", self.id, self.owner.get(), self.name, meta)
+        format!(
+            "{}->{} \"{}\"{}",
+            self.id,
+            self.owner.get(),
+            self.name,
+            meta
+        )
     }
 
     pub fn set_fqn(&self, fqn: String, interner: &InternPool) {

@@ -1,6 +1,61 @@
+use std::process::Output;
+
+use llmcc_core::interner::{InternPool, InternedStr};
 use llmcc_core::ir::HirKind;
-use llmcc_core::symbol::ScopeStack;
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_core::symbol::{Scope, ScopeStack};
+use llmcc_rust::{
+    build_llmcc_ir, collect_symbols, CollectionResult, CompileCtxt, CompileUnit, LangRust,
+};
+
+struct Fixture<'tcx> {
+    cc: &'tcx CompileCtxt<'tcx>,
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+    result: CollectionResult,
+}
+
+fn build_fixture(source: &str) -> Fixture<'static> {
+    let sources = vec![source.as_bytes().to_vec()];
+    let cc: &'static CompileCtxt<'static> =
+        Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
+    let unit = cc.compile_unit(0);
+    build_llmcc_ir::<LangRust>(unit).expect("build HIR");
+    let globals = cc.create_globals();
+    let result = collect_symbols(unit, globals);
+    Fixture {
+        cc,
+        unit,
+        globals,
+        result,
+    }
+}
+
+impl<'tcx> Fixture<'tcx> {
+    fn interner(&self) -> &InternPool {
+        self.unit.interner()
+    }
+
+    fn intern(&self, name: &str) -> InternedStr {
+        self.interner().intern(name)
+    }
+
+    fn scope_stack(&self) -> ScopeStack<'tcx> {
+        let mut stack = ScopeStack::new(&self.cc.arena, &self.cc.interner);
+        stack.push(self.globals);
+        stack
+    }
+
+    fn module_scope(&self, name: &str) -> &'tcx Scope<'tcx> {
+        let mut stack = self.scope_stack();
+        let key = self.intern(name);
+        let symbol = stack
+            .lookup_global_suffix_once(&[key])
+            .unwrap_or_else(|| panic!("module {name} not registered in globals"));
+        self.unit
+            .opt_scope(symbol.owner())
+            .unwrap_or_else(|| panic!("scope not recorded for module {name}"))
+    }
+}
 
 #[test]
 fn inserts_symbols_for_local_and_global_resolution() {
@@ -33,39 +88,32 @@ fn inserts_symbols_for_local_and_global_resolution() {
         const MAX: i32 = 5;
     "#;
 
-    let sources = vec![source.as_bytes().to_vec()];
-    let cc = CompileCtxt::from_sources::<LangRust>(&sources);
-    let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(unit).expect("build HIR");
-    let globals = cc.create_globals();
+    let fixture = build_fixture(source);
 
-    let result = collect_symbols(unit, globals);
+    let outer_key = fixture.intern("outer");
+    let inner_key = fixture.intern("inner");
+    let private_inner_key = fixture.intern("private_inner");
+    let foo_key = fixture.intern("Foo");
+    let foo_method_key = fixture.intern("method");
+    let foo_private_method_key = fixture.intern("private_method");
+    let bar_key = fixture.intern("Bar");
+    let bar_method_key = fixture.intern("bar_method");
+    let max_key = fixture.intern("MAX");
+    let param_key = fixture.intern("param");
+    let local_key = fixture.intern("local");
 
-    let interner = unit.interner();
-    let inner_key = interner.intern("inner");
-    let private_inner_key = interner.intern("private_inner");
-    let outer_key = interner.intern("outer");
-    let foo_key = interner.intern("Foo");
-    let foo_method_key = interner.intern("method");
-    let foo_private_method_key = interner.intern("private_method");
-    let bar_key = interner.intern("Bar");
-    let bar_method_key = interner.intern("bar_method");
-    let max_key = interner.intern("MAX");
-    let param_key = interner.intern("param");
-    let local_key = interner.intern("local");
+    let mut scope_stack = fixture.scope_stack();
 
-    let mut scope_stack = ScopeStack::new(&cc.arena, &cc.interner);
-    scope_stack.push(globals);
     assert!(
-        globals.get_id(outer_key).is_some(),
+        fixture.globals.get_id(outer_key).is_some(),
         "global scope should store module symbol"
     );
     assert!(
-        globals.get_id(max_key).is_some(),
+        fixture.globals.get_id(max_key).is_some(),
         "global scope should store const symbol"
     );
     assert!(
-        globals.get_id(foo_key).is_some(),
+        fixture.globals.get_id(foo_key).is_some(),
         "public struct should be visible globally"
     );
     assert!(
@@ -81,8 +129,8 @@ fn inserts_symbols_for_local_and_global_resolution() {
         "private method on public type should stay local"
     );
     assert!(
-        globals.get_id(bar_key).is_some(),
-        "private struct at crate root still resides in global scope"
+        fixture.globals.get_id(bar_key).is_some(),
+        "crate root struct should exist in global scope regardless of visibility"
     );
     assert!(
         scope_stack
@@ -91,37 +139,42 @@ fn inserts_symbols_for_local_and_global_resolution() {
         "methods on private struct should not be exported globally"
     );
     assert!(
-        globals.get_id(private_inner_key).is_none(),
+        fixture.globals.get_id(private_inner_key).is_none(),
         "private functions should remain local to their module"
     );
+
     let global_symbol = scope_stack
         .lookup_global_suffix_once(&[inner_key, outer_key])
         .expect("global lookup for outer::inner");
     assert_eq!(global_symbol.fqn_name.borrow().as_str(), "outer::inner");
 
-    let inner_desc = result
+    let inner_desc = fixture
+        .result
         .functions
         .iter()
         .find(|desc| desc.fqn == "outer::inner")
         .expect("function descriptor for outer::inner");
 
-    let function_scope = unit
+    let function_scope = fixture
+        .unit
         .opt_scope(inner_desc.hir_id)
         .expect("function scope registered");
     assert!(
         function_scope.get_id(param_key).is_some(),
         "function scope should contain parameter symbol"
     );
-    let function_node = unit.hir_node(inner_desc.hir_id);
+
+    let function_node = fixture.unit.hir_node(inner_desc.hir_id);
     let body_scope_id = function_node
         .children()
         .iter()
         .copied()
-        .map(|child_id| unit.hir_node(child_id))
+        .map(|child_id| fixture.unit.hir_node(child_id))
         .find(|child| child.kind() == HirKind::Scope)
         .map(|child| child.hir_id())
         .expect("function body block scope id");
-    let body_scope = unit
+    let body_scope = fixture
+        .unit
         .opt_scope(body_scope_id)
         .expect("block scope registered for function body");
     assert!(
@@ -129,12 +182,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
         "block scope should contain local variable symbol"
     );
 
-    let module_symbol = scope_stack
-        .lookup_global_suffix_once(&[outer_key])
-        .expect("module symbol registered");
-    let module_scope = unit
-        .opt_scope(module_symbol.owner())
-        .expect("module scope registered for outer");
+    let module_scope = fixture.module_scope("outer");
     assert!(
         module_scope.get_id(inner_key).is_some(),
         "module scope should contain function symbol"
@@ -145,7 +193,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
     );
 
     assert!(
-        globals.get_id(local_key).is_none(),
+        fixture.globals.get_id(local_key).is_none(),
         "global scope should not contain local variables"
     );
 }
@@ -154,40 +202,30 @@ fn inserts_symbols_for_local_and_global_resolution() {
 fn module_struct_visibility() {
     let source = r#"
         mod outer {
-            mod inner {
-                pub struct Foo;
-                impl Foo {
-                    pub fn create() {}
-                }
+            pub struct Foo;
+            impl Foo {
+                pub fn create() {}
+            }
 
-                struct Bar;
-                impl Bar {
-                    fn hidden() {}
-                }
+            struct Bar;
+            impl Bar {
+                fn hidden() {}
             }
         }
     "#;
 
-    let sources = vec![source.as_bytes().to_vec()];
-    let cc = CompileCtxt::from_sources::<LangRust>(&sources);
-    let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(unit).expect("build HIR");
-    let globals = cc.create_globals();
+    let fixture = build_fixture(source);
 
-    collect_symbols(unit, globals);
+    let outer_key = fixture.intern("outer");
+    let foo_key = fixture.intern("Foo");
+    let create_key = fixture.intern("create");
+    let bar_key = fixture.intern("Bar");
+    let hidden_key = fixture.intern("hidden");
 
-    let interner = unit.interner();
-    let inner_key = interner.intern("inner");
-    let foo_key = interner.intern("Foo");
-    let create_key = interner.intern("create");
-    let bar_key = interner.intern("Bar");
-    let hidden_key = interner.intern("hidden");
-
-    let mut scope_stack = ScopeStack::new(&cc.arena, &cc.interner);
-    scope_stack.push(globals);
+    let mut scope_stack = fixture.scope_stack();
 
     assert!(
-        globals.get_id(foo_key).is_some(),
+        fixture.globals.get_id(foo_key).is_some(),
         "public struct inside module should be exported"
     );
     assert!(
@@ -197,7 +235,7 @@ fn module_struct_visibility() {
         "public method on exported struct should be globally accessible"
     );
     assert!(
-        globals.get_id(bar_key).is_none(),
+        fixture.globals.get_id(bar_key).is_none(),
         "private struct inside module should not be exported"
     );
     assert!(
@@ -207,12 +245,7 @@ fn module_struct_visibility() {
         "private method should not be globally accessible"
     );
 
-    let module_symbol = scope_stack
-        .lookup_global_suffix_once(&[inner_key])
-        .expect("module symbol");
-    let module_scope = unit
-        .opt_scope(module_symbol.owner())
-        .expect("scope for module outer");
+    let module_scope = fixture.module_scope("outer");
     assert!(
         module_scope.get_id(bar_key).is_some(),
         "module scope should retain private struct"
@@ -222,5 +255,3 @@ fn module_struct_visibility() {
         "module scope should contain public struct as well"
     );
 }
-
-

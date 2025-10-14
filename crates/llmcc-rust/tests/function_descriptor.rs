@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
-use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, CompileCtxt, FnVisibility, LangRust, TypeExpr,
-};
+use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, FnVisibility, LangRust, TypeExpr};
 
 fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
@@ -119,4 +117,3 @@ fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
         other => panic!("expected path type, found {other:?}"),
     }
 }
-
