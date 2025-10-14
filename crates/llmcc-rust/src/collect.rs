@@ -82,6 +82,7 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         let symbol = self.scopes.find_or_insert_local(node.hir_id(), ident);
+        symbol.set_onwer(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
         dbg!(&fqn);
         // dbg!(&self.scopes.symbols);
@@ -101,6 +102,7 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         let symbol = self.scopes.find_or_insert_local(node.hir_id(), ident);
+        symbol.set_onwer(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
@@ -117,6 +119,7 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         let symbol = self.scopes.find_or_insert_local(node.hir_id(), ident);
+        symbol.set_onwer(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
         Some(symbol.id)
@@ -129,6 +132,7 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        symbol.set_onwer(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
@@ -158,6 +162,7 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        symbol.set_onwer(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
         dbg!(&fqn);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
@@ -176,6 +181,7 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        symbol.set_onwer(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn.clone(), self.unit.interner());
 
@@ -193,6 +199,7 @@ impl<'tcx> DeclFinder<'tcx> {
         };
 
         let symbol = self.scopes.find_or_insert_global(node.hir_id(), ident);
+        symbol.set_onwer(node.hir_id());
         let fqn = self.scoped_fqn(node, &ident.name);
         symbol.set_fqn(fqn, self.unit.interner());
 
@@ -212,12 +219,14 @@ impl<'tcx> DeclFinder<'tcx> {
             .collect();
 
         if let Some(symbol) = self.scopes.lookup_global_suffix_once(&keys) {
+            symbol.set_onwer(node.hir_id());
             return Some(symbol);
         }
 
         let name = segments.last().cloned().unwrap_or_default();
         let fqn = segments.join("::");
         let symbol = self.unit.new_symbol(node.hir_id(), name);
+        symbol.set_onwer(node.hir_id());
         symbol.set_fqn(fqn, self.unit.interner());
         Some(symbol)
     }

@@ -210,7 +210,7 @@ pub struct Symbol {
     /// Monotonic identifier assigned when the symbol is created.
     pub id: SymId,
     /// Owning HIR node that introduces the symbol (e.g. function, struct, module).
-    pub owner: HirId,
+    pub owner: Cell<HirId>,
     /// Unqualified name exactly as written in source.
     pub name: String,
     /// Interned key for `name`, used for fast lookup.
@@ -242,7 +242,7 @@ impl Symbol {
 
         Self {
             id: sym_id,
-            owner,
+            owner: Cell::new(owner),
             name: name.clone(),
             name_key,
             fqn_name: RefCell::new(name),
@@ -257,7 +257,11 @@ impl Symbol {
     }
 
     pub fn owner(&self) -> HirId {
-        self.owner
+        self.owner.get()
+    }
+
+    pub fn set_onwer(&self, owner: HirId) {
+        self.owner.set(owner);
     }
 
     pub fn format_compact(&self) -> String {
@@ -292,7 +296,7 @@ impl Symbol {
             format!(" ({})", info.join(" "))
         };
 
-        format!("{}->{} \"{}\"{}", self.id, self.owner, self.name, meta)
+        format!("{}->{} \"{}\"{}", self.id, self.owner.get(), self.name, meta)
     }
 
     pub fn set_fqn(&self, fqn: String, interner: &InternPool) {
