@@ -63,6 +63,42 @@ fn find_enum<'a>(
         .unwrap()
 }
 
+fn struct_symbol(
+    unit: llmcc_core::context::CompileUnit<'static>,
+    collection: &llmcc_rust::CollectionResult,
+    name: &str,
+) -> &'static Symbol {
+    let desc = find_struct(collection, name);
+    symbol(unit, desc.hir_id)
+}
+
+fn function_symbol(
+    unit: llmcc_core::context::CompileUnit<'static>,
+    collection: &llmcc_rust::CollectionResult,
+    name: &str,
+) -> &'static Symbol {
+    let desc = find_function(collection, name);
+    symbol(unit, desc.hir_id)
+}
+
+fn function_symbol_by_fqn(
+    unit: llmcc_core::context::CompileUnit<'static>,
+    collection: &llmcc_rust::CollectionResult,
+    fqn: &str,
+) -> &'static Symbol {
+    let desc = find_function_by_fqn(collection, fqn);
+    symbol(unit, desc.hir_id)
+}
+
+fn enum_symbol(
+    unit: llmcc_core::context::CompileUnit<'static>,
+    collection: &llmcc_rust::CollectionResult,
+    name: &str,
+) -> &'static Symbol {
+    let desc = find_enum(collection, name);
+    symbol(unit, desc.hir_id)
+}
+
 fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'static Symbol {
     unit.get_scope(hir_id).symbol().unwrap()
 }
@@ -100,11 +136,9 @@ fn type_records_dependencies_on_methods() {
 
     let (_, unit, collection) = compile(source);
 
-    let foo_desc = find_struct(&collection, "Foo");
-    let method_desc = find_function(&collection, "method");
 
-    let foo_symbol = symbol(unit, foo_desc.hir_id);
-    let method_symbol = symbol(unit, method_desc.hir_id);
+    let foo_symbol = struct_symbol(unit, &collection, "Foo");
+    let method_symbol = function_symbol(unit, &collection, "method");
 
     assert_relation(foo_symbol, method_symbol);
 }
@@ -125,11 +159,9 @@ fn method_depends_on_inherent_method() {
 
     let (_, unit, collection) = compile(source);
 
-    let helper_desc = find_function(&collection, "helper");
-    let caller_desc = find_function(&collection, "caller");
 
-    let helper_symbol = symbol(unit, helper_desc.hir_id);
-    let caller_symbol = symbol(unit, caller_desc.hir_id);
+    let helper_symbol = function_symbol(unit, &collection, "helper");
+    let caller_symbol = function_symbol(unit, &collection, "caller");
 
     assert_relation(caller_symbol, helper_symbol);
 }
@@ -146,11 +178,9 @@ fn function_depends_on_called_function() {
 
     let (_, unit, collection) = compile(source);
 
-    let helper_desc = find_function(&collection, "helper");
-    let caller_desc = find_function(&collection, "caller");
 
-    let helper_symbol = symbol(unit, helper_desc.hir_id);
-    let caller_symbol = symbol(unit, caller_desc.hir_id);
+    let helper_symbol = function_symbol(unit, &collection, "helper");
+    let caller_symbol = function_symbol(unit, &collection, "caller");
 
     assert_relation(caller_symbol, helper_symbol);
 }
@@ -165,11 +195,9 @@ fn function_depends_on_argument_type() {
 
     let (_, unit, collection) = compile(source);
 
-    let foo_desc = find_struct(&collection, "Foo");
-    let takes_desc = find_function(&collection, "takes");
 
-    let foo_symbol = symbol(unit, foo_desc.hir_id);
-    let takes_symbol = symbol(unit, takes_desc.hir_id);
+    let foo_symbol = struct_symbol(unit, &collection, "Foo");
+    let takes_symbol = function_symbol(unit, &collection, "takes");
 
     assert_relation(takes_symbol, foo_symbol);
 }
@@ -184,14 +212,13 @@ fn const_initializer_records_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let helper_desc = find_function(&collection, "helper");
     let const_desc = collection
         .variables
         .iter()
         .find(|desc| desc.name == "VALUE")
         .unwrap();
 
-    let helper_symbol = symbol(unit, helper_desc.hir_id);
+    let helper_symbol = function_symbol(unit, &collection, "helper");
     let const_symbol = symbol(unit, const_desc.hir_id);
 
     assert_relation(const_symbol, helper_symbol);
@@ -209,11 +236,9 @@ fn function_depends_on_return_type() {
 
     let (_, unit, collection) = compile(source);
 
-    let bar_desc = find_struct(&collection, "Bar");
-    let returns_desc = find_function(&collection, "returns");
 
-    let bar_symbol = symbol(unit, bar_desc.hir_id);
-    let returns_symbol = symbol(unit, returns_desc.hir_id);
+    let bar_symbol = struct_symbol(unit, &collection, "Bar");
+    let returns_symbol = function_symbol(unit, &collection, "returns");
 
     assert_relation(returns_symbol, bar_symbol);
 }
@@ -233,13 +258,10 @@ fn function_call_resolves_when_struct_shares_name() {
 
     let (_, unit, collection) = compile(source);
 
-    let shared_struct_desc = find_struct(&collection, "Shared");
-    let shared_fn_desc = find_function_by_fqn(&collection, "Shared");
-    let caller_desc = find_function(&collection, "caller");
 
-    let shared_struct_symbol = symbol(unit, shared_struct_desc.hir_id);
-    let shared_fn_symbol = symbol(unit, shared_fn_desc.hir_id);
-    let caller_symbol = symbol(unit, caller_desc.hir_id);
+    let shared_struct_symbol = struct_symbol(unit, &collection, "Shared");
+    let shared_fn_symbol = function_symbol_by_fqn(unit, &collection, "Shared");
+    let caller_symbol = function_symbol(unit, &collection, "caller");
 
     assert_relation(caller_symbol, shared_fn_symbol);
     assert_relation(caller_symbol, shared_struct_symbol);
@@ -258,13 +280,10 @@ fn type_dependency_resolves_when_function_shares_name() {
 
     let (_, unit, collection) = compile(source);
 
-    let shared_struct_desc = find_struct(&collection, "Shared");
-    let shared_fn_desc = find_function_by_fqn(&collection, "Shared");
-    let consume_desc = find_function(&collection, "consume");
 
-    let shared_struct_symbol = symbol(unit, shared_struct_desc.hir_id);
-    let shared_fn_symbol = symbol(unit, shared_fn_desc.hir_id);
-    let consume_symbol = symbol(unit, consume_desc.hir_id);
+    let shared_struct_symbol = struct_symbol(unit, &collection, "Shared");
+    let shared_fn_symbol = function_symbol_by_fqn(unit, &collection, "Shared");
+    let consume_symbol = function_symbol(unit, &collection, "consume");
 
     assert_relation(consume_symbol, shared_struct_symbol);
     assert_relation(consume_symbol, shared_fn_symbol);
@@ -288,15 +307,11 @@ fn method_call_prefers_inherent_method_with_same_name_as_function() {
 
     let (_, unit, collection) = compile(source);
 
-    let processor_desc = find_struct(&collection, "Processor");
-    let method_process_desc = find_function_by_fqn(&collection, "Processor::process");
-    let trigger_desc = find_function_by_fqn(&collection, "Processor::trigger");
-    let free_process_desc = find_function_by_fqn(&collection, "process");
 
-    let processor_symbol = symbol(unit, processor_desc.hir_id);
-    let method_process_symbol = symbol(unit, method_process_desc.hir_id);
-    let trigger_symbol = symbol(unit, trigger_desc.hir_id);
-    let free_process_symbol = symbol(unit, free_process_desc.hir_id);
+    let processor_symbol = struct_symbol(unit, &collection, "Processor");
+    let method_process_symbol = function_symbol_by_fqn(unit, &collection, "Processor::process");
+    let trigger_symbol = function_symbol_by_fqn(unit, &collection, "Processor::trigger");
+    let free_process_symbol = function_symbol_by_fqn(unit, &collection, "process");
 
     assert_relation(processor_symbol, method_process_symbol);
     assert_relation(trigger_symbol, method_process_symbol);
@@ -315,11 +330,9 @@ fn struct_field_creates_dependency() {
 
     let (_, unit, collection) = compile(source);
 
-    let inner_desc = find_struct(&collection, "Inner");
-    let outer_desc = find_struct(&collection, "Outer");
 
-    let inner_symbol = symbol(unit, inner_desc.hir_id);
-    let outer_symbol = symbol(unit, outer_desc.hir_id);
+    let inner_symbol = struct_symbol(unit, &collection, "Inner");
+    let outer_symbol = struct_symbol(unit, &collection, "Outer");
 
     assert_relation(outer_symbol, inner_symbol);
 }
@@ -339,11 +352,9 @@ fn struct_field_depends_on_enum_type() {
 
     let (_, unit, collection) = compile(source);
 
-    let status_desc = find_enum(&collection, "Status");
-    let holder_desc = find_struct(&collection, "Holder");
 
-    let status_symbol = symbol(unit, status_desc.hir_id);
-    let holder_symbol = symbol(unit, holder_desc.hir_id);
+    let status_symbol = enum_symbol(unit, &collection, "Status");
+    let holder_symbol = struct_symbol(unit, &collection, "Holder");
 
     assert_relation(holder_symbol, status_symbol);
 }
@@ -361,11 +372,9 @@ fn enum_variant_depends_on_struct_type() {
 
     let (_, unit, collection) = compile(source);
 
-    let payload_desc = find_struct(&collection, "Payload");
-    let message_desc = find_enum(&collection, "Message");
 
-    let payload_symbol = symbol(unit, payload_desc.hir_id);
-    let message_symbol = symbol(unit, message_desc.hir_id);
+    let payload_symbol = struct_symbol(unit, &collection, "Payload");
+    let message_symbol = enum_symbol(unit, &collection, "Message");
 
     assert_relation(message_symbol, payload_symbol);
 }
@@ -388,11 +397,9 @@ fn match_expression_depends_on_enum_variants() {
 
     let (_, unit, collection) = compile(source);
 
-    let event_desc = find_enum(&collection, "Event");
-    let handle_desc = find_function(&collection, "handle");
 
-    let event_symbol = symbol(unit, event_desc.hir_id);
-    let handle_symbol = symbol(unit, handle_desc.hir_id);
+    let event_symbol = enum_symbol(unit, &collection, "Event");
+    let handle_symbol = function_symbol(unit, &collection, "handle");
 
     assert_relation(handle_symbol, event_symbol);
 }
@@ -418,11 +425,9 @@ fn nested_match_expressions_depend_on_variants() {
 
     let (_, unit, collection) = compile(source);
 
-    let action_desc = find_enum(&collection, "Action");
-    let handle_desc = find_function(&collection, "handle");
 
-    let action_symbol = symbol(unit, action_desc.hir_id);
-    let handle_symbol = symbol(unit, handle_desc.hir_id);
+    let action_symbol = enum_symbol(unit, &collection, "Action");
+    let handle_symbol = function_symbol(unit, &collection, "handle");
 
     assert_relation(handle_symbol, action_symbol);
 }
@@ -443,13 +448,10 @@ fn nested_struct_fields_create_chain() {
 
     let (_, unit, collection) = compile(source);
 
-    let a_desc = find_struct(&collection, "A");
-    let b_desc = find_struct(&collection, "B");
-    let c_desc = find_struct(&collection, "C");
 
-    let a_symbol = symbol(unit, a_desc.hir_id);
-    let b_symbol = symbol(unit, b_desc.hir_id);
-    let c_symbol = symbol(unit, c_desc.hir_id);
+    let a_symbol = struct_symbol(unit, &collection, "A");
+    let b_symbol = struct_symbol(unit, &collection, "B");
+    let c_symbol = struct_symbol(unit, &collection, "C");
 
     assert_relation(b_symbol, a_symbol);
     assert_relation(c_symbol, b_symbol);
@@ -475,15 +477,11 @@ fn function_chain_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let l1_desc = find_function(&collection, "level1");
-    let l2_desc = find_function(&collection, "level2");
-    let l3_desc = find_function(&collection, "level3");
-    let l4_desc = find_function(&collection, "level4");
 
-    let l1_symbol = symbol(unit, l1_desc.hir_id);
-    let l2_symbol = symbol(unit, l2_desc.hir_id);
-    let l3_symbol = symbol(unit, l3_desc.hir_id);
-    let l4_symbol = symbol(unit, l4_desc.hir_id);
+    let l1_symbol = function_symbol(unit, &collection, "level1");
+    let l2_symbol = function_symbol(unit, &collection, "level2");
+    let l3_symbol = function_symbol(unit, &collection, "level3");
+    let l4_symbol = function_symbol(unit, &collection, "level4");
 
     assert_relation(l2_symbol, l1_symbol);
     assert_relation(l3_symbol, l2_symbol);
@@ -506,13 +504,10 @@ fn module_with_nested_types() {
 
     let (_, unit, collection) = compile(source);
 
-    let outer_type_desc = find_struct(&collection, "OuterType");
-    let inner_type_desc = find_struct(&collection, "InnerType");
-    let uses_desc = find_function(&collection, "uses");
 
-    let outer_type_symbol = symbol(unit, outer_type_desc.hir_id);
-    let inner_type_symbol = symbol(unit, inner_type_desc.hir_id);
-    let uses_symbol = symbol(unit, uses_desc.hir_id);
+    let outer_type_symbol = struct_symbol(unit, &collection, "OuterType");
+    let inner_type_symbol = struct_symbol(unit, &collection, "InnerType");
+    let uses_symbol = function_symbol(unit, &collection, "uses");
 
     assert_relation(uses_symbol, outer_type_symbol);
     assert_relation(uses_symbol, inner_type_symbol);
@@ -536,11 +531,9 @@ fn deeply_nested_modules() {
 
     let (_, unit, collection) = compile(source);
 
-    let deep_type_desc = find_struct(&collection, "DeepType");
-    let access_desc = find_function(&collection, "access");
 
-    let deep_type_symbol = symbol(unit, deep_type_desc.hir_id);
-    let access_symbol = symbol(unit, access_desc.hir_id);
+    let deep_type_symbol = struct_symbol(unit, &collection, "DeepType");
+    let access_symbol = function_symbol(unit, &collection, "access");
 
     assert_relation(access_symbol, deep_type_symbol);
 }
@@ -563,13 +556,10 @@ fn module_functions_calling_each_other() {
 
     let (_, unit, collection) = compile(source);
 
-    let helper1_desc = find_function(&collection, "helper1");
-    let helper2_desc = find_function(&collection, "helper2");
-    let main_desc = find_function(&collection, "main");
 
-    let helper1_symbol = symbol(unit, helper1_desc.hir_id);
-    let helper2_symbol = symbol(unit, helper2_desc.hir_id);
-    let main_symbol = symbol(unit, main_desc.hir_id);
+    let helper1_symbol = function_symbol(unit, &collection, "helper1");
+    let helper2_symbol = function_symbol(unit, &collection, "helper2");
+    let main_symbol = function_symbol(unit, &collection, "main");
 
     assert_relation(helper2_symbol, helper1_symbol);
     assert_relation(main_symbol, helper2_symbol);
@@ -592,15 +582,11 @@ fn enum_with_multiple_variant_types() {
 
     let (_, unit, collection) = compile(source);
 
-    let type_a_desc = find_struct(&collection, "TypeA");
-    let type_b_desc = find_struct(&collection, "TypeB");
-    let type_c_desc = find_struct(&collection, "TypeC");
-    let enum_desc = find_enum(&collection, "MultiVariant");
 
-    let type_a_symbol = symbol(unit, type_a_desc.hir_id);
-    let type_b_symbol = symbol(unit, type_b_desc.hir_id);
-    let type_c_symbol = symbol(unit, type_c_desc.hir_id);
-    let enum_symbol = symbol(unit, enum_desc.hir_id);
+    let type_a_symbol = struct_symbol(unit, &collection, "TypeA");
+    let type_b_symbol = struct_symbol(unit, &collection, "TypeB");
+    let type_c_symbol = struct_symbol(unit, &collection, "TypeC");
+    let enum_symbol = enum_symbol(unit, &collection, "MultiVariant");
 
     assert_relation(enum_symbol, type_a_symbol);
     assert_relation(enum_symbol, type_b_symbol);
@@ -620,11 +606,9 @@ fn enum_with_struct_variants() {
 
     let (_, unit, collection) = compile(source);
 
-    let inner_desc = find_struct(&collection, "Inner");
-    let result_desc = find_enum(&collection, "Result");
 
-    let inner_symbol = symbol(unit, inner_desc.hir_id);
-    let result_symbol = symbol(unit, result_desc.hir_id);
+    let inner_symbol = struct_symbol(unit, &collection, "Inner");
+    let result_symbol = enum_symbol(unit, &collection, "Result");
 
     assert_relation(result_symbol, inner_symbol);
 }
@@ -645,13 +629,10 @@ fn nested_enums_with_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let inner_desc = find_enum(&collection, "Inner");
-    let outer_desc = find_enum(&collection, "Outer");
-    let process_desc = find_function(&collection, "process");
 
-    let inner_symbol = symbol(unit, inner_desc.hir_id);
-    let outer_symbol = symbol(unit, outer_desc.hir_id);
-    let process_symbol = symbol(unit, process_desc.hir_id);
+    let inner_symbol = enum_symbol(unit, &collection, "Inner");
+    let outer_symbol = enum_symbol(unit, &collection, "Outer");
+    let process_symbol = function_symbol(unit, &collection, "process");
 
     assert_relation(outer_symbol, inner_symbol);
     assert_relation(process_symbol, outer_symbol);
@@ -679,15 +660,11 @@ fn module_with_impl_block() {
 
     let (_, unit, collection) = compile(source);
 
-    let entity_desc = find_struct(&collection, "Entity");
-    let new_desc = find_function(&collection, "new");
-    let process_desc = find_function(&collection, "process");
-    let create_desc = find_function(&collection, "create");
 
-    let entity_symbol = symbol(unit, entity_desc.hir_id);
-    let new_symbol = symbol(unit, new_desc.hir_id);
-    let process_symbol = symbol(unit, process_desc.hir_id);
-    let create_symbol = symbol(unit, create_desc.hir_id);
+    let entity_symbol = struct_symbol(unit, &collection, "Entity");
+    let new_symbol = function_symbol(unit, &collection, "new");
+    let process_symbol = function_symbol(unit, &collection, "process");
+    let create_symbol = function_symbol(unit, &collection, "create");
 
     assert_relation(entity_symbol, new_symbol);
     assert_relation(entity_symbol, process_symbol);
@@ -715,13 +692,10 @@ fn cross_module_type_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let type_a_desc = find_struct(&collection, "TypeA");
-    let type_b_desc = find_struct(&collection, "TypeB");
-    let uses_desc = find_function(&collection, "uses");
 
-    let type_a_symbol = symbol(unit, type_a_desc.hir_id);
-    let type_b_symbol = symbol(unit, type_b_desc.hir_id);
-    let uses_symbol = symbol(unit, uses_desc.hir_id);
+    let type_a_symbol = struct_symbol(unit, &collection, "TypeA");
+    let type_b_symbol = struct_symbol(unit, &collection, "TypeB");
+    let uses_symbol = function_symbol(unit, &collection, "uses");
 
     assert_relation(type_b_symbol, type_a_symbol);
     assert_relation(uses_symbol, type_b_symbol);
@@ -747,7 +721,6 @@ fn module_with_const_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let config_desc = find_struct(&collection, "Config");
     let default_size_desc = collection
         .variables
         .iter()
@@ -758,12 +731,11 @@ fn module_with_const_dependencies() {
         .iter()
         .find(|desc| desc.name == "DEFAULT_CONFIG")
         .unwrap();
-    let get_config_desc = find_function(&collection, "get_config");
 
-    let config_symbol = symbol(unit, config_desc.hir_id);
+    let config_symbol = struct_symbol(unit, &collection, "Config");
     let default_size_symbol = symbol(unit, default_size_desc.hir_id);
     let default_config_symbol = symbol(unit, default_config_desc.hir_id);
-    let get_config_symbol = symbol(unit, get_config_desc.hir_id);
+    let get_config_symbol = function_symbol(unit, &collection, "get_config");
 
     assert_relation(default_config_symbol, config_symbol);
     assert_relation(default_config_symbol, default_size_symbol);
@@ -795,13 +767,10 @@ fn enum_method_impl() {
 
     let (_, unit, collection) = compile(source);
 
-    let state_desc = find_enum(&collection, "State");
-    let is_active_desc = find_function(&collection, "is_active");
-    let toggle_desc = find_function(&collection, "toggle");
 
-    let state_symbol = symbol(unit, state_desc.hir_id);
-    let is_active_symbol = symbol(unit, is_active_desc.hir_id);
-    let toggle_symbol = symbol(unit, toggle_desc.hir_id);
+    let state_symbol = enum_symbol(unit, &collection, "State");
+    let is_active_symbol = function_symbol(unit, &collection, "is_active");
+    let toggle_symbol = function_symbol(unit, &collection, "toggle");
 
     assert_relation(state_symbol, is_active_symbol);
     assert_relation(state_symbol, toggle_symbol);
@@ -831,13 +800,10 @@ fn complex_module_hierarchy_with_re_exports() {
 
     let (_, unit, collection) = compile(source);
 
-    let core_type_desc = find_struct(&collection, "CoreType");
-    let app_desc = find_struct(&collection, "App");
-    let run_desc = find_function(&collection, "run");
 
-    let core_type_symbol = symbol(unit, core_type_desc.hir_id);
-    let app_symbol = symbol(unit, app_desc.hir_id);
-    let run_symbol = symbol(unit, run_desc.hir_id);
+    let core_type_symbol = struct_symbol(unit, &collection, "CoreType");
+    let app_symbol = struct_symbol(unit, &collection, "App");
+    let run_symbol = function_symbol(unit, &collection, "run");
 
     assert_relation(app_symbol, core_type_symbol);
     assert_relation(run_symbol, app_symbol);
@@ -861,15 +827,11 @@ fn sibling_modules_with_cross_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let type_x_desc = find_struct(&collection, "TypeX");
-    let type_y_desc = find_struct(&collection, "TypeY");
-    let process_x_desc = find_function(&collection, "process_x");
-    let process_y_desc = find_function(&collection, "process_y");
 
-    let type_x_symbol = symbol(unit, type_x_desc.hir_id);
-    let type_y_symbol = symbol(unit, type_y_desc.hir_id);
-    let process_x_symbol = symbol(unit, process_x_desc.hir_id);
-    let process_y_symbol = symbol(unit, process_y_desc.hir_id);
+    let type_x_symbol = struct_symbol(unit, &collection, "TypeX");
+    let type_y_symbol = struct_symbol(unit, &collection, "TypeY");
+    let process_x_symbol = function_symbol(unit, &collection, "process_x");
+    let process_y_symbol = function_symbol(unit, &collection, "process_y");
 
     assert_relation(process_x_symbol, type_y_symbol);
     assert_relation(process_y_symbol, type_x_symbol);
@@ -899,13 +861,10 @@ fn five_level_nested_modules() {
 
     let (_, unit, collection) = compile(source);
 
-    let deep_struct_desc = find_struct(&collection, "DeepStruct");
-    let deep_function_desc = find_function(&collection, "deep_function");
-    let access_deep_desc = find_function(&collection, "access_deep");
 
-    let deep_struct_symbol = symbol(unit, deep_struct_desc.hir_id);
-    let deep_function_symbol = symbol(unit, deep_function_desc.hir_id);
-    let access_deep_symbol = symbol(unit, access_deep_desc.hir_id);
+    let deep_struct_symbol = struct_symbol(unit, &collection, "DeepStruct");
+    let deep_function_symbol = function_symbol(unit, &collection, "deep_function");
+    let access_deep_symbol = function_symbol(unit, &collection, "access_deep");
 
     assert_relation(access_deep_symbol, deep_struct_symbol);
     assert_relation(access_deep_symbol, deep_function_symbol);
@@ -931,13 +890,10 @@ fn enum_as_struct_field() {
 
     let (_, unit, collection) = compile(source);
 
-    let status_desc = find_enum(&collection, "Status");
-    let task_desc = find_struct(&collection, "Task");
-    let create_task_desc = find_function(&collection, "create_task");
 
-    let status_symbol = symbol(unit, status_desc.hir_id);
-    let task_symbol = symbol(unit, task_desc.hir_id);
-    let create_task_symbol = symbol(unit, create_task_desc.hir_id);
+    let status_symbol = enum_symbol(unit, &collection, "Status");
+    let task_symbol = struct_symbol(unit, &collection, "Task");
+    let create_task_symbol = function_symbol(unit, &collection, "create_task");
 
     assert_relation(task_symbol, status_symbol);
     assert_relation(create_task_symbol, task_symbol);
@@ -960,13 +916,10 @@ fn generic_enum_with_constraints() {
 
     let (_, unit, collection) = compile(source);
 
-    let wrapper_desc = find_struct(&collection, "Wrapper");
-    let option_desc = find_enum(&collection, "Option");
-    let process_desc = find_function(&collection, "process");
 
-    let wrapper_symbol = symbol(unit, wrapper_desc.hir_id);
-    let option_symbol = symbol(unit, option_desc.hir_id);
-    let process_symbol = symbol(unit, process_desc.hir_id);
+    let wrapper_symbol = struct_symbol(unit, &collection, "Wrapper");
+    let option_symbol = enum_symbol(unit, &collection, "Option");
+    let process_symbol = function_symbol(unit, &collection, "process");
 
     assert_relation(process_symbol, option_symbol);
     assert_relation(process_symbol, wrapper_symbol);
@@ -994,11 +947,9 @@ fn module_with_trait_and_impl() {
 
     let (_, unit, collection) = compile(source);
 
-    let processor_desc = find_struct(&collection, "Processor");
-    let process_desc = find_function(&collection, "process");
 
-    let processor_symbol = symbol(unit, processor_desc.hir_id);
-    let process_symbol = symbol(unit, process_desc.hir_id);
+    let processor_symbol = struct_symbol(unit, &collection, "Processor");
+    let process_symbol = function_symbol(unit, &collection, "process");
 
     assert_relation(processor_symbol, process_symbol);
 }
@@ -1033,15 +984,11 @@ fn complex_cross_module_enum_struct_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let data_type_desc = find_enum(&collection, "DataType");
-    let storage_desc = find_struct(&collection, "Storage");
-    let add_desc = find_function(&collection, "add");
-    let main_app_desc = find_function(&collection, "main_app");
 
-    let data_type_symbol = symbol(unit, data_type_desc.hir_id);
-    let storage_symbol = symbol(unit, storage_desc.hir_id);
-    let add_symbol = symbol(unit, add_desc.hir_id);
-    let main_app_symbol = symbol(unit, main_app_desc.hir_id);
+    let data_type_symbol = enum_symbol(unit, &collection, "DataType");
+    let storage_symbol = struct_symbol(unit, &collection, "Storage");
+    let add_symbol = function_symbol(unit, &collection, "add");
+    let main_app_symbol = function_symbol(unit, &collection, "main_app");
 
     assert_relation(storage_symbol, data_type_symbol);
     assert_relation(storage_symbol, add_symbol);
@@ -1082,21 +1029,14 @@ fn nested_modules_with_multiple_types_and_functions() {
 
     let (_, unit, collection) = compile(source);
 
-    let outer_struct_desc = find_struct(&collection, "OuterStruct");
-    let middle_struct_desc = find_struct(&collection, "MiddleStruct");
-    let inner_struct_desc = find_struct(&collection, "InnerStruct");
-    let inner_fn_desc = find_function(&collection, "inner_fn");
-    let middle_fn_desc = find_function(&collection, "middle_fn");
-    let outer_fn_desc = find_function(&collection, "outer_fn");
-    let root_desc = find_function(&collection, "root");
 
-    let outer_struct_symbol = symbol(unit, outer_struct_desc.hir_id);
-    let middle_struct_symbol = symbol(unit, middle_struct_desc.hir_id);
-    let inner_struct_symbol = symbol(unit, inner_struct_desc.hir_id);
-    let inner_fn_symbol = symbol(unit, inner_fn_desc.hir_id);
-    let middle_fn_symbol = symbol(unit, middle_fn_desc.hir_id);
-    let outer_fn_symbol = symbol(unit, outer_fn_desc.hir_id);
-    let root_symbol = symbol(unit, root_desc.hir_id);
+    let outer_struct_symbol = struct_symbol(unit, &collection, "OuterStruct");
+    let middle_struct_symbol = struct_symbol(unit, &collection, "MiddleStruct");
+    let inner_struct_symbol = struct_symbol(unit, &collection, "InnerStruct");
+    let inner_fn_symbol = function_symbol(unit, &collection, "inner_fn");
+    let middle_fn_symbol = function_symbol(unit, &collection, "middle_fn");
+    let outer_fn_symbol = function_symbol(unit, &collection, "outer_fn");
+    let root_symbol = function_symbol(unit, &collection, "root");
 
     assert_relation(middle_fn_symbol, inner_struct_symbol);
     assert_relation(middle_fn_symbol, inner_fn_symbol);
@@ -1122,15 +1062,11 @@ fn multiple_dependencies_same_function() {
 
     let (_, unit, collection) = compile(source);
 
-    let dep1_desc = find_function(&collection, "dep1");
-    let dep2_desc = find_function(&collection, "dep2");
-    let dep3_desc = find_function(&collection, "dep3");
-    let caller_desc = find_function(&collection, "caller");
 
-    let dep1_symbol = symbol(unit, dep1_desc.hir_id);
-    let dep2_symbol = symbol(unit, dep2_desc.hir_id);
-    let dep3_symbol = symbol(unit, dep3_desc.hir_id);
-    let caller_symbol = symbol(unit, caller_desc.hir_id);
+    let dep1_symbol = function_symbol(unit, &collection, "dep1");
+    let dep2_symbol = function_symbol(unit, &collection, "dep2");
+    let dep3_symbol = function_symbol(unit, &collection, "dep3");
+    let caller_symbol = function_symbol(unit, &collection, "caller");
 
     assert_relation(caller_symbol, dep1_symbol);
     assert_relation(caller_symbol, dep2_symbol);
@@ -1153,13 +1089,10 @@ fn method_depends_on_type_and_function() {
 
     let (_, unit, collection) = compile(source);
 
-    let foo_desc = find_struct(&collection, "Foo");
-    let helper_desc = find_function(&collection, "external_helper");
-    let method_desc = find_function(&collection, "method");
 
-    let foo_symbol = symbol(unit, foo_desc.hir_id);
-    let helper_symbol = symbol(unit, helper_desc.hir_id);
-    let method_symbol = symbol(unit, method_desc.hir_id);
+    let foo_symbol = struct_symbol(unit, &collection, "Foo");
+    let helper_symbol = function_symbol(unit, &collection, "external_helper");
+    let method_symbol = function_symbol(unit, &collection, "method");
 
     assert_relation(foo_symbol, method_symbol);
     assert_relation(method_symbol, helper_symbol);
@@ -1179,13 +1112,10 @@ fn generic_type_parameter_creates_dependency() {
 
     let (_, unit, collection) = compile(source);
 
-    let container_desc = find_struct(&collection, "Container");
-    let item_desc = find_struct(&collection, "Item");
-    let uses_desc = find_function(&collection, "uses");
 
-    let container_symbol = symbol(unit, container_desc.hir_id);
-    let item_symbol = symbol(unit, item_desc.hir_id);
-    let uses_symbol = symbol(unit, uses_desc.hir_id);
+    let container_symbol = struct_symbol(unit, &collection, "Container");
+    let item_symbol = struct_symbol(unit, &collection, "Item");
+    let uses_symbol = function_symbol(unit, &collection, "uses");
 
     assert_relation(uses_symbol, container_symbol);
     assert_relation(uses_symbol, item_symbol);
@@ -1205,16 +1135,14 @@ fn const_depends_on_type_and_function() {
 
     let (_, unit, collection) = compile(source);
 
-    let config_desc = find_struct(&collection, "Config");
-    let create_desc = find_function(&collection, "create_config");
     let const_desc = collection
         .variables
         .iter()
         .find(|desc| desc.name == "GLOBAL_CONFIG")
         .unwrap();
 
-    let config_symbol = symbol(unit, config_desc.hir_id);
-    let create_symbol = symbol(unit, create_desc.hir_id);
+    let config_symbol = struct_symbol(unit, &collection, "Config");
+    let create_symbol = function_symbol(unit, &collection, "create_config");
     let const_symbol = symbol(unit, const_desc.hir_id);
 
     assert_relation(const_symbol, config_symbol);
@@ -1231,14 +1159,13 @@ fn static_variable_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let init_desc = find_function(&collection, "init_value");
     let static_desc = collection
         .variables
         .iter()
         .find(|desc| desc.name == "COUNTER")
         .unwrap();
 
-    let init_symbol = symbol(unit, init_desc.hir_id);
+    let init_symbol = function_symbol(unit, &collection, "init_value");
     let static_symbol = symbol(unit, static_desc.hir_id);
 
     assert_relation(static_symbol, init_symbol);
@@ -1260,13 +1187,10 @@ fn multiple_impl_blocks_same_type() {
 
     let (_, unit, collection) = compile(source);
 
-    let widget_desc = find_struct(&collection, "Widget");
-    let method1_desc = find_function(&collection, "method1");
-    let method2_desc = find_function(&collection, "method2");
 
-    let widget_symbol = symbol(unit, widget_desc.hir_id);
-    let method1_symbol = symbol(unit, method1_desc.hir_id);
-    let method2_symbol = symbol(unit, method2_desc.hir_id);
+    let widget_symbol = struct_symbol(unit, &collection, "Widget");
+    let method1_symbol = function_symbol(unit, &collection, "method1");
+    let method2_symbol = function_symbol(unit, &collection, "method2");
 
     assert_relation(widget_symbol, method1_symbol);
     assert_relation(widget_symbol, method2_symbol);
@@ -1293,13 +1217,10 @@ fn cross_method_dependencies_in_impl() {
 
     let (_, unit, collection) = compile(source);
 
-    let helper_desc = find_function(&collection, "internal_helper");
-    let public_desc = find_function(&collection, "public_api");
-    let another_desc = find_function(&collection, "another_api");
 
-    let helper_symbol = symbol(unit, helper_desc.hir_id);
-    let public_symbol = symbol(unit, public_desc.hir_id);
-    let another_symbol = symbol(unit, another_desc.hir_id);
+    let helper_symbol = function_symbol(unit, &collection, "internal_helper");
+    let public_symbol = function_symbol(unit, &collection, "public_api");
+    let another_symbol = function_symbol(unit, &collection, "another_api");
 
     assert_relation(public_symbol, helper_symbol);
     assert_relation(another_symbol, helper_symbol);
@@ -1316,11 +1237,9 @@ fn tuple_struct_dependency() {
 
     let (_, unit, collection) = compile(source);
 
-    let inner_desc = find_struct(&collection, "Inner");
-    let wrapper_desc = find_struct(&collection, "Wrapper");
 
-    let inner_symbol = symbol(unit, inner_desc.hir_id);
-    let wrapper_symbol = symbol(unit, wrapper_desc.hir_id);
+    let inner_symbol = struct_symbol(unit, &collection, "Inner");
+    let wrapper_symbol = struct_symbol(unit, &collection, "Wrapper");
 
     assert_relation(wrapper_symbol, inner_symbol);
 }
@@ -1338,11 +1257,9 @@ fn enum_variant_type_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let data_desc = find_struct(&collection, "Data");
-    let message_desc = find_enum(&collection, "Message");
 
-    let data_symbol = symbol(unit, data_desc.hir_id);
-    let message_symbol = symbol(unit, message_desc.hir_id);
+    let data_symbol = struct_symbol(unit, &collection, "Data");
+    let message_symbol = enum_symbol(unit, &collection, "Message");
 
     assert_relation(message_symbol, data_symbol);
 }
@@ -1361,11 +1278,9 @@ fn associated_function_depends_on_type() {
 
     let (_, unit, collection) = compile(source);
 
-    let builder_desc = find_struct(&collection, "Builder");
-    let new_desc = find_function(&collection, "new");
 
-    let builder_symbol = symbol(unit, builder_desc.hir_id);
-    let new_symbol = symbol(unit, new_desc.hir_id);
+    let builder_symbol = struct_symbol(unit, &collection, "Builder");
+    let new_symbol = function_symbol(unit, &collection, "new");
 
     assert_relation(builder_symbol, new_symbol);
     assert_relation(new_symbol, builder_symbol);
@@ -1385,19 +1300,13 @@ fn nested_function_calls_with_types() {
 
     let (_, unit, collection) = compile(source);
 
-    let a_desc = find_struct(&collection, "A");
-    let b_desc = find_struct(&collection, "B");
-    let c_desc = find_struct(&collection, "C");
-    let process_a_desc = find_function(&collection, "process_a");
-    let process_b_desc = find_function(&collection, "process_b");
-    let process_c_desc = find_function(&collection, "process_c");
 
-    let a_symbol = symbol(unit, a_desc.hir_id);
-    let b_symbol = symbol(unit, b_desc.hir_id);
-    let c_symbol = symbol(unit, c_desc.hir_id);
-    let process_a_symbol = symbol(unit, process_a_desc.hir_id);
-    let process_b_symbol = symbol(unit, process_b_desc.hir_id);
-    let process_c_symbol = symbol(unit, process_c_desc.hir_id);
+    let a_symbol = struct_symbol(unit, &collection, "A");
+    let b_symbol = struct_symbol(unit, &collection, "B");
+    let c_symbol = struct_symbol(unit, &collection, "C");
+    let process_a_symbol = function_symbol(unit, &collection, "process_a");
+    let process_b_symbol = function_symbol(unit, &collection, "process_b");
+    let process_c_symbol = function_symbol(unit, &collection, "process_c");
 
     assert_relation(process_a_symbol, a_symbol);
     assert_relation(process_b_symbol, b_symbol);
@@ -1424,15 +1333,11 @@ fn complex_nested_generics() {
 
     let (_, unit, collection) = compile(source);
 
-    let outer_desc = find_struct(&collection, "Outer");
-    let middle_desc = find_struct(&collection, "Middle");
-    let core_desc = find_struct(&collection, "Core");
-    let process_desc = find_function(&collection, "process");
 
-    let outer_symbol = symbol(unit, outer_desc.hir_id);
-    let middle_symbol = symbol(unit, middle_desc.hir_id);
-    let core_symbol = symbol(unit, core_desc.hir_id);
-    let process_symbol = symbol(unit, process_desc.hir_id);
+    let outer_symbol = struct_symbol(unit, &collection, "Outer");
+    let middle_symbol = struct_symbol(unit, &collection, "Middle");
+    let core_symbol = struct_symbol(unit, &collection, "Core");
+    let process_symbol = function_symbol(unit, &collection, "process");
 
     assert_relation(process_symbol, outer_symbol);
     assert_relation(process_symbol, middle_symbol);
@@ -1449,8 +1354,7 @@ fn circular_type_references_via_pointers() {
 
     let (_, unit, collection) = compile(source);
 
-    let node_desc = find_struct(&collection, "Node");
-    let node_symbol = symbol(unit, node_desc.hir_id);
+    let node_symbol = struct_symbol(unit, &collection, "Node");
 
     // Verify node shouldn't depends on itself
     assert!(node_symbol.depended.borrow().is_empty());
@@ -1469,15 +1373,11 @@ fn multiple_parameters_multiple_types() {
 
     let (_, unit, collection) = compile(source);
 
-    let first_desc = find_struct(&collection, "First");
-    let second_desc = find_struct(&collection, "Second");
-    let third_desc = find_struct(&collection, "Third");
-    let multi_desc = find_function(&collection, "multi_param");
 
-    let first_symbol = symbol(unit, first_desc.hir_id);
-    let second_symbol = symbol(unit, second_desc.hir_id);
-    let third_symbol = symbol(unit, third_desc.hir_id);
-    let multi_symbol = symbol(unit, multi_desc.hir_id);
+    let first_symbol = struct_symbol(unit, &collection, "First");
+    let second_symbol = struct_symbol(unit, &collection, "Second");
+    let third_symbol = struct_symbol(unit, &collection, "Third");
+    let multi_symbol = function_symbol(unit, &collection, "multi_param");
 
     assert_relation(multi_symbol, first_symbol);
     assert_relation(multi_symbol, second_symbol);
@@ -1500,11 +1400,9 @@ fn trait_impl_method_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-    let handler_desc = find_struct(&collection, "Handler");
-    let process_desc = find_function(&collection, "process");
 
-    let handler_symbol = symbol(unit, handler_desc.hir_id);
-    let process_symbol = symbol(unit, process_desc.hir_id);
+    let handler_symbol = struct_symbol(unit, &collection, "Handler");
+    let process_symbol = function_symbol(unit, &collection, "process");
 
     assert_relation(handler_symbol, process_symbol);
 }
