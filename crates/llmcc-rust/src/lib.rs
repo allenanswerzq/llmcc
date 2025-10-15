@@ -8,7 +8,7 @@ pub use crate::collect::{collect_symbols, CollectionResult};
 pub use crate::descriptor::{
     CallArgument, CallDescriptor, CallTarget, EnumDescriptor, EnumVariant, EnumVariantField,
     EnumVariantKind, FnVisibility, FunctionDescriptor, FunctionParameter, StructDescriptor,
-    StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind, VariableScope,
+    StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind, VariableScope, ChainSegment,
 };
 pub use llmcc_core::*;
 pub use token::LangRust;

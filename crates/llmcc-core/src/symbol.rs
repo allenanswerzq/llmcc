@@ -270,8 +270,8 @@ pub struct Symbol {
     /// another relation, like field_of, type_of, called_by, calls etc.
     /// we dont do very clear sepration becase we want llm models to do that, we 
     /// only need to tell models some symbols having depends relations
-    pub depends_on: RefCell<Vec<Id>>,
-    pub depended_by: RefCell<Vec<Id>>,
+    pub depends: RefCell<Vec<Id>>,
+    pub depended: RefCell<Vec<Id>>,
 }
 
 impl Symbol {
@@ -288,8 +288,8 @@ impl Symbol {
             name_key,
             fqn_name: RefCell::new(name),
             fqn_key: RefCell::new(fqn_key),
-            depends_on: RefCell::new(Vec::new()),
-            depended_by: RefCell::new(Vec::new()),
+            depends: RefCell::new(Vec::new()),
+            depended: RefCell::new(Vec::new()),
         }
     }
 
@@ -320,7 +320,7 @@ impl Symbol {
         if sym_id == self.id {
             return;
         }
-        let mut deps = self.depends_on.borrow_mut();
+        let mut deps = self.depends.borrow_mut();
         if deps.iter().any(|existing| *existing == sym_id) {
             return;
         }
@@ -331,7 +331,7 @@ impl Symbol {
         if sym_id == self.id {
             return;
         }
-        let mut deps = self.depended_by.borrow_mut();
+        let mut deps = self.depended.borrow_mut();
         if deps.iter().any(|existing| *existing == sym_id) {
             return;
         }

@@ -6,7 +6,7 @@ fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescri
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(unit).expect("build HIR");
+    build_llmcc_ir::<LangRust>(unit).unwrap();
 
     let globals = cc.create_globals();
     collect_symbols(unit, globals)
@@ -19,7 +19,7 @@ fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescri
 #[test]
 fn detects_private_function() {
     let map = collect_functions("fn foo() {}\n");
-    let foo = map.get("foo").expect("foo");
+    let foo = map.get("foo").unwrap();
     assert_eq!(foo.visibility, FnVisibility::Private);
     assert!(foo.parameters.is_empty());
     assert!(foo.return_type.is_none());
@@ -50,41 +50,41 @@ fn captures_parameters_and_return_type() {
     assert_eq!(desc.parameters[0].pattern, "value");
     assert_eq!(desc.parameters[1].pattern, "label");
 
-    let param0 = desc.parameters[0].ty.as_ref().expect("param0 type");
+    let param0 = desc.parameters[0].ty.as_ref().unwrap();
     assert_path(param0, &["i32"]);
 
-    let param1 = desc.parameters[1].ty.as_ref().expect("param1 type");
+    let param1 = desc.parameters[1].ty.as_ref().unwrap();
     let generics = assert_path(param1, &["Option"]);
     assert_eq!(generics.len(), 1);
     let inner = &generics[0];
-    match inner {
-        TypeExpr::Reference {
-            is_mut,
-            lifetime,
-            inner,
-        } => {
-            assert!(!is_mut);
-            assert!(lifetime.is_none());
-            assert_path(inner, &["str"]);
-        }
-        other => panic!("unexpected type: {other:?}"),
+    if let TypeExpr::Reference {
+        is_mut,
+        lifetime,
+        inner,
+    } = inner
+    {
+        assert!(!is_mut);
+        assert!(lifetime.is_none());
+        assert_path(inner, &["str"]);
+    } else {
+        panic!();
     }
 
-    let return_type = desc.return_type.as_ref().expect("return type");
+    let return_type = desc.return_type.as_ref().unwrap();
     let generics = assert_path(return_type, &["Result"]);
     assert_eq!(generics.len(), 2);
     assert_path(&generics[0], &["i32"]);
-    match &generics[1] {
-        TypeExpr::Reference {
-            is_mut,
-            lifetime,
-            inner,
-        } => {
-            assert!(!is_mut);
-            assert_eq!(lifetime.as_deref(), Some("'static"));
-            assert_path(inner, &["str"]);
-        }
-        other => panic!("unexpected type: {other:?}"),
+    if let TypeExpr::Reference {
+        is_mut,
+        lifetime,
+        inner,
+    } = &generics[1]
+    {
+        assert!(!is_mut);
+        assert_eq!(lifetime.as_deref(), Some("'static"));
+        assert_path(inner, &["str"]);
+    } else {
+        panic!();
     }
 }
 
@@ -103,17 +103,16 @@ fn captures_async_const_and_unsafe_flags() {
 
     let build = map.get("build").unwrap();
     assert!(build.is_const);
-    assert!(!build.is_async);
-    assert!(!build.is_unsafe);
+        assert!(!build.is_async);
+        assert!(!build.is_unsafe);
 }
 
 fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
-    match expr {
-        TypeExpr::Path { segments, generics } => {
-            let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
-            assert_eq!(segments, &expected_vec);
-            generics
-        }
-        other => panic!("expected path type, found {other:?}"),
+    if let TypeExpr::Path { segments, generics } = expr {
+        let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
+        assert_eq!(segments, &expected_vec);
+        generics
+    } else {
+        panic!();
     }
 }
