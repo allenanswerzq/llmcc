@@ -58,6 +58,14 @@ impl<'tcx> Scope<'tcx> {
         hits.first().map(|symbol| symbol.id)
     }
 
+    pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.trie
+            .borrow()
+            .lookup_symbol_suffix(suffix)
+            .into_iter()
+            .next()
+    }
+
     pub fn format_compact(&self) -> String {
         let count = self.trie.borrow().total_symbols();
         format!("{}/{}", self.owner, count)
@@ -90,7 +98,6 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn push_with_symbol(&mut self, scope: &'tcx Scope<'tcx>, symbol: Option<&'tcx Symbol>) {
         scope.set_symbol(symbol);
-        dbg!(scope);
         self.stack.push(scope);
     }
 
@@ -115,6 +122,12 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &'tcx Scope<'tcx>> + '_ {
         self.stack.iter().copied()
+    }
+
+    pub fn lookup_scoped_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.iter()
+            .rev()
+            .find_map(|scope| scope.lookup_suffix_once(suffix))
     }
 
     fn scope_for_insertion(&mut self, global: bool) -> Result<&'tcx Scope<'tcx>, &'static str> {

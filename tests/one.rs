@@ -23,8 +23,8 @@ async fn baz() -> Result<(), ()> {
 }
 
 // Function returning a function
-pub(crate) fn make_adder(y: i32) -> impl Fn(i32) -> i32 {
-    move |x| x + y
+pub(crate) fn make_adder(y: Foo) -> impl Fn(i32) -> i32 {
+    move |x| x + y.x
 }
 
 // Function taking another function as argument
