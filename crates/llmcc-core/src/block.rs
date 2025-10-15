@@ -134,10 +134,8 @@ impl BlockId {
 #[strum(serialize_all = "snake_case")]
 pub enum BlockRelation {
     Unknown,
-    Calls,
-    CalledBy,
-    Contains,
-    ContainedBy,
+    DependedBy,
+    DependsOn,
 }
 
 impl Default for BlockRelation {
@@ -265,7 +263,8 @@ impl<'tcx> ProjectGraph<'tcx> {
                     continue;
                 }
 
-                edges.insert((from_node, to_node, BlockRelation::Calls));
+                edges.insert((from_node, to_node, BlockRelation::DependsOn));
+                edges.insert((to_node, from_node, BlockRelation::DependedBy));
             }
         }
 
@@ -629,10 +628,9 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        if Language::block_kind(node.kind_id()) == BlockKind::Func {
-            self.build_block(node, parent, true);
-        } else {
-            self.visit_children(node, parent);
+        match Language::block_kind(node.kind_id()) {
+            BlockKind::Func | BlockKind::Class => self.build_block(node, parent, true),
+            _ => self.visit_children(node, parent),
         }
     }
 }
