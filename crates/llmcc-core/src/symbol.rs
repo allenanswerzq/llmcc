@@ -90,14 +90,12 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn push_with_symbol(&mut self, scope: &'tcx Scope<'tcx>, symbol: Option<&'tcx Symbol>) {
         scope.set_symbol(symbol);
+        dbg!(scope);
         self.stack.push(scope);
     }
 
     pub fn pop(&mut self) -> Option<&'tcx Scope<'tcx>> {
         let popped = self.stack.pop();
-        if let Some(scope) = popped {
-            scope.set_symbol(None);
-        }
         popped
     }
 

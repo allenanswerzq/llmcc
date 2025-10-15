@@ -59,13 +59,13 @@ impl<'hir> HirNode<'hir> {
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, id);
 
-        if let Some(def) = unit.opt_defs(id) {
-            f.push_str(&format!("   d:{}", def.format_compact()));
-        } else if let Some(sym) = unit.opt_uses(id) {
-            f.push_str(&format!("   u:{}", sym.format_compact()));
-        }
+        // if let Some(def) = unit.opt_defs(id) {
+        //     f.push_str(&format!("   d:{}", def.format_compact()));
+        // } else if let Some(sym) = unit.opt_uses(id) {
+        //     f.push_str(&format!("   u:{}", sym.format_compact()));
+        // }
 
-        if let Some(scope) = unit.opt_scope(id) {
+        if let Some(scope) = unit.opt_get_scope(id) {
             f.push_str(&format!("   s:{}", scope.format_compact()));
         }
 

@@ -102,8 +102,13 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Get an existing scope or None if it doesn't exist
-    pub fn opt_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
+    pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
         self.cc.scope_map.borrow().get(&owner).copied()
+    }
+
+    /// Get an existing scope or None if it doesn't exist
+    pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
+        self.cc.scope_map.borrow().get(&owner).copied().unwrap()
     }
 
     /// Create a new symbol in the arena
@@ -324,57 +329,10 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.files.get(index).and_then(|file| file.path())
     }
 
-    /// Get statistics about the maps
-    pub fn stats(&self) -> GlobalCtxtStats {
-        GlobalCtxtStats {
-            hir_nodes: self.hir_map.borrow().len(),
-            scopes: self.scope_map.borrow().len(),
-        }
-    }
-
     /// Clear all maps (useful for testing)
     #[cfg(test)]
     pub fn clear(&self) {
         self.hir_map.borrow_mut().clear();
         self.scope_map.borrow_mut().clear();
-    }
-}
-
-/// Statistics about CompileCtxt contents
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GlobalCtxtStats {
-    pub hir_nodes: usize,
-    pub definitions: usize,
-    pub uses: usize,
-    pub scopes: usize,
-}
-
-impl std::fmt::Display for GlobalCtxtStats {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "CompileCtxt Stats: {} HIR nodes, {} definitions, {} uses, {} scopes",
-            self.hir_nodes, self.definitions, self.uses, self.scopes
-        )
-    }
-}
-
-#[derive(Debug, Default, Clone, Copy)]
-pub struct BlockStats {
-    pub total: usize,
-    pub roots: usize,
-    pub functions: usize,
-    pub classes: usize,
-    pub impls: usize,
-    pub undefined: usize,
-}
-
-impl std::fmt::Display for BlockStats {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Block Stats: {} total ({} roots, {} functions, {} classes, {} impls, {} undefined)",
-            self.total, self.roots, self.functions, self.classes, self.impls, self.undefined
-        )
     }
 }

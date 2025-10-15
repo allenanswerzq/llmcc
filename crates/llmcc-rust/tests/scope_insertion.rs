@@ -50,7 +50,7 @@ impl<'tcx> Fixture<'tcx> {
             .find_global_suffix_once(&[key])
             .unwrap_or_else(|| panic!("module {name} not registered in globals"));
         self.unit
-            .opt_scope(symbol.owner())
+            .opt_get_scope(symbol.owner())
             .unwrap_or_else(|| panic!("scope not recorded for module {name}"))
     }
 }
@@ -155,7 +155,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
 
     let function_scope = fixture
         .unit
-        .opt_scope(inner_desc.hir_id)
+        .opt_get_scope(inner_desc.hir_id)
         .expect("function scope registered");
     assert!(
         function_scope.get_id(param_key).is_some(),
@@ -173,7 +173,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
         .expect("function body block scope id");
     let body_scope = fixture
         .unit
-        .opt_scope(body_scope_id)
+        .opt_get_scope(body_scope_id)
         .expect("block scope registered for function body");
     assert!(
         body_scope.get_id(local_key).is_some(),
@@ -316,7 +316,7 @@ fn module_enum_visibility() {
         .expect("visible enum descriptor");
     let visible_scope = fixture
         .unit
-        .opt_scope(visible_desc.hir_id)
+        .opt_get_scope(visible_desc.hir_id)
         .expect("scope for visible enum");
     assert!(
         visible_scope.get_id(variant_a_key).is_some(),
@@ -331,7 +331,7 @@ fn module_enum_visibility() {
         .expect("hidden enum descriptor");
     let hidden_scope = fixture
         .unit
-        .opt_scope(hidden_desc.hir_id)
+        .opt_get_scope(hidden_desc.hir_id)
         .expect("scope for hidden enum");
     assert!(
         hidden_scope.get_id(variant_b_key).is_some(),
@@ -390,7 +390,7 @@ fn enum_variant_symbols_are_registered() {
 
     let status_scope = fixture
         .unit
-        .opt_scope(
+        .opt_get_scope(
             fixture
                 .result
                 .enums
@@ -405,7 +405,7 @@ fn enum_variant_symbols_are_registered() {
 
     let private_scope = fixture
         .unit
-        .opt_scope(
+        .opt_get_scope(
             fixture
                 .result
                 .enums

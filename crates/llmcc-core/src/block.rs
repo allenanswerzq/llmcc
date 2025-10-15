@@ -54,11 +54,11 @@ impl<'blk> BasicBlock<'blk> {
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, block_id);
 
-        if let Some(def) = unit.opt_defs(hir_id) {
-            f.push_str(&format!("   d:{}", def.format_compact()));
-        } else if let Some(sym) = unit.opt_uses(hir_id) {
-            f.push_str(&format!("   u:{}", sym.format_compact()));
-        }
+        // if let Some(def) = unit.opt_defs(hir_id) {
+        //     f.push_str(&format!("   d:{}", def.format_compact()));
+        // } else if let Some(sym) = unit.opt_uses(hir_id) {
+        //     f.push_str(&format!("   u:{}", sym.format_compact()));
+        // }
 
         f
     }
@@ -224,7 +224,8 @@ impl<'blk> BlockFunc<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Func, children);
-        let name = unit.defs(node.hir_id()).name.clone();
+        // let name = "aaa".to_string();
+        let name = "aaaa".to_string();
         Self::new(base, name)
     }
 }
@@ -296,7 +297,7 @@ impl<'blk> BlockClass<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Class, children);
-        let name = unit.defs(node.hir_id()).name.clone();
+        let name = "aaa".to_string();
         Self::new(base, name)
     }
 

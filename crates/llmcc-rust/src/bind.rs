@@ -1,8 +1,8 @@
-use llmcc_core::symbol::{Scope, ScopeStack, Symbol};
+use llmcc_core::symbol::{Scope, ScopeStack};
+use llmcc_core::ir::HirNode;
+use llmcc_core::CompileUnit;
 
-use crate::descriptor::function::parse_type_expr;
-use crate::descriptor::TypeExpr;
-use crate::token::{AstVisitorRust, LangRust};
+use crate::token::AstVisitorRust;
 
 #[derive(Debug)]
 struct SymbolBinder<'tcx> {
@@ -21,13 +21,14 @@ impl<'tcx> SymbolBinder<'tcx> {
         &mut self,
         node: HirNode<'tcx>,
     ) {
-        if let Some(scope) = self.unit.opt_scope(node.hir_id()) {
-            if let Some(parent_simbol) = self.scopes.scoped_symbol() {
-                parent_symbol.add_dependency(scope.symbol());
+        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+            let current_symbol = scope.symbol();
+            if let Some(parent_symbol) = self.scopes.scoped_symbol() {
+                parent_symbol.add_dependency(current_symbol.unwrap());
             }
 
             let depth = self.scopes.depth();
-            self.scopes.push_with_symbol(scope, symbol);
+            self.scopes.push_with_symbol(scope, current_symbol);
             self.visit_children(&node);
             self.scopes.pop_until(depth);
         }
