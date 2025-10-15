@@ -19,7 +19,7 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn follow_scope_deeper(&mut self, node: HirNode<'tcx>) {
         let depth = self.scope_stack.depth();
-        let scope = self.unit.alloc_scope(node.hir_id());
+        let scope = self.unit.get_scope(node.hir_id());
         self.scope_stack.push(scope);
 
         self.visit_children(&node);

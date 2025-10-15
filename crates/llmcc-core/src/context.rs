@@ -132,6 +132,10 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.arena.alloc(Symbol::new(owner, name, key))
     }
 
+    pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
+        self.cc.get_scope(owner)
+    }
+
     /// Find an existing scope or create a new one
     pub fn alloc_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
         self.cc.alloc_scope(owner)
@@ -321,6 +325,10 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
         self.alloc_scope(HirId(0))
+    }
+
+    pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
+        self.scope_map.borrow().get(&owner).unwrap()
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

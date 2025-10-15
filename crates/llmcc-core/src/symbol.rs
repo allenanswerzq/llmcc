@@ -21,6 +21,7 @@ impl std::fmt::Display for SymId {
 pub struct Scope<'tcx> {
     trie: RefCell<SymbolTrie<'tcx>>,
     owner: HirId,
+    symbol: Cell<Option<&'tcx Symbol>>,
 }
 
 impl<'tcx> Scope<'tcx> {
@@ -28,11 +29,20 @@ impl<'tcx> Scope<'tcx> {
         Self {
             trie: RefCell::new(SymbolTrie::default()),
             owner,
+            symbol: Cell::new(None),
         }
     }
 
     pub fn owner(&self) -> HirId {
         self.owner
+    }
+
+    pub fn symbol(&self) -> Option<&'tcx Symbol> {
+        self.symbol.get()
+    }
+
+    pub fn set_symbol(&self, symbol: Option<&'tcx Symbol>) {
+        self.symbol.set(symbol);
     }
 
     pub fn insert(&self, _key: InternedStr, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
@@ -57,7 +67,6 @@ pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
     interner: &'tcx InternPool,
     stack: Vec<&'tcx Scope<'tcx>>,
-    pub symbols: Vec<Option<&'tcx Symbol>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {
@@ -66,7 +75,6 @@ impl<'tcx> ScopeStack<'tcx> {
             arena,
             interner,
             stack: Vec::new(),
-            symbols: Vec::new(),
         }
     }
 
@@ -79,13 +87,16 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn push_with_symbol(&mut self, scope: &'tcx Scope<'tcx>, symbol: Option<&'tcx Symbol>) {
+        scope.set_symbol(symbol);
         self.stack.push(scope);
-        self.symbols.push(symbol);
     }
 
     pub fn pop(&mut self) -> Option<&'tcx Scope<'tcx>> {
-        self.symbols.pop();
-        self.stack.pop()
+        let popped = self.stack.pop();
+        if let Some(scope) = popped {
+            scope.set_symbol(None);
+        }
+        popped
     }
 
     pub fn pop_until(&mut self, depth: usize) {
@@ -99,7 +110,7 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn scoped_symbol(&self) -> Option<&'tcx Symbol> {
-        self.symbols.iter().rev().find_map(|symbol| *symbol)
+        self.stack.iter().rev().find_map(|scope| scope.symbol())
     }
 
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &'tcx Scope<'tcx>> + '_ {
@@ -248,12 +259,6 @@ pub struct Symbol {
     pub type_of: Cell<Option<SymId>>,
     /// If this symbol is a field, the `SymId` of the aggregate that owns it.
     pub field_of: Cell<Option<SymId>>,
-    /// Base symbol the current one aliases or derives from (e.g. impl method base).
-    pub base_symbol: Cell<Option<SymId>>,
-    /// Overloaded variants that share this name.
-    pub overloads: RefCell<Vec<SymId>>,
-    /// Nested types declared inside this symbol's scope.
-    pub nested_types: RefCell<Vec<SymId>>,
 }
 
 impl Symbol {
@@ -273,9 +278,6 @@ impl Symbol {
             defined: Cell::new(None),
             type_of: Cell::new(None),
             field_of: Cell::new(None),
-            base_symbol: Cell::new(None),
-            overloads: RefCell::new(Vec::new()),
-            nested_types: RefCell::new(Vec::new()),
         }
     }
 
@@ -298,19 +300,6 @@ impl Symbol {
         }
         if let Some(field_of) = self.field_of.get() {
             info.push(format!("${}", field_of));
-        }
-        if let Some(base_symbol) = self.base_symbol.get() {
-            info.push(format!("&{}", base_symbol));
-        }
-
-        let overloads = self.overloads.borrow().len();
-        if overloads > 0 {
-            info.push(format!("+{}", overloads));
-        }
-
-        let nested = self.nested_types.borrow().len();
-        if nested > 0 {
-            info.push(format!("*{}", nested));
         }
 
         let meta = if info.is_empty() {
