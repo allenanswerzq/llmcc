@@ -103,8 +103,8 @@ fn captures_async_const_and_unsafe_flags() {
 
     let build = map.get("build").unwrap();
     assert!(build.is_const);
-        assert!(!build.is_async);
-        assert!(!build.is_unsafe);
+    assert!(!build.is_async);
+    assert!(!build.is_unsafe);
 }
 
 fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {

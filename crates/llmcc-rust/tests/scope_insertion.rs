@@ -46,9 +46,7 @@ impl<'tcx> Fixture<'tcx> {
     fn module_scope(&self, name: &str) -> &'tcx Scope<'tcx> {
         let stack = self.scope_stack();
         let key = self.intern(name);
-        let symbol = stack
-            .find_global_suffix_once(&[key])
-            .unwrap();
+        let symbol = stack.find_global_suffix_once(&[key]).unwrap();
         self.unit.opt_get_scope(symbol.owner()).unwrap()
     }
 }
@@ -127,10 +125,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
         .find(|desc| desc.fqn == "outer::inner")
         .unwrap();
 
-    let function_scope = fixture
-        .unit
-        .opt_get_scope(inner_desc.hir_id)
-        .unwrap();
+    let function_scope = fixture.unit.opt_get_scope(inner_desc.hir_id).unwrap();
     assert!(function_scope.get_id(param_key).is_some());
 
     let function_node = fixture.unit.hir_node(inner_desc.hir_id);
@@ -142,10 +137,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
         .find(|child| child.kind() == HirKind::Scope)
         .map(|child| child.hir_id())
         .unwrap();
-    let body_scope = fixture
-        .unit
-        .opt_get_scope(body_scope_id)
-        .unwrap();
+    let body_scope = fixture.unit.opt_get_scope(body_scope_id).unwrap();
     assert!(body_scope.get_id(local_key).is_some());
 
     let module_scope = fixture.module_scope("outer");

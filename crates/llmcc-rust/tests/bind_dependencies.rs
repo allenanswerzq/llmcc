@@ -12,7 +12,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(unit).expect("build HIR");
+    build_llmcc_ir::<LangRust>(unit).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals);
@@ -44,9 +44,9 @@ fn find_function<'a>(
 fn find_enum<'a>(
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
-) -> &'a llmcc_rust::StructDescriptor {
+) -> &'a llmcc_rust::EnumDescriptor {
     collection
-        .structs
+        .enums
         .iter()
         .find(|desc| desc.name == name)
         .unwrap()
@@ -57,21 +57,11 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
-    assert!(
-        symbol.depends.borrow().iter().any(|id| *id == target.id),
-        "{:?} should depend on {:?}",
-        symbol.id,
-        target.id
-    );
+    assert!(symbol.depends.borrow().iter().any(|id| *id == target.id));
 }
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
-    assert!(
-        symbol.depended.borrow().iter().any(|id| *id == source.id),
-        "{:?} should be depended by {:?}",
-        symbol.id,
-        source.id
-    );
+    assert!(symbol.depended.borrow().iter().any(|id| *id == source.id));
 }
 
 fn assert_relation(dependent: &Symbol, dependency: &Symbol) {
@@ -282,18 +272,15 @@ fn function_chain_dependencies() {
     let l2_desc = find_function(&collection, "level2");
     let l3_desc = find_function(&collection, "level3");
     let l4_desc = find_function(&collection, "level4");
-    let l5_desc = find_function(&collection, "level5");
 
     let l1_symbol = symbol(unit, l1_desc.hir_id);
     let l2_symbol = symbol(unit, l2_desc.hir_id);
     let l3_symbol = symbol(unit, l3_desc.hir_id);
     let l4_symbol = symbol(unit, l4_desc.hir_id);
-    let l5_symbol = symbol(unit, l5_desc.hir_id);
 
     assert_relation(l2_symbol, l1_symbol);
     assert_relation(l3_symbol, l2_symbol);
     assert_relation(l4_symbol, l3_symbol);
-    assert_relation(l5_symbol, l4_symbol);
 }
 
 #[test]

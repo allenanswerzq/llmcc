@@ -148,7 +148,9 @@ fn captures_method_chain() {
     // expect one chain call plus inner processor::handle
     assert!(calls.len() >= 2);
 
-    let chain = find_call(&calls, |call| matches!(call.target, CallTarget::Chain { .. }));
+    let chain = find_call(&calls, |call| {
+        matches!(call.target, CallTarget::Chain { .. })
+    });
 
     let (base, segments) = chain_target(chain);
     assert_eq!(base, "data");
@@ -162,10 +164,12 @@ fn captures_method_chain() {
     assert!(segments[2].arguments.is_empty());
     assert_eq!(segments[2].generics.len(), 1);
 
-    let handle = find_call(&calls, |call| matches!(
-        &call.target,
-        CallTarget::Path { segments, .. } if segments.join("::") == "processor::handle"
-    ));
+    let handle = find_call(&calls, |call| {
+        matches!(
+            &call.target,
+            CallTarget::Path { segments, .. } if segments.join("::") == "processor::handle"
+        )
+    });
     assert_eq!(handle.arguments.len(), 1);
     assert_eq!(handle.arguments[0].text, "v");
 }
@@ -225,10 +229,12 @@ fn captures_generic_path_call() {
     "#;
 
     let calls = collect_calls(source);
-    let apply = find_call(&calls, |call| matches!(
-        &call.target,
-        CallTarget::Path { segments, .. } if segments.join("::") == "compute::apply"
-    ));
+    let apply = find_call(&calls, |call| {
+        matches!(
+            &call.target,
+            CallTarget::Path { segments, .. } if segments.join("::") == "compute::apply"
+        )
+    });
 
     let (_, generics) = path_target(apply);
     assert_eq!(generics.len(), 2);

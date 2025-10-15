@@ -2,8 +2,8 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol};
 
-use crate::descriptor::{CallDescriptor, CallTarget, TypeExpr};
 use crate::descriptor::function::parse_type_expr;
+use crate::descriptor::{CallDescriptor, CallTarget, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
 
 /// `SymbolBinder` connects symbols with the items they reference so that later
@@ -29,11 +29,7 @@ impl<'tcx> SymbolBinder<'tcx> {
         self.scopes.scoped_symbol()
     }
 
-    fn push_scope_with_symbol(
-        &mut self,
-        node: HirNode<'tcx>,
-        symbol: Option<&'tcx Symbol>,
-    ) {
+    fn push_scope_with_symbol(&mut self, node: HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
         let depth = self.scopes.depth();
         let scope = self
             .unit
@@ -56,11 +52,7 @@ impl<'tcx> SymbolBinder<'tcx> {
         }
     }
 
-    fn symbol_from_field(
-        &mut self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-    ) -> Option<&'tcx Symbol> {
+    fn symbol_from_field(&mut self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
         let child = node.opt_child_by_field(self.unit, field_id)?;
         let ident = child.as_ident()?;
         self.scopes.find_ident(ident)
@@ -72,11 +64,7 @@ impl<'tcx> SymbolBinder<'tcx> {
         }
     }
 
-    fn record_symbol_dependency_by_field(
-        &mut self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-    ) {
+    fn record_symbol_dependency_by_field(&mut self, node: &HirNode<'tcx>, field_id: u16) {
         let symbol = self.symbol_from_field(node, field_id);
         self.record_symbol_dependency(symbol);
     }
@@ -87,10 +75,7 @@ impl<'tcx> SymbolBinder<'tcx> {
         self.resolve_symbol_by_segments(&segments)
     }
 
-    fn resolve_symbol_by_segments(
-        &mut self,
-        segments: &[String],
-    ) -> Option<&'tcx Symbol> {
+    fn resolve_symbol_by_segments(&mut self, segments: &[String]) -> Option<&'tcx Symbol> {
         if segments.is_empty() {
             return None;
         }
@@ -299,13 +284,10 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             return;
         };
 
-        let symbol = self
-            .scopes
-            .find_ident(ident)
-            .or_else(|| {
-                let key = self.interner().intern(&ident.name);
-                self.scopes.find_global_suffix_once(&[key])
-            });
+        let symbol = self.scopes.find_ident(ident).or_else(|| {
+            let key = self.interner().intern(&ident.name);
+            self.scopes.find_global_suffix_once(&[key])
+        });
         self.record_symbol_dependency(symbol);
     }
 

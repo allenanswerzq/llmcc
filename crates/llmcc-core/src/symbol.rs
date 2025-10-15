@@ -268,7 +268,7 @@ pub struct Symbol {
     pub fqn_key: RefCell<InternedStr>,
     /// All symbols that this symbols depends on, most general relation, could be
     /// another relation, like field_of, type_of, called_by, calls etc.
-    /// we dont do very clear sepration becase we want llm models to do that, we 
+    /// we dont do very clear sepration becase we want llm models to do that, we
     /// only need to tell models some symbols having depends relations
     pub depends: RefCell<Vec<Id>>,
     pub depended: RefCell<Vec<Id>>,
@@ -302,12 +302,7 @@ impl Symbol {
     }
 
     pub fn format_compact(&self) -> String {
-        format!(
-            "{}->{} \"{}\"",
-            self.id,
-            self.owner.get(),
-            self.name
-        )
+        format!("{}->{} \"{}\"", self.id, self.owner.get(), self.name)
     }
 
     pub fn set_fqn(&self, fqn: String, interner: &InternPool) {

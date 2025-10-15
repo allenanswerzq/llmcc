@@ -6,8 +6,8 @@ use llmcc_core::symbol::{Scope, ScopeStack, Symbol};
 
 use crate::descriptor::function::parse_type_expr;
 use crate::descriptor::{
-    CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor,
-    StructDescriptor, TypeExpr, VariableDescriptor,
+    CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
+    VariableDescriptor,
 };
 use crate::token::{AstVisitorRust, LangRust};
 
@@ -132,7 +132,6 @@ impl<'tcx> DeclCollector<'tcx> {
         }
         true
     }
-
 
     fn visit_children_new_scope(
         &mut self,
