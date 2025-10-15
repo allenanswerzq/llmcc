@@ -271,6 +271,18 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
         self.visit_children(&node);
     }
 
+    fn visit_scoped_identifier(&mut self, node: HirNode<'tcx>) {
+        let text = node_text_simple(self.unit, &node);
+        let segments: Vec<String> = text
+            .split("::")
+            .filter(|segment| !segment.is_empty())
+            .map(|segment| segment.trim().to_string())
+            .collect();
+        let target = self.resolve_symbol_by_segments(&segments);
+        self.record_symbol_dependency(target);
+        self.visit_children(&node);
+    }
+
     fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
         if let Some(symbol) = self.resolve_type_symbol(&node) {
             self.record_symbol_dependency(Some(symbol));
@@ -310,4 +322,8 @@ fn extract_path_segments(expr: &TypeExpr) -> Option<Vec<String>> {
         TypeExpr::Tuple(items) if items.len() == 1 => extract_path_segments(&items[0]),
         _ => None,
     }
+}
+
+fn node_text_simple<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> String {
+    unit.file().get_text(node.start_byte(), node.end_byte())
 }

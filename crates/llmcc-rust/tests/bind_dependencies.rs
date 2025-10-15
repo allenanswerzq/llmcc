@@ -221,6 +221,79 @@ fn struct_field_creates_dependency() {
 }
 
 #[test]
+fn struct_field_depends_on_enum_type() {
+    let source = r#"
+        enum Status {
+            Ready,
+            Busy,
+        }
+
+        struct Holder {
+            status: Status,
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let status_desc = find_enum(&collection, "Status");
+    let holder_desc = find_struct(&collection, "Holder");
+
+    let status_symbol = symbol(unit, status_desc.hir_id);
+    let holder_symbol = symbol(unit, holder_desc.hir_id);
+
+    assert_relation(holder_symbol, status_symbol);
+}
+
+#[test]
+fn enum_variant_depends_on_struct_type() {
+    let source = r#"
+        struct Payload;
+
+        enum Message {
+            Empty,
+            With(Payload),
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let payload_desc = find_struct(&collection, "Payload");
+    let message_desc = find_enum(&collection, "Message");
+
+    let payload_symbol = symbol(unit, payload_desc.hir_id);
+    let message_symbol = symbol(unit, message_desc.hir_id);
+
+    assert_relation(message_symbol, payload_symbol);
+}
+
+#[test]
+fn match_expression_depends_on_enum_variants() {
+    let source = r#"
+        enum Event {
+            Click,
+            Key(char),
+        }
+
+        fn handle(event: Event) -> i32 {
+            match event {
+                Event::Click => 1,
+                Event::Key(_) => 2,
+            }
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let event_desc = find_enum(&collection, "Event");
+    let handle_desc = find_function(&collection, "handle");
+
+    let event_symbol = symbol(unit, event_desc.hir_id);
+    let handle_symbol = symbol(unit, handle_desc.hir_id);
+
+    assert_relation(handle_symbol, event_symbol);
+}
+
+#[test]
 fn nested_struct_fields_create_chain() {
     let source = r#"
         struct A;

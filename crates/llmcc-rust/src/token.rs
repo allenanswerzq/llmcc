@@ -22,6 +22,7 @@ define_tokens! {
     // ---------------- Node Tokens ----------------
     (integer_literal       , 127 , "integer_literal"            , HirKind::Text),
     (type_identifier       , 354 , "type_identifier"            , HirKind::Identifier),
+    (scoped_identifier     , 243 , "scoped_identifier"          , HirKind::Identifier),
     (identifier            ,   1 , "identifier"                 , HirKind::Identifier),
     (parameter             , 213 , "parameter"                  , HirKind::Internal),
     (parameters            , 210 , "parameters"                 , HirKind::Internal),
