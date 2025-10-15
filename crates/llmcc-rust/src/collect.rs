@@ -2,7 +2,7 @@ use std::mem;
 
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, ScopeStack, Symbol};
+use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::descriptor::function::parse_type_expr;
 use crate::descriptor::{
@@ -88,6 +88,7 @@ impl<'tcx> DeclCollector<'tcx> {
         node: &HirNode<'tcx>,
         field_id: u16,
         global: bool,
+        kind: SymbolKind,
     ) -> Option<(&'tcx Symbol, &'tcx HirIdent<'tcx>, String)> {
         let ident_node = node.child_by_field(self.unit, field_id);
         let ident = ident_node.as_ident()?;
@@ -99,7 +100,11 @@ impl<'tcx> DeclCollector<'tcx> {
             .find_or_insert_with(owner, ident, global, |symbol| {
                 symbol.set_owner(owner);
                 symbol.set_fqn(fqn.clone(), interner);
+                symbol.set_kind_if_unknown(kind);
+                symbol.set_origin_file_if_none(self.unit.index);
             });
+        symbol.set_kind_if_unknown(kind);
+        symbol.set_origin_file_if_none(self.unit.index);
         Some((symbol, ident, fqn))
     }
 
@@ -159,9 +164,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) =
-            self.make_new_symbol(&node, LangRust::field_name, register_globally)
-        {
+        if let Some((symbol, _ident, fqn)) = self.make_new_symbol(
+            &node,
+            LangRust::field_name,
+            register_globally,
+            SymbolKind::Function,
+        ) {
             if let Some(desc) = FunctionDescriptor::from_hir(self.unit, &node, fqn.clone()) {
                 self.functions.push(desc);
             }
@@ -173,7 +181,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         if let Some((_symbol, ident, fqn)) =
-            self.make_new_symbol(&node, LangRust::field_pattern, false)
+            self.make_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable)
         {
             let var =
                 VariableDescriptor::from_let(self.unit, &node, ident.name.clone(), fqn.clone());
@@ -187,13 +195,13 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        let _ = self.make_new_symbol(&node, LangRust::field_pattern, false);
+        let _ = self.make_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable);
         self.visit_children(&node);
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self
-            .make_new_symbol(&node, LangRust::field_name, true)
+            .make_new_symbol(&node, LangRust::field_name, true, SymbolKind::Module)
             .map(|(symbol, _ident, _)| symbol);
         self.visit_children_new_scope(&node, symbol);
     }
@@ -214,6 +222,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
                 if let Some(symbol) = self.scopes.find_global_suffix_once(&keys) {
                     symbol.set_owner(node.hir_id());
+                    symbol.set_origin_file_if_none(self.unit.index);
                     Some(symbol)
                 } else {
                     let name = segments.last().cloned().unwrap_or_default();
@@ -221,6 +230,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     let symbol = self.unit.new_symbol(node.hir_id(), name);
                     symbol.set_owner(node.hir_id());
                     symbol.set_fqn(fqn, self.unit.interner());
+                    symbol.set_origin_file_if_none(self.unit.index);
                     Some(symbol)
                 }
             });
@@ -242,7 +252,8 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         let kind = node.inner_ts_node().kind();
-        if let Some((_symbol, ident, fqn)) = self.make_new_symbol(&node, LangRust::field_name, true)
+        if let Some((_symbol, ident, fqn)) =
+            self.make_new_symbol(&node, LangRust::field_name, true, SymbolKind::Const)
         {
             let variable = match kind {
                 "const_item" => VariableDescriptor::from_const_item(
@@ -265,7 +276,8 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
         let kind = node.inner_ts_node().kind();
-        if let Some((_symbol, ident, fqn)) = self.make_new_symbol(&node, LangRust::field_name, true)
+        if let Some((_symbol, ident, fqn)) =
+            self.make_new_symbol(&node, LangRust::field_name, true, SymbolKind::Static)
         {
             let variable = match kind {
                 "const_item" => VariableDescriptor::from_const_item(
@@ -288,9 +300,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) =
-            self.make_new_symbol(&node, LangRust::field_name, register_globally)
-        {
+        if let Some((symbol, _ident, fqn)) = self.make_new_symbol(
+            &node,
+            LangRust::field_name,
+            register_globally,
+            SymbolKind::Struct,
+        ) {
             if let Some(desc) = StructDescriptor::from_struct(self.unit, &node, fqn.clone()) {
                 self.structs.push(desc);
             }
@@ -302,9 +317,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) =
-            self.make_new_symbol(&node, LangRust::field_name, register_globally)
-        {
+        if let Some((symbol, _ident, fqn)) = self.make_new_symbol(
+            &node,
+            LangRust::field_name,
+            register_globally,
+            SymbolKind::Enum,
+        ) {
             if let Some(desc) = EnumDescriptor::from_enum(self.unit, &node, fqn.clone()) {
                 self.enums.push(desc);
             }
@@ -316,7 +334,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.enum_variant_should_register_globally(&node);
-        let _ = self.make_new_symbol(&node, LangRust::field_name, register_globally);
+        let _ = self.make_new_symbol(
+            &node,
+            LangRust::field_name,
+            register_globally,
+            SymbolKind::EnumVariant,
+        );
         self.visit_children(&node);
     }
 

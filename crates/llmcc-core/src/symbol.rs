@@ -18,6 +18,21 @@ impl std::fmt::Display for SymId {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SymbolKind {
+    Unknown,
+    Module,
+    Struct,
+    Enum,
+    Function,
+    Variable,
+    Const,
+    Static,
+    Trait,
+    Impl,
+    EnumVariant,
+}
+
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
 #[derive(Debug)]
 pub struct Scope<'tcx> {
@@ -125,9 +140,22 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn lookup_scoped_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.iter()
-            .rev()
-            .find_map(|scope| scope.lookup_suffix_once(suffix))
+        self.lookup_scoped_suffix_with_filters(suffix, None, None)
+    }
+
+    pub fn lookup_scoped_suffix_with_filters(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        for scope in self.iter().rev() {
+            let symbols = scope.trie.borrow().lookup_symbol_suffix(suffix);
+            if let Some(symbol) = select_symbol(symbols, kind, file) {
+                return Some(symbol);
+            }
+        }
+        None
     }
 
     fn scope_for_insertion(&mut self, global: bool) -> Result<&'tcx Scope<'tcx>, &'static str> {
@@ -180,7 +208,17 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn find_global_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.find_global_suffix(suffix).into_iter().next()
+        self.find_global_suffix_once_with_filters(suffix, None, None)
+    }
+
+    pub fn find_global_suffix_once_with_filters(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        let symbols = self.find_global_suffix(suffix);
+        select_symbol(symbols, kind, file)
     }
 
     pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
@@ -272,6 +310,8 @@ pub struct Symbol {
     /// only need to tell models some symbols having depends relations
     pub depends: RefCell<Vec<Id>>,
     pub depended: RefCell<Vec<Id>>,
+    kind: Cell<SymbolKind>,
+    origin_file: Cell<Option<usize>>,
 }
 
 impl Symbol {
@@ -290,6 +330,8 @@ impl Symbol {
             fqn_key: RefCell::new(fqn_key),
             depends: RefCell::new(Vec::new()),
             depended: RefCell::new(Vec::new()),
+            kind: Cell::new(SymbolKind::Unknown),
+            origin_file: Cell::new(None),
         }
     }
 
@@ -309,6 +351,30 @@ impl Symbol {
         let key = interner.intern(&fqn);
         *self.fqn_name.borrow_mut() = fqn;
         *self.fqn_key.borrow_mut() = key;
+    }
+
+    pub fn kind(&self) -> SymbolKind {
+        self.kind.get()
+    }
+
+    pub fn set_kind_if_unknown(&self, kind: SymbolKind) {
+        if self.kind.get() == SymbolKind::Unknown {
+            self.kind.set(kind);
+        }
+    }
+
+    pub fn set_kind(&self, kind: SymbolKind) {
+        self.kind.set(kind);
+    }
+
+    pub fn origin_file(&self) -> Option<usize> {
+        self.origin_file.get()
+    }
+
+    pub fn set_origin_file_if_none(&self, file: usize) {
+        if self.origin_file.get().is_none() {
+            self.origin_file.set(Some(file));
+        }
     }
 
     pub fn add_depends_on(&self, sym_id: SymId) {
@@ -337,4 +403,48 @@ impl Symbol {
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);
     }
+}
+
+fn select_symbol<'a>(
+    candidates: Vec<&'a Symbol>,
+    kind: Option<SymbolKind>,
+    file: Option<usize>,
+) -> Option<&'a Symbol> {
+    if candidates.is_empty() {
+        return None;
+    }
+
+    if let Some(kind) = kind {
+        let matches: Vec<&Symbol> = candidates
+            .iter()
+            .copied()
+            .filter(|symbol| symbol.kind() == kind)
+            .collect();
+
+        if let Some(file) = file {
+            if let Some(symbol) = matches
+                .iter()
+                .copied()
+                .find(|symbol| symbol.origin_file() == Some(file))
+            {
+                return Some(symbol);
+            }
+        }
+
+        if !matches.is_empty() {
+            return Some(matches[0]);
+        }
+    }
+
+    if let Some(file) = file {
+        if let Some(symbol) = candidates
+            .iter()
+            .copied()
+            .find(|candidate| candidate.origin_file() == Some(file))
+        {
+            return Some(symbol);
+        }
+    }
+
+    candidates.into_iter().next()
 }

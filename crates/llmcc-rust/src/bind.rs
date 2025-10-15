@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
-use llmcc_core::symbol::{Scope, ScopeStack, Symbol};
+use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::descriptor::function::parse_type_expr;
 use crate::descriptor::{CallDescriptor, CallTarget, TypeExpr};
@@ -72,10 +72,14 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn resolve_impl_target(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let type_node = node.opt_child_by_field(self.unit, LangRust::field_type)?;
         let segments = self.type_segments(&type_node)?;
-        self.resolve_symbol_by_segments(&segments)
+        self.resolve_symbol_by_segments(&segments, None)
     }
 
-    fn resolve_symbol_by_segments(&mut self, segments: &[String]) -> Option<&'tcx Symbol> {
+    fn resolve_symbol_by_segments(
+        &mut self,
+        segments: &[String],
+        kind: Option<SymbolKind>,
+    ) -> Option<&'tcx Symbol> {
         if segments.is_empty() {
             return None;
         }
@@ -86,60 +90,79 @@ impl<'tcx> SymbolBinder<'tcx> {
             .map(|segment| self.interner().intern(segment))
             .collect();
 
-        // Try global lookup first.
-        if let Some(symbol) = self.scopes.find_global_suffix_once(&suffix) {
-            return Some(symbol);
-        }
+        let file_index = self.unit.index;
 
-        // Fallback: single-segment name may be available in the current stack.
-        if segments.len() == 1 {
-            if let Some(current_scope_symbol) = self.scopes.scoped_symbol() {
-                if current_scope_symbol.name == segments[0] {
-                    return Some(current_scope_symbol);
+        self.scopes
+            .lookup_scoped_suffix_with_filters(&suffix, kind, Some(file_index))
+            .or_else(|| {
+                self.scopes
+                    .lookup_scoped_suffix_with_filters(&suffix, kind, None)
+            })
+            .or_else(|| {
+                self.scopes
+                    .find_global_suffix_once_with_filters(&suffix, kind, Some(file_index))
+            })
+            .or_else(|| {
+                self.scopes
+                    .find_global_suffix_once_with_filters(&suffix, kind, None)
+            })
+            .or_else(|| {
+                if kind.is_some() {
+                    self.scopes
+                        .lookup_scoped_suffix_with_filters(&suffix, None, Some(file_index))
+                        .or_else(|| {
+                            self.scopes
+                                .lookup_scoped_suffix_with_filters(&suffix, None, None)
+                        })
+                        .or_else(|| {
+                            self.scopes.find_global_suffix_once_with_filters(
+                                &suffix,
+                                None,
+                                Some(file_index),
+                            )
+                        })
+                        .or_else(|| {
+                            self.scopes
+                                .find_global_suffix_once_with_filters(&suffix, None, None)
+                        })
+                } else {
+                    None
                 }
-            }
-        }
-
-        None
+            })
     }
 
     fn resolve_method_symbol(&mut self, method: &str) -> Option<&'tcx Symbol> {
-        let interner = self.interner();
-        let method_key = interner.intern(method);
-
-        // Direct global lookup (e.g. associated function exposed publicly).
-        if let Some(symbol) = self.scopes.find_global_suffix_once(&[method_key]) {
+        if let Some(symbol) =
+            self.resolve_symbol_by_segments(&[method.to_string()], Some(SymbolKind::Function))
+        {
             return Some(symbol);
         }
 
-        // Walk up the scope stack looking for an enclosing symbol (impl/trait/struct)
-        // and try to resolve `enclosing::method`.
-        for scope in self.scopes.iter().rev() {
-            if let Some(owner_symbol) = scope.symbol() {
-                let fqn = owner_symbol.fqn_name.borrow();
-                if fqn.is_empty() {
-                    continue;
-                }
-                let mut suffix = vec![method_key];
-                let mut owner_segments: Vec<_> = fqn
-                    .split("::")
-                    .filter(|segment| !segment.is_empty())
-                    .map(|segment| interner.intern(segment))
-                    .collect();
-                owner_segments.reverse();
-                suffix.extend(owner_segments);
+        let owner_fqns: Vec<String> = self
+            .scopes
+            .iter()
+            .rev()
+            .filter_map(|scope| {
+                scope
+                    .symbol()
+                    .map(|symbol| symbol.fqn_name.borrow().clone())
+            })
+            .collect();
 
-                if let Some(symbol) = scope.lookup_suffix_once(&suffix) {
-                    return Some(symbol);
-                }
-
-                if let Some(symbol) = scope.lookup_suffix_once(&[method_key]) {
-                    return Some(symbol);
-                }
-
-                if let Some(symbol) = self.scopes.find_global_suffix_once(&suffix) {
-                    return Some(symbol);
-                }
+        for fqn in owner_fqns {
+            if fqn.is_empty() {
+                continue;
+            }
+            let mut segments: Vec<String> = fqn
+                .split("::")
+                .filter(|segment| !segment.is_empty())
+                .map(|segment| segment.to_string())
+                .collect();
+            segments.push(method.to_string());
+            if let Some(symbol) =
+                self.resolve_symbol_by_segments(&segments, Some(SymbolKind::Function))
+            {
+                return Some(symbol);
             }
         }
 
@@ -148,7 +171,9 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn resolve_type_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let segments = self.type_segments(node)?;
-        self.resolve_symbol_by_segments(&segments)
+        self.resolve_symbol_by_segments(&segments, Some(SymbolKind::Struct))
+            .or_else(|| self.resolve_symbol_by_segments(&segments, Some(SymbolKind::Enum)))
+            .or_else(|| self.resolve_symbol_by_segments(&segments, None))
     }
 
     fn type_segments(&mut self, node: &HirNode<'tcx>) -> Option<Vec<String>> {
@@ -160,7 +185,10 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn record_call_target(&mut self, target: &CallTarget) {
         match target {
             CallTarget::Path { segments, .. } => {
-                if let Some(symbol) = self.resolve_symbol_by_segments(segments) {
+                if let Some(symbol) = self
+                    .resolve_symbol_by_segments(segments, Some(SymbolKind::Function))
+                    .or_else(|| self.resolve_symbol_by_segments(segments, None))
+                {
                     self.record_symbol_dependency(Some(symbol));
                 }
             }
@@ -193,7 +221,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             .map(|segment| segment.trim().to_string())
             .filter(|segment| !segment.is_empty())
             .collect();
-        self.resolve_symbol_by_segments(&segments)
+        self.resolve_symbol_by_segments(&segments, None)
     }
 }
 
@@ -278,7 +306,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             .filter(|segment| !segment.is_empty())
             .map(|segment| segment.trim().to_string())
             .collect();
-        let target = self.resolve_symbol_by_segments(&segments);
+        let target = self.resolve_symbol_by_segments(&segments, None);
         self.record_symbol_dependency(target);
         self.visit_children(&node);
     }
@@ -296,10 +324,28 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             return;
         };
 
-        let symbol = self.scopes.find_ident(ident).or_else(|| {
+        let symbol = if let Some(local) = self.scopes.find_ident(ident) {
+            Some(local)
+        } else {
             let key = self.interner().intern(&ident.name);
-            self.scopes.find_global_suffix_once(&[key])
-        });
+            self.scopes
+                .lookup_scoped_suffix_with_filters(&[key], None, Some(self.unit.index))
+                .or_else(|| {
+                    self.scopes
+                        .lookup_scoped_suffix_with_filters(&[key], None, None)
+                })
+                .or_else(|| {
+                    self.scopes.find_global_suffix_once_with_filters(
+                        &[key],
+                        None,
+                        Some(self.unit.index),
+                    )
+                })
+                .or_else(|| {
+                    self.scopes
+                        .find_global_suffix_once_with_filters(&[key], None, None)
+                })
+        };
         self.record_symbol_dependency(symbol);
     }
 

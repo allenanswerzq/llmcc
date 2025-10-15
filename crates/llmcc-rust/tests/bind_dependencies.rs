@@ -294,6 +294,36 @@ fn match_expression_depends_on_enum_variants() {
 }
 
 #[test]
+fn nested_match_expressions_depend_on_variants() {
+    let source = r#"
+        enum Action {
+            Move { x: i32, y: i32 },
+            Click,
+        }
+
+        fn handle(action: Action) -> i32 {
+            match action {
+                Action::Move { x, y } => match (x, y) {
+                    (0, 0) => 0,
+                    _ => 1,
+                },
+                Action::Click => 2,
+            }
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let action_desc = find_enum(&collection, "Action");
+    let handle_desc = find_function(&collection, "handle");
+
+    let action_symbol = symbol(unit, action_desc.hir_id);
+    let handle_symbol = symbol(unit, handle_desc.hir_id);
+
+    assert_relation(handle_symbol, action_symbol);
+}
+
+#[test]
 fn nested_struct_fields_create_chain() {
     let source = r#"
         struct A;
@@ -325,15 +355,15 @@ fn nested_struct_fields_create_chain() {
 fn function_chain_dependencies() {
     let source = r#"
         fn level1() {}
-        
+
         fn level2() {
             level1();
         }
-        
+
         fn level3() {
             level2();
         }
-        
+
         fn level4() {
             level3();
         }
