@@ -10,6 +10,8 @@ static NEXT_SYMBOL_ID: AtomicU32 = AtomicU32::new(1);
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub struct SymId(pub u32);
 
+pub type Id = SymId;
+
 impl std::fmt::Display for SymId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -253,12 +255,12 @@ pub struct Symbol {
     pub fqn_name: RefCell<String>,
     /// Interned key for the fully qualified name.
     pub fqn_key: RefCell<InternedStr>,
-    /// HIR node where the symbol definition appears (`None` until resolved).
-    pub defined: Cell<Option<HirId>>,
-    /// `SymId` of the type describing this symbol (e.g. variable type), if any.
-    pub type_of: Cell<Option<SymId>>,
-    /// If this symbol is a field, the `SymId` of the aggregate that owns it.
-    pub field_of: Cell<Option<SymId>>,
+    /// All symbols that this symbols depends on, most general relation, could be
+    /// another relation, like field_of, type_of, called_by, calls etc.
+    /// we dont do very clear sepration becase we want llm models to do that, we 
+    /// only need to tell models some symbols having depends relations
+    pub depends_on: RefCell<Vec<Id>>,
+    pub depended_by: RefCell<Vec<Id>>,
 }
 
 impl Symbol {
@@ -275,9 +277,8 @@ impl Symbol {
             name_key,
             fqn_name: RefCell::new(name),
             fqn_key: RefCell::new(fqn_key),
-            defined: Cell::new(None),
-            type_of: Cell::new(None),
-            field_of: Cell::new(None),
+            depends_on: RefCell::new(Vec::new()),
+            depended_by: RefCell::new(Vec::new()),
         }
     }
 
@@ -290,30 +291,11 @@ impl Symbol {
     }
 
     pub fn format_compact(&self) -> String {
-        let mut info = Vec::new();
-
-        if let Some(defined) = self.defined.get() {
-            info.push(format!("#{}", defined));
-        }
-        if let Some(type_of) = self.type_of.get() {
-            info.push(format!("@{}", type_of));
-        }
-        if let Some(field_of) = self.field_of.get() {
-            info.push(format!("${}", field_of));
-        }
-
-        let meta = if info.is_empty() {
-            String::new()
-        } else {
-            format!(" ({})", info.join(" "))
-        };
-
         format!(
-            "{}->{} \"{}\"{}",
+            "{}->{} \"{}\"",
             self.id,
             self.owner.get(),
-            self.name,
-            meta
+            self.name
         )
     }
 
@@ -321,5 +303,32 @@ impl Symbol {
         let key = interner.intern(&fqn);
         *self.fqn_name.borrow_mut() = fqn;
         *self.fqn_key.borrow_mut() = key;
+    }
+
+    pub fn add_depends_on(&self, sym_id: SymId) {
+        if sym_id == self.id {
+            return;
+        }
+        let mut deps = self.depends_on.borrow_mut();
+        if deps.iter().any(|existing| *existing == sym_id) {
+            return;
+        }
+        deps.push(sym_id);
+    }
+
+    pub fn add_depended_by(&self, sym_id: SymId) {
+        if sym_id == self.id {
+            return;
+        }
+        let mut deps = self.depended_by.borrow_mut();
+        if deps.iter().any(|existing| *existing == sym_id) {
+            return;
+        }
+        deps.push(sym_id);
+    }
+
+    pub fn add_dependency(&self, other: &Symbol) {
+        self.add_depends_on(other.id);
+        other.add_depended_by(self.id);
     }
 }

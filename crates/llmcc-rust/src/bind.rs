@@ -1,29 +1,36 @@
-use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::HirNode;
-use llmcc_core::symbol::{Scope, ScopeStack};
+use llmcc_core::symbol::{Scope, ScopeStack, Symbol};
 
-use crate::token::AstVisitorRust;
+use crate::descriptor::function::parse_type_expr;
+use crate::descriptor::TypeExpr;
+use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
 struct SymbolBinder<'tcx> {
     unit: CompileUnit<'tcx>,
-    scope_stack: ScopeStack<'tcx>,
+    scopes: ScopeStack<'tcx>,
 }
 
 impl<'tcx> SymbolBinder<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scope_stack = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
-        scope_stack.push(globals);
-        Self { unit, scope_stack }
+        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
+        scopes.push(globals);
+        Self { unit, scopes }
     }
 
-    fn follow_scope_deeper(&mut self, node: HirNode<'tcx>) {
-        let depth = self.scope_stack.depth();
-        let scope = self.unit.get_scope(node.hir_id());
-        self.scope_stack.push(scope);
+    fn enter_child_scope(
+        &mut self,
+        node: HirNode<'tcx>,
+    ) {
+        if let Some(scope) = self.unit.opt_scope(node.hir_id()) {
+            if let Some(parent_simbol) = self.scopes.scoped_symbol() {
+                parent_symbol.add_dependency(scope.symbol());
+            }
 
-        self.visit_children(&node);
-        self.scope_stack.pop_until(depth);
+            let depth = self.scopes.depth();
+            self.scopes.push_with_symbol(scope, symbol);
+            self.visit_children(&node);
+            self.scopes.pop_until(depth);
+        }
     }
 }
 
@@ -33,11 +40,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
-        self.follow_scope_deeper(node);
+        self.enter_child_scope(node);
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        self.follow_scope_deeper(node);
+        self.enter_child_scope(node);
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
@@ -45,33 +52,21 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
-        self.follow_scope_deeper(node);
+        self.enter_child_scope(node);
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
     }
 
-    fn visit_identifier(&mut self, node: HirNode<'tcx>) {
-        let id = node.hir_id();
-        if self.unit.opt_uses(id).is_none() {
-            let ident = node.expect_ident();
-            if let Some(def_sym) = self.scope_stack.find_ident(ident) {
-                let use_sym = self.unit.new_symbol(node.hir_id(), ident.name.clone());
-                use_sym.defined.set(Some(def_sym.owner()));
-                self.unit.insert_use(id, use_sym);
-                return;
-            }
+    fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
+        self.enter_child_scope(node);
+    }
 
-            let ident_key = self.unit.interner().intern(&ident.name);
-            if let Some(def_sym) = self.scope_stack.find_global_suffix_once(&[ident_key]) {
-                let use_sym = self.unit.new_symbol(node.hir_id(), ident.name.clone());
-                use_sym.defined.set(Some(def_sym.owner()));
-                self.unit.insert_use(id, use_sym);
-            } else {
-                println!("not find ident: {}", ident.name);
-            }
-        }
+    fn visit_call_expression(&mut self,node:HirNode<'tcx>) {
+    }
+
+    fn visit_identifier(&mut self, node: HirNode<'tcx>) {
     }
 }
 
