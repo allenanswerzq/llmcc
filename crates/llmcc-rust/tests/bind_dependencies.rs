@@ -41,6 +41,17 @@ fn find_function<'a>(
         .unwrap()
 }
 
+fn find_function_by_fqn<'a>(
+    collection: &'a llmcc_rust::CollectionResult,
+    fqn: &str,
+) -> &'a llmcc_rust::FunctionDescriptor {
+    collection
+        .functions
+        .iter()
+        .find(|desc| desc.fqn == fqn)
+        .unwrap()
+}
+
 fn find_enum<'a>(
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
@@ -58,6 +69,14 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
     assert!(symbol.depends.borrow().iter().any(|id| *id == target.id));
+}
+
+fn assert_not_depends_on(symbol: &Symbol, target: &Symbol) {
+    assert!(
+        !symbol.depends.borrow().iter().any(|id| *id == target.id),
+        "unexpected dependency on {}",
+        target.name.as_str()
+    );
 }
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
@@ -197,6 +216,91 @@ fn function_depends_on_return_type() {
     let returns_symbol = symbol(unit, returns_desc.hir_id);
 
     assert_relation(returns_symbol, bar_symbol);
+}
+
+#[test]
+fn function_call_resolves_when_struct_shares_name() {
+    let source = r#"
+        struct Shared;
+
+        #[allow(non_snake_case)]
+        fn Shared() {}
+
+        fn caller() {
+            Shared();
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let shared_struct_desc = find_struct(&collection, "Shared");
+    let shared_fn_desc = find_function_by_fqn(&collection, "Shared");
+    let caller_desc = find_function(&collection, "caller");
+
+    let shared_struct_symbol = symbol(unit, shared_struct_desc.hir_id);
+    let shared_fn_symbol = symbol(unit, shared_fn_desc.hir_id);
+    let caller_symbol = symbol(unit, caller_desc.hir_id);
+
+    assert_relation(caller_symbol, shared_fn_symbol);
+    assert_relation(caller_symbol, shared_struct_symbol);
+}
+
+#[test]
+fn type_dependency_resolves_when_function_shares_name() {
+    let source = r#"
+        struct Shared;
+
+        #[allow(non_snake_case)]
+        fn Shared() {}
+
+        fn consume(_: Shared) {}
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let shared_struct_desc = find_struct(&collection, "Shared");
+    let shared_fn_desc = find_function_by_fqn(&collection, "Shared");
+    let consume_desc = find_function(&collection, "consume");
+
+    let shared_struct_symbol = symbol(unit, shared_struct_desc.hir_id);
+    let shared_fn_symbol = symbol(unit, shared_fn_desc.hir_id);
+    let consume_symbol = symbol(unit, consume_desc.hir_id);
+
+    assert_relation(consume_symbol, shared_struct_symbol);
+    assert_relation(consume_symbol, shared_fn_symbol);
+}
+
+#[test]
+fn method_call_prefers_inherent_method_with_same_name_as_function() {
+    let source = r#"
+        struct Processor;
+
+        impl Processor {
+            fn process(&self) {}
+
+            fn trigger(&self) {
+                self.process();
+            }
+        }
+
+        fn process() {}
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let processor_desc = find_struct(&collection, "Processor");
+    let method_process_desc = find_function_by_fqn(&collection, "Processor::process");
+    let trigger_desc = find_function_by_fqn(&collection, "Processor::trigger");
+    let free_process_desc = find_function_by_fqn(&collection, "process");
+
+    let processor_symbol = symbol(unit, processor_desc.hir_id);
+    let method_process_symbol = symbol(unit, method_process_desc.hir_id);
+    let trigger_symbol = symbol(unit, trigger_desc.hir_id);
+    let free_process_symbol = symbol(unit, free_process_desc.hir_id);
+
+    assert_relation(processor_symbol, method_process_symbol);
+    assert_relation(trigger_symbol, method_process_symbol);
+    assert_not_depends_on(trigger_symbol, free_process_symbol);
 }
 
 #[test]
