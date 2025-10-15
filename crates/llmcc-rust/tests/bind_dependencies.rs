@@ -141,7 +141,6 @@ fn type_records_dependencies_on_methods() {
 
     let (_, unit, collection) = compile(source);
 
-
     let foo_symbol = struct_symbol(unit, &collection, "Foo");
     let method_symbol = function_symbol(unit, &collection, "method");
 
@@ -164,7 +163,6 @@ fn method_depends_on_inherent_method() {
 
     let (_, unit, collection) = compile(source);
 
-
     let helper_symbol = function_symbol(unit, &collection, "helper");
     let caller_symbol = function_symbol(unit, &collection, "caller");
 
@@ -183,7 +181,6 @@ fn function_depends_on_called_function() {
 
     let (_, unit, collection) = compile(source);
 
-
     let helper_symbol = function_symbol(unit, &collection, "helper");
     let caller_symbol = function_symbol(unit, &collection, "caller");
 
@@ -199,7 +196,6 @@ fn function_depends_on_argument_type() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let foo_symbol = struct_symbol(unit, &collection, "Foo");
     let takes_symbol = function_symbol(unit, &collection, "takes");
@@ -241,7 +237,6 @@ fn function_depends_on_return_type() {
 
     let (_, unit, collection) = compile(source);
 
-
     let bar_symbol = struct_symbol(unit, &collection, "Bar");
     let returns_symbol = function_symbol(unit, &collection, "returns");
 
@@ -263,7 +258,6 @@ fn function_call_resolves_when_struct_shares_name() {
 
     let (_, unit, collection) = compile(source);
 
-
     let shared_struct_symbol = struct_symbol(unit, &collection, "Shared");
     let shared_fn_symbol = function_symbol_by_fqn(unit, &collection, "Shared");
     let caller_symbol = function_symbol(unit, &collection, "caller");
@@ -284,7 +278,6 @@ fn type_dependency_resolves_when_function_shares_name() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let shared_struct_symbol = struct_symbol(unit, &collection, "Shared");
     let shared_fn_symbol = function_symbol_by_fqn(unit, &collection, "Shared");
@@ -312,7 +305,6 @@ fn method_call_prefers_inherent_method_with_same_name_as_function() {
 
     let (_, unit, collection) = compile(source);
 
-
     let processor_symbol = struct_symbol(unit, &collection, "Processor");
     let method_process_symbol = function_symbol_by_fqn(unit, &collection, "Processor::process");
     let trigger_symbol = function_symbol_by_fqn(unit, &collection, "Processor::trigger");
@@ -335,7 +327,6 @@ fn struct_field_creates_dependency() {
 
     let (_, unit, collection) = compile(source);
 
-
     let inner_symbol = struct_symbol(unit, &collection, "Inner");
     let outer_symbol = struct_symbol(unit, &collection, "Outer");
 
@@ -357,7 +348,6 @@ fn struct_field_depends_on_enum_type() {
 
     let (_, unit, collection) = compile(source);
 
-
     let status_symbol = enum_symbol(unit, &collection, "Status");
     let holder_symbol = struct_symbol(unit, &collection, "Holder");
 
@@ -376,7 +366,6 @@ fn enum_variant_depends_on_struct_type() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let payload_symbol = struct_symbol(unit, &collection, "Payload");
     let message_symbol = enum_symbol(unit, &collection, "Message");
@@ -401,7 +390,6 @@ fn match_expression_depends_on_enum_variants() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let event_symbol = enum_symbol(unit, &collection, "Event");
     let handle_symbol = function_symbol(unit, &collection, "handle");
@@ -430,7 +418,6 @@ fn nested_match_expressions_depend_on_variants() {
 
     let (_, unit, collection) = compile(source);
 
-
     let action_symbol = enum_symbol(unit, &collection, "Action");
     let handle_symbol = function_symbol(unit, &collection, "handle");
 
@@ -452,7 +439,6 @@ fn nested_struct_fields_create_chain() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let a_symbol = struct_symbol(unit, &collection, "A");
     let b_symbol = struct_symbol(unit, &collection, "B");
@@ -482,7 +468,6 @@ fn function_chain_dependencies() {
 
     let (_, unit, collection) = compile(source);
 
-
     let l1_symbol = function_symbol(unit, &collection, "level1");
     let l2_symbol = function_symbol(unit, &collection, "level2");
     let l3_symbol = function_symbol(unit, &collection, "level3");
@@ -508,7 +493,6 @@ fn module_with_nested_types() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let outer_type_symbol = struct_symbol(unit, &collection, "OuterType");
     let inner_type_symbol = struct_symbol(unit, &collection, "InnerType");
@@ -536,7 +520,6 @@ fn deeply_nested_modules() {
 
     let (_, unit, collection) = compile(source);
 
-
     let deep_type_symbol = struct_symbol(unit, &collection, "DeepType");
     let access_symbol = function_symbol(unit, &collection, "access");
 
@@ -560,7 +543,6 @@ fn module_functions_calling_each_other() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let helper1_symbol = function_symbol(unit, &collection, "helper1");
     let helper2_symbol = function_symbol(unit, &collection, "helper2");
@@ -587,7 +569,6 @@ fn enum_with_multiple_variant_types() {
 
     let (_, unit, collection) = compile(source);
 
-
     let type_a_symbol = struct_symbol(unit, &collection, "TypeA");
     let type_b_symbol = struct_symbol(unit, &collection, "TypeB");
     let type_c_symbol = struct_symbol(unit, &collection, "TypeC");
@@ -611,7 +592,6 @@ fn enum_with_struct_variants() {
 
     let (_, unit, collection) = compile(source);
 
-
     let inner_symbol = struct_symbol(unit, &collection, "Inner");
     let result_symbol = enum_symbol(unit, &collection, "Result");
 
@@ -633,7 +613,6 @@ fn nested_enums_with_dependencies() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let inner_symbol = enum_symbol(unit, &collection, "Inner");
     let outer_symbol = enum_symbol(unit, &collection, "Outer");
@@ -665,7 +644,6 @@ fn module_with_impl_block() {
 
     let (_, unit, collection) = compile(source);
 
-
     let entity_symbol = struct_symbol(unit, &collection, "Entity");
     let new_symbol = function_symbol(unit, &collection, "new");
     let process_symbol = function_symbol(unit, &collection, "process");
@@ -696,7 +674,6 @@ fn cross_module_type_dependencies() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let type_a_symbol = struct_symbol(unit, &collection, "TypeA");
     let type_b_symbol = struct_symbol(unit, &collection, "TypeB");
@@ -772,7 +749,6 @@ fn enum_method_impl() {
 
     let (_, unit, collection) = compile(source);
 
-
     let state_symbol = enum_symbol(unit, &collection, "State");
     let is_active_symbol = function_symbol(unit, &collection, "is_active");
     let toggle_symbol = function_symbol(unit, &collection, "toggle");
@@ -805,7 +781,6 @@ fn complex_module_hierarchy_with_re_exports() {
 
     let (_, unit, collection) = compile(source);
 
-
     let core_type_symbol = struct_symbol(unit, &collection, "CoreType");
     let app_symbol = struct_symbol(unit, &collection, "App");
     let run_symbol = function_symbol(unit, &collection, "run");
@@ -831,7 +806,6 @@ fn sibling_modules_with_cross_dependencies() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let type_x_symbol = struct_symbol(unit, &collection, "TypeX");
     let type_y_symbol = struct_symbol(unit, &collection, "TypeY");
@@ -866,7 +840,6 @@ fn five_level_nested_modules() {
 
     let (_, unit, collection) = compile(source);
 
-
     let deep_struct_symbol = struct_symbol(unit, &collection, "DeepStruct");
     let deep_function_symbol = function_symbol(unit, &collection, "deep_function");
     let access_deep_symbol = function_symbol(unit, &collection, "access_deep");
@@ -895,7 +868,6 @@ fn enum_as_struct_field() {
 
     let (_, unit, collection) = compile(source);
 
-
     let status_symbol = enum_symbol(unit, &collection, "Status");
     let task_symbol = struct_symbol(unit, &collection, "Task");
     let create_task_symbol = function_symbol(unit, &collection, "create_task");
@@ -920,7 +892,6 @@ fn generic_enum_with_constraints() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let wrapper_symbol = struct_symbol(unit, &collection, "Wrapper");
     let option_symbol = enum_symbol(unit, &collection, "Option");
@@ -951,7 +922,6 @@ fn module_with_trait_and_impl() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let processor_symbol = struct_symbol(unit, &collection, "Processor");
     let process_symbol = function_symbol(unit, &collection, "process");
@@ -988,7 +958,6 @@ fn complex_cross_module_enum_struct_dependencies() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let data_type_symbol = enum_symbol(unit, &collection, "DataType");
     let storage_symbol = struct_symbol(unit, &collection, "Storage");
@@ -1034,7 +1003,6 @@ fn nested_modules_with_multiple_types_and_functions() {
 
     let (_, unit, collection) = compile(source);
 
-
     let outer_struct_symbol = struct_symbol(unit, &collection, "OuterStruct");
     let middle_struct_symbol = struct_symbol(unit, &collection, "MiddleStruct");
     let inner_struct_symbol = struct_symbol(unit, &collection, "InnerStruct");
@@ -1067,7 +1035,6 @@ fn multiple_dependencies_same_function() {
 
     let (_, unit, collection) = compile(source);
 
-
     let dep1_symbol = function_symbol(unit, &collection, "dep1");
     let dep2_symbol = function_symbol(unit, &collection, "dep2");
     let dep3_symbol = function_symbol(unit, &collection, "dep3");
@@ -1094,7 +1061,6 @@ fn method_depends_on_type_and_function() {
 
     let (_, unit, collection) = compile(source);
 
-
     let foo_symbol = struct_symbol(unit, &collection, "Foo");
     let helper_symbol = function_symbol(unit, &collection, "external_helper");
     let method_symbol = function_symbol(unit, &collection, "method");
@@ -1116,7 +1082,6 @@ fn generic_type_parameter_creates_dependency() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let container_symbol = struct_symbol(unit, &collection, "Container");
     let item_symbol = struct_symbol(unit, &collection, "Item");
@@ -1192,7 +1157,6 @@ fn multiple_impl_blocks_same_type() {
 
     let (_, unit, collection) = compile(source);
 
-
     let widget_symbol = struct_symbol(unit, &collection, "Widget");
     let method1_symbol = function_symbol(unit, &collection, "method1");
     let method2_symbol = function_symbol(unit, &collection, "method2");
@@ -1222,7 +1186,6 @@ fn cross_method_dependencies_in_impl() {
 
     let (_, unit, collection) = compile(source);
 
-
     let helper_symbol = function_symbol(unit, &collection, "internal_helper");
     let public_symbol = function_symbol(unit, &collection, "public_api");
     let another_symbol = function_symbol(unit, &collection, "another_api");
@@ -1242,7 +1205,6 @@ fn tuple_struct_dependency() {
 
     let (_, unit, collection) = compile(source);
 
-
     let inner_symbol = struct_symbol(unit, &collection, "Inner");
     let wrapper_symbol = struct_symbol(unit, &collection, "Wrapper");
 
@@ -1261,7 +1223,6 @@ fn enum_variant_type_dependencies() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let data_symbol = struct_symbol(unit, &collection, "Data");
     let message_symbol = enum_symbol(unit, &collection, "Message");
@@ -1283,7 +1244,6 @@ fn associated_function_depends_on_type() {
 
     let (_, unit, collection) = compile(source);
 
-
     let builder_symbol = struct_symbol(unit, &collection, "Builder");
     let new_symbol = function_symbol(unit, &collection, "new");
 
@@ -1304,7 +1264,6 @@ fn nested_function_calls_with_types() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let a_symbol = struct_symbol(unit, &collection, "A");
     let b_symbol = struct_symbol(unit, &collection, "B");
@@ -1337,7 +1296,6 @@ fn complex_nested_generics() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let outer_symbol = struct_symbol(unit, &collection, "Outer");
     let middle_symbol = struct_symbol(unit, &collection, "Middle");
@@ -1378,7 +1336,6 @@ fn multiple_parameters_multiple_types() {
 
     let (_, unit, collection) = compile(source);
 
-
     let first_symbol = struct_symbol(unit, &collection, "First");
     let second_symbol = struct_symbol(unit, &collection, "Second");
     let third_symbol = struct_symbol(unit, &collection, "Third");
@@ -1404,7 +1361,6 @@ fn trait_impl_method_dependencies() {
     "#;
 
     let (_, unit, collection) = compile(source);
-
 
     let handler_symbol = struct_symbol(unit, &collection, "Handler");
     let process_symbol = function_symbol(unit, &collection, "process");

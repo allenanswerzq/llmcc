@@ -93,7 +93,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn record_symbol_dependency_by_field(&mut self, node: &HirNode<'tcx>, field_id: u16) {
-    let symbol = self.symbol_from_field(node, field_id, SymbolKind::EnumVariant);
+        let symbol = self.symbol_from_field(node, field_id, SymbolKind::EnumVariant);
         self.record_symbol_dependency(symbol);
     }
 
@@ -263,26 +263,22 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Module);
+        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Module);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
+        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Enum);
+        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Enum);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
+        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
         self.push_scope_with_symbol(node, symbol);
     }
 
@@ -308,14 +304,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
+        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Static);
+        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Static);
         self.push_scope_with_symbol(node, symbol);
     }
 

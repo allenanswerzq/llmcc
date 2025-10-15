@@ -85,6 +85,10 @@ impl<'tcx> Scope<'tcx> {
         let count = self.trie.borrow().total_symbols();
         format!("{}/{}", self.owner, count)
     }
+
+    pub fn all_symbols(&self) -> Vec<&'tcx Symbol> {
+        self.trie.borrow().symbols()
+    }
 }
 
 #[derive(Debug)]

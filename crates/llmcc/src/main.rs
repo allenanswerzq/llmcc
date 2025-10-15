@@ -20,13 +20,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         collect_symbols(unit, globals);
     }
 
-    // for (index, path) in files.iter().enumerate() {
-    //     let unit = cc.compile_unit(index);
-    //     bind_symbols(unit, globals);
+    let mut graph = cc.create_graph(globals);
+    for (index, path) in files.iter().enumerate() {
+        let unit = cc.compile_unit(index);
+        bind_symbols(unit, globals);
 
-    //     build_llmcc_graph::<LangRust>(unit)?;
-    //     print_llmcc_graph(BlockId(0), unit);
-    // }
+        let unit_graph = build_llmcc_graph::<LangRust>(unit)?;
+        print_llmcc_graph(unit_graph.root(), unit);
+        graph.add_child(unit_graph);
+    }
+    graph.link_units();
 
     Ok(())
 }

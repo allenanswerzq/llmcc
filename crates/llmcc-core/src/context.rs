@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use tree_sitter::Tree;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId, ProjectGraph};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
@@ -288,6 +288,10 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
         self.alloc_scope(HirId(0))
+    }
+
+    pub fn create_graph(&'tcx self, globals: &'tcx Scope<'tcx>) -> ProjectGraph<'tcx> {
+        ProjectGraph::new(globals)
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

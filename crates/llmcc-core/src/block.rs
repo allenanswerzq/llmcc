@@ -1,10 +1,12 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::collections::{HashMap, HashSet};
+use std::marker::PhantomData;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::{CompileUnit, ParentedBlock};
 use crate::declare_arena;
-use crate::ir::HirNode;
+use crate::ir::{HirId, HirNode};
 use crate::lang_def::LanguageTrait;
+use crate::symbol::{Scope, Symbol};
 use crate::visit::HirVisitor;
 
 declare_arena!([
@@ -48,19 +50,10 @@ pub enum BasicBlock<'blk> {
 }
 
 impl<'blk> BasicBlock<'blk> {
-    pub fn format_block(&self, unit: CompileUnit<'blk>) -> String {
+    pub fn format_block(&self, _unit: CompileUnit<'blk>) -> String {
         let block_id = self.block_id();
-        let hir_id = self.node().hir_id();
         let kind = self.kind();
-        let mut f = format!("{}:{}", kind, block_id);
-
-        // if let Some(def) = unit.opt_defs(hir_id) {
-        //     f.push_str(&format!("   d:{}", def.format_compact()));
-        // } else if let Some(sym) = unit.opt_uses(hir_id) {
-        //     f.push_str(&format!("   u:{}", sym.format_compact()));
-        // }
-
-        f
+        format!("{}:{}", kind, block_id)
     }
 
     /// Get the base block information regardless of variant
@@ -129,6 +122,12 @@ impl BlockId {
     pub fn as_u32(self) -> u32 {
         self.0
     }
+
+    pub const ROOT_PARENT: BlockId = BlockId(u32::MAX);
+
+    pub fn is_root_parent(self) -> bool {
+        self.0 == u32::MAX
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
@@ -144,6 +143,159 @@ pub enum BlockRelation {
 impl Default for BlockRelation {
     fn default() -> Self {
         BlockRelation::Unknown
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UnitGraph<'tcx> {
+    unit: CompileUnit<'tcx>,
+    unit_index: usize,
+    root: BlockId,
+    hir_to_block: HashMap<HirId, BlockId>,
+}
+
+impl<'tcx> UnitGraph<'tcx> {
+    pub fn new(
+        unit: CompileUnit<'tcx>,
+        root: BlockId,
+        hir_to_block: HashMap<HirId, BlockId>,
+    ) -> Self {
+        Self {
+            unit,
+            unit_index: unit.index,
+            root,
+            hir_to_block,
+        }
+    }
+
+    pub fn unit(&self) -> CompileUnit<'tcx> {
+        self.unit
+    }
+
+    pub fn unit_index(&self) -> usize {
+        self.unit_index
+    }
+
+    pub fn root(&self) -> BlockId {
+        self.root
+    }
+
+    pub fn block_for_hir(&self, hir_id: HirId) -> Option<BlockId> {
+        self.hir_to_block.get(&hir_id).copied()
+    }
+
+    pub fn hir_mappings(&self) -> &HashMap<HirId, BlockId> {
+        &self.hir_to_block
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GraphNode {
+    pub unit_index: usize,
+    pub block_id: BlockId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CrossUnitEdge {
+    pub from: GraphNode,
+    pub to: GraphNode,
+    pub relation: BlockRelation,
+}
+
+pub struct ProjectGraph<'tcx> {
+    globals: &'tcx Scope<'tcx>,
+    units: Vec<UnitGraph<'tcx>>,
+    hir_index: HashMap<HirId, GraphNode>,
+    cross_unit_edges: Vec<CrossUnitEdge>,
+}
+
+impl<'tcx> ProjectGraph<'tcx> {
+    pub fn new(globals: &'tcx Scope<'tcx>) -> Self {
+        Self {
+            globals,
+            units: Vec::new(),
+            hir_index: HashMap::new(),
+            cross_unit_edges: Vec::new(),
+        }
+    }
+
+    pub fn add_child(&mut self, graph: UnitGraph<'tcx>) {
+        self.register_unit(&graph);
+        self.units.push(graph);
+    }
+
+    fn register_unit(&mut self, graph: &UnitGraph<'tcx>) {
+        for (hir_id, block_id) in graph.hir_mappings() {
+            self.hir_index.insert(
+                *hir_id,
+                GraphNode {
+                    unit_index: graph.unit_index(),
+                    block_id: *block_id,
+                },
+            );
+        }
+    }
+
+    fn node_for_symbol(&self, symbol: &Symbol) -> Option<GraphNode> {
+        let owner = symbol.owner();
+        self.hir_index.get(&owner).copied()
+    }
+
+    pub fn link_units(&mut self) {
+        let mut symbols_by_id = HashMap::new();
+        for symbol in self.globals.all_symbols() {
+            symbols_by_id.insert(symbol.id, symbol);
+        }
+
+        let mut edges = HashSet::new();
+        for symbol in symbols_by_id.values() {
+            let Some(from_node) = self.node_for_symbol(symbol) else {
+                continue;
+            };
+
+            for dependency in symbol.depends.borrow().iter() {
+                let Some(target_symbol) = symbols_by_id.get(dependency) else {
+                    continue;
+                };
+                let Some(to_node) = self.node_for_symbol(target_symbol) else {
+                    continue;
+                };
+
+                if from_node.unit_index == to_node.unit_index {
+                    continue;
+                }
+
+                edges.insert((from_node, to_node, BlockRelation::Calls));
+            }
+        }
+
+        self.cross_unit_edges = edges
+            .into_iter()
+            .map(|(from, to, relation)| CrossUnitEdge { from, to, relation })
+            .collect();
+
+        self.cross_unit_edges.sort_by(|lhs, rhs| {
+            (
+                lhs.from.unit_index,
+                lhs.from.block_id.as_u32(),
+                lhs.to.unit_index,
+                lhs.to.block_id.as_u32(),
+            )
+                .cmp(&(
+                    rhs.from.unit_index,
+                    rhs.from.block_id.as_u32(),
+                    rhs.to.unit_index,
+                    rhs.to.block_id.as_u32(),
+                ))
+        });
+    }
+
+    pub fn cross_unit_edges(&self) -> &[CrossUnitEdge] {
+        &self.cross_unit_edges
+    }
+
+    pub fn units(&self) -> &[UnitGraph<'tcx>] {
+        &self.units
     }
 }
 
@@ -218,7 +370,7 @@ impl<'blk> BlockFunc<'blk> {
     }
 
     pub fn from_hir(
-        unit: CompileUnit<'blk>,
+        _unit: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -291,7 +443,7 @@ impl<'blk> BlockClass<'blk> {
     }
 
     pub fn from_hir(
-        unit: CompileUnit<'blk>,
+        _unit: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
@@ -354,6 +506,8 @@ struct GraphBuilder<'tcx, Language> {
     unit: CompileUnit<'tcx>,
     id: u32,
     bb_map: HashMap<BlockId, ParentedBlock<'tcx>>,
+    hir_to_block: HashMap<HirId, BlockId>,
+    root: Option<BlockId>,
     children_stack: Vec<Vec<BlockId>>,
     ph: PhantomData<Language>,
 }
@@ -364,6 +518,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             unit,
             id: 0,
             bb_map: HashMap::new(),
+            hir_to_block: HashMap::new(),
+            root: None,
             children_stack: Vec::new(),
             ph: PhantomData,
         }
@@ -425,6 +581,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         let block_kind = Language::block_kind(node.kind_id());
         assert_ne!(block_kind, BlockKind::Undefined);
 
+        if self.root.is_none() {
+            self.root = Some(id);
+        }
+
         let children = if recursive {
             self.children_stack.push(Vec::new());
             self.visit_children(node, id);
@@ -436,8 +596,17 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         };
 
         let block = self.create_block(id, node, block_kind, children);
+        self.hir_to_block.insert(node.hir_id(), id);
         self.bb_map.insert(id, ParentedBlock::new(parent, block));
-        self.children_stack.last_mut().unwrap().push(id);
+        if !parent.is_root_parent() {
+            self.unit
+                .cc
+                .related_map
+                .add_containment_relationship(parent, id);
+        }
+        if let Some(children) = self.children_stack.last_mut() {
+            children.push(id);
+        }
     }
 }
 
@@ -470,11 +639,23 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let root = unit.file_start_hir_id().unwrap();
+) -> Result<UnitGraph<'tcx>, Box<dyn std::error::Error>> {
+    let root_hir = unit
+        .file_start_hir_id()
+        .ok_or_else(|| "missing file start HIR id")?;
     let mut builder = GraphBuilder::<L>::new(unit);
-    let root = unit.hir_node(root);
-    builder.visit_node(root, BlockId(0));
-    *unit.bb_map.borrow_mut() = builder.bb_map;
-    Ok(())
+    let root_node = unit.hir_node(root_hir);
+    builder.visit_node(root_node, BlockId::ROOT_PARENT);
+
+    let GraphBuilder {
+        bb_map,
+        hir_to_block,
+        root,
+        ..
+    } = builder;
+
+    *unit.bb_map.borrow_mut() = bb_map;
+
+    let root_block = root.ok_or_else(|| "graph builder produced no root")?;
+    Ok(UnitGraph::new(unit, root_block, hir_to_block))
 }

@@ -105,13 +105,11 @@ impl<'tcx> DeclCollector<'tcx> {
                 symbol.set_fqn(fqn.clone(), interner);
                 symbol.set_kind(kind);
                 symbol.set_origin_file_if_none(self.unit.index);
-                self
-                    .scopes
+                self.scopes
                     .insert_symbol(key, symbol, false)
                     .expect("failed to insert symbol into local scope");
                 if global {
-                    self
-                        .scopes
+                    self.scopes
                         .insert_symbol(key, symbol, true)
                         .expect("failed to insert symbol into global scope");
                 }

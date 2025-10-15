@@ -12,7 +12,9 @@ pub mod symbol;
 pub mod trie;
 pub mod visit;
 
-pub use block::{build_llmcc_graph, BlockId};
+pub use block::{
+    build_llmcc_graph, BlockId, BlockRelation, CrossUnitEdge, GraphNode, ProjectGraph, UnitGraph,
+};
 pub use context::{CompileCtxt, CompileUnit};
 pub use ir::HirId;
 pub use ir_builder::build_llmcc_ir;
