@@ -95,16 +95,47 @@ impl<'tcx> DeclCollector<'tcx> {
         let fqn = self.scoped_fqn(node, &ident.name);
         let interner = self.unit.interner();
         let owner = node.hir_id();
-        let symbol = self
-            .scopes
-            .find_or_insert_with(owner, ident, global, |symbol| {
+        let key = interner.intern(&ident.name);
+
+        let symbol = if let Some(existing) = self.scopes.find_ident(ident) {
+            let existing_kind = existing.kind();
+            if existing_kind != SymbolKind::Unknown && existing_kind != kind {
+                let symbol = self.unit.new_symbol(owner, ident.name.clone());
                 symbol.set_owner(owner);
                 symbol.set_fqn(fqn.clone(), interner);
-                symbol.set_kind_if_unknown(kind);
+                symbol.set_kind(kind);
                 symbol.set_origin_file_if_none(self.unit.index);
-            });
-        symbol.set_kind_if_unknown(kind);
-        symbol.set_origin_file_if_none(self.unit.index);
+                self
+                    .scopes
+                    .insert_symbol(key, symbol, false)
+                    .expect("failed to insert symbol into local scope");
+                if global {
+                    self
+                        .scopes
+                        .insert_symbol(key, symbol, true)
+                        .expect("failed to insert symbol into global scope");
+                }
+                symbol
+            } else {
+                existing.set_owner(owner);
+                existing.set_fqn(fqn.clone(), interner);
+                existing.set_kind_if_unknown(kind);
+                existing.set_origin_file_if_none(self.unit.index);
+                existing
+            }
+        } else {
+            let symbol = self
+                .scopes
+                .find_or_insert_with(owner, ident, global, |symbol| {
+                    symbol.set_owner(owner);
+                    symbol.set_fqn(fqn.clone(), interner);
+                    symbol.set_kind_if_unknown(kind);
+                    symbol.set_origin_file_if_none(self.unit.index);
+                });
+            symbol.set_kind_if_unknown(kind);
+            symbol.set_origin_file_if_none(self.unit.index);
+            symbol
+        };
         Some((symbol, ident, fqn))
     }
 

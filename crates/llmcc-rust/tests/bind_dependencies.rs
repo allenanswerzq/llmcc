@@ -107,10 +107,15 @@ fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
     assert!(symbol.depends.borrow().iter().any(|id| *id == target.id));
 }
 
-fn assert_not_depends_on(symbol: &Symbol, target: &Symbol) {
+fn assert_no_relation(symbol: &Symbol, target: &Symbol) {
     assert!(
         !symbol.depends.borrow().iter().any(|id| *id == target.id),
         "unexpected dependency on {}",
+        target.name.as_str()
+    );
+    assert!(
+        !target.depended.borrow().iter().any(|id| *id == symbol.id),
+        "unexpected reverse dependency from {}",
         target.name.as_str()
     );
 }
@@ -264,7 +269,7 @@ fn function_call_resolves_when_struct_shares_name() {
     let caller_symbol = function_symbol(unit, &collection, "caller");
 
     assert_relation(caller_symbol, shared_fn_symbol);
-    assert_relation(caller_symbol, shared_struct_symbol);
+    assert_no_relation(caller_symbol, shared_struct_symbol);
 }
 
 #[test]
@@ -286,7 +291,7 @@ fn type_dependency_resolves_when_function_shares_name() {
     let consume_symbol = function_symbol(unit, &collection, "consume");
 
     assert_relation(consume_symbol, shared_struct_symbol);
-    assert_relation(consume_symbol, shared_fn_symbol);
+    assert_no_relation(consume_symbol, shared_fn_symbol);
 }
 
 #[test]
@@ -315,7 +320,7 @@ fn method_call_prefers_inherent_method_with_same_name_as_function() {
 
     assert_relation(processor_symbol, method_process_symbol);
     assert_relation(trigger_symbol, method_process_symbol);
-    assert_not_depends_on(trigger_symbol, free_process_symbol);
+    assert_no_relation(trigger_symbol, free_process_symbol);
 }
 
 #[test]

@@ -52,10 +52,38 @@ impl<'tcx> SymbolBinder<'tcx> {
         }
     }
 
-    fn symbol_from_field(&mut self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
+    fn symbol_from_field(
+        &mut self,
+        node: &HirNode<'tcx>,
+        field_id: u16,
+        expected: SymbolKind,
+    ) -> Option<&'tcx Symbol> {
         let child = node.opt_child_by_field(self.unit, field_id)?;
         let ident = child.as_ident()?;
-        self.scopes.find_ident(ident)
+        let key = self.interner().intern(&ident.name);
+        self.scopes
+            .lookup_scoped_suffix_with_filters(&[key], Some(expected), Some(self.unit.index))
+            .or_else(|| {
+                self.scopes
+                    .lookup_scoped_suffix_with_filters(&[key], Some(expected), None)
+            })
+            .or_else(|| {
+                self.scopes.find_global_suffix_once_with_filters(
+                    &[key],
+                    Some(expected),
+                    Some(self.unit.index),
+                )
+            })
+            .or_else(|| {
+                self.scopes
+                    .find_global_suffix_once_with_filters(&[key], Some(expected), None)
+            })
+            .or_else(|| {
+                self.scopes.find_ident(ident).map(|symbol| {
+                    symbol.set_kind_if_unknown(expected);
+                    symbol
+                })
+            })
     }
 
     fn record_symbol_dependency(&mut self, symbol: Option<&'tcx Symbol>) {
@@ -65,7 +93,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn record_symbol_dependency_by_field(&mut self, node: &HirNode<'tcx>, field_id: u16) {
-        let symbol = self.symbol_from_field(node, field_id);
+    let symbol = self.symbol_from_field(node, field_id, SymbolKind::EnumVariant);
         self.record_symbol_dependency(symbol);
     }
 
@@ -235,22 +263,26 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name);
+        let symbol =
+            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Module);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name);
+        let symbol =
+            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name);
+        let symbol =
+            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Enum);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name);
+        let symbol =
+            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
         self.push_scope_with_symbol(node, symbol);
     }
 
@@ -276,12 +308,14 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name);
+        let symbol =
+            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
         self.push_scope_with_symbol(node, symbol);
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name);
+        let symbol =
+            self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Static);
         self.push_scope_with_symbol(node, symbol);
     }
 
@@ -300,6 +334,10 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_scoped_identifier(&mut self, node: HirNode<'tcx>) {
+        if self.identifier_is_call_function(&node) {
+            self.visit_children(&node);
+            return;
+        }
         let text = node_text_simple(self.unit, &node);
         let segments: Vec<String> = text
             .split("::")
@@ -323,6 +361,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             self.visit_children(&node);
             return;
         };
+
+        if self.identifier_is_call_function(&node) {
+            self.visit_children(&node);
+            return;
+        }
 
         let symbol = if let Some(local) = self.scopes.find_ident(ident) {
             Some(local)
@@ -351,6 +394,25 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
+    }
+}
+
+impl<'tcx> SymbolBinder<'tcx> {
+    fn identifier_is_call_function(&self, node: &HirNode<'tcx>) -> bool {
+        let Some(parent_id) = node.parent() else {
+            return false;
+        };
+        let parent = self.unit.hir_node(parent_id);
+        if parent.kind_id() != LangRust::call_expression {
+            return false;
+        }
+        let parent_ts = parent.inner_ts_node();
+        let Some(function_ts) = parent_ts.child_by_field_name("function") else {
+            return false;
+        };
+        let node_ts = node.inner_ts_node();
+        function_ts.start_byte() == node_ts.start_byte()
+            && function_ts.end_byte() == node_ts.end_byte()
     }
 }
 
