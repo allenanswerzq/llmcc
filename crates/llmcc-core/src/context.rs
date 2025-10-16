@@ -6,7 +6,6 @@ use tree_sitter::Tree;
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
-use crate::graph_builder::ProjectGraph;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
@@ -317,10 +316,6 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
         self.alloc_scope(HirId(0))
-    }
-
-    pub fn create_graph(&self) -> ProjectGraph {
-        ProjectGraph::new()
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

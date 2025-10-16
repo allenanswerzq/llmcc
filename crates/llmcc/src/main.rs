@@ -20,7 +20,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         collect_symbols(unit, globals);
     }
 
-    let mut graph = cc.create_graph();
+    let mut graph = ProjectGraph::new(&cc);
     for (index, _path) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
         bind_symbols(unit, globals);
@@ -29,7 +29,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         print_llmcc_graph(unit_graph.root(), unit);
         graph.add_child(unit_graph);
     }
-    graph.link_units(&cc);
+    graph.link_units();
 
     Ok(())
 }
