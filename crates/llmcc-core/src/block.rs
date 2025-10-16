@@ -16,6 +16,8 @@ declare_arena!([
     blk_impl: BlockImpl<'tcx>,
     blk_stmt: BlockStmt<'tcx>,
     blk_call: BlockCall<'tcx>,
+    blk_enum: BlockEnum<'tcx>,
+    blk_const: BlockConst<'tcx>,
 ]);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
@@ -27,6 +29,8 @@ pub enum BlockKind {
     Stmt,
     Call,
     Class,
+    Enum,
+    Const,
     Impl,
     Scope,
 }
@@ -44,8 +48,10 @@ pub enum BasicBlock<'blk> {
     Func(&'blk BlockFunc<'blk>),
     Stmt(&'blk BlockStmt<'blk>),
     Call(&'blk BlockCall<'blk>),
+    Enum(&'blk BlockEnum<'blk>),
     Class(&'blk BlockClass<'blk>),
     Impl(&'blk BlockImpl<'blk>),
+    Const(&'blk BlockConst<'blk>),
     Block,
 }
 
@@ -66,6 +72,8 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Impl(block) => Some(&block.base),
             BasicBlock::Stmt(block) => Some(&block.base),
             BasicBlock::Call(block) => Some(&block.base),
+            BasicBlock::Enum(block) => Some(&block.base),
+            BasicBlock::Const(block) => Some(&block.base),
         }
     }
 
@@ -351,5 +359,60 @@ impl<'blk> BlockImpl<'blk> {
 
     pub fn add_method(&mut self, method_id: BlockId) {
         self.methods.push(method_id);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockEnum<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+    pub fields: Vec<BlockId>,
+}
+
+impl<'blk> BlockEnum<'blk> {
+    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
+        Self {
+            base,
+            name,
+            fields: Vec::new(),
+        }
+    }
+
+    pub fn from_hir(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
+        let name = "aaa".to_string();
+        Self::new(base, name)
+    }
+
+    pub fn add_field(&mut self, field_id: BlockId) {
+        self.fields.push(field_id);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockConst<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+}
+
+impl<'blk> BlockConst<'blk> {
+    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
+        Self { base, name }
+    }
+
+    pub fn from_hir(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
+        let name = "aaa".to_string();
+        Self::new(base, name)
     }
 }

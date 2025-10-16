@@ -79,8 +79,8 @@ impl<'tcx> SymbolBinder<'tcx> {
                     .find_global_suffix_once_with_filters(&[key], Some(expected), None)
             })
             .or_else(|| {
-                self.scopes.find_ident(ident).map(|symbol| {
-                    symbol.set_kind_if_unknown(expected);
+                self.scopes.find_symbol_local(&ident.name).map(|symbol| {
+                    symbol.set_kind(expected);
                     symbol
                 })
             })
@@ -361,7 +361,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             return;
         }
 
-        let symbol = if let Some(local) = self.scopes.find_ident(ident) {
+        let symbol = if let Some(local) = self.scopes.find_symbol_local(&ident.name) {
             Some(local)
         } else {
             let key = self.interner().intern(&ident.name);
