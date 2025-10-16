@@ -56,7 +56,7 @@ impl<'tcx> GraphFixture<'tcx> {
             graph.add_child(unit_graph);
         }
 
-        graph.link_units(self.cc);
+        graph.link_units();
         graph
     }
 

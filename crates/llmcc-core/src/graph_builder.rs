@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
-use crate::block::{BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockRoot, BlockStmt};
+use crate::block::{BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockRoot, BlockStmt, BlockImpl};
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
@@ -210,9 +210,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 BasicBlock::Const(arena.alloc(stmt))
             }
             BlockKind::Impl => {
-                todo!()
-                // let block = BlockImpl::from_hir(unit, id, node, parent, children);
-                // BasicBlock::Impl(arena.alloc(block))
+                let block = BlockImpl::from_hir(id, node, parent, children);
+                BasicBlock::Impl(arena.alloc(block))
             }
             _ => {
                 panic!("unknown block kind: {}", kind)
@@ -361,7 +360,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         match Language::block_kind(node.kind_id()) {
-            BlockKind::Func | BlockKind::Class | BlockKind::Enum | BlockKind::Const => {
+            BlockKind::Func | BlockKind::Class | BlockKind::Enum | BlockKind::Const | BlockKind::Impl => {
                 self.build_block(node, parent, true)
             }
             _ => self.visit_children(node, parent),
