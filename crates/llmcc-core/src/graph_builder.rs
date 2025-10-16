@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
-use crate::block::{BlockCall, BlockClass, BlockFunc, BlockRoot, BlockStmt};
+use crate::block::{BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockRoot, BlockStmt};
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
@@ -188,6 +188,14 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // let block = BlockImpl::from_hir(unit, id, node, parent, children);
                 // BasicBlock::Impl(arena.alloc(block))
             }
+            BlockKind::Enum => {
+                let enum_ty = BlockEnum::from_hir(id, node, parent, children);
+                BasicBlock::Enum(arena.alloc(enum_ty))
+            }
+            BlockKind::Const => {
+                let stmt = BlockConst::from_hir(id, node, parent, children);
+                BasicBlock::Const(arena.alloc(stmt))
+            }
             _ => {
                 panic!("unknown block kind: {}", kind)
             }
@@ -246,6 +254,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     fn build_block(&mut self, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
         let id = self.next_id();
         let block_kind = Language::block_kind(node.kind_id());
+        dbg!(id, block_kind, node.kind());
         assert_ne!(block_kind, BlockKind::Undefined);
 
         if self.root.is_none() {
