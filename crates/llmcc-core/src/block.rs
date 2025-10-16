@@ -1,13 +1,8 @@
-use std::collections::{HashMap, HashSet};
-use std::marker::PhantomData;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
-use crate::context::{CompileCtxt, CompileUnit, ParentedBlock};
+use crate::context::CompileUnit;
 use crate::declare_arena;
-use crate::ir::{HirId, HirNode};
-use crate::lang_def::LanguageTrait;
-use crate::symbol::Symbol;
-use crate::visit::HirVisitor;
+use crate::ir::HirNode;
 
 declare_arena!([
     blk_root: BlockRoot<'tcx>,

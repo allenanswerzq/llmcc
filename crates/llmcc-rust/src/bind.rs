@@ -86,24 +86,24 @@ impl<'tcx> SymbolBinder<'tcx> {
         })
     }
 
-    fn record_symbol_dependency(&mut self, symbol: Option<&'tcx Symbol>) {
+    fn add_symbol_relation(&mut self, symbol: Option<&'tcx Symbol>) {
         if let (Some(current), Some(target)) = (self.current_symbol(), symbol) {
             current.add_dependency(target);
         }
     }
 
-    fn record_symbol_dependency_by_field(&mut self, node: &HirNode<'tcx>, field_id: u16) {
+    fn add_symbol_relation_by_field(&mut self, node: &HirNode<'tcx>, field_id: u16) {
         let symbol = self.find_symbol_from_field(node, field_id, SymbolKind::EnumVariant);
-        self.record_symbol_dependency(symbol);
+        self.add_symbol_relation(symbol);
     }
 
     fn resolve_impl_target(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let type_node = node.opt_child_by_field(self.unit, LangRust::field_type)?;
         let segments = self.type_segments(&type_node)?;
-        self.resolve_symbol_by_segments(&segments, None)
+        self.resolve_symbol(&segments, None)
     }
 
-    fn resolve_symbol_by_segments(
+    fn resolve_symbol(
         &mut self,
         segments: &[String],
         kind: Option<SymbolKind>,
@@ -129,7 +129,7 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn resolve_method_symbol(&mut self, method: &str) -> Option<&'tcx Symbol> {
         if let Some(symbol) =
-            self.resolve_symbol_by_segments(&[method.to_string()], Some(SymbolKind::Function))
+            self.resolve_symbol(&[method.to_string()], Some(SymbolKind::Function))
         {
             return Some(symbol);
         }
@@ -156,7 +156,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                 .collect();
             segments.push(method.to_string());
             if let Some(symbol) =
-                self.resolve_symbol_by_segments(&segments, Some(SymbolKind::Function))
+                self.resolve_symbol(&segments, Some(SymbolKind::Function))
             {
                 return Some(symbol);
             }
@@ -167,9 +167,9 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn resolve_type_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let segments = self.type_segments(node)?;
-        self.resolve_symbol_by_segments(&segments, Some(SymbolKind::Struct))
-            .or_else(|| self.resolve_symbol_by_segments(&segments, Some(SymbolKind::Enum)))
-            .or_else(|| self.resolve_symbol_by_segments(&segments, None))
+        self.resolve_symbol(&segments, Some(SymbolKind::Struct))
+            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
+            .or_else(|| self.resolve_symbol(&segments, None))
     }
 
     fn type_segments(&mut self, node: &HirNode<'tcx>) -> Option<Vec<String>> {
@@ -182,24 +182,24 @@ impl<'tcx> SymbolBinder<'tcx> {
         match target {
             CallTarget::Path { segments, .. } => {
                 if let Some(symbol) = self
-                    .resolve_symbol_by_segments(segments, Some(SymbolKind::Function))
-                    .or_else(|| self.resolve_symbol_by_segments(segments, None))
+                    .resolve_symbol(segments, Some(SymbolKind::Function))
+                    .or_else(|| self.resolve_symbol(segments, None))
                 {
-                    self.record_symbol_dependency(Some(symbol));
+                    self.add_symbol_relation(Some(symbol));
                 }
             }
             CallTarget::Method { method, .. } => {
                 if let Some(symbol) = self.resolve_method_symbol(method) {
-                    self.record_symbol_dependency(Some(symbol));
+                    self.add_symbol_relation(Some(symbol));
                 }
             }
             CallTarget::Chain { base, segments } => {
                 if let Some(symbol) = self.resolve_path_text(base) {
-                    self.record_symbol_dependency(Some(symbol));
+                    self.add_symbol_relation(Some(symbol));
                 }
                 for segment in segments {
                     if let Some(symbol) = self.resolve_method_symbol(&segment.method) {
-                        self.record_symbol_dependency(Some(symbol));
+                        self.add_symbol_relation(Some(symbol));
                     }
                 }
             }
@@ -217,7 +217,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             .map(|segment| segment.trim().to_string())
             .filter(|segment| !segment.is_empty())
             .collect();
-        self.resolve_symbol_by_segments(&segments, None)
+        self.resolve_symbol(&segments, None)
     }
 }
 
@@ -282,7 +282,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
-        self.record_symbol_dependency_by_field(&node, LangRust::field_name);
+        self.add_symbol_relation_by_field(&node, LangRust::field_name);
         self.visit_children(&node);
     }
 
@@ -306,14 +306,14 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             .filter(|segment| !segment.is_empty())
             .map(|segment| segment.trim().to_string())
             .collect();
-        let target = self.resolve_symbol_by_segments(&segments, None);
-        self.record_symbol_dependency(target);
+        let target = self.resolve_symbol(&segments, None);
+        self.add_symbol_relation(target);
         self.visit_children(&node);
     }
 
     fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
         if let Some(symbol) = self.resolve_type_symbol(&node) {
-            self.record_symbol_dependency(Some(symbol));
+            self.add_symbol_relation(Some(symbol));
         }
         self.visit_children(&node);
     }
@@ -351,7 +351,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
                         .find_global_suffix_with_filters(&[key], None, None)
                 })
         };
-        self.record_symbol_dependency(symbol);
+        self.add_symbol_relation(symbol);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {

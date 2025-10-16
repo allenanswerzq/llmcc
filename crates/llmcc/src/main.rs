@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let mut graph = cc.create_graph();
-    for (index, path) in files.iter().enumerate() {
+    for (index, _path) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
         bind_symbols(unit, globals);
 
