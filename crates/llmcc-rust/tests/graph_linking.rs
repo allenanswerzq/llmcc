@@ -21,7 +21,7 @@ fn cross_unit_dependencies_create_edges() {
         collect_symbols(unit, globals);
     }
 
-    let mut graph = cc.create_graph(globals);
+    let mut graph = cc.create_graph();
 
     for index in 0..sources.len() {
         let unit = cc.compile_unit(index);
@@ -30,7 +30,7 @@ fn cross_unit_dependencies_create_edges() {
         graph.add_child(unit_graph);
     }
 
-    graph.link_units();
+    graph.link_units(&cc);
 
     let edges: HashSet<_> = graph
         .cross_unit_edges()
@@ -56,7 +56,7 @@ fn local_dependencies_do_not_create_cross_unit_edges() {
         collect_symbols(unit, globals);
     }
 
-    let mut graph = cc.create_graph(globals);
+    let mut graph = cc.create_graph();
 
     for index in 0..sources.len() {
         let unit = cc.compile_unit(index);
@@ -65,7 +65,7 @@ fn local_dependencies_do_not_create_cross_unit_edges() {
         graph.add_child(unit_graph);
     }
 
-    graph.link_units();
+    graph.link_units(&cc);
 
     assert!(graph.cross_unit_edges().is_empty());
 }
@@ -86,7 +86,7 @@ fn type_dependencies_create_edges() {
         collect_symbols(unit, globals);
     }
 
-    let mut graph = cc.create_graph(globals);
+    let mut graph = cc.create_graph();
 
     for index in 0..sources.len() {
         let unit = cc.compile_unit(index);
@@ -95,7 +95,7 @@ fn type_dependencies_create_edges() {
         graph.add_child(unit_graph);
     }
 
-    graph.link_units();
+    graph.link_units(&cc);
 
     let edges: HashSet<_> = graph
         .cross_unit_edges()

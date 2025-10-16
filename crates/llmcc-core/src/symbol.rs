@@ -1,5 +1,6 @@
 use std::cell::{Cell, RefCell};
 
+use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirIdent};
 use crate::trie::SymbolTrie;
@@ -316,6 +317,8 @@ pub struct Symbol {
     pub depended: RefCell<Vec<Id>>,
     kind: Cell<SymbolKind>,
     origin_file: Cell<Option<usize>>,
+    /// Optional block id associated with this symbol (for graph building)
+    pub block_id: Cell<Option<BlockId>>,
 }
 
 impl Symbol {
@@ -336,6 +339,7 @@ impl Symbol {
             depended: RefCell::new(Vec::new()),
             kind: Cell::new(SymbolKind::Unknown),
             origin_file: Cell::new(None),
+            block_id: Cell::new(None),
         }
     }
 
@@ -406,6 +410,14 @@ impl Symbol {
     pub fn add_dependency(&self, other: &Symbol) {
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);
+    }
+
+    pub fn block_id(&self) -> Option<BlockId> {
+        self.block_id.get()
+    }
+
+    pub fn set_block_id(&self, block_id: Option<BlockId>) {
+        self.block_id.set(block_id);
     }
 }
 

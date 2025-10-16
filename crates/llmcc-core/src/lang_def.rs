@@ -1,4 +1,4 @@
-use crate::block::BlockKind;
+use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
 
 use tree_sitter::Tree;

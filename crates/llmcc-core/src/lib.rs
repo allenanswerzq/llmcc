@@ -1,4 +1,5 @@
 pub mod arena;
+pub mod graph_builder;
 pub mod block;
 pub mod block_rel;
 pub mod context;
@@ -12,8 +13,8 @@ pub mod symbol;
 pub mod trie;
 pub mod visit;
 
-pub use block::{
-    build_llmcc_graph, BlockId, BlockRelation, CrossUnitEdge, GraphNode, ProjectGraph, UnitGraph,
+pub use graph_builder::{
+    build_llmcc_graph, BlockId, BlockRelation, GraphNode, ProjectGraph, UnitGraph,
 };
 pub use context::{CompileCtxt, CompileUnit};
 pub use ir::HirId;

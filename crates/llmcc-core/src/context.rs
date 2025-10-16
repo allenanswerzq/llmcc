@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 use tree_sitter::Tree;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId, ProjectGraph};
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
@@ -46,6 +46,10 @@ impl<'tcx> CompileUnit<'tcx> {
 
     pub fn reserve_hir_id(&self) -> HirId {
         self.cc.reserve_hir_id()
+    }
+
+    pub fn reserve_block_id(&self) -> BlockId {
+        self.cc.reserve_block_id()
     }
 
     pub fn register_file_start(&self) -> HirId {
@@ -226,6 +230,7 @@ pub struct CompileCtxt<'tcx> {
     pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
 
     pub block_arena: BlockArena<'tcx>,
+    pub block_next_id: Cell<u32>,
     // BlockId -> ParentedBlock
     pub bb_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
     // BlockId -> RelatedBlock
@@ -251,6 +256,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
+            block_next_id: Cell::new(0),
             bb_map: RefCell::new(HashMap::new()),
             related_map: BlockRelationMap::default(),
         }
@@ -276,6 +282,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
+            block_next_id: Cell::new(0),
             bb_map: RefCell::new(HashMap::new()),
             related_map: BlockRelationMap::default(),
         })
@@ -290,8 +297,8 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.alloc_scope(HirId(0))
     }
 
-    pub fn create_graph(&'tcx self, globals: &'tcx Scope<'tcx>) -> ProjectGraph<'tcx> {
-        ProjectGraph::new(globals)
+    pub fn create_graph(&'tcx self) -> ProjectGraph<'tcx> {
+        ProjectGraph::new()
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
@@ -312,6 +319,12 @@ impl<'tcx> CompileCtxt<'tcx> {
         let id = self.hir_next_id.get();
         self.hir_next_id.set(id + 1);
         HirId(id)
+    }
+
+    pub fn reserve_block_id(&self) -> BlockId {
+        let id = self.block_next_id.get();
+        self.block_next_id.set(id + 1);
+        BlockId::new(id)
     }
 
     pub fn current_hir_id(&self) -> HirId {

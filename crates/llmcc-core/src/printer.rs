@@ -1,4 +1,4 @@
-use crate::block::{BasicBlock, BlockId};
+use crate::graph_builder::{BasicBlock, BlockId};
 use crate::context::CompileUnit;
 use crate::ir::{HirId, HirNode};
 use tree_sitter::Node;
