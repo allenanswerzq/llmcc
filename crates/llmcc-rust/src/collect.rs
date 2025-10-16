@@ -97,7 +97,7 @@ impl<'tcx> DeclCollector<'tcx> {
         let owner = node.hir_id();
         let key = interner.intern(&ident.name);
 
-        let symbol = if let Some(existing) = self.scopes.find_ident(ident) {
+        let symbol = if let Some(existing) = self.scopes.find_symbol_local(&ident.name) {
             let existing_kind = existing.kind();
             if existing_kind != SymbolKind::Unknown && existing_kind != kind {
                 let symbol = self.unit.alloc_symbol(owner, ident.name.clone());

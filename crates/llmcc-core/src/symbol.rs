@@ -198,7 +198,7 @@ impl<'tcx> ScopeStack<'tcx> {
         })
     }
 
-    fn find_symbol_local(&self, name: &str) -> Option<&'tcx Symbol> {
+    pub fn find_symbol_local(&self, name: &str) -> Option<&'tcx Symbol> {
         let key = self.interner.intern(name);
         self.find_symbol_local_by_key(key)
     }
@@ -224,10 +224,6 @@ impl<'tcx> ScopeStack<'tcx> {
         select_symbol(symbols, kind, file)
     }
 
-    pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
-        self.find_symbol_local(&ident.name)
-    }
-
     pub fn find_or_insert(
         &mut self,
         owner: HirId,
@@ -249,7 +245,7 @@ impl<'tcx> ScopeStack<'tcx> {
     {
         let key = self.interner.intern(&ident.name);
 
-        let symbol = if let Some(existing) = self.find_ident_local(ident) {
+        let symbol = if let Some(existing) = self.find_symbol_local(&ident.name) {
             init(existing);
             existing
         } else {
@@ -287,9 +283,6 @@ impl<'tcx> ScopeStack<'tcx> {
         self.arena.alloc(symbol)
     }
 
-    fn find_ident_local(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
-        self.find_symbol_local(&ident.name)
-    }
 }
 
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
