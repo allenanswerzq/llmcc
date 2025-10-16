@@ -21,11 +21,7 @@ pub struct GraphUnit {
 }
 
 impl GraphUnit {
-    pub fn new(
-        unit_index: usize,
-        root: BlockId,
-        edges: BlockRelationMap,
-    ) -> Self {
+    pub fn new(unit_index: usize, root: BlockId, edges: BlockRelationMap) -> Self {
         Self {
             unit_index,
             root,
@@ -84,8 +80,11 @@ impl ProjectGraph {
                     continue;
                 };
                 self.add_cross_edge(
-                    source_symbol.unit_index().unwrap(), 
-                    target.unit_index().unwrap(), from_block, target_block);
+                    source_symbol.unit_index().unwrap(),
+                    target.unit_index().unwrap(),
+                    from_block,
+                    target_block,
+                );
             }
 
             false
@@ -103,7 +102,6 @@ impl ProjectGraph {
         from_block: BlockId,
         to_block: BlockId,
     ) {
-
         if from_idx == to_idx {
             let unit = &self.units[from_idx];
             if !unit
@@ -120,9 +118,7 @@ impl ProjectGraph {
             .edges
             .has_relation(from_block, BlockRelation::DependsOn, to_block)
         {
-            from_unit
-                .edges
-                .add_relation(from_block, to_block);
+            from_unit.edges.add_relation(from_block, to_block);
         }
 
         let to_unit = &self.units[to_idx];
@@ -130,9 +126,7 @@ impl ProjectGraph {
             .edges
             .has_relation(to_block, BlockRelation::DependedBy, from_block)
         {
-            to_unit
-                .edges
-                .add_relation(to_block,  from_block);
+            to_unit.edges.add_relation(to_block, from_block);
         }
     }
 }

@@ -80,7 +80,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             })
             .or_else(|| {
                 self.scopes.find_ident(ident).map(|symbol| {
-                    symbol.set_kind_if_unknown(expected);
+                    symbol.set_kind(expected);
                     symbol
                 })
             })

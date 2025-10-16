@@ -364,12 +364,6 @@ impl Symbol {
         self.kind.get()
     }
 
-    pub fn set_kind_if_unknown(&self, kind: SymbolKind) {
-        if self.kind.get() == SymbolKind::Unknown {
-            self.kind.set(kind);
-        }
-    }
-
     pub fn set_kind(&self, kind: SymbolKind) {
         self.kind.set(kind);
     }

@@ -31,7 +31,12 @@ impl BlockRelationMap {
     }
 
     /// Remove a specific relationship
-    pub fn remove_relation_impl(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
+    pub fn remove_relation_impl(
+        &self,
+        from: BlockId,
+        relation: BlockRelation,
+        to: BlockId,
+    ) -> bool {
         let mut relations = self.relations.borrow_mut();
         if let Some(block_relations) = relations.get_mut(&from) {
             if let Some(targets) = block_relations.get_mut(&relation) {
@@ -207,13 +212,15 @@ impl<'a> RelationBuilder<'a> {
 
     /// Add a "contains" relationship
     pub fn contains(self, to: BlockId) -> Self {
-        self.map.add_relation_impl(self.from, BlockRelation::Unknown, to);
+        self.map
+            .add_relation_impl(self.from, BlockRelation::Unknown, to);
         self
     }
 
     /// Add a "contained by" relationship
     pub fn contained_by(self, to: BlockId) -> Self {
-        self.map.add_relation_impl(self.from, BlockRelation::Unknown, to);
+        self.map
+            .add_relation_impl(self.from, BlockRelation::Unknown, to);
         self
     }
 
@@ -271,7 +278,6 @@ impl BlockRelationMap {
         self.remove_relation_impl(caller, BlockRelation::DependsOn, callee);
         self.remove_relation_impl(callee, BlockRelation::DependedBy, caller);
     }
-
 
     pub fn get_depended(&self, block: BlockId) -> Vec<BlockId> {
         self.get_related(block, BlockRelation::DependedBy)
