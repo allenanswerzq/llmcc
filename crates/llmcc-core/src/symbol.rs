@@ -224,16 +224,7 @@ impl<'tcx> ScopeStack<'tcx> {
         select_symbol(symbols, kind, file)
     }
 
-    pub fn find_or_insert(
-        &mut self,
-        owner: HirId,
-        ident: &HirIdent<'tcx>,
-        global: bool,
-    ) -> &'tcx Symbol {
-        self.find_or_insert_with(owner, ident, global, |_| {})
-    }
-
-    pub fn find_or_insert_with<F>(
+    pub fn insert_with<F>(
         &mut self,
         owner: HirId,
         ident: &HirIdent<'tcx>,
@@ -245,14 +236,8 @@ impl<'tcx> ScopeStack<'tcx> {
     {
         let key = self.interner.intern(&ident.name);
 
-        let symbol = if let Some(existing) = self.find_symbol_local(&ident.name) {
-            init(existing);
-            existing
-        } else {
-            let symbol = self.create_symbol(owner, ident, key);
-            init(symbol);
-            symbol
-        };
+        let symbol = self.create_symbol(owner, ident, key);
+        init(symbol);
 
         self.insert_symbol(key, symbol, false)
             .expect("failed to insert symbol into scope");
@@ -263,14 +248,6 @@ impl<'tcx> ScopeStack<'tcx> {
 
         self.find_symbol_local_by_key(key)
             .expect("symbol should be present after insertion")
-    }
-
-    pub fn find_or_insert_local(&mut self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol {
-        self.find_or_insert(owner, ident, false)
-    }
-
-    pub fn find_or_insert_global(&mut self, owner: HirId, ident: &HirIdent<'tcx>) -> &'tcx Symbol {
-        self.find_or_insert(owner, ident, true)
     }
 
     fn create_symbol(

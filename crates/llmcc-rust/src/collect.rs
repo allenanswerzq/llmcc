@@ -10,6 +10,8 @@ use crate::descriptor::{
     VariableDescriptor,
 };
 use crate::token::{AstVisitorRust, LangRust};
+use crate::ir::HirId;
+use crate::interner::{InternPool, InternedStr};
 
 /// DeclCollector:
 /// For local resolve (single file) later, we only need to trace back to the scope stack using simple name
@@ -93,46 +95,50 @@ impl<'tcx> DeclCollector<'tcx> {
         let ident_node = node.child_by_field(self.unit, field_id);
         let ident = ident_node.as_ident()?;
         let fqn = self.scoped_fqn(node, &ident.name);
-        let interner = self.unit.interner();
         let owner = node.hir_id();
-        let key = interner.intern(&ident.name);
-
-        let symbol = if let Some(existing) = self.scopes.find_symbol_local(&ident.name) {
-            let existing_kind = existing.kind();
-            if existing_kind != SymbolKind::Unknown && existing_kind != kind {
-                let symbol = self.unit.alloc_symbol(owner, ident.name.clone());
-                symbol.set_owner(owner);
-                symbol.set_fqn(fqn.clone(), interner);
-                symbol.set_kind(kind);
-                symbol.set_unit_index(self.unit.index);
-                self.scopes
-                    .insert_symbol(key, symbol, false)
-                    .expect("failed to insert symbol into local scope");
-                if global {
-                    self.scopes
-                        .insert_symbol(key, symbol, true)
-                        .expect("failed to insert symbol into global scope");
-                }
-                symbol
-            } else {
-                existing.set_owner(owner);
-                existing.set_fqn(fqn.clone(), interner);
-                existing.set_kind(kind);
-                existing.set_unit_index(self.unit.index);
+        
+        let symbol = match self.scopes.find_symbol_local(&ident.name) {
+            Some(existing) if Self::different_kind(existing.kind(), kind) => {
+                self.insert_into_scope(owner, ident, global, &fqn, kind)
+            }
+            Some(existing) => {
+                self.warn_duplicate_symbol(&ident.name, existing.kind(), kind);
                 existing
             }
-        } else {
-            let symbol = self
-                .scopes
-                .find_or_insert_with(owner, ident, global, |symbol| {
-                    symbol.set_owner(owner);
-                    symbol.set_fqn(fqn.clone(), interner);
-                    symbol.set_kind(kind);
-                    symbol.set_unit_index(self.unit.index);
-                });
-            symbol
+            None => self.insert_into_scope(owner, ident, global, &fqn, kind),
         };
+        
         Some((symbol, ident, fqn))
+    }
+
+    fn different_kind(existing_kind: SymbolKind, new_kind: SymbolKind) -> bool {
+        existing_kind != SymbolKind::Unknown && existing_kind != new_kind
+    }
+
+    fn warn_duplicate_symbol(&self, name: &str, existing_kind: SymbolKind, new_kind: SymbolKind) {
+        eprintln!(
+            "warning: duplicate symbol '{}' found in the same scope. existing kind: {:?}, new kind: {:?}. skipping insertion.",
+            name, existing_kind, new_kind
+        );
+    }
+
+    fn insert_into_scope(
+        &mut self,
+        owner: HirId,
+        ident: &'tcx HirIdent<'tcx>,
+        global: bool,
+        fqn: &str,
+        kind: SymbolKind,
+    ) -> &'tcx Symbol {
+        let interner = self.unit.interner();
+        let unit_index = self.unit.index;
+        
+        self.scopes.insert_with(owner, ident, global, |symbol| {
+            symbol.set_owner(owner);
+            symbol.set_fqn(fqn.to_string(), interner);
+            symbol.set_kind(kind);
+            symbol.set_unit_index(unit_index);
+        })
     }
 
     fn has_public_visibility(&self, node: &HirNode<'tcx>) -> bool {
