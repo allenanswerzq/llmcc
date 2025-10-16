@@ -645,14 +645,14 @@ fn module_with_impl_block() {
     let (_, unit, collection) = compile(source);
 
     let entity_symbol = struct_symbol(unit, &collection, "Entity");
-    let new_symbol = function_symbol(unit, &collection, "new");
+    let alloc_symbol = function_symbol(unit, &collection, "new");
     let process_symbol = function_symbol(unit, &collection, "process");
     let create_symbol = function_symbol(unit, &collection, "create");
 
-    assert_relation(entity_symbol, new_symbol);
+    assert_relation(entity_symbol, alloc_symbol);
     assert_relation(entity_symbol, process_symbol);
     assert_relation(create_symbol, entity_symbol);
-    assert_relation(create_symbol, new_symbol);
+    assert_relation(create_symbol, alloc_symbol);
 }
 
 #[test]
@@ -1245,10 +1245,10 @@ fn associated_function_depends_on_type() {
     let (_, unit, collection) = compile(source);
 
     let builder_symbol = struct_symbol(unit, &collection, "Builder");
-    let new_symbol = function_symbol(unit, &collection, "new");
+    let alloc_symbol = function_symbol(unit, &collection, "new");
 
-    assert_relation(builder_symbol, new_symbol);
-    assert_relation(new_symbol, builder_symbol);
+    assert_relation(builder_symbol, alloc_symbol);
+    assert_relation(alloc_symbol, builder_symbol);
 }
 
 #[test]

@@ -10,7 +10,7 @@ use crate::graph_builder::ProjectGraph;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
-use crate::symbol::{Scope, Symbol};
+use crate::symbol::{Scope, Symbol, SymId};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -111,15 +111,21 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.scope_map.borrow().get(&owner).copied()
     }
 
+    pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
+        self.cc.symbol_map.borrow().get(&owner).copied()
+    }
+
     /// Get an existing scope or None if it doesn't exist
     pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
         self.cc.scope_map.borrow().get(&owner).copied().unwrap()
     }
 
     /// Create a new symbol in the arena
-    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
+    pub fn alloc_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
         let key = self.cc.interner.intern(&name);
-        self.cc.arena.alloc(Symbol::new(owner, name, key))
+        let symbol = self.cc.arena.alloc(Symbol::new(owner, name, key));
+        self.cc.symbol_map.borrow_mut().insert(symbol.id, symbol);
+        symbol
     }
 
     /// Find an existing scope or create a new one
@@ -238,6 +244,8 @@ pub struct CompileCtxt<'tcx> {
     pub hir_map: RefCell<HashMap<HirId, ParentedNode<'tcx>>>,
     // HirId -> &Scope (scopes owned by this HIR node)
     pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
+    // SymId -> &Symbol
+    pub symbol_map: RefCell<HashMap<SymId, &'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
     pub block_next_id: Cell<u32>,
@@ -265,6 +273,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RefCell::new(vec![None; count]),
             hir_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
+            symbol_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
             block_next_id: Cell::new(0),
             block_map: RefCell::new(HashMap::new()),
@@ -292,6 +301,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RefCell::new(vec![None; count]),
             hir_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
+            symbol_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
             block_next_id: Cell::new(0),
             block_map: RefCell::new(HashMap::new()),
@@ -315,6 +325,11 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         self.scope_map.borrow().get(&owner).unwrap()
+    }
+
+
+    pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
+        self.symbol_map.borrow().get(&owner).cloned()
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

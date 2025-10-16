@@ -7,7 +7,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
-use crate::symbol::{Id, Symbol};
+use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 
 #[derive(Debug, Clone)]
@@ -18,8 +18,6 @@ pub struct GraphUnit {
     root: BlockId,
     /// Edges of this graph unit
     edges: BlockRelationMap,
-    /// All blocks that belong to this unit (used for linking)
-    blocks: HashSet<BlockId>,
 }
 
 impl GraphUnit {
@@ -27,13 +25,11 @@ impl GraphUnit {
         unit_index: usize,
         root: BlockId,
         edges: BlockRelationMap,
-        blocks: Vec<BlockId>,
     ) -> Self {
         Self {
             unit_index,
             root,
             edges,
-            blocks: blocks.into_iter().collect(),
         }
     }
 
@@ -43,14 +39,6 @@ impl GraphUnit {
 
     pub fn root(&self) -> BlockId {
         self.root
-    }
-
-    pub fn contains_block(&self, id: BlockId) -> bool {
-        self.blocks.contains(&id)
-    }
-
-    pub fn blocks(&self) -> impl Iterator<Item = &BlockId> {
-        self.blocks.iter()
     }
 }
 
@@ -80,15 +68,6 @@ impl ProjectGraph {
             return;
         }
 
-        let mut resolver = SymbolResolver::new(cc);
-
-        let mut block_to_unit = HashMap::new();
-        for (idx, unit) in self.units.iter().enumerate() {
-            for block_id in unit.blocks() {
-                block_to_unit.insert(*block_id, idx);
-            }
-        }
-
         let mut unresolved = cc.unresolve_symbols.borrow_mut();
         unresolved.retain(|symbol_ref| {
             let target = *symbol_ref;
@@ -96,15 +75,17 @@ impl ProjectGraph {
                 return false;
             };
 
-            let dependents: Vec<Id> = target.depended.borrow().clone();
+            let dependents: Vec<SymId> = target.depended.borrow().clone();
             for dependent_id in dependents {
-                let Some(source_symbol) = resolver.resolve(dependent_id) else {
+                let Some(source_symbol) = cc.opt_get_symbol(dependent_id) else {
                     continue;
                 };
                 let Some(from_block) = source_symbol.block_id() else {
                     continue;
                 };
-                self.add_dependency_edge(&block_to_unit, from_block, target_block);
+                self.add_cross_edge(
+                    source_symbol.unit_index().unwrap(), 
+                    target.unit_index().unwrap(), from_block, target_block);
             }
 
             false
@@ -114,6 +95,46 @@ impl ProjectGraph {
     pub fn units(&self) -> &[GraphUnit] {
         &self.units
     }
+
+    fn add_cross_edge(
+        &self,
+        from_idx: usize,
+        to_idx: usize,
+        from_block: BlockId,
+        to_block: BlockId,
+    ) {
+
+        if from_idx == to_idx {
+            let unit = &self.units[from_idx];
+            if !unit
+                .edges
+                .has_relation(from_block, BlockRelation::DependsOn, to_block)
+            {
+                unit.edges.add_relation(from_block, to_block);
+            }
+            return;
+        }
+
+        let from_unit = &self.units[from_idx];
+        if !from_unit
+            .edges
+            .has_relation(from_block, BlockRelation::DependsOn, to_block)
+        {
+            from_unit
+                .edges
+                .add_relation(from_block, to_block);
+        }
+
+        let to_unit = &self.units[to_idx];
+        if !to_unit
+            .edges
+            .has_relation(to_block, BlockRelation::DependedBy, from_block)
+        {
+            to_unit
+                .edges
+                .add_relation(to_block,  from_block);
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -121,7 +142,6 @@ struct GraphBuilder<'tcx, Language> {
     unit: CompileUnit<'tcx>,
     root: Option<BlockId>,
     children_stack: Vec<Vec<BlockId>>,
-    blocks: Vec<BlockId>,
     _marker: PhantomData<Language>,
 }
 
@@ -131,7 +151,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             unit,
             root: None,
             children_stack: Vec::new(),
-            blocks: Vec::new(),
             _marker: PhantomData,
         }
     }
@@ -181,16 +200,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
-    fn block_ids(&self) -> &[BlockId] {
-        &self.blocks
-    }
-
     fn build_edges(&self, node: HirNode<'tcx>) -> BlockRelationMap {
         let edges = BlockRelationMap::default();
-        let mut resolver = SymbolResolver::new(self.unit.cc);
         let mut visited = HashSet::new();
         let mut unresolved = HashSet::new();
-        self.collect_edges(node, &edges, &mut resolver, &mut visited, &mut unresolved);
+        self.collect_edges(node, &edges, &mut visited, &mut unresolved);
         edges
     }
 
@@ -198,9 +212,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         &self,
         node: HirNode<'tcx>,
         edges: &BlockRelationMap,
-        resolver: &mut SymbolResolver<'tcx>,
-        visited: &mut HashSet<Id>,
-        unresolved: &mut HashSet<Id>,
+        visited: &mut HashSet<SymId>,
+        unresolved: &mut HashSet<SymId>,
     ) {
         if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
             if let Some(symbol) = scope.symbol() {
@@ -209,14 +222,14 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     if let Some(from_block) = symbol.block_id() {
                         let deps = symbol.depends.borrow();
                         for dep_id in deps.iter().copied() {
-                            if let Some(target_symbol) = resolver.resolve(dep_id) {
+                            if let Some(target_symbol) = self.unit.opt_get_symbol(dep_id) {
                                 if let Some(to_block) = target_symbol.block_id() {
                                     if !edges.has_relation(
                                         from_block,
                                         BlockRelation::DependsOn,
                                         to_block,
                                     ) {
-                                        edges.add_call_relationship(from_block, to_block);
+                                        edges.add_relation(from_block, to_block);
                                     }
                                 } else if unresolved.insert(dep_id) {
                                     self.unit.add_unresolved_symbol(target_symbol);
@@ -232,7 +245,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
         for child_id in node.children() {
             let child = self.unit.hir_node(*child_id);
-            self.collect_edges(child, edges, resolver, visited, unresolved);
+            self.collect_edges(child, edges, visited, unresolved);
         }
     }
 
@@ -263,7 +276,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             }
         }
         self.unit.insert_block(id, block, parent);
-        self.blocks.push(id);
 
         if let Some(children) = self.children_stack.last_mut() {
             children.push(id);
@@ -311,92 +323,5 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     let root_block = builder.root;
     let root_block = root_block.ok_or_else(|| "graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
-    let blocks = builder.block_ids().to_vec();
-    Ok(GraphUnit::new(unit_index, root_block, edges, blocks))
-}
-
-impl ProjectGraph {
-    fn add_dependency_edge(
-        &self,
-        block_to_unit: &HashMap<BlockId, usize>,
-        from_block: BlockId,
-        to_block: BlockId,
-    ) {
-        let Some(&from_idx) = block_to_unit.get(&from_block) else {
-            return;
-        };
-        let Some(&to_idx) = block_to_unit.get(&to_block) else {
-            return;
-        };
-
-        if from_idx == to_idx {
-            let unit = &self.units[from_idx];
-            if !unit
-                .edges
-                .has_relation(from_block, BlockRelation::DependsOn, to_block)
-            {
-                unit.edges.add_call_relationship(from_block, to_block);
-            }
-            return;
-        }
-
-        let from_unit = &self.units[from_idx];
-        if !from_unit
-            .edges
-            .has_relation(from_block, BlockRelation::DependsOn, to_block)
-        {
-            from_unit
-                .edges
-                .add_relation(from_block, BlockRelation::DependsOn, to_block);
-        }
-
-        let to_unit = &self.units[to_idx];
-        if !to_unit
-            .edges
-            .has_relation(to_block, BlockRelation::DependedBy, from_block)
-        {
-            to_unit
-                .edges
-                .add_relation(to_block, BlockRelation::DependedBy, from_block);
-        }
-    }
-}
-
-struct SymbolResolver<'tcx> {
-    cc: &'tcx CompileCtxt<'tcx>,
-    cache: HashMap<Id, &'tcx Symbol>,
-}
-
-impl<'tcx> SymbolResolver<'tcx> {
-    fn new(cc: &'tcx CompileCtxt<'tcx>) -> Self {
-        Self {
-            cc,
-            cache: HashMap::new(),
-        }
-    }
-
-    fn resolve(&mut self, id: Id) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = self.cache.get(&id) {
-            return Some(*symbol);
-        }
-
-        let scope_map = self.cc.scope_map.borrow();
-        for scope in scope_map.values() {
-            if let Some(symbol) = scope.symbol() {
-                if symbol.id == id {
-                    self.cache.insert(id, symbol);
-                    return Some(symbol);
-                }
-            }
-
-            for symbol in scope.all_symbols() {
-                if symbol.id == id {
-                    self.cache.insert(id, symbol);
-                    return Some(symbol);
-                }
-            }
-        }
-
-        None
-    }
+    Ok(GraphUnit::new(unit_index, root_block, edges))
 }

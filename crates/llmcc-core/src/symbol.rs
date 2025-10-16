@@ -11,8 +11,6 @@ static NEXT_SYMBOL_ID: AtomicU32 = AtomicU32::new(1);
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub struct SymId(pub u32);
 
-pub type Id = SymId;
-
 impl std::fmt::Display for SymId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -313,10 +311,11 @@ pub struct Symbol {
     /// another relation, like field_of, type_of, called_by, calls etc.
     /// we dont do very clear sepration becase we want llm models to do that, we
     /// only need to tell models some symbols having depends relations
-    pub depends: RefCell<Vec<Id>>,
-    pub depended: RefCell<Vec<Id>>,
-    kind: Cell<SymbolKind>,
-    origin_file: Cell<Option<usize>>,
+    pub depends: RefCell<Vec<SymId>>,
+    pub depended: RefCell<Vec<SymId>>,
+    pub kind: Cell<SymbolKind>,
+    /// Which compile unit this symbol defined
+    pub unit_index: Cell<Option<usize>>,
     /// Optional block id associated with this symbol (for graph building)
     pub block_id: Cell<Option<BlockId>>,
 }
@@ -338,7 +337,7 @@ impl Symbol {
             depends: RefCell::new(Vec::new()),
             depended: RefCell::new(Vec::new()),
             kind: Cell::new(SymbolKind::Unknown),
-            origin_file: Cell::new(None),
+            unit_index: Cell::new(None),
             block_id: Cell::new(None),
         }
     }
@@ -375,13 +374,13 @@ impl Symbol {
         self.kind.set(kind);
     }
 
-    pub fn origin_file(&self) -> Option<usize> {
-        self.origin_file.get()
+    pub fn unit_index(&self) -> Option<usize> {
+        self.unit_index.get()
     }
 
-    pub fn set_origin_file_if_none(&self, file: usize) {
-        if self.origin_file.get().is_none() {
-            self.origin_file.set(Some(file));
+    pub fn set_unit_index(&self, file: usize) {
+        if self.unit_index.get().is_none() {
+            self.unit_index.set(Some(file));
         }
     }
 
@@ -441,7 +440,7 @@ fn select_symbol<'a>(
             if let Some(symbol) = matches
                 .iter()
                 .copied()
-                .find(|symbol| symbol.origin_file() == Some(file))
+                .find(|symbol| symbol.unit_index() == Some(file))
             {
                 return Some(symbol);
             }
@@ -456,7 +455,7 @@ fn select_symbol<'a>(
         if let Some(symbol) = candidates
             .iter()
             .copied()
-            .find(|candidate| candidate.origin_file() == Some(file))
+            .find(|candidate| candidate.unit_index() == Some(file))
         {
             return Some(symbol);
         }

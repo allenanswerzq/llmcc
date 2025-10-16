@@ -12,7 +12,7 @@ pub struct BlockRelationMap {
 
 impl BlockRelationMap {
     /// Add a relationship between two blocks
-    pub fn add_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
+    pub fn add_relation_impl(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
         let mut relations = self.relations.borrow_mut();
         relations
             .entry(from)
@@ -23,7 +23,7 @@ impl BlockRelationMap {
     }
 
     /// Add multiple relationships of the same type from one block
-    pub fn add_relations(&self, from: BlockId, relation: BlockRelation, targets: &[BlockId]) {
+    pub fn add_relation_impls(&self, from: BlockId, relation: BlockRelation, targets: &[BlockId]) {
         let mut relations = self.relations.borrow_mut();
         let block_relations = relations.entry(from).or_insert_with(HashMap::new);
         let relation_vec = block_relations.entry(relation).or_insert_with(Vec::new);
@@ -31,7 +31,7 @@ impl BlockRelationMap {
     }
 
     /// Remove a specific relationship
-    pub fn remove_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
+    pub fn remove_relation_impl(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
         let mut relations = self.relations.borrow_mut();
         if let Some(block_relations) = relations.get_mut(&from) {
             if let Some(targets) = block_relations.get_mut(&relation) {
@@ -194,38 +194,38 @@ impl<'a> RelationBuilder<'a> {
     /// Add a "calls" relationship
     pub fn calls(self, to: BlockId) -> Self {
         self.map
-            .add_relation(self.from, BlockRelation::DependsOn, to);
+            .add_relation_impl(self.from, BlockRelation::DependsOn, to);
         self
     }
 
     /// Add a "called by" relationship
     pub fn called_by(self, to: BlockId) -> Self {
         self.map
-            .add_relation(self.from, BlockRelation::DependedBy, to);
+            .add_relation_impl(self.from, BlockRelation::DependedBy, to);
         self
     }
 
     /// Add a "contains" relationship
     pub fn contains(self, to: BlockId) -> Self {
-        self.map.add_relation(self.from, BlockRelation::Unknown, to);
+        self.map.add_relation_impl(self.from, BlockRelation::Unknown, to);
         self
     }
 
     /// Add a "contained by" relationship
     pub fn contained_by(self, to: BlockId) -> Self {
-        self.map.add_relation(self.from, BlockRelation::Unknown, to);
+        self.map.add_relation_impl(self.from, BlockRelation::Unknown, to);
         self
     }
 
     /// Add a custom relationship
     pub fn relation(self, relation: BlockRelation, to: BlockId) -> Self {
-        self.map.add_relation(self.from, relation, to);
+        self.map.add_relation_impl(self.from, relation, to);
         self
     }
 
     /// Add multiple relationships of the same type
     pub fn relations(self, relation: BlockRelation, targets: &[BlockId]) -> Self {
-        self.map.add_relations(self.from, relation, targets);
+        self.map.add_relation_impls(self.from, relation, targets);
         self
     }
 }
@@ -261,34 +261,23 @@ impl std::fmt::Display for RelationStats {
 // Convenience functions for common relationship patterns
 impl BlockRelationMap {
     /// Create a bidirectional call relationship
-    pub fn add_call_relationship(&self, caller: BlockId, callee: BlockId) {
-        self.add_relation(caller, BlockRelation::DependsOn, callee);
-        self.add_relation(callee, BlockRelation::DependedBy, caller);
-    }
-
-    /// Create a bidirectional containment relationship
-    pub fn add_containment_relationship(&self, parent: BlockId, child: BlockId) {
-        self.add_relation(parent, BlockRelation::Unknown, child);
+    pub fn add_relation(&self, caller: BlockId, callee: BlockId) {
+        self.add_relation_impl(caller, BlockRelation::DependsOn, callee);
+        self.add_relation_impl(callee, BlockRelation::DependedBy, caller);
     }
 
     /// Remove a bidirectional call relationship
-    pub fn remove_call_relationship(&self, caller: BlockId, callee: BlockId) {
-        self.remove_relation(caller, BlockRelation::DependsOn, callee);
-        self.remove_relation(callee, BlockRelation::DependedBy, caller);
+    pub fn remove_relation(&self, caller: BlockId, callee: BlockId) {
+        self.remove_relation_impl(caller, BlockRelation::DependsOn, callee);
+        self.remove_relation_impl(callee, BlockRelation::DependedBy, caller);
     }
 
-    /// Remove a bidirectional containment relationship
-    pub fn remove_containment_relationship(&self, parent: BlockId, child: BlockId) {
-        self.remove_relation(parent, BlockRelation::Unknown, child);
-    }
 
-    /// Get all callers of a block
-    pub fn get_callers(&self, block: BlockId) -> Vec<BlockId> {
+    pub fn get_depended(&self, block: BlockId) -> Vec<BlockId> {
         self.get_related(block, BlockRelation::DependedBy)
     }
 
-    /// Get all callees of a block
-    pub fn get_callees(&self, block: BlockId) -> Vec<BlockId> {
+    pub fn get_depends(&self, block: BlockId) -> Vec<BlockId> {
         self.get_related(block, BlockRelation::DependsOn)
     }
 

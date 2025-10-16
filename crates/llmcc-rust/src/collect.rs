@@ -97,14 +97,15 @@ impl<'tcx> DeclCollector<'tcx> {
         let owner = node.hir_id();
         let key = interner.intern(&ident.name);
 
+        // TODO: use trie to optimize code here
         let symbol = if let Some(existing) = self.scopes.find_ident(ident) {
             let existing_kind = existing.kind();
             if existing_kind != SymbolKind::Unknown && existing_kind != kind {
-                let symbol = self.unit.new_symbol(owner, ident.name.clone());
+                let symbol = self.unit.alloc_symbol(owner, ident.name.clone());
                 symbol.set_owner(owner);
                 symbol.set_fqn(fqn.clone(), interner);
                 symbol.set_kind(kind);
-                symbol.set_origin_file_if_none(self.unit.index);
+                symbol.set_unit_index(self.unit.index);
                 self.scopes
                     .insert_symbol(key, symbol, false)
                     .expect("failed to insert symbol into local scope");
@@ -118,7 +119,7 @@ impl<'tcx> DeclCollector<'tcx> {
                 existing.set_owner(owner);
                 existing.set_fqn(fqn.clone(), interner);
                 existing.set_kind_if_unknown(kind);
-                existing.set_origin_file_if_none(self.unit.index);
+                existing.set_unit_index(self.unit.index);
                 existing
             }
         } else {
@@ -128,10 +129,10 @@ impl<'tcx> DeclCollector<'tcx> {
                     symbol.set_owner(owner);
                     symbol.set_fqn(fqn.clone(), interner);
                     symbol.set_kind_if_unknown(kind);
-                    symbol.set_origin_file_if_none(self.unit.index);
+                    symbol.set_unit_index(self.unit.index);
                 });
             symbol.set_kind_if_unknown(kind);
-            symbol.set_origin_file_if_none(self.unit.index);
+            symbol.set_unit_index(self.unit.index);
             symbol
         };
         Some((symbol, ident, fqn))
@@ -251,15 +252,15 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
                 if let Some(symbol) = self.scopes.find_global_suffix_once(&keys) {
                     symbol.set_owner(node.hir_id());
-                    symbol.set_origin_file_if_none(self.unit.index);
+                    symbol.set_unit_index(self.unit.index);
                     Some(symbol)
                 } else {
                     let name = segments.last().cloned().unwrap_or_default();
                     let fqn = segments.join("::");
-                    let symbol = self.unit.new_symbol(node.hir_id(), name);
+                    let symbol = self.unit.alloc_symbol(node.hir_id(), name);
                     symbol.set_owner(node.hir_id());
                     symbol.set_fqn(fqn, self.unit.interner());
-                    symbol.set_origin_file_if_none(self.unit.index);
+                    symbol.set_unit_index(self.unit.index);
                     Some(symbol)
                 }
             });
