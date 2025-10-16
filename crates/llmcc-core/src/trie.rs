@@ -91,6 +91,12 @@ impl<'tcx> SymbolTrie<'tcx> {
         self.count_symbols(&self.root)
     }
 
+    pub fn symbols(&self) -> Vec<&'tcx Symbol> {
+        let mut results = Vec::new();
+        self.collect_symbols(&self.root, &mut results);
+        results
+    }
+
     fn count_symbols(&self, node: &SymbolTrieNode<'tcx>) -> usize {
         let mut total = node.symbols.len();
         for child in node.children.values() {

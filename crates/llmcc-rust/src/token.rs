@@ -1,5 +1,5 @@
-use llmcc_core::block::BlockKind;
 use llmcc_core::define_tokens;
+use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::HirKind;
 use llmcc_core::paste;
 use llmcc_core::{Parser, Tree};
@@ -22,6 +22,7 @@ define_tokens! {
     // ---------------- Node Tokens ----------------
     (integer_literal       , 127 , "integer_literal"            , HirKind::Text),
     (type_identifier       , 354 , "type_identifier"            , HirKind::Identifier),
+    (scoped_identifier     , 243 , "scoped_identifier"          , HirKind::Identifier),
     (identifier            ,   1 , "identifier"                 , HirKind::Identifier),
     (parameter             , 213 , "parameter"                  , HirKind::Internal),
     (parameters            , 210 , "parameters"                 , HirKind::Internal),
@@ -29,8 +30,10 @@ define_tokens! {
     (block                 , 293 , "block"                      , HirKind::Scope,               BlockKind::Scope),
     (source_file           , 157 , "source_file"                , HirKind::File,                BlockKind::Root),
     (mod_item              , 173 , "mod_item"                   , HirKind::Scope,               BlockKind::Scope),
-    (struct_item           , 176 , "struct_item"                , HirKind::Scope,               BlockKind::Scope),
-    (enum_item             , 178 , "enum_item"                  , HirKind::Scope,               BlockKind::Scope),
+    (struct_item           , 176 , "struct_item"                , HirKind::Scope,               BlockKind::Class),
+    (enum_item             , 178 , "enum_item"                  , HirKind::Scope,               BlockKind::Class),
+    (enum_variant_list     , 179 , "enum_variant_list"                  , HirKind::Internal),
+    (enum_variant          , 180 , "enum_variant"                  , HirKind::Identifier),
     (impl_item             , 193 , "impl_item"                  , HirKind::Scope,               BlockKind::Scope),
     (trait_item            , 194 , "trait_item"                 , HirKind::Scope,               BlockKind::Scope),
     (const_item            , 185 , "const_item"                 , HirKind::Internal),

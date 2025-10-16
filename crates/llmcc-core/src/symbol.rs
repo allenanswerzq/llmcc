@@ -1,5 +1,6 @@
 use std::cell::{Cell, RefCell};
 
+use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirIdent};
 use crate::trie::SymbolTrie;
@@ -16,11 +17,27 @@ impl std::fmt::Display for SymId {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SymbolKind {
+    Unknown,
+    Module,
+    Struct,
+    Enum,
+    Function,
+    Variable,
+    Const,
+    Static,
+    Trait,
+    Impl,
+    EnumVariant,
+}
+
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
 #[derive(Debug)]
 pub struct Scope<'tcx> {
     trie: RefCell<SymbolTrie<'tcx>>,
     owner: HirId,
+    symbol: Cell<Option<&'tcx Symbol>>,
 }
 
 impl<'tcx> Scope<'tcx> {
@@ -28,11 +45,20 @@ impl<'tcx> Scope<'tcx> {
         Self {
             trie: RefCell::new(SymbolTrie::default()),
             owner,
+            symbol: Cell::new(None),
         }
     }
 
     pub fn owner(&self) -> HirId {
         self.owner
+    }
+
+    pub fn symbol(&self) -> Option<&'tcx Symbol> {
+        self.symbol.get()
+    }
+
+    pub fn set_symbol(&self, symbol: Option<&'tcx Symbol>) {
+        self.symbol.set(symbol);
     }
 
     pub fn insert(&self, _key: InternedStr, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
@@ -46,9 +72,21 @@ impl<'tcx> Scope<'tcx> {
         hits.first().map(|symbol| symbol.id)
     }
 
+    pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.trie
+            .borrow()
+            .lookup_symbol_suffix(suffix)
+            .into_iter()
+            .next()
+    }
+
     pub fn format_compact(&self) -> String {
         let count = self.trie.borrow().total_symbols();
         format!("{}/{}", self.owner, count)
+    }
+
+    pub fn all_symbols(&self) -> Vec<&'tcx Symbol> {
+        self.trie.borrow().symbols()
     }
 }
 
@@ -73,11 +111,17 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn push(&mut self, scope: &'tcx Scope<'tcx>) {
+        self.push_with_symbol(scope, None);
+    }
+
+    pub fn push_with_symbol(&mut self, scope: &'tcx Scope<'tcx>, symbol: Option<&'tcx Symbol>) {
+        scope.set_symbol(symbol);
         self.stack.push(scope);
     }
 
     pub fn pop(&mut self) -> Option<&'tcx Scope<'tcx>> {
-        self.stack.pop()
+        let popped = self.stack.pop();
+        popped
     }
 
     pub fn pop_until(&mut self, depth: usize) {
@@ -90,8 +134,31 @@ impl<'tcx> ScopeStack<'tcx> {
         self.stack.last().copied()
     }
 
+    pub fn scoped_symbol(&self) -> Option<&'tcx Symbol> {
+        self.stack.iter().rev().find_map(|scope| scope.symbol())
+    }
+
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &'tcx Scope<'tcx>> + '_ {
         self.stack.iter().copied()
+    }
+
+    pub fn lookup_scoped_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.lookup_scoped_suffix_with_filters(suffix, None, None)
+    }
+
+    pub fn lookup_scoped_suffix_with_filters(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        for scope in self.iter().rev() {
+            let symbols = scope.trie.borrow().lookup_symbol_suffix(suffix);
+            if let Some(symbol) = select_symbol(symbols, kind, file) {
+                return Some(symbol);
+            }
+        }
+        None
     }
 
     fn scope_for_insertion(&mut self, global: bool) -> Result<&'tcx Scope<'tcx>, &'static str> {
@@ -136,15 +203,25 @@ impl<'tcx> ScopeStack<'tcx> {
         self.find_symbol_local_by_key(key)
     }
 
-    pub fn lookup_global_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+    pub fn find_global_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
             .map(|scope| scope.trie.borrow().lookup_symbol_suffix(suffix))
             .unwrap_or_default()
     }
 
-    pub fn lookup_global_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.lookup_global_suffix(suffix).into_iter().next()
+    pub fn find_global_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.find_global_suffix_once_with_filters(suffix, None, None)
+    }
+
+    pub fn find_global_suffix_once_with_filters(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        let symbols = self.find_global_suffix(suffix);
+        select_symbol(symbols, kind, file)
     }
 
     pub fn find_ident(&self, ident: &HirIdent<'tcx>) -> Option<&'tcx Symbol> {
@@ -157,14 +234,37 @@ impl<'tcx> ScopeStack<'tcx> {
         ident: &HirIdent<'tcx>,
         global: bool,
     ) -> &'tcx Symbol {
-        if let Some(symbol) = self.find_ident_local(ident) {
-            return symbol;
+        self.find_or_insert_with(owner, ident, global, |_| {})
+    }
+
+    pub fn find_or_insert_with<F>(
+        &mut self,
+        owner: HirId,
+        ident: &HirIdent<'tcx>,
+        global: bool,
+        init: F,
+    ) -> &'tcx Symbol
+    where
+        F: FnOnce(&'tcx Symbol),
+    {
+        let key = self.interner.intern(&ident.name);
+
+        let symbol = if let Some(existing) = self.find_ident_local(ident) {
+            init(existing);
+            existing
+        } else {
+            let symbol = self.create_symbol(owner, ident, key);
+            init(symbol);
+            symbol
+        };
+
+        self.insert_symbol(key, symbol, false)
+            .expect("failed to insert symbol into scope");
+        if global {
+            self.insert_symbol(key, symbol, true)
+                .expect("failed to insert symbol into global scope");
         }
 
-        let key = self.interner.intern(&ident.name);
-        let symbol = self.create_symbol(owner, ident, key);
-        self.insert_symbol(key, symbol, global)
-            .expect("failed to insert symbol");
         self.find_symbol_local_by_key(key)
             .expect("symbol should be present after insertion")
     }
@@ -198,7 +298,7 @@ pub struct Symbol {
     /// Monotonic identifier assigned when the symbol is created.
     pub id: SymId,
     /// Owning HIR node that introduces the symbol (e.g. function, struct, module).
-    pub owner: HirId,
+    pub owner: Cell<HirId>,
     /// Unqualified name exactly as written in source.
     pub name: String,
     /// Interned key for `name`, used for fast lookup.
@@ -207,18 +307,17 @@ pub struct Symbol {
     pub fqn_name: RefCell<String>,
     /// Interned key for the fully qualified name.
     pub fqn_key: RefCell<InternedStr>,
-    /// HIR node where the symbol definition appears (`None` until resolved).
-    pub defined: Cell<Option<HirId>>,
-    /// `SymId` of the type describing this symbol (e.g. variable type), if any.
-    pub type_of: Cell<Option<SymId>>,
-    /// If this symbol is a field, the `SymId` of the aggregate that owns it.
-    pub field_of: Cell<Option<SymId>>,
-    /// Base symbol the current one aliases or derives from (e.g. impl method base).
-    pub base_symbol: Cell<Option<SymId>>,
-    /// Overloaded variants that share this name.
-    pub overloads: RefCell<Vec<SymId>>,
-    /// Nested types declared inside this symbol's scope.
-    pub nested_types: RefCell<Vec<SymId>>,
+    /// All symbols that this symbols depends on, most general relation, could be
+    /// another relation, like field_of, type_of, called_by, calls etc.
+    /// we dont do very clear sepration becase we want llm models to do that, we
+    /// only need to tell models some symbols having depends relations
+    pub depends: RefCell<Vec<SymId>>,
+    pub depended: RefCell<Vec<SymId>>,
+    pub kind: Cell<SymbolKind>,
+    /// Which compile unit this symbol defined
+    pub unit_index: Cell<Option<usize>>,
+    /// Optional block id associated with this symbol (for graph building)
+    pub block_id: Cell<Option<BlockId>>,
 }
 
 impl Symbol {
@@ -230,57 +329,29 @@ impl Symbol {
 
         Self {
             id: sym_id,
-            owner,
+            owner: Cell::new(owner),
             name: name.clone(),
             name_key,
             fqn_name: RefCell::new(name),
             fqn_key: RefCell::new(fqn_key),
-            defined: Cell::new(None),
-            type_of: Cell::new(None),
-            field_of: Cell::new(None),
-            base_symbol: Cell::new(None),
-            overloads: RefCell::new(Vec::new()),
-            nested_types: RefCell::new(Vec::new()),
+            depends: RefCell::new(Vec::new()),
+            depended: RefCell::new(Vec::new()),
+            kind: Cell::new(SymbolKind::Unknown),
+            unit_index: Cell::new(None),
+            block_id: Cell::new(None),
         }
     }
 
     pub fn owner(&self) -> HirId {
-        self.owner
+        self.owner.get()
+    }
+
+    pub fn set_owner(&self, owner: HirId) {
+        self.owner.set(owner);
     }
 
     pub fn format_compact(&self) -> String {
-        let mut info = Vec::new();
-
-        if let Some(defined) = self.defined.get() {
-            info.push(format!("#{}", defined));
-        }
-        if let Some(type_of) = self.type_of.get() {
-            info.push(format!("@{}", type_of));
-        }
-        if let Some(field_of) = self.field_of.get() {
-            info.push(format!("${}", field_of));
-        }
-        if let Some(base_symbol) = self.base_symbol.get() {
-            info.push(format!("&{}", base_symbol));
-        }
-
-        let overloads = self.overloads.borrow().len();
-        if overloads > 0 {
-            info.push(format!("+{}", overloads));
-        }
-
-        let nested = self.nested_types.borrow().len();
-        if nested > 0 {
-            info.push(format!("*{}", nested));
-        }
-
-        let meta = if info.is_empty() {
-            String::new()
-        } else {
-            format!(" ({})", info.join(" "))
-        };
-
-        format!("{}->{} \"{}\"{}", self.id, self.owner, self.name, meta)
+        format!("{}->{} \"{}\"", self.id, self.owner.get(), self.name)
     }
 
     pub fn set_fqn(&self, fqn: String, interner: &InternPool) {
@@ -288,4 +359,107 @@ impl Symbol {
         *self.fqn_name.borrow_mut() = fqn;
         *self.fqn_key.borrow_mut() = key;
     }
+
+    pub fn kind(&self) -> SymbolKind {
+        self.kind.get()
+    }
+
+    pub fn set_kind_if_unknown(&self, kind: SymbolKind) {
+        if self.kind.get() == SymbolKind::Unknown {
+            self.kind.set(kind);
+        }
+    }
+
+    pub fn set_kind(&self, kind: SymbolKind) {
+        self.kind.set(kind);
+    }
+
+    pub fn unit_index(&self) -> Option<usize> {
+        self.unit_index.get()
+    }
+
+    pub fn set_unit_index(&self, file: usize) {
+        if self.unit_index.get().is_none() {
+            self.unit_index.set(Some(file));
+        }
+    }
+
+    pub fn add_depends_on(&self, sym_id: SymId) {
+        if sym_id == self.id {
+            return;
+        }
+        let mut deps = self.depends.borrow_mut();
+        if deps.iter().any(|existing| *existing == sym_id) {
+            return;
+        }
+        deps.push(sym_id);
+    }
+
+    pub fn add_depended_by(&self, sym_id: SymId) {
+        if sym_id == self.id {
+            return;
+        }
+        let mut deps = self.depended.borrow_mut();
+        if deps.iter().any(|existing| *existing == sym_id) {
+            return;
+        }
+        deps.push(sym_id);
+    }
+
+    pub fn add_dependency(&self, other: &Symbol) {
+        self.add_depends_on(other.id);
+        other.add_depended_by(self.id);
+    }
+
+    pub fn block_id(&self) -> Option<BlockId> {
+        self.block_id.get()
+    }
+
+    pub fn set_block_id(&self, block_id: Option<BlockId>) {
+        self.block_id.set(block_id);
+    }
+}
+
+fn select_symbol<'a>(
+    candidates: Vec<&'a Symbol>,
+    kind: Option<SymbolKind>,
+    file: Option<usize>,
+) -> Option<&'a Symbol> {
+    if candidates.is_empty() {
+        return None;
+    }
+
+    if let Some(kind) = kind {
+        let matches: Vec<&Symbol> = candidates
+            .iter()
+            .copied()
+            .filter(|symbol| symbol.kind() == kind)
+            .collect();
+
+        if let Some(file) = file {
+            if let Some(symbol) = matches
+                .iter()
+                .copied()
+                .find(|symbol| symbol.unit_index() == Some(file))
+            {
+                return Some(symbol);
+            }
+        }
+
+        if !matches.is_empty() {
+            return Some(matches[0]);
+        }
+    }
+
+    if let Some(file) = file {
+        if let Some(symbol) = candidates
+            .iter()
+            .copied()
+            .find(|candidate| candidate.unit_index() == Some(file))
+        {
+            return Some(symbol);
+        }
+    }
+
+    candidates.into_iter().next()
 }

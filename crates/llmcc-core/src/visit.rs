@@ -1,4 +1,4 @@
-use crate::block::BlockId;
+use crate::graph_builder::BlockId;
 use crate::ir::{HirKind, HirNode};
 use crate::CompileUnit;
 

@@ -40,7 +40,11 @@ pub struct EnumDescriptor {
 }
 
 impl EnumDescriptor {
-    pub fn from_enum<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>, fqn: String) -> Option<Self> {
+    pub fn from_enum<'tcx>(
+        unit: CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        fqn: String,
+    ) -> Option<Self> {
         let ts_node = match node.inner_ts_node() {
             ts if ts.kind() == "enum_item" => ts,
             _ => return None,
@@ -135,7 +139,10 @@ fn parse_variant_body<'tcx>(
     }
 }
 
-fn parse_named_variant_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -> Vec<EnumVariantField> {
+fn parse_named_variant_fields<'tcx>(
+    unit: CompileUnit<'tcx>,
+    list: Node<'tcx>,
+) -> Vec<EnumVariantField> {
     let mut fields = Vec::new();
     let mut cursor = list.walk();
     for child in list.named_children(&mut cursor) {
@@ -152,7 +159,10 @@ fn parse_named_variant_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -
     fields
 }
 
-fn parse_tuple_variant_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -> Vec<EnumVariantField> {
+fn parse_tuple_variant_fields<'tcx>(
+    unit: CompileUnit<'tcx>,
+    list: Node<'tcx>,
+) -> Vec<EnumVariantField> {
     let mut fields = Vec::new();
     let mut cursor = list.walk();
     for child in list.children(&mut cursor) {

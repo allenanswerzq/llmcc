@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use tree_sitter::Node;
@@ -20,60 +18,6 @@ pub struct FunctionParameter {
     pub ty: Option<TypeExpr>,
 }
 
-/// Tracks the logical owner of a function so we can rebuild fully-qualified names.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum FunctionOwner {
-    /// Free-standing functions defined inside modules (segments capture nested module path).
-    Free { modules: Vec<String> },
-    /// Methods inside `impl` blocks, optionally noting the trait they implement.
-    Impl {
-        modules: Vec<String>,
-        self_ty: String,
-        trait_name: Option<String>,
-    },
-    /// Functions declared inside trait definitions (default methods).
-    Trait {
-        modules: Vec<String>,
-        trait_name: String,
-    },
-}
-
-impl FunctionOwner {
-    pub fn modules(&self) -> &[String] {
-        match self {
-            FunctionOwner::Free { modules }
-            | FunctionOwner::Impl { modules, .. }
-            | FunctionOwner::Trait { modules, .. } => modules,
-        }
-    }
-
-    pub fn trait_name(&self) -> Option<&str> {
-        match self {
-            FunctionOwner::Impl { trait_name, .. } => trait_name.as_deref(),
-            FunctionOwner::Trait { trait_name, .. } => Some(trait_name),
-            FunctionOwner::Free { .. } => None,
-        }
-    }
-
-    pub fn impl_type(&self) -> Option<&str> {
-        match self {
-            FunctionOwner::Impl { self_ty, .. } => Some(self_ty),
-            _ => None,
-        }
-    }
-
-    pub fn fqn(&self, fn_name: &str) -> String {
-        let mut parts: Vec<String> = self.modules().to_vec();
-        match self {
-            FunctionOwner::Free { .. } => {}
-            FunctionOwner::Impl { self_ty, .. } => parts.push(self_ty.clone()),
-            FunctionOwner::Trait { trait_name, .. } => parts.push(trait_name.clone()),
-        }
-        parts.push(fn_name.to_string());
-        parts.join("::")
-    }
-}
-
 /// Rich metadata extracted for each Rust function encountered in the HIR.
 #[derive(Debug, Clone)]
 pub struct FunctionDescriptor {
@@ -82,7 +26,7 @@ pub struct FunctionDescriptor {
     /// Short name as written in source (no qualification).
     pub name: String,
     /// Module/impl/trait context owning the function.
-    pub owner: FunctionOwner,
+    // pub owner: SymbolOwner,
     /// Visibility as declared (`pub`, `pub(crate)`, etc.).
     pub visibility: FnVisibility,
     /// Whether the function is marked `async`.
@@ -106,21 +50,25 @@ pub struct FunctionDescriptor {
 }
 
 impl FunctionDescriptor {
-    pub fn from_hir<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Self> {
+    pub fn from_hir<'tcx>(
+        unit: CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        fqn: String,
+    ) -> Option<Self> {
         let ts_node = match node.inner_ts_node() {
             ts if ts.kind() == "function_item" => ts,
             _ => return None,
         };
 
         let name_node = ts_node.child_by_field_name("name")?;
-        let name = clean(&node_text(unit, name_node));
+        let name = node_text(unit, name_node);
         let header_text = unit
             .file()
             .get_text(ts_node.start_byte(), name_node.start_byte());
         let fn_index = header_text.rfind("fn").unwrap_or_else(|| header_text.len());
         let header_clean = clean(&header_text[..fn_index]);
 
-        let owner = FunctionOwner::from_ts_node(unit, ts_node);
+        // let owner = SymbolOwner::from_ts_node(unit, ts_node);
         let visibility = FnVisibility::from_header(&header_clean);
         let is_async = header_clean
             .split_whitespace()
@@ -139,10 +87,10 @@ impl FunctionDescriptor {
 
         let generics = ts_node
             .child_by_field_name("type_parameters")
-            .map(|n| clean(&node_text(unit, n)));
+            .map(|n| node_text(unit, n));
         let where_clause = ts_node
             .child_by_field_name("where_clause")
-            .map(|n| clean(&node_text(unit, n)))
+            .map(|n| node_text(unit, n))
             .or_else(|| extract_where_clause(&signature));
         let parameters = ts_node
             .child_by_field_name("parameters")
@@ -152,12 +100,10 @@ impl FunctionDescriptor {
             .child_by_field_name("return_type")
             .map(|n| parse_return_type_node(unit, n));
 
-        let fqn = owner.fqn(&name);
-
         Some(FunctionDescriptor {
             hir_id: node.hir_id(),
             name,
-            owner,
+            // owner,
             visibility,
             is_async,
             is_const,
@@ -169,10 +115,6 @@ impl FunctionDescriptor {
             signature,
             fqn,
         })
-    }
-
-    pub fn set_fqn(&mut self, fqn: String) {
-        self.fqn = fqn;
     }
 }
 
@@ -245,7 +187,10 @@ impl TypeExpr {
     }
 }
 
-fn parse_parameters<'tcx>(unit: CompileUnit<'tcx>, params_node: Node<'tcx>) -> Vec<FunctionParameter> {
+fn parse_parameters<'tcx>(
+    unit: CompileUnit<'tcx>,
+    params_node: Node<'tcx>,
+) -> Vec<FunctionParameter> {
     let mut params = Vec::new();
     let mut cursor = params_node.walk();
     for child in params_node.named_children(&mut cursor) {
@@ -253,8 +198,8 @@ fn parse_parameters<'tcx>(unit: CompileUnit<'tcx>, params_node: Node<'tcx>) -> V
             "parameter" => {
                 let pattern = child
                     .child_by_field_name("pattern")
-                    .map(|n| clean(&node_text(unit, n)))
-                    .unwrap_or_else(|| clean(&node_text(unit, child)));
+                    .map(|n| node_text(unit, n))
+                    .unwrap_or_else(|| node_text(unit, child));
                 let ty = child
                     .child_by_field_name("type")
                     .map(|n| parse_type_expr(unit, n));
@@ -262,7 +207,7 @@ fn parse_parameters<'tcx>(unit: CompileUnit<'tcx>, params_node: Node<'tcx>) -> V
             }
             "self_parameter" => {
                 params.push(FunctionParameter {
-                    pattern: clean(&node_text(unit, child)),
+                    pattern: node_text(unit, child),
                     ty: None,
                 });
             }
@@ -275,14 +220,14 @@ fn parse_parameters<'tcx>(unit: CompileUnit<'tcx>, params_node: Node<'tcx>) -> V
 pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     match node.kind() {
         "type_identifier" | "primitive_type" => TypeExpr::Path {
-            segments: clean(&node_text(unit, node))
+            segments: node_text(unit, node)
                 .split("::")
                 .map(|s| s.to_string())
                 .collect(),
             generics: Vec::new(),
         },
         "scoped_type_identifier" => TypeExpr::Path {
-            segments: clean(&node_text(unit, node))
+            segments: node_text(unit, node)
                 .split("::")
                 .map(|s| s.to_string())
                 .collect(),
@@ -301,9 +246,9 @@ pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -
             TypeExpr::Tuple(types)
         }
         "impl_trait_type" => TypeExpr::ImplTrait {
-            bounds: clean(&node_text(unit, node)),
+            bounds: node_text(unit, node),
         },
-        _ => TypeExpr::Unknown(clean(&node_text(unit, node))),
+        _ => TypeExpr::Unknown(node_text(unit, node)),
     }
 }
 
@@ -314,7 +259,7 @@ fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeEx
     for child in node.named_children(&mut cursor) {
         match child.kind() {
             "type_identifier" | "scoped_type_identifier" => {
-                base_segments = clean(&node_text(unit, child))
+                base_segments = node_text(unit, child)
                     .split("::")
                     .map(|s| s.to_string())
                     .collect();
@@ -326,7 +271,7 @@ fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeEx
         }
     }
     if base_segments.is_empty() {
-        base_segments = clean(&node_text(unit, node))
+        base_segments = node_text(unit, node)
             .split("::")
             .map(|s| s.to_string())
             .collect();
@@ -363,13 +308,13 @@ fn parse_reference_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Type
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         match child.kind() {
-            "lifetime" => lifetime = Some(clean(&node_text(unit, child))),
+            "lifetime" => lifetime = Some(node_text(unit, child)),
             "mutable_specifier" => is_mut = true,
             kind if is_type_node(kind) => inner = Some(parse_type_expr(unit, child)),
             _ => {}
         }
     }
-    let inner = inner.unwrap_or_else(|| TypeExpr::Unknown(clean(&node_text(unit, node))));
+    let inner = inner.unwrap_or_else(|| TypeExpr::Unknown(node_text(unit, node)));
     TypeExpr::Reference {
         is_mut,
         lifetime,
@@ -448,59 +393,5 @@ fn clean(text: &str) -> String {
 }
 
 fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
-    unit.file().get_text(node.start_byte(), node.end_byte())
-}
-
-impl FunctionOwner {
-    fn from_ts_node<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Self {
-        let mut modules = VecDeque::new();
-        let mut impl_info: Option<(String, Option<String>)> = None;
-        let mut trait_name: Option<String> = None;
-
-        while let Some(parent) = node.parent() {
-            match parent.kind() {
-                "mod_item" => {
-                    if let Some(name_node) = parent.child_by_field_name("name") {
-                        modules.push_front(clean(&node_text(unit, name_node)));
-                    }
-                }
-                "impl_item" => {
-                    let ty = parent
-                        .child_by_field_name("type")
-                        .map(|n| clean(&node_text(unit, n)))
-                        .unwrap_or_else(|| "impl".to_string());
-                    let trait_name_text = parent
-                        .child_by_field_name("trait")
-                        .map(|n| clean(&node_text(unit, n)));
-                    impl_info = Some((ty, trait_name_text));
-                }
-                "trait_item" => {
-                    if trait_name.is_none() {
-                        trait_name = parent
-                            .child_by_field_name("name")
-                            .map(|n| clean(&node_text(unit, n)));
-                    }
-                }
-                _ => {}
-            }
-            node = parent;
-        }
-
-        let modules: Vec<String> = modules.into_iter().collect();
-
-        if let Some((self_ty, trait_impl)) = impl_info {
-            FunctionOwner::Impl {
-                modules,
-                self_ty,
-                trait_name: trait_impl,
-            }
-        } else if let Some(trait_name) = trait_name {
-            FunctionOwner::Trait {
-                modules,
-                trait_name,
-            }
-        } else {
-            FunctionOwner::Free { modules }
-        }
-    }
+    clean(&unit.file().get_text(node.start_byte(), node.end_byte()))
 }
