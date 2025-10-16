@@ -428,11 +428,11 @@ fn nested_match_expressions_depend_on_variants() {
 fn nested_struct_fields_create_chain() {
     let source = r#"
         struct A;
-        
+
         struct B {
             a: A,
         }
-        
+
         struct C {
             b: B,
         }
@@ -483,12 +483,12 @@ fn module_with_nested_types() {
     let source = r#"
         mod outer {
             pub struct OuterType;
-            
+
             pub mod inner {
                 pub struct InnerType;
             }
         }
-        
+
         fn uses(_: outer::OuterType, _: outer::inner::InnerType) {}
     "#;
 
@@ -514,7 +514,7 @@ fn deeply_nested_modules() {
                 }
             }
         }
-        
+
         fn access(_: level1::level2::level3::level4::DeepType) {}
     "#;
 
@@ -531,12 +531,12 @@ fn module_functions_calling_each_other() {
     let source = r#"
         mod tools {
             pub fn helper1() {}
-            
+
             pub fn helper2() {
                 helper1();
             }
         }
-        
+
         fn main() {
             tools::helper2();
         }
@@ -558,7 +558,7 @@ fn enum_with_multiple_variant_types() {
         struct TypeA;
         struct TypeB;
         struct TypeC;
-        
+
         enum MultiVariant {
             VariantA(TypeA),
             VariantB(TypeB),
@@ -583,7 +583,7 @@ fn enum_with_multiple_variant_types() {
 fn enum_with_struct_variants() {
     let source = r#"
         struct Inner;
-        
+
         enum Result {
             Ok { value: Inner },
             Err { message: String },
@@ -604,11 +604,11 @@ fn nested_enums_with_dependencies() {
         enum Inner {
             Value(i32),
         }
-        
+
         enum Outer {
             Nested(Inner),
         }
-        
+
         fn process(_: Outer) {}
     "#;
 
@@ -627,16 +627,16 @@ fn module_with_impl_block() {
     let source = r#"
         mod domain {
             pub struct Entity;
-            
+
             impl Entity {
                 pub fn new() -> Entity {
                     Entity
                 }
-                
+
                 pub fn process(&self) {}
             }
         }
-        
+
         fn create() -> domain::Entity {
             domain::Entity::new()
         }
@@ -661,15 +661,15 @@ fn cross_module_type_dependencies() {
         mod module_a {
             pub struct TypeA;
         }
-        
+
         mod module_b {
             use super::module_a::TypeA;
-            
+
             pub struct TypeB {
                 field: TypeA,
             }
         }
-        
+
         fn uses(_: module_b::TypeB) {}
     "#;
 
@@ -688,14 +688,14 @@ fn module_with_const_dependencies() {
     let source = r#"
         mod config {
             pub const DEFAULT_SIZE: usize = 100;
-            
+
             pub struct Config {
                 size: usize,
             }
-            
+
             pub const DEFAULT_CONFIG: Config = Config { size: DEFAULT_SIZE };
         }
-        
+
         fn get_config() -> config::Config {
             config::DEFAULT_CONFIG
         }
@@ -732,12 +732,12 @@ fn enum_method_impl() {
             Active,
             Inactive,
         }
-        
+
         impl State {
             fn is_active(&self) -> bool {
                 matches!(self, State::Active)
             }
-            
+
             fn toggle(&mut self) {
                 *self = match self {
                     State::Active => State::Inactive,
@@ -764,18 +764,18 @@ fn complex_module_hierarchy_with_re_exports() {
             pub mod types {
                 pub struct CoreType;
             }
-            
+
             pub use types::CoreType;
         }
-        
+
         mod application {
             use super::core::CoreType;
-            
+
             pub struct App {
                 core: CoreType,
             }
         }
-        
+
         fn run(_: application::App) {}
     "#;
 
@@ -794,13 +794,13 @@ fn sibling_modules_with_cross_dependencies() {
     let source = r#"
         mod module_x {
             pub struct TypeX;
-            
+
             pub fn process_x(_: super::module_y::TypeY) {}
         }
-        
+
         mod module_y {
             pub struct TypeY;
-            
+
             pub fn process_y(_: super::module_x::TypeX) {}
         }
     "#;
@@ -825,14 +825,14 @@ fn five_level_nested_modules() {
                     pub mod l4 {
                         pub mod l5 {
                             pub struct DeepStruct;
-                            
+
                             pub fn deep_function() {}
                         }
                     }
                 }
             }
         }
-        
+
         fn access_deep(_: l1::l2::l3::l4::l5::DeepStruct) {
             l1::l2::l3::l4::l5::deep_function();
         }
@@ -856,11 +856,11 @@ fn enum_as_struct_field() {
             Processing,
             Done,
         }
-        
+
         struct Task {
             status: Status,
         }
-        
+
         fn create_task() -> Task {
             Task { status: Status::Ready }
         }
@@ -882,12 +882,12 @@ fn generic_enum_with_constraints() {
         struct Wrapper<T> {
             value: T,
         }
-        
+
         enum Option<T> {
             Some(T),
             None,
         }
-        
+
         fn process(_: Option<Wrapper<i32>>) {}
     "#;
 
@@ -909,12 +909,12 @@ fn module_with_trait_and_impl() {
                 fn process(&self);
             }
         }
-        
+
         mod types {
             use super::traits::Processable;
-            
+
             pub struct Processor;
-            
+
             impl Processable for Processor {
                 fn process(&self) {}
             }
@@ -938,19 +938,19 @@ fn complex_cross_module_enum_struct_dependencies() {
                 Float(f64),
             }
         }
-        
+
         mod storage {
             use super::data::DataType;
-            
+
             pub struct Storage {
                 items: Vec<DataType>,
             }
-            
+
             impl Storage {
                 pub fn add(&mut self, item: DataType) {}
             }
         }
-        
+
         fn main_app() {
             let mut s = storage::Storage { items: vec![] };
             s.add(data::DataType::Integer(42));
@@ -976,26 +976,26 @@ fn nested_modules_with_multiple_types_and_functions() {
     let source = r#"
         mod outer {
             pub struct OuterStruct;
-            
+
             pub mod middle {
                 pub struct MiddleStruct;
-                
+
                 pub mod inner {
                     pub struct InnerStruct;
-                    
+
                     pub fn inner_fn() {}
                 }
-                
+
                 pub fn middle_fn(_: inner::InnerStruct) {
                     inner::inner_fn();
                 }
             }
-            
+
             pub fn outer_fn(_: middle::MiddleStruct) {
                 middle::middle_fn(middle::inner::InnerStruct);
             }
         }
-        
+
         fn root(_: outer::OuterStruct) {
             outer::outer_fn(outer::middle::MiddleStruct);
         }
@@ -1025,7 +1025,7 @@ fn multiple_dependencies_same_function() {
         fn dep1() {}
         fn dep2() {}
         fn dep3() {}
-        
+
         fn caller() {
             dep1();
             dep2();
@@ -1049,9 +1049,9 @@ fn multiple_dependencies_same_function() {
 fn method_depends_on_type_and_function() {
     let source = r#"
         struct Foo;
-        
+
         fn external_helper() {}
-        
+
         impl Foo {
             fn method(&self) {
                 external_helper();
@@ -1075,9 +1075,9 @@ fn generic_type_parameter_creates_dependency() {
         struct Container<T> {
             value: T,
         }
-        
+
         struct Item;
-        
+
         fn uses(_: Container<Item>) {}
     "#;
 
@@ -1095,11 +1095,11 @@ fn generic_type_parameter_creates_dependency() {
 fn const_depends_on_type_and_function() {
     let source = r#"
         struct Config;
-        
+
         fn create_config() -> Config {
             Config
         }
-        
+
         const GLOBAL_CONFIG: Config = create_config();
     "#;
 
@@ -1123,7 +1123,7 @@ fn const_depends_on_type_and_function() {
 fn static_variable_dependencies() {
     let source = r#"
         fn init_value() -> i32 { 42 }
-        
+
         static COUNTER: i32 = init_value();
     "#;
 
@@ -1145,11 +1145,11 @@ fn static_variable_dependencies() {
 fn multiple_impl_blocks_same_type() {
     let source = r#"
         struct Widget;
-        
+
         impl Widget {
             fn method1(&self) {}
         }
-        
+
         impl Widget {
             fn method2(&self) {}
         }
@@ -1169,14 +1169,14 @@ fn multiple_impl_blocks_same_type() {
 fn cross_method_dependencies_in_impl() {
     let source = r#"
         struct Service;
-        
+
         impl Service {
             fn internal_helper(&self) {}
-            
+
             fn public_api(&self) {
                 self.internal_helper();
             }
-            
+
             fn another_api(&self) {
                 self.internal_helper();
                 self.public_api();
@@ -1199,7 +1199,7 @@ fn cross_method_dependencies_in_impl() {
 fn tuple_struct_dependency() {
     let source = r#"
         struct Inner;
-        
+
         struct Wrapper(Inner);
     "#;
 
@@ -1215,7 +1215,7 @@ fn tuple_struct_dependency() {
 fn enum_variant_type_dependencies() {
     let source = r#"
         struct Data;
-        
+
         enum Message {
             Empty,
             WithData(Data),
@@ -1234,7 +1234,7 @@ fn enum_variant_type_dependencies() {
 fn associated_function_depends_on_type() {
     let source = r#"
         struct Builder;
-        
+
         impl Builder {
             fn new() -> Builder {
                 Builder
@@ -1257,7 +1257,7 @@ fn nested_function_calls_with_types() {
         struct A;
         struct B;
         struct C;
-        
+
         fn process_a(_: A) {}
         fn process_b(_: B) { process_a(A); }
         fn process_c(_: C) { process_b(B); }
@@ -1285,13 +1285,13 @@ fn complex_nested_generics() {
         struct Outer<T> {
             inner: T,
         }
-        
+
         struct Middle<U> {
             data: U,
         }
-        
+
         struct Core;
-        
+
         fn process(_: Outer<Middle<Core>>) {}
     "#;
 
@@ -1330,7 +1330,7 @@ fn multiple_parameters_multiple_types() {
         struct First;
         struct Second;
         struct Third;
-        
+
         fn multi_param(_a: First, _b: Second, _c: Third) {}
     "#;
 
@@ -1352,9 +1352,9 @@ fn trait_impl_method_dependencies() {
         trait Processor {
             fn process(&self);
         }
-        
+
         struct Handler;
-        
+
         impl Processor for Handler {
             fn process(&self) {}
         }

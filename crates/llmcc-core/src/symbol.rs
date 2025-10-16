@@ -35,8 +35,11 @@ pub enum SymbolKind {
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
 #[derive(Debug)]
 pub struct Scope<'tcx> {
+    /// Trie for fast symbol lookup by suffix
     trie: RefCell<SymbolTrie<'tcx>>,
+    /// The HIR node that owns this scope
     owner: HirId,
+    /// The symbol that introduced this scope, if any
     symbol: Cell<Option<&'tcx Symbol>>,
 }
 
@@ -61,7 +64,7 @@ impl<'tcx> Scope<'tcx> {
         self.symbol.set(symbol);
     }
 
-    pub fn insert(&self, _key: InternedStr, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
+    pub fn insert(&self, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
         let sym_id = symbol.id;
         self.trie.borrow_mut().insert_symbol(symbol, interner);
         sym_id
@@ -143,10 +146,10 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn lookup_scoped_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.lookup_scoped_suffix_with_filters(suffix, None, None)
+        self.find_scoped_suffix_with_filters(suffix, None, None)
     }
 
-    pub fn lookup_scoped_suffix_with_filters(
+    pub fn find_scoped_suffix_with_filters(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -174,12 +177,11 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn insert_symbol(
         &mut self,
-        key: InternedStr,
         symbol: &'tcx Symbol,
         global: bool,
     ) -> Result<SymId, &'static str> {
         let scope = self.scope_for_insertion(global)?;
-        Ok(scope.insert(key, symbol, self.interner))
+        Ok(scope.insert(symbol, self.interner))
     }
 
     pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
@@ -203,24 +205,24 @@ impl<'tcx> ScopeStack<'tcx> {
         self.find_symbol_local_by_key(key)
     }
 
-    pub fn find_global_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+    pub fn find_global_suffix_vec(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
             .map(|scope| scope.trie.borrow().lookup_symbol_suffix(suffix))
             .unwrap_or_default()
     }
 
-    pub fn find_global_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.find_global_suffix_once_with_filters(suffix, None, None)
+    pub fn find_global_suffix(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+        self.find_global_suffix_with_filters(suffix, None, None)
     }
 
-    pub fn find_global_suffix_once_with_filters(
+    pub fn find_global_suffix_with_filters(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        let symbols = self.find_global_suffix(suffix);
+        let symbols = self.find_global_suffix_vec(suffix);
         select_symbol(symbols, kind, file)
     }
 
@@ -236,13 +238,13 @@ impl<'tcx> ScopeStack<'tcx> {
     {
         let key = self.interner.intern(&ident.name);
 
-        let symbol = self.create_symbol(owner, ident, key);
+        let symbol = self.alloc_symbol(owner, ident, key);
         init(symbol);
 
-        self.insert_symbol(key, symbol, false)
+        self.insert_symbol(symbol, false)
             .expect("failed to insert symbol into scope");
         if global {
-            self.insert_symbol(key, symbol, true)
+            self.insert_symbol(symbol, true)
                 .expect("failed to insert symbol into global scope");
         }
 
@@ -250,7 +252,7 @@ impl<'tcx> ScopeStack<'tcx> {
             .expect("symbol should be present after insertion")
     }
 
-    fn create_symbol(
+    fn alloc_symbol(
         &self,
         owner: HirId,
         ident: &HirIdent<'tcx>,

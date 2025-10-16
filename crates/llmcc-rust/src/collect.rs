@@ -9,7 +9,6 @@ use crate::descriptor::{
     CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
     VariableDescriptor,
 };
-use crate::interner::{InternPool, InternedStr};
 use crate::ir::HirId;
 use crate::token::{AstVisitorRust, LangRust};
 
@@ -253,7 +252,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     .map(|segment| self.unit.interner().intern(segment))
                     .collect();
 
-                if let Some(symbol) = self.scopes.find_global_suffix_once(&keys) {
+                if let Some(symbol) = self.scopes.find_global_suffix(&keys) {
                     symbol.set_owner(node.hir_id());
                     symbol.set_unit_index(self.unit.index);
                     Some(symbol)
@@ -327,6 +326,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             }
             self.visit_children_new_scope(&node, Some(symbol));
         } else {
+            dbg!(&node);
             self.visit_children(&node);
         }
     }

@@ -1,4 +1,5 @@
 use llmcc_core::context::CompileUnit;
+use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
@@ -52,7 +53,23 @@ impl<'tcx> SymbolBinder<'tcx> {
         }
     }
 
-    fn symbol_from_field(
+    fn lookup_symbol_suffix(
+        &mut self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+    ) -> Option<&'tcx Symbol> {
+        let file_index = self.unit.index;
+        self.scopes
+            .find_scoped_suffix_with_filters(suffix, kind, Some(file_index))
+            .or_else(|| self.scopes.find_scoped_suffix_with_filters(suffix, kind, None))
+            .or_else(|| {
+                self.scopes
+                    .find_global_suffix_with_filters(suffix, kind, Some(file_index))
+            })
+            .or_else(|| self.scopes.find_global_suffix_with_filters(suffix, kind, None))
+    }
+
+    fn find_symbol_from_field(
         &mut self,
         node: &HirNode<'tcx>,
         field_id: u16,
@@ -61,29 +78,12 @@ impl<'tcx> SymbolBinder<'tcx> {
         let child = node.opt_child_by_field(self.unit, field_id)?;
         let ident = child.as_ident()?;
         let key = self.interner().intern(&ident.name);
-        self.scopes
-            .lookup_scoped_suffix_with_filters(&[key], Some(expected), Some(self.unit.index))
-            .or_else(|| {
-                self.scopes
-                    .lookup_scoped_suffix_with_filters(&[key], Some(expected), None)
+        self.lookup_symbol_suffix(&[key], Some(expected)).or_else(|| {
+            self.scopes.find_symbol_local(&ident.name).map(|symbol| {
+                symbol.set_kind(expected);
+                symbol
             })
-            .or_else(|| {
-                self.scopes.find_global_suffix_once_with_filters(
-                    &[key],
-                    Some(expected),
-                    Some(self.unit.index),
-                )
-            })
-            .or_else(|| {
-                self.scopes
-                    .find_global_suffix_once_with_filters(&[key], Some(expected), None)
-            })
-            .or_else(|| {
-                self.scopes.find_symbol_local(&ident.name).map(|symbol| {
-                    symbol.set_kind(expected);
-                    symbol
-                })
-            })
+        })
     }
 
     fn record_symbol_dependency(&mut self, symbol: Option<&'tcx Symbol>) {
@@ -93,7 +93,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn record_symbol_dependency_by_field(&mut self, node: &HirNode<'tcx>, field_id: u16) {
-        let symbol = self.symbol_from_field(node, field_id, SymbolKind::EnumVariant);
+        let symbol = self.find_symbol_from_field(node, field_id, SymbolKind::EnumVariant);
         self.record_symbol_dependency(symbol);
     }
 
@@ -118,45 +118,13 @@ impl<'tcx> SymbolBinder<'tcx> {
             .map(|segment| self.interner().intern(segment))
             .collect();
 
-        let file_index = self.unit.index;
-
-        self.scopes
-            .lookup_scoped_suffix_with_filters(&suffix, kind, Some(file_index))
-            .or_else(|| {
-                self.scopes
-                    .lookup_scoped_suffix_with_filters(&suffix, kind, None)
-            })
-            .or_else(|| {
-                self.scopes
-                    .find_global_suffix_once_with_filters(&suffix, kind, Some(file_index))
-            })
-            .or_else(|| {
-                self.scopes
-                    .find_global_suffix_once_with_filters(&suffix, kind, None)
-            })
-            .or_else(|| {
-                if kind.is_some() {
-                    self.scopes
-                        .lookup_scoped_suffix_with_filters(&suffix, None, Some(file_index))
-                        .or_else(|| {
-                            self.scopes
-                                .lookup_scoped_suffix_with_filters(&suffix, None, None)
-                        })
-                        .or_else(|| {
-                            self.scopes.find_global_suffix_once_with_filters(
-                                &suffix,
-                                None,
-                                Some(file_index),
-                            )
-                        })
-                        .or_else(|| {
-                            self.scopes
-                                .find_global_suffix_once_with_filters(&suffix, None, None)
-                        })
-                } else {
-                    None
-                }
-            })
+        self.lookup_symbol_suffix(&suffix, kind).or_else(|| {
+            if kind.is_some() {
+                self.lookup_symbol_suffix(&suffix, None)
+            } else {
+                None
+            }
+        })
     }
 
     fn resolve_method_symbol(&mut self, method: &str) -> Option<&'tcx Symbol> {
@@ -263,22 +231,22 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Module);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Module);
         self.visit_children_scope(node, symbol);
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
         self.visit_children_scope(node, symbol);
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Enum);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Enum);
         self.visit_children_scope(node, symbol);
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(node, symbol);
     }
 
@@ -304,12 +272,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(node, symbol);
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Static);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Static);
         self.visit_children_scope(node, symbol);
     }
 
@@ -366,13 +334,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
         } else {
             let key = self.interner().intern(&ident.name);
             self.scopes
-                .lookup_scoped_suffix_with_filters(&[key], None, Some(self.unit.index))
+                .find_scoped_suffix_with_filters(&[key], None, Some(self.unit.index))
                 .or_else(|| {
                     self.scopes
-                        .lookup_scoped_suffix_with_filters(&[key], None, None)
+                        .find_scoped_suffix_with_filters(&[key], None, None)
                 })
                 .or_else(|| {
-                    self.scopes.find_global_suffix_once_with_filters(
+                    self.scopes.find_global_suffix_with_filters(
                         &[key],
                         None,
                         Some(self.unit.index),
@@ -380,7 +348,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
                 })
                 .or_else(|| {
                     self.scopes
-                        .find_global_suffix_once_with_filters(&[key], None, None)
+                        .find_global_suffix_with_filters(&[key], None, None)
                 })
         };
         self.record_symbol_dependency(symbol);
