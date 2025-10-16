@@ -29,26 +29,26 @@ impl<'tcx> SymbolBinder<'tcx> {
         self.scopes.scoped_symbol()
     }
 
-    fn push_scope_with_symbol(&mut self, node: HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
+    fn visit_children_scope(&mut self, node: HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
         let depth = self.scopes.depth();
-        let scope = self
-            .unit
-            .opt_get_scope(node.hir_id())
-            .unwrap_or_else(|| self.unit.alloc_scope(node.hir_id()));
-
         if let Some(symbol) = symbol {
             if let Some(parent) = self.scopes.scoped_symbol() {
                 parent.add_dependency(symbol);
             }
-            scope.set_symbol(Some(symbol));
         }
 
-        self.scopes.push_with_symbol(scope, symbol);
-        self.visit_children(&node);
-        self.scopes.pop_until(depth);
+        // NOTE: scope should already be created during symbol collection, here we just
+        // follow the tree structure again
+        let scope = self
+            .unit
+            .opt_get_scope(node.hir_id());
 
-        if let Some(symbol) = symbol {
-            scope.set_symbol(Some(symbol));
+        if let Some(scope) = scope {
+            self.scopes.push_with_symbol(scope, symbol);
+            self.visit_children(&node);
+            self.scopes.pop_until(depth);
+        } else {
+            self.visit_children(&node);
         }
     }
 
@@ -259,40 +259,40 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
-        self.push_scope_with_symbol(node, None);
+        self.visit_children_scope(node, None);
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Module);
-        self.push_scope_with_symbol(node, symbol);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
-        self.push_scope_with_symbol(node, symbol);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Enum);
-        self.push_scope_with_symbol(node, symbol);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
-        self.push_scope_with_symbol(node, symbol);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.resolve_impl_target(&node);
-        self.push_scope_with_symbol(node, symbol);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
-        self.push_scope_with_symbol(node, None);
+        self.visit_children_scope(node, None);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
-        self.push_scope_with_symbol(node, None);
+        self.visit_children_scope(node, None);
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
@@ -305,12 +305,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
-        self.push_scope_with_symbol(node, symbol);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.symbol_from_field(&node, LangRust::field_name, SymbolKind::Static);
-        self.push_scope_with_symbol(node, symbol);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {

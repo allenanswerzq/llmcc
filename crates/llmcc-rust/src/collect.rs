@@ -285,7 +285,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         let kind = node.inner_ts_node().kind();
-        if let Some((_symbol, ident, fqn)) =
+        if let Some((symbol, ident, fqn)) =
             self.create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Const)
         {
             let variable = match kind {
@@ -304,31 +304,14 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 _ => return,
             };
             self.variables.push(variable);
+            self.visit_children_new_scope(&node, Some(symbol));
+        } else {
+            self.visit_children(&node);
         }
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
-        let kind = node.inner_ts_node().kind();
-        if let Some((_symbol, ident, fqn)) =
-            self.create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Static)
-        {
-            let variable = match kind {
-                "const_item" => VariableDescriptor::from_const_item(
-                    self.unit,
-                    &node,
-                    ident.name.clone(),
-                    fqn.clone(),
-                ),
-                "static_item" => VariableDescriptor::from_static_item(
-                    self.unit,
-                    &node,
-                    ident.name.clone(),
-                    fqn.clone(),
-                ),
-                _ => return,
-            };
-            self.variables.push(variable);
-        }
+        self.visit_const_item(node);
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
