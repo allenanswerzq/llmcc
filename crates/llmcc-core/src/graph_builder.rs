@@ -36,6 +36,10 @@ impl GraphUnit {
     pub fn root(&self) -> BlockId {
         self.root
     }
+
+    pub fn edges(&self) -> &BlockRelationMap {
+        &self.edges
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -46,25 +50,26 @@ pub struct GraphNode {
 
 pub type UnitGraph = GraphUnit;
 
-pub struct ProjectGraph {
+pub struct ProjectGraph<'tcx> {
+    pub cc: &'tcx CompileCtxt<'tcx>,
     units: Vec<GraphUnit>,
 }
 
-impl ProjectGraph {
-    pub fn new() -> Self {
-        Self { units: Vec::new() }
+impl<'tcx> ProjectGraph<'tcx> {
+    pub fn new(cc: &'tcx CompileCtxt<'tcx>) -> Self {
+        Self { cc, units: Vec::new() }
     }
 
     pub fn add_child(&mut self, graph: GraphUnit) {
         self.units.push(graph);
     }
 
-    pub fn link_units<'tcx>(&mut self, cc: &'tcx CompileCtxt<'tcx>) {
+    pub fn link_units(&mut self) {
         if self.units.is_empty() {
             return;
         }
 
-        let mut unresolved = cc.unresolve_symbols.borrow_mut();
+        let mut unresolved = self.cc.unresolve_symbols.borrow_mut();
         unresolved.retain(|symbol_ref| {
             let target = *symbol_ref;
             let Some(target_block) = target.block_id() else {
@@ -73,7 +78,7 @@ impl ProjectGraph {
 
             let dependents: Vec<SymId> = target.depended.borrow().clone();
             for dependent_id in dependents {
-                let Some(source_symbol) = cc.opt_get_symbol(dependent_id) else {
+                let Some(source_symbol) = self.cc.opt_get_symbol(dependent_id) else {
                     continue;
                 };
                 let Some(from_block) = source_symbol.block_id() else {
@@ -269,6 +274,12 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 if !edges.has_relation(from_block, BlockRelation::DependsOn, to_block) {
                     edges.add_relation(from_block, to_block);
                 }
+                let target_unit = target_symbol.unit_index();
+                if target_unit.is_some() && target_unit != Some(self.unit.index) {
+                    if unresolved.insert(dep_id) {
+                        self.unit.add_unresolved_symbol(target_symbol);
+                    }
+                }
                 return;
             }
 
@@ -286,7 +297,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     fn build_block(&mut self, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
         let id = self.next_id();
         let block_kind = Language::block_kind(node.kind_id());
-        dbg!(id, block_kind, node.kind());
         assert_ne!(block_kind, BlockKind::Undefined);
 
         if self.root.is_none() {
