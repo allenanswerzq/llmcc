@@ -1,3 +1,13 @@
+
+struct Builder;
+
+impl Builder {
+    fn new() -> Builder {
+        Builder
+    }
+}
+
+
 const MAX: i32 = 10;
 
 static mut COUNTER: usize = 0;

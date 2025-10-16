@@ -46,7 +46,7 @@ impl<'tcx> Fixture<'tcx> {
     fn module_scope(&self, name: &str) -> &'tcx Scope<'tcx> {
         let stack = self.scope_stack();
         let key = self.intern(name);
-        let symbol = stack.find_global_suffix_once(&[key]).unwrap();
+        let symbol = stack.find_global_suffix(&[key]).unwrap();
         self.unit.opt_get_scope(symbol.owner()).unwrap()
     }
 }
@@ -102,19 +102,19 @@ fn inserts_symbols_for_local_and_global_resolution() {
     assert!(fixture.globals.get_id(max_key).is_some());
     assert!(fixture.globals.get_id(foo_key).is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[foo_method_key, foo_key])
+        .find_global_suffix(&[foo_method_key, foo_key])
         .is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[foo_private_method_key, foo_key])
+        .find_global_suffix(&[foo_private_method_key, foo_key])
         .is_none());
     assert!(fixture.globals.get_id(bar_key).is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[bar_method_key, bar_key])
+        .find_global_suffix(&[bar_method_key, bar_key])
         .is_none());
     assert!(fixture.globals.get_id(private_inner_key).is_none());
 
     let global_symbol = scope_stack
-        .find_global_suffix_once(&[inner_key, outer_key])
+        .find_global_suffix(&[inner_key, outer_key])
         .unwrap();
     assert_eq!(global_symbol.fqn_name.borrow().as_str(), "outer::inner");
 
@@ -174,11 +174,11 @@ fn module_struct_visibility() {
 
     assert!(fixture.globals.get_id(foo_key).is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[create_key, foo_key])
+        .find_global_suffix(&[create_key, foo_key])
         .is_some());
     assert!(fixture.globals.get_id(bar_key).is_none());
     assert!(scope_stack
-        .find_global_suffix_once(&[hidden_key, bar_key])
+        .find_global_suffix(&[hidden_key, bar_key])
         .is_none());
 
     let module_scope = fixture.module_scope("outer");
@@ -214,10 +214,10 @@ fn module_enum_visibility() {
     assert!(fixture.globals.get_id(visible_key).is_some());
     assert!(fixture.globals.get_id(hidden_key).is_none());
     assert!(scope_stack
-        .find_global_suffix_once(&[visible_key, outer_key])
+        .find_global_suffix(&[visible_key, outer_key])
         .is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[hidden_key, outer_key])
+        .find_global_suffix(&[hidden_key, outer_key])
         .is_none());
 
     assert!(outer_scope.get_id(visible_key).is_some());
@@ -242,10 +242,10 @@ fn module_enum_visibility() {
     assert!(hidden_scope.get_id(variant_b_key).is_some());
 
     assert!(scope_stack
-        .find_global_suffix_once(&[variant_a_key, visible_key, outer_key])
+        .find_global_suffix(&[variant_a_key, visible_key, outer_key])
         .is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[variant_b_key, hidden_key, outer_key])
+        .find_global_suffix(&[variant_b_key, hidden_key, outer_key])
         .is_none());
 }
 
@@ -274,15 +274,15 @@ fn enum_variant_symbols_are_registered() {
 
     assert!(fixture.globals.get_id(status_key).is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[ok_key, status_key])
+        .find_global_suffix(&[ok_key, status_key])
         .is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[not_found_key, status_key])
+        .find_global_suffix(&[not_found_key, status_key])
         .is_some());
 
     assert!(fixture.globals.get_id(private_status_key).is_some());
     assert!(scope_stack
-        .find_global_suffix_once(&[hidden_key, private_status_key])
+        .find_global_suffix(&[hidden_key, private_status_key])
         .is_none());
 
     let status_scope = fixture
