@@ -11,7 +11,7 @@ use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 
 #[derive(Debug, Clone)]
-pub struct GraphUnit {
+pub struct UnitGraph {
     /// Compile unit this graph belongs to
     unit_index: usize,
     /// Root block ID of this unit
@@ -20,7 +20,7 @@ pub struct GraphUnit {
     edges: BlockRelationMap,
 }
 
-impl GraphUnit {
+impl UnitGraph {
     pub fn new(unit_index: usize, root: BlockId, edges: BlockRelationMap) -> Self {
         Self {
             unit_index,
@@ -48,19 +48,32 @@ pub struct GraphNode {
     pub block_id: BlockId,
 }
 
-pub type UnitGraph = GraphUnit;
-
+/// The project graph contains multiple unit graphs and their inter-dependencies.
+/// it should support traversing the entire project structure. and each unit graph,
+/// given a symbol name, should be able to find the corresponding block id if exists,
+/// and all the related blocks in same or units.
+///
+/// The primary purpose of this graph is to given a whole project view to the llm model,
+/// and able to easily find all the context for a specific function code in the plain text code or
+/// json format.
+///
+/// Since it outputs to the llm model, all the data structure should be serializable.
+/// in either plain text or json format.
+#[derive(Debug)]
 pub struct ProjectGraph<'tcx> {
     pub cc: &'tcx CompileCtxt<'tcx>,
-    units: Vec<GraphUnit>,
+    units: Vec<UnitGraph>,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
     pub fn new(cc: &'tcx CompileCtxt<'tcx>) -> Self {
-        Self { cc, units: Vec::new() }
+        Self {
+            cc,
+            units: Vec::new(),
+        }
     }
 
-    pub fn add_child(&mut self, graph: GraphUnit) {
+    pub fn add_child(&mut self, graph: UnitGraph) {
         self.units.push(graph);
     }
 
@@ -96,7 +109,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         });
     }
 
-    pub fn units(&self) -> &[GraphUnit] {
+    pub fn units(&self) -> &[UnitGraph] {
         &self.units
     }
 
@@ -188,11 +201,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let stmt = BlockCall::from_hir(id, node, parent, children);
                 BasicBlock::Call(arena.alloc(stmt))
             }
-            BlockKind::Impl => {
-                todo!()
-                // let block = BlockImpl::from_hir(unit, id, node, parent, children);
-                // BasicBlock::Impl(arena.alloc(block))
-            }
             BlockKind::Enum => {
                 let enum_ty = BlockEnum::from_hir(id, node, parent, children);
                 BasicBlock::Enum(arena.alloc(enum_ty))
@@ -200,6 +208,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BlockKind::Const => {
                 let stmt = BlockConst::from_hir(id, node, parent, children);
                 BasicBlock::Const(arena.alloc(stmt))
+            }
+            BlockKind::Impl => {
+                todo!()
+                // let block = BlockImpl::from_hir(unit, id, node, parent, children);
+                // BasicBlock::Impl(arena.alloc(block))
             }
             _ => {
                 panic!("unknown block kind: {}", kind)
@@ -348,7 +361,9 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         match Language::block_kind(node.kind_id()) {
-            BlockKind::Func | BlockKind::Class => self.build_block(node, parent, true),
+            BlockKind::Func | BlockKind::Class | BlockKind::Enum | BlockKind::Const => {
+                self.build_block(node, parent, true)
+            }
             _ => self.visit_children(node, parent),
         }
     }
@@ -357,7 +372,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
-) -> Result<GraphUnit, Box<dyn std::error::Error>> {
+) -> Result<UnitGraph, Box<dyn std::error::Error>> {
     let root_hir = unit
         .file_start_hir_id()
         .ok_or_else(|| "missing file start HIR id")?;
@@ -368,5 +383,5 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     let root_block = builder.root;
     let root_block = root_block.ok_or_else(|| "graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
-    Ok(GraphUnit::new(unit_index, root_block, edges))
+    Ok(UnitGraph::new(unit_index, root_block, edges))
 }

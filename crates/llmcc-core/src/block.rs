@@ -54,7 +54,11 @@ impl<'blk> BasicBlock<'blk> {
     pub fn format_block(&self, _unit: CompileUnit<'blk>) -> String {
         let block_id = self.block_id();
         let kind = self.kind();
-        format!("{}:{}", kind, block_id)
+        let name = self
+            .base()
+            .and_then(|base| base.opt_get_name())
+            .unwrap_or("");
+        format!("{}:{} {}", kind, block_id, name)
     }
 
     /// Get the base block information regardless of variant
@@ -173,6 +177,13 @@ impl<'blk> BlockBase<'blk> {
         }
     }
 
+    pub fn opt_get_name(&self) -> Option<&str> {
+        self.node
+            .as_scope()
+            .and_then(|scope| scope.ident.as_ref())
+            .map(|ident| ident.name.as_str())
+    }
+
     pub fn add_child(&mut self, child_id: BlockId) {
         if !self.children.contains(&child_id) {
             self.children.push(child_id);
@@ -232,8 +243,7 @@ impl<'blk> BlockFunc<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Func, parent, children);
-        // let name = "aaa".to_string();
-        let name = "aaaa".to_string();
+        let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
     }
 }
@@ -305,7 +315,7 @@ impl<'blk> BlockClass<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
-        let name = "aaa".to_string();
+        let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
     }
 
@@ -379,8 +389,8 @@ impl<'blk> BlockEnum<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
-        let name = "aaa".to_string();
+        let base = BlockBase::new(id, node, BlockKind::Enum, parent, children);
+        let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
     }
 
@@ -406,8 +416,8 @@ impl<'blk> BlockConst<'blk> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
-        let name = "aaa".to_string();
+        let base = BlockBase::new(id, node, BlockKind::Const, parent, children);
+        let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
     }
 }
