@@ -3,6 +3,10 @@ use std::collections::HashMap;
 use crate::interner::{InternPool, InternedStr};
 use crate::symbol::Symbol;
 
+/// A trie structure to store and lookup symbols by their fully qualified names.
+/// The trie is built in reverse order to facilitate suffix-based lookups.
+/// Multiple same-named fqn symbols are stored in the same node, caller can use symbol
+/// to do further disambiguation.
 #[derive(Debug, Default)]
 struct SymbolTrieNode<'tcx> {
     children: HashMap<InternedStr, SymbolTrieNode<'tcx>>,

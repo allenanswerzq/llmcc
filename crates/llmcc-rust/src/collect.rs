@@ -9,6 +9,8 @@ use crate::descriptor::{
     CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
     VariableDescriptor,
 };
+use crate::interner::{InternPool, InternedStr};
+use crate::ir::HirId;
 use crate::token::{AstVisitorRust, LangRust};
 
 /// DeclCollector:
@@ -83,7 +85,7 @@ impl<'tcx> DeclCollector<'tcx> {
         mem::take(&mut self.enums)
     }
 
-    fn make_new_symbol(
+    fn create_new_symbol(
         &mut self,
         node: &HirNode<'tcx>,
         field_id: u16,
@@ -93,49 +95,50 @@ impl<'tcx> DeclCollector<'tcx> {
         let ident_node = node.child_by_field(self.unit, field_id);
         let ident = ident_node.as_ident()?;
         let fqn = self.scoped_fqn(node, &ident.name);
-        let interner = self.unit.interner();
         let owner = node.hir_id();
-        let key = interner.intern(&ident.name);
 
-        // TODO: use trie to optimize code here
-        let symbol = if let Some(existing) = self.scopes.find_ident(ident) {
-            let existing_kind = existing.kind();
-            if existing_kind != SymbolKind::Unknown && existing_kind != kind {
-                let symbol = self.unit.alloc_symbol(owner, ident.name.clone());
-                symbol.set_owner(owner);
-                symbol.set_fqn(fqn.clone(), interner);
-                symbol.set_kind(kind);
-                symbol.set_unit_index(self.unit.index);
-                self.scopes
-                    .insert_symbol(key, symbol, false)
-                    .expect("failed to insert symbol into local scope");
-                if global {
-                    self.scopes
-                        .insert_symbol(key, symbol, true)
-                        .expect("failed to insert symbol into global scope");
-                }
-                symbol
-            } else {
-                existing.set_owner(owner);
-                existing.set_fqn(fqn.clone(), interner);
-                existing.set_kind_if_unknown(kind);
-                existing.set_unit_index(self.unit.index);
+        let symbol = match self.scopes.find_symbol_local(&ident.name) {
+            Some(existing) if Self::different_kind(existing.kind(), kind) => {
+                self.insert_into_scope(owner, ident, global, &fqn, kind)
+            }
+            Some(existing) => {
+                self.warn_duplicate_symbol(&ident.name, existing.kind(), kind);
                 existing
             }
-        } else {
-            let symbol = self
-                .scopes
-                .find_or_insert_with(owner, ident, global, |symbol| {
-                    symbol.set_owner(owner);
-                    symbol.set_fqn(fqn.clone(), interner);
-                    symbol.set_kind_if_unknown(kind);
-                    symbol.set_unit_index(self.unit.index);
-                });
-            symbol.set_kind_if_unknown(kind);
-            symbol.set_unit_index(self.unit.index);
-            symbol
+            None => self.insert_into_scope(owner, ident, global, &fqn, kind),
         };
+
         Some((symbol, ident, fqn))
+    }
+
+    fn different_kind(existing_kind: SymbolKind, new_kind: SymbolKind) -> bool {
+        existing_kind != SymbolKind::Unknown && existing_kind != new_kind
+    }
+
+    fn warn_duplicate_symbol(&self, name: &str, existing_kind: SymbolKind, new_kind: SymbolKind) {
+        eprintln!(
+            "warning: duplicate symbol '{}' found in the same scope. existing kind: {:?}, new kind: {:?}. skipping insertion.",
+            name, existing_kind, new_kind
+        );
+    }
+
+    fn insert_into_scope(
+        &mut self,
+        owner: HirId,
+        ident: &'tcx HirIdent<'tcx>,
+        global: bool,
+        fqn: &str,
+        kind: SymbolKind,
+    ) -> &'tcx Symbol {
+        let interner = self.unit.interner();
+        let unit_index = self.unit.index;
+
+        self.scopes.insert_with(owner, ident, global, |symbol| {
+            symbol.set_owner(owner);
+            symbol.set_fqn(fqn.to_string(), interner);
+            symbol.set_kind(kind);
+            symbol.set_unit_index(unit_index);
+        })
     }
 
     fn has_public_visibility(&self, node: &HirNode<'tcx>) -> bool {
@@ -194,7 +197,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) = self.make_new_symbol(
+        if let Some((symbol, _ident, fqn)) = self.create_new_symbol(
             &node,
             LangRust::field_name,
             register_globally,
@@ -211,7 +214,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         if let Some((_symbol, ident, fqn)) =
-            self.make_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable)
+            self.create_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable)
         {
             let var =
                 VariableDescriptor::from_let(self.unit, &node, ident.name.clone(), fqn.clone());
@@ -225,13 +228,13 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        let _ = self.make_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable);
+        let _ = self.create_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable);
         self.visit_children(&node);
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self
-            .make_new_symbol(&node, LangRust::field_name, true, SymbolKind::Module)
+            .create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Module)
             .map(|(symbol, _ident, _)| symbol);
         self.visit_children_new_scope(&node, symbol);
     }
@@ -283,7 +286,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         let kind = node.inner_ts_node().kind();
         if let Some((_symbol, ident, fqn)) =
-            self.make_new_symbol(&node, LangRust::field_name, true, SymbolKind::Const)
+            self.create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Const)
         {
             let variable = match kind {
                 "const_item" => VariableDescriptor::from_const_item(
@@ -307,7 +310,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
         let kind = node.inner_ts_node().kind();
         if let Some((_symbol, ident, fqn)) =
-            self.make_new_symbol(&node, LangRust::field_name, true, SymbolKind::Static)
+            self.create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Static)
         {
             let variable = match kind {
                 "const_item" => VariableDescriptor::from_const_item(
@@ -330,7 +333,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) = self.make_new_symbol(
+        if let Some((symbol, _ident, fqn)) = self.create_new_symbol(
             &node,
             LangRust::field_name,
             register_globally,
@@ -347,7 +350,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) = self.make_new_symbol(
+        if let Some((symbol, _ident, fqn)) = self.create_new_symbol(
             &node,
             LangRust::field_name,
             register_globally,
@@ -364,7 +367,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.enum_variant_should_register_globally(&node);
-        let _ = self.make_new_symbol(
+        let _ = self.create_new_symbol(
             &node,
             LangRust::field_name,
             register_globally,

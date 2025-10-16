@@ -10,7 +10,7 @@ use crate::graph_builder::ProjectGraph;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
-use crate::symbol::{Scope, Symbol, SymId};
+use crate::symbol::{Scope, SymId, Symbol};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -326,7 +326,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         self.scope_map.borrow().get(&owner).unwrap()
     }
-
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
         self.symbol_map.borrow().get(&owner).cloned()

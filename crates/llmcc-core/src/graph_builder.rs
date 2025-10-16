@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
-use crate::block::{BlockCall, BlockClass, BlockFunc, BlockRoot, BlockStmt};
+use crate::block::{BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockRoot, BlockStmt};
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
@@ -21,11 +21,7 @@ pub struct GraphUnit {
 }
 
 impl GraphUnit {
-    pub fn new(
-        unit_index: usize,
-        root: BlockId,
-        edges: BlockRelationMap,
-    ) -> Self {
+    pub fn new(unit_index: usize, root: BlockId, edges: BlockRelationMap) -> Self {
         Self {
             unit_index,
             root,
@@ -84,8 +80,11 @@ impl ProjectGraph {
                     continue;
                 };
                 self.add_cross_edge(
-                    source_symbol.unit_index().unwrap(), 
-                    target.unit_index().unwrap(), from_block, target_block);
+                    source_symbol.unit_index().unwrap(),
+                    target.unit_index().unwrap(),
+                    from_block,
+                    target_block,
+                );
             }
 
             false
@@ -103,7 +102,6 @@ impl ProjectGraph {
         from_block: BlockId,
         to_block: BlockId,
     ) {
-
         if from_idx == to_idx {
             let unit = &self.units[from_idx];
             if !unit
@@ -120,9 +118,7 @@ impl ProjectGraph {
             .edges
             .has_relation(from_block, BlockRelation::DependsOn, to_block)
         {
-            from_unit
-                .edges
-                .add_relation(from_block, to_block);
+            from_unit.edges.add_relation(from_block, to_block);
         }
 
         let to_unit = &self.units[to_idx];
@@ -130,9 +126,7 @@ impl ProjectGraph {
             .edges
             .has_relation(to_block, BlockRelation::DependedBy, from_block)
         {
-            to_unit
-                .edges
-                .add_relation(to_block,  from_block);
+            to_unit.edges.add_relation(to_block, from_block);
         }
     }
 }
@@ -194,6 +188,14 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // let block = BlockImpl::from_hir(unit, id, node, parent, children);
                 // BasicBlock::Impl(arena.alloc(block))
             }
+            BlockKind::Enum => {
+                let enum_ty = BlockEnum::from_hir(id, node, parent, children);
+                BasicBlock::Enum(arena.alloc(enum_ty))
+            }
+            BlockKind::Const => {
+                let stmt = BlockConst::from_hir(id, node, parent, children);
+                BasicBlock::Const(arena.alloc(stmt))
+            }
             _ => {
                 panic!("unknown block kind: {}", kind)
             }
@@ -215,43 +217,76 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         visited: &mut HashSet<SymId>,
         unresolved: &mut HashSet<SymId>,
     ) {
-        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
-            if let Some(symbol) = scope.symbol() {
-                let symbol_id = symbol.id;
-                if visited.insert(symbol_id) {
-                    if let Some(from_block) = symbol.block_id() {
-                        let deps = symbol.depends.borrow();
-                        for dep_id in deps.iter().copied() {
-                            if let Some(target_symbol) = self.unit.opt_get_symbol(dep_id) {
-                                if let Some(to_block) = target_symbol.block_id() {
-                                    if !edges.has_relation(
-                                        from_block,
-                                        BlockRelation::DependsOn,
-                                        to_block,
-                                    ) {
-                                        edges.add_relation(from_block, to_block);
-                                    }
-                                } else if unresolved.insert(dep_id) {
-                                    self.unit.add_unresolved_symbol(target_symbol);
-                                }
-                            } else if unresolved.insert(dep_id) {
-                                // Without a symbol reference we cannot link now.
-                            }
-                        }
-                    }
-                }
-            }
+        // Try to process symbol dependencies for this node
+        if let Some(symbol) = self
+            .unit
+            .opt_get_scope(node.hir_id())
+            .and_then(|scope| scope.symbol())
+        {
+            self.process_symbol(symbol, edges, visited, unresolved);
         }
 
-        for child_id in node.children() {
-            let child = self.unit.hir_node(*child_id);
+        // Recurse into children
+        for &child_id in node.children() {
+            let child = self.unit.hir_node(child_id);
             self.collect_edges(child, edges, visited, unresolved);
         }
+    }
+
+    fn process_symbol(
+        &self,
+        symbol: &Symbol,
+        edges: &BlockRelationMap,
+        visited: &mut HashSet<SymId>,
+        unresolved: &mut HashSet<SymId>,
+    ) {
+        let symbol_id = symbol.id;
+
+        // Avoid processing the same symbol twice
+        if !visited.insert(symbol_id) {
+            return;
+        }
+
+        let Some(from_block) = symbol.block_id() else {
+            return;
+        };
+
+        for &dep_id in symbol.depends.borrow().iter() {
+            self.link_dependency(dep_id, from_block, edges, unresolved);
+        }
+    }
+
+    fn link_dependency(
+        &self,
+        dep_id: SymId,
+        from_block: BlockId,
+        edges: &BlockRelationMap,
+        unresolved: &mut HashSet<SymId>,
+    ) {
+        // If target symbol exists and has a block, add the dependency edge
+        if let Some(target_symbol) = self.unit.opt_get_symbol(dep_id) {
+            if let Some(to_block) = target_symbol.block_id() {
+                if !edges.has_relation(from_block, BlockRelation::DependsOn, to_block) {
+                    edges.add_relation(from_block, to_block);
+                }
+                return;
+            }
+
+            // Target symbol exists but block not yet known
+            if unresolved.insert(dep_id) {
+                self.unit.add_unresolved_symbol(target_symbol);
+            }
+            return;
+        }
+
+        // Target symbol not found at all
+        unresolved.insert(dep_id);
     }
 
     fn build_block(&mut self, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
         let id = self.next_id();
         let block_kind = Language::block_kind(node.kind_id());
+        dbg!(id, block_kind, node.kind());
         assert_ne!(block_kind, BlockKind::Undefined);
 
         if self.root.is_none() {
