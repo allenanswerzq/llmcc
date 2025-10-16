@@ -259,7 +259,6 @@ impl<'tcx> ScopeStack<'tcx> {
         let symbol = Symbol::new(owner, ident.name.clone(), key);
         self.arena.alloc(symbol)
     }
-
 }
 
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).

@@ -362,7 +362,6 @@ impl<'blk> BlockImpl<'blk> {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct BlockEnum<'blk> {
     pub base: BlockBase<'blk>,
@@ -395,7 +394,6 @@ impl<'blk> BlockEnum<'blk> {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct BlockConst<'blk> {
     pub base: BlockBase<'blk>,
@@ -404,10 +402,7 @@ pub struct BlockConst<'blk> {
 
 impl<'blk> BlockConst<'blk> {
     pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self {
-            base,
-            name,
-        }
+        Self { base, name }
     }
 
     pub fn from_hir(

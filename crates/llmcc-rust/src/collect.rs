@@ -9,9 +9,9 @@ use crate::descriptor::{
     CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
     VariableDescriptor,
 };
-use crate::token::{AstVisitorRust, LangRust};
-use crate::ir::HirId;
 use crate::interner::{InternPool, InternedStr};
+use crate::ir::HirId;
+use crate::token::{AstVisitorRust, LangRust};
 
 /// DeclCollector:
 /// For local resolve (single file) later, we only need to trace back to the scope stack using simple name
@@ -96,7 +96,7 @@ impl<'tcx> DeclCollector<'tcx> {
         let ident = ident_node.as_ident()?;
         let fqn = self.scoped_fqn(node, &ident.name);
         let owner = node.hir_id();
-        
+
         let symbol = match self.scopes.find_symbol_local(&ident.name) {
             Some(existing) if Self::different_kind(existing.kind(), kind) => {
                 self.insert_into_scope(owner, ident, global, &fqn, kind)
@@ -107,7 +107,7 @@ impl<'tcx> DeclCollector<'tcx> {
             }
             None => self.insert_into_scope(owner, ident, global, &fqn, kind),
         };
-        
+
         Some((symbol, ident, fqn))
     }
 
@@ -132,7 +132,7 @@ impl<'tcx> DeclCollector<'tcx> {
     ) -> &'tcx Symbol {
         let interner = self.unit.interner();
         let unit_index = self.unit.index;
-        
+
         self.scopes.insert_with(owner, ident, global, |symbol| {
             symbol.set_owner(owner);
             symbol.set_fqn(fqn.to_string(), interner);
