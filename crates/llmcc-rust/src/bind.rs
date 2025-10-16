@@ -40,9 +40,7 @@ impl<'tcx> SymbolBinder<'tcx> {
 
         // NOTE: scope should already be created during symbol collection, here we just
         // follow the tree structure again
-        let scope = self
-            .unit
-            .opt_get_scope(node.hir_id());
+        let scope = self.unit.opt_get_scope(node.hir_id());
 
         if let Some(scope) = scope {
             self.scopes.push_with_symbol(scope, symbol);
@@ -61,12 +59,18 @@ impl<'tcx> SymbolBinder<'tcx> {
         let file_index = self.unit.index;
         self.scopes
             .find_scoped_suffix_with_filters(suffix, kind, Some(file_index))
-            .or_else(|| self.scopes.find_scoped_suffix_with_filters(suffix, kind, None))
+            .or_else(|| {
+                self.scopes
+                    .find_scoped_suffix_with_filters(suffix, kind, None)
+            })
             .or_else(|| {
                 self.scopes
                     .find_global_suffix_with_filters(suffix, kind, Some(file_index))
             })
-            .or_else(|| self.scopes.find_global_suffix_with_filters(suffix, kind, None))
+            .or_else(|| {
+                self.scopes
+                    .find_global_suffix_with_filters(suffix, kind, None)
+            })
     }
 
     fn find_symbol_from_field(
@@ -78,12 +82,13 @@ impl<'tcx> SymbolBinder<'tcx> {
         let child = node.opt_child_by_field(self.unit, field_id)?;
         let ident = child.as_ident()?;
         let key = self.interner().intern(&ident.name);
-        self.lookup_symbol_suffix(&[key], Some(expected)).or_else(|| {
-            self.scopes.find_symbol_local(&ident.name).map(|symbol| {
-                symbol.set_kind(expected);
-                symbol
+        self.lookup_symbol_suffix(&[key], Some(expected))
+            .or_else(|| {
+                self.scopes.find_symbol_local(&ident.name).map(|symbol| {
+                    symbol.set_kind(expected);
+                    symbol
+                })
             })
-        })
     }
 
     fn add_symbol_relation(&mut self, symbol: Option<&'tcx Symbol>) {
@@ -128,8 +133,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn resolve_method_symbol(&mut self, method: &str) -> Option<&'tcx Symbol> {
-        if let Some(symbol) =
-            self.resolve_symbol(&[method.to_string()], Some(SymbolKind::Function))
+        if let Some(symbol) = self.resolve_symbol(&[method.to_string()], Some(SymbolKind::Function))
         {
             return Some(symbol);
         }
@@ -155,9 +159,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                 .map(|segment| segment.to_string())
                 .collect();
             segments.push(method.to_string());
-            if let Some(symbol) =
-                self.resolve_symbol(&segments, Some(SymbolKind::Function))
-            {
+            if let Some(symbol) = self.resolve_symbol(&segments, Some(SymbolKind::Function)) {
                 return Some(symbol);
             }
         }
@@ -340,11 +342,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
                         .find_scoped_suffix_with_filters(&[key], None, None)
                 })
                 .or_else(|| {
-                    self.scopes.find_global_suffix_with_filters(
-                        &[key],
-                        None,
-                        Some(self.unit.index),
-                    )
+                    self.scopes
+                        .find_global_suffix_with_filters(&[key], None, Some(self.unit.index))
                 })
                 .or_else(|| {
                     self.scopes

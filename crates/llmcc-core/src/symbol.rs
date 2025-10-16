@@ -252,12 +252,7 @@ impl<'tcx> ScopeStack<'tcx> {
             .expect("symbol should be present after insertion")
     }
 
-    fn alloc_symbol(
-        &self,
-        owner: HirId,
-        ident: &HirIdent<'tcx>,
-        key: InternedStr,
-    ) -> &'tcx Symbol {
+    fn alloc_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>, key: InternedStr) -> &'tcx Symbol {
         let symbol = Symbol::new(owner, ident.name.clone(), key);
         self.arena.alloc(symbol)
     }
