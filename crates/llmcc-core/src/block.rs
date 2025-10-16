@@ -331,39 +331,23 @@ impl<'blk> BlockClass<'blk> {
 #[derive(Debug, Clone)]
 pub struct BlockImpl<'blk> {
     pub base: BlockBase<'blk>,
-    pub target_class: BlockId,
-    pub trait_ref: Option<BlockId>,
-    pub methods: Vec<BlockId>,
+    pub name: String,
 }
 
 impl<'blk> BlockImpl<'blk> {
-    pub fn new(base: BlockBase<'blk>, target_class: BlockId) -> Self {
-        Self {
-            base,
-            target_class,
-            trait_ref: None,
-            methods: Vec::new(),
-        }
+    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
+        Self { base, name }
     }
 
     pub fn from_hir(
         id: BlockId,
         node: HirNode<'blk>,
-        children: Vec<BlockId>,
         parent: Option<BlockId>,
-        target_class: BlockId,
+        children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Impl, parent, children);
-        Self::new(base, target_class)
-    }
-
-    pub fn with_trait(mut self, trait_id: BlockId) -> Self {
-        self.trait_ref = Some(trait_id);
-        self
-    }
-
-    pub fn add_method(&mut self, method_id: BlockId) {
-        self.methods.push(method_id);
+        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self::new(base, name)
     }
 }
 
