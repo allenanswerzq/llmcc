@@ -10,23 +10,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cc = CompileCtxt::from_files::<LangRust>(&files)?;
     let globals = cc.create_globals();
 
-    for (index, _) in files.iter().enumerate() {
-        let unit = cc.compile_unit(index);
-        build_llmcc_ir::<LangRust>(unit)?;
-
-        collect_symbols(unit, globals);
-    }
-
     for (index, path) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
-        bind_symbols(unit, globals);
+        build_llmcc_ir::<LangRust>(unit)?;
 
         println!("== {} ==", path);
         print_llmcc_ir(unit);
 
-        build_llmcc_graph::<LangRust>(unit)?;
-        print_llmcc_graph(BlockId(0), unit);
+        collect_symbols(unit, globals);
     }
+
+    let mut graph = cc.create_graph();
+    for (index, path) in files.iter().enumerate() {
+        let unit = cc.compile_unit(index);
+        bind_symbols(unit, globals);
+
+        let unit_graph = build_llmcc_graph::<LangRust>(unit, index)?;
+        print_llmcc_graph(unit_graph.root(), unit);
+        graph.add_child(unit_graph);
+    }
+    graph.link_units(&cc);
 
     Ok(())
 }

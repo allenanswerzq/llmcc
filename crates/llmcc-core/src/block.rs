@@ -1,11 +1,13 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::collections::{HashMap, HashSet};
+use std::marker::PhantomData;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
-use crate::context::{CompileUnit, ParentedBlock};
-use crate::ir::HirNode;
-use crate::lang_def::LanguageTrait;
-use crate::visit::HirVisitor;
+use crate::context::{CompileCtxt, CompileUnit, ParentedBlock};
 use crate::declare_arena;
+use crate::ir::{HirId, HirNode};
+use crate::lang_def::LanguageTrait;
+use crate::symbol::Symbol;
+use crate::visit::HirVisitor;
 
 declare_arena!([
     blk_root: BlockRoot<'tcx>,
@@ -48,19 +50,10 @@ pub enum BasicBlock<'blk> {
 }
 
 impl<'blk> BasicBlock<'blk> {
-    pub fn format_block(&self, unit: CompileUnit<'blk>) -> String {
+    pub fn format_block(&self, _unit: CompileUnit<'blk>) -> String {
         let block_id = self.block_id();
-        let hir_id = self.node().hir_id();
         let kind = self.kind();
-        let mut f = format!("{}:{}", kind, block_id);
-
-        if let Some(def) = unit.opt_defs(hir_id) {
-            f.push_str(&format!("   d:{}", def.format_compact()));
-        } else if let Some(sym) = unit.opt_uses(hir_id) {
-            f.push_str(&format!("   u:{}", sym.format_compact()));
-        }
-
-        f
+        format!("{}:{}", kind, block_id)
     }
 
     /// Get the base block information regardless of variant
@@ -129,16 +122,20 @@ impl BlockId {
     pub fn as_u32(self) -> u32 {
         self.0
     }
+
+    pub const ROOT_PARENT: BlockId = BlockId(u32::MAX);
+
+    pub fn is_root_parent(self) -> bool {
+        self.0 == u32::MAX
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
 #[strum(serialize_all = "snake_case")]
 pub enum BlockRelation {
     Unknown,
-    Calls,
-    CalledBy,
-    Contains,
-    ContainedBy,
+    DependedBy,
+    DependsOn,
 }
 
 impl Default for BlockRelation {
@@ -152,15 +149,23 @@ pub struct BlockBase<'blk> {
     pub id: BlockId,
     pub node: HirNode<'blk>,
     pub kind: BlockKind,
+    pub parent: Option<BlockId>,
     pub children: Vec<BlockId>,
 }
 
 impl<'blk> BlockBase<'blk> {
-    pub fn new(id: BlockId, node: HirNode<'blk>, kind: BlockKind, children: Vec<BlockId>) -> Self {
+    pub fn new(
+        id: BlockId,
+        node: HirNode<'blk>,
+        kind: BlockKind,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
         Self {
             id,
             node,
             kind,
+            parent,
             children,
         }
     }
@@ -187,12 +192,12 @@ impl<'blk> BlockRoot<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
+        parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Root, children);
+        let base = BlockBase::new(id, node, BlockKind::Root, parent, children);
         Self::new(base)
     }
 }
@@ -218,13 +223,14 @@ impl<'blk> BlockFunc<'blk> {
     }
 
     pub fn from_hir(
-        unit: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
+        parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Func, children);
-        let name = unit.defs(node.hir_id()).name.clone();
+        let base = BlockBase::new(id, node, BlockKind::Func, parent, children);
+        // let name = "aaa".to_string();
+        let name = "aaaa".to_string();
         Self::new(base, name)
     }
 }
@@ -240,12 +246,12 @@ impl<'blk> BlockStmt<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
+        parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Stmt, children);
+        let base = BlockBase::new(id, node, BlockKind::Stmt, parent, children);
         Self::new(base)
     }
 }
@@ -261,12 +267,12 @@ impl<'blk> BlockCall<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
+        parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Call, children);
+        let base = BlockBase::new(id, node, BlockKind::Call, parent, children);
         Self::new(base)
     }
 }
@@ -290,13 +296,13 @@ impl<'blk> BlockClass<'blk> {
     }
 
     pub fn from_hir(
-        unit: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
+        parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Class, children);
-        let name = unit.defs(node.hir_id()).name.clone();
+        let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
+        let name = "aaa".to_string();
         Self::new(base, name)
     }
 
@@ -328,13 +334,13 @@ impl<'blk> BlockImpl<'blk> {
     }
 
     pub fn from_hir(
-        _ctx: CompileUnit<'blk>,
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,
+        parent: Option<BlockId>,
         target_class: BlockId,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Impl, children);
+        let base = BlockBase::new(id, node, BlockKind::Impl, parent, children);
         Self::new(base, target_class)
     }
 
@@ -346,134 +352,4 @@ impl<'blk> BlockImpl<'blk> {
     pub fn add_method(&mut self, method_id: BlockId) {
         self.methods.push(method_id);
     }
-}
-
-#[derive(Debug)]
-struct GraphBuilder<'tcx, Language> {
-    unit: CompileUnit<'tcx>,
-    id: u32,
-    bb_map: HashMap<BlockId, ParentedBlock<'tcx>>,
-    children_stack: Vec<Vec<BlockId>>,
-    ph: PhantomData<Language>,
-}
-
-impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
-    fn new(unit: CompileUnit<'tcx>) -> Self {
-        Self {
-            unit,
-            id: 0,
-            bb_map: HashMap::new(),
-            children_stack: Vec::new(),
-            ph: PhantomData,
-        }
-    }
-
-    fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit
-    }
-
-    fn next_id(&mut self) -> BlockId {
-        let ans = BlockId(self.id);
-        self.id += 1;
-        ans
-    }
-
-    fn create_block(
-        &self,
-        id: BlockId,
-        node: HirNode<'tcx>,
-        kind: BlockKind,
-        children: Vec<BlockId>,
-    ) -> BasicBlock<'tcx> {
-        let unit = self.unit();
-        let arena = &self.unit.cc.block_arena;
-        match kind {
-            BlockKind::Root => {
-                let block = BlockRoot::from_hir(unit, id, node, children);
-                BasicBlock::Root(arena.alloc(block))
-            }
-            BlockKind::Func => {
-                let block = BlockFunc::from_hir(unit, id, node, children);
-                BasicBlock::Func(arena.alloc(block))
-            }
-            BlockKind::Class => {
-                let block = BlockClass::from_hir(unit, id, node, children);
-                BasicBlock::Class(arena.alloc(block))
-            }
-            BlockKind::Stmt => {
-                let stmt = BlockStmt::from_hir(unit, id, node, children);
-                BasicBlock::Stmt(arena.alloc(stmt))
-            }
-            BlockKind::Call => {
-                let stmt = BlockCall::from_hir(unit, id, node, children);
-                BasicBlock::Call(arena.alloc(stmt))
-            }
-            BlockKind::Impl => {
-                todo!()
-                // let block = BlockImpl::from_hir(unit, id, node);
-                // BasicBlock::Impl(arena.alloc(block))
-            }
-            _ => {
-                panic!("unknown block kind: {}", kind)
-            }
-        }
-    }
-
-    fn build_block(&mut self, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
-        let id = self.next_id();
-        let block_kind = Language::block_kind(node.kind_id());
-        assert_ne!(block_kind, BlockKind::Undefined);
-
-        let children = if recursive {
-            self.children_stack.push(Vec::new());
-            self.visit_children(node, id);
-
-            let children = self.children_stack.pop().unwrap();
-            children
-        } else {
-            Vec::new()
-        };
-
-        let block = self.create_block(id, node, block_kind, children);
-        self.bb_map.insert(id, ParentedBlock::new(parent, block));
-        self.children_stack.last_mut().unwrap().push(id);
-    }
-}
-
-impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Language> {
-    fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit()
-    }
-
-    fn visit_file(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        self.children_stack.push(Vec::new());
-        self.build_block(node, parent, true);
-    }
-
-    fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        if Language::block_kind(node.kind_id()) != BlockKind::Undefined {
-            self.build_block(node, parent, false);
-        } else {
-            self.visit_children(node, parent);
-        }
-    }
-
-    fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        if Language::block_kind(node.kind_id()) == BlockKind::Func {
-            self.build_block(node, parent, true);
-        } else {
-            self.visit_children(node, parent);
-        }
-    }
-}
-
-pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
-    unit: CompileUnit<'tcx>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let root = unit.file_start_hir_id().unwrap();
-    let mut builder = GraphBuilder::<L>::new(unit);
-    let root = unit.hir_node(root);
-    builder.visit_node(root, BlockId(0));
-    *unit.bb_map.borrow_mut() = builder.bb_map;
-    Ok(())
 }

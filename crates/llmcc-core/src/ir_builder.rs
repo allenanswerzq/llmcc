@@ -70,12 +70,7 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         }
     }
 
-    fn make_hir_node(
-        &self,
-        base: HirBase<'a>,
-        ts_node: Node<'a>,
-        kind: HirKind,
-    ) -> HirNode<'a> {
+    fn make_hir_node(&self, base: HirBase<'a>, ts_node: Node<'a>, kind: HirKind) -> HirNode<'a> {
         match kind {
             HirKind::File => {
                 let file_node = HirFile::new(base, "NONE".into());

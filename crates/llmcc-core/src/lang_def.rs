@@ -1,10 +1,10 @@
-use crate::block::BlockKind;
+use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
 
 use tree_sitter::Tree;
 
 pub trait LanguageTrait {
-    // TODO: add gneral parse result struct
+    // TODO: add general parse result struct
     fn parse(text: impl AsRef<[u8]>) -> Option<Tree>;
     fn hir_kind(kind_id: u16) -> HirKind;
     fn block_kind(kind_id: u16) -> BlockKind;

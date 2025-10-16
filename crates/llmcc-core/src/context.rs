@@ -6,10 +6,11 @@ use tree_sitter::Tree;
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
+use crate::graph_builder::ProjectGraph;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
-use crate::symbol::{Scope, Symbol};
+use crate::symbol::{Scope, Symbol, SymId};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -48,6 +49,10 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.reserve_hir_id()
     }
 
+    pub fn reserve_block_id(&self) -> BlockId {
+        self.cc.reserve_block_id()
+    }
+
     pub fn register_file_start(&self) -> HirId {
         let start = self.cc.current_hir_id();
         self.cc.set_file_start(self.index, start);
@@ -80,7 +85,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
         self.cc
-            .bb_map
+            .block_map
             .borrow()
             .get(&id)
             .map(|parented| parented.block.clone())
@@ -101,35 +106,26 @@ impl<'tcx> CompileUnit<'tcx> {
             .and_then(|parented| parented.parent())
     }
 
-    /// Get a symbol from the uses map
-    pub fn opt_uses(self, id: HirId) -> Option<&'tcx Symbol> {
-        self.cc.uses_map.borrow().get(&id).copied()
-    }
-
-    /// Get a symbol from the defs map
-    pub fn opt_defs(self, id: HirId) -> Option<&'tcx Symbol> {
-        self.cc.defs_map.borrow().get(&id).copied()
-    }
-
-    /// Get a symbol from the defs map
-    pub fn defs(self, id: HirId) -> &'tcx Symbol {
-        self.cc
-            .defs_map
-            .borrow()
-            .get(&id)
-            .copied()
-            .unwrap_or_else(|| panic!("no defs: {}", id))
-    }
-
     /// Get an existing scope or None if it doesn't exist
-    pub fn opt_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
+    pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
         self.cc.scope_map.borrow().get(&owner).copied()
     }
 
+    pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
+        self.cc.symbol_map.borrow().get(&owner).copied()
+    }
+
+    /// Get an existing scope or None if it doesn't exist
+    pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
+        self.cc.scope_map.borrow().get(&owner).copied().unwrap()
+    }
+
     /// Create a new symbol in the arena
-    pub fn new_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
+    pub fn alloc_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
         let key = self.cc.interner.intern(&name);
-        self.cc.arena.alloc(Symbol::new(owner, name, key))
+        let symbol = self.cc.arena.alloc(Symbol::new(owner, name, key));
+        self.cc.symbol_map.borrow_mut().insert(symbol.id, symbol);
+        symbol
     }
 
     /// Find an existing scope or create a new one
@@ -141,16 +137,6 @@ impl<'tcx> CompileUnit<'tcx> {
     pub fn insert_hir_node(self, id: HirId, node: HirNode<'tcx>) {
         let parented = ParentedNode::new(node);
         self.cc.hir_map.borrow_mut().insert(id, parented);
-    }
-
-    /// Add a symbol definition
-    pub fn insert_def(self, id: HirId, symbol: &'tcx Symbol) {
-        self.cc.defs_map.borrow_mut().insert(id, symbol);
-    }
-
-    /// Add a symbol use
-    pub fn insert_use(self, id: HirId, symbol: &'tcx Symbol) {
-        self.cc.uses_map.borrow_mut().insert(id, symbol);
     }
 
     /// Get all child nodes of a given parent
@@ -181,6 +167,15 @@ impl<'tcx> CompileUnit<'tcx> {
             }
         }
         None
+    }
+
+    pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
+        self.cc.unresolve_symbols.borrow_mut().push(symbol);
+    }
+
+    pub fn insert_block(self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
+        let parented = ParentedBlock::new(parent, block);
+        self.cc.block_map.borrow_mut().insert(id, parented);
     }
 }
 
@@ -247,17 +242,16 @@ pub struct CompileCtxt<'tcx> {
 
     // HirId -> ParentedNode
     pub hir_map: RefCell<HashMap<HirId, ParentedNode<'tcx>>>,
-    // HirId -> &Symbol (definitions)
-    pub defs_map: RefCell<HashMap<HirId, &'tcx Symbol>>,
-    // HirId -> &Symbol (uses/references)
-    pub uses_map: RefCell<HashMap<HirId, &'tcx Symbol>>,
     // HirId -> &Scope (scopes owned by this HIR node)
     pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
+    // SymId -> &Symbol
+    pub symbol_map: RefCell<HashMap<SymId, &'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
+    pub block_next_id: Cell<u32>,
     // BlockId -> ParentedBlock
-    pub bb_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
-    // BlockId -> RelatedBlock
+    pub block_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
+    pub unresolve_symbols: RefCell<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 }
 
@@ -278,11 +272,12 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_next_id: Cell::new(1),
             hir_start_ids: RefCell::new(vec![None; count]),
             hir_map: RefCell::new(HashMap::new()),
-            defs_map: RefCell::new(HashMap::new()),
-            uses_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
+            symbol_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            bb_map: RefCell::new(HashMap::new()),
+            block_next_id: Cell::new(0),
+            block_map: RefCell::new(HashMap::new()),
+            unresolve_symbols: RefCell::new(Vec::new()),
             related_map: BlockRelationMap::default(),
         }
     }
@@ -305,11 +300,12 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_next_id: Cell::new(0),
             hir_start_ids: RefCell::new(vec![None; count]),
             hir_map: RefCell::new(HashMap::new()),
-            defs_map: RefCell::new(HashMap::new()),
-            uses_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
+            symbol_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            bb_map: RefCell::new(HashMap::new()),
+            block_next_id: Cell::new(0),
+            block_map: RefCell::new(HashMap::new()),
+            unresolve_symbols: RefCell::new(Vec::new()),
             related_map: BlockRelationMap::default(),
         })
     }
@@ -321,6 +317,19 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
         self.alloc_scope(HirId(0))
+    }
+
+    pub fn create_graph(&self) -> ProjectGraph {
+        ProjectGraph::new()
+    }
+
+    pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
+        self.scope_map.borrow().get(&owner).unwrap()
+    }
+
+
+    pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
+        self.symbol_map.borrow().get(&owner).cloned()
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
@@ -337,6 +346,12 @@ impl<'tcx> CompileCtxt<'tcx> {
         let id = self.hir_next_id.get();
         self.hir_next_id.set(id + 1);
         HirId(id)
+    }
+
+    pub fn reserve_block_id(&self) -> BlockId {
+        let id = self.block_next_id.get();
+        self.block_next_id.set(id + 1);
+        BlockId::new(id)
     }
 
     pub fn current_hir_id(&self) -> HirId {
@@ -358,61 +373,10 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.files.get(index).and_then(|file| file.path())
     }
 
-    /// Get statistics about the maps
-    pub fn stats(&self) -> GlobalCtxtStats {
-        GlobalCtxtStats {
-            hir_nodes: self.hir_map.borrow().len(),
-            definitions: self.defs_map.borrow().len(),
-            uses: self.uses_map.borrow().len(),
-            scopes: self.scope_map.borrow().len(),
-        }
-    }
-
     /// Clear all maps (useful for testing)
     #[cfg(test)]
     pub fn clear(&self) {
         self.hir_map.borrow_mut().clear();
-        self.defs_map.borrow_mut().clear();
-        self.uses_map.borrow_mut().clear();
         self.scope_map.borrow_mut().clear();
-    }
-}
-
-/// Statistics about CompileCtxt contents
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct GlobalCtxtStats {
-    pub hir_nodes: usize,
-    pub definitions: usize,
-    pub uses: usize,
-    pub scopes: usize,
-}
-
-impl std::fmt::Display for GlobalCtxtStats {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "CompileCtxt Stats: {} HIR nodes, {} definitions, {} uses, {} scopes",
-            self.hir_nodes, self.definitions, self.uses, self.scopes
-        )
-    }
-}
-
-#[derive(Debug, Default, Clone, Copy)]
-pub struct BlockStats {
-    pub total: usize,
-    pub roots: usize,
-    pub functions: usize,
-    pub classes: usize,
-    pub impls: usize,
-    pub undefined: usize,
-}
-
-impl std::fmt::Display for BlockStats {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Block Stats: {} total ({} roots, {} functions, {} classes, {} impls, {} undefined)",
-            self.total, self.roots, self.functions, self.classes, self.impls, self.undefined
-        )
     }
 }

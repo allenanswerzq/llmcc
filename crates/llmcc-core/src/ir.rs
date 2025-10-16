@@ -59,13 +59,13 @@ impl<'hir> HirNode<'hir> {
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, id);
 
-        if let Some(def) = unit.opt_defs(id) {
-            f.push_str(&format!("   d:{}", def.format_compact()));
-        } else if let Some(sym) = unit.opt_uses(id) {
-            f.push_str(&format!("   u:{}", sym.format_compact()));
-        }
+        // if let Some(def) = unit.opt_defs(id) {
+        //     f.push_str(&format!("   d:{}", def.format_compact()));
+        // } else if let Some(sym) = unit.opt_uses(id) {
+        //     f.push_str(&format!("   u:{}", sym.format_compact()));
+        // }
 
-        if let Some(scope) = unit.opt_scope(id) {
+        if let Some(scope) = unit.opt_get_scope(id) {
             f.push_str(&format!("   s:{}", scope.format_compact()));
         }
 
@@ -132,7 +132,11 @@ impl<'hir> HirNode<'hir> {
         self.base().and_then(|base| base.parent)
     }
 
-    pub fn opt_child_by_field(&self, unit: CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_field(
+        &self,
+        unit: CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<HirNode<'hir>> {
         self.base().unwrap().opt_child_by_field(unit, field_id)
     }
 
@@ -151,7 +155,11 @@ impl<'hir> HirNode<'hir> {
             .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
     }
 
-    pub fn opt_child_by_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_kind(
+        &self,
+        unit: CompileUnit<'hir>,
+        kind_id: u16,
+    ) -> Option<HirNode<'hir>> {
         self.children()
             .iter()
             .map(|id| unit.hir_node(*id))
@@ -232,7 +240,11 @@ impl<'hir> HirBase<'hir> {
             .find(|child| fields_id.contains(&child.field_id()))
     }
 
-    pub fn opt_child_by_field(&self, unit: CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+    pub fn opt_child_by_field(
+        &self,
+        unit: CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<HirNode<'hir>> {
         self.children
             .iter()
             .map(|id| unit.hir_node(*id))
