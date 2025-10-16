@@ -25,11 +25,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let unit = cc.compile_unit(index);
         bind_symbols(unit, globals);
 
-        let unit_graph = build_llmcc_graph::<LangRust>(unit)?;
+        let unit_graph = build_llmcc_graph::<LangRust>(unit, index)?;
         print_llmcc_graph(unit_graph.root(), unit);
         graph.add_child(unit_graph);
     }
-    graph.link_units();
+    graph.link_units(&cc);
 
     Ok(())
 }

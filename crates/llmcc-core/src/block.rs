@@ -9,7 +9,6 @@ use crate::lang_def::LanguageTrait;
 use crate::symbol::Symbol;
 use crate::visit::HirVisitor;
 
-
 declare_arena!([
     blk_root: BlockRoot<'tcx>,
     blk_func: BlockFunc<'tcx>,
@@ -155,7 +154,13 @@ pub struct BlockBase<'blk> {
 }
 
 impl<'blk> BlockBase<'blk> {
-    pub fn new(id: BlockId, node: HirNode<'blk>, kind: BlockKind, parent: Option<BlockId>, children: Vec<BlockId>) -> Self {
+    pub fn new(
+        id: BlockId,
+        node: HirNode<'blk>,
+        kind: BlockKind,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
         Self {
             id,
             node,
@@ -187,7 +192,6 @@ impl<'blk> BlockRoot<'blk> {
     }
 
     pub fn from_hir(
-
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -219,7 +223,6 @@ impl<'blk> BlockFunc<'blk> {
     }
 
     pub fn from_hir(
-
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -243,7 +246,6 @@ impl<'blk> BlockStmt<'blk> {
     }
 
     pub fn from_hir(
-
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -265,7 +267,6 @@ impl<'blk> BlockCall<'blk> {
     }
 
     pub fn from_hir(
-
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -295,7 +296,6 @@ impl<'blk> BlockClass<'blk> {
     }
 
     pub fn from_hir(
-
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -334,7 +334,6 @@ impl<'blk> BlockImpl<'blk> {
     }
 
     pub fn from_hir(
-
         id: BlockId,
         node: HirNode<'blk>,
         children: Vec<BlockId>,

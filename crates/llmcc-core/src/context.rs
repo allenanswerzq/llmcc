@@ -6,6 +6,7 @@ use tree_sitter::Tree;
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
+use crate::graph_builder::ProjectGraph;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
@@ -84,7 +85,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
         self.cc
-            .bb_map
+            .block_map
             .borrow()
             .get(&id)
             .map(|parented| parented.block.clone())
@@ -161,6 +162,15 @@ impl<'tcx> CompileUnit<'tcx> {
         }
         None
     }
+
+    pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
+        self.cc.unresolve_symbols.borrow_mut().push(symbol);
+    }
+
+    pub fn insert_block(self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
+        let parented = ParentedBlock::new(parent, block);
+        self.cc.block_map.borrow_mut().insert(id, parented);
+    }
 }
 
 impl<'tcx> Deref for CompileUnit<'tcx> {
@@ -232,8 +242,8 @@ pub struct CompileCtxt<'tcx> {
     pub block_arena: BlockArena<'tcx>,
     pub block_next_id: Cell<u32>,
     // BlockId -> ParentedBlock
-    pub bb_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
-    // BlockId -> RelatedBlock
+    pub block_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
+    pub unresolve_symbols: RefCell<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 }
 
@@ -257,7 +267,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             scope_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
             block_next_id: Cell::new(0),
-            bb_map: RefCell::new(HashMap::new()),
+            block_map: RefCell::new(HashMap::new()),
+            unresolve_symbols: RefCell::new(Vec::new()),
             related_map: BlockRelationMap::default(),
         }
     }
@@ -283,7 +294,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             scope_map: RefCell::new(HashMap::new()),
             block_arena: BlockArena::default(),
             block_next_id: Cell::new(0),
-            bb_map: RefCell::new(HashMap::new()),
+            block_map: RefCell::new(HashMap::new()),
+            unresolve_symbols: RefCell::new(Vec::new()),
             related_map: BlockRelationMap::default(),
         })
     }
@@ -297,7 +309,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.alloc_scope(HirId(0))
     }
 
-    pub fn create_graph(&'tcx self) -> ProjectGraph<'tcx> {
+    pub fn create_graph(&self) -> ProjectGraph {
         ProjectGraph::new()
     }
 
