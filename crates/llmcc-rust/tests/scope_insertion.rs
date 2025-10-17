@@ -38,7 +38,7 @@ impl<'tcx> Fixture<'tcx> {
     }
 
     fn scope_stack(&self) -> ScopeStack<'tcx> {
-        let mut stack = ScopeStack::new(&self.cc.arena, &self.cc.interner);
+        let mut stack = ScopeStack::new(&self.cc.arena, &self.cc.interner, &self.cc.symbol_map);
         stack.push(self.globals);
         stack
     }

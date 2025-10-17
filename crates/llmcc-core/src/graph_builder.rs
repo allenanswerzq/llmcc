@@ -48,20 +48,30 @@ pub struct GraphNode {
     pub block_id: BlockId,
 }
 
-/// The project graph contains multiple unit graphs and their inter-dependencies.
-/// it should support traversing the entire project structure. and each unit graph,
-/// given a symbol name, should be able to find the corresponding block id if exists,
-/// and all the related blocks in same or units.
+/// ProjectGraph represents a complete compilation project with all units and their inter-dependencies.
 ///
-/// The primary purpose of this graph is to given a whole project view to the llm model,
-/// and able to easily find all the context for a specific function code in the plain text code or
-/// json format.
+/// # Overview
+/// ProjectGraph maintains a collection of per-unit compilation graphs (UnitGraph) and facilitates
+/// cross-unit dependency resolution. It provides efficient multi-dimensional indexing for block
+/// lookups by name, kind, unit, and ID, enabling quick context retrieval for LLM consumption.
 ///
-/// Since it outputs to the llm model, all the data structure should be serializable.
-/// in either plain text or json format.
+/// # Architecture
+/// The graph consists of:
+/// - **UnitGraphs**: One per compilation unit (file), containing blocks and intra-unit relations
+/// - **Block Indexes**: Multi-dimensional indexes via BlockIndexMaps for O(1) to O(log n) lookups
+/// - **Cross-unit Links**: Dependencies tracked between blocks across different units
+///
+/// # Primary Use Cases
+/// 1. **Symbol Resolution**: Find blocks by name across the entire project
+/// 2. **Context Gathering**: Collect all related blocks for code analysis
+/// 3. **LLM Serialization**: Export graph as text or JSON for LLM model consumption
+/// 4. **Dependency Analysis**: Traverse dependency graphs to understand block relationships
+///
 #[derive(Debug)]
 pub struct ProjectGraph<'tcx> {
+    /// Reference to the compilation context containing all symbols, HIR nodes, and blocks
     pub cc: &'tcx CompileCtxt<'tcx>,
+    /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
 }
 
@@ -111,6 +121,250 @@ impl<'tcx> ProjectGraph<'tcx> {
 
     pub fn units(&self) -> &[UnitGraph] {
         &self.units
+    }
+
+    pub fn block_by_name(&self, name: &str) -> Option<GraphNode> {
+        let block_indexes = self.cc.block_indexes.borrow();
+        let matches = block_indexes.find_by_name(name);
+
+        matches.first().map(|(unit_index, _, block_id)| GraphNode {
+            unit_index: *unit_index,
+            block_id: *block_id,
+        })
+    }
+
+    pub fn blocks_by_name(&self, name: &str) -> Vec<GraphNode> {
+        let block_indexes = self.cc.block_indexes.borrow();
+        let matches = block_indexes.find_by_name(name);
+
+        matches
+            .into_iter()
+            .map(|(unit_index, _, block_id)| GraphNode {
+                unit_index,
+                block_id,
+            })
+            .collect()
+    }
+
+    pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
+        let block_indexes = self.cc.block_indexes.borrow();
+        let matches = block_indexes.find_by_name(name);
+
+        matches
+            .iter()
+            .find(|(u, _, _)| *u == unit_index)
+            .map(|(_, _, block_id)| GraphNode {
+                unit_index,
+                block_id: *block_id,
+            })
+    }
+
+    pub fn blocks_by_kind(&self, block_kind: BlockKind) -> Vec<GraphNode> {
+        let block_indexes = self.cc.block_indexes.borrow();
+        let matches = block_indexes.find_by_kind(block_kind);
+
+        matches
+            .into_iter()
+            .map(|(unit_index, _, block_id)| GraphNode {
+                unit_index,
+                block_id,
+            })
+            .collect()
+    }
+
+    pub fn blocks_by_kind_in(&self, block_kind: BlockKind, unit_index: usize) -> Vec<GraphNode> {
+        let block_indexes = self.cc.block_indexes.borrow();
+        let block_ids = block_indexes.find_by_kind_and_unit(block_kind, unit_index);
+
+        block_ids
+            .into_iter()
+            .map(|block_id| GraphNode {
+                unit_index,
+                block_id,
+            })
+            .collect()
+    }
+
+    pub fn blocks_in(&self, unit_index: usize) -> Vec<GraphNode> {
+        let block_indexes = self.cc.block_indexes.borrow();
+        let matches = block_indexes.find_by_unit(unit_index);
+
+        matches
+            .into_iter()
+            .map(|(_, _, block_id)| GraphNode {
+                unit_index,
+                block_id,
+            })
+            .collect()
+    }
+
+    pub fn block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
+        let block_indexes = self.cc.block_indexes.borrow();
+        block_indexes.get_block_info(block_id)
+    }
+
+    pub fn find_related_blocks(&self, node: GraphNode) -> Vec<GraphNode> {
+        if node.unit_index >= self.units.len() {
+            return Vec::new();
+        }
+
+        let unit = &self.units[node.unit_index];
+        let mut result = Vec::new();
+
+        // Get all blocks that this block depends on
+        let dependencies = unit.edges.get_related(node.block_id, BlockRelation::DependsOn);
+        for dep_block_id in dependencies {
+            result.push(GraphNode {
+                unit_index: node.unit_index,
+                block_id: dep_block_id,
+            });
+        }
+
+        // Get all blocks that depend on this block
+        let dependents = unit
+            .edges
+            .find_reverse_relations(node.block_id, BlockRelation::DependsOn);
+        for dep_block_id in dependents {
+            result.push(GraphNode {
+                unit_index: node.unit_index,
+                block_id: dep_block_id,
+            });
+        }
+
+        result
+    }
+
+    pub fn find_related_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
+        let mut visited = HashSet::new();
+        let mut stack = vec![node];
+
+        while let Some(current) = stack.pop() {
+            if visited.contains(&current) {
+                continue;
+            }
+            visited.insert(current);
+
+            for related in self.find_related_blocks(current) {
+                if !visited.contains(&related) {
+                    stack.push(related);
+                }
+            }
+        }
+
+        visited.remove(&node);
+        visited
+    }
+
+    pub fn traverse_bfs<F>(&self, start: GraphNode, mut callback: F)
+    where
+        F: FnMut(GraphNode),
+    {
+        let mut visited = HashSet::new();
+        let mut queue = vec![start];
+
+        while !queue.is_empty() {
+            let current = queue.remove(0);
+            if visited.contains(&current) {
+                continue;
+            }
+            visited.insert(current);
+            callback(current);
+
+            for related in self.find_related_blocks(current) {
+                if !visited.contains(&related) {
+                    queue.push(related);
+                }
+            }
+        }
+    }
+
+
+    pub fn traverse_dfs<F>(&self, start: GraphNode, mut callback: F)
+    where
+        F: FnMut(GraphNode),
+    {
+        let mut visited = HashSet::new();
+        self.traverse_dfs_impl(start, &mut visited, &mut callback);
+    }
+
+    fn traverse_dfs_impl<F>(&self, node: GraphNode, visited: &mut HashSet<GraphNode>, callback: &mut F)
+    where
+        F: FnMut(GraphNode),
+    {
+        if visited.contains(&node) {
+            return;
+        }
+        visited.insert(node);
+        callback(node);
+
+        for related in self.find_related_blocks(node) {
+            if !visited.contains(&related) {
+                self.traverse_dfs_impl(related, visited, callback);
+            }
+        }
+    }
+
+
+    pub fn get_block_depends(&self, node: GraphNode) -> HashSet<GraphNode> {
+        if node.unit_index >= self.units.len() {
+            return HashSet::new();
+        }
+
+        let unit = &self.units[node.unit_index];
+        let mut result = HashSet::new();
+        let mut visited = HashSet::new();
+        let mut stack = vec![node.block_id];
+
+        while let Some(current_block) = stack.pop() {
+            if visited.contains(&current_block) {
+                continue;
+            }
+            visited.insert(current_block);
+
+            let dependencies = unit.edges.get_related(current_block, BlockRelation::DependsOn);
+            for dep_block_id in dependencies {
+                if dep_block_id != node.block_id {
+                    result.insert(GraphNode {
+                        unit_index: node.unit_index,
+                        block_id: dep_block_id,
+                    });
+                    stack.push(dep_block_id);
+                }
+            }
+        }
+
+        result
+    }
+
+    pub fn get_block_depended(&self, node: GraphNode) -> HashSet<GraphNode> {
+        if node.unit_index >= self.units.len() {
+            return HashSet::new();
+        }
+
+        let unit = &self.units[node.unit_index];
+        let mut result = HashSet::new();
+        let mut visited = HashSet::new();
+        let mut stack = vec![node.block_id];
+
+        while let Some(current_block) = stack.pop() {
+            if visited.contains(&current_block) {
+                continue;
+            }
+            visited.insert(current_block);
+
+            let dependencies = unit.edges.get_related(current_block, BlockRelation::DependedBy);
+            for dep_block_id in dependencies {
+                if dep_block_id != node.block_id {
+                    result.insert(GraphNode {
+                        unit_index: node.unit_index,
+                        block_id: dep_block_id,
+                    });
+                    stack.push(dep_block_id);
+                }
+            }
+        }
+
+        result
     }
 
     fn add_cross_edge(
@@ -235,12 +489,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         unresolved: &mut HashSet<SymId>,
     ) {
         // Try to process symbol dependencies for this node
-        if let Some(symbol) = self
-            .unit
-            .opt_get_scope(node.hir_id())
-            .and_then(|scope| scope.symbol())
-        {
-            self.process_symbol(symbol, edges, visited, unresolved);
+        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+            if let Some(symbol) = scope.symbol() {
+                self.process_symbol(symbol, edges, visited, unresolved);
+            }
         }
 
         // Recurse into children
@@ -252,7 +504,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
     fn process_symbol(
         &self,
-        symbol: &Symbol,
+        symbol: &'tcx Symbol,
         edges: &BlockRelationMap,
         visited: &mut HashSet<SymId>,
         unresolved: &mut HashSet<SymId>,
@@ -271,9 +523,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         for &dep_id in symbol.depends.borrow().iter() {
             self.link_dependency(dep_id, from_block, edges, unresolved);
         }
-    }
-
-    fn link_dependency(
+    }    fn link_dependency(
         &self,
         dep_id: SymId,
         from_block: BlockId,
