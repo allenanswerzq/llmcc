@@ -1,3 +1,12 @@
+impl<'tcx> Holder<'tcx> {
+    fn bump(&mut self) {
+        self.foo.0 += 1;
+    }
+
+    fn set_value(&mut self, value: i32) {
+        self.foo.0 = value;
+    }
+}
 
 struct Builder;
 

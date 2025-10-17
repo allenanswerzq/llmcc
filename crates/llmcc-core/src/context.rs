@@ -1,6 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
+use std::path::Path;
 use tree_sitter::Tree;
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
@@ -64,6 +65,11 @@ impl<'tcx> CompileUnit<'tcx> {
 
     pub fn file_path(&self) -> Option<&str> {
         self.cc.file_path(self.index)
+    }
+
+    /// Get text from the file between start and end byte positions
+    pub fn get_text(&self, start: usize, end: usize) -> String {
+        self.file().get_text(start, end)
     }
 
     /// Get a HIR node by ID, returning None if not found
@@ -467,6 +473,54 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
+    /// Create a new CompileCtxt from a directory, recursively finding all *.rs files
+    pub fn from_dir<P: AsRef<Path>, L: LanguageTrait>(dir: P) -> std::io::Result<Self> {
+        let mut files = Vec::new();
+        let mut trees = Vec::new();
+
+        // Use the ignore crate to walk the directory, respecting .gitignore
+        let walker = ignore::WalkBuilder::new(dir.as_ref())
+            .standard_filters(true)
+            .build();
+
+        for entry in walker {
+            let entry = entry.map_err(|e| {
+                std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Failed to walk directory: {}", e),
+                )
+            })?;
+            let path = entry.path();
+
+            // Only process .rs files
+            if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
+                if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
+                    trees.push(L::parse(file.content()));
+                    files.push(file);
+                }
+            }
+        }
+
+        let count = files.len();
+        Ok(Self {
+            arena: Arena::default(),
+            interner: InternPool::default(),
+            files,
+            trees,
+            hir_next_id: Cell::new(0),
+            hir_start_ids: RefCell::new(vec![None; count]),
+            hir_map: RefCell::new(HashMap::new()),
+            scope_map: RefCell::new(HashMap::new()),
+            symbol_map: RefCell::new(HashMap::new()),
+            block_arena: BlockArena::default(),
+            block_next_id: Cell::new(0),
+            block_map: RefCell::new(HashMap::new()),
+            unresolve_symbols: RefCell::new(Vec::new()),
+            related_map: BlockRelationMap::default(),
+            block_indexes: RefCell::new(BlockIndexMaps::new()),
+        })
+    }
+
     /// Create a context that references this CompileCtxt for a specific file index
     pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
         CompileUnit { cc: self, index }
@@ -523,6 +577,14 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn file_path(&self, index: usize) -> Option<&str> {
         self.files.get(index).and_then(|file| file.path())
+    }
+
+    /// Get all file paths from the compilation context
+    pub fn get_files(&self) -> Vec<String> {
+        self.files
+            .iter()
+            .filter_map(|f| f.path().map(|p| p.to_string()))
+            .collect()
     }
 
     /// Clear all maps (useful for testing)

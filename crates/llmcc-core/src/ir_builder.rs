@@ -102,14 +102,23 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         let fields = [Language::name_field(), Language::type_field()];
         let ident = base
             .opt_child_by_fields(self.unit(), &fields)
-            .map(|node| node.expect_ident());
+            .and_then(|node| {
+                // If the node is already an Ident, use it
+                if let Some(ident) = node.as_ident() {
+                    Some(ident)
+                } else {
+                    // Otherwise, recursively search for an Ident child within this node
+                    // This handles cases like generic_type nodes that contain the actual identifier
+                    node.find_ident(self.unit())
+                }
+            });
         HirScope::new(base, ident)
     }
 
     fn extract_text(&self, base: &HirBase<'a>) -> String {
         let start = base.node.start_byte();
         let end = base.node.end_byte();
-        self.unit.file().get_text(start, end)
+        self.unit.get_text(start, end)
     }
 
     fn field_id_of(node: Node<'_>) -> Option<u16> {
