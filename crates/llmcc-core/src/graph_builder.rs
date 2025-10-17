@@ -446,7 +446,9 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         let arena = &self.unit.cc.block_arena;
         match kind {
             BlockKind::Root => {
-                let block = BlockRoot::from_hir(id, node, parent, children);
+                // Extract file_name from HirFile node if available
+                let file_name = node.as_file().map(|file| file.file_path.clone());
+                let block = BlockRoot::from_hir(id, node, parent, children, file_name);
                 BasicBlock::Root(arena.alloc(block))
             }
             BlockKind::Func => {

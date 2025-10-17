@@ -170,6 +170,39 @@ impl<'hir> HirNode<'hir> {
         self.opt_child_by_kind(unit, kind_id)
             .unwrap_or_else(|| panic!("no child with kind_id {}", kind_id))
     }
+
+    /// Recursively search for an identifier within this node.
+    ///
+    /// Useful for finding the actual identifier in complex AST nodes like generic_type
+    /// that wrap the identifier. For example, in `impl<'tcx> Holder<'tcx>`, the type
+    /// field points to a generic_type node, which contains the type_identifier "Holder".
+    pub fn find_ident(&self, unit: CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
+        // Check if this node is already an identifier
+        if let Some(ident) = self.as_ident() {
+            return Some(ident);
+        }
+
+        // Otherwise, search through children of any node that has them
+        let children = match self {
+            HirNode::Root(r) => &r.base.children,
+            HirNode::Text(_) => return None,
+            HirNode::Internal(i) => &i.base.children,
+            HirNode::Scope(s) => &s.base.children,
+            HirNode::File(f) => &f.base.children,
+            HirNode::Ident(_) => return None,
+            HirNode::Undefined => return None,
+        };
+
+        // Recursively search all children
+        for child_id in children {
+            let child = unit.hir_node(*child_id);
+            if let Some(ident) = child.find_ident(unit) {
+                return Some(ident);
+            }
+        }
+
+        None
+    }
 }
 
 macro_rules! impl_getters {
@@ -255,11 +288,12 @@ impl<'hir> HirBase<'hir> {
 #[derive(Debug, Clone)]
 pub struct HirRoot<'hir> {
     pub base: HirBase<'hir>,
+    pub file_name: Option<String>,
 }
 
 impl<'hir> HirRoot<'hir> {
-    pub fn new(base: HirBase<'hir>) -> Self {
-        Self { base }
+    pub fn new(base: HirBase<'hir>, file_name: Option<String>) -> Self {
+        Self { base, file_name }
     }
 }
 
