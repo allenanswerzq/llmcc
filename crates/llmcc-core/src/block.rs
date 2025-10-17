@@ -58,6 +58,14 @@ impl<'blk> BasicBlock<'blk> {
             .base()
             .and_then(|base| base.opt_get_name())
             .unwrap_or("");
+
+        // Include file_name for Root blocks
+        if let BasicBlock::Root(root) = self {
+            if let Some(file_name) = &root.file_name {
+                return format!("{}:{} {} ({})", kind, block_id, name, file_name);
+            }
+        }
+
         format!("{}:{} {}", kind, block_id, name)
     }
 
@@ -198,11 +206,12 @@ impl<'blk> BlockBase<'blk> {
 #[derive(Debug, Clone)]
 pub struct BlockRoot<'blk> {
     pub base: BlockBase<'blk>,
+    pub file_name: Option<String>,
 }
 
 impl<'blk> BlockRoot<'blk> {
-    pub fn new(base: BlockBase<'blk>) -> Self {
-        Self { base }
+    pub fn new(base: BlockBase<'blk>, file_name: Option<String>) -> Self {
+        Self { base, file_name }
     }
 
     pub fn from_hir(
@@ -210,9 +219,10 @@ impl<'blk> BlockRoot<'blk> {
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
+        file_name: Option<String>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Root, parent, children);
-        Self::new(base)
+        Self::new(base, file_name)
     }
 }
 
