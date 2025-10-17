@@ -124,10 +124,20 @@ fn render_node(node: &RenderNode, depth: usize, out: &mut Vec<String>) {
     }
 }
 
+fn safe_truncate(s: &mut String, max_len: usize) {
+    if s.len() > max_len {
+        let mut new_len = max_len;
+        while !s.is_char_boundary(new_len) {
+            new_len -= 1;
+        }
+        s.truncate(new_len);
+    }
+}
+
 fn pad_snippet(line: &str, snippet: &str) -> String {
     let mut snippet = snippet.trim().replace('\n', " ");
     if snippet.len() > TRUNCATE_COL {
-        snippet.truncate(TRUNCATE_COL);
+        safe_truncate(&mut snippet, TRUNCATE_COL);
         snippet.push_str("...");
     }
 
