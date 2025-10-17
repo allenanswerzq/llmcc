@@ -33,7 +33,7 @@ struct DeclCollector<'tcx> {
 
 impl<'tcx> DeclCollector<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
+        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
         // TODO: make create a new symbol assoicate unit file name
         scopes.push_with_symbol(globals, None);
         Self {
@@ -257,12 +257,17 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     symbol.set_unit_index(self.unit.index);
                     Some(symbol)
                 } else {
-                    let name = segments.last().cloned().unwrap_or_default();
                     let fqn = segments.join("::");
-                    let symbol = self.unit.alloc_symbol(node.hir_id(), name);
-                    symbol.set_owner(node.hir_id());
-                    symbol.set_fqn(fqn, self.unit.interner());
-                    symbol.set_unit_index(self.unit.index);
+                    let owner = node.hir_id();
+                    let ident = node.expect_scope().ident.unwrap();
+                    let global = false;
+                    let kind = SymbolKind::Impl;
+                    let symbol = self.scopes.insert_with(owner, ident, global, |symbol| {
+                        symbol.set_owner(owner);
+                        symbol.set_fqn(fqn, self.unit.interner());
+                        symbol.set_kind(kind);
+                        symbol.set_unit_index(self.unit.index);
+                    });
                     Some(symbol)
                 }
             });

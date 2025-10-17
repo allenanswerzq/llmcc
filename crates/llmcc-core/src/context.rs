@@ -1,9 +1,9 @@
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use tree_sitter::Tree;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
@@ -119,14 +119,6 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.scope_map.borrow().get(&owner).copied().unwrap()
     }
 
-    /// Create a new symbol in the arena
-    pub fn alloc_symbol(self, owner: HirId, name: String) -> &'tcx Symbol {
-        let key = self.cc.interner.intern(&name);
-        let symbol = self.cc.arena.alloc(Symbol::new(owner, name, key));
-        self.cc.symbol_map.borrow_mut().insert(symbol.id, symbol);
-        symbol
-    }
-
     /// Find an existing scope or create a new one
     pub fn alloc_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
         self.cc.alloc_scope(owner)
@@ -173,8 +165,22 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     pub fn insert_block(self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
-        let parented = ParentedBlock::new(parent, block);
+        let parented = ParentedBlock::new(parent, block.clone());
         self.cc.block_map.borrow_mut().insert(id, parented);
+
+        // Register the block in the index maps
+        let block_kind = block.kind();
+        let block_name = block
+            .base()
+            .and_then(|base| base.opt_get_name())
+            .map(|s| s.to_string());
+
+        self.cc.block_indexes.borrow_mut().insert_block(
+            id,
+            block_name,
+            block_kind,
+            self.index,
+        );
     }
 }
 
@@ -230,6 +236,158 @@ impl<'tcx> ParentedBlock<'tcx> {
     }
 }
 
+/// BlockIndexMaps provides efficient lookup of blocks by various indices.
+///
+/// Best practices for usage:
+/// - block_name_index: Use when you want to find blocks by name (multiple blocks can share the same name)
+/// - unit_index_index: Use when you want all blocks in a specific unit
+/// - block_kind_index: Use when you want all blocks of a specific kind (e.g., all functions)
+/// - block_id_index: Use for O(1) lookup of block metadata by BlockId
+///
+/// Important: The "name" field is optional since Root blocks and some other blocks may not have names.
+///
+/// Rationale for data structure choices:
+/// - BTreeMap is used for name and unit indexes for better iteration and range queries
+/// - HashMap is used for kind index since BlockKind doesn't implement Ord
+/// - HashMap is used for block_id_index (direct lookup by BlockId) for O(1) access
+/// - Vec is used for values to handle multiple blocks with the same index (same name/kind/unit)
+#[derive(Debug, Default, Clone)]
+pub struct BlockIndexMaps {
+    /// block_name -> Vec<(unit_index, block_kind, block_id)>
+    /// Multiple blocks can share the same name across units or within the same unit
+    pub block_name_index: BTreeMap<String, Vec<(usize, BlockKind, BlockId)>>,
+
+    /// unit_index -> Vec<(block_name, block_kind, block_id)>
+    /// Allows retrieval of all blocks in a specific compilation unit
+    pub unit_index_map: BTreeMap<usize, Vec<(Option<String>, BlockKind, BlockId)>>,
+
+    /// block_kind -> Vec<(unit_index, block_name, block_id)>
+    /// Allows retrieval of all blocks of a specific kind across all units
+    pub block_kind_index: HashMap<BlockKind, Vec<(usize, Option<String>, BlockId)>>,
+
+    /// block_id -> (unit_index, block_name, block_kind)
+    /// Direct O(1) lookup of block metadata by ID
+    pub block_id_index: HashMap<BlockId, (usize, Option<String>, BlockKind)>,
+}
+
+impl BlockIndexMaps {
+    /// Create a new empty BlockIndexMaps
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Register a new block in all indexes
+    ///
+    /// # Arguments
+    /// - `block_id`: The unique block identifier
+    /// - `block_name`: Optional name of the block (None for unnamed blocks)
+    /// - `block_kind`: The kind of block (Func, Class, Stmt, etc.)
+    /// - `unit_index`: The compilation unit index this block belongs to
+    pub fn insert_block(
+        &mut self,
+        block_id: BlockId,
+        block_name: Option<String>,
+        block_kind: BlockKind,
+        unit_index: usize,
+    ) {
+        // Insert into block_id_index for O(1) lookups
+        self.block_id_index
+            .insert(block_id, (unit_index, block_name.clone(), block_kind));
+
+        // Insert into block_name_index (if name exists)
+        if let Some(ref name) = block_name {
+            self.block_name_index
+                .entry(name.clone())
+                .or_insert_with(Vec::new)
+                .push((unit_index, block_kind, block_id));
+        }
+
+        // Insert into unit_index_map
+        self.unit_index_map
+            .entry(unit_index)
+            .or_insert_with(Vec::new)
+            .push((block_name.clone(), block_kind, block_id));
+
+        // Insert into block_kind_index
+        self.block_kind_index
+            .entry(block_kind)
+            .or_insert_with(Vec::new)
+            .push((unit_index, block_name, block_id));
+    }
+
+    /// Find all blocks with a given name (may return multiple blocks)
+    ///
+    /// Returns a vector of (unit_index, block_kind, block_id) tuples
+    pub fn find_by_name(&self, name: &str) -> Vec<(usize, BlockKind, BlockId)> {
+        self.block_name_index
+            .get(name)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Find all blocks in a specific unit
+    ///
+    /// Returns a vector of (block_name, block_kind, block_id) tuples
+    pub fn find_by_unit(&self, unit_index: usize) -> Vec<(Option<String>, BlockKind, BlockId)> {
+        self.unit_index_map
+            .get(&unit_index)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Find all blocks of a specific kind across all units
+    ///
+    /// Returns a vector of (unit_index, block_name, block_id) tuples
+    pub fn find_by_kind(&self, block_kind: BlockKind) -> Vec<(usize, Option<String>, BlockId)> {
+        self.block_kind_index
+            .get(&block_kind)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Find all blocks of a specific kind in a specific unit
+    ///
+    /// Returns a vector of block_ids
+    pub fn find_by_kind_and_unit(&self, block_kind: BlockKind, unit_index: usize) -> Vec<BlockId> {
+        let by_kind = self.find_by_kind(block_kind);
+        by_kind
+            .into_iter()
+            .filter(|(unit, _, _)| *unit == unit_index)
+            .map(|(_, _, block_id)| block_id)
+            .collect()
+    }
+
+    /// Look up block metadata by BlockId for O(1) access
+    ///
+    /// Returns (unit_index, block_name, block_kind) if found
+    pub fn get_block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
+        self.block_id_index.get(&block_id).cloned()
+    }
+
+    /// Get total number of blocks indexed
+    pub fn block_count(&self) -> usize {
+        self.block_id_index.len()
+    }
+
+    /// Get the number of unique block names
+    pub fn unique_names_count(&self) -> usize {
+        self.block_name_index.len()
+    }
+
+    /// Check if a block with the given ID exists
+    pub fn contains_block(&self, block_id: BlockId) -> bool {
+        self.block_id_index.contains_key(&block_id)
+    }
+
+    /// Clear all indexes
+    pub fn clear(&mut self) {
+        self.block_name_index.clear();
+        self.unit_index_map.clear();
+        self.block_kind_index.clear();
+        self.block_id_index.clear();
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct CompileCtxt<'tcx> {
     pub arena: Arena<'tcx>,
@@ -252,6 +410,9 @@ pub struct CompileCtxt<'tcx> {
     pub block_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
     pub unresolve_symbols: RefCell<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
+
+    /// Index maps for efficient block lookups by name, kind, unit, and id
+    pub block_indexes: RefCell<BlockIndexMaps>,
 }
 
 impl<'tcx> CompileCtxt<'tcx> {
@@ -278,6 +439,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             block_map: RefCell::new(HashMap::new()),
             unresolve_symbols: RefCell::new(Vec::new()),
             related_map: BlockRelationMap::default(),
+            block_indexes: RefCell::new(BlockIndexMaps::new()),
         }
     }
 
@@ -306,6 +468,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             block_map: RefCell::new(HashMap::new()),
             unresolve_symbols: RefCell::new(Vec::new()),
             related_map: BlockRelationMap::default(),
+            block_indexes: RefCell::new(BlockIndexMaps::new()),
         })
     }
 

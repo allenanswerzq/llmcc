@@ -17,7 +17,7 @@ struct SymbolBinder<'tcx> {
 
 impl<'tcx> SymbolBinder<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
+        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
         scopes.push(globals);
         Self { unit, scopes }
     }
