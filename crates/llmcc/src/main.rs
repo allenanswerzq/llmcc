@@ -55,7 +55,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let globals = cc.create_globals();
 
-    for (index, _path) in files.iter().enumerate() {
+    for (index, path) in files.iter().enumerate() {
+        dbg!(path);
         let unit = cc.compile_unit(index);
         build_llmcc_ir::<LangRust>(unit)?;
 
