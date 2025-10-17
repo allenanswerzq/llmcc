@@ -55,8 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let globals = cc.create_globals();
 
-    // Build IR and optionally print
-    for (index, path) in files.iter().enumerate() {
+    for (index, _path) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
         build_llmcc_ir::<LangRust>(unit)?;
 
@@ -67,9 +66,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         collect_symbols(unit, globals);
     }
 
-    // Build graph and optionally print
     let mut graph = ProjectGraph::new(&cc);
-    for (index, path) in files.iter().enumerate() {
+    for (index, _path) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
         bind_symbols(unit, globals);
 
