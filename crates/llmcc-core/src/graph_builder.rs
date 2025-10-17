@@ -2,7 +2,9 @@ use std::collections::HashSet;
 use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
-use crate::block::{BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockRoot, BlockStmt, BlockImpl};
+use crate::block::{
+    BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockImpl, BlockRoot, BlockStmt,
+};
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
@@ -212,7 +214,9 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut result = Vec::new();
 
         // Get all blocks that this block depends on
-        let dependencies = unit.edges.get_related(node.block_id, BlockRelation::DependsOn);
+        let dependencies = unit
+            .edges
+            .get_related(node.block_id, BlockRelation::DependsOn);
         for dep_block_id in dependencies {
             result.push(GraphNode {
                 unit_index: node.unit_index,
@@ -278,7 +282,6 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
     }
 
-
     pub fn traverse_dfs<F>(&self, start: GraphNode, mut callback: F)
     where
         F: FnMut(GraphNode),
@@ -287,8 +290,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         self.traverse_dfs_impl(start, &mut visited, &mut callback);
     }
 
-    fn traverse_dfs_impl<F>(&self, node: GraphNode, visited: &mut HashSet<GraphNode>, callback: &mut F)
-    where
+    fn traverse_dfs_impl<F>(
+        &self,
+        node: GraphNode,
+        visited: &mut HashSet<GraphNode>,
+        callback: &mut F,
+    ) where
         F: FnMut(GraphNode),
     {
         if visited.contains(&node) {
@@ -303,7 +310,6 @@ impl<'tcx> ProjectGraph<'tcx> {
             }
         }
     }
-
 
     pub fn get_block_depends(&self, node: GraphNode) -> HashSet<GraphNode> {
         if node.unit_index >= self.units.len() {
@@ -321,7 +327,9 @@ impl<'tcx> ProjectGraph<'tcx> {
             }
             visited.insert(current_block);
 
-            let dependencies = unit.edges.get_related(current_block, BlockRelation::DependsOn);
+            let dependencies = unit
+                .edges
+                .get_related(current_block, BlockRelation::DependsOn);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
                     result.insert(GraphNode {
@@ -352,7 +360,9 @@ impl<'tcx> ProjectGraph<'tcx> {
             }
             visited.insert(current_block);
 
-            let dependencies = unit.edges.get_related(current_block, BlockRelation::DependedBy);
+            let dependencies = unit
+                .edges
+                .get_related(current_block, BlockRelation::DependedBy);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
                     result.insert(GraphNode {
@@ -523,7 +533,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         for &dep_id in symbol.depends.borrow().iter() {
             self.link_dependency(dep_id, from_block, edges, unresolved);
         }
-    }    fn link_dependency(
+    }
+    fn link_dependency(
         &self,
         dep_id: SymId,
         from_block: BlockId,
@@ -610,9 +621,11 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         match Language::block_kind(node.kind_id()) {
-            BlockKind::Func | BlockKind::Class | BlockKind::Enum | BlockKind::Const | BlockKind::Impl => {
-                self.build_block(node, parent, true)
-            }
+            BlockKind::Func
+            | BlockKind::Class
+            | BlockKind::Enum
+            | BlockKind::Const
+            | BlockKind::Impl => self.build_block(node, parent, true),
             _ => self.visit_children(node, parent),
         }
     }
