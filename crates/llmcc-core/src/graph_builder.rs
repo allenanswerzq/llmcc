@@ -94,7 +94,12 @@ impl<'tcx> ProjectGraph<'tcx> {
             return;
         }
 
+        let start = std::time::Instant::now();
         let mut unresolved = self.cc.unresolve_symbols.borrow_mut();
+        let unresolved_count = unresolved.len();
+        eprintln!("[TIMING] link_units: processing {} unresolved symbols", unresolved_count);
+        
+        let process_start = std::time::Instant::now();
         unresolved.retain(|symbol_ref| {
             let target = *symbol_ref;
             let Some(target_block) = target.block_id() else {
@@ -119,6 +124,12 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             false
         });
+        let process_duration = process_start.elapsed();
+        eprintln!("[TIMING]   └─ process & link: {:.3}ms ({} unresolved)", 
+            process_duration.as_secs_f64() * 1000.0, 
+            unresolved_count);
+        let total_duration = start.elapsed();
+        eprintln!("[TIMING]   └─ total link_units: {:.3}ms", total_duration.as_secs_f64() * 1000.0);
     }
 
     pub fn units(&self) -> &[UnitGraph] {

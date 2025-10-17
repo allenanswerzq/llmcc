@@ -1,7 +1,7 @@
 use std::mem;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirIdent, HirNode};
+use llmcc_core::ir::{HirBase, HirIdent, HirKind, HirNode};
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::descriptor::function::parse_type_expr;
@@ -259,10 +259,29 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 } else {
                     let fqn = segments.join("::");
                     let owner = node.hir_id();
-                    let ident = node.expect_scope().ident.unwrap();
+
+                    // For impl blocks with qualified types like `impl From<T> for module::Type`,
+                    // use the last segment (the actual type name) as the symbol name.
+                    // This ensures proper trie indexing.
+                    let impl_name = segments.last().cloned().unwrap_or_else(|| "impl".to_string());
+
+                    // Create a synthetic identifier using the impl target type name
+                    let synthetic_ident = self.unit.cc.arena.alloc(HirIdent::new(
+                        // Create a minimal HirBase using the impl node's information
+                        HirBase {
+                            hir_id: owner,
+                            parent: node.parent(),
+                            node: node.inner_ts_node(),
+                            kind: HirKind::Identifier,
+                            field_id: u16::MAX,
+                            children: Vec::new(),
+                        },
+                        impl_name,
+                    ));
+
                     let global = false;
                     let kind = SymbolKind::Impl;
-                    let symbol = self.scopes.insert_with(owner, ident, global, |symbol| {
+                    let symbol = self.scopes.insert_with(owner, synthetic_ident, global, |symbol| {
                         symbol.set_owner(owner);
                         symbol.set_fqn(fqn, self.unit.interner());
                         symbol.set_kind(kind);
