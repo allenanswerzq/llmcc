@@ -101,7 +101,7 @@ impl<'tcx> DeclCollector<'tcx> {
                 self.insert_into_scope(owner, ident, global, &fqn, kind)
             }
             Some(existing) => {
-                self.warn_duplicate_symbol(&ident.name, existing.kind(), kind);
+                // self.warn_duplicate_symbol(&ident.name, existing.kind(), kind);
                 existing
             }
             None => self.insert_into_scope(owner, ident, global, &fqn, kind),
@@ -114,12 +114,12 @@ impl<'tcx> DeclCollector<'tcx> {
         existing_kind != SymbolKind::Unknown && existing_kind != new_kind
     }
 
-    fn warn_duplicate_symbol(&self, name: &str, existing_kind: SymbolKind, new_kind: SymbolKind) {
-        eprintln!(
-            "warning: duplicate symbol '{}' found in the same scope. existing kind: {:?}, new kind: {:?}. skipping insertion.",
-            name, existing_kind, new_kind
-        );
-    }
+    // fn warn_duplicate_symbol(&self, name: &str, existing_kind: SymbolKind, new_kind: SymbolKind) {
+    //     eprintln!(
+    //         "warning: duplicate symbol '{}' found in the same scope. existing kind: {:?}, new kind: {:?}. skipping insertion.",
+    //         name, existing_kind, new_kind
+    //     );
+    // }
 
     fn insert_into_scope(
         &mut self,

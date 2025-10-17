@@ -44,7 +44,8 @@ define_tokens! {
     (assignment_expression , 251 , "assignment_expression"      , HirKind::Internal),
     (binary_expression     , 250 , "binary_expression"          , HirKind::Internal),
     (operator              ,  14 , "operator"                   , HirKind::Internal),
-    (call_expression       , 256 , "call_expression"            , HirKind::Internal,            BlockKind::Call),
+    (call_expression       , 256 , "call_expression"            , HirKind::Internal),
+    // (call_expression       , 256 , "call_expression"            , HirKind::Internal,            BlockKind::Call),
     (arguments             , 257 , "arguments"                  , HirKind::Internal),
     (primitive_type        ,  32 , "primitive_type"             , HirKind::Identifier),
 
