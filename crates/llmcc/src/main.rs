@@ -61,7 +61,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         build_llmcc_ir::<LangRust>(unit)?;
 
         if args.print_ir {
-            println!("== {} ==", path);
             print_llmcc_ir(unit);
         }
 
@@ -77,7 +76,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let unit_graph = build_llmcc_graph::<LangRust>(unit, index)?;
 
         if args.print_graph {
-            println!("== {} ==", path);
             print_llmcc_graph(unit_graph.root(), unit);
         }
 

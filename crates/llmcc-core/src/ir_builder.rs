@@ -73,7 +73,12 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     fn make_hir_node(&self, base: HirBase<'a>, ts_node: Node<'a>, kind: HirKind) -> HirNode<'a> {
         match kind {
             HirKind::File => {
-                let file_node = HirFile::new(base, "NONE".into());
+                let file_path = self
+                    .unit
+                    .file_path()
+                    .map(|p| p.to_string())
+                    .unwrap_or_default();
+                let file_node = HirFile::new(base, file_path);
                 HirNode::File(self.unit.cc.arena.alloc(file_node))
             }
             HirKind::Text => {

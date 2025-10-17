@@ -288,11 +288,12 @@ impl<'hir> HirBase<'hir> {
 #[derive(Debug, Clone)]
 pub struct HirRoot<'hir> {
     pub base: HirBase<'hir>,
+    pub file_name: Option<String>,
 }
 
 impl<'hir> HirRoot<'hir> {
-    pub fn new(base: HirBase<'hir>) -> Self {
-        Self { base }
+    pub fn new(base: HirBase<'hir>, file_name: Option<String>) -> Self {
+        Self { base, file_name }
     }
 }
 
