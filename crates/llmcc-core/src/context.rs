@@ -175,12 +175,10 @@ impl<'tcx> CompileUnit<'tcx> {
             .and_then(|base| base.opt_get_name())
             .map(|s| s.to_string());
 
-        self.cc.block_indexes.borrow_mut().insert_block(
-            id,
-            block_name,
-            block_kind,
-            self.index,
-        );
+        self.cc
+            .block_indexes
+            .borrow_mut()
+            .insert_block(id, block_name, block_kind, self.index);
     }
 }
 
@@ -319,10 +317,7 @@ impl BlockIndexMaps {
     ///
     /// Returns a vector of (unit_index, block_kind, block_id) tuples
     pub fn find_by_name(&self, name: &str) -> Vec<(usize, BlockKind, BlockId)> {
-        self.block_name_index
-            .get(name)
-            .cloned()
-            .unwrap_or_default()
+        self.block_name_index.get(name).cloned().unwrap_or_default()
     }
 
     /// Find all blocks in a specific unit
