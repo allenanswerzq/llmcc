@@ -1,4 +1,5 @@
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 
 use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
@@ -98,14 +99,20 @@ pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
     interner: &'tcx InternPool,
     stack: Vec<&'tcx Scope<'tcx>>,
+    symbol_map: &'tcx RefCell<HashMap<SymId, &'tcx Symbol>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {
-    pub fn new(arena: &'tcx Arena<'tcx>, interner: &'tcx InternPool) -> Self {
+    pub fn new(
+        arena: &'tcx Arena<'tcx>,
+        interner: &'tcx InternPool,
+        symbol_map: &'tcx RefCell<HashMap<SymId, &'tcx Symbol>>,
+    ) -> Self {
         Self {
             arena,
             interner,
             stack: Vec::new(),
+            symbol_map,
         }
     }
 
@@ -254,7 +261,9 @@ impl<'tcx> ScopeStack<'tcx> {
 
     fn alloc_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>, key: InternedStr) -> &'tcx Symbol {
         let symbol = Symbol::new(owner, ident.name.clone(), key);
-        self.arena.alloc(symbol)
+        let symbol = self.arena.alloc(symbol);
+        self.symbol_map.borrow_mut().insert(symbol.id, symbol);
+        symbol
     }
 }
 
