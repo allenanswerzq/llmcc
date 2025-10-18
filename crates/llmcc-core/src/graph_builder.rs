@@ -98,7 +98,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut unresolved = self.cc.unresolve_symbols.borrow_mut();
         let unresolved_count = unresolved.len();
         eprintln!("[TIMING] link_units: processing {} unresolved symbols", unresolved_count);
-        
+
         let process_start = std::time::Instant::now();
         unresolved.retain(|symbol_ref| {
             let target = *symbol_ref;
@@ -125,8 +125,8 @@ impl<'tcx> ProjectGraph<'tcx> {
             false
         });
         let process_duration = process_start.elapsed();
-        eprintln!("[TIMING]   └─ process & link: {:.3}ms ({} unresolved)", 
-            process_duration.as_secs_f64() * 1000.0, 
+        eprintln!("[TIMING]   └─ process & link: {:.3}ms ({} unresolved)",
+            process_duration.as_secs_f64() * 1000.0,
             unresolved_count);
         let total_duration = start.elapsed();
         eprintln!("[TIMING]   └─ total link_units: {:.3}ms", total_duration.as_secs_f64() * 1000.0);
@@ -407,20 +407,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         let from_unit = &self.units[from_idx];
-        if !from_unit
-            .edges
-            .has_relation(from_block, BlockRelation::DependsOn, to_block)
-        {
-            from_unit.edges.add_relation(from_block, to_block);
-        }
+        from_unit.edges
+            .add_relation_if_not_exists(from_block, BlockRelation::DependsOn, to_block);
 
         let to_unit = &self.units[to_idx];
-        if !to_unit
-            .edges
-            .has_relation(to_block, BlockRelation::DependedBy, from_block)
-        {
-            to_unit.edges.add_relation(to_block, from_block);
-        }
+        to_unit.edges
+            .add_relation_if_not_exists(to_block, BlockRelation::DependedBy, from_block);
     }
 }
 
