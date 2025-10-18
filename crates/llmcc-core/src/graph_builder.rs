@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
-    BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockImpl, BlockRoot, BlockStmt,
+    BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockImpl, BlockRoot, BlockStmt, BlockField
 };
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
@@ -474,6 +474,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block = BlockImpl::from_hir(id, node, parent, children);
                 BasicBlock::Impl(arena.alloc(block))
             }
+            BlockKind::Field => {
+                let block = BlockField::from_hir(id, node, parent, children);
+                BasicBlock::Field(arena.alloc(block))
+            }
             _ => {
                 panic!("unknown block kind: {}", kind)
             }
@@ -622,7 +626,8 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             | BlockKind::Class
             | BlockKind::Enum
             | BlockKind::Const
-            | BlockKind::Impl => self.build_block(node, parent, true),
+            | BlockKind::Impl
+            | BlockKind::Field => self.build_block(node, parent, true),
             _ => self.visit_children(node, parent),
         }
     }

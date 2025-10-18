@@ -9,14 +9,16 @@ const TRUNCATE_COL: usize = 60;
 #[derive(Debug, Clone)]
 struct RenderNode {
     label: String,
+    line_info: Option<String>,
     snippet: Option<String>,
     children: Vec<RenderNode>,
 }
 
 impl RenderNode {
-    fn new(label: String, snippet: Option<String>, children: Vec<RenderNode>) -> Self {
+    fn new(label: String, line_info: Option<String>, snippet: Option<String>, children: Vec<RenderNode>) -> Self {
         Self {
             label,
+            line_info,
             snippet,
             children,
         }
@@ -57,6 +59,12 @@ fn build_ast_render<'tcx>(node: Node<'tcx>, unit: CompileUnit<'tcx>) -> RenderNo
         Some((name, field_id)) => format!("({name}_{field_id}):{kind} [{kind_id}]"),
         None => format!("{kind} [{kind_id}]"),
     };
+
+    // Get line information from byte positions
+    let start_line = get_line_from_byte(&unit, node.start_byte());
+    let end_line = get_line_from_byte(&unit, node.end_byte());
+    let line_info = Some(format!("[{}-{}]", start_line, end_line));
+
     let snippet = snippet_from_ctx(&unit, node.start_byte(), node.end_byte());
 
     let mut cursor = node.walk();
@@ -65,11 +73,17 @@ fn build_ast_render<'tcx>(node: Node<'tcx>, unit: CompileUnit<'tcx>) -> RenderNo
         .map(|child| build_ast_render(child, unit))
         .collect();
 
-    RenderNode::new(label, snippet, children)
+    RenderNode::new(label, line_info, snippet, children)
 }
 
 fn build_hir_render<'tcx>(node: &HirNode<'tcx>, unit: CompileUnit<'tcx>) -> RenderNode {
     let label = node.format_node(unit);
+
+    // Get line information from byte positions
+    let start_line = get_line_from_byte(&unit, node.start_byte());
+    let end_line = get_line_from_byte(&unit, node.end_byte());
+    let line_info = Some(format!("[{}-{}]", start_line, end_line));
+
     let snippet = snippet_from_ctx(&unit, node.start_byte(), node.end_byte());
     let children = node
         .children()
@@ -79,11 +93,19 @@ fn build_hir_render<'tcx>(node: &HirNode<'tcx>, unit: CompileUnit<'tcx>) -> Rend
             build_hir_render(&child, unit)
         })
         .collect();
-    RenderNode::new(label, snippet, children)
+    RenderNode::new(label, line_info, snippet, children)
 }
 
 fn build_block_render<'tcx>(block: &BasicBlock<'tcx>, unit: CompileUnit<'tcx>) -> RenderNode {
     let label = block.format_block(unit);
+
+    // Get line information from the block's node
+    let line_info = block.opt_node().map(|node| {
+        let start_line = get_line_from_byte(&unit, node.start_byte());
+        let end_line = get_line_from_byte(&unit, node.end_byte());
+        format!("[{}-{}]", start_line, end_line)
+    });
+
     let snippet = block
         .opt_node()
         .and_then(|n| snippet_from_ctx(&unit, n.start_byte(), n.end_byte()));
@@ -95,7 +117,7 @@ fn build_block_render<'tcx>(block: &BasicBlock<'tcx>, unit: CompileUnit<'tcx>) -
             build_block_render(&child, unit)
         })
         .collect();
-    RenderNode::new(label, snippet, children)
+    RenderNode::new(label, line_info, snippet, children)
 }
 
 fn render_lines(node: &RenderNode) -> String {
@@ -107,6 +129,12 @@ fn render_lines(node: &RenderNode) -> String {
 fn render_node(node: &RenderNode, depth: usize, out: &mut Vec<String>) {
     let indent = "  ".repeat(depth);
     let mut line = format!("{}({}", indent, node.label);
+
+    // Add line information if available
+    if let Some(line_info) = &node.line_info {
+        line.push_str(&format!(" {}", line_info));
+    }
+
     if let Some(snippet) = &node.snippet {
         let padded = pad_snippet(&line, snippet);
         line.push_str(&padded);
@@ -156,6 +184,13 @@ fn snippet_from_ctx(unit: &CompileUnit<'_>, start: usize, end: usize) -> Option<
         .filter(|s| !s.is_empty())
 }
 
+/// Get line number from byte position
+fn get_line_from_byte(unit: &CompileUnit<'_>, byte_pos: usize) -> usize {
+    let content = unit.file().content();
+    let text = String::from_utf8_lossy(&content[..byte_pos.min(content.len())]);
+    text.lines().count()
+}
+
 fn field_info(node: Node<'_>) -> Option<(String, u16)> {
     let parent = node.parent()?;
     let mut cursor = parent.walk();
@@ -181,7 +216,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     fn node(label: &str, snippet: Option<&str>, children: Vec<RenderNode>) -> RenderNode {
-        RenderNode::new(label.to_string(), snippet.map(ToOwned::to_owned), children)
+        RenderNode::new(label.to_string(), None, snippet.map(ToOwned::to_owned), children)
     }
 
     #[test]
