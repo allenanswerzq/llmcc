@@ -10,6 +10,9 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(
         &source_bytes,
     )));
+
+    build_llmcc_ir::<LangRust>(cc).unwrap();
+
     let globals = cc.create_globals();
     let unit_count = sources.len();
     let mut collections = Vec::new();
