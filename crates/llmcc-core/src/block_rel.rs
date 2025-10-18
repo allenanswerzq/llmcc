@@ -108,17 +108,10 @@ impl BlockRelationMap {
     }
 
     /// Add a relation if it doesn't already exist (optimized: single borrow)
-    pub fn add_relation_if_not_exists(
-        &self,
-        from: BlockId,
-        relation: BlockRelation,
-        to: BlockId,
-    ) {
+    pub fn add_relation_if_not_exists(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
         let mut relations = self.relations.borrow_mut();
         let block_relations = relations.entry(from).or_insert_with(HashMap::new);
-        let targets = block_relations
-            .entry(relation)
-            .or_insert_with(Vec::new);
+        let targets = block_relations.entry(relation).or_insert_with(Vec::new);
         if !targets.contains(&to) {
             targets.push(to);
         }

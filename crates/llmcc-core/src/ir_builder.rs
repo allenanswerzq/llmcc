@@ -24,11 +24,7 @@ struct HirBuilder<'a, Language> {
 
 impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     /// Create a new builder that directly assigns to context
-    fn new(
-        arena: &'a Arena<'a>,
-        file_path: Option<String>,
-        file_content: String,
-    ) -> Self {
+    fn new(arena: &'a Arena<'a>, file_path: Option<String>, file_content: String) -> Self {
         Self {
             arena,
             hir_map: HashMap::new(),
@@ -156,7 +152,6 @@ pub fn build_llmcc_ir_inner<'a, L: LanguageTrait>(
     Ok(result)
 }
 
-
 /// Build IR for all units in the context
 /// TODO: make this run in parallel
 pub fn build_llmcc_ir<'a, L: LanguageTrait>(
@@ -168,7 +163,8 @@ pub fn build_llmcc_ir<'a, L: LanguageTrait>(
         let file_content = String::from_utf8_lossy(&unit.file().content()).to_string();
         let tree = unit.tree();
 
-        let (_file_start_id, hir_map) = build_llmcc_ir_inner::<L>(&cc.arena, file_path, file_content, tree)?;
+        let (_file_start_id, hir_map) =
+            build_llmcc_ir_inner::<L>(&cc.arena, file_path, file_content, tree)?;
 
         // Insert all nodes into the compile context
         for (hir_id, parented_node) in hir_map {

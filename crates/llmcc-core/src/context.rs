@@ -1,9 +1,9 @@
+use rayon::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::path::Path;
 use tree_sitter::Tree;
-use rayon::prelude::*;
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
@@ -424,10 +424,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             .iter()
             .map(|src| File::new_source(src.clone()))
             .collect();
-        let trees = sources
-            .par_iter()
-            .map(|src| L::parse(src))
-            .collect();
+        let trees = sources.par_iter().map(|src| L::parse(src)).collect();
         let count = files.len();
         Self {
             arena: Arena::default(),

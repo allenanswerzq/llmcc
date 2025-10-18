@@ -263,7 +263,10 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     // For impl blocks with qualified types like `impl From<T> for module::Type`,
                     // use the last segment (the actual type name) as the symbol name.
                     // This ensures proper trie indexing.
-                    let impl_name = segments.last().cloned().unwrap_or_else(|| "impl".to_string());
+                    let impl_name = segments
+                        .last()
+                        .cloned()
+                        .unwrap_or_else(|| "impl".to_string());
 
                     // Create a synthetic identifier using the impl target type name
                     let synthetic_ident = self.unit.cc.arena.alloc(HirIdent::new(
@@ -281,12 +284,14 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
                     let global = false;
                     let kind = SymbolKind::Impl;
-                    let symbol = self.scopes.insert_with(owner, synthetic_ident, global, |symbol| {
-                        symbol.set_owner(owner);
-                        symbol.set_fqn(fqn, self.unit.interner());
-                        symbol.set_kind(kind);
-                        symbol.set_unit_index(self.unit.index);
-                    });
+                    let symbol =
+                        self.scopes
+                            .insert_with(owner, synthetic_ident, global, |symbol| {
+                                symbol.set_owner(owner);
+                                symbol.set_fqn(fqn, self.unit.interner());
+                                symbol.set_kind(kind);
+                                symbol.set_unit_index(self.unit.index);
+                            });
                     Some(symbol)
                 }
             });

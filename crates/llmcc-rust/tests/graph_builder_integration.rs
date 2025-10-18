@@ -21,7 +21,7 @@ fn build_graph(sources: &[&str]) -> ProjectGraph<'static> {
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
-        build_llmcc_ir::<LangRust>(unit).unwrap();
+        build_llmcc_ir::<LangRust>(cc).unwrap();
         collections.push(collect_symbols(unit, globals));
     }
 
