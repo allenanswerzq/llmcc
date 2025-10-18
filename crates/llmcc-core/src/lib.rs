@@ -9,6 +9,7 @@ pub mod ir;
 pub mod ir_builder;
 pub mod lang_def;
 pub mod printer;
+pub mod query;
 pub mod symbol;
 pub mod trie;
 pub mod visit;
@@ -20,4 +21,5 @@ pub use graph_builder::{
 pub use ir::HirId;
 pub use paste;
 pub use printer::{print_llmcc_graph, print_llmcc_ir};
+pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

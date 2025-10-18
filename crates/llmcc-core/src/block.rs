@@ -420,7 +420,6 @@ impl<'blk> BlockConst<'blk> {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct BlockField<'blk> {
     pub base: BlockBase<'blk>,

@@ -15,7 +15,12 @@ struct RenderNode {
 }
 
 impl RenderNode {
-    fn new(label: String, line_info: Option<String>, snippet: Option<String>, children: Vec<RenderNode>) -> Self {
+    fn new(
+        label: String,
+        line_info: Option<String>,
+        snippet: Option<String>,
+        children: Vec<RenderNode>,
+    ) -> Self {
         Self {
             label,
             line_info,
@@ -216,7 +221,12 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     fn node(label: &str, snippet: Option<&str>, children: Vec<RenderNode>) -> RenderNode {
-        RenderNode::new(label.to_string(), None, snippet.map(ToOwned::to_owned), children)
+        RenderNode::new(
+            label.to_string(),
+            None,
+            snippet.map(ToOwned::to_owned),
+            children,
+        )
     }
 
     #[test]

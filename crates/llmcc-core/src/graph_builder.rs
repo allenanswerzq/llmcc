@@ -3,7 +3,8 @@ use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
-    BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockImpl, BlockRoot, BlockStmt, BlockField
+    BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockRoot,
+    BlockStmt,
 };
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
