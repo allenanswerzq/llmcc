@@ -1393,3 +1393,69 @@ fn const_references_other_const() {
 
     assert_relation(derived_symbol, base_symbol);
 }
+
+
+#[test]
+fn test_impl_from_with_qualified_type() {
+    let code = r#"
+struct SandboxWorkspaceWrite {
+    writable_roots: Vec<String>,
+    network_access: bool,
+    exclude_tmpdir_env_var: bool,
+    exclude_slash_tmp: bool,
+}
+
+mod codex_app_server_protocol {
+    pub struct SandboxSettings {
+        pub writable_roots: Vec<String>,
+        pub network_access: Option<bool>,
+        pub exclude_tmpdir_env_var: Option<bool>,
+        pub exclude_slash_tmp: Option<bool>,
+    }
+}
+
+impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings {
+    fn from(sandbox_workspace_write: SandboxWorkspaceWrite) -> Self {
+        Self {
+            writable_roots: sandbox_workspace_write.writable_roots,
+            network_access: Some(sandbox_workspace_write.network_access),
+            exclude_tmpdir_env_var: Some(sandbox_workspace_write.exclude_tmpdir_env_var),
+            exclude_slash_tmp: Some(sandbox_workspace_write.exclude_slash_tmp),
+        }
+    }
+}
+"#;
+
+    let cc = CompileCtxt::from_sources::<LangRust>(&[code.as_bytes().to_vec()]);
+    let unit = cc.compile_unit(0);
+
+    // Build IR
+    build_llmcc_ir::<LangRust>(unit).expect("failed to build IR");
+
+    // Collect symbols
+    let globals = cc.create_globals();
+    collect_symbols(unit, globals);
+
+    // Bind symbols
+    bind_symbols(unit, globals);
+
+    // Verify the impl block was processed without panicking
+    let all_symbols = globals.all_symbols();
+    println!("Collected {} symbols", all_symbols.len());
+    for sym in all_symbols.iter() {
+        println!("  - {} (kind: {:?})", sym.name, sym.kind());
+    }
+
+    assert!(!all_symbols.is_empty(), "Should have collected some symbols");
+
+    // Check that we have the impl symbol or at least the types it uses
+    let has_struct = all_symbols.iter().any(|sym| {
+        sym.kind() == llmcc_core::symbol::SymbolKind::Struct
+    });
+    println!("Has struct: {}", has_struct);
+
+    let has_impl = all_symbols.iter().any(|sym| {
+        sym.kind() == llmcc_core::symbol::SymbolKind::Impl
+    });
+    println!("Has impl: {}", has_impl);
+}

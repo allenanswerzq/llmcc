@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::path::Path;
 use tree_sitter::Tree;
+use rayon::prelude::*;
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
@@ -423,14 +424,17 @@ impl<'tcx> CompileCtxt<'tcx> {
             .iter()
             .map(|src| File::new_source(src.clone()))
             .collect();
-        let trees = sources.iter().map(|src| L::parse(src)).collect();
+        let trees = sources
+            .par_iter()
+            .map(|src| L::parse(src))
+            .collect();
         let count = files.len();
         Self {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
             trees,
-            hir_next_id: Cell::new(1),
+            hir_next_id: Cell::new(0),
             hir_start_ids: RefCell::new(vec![None; count]),
             hir_map: RefCell::new(HashMap::new()),
             scope_map: RefCell::new(HashMap::new()),
@@ -447,12 +451,15 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from files
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
         let mut files = Vec::new();
-        let mut trees = Vec::new();
         for path in paths {
-            let file = File::new_file(path.clone())?;
-            trees.push(L::parse(file.content()));
-            files.push(file);
+            files.push(File::new_file(path.clone())?);
         }
+
+        let trees: Vec<_> = files
+            .par_iter()
+            .map(|file| L::parse(file.content()))
+            .collect();
+
         let count = files.len();
         Ok(Self {
             arena: Arena::default(),
@@ -476,15 +483,13 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from a directory, recursively finding all *.rs files
     pub fn from_dir<P: AsRef<Path>, L: LanguageTrait>(dir: P) -> std::io::Result<Self> {
         let mut files = Vec::new();
-        let mut trees = Vec::new();
 
-        // Use the ignore crate to walk the directory, respecting .gitignore
         let walker = ignore::WalkBuilder::new(dir.as_ref())
             .standard_filters(true)
             .build();
 
         for entry in walker {
-            let entry = entry.map_err(|e| {
+            let entry: ignore::DirEntry = entry.map_err(|e| {
                 std::io::Error::new(
                     std::io::ErrorKind::Other,
                     format!("Failed to walk directory: {}", e),
@@ -492,14 +497,17 @@ impl<'tcx> CompileCtxt<'tcx> {
             })?;
             let path = entry.path();
 
-            // Only process .rs files
             if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
                 if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
-                    trees.push(L::parse(file.content()));
                     files.push(file);
                 }
             }
         }
+
+        let trees: Vec<_> = files
+            .par_iter()
+            .map(|file| L::parse(file.content()))
+            .collect();
 
         let count = files.len();
         Ok(Self {

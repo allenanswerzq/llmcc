@@ -107,6 +107,46 @@ impl BlockRelationMap {
             .unwrap_or(false)
     }
 
+    /// Add a relation if it doesn't already exist (optimized: single borrow)
+    pub fn add_relation_if_not_exists(
+        &self,
+        from: BlockId,
+        relation: BlockRelation,
+        to: BlockId,
+    ) {
+        let mut relations = self.relations.borrow_mut();
+        let block_relations = relations.entry(from).or_insert_with(HashMap::new);
+        let targets = block_relations
+            .entry(relation)
+            .or_insert_with(Vec::new);
+        if !targets.contains(&to) {
+            targets.push(to);
+        }
+    }
+
+    /// Add bidirectional relation if it doesn't already exist (optimized: single borrow)
+    pub fn add_bidirectional_if_not_exists(&self, caller: BlockId, callee: BlockId) {
+        let mut relations = self.relations.borrow_mut();
+
+        // Add caller -> callee (DependsOn)
+        let caller_relations = relations.entry(caller).or_insert_with(HashMap::new);
+        let caller_targets = caller_relations
+            .entry(BlockRelation::DependsOn)
+            .or_insert_with(Vec::new);
+        if !caller_targets.contains(&callee) {
+            caller_targets.push(callee);
+        }
+
+        // Add callee -> caller (DependedBy)
+        let callee_relations = relations.entry(callee).or_insert_with(HashMap::new);
+        let callee_targets = callee_relations
+            .entry(BlockRelation::DependedBy)
+            .or_insert_with(Vec::new);
+        if !callee_targets.contains(&caller) {
+            callee_targets.push(caller);
+        }
+    }
+
     /// Check if any relationship of a type exists
     pub fn has_relation_type(&self, from: BlockId, relation: BlockRelation) -> bool {
         self.relations
