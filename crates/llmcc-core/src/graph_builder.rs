@@ -94,7 +94,11 @@ impl<'tcx> ProjectGraph<'tcx> {
             return;
         }
 
+        let start = std::time::Instant::now();
         let mut unresolved = self.cc.unresolve_symbols.borrow_mut();
+        let unresolved_count = unresolved.len();
+
+        let process_start = std::time::Instant::now();
         unresolved.retain(|symbol_ref| {
             let target = *symbol_ref;
             let Some(target_block) = target.block_id() else {
@@ -396,20 +400,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         let from_unit = &self.units[from_idx];
-        if !from_unit
-            .edges
-            .has_relation(from_block, BlockRelation::DependsOn, to_block)
-        {
-            from_unit.edges.add_relation(from_block, to_block);
-        }
+        from_unit.edges
+            .add_relation_if_not_exists(from_block, BlockRelation::DependsOn, to_block);
 
         let to_unit = &self.units[to_idx];
-        if !to_unit
-            .edges
-            .has_relation(to_block, BlockRelation::DependedBy, from_block)
-        {
-            to_unit.edges.add_relation(to_block, from_block);
-        }
+        to_unit.edges
+            .add_relation_if_not_exists(to_block, BlockRelation::DependedBy, from_block);
     }
 }
 
