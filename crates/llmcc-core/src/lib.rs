@@ -19,6 +19,7 @@ pub use graph_builder::{
     build_llmcc_graph, BlockId, BlockRelation, GraphNode, ProjectGraph, UnitGraph,
 };
 pub use ir::HirId;
+pub use ir_builder::build_llmcc_ir;
 pub use paste;
 pub use printer::{print_llmcc_graph, print_llmcc_ir};
 pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
