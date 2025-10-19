@@ -1,5 +1,7 @@
 use clap::Parser;
 use llmcc_core::ir_builder;
+use llmcc_core::query::ProjectQuery;
+use llmcc_core::graph_builder::ProjectGraph;
 use llmcc_rust::*;
 
 #[derive(Parser, Debug)]
@@ -30,6 +32,18 @@ struct Args {
     /// Don't print graph
     #[arg(long, action = clap::ArgAction::SetTrue)]
     no_print_graph: bool,
+
+    /// Query mode: find, find_related, find_related_recursive, list_functions, list_structs
+    #[arg(long, value_name = "MODE")]
+    query: Option<String>,
+
+    /// Name of the symbol/function to query
+    #[arg(long, value_name = "NAME")]
+    query_name: Option<String>,
+
+    /// File/unit index for file_structure query
+    #[arg(long, value_name = "INDEX")]
+    query_unit: Option<usize>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -83,6 +97,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     pg.link_units();
+
+    // Handle query mode
+    if let Some(query_mode) = args.query {
+        let query = ProjectQuery::new(&pg);
+        let output = match query_mode.as_str() {
+            "find" => {
+                if let Some(name) = args.query_name {
+                    query.find_by_name(&name).format_for_llm()
+                } else {
+                    eprintln!("Error: --query_name is required for 'find' mode");
+                    std::process::exit(1);
+                }
+            }
+            "find_related" => {
+                if let Some(name) = args.query_name {
+                    query.find_related(&name).format_for_llm()
+                } else {
+                    eprintln!("Error: --query_name is required for 'find_related' mode");
+                    std::process::exit(1);
+                }
+            }
+            "find_related_recursive" => {
+                if let Some(name) = args.query_name {
+                    query.find_related_recursive(&name).format_for_llm()
+                } else {
+                    eprintln!("Error: --query_name is required for 'find_related_recursive' mode");
+                    std::process::exit(1);
+                }
+            }
+            "list_functions" => {
+                query.find_all_functions().format_for_llm()
+            }
+            "list_structs" => {
+                query.find_all_structs().format_for_llm()
+            }
+            "file_structure" => {
+                let unit_idx = args.query_unit.unwrap_or(0);
+                query.file_structure(unit_idx).format_for_llm()
+            }
+            _ => {
+                eprintln!(
+                    "Unknown query mode: {}. Valid modes are: find, find_related, find_related_recursive, list_functions, list_structs, file_structure",
+                    query_mode
+                );
+                std::process::exit(1);
+            }
+        };
+
+        println!("{}", output);
+    }
 
     Ok(())
 }
