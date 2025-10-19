@@ -68,7 +68,9 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
                 HirNode::Internal(self.arena.alloc(internal))
             }
             HirKind::Scope => {
-                let scope = HirScope::new(base, None);
+                // Try to extract the name identifier from the scope node
+                let ident = self.extract_scope_ident(&base, node);
+                let scope = HirScope::new(base, ident);
                 HirNode::Scope(self.arena.alloc(scope))
             }
             HirKind::Identifier => {
@@ -117,6 +119,27 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         } else {
             String::new()
         }
+    }
+
+    fn extract_scope_ident(&self, base: &HirBase<'a>, node: Node<'a>) -> Option<&'a HirIdent<'a>> {
+        // Try to get the name field from the tree-sitter node
+        // For Rust, the name field is typically "name"
+        let name_node = node.child_by_field_name("name")?;
+
+        // Create an identifier for the name node
+        let hir_id = self.reserve_hir_id();
+        let ident_base = HirBase {
+            hir_id,
+            parent: Some(base.hir_id),
+            node: name_node,
+            kind: HirKind::Identifier,
+            field_id: u16::MAX,
+            children: Vec::new(),
+        };
+
+        let text = self.extract_text(&ident_base);
+        let ident = HirIdent::new(ident_base, text);
+        Some(self.arena.alloc(ident))
     }
 
     fn field_id_of(node: Node<'_>) -> Option<u16> {
