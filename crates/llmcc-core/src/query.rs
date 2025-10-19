@@ -16,17 +16,33 @@ pub struct GraphBlockInfo {
     pub name: String,
     pub kind: String,
     pub file_path: Option<String>,
+    pub source_code: Option<String>,
     pub node: GraphNode,
+    pub unit_index: usize,
 }
 
 impl GraphBlockInfo {
     pub fn format_for_llm(&self) -> String {
-        format!(
-            "{} [{}] at {}",
-            self.name,
-            self.kind,
-            self.file_path.as_ref().unwrap_or(&"<unknown>".to_string()),
-        )
+        let mut output = String::new();
+
+        // Location line
+        let location = if let Some(path) = &self.file_path {
+            path.clone()
+        } else {
+            format!("<file_unit_{}>", self.unit_index)
+        };
+
+        output.push_str(&format!("{} [{}] at {}\n", self.name, self.kind, location));
+
+        // Source code (if available)
+        if let Some(source) = &self.source_code {
+            output.push_str("Source:\n");
+            for line in source.lines() {
+                output.push_str(&format!("  {}\n", line));
+            }
+        }
+
+        output
     }
 }
 
@@ -242,11 +258,35 @@ impl<'tcx> ProjectQuery<'tcx> {
             .get(unit_index)
             .and_then(|file| file.path().map(|s| s.to_string()));
 
+        // Extract source code for this block
+        let source_code = self.get_block_source_code(node, unit_index);
+
         Some(GraphBlockInfo {
             name: name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
             kind: format!("{:?}", kind),
             file_path,
+            source_code,
             node,
+            unit_index,
         })
+    }
+
+    /// Extract the source code for a given block
+    fn get_block_source_code(&self, node: GraphNode, unit_index: usize) -> Option<String> {
+        let file = self.graph.cc.files.get(unit_index)?;
+        let unit = self.graph.cc.compile_unit(unit_index);
+
+        // Get the BasicBlock to access its HIR node
+        let bb = unit.opt_bb(node.block_id)?;
+
+        // Get the base which contains the HirNode
+        let base = bb.base()?;
+        let hir_node = base.node;
+
+        // Get the span information from the HirNode
+        let start_byte = hir_node.start_byte();
+        let end_byte = hir_node.end_byte();
+
+        file.opt_get_text(start_byte, end_byte)
     }
 }
