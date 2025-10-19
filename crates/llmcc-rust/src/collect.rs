@@ -158,16 +158,17 @@ impl<'tcx> DeclCollector<'tcx> {
         self.parent_symbol().is_none() || self.has_public_visibility(node)
     }
 
-    fn enum_variant_should_register_globally(&self, node: &HirNode<'tcx>) -> bool {
-        let mut parent_id = node.parent();
-        while let Some(id) = parent_id {
-            let parent = self.unit.hir_node(id);
-            if parent.kind_id() == LangRust::enum_item {
-                return self.should_register_globally(&parent);
-            }
-            parent_id = parent.parent();
+    fn enum_variant_should_register_globally(&self, _node: &HirNode<'tcx>) -> bool {
+        let Some(enum_symbol) = self.scopes.scoped_symbol() else {
+            return false;
+        };
+
+        if enum_symbol.kind() != SymbolKind::Enum {
+            return false;
         }
-        true
+
+        let parent_node = self.unit.hir_node(enum_symbol.owner());
+        self.has_public_visibility(&parent_node)
     }
 
     fn visit_children_new_scope(
