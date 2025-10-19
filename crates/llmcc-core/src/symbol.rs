@@ -255,9 +255,7 @@ impl<'tcx> ScopeStack<'tcx> {
                 .expect("failed to insert symbol into global scope");
         }
 
-        // dbg!(&ident.name);
-        self.find_symbol_local_by_key(key)
-            .expect("symbol should be present after insertion")
+        symbol
     }
 
     fn alloc_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>, key: InternedStr) -> &'tcx Symbol {

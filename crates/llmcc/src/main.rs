@@ -1,6 +1,6 @@
 use clap::Parser;
-use llmcc_rust::*;
 use llmcc_core::ir_builder;
+use llmcc_rust::*;
 
 #[derive(Parser, Debug)]
 #[command(name = "llmcc")]

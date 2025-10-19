@@ -42,3 +42,24 @@ unexpected_cfgs = { level = "allow" }
 [workspace.lints.clippy]
 dbg_macro = "deny"
 todo = "deny"
+
+# Optimization profiles for different use cases
+[profile.release]
+opt-level = 3           # Maximum optimization
+lto = true              # Link-Time Optimization
+codegen-units = 1       # Better optimization, slower compilation
+strip = true            # Strip debug symbols
+panic = "abort"         # Abort on panic (smaller binary)
+
+[profile.release-with-debug]
+inherits = "release"
+strip = false           # Keep debug symbols
+debug = true
+
+[profile.dev]
+opt-level = 0           # No optimization for fast compilation
+debug = true
+split-debuginfo = "packed"
+
+[profile.bench]
+inherits = "release"

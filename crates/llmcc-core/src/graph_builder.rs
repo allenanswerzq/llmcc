@@ -3,7 +3,8 @@ use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
-    BlockCall, BlockClass, BlockConst, BlockEnum, BlockFunc, BlockImpl, BlockRoot, BlockStmt,
+    BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockRoot,
+    BlockStmt,
 };
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
@@ -94,11 +95,8 @@ impl<'tcx> ProjectGraph<'tcx> {
             return;
         }
 
-        let start = std::time::Instant::now();
         let mut unresolved = self.cc.unresolve_symbols.borrow_mut();
-        let unresolved_count = unresolved.len();
 
-        let process_start = std::time::Instant::now();
         unresolved.retain(|symbol_ref| {
             let target = *symbol_ref;
             let Some(target_block) = target.block_id() else {
@@ -400,11 +398,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         let from_unit = &self.units[from_idx];
-        from_unit.edges
+        from_unit
+            .edges
             .add_relation_if_not_exists(from_block, BlockRelation::DependsOn, to_block);
 
         let to_unit = &self.units[to_idx];
-        to_unit.edges
+        to_unit
+            .edges
             .add_relation_if_not_exists(to_block, BlockRelation::DependedBy, from_block);
     }
 }
@@ -474,6 +474,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BlockKind::Impl => {
                 let block = BlockImpl::from_hir(id, node, parent, children);
                 BasicBlock::Impl(arena.alloc(block))
+            }
+            BlockKind::Field => {
+                let block = BlockField::from_hir(id, node, parent, children);
+                BasicBlock::Field(arena.alloc(block))
             }
             _ => {
                 panic!("unknown block kind: {}", kind)
@@ -623,7 +627,8 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             | BlockKind::Class
             | BlockKind::Enum
             | BlockKind::Const
-            | BlockKind::Impl => self.build_block(node, parent, true),
+            | BlockKind::Impl
+            | BlockKind::Field => self.build_block(node, parent, true),
             _ => self.visit_children(node, parent),
         }
     }

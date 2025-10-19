@@ -12,7 +12,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(unit).unwrap();
+    build_llmcc_ir::<LangRust>(cc).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals);
@@ -1394,7 +1394,6 @@ fn const_references_other_const() {
     assert_relation(derived_symbol, base_symbol);
 }
 
-
 #[test]
 fn test_impl_from_with_qualified_type() {
     let code = r#"
@@ -1430,7 +1429,7 @@ impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings 
     let unit = cc.compile_unit(0);
 
     // Build IR
-    build_llmcc_ir::<LangRust>(unit).expect("failed to build IR");
+    build_llmcc_ir::<LangRust>(&cc).expect("failed to build IR");
 
     // Collect symbols
     let globals = cc.create_globals();
@@ -1446,16 +1445,19 @@ impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings 
         println!("  - {} (kind: {:?})", sym.name, sym.kind());
     }
 
-    assert!(!all_symbols.is_empty(), "Should have collected some symbols");
+    assert!(
+        !all_symbols.is_empty(),
+        "Should have collected some symbols"
+    );
 
     // Check that we have the impl symbol or at least the types it uses
-    let has_struct = all_symbols.iter().any(|sym| {
-        sym.kind() == llmcc_core::symbol::SymbolKind::Struct
-    });
+    let has_struct = all_symbols
+        .iter()
+        .any(|sym| sym.kind() == llmcc_core::symbol::SymbolKind::Struct);
     println!("Has struct: {}", has_struct);
 
-    let has_impl = all_symbols.iter().any(|sym| {
-        sym.kind() == llmcc_core::symbol::SymbolKind::Impl
-    });
+    let has_impl = all_symbols
+        .iter()
+        .any(|sym| sym.kind() == llmcc_core::symbol::SymbolKind::Impl);
     println!("Has impl: {}", has_impl);
 }

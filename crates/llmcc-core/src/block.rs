@@ -12,6 +12,7 @@ declare_arena!([
     blk_stmt: BlockStmt<'tcx>,
     blk_call: BlockCall<'tcx>,
     blk_enum: BlockEnum<'tcx>,
+    blk_field: BlockField<'tcx>,
     blk_const: BlockConst<'tcx>,
 ]);
 
@@ -27,6 +28,7 @@ pub enum BlockKind {
     Enum,
     Const,
     Impl,
+    Field,
     Scope,
 }
 
@@ -47,6 +49,7 @@ pub enum BasicBlock<'blk> {
     Class(&'blk BlockClass<'blk>),
     Impl(&'blk BlockImpl<'blk>),
     Const(&'blk BlockConst<'blk>),
+    Field(&'blk BlockField<'blk>),
     Block,
 }
 
@@ -81,6 +84,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Call(block) => Some(&block.base),
             BasicBlock::Enum(block) => Some(&block.base),
             BasicBlock::Const(block) => Some(&block.base),
+            BasicBlock::Field(block) => Some(&block.base),
         }
     }
 
@@ -411,6 +415,29 @@ impl<'blk> BlockConst<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Const, parent, children);
+        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self::new(base, name)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockField<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+}
+
+impl<'blk> BlockField<'blk> {
+    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
+        Self { base, name }
+    }
+
+    pub fn from_hir(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Field, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
     }
