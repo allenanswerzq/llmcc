@@ -111,3 +111,10 @@ impl Foo {
     }
 }
 
+
+/// Some comments
+#[derive(Debug)]
+struct Bar {
+    a: u16,
+    b: u32,
+}

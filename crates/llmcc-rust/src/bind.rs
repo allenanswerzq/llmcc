@@ -83,12 +83,6 @@ impl<'tcx> SymbolBinder<'tcx> {
         let ident = child.as_ident()?;
         let key = self.interner().intern(&ident.name);
         self.lookup_symbol_suffix(&[key], Some(expected))
-            .or_else(|| {
-                self.scopes.find_symbol_local(&ident.name).map(|symbol| {
-                    symbol.set_kind(expected);
-                    symbol
-                })
-            })
     }
 
     fn add_symbol_relation(&mut self, symbol: Option<&'tcx Symbol>) {
@@ -123,13 +117,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             .map(|segment| self.interner().intern(segment))
             .collect();
 
-        self.lookup_symbol_suffix(&suffix, kind).or_else(|| {
-            if kind.is_some() {
-                self.lookup_symbol_suffix(&suffix, None)
-            } else {
-                None
-            }
-        })
+        self.lookup_symbol_suffix(&suffix, kind)
     }
 
     fn resolve_method_symbol(&mut self, method: &str) -> Option<&'tcx Symbol> {
@@ -171,7 +159,6 @@ impl<'tcx> SymbolBinder<'tcx> {
         let segments = self.type_segments(node)?;
         self.resolve_symbol(&segments, Some(SymbolKind::Struct))
             .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
-            .or_else(|| self.resolve_symbol(&segments, None))
     }
 
     fn type_segments(&mut self, node: &HirNode<'tcx>) -> Option<Vec<String>> {
@@ -183,11 +170,10 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn record_call_target(&mut self, target: &CallTarget) {
         match target {
             CallTarget::Path { segments, .. } => {
-                if let Some(symbol) = self
-                    .resolve_symbol(segments, Some(SymbolKind::Function))
-                    .or_else(|| self.resolve_symbol(segments, None))
-                {
-                    self.add_symbol_relation(Some(symbol));
+                if let Some(symbol) = self.resolve_symbol(segments, Some(SymbolKind::Function)) {
+                    if symbol.kind() == SymbolKind::Function {
+                        self.add_symbol_relation(Some(symbol));
+                    }
                 }
             }
             CallTarget::Method { method, .. } => {
@@ -249,6 +235,20 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
+        
+        // Also extract return type as a dependency
+        if let Some(func_symbol) = symbol {
+            if let Some(return_type_node) = node.opt_child_by_field(self.unit, LangRust::field_return_type) {
+                let segments = self.type_segments(&return_type_node);
+                if let Some(segs) = segments {
+                    if let Some(return_type_sym) = self.resolve_symbol(&segs, Some(SymbolKind::Struct))
+                        .or_else(|| self.resolve_symbol(&segs, Some(SymbolKind::Enum))) {
+                        func_symbol.add_dependency(return_type_sym);
+                    }
+                }
+            }
+        }
+        
         self.visit_children_scope(node, symbol);
     }
 
@@ -308,13 +308,34 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             .filter(|segment| !segment.is_empty())
             .map(|segment| segment.trim().to_string())
             .collect();
-        let target = self.resolve_symbol(&segments, None);
+        // Try to resolve as a function first (for calls), then as a struct (for types), then anything else
+        let target = self.resolve_symbol(&segments, Some(SymbolKind::Function))
+            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Struct)))
+            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)));
         self.add_symbol_relation(target);
         self.visit_children(&node);
     }
 
     fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
+        if self.identifier_is_call_function(&node) {
+            self.visit_children(&node);
+            return;
+        }
         if let Some(symbol) = self.resolve_type_symbol(&node) {
+            // Skip struct/enum dependencies if this identifier is followed by parentheses (bare constructor call).
+            // This is detected by checking if the parent is a call_expression.
+            if matches!(symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
+                // Check parent - if it's a call_expression, this might be a bare constructor call
+                if let Some(parent_id) = node.parent() {
+                    let parent = self.unit.hir_node(parent_id);
+                    if parent.kind_id() == LangRust::call_expression {
+                        // Parent is a call expression - skip adding this dependency
+                        // record_call_target will handle it
+                        self.visit_children(&node);
+                        return;
+                    }
+                }
+            }
             self.add_symbol_relation(Some(symbol));
         }
         self.visit_children(&node);
@@ -326,15 +347,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             return;
         };
 
-        if self.identifier_is_call_function(&node) {
-            self.visit_children(&node);
-            return;
-        }
-
+        let key = self.interner().intern(&ident.name);
+        
         let symbol = if let Some(local) = self.scopes.find_symbol_local(&ident.name) {
             Some(local)
         } else {
-            let key = self.interner().intern(&ident.name);
             self.scopes
                 .find_scoped_suffix_with_filters(&[key], None, Some(self.unit.index))
                 .or_else(|| {
@@ -350,7 +367,14 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
                         .find_global_suffix_with_filters(&[key], None, None)
                 })
         };
-        self.add_symbol_relation(symbol);
+        
+        // Don't add struct/enum identifiers through visit_identifier. They should be added through
+        // visit_type_identifier (for type annotations) instead.
+        if let Some(sym) = symbol {
+            if !matches!(sym.kind(), SymbolKind::Struct | SymbolKind::Enum) {
+                self.add_symbol_relation(Some(sym));
+            }
+        }
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {

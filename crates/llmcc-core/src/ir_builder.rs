@@ -24,11 +24,7 @@ struct HirBuilder<'a, Language> {
 
 impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     /// Create a new builder that directly assigns to context
-    fn new(
-        arena: &'a Arena<'a>,
-        file_path: Option<String>,
-        file_content: String,
-    ) -> Self {
+    fn new(arena: &'a Arena<'a>, file_path: Option<String>, file_content: String) -> Self {
         Self {
             arena,
             hir_map: HashMap::new(),
@@ -72,7 +68,9 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
                 HirNode::Internal(self.arena.alloc(internal))
             }
             HirKind::Scope => {
-                let scope = HirScope::new(base, None);
+                // Try to extract the name identifier from the scope node
+                let ident = self.extract_scope_ident(&base, node);
+                let scope = HirScope::new(base, ident);
                 HirNode::Scope(self.arena.alloc(scope))
             }
             HirKind::Identifier => {
@@ -123,6 +121,27 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         }
     }
 
+    fn extract_scope_ident(&self, base: &HirBase<'a>, node: Node<'a>) -> Option<&'a HirIdent<'a>> {
+        // Try to get the name field from the tree-sitter node
+        // For Rust, the name field is typically "name"
+        let name_node = node.child_by_field_name("name")?;
+
+        // Create an identifier for the name node
+        let hir_id = self.reserve_hir_id();
+        let ident_base = HirBase {
+            hir_id,
+            parent: Some(base.hir_id),
+            node: name_node,
+            kind: HirKind::Identifier,
+            field_id: u16::MAX,
+            children: Vec::new(),
+        };
+
+        let text = self.extract_text(&ident_base);
+        let ident = HirIdent::new(ident_base, text);
+        Some(self.arena.alloc(ident))
+    }
+
     fn field_id_of(node: Node<'_>) -> Option<u16> {
         let parent = node.parent()?;
         let mut cursor = parent.walk();
@@ -156,7 +175,6 @@ pub fn build_llmcc_ir_inner<'a, L: LanguageTrait>(
     Ok(result)
 }
 
-
 /// Build IR for all units in the context
 /// TODO: make this run in parallel
 pub fn build_llmcc_ir<'a, L: LanguageTrait>(
@@ -168,7 +186,8 @@ pub fn build_llmcc_ir<'a, L: LanguageTrait>(
         let file_content = String::from_utf8_lossy(&unit.file().content()).to_string();
         let tree = unit.tree();
 
-        let (_file_start_id, hir_map) = build_llmcc_ir_inner::<L>(&cc.arena, file_path, file_content, tree)?;
+        let (_file_start_id, hir_map) =
+            build_llmcc_ir_inner::<L>(&cc.arena, file_path, file_content, tree)?;
 
         // Insert all nodes into the compile context
         for (hir_id, parented_node) in hir_map {

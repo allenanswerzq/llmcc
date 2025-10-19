@@ -19,13 +19,16 @@ mod codex_app_server_protocol {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(unit).expect("build failed");
-    
+    build_llmcc_ir::<LangRust>(cc).expect("build failed");
+
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
 
     // Find the struct SandboxWorkspaceWrite
-    let has_struct = collection.structs.iter().any(|s| s.name == "SandboxWorkspaceWrite");
+    let has_struct = collection
+        .structs
+        .iter()
+        .any(|s| s.name == "SandboxWorkspaceWrite");
     println!("Has struct: {}", has_struct);
     assert!(has_struct, "should find SandboxWorkspaceWrite struct");
 
