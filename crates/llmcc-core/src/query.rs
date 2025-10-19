@@ -19,29 +19,44 @@ pub struct GraphBlockInfo {
     pub source_code: Option<String>,
     pub node: GraphNode,
     pub unit_index: usize,
+    pub start_line: usize,
+    pub end_line: usize,
 }
 
 impl GraphBlockInfo {
     pub fn format_for_llm(&self) -> String {
         let mut output = String::new();
 
-        // Location line
+        // Header line with name, kind, and location
         let location = if let Some(path) = &self.file_path {
             path.clone()
         } else {
             format!("<file_unit_{}>", self.unit_index)
         };
 
-        output.push_str(&format!("{} [{}] at {}\n", self.name, self.kind, location));
+        output.push_str(&format!(
+            "┌─ {} [{}] at {}\n",
+            self.name, self.kind, location
+        ));
 
-        // Source code (if available)
+        // Source code with line numbers
         if let Some(source) = &self.source_code {
-            output.push_str("Source:\n");
-            for line in source.lines() {
-                output.push_str(&format!("  {}\n", line));
+            let lines: Vec<&str> = source.lines().collect();
+            let max_line_num = self.end_line;
+            let line_num_width = max_line_num.to_string().len();
+
+            for (idx, line) in lines.iter().enumerate() {
+                let line_num = self.start_line + idx;
+                output.push_str(&format!(
+                    "│ [{:width$}] {}\n",
+                    line_num,
+                    line,
+                    width = line_num_width
+                ));
             }
         }
 
+        output.push_str("└─\n");
         output
     }
 }
@@ -59,27 +74,22 @@ impl QueryResult {
         let mut output = String::new();
 
         if !self.primary.is_empty() {
-            output.push_str("=== PRIMARY RESULTS ===\n");
+            output.push_str("╔═══════════════════════════════════════════════════════╗\n");
+            output.push_str("║          PRIMARY RESULTS                              ║\n");
+            output.push_str("╚═══════════════════════════════════════════════════════╝\n\n");
             for block in &self.primary {
                 output.push_str(&block.format_for_llm());
                 output.push_str("\n");
             }
-            output.push_str("\n");
         }
 
         if !self.related.is_empty() {
-            output.push_str("=== RELATED BLOCKS ===\n");
+            output.push_str("╔═══════════════════════════════════════════════════════╗\n");
+            output.push_str("║          RELATED BLOCKS & DEPENDENCIES                ║\n");
+            output.push_str("╚═══════════════════════════════════════════════════════╝\n\n");
             for block in &self.related {
                 output.push_str(&block.format_for_llm());
                 output.push_str("\n");
-            }
-            output.push_str("\n");
-        }
-
-        if !self.definitions.is_empty() {
-            output.push_str("=== DEFINITIONS ===\n");
-            for (name, block) in &self.definitions {
-                output.push_str(&format!("{}: {}\n", name, block.format_for_llm()));
             }
         }
 
@@ -261,6 +271,9 @@ impl<'tcx> ProjectQuery<'tcx> {
         // Extract source code for this block
         let source_code = self.get_block_source_code(node, unit_index);
 
+        // Calculate line numbers
+        let (start_line, end_line) = self.get_line_numbers(node, unit_index);
+
         Some(GraphBlockInfo {
             name: name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
             kind: format!("{:?}", kind),
@@ -268,7 +281,52 @@ impl<'tcx> ProjectQuery<'tcx> {
             source_code,
             node,
             unit_index,
+            start_line,
+            end_line,
         })
+    }
+
+    /// Calculate line numbers from byte offsets
+    fn get_line_numbers(&self, node: GraphNode, unit_index: usize) -> (usize, usize) {
+        let file = match self.graph.cc.files.get(unit_index) {
+            Some(f) => f,
+            None => return (0, 0),
+        };
+
+        let unit = self.graph.cc.compile_unit(unit_index);
+
+        // Get the BasicBlock to access its HIR node
+        let bb = match unit.opt_bb(node.block_id) {
+            Some(b) => b,
+            None => return (0, 0),
+        };
+
+        // Get the base which contains the HirNode
+        let base = match bb.base() {
+            Some(b) => b,
+            None => return (0, 0),
+        };
+
+        let hir_node = base.node;
+        let start_byte = hir_node.start_byte();
+        let end_byte = hir_node.end_byte();
+
+        // Get the file content and count lines
+        if let Some(content) = file.file.content.as_ref() {
+            let start_line = content[..start_byte.min(content.len())]
+                .iter()
+                .filter(|&&b| b == b'\n')
+                .count()
+                + 1;
+            let end_line = content[..end_byte.min(content.len())]
+                .iter()
+                .filter(|&&b| b == b'\n')
+                .count()
+                + 1;
+            (start_line, end_line)
+        } else {
+            (0, 0)
+        }
     }
 
     /// Extract the source code for a given block

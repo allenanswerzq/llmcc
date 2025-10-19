@@ -193,9 +193,24 @@ fn example_type_dependencies() {
 #[test]
 fn example_http_handler() {
     let graph = build_graph(&[r#"
-        struct Request;
-        struct Response;
-        struct Database;
+        struct NonRelated {
+            data: i32,
+        }
+
+        struct Request<'a> {
+            url: String,
+            method: String,
+            headers: Vec<(&'a str, &'a str)>,
+        }
+
+        struct Response {
+            status_code: u16,
+            body: String,
+        }
+
+        struct Database {
+            connection_string: String,
+        }
 
         fn validate_request(_: &Request) -> bool {
             true
