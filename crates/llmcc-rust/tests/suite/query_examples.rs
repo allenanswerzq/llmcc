@@ -49,7 +49,7 @@ fn example_find_related_code() {
     "#]);
 
     let query = ProjectQuery::new(&graph);
-    let results = query.find_related("caller");
+    let results = query.find_depends("caller");
     let llm_output = results.format_for_llm();
 
     println!("\n=== EXAMPLE 1: Find Related Code ===");

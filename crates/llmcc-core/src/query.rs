@@ -1,6 +1,5 @@
-use crate::block::BlockKind;
+use crate::block::{BlockKind, BlockRelation};
 use crate::graph_builder::{GraphNode, ProjectGraph};
-use std::collections::HashMap;
 
 /// Query API for semantic code questions built on top of ProjectGraph:
 /// - given a function name, find all related code
@@ -65,8 +64,8 @@ impl GraphBlockInfo {
 #[derive(Debug, Default)]
 pub struct QueryResult {
     pub primary: Vec<GraphBlockInfo>,
-    pub related: Vec<GraphBlockInfo>,
-    pub definitions: HashMap<String, GraphBlockInfo>,
+    pub depends: Vec<GraphBlockInfo>,
+    pub depended: Vec<GraphBlockInfo>,
 }
 
 impl QueryResult {
@@ -74,20 +73,25 @@ impl QueryResult {
         let mut output = String::new();
 
         if !self.primary.is_empty() {
-            output.push_str("╔═══════════════════════════════════════════════════════╗\n");
-            output.push_str("║          PRIMARY RESULTS                              ║\n");
-            output.push_str("╚═══════════════════════════════════════════════════════╝\n\n");
+            output.push_str(" ------------- PRIMARY RESULTS ------------------- \n");
             for block in &self.primary {
                 output.push_str(&block.format_for_llm());
                 output.push_str("\n");
             }
         }
 
-        if !self.related.is_empty() {
-            output.push_str("╔═══════════════════════════════════════════════════════╗\n");
-            output.push_str("║          RELATED BLOCKS & DEPENDENCIES                ║\n");
-            output.push_str("╚═══════════════════════════════════════════════════════╝\n\n");
-            for block in &self.related {
+
+        if !self.depends.is_empty() {
+            output.push_str(" -------------- DEPENDS ON (Dependencies) ----------------- \n");
+            for block in &self.depends {
+                output.push_str(&block.format_for_llm());
+                output.push_str("\n");
+            }
+        }
+
+        if !self.depended.is_empty() {
+            output.push_str(" -------------- DEPENDED BY (Dependents) ----------------- \n");
+            for block in &self.depended {
                 output.push_str(&block.format_for_llm());
                 output.push_str("\n");
             }
@@ -114,10 +118,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         let blocks = self.graph.blocks_by_name(name);
         for node in blocks {
             if let Some(block_info) = self.node_to_block_info(node) {
-                result.primary.push(block_info.clone());
-                result
-                    .definitions
-                    .insert(block_info.name.clone(), block_info);
+                result.primary.push(block_info);
             }
         }
 
@@ -162,23 +163,20 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
-    /// Find all blocks that are related to a given block
-    pub fn find_related(&self, name: &str) -> QueryResult {
+    /// Find all blocks that this block depends on
+    pub fn find_depends(&self, name: &str) -> QueryResult {
         let mut result = QueryResult::default();
 
         // Find the primary block
         if let Some(primary_node) = self.graph.block_by_name(name) {
             if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info.clone());
-                result
-                    .definitions
-                    .insert(block_info.name.clone(), block_info);
+                result.primary.push(block_info);
 
-                // Find all related blocks
-                let related_blocks = self.graph.find_related_blocks(primary_node);
-                for related_node in related_blocks {
-                    if let Some(related_info) = self.node_to_block_info(related_node) {
-                        result.related.push(related_info);
+                // Find all blocks this one depends on
+                let depends_blocks = self.graph.find_related_blocks(primary_node, vec![BlockRelation::DependsOn]);
+                for depends_node in depends_blocks {
+                    if let Some(depends_info) = self.node_to_block_info(depends_node) {
+                        result.depends.push(depends_info);
                     }
                 }
             }
@@ -187,23 +185,42 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
-    /// Find all blocks related to a given block recursively
+    /// Find all blocks that depend on this block (dependents)
+    pub fn find_depended(&self, name: &str) -> QueryResult {
+        let mut result = QueryResult::default();
+
+        // Find the primary block
+        if let Some(primary_node) = self.graph.block_by_name(name) {
+            if let Some(block_info) = self.node_to_block_info(primary_node) {
+                result.primary.push(block_info);
+
+                // Find all blocks that depend on this one
+                let depended_blocks = self.graph.find_related_blocks(primary_node, vec![BlockRelation::DependedBy]);
+                for depended_node in depended_blocks {
+                    if let Some(depended_info) = self.node_to_block_info(depended_node) {
+                        result.depended.push(depended_info);
+                    }
+                }
+            }
+        }
+
+        result
+    }
+
+    /// Find all blocks that are related to a given block recursively
     pub fn find_related_recursive(&self, name: &str) -> QueryResult {
         let mut result = QueryResult::default();
 
         // Find the primary block
         if let Some(primary_node) = self.graph.block_by_name(name) {
             if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info.clone());
-                result
-                    .definitions
-                    .insert(block_info.name.clone(), block_info);
+                result.primary.push(block_info);
 
                 // Find all related blocks recursively
                 let all_related = self.graph.find_related_blocks_recursive(primary_node);
                 for related_node in all_related {
                     if let Some(related_info) = self.node_to_block_info(related_node) {
-                        result.related.push(related_info);
+                        result.depends.push(related_info);
                     }
                 }
             }
