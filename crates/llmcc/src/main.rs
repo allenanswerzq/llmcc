@@ -1,5 +1,4 @@
 use clap::Parser;
-use llmcc_core::ir_builder;
 use llmcc_rust::*;
 
 #[derive(Parser, Debug)]
@@ -30,6 +29,10 @@ struct Args {
     /// Don't print graph
     #[arg(long, action = clap::ArgAction::SetTrue)]
     no_print_graph: bool,
+
+    /// Name of the symbol/function to query (enables find_depends mode)
+    #[arg(long, value_name = "NAME")]
+    query_name: Option<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -83,6 +86,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     pg.link_units();
+
+    if let Some(name) = args.query_name {
+        let query = ProjectQuery::new(&pg);
+        let output = query.find_depends(&name).format_for_llm();
+        println!("{}", output);
+    }
 
     Ok(())
 }
