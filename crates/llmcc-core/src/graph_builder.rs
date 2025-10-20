@@ -207,7 +207,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         block_indexes.get_block_info(block_id)
     }
 
-    pub fn find_related_blocks(&self, node: GraphNode) -> Vec<GraphNode> {
+    pub fn find_related_blocks(&self, node: GraphNode, relations: Vec<BlockRelation>) -> Vec<GraphNode> {
         if node.unit_index >= self.units.len() {
             return Vec::new();
         }
@@ -215,26 +215,36 @@ impl<'tcx> ProjectGraph<'tcx> {
         let unit = &self.units[node.unit_index];
         let mut result = Vec::new();
 
-        // Get all blocks that this block depends on
-        let dependencies = unit
-            .edges
-            .get_related(node.block_id, BlockRelation::DependsOn);
-        for dep_block_id in dependencies {
-            result.push(GraphNode {
-                unit_index: node.unit_index,
-                block_id: dep_block_id,
-            });
-        }
-
-        // Get all blocks that depend on this block
-        let dependents = unit
-            .edges
-            .find_reverse_relations(node.block_id, BlockRelation::DependsOn);
-        for dep_block_id in dependents {
-            result.push(GraphNode {
-                unit_index: node.unit_index,
-                block_id: dep_block_id,
-            });
+        for relation in relations {
+            match relation {
+                BlockRelation::DependsOn => {
+                    // Get all blocks that this block depends on
+                    let dependencies = unit
+                        .edges
+                        .get_related(node.block_id, BlockRelation::DependsOn);
+                    for dep_block_id in dependencies {
+                        result.push(GraphNode {
+                            unit_index: node.unit_index,
+                            block_id: dep_block_id,
+                        });
+                    }
+                }
+                BlockRelation::DependedBy => {
+                    // Get all blocks that depend on this block
+                    let dependents = unit
+                        .edges
+                        .find_reverse_relations(node.block_id, BlockRelation::DependsOn);
+                    for dep_block_id in dependents {
+                        result.push(GraphNode {
+                            unit_index: node.unit_index,
+                            block_id: dep_block_id,
+                        });
+                    }
+                }
+                BlockRelation::Unknown => {
+                    // Skip unknown relations
+                }
+            }
         }
 
         result
@@ -243,6 +253,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     pub fn find_related_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
         let mut visited = HashSet::new();
         let mut stack = vec![node];
+        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
 
         while let Some(current) = stack.pop() {
             if visited.contains(&current) {
@@ -250,7 +261,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             }
             visited.insert(current);
 
-            for related in self.find_related_blocks(current) {
+            for related in self.find_related_blocks(current, relations.clone()) {
                 if !visited.contains(&related) {
                     stack.push(related);
                 }
@@ -267,6 +278,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     {
         let mut visited = HashSet::new();
         let mut queue = vec![start];
+        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
 
         while !queue.is_empty() {
             let current = queue.remove(0);
@@ -276,7 +288,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             visited.insert(current);
             callback(current);
 
-            for related in self.find_related_blocks(current) {
+            for related in self.find_related_blocks(current, relations.clone()) {
                 if !visited.contains(&related) {
                     queue.push(related);
                 }
@@ -306,7 +318,8 @@ impl<'tcx> ProjectGraph<'tcx> {
         visited.insert(node);
         callback(node);
 
-        for related in self.find_related_blocks(node) {
+        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
+        for related in self.find_related_blocks(node, relations) {
             if !visited.contains(&related) {
                 self.traverse_dfs_impl(related, visited, callback);
             }

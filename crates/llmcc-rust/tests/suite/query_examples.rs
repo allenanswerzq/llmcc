@@ -49,7 +49,7 @@ fn example_find_related_code() {
     "#]);
 
     let query = ProjectQuery::new(&graph);
-    let results = query.find_related("caller");
+    let results = query.find_depends("caller");
     let llm_output = results.format_for_llm();
 
     println!("\n=== EXAMPLE 1: Find Related Code ===");
@@ -193,9 +193,24 @@ fn example_type_dependencies() {
 #[test]
 fn example_http_handler() {
     let graph = build_graph(&[r#"
-        struct Request;
-        struct Response;
-        struct Database;
+        struct NonRelated {
+            data: i32,
+        }
+
+        struct Request<'a> {
+            url: String,
+            method: String,
+            headers: Vec<(&'a str, &'a str)>,
+        }
+
+        struct Response {
+            status_code: u16,
+            body: String,
+        }
+
+        struct Database {
+            connection_string: String,
+        }
 
         fn validate_request(_: &Request) -> bool {
             true

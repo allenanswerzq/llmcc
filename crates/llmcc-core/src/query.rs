@@ -1,6 +1,5 @@
-use crate::block::BlockKind;
+use crate::block::{BlockKind, BlockRelation};
 use crate::graph_builder::{GraphNode, ProjectGraph};
-use std::collections::HashMap;
 
 /// Query API for semantic code questions built on top of ProjectGraph:
 /// - given a function name, find all related code
@@ -16,17 +15,48 @@ pub struct GraphBlockInfo {
     pub name: String,
     pub kind: String,
     pub file_path: Option<String>,
+    pub source_code: Option<String>,
     pub node: GraphNode,
+    pub unit_index: usize,
+    pub start_line: usize,
+    pub end_line: usize,
 }
 
 impl GraphBlockInfo {
     pub fn format_for_llm(&self) -> String {
-        format!(
-            "{} [{}] at {}",
-            self.name,
-            self.kind,
-            self.file_path.as_ref().unwrap_or(&"<unknown>".to_string()),
-        )
+        let mut output = String::new();
+
+        // Header line with name, kind, and location
+        let location = if let Some(path) = &self.file_path {
+            path.clone()
+        } else {
+            format!("<file_unit_{}>", self.unit_index)
+        };
+
+        output.push_str(&format!(
+            "┌─ {} [{}] at {}\n",
+            self.name, self.kind, location
+        ));
+
+        // Source code with line numbers
+        if let Some(source) = &self.source_code {
+            let lines: Vec<&str> = source.lines().collect();
+            let max_line_num = self.end_line;
+            let line_num_width = max_line_num.to_string().len();
+
+            for (idx, line) in lines.iter().enumerate() {
+                let line_num = self.start_line + idx;
+                output.push_str(&format!(
+                    "│ [{:width$}] {}\n",
+                    line_num,
+                    line,
+                    width = line_num_width
+                ));
+            }
+        }
+
+        output.push_str("└─\n");
+        output
     }
 }
 
@@ -34,8 +64,8 @@ impl GraphBlockInfo {
 #[derive(Debug, Default)]
 pub struct QueryResult {
     pub primary: Vec<GraphBlockInfo>,
-    pub related: Vec<GraphBlockInfo>,
-    pub definitions: HashMap<String, GraphBlockInfo>,
+    pub depends: Vec<GraphBlockInfo>,
+    pub depended: Vec<GraphBlockInfo>,
 }
 
 impl QueryResult {
@@ -43,27 +73,27 @@ impl QueryResult {
         let mut output = String::new();
 
         if !self.primary.is_empty() {
-            output.push_str("=== PRIMARY RESULTS ===\n");
+            output.push_str(" ------------- PRIMARY RESULTS ------------------- \n");
             for block in &self.primary {
                 output.push_str(&block.format_for_llm());
                 output.push_str("\n");
             }
-            output.push_str("\n");
         }
 
-        if !self.related.is_empty() {
-            output.push_str("=== RELATED BLOCKS ===\n");
-            for block in &self.related {
+
+        if !self.depends.is_empty() {
+            output.push_str(" -------------- DEPENDS ON (Dependencies) ----------------- \n");
+            for block in &self.depends {
                 output.push_str(&block.format_for_llm());
                 output.push_str("\n");
             }
-            output.push_str("\n");
         }
 
-        if !self.definitions.is_empty() {
-            output.push_str("=== DEFINITIONS ===\n");
-            for (name, block) in &self.definitions {
-                output.push_str(&format!("{}: {}\n", name, block.format_for_llm()));
+        if !self.depended.is_empty() {
+            output.push_str(" -------------- DEPENDED BY (Dependents) ----------------- \n");
+            for block in &self.depended {
+                output.push_str(&block.format_for_llm());
+                output.push_str("\n");
             }
         }
 
@@ -88,10 +118,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         let blocks = self.graph.blocks_by_name(name);
         for node in blocks {
             if let Some(block_info) = self.node_to_block_info(node) {
-                result.primary.push(block_info.clone());
-                result
-                    .definitions
-                    .insert(block_info.name.clone(), block_info);
+                result.primary.push(block_info);
             }
         }
 
@@ -136,23 +163,20 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
-    /// Find all blocks that are related to a given block
-    pub fn find_related(&self, name: &str) -> QueryResult {
+    /// Find all blocks that this block depends on
+    pub fn find_depends(&self, name: &str) -> QueryResult {
         let mut result = QueryResult::default();
 
         // Find the primary block
         if let Some(primary_node) = self.graph.block_by_name(name) {
             if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info.clone());
-                result
-                    .definitions
-                    .insert(block_info.name.clone(), block_info);
+                result.primary.push(block_info);
 
-                // Find all related blocks
-                let related_blocks = self.graph.find_related_blocks(primary_node);
-                for related_node in related_blocks {
-                    if let Some(related_info) = self.node_to_block_info(related_node) {
-                        result.related.push(related_info);
+                // Find all blocks this one depends on
+                let depends_blocks = self.graph.find_related_blocks(primary_node, vec![BlockRelation::DependsOn]);
+                for depends_node in depends_blocks {
+                    if let Some(depends_info) = self.node_to_block_info(depends_node) {
+                        result.depends.push(depends_info);
                     }
                 }
             }
@@ -161,23 +185,42 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
-    /// Find all blocks related to a given block recursively
+    /// Find all blocks that depend on this block (dependents)
+    pub fn find_depended(&self, name: &str) -> QueryResult {
+        let mut result = QueryResult::default();
+
+        // Find the primary block
+        if let Some(primary_node) = self.graph.block_by_name(name) {
+            if let Some(block_info) = self.node_to_block_info(primary_node) {
+                result.primary.push(block_info);
+
+                // Find all blocks that depend on this one
+                let depended_blocks = self.graph.find_related_blocks(primary_node, vec![BlockRelation::DependedBy]);
+                for depended_node in depended_blocks {
+                    if let Some(depended_info) = self.node_to_block_info(depended_node) {
+                        result.depended.push(depended_info);
+                    }
+                }
+            }
+        }
+
+        result
+    }
+
+    /// Find all blocks that are related to a given block recursively
     pub fn find_related_recursive(&self, name: &str) -> QueryResult {
         let mut result = QueryResult::default();
 
         // Find the primary block
         if let Some(primary_node) = self.graph.block_by_name(name) {
             if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info.clone());
-                result
-                    .definitions
-                    .insert(block_info.name.clone(), block_info);
+                result.primary.push(block_info);
 
                 // Find all related blocks recursively
                 let all_related = self.graph.find_related_blocks_recursive(primary_node);
                 for related_node in all_related {
                     if let Some(related_info) = self.node_to_block_info(related_node) {
-                        result.related.push(related_info);
+                        result.depends.push(related_info);
                     }
                 }
             }
@@ -242,11 +285,83 @@ impl<'tcx> ProjectQuery<'tcx> {
             .get(unit_index)
             .and_then(|file| file.path().map(|s| s.to_string()));
 
+        // Extract source code for this block
+        let source_code = self.get_block_source_code(node, unit_index);
+
+        // Calculate line numbers
+        let (start_line, end_line) = self.get_line_numbers(node, unit_index);
+
         Some(GraphBlockInfo {
             name: name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
             kind: format!("{:?}", kind),
             file_path,
+            source_code,
             node,
+            unit_index,
+            start_line,
+            end_line,
         })
+    }
+
+    /// Calculate line numbers from byte offsets
+    fn get_line_numbers(&self, node: GraphNode, unit_index: usize) -> (usize, usize) {
+        let file = match self.graph.cc.files.get(unit_index) {
+            Some(f) => f,
+            None => return (0, 0),
+        };
+
+        let unit = self.graph.cc.compile_unit(unit_index);
+
+        // Get the BasicBlock to access its HIR node
+        let bb = match unit.opt_bb(node.block_id) {
+            Some(b) => b,
+            None => return (0, 0),
+        };
+
+        // Get the base which contains the HirNode
+        let base = match bb.base() {
+            Some(b) => b,
+            None => return (0, 0),
+        };
+
+        let hir_node = base.node;
+        let start_byte = hir_node.start_byte();
+        let end_byte = hir_node.end_byte();
+
+        // Get the file content and count lines
+        if let Some(content) = file.file.content.as_ref() {
+            let start_line = content[..start_byte.min(content.len())]
+                .iter()
+                .filter(|&&b| b == b'\n')
+                .count()
+                + 1;
+            let end_line = content[..end_byte.min(content.len())]
+                .iter()
+                .filter(|&&b| b == b'\n')
+                .count()
+                + 1;
+            (start_line, end_line)
+        } else {
+            (0, 0)
+        }
+    }
+
+    /// Extract the source code for a given block
+    fn get_block_source_code(&self, node: GraphNode, unit_index: usize) -> Option<String> {
+        let file = self.graph.cc.files.get(unit_index)?;
+        let unit = self.graph.cc.compile_unit(unit_index);
+
+        // Get the BasicBlock to access its HIR node
+        let bb = unit.opt_bb(node.block_id)?;
+
+        // Get the base which contains the HirNode
+        let base = bb.base()?;
+        let hir_node = base.node;
+
+        // Get the span information from the HirNode
+        let start_byte = hir_node.start_byte();
+        let end_byte = hir_node.end_byte();
+
+        file.opt_get_text(start_byte, end_byte)
     }
 }
