@@ -25,6 +25,10 @@ struct Args {
     /// Name of the symbol/function to query (enables find_depends mode)
     #[arg(long, value_name = "NAME")]
     query: Option<String>,
+
+    /// Search recursively for transitive dependencies (default: direct dependencies only)
+    #[arg(long, default_value_t = false)]
+    recursive: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -74,7 +78,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(name) = args.query {
         let query = ProjectQuery::new(&pg);
-        let output = query.find_depends(&name).format_for_llm();
+        let output = if args.recursive {
+            query.find_depends_recursive(&name).format_for_llm()
+        } else {
+            query.find_depends(&name).format_for_llm()
+        };
         println!("{}", output);
     }
 

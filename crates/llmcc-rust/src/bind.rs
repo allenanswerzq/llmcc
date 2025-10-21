@@ -329,6 +329,21 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
         self.visit_children(&node);
     }
 
+    fn visit_field_declaration(&mut self, node: HirNode<'tcx>) {
+        // Extract the type annotation from the field and add it as a dependency
+        if let Some(type_node) = node.opt_child_by_field(self.unit, LangRust::field_type) {
+            if let Some(segments) = self.type_segments(&type_node) {
+                if let Some(type_symbol) = self
+                    .resolve_symbol(&segments, Some(SymbolKind::Struct))
+                    .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
+                {
+                    self.add_symbol_relation(Some(type_symbol));
+                }
+            }
+        }
+        self.visit_children(&node);
+    }
+
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         let enclosing = self
             .current_symbol()

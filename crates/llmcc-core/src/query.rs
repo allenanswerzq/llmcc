@@ -219,7 +219,7 @@ impl<'tcx> ProjectQuery<'tcx> {
     }
 
     /// Find all blocks that are related to a given block recursively
-    pub fn find_related_recursive(&self, name: &str) -> QueryResult {
+    pub fn find_depends_recursive(&self, name: &str) -> QueryResult {
         let mut result = QueryResult::default();
 
         // Find the primary block
@@ -228,7 +228,7 @@ impl<'tcx> ProjectQuery<'tcx> {
                 result.primary.push(block_info);
 
                 // Find all related blocks recursively
-                let all_related = self.graph.find_related_blocks_recursive(primary_node);
+                let all_related = self.graph.find_dpends_blocks_recursive(primary_node);
                 for related_node in all_related {
                     if let Some(related_info) = self.node_to_block_info(related_node) {
                         result.depends.push(related_info);
