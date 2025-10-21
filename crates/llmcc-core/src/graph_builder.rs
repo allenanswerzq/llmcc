@@ -207,7 +207,11 @@ impl<'tcx> ProjectGraph<'tcx> {
         block_indexes.get_block_info(block_id)
     }
 
-    pub fn find_related_blocks(&self, node: GraphNode, relations: Vec<BlockRelation>) -> Vec<GraphNode> {
+    pub fn find_related_blocks(
+        &self,
+        node: GraphNode,
+        relations: Vec<BlockRelation>,
+    ) -> Vec<GraphNode> {
         if node.unit_index >= self.units.len() {
             return Vec::new();
         }
@@ -604,8 +608,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         let block = self.create_block(id, node, block_kind, Some(parent), children);
         if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
             if let Some(symbol) = scope.symbol() {
-                // Set the block ID for the symbol
-                symbol.set_block_id(Some(id));
+                // Only set the block ID if it hasn't been set before
+                // This prevents impl blocks from overwriting struct block IDs
+                if symbol.block_id().is_none() {
+                    symbol.set_block_id(Some(id));
+                }
             }
         }
         self.unit.insert_block(id, block, parent);

@@ -58,8 +58,14 @@ fn test_query_find_function_basic() {
     assert_eq!(results.primary[0].kind, "Func");
 
     let formatted = results.format_for_llm();
-    assert!(formatted.contains("helper"), "Output should contain function name");
-    assert!(formatted.contains("[Func]"), "Output should contain function type");
+    assert!(
+        formatted.contains("helper"),
+        "Output should contain function name"
+    );
+    assert!(
+        formatted.contains("[Func]"),
+        "Output should contain function type"
+    );
 }
 
 /// Test 2: Query result is consistent across calls
@@ -107,18 +113,33 @@ fn test_query_find_all_functions() {
     let results = query.find_all_functions();
 
     // Should have at least first and second functions
-    assert!(results.primary.len() >= 2, "Should find at least 2 functions");
+    assert!(
+        results.primary.len() >= 2,
+        "Should find at least 2 functions"
+    );
 
     // Verify functions are found
     let func_names: Vec<&str> = results.primary.iter().map(|f| f.name.as_str()).collect();
-    assert!(func_names.contains(&"first"), "Should find 'first' function");
-    assert!(func_names.contains(&"second"), "Should find 'second' function");
+    assert!(
+        func_names.contains(&"first"),
+        "Should find 'first' function"
+    );
+    assert!(
+        func_names.contains(&"second"),
+        "Should find 'second' function"
+    );
 
     // Verify output format
     let formatted = results.format_for_llm();
     assert!(formatted.contains("first"), "Output should contain 'first'");
-    assert!(formatted.contains("second"), "Output should contain 'second'");
-    assert!(formatted.contains("[Func]"), "Output should contain function type");
+    assert!(
+        formatted.contains("second"),
+        "Output should contain 'second'"
+    );
+    assert!(
+        formatted.contains("[Func]"),
+        "Output should contain function type"
+    );
 }
 
 /// Test 5: Multiple source files
@@ -140,8 +161,14 @@ fn test_query_multiple_files() {
     let results1 = query.find_by_name("file1_func");
 
     // Both queries should find results
-    assert!(!results0.primary.is_empty(), "Should find 'file0_func' from unit 0");
-    assert!(!results1.primary.is_empty(), "Should find 'file1_func' from unit 1");
+    assert!(
+        !results0.primary.is_empty(),
+        "Should find 'file0_func' from unit 0"
+    );
+    assert!(
+        !results1.primary.is_empty(),
+        "Should find 'file1_func' from unit 1"
+    );
 
     assert_eq!(results0.primary[0].name, "file0_func");
     assert_eq!(results1.primary[0].name, "file1_func");
@@ -172,14 +199,26 @@ fn test_query_file_structure() {
     // Unit 0 should have ConfigA and handler_a
     assert!(!results.primary.is_empty(), "Unit 0 should have items");
     let names_u0: Vec<&str> = results.primary.iter().map(|b| b.name.as_str()).collect();
-    assert!(names_u0.contains(&"ConfigA"), "Unit 0 should contain ConfigA");
-    assert!(names_u0.contains(&"handler_a"), "Unit 0 should contain handler_a");
+    assert!(
+        names_u0.contains(&"ConfigA"),
+        "Unit 0 should contain ConfigA"
+    );
+    assert!(
+        names_u0.contains(&"handler_a"),
+        "Unit 0 should contain handler_a"
+    );
 
     // Unit 1 should have ConfigB and handler_b
     assert!(!results_u1.primary.is_empty(), "Unit 1 should have items");
     let names_u1: Vec<&str> = results_u1.primary.iter().map(|b| b.name.as_str()).collect();
-    assert!(names_u1.contains(&"ConfigB"), "Unit 1 should contain ConfigB");
-    assert!(names_u1.contains(&"handler_b"), "Unit 1 should contain handler_b");
+    assert!(
+        names_u1.contains(&"ConfigB"),
+        "Unit 1 should contain ConfigB"
+    );
+    assert!(
+        names_u1.contains(&"handler_b"),
+        "Unit 1 should contain handler_b"
+    );
 }
 
 /// Test 7: Find depends blocks (what this function depends on)
@@ -200,15 +239,24 @@ fn test_query_find_related() {
     assert_eq!(results.primary[0].name, "caller");
 
     // Should find dep as depends block (caller depends on dep)
-    assert!(!results.depends.is_empty(), "Should find 'dep' function that caller depends on");
+    assert!(
+        !results.depends.is_empty(),
+        "Should find 'dep' function that caller depends on"
+    );
     let depends_names: Vec<&str> = results.depends.iter().map(|b| b.name.as_str()).collect();
-    assert!(depends_names.contains(&"dep"), "Depends blocks should contain 'dep'");
+    assert!(
+        depends_names.contains(&"dep"),
+        "Depends blocks should contain 'dep'"
+    );
 
     // Verify output includes both
     let formatted = results.format_for_llm();
     assert!(formatted.contains("caller"), "Output should contain caller");
     assert!(formatted.contains("dep"), "Output should contain dep");
-    assert!(formatted.contains("DEPENDS ON"), "Output should have DEPENDS ON section");
+    assert!(
+        formatted.contains("DEPENDS ON"),
+        "Output should have DEPENDS ON section"
+    );
 }
 
 /// Test 8: Find depends blocks recursively (transitive dependencies)
@@ -233,11 +281,20 @@ fn test_query_find_related_recursive() {
 
     // Should find both middle and leaf as depends (transitively)
     let depends_names: Vec<&str> = results.depends.iter().map(|b| b.name.as_str()).collect();
-    assert!(depends_names.contains(&"middle"), "Should find 'middle' as depends");
-    assert!(depends_names.contains(&"leaf"), "Should find 'leaf' as depends");
+    assert!(
+        depends_names.contains(&"middle"),
+        "Should find 'middle' as depends"
+    );
+    assert!(
+        depends_names.contains(&"leaf"),
+        "Should find 'leaf' as depends"
+    );
 
     // Verify recursive depth - should have both direct and indirect dependencies
-    assert!(results.depends.len() >= 2, "Should find at least 2 depends blocks");
+    assert!(
+        results.depends.len() >= 2,
+        "Should find at least 2 depends blocks"
+    );
 
     let formatted = results.format_for_llm();
     assert!(formatted.contains("root"), "Output should contain root");
@@ -272,8 +329,10 @@ fn test_query_traverse_bfs() {
     assert!(names.contains(&"leaf"), "Should contain leaf");
 
     // BFS means we visit breadth-first: root -> middle -> leaf
-    assert!(names.windows(2).any(|w| w[0] == "root" && w[1] == "middle"),
-            "BFS should visit middle before leaf");
+    assert!(
+        names.windows(2).any(|w| w[0] == "root" && w[1] == "middle"),
+        "BFS should visit middle before leaf"
+    );
 }
 
 /// Test 10: DFS traversal
@@ -319,11 +378,20 @@ fn test_query_format_headers() {
     assert!(!results.primary.is_empty(), "Should find 'sample' function");
 
     // Check that formatted output contains primary section header
-    assert!(formatted.contains("PRIMARY RESULTS"), "Formatted output should contain PRIMARY RESULTS header");
+    assert!(
+        formatted.contains("PRIMARY RESULTS"),
+        "Formatted output should contain PRIMARY RESULTS header"
+    );
 
     // Check that the function details are present
-    assert!(formatted.contains("sample"), "Output should contain function name");
-    assert!(formatted.contains("[Func]"), "Output should contain function type marker");
+    assert!(
+        formatted.contains("sample"),
+        "Output should contain function name"
+    );
+    assert!(
+        formatted.contains("[Func]"),
+        "Output should contain function type marker"
+    );
 }
 
 /// Test 12: Large source file
@@ -340,7 +408,10 @@ fn test_query_large_source() {
     let results = query.find_all_functions();
 
     // Should find all 50 functions
-    assert!(results.primary.len() >= 50, "Should find at least 50 functions");
+    assert!(
+        results.primary.len() >= 50,
+        "Should find at least 50 functions"
+    );
 
     // Verify some specific functions are found
     let names: Vec<&str> = results.primary.iter().map(|f| f.name.as_str()).collect();
@@ -350,8 +421,14 @@ fn test_query_large_source() {
 
     // Test formatting works with large results
     let formatted = results.format_for_llm();
-    assert!(!formatted.is_empty(), "Formatted output should not be empty");
-    assert!(formatted.len() > 1000, "Output should be substantial for large source");
+    assert!(
+        !formatted.is_empty(),
+        "Formatted output should not be empty"
+    );
+    assert!(
+        formatted.len() > 1000,
+        "Output should be substantial for large source"
+    );
 }
 
 /// Test 13: Query with mixed types
@@ -373,17 +450,29 @@ fn test_query_mixed_types() {
     let _const_results = query.find_by_name("MAX_SIZE");
 
     // All should be queryable and find results
-    assert!(!func_results.primary.is_empty(), "Should find 'process' function");
+    assert!(
+        !func_results.primary.is_empty(),
+        "Should find 'process' function"
+    );
     assert_eq!(func_results.primary[0].name, "process");
     assert_eq!(func_results.primary[0].kind, "Func");
 
-    assert!(!struct_results.primary.is_empty(), "Should find 'Container' struct");
+    assert!(
+        !struct_results.primary.is_empty(),
+        "Should find 'Container' struct"
+    );
     assert_eq!(struct_results.primary[0].name, "Container");
     assert_eq!(struct_results.primary[0].kind, "Class");
 
     // Verify both have source code captured
-    assert!(func_results.primary[0].source_code.is_some(), "Function should have source code");
-    assert!(struct_results.primary[0].source_code.is_some(), "Struct should have source code");
+    assert!(
+        func_results.primary[0].source_code.is_some(),
+        "Function should have source code"
+    );
+    assert!(
+        struct_results.primary[0].source_code.is_some(),
+        "Struct should have source code"
+    );
 }
 
 /// Test 14: Query result inspection
@@ -397,19 +486,36 @@ fn test_query_result_inspection() {
     let results = query.find_by_name("test");
 
     // Should be inspectable and contain data
-    assert!(!results.primary.is_empty(), "Primary results should not be empty");
+    assert!(
+        !results.primary.is_empty(),
+        "Primary results should not be empty"
+    );
 
     // Inspect the primary result
     let test_block = &results.primary[0];
     assert_eq!(test_block.name, "test");
     assert_eq!(test_block.kind, "Func");
     assert!(test_block.start_line > 0, "Start line should be positive");
-    assert!(test_block.end_line >= test_block.start_line, "End line should be >= start line");
-    assert!(test_block.source_code.is_some(), "Source code should be available");
+    assert!(
+        test_block.end_line >= test_block.start_line,
+        "End line should be >= start line"
+    );
+    assert!(
+        test_block.source_code.is_some(),
+        "Source code should be available"
+    );
 
     // Should have metadata
-    assert_eq!(results.depends.len(), 0, "Should have no depends blocks for simple function");
-    assert_eq!(results.depended.len(), 0, "Should have no depended blocks for simple function");
+    assert_eq!(
+        results.depends.len(),
+        0,
+        "Should have no depends blocks for simple function"
+    );
+    assert_eq!(
+        results.depended.len(),
+        0,
+        "Should have no depended blocks for simple function"
+    );
 }
 
 /// Test 15: Multiple queries on same graph
@@ -481,13 +587,22 @@ fn test_query_find_depended() {
     assert_eq!(results.primary[0].name, "helper");
 
     // Should find caller as depended block (caller depends on helper)
-    assert!(!results.depended.is_empty(), "Should find 'caller' that depends on helper");
+    assert!(
+        !results.depended.is_empty(),
+        "Should find 'caller' that depends on helper"
+    );
     let depended_names: Vec<&str> = results.depended.iter().map(|b| b.name.as_str()).collect();
-    assert!(depended_names.contains(&"caller"), "Depended blocks should contain 'caller'");
+    assert!(
+        depended_names.contains(&"caller"),
+        "Depended blocks should contain 'caller'"
+    );
 
     // Verify output includes both
     let formatted = results.format_for_llm();
     assert!(formatted.contains("helper"), "Output should contain helper");
     assert!(formatted.contains("caller"), "Output should contain caller");
-    assert!(formatted.contains("DEPENDED BY"), "Output should have DEPENDED BY section");
+    assert!(
+        formatted.contains("DEPENDED BY"),
+        "Output should have DEPENDED BY section"
+    );
 }
