@@ -19,31 +19,16 @@ struct Args {
     print_ir: bool,
 
     /// Print project graph
-    #[arg(long, default_value_t = true)]
+    #[arg(long, default_value_t = false)]
     print_graph: bool,
-
-    /// Don't print IR (use with other flags to disable default)
-    #[arg(long, action = clap::ArgAction::SetTrue)]
-    no_print_ir: bool,
-
-    /// Don't print graph
-    #[arg(long, action = clap::ArgAction::SetTrue)]
-    no_print_graph: bool,
 
     /// Name of the symbol/function to query (enables find_depends mode)
     #[arg(long, value_name = "NAME")]
-    query_name: Option<String>,
+    query: Option<String>,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut args = Args::parse();
-
-    if args.no_print_ir {
-        args.print_ir = false;
-    }
-    if args.no_print_graph {
-        args.print_graph = false;
-    }
+    let args = Args::parse();
 
     let (cc, files) = if let Some(dir) = args.dir {
         eprintln!(" loading .rs files from directory: {}", dir);
@@ -56,7 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (cc, args.files)
     };
 
-    ir_builder::build_llmcc_ir::<LangRust>(&cc)?;
+    build_llmcc_ir::<LangRust>(&cc)?;
 
     let globals = cc.create_globals();
 
@@ -87,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     pg.link_units();
 
-    if let Some(name) = args.query_name {
+    if let Some(name) = args.query {
         let query = ProjectQuery::new(&pg);
         let output = query.find_depends(&name).format_for_llm();
         println!("{}", output);

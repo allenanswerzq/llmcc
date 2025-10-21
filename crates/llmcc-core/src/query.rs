@@ -28,7 +28,16 @@ impl GraphBlockInfo {
 
         // Header line with name, kind, and location
         let location = if let Some(path) = &self.file_path {
-            path.clone()
+            use std::path::Path;
+            let abs_path = Path::new(path);
+            if abs_path.is_absolute() {
+                path.clone()
+            } else {
+                match std::env::current_dir() {
+                    Ok(cwd) => cwd.join(path).display().to_string(),
+                    Err(_) => path.clone(),
+                }
+            }
         } else {
             format!("<file_unit_{}>", self.unit_index)
         };
