@@ -80,7 +80,6 @@ impl QueryResult {
             }
         }
 
-
         if !self.depends.is_empty() {
             output.push_str(" -------------- DEPENDS ON (Dependencies) ----------------- \n");
             for block in &self.depends {
@@ -173,7 +172,9 @@ impl<'tcx> ProjectQuery<'tcx> {
                 result.primary.push(block_info);
 
                 // Find all blocks this one depends on
-                let depends_blocks = self.graph.find_related_blocks(primary_node, vec![BlockRelation::DependsOn]);
+                let depends_blocks = self
+                    .graph
+                    .find_related_blocks(primary_node, vec![BlockRelation::DependsOn]);
                 for depends_node in depends_blocks {
                     if let Some(depends_info) = self.node_to_block_info(depends_node) {
                         result.depends.push(depends_info);
@@ -195,7 +196,9 @@ impl<'tcx> ProjectQuery<'tcx> {
                 result.primary.push(block_info);
 
                 // Find all blocks that depend on this one
-                let depended_blocks = self.graph.find_related_blocks(primary_node, vec![BlockRelation::DependedBy]);
+                let depended_blocks = self
+                    .graph
+                    .find_related_blocks(primary_node, vec![BlockRelation::DependedBy]);
                 for depended_node in depended_blocks {
                     if let Some(depended_info) = self.node_to_block_info(depended_node) {
                         result.depended.push(depended_info);
