@@ -12,14 +12,15 @@ use crate::descriptor::{
 use crate::ir::HirId;
 use crate::token::{AstVisitorRust, LangRust};
 
-/// DeclCollector:
-/// For local resolve (single file) later, we only need to trace back to the scope stack using simple name
-/// If found, a symbol saves in the Scope struct in the closest stack.
-/// If not found, we need to use the full qualified name to resolve in the global system table, thus we need
-/// to save global and public level symbol saved in the global system table for later use.
+/// DeclCollector collects all symbol declarations (functions, structs, enums, variables, etc.)
+/// from the AST during the first pass of semantic analysis.
 ///
-/// For any symbol, we first need to insert it into the local scope stack for local resolve, and also need to
-/// insert it to the globals if it's global or public level for global resolve.
+/// For each symbol encountered:
+/// 1. Insert it into the local scope stack for local name resolution
+/// 2. If it's public/global, also register it in the global symbol table for cross-file resolution
+///
+/// This enables later phases to resolve both local names (via scope stack) and qualified names
+/// (via global symbol table).
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
     unit: CompileUnit<'tcx>,
