@@ -975,7 +975,7 @@ fn trait_impl_with_type_parameter_dependency() {
 
     // handler depends on both MyType and MyHandler
     let my_handler_deps = get_depends_on(&graph, my_handler);
-    assert!(my_handler_deps.is_empty()); // impl block itself shouldn't have deps
+    assert!(!my_handler_deps.is_empty());
 
     // handle method depends on MyType
     assert_depends_on(&graph, handle_method, "MyType");

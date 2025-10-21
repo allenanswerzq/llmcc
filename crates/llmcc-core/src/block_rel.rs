@@ -272,7 +272,7 @@ impl<'a> RelationBuilder<'a> {
 
 impl BlockRelationMap {
     /// Create a fluent builder for adding relationships from a block
-    pub fn from_block(&self, from: BlockId) -> RelationBuilder {
+    pub fn from_block(&self, from: BlockId) -> RelationBuilder<'_> {
         RelationBuilder::new(self, from)
     }
 }
