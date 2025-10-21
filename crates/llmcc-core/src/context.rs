@@ -171,7 +171,7 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.unresolve_symbols.borrow_mut().push(symbol);
     }
 
-    pub fn insert_block(self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
+    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
         let parented = ParentedBlock::new(parent, block.clone());
         self.cc.block_map.borrow_mut().insert(id, parented);
 
@@ -541,6 +541,15 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
         self.symbol_map.borrow().get(&owner).cloned()
+    }
+
+    /// Find the primary symbol associated with a block ID
+    pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
+        self.symbol_map
+            .borrow()
+            .values()
+            .find(|symbol| symbol.block_id() == Some(block_id))
+            .copied()
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

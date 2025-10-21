@@ -68,7 +68,7 @@ fn get_depended_by(graph: &ProjectGraph<'static>, block: GraphNode) -> HashSet<S
 /// Helper to get all related blocks recursively
 fn get_all_related_names(graph: &ProjectGraph<'static>, block: GraphNode) -> HashSet<String> {
     graph
-        .find_related_blocks_recursive(block)
+        .find_dpends_blocks_recursive(block)
         .into_iter()
         .filter_map(|node| block_name(graph, node))
         .collect()
@@ -218,7 +218,7 @@ fn finds_transitive_dependencies() {
     assert_depended_by(&graph, middle_a, "top");
     assert_depended_by(&graph, middle_b, "top");
 
-    // Get transitive dependencies via find_related_blocks_recursive
+    // Get transitive dependencies via find_dpends_blocks_recursive
     let all_names = get_all_related_names(&graph, top);
     assert!(all_names.contains("leaf"));
 }
