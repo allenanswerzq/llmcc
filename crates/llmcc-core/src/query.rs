@@ -8,7 +8,6 @@ use crate::graph_builder::{GraphNode, ProjectGraph};
 /// - given a file name, extract important structures (functions, types, etc.)
 ///
 /// Output format: plain text suitable for LLM ingestion
-
 /// Represents a semantic code block from the project graph
 #[derive(Debug, Clone)]
 pub struct GraphBlockInfo {
@@ -28,7 +27,16 @@ impl GraphBlockInfo {
 
         // Header line with name, kind, and location
         let location = if let Some(path) = &self.file_path {
-            path.clone()
+            use std::path::Path;
+            let abs_path = Path::new(path);
+            if abs_path.is_absolute() {
+                path.clone()
+            } else {
+                match std::env::current_dir() {
+                    Ok(cwd) => cwd.join(path).display().to_string(),
+                    Err(_) => path.clone(),
+                }
+            }
         } else {
             format!("<file_unit_{}>", self.unit_index)
         };
@@ -211,7 +219,7 @@ impl<'tcx> ProjectQuery<'tcx> {
     }
 
     /// Find all blocks that are related to a given block recursively
-    pub fn find_related_recursive(&self, name: &str) -> QueryResult {
+    pub fn find_depends_recursive(&self, name: &str) -> QueryResult {
         let mut result = QueryResult::default();
 
         // Find the primary block
@@ -220,7 +228,7 @@ impl<'tcx> ProjectQuery<'tcx> {
                 result.primary.push(block_info);
 
                 // Find all related blocks recursively
-                let all_related = self.graph.find_related_blocks_recursive(primary_node);
+                let all_related = self.graph.find_dpends_blocks_recursive(primary_node);
                 for related_node in all_related {
                     if let Some(related_info) = self.node_to_block_info(related_node) {
                         result.depends.push(related_info);
@@ -280,6 +288,19 @@ impl<'tcx> ProjectQuery<'tcx> {
     fn node_to_block_info(&self, node: GraphNode) -> Option<GraphBlockInfo> {
         let (unit_index, name, kind) = self.graph.block_info(node.block_id)?;
 
+        // Try to get the fully qualified name from the symbol if available
+        let display_name =
+            if let Some(symbol) = self.graph.cc.find_symbol_by_block_id(node.block_id) {
+                let fqn = symbol.fqn_name.borrow();
+                if !fqn.is_empty() && *fqn != symbol.name {
+                    fqn.clone()
+                } else {
+                    name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
+                }
+            } else {
+                name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
+            };
+
         // Get file path from compile context
         let file_path = self
             .graph
@@ -295,7 +316,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         let (start_line, end_line) = self.get_line_numbers(node, unit_index);
 
         Some(GraphBlockInfo {
-            name: name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
+            name: display_name,
             kind: format!("{:?}", kind),
             file_path,
             source_code,

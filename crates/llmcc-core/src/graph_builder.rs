@@ -254,10 +254,10 @@ impl<'tcx> ProjectGraph<'tcx> {
         result
     }
 
-    pub fn find_related_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
+    pub fn find_dpends_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
         let mut visited = HashSet::new();
         let mut stack = vec![node];
-        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
+        let relations = vec![BlockRelation::DependsOn];
 
         while let Some(current) = stack.pop() {
             if visited.contains(&current) {

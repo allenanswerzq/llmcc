@@ -1612,3 +1612,149 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The test mainly verifies that collection works with this code pattern
     // The actual graph-level dependencies will be tested elsewhere
 }
+
+#[test]
+fn debug_field_dependency_creation() {
+    let source = r#"
+struct Arena<'tcx>;
+
+struct CompileCtxt<'tcx> {
+    pub arena: Arena<'tcx>,
+}
+"#;
+
+    let (_, unit, collection) = compile(source);
+
+    let arena_symbol = struct_symbol(unit, &collection, "Arena");
+    let compile_ctxt_symbol = struct_symbol(unit, &collection, "CompileCtxt");
+
+    // Debug output
+    println!(
+        "Arena symbol: {:?} (kind: {:?})",
+        arena_symbol.id,
+        arena_symbol.kind()
+    );
+    println!(
+        "CompileCtxt symbol: {:?} (kind: {:?})",
+        compile_ctxt_symbol.id,
+        compile_ctxt_symbol.kind()
+    );
+    println!(
+        "CompileCtxt dependencies: {:?}",
+        compile_ctxt_symbol.depends.borrow()
+    );
+
+    // CompileCtxt should depend on Arena (field type)
+    assert_relation(compile_ctxt_symbol, arena_symbol);
+}
+
+#[test]
+fn field_dependencies_with_imports() {
+    let source = r#"
+mod ir {
+    pub struct Arena<'tcx>;
+}
+
+mod interner {
+    pub struct InternPool;
+}
+
+use crate::ir::Arena;
+use crate::interner::InternPool;
+
+struct CompileCtxt<'tcx> {
+    pub arena: Arena<'tcx>,
+    pub interner: InternPool,
+}
+"#;
+
+    let (_, unit, collection) = compile(source);
+
+    let arena_symbol = struct_symbol(unit, &collection, "Arena");
+    let intern_pool_symbol = struct_symbol(unit, &collection, "InternPool");
+    let compile_ctxt_symbol = struct_symbol(unit, &collection, "CompileCtxt");
+
+    // Debug output
+    println!(
+        "Arena symbol: {:?} (FQN: {})",
+        arena_symbol.id,
+        arena_symbol.fqn_name.borrow()
+    );
+    println!(
+        "InternPool symbol: {:?} (FQN: {})",
+        intern_pool_symbol.id,
+        intern_pool_symbol.fqn_name.borrow()
+    );
+    println!(
+        "CompileCtxt symbol: {:?} (FQN: {})",
+        compile_ctxt_symbol.id,
+        compile_ctxt_symbol.fqn_name.borrow()
+    );
+    println!(
+        "CompileCtxt dependencies: {:?}",
+        compile_ctxt_symbol.depends.borrow()
+    );
+
+    // CompileCtxt should depend on Arena and InternPool even when imported
+    assert_relation(compile_ctxt_symbol, arena_symbol);
+    assert_relation(compile_ctxt_symbol, intern_pool_symbol);
+}
+
+#[test]
+fn field_reference_types_create_dependencies() {
+    let source = r#"
+struct File;
+struct Tree;
+
+struct CompileCtxt<'tcx> {
+    pub files: Vec<File>,
+    pub trees: Vec<Option<Tree>>,
+}
+
+struct CompileUnit<'tcx> {
+    pub cc: &'tcx CompileCtxt<'tcx>,
+    pub index: usize,
+}
+
+fn uses_compile_unit(unit: &CompileUnit) -> &File {
+    &unit.cc.files[unit.index]
+}
+"#;
+
+    let (_, unit, collection) = compile(source);
+
+    let file_symbol = struct_symbol(unit, &collection, "File");
+    let tree_symbol = struct_symbol(unit, &collection, "Tree");
+    let compile_ctxt_symbol = struct_symbol(unit, &collection, "CompileCtxt");
+    let compile_unit_symbol = struct_symbol(unit, &collection, "CompileUnit");
+    let uses_symbol = function_symbol(unit, &collection, "uses_compile_unit");
+
+    // Debug output
+    println!("File symbol: {:?}", file_symbol.id);
+    println!("Tree symbol: {:?}", tree_symbol.id);
+    println!("CompileCtxt symbol: {:?}", compile_ctxt_symbol.id);
+    println!("CompileUnit symbol: {:?}", compile_unit_symbol.id);
+    println!(
+        "CompileCtxt dependencies: {:?}",
+        compile_ctxt_symbol.depends.borrow()
+    );
+    println!(
+        "CompileUnit dependencies: {:?}",
+        compile_unit_symbol.depends.borrow()
+    );
+    println!(
+        "uses_compile_unit dependencies: {:?}",
+        uses_symbol.depends.borrow()
+    );
+
+    // CompileCtxt should depend on File and Tree (field types inside Vec/Option)
+    assert_relation(compile_ctxt_symbol, file_symbol);
+    assert_relation(compile_ctxt_symbol, tree_symbol);
+
+    // CompileUnit should depend on CompileCtxt (field type)
+    assert_relation(compile_unit_symbol, compile_ctxt_symbol);
+
+    // Function should depend on the types it uses
+    assert_relation(uses_symbol, compile_unit_symbol);
+    assert_relation(uses_symbol, file_symbol);
+}
