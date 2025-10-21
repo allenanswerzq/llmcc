@@ -8,7 +8,6 @@ use crate::graph_builder::{GraphNode, ProjectGraph};
 /// - given a file name, extract important structures (functions, types, etc.)
 ///
 /// Output format: plain text suitable for LLM ingestion
-
 /// Represents a semantic code block from the project graph
 #[derive(Debug, Clone)]
 pub struct GraphBlockInfo {
@@ -289,6 +288,19 @@ impl<'tcx> ProjectQuery<'tcx> {
     fn node_to_block_info(&self, node: GraphNode) -> Option<GraphBlockInfo> {
         let (unit_index, name, kind) = self.graph.block_info(node.block_id)?;
 
+        // Try to get the fully qualified name from the symbol if available
+        let display_name =
+            if let Some(symbol) = self.graph.cc.find_symbol_by_block_id(node.block_id) {
+                let fqn = symbol.fqn_name.borrow();
+                if !fqn.is_empty() && *fqn != symbol.name {
+                    fqn.clone()
+                } else {
+                    name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
+                }
+            } else {
+                name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
+            };
+
         // Get file path from compile context
         let file_path = self
             .graph
@@ -304,7 +316,7 @@ impl<'tcx> ProjectQuery<'tcx> {
         let (start_line, end_line) = self.get_line_numbers(node, unit_index);
 
         Some(GraphBlockInfo {
-            name: name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
+            name: display_name,
             kind: format!("{:?}", kind),
             file_path,
             source_code,
