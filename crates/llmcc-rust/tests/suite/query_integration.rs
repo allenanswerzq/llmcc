@@ -273,7 +273,7 @@ fn test_query_find_related_recursive() {
     "#]);
 
     let query = ProjectQuery::new(&graph);
-    let results = query.find_related_recursive("root");
+    let results = query.find_depends_recursive("root");
 
     // Should find root as primary
     assert!(!results.primary.is_empty(), "Should find 'root' function");

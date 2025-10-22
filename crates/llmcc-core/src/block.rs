@@ -16,9 +16,12 @@ declare_arena!([
     blk_const: BlockConst<'tcx>,
 ]);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,
+)]
 #[strum(serialize_all = "snake_case")]
 pub enum BlockKind {
+    #[default]
     Undefined,
     Root,
     Func,
@@ -30,12 +33,6 @@ pub enum BlockKind {
     Impl,
     Field,
     Scope,
-}
-
-impl Default for BlockKind {
-    fn default() -> Self {
-        BlockKind::Undefined
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -149,18 +146,15 @@ impl BlockId {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,
+)]
 #[strum(serialize_all = "snake_case")]
 pub enum BlockRelation {
+    #[default]
     Unknown,
     DependedBy,
     DependsOn,
-}
-
-impl Default for BlockRelation {
-    fn default() -> Self {
-        BlockRelation::Unknown
-    }
 }
 
 #[derive(Debug, Clone)]

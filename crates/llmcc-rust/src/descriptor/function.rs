@@ -65,7 +65,7 @@ impl FunctionDescriptor {
         let header_text = unit
             .file()
             .get_text(ts_node.start_byte(), name_node.start_byte());
-        let fn_index = header_text.rfind("fn").unwrap_or_else(|| header_text.len());
+        let fn_index = header_text.rfind("fn").unwrap_or(header_text.len());
         let header_clean = clean(&header_text[..fn_index]);
 
         // let owner = SymbolOwner::from_ts_node(unit, ts_node);

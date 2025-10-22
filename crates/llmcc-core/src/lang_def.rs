@@ -24,7 +24,7 @@ macro_rules! define_tokens {
         use llmcc_core::context::CompileUnit;
         use llmcc_core::ir::HirNode;
 
-        crate::paste::paste! {
+        $crate::paste::paste! {
             /// Language context for HIR processing
             #[derive(Debug)]
             pub struct [<Lang $suffix>] {}

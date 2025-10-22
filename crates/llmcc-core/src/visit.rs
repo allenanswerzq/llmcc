@@ -41,7 +41,7 @@ pub trait HirVisitor<'v> {
             HirKind::Undefined => self.visit_undefined(node, parent),
             HirKind::Identifier => self.visit_ident(node, parent),
             _ => {
-                todo!("{}", node.format_node(self.unit()))
+                eprintln!("Unhandled node kind: {}", node.format_node(self.unit()));
             }
         }
     }

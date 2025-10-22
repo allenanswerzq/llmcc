@@ -203,9 +203,7 @@ fn parse_chain<'tcx>(
                     .child_by_field_name("arguments")
                     .map(|args| parse_arguments(unit, args))
                     .unwrap_or_default();
-                let Some(function_node) = node.child_by_field_name("function") else {
-                    return None;
-                };
+                let function_node = node.child_by_field_name("function")?;
                 node = function_node;
             }
             "generic_function" => {
@@ -213,9 +211,7 @@ fn parse_chain<'tcx>(
                     .child_by_field_name("type_arguments")
                     .map(|n| parse_type_arguments(unit, n))
                     .unwrap_or_default();
-                let Some(inner_function) = node.child_by_field_name("function") else {
-                    return None;
-                };
+                let inner_function = node.child_by_field_name("function")?;
                 node = inner_function;
             }
             "field_expression" => {
@@ -230,9 +226,7 @@ fn parse_chain<'tcx>(
                     generics,
                     arguments,
                 });
-                let Some(argument_node) = node.child_by_field_name("value") else {
-                    return None;
-                };
+                let argument_node = node.child_by_field_name("value")?;
                 node = argument_node;
             }
             _ => {
