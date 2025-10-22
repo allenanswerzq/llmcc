@@ -14,4 +14,6 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 
 ## run
 
-```cargo run -- tests/test.rs```
+eg. find all depends of symbol `Codex` under codex-rs/core folder
+
+```cargo run -- --dir ../codex/codex-rs/core --query Codex --recursive```
