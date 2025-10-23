@@ -182,7 +182,7 @@ impl<'tcx> DeclCollector<'tcx> {
 
         let symbol = scoped_symbol.or_else(|| self.scopes.scoped_symbol());
         self.scopes.push_with_symbol(scope, symbol);
-        self.visit_children(&node);
+        self.visit_children(node);
         self.scopes.pop_until(depth);
     }
 }
@@ -357,7 +357,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             }
             self.visit_children_new_scope(&node, Some(symbol));
         } else {
-            dbg!(&node);
+            eprintln!("Failed to create struct descriptor for: {:?}", node);
             self.visit_children(&node);
         }
     }

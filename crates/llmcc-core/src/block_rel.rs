@@ -16,17 +16,17 @@ impl BlockRelationMap {
         let mut relations = self.relations.borrow_mut();
         relations
             .entry(from)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .entry(relation)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(to);
     }
 
     /// Add multiple relationships of the same type from one block
     pub fn add_relation_impls(&self, from: BlockId, relation: BlockRelation, targets: &[BlockId]) {
         let mut relations = self.relations.borrow_mut();
-        let block_relations = relations.entry(from).or_insert_with(HashMap::new);
-        let relation_vec = block_relations.entry(relation).or_insert_with(Vec::new);
+        let block_relations = relations.entry(from).or_default();
+        let relation_vec = block_relations.entry(relation).or_default();
         relation_vec.extend_from_slice(targets);
     }
 
@@ -84,7 +84,7 @@ impl BlockRelationMap {
             .borrow()
             .get(&from)
             .and_then(|block_relations| block_relations.get(&relation))
-            .map(|targets| targets.clone())
+            .cloned()
             .unwrap_or_default()
     }
 
@@ -110,8 +110,8 @@ impl BlockRelationMap {
     /// Add a relation if it doesn't already exist (optimized: single borrow)
     pub fn add_relation_if_not_exists(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
         let mut relations = self.relations.borrow_mut();
-        let block_relations = relations.entry(from).or_insert_with(HashMap::new);
-        let targets = block_relations.entry(relation).or_insert_with(Vec::new);
+        let block_relations = relations.entry(from).or_default();
+        let targets = block_relations.entry(relation).or_default();
         if !targets.contains(&to) {
             targets.push(to);
         }
@@ -122,19 +122,19 @@ impl BlockRelationMap {
         let mut relations = self.relations.borrow_mut();
 
         // Add caller -> callee (DependsOn)
-        let caller_relations = relations.entry(caller).or_insert_with(HashMap::new);
+        let caller_relations = relations.entry(caller).or_default();
         let caller_targets = caller_relations
             .entry(BlockRelation::DependsOn)
-            .or_insert_with(Vec::new);
+            .or_default();
         if !caller_targets.contains(&callee) {
             caller_targets.push(callee);
         }
 
         // Add callee -> caller (DependedBy)
-        let callee_relations = relations.entry(callee).or_insert_with(HashMap::new);
+        let callee_relations = relations.entry(callee).or_default();
         let callee_targets = callee_relations
             .entry(BlockRelation::DependedBy)
-            .or_insert_with(Vec::new);
+            .or_default();
         if !callee_targets.contains(&caller) {
             callee_targets.push(caller);
         }
@@ -184,22 +184,24 @@ impl BlockRelationMap {
     /// Get statistics about relationships
     pub fn stats(&self) -> RelationStats {
         let relations = self.relations.borrow();
-        let mut stats = RelationStats::default();
-
-        stats.total_blocks = relations.len();
+        let mut total_relations = 0;
+        let mut by_relation: HashMap<BlockRelation, usize> = HashMap::new();
 
         for block_relations in relations.values() {
             for (&relation, targets) in block_relations.iter() {
-                stats
-                    .by_relation
+                by_relation
                     .entry(relation)
                     .and_modify(|count| *count += targets.len())
-                    .or_insert(targets.len());
-                stats.total_relations += targets.len();
+                    .or_insert_with(|| targets.len());
+                total_relations += targets.len();
             }
         }
 
-        stats
+        RelationStats {
+            total_blocks: relations.len(),
+            total_relations,
+            by_relation,
+        }
     }
 
     /// Clear all relationships

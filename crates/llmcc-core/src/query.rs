@@ -84,7 +84,7 @@ impl QueryResult {
             output.push_str(" ------------- PRIMARY RESULTS ------------------- \n");
             for block in &self.primary {
                 output.push_str(&block.format_for_llm());
-                output.push_str("\n");
+                output.push('\n');
             }
         }
 
@@ -92,7 +92,7 @@ impl QueryResult {
             output.push_str(" -------------- DEPENDS ON (Dependencies) ----------------- \n");
             for block in &self.depends {
                 output.push_str(&block.format_for_llm());
-                output.push_str("\n");
+                output.push('\n');
             }
         }
 
@@ -100,7 +100,7 @@ impl QueryResult {
             output.push_str(" -------------- DEPENDED BY (Dependents) ----------------- \n");
             for block in &self.depended {
                 output.push_str(&block.format_for_llm());
-                output.push_str("\n");
+                output.push('\n');
             }
         }
 

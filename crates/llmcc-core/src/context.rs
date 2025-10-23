@@ -25,7 +25,7 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     pub fn tree(&self) -> &'tcx Tree {
-        &self.cc.trees[self.index].as_ref().unwrap()
+        self.cc.trees[self.index].as_ref().unwrap()
     }
 
     /// Access the shared string interner.
@@ -79,7 +79,7 @@ impl<'tcx> CompileUnit<'tcx> {
             .hir_map
             .borrow()
             .get(&id)
-            .map(|parented| parented.node.clone())
+            .map(|parented| parented.node)
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -303,20 +303,21 @@ impl BlockIndexMaps {
         if let Some(ref name) = block_name {
             self.block_name_index
                 .entry(name.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((unit_index, block_kind, block_id));
         }
 
         // Insert into unit_index_map
-        self.unit_index_map
-            .entry(unit_index)
-            .or_insert_with(Vec::new)
-            .push((block_name.clone(), block_kind, block_id));
+        self.unit_index_map.entry(unit_index).or_default().push((
+            block_name.clone(),
+            block_kind,
+            block_id,
+        ));
 
         // Insert into block_kind_index
         self.block_kind_index
             .entry(block_kind)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push((unit_index, block_name, block_id));
     }
 
@@ -486,12 +487,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             .build();
 
         for entry in walker {
-            let entry: ignore::DirEntry = entry.map_err(|e| {
-                std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to walk directory: {}", e),
-                )
-            })?;
+            let entry: ignore::DirEntry = entry
+                .map_err(|e| std::io::Error::other(format!("Failed to walk directory: {}", e)))?;
             let path = entry.path();
 
             if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {

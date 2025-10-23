@@ -73,7 +73,7 @@ fn example_recursive_dependencies() {
     "#]);
 
     let query = ProjectQuery::new(&graph);
-    let results = query.find_related_recursive("root");
+    let results = query.find_depends_recursive("root");
     let llm_output = results.format_for_llm();
 
     println!("\n=== EXAMPLE 2: Recursive Dependencies ===");
@@ -101,7 +101,7 @@ fn example_complex_dependencies() {
     "#]);
 
     let query = ProjectQuery::new(&graph);
-    let results = query.find_related_recursive("process_request");
+    let results = query.find_depends_recursive("process_request");
     let llm_output = results.format_for_llm();
 
     println!("\n=== EXAMPLE 3: Complex Dependencies ===");
@@ -130,7 +130,7 @@ fn example_shared_dependencies() {
     "#]);
 
     let query = ProjectQuery::new(&graph);
-    let results = query.find_related_recursive("coordinator");
+    let results = query.find_depends_recursive("coordinator");
     let llm_output = results.format_for_llm();
 
     println!("\n=== EXAMPLE 4: Shared Dependencies ===");
@@ -229,7 +229,7 @@ fn example_http_handler() {
     "#]);
 
     let query = ProjectQuery::new(&graph);
-    let results = query.find_related_recursive("handle_http_request");
+    let results = query.find_depends_recursive("handle_http_request");
     let llm_output = results.format_for_llm();
 
     println!("\n=== EXAMPLE 7: HTTP Handler (Practical) ===");

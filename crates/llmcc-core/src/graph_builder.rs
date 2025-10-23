@@ -567,10 +567,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     edges.add_relation(from_block, to_block);
                 }
                 let target_unit = target_symbol.unit_index();
-                if target_unit.is_some() && target_unit != Some(self.unit.index) {
-                    if unresolved.insert(dep_id) {
-                        self.unit.add_unresolved_symbol(target_symbol);
-                    }
+                if target_unit.is_some()
+                    && target_unit != Some(self.unit.index)
+                    && unresolved.insert(dep_id)
+                {
+                    self.unit.add_unresolved_symbol(target_symbol);
                 }
                 return;
             }
@@ -599,8 +600,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             self.children_stack.push(Vec::new());
             self.visit_children(node, id);
 
-            let children = self.children_stack.pop().unwrap();
-            children
+            self.children_stack.pop().unwrap()
         } else {
             Vec::new()
         };
@@ -660,13 +660,13 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
 ) -> Result<UnitGraph, Box<dyn std::error::Error>> {
     let root_hir = unit
         .file_start_hir_id()
-        .ok_or_else(|| "missing file start HIR id")?;
+        .ok_or("missing file start HIR id")?;
     let mut builder = GraphBuilder::<L>::new(unit);
     let root_node = unit.hir_node(root_hir);
     builder.visit_node(root_node, BlockId::ROOT_PARENT);
 
     let root_block = builder.root;
-    let root_block = root_block.ok_or_else(|| "graph builder produced no root")?;
+    let root_block = root_block.ok_or("graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
     Ok(UnitGraph::new(unit_index, root_block, edges))
 }
