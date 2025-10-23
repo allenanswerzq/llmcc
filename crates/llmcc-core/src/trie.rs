@@ -15,9 +15,7 @@ struct SymbolTrieNode<'tcx> {
 
 impl<'tcx> SymbolTrieNode<'tcx> {
     fn child_mut(&mut self, key: InternedStr) -> &mut SymbolTrieNode<'tcx> {
-        self.children
-            .entry(key)
-            .or_insert_with(SymbolTrieNode::default)
+        self.children.entry(key).or_default()
     }
 
     fn add_symbol(&mut self, symbol: &'tcx Symbol) {
@@ -84,6 +82,7 @@ impl<'tcx> SymbolTrie<'tcx> {
         self.root = SymbolTrieNode::default();
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn collect_symbols(&self, node: &SymbolTrieNode<'tcx>, out: &mut Vec<&'tcx Symbol>) {
         out.extend(node.symbols.iter().copied());
         for child in node.children.values() {
@@ -101,6 +100,7 @@ impl<'tcx> SymbolTrie<'tcx> {
         results
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn count_symbols(&self, node: &SymbolTrieNode<'tcx>) -> usize {
         let mut total = node.symbols.len();
         for child in node.children.values() {

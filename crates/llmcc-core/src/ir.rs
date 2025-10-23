@@ -17,9 +17,12 @@ declare_arena!([
     scope: Scope<'tcx>,
 ]);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,
+)]
 #[strum(serialize_all = "snake_case")]
 pub enum HirKind {
+    #[default]
     Undefined,
     Error,
     File,
@@ -30,14 +33,9 @@ pub enum HirKind {
     Identifier,
 }
 
-impl Default for HirKind {
-    fn default() -> Self {
-        HirKind::Undefined
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub enum HirNode<'hir> {
+    #[default]
     Undefined,
     Root(&'hir HirRoot<'hir>),
     Text(&'hir HirText<'hir>),
@@ -45,12 +43,6 @@ pub enum HirNode<'hir> {
     Scope(&'hir HirScope<'hir>),
     File(&'hir HirFile<'hir>),
     Ident(&'hir HirIdent<'hir>),
-}
-
-impl<'hir> Default for HirNode<'hir> {
-    fn default() -> Self {
-        HirNode::Undefined
-    }
 }
 
 impl<'hir> HirNode<'hir> {
@@ -333,7 +325,7 @@ impl<'hir> HirScope<'hir> {
 
     pub fn owner_name(&self) -> String {
         if let Some(id) = self.ident {
-            return id.name.clone();
+            id.name.clone()
         } else {
             "unamed_scope".to_string()
         }

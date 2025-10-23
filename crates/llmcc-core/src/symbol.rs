@@ -130,8 +130,7 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn pop(&mut self) -> Option<&'tcx Scope<'tcx>> {
-        let popped = self.stack.pop();
-        popped
+        self.stack.pop()
     }
 
     pub fn pop_until(&mut self, depth: usize) {
@@ -173,7 +172,7 @@ impl<'tcx> ScopeStack<'tcx> {
 
     fn scope_for_insertion(&mut self, global: bool) -> Result<&'tcx Scope<'tcx>, &'static str> {
         if global {
-            self.stack.get(0).copied().ok_or("no global scope exists")
+            self.stack.first().copied().ok_or("no global scope exists")
         } else {
             self.stack
                 .last()
@@ -357,7 +356,7 @@ impl Symbol {
             return;
         }
         let mut deps = self.depends.borrow_mut();
-        if deps.iter().any(|existing| *existing == sym_id) {
+        if deps.contains(&sym_id) {
             return;
         }
         deps.push(sym_id);
@@ -368,7 +367,7 @@ impl Symbol {
             return;
         }
         let mut deps = self.depended.borrow_mut();
-        if deps.iter().any(|existing| *existing == sym_id) {
+        if deps.contains(&sym_id) {
             return;
         }
         deps.push(sym_id);
@@ -388,11 +387,11 @@ impl Symbol {
     }
 }
 
-fn select_symbol<'a>(
-    candidates: Vec<&'a Symbol>,
+fn select_symbol(
+    candidates: Vec<&Symbol>,
     kind: Option<SymbolKind>,
     file: Option<usize>,
-) -> Option<&'a Symbol> {
+) -> Option<&Symbol> {
     if candidates.is_empty() {
         return None;
     }
