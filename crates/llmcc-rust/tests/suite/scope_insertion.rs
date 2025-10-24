@@ -1,9 +1,8 @@
+use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::{InternPool, InternedStr};
 use llmcc_core::ir::HirKind;
 use llmcc_core::symbol::{Scope, ScopeStack};
-use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, CollectionResult, CompileCtxt, CompileUnit, LangRust,
-};
+use llmcc_rust::{build_llmcc_ir, collect_symbols, CollectionResult, CompileCtxt, LangRust};
 
 struct Fixture<'tcx> {
     cc: &'tcx CompileCtxt<'tcx>,
