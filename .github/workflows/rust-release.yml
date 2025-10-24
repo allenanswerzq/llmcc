@@ -1,0 +1,82 @@
+name: Rust Release
+
+on:
+  push:
+    tags:
+      - 'rust-v*'
+      - 'llmcc-core-v*'
+      - 'llmcc-rust-v*'
+      - 'llmcc-python-v*'
+      - 'llmcc-bindings-v*'
+      - 'llmcc-v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Extract crate and version from tag
+        id: tag_info
+        run: |
+          TAG="${{ github.ref_name }}"
+          # Extract version from tag (e.g., llmcc-core-v0.2.0 -> 0.2.0)
+          VERSION=${TAG##*-v}
+          # Extract crate name from tag (e.g., llmcc-core-v0.2.0 -> llmcc-core)
+          CRATE=${TAG%-v*}
+          echo "crate=$CRATE" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Verify crate exists
+        run: |
+          if [[ "${{ steps.tag_info.outputs.crate }}" == "llmcc" ]]; then
+            cargo metadata --manifest-path crates/llmcc/Cargo.toml > /dev/null
+          else
+            cargo metadata --manifest-path crates/${{ steps.tag_info.outputs.crate }}/Cargo.toml > /dev/null
+          fi
+
+      - name: Verify build
+        run: |
+          if [[ "${{ steps.tag_info.outputs.crate }}" == "llmcc" ]]; then
+            cargo build --release -p llmcc
+          else
+            cargo build --release -p ${{ steps.tag_info.outputs.crate }}
+          fi
+
+      - name: Test
+        run: |
+          if [[ "${{ steps.tag_info.outputs.crate }}" == "llmcc" ]]; then
+            cargo test --release -p llmcc
+          else
+            cargo test --release -p ${{ steps.tag_info.outputs.crate }}
+          fi
+
+      - name: Publish to crates.io
+        run: |
+          if [[ "${{ steps.tag_info.outputs.crate }}" == "llmcc" ]]; then
+            cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc
+          else
+            cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p ${{ steps.tag_info.outputs.crate }}
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          body: |
+            Released ${{ steps.tag_info.outputs.crate }} version ${{ steps.tag_info.outputs.version }}
+
+            See [crates.io](https://crates.io/crates/${{ steps.tag_info.outputs.crate }}) for details.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
