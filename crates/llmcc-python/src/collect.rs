@@ -53,7 +53,7 @@ impl<'tcx> DeclCollector<'tcx> {
             if parent_fqn.is_empty() {
                 name.to_string()
             } else {
-                format!("{}.{}", parent_fqn.as_str(), name)
+                format!("{}::{}", parent_fqn.as_str(), name)
             }
         } else {
             name.to_string()
