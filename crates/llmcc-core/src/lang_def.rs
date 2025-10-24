@@ -15,8 +15,8 @@ pub trait LanguageTrait {
     fn name_field() -> u16;
     fn type_field() -> u16;
 
-    fn do_collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
-    fn do_bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
+    fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
+    fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
 }
 
 #[macro_export]
@@ -102,11 +102,11 @@ macro_rules! define_tokens {
                     Self::field_type
                 }
 
-                fn do_collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
+                fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
                     let _ = collect_symbols(unit, globals);
                 }
 
-                fn do_bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
+                fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
                     let _ = bind_symbols(unit, globals);
                 }
             }
