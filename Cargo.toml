@@ -5,7 +5,7 @@ members = [
     "crates/llmcc-core",
     "crates/llmcc-rust",
     "crates/llmcc-python",
-    "crates/debug-python-ast",
+    "crates/llmcc-bindings",
 ]
 default-members = ["crates/llmcc"]
 
@@ -22,6 +22,7 @@ edition = "2021"
 llmcc-core = { path = "crates/llmcc-core" }
 llmcc-rust = { path = "crates/llmcc-rust" }
 llmcc-python = { path = "crates/llmcc-python" }
+llmcc-bindings = { path = "crates/llmcc-bindings" }
 
 #
 # External crates
@@ -38,6 +39,9 @@ string-interner = "0.19"
 ignore = "0.4"
 clap = { version = "4.5", features = ["derive"] }
 rayon = "1.10"
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py38"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 
 [workspace.lints.rust]

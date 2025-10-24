@@ -72,13 +72,13 @@ fn run_main<L: LanguageTrait>(args: &Args) -> Result<(), Box<dyn std::error::Err
 
     for (index, _path) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
-        L::do_collect_symbols(unit, globals);
+        L::collect_symbols(unit, globals);
     }
 
     let mut pg = ProjectGraph::new(&cc);
     for (index, _path) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
-        L::do_bind_symbols(unit, globals);
+        L::bind_symbols(unit, globals);
         let unit_graph = build_llmcc_graph::<L>(unit, index)?;
 
         if args.print_graph {
