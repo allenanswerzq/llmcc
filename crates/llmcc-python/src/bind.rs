@@ -93,39 +93,10 @@ impl<'tcx> SymbolBinder<'tcx> {
         // Use HIR children instead of tree-sitter children
         for child_id in node.children() {
             let child = self.unit.hir_node(*child_id);
-            self.visit_node(&child);
+            self.visit_node(child);
         }
     }
 
-    fn visit_node(&mut self, node: &HirNode<'tcx>) {
-        let kind = node.kind();
-        let ts_node = node.inner_ts_node();
-        let kind_id = ts_node.kind_id();
-
-        match kind {
-            llmcc_core::ir::HirKind::Scope => {
-                if kind_id == LangPython::function_definition
-                    || kind_id == LangPython::class_definition
-                {
-                    self.visit_definition_node(node, &[]);
-                } else if kind_id == LangPython::decorated_definition {
-                    self.visit_decorated_def(node);
-                } else {
-                    self.visit_children(node);
-                }
-            }
-            llmcc_core::ir::HirKind::Internal => {
-                if kind_id == LangPython::call {
-                    self.visit_call_impl(node);
-                } else {
-                    self.visit_children(node);
-                }
-            }
-            _ => {
-                self.visit_children(node);
-            }
-        }
-    }
     fn visit_decorated_def(&mut self, node: &HirNode<'tcx>) {
         let mut decorator_symbols = Vec::new();
         let mut definition_idx = None;
@@ -170,6 +141,8 @@ impl<'tcx> SymbolBinder<'tcx> {
             let content = self.unit.file().content();
             let record_target = |name: &str, this: &mut SymbolBinder<'tcx>| {
                 let key = this.interner().intern(name);
+
+                // First try to find in current scoped context (for method calls)
                 if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Function))
                 {
                     this.add_symbol_relation(Some(target));
@@ -185,14 +158,62 @@ impl<'tcx> SymbolBinder<'tcx> {
                     return true;
                 }
 
+                // Try to find a struct (class) constructor call
                 if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct)) {
                     this.add_symbol_relation(Some(target));
                     return true;
                 }
 
+                // For method calls (self.method()), try looking up within parent class
+                // If current symbol is a method, parent is the class
+                if let Some(current) = this.current_symbol() {
+                    if current.kind() == SymbolKind::Function {
+                        let fqn = current.fqn_name.borrow();
+                        // Split "ClassName.method_name" to get class name
+                        if let Some(dot_pos) = fqn.rfind('.') {
+                            let class_name = &fqn[..dot_pos];
+                            // Build the method FQN: "ClassName.method_name"
+                            let method_fqn = format!("{}.{}", class_name, name);
+                            // Look up the method with no kind filter first
+                            if let Some(target) = this.scopes.find_global_suffix_with_filters(
+                                &[this.interner().intern(&method_fqn)],
+                                None,
+                                None,
+                            ) {
+                                if target.kind() == SymbolKind::Function {
+                                    this.add_symbol_relation(Some(target));
+                                    let caller_name = fqn.clone();
+                                    let target_name = target.fqn_name.borrow().clone();
+                                    this.calls.push(CallBinding {
+                                        caller: caller_name,
+                                        target: target_name,
+                                    });
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // If not found, try looking with no kind filter (generic lookup)
+                if let Some(target) = this.lookup_symbol_suffix(&[key], None) {
+                    this.add_symbol_relation(Some(target));
+                    if target.kind() == SymbolKind::Function {
+                        let caller_name = this
+                            .current_symbol()
+                            .map(|s| s.fqn_name.borrow().clone())
+                            .unwrap_or_else(|| "<module>".to_string());
+                        let target_name = target.fqn_name.borrow().clone();
+                        this.calls.push(CallBinding {
+                            caller: caller_name,
+                            target: target_name,
+                        });
+                    }
+                    return true;
+                }
+
                 false
             };
-
             let handled = match func_node.kind_id() {
                 id if id == LangPython::identifier => {
                     if let Ok(name) = func_node.utf8_text(&content) {
@@ -202,6 +223,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                     }
                 }
                 id if id == LangPython::attribute => {
+                    // For attribute access (e.g., self.method()), extract the method name
                     if let Some(attr_node) = func_node.child_by_field_name("attribute") {
                         if let Ok(name) = attr_node.utf8_text(&content) {
                             record_target(name, self)
@@ -351,12 +373,17 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
         };
 
         let key = self.interner().intern(&ident.name);
-        let symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Function));
+        let mut symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Function));
 
         // Get the parent symbol before pushing a new scope
         let parent_symbol = self.current_symbol();
 
         if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+            // If symbol not found by lookup, get it from the scope
+            if symbol.is_none() {
+                symbol = scope.symbol();
+            }
+
             let depth = self.scopes.depth();
             self.scopes.push_with_symbol(scope, symbol);
 
@@ -394,9 +421,14 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
         };
 
         let key = self.interner().intern(&ident.name);
-        let symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct));
+        let mut symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct));
 
         if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+            // If symbol not found by lookup, get it from the scope
+            if symbol.is_none() {
+                symbol = scope.symbol();
+            }
+
             let depth = self.scopes.depth();
             self.scopes.push_with_symbol(scope, symbol);
 
