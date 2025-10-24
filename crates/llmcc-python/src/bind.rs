@@ -170,10 +170,10 @@ impl<'tcx> SymbolBinder<'tcx> {
                     if current.kind() == SymbolKind::Function {
                         let fqn = current.fqn_name.borrow();
                         // Split "ClassName.method_name" to get class name
-                        if let Some(dot_pos) = fqn.rfind('.') {
+                        if let Some(dot_pos) = fqn.rfind("::") {
                             let class_name = &fqn[..dot_pos];
                             // Build the method FQN: "ClassName.method_name"
-                            let method_fqn = format!("{}.{}", class_name, name);
+                            let method_fqn = format!("{}::{}", class_name, name);
                             // Look up the method with no kind filter first
                             if let Some(target) = this.scopes.find_global_suffix_with_filters(
                                 &[this.interner().intern(&method_fqn)],

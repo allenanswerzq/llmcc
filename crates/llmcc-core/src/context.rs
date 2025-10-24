@@ -495,6 +495,10 @@ impl<'tcx> CompileCtxt<'tcx> {
                 if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
                     files.push(file);
                 }
+            } else if path.extension().and_then(|ext| ext.to_str()) == Some("py") {
+                if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
+                    files.push(file);
+                }
             }
         }
 
