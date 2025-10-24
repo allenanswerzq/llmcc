@@ -1,5 +1,7 @@
+use crate::context::CompileUnit;
 use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
+use crate::symbol::Scope;
 
 use tree_sitter::Tree;
 
@@ -12,6 +14,9 @@ pub trait LanguageTrait {
     fn is_valid_token(kind_id: u16) -> bool;
     fn name_field() -> u16;
     fn type_field() -> u16;
+
+    fn do_collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
+    fn do_bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
 }
 
 #[macro_export]
@@ -23,6 +28,10 @@ macro_rules! define_tokens {
         use llmcc_core::lang_def::LanguageTrait;
         use llmcc_core::context::CompileUnit;
         use llmcc_core::ir::HirNode;
+        use llmcc_core::symbol::Scope;
+
+        use crate::collect::collect_symbols;
+        use crate::bind::bind_symbols;
 
         $crate::paste::paste! {
             /// Language context for HIR processing
@@ -91,6 +100,14 @@ macro_rules! define_tokens {
 
                 fn type_field() -> u16 {
                     Self::field_type
+                }
+
+                fn do_collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
+                    let _ = collect_symbols(unit, globals);
+                }
+
+                fn do_bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
+                    let _ = bind_symbols(unit, globals);
                 }
             }
 
