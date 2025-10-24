@@ -1,7 +1,7 @@
 use std::mem;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirIdent, HirKind, HirNode};
+use llmcc_core::ir::{HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::descriptor::class::PythonClassDescriptor;
@@ -119,62 +119,37 @@ impl<'tcx> DeclCollector<'tcx> {
 
     fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
         let depth = self.scopes.depth();
-        let scope = self.unit.opt_get_scope(node.hir_id());
-
-        if let Some(scope) = scope {
-            self.scopes.push_with_symbol(scope, symbol);
-            self.visit_children(node);
-            self.scopes.pop_until(depth);
-        } else {
-            self.visit_children(node);
-        }
+        // Allocate scope for this node
+        let scope = self.unit.alloc_scope(node.hir_id());
+        self.scopes.push_with_symbol(scope, symbol);
+        self.visit_children(node);
+        self.scopes.pop_until(depth);
     }
 
     fn visit_children(&mut self, node: &HirNode<'tcx>) {
-        let mut cursor = node.inner_ts_node().walk();
-
-        for child in node.inner_ts_node().children(&mut cursor) {
-            if let Some(child_hir) = self.unit.opt_hir_node(llmcc_core::HirId(child.id() as u32)) {
-                self.visit_node(&child_hir);
-            }
+        for id in node.children() {
+            let child = self.unit.hir_node(*id);
+            self.visit_node(&child);
         }
     }
 
     fn visit_node(&mut self, node: &HirNode<'tcx>) {
-        let kind = node.kind();
+        let kind_id = node.kind_id();
 
-        match kind {
-            HirKind::Scope => {
-                let ts_node = node.inner_ts_node();
-                let kind_id = ts_node.kind_id();
-
-                if kind_id == LangPython::function_definition {
-                    self.visit_function_def(node);
-                } else if kind_id == LangPython::class_definition {
-                    self.visit_class_def(node);
-                } else if kind_id == LangPython::decorated_definition {
-                    self.visit_decorated_def(node);
-                } else {
-                    self.visit_children(node);
-                }
-            }
-            HirKind::Internal => {
-                let ts_node = node.inner_ts_node();
-                let kind_id = ts_node.kind_id();
-
-                if kind_id == LangPython::import_statement {
-                    self.visit_import_statement(node);
-                } else if kind_id == LangPython::import_from {
-                    self.visit_import_from(node);
-                } else if kind_id == LangPython::assignment {
-                    self.visit_assignment(node);
-                } else {
-                    self.visit_children(node);
-                }
-            }
-            _ => {
-                self.visit_children(node);
-            }
+        if kind_id == LangPython::function_definition {
+            self.visit_function_def(node);
+        } else if kind_id == LangPython::class_definition {
+            self.visit_class_def(node);
+        } else if kind_id == LangPython::decorated_definition {
+            self.visit_decorated_def(node);
+        } else if kind_id == LangPython::import_statement {
+            self.visit_import_statement(node);
+        } else if kind_id == LangPython::import_from {
+            self.visit_import_from(node);
+        } else if kind_id == LangPython::assignment {
+            self.visit_assignment(node);
+        } else {
+            self.visit_children(node);
         }
     }
 
@@ -182,7 +157,21 @@ impl<'tcx> DeclCollector<'tcx> {
         if let Some((symbol, ident, _fqn)) =
             self.create_new_symbol(node, LangPython::field_name, true, SymbolKind::Function)
         {
-            let func = PythonFunctionDescriptor::new(ident.name.clone());
+            let mut func = PythonFunctionDescriptor::new(ident.name.clone());
+
+            // Extract parameters and return type using AST walking methods
+            for child_id in node.children() {
+                let child = self.unit.hir_node(*child_id);
+                let kind_id = child.kind_id();
+
+                if kind_id == LangPython::parameters {
+                    func.extract_parameters_from_ast(&child, self.unit);
+                }
+            }
+
+            // Extract return type by walking the AST
+            func.extract_return_type_from_ast(node, self.unit);
+
             self.functions.push(func);
             self.visit_children_scope(node, Some(symbol));
         }
@@ -192,15 +181,110 @@ impl<'tcx> DeclCollector<'tcx> {
         if let Some((symbol, ident, _fqn)) =
             self.create_new_symbol(node, LangPython::field_name, true, SymbolKind::Struct)
         {
-            let class = PythonClassDescriptor::new(ident.name.clone());
+            let mut class = PythonClassDescriptor::new(ident.name.clone());
+
+            // Look for base classes and body
+            for child_id in node.children() {
+                let child = self.unit.hir_node(*child_id);
+                let kind_id = child.kind_id();
+
+                if kind_id == LangPython::argument_list {
+                    // These are base classes
+                    self.extract_base_classes(&child, &mut class);
+                } else if kind_id == LangPython::block {
+                    // This is the class body
+                    self.extract_class_members(&child, &mut class);
+                }
+            }
+
             self.classes.push(class);
             self.visit_children_scope(node, Some(symbol));
         }
     }
 
+    fn extract_base_classes(
+        &mut self,
+        arg_list_node: &HirNode<'tcx>,
+        class: &mut PythonClassDescriptor,
+    ) {
+        for child_id in arg_list_node.children() {
+            let child = self.unit.hir_node(*child_id);
+            if child.kind_id() == LangPython::identifier {
+                if let Some(ident) = child.as_ident() {
+                    class.add_base_class(ident.name.clone());
+                }
+            }
+        }
+    }
+
+    fn extract_class_members(
+        &mut self,
+        body_node: &HirNode<'tcx>,
+        class: &mut PythonClassDescriptor,
+    ) {
+        for child_id in body_node.children() {
+            let child = self.unit.hir_node(*child_id);
+            let kind_id = child.kind_id();
+
+            if kind_id == LangPython::function_definition {
+                // This is a method
+                if let Some(name_node) = child.opt_child_by_field(self.unit, LangPython::field_name)
+                {
+                    if let Some(ident) = name_node.as_ident() {
+                        class.add_method(ident.name.clone());
+                    }
+                }
+            } else if kind_id == LangPython::assignment {
+                // This is a field (assignment at class level)
+                if let Some(left_node) = child.opt_child_by_field(self.unit, LangPython::field_left)
+                {
+                    if let Some(ident) = left_node.as_ident() {
+                        use crate::descriptor::class::ClassField;
+                        class.add_field(ClassField::new(ident.name.clone()));
+                    }
+                }
+            }
+        }
+    }
+
     fn visit_decorated_def(&mut self, node: &HirNode<'tcx>) {
-        // For now, just recurse - decorated definitions are processed as their underlying definition
+        // decorated_definition contains decorators followed by the actual definition (function or class)
+        let mut decorators = Vec::new();
+        let mut definition_idx = None;
+
+        for (idx, child_id) in node.children().iter().enumerate() {
+            let child = self.unit.hir_node(*child_id);
+            let kind_id = child.kind_id();
+
+            if kind_id == LangPython::decorator {
+                // Extract decorator name
+                // A decorator is usually just an identifier or a call expression
+                // For now, extract the text of the decorator
+                let decorator_text = self.unit.get_text(
+                    child.inner_ts_node().start_byte(),
+                    child.inner_ts_node().end_byte(),
+                );
+                if !decorator_text.is_empty() {
+                    decorators.push(decorator_text.trim_start_matches('@').trim().to_string());
+                }
+            } else if kind_id == LangPython::function_definition
+                || kind_id == LangPython::class_definition
+            {
+                definition_idx = Some(idx);
+            }
+        }
+
+        // Visit the decorated definition and apply decorators to the last collected function/class
         self.visit_children(node);
+
+        // Apply decorators to the last function or class that was added
+        if !decorators.is_empty() {
+            if let Some(last_func) = self.functions.last_mut() {
+                last_func.decorators = decorators.clone();
+            } else if let Some(last_class) = self.classes.last_mut() {
+                // Could apply to class if needed
+            }
+        }
     }
 
     fn visit_import_statement(&mut self, node: &HirNode<'tcx>) {
@@ -225,8 +309,9 @@ impl<'tcx> DeclCollector<'tcx> {
 
     fn visit_assignment(&mut self, node: &HirNode<'tcx>) {
         // Handle: x = value
+        // In tree-sitter, the "left" side of assignment is the target
         if let Some((_symbol, ident, _)) =
-            self.create_new_symbol(node, LangPython::field_name, false, SymbolKind::Variable)
+            self.create_new_symbol(node, LangPython::field_left, false, SymbolKind::Variable)
         {
             use crate::descriptor::variable::VariableScope;
             let var = VariableDescriptor::new(ident.name.clone(), VariableScope::FunctionLocal);
@@ -241,8 +326,10 @@ pub fn collect_symbols<'tcx>(
 ) -> CollectionResult {
     let mut collector = DeclCollector::new(unit, globals);
 
-    if let Some(root) = unit.opt_hir_node(llmcc_core::HirId(0)) {
-        collector.visit_children(&root);
+    if let Some(file_start_id) = unit.file_start_hir_id() {
+        if let Some(root) = unit.opt_hir_node(file_start_id) {
+            collector.visit_node(&root);
+        }
     }
 
     CollectionResult {
