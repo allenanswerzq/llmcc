@@ -1,0 +1,128 @@
+name: Rust Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Extract version from tag
+        id: tag_info
+        run: |
+          TAG="${{ github.ref_name }}"
+          # Extract version from tag (e.g., v0.2.0 -> 0.2.0)
+          VERSION=${TAG#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build all crates
+        run: cargo build --release
+
+      - name: Test all crates
+        run: cargo test --release
+
+      - name: Set up wait helper function
+        run: |
+          cat > /tmp/wait-for-crate.sh << 'EOF'
+          #!/bin/bash
+          # Helper function to wait for a crate to be available on crates.io
+          # Usage: wait_for_crate <crate-name> <version>
+          wait_for_crate() {
+            local crate=$1
+            local version=$2
+            local max_attempts=30
+            local attempt=0
+
+            echo "⏳ Waiting for $crate v$version..."
+
+            while [ $attempt -lt $max_attempts ]; do
+              if cargo search "$crate" --limit 1 | grep -q "$crate = \"$version\""; then
+                echo "✓ $crate v$version is available on crates.io"
+                return 0
+              fi
+              attempt=$((attempt + 1))
+              echo "  Attempt $attempt/$max_attempts..."
+              sleep 2
+            done
+
+            echo "⚠️ $crate v$version not yet available, continuing anyway"
+            return 0
+          }
+
+          export -f wait_for_crate
+          EOF
+          chmod +x /tmp/wait-for-crate.sh
+          source /tmp/wait-for-crate.sh
+
+      - name: Publish llmcc-core to crates.io
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-core
+
+      - name: Wait for llmcc-core to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-core" "${{ steps.tag_info.outputs.version }}"
+
+      - name: Publish llmcc-rust to crates.io
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-rust
+
+      - name: Wait for llmcc-rust to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-rust" "${{ steps.tag_info.outputs.version }}"
+
+      - name: Publish llmcc-python to crates.io
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-python
+
+      - name: Wait for llmcc-python to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-python" "${{ steps.tag_info.outputs.version }}"
+
+      - name: Publish llmcc-bindings to crates.io
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-bindings
+
+      - name: Wait for llmcc-bindings to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-bindings" "${{ steps.tag_info.outputs.version }}"
+
+      - name: Publish llmcc (CLI) to crates.io
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc
+
+      - name: Wait for llmcc (CLI) to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc" "${{ steps.tag_info.outputs.version }}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          body: |
+            Released llmcc version ${{ steps.tag_info.outputs.version }}
+
+            Includes:
+            - llmcc-core
+            - llmcc-rust
+            - llmcc-python
+            - llmcc-bindings
+            - llmcc (CLI)
+
+            See [crates.io](https://crates.io/crates/llmcc) for details.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
