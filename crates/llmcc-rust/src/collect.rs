@@ -1,7 +1,7 @@
 use std::mem;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirBase, HirIdent, HirKind, HirNode};
+use llmcc_core::ir::{HirBase, HirId, HirIdent, HirKind, HirNode};
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::descriptor::function::parse_type_expr;
@@ -9,7 +9,6 @@ use crate::descriptor::{
     CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
     VariableDescriptor,
 };
-use crate::ir::HirId;
 use crate::token::{AstVisitorRust, LangRust};
 
 /// DeclCollector collects all symbol declarations (functions, structs, enums, variables, etc.)
