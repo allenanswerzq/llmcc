@@ -42,8 +42,6 @@ impl PythonFunctionDescriptor {
         params_node: &llmcc_core::ir::HirNode<'tcx>,
         unit: llmcc_core::context::CompileUnit<'tcx>,
     ) {
-        use llmcc_core::ir::HirIdent;
-
         // Iterate through direct children of parameters node
         for child_id in params_node.children() {
             let child = unit.hir_node(*child_id);

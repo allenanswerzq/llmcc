@@ -8,6 +8,7 @@ use crate::descriptor::class::PythonClassDescriptor;
 use crate::descriptor::function::PythonFunctionDescriptor;
 use crate::descriptor::import::ImportDescriptor;
 use crate::descriptor::variable::VariableDescriptor;
+use crate::token::AstVisitorPython;
 use crate::token::LangPython;
 
 #[derive(Debug)]
@@ -129,76 +130,7 @@ impl<'tcx> DeclCollector<'tcx> {
     fn visit_children(&mut self, node: &HirNode<'tcx>) {
         for id in node.children() {
             let child = self.unit.hir_node(*id);
-            self.visit_node(&child);
-        }
-    }
-
-    fn visit_node(&mut self, node: &HirNode<'tcx>) {
-        let kind_id = node.kind_id();
-
-        if kind_id == LangPython::function_definition {
-            self.visit_function_def(node);
-        } else if kind_id == LangPython::class_definition {
-            self.visit_class_def(node);
-        } else if kind_id == LangPython::decorated_definition {
-            self.visit_decorated_def(node);
-        } else if kind_id == LangPython::import_statement {
-            self.visit_import_statement(node);
-        } else if kind_id == LangPython::import_from {
-            self.visit_import_from(node);
-        } else if kind_id == LangPython::assignment {
-            self.visit_assignment(node);
-        } else {
-            self.visit_children(node);
-        }
-    }
-
-    fn visit_function_def(&mut self, node: &HirNode<'tcx>) {
-        if let Some((symbol, ident, _fqn)) =
-            self.create_new_symbol(node, LangPython::field_name, true, SymbolKind::Function)
-        {
-            let mut func = PythonFunctionDescriptor::new(ident.name.clone());
-
-            // Extract parameters and return type using AST walking methods
-            for child_id in node.children() {
-                let child = self.unit.hir_node(*child_id);
-                let kind_id = child.kind_id();
-
-                if kind_id == LangPython::parameters {
-                    func.extract_parameters_from_ast(&child, self.unit);
-                }
-            }
-
-            // Extract return type by walking the AST
-            func.extract_return_type_from_ast(node, self.unit);
-
-            self.functions.push(func);
-            self.visit_children_scope(node, Some(symbol));
-        }
-    }
-
-    fn visit_class_def(&mut self, node: &HirNode<'tcx>) {
-        if let Some((symbol, ident, _fqn)) =
-            self.create_new_symbol(node, LangPython::field_name, true, SymbolKind::Struct)
-        {
-            let mut class = PythonClassDescriptor::new(ident.name.clone());
-
-            // Look for base classes and body
-            for child_id in node.children() {
-                let child = self.unit.hir_node(*child_id);
-                let kind_id = child.kind_id();
-
-                if kind_id == LangPython::argument_list {
-                    // These are base classes
-                    self.extract_base_classes(&child, &mut class);
-                } else if kind_id == LangPython::block {
-                    // This is the class body
-                    self.extract_class_members(&child, &mut class);
-                }
-            }
-
-            self.classes.push(class);
-            self.visit_children_scope(node, Some(symbol));
+            self.visit_node(child);
         }
     }
 
@@ -227,32 +159,247 @@ impl<'tcx> DeclCollector<'tcx> {
             let kind_id = child.kind_id();
 
             if kind_id == LangPython::function_definition {
-                // This is a method
                 if let Some(name_node) = child.opt_child_by_field(self.unit, LangPython::field_name)
                 {
                     if let Some(ident) = name_node.as_ident() {
                         class.add_method(ident.name.clone());
                     }
                 }
+                self.extract_instance_fields_from_method(&child, class);
+            } else if kind_id == LangPython::decorated_definition {
+                if let Some(method_name) = self.extract_decorated_method_name(&child) {
+                    class.add_method(method_name);
+                }
+                if let Some(method_node) = self.method_node_from_decorated(&child) {
+                    self.extract_instance_fields_from_method(&method_node, class);
+                }
             } else if kind_id == LangPython::assignment {
-                // This is a field (assignment at class level)
-                if let Some(left_node) = child.opt_child_by_field(self.unit, LangPython::field_left)
-                {
-                    if let Some(ident) = left_node.as_ident() {
-                        use crate::descriptor::class::ClassField;
-                        class.add_field(ClassField::new(ident.name.clone()));
+                if let Some(field) = self.extract_class_field(&child) {
+                    self.upsert_class_field(class, field);
+                }
+            } else if kind_id == LangPython::expression_statement {
+                for stmt_child_id in child.children() {
+                    let stmt_child = self.unit.hir_node(*stmt_child_id);
+                    if stmt_child.kind_id() == LangPython::assignment {
+                        if let Some(field) = self.extract_class_field(&stmt_child) {
+                            self.upsert_class_field(class, field);
+                        }
                     }
                 }
             }
         }
     }
 
-    fn visit_decorated_def(&mut self, node: &HirNode<'tcx>) {
+    fn extract_decorated_method_name(&self, node: &HirNode<'tcx>) -> Option<String> {
+        for child_id in node.children() {
+            let child = self.unit.hir_node(*child_id);
+            if child.kind_id() == LangPython::function_definition {
+                if let Some(name_node) = child.opt_child_by_field(self.unit, LangPython::field_name)
+                {
+                    if let Some(ident) = name_node.as_ident() {
+                        return Some(ident.name.clone());
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn method_node_from_decorated(&self, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
+        for child_id in node.children() {
+            let child = self.unit.hir_node(*child_id);
+            if child.kind_id() == LangPython::function_definition {
+                return Some(child);
+            }
+        }
+        None
+    }
+
+    fn extract_class_field(
+        &self,
+        node: &HirNode<'tcx>,
+    ) -> Option<crate::descriptor::class::ClassField> {
+        let left_node = node.opt_child_by_field(self.unit, LangPython::field_left)?;
+        let ident = left_node.as_ident()?;
+
+        let mut field = crate::descriptor::class::ClassField::new(ident.name.clone());
+
+        let type_hint = node
+            .opt_child_by_field(self.unit, LangPython::field_type)
+            .and_then(|type_node| {
+                let text = self.unit.get_text(
+                    type_node.inner_ts_node().start_byte(),
+                    type_node.inner_ts_node().end_byte(),
+                );
+                let trimmed = text.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_string())
+                }
+            })
+            .or_else(|| {
+                for child_id in node.children() {
+                    let child = self.unit.hir_node(*child_id);
+                    if child.kind_id() == LangPython::type_node {
+                        let text = self.unit.get_text(
+                            child.inner_ts_node().start_byte(),
+                            child.inner_ts_node().end_byte(),
+                        );
+                        let trimmed = text.trim();
+                        if !trimmed.is_empty() {
+                            return Some(trimmed.to_string());
+                        }
+                    }
+                }
+                None
+            });
+
+        if let Some(type_hint) = type_hint {
+            field = field.with_type_hint(type_hint);
+        }
+
+        Some(field)
+    }
+
+    fn upsert_class_field(
+        &self,
+        class: &mut PythonClassDescriptor,
+        field: crate::descriptor::class::ClassField,
+    ) {
+        if let Some(existing) = class.fields.iter_mut().find(|f| f.name == field.name) {
+            if existing.type_hint.is_none() && field.type_hint.is_some() {
+                existing.type_hint = field.type_hint;
+            }
+        } else {
+            class.add_field(field);
+        }
+    }
+
+    fn extract_instance_fields_from_method(
+        &mut self,
+        method_node: &HirNode<'tcx>,
+        class: &mut PythonClassDescriptor,
+    ) {
+        self.collect_instance_fields_recursive(method_node, class);
+    }
+
+    fn collect_instance_fields_recursive(
+        &mut self,
+        node: &HirNode<'tcx>,
+        class: &mut PythonClassDescriptor,
+    ) {
+        if node.kind_id() == LangPython::assignment {
+            self.extract_instance_field_from_assignment(node, class);
+        }
+
+        for child_id in node.children() {
+            let child = self.unit.hir_node(*child_id);
+            self.collect_instance_fields_recursive(&child, class);
+        }
+    }
+
+    fn extract_instance_field_from_assignment(
+        &mut self,
+        node: &HirNode<'tcx>,
+        class: &mut PythonClassDescriptor,
+    ) {
+        let left_node = match node.opt_child_by_field(self.unit, LangPython::field_left) {
+            Some(node) => node,
+            None => return,
+        };
+
+        if left_node.kind_id() != LangPython::attribute {
+            return;
+        }
+
+        let mut identifier_names = Vec::new();
+        for child_id in left_node.children() {
+            let child = self.unit.hir_node(*child_id);
+            if child.kind_id() == LangPython::identifier {
+                if let Some(ident) = child.as_ident() {
+                    identifier_names.push(ident.name.clone());
+                }
+            }
+        }
+
+        if identifier_names.first().map(String::as_str) != Some("self") {
+            return;
+        }
+
+        let field_name = match identifier_names.last() {
+            Some(name) if name != "self" => name.clone(),
+            _ => return,
+        };
+
+        let field = crate::descriptor::class::ClassField::new(field_name);
+        self.upsert_class_field(class, field);
+    }
+}
+
+impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
+    fn unit(&self) -> CompileUnit<'tcx> {
+        self.unit
+    }
+
+    fn visit_source_file(&mut self, node: HirNode<'tcx>) {
+        self.visit_children_scope(&node, None);
+    }
+
+    fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
+        if let Some((symbol, ident, _fqn)) =
+            self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Function)
+        {
+            let mut func = PythonFunctionDescriptor::new(ident.name.clone());
+
+            // Extract parameters and return type using AST walking methods
+            for child_id in node.children() {
+                let child = self.unit.hir_node(*child_id);
+                let kind_id = child.kind_id();
+
+                if kind_id == LangPython::parameters {
+                    func.extract_parameters_from_ast(&child, self.unit);
+                }
+            }
+
+            // Extract return type by walking the AST
+            func.extract_return_type_from_ast(&node, self.unit);
+
+            self.functions.push(func);
+            self.visit_children_scope(&node, Some(symbol));
+        }
+    }
+
+    fn visit_class_definition(&mut self, node: HirNode<'tcx>) {
+        if let Some((symbol, ident, _fqn)) =
+            self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
+        {
+            let mut class = PythonClassDescriptor::new(ident.name.clone());
+
+            // Look for base classes and body
+            for child_id in node.children() {
+                let child = self.unit.hir_node(*child_id);
+                let kind_id = child.kind_id();
+
+                if kind_id == LangPython::argument_list {
+                    // These are base classes
+                    self.extract_base_classes(&child, &mut class);
+                } else if kind_id == LangPython::block {
+                    // This is the class body
+                    self.extract_class_members(&child, &mut class);
+                }
+            }
+
+            self.classes.push(class);
+            self.visit_children_scope(&node, Some(symbol));
+        }
+    }
+
+    fn visit_decorated_definition(&mut self, node: HirNode<'tcx>) {
         // decorated_definition contains decorators followed by the actual definition (function or class)
         let mut decorators = Vec::new();
-        let mut definition_idx = None;
 
-        for (idx, child_id) in node.children().iter().enumerate() {
+        for child_id in node.children() {
             let child = self.unit.hir_node(*child_id);
             let kind_id = child.kind_id();
 
@@ -267,56 +414,54 @@ impl<'tcx> DeclCollector<'tcx> {
                 if !decorator_text.is_empty() {
                     decorators.push(decorator_text.trim_start_matches('@').trim().to_string());
                 }
-            } else if kind_id == LangPython::function_definition
-                || kind_id == LangPython::class_definition
-            {
-                definition_idx = Some(idx);
             }
         }
 
         // Visit the decorated definition and apply decorators to the last collected function/class
-        self.visit_children(node);
+        self.visit_children(&node);
 
         // Apply decorators to the last function or class that was added
         if !decorators.is_empty() {
             if let Some(last_func) = self.functions.last_mut() {
                 last_func.decorators = decorators.clone();
-            } else if let Some(last_class) = self.classes.last_mut() {
-                // Could apply to class if needed
             }
         }
     }
 
-    fn visit_import_statement(&mut self, node: &HirNode<'tcx>) {
+    fn visit_import_statement(&mut self, node: HirNode<'tcx>) {
         // Handle: import os, sys, etc.
         let mut cursor = node.inner_ts_node().walk();
 
         for child in node.inner_ts_node().children(&mut cursor) {
             if child.kind() == "dotted_name" || child.kind() == "identifier" {
                 let text = self.unit.get_text(child.start_byte(), child.end_byte());
-                let mut _import =
+                let _import =
                     ImportDescriptor::new(text, crate::descriptor::import::ImportKind::Simple);
                 self.imports.push(_import);
             }
         }
     }
 
-    fn visit_import_from(&mut self, _node: &HirNode<'tcx>) {
+    fn visit_import_from(&mut self, _node: HirNode<'tcx>) {
         // Handle: from x import y
         // This is more complex - we need to parse module and names
         // For now, simple implementation
     }
 
-    fn visit_assignment(&mut self, node: &HirNode<'tcx>) {
+    fn visit_assignment(&mut self, node: HirNode<'tcx>) {
         // Handle: x = value
         // In tree-sitter, the "left" side of assignment is the target
         if let Some((_symbol, ident, _)) =
-            self.create_new_symbol(node, LangPython::field_left, false, SymbolKind::Variable)
+            self.create_new_symbol(&node, LangPython::field_left, false, SymbolKind::Variable)
         {
             use crate::descriptor::variable::VariableScope;
             let var = VariableDescriptor::new(ident.name.clone(), VariableScope::FunctionLocal);
             self.variables.push(var);
         }
+    }
+
+    fn visit_unknown(&mut self, node: HirNode<'tcx>) {
+        self.visit_children(&node);
     }
 }
 
@@ -324,13 +469,10 @@ pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
 ) -> CollectionResult {
+    let root = unit.file_start_hir_id().unwrap();
+    let node = unit.hir_node(root);
     let mut collector = DeclCollector::new(unit, globals);
-
-    if let Some(file_start_id) = unit.file_start_hir_id() {
-        if let Some(root) = unit.opt_hir_node(file_start_id) {
-            collector.visit_node(&root);
-        }
-    }
+    collector.visit_node(node);
 
     CollectionResult {
         functions: collector.take_functions(),

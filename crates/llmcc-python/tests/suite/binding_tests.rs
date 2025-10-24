@@ -28,6 +28,7 @@ fn compile(
     (cc, unit, collection, globals)
 }
 
+#[allow(dead_code)]
 fn find_function<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
@@ -35,6 +36,7 @@ fn find_function<'a>(
     collection.functions.iter().find(|desc| desc.name == name)
 }
 
+#[allow(dead_code)]
 fn find_function_unwrap<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
@@ -42,6 +44,7 @@ fn find_function_unwrap<'a>(
     find_function(collection, name).expect(&format!("function '{}' not found", name))
 }
 
+#[allow(dead_code)]
 fn find_class<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
@@ -49,6 +52,7 @@ fn find_class<'a>(
     collection.classes.iter().find(|desc| desc.name == name)
 }
 
+#[allow(dead_code)]
 fn find_class_unwrap<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,

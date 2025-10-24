@@ -32,6 +32,7 @@ fn expect_class<'a>(collection: &'a CollectionResult, name: &str) -> &'a PythonC
         .unwrap_or_else(|| panic!("Class '{name}' should be found in collection"))
 }
 
+#[allow(dead_code)]
 fn expect_variable<'a>(collection: &'a CollectionResult, name: &str) -> &'a VariableDescriptor {
     collection
         .variables

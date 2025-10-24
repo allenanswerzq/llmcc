@@ -3,7 +3,7 @@ use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
-use crate::token::LangPython;
+use crate::token::{AstVisitorPython, LangPython};
 
 #[derive(Debug, Default)]
 pub struct BindingResult {
@@ -107,67 +107,8 @@ impl<'tcx> SymbolBinder<'tcx> {
                 if kind_id == LangPython::function_definition
                     || kind_id == LangPython::class_definition
                 {
-                    // Enter scope for function/class
-                    // Look up the symbol for this function/class
-                    if let Some(name_node) =
-                        node.opt_child_by_field(self.unit, LangPython::field_name)
-                    {
-                        if let Some(ident) = name_node.as_ident() {
-                            let key = self.interner().intern(&ident.name);
-                            let file_index = self.unit.index;
-                            let symbol = self
-                                .scopes
-                                .find_scoped_suffix_with_filters(&[key], None, Some(file_index))
-                                .or_else(|| {
-                                    self.scopes
-                                        .find_scoped_suffix_with_filters(&[key], None, None)
-                                })
-                                .or_else(|| {
-                                    self.scopes.find_global_suffix_with_filters(
-                                        &[key],
-                                        None,
-                                        Some(file_index),
-                                    )
-                                })
-                                .or_else(|| {
-                                    self.scopes
-                                        .find_global_suffix_with_filters(&[key], None, None)
-                                });
-
-                            // Check parent symbol BEFORE pushing new scope
-                            let parent_symbol = self.scopes.scoped_symbol();
-
-                            let scope = self.unit.opt_get_scope(node.hir_id());
-                            if let Some(scope) = scope {
-                                let depth = self.scopes.depth();
-                                self.scopes.push_with_symbol(scope, symbol);
-
-                                // If this is a method (function inside a class), add class->method dependency
-                                if kind_id == LangPython::function_definition {
-                                    if let Some(method_sym) = symbol {
-                                        // Check if the parent scope symbol is a class
-                                        if let Some(class_sym) = parent_symbol {
-                                            if class_sym.kind() == SymbolKind::Struct {
-                                                // This is a method inside a class
-                                                class_sym.add_dependency(method_sym);
-                                            }
-                                        }
-                                    }
-                                }
-
-                                self.visit_children(node);
-                                self.scopes.pop_until(depth);
-                            } else {
-                                self.visit_children(node);
-                            }
-                        } else {
-                            self.visit_children(node);
-                        }
-                    } else {
-                        self.visit_children(node);
-                    }
+                    self.visit_definition_node(node, &[]);
                 } else if kind_id == LangPython::decorated_definition {
-                    // Handle decorated definitions
                     self.visit_decorated_def(node);
                 } else {
                     self.visit_children(node);
@@ -175,7 +116,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             }
             llmcc_core::ir::HirKind::Internal => {
                 if kind_id == LangPython::call {
-                    self.visit_call(node);
+                    self.visit_call_impl(node);
                 } else {
                     self.visit_children(node);
                 }
@@ -186,9 +127,6 @@ impl<'tcx> SymbolBinder<'tcx> {
         }
     }
     fn visit_decorated_def(&mut self, node: &HirNode<'tcx>) {
-        // Extract decorators and the decorated definition (function or class)
-        // A decorated_definition contains decorators followed by the actual function/class definition
-
         let mut decorator_symbols = Vec::new();
         let mut definition_idx = None;
 
@@ -197,10 +135,8 @@ impl<'tcx> SymbolBinder<'tcx> {
             let kind_id = child.kind_id();
 
             if kind_id == LangPython::decorator {
-                // Extract the decorator name
                 let content = self.unit.file().content();
                 let ts_node = child.inner_ts_node();
-                // Decorator text includes @, so we skip it
                 if let Ok(decorator_text) = ts_node.utf8_text(&content) {
                     let decorator_name = decorator_text.trim_start_matches('@').trim();
                     let key = self.interner().intern(decorator_name);
@@ -214,91 +150,282 @@ impl<'tcx> SymbolBinder<'tcx> {
                 || kind_id == LangPython::class_definition
             {
                 definition_idx = Some(idx);
-                break; // The definition is always after decorators
+                break;
             }
         }
 
-        // Now visit the definition and apply decorators inside its scope
         if let Some(idx) = definition_idx {
             let definition_id = node.children()[idx];
             let definition = self.unit.hir_node(definition_id);
-            let kind_id = definition.kind_id();
-
-            // Enter scope for function/class
-            if let Some(name_node) =
-                definition.opt_child_by_field(self.unit, LangPython::field_name)
-            {
-                if let Some(ident) = name_node.as_ident() {
-                    let key = self.interner().intern(&ident.name);
-                    let file_index = self.unit.index;
-                    let symbol = self
-                        .scopes
-                        .find_scoped_suffix_with_filters(&[key], None, Some(file_index))
-                        .or_else(|| {
-                            self.scopes
-                                .find_scoped_suffix_with_filters(&[key], None, None)
-                        })
-                        .or_else(|| {
-                            self.scopes.find_global_suffix_with_filters(
-                                &[key],
-                                None,
-                                Some(file_index),
-                            )
-                        })
-                        .or_else(|| {
-                            self.scopes
-                                .find_global_suffix_with_filters(&[key], None, None)
-                        });
-
-                    let scope = self.unit.opt_get_scope(definition.hir_id());
-                    if let Some(scope) = scope {
-                        let depth = self.scopes.depth();
-                        self.scopes.push_with_symbol(scope, symbol);
-
-                        // Apply decorators while in the function scope
-                        if let Some(decorated_symbol) = self.current_symbol() {
-                            for decorator_symbol in &decorator_symbols {
-                                decorated_symbol.add_dependency(decorator_symbol);
-                            }
-                        }
-
-                        self.visit_children(&definition);
-                        self.scopes.pop_until(depth);
-                    }
-                }
-            }
+            self.visit_definition_node(&definition, &decorator_symbols);
         }
     }
 
-    fn visit_call(&mut self, node: &HirNode<'tcx>) {
+    fn visit_call_impl(&mut self, node: &HirNode<'tcx>) {
         // Extract function being called
         let ts_node = node.inner_ts_node();
 
         // In tree-sitter-python, call has a `function` field
         if let Some(func_node) = ts_node.child_by_field_name("function") {
             let content = self.unit.file().content();
-            if let Ok(name) = func_node.utf8_text(&content) {
-                let key = self.interner().intern(name);
-                if let Some(target) = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Function))
+            let record_target = |name: &str, this: &mut SymbolBinder<'tcx>| {
+                let key = this.interner().intern(name);
+                if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Function))
                 {
-                    self.add_symbol_relation(Some(target));
-
-                    // Track the call
-                    let caller_name = self
+                    this.add_symbol_relation(Some(target));
+                    let caller_name = this
                         .current_symbol()
-                        .and_then(|s| Some(s.fqn_name.borrow().clone()))
+                        .map(|s| s.fqn_name.borrow().clone())
                         .unwrap_or_else(|| "<module>".to_string());
                     let target_name = target.fqn_name.borrow().clone();
-
-                    self.calls.push(CallBinding {
+                    this.calls.push(CallBinding {
                         caller: caller_name,
                         target: target_name,
                     });
+                    return true;
+                }
+
+                if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct)) {
+                    this.add_symbol_relation(Some(target));
+                    return true;
+                }
+
+                false
+            };
+
+            let handled = match func_node.kind_id() {
+                id if id == LangPython::identifier => {
+                    if let Ok(name) = func_node.utf8_text(&content) {
+                        record_target(name, self)
+                    } else {
+                        false
+                    }
+                }
+                id if id == LangPython::attribute => {
+                    if let Some(attr_node) = func_node.child_by_field_name("attribute") {
+                        if let Ok(name) = attr_node.utf8_text(&content) {
+                            record_target(name, self)
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            };
+
+            if !handled {
+                if let Ok(name) = func_node.utf8_text(&content) {
+                    let _ = record_target(name.trim(), self);
                 }
             }
         }
 
         self.visit_children(node);
+    }
+
+    fn visit_definition_node(&mut self, node: &HirNode<'tcx>, decorator_symbols: &[&'tcx Symbol]) {
+        let kind_id = node.kind_id();
+        let name_node = match node.opt_child_by_field(self.unit, LangPython::field_name) {
+            Some(name) => name,
+            None => {
+                self.visit_children(node);
+                return;
+            }
+        };
+
+        let ident = match name_node.as_ident() {
+            Some(ident) => ident,
+            None => {
+                self.visit_children(node);
+                return;
+            }
+        };
+
+        let key = self.interner().intern(&ident.name);
+        let preferred_kind = if kind_id == LangPython::function_definition {
+            Some(SymbolKind::Function)
+        } else if kind_id == LangPython::class_definition {
+            Some(SymbolKind::Struct)
+        } else {
+            None
+        };
+
+        let mut symbol = preferred_kind
+            .and_then(|kind| self.lookup_symbol_suffix(&[key], Some(kind)))
+            .or_else(|| self.lookup_symbol_suffix(&[key], None));
+
+        let parent_symbol = self.current_symbol();
+
+        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+            if symbol.is_none() {
+                symbol = scope.symbol();
+            }
+
+            let depth = self.scopes.depth();
+            self.scopes.push_with_symbol(scope, symbol);
+
+            if let Some(current_symbol) = self.current_symbol() {
+                if kind_id == LangPython::function_definition {
+                    if let Some(class_symbol) = parent_symbol {
+                        if class_symbol.kind() == SymbolKind::Struct {
+                            class_symbol.add_dependency(current_symbol);
+                        }
+                    }
+                } else if kind_id == LangPython::class_definition {
+                    self.add_base_class_dependencies(node, current_symbol);
+                }
+
+                for decorator_symbol in decorator_symbols {
+                    current_symbol.add_dependency(decorator_symbol);
+                }
+            }
+
+            self.visit_children(node);
+            self.scopes.pop_until(depth);
+        } else {
+            self.visit_children(node);
+        }
+    }
+
+    fn add_base_class_dependencies(&mut self, node: &HirNode<'tcx>, class_symbol: &Symbol) {
+        for child_id in node.children() {
+            let child = self.unit.hir_node(*child_id);
+            if child.kind_id() == LangPython::argument_list {
+                for base_id in child.children() {
+                    let base_node = self.unit.hir_node(*base_id);
+
+                    if let Some(ident) = base_node.as_ident() {
+                        let key = self.interner().intern(&ident.name);
+                        if let Some(base_symbol) =
+                            self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct))
+                        {
+                            class_symbol.add_dependency(base_symbol);
+                        }
+                    } else if base_node.kind_id() == LangPython::attribute {
+                        if let Some(attr_node) =
+                            base_node.inner_ts_node().child_by_field_name("attribute")
+                        {
+                            let content = self.unit.file().content();
+                            if let Ok(name) = attr_node.utf8_text(&content) {
+                                let key = self.interner().intern(name);
+                                if let Some(base_symbol) =
+                                    self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct))
+                                {
+                                    class_symbol.add_dependency(base_symbol);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
+    fn unit(&self) -> CompileUnit<'tcx> {
+        self.unit
+    }
+
+    fn visit_source_file(&mut self, node: HirNode<'tcx>) {
+        self.visit_children_scope(&node, None);
+    }
+
+    fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
+        let name_node = match node.opt_child_by_field(self.unit, LangPython::field_name) {
+            Some(n) => n,
+            None => {
+                self.visit_children(&node);
+                return;
+            }
+        };
+
+        let ident = match name_node.as_ident() {
+            Some(id) => id,
+            None => {
+                self.visit_children(&node);
+                return;
+            }
+        };
+
+        let key = self.interner().intern(&ident.name);
+        let symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Function));
+
+        // Get the parent symbol before pushing a new scope
+        let parent_symbol = self.current_symbol();
+
+        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+            let depth = self.scopes.depth();
+            self.scopes.push_with_symbol(scope, symbol);
+
+            if let Some(current_symbol) = self.current_symbol() {
+                // If parent is a class, class depends on method
+                if let Some(parent) = parent_symbol {
+                    if parent.kind() == SymbolKind::Struct {
+                        parent.add_dependency(current_symbol);
+                    }
+                }
+            }
+
+            self.visit_children(&node);
+            self.scopes.pop_until(depth);
+        } else {
+            self.visit_children(&node);
+        }
+    }
+
+    fn visit_class_definition(&mut self, node: HirNode<'tcx>) {
+        let name_node = match node.opt_child_by_field(self.unit, LangPython::field_name) {
+            Some(n) => n,
+            None => {
+                self.visit_children(&node);
+                return;
+            }
+        };
+
+        let ident = match name_node.as_ident() {
+            Some(id) => id,
+            None => {
+                self.visit_children(&node);
+                return;
+            }
+        };
+
+        let key = self.interner().intern(&ident.name);
+        let symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct));
+
+        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+            let depth = self.scopes.depth();
+            self.scopes.push_with_symbol(scope, symbol);
+
+            if let Some(current_symbol) = self.current_symbol() {
+                self.add_base_class_dependencies(&node, current_symbol);
+            }
+
+            self.visit_children(&node);
+            self.scopes.pop_until(depth);
+        } else {
+            self.visit_children(&node);
+        }
+    }
+
+    fn visit_decorated_definition(&mut self, node: HirNode<'tcx>) {
+        self.visit_decorated_def(&node);
+    }
+
+    fn visit_block(&mut self, node: HirNode<'tcx>) {
+        self.visit_children_scope(&node, None);
+    }
+
+    fn visit_call(&mut self, node: HirNode<'tcx>) {
+        // Delegate to the existing visit_call method
+        self.visit_call_impl(&node);
+    }
+
+    fn visit_unknown(&mut self, node: HirNode<'tcx>) {
+        self.visit_children(&node);
     }
 }
 
