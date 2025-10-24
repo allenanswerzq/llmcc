@@ -386,6 +386,72 @@ impl<'tcx> ProjectQuery<'tcx> {
         let start_byte = hir_node.start_byte();
         let end_byte = hir_node.end_byte();
 
+        // Special handling for Class blocks: filter out method implementations
+        if let crate::block::BasicBlock::Class(class_block) = bb {
+            return self.extract_class_definition(class_block, unit, file, start_byte, end_byte);
+        }
+
         file.opt_get_text(start_byte, end_byte)
+    }
+
+    /// Extract only the class definition without method implementations
+    /// This handles classes where methods are defined inside the class body (Python-style)
+    fn extract_class_definition(
+        &self,
+        class_block: &crate::block::BlockClass,
+        unit: crate::context::CompileUnit,
+        file: &crate::file::File,
+        class_start_byte: usize,
+        class_end_byte: usize,
+    ) -> Option<String> {
+        // Get the full class source
+        let full_text = file.opt_get_text(class_start_byte, class_end_byte)?;
+
+        // Collect byte positions of all methods (BlockKind::Func children)
+        let mut method_start_bytes = Vec::new();
+
+        for child_id in &class_block.base.children {
+            let child_bb = unit.opt_bb(*child_id)?;
+            let child_kind = child_bb.kind();
+
+            // If this child is a method (Func block), record its start byte
+            if child_kind == BlockKind::Func {
+                if let Some(child_base) = child_bb.base() {
+                    let child_node = child_base.node;
+                    let child_start = child_node.start_byte();
+                    if child_start > class_start_byte {
+                        method_start_bytes.push(child_start);
+                    }
+                }
+            }
+        }
+
+        // If there are no methods, return the full text
+        if method_start_bytes.is_empty() {
+            return Some(full_text);
+        }
+
+        // Find the byte position of the first method
+        method_start_bytes.sort();
+        let first_method_start = method_start_bytes[0];
+
+        // Calculate the offset relative to class start
+        let offset = first_method_start - class_start_byte;
+        if offset >= full_text.len() {
+            return Some(full_text);
+        }
+
+        // Extract text up to the first method
+        let class_def = full_text[..offset].to_string();
+
+        // Clean up trailing whitespace and incomplete lines
+        let trimmed = class_def.trim_end();
+
+        // Try to find the last complete line (before the first method starts)
+        if let Some(last_newline) = trimmed.rfind('\n') {
+            Some(trimmed[..=last_newline].to_string())
+        } else {
+            Some(trimmed.to_string())
+        }
     }
 }

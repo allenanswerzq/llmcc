@@ -302,18 +302,11 @@ impl<'blk> BlockCall<'blk> {
 pub struct BlockClass<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
-    pub fields: Vec<BlockId>,
-    pub methods: Vec<BlockId>,
 }
 
 impl<'blk> BlockClass<'blk> {
     pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self {
-            base,
-            name,
-            fields: Vec::new(),
-            methods: Vec::new(),
-        }
+        Self { base, name }
     }
 
     pub fn from_hir(
@@ -325,14 +318,6 @@ impl<'blk> BlockClass<'blk> {
         let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
-    }
-
-    pub fn add_field(&mut self, field_id: BlockId) {
-        self.fields.push(field_id);
-    }
-
-    pub fn add_method(&mut self, method_id: BlockId) {
-        self.methods.push(method_id);
     }
 }
 

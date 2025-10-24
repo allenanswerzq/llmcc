@@ -51,7 +51,10 @@ fn expect_import<'a>(collection: &'a CollectionResult, module: &str) -> &'a Impo
 
 #[test]
 fn collects_simple_function() {
-    let source = "def foo():\n    pass\n";
+    let source = r#"
+def foo():
+    pass
+"#;
     let result = collect_from_source(source);
 
     let func = expect_function(&result, "foo");
@@ -60,7 +63,10 @@ fn collects_simple_function() {
 
 #[test]
 fn collects_function_with_parameters() {
-    let source = "def greet(name, age=25):\n    pass\n";
+    let source = r#"
+def greet(name, age=25):
+    pass
+"#;
     let result = collect_from_source(source);
 
     let func = expect_function(&result, "greet");
@@ -79,7 +85,10 @@ fn collects_function_with_parameters() {
 
 #[test]
 fn collects_function_with_return_type_hint() {
-    let source = "def get_value() -> int:\n    return 42\n";
+    let source = r#"
+def get_value() -> int:
+    return 42
+"#;
     let result = collect_from_source(source);
 
     let func = expect_function(&result, "get_value");
@@ -92,7 +101,13 @@ fn collects_function_with_return_type_hint() {
 
 #[test]
 fn collects_multiple_functions() {
-    let source = "def func_one():\n    pass\n\ndef func_two():\n    pass\n";
+    let source = r#"
+def func_one():
+    pass
+
+def func_two():
+    pass
+"#;
     let result = collect_from_source(source);
 
     // Should collect valid function descriptors
@@ -107,7 +122,10 @@ fn collects_multiple_functions() {
 
 #[test]
 fn collects_simple_class() {
-    let source = "class MyClass:\n    pass\n";
+    let source = r#"
+class MyClass:
+    pass
+"#;
     let result = collect_from_source(source);
 
     let class = expect_class(&result, "MyClass");
@@ -116,7 +134,13 @@ fn collects_simple_class() {
 
 #[test]
 fn collects_class_with_methods() {
-    let source = "class Calculator:\n    def add(self, x, y):\n        pass\n    def subtract(self, x, y):\n        pass\n";
+    let source = r#"
+class Calculator:
+    def add(self, x, y):
+        pass
+    def subtract(self, x, y):
+        pass
+"#;
     let result = collect_from_source(source);
 
     let class = expect_class(&result, "Calculator");
@@ -129,7 +153,13 @@ fn collects_class_with_methods() {
 
 #[test]
 fn collects_class_with_inheritance() {
-    let source = "class Base:\n    pass\n\nclass Derived(Base):\n    pass\n";
+    let source = r#"
+class Base:
+    pass
+
+class Derived(Base):
+    pass
+"#;
     let result = collect_from_source(source);
 
     let derived = expect_class(&result, "Derived");
@@ -166,7 +196,11 @@ class Person:
 
 #[test]
 fn collects_global_variables() {
-    let source = "x = 42\ny = 'hello'\nz = [1, 2, 3]\n";
+    let source = r#"
+x = 42
+y = 'hello'
+z = [1, 2, 3]
+"#;
     let result = collect_from_source(source);
 
     // All collected variables should have valid structure
@@ -181,7 +215,9 @@ fn collects_global_variables() {
 
 #[test]
 fn collects_simple_import() {
-    let source = "import os\n";
+    let source = r#"
+import os
+"#;
     let result = collect_from_source(source);
 
     let import = expect_import(&result, "os");
@@ -190,7 +226,11 @@ fn collects_simple_import() {
 
 #[test]
 fn collects_multiple_imports() {
-    let source = "import os\nimport sys\nimport json\n";
+    let source = r#"
+import os
+import sys
+import json
+"#;
     let result = collect_from_source(source);
 
     // All collected imports should have valid structure
@@ -205,7 +245,11 @@ fn collects_multiple_imports() {
 
 #[test]
 fn collects_decorated_function() {
-    let source = "@decorator\ndef func():\n    pass\n";
+    let source = r#"
+@decorator
+def func():
+    pass
+"#;
     let result = collect_from_source(source);
 
     let func = expect_function(&result, "func");
@@ -223,7 +267,10 @@ fn collects_decorated_function() {
 
 #[test]
 fn collects_function_with_type_hints() {
-    let source = "def typed_func(name: str, age: int) -> bool:\n    pass\n";
+    let source = r#"
+def typed_func(name: str, age: int) -> bool:
+    pass
+"#;
     let result = collect_from_source(source);
 
     let func = expect_function(&result, "typed_func");
@@ -246,7 +293,9 @@ fn collects_function_with_type_hints() {
 
 #[test]
 fn collects_empty_module() {
-    let source = "# Just a comment\n";
+    let source = r#"
+# Just a comment
+"#;
     let result = collect_from_source(source);
 
     // Empty module should have empty collections
@@ -415,7 +464,10 @@ import os
 
 #[test]
 fn function_parameters_structure_valid() {
-    let source = "def func(a, b=10, *args, **kwargs):\n    pass\n";
+    let source = r#"
+def func(a, b=10, *args, **kwargs):
+    pass
+"#;
     let result = collect_from_source(source);
 
     let func = expect_function(&result, "func");
