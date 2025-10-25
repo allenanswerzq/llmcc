@@ -39,7 +39,7 @@ jobs:
           maturin-version: 'latest'
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist/*.whl
@@ -65,7 +65,7 @@ jobs:
           maturin-version: 'latest'
 
       - name: Upload sdist
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -85,7 +85,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist
@@ -121,7 +121,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: dist
 
