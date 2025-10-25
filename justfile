@@ -16,12 +16,12 @@ build-bindings: ensure-venv
 run-example: build-bindings
     . "{{venv}}/bin/activate" && python "{{root}}/examples/basic.py"
 
-release-stage version:
+release version:
     #!/bin/bash
     set -e
 
     VERSION="{{version}}"
-    BRANCH="release-v${VERSION}"
+    TAG="v${VERSION}"
 
     # Verify version format (e.g., 0.2.0)
     if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -31,12 +31,6 @@ release-stage version:
 
     echo "Preparing release v$VERSION"
     echo ""
-
-    # Check if branch already exists
-    if git show-ref --quiet refs/heads/"$BRANCH"; then
-        echo "Branch $BRANCH already exists!"
-        exit 1
-    fi
 
     # Update workspace version in root Cargo.toml
     echo ""
@@ -79,41 +73,11 @@ release-stage version:
     git commit -m "chore: bump version to $VERSION"
     git push origin main
 
-
-release-publish version:
-    #!/bin/bash
-    set -e
-
-    VERSION="{{version}}"
-    TAG="v${VERSION}"
-    BRANCH="release-v${VERSION}"
-
-    # Verify version format
-    if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "Invalid version format: $VERSION (expected e.g., 0.2.0)"
-        exit 1
-    fi
-
-    echo "Publishing release v$VERSION"
-    echo ""
-
-    # Verify we're on the release branch
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    if [ "$CURRENT_BRANCH" != "$BRANCH" ]; then
-        echo "Not on release branch! Current: $CURRENT_BRANCH, Expected: $BRANCH"
-        exit 1
-    fi
-
-    # Verify no uncommitted changes
-    if ! git diff-index --quiet HEAD --; then
-        echo "Uncommitted changes detected!"
-        git status
-        exit 1
-    fi
-
     echo "Pushing branch and tag to GitHub..."
+    git tag -a $TAG -m "Release $TAG"
     git push origin "$TAG"
 
     echo ""
     echo "Release $VERSION published!"
     echo ""
+
