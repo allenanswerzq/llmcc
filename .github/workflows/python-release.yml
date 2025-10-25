@@ -139,12 +139,11 @@ jobs:
           VERSION=${VERSION#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      # TODO: Publish to PyPI (future work)
-      # - name: Publish to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     password: ${{ secrets.PYPI_API_TOKEN }}
-      #     packages-dir: dist
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
@@ -160,7 +159,7 @@ jobs:
             Includes:
             - Rust bindings for llmcc-core, llmcc-rust, llmcc-python
 
-            Publishing to PyPI coming in future release.
+            See [PyPI](https://pypi.org/project/llmcc/) for details.
           draft: false
           prerelease: false
           files: dist/*

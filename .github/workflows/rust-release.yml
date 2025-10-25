@@ -34,104 +34,103 @@ jobs:
       - name: Test all crates
         run: cargo test --release
 
-      # TODO: Publish to crates.io (future work)
-      # - name: Set up wait helper function
-      #   run: |
-      #     cat > /tmp/wait-for-crate.sh << 'EOF'
-      #     #!/bin/bash
-      #     # Helper function to wait for a crate to be available on crates.io
-      #     # Usage: wait_for_crate <crate-name> <version>
-      #     wait_for_crate() {
-      #       local crate=$1
-      #       local version=$2
-      #       local max_attempts=30
-      #       local attempt=0
-      #
-      #       echo "[WAIT] Waiting for $crate v$version..."
-      #
-      #       while [ $attempt -lt $max_attempts ]; do
-      #         if cargo search "$crate" --limit 1 | grep -q "$crate = \"$version\""; then
-      #           echo "[OK] $crate v$version is available on crates.io"
-      #           return 0
-      #         fi
-      #         attempt=$((attempt + 1))
-      #         echo "  Attempt $attempt/$max_attempts..."
-      #         sleep 2
-      #       done
-      #
-      #       echo "[WARN] $crate v$version not yet available, continuing anyway"
-      #       return 0
-      #     }
-      #
-      #     export -f wait_for_crate
-      #     EOF
-      #     chmod +x /tmp/wait-for-crate.sh
-      #     source /tmp/wait-for-crate.sh
+      - name: Set up wait helper function
+        run: |
+          cat > /tmp/wait-for-crate.sh << 'EOF'
+          #!/bin/bash
+          # Helper function to wait for a crate to be available on crates.io
+          # Usage: wait_for_crate <crate-name> <version>
+          wait_for_crate() {
+            local crate=$1
+            local version=$2
+            local max_attempts=30
+            local attempt=0
 
-      # - name: Publish llmcc-core to crates.io
-      #   run: |
-      #     if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-      #       echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-      #       exit 1
-      #     fi
-      #     cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-core
+            echo "[WAIT] Waiting for $crate v$version..."
 
-      # - name: Wait for llmcc-core to be available
-      #   run: |
-      #     source /tmp/wait-for-crate.sh
-      #     wait_for_crate "llmcc-core" "${{ steps.tag_info.outputs.version }}"
+            while [ $attempt -lt $max_attempts ]; do
+              if cargo search "$crate" --limit 1 | grep -q "$crate = \"$version\""; then
+                echo "[OK] $crate v$version is available on crates.io"
+                return 0
+              fi
+              attempt=$((attempt + 1))
+              echo "  Attempt $attempt/$max_attempts..."
+              sleep 2
+            done
 
-      # - name: Publish llmcc-rust to crates.io
-      #   run: |
-      #     if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-      #       echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-      #       exit 1
-      #     fi
-      #     cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-rust
+            echo "[WARN] $crate v$version not yet available, continuing anyway"
+            return 0
+          }
 
-      # - name: Wait for llmcc-rust to be available
-      #   run: |
-      #     source /tmp/wait-for-crate.sh
-      #     wait_for_crate "llmcc-rust" "${{ steps.tag_info.outputs.version }}"
+          export -f wait_for_crate
+          EOF
+          chmod +x /tmp/wait-for-crate.sh
+          source /tmp/wait-for-crate.sh
 
-      # - name: Publish llmcc-python to crates.io
-      #   run: |
-      #     if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-      #       echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-      #       exit 1
-      #     fi
-      #     cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-python
+      - name: Publish llmcc-core to crates.io
+        run: |
+          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
+            exit 1
+          fi
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-core
 
-      # - name: Wait for llmcc-python to be available
-      #   run: |
-      #     source /tmp/wait-for-crate.sh
-      #     wait_for_crate "llmcc-python" "${{ steps.tag_info.outputs.version }}"
+      - name: Wait for llmcc-core to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-core" "${{ steps.tag_info.outputs.version }}"
 
-      # - name: Publish llmcc-bindings to crates.io
-      #   run: |
-      #     if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-      #       echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-      #       exit 1
-      #     fi
-      #     cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-bindings
+      - name: Publish llmcc-rust to crates.io
+        run: |
+          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
+            exit 1
+          fi
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-rust
 
-      # - name: Wait for llmcc-bindings to be available
-      #   run: |
-      #     source /tmp/wait-for-crate.sh
-      #     wait_for_crate "llmcc-bindings" "${{ steps.tag_info.outputs.version }}"
+      - name: Wait for llmcc-rust to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-rust" "${{ steps.tag_info.outputs.version }}"
 
-      # - name: Publish llmcc (CLI) to crates.io
-      #   run: |
-      #     if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-      #       echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-      #       exit 1
-      #     fi
-      #     cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc
+      - name: Publish llmcc-python to crates.io
+        run: |
+          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
+            exit 1
+          fi
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-python
 
-      # - name: Wait for llmcc (CLI) to be available
-      #   run: |
-      #     source /tmp/wait-for-crate.sh
-      #     wait_for_crate "llmcc" "${{ steps.tag_info.outputs.version }}"
+      - name: Wait for llmcc-python to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-python" "${{ steps.tag_info.outputs.version }}"
+
+      - name: Publish llmcc-bindings to crates.io
+        run: |
+          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
+            exit 1
+          fi
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-bindings
+
+      - name: Wait for llmcc-bindings to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc-bindings" "${{ steps.tag_info.outputs.version }}"
+
+      - name: Publish llmcc (CLI) to crates.io
+        run: |
+          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
+            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
+            exit 1
+          fi
+          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc
+
+      - name: Wait for llmcc (CLI) to be available
+        run: |
+          source /tmp/wait-for-crate.sh
+          wait_for_crate "llmcc" "${{ steps.tag_info.outputs.version }}"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
@@ -147,7 +146,7 @@ jobs:
             - llmcc-bindings
             - llmcc (CLI)
 
-            Publishing to crates.io coming in future release.
+            See [crates.io](https://crates.io/crates/llmcc) for details.
           draft: false
           prerelease: false
         env:
