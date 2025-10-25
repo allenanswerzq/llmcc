@@ -117,10 +117,6 @@ release-publish version:
         exit 1
     fi
 
-    echo ""
-    echo "Creating tag: $TAG"
-    git tag -a "$TAG" -m "Release llmcc v$VERSION"
-
     echo "Pushing branch and tag to GitHub..."
     git push origin "$TAG"
 
