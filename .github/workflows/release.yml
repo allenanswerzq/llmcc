@@ -236,7 +236,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: dist
+license = "Apache-2.0"A          path: dist
 
       - name: Debug directory structure
         shell: bash
@@ -339,7 +339,7 @@ jobs:
           find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
           find dist -type d -empty -delete
 
-      - name: Create GitHub release
+      - name: Create GitHub release (draft)
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
@@ -358,8 +358,17 @@ jobs:
               - Windows (x86_64)
 
             See [crates.io](https://crates.io/crates/llmcc) and [PyPI](https://pypi.org/project/llmcc/) for details.
-          draft: false
+          draft: true
           prerelease: false
           files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
