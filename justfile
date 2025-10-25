@@ -75,8 +75,9 @@ release-stage version:
 
     echo ""
     echo "Committing version bump..."
-    git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/setup.py
+    git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/setup.py {{root}}/Cargo.lock
     git commit -m "chore: bump version to $VERSION"
+    git push origin "$BRANCH"
 
 
 release-publish version:
@@ -110,14 +111,11 @@ release-publish version:
         exit 1
     fi
 
-    echo "ok: No uncommitted changes"
-
     echo ""
     echo "Creating tag: $TAG"
     git tag -a "$TAG" -m "Release llmcc v$VERSION"
 
     echo "Pushing branch and tag to GitHub..."
-    git push origin "$BRANCH"
     git push origin "$TAG"
 
     echo ""
