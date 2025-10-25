@@ -91,18 +91,41 @@ jobs:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist
 
+      - name: Debug directory structure
+        shell: bash
+        run: |
+          echo "Contents of dist directory:"
+          ls -laR dist || echo "dist directory not found"
+          find . -name "*.whl" -type f | head -20
+
       - name: Flatten dist directory
         shell: bash
         run: |
           mkdir -p wheels
-          find dist -type f -name "*.whl" -exec mv {} wheels/ \;
-          rm -rf dist
-          mv wheels dist
+          find dist -type f -name "*.whl" -exec mv {} wheels/ \; 2>/dev/null || true
+          if [ -d dist ]; then rm -rf dist; fi
+          if [ -d wheels ] && [ "$(ls -A wheels)" ]; then mv wheels dist; fi
+
+      - name: Verify wheels exist
+        shell: bash
+        run: |
+          if [ -d dist ] && [ "$(ls -A dist 2>/dev/null)" ]; then
+            echo "Wheels found:"
+            ls -la dist/*.whl
+          else
+            echo "[WARNING] No wheels found in dist directory"
+            find . -name "*.whl" -type f
+          fi
 
       - name: Install wheel
         run: |
           python -m pip install --upgrade pip
-          pip install dist/*.whl
+          if [ -f dist/*.whl ]; then
+            pip install dist/*.whl
+          else
+            echo "[ERROR] No wheel file found to install"
+            exit 1
+          fi
 
       - name: Test import
         run: |
