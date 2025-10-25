@@ -59,6 +59,12 @@ release-stage version:
         echo "  ok: pyproject.toml"
     fi
 
+    if [ -f "{{root}}/crates/llmcc-bindings/pyproject.toml" ]; then
+        sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/crates/llmcc-bindings/pyproject.toml"
+        rm -f "{{root}}/crates/llmcc-bindings/pyproject.toml.bak"
+        echo "  ok: crates/llmcc-bindings/pyproject.toml"
+    fi
+
     if [ -f "{{root}}/setup.py" ]; then
         sed -i.bak 's/version=.*/version="'$VERSION'",/' "{{root}}/setup.py"
         rm -f "{{root}}/setup.py.bak"
@@ -75,7 +81,7 @@ release-stage version:
 
     echo ""
     echo "Committing version bump..."
-    git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/setup.py {{root}}/Cargo.lock
+    git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/crates/llmcc-bindings/pyproject.toml {{root}}/setup.py {{root}}/Cargo.lock
     git commit -m "chore: bump version to $VERSION"
     git push origin "$BRANCH"
 
