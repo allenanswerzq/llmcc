@@ -492,9 +492,76 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .replace('\n', "\\n")
         }
 
+        fn strongly_connected_components(adjacency: &[Vec<usize>]) -> Vec<Vec<usize>> {
+            fn strongconnect(
+                v: usize,
+                index: &mut usize,
+                adjacency: &[Vec<usize>],
+                indices: &mut [Option<usize>],
+                lowlink: &mut [usize],
+                stack: &mut Vec<usize>,
+                on_stack: &mut [bool],
+                components: &mut Vec<Vec<usize>>,
+            ) {
+                indices[v] = Some(*index);
+                lowlink[v] = *index;
+                *index += 1;
+                stack.push(v);
+                on_stack[v] = true;
+
+                for &w in &adjacency[v] {
+                    if indices[w].is_none() {
+                        strongconnect(
+                            w, index, adjacency, indices, lowlink, stack, on_stack, components,
+                        );
+                        lowlink[v] = lowlink[v].min(lowlink[w]);
+                    } else if on_stack[w] {
+                        let w_index = indices[w].unwrap();
+                        lowlink[v] = lowlink[v].min(w_index);
+                    }
+                }
+
+                if lowlink[v] == indices[v].unwrap() {
+                    let mut component = Vec::new();
+                    while let Some(w) = stack.pop() {
+                        on_stack[w] = false;
+                        component.push(w);
+                        if w == v {
+                            break;
+                        }
+                    }
+                    components.push(component);
+                }
+            }
+
+            let mut index = 0;
+            let mut stack = Vec::new();
+            let mut indices = vec![None; adjacency.len()];
+            let mut lowlink = vec![0; adjacency.len()];
+            let mut on_stack = vec![false; adjacency.len()];
+            let mut components = Vec::new();
+
+            for v in 0..adjacency.len() {
+                if indices[v].is_none() {
+                    strongconnect(
+                        v,
+                        &mut index,
+                        adjacency,
+                        &mut indices,
+                        &mut lowlink,
+                        &mut stack,
+                        &mut on_stack,
+                        &mut components,
+                    );
+                }
+            }
+
+            components
+        }
+
         let interesting_kinds = [BlockKind::Class, BlockKind::Enum];
 
-        let ranked_filter = top_k.and_then(|limit| {
+        let ranked_order = top_k.and_then(|limit| {
             let ranker = PageRanker::new(self);
             let mut collected = Vec::new();
 
@@ -510,9 +577,13 @@ impl<'tcx> ProjectGraph<'tcx> {
             if collected.is_empty() {
                 None
             } else {
-                Some(collected.into_iter().collect::<HashSet<_>>())
+                Some(collected)
             }
         });
+
+        let ranked_filter: Option<HashSet<BlockId>> = ranked_order
+            .as_ref()
+            .map(|ordered| ordered.iter().copied().collect());
 
         let mut nodes: Vec<CompactNode> = {
             let block_indexes = self.cc.block_indexes.borrow();
@@ -578,12 +649,16 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         nodes.sort_by(|a, b| a.name.cmp(&b.name));
 
+        if nodes.is_empty() {
+            return "digraph CompactProject {\n}\n".to_string();
+        }
+
         let mut node_index = HashMap::new();
         for (idx, node) in nodes.iter().enumerate() {
             node_index.insert(node.block_id, idx);
         }
 
-        let mut edges = BTreeSet::new();
+        let mut adjacency: Vec<Vec<usize>> = vec![Vec::new(); nodes.len()];
         for node in &nodes {
             let Some(unit_graph) = self.unit_graph(node.unit_index) else {
                 continue;
@@ -593,12 +668,139 @@ impl<'tcx> ProjectGraph<'tcx> {
             let dependencies = unit_graph
                 .edges()
                 .get_related(node.block_id, BlockRelation::DependsOn);
-            for dep_id in dependencies {
-                if let Some(&target_idx) = node_index.get(&dep_id) {
-                    edges.insert((from_idx, target_idx));
+            let mut targets = dependencies
+                .into_iter()
+                .filter_map(|dep_id| node_index.get(&dep_id).copied())
+                .collect::<Vec<_>>();
+
+            targets.sort_unstable();
+            targets.dedup();
+            adjacency[from_idx] = targets;
+        }
+
+        let mut components: Vec<Vec<usize>> = strongly_connected_components(&adjacency)
+            .into_iter()
+            .filter(|component| !component.is_empty())
+            .collect();
+
+        if components.is_empty() {
+            return "digraph CompactProject {\n}\n".to_string();
+        }
+
+        components.sort_by(|a, b| b.len().cmp(&a.len()));
+
+        let target_limit = ranked_order
+            .as_ref()
+            .map(|order| order.len())
+            .unwrap_or_else(|| nodes.len());
+
+        let mut keep = vec![false; nodes.len()];
+        let mut kept = 0usize;
+
+        for component in components.iter().filter(|component| component.len() > 1) {
+            for &idx in component {
+                if !keep[idx] {
+                    keep[idx] = true;
+                    kept += 1;
+                }
+            }
+            if kept >= target_limit {
+                break;
+            }
+        }
+
+        if kept < target_limit {
+            if let Some(order) = ranked_order.as_ref() {
+                for block_id in order {
+                    if let Some(&idx) = node_index.get(block_id) {
+                        if !keep[idx] {
+                            keep[idx] = true;
+                            kept += 1;
+                            if kept >= target_limit {
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for idx in 0..nodes.len() {
+                    if !keep[idx] {
+                        keep[idx] = true;
+                        kept += 1;
+                        if kept >= target_limit {
+                            break;
+                        }
+                    }
                 }
             }
         }
+
+        if kept == 0 {
+            if let Some(component) = components.first() {
+                for &idx in component {
+                    keep[idx] = true;
+                }
+                kept = component.len();
+            }
+        }
+
+        let mut filtered_nodes = Vec::with_capacity(kept);
+        let mut remap = HashMap::new();
+        for (old_idx, node) in nodes.into_iter().enumerate() {
+            if keep[old_idx] {
+                let new_idx = filtered_nodes.len();
+                remap.insert(old_idx, new_idx);
+                filtered_nodes.push(node);
+            }
+        }
+
+        let nodes = filtered_nodes;
+
+        let mut edges = BTreeSet::new();
+        for (old_idx, neighbours) in adjacency.iter().enumerate() {
+            let Some(&from_idx) = remap.get(&old_idx) else {
+                continue;
+            };
+            for &target in neighbours {
+                if let Some(&to_idx) = remap.get(&target) {
+                    edges.insert((from_idx, to_idx));
+                }
+            }
+        }
+
+        // Remove isolated nodes (nodes with no incoming or outgoing edges in the filtered graph).
+        let mut in_degree = vec![0usize; nodes.len()];
+        let mut out_degree = vec![0usize; nodes.len()];
+        for &(from, to) in &edges {
+            out_degree[from] += 1;
+            in_degree[to] += 1;
+        }
+
+        let final_keep: Vec<bool> = (0..nodes.len())
+            .map(|idx| in_degree[idx] > 0 || out_degree[idx] > 0)
+            .collect();
+
+        let mut final_nodes = Vec::new();
+        let mut final_remap = HashMap::new();
+        for (old_idx, node) in nodes.into_iter().enumerate() {
+            if final_keep[old_idx] {
+                let new_idx = final_nodes.len();
+                final_remap.insert(old_idx, new_idx);
+                final_nodes.push(node);
+            }
+        }
+
+        let nodes = final_nodes;
+
+        let final_edges: BTreeSet<_> = edges
+            .into_iter()
+            .filter_map(|(from, to)| {
+                let new_from = final_remap.get(&from).copied()?;
+                let new_to = final_remap.get(&to).copied()?;
+                Some((new_from, new_to))
+            })
+            .collect();
+        let edges = final_edges;
 
         let mut output = String::from("digraph CompactProject {\n");
         for (idx, node) in nodes.iter().enumerate() {
