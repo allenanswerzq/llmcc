@@ -224,11 +224,20 @@ impl<'tcx> ProjectGraph<'tcx> {
                         })
                         .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
 
-                    let path = unit
-                        .file_path()
-                        .or_else(|| unit.file().path())
-                        .unwrap_or("<unknown>")
-                        .to_string();
+                    let path = std::fs::canonicalize(
+                        unit
+                            .file_path()
+                            .or_else(|| unit.file().path())
+                            .unwrap_or("<unknown>")
+                    )
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|_| {
+                        unit
+                            .file_path()
+                            .or_else(|| unit.file().path())
+                            .unwrap_or("<unknown>")
+                            .to_string()
+                    });
                     let location = block
                         .opt_node()
                         .and_then(|node| {
@@ -823,6 +832,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             return;
         }
 
+        // Non-compact mode: process all defined kinds
         if kind != BlockKind::Undefined {
             self.build_block(node, parent, false);
         } else {
@@ -833,18 +843,23 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
         if self.config.compact {
+            // In compact mode, only create blocks for major constructs (Class, Enum, Impl)
+            // Skip functions, fields, and scopes to reduce graph size
             match kind {
-                BlockKind::Class | BlockKind::Enum | BlockKind::Impl => {
+                BlockKind::Class | BlockKind::Enum => {
+                    // Build with recursion enabled to capture nested major constructs
                     self.build_block(node, parent, true);
                 }
-                BlockKind::Scope => {
-                    self.visit_children(node, parent);
+                // Skip all other scopes - don't recurse
+                _ => {
+                    // Stop here, do not visit children
+                    // self.visit_children(node, parent);
                 }
-                _ => {}
             }
             return;
         }
 
+        // Non-compact mode: build blocks for all major constructs
         match kind {
             BlockKind::Func
             | BlockKind::Class

@@ -41,7 +41,9 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     }
 
     let mut pg = ProjectGraph::new(&cc);
-    let graph_config = if opts.compact_graph {
+    // Keep the full graph when a query is requested so dependency queries remain accurate.
+    let use_compact_builder = opts.compact_graph && opts.query.is_none();
+    let graph_config = if use_compact_builder {
         GraphBuildConfig::compact()
     } else {
         GraphBuildConfig::default()
@@ -68,18 +70,18 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     if opts.compact_graph {
         outputs.push(pg.render_compact_graph());
-    }
-
-    if let Some(name) = opts.query.as_ref() {
-        let query = ProjectQuery::new(&pg);
-        let query_output = if opts.dependents {
-            query.find_depended(name).format_for_llm()
-        } else if opts.recursive {
-            query.find_depends_recursive(name).format_for_llm()
-        } else {
-            query.find_depends(name).format_for_llm()
-        };
-        outputs.push(query_output);
+    } else {
+        if let Some(name) = opts.query.as_ref() {
+            let query = ProjectQuery::new(&pg);
+            let query_output = if opts.dependents {
+                query.find_depended(name).format_for_llm()
+            } else if opts.recursive {
+                query.find_depends_recursive(name).format_for_llm()
+            } else {
+                query.find_depends(name).format_for_llm()
+            };
+            outputs.push(query_output);
+        }
     }
 
     if outputs.is_empty() {

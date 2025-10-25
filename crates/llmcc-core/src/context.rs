@@ -478,9 +478,10 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
-    /// Create a new CompileCtxt from a directory, recursively finding all *.rs files
+    /// Create a new CompileCtxt from a directory, recursively finding files matching the language's supported extensions
     pub fn from_dir<P: AsRef<Path>, L: LanguageTrait>(dir: P) -> std::io::Result<Self> {
         let mut files = Vec::new();
+        let supported_exts = L::supported_extensions();
 
         let walker = ignore::WalkBuilder::new(dir.as_ref())
             .standard_filters(true)
@@ -491,13 +492,12 @@ impl<'tcx> CompileCtxt<'tcx> {
                 .map_err(|e| std::io::Error::other(format!("Failed to walk directory: {}", e)))?;
             let path = entry.path();
 
-            if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
-                if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
-                    files.push(file);
-                }
-            } else if path.extension().and_then(|ext| ext.to_str()) == Some("py") {
-                if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
-                    files.push(file);
+            let file_ext = path.extension().and_then(|ext| ext.to_str());
+            if let Some(ext) = file_ext {
+                if supported_exts.contains(&ext) {
+                    if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
+                        files.push(file);
+                    }
                 }
             }
         }

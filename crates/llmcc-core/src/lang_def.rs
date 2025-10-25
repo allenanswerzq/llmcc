@@ -15,6 +15,9 @@ pub trait LanguageTrait {
     fn name_field() -> u16;
     fn type_field() -> u16;
 
+    /// Return the list of supported file extensions for this language (e.g., ["rs"] for Rust)
+    fn supported_extensions() -> &'static [&'static str];
+
     fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
     fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
 }
@@ -44,6 +47,7 @@ macro_rules! define_tokens {
                 pub fn new() -> Self {
                     Self { }
                 }
+
                 // Generate token ID constants
                 $(
                     pub const $const: u16 = $id;
@@ -57,6 +61,11 @@ macro_rules! define_tokens {
                     let mut parser = Parser::new();
                     parser.set_language(&lang).unwrap();
                     parser.parse(text, None)
+                }
+
+                /// Return the list of supported file extensions for this language
+                fn supported_extensions() -> &'static [&'static str] {
+                    paste::paste! { [<Lang $suffix>]::SUPPORTED_EXTENSIONS }
                 }
 
                 /// Get the HIR kind for a given token ID
