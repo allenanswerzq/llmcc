@@ -42,7 +42,12 @@ struct HirBuilder<'a, Language> {
 
 impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     /// Create a new builder that directly assigns to context
-    fn new(arena: &'a Arena<'a>, file_path: Option<String>, file_content: String, config: IrBuildConfig) -> Self {
+    fn new(
+        arena: &'a Arena<'a>,
+        file_path: Option<String>,
+        file_content: String,
+        config: IrBuildConfig,
+    ) -> Self {
         Self {
             arena,
             hir_map: HashMap::new(),

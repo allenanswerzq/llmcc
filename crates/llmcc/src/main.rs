@@ -33,6 +33,14 @@ struct Args {
     #[arg(long, default_value_t = false)]
     compact_graph: bool,
 
+    /// Compute and print PageRank scores for the project graph
+    #[arg(long, default_value_t = false)]
+    pagerank: bool,
+
+    /// Top k nodes to select using PageRank algorithm
+    #[arg(long, value_name = "K", requires = "pagerank")]
+    top_k: Option<usize>,
+
     /// Name of the symbol/function to query (enables find_depends mode)
     #[arg(long, value_name = "NAME")]
     query: Option<String>,
@@ -55,6 +63,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         print_ir: args.print_ir,
         print_graph: args.print_graph,
         compact_graph: args.compact_graph,
+        pagerank: args.pagerank,
+        top_k: args.top_k,
         query: args.query,
         recursive: args.recursive,
         dependents: args.dependents,

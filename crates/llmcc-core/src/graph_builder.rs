@@ -10,6 +10,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
+use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 
@@ -93,6 +94,7 @@ pub struct ProjectGraph<'tcx> {
     pub cc: &'tcx CompileCtxt<'tcx>,
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
+    compact_rank_limit: Option<usize>,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -100,11 +102,20 @@ impl<'tcx> ProjectGraph<'tcx> {
         Self {
             cc,
             units: Vec::new(),
+            compact_rank_limit: None,
         }
     }
 
     pub fn add_child(&mut self, graph: UnitGraph) {
         self.units.push(graph);
+    }
+
+    /// Configure the number of PageRank-filtered nodes retained when rendering compact graphs.
+    pub fn set_compact_rank_limit(&mut self, limit: Option<usize>) {
+        self.compact_rank_limit = match limit {
+            Some(0) => None,
+            other => other,
+        };
     }
 
     pub fn link_units(&mut self) {
@@ -174,136 +185,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn render_compact_graph(&self) -> String {
-        #[derive(Clone)]
-        struct CompactNode {
-            block_id: BlockId,
-            unit_index: usize,
-            kind: BlockKind,
-            name: String,
-            location: Option<String>,
-        }
-
-        fn byte_to_line(content: &[u8], byte_pos: usize) -> usize {
-            let clamped = byte_pos.min(content.len());
-            let mut line = 1;
-            for &ch in &content[..clamped] {
-                if ch == b'\n' {
-                    line += 1;
-                }
-            }
-            line
-        }
-
-        fn escape_label(input: &str) -> String {
-            input
-                .replace('\\', "\\\\")
-                .replace('"', "\\\"")
-                .replace('\n', "\\n")
-        }
-
-        let interesting_kinds = [BlockKind::Class, BlockKind::Enum];
-
-        let mut nodes: Vec<CompactNode> = {
-            let block_indexes = self.cc.block_indexes.borrow();
-            block_indexes
-                .block_id_index
-                .iter()
-                .filter_map(|(&block_id, (unit_index, name_opt, kind))| {
-                    if !interesting_kinds.contains(kind) {
-                        return None;
-                    }
-
-                    let unit = self.cc.compile_unit(*unit_index);
-                    let block = unit.bb(block_id);
-                    let display_name = name_opt
-                        .clone()
-                        .or_else(|| {
-                            block
-                                .base()
-                                .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
-                        })
-                        .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
-
-                    let path = std::fs::canonicalize(
-                        unit
-                            .file_path()
-                            .or_else(|| unit.file().path())
-                            .unwrap_or("<unknown>")
-                    )
-                    .map(|p| p.to_string_lossy().to_string())
-                    .unwrap_or_else(|_| {
-                        unit
-                            .file_path()
-                            .or_else(|| unit.file().path())
-                            .unwrap_or("<unknown>")
-                            .to_string()
-                    });
-                    let location = block
-                        .opt_node()
-                        .and_then(|node| {
-                            unit.file()
-                                .file
-                                .content
-                                .as_ref()
-                                .map(|bytes| byte_to_line(bytes.as_slice(), node.start_byte()))
-                                .map(|line| format!("{path}:{line}"))
-                        })
-                        .or_else(|| Some(path.clone()));
-
-                    Some(CompactNode {
-                        block_id,
-                        unit_index: *unit_index,
-                        kind: *kind,
-                        name: display_name,
-                        location,
-                    })
-                })
-                .collect()
-        };
-
-        nodes.sort_by(|a, b| a.name.cmp(&b.name));
-
-        let mut node_index = HashMap::new();
-        for (idx, node) in nodes.iter().enumerate() {
-            node_index.insert(node.block_id, idx);
-        }
-
-        let mut edges = BTreeSet::new();
-        for node in &nodes {
-            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
-                continue;
-            };
-            let from_idx = node_index[&node.block_id];
-
-            let dependencies = unit_graph
-                .edges()
-                .get_related(node.block_id, BlockRelation::DependsOn);
-            for dep_id in dependencies {
-                if let Some(&target_idx) = node_index.get(&dep_id) {
-                    edges.insert((from_idx, target_idx));
-                }
-            }
-        }
-
-        let mut output = String::from("digraph CompactProject {\n");
-        for (idx, node) in nodes.iter().enumerate() {
-            let mut parts = vec![node.name.clone(), format!("({})", node.kind)];
-            if let Some(location) = &node.location {
-                parts.push(location.clone());
-            }
-            let label = parts
-                .into_iter()
-                .map(|part| escape_label(&part))
-                .collect::<Vec<_>>()
-                .join("\\n");
-            output.push_str(&format!("  n{} [label=\"{}\"];\n", idx, label));
-        }
-
-        for (from, to) in edges {
-            output.push_str(&format!("  n{} -> n{};\n", from, to));
-        }
-        output.push_str("}\n");
-        output
+        self.render_compact_graph_inner(self.compact_rank_limit)
     }
 
     pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
@@ -580,6 +462,163 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         result
+    }
+
+    fn render_compact_graph_inner(&self, top_k: Option<usize>) -> String {
+        #[derive(Clone)]
+        struct CompactNode {
+            block_id: BlockId,
+            unit_index: usize,
+            kind: BlockKind,
+            name: String,
+            location: Option<String>,
+        }
+
+        fn byte_to_line(content: &[u8], byte_pos: usize) -> usize {
+            let clamped = byte_pos.min(content.len());
+            let mut line = 1;
+            for &ch in &content[..clamped] {
+                if ch == b'\n' {
+                    line += 1;
+                }
+            }
+            line
+        }
+
+        fn escape_label(input: &str) -> String {
+            input
+                .replace('\\', "\\\\")
+                .replace('"', "\\\"")
+                .replace('\n', "\\n")
+        }
+
+        let interesting_kinds = [BlockKind::Class, BlockKind::Enum];
+
+        let ranked_filter = top_k.and_then(|limit| {
+            let ranker = PageRanker::new(self);
+            let mut collected = Vec::new();
+
+            for ranked in ranker.rank() {
+                if interesting_kinds.contains(&ranked.kind) {
+                    collected.push(ranked.node.block_id);
+                }
+                if collected.len() >= limit {
+                    break;
+                }
+            }
+
+            if collected.is_empty() {
+                None
+            } else {
+                Some(collected.into_iter().collect::<HashSet<_>>())
+            }
+        });
+
+        let mut nodes: Vec<CompactNode> = {
+            let block_indexes = self.cc.block_indexes.borrow();
+            block_indexes
+                .block_id_index
+                .iter()
+                .filter_map(|(&block_id, (unit_index, name_opt, kind))| {
+                    if !interesting_kinds.contains(kind) {
+                        return None;
+                    }
+
+                    if let Some(ref ranked_ids) = ranked_filter {
+                        if !ranked_ids.contains(&block_id) {
+                            return None;
+                        }
+                    }
+
+                    let unit = self.cc.compile_unit(*unit_index);
+                    let block = unit.bb(block_id);
+                    let display_name = name_opt
+                        .clone()
+                        .or_else(|| {
+                            block
+                                .base()
+                                .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
+                        })
+                        .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
+
+                    let path = std::fs::canonicalize(
+                        unit.file_path()
+                            .or_else(|| unit.file().path())
+                            .unwrap_or("<unknown>"),
+                    )
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|_| {
+                        unit.file_path()
+                            .or_else(|| unit.file().path())
+                            .unwrap_or("<unknown>")
+                            .to_string()
+                    });
+                    let location = block
+                        .opt_node()
+                        .and_then(|node| {
+                            unit.file()
+                                .file
+                                .content
+                                .as_ref()
+                                .map(|bytes| byte_to_line(bytes.as_slice(), node.start_byte()))
+                                .map(|line| format!("{path}:{line}"))
+                        })
+                        .or_else(|| Some(path.clone()));
+
+                    Some(CompactNode {
+                        block_id,
+                        unit_index: *unit_index,
+                        kind: *kind,
+                        name: display_name,
+                        location,
+                    })
+                })
+                .collect()
+        };
+
+        nodes.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let mut node_index = HashMap::new();
+        for (idx, node) in nodes.iter().enumerate() {
+            node_index.insert(node.block_id, idx);
+        }
+
+        let mut edges = BTreeSet::new();
+        for node in &nodes {
+            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
+                continue;
+            };
+            let from_idx = node_index[&node.block_id];
+
+            let dependencies = unit_graph
+                .edges()
+                .get_related(node.block_id, BlockRelation::DependsOn);
+            for dep_id in dependencies {
+                if let Some(&target_idx) = node_index.get(&dep_id) {
+                    edges.insert((from_idx, target_idx));
+                }
+            }
+        }
+
+        let mut output = String::from("digraph CompactProject {\n");
+        for (idx, node) in nodes.iter().enumerate() {
+            let mut parts = vec![node.name.clone(), format!("({})", node.kind)];
+            if let Some(location) = &node.location {
+                parts.push(location.clone());
+            }
+            let label = parts
+                .into_iter()
+                .map(|part| escape_label(&part))
+                .collect::<Vec<_>>()
+                .join("\\n");
+            output.push_str(&format!("  n{} [label=\"{}\"];\n", idx, label));
+        }
+
+        for (from, to) in edges {
+            output.push_str(&format!("  n{} -> n{};\n", from, to));
+        }
+        output.push_str("}\n");
+        output
     }
 
     fn add_cross_edge(

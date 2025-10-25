@@ -10,6 +10,8 @@ pub struct LlmccOptions {
     pub print_ir: bool,
     pub print_graph: bool,
     pub compact_graph: bool,
+    pub pagerank: bool,
+    pub top_k: Option<usize>,
     pub query: Option<String>,
     pub recursive: bool,
     pub dependents: bool,
@@ -69,6 +71,10 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     let mut outputs = Vec::new();
 
     if opts.compact_graph {
+        if opts.pagerank {
+            let limit = Some(opts.top_k.unwrap_or(25));
+            pg.set_compact_rank_limit(limit);
+        }
         outputs.push(pg.render_compact_graph());
     } else {
         if let Some(name) = opts.query.as_ref() {
