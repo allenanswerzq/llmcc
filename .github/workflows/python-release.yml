@@ -177,23 +177,13 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: dist
 
-      - name: Create GitHub release
+      - name: Upload Python wheels to existing release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
-          body: |
-            Released llmcc version ${{ steps.tag_info.outputs.version }}
-
-            Python wheels built for:
-            - Python 3.8, 3.9, 3.10, 3.11, 3.12
-            - Linux (x86_64, aarch64), macOS (x86_64, arm64), Windows (x86_64)
-
-            Includes:
-            - Rust bindings for llmcc-core, llmcc-rust, llmcc-python
-
-            See [PyPI](https://pypi.org/project/llmcc/) for details.
+          files: dist/*
           draft: false
           prerelease: false
-          files: dist/*
+          append_body: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
