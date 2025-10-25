@@ -38,12 +38,6 @@ release-stage version:
         exit 1
     fi
 
-    # Create release branch from main
-    echo "Creating branch: $BRANCH"
-    git checkout main
-    git pull origin main
-    git checkout -b "$BRANCH"
-
     # Update workspace version in root Cargo.toml
     echo ""
     echo "Updating workspace version in Cargo.toml..."
@@ -83,7 +77,7 @@ release-stage version:
     echo "Committing version bump..."
     git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/crates/llmcc-bindings/pyproject.toml {{root}}/setup.py {{root}}/Cargo.lock
     git commit -m "chore: bump version to $VERSION"
-    git push origin "$BRANCH"
+    git push origin main
 
 
 release-publish version:
