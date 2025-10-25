@@ -1,14 +1,13 @@
 use std::collections::HashSet;
 
 use llmcc_core::{
-    build_llmcc_graph,
+    build_llmcc_graph_with_config,
     graph_builder::{BlockKind, GraphNode, ProjectGraph},
+    GraphBuildConfig,
 };
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
-/// Helper to build a project graph from multiple Rust source files
-/// Each source becomes a separate compilation unit in the graph
-fn build_graph(sources: &[&str]) -> ProjectGraph<'static> {
+fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> ProjectGraph<'static> {
     let source_bytes: Vec<Vec<u8>> = sources.iter().map(|s| s.as_bytes().to_vec()).collect();
 
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(
@@ -30,7 +29,7 @@ fn build_graph(sources: &[&str]) -> ProjectGraph<'static> {
         let unit = graph.cc.compile_unit(unit_idx);
         bind_symbols(unit, globals);
 
-        let unit_graph = build_llmcc_graph::<LangRust>(unit, unit_idx).unwrap();
+        let unit_graph = build_llmcc_graph_with_config::<LangRust>(unit, unit_idx, config).unwrap();
         graph.add_child(unit_graph);
     }
 
@@ -39,6 +38,12 @@ fn build_graph(sources: &[&str]) -> ProjectGraph<'static> {
     drop(collections);
 
     graph
+}
+
+/// Helper to build a project graph from multiple Rust source files
+/// Each source becomes a separate compilation unit in the graph
+fn build_graph(sources: &[&str]) -> ProjectGraph<'static> {
+    build_graph_with_config(sources, GraphBuildConfig::default())
 }
 
 fn block_name(graph: &ProjectGraph<'static>, node: GraphNode) -> Option<String> {
@@ -1191,4 +1196,32 @@ fn recursive_type_dependency() {
     // Node references itself in the next field (recursive)
     let node_deps = get_depends_on(&graph, node);
     assert!(node_deps.is_empty() || node_deps.contains("Node"));
+}
+
+#[test]
+fn compact_graph_matches_default_output() {
+    let sources = [r#"
+        struct Config;
+
+        struct Handler {
+            config: Config,
+        }
+
+        struct App {
+            handler: Handler,
+        }
+    "#];
+
+    let default_graph = build_graph_with_config(&sources, GraphBuildConfig::default());
+    let compact_graph = build_graph_with_config(&sources, GraphBuildConfig::compact());
+
+    let default_render = default_graph.render_compact_graph();
+    let compact_render = compact_graph.render_compact_graph();
+
+    assert_eq!(default_render, compact_render);
+    assert!(compact_render.contains("App\\n(class)"));
+    assert!(compact_render.contains("Handler\\n(class)"));
+    assert!(compact_render.contains("Config\\n(class)"));
+    assert!(compact_render.contains("n0 -> n2;"));
+    assert!(compact_render.contains("n2 -> n1;"));
 }

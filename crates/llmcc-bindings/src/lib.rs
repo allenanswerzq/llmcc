@@ -2,8 +2,8 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 use llmcc_core::{
-    build_llmcc_graph, build_llmcc_ir, lang_def::LanguageTrait, print_llmcc_graph, print_llmcc_ir,
-    CompileCtxt, ProjectGraph, ProjectQuery,
+    build_llmcc_graph_with_config, build_llmcc_ir, lang_def::LanguageTrait, print_llmcc_graph,
+    print_llmcc_ir, CompileCtxt, GraphBuildConfig, ProjectGraph, ProjectQuery,
 };
 use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
@@ -26,6 +26,7 @@ fn run_workflow<L>(
     dir: Option<String>,
     print_ir: bool,
     print_graph: bool,
+    compact_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -74,10 +75,15 @@ where
     }
 
     let mut project_graph = ProjectGraph::new(&cc);
+    let graph_config = if compact_graph {
+        GraphBuildConfig::compact()
+    } else {
+        GraphBuildConfig::default()
+    };
     for (index, _) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
         L::bind_symbols(unit, globals);
-        let unit_graph = build_llmcc_graph::<L>(unit, index)?;
+        let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
 
         if print_graph {
             print_llmcc_graph(unit_graph.root(), unit);
@@ -88,6 +94,12 @@ where
 
     project_graph.link_units();
 
+    let mut outputs = Vec::new();
+
+    if compact_graph {
+        outputs.push(project_graph.render_compact_graph());
+    }
+
     if let Some(symbol_name) = query {
         let query = ProjectQuery::new(&project_graph);
         let result = if dependents {
@@ -97,20 +109,25 @@ where
         } else {
             query.find_depends(&symbol_name)
         };
-        Ok(Some(result.format_for_llm()))
-    } else {
+        outputs.push(result.format_for_llm());
+    }
+
+    if outputs.is_empty() {
         Ok(None)
+    } else {
+        Ok(Some(outputs.join("\n")))
     }
 }
 
 #[pyfunction]
-#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_graph=false, query=None, recursive=false, dependents=false))]
+#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_graph=false, compact_graph=false, query=None, recursive=false, dependents=false))]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
     dir: Option<String>,
     print_ir: bool,
     print_graph: bool,
+    compact_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -122,6 +139,7 @@ fn run_llmcc(
             dir.clone(),
             print_ir,
             print_graph,
+            compact_graph,
             query.clone(),
             recursive,
             dependents,
@@ -132,6 +150,7 @@ fn run_llmcc(
             dir.clone(),
             print_ir,
             print_graph,
+            compact_graph,
             query.clone(),
             recursive,
             dependents,

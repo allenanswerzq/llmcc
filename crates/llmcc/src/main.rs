@@ -29,6 +29,10 @@ struct Args {
     #[arg(long, default_value_t = false)]
     print_graph: bool,
 
+    /// Render a compact dependency graph focused on class-like blocks
+    #[arg(long, default_value_t = false)]
+    compact_graph: bool,
+
     /// Name of the symbol/function to query (enables find_depends mode)
     #[arg(long, value_name = "NAME")]
     query: Option<String>,
@@ -50,6 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         dir: args.dir,
         print_ir: args.print_ir,
         print_graph: args.print_graph,
+        compact_graph: args.compact_graph,
         query: args.query,
         recursive: args.recursive,
         dependents: args.dependents,

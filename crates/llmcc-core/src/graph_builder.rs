@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
@@ -42,6 +42,23 @@ impl UnitGraph {
 
     pub fn edges(&self) -> &BlockRelationMap {
         &self.edges
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct GraphBuildConfig {
+    pub compact: bool,
+}
+
+impl GraphBuildConfig {
+    pub fn compact() -> Self {
+        Self { compact: true }
+    }
+}
+
+impl Default for GraphBuildConfig {
+    fn default() -> Self {
+        Self { compact: false }
     }
 }
 
@@ -127,6 +144,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         &self.units
     }
 
+    pub fn unit_graph(&self, unit_index: usize) -> Option<&UnitGraph> {
+        self.units
+            .iter()
+            .find(|unit| unit.unit_index() == unit_index)
+    }
+
     pub fn block_by_name(&self, name: &str) -> Option<GraphNode> {
         let block_indexes = self.cc.block_indexes.borrow();
         let matches = block_indexes.find_by_name(name);
@@ -148,6 +171,130 @@ impl<'tcx> ProjectGraph<'tcx> {
                 block_id,
             })
             .collect()
+    }
+
+    pub fn render_compact_graph(&self) -> String {
+        #[derive(Clone)]
+        struct CompactNode {
+            block_id: BlockId,
+            unit_index: usize,
+            kind: BlockKind,
+            name: String,
+            location: Option<String>,
+        }
+
+        fn byte_to_line(content: &[u8], byte_pos: usize) -> usize {
+            let clamped = byte_pos.min(content.len());
+            let mut line = 1;
+            for &ch in &content[..clamped] {
+                if ch == b'\n' {
+                    line += 1;
+                }
+            }
+            line
+        }
+
+        fn escape_label(input: &str) -> String {
+            input
+                .replace('\\', "\\\\")
+                .replace('"', "\\\"")
+                .replace('\n', "\\n")
+        }
+
+        let interesting_kinds = [BlockKind::Class, BlockKind::Enum];
+
+        let mut nodes: Vec<CompactNode> = {
+            let block_indexes = self.cc.block_indexes.borrow();
+            block_indexes
+                .block_id_index
+                .iter()
+                .filter_map(|(&block_id, (unit_index, name_opt, kind))| {
+                    if !interesting_kinds.contains(kind) {
+                        return None;
+                    }
+
+                    let unit = self.cc.compile_unit(*unit_index);
+                    let block = unit.bb(block_id);
+                    let display_name = name_opt
+                        .clone()
+                        .or_else(|| {
+                            block
+                                .base()
+                                .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
+                        })
+                        .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
+
+                    let path = unit
+                        .file_path()
+                        .or_else(|| unit.file().path())
+                        .unwrap_or("<unknown>")
+                        .to_string();
+                    let location = block
+                        .opt_node()
+                        .and_then(|node| {
+                            unit.file()
+                                .file
+                                .content
+                                .as_ref()
+                                .map(|bytes| byte_to_line(bytes.as_slice(), node.start_byte()))
+                                .map(|line| format!("{path}:{line}"))
+                        })
+                        .or_else(|| Some(path.clone()));
+
+                    Some(CompactNode {
+                        block_id,
+                        unit_index: *unit_index,
+                        kind: *kind,
+                        name: display_name,
+                        location,
+                    })
+                })
+                .collect()
+        };
+
+        nodes.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let mut node_index = HashMap::new();
+        for (idx, node) in nodes.iter().enumerate() {
+            node_index.insert(node.block_id, idx);
+        }
+
+        let mut edges = BTreeSet::new();
+        for node in &nodes {
+            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
+                continue;
+            };
+            let from_idx = node_index[&node.block_id];
+
+            let dependencies = unit_graph
+                .edges()
+                .get_related(node.block_id, BlockRelation::DependsOn);
+            for dep_id in dependencies {
+                if let Some(&target_idx) = node_index.get(&dep_id) {
+                    edges.insert((from_idx, target_idx));
+                }
+            }
+        }
+
+        let mut output = String::from("digraph CompactProject {\n");
+        for (idx, node) in nodes.iter().enumerate() {
+            let mut parts = vec![node.name.clone(), format!("({})", node.kind)];
+            if let Some(location) = &node.location {
+                parts.push(location.clone());
+            }
+            let label = parts
+                .into_iter()
+                .map(|part| escape_label(&part))
+                .collect::<Vec<_>>()
+                .join("\\n");
+            output.push_str(&format!("  n{} [label=\"{}\"];\n", idx, label));
+        }
+
+        for (from, to) in edges {
+            output.push_str(&format!("  n{} -> n{};\n", from, to));
+        }
+        output.push_str("}\n");
+        output
     }
 
     pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
@@ -461,15 +608,17 @@ struct GraphBuilder<'tcx, Language> {
     unit: CompileUnit<'tcx>,
     root: Option<BlockId>,
     children_stack: Vec<Vec<BlockId>>,
+    config: GraphBuildConfig,
     _marker: PhantomData<Language>,
 }
 
 impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
-    fn new(unit: CompileUnit<'tcx>) -> Self {
+    fn new(unit: CompileUnit<'tcx>, config: GraphBuildConfig) -> Self {
         Self {
             unit,
             root: None,
             children_stack: Vec::new(),
+            config,
             _marker: PhantomData,
         }
     }
@@ -664,7 +813,17 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 
     fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        if Language::block_kind(node.kind_id()) != BlockKind::Undefined {
+        let kind = Language::block_kind(node.kind_id());
+        if self.config.compact {
+            if kind == BlockKind::Root {
+                self.build_block(node, parent, true);
+            } else {
+                self.visit_children(node, parent);
+            }
+            return;
+        }
+
+        if kind != BlockKind::Undefined {
             self.build_block(node, parent, false);
         } else {
             self.visit_children(node, parent);
@@ -672,7 +831,21 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        match Language::block_kind(node.kind_id()) {
+        let kind = Language::block_kind(node.kind_id());
+        if self.config.compact {
+            match kind {
+                BlockKind::Class | BlockKind::Enum | BlockKind::Impl => {
+                    self.build_block(node, parent, true);
+                }
+                BlockKind::Scope => {
+                    self.visit_children(node, parent);
+                }
+                _ => {}
+            }
+            return;
+        }
+
+        match kind {
             BlockKind::Func
             | BlockKind::Class
             | BlockKind::Enum
@@ -684,14 +857,15 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
-pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
+pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
+    config: GraphBuildConfig,
 ) -> Result<UnitGraph, Box<dyn std::error::Error>> {
     let root_hir = unit
         .file_start_hir_id()
         .ok_or("missing file start HIR id")?;
-    let mut builder = GraphBuilder::<L>::new(unit);
+    let mut builder = GraphBuilder::<L>::new(unit, config);
     let root_node = unit.hir_node(root_hir);
     builder.visit_node(root_node, BlockId::ROOT_PARENT);
 
@@ -699,4 +873,11 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     let root_block = root_block.ok_or("graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
     Ok(UnitGraph::new(unit_index, root_block, edges))
+}
+
+pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
+    unit: CompileUnit<'tcx>,
+    unit_index: usize,
+) -> Result<UnitGraph, Box<dyn std::error::Error>> {
+    build_llmcc_graph_with_config::<L>(unit, unit_index, GraphBuildConfig::default())
 }

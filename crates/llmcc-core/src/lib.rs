@@ -16,7 +16,8 @@ pub mod visit;
 
 pub use context::{CompileCtxt, CompileUnit};
 pub use graph_builder::{
-    build_llmcc_graph, BlockId, BlockRelation, GraphNode, ProjectGraph, UnitGraph,
+    build_llmcc_graph, build_llmcc_graph_with_config, BlockId, BlockRelation, GraphBuildConfig,
+    GraphNode, ProjectGraph, UnitGraph,
 };
 pub use ir::HirId;
 pub use ir_builder::build_llmcc_ir;

@@ -9,6 +9,7 @@ pub struct LlmccOptions {
     pub dir: Option<String>,
     pub print_ir: bool,
     pub print_graph: bool,
+    pub compact_graph: bool,
     pub query: Option<String>,
     pub recursive: bool,
     pub dependents: bool,
@@ -40,10 +41,15 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     }
 
     let mut pg = ProjectGraph::new(&cc);
+    let graph_config = if opts.compact_graph {
+        GraphBuildConfig::compact()
+    } else {
+        GraphBuildConfig::default()
+    };
     for (index, _) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
         L::bind_symbols(unit, globals);
-        let unit_graph = build_llmcc_graph::<L>(unit, index)?;
+        let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
 
         if opts.print_graph {
             print_llmcc_graph(unit_graph.root(), unit);
@@ -58,16 +64,27 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         return Err("`--recursive` is not supported together with `--dependents`".into());
     }
 
-    let result = opts.query.as_ref().map(|name| {
+    let mut outputs = Vec::new();
+
+    if opts.compact_graph {
+        outputs.push(pg.render_compact_graph());
+    }
+
+    if let Some(name) = opts.query.as_ref() {
         let query = ProjectQuery::new(&pg);
-        if opts.dependents {
+        let query_output = if opts.dependents {
             query.find_depended(name).format_for_llm()
         } else if opts.recursive {
             query.find_depends_recursive(name).format_for_llm()
         } else {
             query.find_depends(name).format_for_llm()
-        }
-    });
+        };
+        outputs.push(query_output);
+    }
 
-    Ok(result)
+    if outputs.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(outputs.join("\n")))
+    }
 }
