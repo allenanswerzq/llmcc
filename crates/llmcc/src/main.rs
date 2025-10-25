@@ -1,8 +1,8 @@
 use clap::Parser;
 
-use llmcc_rust::LangRust;
-use llmcc_python::LangPython;
 use llmcc::{run_main, LlmccOptions};
+use llmcc_python::LangPython;
+use llmcc_rust::LangRust;
 
 #[derive(Parser, Debug)]
 #[command(name = "llmcc")]
@@ -21,11 +21,11 @@ struct Args {
     #[arg(long, value_name = "LANG", default_value = "rust")]
     lang: String,
 
-    /// Print intermediate representation (IR)
+    /// Print intermediate representation (IR), internal debugging output
     #[arg(long, default_value_t = false)]
     print_ir: bool,
 
-    /// Print project graph
+    /// Print project graph or file structure graph
     #[arg(long, default_value_t = false)]
     print_graph: bool,
 
@@ -36,6 +36,10 @@ struct Args {
     /// Search recursively for transitive dependencies (default: direct dependencies only)
     #[arg(long, default_value_t = false)]
     recursive: bool,
+
+    /// Return blocks that depend on the queried symbol instead of the ones it depends on
+    #[arg(long, default_value_t = false, conflicts_with = "recursive")]
+    dependents: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,6 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         print_graph: args.print_graph,
         query: args.query,
         recursive: args.recursive,
+        dependents: args.dependents,
     };
 
     let result = match args.lang.as_str() {

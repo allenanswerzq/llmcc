@@ -234,11 +234,41 @@ impl<'tcx> ProjectGraph<'tcx> {
                     }
                 }
                 BlockRelation::DependedBy => {
-                    // Get all blocks that depend on this block
+                    let mut seen = HashSet::new();
+
+                    // Direct dependents tracked on this unit (covers cross-unit edges too)
                     let dependents = unit
                         .edges
+                        .get_related(node.block_id, BlockRelation::DependedBy);
+                    if !dependents.is_empty() {
+                        let indexes = self.cc.block_indexes.borrow();
+                        for dep_block_id in dependents {
+                            if !seen.insert(dep_block_id) {
+                                continue;
+                            }
+                            if let Some((dep_unit_idx, _, _)) = indexes.get_block_info(dep_block_id)
+                            {
+                                result.push(GraphNode {
+                                    unit_index: dep_unit_idx,
+                                    block_id: dep_block_id,
+                                });
+                            } else {
+                                result.push(GraphNode {
+                                    unit_index: node.unit_index,
+                                    block_id: dep_block_id,
+                                });
+                            }
+                        }
+                    }
+
+                    // Fallback: scan current unit for reverse DependsOn edges
+                    let local_dependents = unit
+                        .edges
                         .find_reverse_relations(node.block_id, BlockRelation::DependsOn);
-                    for dep_block_id in dependents {
+                    for dep_block_id in local_dependents {
+                        if !seen.insert(dep_block_id) {
+                            continue;
+                        }
                         result.push(GraphNode {
                             unit_index: node.unit_index,
                             block_id: dep_block_id,
