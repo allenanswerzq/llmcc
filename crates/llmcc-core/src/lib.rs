@@ -24,3 +24,4 @@ pub use paste;
 pub use printer::{print_llmcc_graph, print_llmcc_ir};
 pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};
+pub use lang_def::LanguageTrait;
