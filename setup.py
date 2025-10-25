@@ -14,7 +14,7 @@ setup(
     long_description_content_type="text/markdown",
     author="llmcc contributors",
     url="https://github.com/allenanswerzq/llmcc",
-    license="MIT",
+    license="Apache-2.0",
     packages=find_packages(exclude=["tests", "examples"]),
     python_requires=">=3.8",
     zip_safe=False,
@@ -30,7 +30,7 @@ setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
