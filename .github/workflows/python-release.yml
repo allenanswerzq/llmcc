@@ -91,6 +91,13 @@ jobs:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist
 
+      - name: Flatten dist directory
+        run: |
+          mkdir -p wheels
+          find dist -type f -name "*.whl" -exec mv {} wheels/ \;
+          rm -rf dist
+          mv wheels dist
+
       - name: Install wheel
         run: |
           python -m pip install --upgrade pip
