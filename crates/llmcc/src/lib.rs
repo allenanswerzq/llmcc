@@ -11,11 +11,10 @@ pub struct LlmccOptions {
     pub print_graph: bool,
     pub query: Option<String>,
     pub recursive: bool,
+    pub dependents: bool,
 }
 
-pub fn run_main<L: LanguageTrait>(
-    opts: &LlmccOptions,
-) -> Result<Option<String>, Box<dyn Error>> {
+pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, Box<dyn Error>> {
     let (cc, files) = if let Some(dir) = opts.dir.as_ref() {
         let ctx = CompileCtxt::from_dir::<_, L>(Path::new(dir))?;
         let file_paths = ctx.get_files();
@@ -55,17 +54,20 @@ pub fn run_main<L: LanguageTrait>(
 
     pg.link_units();
 
-    let result = if let Some(name) = opts.query.as_ref() {
+    if opts.recursive && opts.dependents {
+        return Err("`--recursive` is not supported together with `--dependents`".into());
+    }
+
+    let result = opts.query.as_ref().map(|name| {
         let query = ProjectQuery::new(&pg);
-        let output = if opts.recursive {
+        if opts.dependents {
+            query.find_depended(name).format_for_llm()
+        } else if opts.recursive {
             query.find_depends_recursive(name).format_for_llm()
         } else {
             query.find_depends(name).format_for_llm()
-        };
-        Some(output)
-    } else {
-        None
-    };
+        }
+    });
 
     Ok(result)
 }

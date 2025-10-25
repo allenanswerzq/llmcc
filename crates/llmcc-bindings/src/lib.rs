@@ -28,10 +28,15 @@ fn run_workflow<L>(
     print_graph: bool,
     query: Option<String>,
     recursive: bool,
+    dependents: bool,
 ) -> Result<Option<String>, Box<dyn Error>>
 where
     L: LanguageTrait,
 {
+    if recursive && dependents {
+        return Err("Recursive queries are not yet supported for dependents".into());
+    }
+
     let (cc, files) = if let Some(dir_path) = dir {
         eprintln!(" loading {lang_label} files from directory: {}", dir_path);
         let ctx = CompileCtxt::from_dir::<_, L>(dir_path.as_str())?;
@@ -85,7 +90,9 @@ where
 
     if let Some(symbol_name) = query {
         let query = ProjectQuery::new(&project_graph);
-        let result = if recursive {
+        let result = if dependents {
+            query.find_depended(&symbol_name)
+        } else if recursive {
             query.find_depends_recursive(&symbol_name)
         } else {
             query.find_depends(&symbol_name)
@@ -97,7 +104,7 @@ where
 }
 
 #[pyfunction]
-#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_graph=false, query=None, recursive=false))]
+#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_graph=false, query=None, recursive=false, dependents=false))]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
@@ -106,6 +113,7 @@ fn run_llmcc(
     print_graph: bool,
     query: Option<String>,
     recursive: bool,
+    dependents: bool,
 ) -> PyResult<Option<String>> {
     let result = match lang {
         "rust" => run_workflow::<LangRust>(
@@ -116,6 +124,7 @@ fn run_llmcc(
             print_graph,
             query.clone(),
             recursive,
+            dependents,
         ),
         "python" => run_workflow::<LangPython>(
             "python",
@@ -125,6 +134,7 @@ fn run_llmcc(
             print_graph,
             query.clone(),
             recursive,
+            dependents,
         ),
         other => {
             return Err(PyErr::new::<PyValueError, _>(format!(
