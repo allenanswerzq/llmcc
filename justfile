@@ -66,11 +66,11 @@ release-stage version:
     fi
 
     echo ""
-    echo "[BUILD] Building all crates..."
+    echo "Building all crates..."
     cargo build --release 2>&1 | grep -E "^(Compiling|Finished|error)" || true
 
     echo ""
-    echo "[TEST] Testing all crates..."
+    echo "Testing all crates..."
     cargo test --release 2>&1 | grep -E "^(running|test result)" || true
 
     echo ""
