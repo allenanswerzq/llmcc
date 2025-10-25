@@ -6,9 +6,32 @@ on:
       - 'v*'
 
 jobs:
-  build-rust:
-    name: Build and publish Rust crates
+  build-and-test-rust:
+    name: Build and test Rust crates
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Build all crates
+        run: cargo build --release
+
+      - name: Test all crates
+        run: cargo test --release
+
+  publish-rust:
+    name: Publish Rust crates to crates.io
     runs-on: ubuntu-latest
+    needs: [build-and-test-rust]
     permissions:
       contents: write
 
@@ -27,12 +50,6 @@ jobs:
           TAG="${{ github.ref_name }}"
           VERSION=${TAG#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Build all crates
-        run: cargo build --release
-
-      - name: Test all crates
-        run: cargo test --release
 
       - name: Set up wait helper function
         run: |
@@ -133,7 +150,7 @@ jobs:
   build-python:
     name: Build and publish Python wheels
     runs-on: ${{ matrix.os }}
-    needs: [build-rust]
+    needs: [build-and-test-rust]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
@@ -173,7 +190,7 @@ jobs:
   build-sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
-    needs: [build-rust]
+    needs: [build-and-test-rust]
 
     steps:
       - uses: actions/checkout@v4
@@ -298,7 +315,7 @@ jobs:
 
   release:
     name: Create GitHub release
-    needs: [build-rust, publish-python]
+    needs: [publish-rust, publish-python]
     runs-on: ubuntu-latest
     permissions:
       contents: write
