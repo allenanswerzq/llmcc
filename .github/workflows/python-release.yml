@@ -33,16 +33,16 @@ jobs:
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
-          python-version: ${{ matrix.python-version }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
           maturin-version: 'latest'
+          working-directory: crates/llmcc-bindings
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: dist/*.whl
+          path: crates/llmcc-bindings/dist/*.whl
 
   build-sdist:
     runs-on: ubuntu-latest
@@ -63,12 +63,13 @@ jobs:
           command: sdist
           args: --out dist
           maturin-version: 'latest'
+          working-directory: crates/llmcc-bindings
 
       - name: Upload sdist
         uses: actions/upload-artifact@v4
         with:
           name: sdist
-          path: dist/*.tar.gz
+          path: crates/llmcc-bindings/dist/*.tar.gz
 
   test-wheels:
     needs: [build-wheels, build-sdist]
