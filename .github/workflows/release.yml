@@ -339,7 +339,7 @@ jobs:
           find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
           find dist -type d -empty -delete
 
-      - name: Create GitHub release (draft)
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
@@ -358,17 +358,8 @@ jobs:
               - Windows (x86_64)
 
             See [crates.io](https://crates.io/crates/llmcc) and [PyPI](https://pypi.org/project/llmcc/) for details.
-          draft: true
-          prerelease: false
-          files: dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
+          files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
