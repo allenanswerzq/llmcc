@@ -4,6 +4,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 use tree_sitter::Node;
 
+use crate::block::BlockKind;
 use crate::context::{CompileCtxt, ParentedNode};
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
@@ -71,9 +72,14 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
 
     fn build_node(&mut self, node: Node<'a>, parent: Option<HirId>) -> HirId {
         let hir_id = self.reserve_hir_id();
-        let child_ids = self.collect_children(node, hir_id);
-
-        let kind = Language::hir_kind(node.kind_id());
+        let kind_id = node.kind_id();
+        let kind = Language::hir_kind(kind_id);
+        let block_kind = Language::block_kind(kind_id);
+        let child_ids = if self.should_collect_children(kind, block_kind) {
+            self.collect_children(node, hir_id)
+        } else {
+            Vec::new()
+        };
         let base = self.make_base(hir_id, parent, node, kind, child_ids);
 
         let hir_node = match kind {
@@ -109,7 +115,7 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         hir_id
     }
 
-    fn collect_children(&mut self, node: Node<'a>, _parent: HirId) -> Vec<HirId> {
+    fn collect_children(&mut self, node: Node<'a>, parent_id: HirId) -> Vec<HirId> {
         let mut cursor = node.walk();
 
         // In compact mode, skip children for Text nodes to reduce tree size
@@ -122,16 +128,51 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
 
         node.children(&mut cursor)
             .filter_map(|child| {
-                // In compact mode, skip certain node types to reduce tree construction overhead
                 if self.config.compact {
-                    // Skip error nodes and unnamed children in compact mode
-                    if child.is_error() || (child.is_missing() && !child.is_named()) {
+                    if child.is_error() || child.is_extra() || child.is_missing() || !child.is_named()
+                    {
+                        return None;
+                    }
+                    let child_kind = Language::hir_kind(child.kind_id());
+                    if child_kind == HirKind::Text {
+                        return None;
+                    }
+                    let child_block_kind = Language::block_kind(child.kind_id());
+                    if matches!(child_block_kind, BlockKind::Stmt | BlockKind::Call) {
+                        return None;
+                    }
+                    if child_block_kind == BlockKind::Scope && child.kind() == "block" {
                         return None;
                     }
                 }
-                Some(self.build_node(child, None))
+                Some(self.build_node(child, Some(parent_id)))
             })
             .collect()
+    }
+
+    fn should_collect_children(&self, kind: HirKind, block_kind: BlockKind) -> bool {
+        if !self.config.compact {
+            return true;
+        }
+
+        match kind {
+            HirKind::File => true,
+            HirKind::Scope => matches!(
+                block_kind,
+                BlockKind::Root
+                    | BlockKind::Scope
+                    | BlockKind::Class
+                    | BlockKind::Enum
+                    | BlockKind::Impl
+                    | BlockKind::Func
+                    | BlockKind::Const
+            ),
+            HirKind::Internal => matches!(
+                block_kind,
+                BlockKind::Scope | BlockKind::Field | BlockKind::Const | BlockKind::Undefined
+            ),
+            _ => false,
+        }
     }
 
     fn make_base(

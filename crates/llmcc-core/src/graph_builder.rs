@@ -500,11 +500,10 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         fn extract_crate_path(location: &str) -> String {
-            // Extract crate/module path from file location
+            // Extract crate path from file location so all nodes from the same crate cluster together.
             // Examples:
-            //   /path/to/crate/src/module/file.rs -> crate/module
-            //   /path/to/crate/src/file.rs -> crate
-            //   C:\path\to\crate\src\module\file.rs -> crate/module
+            //   /path/to/crate/src/module/file.rs -> crate
+            //   C:\path\to\crate\src\module\file.rs -> crate
 
             let path = location.split(':').next().unwrap_or(location);
             let parts: Vec<&str> = path.split(['/', '\\']).collect();
@@ -512,18 +511,8 @@ impl<'tcx> ProjectGraph<'tcx> {
             // Find the "src" directory index
             if let Some(src_idx) = parts.iter().position(|&p| p == "src") {
                 if src_idx > 0 {
-                    // Get crate name (directory before src)
-                    let crate_name = parts[src_idx - 1];
-
-                    // Get all module directories after src (excluding filename)
-                    let mut result = crate_name.to_string();
-                    for &part in &parts[src_idx + 1..] {
-                        if !part.is_empty() && !part.contains('.') {
-                            result.push('/');
-                            result.push_str(part);
-                        }
-                    }
-                    return result;
+                    // The directory before `src` is the crate root.
+                    return parts[src_idx - 1].to_string();
                 }
             }
 
