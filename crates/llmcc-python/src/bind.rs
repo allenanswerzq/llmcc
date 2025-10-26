@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
@@ -21,6 +23,7 @@ struct SymbolBinder<'tcx> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
     calls: Vec<CallBinding>,
+    module_imports: Vec<&'tcx Symbol>,
 }
 
 impl<'tcx> SymbolBinder<'tcx> {
@@ -31,6 +34,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             unit,
             scopes,
             calls: Vec::new(),
+            module_imports: Vec::new(),
         }
     }
 
@@ -40,6 +44,92 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
         self.scopes.scoped_symbol()
+    }
+
+    fn module_segments_from_path(path: &Path) -> Vec<String> {
+        if path.extension().and_then(|ext| ext.to_str()) != Some("py") {
+            return Vec::new();
+        }
+
+        let mut segments: Vec<String> = Vec::new();
+
+        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+            if stem != "__init__" && !stem.is_empty() {
+                segments.push(stem.to_string());
+            }
+        }
+
+        let mut current = path.parent();
+        while let Some(dir) = current {
+            let dir_name = match dir.file_name().and_then(|n| n.to_str()) {
+                Some(name) if !name.is_empty() => name.to_string(),
+                _ => break,
+            };
+
+            let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
+            if has_init {
+                segments.push(dir_name);
+                current = dir.parent();
+                continue;
+            }
+
+            if segments.is_empty() {
+                segments.push(dir_name);
+            }
+            break;
+        }
+
+        segments.reverse();
+        segments
+    }
+
+    fn ensure_module_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let scope = self.unit.alloc_scope(node.hir_id());
+        if let Some(symbol) = scope.symbol() {
+            return Some(symbol);
+        }
+
+        let raw_path = self
+            .unit
+            .file_path()
+            .or_else(|| self.unit.file().path());
+        let path = raw_path
+            .map(PathBuf::from)
+            .and_then(|p| p.canonicalize().ok().or(Some(p)))
+            .unwrap_or_else(|| PathBuf::from("__module__"));
+
+        let segments = Self::module_segments_from_path(&path);
+        let interner = self.unit.interner();
+
+        let (name, fqn) = if segments.is_empty() {
+            let fallback = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("__module__")
+                .to_string();
+            (fallback.clone(), fallback)
+        } else {
+            let name = segments.last().cloned().unwrap_or_else(|| "__module__".to_string());
+            let fqn = segments.join("::");
+            (name, fqn)
+        };
+
+        let key = interner.intern(&name);
+        let symbol = Symbol::new(node.hir_id(), name.clone(), key);
+        let symbol = self.unit.cc.arena.alloc(symbol);
+        symbol.set_kind(SymbolKind::Module);
+        symbol.set_unit_index(self.unit.index);
+        symbol.set_fqn(fqn, interner);
+
+        self.unit
+            .cc
+            .symbol_map
+            .borrow_mut()
+            .insert(symbol.id, symbol);
+
+        let _ = self.scopes.insert_symbol(symbol, true);
+        scope.set_symbol(Some(symbol));
+        Some(symbol)
     }
 
     #[allow(dead_code)]
@@ -84,9 +174,138 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn add_symbol_relation(&mut self, symbol: Option<&'tcx Symbol>) {
-        if let (Some(current), Some(target)) = (self.current_symbol(), symbol) {
-            current.add_dependency(target);
+        let Some(target) = symbol else { return };
+        let Some(current) = self.current_symbol() else { return };
+
+        current.add_dependency(target);
+
+        match current.kind() {
+            SymbolKind::Function => {
+                let parent_class = self
+                    .scopes
+                    .iter()
+                    .rev()
+                    .filter_map(|scope| scope.symbol())
+                    .find(|symbol| symbol.kind() == SymbolKind::Struct);
+
+                if let Some(class_symbol) = parent_class {
+                    class_symbol.add_dependency(target);
+                }
+            }
+            SymbolKind::Module => {
+                if !self.module_imports.iter().any(|&sym| sym.id == target.id) {
+                    self.module_imports.push(target);
+                }
+            }
+            _ => {}
         }
+    }
+
+    fn record_segments_dependency(&mut self, segments: &[String]) {
+        if segments.is_empty() {
+            return;
+        }
+
+        let interner = self.interner();
+        let suffix: Vec<_> = segments.iter().rev().map(|s| interner.intern(s)).collect();
+
+        let target = self
+            .lookup_symbol_suffix(&suffix, Some(SymbolKind::Struct))
+            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Enum)))
+            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Module)))
+            .or_else(|| self.lookup_symbol_suffix(&suffix, None));
+
+        self.add_symbol_relation(target);
+    }
+
+    fn build_attribute_path(&mut self, node: &HirNode<'tcx>, out: &mut Vec<String>) {
+        if node.kind_id() == LangPython::attribute {
+            if let Some(object_node) = node.opt_child_by_field(self.unit, LangPython::field_object)
+            {
+                self.build_attribute_path(&object_node, out);
+            }
+            if let Some(attr_node) =
+                node.opt_child_by_field(self.unit, LangPython::field_attribute)
+            {
+                if let Some(ident) = attr_node.as_ident() {
+                    out.push(ident.name.clone());
+                }
+            }
+        } else if node.kind_id() == LangPython::identifier {
+            if let Some(ident) = node.as_ident() {
+                out.push(ident.name.clone());
+            }
+        } else {
+            for child_id in node.children() {
+                let child = self.unit.hir_node(*child_id);
+                self.build_attribute_path(&child, out);
+            }
+        }
+    }
+
+    fn collect_identifier_paths(
+        &mut self,
+        node: &HirNode<'tcx>,
+        results: &mut Vec<Vec<String>>,
+    ) {
+        if node.kind_id() == LangPython::identifier {
+            if let Some(ident) = node.as_ident() {
+                results.push(vec![ident.name.clone()]);
+            }
+            return;
+        }
+
+        if node.kind_id() == LangPython::attribute {
+            let mut path = Vec::new();
+            self.build_attribute_path(node, &mut path);
+            if !path.is_empty() {
+                results.push(path);
+            }
+            return;
+        }
+
+        for child_id in node.children() {
+            let child = self.unit.hir_node(*child_id);
+            self.collect_identifier_paths(&child, results);
+        }
+    }
+
+    fn add_type_dependencies(&mut self, node: &HirNode<'tcx>) {
+        let mut paths = Vec::new();
+        self.collect_identifier_paths(node, &mut paths);
+
+        let mut seen = HashSet::new();
+        for path in paths {
+            if path.is_empty() {
+                continue;
+            }
+            let key = path.join("::");
+            if seen.insert(key) {
+                self.record_segments_dependency(&path);
+            }
+        }
+    }
+
+    fn record_import_path(&mut self, path: &str) {
+        let segments: Vec<String> = path
+            .split('.')
+            .filter(|segment| !segment.is_empty())
+            .map(|segment| segment.trim().to_string())
+            .collect();
+        if segments.is_empty() {
+            return;
+        }
+
+        let interner = self.interner();
+        let suffix: Vec<_> = segments.iter().rev().map(|s| interner.intern(s)).collect();
+
+        let target = self
+            .lookup_symbol_suffix(&suffix, Some(SymbolKind::Struct))
+            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Enum)))
+            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Module)))
+            .or_else(|| self.lookup_symbol_suffix(&suffix, None));
+
+        self.add_symbol_relation(target);
     }
 
     fn visit_children(&mut self, node: &HirNode<'tcx>) {
@@ -352,7 +571,9 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_scope(&node, None);
+        self.module_imports.clear();
+        let module_symbol = self.ensure_module_symbol(&node);
+        self.visit_children_scope(&node, module_symbol);
     }
 
     fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
@@ -396,10 +617,15 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
                 }
             }
 
-            self.visit_children(&node);
+            let is_init = ident.name.as_str() == "__init__";
+            if is_init {
+                self.visit_children(&node);
+            }
             self.scopes.pop_until(depth);
         } else {
-            self.visit_children(&node);
+            if ident.name.as_str() == "__init__" {
+                self.visit_children(&node);
+            }
         }
     }
 
@@ -434,6 +660,9 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
 
             if let Some(current_symbol) = self.current_symbol() {
                 self.add_base_class_dependencies(&node, current_symbol);
+                for import_symbol in &self.module_imports {
+                    current_symbol.add_dependency(import_symbol);
+                }
             }
 
             self.visit_children(&node);
@@ -454,6 +683,73 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
     fn visit_call(&mut self, node: HirNode<'tcx>) {
         // Delegate to the existing visit_call method
         self.visit_call_impl(&node);
+    }
+
+    fn visit_assignment(&mut self, node: HirNode<'tcx>) {
+        if let Some(type_node) = node.opt_child_by_field(self.unit, LangPython::field_type) {
+            self.add_type_dependencies(&type_node);
+        } else {
+            for child_id in node.children() {
+                let child = self.unit.hir_node(*child_id);
+                if child.kind_id() == LangPython::type_node {
+                    self.add_type_dependencies(&child);
+                }
+            }
+        }
+
+        self.visit_children(&node);
+    }
+
+    fn visit_import_statement(&mut self, node: HirNode<'tcx>) {
+        let content = self.unit.file().content();
+        let ts_node = node.inner_ts_node();
+        let mut cursor = ts_node.walk();
+
+        for child in ts_node.children(&mut cursor) {
+            match child.kind() {
+                "dotted_name" | "identifier" => {
+                    if let Ok(text) = child.utf8_text(&content) {
+                        self.record_import_path(text);
+                    }
+                }
+                "aliased_import" => {
+                    if let Some(name_node) = child.child_by_field_name("name") {
+                        if let Ok(text) = name_node.utf8_text(&content) {
+                            self.record_import_path(text);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        self.visit_children(&node);
+    }
+
+    fn visit_import_from(&mut self, node: HirNode<'tcx>) {
+        let content = self.unit.file().content();
+        let ts_node = node.inner_ts_node();
+        let mut cursor = ts_node.walk();
+
+        for child in ts_node.children(&mut cursor) {
+            match child.kind() {
+                "dotted_name" | "identifier" => {
+                    if let Ok(text) = child.utf8_text(&content) {
+                        self.record_import_path(text);
+                    }
+                }
+                "aliased_import" => {
+                    if let Some(name_node) = child.child_by_field_name("name") {
+                        if let Ok(text) = name_node.utf8_text(&content) {
+                            self.record_import_path(text);
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        self.visit_children(&node);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {

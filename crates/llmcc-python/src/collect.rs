@@ -1,4 +1,5 @@
 use std::mem;
+use std::path::{Path, PathBuf};
 
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirIdent, HirNode};
@@ -132,6 +133,92 @@ impl<'tcx> DeclCollector<'tcx> {
             let child = self.unit.hir_node(*id);
             self.visit_node(child);
         }
+    }
+
+    fn module_segments_from_path(path: &Path) -> Vec<String> {
+        if path.extension().and_then(|ext| ext.to_str()) != Some("py") {
+            return Vec::new();
+        }
+
+        let mut segments: Vec<String> = Vec::new();
+
+        if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+            if stem != "__init__" && !stem.is_empty() {
+                segments.push(stem.to_string());
+            }
+        }
+
+        let mut current = path.parent();
+        while let Some(dir) = current {
+            let dir_name = match dir.file_name().and_then(|n| n.to_str()) {
+                Some(name) if !name.is_empty() => name.to_string(),
+                _ => break,
+            };
+
+            let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
+            if has_init {
+                segments.push(dir_name);
+                current = dir.parent();
+                continue;
+            }
+
+            if segments.is_empty() {
+                segments.push(dir_name);
+            }
+            break;
+        }
+
+        segments.reverse();
+        segments
+    }
+
+    fn ensure_module_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let scope = self.unit.alloc_scope(node.hir_id());
+        if let Some(symbol) = scope.symbol() {
+            return Some(symbol);
+        }
+
+        let raw_path = self
+            .unit
+            .file_path()
+            .or_else(|| self.unit.file().path());
+        let path = raw_path
+            .map(PathBuf::from)
+            .and_then(|p| p.canonicalize().ok().or(Some(p)))
+            .unwrap_or_else(|| PathBuf::from("__module__"));
+
+        let segments = Self::module_segments_from_path(&path);
+        let interner = self.unit.interner();
+
+        let (name, fqn) = if segments.is_empty() {
+            let fallback = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("__module__")
+                .to_string();
+            (fallback.clone(), fallback)
+        } else {
+            let name = segments.last().cloned().unwrap_or_else(|| "__module__".to_string());
+            let fqn = segments.join("::");
+            (name, fqn)
+        };
+
+        let key = interner.intern(&name);
+        let symbol = Symbol::new(node.hir_id(), name.clone(), key);
+        let symbol = self.unit.cc.arena.alloc(symbol);
+        symbol.set_kind(SymbolKind::Module);
+        symbol.set_unit_index(self.unit.index);
+        symbol.set_fqn(fqn, interner);
+
+        self.unit
+            .cc
+            .symbol_map
+            .borrow_mut()
+            .insert(symbol.id, symbol);
+
+        let _ = self.scopes.insert_symbol(symbol, true);
+        scope.set_symbol(Some(symbol));
+        Some(symbol)
     }
 
     fn extract_base_classes(
@@ -343,7 +430,8 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_scope(&node, None);
+        let module_symbol = self.ensure_module_symbol(&node);
+        self.visit_children_scope(&node, module_symbol);
     }
 
     fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
