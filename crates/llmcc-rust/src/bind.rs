@@ -169,9 +169,12 @@ impl<'tcx> SymbolBinder<'tcx> {
             TypeExpr::Path { segments, generics } => {
                 let symbol = self
                     .resolve_symbol(segments, Some(SymbolKind::Struct))
-                    .or_else(|| self.resolve_symbol(segments, Some(SymbolKind::Enum)));
+                    .or_else(|| self.resolve_symbol(segments, Some(SymbolKind::Enum)))
+                    .or_else(|| self.resolve_symbol(segments, None));
                 if let Some(symbol) = symbol {
-                    symbols.push(symbol);
+                    if !symbols.iter().any(|existing| existing.id == symbol.id) {
+                        symbols.push(symbol);
+                    }
                 }
                 for generic in generics {
                     self.collect_type_expr_symbols(generic, symbols);

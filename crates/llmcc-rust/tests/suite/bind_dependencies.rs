@@ -1164,6 +1164,59 @@ fn static_variable_dependencies() {
 }
 
 #[test]
+fn enum_depends_on_type_alias_target() {
+    let source = r#"
+        mod config {
+            pub enum ReasoningEffort {
+                Low,
+                High,
+            }
+
+            pub enum ReasoningSummary {
+                Brief,
+                Detailed,
+            }
+        }
+
+        use config::ReasoningEffort as ReasoningEffortConfig;
+        use config::ReasoningSummary as ReasoningSummaryConfig;
+
+        pub enum Op {
+            UserTurn {
+                effort: Option<ReasoningEffortConfig>,
+                summary: ReasoningSummaryConfig,
+            }
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let op_symbol = enum_symbol(unit, &collection, "Op");
+    let effort_symbol = enum_symbol(unit, &collection, "ReasoningEffort");
+    let summary_symbol = enum_symbol(unit, &collection, "ReasoningSummary");
+
+    let dependency_ids = op_symbol.depends.borrow().clone();
+    let dependency_names: Vec<String> = dependency_ids
+        .iter()
+        .filter_map(|id| unit.cc.opt_get_symbol(*id))
+        .map(|symbol| symbol.fqn_name.borrow().clone())
+        .collect();
+
+    assert!(
+        dependency_ids.iter().any(|id| *id == effort_symbol.id),
+        "Op missing dependency on ReasoningEffort (ids: {:?}, names: {:?})",
+        dependency_ids,
+        dependency_names
+    );
+    assert!(
+        dependency_ids.iter().any(|id| *id == summary_symbol.id),
+        "Op missing dependency on ReasoningSummary (ids: {:?}, names: {:?})",
+        dependency_ids,
+        dependency_names
+    );
+}
+
+#[test]
 fn multiple_impl_blocks_same_type() {
     let source = r#"
         struct Widget;

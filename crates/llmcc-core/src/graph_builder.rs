@@ -1026,7 +1026,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             for &idx in node_indices {
                 let node = &nodes[idx];
-                let parts = vec![node.name.clone(), format!("({})", node.kind)];
+                let parts = vec![node.name.clone()];
                 let mut tooltip = None;
                 if let Some(location) = &node.location {
                     let (_display, full) = summarize_location(location);
