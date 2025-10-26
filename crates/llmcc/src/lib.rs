@@ -28,7 +28,13 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         (ctx, opts.files.clone())
     };
 
-    build_llmcc_ir::<L>(&cc)?;
+    let use_compact_builder = opts.project_graph && opts.query.is_none();
+    let ir_config = if use_compact_builder {
+        IrBuildConfig::compact()
+    } else {
+        IrBuildConfig::default()
+    };
+    build_llmcc_ir_with_config::<L>(&cc, ir_config)?;
     let globals = cc.create_globals();
 
     if opts.print_ir {
@@ -45,7 +51,6 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     let mut pg = ProjectGraph::new(&cc);
     // Keep the full graph when a query is requested so dependency queries remain accurate.
-    let use_compact_builder = opts.project_graph && opts.query.is_none();
     let graph_config = if use_compact_builder {
         GraphBuildConfig::compact()
     } else {

@@ -29,7 +29,7 @@ struct Args {
     #[arg(long, default_value_t = false)]
     print_block: bool,
 
-    /// Print a project level graph focused on class relationships, good for understanding high-level design architecture
+    /// Print a project level graph focused on class relationships for dir, good for understanding high-level design architecture
     #[arg(long, default_value_t = false)]
     project_graph: bool,
 

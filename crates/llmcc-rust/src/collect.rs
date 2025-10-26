@@ -91,7 +91,7 @@ impl<'tcx> DeclCollector<'tcx> {
         global: bool,
         kind: SymbolKind,
     ) -> Option<(&'tcx Symbol, &'tcx HirIdent<'tcx>, String)> {
-        let ident_node = node.child_by_field(self.unit, field_id);
+        let ident_node = node.opt_child_by_field(self.unit, field_id)?;
         let ident = ident_node.as_ident()?;
         let fqn = self.scoped_fqn(node, &ident.name);
         let owner = node.hir_id();
