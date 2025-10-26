@@ -1,6 +1,6 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
-use std::path::Path;
 use std::marker::PhantomData;
+use std::path::Path;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
@@ -477,9 +477,10 @@ impl<'tcx> ProjectGraph<'tcx> {
         struct CompactNode {
             block_id: BlockId,
             unit_index: usize,
-            // kind: BlockKind,
+            kind: BlockKind,
             name: String,
             location: Option<String>,
+            group: String,
         }
 
         fn byte_to_line(content: &[u8], byte_pos: usize) -> usize {
@@ -516,9 +517,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .filter_map(|comp| comp.as_os_str().to_str())
                 .collect();
 
-            let start = components
-                .len()
-                .saturating_sub(3);
+            let start = components.len().saturating_sub(3);
             let mut shortened = components[start..].join("/");
             if shortened.is_empty() {
                 shortened = path
@@ -589,7 +588,8 @@ impl<'tcx> ProjectGraph<'tcx> {
                     _ => break,
                 };
 
-                let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
+                let has_init =
+                    dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
 
                 if has_init {
                     packages.push(dir_name);
@@ -599,7 +599,10 @@ impl<'tcx> ProjectGraph<'tcx> {
             }
 
             if packages.is_empty() {
-                if let Some(stem) = file_stem.as_ref().filter(|stem| stem.as_str() != "__init__") {
+                if let Some(stem) = file_stem
+                    .as_ref()
+                    .filter(|stem| stem.as_str() != "__init__")
+                {
                     return stem.clone();
                 }
 
@@ -776,13 +779,18 @@ impl<'tcx> ProjectGraph<'tcx> {
                                 .map(|line| format!("{path}:{line}"))
                         })
                         .or_else(|| Some(path.clone()));
+                    let group = location
+                        .as_ref()
+                        .map(|loc| extract_group_path(loc))
+                        .unwrap_or_else(|| extract_group_path(&path));
 
                     Some(CompactNode {
                         block_id,
                         unit_index: *unit_index,
-                        // kind: *kind,
+                        kind: *kind,
                         name: display_name,
                         location,
+                        group,
                     })
                 })
                 .collect()
@@ -800,6 +808,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         let mut adjacency: Vec<Vec<usize>> = vec![Vec::new(); nodes.len()];
+        let mut reverse_adjacency: Vec<Vec<usize>> = vec![Vec::new(); nodes.len()];
         for node in &nodes {
             let Some(unit_graph) = self.unit_graph(node.unit_index) else {
                 continue;
@@ -816,6 +825,9 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             targets.sort_unstable();
             targets.dedup();
+            for &target_idx in &targets {
+                reverse_adjacency[target_idx].push(from_idx);
+            }
             adjacency[from_idx] = targets;
         }
 
@@ -874,6 +886,36 @@ impl<'tcx> ProjectGraph<'tcx> {
                     }
                 }
             }
+        }
+
+        if ranked_order.is_some() {
+            let mut changed = true;
+            while changed {
+                changed = false;
+                for idx in 0..keep.len() {
+                    if !keep[idx] {
+                        continue;
+                    }
+
+                    for &target in &adjacency[idx] {
+                        if nodes[idx].group != nodes[target].group && !keep[target] {
+                            keep[target] = true;
+                            kept += 1;
+                            changed = true;
+                        }
+                    }
+
+                    for &source in &reverse_adjacency[idx] {
+                        if nodes[source].group != nodes[idx].group && !keep[source] {
+                            keep[source] = true;
+                            kept += 1;
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+            kept = keep.iter().filter(|&&flag| flag).count();
         }
 
         if kept == 0 {
@@ -966,13 +1008,10 @@ impl<'tcx> ProjectGraph<'tcx> {
         // Extract crate/module paths from node locations
         let mut crate_groups: HashMap<String, Vec<usize>> = HashMap::new();
         for (idx, node) in nodes.iter().enumerate() {
-            if let Some(location) = &node.location {
-                let crate_path = extract_group_path(location);
-                crate_groups
-                    .entry(crate_path)
-                    .or_insert_with(Vec::new)
-                    .push(idx);
-            }
+            crate_groups
+                .entry(node.group.clone())
+                .or_insert_with(Vec::new)
+                .push(idx);
         }
 
         let mut output = String::from("digraph CompactProject {\n");
@@ -987,7 +1026,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             for &idx in node_indices {
                 let node = &nodes[idx];
-                let parts = vec![node.name.clone()];
+                let parts = vec![node.name.clone(), format!("({})", node.kind)];
                 let mut tooltip = None;
                 if let Some(location) = &node.location {
                     let (_display, full) = summarize_location(location);

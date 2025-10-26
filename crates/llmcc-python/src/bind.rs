@@ -1,9 +1,9 @@
-use std::collections::HashSet;
-use std::path::{Path, PathBuf};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
+use std::collections::HashSet;
+use std::path::{Path, PathBuf};
 
 use crate::token::{AstVisitorPython, LangPython};
 
@@ -89,10 +89,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             return Some(symbol);
         }
 
-        let raw_path = self
-            .unit
-            .file_path()
-            .or_else(|| self.unit.file().path());
+        let raw_path = self.unit.file_path().or_else(|| self.unit.file().path());
         let path = raw_path
             .map(PathBuf::from)
             .and_then(|p| p.canonicalize().ok().or(Some(p)))
@@ -109,7 +106,10 @@ impl<'tcx> SymbolBinder<'tcx> {
                 .to_string();
             (fallback.clone(), fallback)
         } else {
-            let name = segments.last().cloned().unwrap_or_else(|| "__module__".to_string());
+            let name = segments
+                .last()
+                .cloned()
+                .unwrap_or_else(|| "__module__".to_string());
             let fqn = segments.join("::");
             (name, fqn)
         };
@@ -175,7 +175,9 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn add_symbol_relation(&mut self, symbol: Option<&'tcx Symbol>) {
         let Some(target) = symbol else { return };
-        let Some(current) = self.current_symbol() else { return };
+        let Some(current) = self.current_symbol() else {
+            return;
+        };
 
         current.add_dependency(target);
 
@@ -224,8 +226,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             {
                 self.build_attribute_path(&object_node, out);
             }
-            if let Some(attr_node) =
-                node.opt_child_by_field(self.unit, LangPython::field_attribute)
+            if let Some(attr_node) = node.opt_child_by_field(self.unit, LangPython::field_attribute)
             {
                 if let Some(ident) = attr_node.as_ident() {
                     out.push(ident.name.clone());
@@ -243,11 +244,7 @@ impl<'tcx> SymbolBinder<'tcx> {
         }
     }
 
-    fn collect_identifier_paths(
-        &mut self,
-        node: &HirNode<'tcx>,
-        results: &mut Vec<Vec<String>>,
-    ) {
+    fn collect_identifier_paths(&mut self, node: &HirNode<'tcx>, results: &mut Vec<Vec<String>>) {
         if node.kind_id() == LangPython::identifier {
             if let Some(ident) = node.as_ident() {
                 results.push(vec![ident.name.clone()]);
@@ -376,6 +373,10 @@ impl<'tcx> SymbolBinder<'tcx> {
                     });
                     return true;
                 }
+                eprintln!(
+                    "failed to find function symbol '{}' (kind Function) in scope",
+                    name
+                );
 
                 // Try to find a struct (class) constructor call
                 if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct)) {
@@ -617,15 +618,10 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
                 }
             }
 
-            let is_init = ident.name.as_str() == "__init__";
-            if is_init {
-                self.visit_children(&node);
-            }
+            self.visit_children(&node);
             self.scopes.pop_until(depth);
         } else {
-            if ident.name.as_str() == "__init__" {
-                self.visit_children(&node);
-            }
+            self.visit_children(&node);
         }
     }
 

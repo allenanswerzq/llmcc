@@ -1,3 +1,5 @@
+use std::ptr;
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
@@ -57,20 +59,10 @@ impl<'tcx> SymbolBinder<'tcx> {
         kind: Option<SymbolKind>,
     ) -> Option<&'tcx Symbol> {
         let file_index = self.unit.index;
-        self.scopes
-            .find_scoped_suffix_with_filters(suffix, kind, Some(file_index))
-            .or_else(|| {
-                self.scopes
-                    .find_scoped_suffix_with_filters(suffix, kind, None)
-            })
-            .or_else(|| {
-                self.scopes
-                    .find_global_suffix_with_filters(suffix, kind, Some(file_index))
-            })
-            .or_else(|| {
-                self.scopes
-                    .find_global_suffix_with_filters(suffix, kind, None)
-            })
+        self.lookup_in_local_scopes(suffix, kind, Some(file_index))
+            .or_else(|| self.lookup_in_local_scopes(suffix, kind, None))
+            .or_else(|| self.lookup_in_global_scope(suffix, kind, Some(file_index)))
+            .or_else(|| self.lookup_in_global_scope(suffix, kind, None))
     }
 
     fn find_symbol_from_field(
@@ -167,6 +159,113 @@ impl<'tcx> SymbolBinder<'tcx> {
         extract_path_segments(&expr)
     }
 
+    fn parse_type_expr_from_node(&self, node: &HirNode<'tcx>) -> TypeExpr {
+        let ts_node = node.inner_ts_node();
+        parse_type_expr(self.unit, ts_node)
+    }
+
+    fn collect_type_expr_symbols(&mut self, expr: &TypeExpr, symbols: &mut Vec<&'tcx Symbol>) {
+        match expr {
+            TypeExpr::Path { segments, generics } => {
+                let symbol = self
+                    .resolve_symbol(segments, Some(SymbolKind::Struct))
+                    .or_else(|| self.resolve_symbol(segments, Some(SymbolKind::Enum)));
+                if let Some(symbol) = symbol {
+                    symbols.push(symbol);
+                }
+                for generic in generics {
+                    self.collect_type_expr_symbols(generic, symbols);
+                }
+            }
+            TypeExpr::Reference { inner, .. } => {
+                self.collect_type_expr_symbols(inner, symbols);
+            }
+            TypeExpr::Tuple(items) => {
+                for item in items {
+                    self.collect_type_expr_symbols(item, symbols);
+                }
+            }
+            TypeExpr::ImplTrait { .. } | TypeExpr::Unknown(_) => {}
+        }
+    }
+
+    fn type_symbols_from_node(&mut self, node: &HirNode<'tcx>) -> Vec<&'tcx Symbol> {
+        let expr = self.parse_type_expr_from_node(node);
+        let mut symbols = Vec::new();
+        self.collect_type_expr_symbols(&expr, &mut symbols);
+        symbols
+    }
+
+    fn lookup_in_local_scopes(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        let global_scope = self.scopes.iter().next();
+        for scope in self.scopes.iter().rev() {
+            if let Some(global) = global_scope {
+                if ptr::eq(scope, global) {
+                    continue;
+                }
+            }
+            let symbols = scope.lookup_suffix_symbols(suffix);
+            if let Some(symbol) = Self::select_matching_symbol(&symbols, kind, file) {
+                return Some(symbol);
+            }
+        }
+        None
+    }
+
+    fn lookup_in_global_scope(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        if let Some(global_scope) = self.scopes.iter().next() {
+            let symbols = global_scope.lookup_suffix_symbols(suffix);
+            Self::select_matching_symbol(&symbols, kind, file)
+        } else {
+            None
+        }
+    }
+
+    fn select_matching_symbol(
+        candidates: &[&'tcx Symbol],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        if let Some(kind) = kind {
+            if let Some(file) = file {
+                if let Some(symbol) = candidates
+                    .iter()
+                    .copied()
+                    .find(|symbol| symbol.kind() == kind && symbol.unit_index() == Some(file))
+                {
+                    return Some(symbol);
+                }
+            }
+
+            return candidates
+                .iter()
+                .copied()
+                .find(|symbol| symbol.kind() == kind);
+        }
+
+        if let Some(file) = file {
+            if let Some(symbol) = candidates
+                .iter()
+                .copied()
+                .find(|symbol| symbol.unit_index() == Some(file))
+            {
+                return Some(symbol);
+            }
+        }
+
+        candidates.first().copied()
+    }
+
     fn record_call_target(&mut self, target: &CallTarget) {
         match target {
             CallTarget::Path { segments, .. } => {
@@ -256,14 +355,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
             if let Some(return_type_node) =
                 node.opt_child_by_field(self.unit, LangRust::field_return_type)
             {
-                let segments = self.type_segments(&return_type_node);
-                if let Some(segs) = segments {
-                    if let Some(return_type_sym) = self
-                        .resolve_symbol(&segs, Some(SymbolKind::Struct))
-                        .or_else(|| self.resolve_symbol(&segs, Some(SymbolKind::Enum)))
-                    {
-                        func_symbol.add_dependency(return_type_sym);
-                    }
+                let expr = self.parse_type_expr_from_node(&return_type_node);
+                let mut symbols = Vec::new();
+                self.collect_type_expr_symbols(&expr, &mut symbols);
+                for return_type_sym in symbols {
+                    func_symbol.add_dependency(return_type_sym);
                 }
             }
 
@@ -296,13 +392,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         // Extract the type annotation if present and add it as a dependency
         if let Some(type_node) = node.opt_child_by_field(self.unit, LangRust::field_type) {
-            if let Some(segments) = self.type_segments(&type_node) {
-                if let Some(type_symbol) = self
-                    .resolve_symbol(&segments, Some(SymbolKind::Struct))
-                    .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
-                {
-                    self.add_symbol_relation(Some(type_symbol));
-                }
+            for type_symbol in self.type_symbols_from_node(&type_node) {
+                self.add_symbol_relation(Some(type_symbol));
             }
         }
 
@@ -332,13 +423,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     fn visit_field_declaration(&mut self, node: HirNode<'tcx>) {
         // Extract the type annotation from the field and add it as a dependency
         if let Some(type_node) = node.opt_child_by_field(self.unit, LangRust::field_type) {
-            if let Some(segments) = self.type_segments(&type_node) {
-                if let Some(type_symbol) = self
-                    .resolve_symbol(&segments, Some(SymbolKind::Struct))
-                    .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
-                {
-                    self.add_symbol_relation(Some(type_symbol));
-                }
+            for type_symbol in self.type_symbols_from_node(&type_node) {
+                self.add_symbol_relation(Some(type_symbol));
             }
         }
         self.visit_children(&node);

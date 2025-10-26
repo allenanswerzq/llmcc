@@ -129,7 +129,10 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         node.children(&mut cursor)
             .filter_map(|child| {
                 if self.config.compact {
-                    if child.is_error() || child.is_extra() || child.is_missing() || !child.is_named()
+                    if child.is_error()
+                        || child.is_extra()
+                        || child.is_missing()
+                        || !child.is_named()
                     {
                         return None;
                     }

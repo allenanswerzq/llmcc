@@ -972,6 +972,28 @@ fn complex_cross_module_enum_struct_dependencies() {
 }
 
 #[test]
+fn enum_variant_struct_field_depends_on_type_arguments() {
+    let source = r#"
+        pub enum UserInput {
+            Text(String),
+        }
+
+        pub enum Op {
+            UserInput {
+                items: Vec<UserInput>,
+            },
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let op_symbol = enum_symbol(unit, &collection, "Op");
+    let user_input_symbol = enum_symbol(unit, &collection, "UserInput");
+
+    assert_relation(op_symbol, user_input_symbol);
+}
+
+#[test]
 fn nested_modules_with_multiple_types_and_functions() {
     let source = r#"
         mod outer {

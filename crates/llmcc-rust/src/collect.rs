@@ -313,11 +313,16 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
-        let kind = node.inner_ts_node().kind();
+        let ts_kind = node.inner_ts_node().kind();
+        let symbol_kind = if ts_kind == "static_item" {
+            SymbolKind::Static
+        } else {
+            SymbolKind::Const
+        };
         if let Some((symbol, ident, fqn)) =
-            self.create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Const)
+            self.create_new_symbol(&node, LangRust::field_name, true, symbol_kind)
         {
-            let variable = match kind {
+            let variable = match ts_kind {
                 "const_item" => VariableDescriptor::from_const_item(
                     self.unit,
                     &node,

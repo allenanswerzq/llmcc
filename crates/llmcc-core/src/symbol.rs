@@ -84,6 +84,10 @@ impl<'tcx> Scope<'tcx> {
             .next()
     }
 
+    pub fn lookup_suffix_symbols(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+        self.trie.borrow().lookup_symbol_suffix(suffix)
+    }
+
     pub fn format_compact(&self) -> String {
         let count = self.trie.borrow().total_symbols();
         format!("{}/{}", self.owner, count)

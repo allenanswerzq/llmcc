@@ -291,11 +291,15 @@ impl<'tcx> ProjectQuery<'tcx> {
         // Try to get the fully qualified name from the symbol if available
         let display_name =
             if let Some(symbol) = self.graph.cc.find_symbol_by_block_id(node.block_id) {
-                let fqn = symbol.fqn_name.borrow();
-                if !fqn.is_empty() && *fqn != symbol.name {
-                    fqn.clone()
+                if let Some(ref base_name) = name {
+                    base_name.clone()
                 } else {
-                    name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
+                    let fqn = symbol.fqn_name.borrow();
+                    if !fqn.is_empty() {
+                        fqn.clone()
+                    } else {
+                        symbol.name.as_str().to_string()
+                    }
                 }
             } else {
                 name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
