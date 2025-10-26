@@ -8,8 +8,8 @@ pub struct LlmccOptions {
     pub files: Vec<String>,
     pub dir: Option<String>,
     pub print_ir: bool,
-    pub print_graph: bool,
-    pub compact_graph: bool,
+    pub print_block: bool,
+    pub project_graph: bool,
     pub pagerank: bool,
     pub top_k: Option<usize>,
     pub pagerank_direction: String,
@@ -45,7 +45,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     let mut pg = ProjectGraph::new(&cc);
     // Keep the full graph when a query is requested so dependency queries remain accurate.
-    let use_compact_builder = opts.compact_graph && opts.query.is_none();
+    let use_compact_builder = opts.project_graph && opts.query.is_none();
     let graph_config = if use_compact_builder {
         GraphBuildConfig::compact()
     } else {
@@ -56,7 +56,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         L::bind_symbols(unit, globals);
         let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
 
-        if opts.print_graph {
+        if opts.print_block {
             print_llmcc_graph(unit_graph.root(), unit);
         }
 
@@ -71,7 +71,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     let mut outputs = Vec::new();
 
-    if opts.compact_graph {
+    if opts.project_graph {
         if opts.pagerank {
             let limit = Some(opts.top_k.unwrap_or(25));
             pg.set_compact_rank_limit(limit);

@@ -25,15 +25,15 @@ struct Args {
     #[arg(long, default_value_t = false)]
     print_ir: bool,
 
-    /// Print project graph or file structure graph
+    /// Print basic block graph
     #[arg(long, default_value_t = false)]
-    print_graph: bool,
+    print_block: bool,
 
-    /// Render a compact dependency graph focused on class-like blocks
+    /// Print a project level graph focused on class relationships, good for understanding high-level design architecture
     #[arg(long, default_value_t = false)]
-    compact_graph: bool,
+    project_graph: bool,
 
-    /// Compute and print PageRank scores for the project graph
+    /// Use page rank algorithm to filter the most important nodes in the project graph
     #[arg(long, default_value_t = false)]
     pagerank: bool,
 
@@ -70,8 +70,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         files: args.files,
         dir: args.dir,
         print_ir: args.print_ir,
-        print_graph: args.print_graph,
-        compact_graph: args.compact_graph,
+        print_block: args.print_block,
+        project_graph: args.project_graph,
         pagerank: args.pagerank,
         top_k: args.top_k,
         pagerank_direction: args.pagerank_direction,

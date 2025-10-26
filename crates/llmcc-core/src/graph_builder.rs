@@ -856,7 +856,10 @@ impl<'tcx> ProjectGraph<'tcx> {
                 // Extract crate path from location
                 // Format: /path/to/crate/src/module/file.rs -> crate/module
                 let crate_path = extract_crate_path(location);
-                crate_groups.entry(crate_path).or_insert_with(Vec::new).push(idx);
+                crate_groups
+                    .entry(crate_path)
+                    .or_insert_with(Vec::new)
+                    .push(idx);
             }
         }
 

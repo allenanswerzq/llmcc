@@ -1213,10 +1213,10 @@ fn compact_graph_matches_default_output() {
     "#];
 
     let default_graph = build_graph_with_config(&sources, GraphBuildConfig::default());
-    let compact_graph = build_graph_with_config(&sources, GraphBuildConfig::compact());
+    let project_graph = build_graph_with_config(&sources, GraphBuildConfig::compact());
 
     let default_render = default_graph.render_compact_graph();
-    let compact_render = compact_graph.render_compact_graph();
+    let compact_render = project_graph.render_compact_graph();
 
     assert_eq!(default_render, compact_render);
     assert!(compact_render.contains("App\\n(class)"));

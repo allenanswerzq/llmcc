@@ -25,8 +25,8 @@ fn run_workflow<L>(
     files: Option<Vec<String>>,
     dir: Option<String>,
     print_ir: bool,
-    print_graph: bool,
-    compact_graph: bool,
+    print_block: bool,
+    project_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -75,7 +75,7 @@ where
     }
 
     let mut project_graph = ProjectGraph::new(&cc);
-    let graph_config = if compact_graph {
+    let graph_config = if project_graph {
         GraphBuildConfig::compact()
     } else {
         GraphBuildConfig::default()
@@ -85,7 +85,7 @@ where
         L::bind_symbols(unit, globals);
         let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
 
-        if print_graph {
+        if print_block {
             print_llmcc_graph(unit_graph.root(), unit);
         }
 
@@ -96,7 +96,7 @@ where
 
     let mut outputs = Vec::new();
 
-    if compact_graph {
+    if project_graph {
         outputs.push(project_graph.render_compact_graph());
     }
 
@@ -120,14 +120,14 @@ where
 }
 
 #[pyfunction]
-#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_graph=false, compact_graph=false, query=None, recursive=false, dependents=false))]
+#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, project_graph=false, query=None, recursive=false, dependents=false))]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
     dir: Option<String>,
     print_ir: bool,
-    print_graph: bool,
-    compact_graph: bool,
+    print_block: bool,
+    project_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -138,8 +138,8 @@ fn run_llmcc(
             files.clone(),
             dir.clone(),
             print_ir,
-            print_graph,
-            compact_graph,
+            print_block,
+            project_graph,
             query.clone(),
             recursive,
             dependents,
@@ -149,8 +149,8 @@ fn run_llmcc(
             files.clone(),
             dir.clone(),
             print_ir,
-            print_graph,
-            compact_graph,
+            print_block,
+            project_graph,
             query.clone(),
             recursive,
             dependents,
