@@ -477,7 +477,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         struct CompactNode {
             block_id: BlockId,
             unit_index: usize,
-            kind: BlockKind,
+            // kind: BlockKind,
             name: String,
             location: Option<String>,
         }
@@ -498,6 +498,43 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .replace('\\', "\\\\")
                 .replace('"', "\\\"")
                 .replace('\n', "\\n")
+        }
+
+        fn escape_attr(input: &str) -> String {
+            input.replace('\\', "\\\\").replace('"', "\\\"")
+        }
+
+        fn summarize_location(location: &str) -> (String, String) {
+            let (path_part, line_part) = location
+                .rsplit_once(':')
+                .map(|(path, line)| (path, Some(line)))
+                .unwrap_or((location, None));
+
+            let path = Path::new(path_part);
+            let components: Vec<_> = path
+                .components()
+                .filter_map(|comp| comp.as_os_str().to_str())
+                .collect();
+
+            let start = components
+                .len()
+                .saturating_sub(3);
+            let mut shortened = components[start..].join("/");
+            if shortened.is_empty() {
+                shortened = path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or(path_part)
+                    .to_string();
+            }
+
+            let display = if let Some(line) = line_part {
+                format!("{shortened}:{line}")
+            } else {
+                shortened
+            };
+
+            (display, location.to_string())
         }
 
         fn extract_crate_path(location: &str) -> String {
@@ -528,6 +565,8 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
 
         fn extract_python_module_path(location: &str) -> String {
+            const MAX_MODULE_DEPTH: usize = 2;
+
             let path_str = location.split(':').next().unwrap_or(location);
             let path = Path::new(path_str);
 
@@ -536,15 +575,14 @@ impl<'tcx> ProjectGraph<'tcx> {
                 return extract_crate_path(location);
             }
 
-            let mut components: Vec<String> = Vec::new();
+            let file_stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .map(|s| s.to_string());
 
-            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                if stem != "__init__" && !stem.is_empty() {
-                    components.push(stem.to_string());
-                }
-            }
-
+            let mut packages: Vec<String> = Vec::new();
             let mut current = path.parent();
+
             while let Some(dir) = current {
                 let dir_name = match dir.file_name().and_then(|n| n.to_str()) {
                     Some(name) if !name.is_empty() => name.to_string(),
@@ -554,33 +592,34 @@ impl<'tcx> ProjectGraph<'tcx> {
                 let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
 
                 if has_init {
-                    components.push(dir_name);
-                    current = dir.parent();
-                    continue;
+                    packages.push(dir_name);
                 }
 
-                // Skip common project layout folders that are not part of the import path.
-                if dir_name == "src" || dir_name == "lib" {
-                    current = dir.parent();
-                    continue;
-                }
-
-                if components.is_empty() {
-                    // If no package components were detected, at least group by the immediate directory.
-                    components.push(dir_name);
-                }
-                break;
+                current = dir.parent();
             }
 
-            components.reverse();
-            if components.is_empty() {
-                path.file_stem()
-                    .and_then(|s| s.to_str())
+            if packages.is_empty() {
+                if let Some(stem) = file_stem.as_ref().filter(|stem| stem.as_str() != "__init__") {
+                    return stem.clone();
+                }
+
+                if let Some(parent_name) = path
+                    .parent()
+                    .and_then(|dir| dir.file_name().and_then(|n| n.to_str()))
                     .map(|s| s.to_string())
-                    .unwrap_or_else(|| "unknown".to_string())
-            } else {
-                components.join(".")
+                {
+                    return parent_name;
+                }
+
+                return "unknown".to_string();
             }
+
+            packages.reverse();
+            if packages.len() > MAX_MODULE_DEPTH {
+                packages.truncate(MAX_MODULE_DEPTH);
+            }
+
+            packages.join(".")
         }
 
         fn extract_group_path(location: &str) -> String {
@@ -741,7 +780,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     Some(CompactNode {
                         block_id,
                         unit_index: *unit_index,
-                        kind: *kind,
+                        // kind: *kind,
                         name: display_name,
                         location,
                     })
@@ -948,16 +987,23 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             for &idx in node_indices {
                 let node = &nodes[idx];
-                let mut parts = vec![node.name.clone(), format!("({})", node.kind)];
+                let parts = vec![node.name.clone()];
+                let mut tooltip = None;
                 if let Some(location) = &node.location {
-                    parts.push(location.clone());
+                    let (_display, full) = summarize_location(location);
+                    tooltip = Some(full);
                 }
                 let label = parts
                     .into_iter()
                     .map(|part| escape_label(&part))
                     .collect::<Vec<_>>()
                     .join("\\n");
-                output.push_str(&format!("    n{} [label=\"{}\"];\n", idx, label));
+                let mut attrs = vec![format!("label=\"{}\"", label)];
+                if let Some(full) = tooltip {
+                    let escaped_full = escape_attr(&full);
+                    attrs.push(format!("full_path=\"{}\"", escaped_full));
+                }
+                output.push_str(&format!("    n{} [{}];\n", idx, attrs.join(", ")));
             }
 
             output.push_str("  }\n");
