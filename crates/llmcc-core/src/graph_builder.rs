@@ -1,4 +1,5 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::path::Path;
 use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
@@ -526,6 +527,71 @@ impl<'tcx> ProjectGraph<'tcx> {
             "unknown".to_string()
         }
 
+        fn extract_python_module_path(location: &str) -> String {
+            let path_str = location.split(':').next().unwrap_or(location);
+            let path = Path::new(path_str);
+
+            // If the path is not a Python file, fall back to generic handling.
+            if path.extension().and_then(|ext| ext.to_str()) != Some("py") {
+                return extract_crate_path(location);
+            }
+
+            let mut components: Vec<String> = Vec::new();
+
+            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                if stem != "__init__" && !stem.is_empty() {
+                    components.push(stem.to_string());
+                }
+            }
+
+            let mut current = path.parent();
+            while let Some(dir) = current {
+                let dir_name = match dir.file_name().and_then(|n| n.to_str()) {
+                    Some(name) if !name.is_empty() => name.to_string(),
+                    _ => break,
+                };
+
+                let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
+
+                if has_init {
+                    components.push(dir_name);
+                    current = dir.parent();
+                    continue;
+                }
+
+                // Skip common project layout folders that are not part of the import path.
+                if dir_name == "src" || dir_name == "lib" {
+                    current = dir.parent();
+                    continue;
+                }
+
+                if components.is_empty() {
+                    // If no package components were detected, at least group by the immediate directory.
+                    components.push(dir_name);
+                }
+                break;
+            }
+
+            components.reverse();
+            if components.is_empty() {
+                path.file_stem()
+                    .and_then(|s| s.to_str())
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "unknown".to_string())
+            } else {
+                components.join(".")
+            }
+        }
+
+        fn extract_group_path(location: &str) -> String {
+            let path = location.split(':').next().unwrap_or(location);
+            if path.ends_with(".py") {
+                extract_python_module_path(location)
+            } else {
+                extract_crate_path(location)
+            }
+        }
+
         fn strongly_connected_components(adjacency: &[Vec<usize>]) -> Vec<Vec<usize>> {
             fn strongconnect(
                 v: usize,
@@ -812,9 +878,29 @@ impl<'tcx> ProjectGraph<'tcx> {
             in_degree[to] += 1;
         }
 
-        let final_keep: Vec<bool> = (0..nodes.len())
+        let mut final_keep: Vec<bool> = (0..nodes.len())
             .map(|idx| in_degree[idx] > 0 || out_degree[idx] > 0)
             .collect();
+
+        let mut kept_after_degree = final_keep.iter().filter(|&&keep| keep).count();
+        if kept_after_degree < target_limit {
+            for idx in 0..nodes.len() {
+                if !final_keep[idx] {
+                    final_keep[idx] = true;
+                    kept_after_degree += 1;
+                    if kept_after_degree >= target_limit {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if kept_after_degree == 0 && !nodes.is_empty() {
+            let retain = target_limit.max(1).min(nodes.len());
+            for idx in 0..retain {
+                final_keep[idx] = true;
+            }
+        }
 
         let mut final_nodes = Vec::new();
         let mut final_remap = HashMap::new();
@@ -842,9 +928,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut crate_groups: HashMap<String, Vec<usize>> = HashMap::new();
         for (idx, node) in nodes.iter().enumerate() {
             if let Some(location) = &node.location {
-                // Extract crate path from location
-                // Format: /path/to/crate/src/module/file.rs -> crate/module
-                let crate_path = extract_crate_path(location);
+                let crate_path = extract_group_path(location);
                 crate_groups
                     .entry(crate_path)
                     .or_insert_with(Vec::new)
