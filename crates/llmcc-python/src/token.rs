@@ -87,3 +87,7 @@ define_tokens! {
     (field_object,          20,  "object",             HirKind::Internal),
     (field_attribute,       21,  "attribute",          HirKind::Internal),
 }
+
+impl LangPython {
+    pub const SUPPORTED_EXTENSIONS: &'static [&'static str] = &["py"];
+}

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
@@ -10,6 +10,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
+use crate::pagerank::{PageRankDirection, PageRanker};
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 
@@ -45,6 +46,23 @@ impl UnitGraph {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct GraphBuildConfig {
+    pub compact: bool,
+}
+
+impl GraphBuildConfig {
+    pub fn compact() -> Self {
+        Self { compact: true }
+    }
+}
+
+impl Default for GraphBuildConfig {
+    fn default() -> Self {
+        Self { compact: false }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GraphNode {
     pub unit_index: usize,
@@ -76,6 +94,8 @@ pub struct ProjectGraph<'tcx> {
     pub cc: &'tcx CompileCtxt<'tcx>,
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
+    compact_rank_limit: Option<usize>,
+    pagerank_direction: PageRankDirection,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -83,11 +103,26 @@ impl<'tcx> ProjectGraph<'tcx> {
         Self {
             cc,
             units: Vec::new(),
+            compact_rank_limit: None,
+            pagerank_direction: PageRankDirection::default(),
         }
     }
 
     pub fn add_child(&mut self, graph: UnitGraph) {
         self.units.push(graph);
+    }
+
+    /// Configure the number of PageRank-filtered nodes retained when rendering compact graphs.
+    pub fn set_compact_rank_limit(&mut self, limit: Option<usize>) {
+        self.compact_rank_limit = match limit {
+            Some(0) => None,
+            other => other,
+        };
+    }
+
+    /// Configure the PageRank direction for ranking nodes.
+    pub fn set_pagerank_direction(&mut self, direction: PageRankDirection) {
+        self.pagerank_direction = direction;
     }
 
     pub fn link_units(&mut self) {
@@ -127,6 +162,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         &self.units
     }
 
+    pub fn unit_graph(&self, unit_index: usize) -> Option<&UnitGraph> {
+        self.units
+            .iter()
+            .find(|unit| unit.unit_index() == unit_index)
+    }
+
     pub fn block_by_name(&self, name: &str) -> Option<GraphNode> {
         let block_indexes = self.cc.block_indexes.borrow();
         let matches = block_indexes.find_by_name(name);
@@ -148,6 +189,10 @@ impl<'tcx> ProjectGraph<'tcx> {
                 block_id,
             })
             .collect()
+    }
+
+    pub fn render_compact_graph(&self) -> String {
+        self.render_compact_graph_inner(self.compact_rank_limit)
     }
 
     pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
@@ -426,6 +471,433 @@ impl<'tcx> ProjectGraph<'tcx> {
         result
     }
 
+    fn render_compact_graph_inner(&self, top_k: Option<usize>) -> String {
+        #[derive(Clone)]
+        struct CompactNode {
+            block_id: BlockId,
+            unit_index: usize,
+            kind: BlockKind,
+            name: String,
+            location: Option<String>,
+        }
+
+        fn byte_to_line(content: &[u8], byte_pos: usize) -> usize {
+            let clamped = byte_pos.min(content.len());
+            let mut line = 1;
+            for &ch in &content[..clamped] {
+                if ch == b'\n' {
+                    line += 1;
+                }
+            }
+            line
+        }
+
+        fn escape_label(input: &str) -> String {
+            input
+                .replace('\\', "\\\\")
+                .replace('"', "\\\"")
+                .replace('\n', "\\n")
+        }
+
+        fn extract_crate_path(location: &str) -> String {
+            // Extract crate/module path from file location
+            // Examples:
+            //   /path/to/crate/src/module/file.rs -> crate/module
+            //   /path/to/crate/src/file.rs -> crate
+            //   C:\path\to\crate\src\module\file.rs -> crate/module
+
+            let path = location.split(':').next().unwrap_or(location);
+            let parts: Vec<&str> = path.split(['/', '\\']).collect();
+
+            // Find the "src" directory index
+            if let Some(src_idx) = parts.iter().position(|&p| p == "src") {
+                if src_idx > 0 {
+                    // Get crate name (directory before src)
+                    let crate_name = parts[src_idx - 1];
+
+                    // Get all module directories after src (excluding filename)
+                    let mut result = crate_name.to_string();
+                    for &part in &parts[src_idx + 1..] {
+                        if !part.is_empty() && !part.contains('.') {
+                            result.push('/');
+                            result.push_str(part);
+                        }
+                    }
+                    return result;
+                }
+            }
+
+            // Fallback: try to extract just the filename without extension
+            if let Some(filename) = parts.last() {
+                if !filename.is_empty() {
+                    return filename.split('.').next().unwrap_or("unknown").to_string();
+                }
+            }
+
+            "unknown".to_string()
+        }
+
+        fn strongly_connected_components(adjacency: &[Vec<usize>]) -> Vec<Vec<usize>> {
+            fn strongconnect(
+                v: usize,
+                index: &mut usize,
+                adjacency: &[Vec<usize>],
+                indices: &mut [Option<usize>],
+                lowlink: &mut [usize],
+                stack: &mut Vec<usize>,
+                on_stack: &mut [bool],
+                components: &mut Vec<Vec<usize>>,
+            ) {
+                indices[v] = Some(*index);
+                lowlink[v] = *index;
+                *index += 1;
+                stack.push(v);
+                on_stack[v] = true;
+
+                for &w in &adjacency[v] {
+                    if indices[w].is_none() {
+                        strongconnect(
+                            w, index, adjacency, indices, lowlink, stack, on_stack, components,
+                        );
+                        lowlink[v] = lowlink[v].min(lowlink[w]);
+                    } else if on_stack[w] {
+                        let w_index = indices[w].unwrap();
+                        lowlink[v] = lowlink[v].min(w_index);
+                    }
+                }
+
+                if lowlink[v] == indices[v].unwrap() {
+                    let mut component = Vec::new();
+                    while let Some(w) = stack.pop() {
+                        on_stack[w] = false;
+                        component.push(w);
+                        if w == v {
+                            break;
+                        }
+                    }
+                    components.push(component);
+                }
+            }
+
+            let mut index = 0;
+            let mut stack = Vec::new();
+            let mut indices = vec![None; adjacency.len()];
+            let mut lowlink = vec![0; adjacency.len()];
+            let mut on_stack = vec![false; adjacency.len()];
+            let mut components = Vec::new();
+
+            for v in 0..adjacency.len() {
+                if indices[v].is_none() {
+                    strongconnect(
+                        v,
+                        &mut index,
+                        adjacency,
+                        &mut indices,
+                        &mut lowlink,
+                        &mut stack,
+                        &mut on_stack,
+                        &mut components,
+                    );
+                }
+            }
+
+            components
+        }
+
+        let interesting_kinds = [BlockKind::Class, BlockKind::Enum];
+
+        let ranked_order = top_k.and_then(|limit| {
+            let mut ranker = PageRanker::new(self);
+            // Apply configured PageRank direction
+            ranker.config_mut().direction = self.pagerank_direction;
+            let mut collected = Vec::new();
+
+            for ranked in ranker.rank() {
+                if interesting_kinds.contains(&ranked.kind) {
+                    collected.push(ranked.node.block_id);
+                }
+                if collected.len() >= limit {
+                    break;
+                }
+            }
+
+            if collected.is_empty() {
+                None
+            } else {
+                Some(collected)
+            }
+        });
+
+        let ranked_filter: Option<HashSet<BlockId>> = ranked_order
+            .as_ref()
+            .map(|ordered| ordered.iter().copied().collect());
+
+        let mut nodes: Vec<CompactNode> = {
+            let block_indexes = self.cc.block_indexes.borrow();
+            block_indexes
+                .block_id_index
+                .iter()
+                .filter_map(|(&block_id, (unit_index, name_opt, kind))| {
+                    if !interesting_kinds.contains(kind) {
+                        return None;
+                    }
+
+                    if let Some(ref ranked_ids) = ranked_filter {
+                        if !ranked_ids.contains(&block_id) {
+                            return None;
+                        }
+                    }
+
+                    let unit = self.cc.compile_unit(*unit_index);
+                    let block = unit.bb(block_id);
+                    let display_name = name_opt
+                        .clone()
+                        .or_else(|| {
+                            block
+                                .base()
+                                .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
+                        })
+                        .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
+
+                    let path = std::fs::canonicalize(
+                        unit.file_path()
+                            .or_else(|| unit.file().path())
+                            .unwrap_or("<unknown>"),
+                    )
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_else(|_| {
+                        unit.file_path()
+                            .or_else(|| unit.file().path())
+                            .unwrap_or("<unknown>")
+                            .to_string()
+                    });
+                    let location = block
+                        .opt_node()
+                        .and_then(|node| {
+                            unit.file()
+                                .file
+                                .content
+                                .as_ref()
+                                .map(|bytes| byte_to_line(bytes.as_slice(), node.start_byte()))
+                                .map(|line| format!("{path}:{line}"))
+                        })
+                        .or_else(|| Some(path.clone()));
+
+                    Some(CompactNode {
+                        block_id,
+                        unit_index: *unit_index,
+                        kind: *kind,
+                        name: display_name,
+                        location,
+                    })
+                })
+                .collect()
+        };
+
+        nodes.sort_by(|a, b| a.name.cmp(&b.name));
+
+        if nodes.is_empty() {
+            return "digraph CompactProject {\n}\n".to_string();
+        }
+
+        let mut node_index = HashMap::new();
+        for (idx, node) in nodes.iter().enumerate() {
+            node_index.insert(node.block_id, idx);
+        }
+
+        let mut adjacency: Vec<Vec<usize>> = vec![Vec::new(); nodes.len()];
+        for node in &nodes {
+            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
+                continue;
+            };
+            let from_idx = node_index[&node.block_id];
+
+            let dependencies = unit_graph
+                .edges()
+                .get_related(node.block_id, BlockRelation::DependsOn);
+            let mut targets = dependencies
+                .into_iter()
+                .filter_map(|dep_id| node_index.get(&dep_id).copied())
+                .collect::<Vec<_>>();
+
+            targets.sort_unstable();
+            targets.dedup();
+            adjacency[from_idx] = targets;
+        }
+
+        let mut components: Vec<Vec<usize>> = strongly_connected_components(&adjacency)
+            .into_iter()
+            .filter(|component| !component.is_empty())
+            .collect();
+
+        if components.is_empty() {
+            return "digraph CompactProject {\n}\n".to_string();
+        }
+
+        components.sort_by(|a, b| b.len().cmp(&a.len()));
+
+        let target_limit = ranked_order
+            .as_ref()
+            .map(|order| order.len())
+            .unwrap_or_else(|| nodes.len());
+
+        let mut keep = vec![false; nodes.len()];
+        let mut kept = 0usize;
+
+        for component in components.iter().filter(|component| component.len() > 1) {
+            for &idx in component {
+                if !keep[idx] {
+                    keep[idx] = true;
+                    kept += 1;
+                }
+            }
+            if kept >= target_limit {
+                break;
+            }
+        }
+
+        if kept < target_limit {
+            if let Some(order) = ranked_order.as_ref() {
+                for block_id in order {
+                    if let Some(&idx) = node_index.get(block_id) {
+                        if !keep[idx] {
+                            keep[idx] = true;
+                            kept += 1;
+                            if kept >= target_limit {
+                                break;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for idx in 0..nodes.len() {
+                    if !keep[idx] {
+                        keep[idx] = true;
+                        kept += 1;
+                        if kept >= target_limit {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if kept == 0 {
+            if let Some(component) = components.first() {
+                for &idx in component {
+                    keep[idx] = true;
+                }
+                kept = component.len();
+            }
+        }
+
+        let mut filtered_nodes = Vec::with_capacity(kept);
+        let mut remap = HashMap::new();
+        for (old_idx, node) in nodes.into_iter().enumerate() {
+            if keep[old_idx] {
+                let new_idx = filtered_nodes.len();
+                remap.insert(old_idx, new_idx);
+                filtered_nodes.push(node);
+            }
+        }
+
+        let nodes = filtered_nodes;
+
+        let mut edges = BTreeSet::new();
+        for (old_idx, neighbours) in adjacency.iter().enumerate() {
+            let Some(&from_idx) = remap.get(&old_idx) else {
+                continue;
+            };
+            for &target in neighbours {
+                if let Some(&to_idx) = remap.get(&target) {
+                    edges.insert((from_idx, to_idx));
+                }
+            }
+        }
+
+        // Remove isolated nodes (nodes with no incoming or outgoing edges in the filtered graph).
+        let mut in_degree = vec![0usize; nodes.len()];
+        let mut out_degree = vec![0usize; nodes.len()];
+        for &(from, to) in &edges {
+            out_degree[from] += 1;
+            in_degree[to] += 1;
+        }
+
+        let final_keep: Vec<bool> = (0..nodes.len())
+            .map(|idx| in_degree[idx] > 0 || out_degree[idx] > 0)
+            .collect();
+
+        let mut final_nodes = Vec::new();
+        let mut final_remap = HashMap::new();
+        for (old_idx, node) in nodes.into_iter().enumerate() {
+            if final_keep[old_idx] {
+                let new_idx = final_nodes.len();
+                final_remap.insert(old_idx, new_idx);
+                final_nodes.push(node);
+            }
+        }
+
+        let nodes = final_nodes;
+
+        let final_edges: BTreeSet<_> = edges
+            .into_iter()
+            .filter_map(|(from, to)| {
+                let new_from = final_remap.get(&from).copied()?;
+                let new_to = final_remap.get(&to).copied()?;
+                Some((new_from, new_to))
+            })
+            .collect();
+        let edges = final_edges;
+
+        // Extract crate/module paths from node locations
+        let mut crate_groups: HashMap<String, Vec<usize>> = HashMap::new();
+        for (idx, node) in nodes.iter().enumerate() {
+            if let Some(location) = &node.location {
+                // Extract crate path from location
+                // Format: /path/to/crate/src/module/file.rs -> crate/module
+                let crate_path = extract_crate_path(location);
+                crate_groups
+                    .entry(crate_path)
+                    .or_insert_with(Vec::new)
+                    .push(idx);
+            }
+        }
+
+        let mut output = String::from("digraph CompactProject {\n");
+
+        // Generate subgraphs for each crate/module group
+        let mut subgraph_counter = 0;
+        for (crate_path, node_indices) in crate_groups.iter() {
+            output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));
+            output.push_str(&format!("    label=\"{}\";\n", escape_label(crate_path)));
+            output.push_str("    style=filled;\n");
+            output.push_str("    color=lightgrey;\n");
+
+            for &idx in node_indices {
+                let node = &nodes[idx];
+                let mut parts = vec![node.name.clone(), format!("({})", node.kind)];
+                if let Some(location) = &node.location {
+                    parts.push(location.clone());
+                }
+                let label = parts
+                    .into_iter()
+                    .map(|part| escape_label(&part))
+                    .collect::<Vec<_>>()
+                    .join("\\n");
+                output.push_str(&format!("    n{} [label=\"{}\"];\n", idx, label));
+            }
+
+            output.push_str("  }\n");
+            subgraph_counter += 1;
+        }
+
+        for (from, to) in edges {
+            output.push_str(&format!("  n{} -> n{};\n", from, to));
+        }
+        output.push_str("}\n");
+        output
+    }
+
     fn add_cross_edge(
         &self,
         from_idx: usize,
@@ -461,15 +933,17 @@ struct GraphBuilder<'tcx, Language> {
     unit: CompileUnit<'tcx>,
     root: Option<BlockId>,
     children_stack: Vec<Vec<BlockId>>,
+    config: GraphBuildConfig,
     _marker: PhantomData<Language>,
 }
 
 impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
-    fn new(unit: CompileUnit<'tcx>) -> Self {
+    fn new(unit: CompileUnit<'tcx>, config: GraphBuildConfig) -> Self {
         Self {
             unit,
             root: None,
             children_stack: Vec::new(),
+            config,
             _marker: PhantomData,
         }
     }
@@ -664,7 +1138,18 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 
     fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        if Language::block_kind(node.kind_id()) != BlockKind::Undefined {
+        let kind = Language::block_kind(node.kind_id());
+        if self.config.compact {
+            if kind == BlockKind::Root {
+                self.build_block(node, parent, true);
+            } else {
+                self.visit_children(node, parent);
+            }
+            return;
+        }
+
+        // Non-compact mode: process all defined kinds
+        if kind != BlockKind::Undefined {
             self.build_block(node, parent, false);
         } else {
             self.visit_children(node, parent);
@@ -672,7 +1157,26 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
-        match Language::block_kind(node.kind_id()) {
+        let kind = Language::block_kind(node.kind_id());
+        if self.config.compact {
+            // In compact mode, only create blocks for major constructs (Class, Enum, Impl)
+            // Skip functions, fields, and scopes to reduce graph size
+            match kind {
+                BlockKind::Class | BlockKind::Enum => {
+                    // Build with recursion enabled to capture nested major constructs
+                    self.build_block(node, parent, true);
+                }
+                // Skip all other scopes - don't recurse
+                _ => {
+                    // Stop here, do not visit children
+                    // self.visit_children(node, parent);
+                }
+            }
+            return;
+        }
+
+        // Non-compact mode: build blocks for all major constructs
+        match kind {
             BlockKind::Func
             | BlockKind::Class
             | BlockKind::Enum
@@ -684,14 +1188,15 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
-pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
+pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
+    config: GraphBuildConfig,
 ) -> Result<UnitGraph, Box<dyn std::error::Error>> {
     let root_hir = unit
         .file_start_hir_id()
         .ok_or("missing file start HIR id")?;
-    let mut builder = GraphBuilder::<L>::new(unit);
+    let mut builder = GraphBuilder::<L>::new(unit, config);
     let root_node = unit.hir_node(root_hir);
     builder.visit_node(root_node, BlockId::ROOT_PARENT);
 
@@ -699,4 +1204,11 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     let root_block = root_block.ok_or("graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
     Ok(UnitGraph::new(unit_index, root_block, edges))
+}
+
+pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
+    unit: CompileUnit<'tcx>,
+    unit_index: usize,
+) -> Result<UnitGraph, Box<dyn std::error::Error>> {
+    build_llmcc_graph_with_config::<L>(unit, unit_index, GraphBuildConfig::default())
 }

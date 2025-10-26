@@ -57,3 +57,7 @@ define_tokens! {
     (field_return_type     ,  25 , "return_type"                , HirKind::Internal),
     (field_parameters      ,  22 , "parameters"                 , HirKind::Internal),
 }
+
+impl LangRust {
+    pub const SUPPORTED_EXTENSIONS: &'static [&'static str] = &["rs"];
+}
