@@ -26,7 +26,7 @@ fn run_workflow<L>(
     dir: Option<String>,
     print_ir: bool,
     print_block: bool,
-    project_graph: bool,
+    print_project_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -74,8 +74,8 @@ where
         L::collect_symbols(unit, globals);
     }
 
-    let mut project_graph = ProjectGraph::new(&cc);
-    let graph_config = if project_graph {
+    let mut pg = ProjectGraph::new(&cc);
+    let graph_config = if print_project_graph {
         GraphBuildConfig::compact()
     } else {
         GraphBuildConfig::default()
@@ -89,19 +89,19 @@ where
             print_llmcc_graph(unit_graph.root(), unit);
         }
 
-        project_graph.add_child(unit_graph);
+        pg.add_child(unit_graph);
     }
 
-    project_graph.link_units();
+    pg.link_units();
 
     let mut outputs = Vec::new();
 
-    if project_graph {
-        outputs.push(project_graph.render_compact_graph());
+    if print_project_graph {
+        outputs.push(pg.render_compact_graph());
     }
 
     if let Some(symbol_name) = query {
-        let query = ProjectQuery::new(&project_graph);
+        let query = ProjectQuery::new(&pg);
         let result = if dependents {
             query.find_depended(&symbol_name)
         } else if recursive {
@@ -120,14 +120,14 @@ where
 }
 
 #[pyfunction]
-#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, project_graph=false, query=None, recursive=false, dependents=false))]
+#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, print_project_graph=false, query=None, recursive=false, dependents=false))]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
     dir: Option<String>,
     print_ir: bool,
     print_block: bool,
-    project_graph: bool,
+    print_project_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -139,7 +139,7 @@ fn run_llmcc(
             dir.clone(),
             print_ir,
             print_block,
-            project_graph,
+            print_project_graph,
             query.clone(),
             recursive,
             dependents,
@@ -150,7 +150,7 @@ fn run_llmcc(
             dir.clone(),
             print_ir,
             print_block,
-            project_graph,
+            print_project_graph,
             query.clone(),
             recursive,
             dependents,
