@@ -141,9 +141,7 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
                     if matches!(child_block_kind, BlockKind::Stmt | BlockKind::Call) {
                         return None;
                     }
-                    if child_block_kind == BlockKind::Scope && child.kind() == "block" {
-                        return None;
-                    }
+                    // Keep Python/Rust block nodes so nested declarations remain visible in compact mode.
                 }
                 Some(self.build_node(child, Some(parent_id)))
             })
