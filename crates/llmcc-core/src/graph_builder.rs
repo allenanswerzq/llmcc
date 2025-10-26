@@ -10,7 +10,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
-use crate::pagerank::PageRanker;
+use crate::pagerank::{PageRankDirection, PageRanker};
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 
@@ -95,6 +95,7 @@ pub struct ProjectGraph<'tcx> {
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
     compact_rank_limit: Option<usize>,
+    pagerank_direction: PageRankDirection,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -103,6 +104,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             cc,
             units: Vec::new(),
             compact_rank_limit: None,
+            pagerank_direction: PageRankDirection::default(),
         }
     }
 
@@ -116,6 +118,11 @@ impl<'tcx> ProjectGraph<'tcx> {
             Some(0) => None,
             other => other,
         };
+    }
+
+    /// Configure the PageRank direction for ranking nodes.
+    pub fn set_pagerank_direction(&mut self, direction: PageRankDirection) {
+        self.pagerank_direction = direction;
     }
 
     pub fn link_units(&mut self) {
@@ -492,6 +499,44 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .replace('\n', "\\n")
         }
 
+        fn extract_crate_path(location: &str) -> String {
+            // Extract crate/module path from file location
+            // Examples:
+            //   /path/to/crate/src/module/file.rs -> crate/module
+            //   /path/to/crate/src/file.rs -> crate
+            //   C:\path\to\crate\src\module\file.rs -> crate/module
+
+            let path = location.split(':').next().unwrap_or(location);
+            let parts: Vec<&str> = path.split(['/', '\\']).collect();
+
+            // Find the "src" directory index
+            if let Some(src_idx) = parts.iter().position(|&p| p == "src") {
+                if src_idx > 0 {
+                    // Get crate name (directory before src)
+                    let crate_name = parts[src_idx - 1];
+
+                    // Get all module directories after src (excluding filename)
+                    let mut result = crate_name.to_string();
+                    for &part in &parts[src_idx + 1..] {
+                        if !part.is_empty() && !part.contains('.') {
+                            result.push('/');
+                            result.push_str(part);
+                        }
+                    }
+                    return result;
+                }
+            }
+
+            // Fallback: try to extract just the filename without extension
+            if let Some(filename) = parts.last() {
+                if !filename.is_empty() {
+                    return filename.split('.').next().unwrap_or("unknown").to_string();
+                }
+            }
+
+            "unknown".to_string()
+        }
+
         fn strongly_connected_components(adjacency: &[Vec<usize>]) -> Vec<Vec<usize>> {
             fn strongconnect(
                 v: usize,
@@ -562,7 +607,9 @@ impl<'tcx> ProjectGraph<'tcx> {
         let interesting_kinds = [BlockKind::Class, BlockKind::Enum];
 
         let ranked_order = top_k.and_then(|limit| {
-            let ranker = PageRanker::new(self);
+            let mut ranker = PageRanker::new(self);
+            // Apply configured PageRank direction
+            ranker.config_mut().direction = self.pagerank_direction;
             let mut collected = Vec::new();
 
             for ranked in ranker.rank() {
@@ -802,18 +849,43 @@ impl<'tcx> ProjectGraph<'tcx> {
             .collect();
         let edges = final_edges;
 
-        let mut output = String::from("digraph CompactProject {\n");
+        // Extract crate/module paths from node locations
+        let mut crate_groups: HashMap<String, Vec<usize>> = HashMap::new();
         for (idx, node) in nodes.iter().enumerate() {
-            let mut parts = vec![node.name.clone(), format!("({})", node.kind)];
             if let Some(location) = &node.location {
-                parts.push(location.clone());
+                // Extract crate path from location
+                // Format: /path/to/crate/src/module/file.rs -> crate/module
+                let crate_path = extract_crate_path(location);
+                crate_groups.entry(crate_path).or_insert_with(Vec::new).push(idx);
             }
-            let label = parts
-                .into_iter()
-                .map(|part| escape_label(&part))
-                .collect::<Vec<_>>()
-                .join("\\n");
-            output.push_str(&format!("  n{} [label=\"{}\"];\n", idx, label));
+        }
+
+        let mut output = String::from("digraph CompactProject {\n");
+
+        // Generate subgraphs for each crate/module group
+        let mut subgraph_counter = 0;
+        for (crate_path, node_indices) in crate_groups.iter() {
+            output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));
+            output.push_str(&format!("    label=\"{}\";\n", escape_label(crate_path)));
+            output.push_str("    style=filled;\n");
+            output.push_str("    color=lightgrey;\n");
+
+            for &idx in node_indices {
+                let node = &nodes[idx];
+                let mut parts = vec![node.name.clone(), format!("({})", node.kind)];
+                if let Some(location) = &node.location {
+                    parts.push(location.clone());
+                }
+                let label = parts
+                    .into_iter()
+                    .map(|part| escape_label(&part))
+                    .collect::<Vec<_>>()
+                    .join("\\n");
+                output.push_str(&format!("    n{} [label=\"{}\"];\n", idx, label));
+            }
+
+            output.push_str("  }\n");
+            subgraph_counter += 1;
         }
 
         for (from, to) in edges {

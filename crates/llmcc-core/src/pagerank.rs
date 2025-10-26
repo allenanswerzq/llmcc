@@ -3,6 +3,23 @@ use std::collections::HashMap;
 use crate::block::{BlockId, BlockKind, BlockRelation};
 use crate::graph_builder::{GraphNode, ProjectGraph};
 
+/// Edge direction for PageRank traversal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PageRankDirection {
+    /// Follow DependsOn edges: rank flows toward heavily-depended-upon nodes (data types).
+    DependsOn,
+    /// Follow DependedBy edges: rank flows toward orchestrators that many nodes depend on.
+    DependedBy,
+}
+
+impl Default for PageRankDirection {
+    fn default() -> Self {
+        // Default to DependedBy to surface orchestrators and coordinators
+        // (more useful for understanding codebase behavior)
+        Self::DependedBy
+    }
+}
+
 /// Configuration options for the PageRank algorithm.
 #[derive(Debug, Clone)]
 pub struct PageRankConfig {
@@ -14,6 +31,8 @@ pub struct PageRankConfig {
     pub tolerance: f64,
     /// Which edge relation to consider when traversing the graph.
     pub relation: BlockRelation,
+    /// Edge direction: follow DependsOn or DependedBy edges.
+    pub direction: PageRankDirection,
 }
 
 impl Default for PageRankConfig {
@@ -23,6 +42,7 @@ impl Default for PageRankConfig {
             max_iterations: 100,
             tolerance: 1e-6,
             relation: BlockRelation::DependsOn,
+            direction: PageRankDirection::default(),
         }
     }
 }
@@ -70,13 +90,48 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
 
     /// Compute PageRank scores for all blocks in the project and return them in descending order.
     pub fn rank(&self) -> Vec<RankedBlock> {
-        let entries = self.collect_entries();
-        let total_nodes = entries.len();
-        if total_nodes == 0 {
+        let mut entries = self.collect_entries();
+        if entries.is_empty() {
             return Vec::new();
         }
 
-        let outgoing = self.build_adjacency(&entries);
+        let mut outgoing = self.build_adjacency(&entries);
+
+        // Remove isolated nodes with neither incoming nor outgoing edges so they don't skew scoring.
+        let mut incoming_counts = vec![0usize; outgoing.len()];
+        for neighbours in &outgoing {
+            for &target_idx in neighbours {
+                incoming_counts[target_idx] += 1;
+            }
+        }
+
+        let mut any_filtered = false;
+        let mut keep_mask = Vec::with_capacity(entries.len());
+        for (idx, neighbours) in outgoing.iter().enumerate() {
+            let has_outgoing = !neighbours.is_empty();
+            let has_incoming = incoming_counts[idx] > 0;
+            let keep = has_outgoing || has_incoming;
+            if !keep {
+                any_filtered = true;
+            }
+            keep_mask.push(keep);
+        }
+
+        if any_filtered {
+            entries = entries
+                .into_iter()
+                .enumerate()
+                .filter_map(|(idx, entry)| keep_mask[idx].then_some(entry))
+                .collect();
+
+            if entries.is_empty() {
+                return Vec::new();
+            }
+
+            outgoing = self.build_adjacency(&entries);
+        }
+
+        let total_nodes = entries.len();
         let mut ranks = vec![1.0 / total_nodes as f64; total_nodes];
         let mut next_ranks = vec![0.0; total_nodes];
         let damping = self.config.damping_factor;
@@ -118,6 +173,15 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             }
         }
 
+        // Apply block-kind weighting: favor Classes and Funcs over data types
+        fn kind_weight(kind: BlockKind) -> f64 {
+            match kind {
+                BlockKind::Class | BlockKind::Func | BlockKind::Impl => 2.0,
+                BlockKind::Enum | BlockKind::Const | BlockKind::Field => 1.0,
+                _ => 1.0,
+            }
+        }
+
         let mut ranked: Vec<RankedBlock> = entries
             .into_iter()
             .enumerate()
@@ -134,12 +198,15 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                     .filter(|name| !name.is_empty())
                     .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
 
+                // Apply kind weight multiplier to the raw rank score
+                let weighted_score = ranks[idx] * kind_weight(kind);
+
                 RankedBlock {
                     node: GraphNode {
                         unit_index,
                         block_id,
                     },
-                    score: ranks[idx],
+                    score: weighted_score,
                     name: display_name,
                     kind,
                     file_path,
@@ -220,9 +287,22 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                 continue;
             };
 
+            // Use the configured direction: follow DependsOn or DependedBy edges
+            let relation_to_follow = match self.config.direction {
+                PageRankDirection::DependsOn => self.config.relation,
+                PageRankDirection::DependedBy => {
+                    // Reverse the relation: if we want DependedBy, follow the reverse of DependsOn
+                    match self.config.relation {
+                        BlockRelation::DependsOn => BlockRelation::DependedBy,
+                        BlockRelation::DependedBy => BlockRelation::DependsOn,
+                        _ => self.config.relation,
+                    }
+                }
+            };
+
             let mut targets = unit_graph
                 .edges()
-                .get_related(entry.block_id, self.config.relation)
+                .get_related(entry.block_id, relation_to_follow)
                 .into_iter()
                 .filter_map(|dep_id| index_by_block.get(&dep_id).copied())
                 .filter(|target_idx| *target_idx != idx)

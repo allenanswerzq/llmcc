@@ -41,6 +41,15 @@ struct Args {
     #[arg(long, value_name = "K", requires = "pagerank")]
     top_k: Option<usize>,
 
+    /// PageRank direction: 'depends-on' to rank depended-upon nodes, 'depended-by' to rank orchestrators (default: depended-by)
+    #[arg(
+        long,
+        value_name = "DIR",
+        requires = "pagerank",
+        default_value = "depended-by"
+    )]
+    pagerank_direction: String,
+
     /// Name of the symbol/function to query (enables find_depends mode)
     #[arg(long, value_name = "NAME")]
     query: Option<String>,
@@ -65,6 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         compact_graph: args.compact_graph,
         pagerank: args.pagerank,
         top_k: args.top_k,
+        pagerank_direction: args.pagerank_direction,
         query: args.query,
         recursive: args.recursive,
         dependents: args.dependents,
