@@ -304,7 +304,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node, None);
+        self.visit_struct_item(node);
+    }
+
+    fn visit_function_signature_item(&mut self,node:HirNode<'tcx>) {
+        self.visit_function_item(node);
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
