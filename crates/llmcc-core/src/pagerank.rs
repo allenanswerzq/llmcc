@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 use crate::block::{BlockId, BlockKind, BlockRelation};
 use crate::graph_builder::{GraphNode, ProjectGraph};
@@ -181,6 +181,8 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             }
         }
 
+        let proximity_multipliers = compute_proximity_multipliers(&ranks, &outgoing);
+
         let mut ranked: Vec<RankedBlock> = entries
             .into_iter()
             .enumerate()
@@ -198,7 +200,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                     .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
 
                 // Apply kind weight multiplier to the raw rank score
-                let weighted_score = ranks[idx] * kind_weight(kind);
+                let weighted_score = ranks[idx] * kind_weight(kind) * proximity_multipliers[idx];
 
                 RankedBlock {
                     node: GraphNode {
@@ -323,4 +325,75 @@ struct BlockEntry {
     name: Option<String>,
     kind: BlockKind,
     file_path: Option<String>,
+}
+
+fn compute_proximity_multipliers(ranks: &[f64], adjacency: &[Vec<usize>]) -> Vec<f64> {
+    let node_count = ranks.len();
+    if node_count == 0 {
+        return Vec::new();
+    }
+
+    let mut multipliers = vec![1.0; node_count];
+    let mut closeness = vec![0.0; node_count];
+
+    let mut top_indices: Vec<usize> = (0..node_count).collect();
+    top_indices.sort_by(|a, b| {
+        ranks[*b]
+            .partial_cmp(&ranks[*a])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    const TOP_LIMIT: usize = 20;
+    const MAX_DEPTH: usize = 4;
+    const ATTENUATION: f64 = 0.6;
+    const STRENGTH: f64 = 0.75;
+
+    if top_indices.len() > TOP_LIMIT {
+        top_indices.truncate(TOP_LIMIT);
+    }
+
+    if top_indices.is_empty() {
+        return multipliers;
+    }
+
+    let total_top_weight: f64 = top_indices.iter().map(|&idx| ranks[idx]).sum();
+    let uniform_weight = 1.0 / top_indices.len() as f64;
+
+    for &root in top_indices.iter() {
+        let importance = if total_top_weight > 0.0 {
+            ranks[root] / total_top_weight
+        } else {
+            uniform_weight
+        };
+
+        let mut visited = vec![false; node_count];
+        let mut queue: VecDeque<(usize, usize)> = VecDeque::new();
+        queue.push_back((root, 0));
+        visited[root] = true;
+
+        while let Some((current, depth)) = queue.pop_front() {
+            let decay = ATTENUATION.powf(depth as f64);
+            closeness[current] += importance * decay;
+
+            if depth >= MAX_DEPTH {
+                continue;
+            }
+
+            if let Some(neighbors) = adjacency.get(current) {
+                for &neighbor in neighbors {
+                    if visited[neighbor] {
+                        continue;
+                    }
+                    visited[neighbor] = true;
+                    queue.push_back((neighbor, depth + 1));
+                }
+            }
+        }
+    }
+
+    for (idx, boost) in closeness.into_iter().enumerate() {
+        multipliers[idx] += STRENGTH * boost;
+    }
+
+    multipliers
 }

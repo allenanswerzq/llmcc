@@ -636,7 +636,9 @@ impl<'tcx> ProjectGraph<'tcx> {
             return "digraph CompactProject {\n}\n".to_string();
         }
 
-        render_compact_dot(&pruned.nodes, &pruned.edges)
+        let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
+
+        render_compact_dot(&pruned.nodes, &reduced_edges)
     }
 
     fn add_cross_edge(
@@ -1169,44 +1171,31 @@ fn prune_compact_components(
         };
     }
 
-    let largest_component = find_largest_component(nodes, edges, None);
-    if largest_component.is_empty() {
+    let components = find_connected_components(nodes.len(), edges);
+    if components.is_empty() {
         return PrunedGraph {
             nodes: nodes.to_vec(),
             edges: edges.clone(),
         };
     }
 
-    let grouped = group_nodes_by_cluster(nodes);
-    let mut retained_clusters = HashSet::new();
-
-    for (cluster, indices) in grouped.iter() {
-        let largest_in_cluster = find_largest_component(nodes, edges, Some(indices));
-        if largest_in_cluster.is_empty() {
-            continue;
-        }
-
-        let has_bridge = largest_in_cluster
-            .iter()
-            .any(|idx| node_has_edge_to_component(*idx, edges, &largest_component));
-
-        if has_bridge {
-            retained_clusters.insert(cluster.clone());
-        }
-    }
-
-    if retained_clusters.is_empty() {
-        retained_clusters.insert(nodes[largest_component[0]].group.clone());
-    }
-
     let mut retained_indices = HashSet::new();
-    for cluster in retained_clusters.iter() {
-        if let Some(indices) = grouped.get(cluster) {
-            let keep = find_largest_component(nodes, edges, Some(indices));
-            for idx in keep {
-                retained_indices.insert(idx);
+    for component in components {
+        if component.len() == 1 {
+            let idx = component[0];
+            let has_edges = edges.iter().any(|&(from, to)| from == idx || to == idx);
+            if !has_edges {
+                continue;
             }
         }
+        retained_indices.extend(component);
+    }
+
+    if retained_indices.is_empty() {
+        return PrunedGraph {
+            nodes: Vec::new(),
+            edges: BTreeSet::new(),
+        };
     }
 
     let mut retained_nodes = Vec::new();
@@ -1229,47 +1218,32 @@ fn prune_compact_components(
     }
 }
 
-fn group_nodes_by_cluster(nodes: &[CompactNode]) -> HashMap<String, Vec<usize>> {
-    let mut groups: HashMap<String, Vec<usize>> = HashMap::new();
-    for (idx, node) in nodes.iter().enumerate() {
-        groups.entry(node.group.clone()).or_default().push(idx);
-    }
-    groups
-}
-
-fn find_largest_component(
-    nodes: &[CompactNode],
+fn find_connected_components(
+    node_count: usize,
     edges: &BTreeSet<(usize, usize)>,
-    scope: Option<&Vec<usize>>,
-) -> Vec<usize> {
-    if nodes.is_empty() {
+) -> Vec<Vec<usize>> {
+    if node_count == 0 {
         return Vec::new();
     }
 
-    let scoped: HashSet<usize> = scope
-        .map(|indices| indices.iter().copied().collect())
-        .unwrap_or_else(|| (0..nodes.len()).collect());
-
     let mut graph: HashMap<usize, Vec<usize>> = HashMap::new();
-    for &(from, to) in edges {
-        if scoped.contains(&from) && scoped.contains(&to) {
-            graph.entry(from).or_default().push(to);
-            graph.entry(to).or_default().push(from);
-        }
+    for &(from, to) in edges.iter() {
+        graph.entry(from).or_default().push(to);
+        graph.entry(to).or_default().push(from);
     }
 
     let mut visited = HashSet::new();
-    let mut largest_component = Vec::new();
+    let mut components = Vec::new();
 
-    for &idx in scoped.iter() {
-        if visited.contains(&idx) {
+    for node in 0..node_count {
+        if visited.contains(&node) {
             continue;
         }
 
         let mut component = Vec::new();
-        let mut queue = vec![idx];
+        let mut stack = vec![node];
 
-        while let Some(current) = queue.pop() {
+        while let Some(current) = stack.pop() {
             if !visited.insert(current) {
                 continue;
             }
@@ -1278,28 +1252,83 @@ fn find_largest_component(
 
             if let Some(neighbors) = graph.get(&current) {
                 for &neighbor in neighbors {
-                    if scoped.contains(&neighbor) && !visited.contains(&neighbor) {
-                        queue.push(neighbor);
+                    if !visited.contains(&neighbor) {
+                        stack.push(neighbor);
                     }
                 }
             }
         }
 
-        if component.len() > largest_component.len() {
-            largest_component = component;
+        components.push(component);
+    }
+
+    components
+}
+
+fn reduce_transitive_edges(
+    nodes: &[CompactNode],
+    edges: &BTreeSet<(usize, usize)>,
+) -> BTreeSet<(usize, usize)> {
+    if nodes.is_empty() {
+        return BTreeSet::new();
+    }
+
+    let mut adjacency: HashMap<usize, Vec<usize>> = HashMap::new();
+    for &(from, to) in edges.iter() {
+        adjacency.entry(from).or_default().push(to);
+    }
+
+    let mut minimal_edges = BTreeSet::new();
+
+    for &(from, to) in edges.iter() {
+        if !has_alternative_path(from, to, &adjacency, (from, to)) {
+            minimal_edges.insert((from, to));
         }
     }
 
-    largest_component
+    minimal_edges
 }
 
-fn node_has_edge_to_component(
-    node_idx: usize,
-    edges: &BTreeSet<(usize, usize)>,
-    component: &[usize],
+fn has_alternative_path(
+    start: usize,
+    target: usize,
+    adjacency: &HashMap<usize, Vec<usize>>,
+    edge_to_skip: (usize, usize),
 ) -> bool {
-    let target: HashSet<usize> = component.iter().copied().collect();
-    edges.iter().any(|&(from, to)| {
-        (from == node_idx && target.contains(&to)) || (to == node_idx && target.contains(&from))
-    })
+    let mut visited = HashSet::new();
+    let mut stack: Vec<usize> = adjacency
+        .get(&start)
+        .into_iter()
+        .flat_map(|neighbors| neighbors.iter())
+        .filter_map(|&neighbor| {
+            if (start, neighbor) == edge_to_skip {
+                None
+            } else {
+                Some(neighbor)
+            }
+        })
+        .collect();
+
+    while let Some(current) = stack.pop() {
+        if !visited.insert(current) {
+            continue;
+        }
+
+        if current == target {
+            return true;
+        }
+
+        if let Some(neighbors) = adjacency.get(&current) {
+            for &neighbor in neighbors {
+                if (current, neighbor) == edge_to_skip {
+                    continue;
+                }
+                if !visited.contains(&neighbor) {
+                    stack.push(neighbor);
+                }
+            }
+        }
+    }
+
+    false
 }
