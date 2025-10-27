@@ -439,7 +439,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
-        self.visit_struct_item(node);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Trait);
+        self.visit_children_scope(node, symbol);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
@@ -618,7 +619,10 @@ fn extract_path_segments(expr: &TypeExpr) -> Option<Vec<String>> {
     }
 }
 
-fn extract_segments_from_ts_node<'tcx>(unit: CompileUnit<'tcx>, node: tree_sitter::Node<'tcx>) -> Vec<String> {
+fn extract_segments_from_ts_node<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: tree_sitter::Node<'tcx>,
+) -> Vec<String> {
     let text = unit.file().get_text(node.start_byte(), node.end_byte());
     text.split("::")
         .map(|s| s.trim().to_string())
