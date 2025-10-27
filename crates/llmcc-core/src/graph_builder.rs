@@ -270,11 +270,16 @@ impl<'tcx> ProjectGraph<'tcx> {
                 BlockRelation::DependsOn => {
                     // Get all blocks that this block depends on
                     let dependencies = unit
-                        .edges
-                        .get_related(node.block_id, BlockRelation::DependsOn);
+                            .edges
+                            .get_related(node.block_id, BlockRelation::DependsOn);
+                    let block_indexes = self.cc.block_indexes.borrow();
                     for dep_block_id in dependencies {
+                        let dep_unit_index = block_indexes
+                            .get_block_info(dep_block_id)
+                            .map(|(idx, _, _)| idx)
+                            .unwrap_or(node.unit_index);
                         result.push(GraphNode {
-                            unit_index: node.unit_index,
+                            unit_index: dep_unit_index,
                             block_id: dep_block_id,
                         });
                     }
@@ -411,10 +416,11 @@ impl<'tcx> ProjectGraph<'tcx> {
             return HashSet::new();
         }
 
-        let unit = &self.units[node.unit_index];
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut stack = vec![node.block_id];
+    let unit = &self.units[node.unit_index];
+    let mut result = HashSet::new();
+    let mut visited = HashSet::new();
+    let mut stack = vec![node.block_id];
+    let block_indexes = self.cc.block_indexes.borrow();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -427,8 +433,12 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .get_related(current_block, BlockRelation::DependsOn);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
+                    let dep_unit_index = block_indexes
+                        .get_block_info(dep_block_id)
+                        .map(|(idx, _, _)| idx)
+                        .unwrap_or(node.unit_index);
                     result.insert(GraphNode {
-                        unit_index: node.unit_index,
+                        unit_index: dep_unit_index,
                         block_id: dep_block_id,
                     });
                     stack.push(dep_block_id);
@@ -444,10 +454,11 @@ impl<'tcx> ProjectGraph<'tcx> {
             return HashSet::new();
         }
 
-        let unit = &self.units[node.unit_index];
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut stack = vec![node.block_id];
+    let unit = &self.units[node.unit_index];
+    let mut result = HashSet::new();
+    let mut visited = HashSet::new();
+    let mut stack = vec![node.block_id];
+    let block_indexes = self.cc.block_indexes.borrow();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -460,8 +471,12 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .get_related(current_block, BlockRelation::DependedBy);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
+                    let dep_unit_index = block_indexes
+                        .get_block_info(dep_block_id)
+                        .map(|(idx, _, _)| idx)
+                        .unwrap_or(node.unit_index);
                     result.insert(GraphNode {
-                        unit_index: node.unit_index,
+                        unit_index: dep_unit_index,
                         block_id: dep_block_id,
                     });
                     stack.push(dep_block_id);
@@ -477,7 +492,6 @@ impl<'tcx> ProjectGraph<'tcx> {
         struct CompactNode {
             block_id: BlockId,
             unit_index: usize,
-            kind: BlockKind,
             name: String,
             location: Option<String>,
             group: String,
@@ -787,7 +801,6 @@ impl<'tcx> ProjectGraph<'tcx> {
                     Some(CompactNode {
                         block_id,
                         unit_index: *unit_index,
-                        kind: *kind,
                         name: display_name,
                         location,
                         group,

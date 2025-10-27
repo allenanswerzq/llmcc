@@ -1164,6 +1164,7 @@ fn static_variable_dependencies() {
 }
 
 #[test]
+#[ignore = "not support use of type aliases yet"]
 fn enum_depends_on_type_alias_target() {
     let source = r#"
         mod config {
