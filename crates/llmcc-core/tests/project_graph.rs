@@ -1,9 +1,6 @@
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::graph_builder::{
-    build_llmcc_graph_with_config,
-    BlockRelation,
-    GraphBuildConfig,
-    ProjectGraph,
+    build_llmcc_graph_with_config, BlockRelation, GraphBuildConfig, ProjectGraph,
 };
 use llmcc_core::ir_builder::{build_llmcc_ir_with_config, IrBuildConfig};
 use llmcc_core::LanguageTrait;
@@ -34,12 +31,9 @@ fn compact_project_graph_includes_enum_dependencies() {
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
         LangRust::bind_symbols(unit, globals);
-        let graph = build_llmcc_graph_with_config::<LangRust>(
-            unit,
-            index,
-            GraphBuildConfig::compact(),
-        )
-        .unwrap();
+        let graph =
+            build_llmcc_graph_with_config::<LangRust>(unit, index, GraphBuildConfig::compact())
+                .unwrap();
         project.add_child(graph);
     }
 
@@ -47,7 +41,11 @@ fn compact_project_graph_includes_enum_dependencies() {
 
     let block_indexes = cc.block_indexes.borrow();
     let op_info = block_indexes.find_by_name("Op");
-    assert_eq!(op_info.len(), 1, "expected a single Op block, got {op_info:?}");
+    assert_eq!(
+        op_info.len(),
+        1,
+        "expected a single Op block, got {op_info:?}"
+    );
     let (op_unit, _, op_block) = op_info[0];
 
     let approval_info = block_indexes.find_by_name("AskForApproval");
@@ -73,10 +71,7 @@ fn compact_project_graph_includes_enum_dependencies() {
         .find_symbol_by_block_id(approval_block)
         .expect("AskForApproval symbol");
     assert!(
-        op_symbol
-            .depends
-            .borrow()
-            .contains(&approval_symbol.id),
+        op_symbol.depends.borrow().contains(&approval_symbol.id),
         "Symbol dependencies missing AskForApproval"
     );
     let dependencies = unit_graph

@@ -253,7 +253,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     .map(|segment| self.unit.interner().intern(segment))
                     .collect();
 
-                if let Some(symbol) = self.scopes.find_global_suffix(&keys) {
+                if let Some(symbol) = self
+                    .scopes
+                    .find_global_suffix_in_unit(&keys, self.unit.index)
+                    .or_else(|| self.scopes.find_global_suffix(&keys))
+                {
                     symbol.set_owner(node.hir_id());
                     symbol.set_unit_index(self.unit.index);
                     Some(symbol)

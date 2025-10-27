@@ -275,22 +275,10 @@ impl<'tcx> SymbolBinder<'tcx> {
                 if let Some(symbol) = self.resolve_symbol(segments, Some(SymbolKind::Function)) {
                     if symbol.kind() == SymbolKind::Function {
                         self.add_symbol_relation(Some(symbol));
+                        self.add_type_dependency_for_segments(segments);
                     }
                 } else if segments.len() > 1 {
-                    // If not a function, try to resolve the base type (for calls like Builder::new())
-                    // where Builder might be a struct and new is an associated function
-                    let base_segments = &segments[0..segments.len() - 1];
-                    let struct_sym = self.resolve_symbol(base_segments, Some(SymbolKind::Struct));
-                    let enum_sym = if struct_sym.is_none() {
-                        self.resolve_symbol(base_segments, Some(SymbolKind::Enum))
-                    } else {
-                        None
-                    };
-                    let type_symbol = struct_sym.or(enum_sym);
-
-                    if let Some(sym) = type_symbol {
-                        self.add_symbol_relation(Some(sym));
-                    }
+                    self.add_type_dependency_for_segments(segments);
                 }
             }
             CallTarget::Method { method, .. } => {
@@ -324,6 +312,50 @@ impl<'tcx> SymbolBinder<'tcx> {
             .collect();
         self.resolve_symbol(&segments, None)
     }
+
+    fn add_type_dependency_for_segments(&mut self, segments: &[String]) {
+        if segments.len() <= 1 {
+            return;
+        }
+
+        let base_segments = &segments[..segments.len() - 1];
+        let struct_sym = self.resolve_symbol(base_segments, Some(SymbolKind::Struct));
+        let enum_sym = if struct_sym.is_none() {
+            self.resolve_symbol(base_segments, Some(SymbolKind::Enum))
+        } else {
+            None
+        };
+
+        if let Some(sym) = struct_sym.or(enum_sym) {
+            self.add_symbol_relation(Some(sym));
+        }
+    }
+
+    fn propagate_child_dependencies(&mut self, parent: &'tcx Symbol, child: &'tcx Symbol) {
+        let dependencies: Vec<_> = child.depends.borrow().iter().copied().collect();
+        for dep_id in dependencies {
+            if dep_id == parent.id {
+                continue;
+            }
+
+            if let Some(dep_symbol) = self.unit.opt_get_symbol(dep_id) {
+                if dep_symbol.kind() == SymbolKind::Function {
+                    continue;
+                }
+
+                if dep_symbol
+                    .depends
+                    .borrow()
+                    .iter()
+                    .any(|&id| id == parent.id)
+                {
+                    continue;
+                }
+
+                parent.add_dependency(dep_symbol);
+            }
+        }
+    }
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
@@ -352,6 +384,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
+        let parent_symbol = self.current_symbol();
 
         // Also extract return type as a dependency
         if let Some(func_symbol) = symbol {
@@ -368,7 +401,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 
             // If this function is inside an impl block, it depends on the impl's target struct/enum
             // The current_symbol() when visiting impl children is the target struct/enum
-            if let Some(parent_symbol) = self.current_symbol() {
+            if let Some(parent_symbol) = parent_symbol {
                 let kind = parent_symbol.kind();
                 if matches!(kind, SymbolKind::Struct | SymbolKind::Enum) {
                     func_symbol.add_dependency(parent_symbol);
@@ -377,6 +410,15 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
         }
 
         self.visit_children_scope(node, symbol);
+
+        if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
+            if matches!(
+                parent_symbol.kind(),
+                SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Impl
+            ) {
+                self.propagate_child_dependencies(parent_symbol, func_symbol);
+            }
+        }
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {

@@ -176,8 +176,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         // Apply block-kind weighting: favor Classes and Funcs over data types
         fn kind_weight(kind: BlockKind) -> f64 {
             match kind {
-                BlockKind::Class | BlockKind::Func | BlockKind::Impl => 2.0,
-                BlockKind::Enum | BlockKind::Const | BlockKind::Field => 1.0,
+                BlockKind::Class | BlockKind::Enum => 2.0,
                 _ => 1.0,
             }
         }

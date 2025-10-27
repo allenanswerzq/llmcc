@@ -50,6 +50,10 @@ struct Args {
     )]
     pagerank_direction: String,
 
+    /// Number of refinement passes applied during PageRank filtering
+    #[arg(long, value_name = "N", requires = "pagerank", default_value_t = 2)]
+    pagerank_iterations: usize,
+
     /// Name of the symbol/function to query (enables find_depends mode)
     #[arg(long, value_name = "NAME")]
     query: Option<String>,
@@ -75,6 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         pagerank: args.pagerank,
         top_k: args.top_k,
         pagerank_direction: args.pagerank_direction,
+        pagerank_iterations: args.pagerank_iterations,
         query: args.query,
         recursive: args.recursive,
         dependents: args.dependents,
