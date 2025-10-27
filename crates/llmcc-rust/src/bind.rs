@@ -423,15 +423,23 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.resolve_impl_target(&node);
+
+        // If this is a trait impl (impl Trait for Type), make the trait depend on the type
+        let trait_node = node.inner_ts_node();
+        if let Some(trait_ts) = trait_node.child_by_field_name("trait") {
+            let trait_segments = extract_segments_from_ts_node(self.unit, trait_ts);
+            if let Some(trait_symbol) = self.resolve_symbol(&trait_segments, None) {
+                if let Some(target_symbol) = symbol {
+                    trait_symbol.add_dependency(target_symbol);
+                }
+            }
+        }
+
         self.visit_children_scope(node, symbol);
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
         self.visit_struct_item(node);
-    }
-
-    fn visit_function_signature_item(&mut self,node:HirNode<'tcx>) {
-        self.visit_function_item(node);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
@@ -608,6 +616,14 @@ fn extract_path_segments(expr: &TypeExpr) -> Option<Vec<String>> {
         TypeExpr::Tuple(items) if items.len() == 1 => extract_path_segments(&items[0]),
         _ => None,
     }
+}
+
+fn extract_segments_from_ts_node<'tcx>(unit: CompileUnit<'tcx>, node: tree_sitter::Node<'tcx>) -> Vec<String> {
+    let text = unit.file().get_text(node.start_byte(), node.end_byte());
+    text.split("::")
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
 }
 
 fn node_text_simple<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> String {
