@@ -373,10 +373,6 @@ impl<'tcx> SymbolBinder<'tcx> {
                     });
                     return true;
                 }
-                eprintln!(
-                    "failed to find function symbol '{}' (kind Function) in scope",
-                    name
-                );
 
                 // Try to find a struct (class) constructor call
                 if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct)) {
