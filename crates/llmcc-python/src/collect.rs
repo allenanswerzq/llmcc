@@ -178,10 +178,7 @@ impl<'tcx> DeclCollector<'tcx> {
             return Some(symbol);
         }
 
-        let raw_path = self
-            .unit
-            .file_path()
-            .or_else(|| self.unit.file().path());
+        let raw_path = self.unit.file_path().or_else(|| self.unit.file().path());
         let path = raw_path
             .map(PathBuf::from)
             .and_then(|p| p.canonicalize().ok().or(Some(p)))
@@ -198,7 +195,10 @@ impl<'tcx> DeclCollector<'tcx> {
                 .to_string();
             (fallback.clone(), fallback)
         } else {
-            let name = segments.last().cloned().unwrap_or_else(|| "__module__".to_string());
+            let name = segments
+                .last()
+                .cloned()
+                .unwrap_or_else(|| "__module__".to_string());
             let fqn = segments.join("::");
             (name, fqn)
         };
