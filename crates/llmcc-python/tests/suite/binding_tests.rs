@@ -14,16 +14,9 @@ fn compile(
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangPython>(&sources)));
     let unit = cc.compile_unit(0);
     let result = build_llmcc_ir::<LangPython>(cc);
-    eprintln!("build_llmcc_ir result: {:?}", result);
     result.ok();
     let globals = cc.create_globals();
-    eprintln!("globals created, symbols: {}", globals.all_symbols().len());
     let collection = collect_symbols(unit, globals);
-    eprintln!(
-        "collection result: {} functions, {} classes",
-        collection.functions.len(),
-        collection.classes.len()
-    );
     bind_symbols(unit, globals);
     (cc, unit, collection, globals)
 }
@@ -126,20 +119,6 @@ def caller():
     helper()
 "#;
     let (_, _, collection, globals) = compile(source);
-
-    // Debug: Print all symbols in globals
-    println!("All symbols in globals:");
-    for sym in globals.all_symbols() {
-        println!("  - {} (kind: {:?})", sym.name.as_str(), sym.kind());
-    }
-    println!(
-        "Collection functions: {:?}",
-        collection
-            .functions
-            .iter()
-            .map(|f| &f.name)
-            .collect::<Vec<_>>()
-    );
 
     let helper_sym = function_symbol(globals, &collection, "helper");
     let caller_sym = function_symbol(globals, &collection, "caller");

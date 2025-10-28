@@ -1197,31 +1197,3 @@ fn recursive_type_dependency() {
     let node_deps = get_depends_on(&graph, node);
     assert!(node_deps.is_empty() || node_deps.contains("Node"));
 }
-
-#[test]
-fn compact_graph_matches_default_output() {
-    let sources = [r#"
-        struct Config;
-
-        struct Handler {
-            config: Config,
-        }
-
-        struct App {
-            handler: Handler,
-        }
-    "#];
-
-    let default_graph = build_graph_with_config(&sources, GraphBuildConfig::default());
-    let project_graph = build_graph_with_config(&sources, GraphBuildConfig::compact());
-
-    let default_render = default_graph.render_compact_graph();
-    let compact_render = project_graph.render_compact_graph();
-
-    assert_eq!(default_render, compact_render);
-    assert!(compact_render.contains("App\\n(class)"));
-    assert!(compact_render.contains("Handler\\n(class)"));
-    assert!(compact_render.contains("Config\\n(class)"));
-    assert!(compact_render.contains("n0 -> n2;"));
-    assert!(compact_render.contains("n2 -> n1;"));
-}

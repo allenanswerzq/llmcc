@@ -253,7 +253,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     .map(|segment| self.unit.interner().intern(segment))
                     .collect();
 
-                if let Some(symbol) = self.scopes.find_global_suffix(&keys) {
+                if let Some(symbol) = self
+                    .scopes
+                    .find_global_suffix_in_unit(&keys, self.unit.index)
+                    .or_else(|| self.scopes.find_global_suffix(&keys))
+                {
                     symbol.set_owner(node.hir_id());
                     symbol.set_unit_index(self.unit.index);
                     Some(symbol)
@@ -300,7 +304,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node, None);
+        self.visit_struct_item(node);
+    }
+
+    fn visit_function_signature_item(&mut self, node: HirNode<'tcx>) {
+        self.visit_function_item(node);
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
@@ -313,11 +321,16 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
-        let kind = node.inner_ts_node().kind();
+        let ts_kind = node.inner_ts_node().kind();
+        let symbol_kind = if ts_kind == "static_item" {
+            SymbolKind::Static
+        } else {
+            SymbolKind::Const
+        };
         if let Some((symbol, ident, fqn)) =
-            self.create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Const)
+            self.create_new_symbol(&node, LangRust::field_name, true, symbol_kind)
         {
-            let variable = match kind {
+            let variable = match ts_kind {
                 "const_item" => VariableDescriptor::from_const_item(
                     self.unit,
                     &node,

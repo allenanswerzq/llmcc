@@ -84,6 +84,10 @@ impl<'tcx> Scope<'tcx> {
             .next()
     }
 
+    pub fn lookup_suffix_symbols(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+        self.trie.borrow().lookup_symbol_suffix(suffix)
+    }
+
     pub fn format_compact(&self) -> String {
         let count = self.trie.borrow().total_symbols();
         format!("{}/{}", self.owner, count)
@@ -196,7 +200,13 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     fn find_symbol_local_by_key(&self, key: InternedStr) -> Option<&'tcx Symbol> {
-        self.iter().rev().find_map(|scope| {
+        let scopes = if self.stack.len() > 1 {
+            &self.stack[1..]
+        } else {
+            &self.stack[..]
+        };
+
+        scopes.iter().rev().find_map(|scope| {
             scope
                 .trie
                 .borrow()
@@ -230,6 +240,15 @@ impl<'tcx> ScopeStack<'tcx> {
     ) -> Option<&'tcx Symbol> {
         let symbols = self.find_global_suffix_vec(suffix);
         select_symbol(symbols, kind, file)
+    }
+
+    /// Find a global symbol that matches the provided suffix but restrict results to a unit index.
+    pub fn find_global_suffix_in_unit(
+        &self,
+        suffix: &[InternedStr],
+        unit_index: usize,
+    ) -> Option<&'tcx Symbol> {
+        self.find_global_suffix_with_filters(suffix, None, Some(unit_index))
     }
 
     pub fn insert_with<F>(

@@ -13,6 +13,7 @@ pub struct LlmccOptions {
     pub pagerank: bool,
     pub top_k: Option<usize>,
     pub pagerank_direction: String,
+    pub pagerank_iterations: usize,
     pub query: Option<String>,
     pub recursive: bool,
     pub dependents: bool,
@@ -29,12 +30,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     };
 
     let use_compact_builder = opts.project_graph && opts.query.is_none();
-    let ir_config = if use_compact_builder {
-        IrBuildConfig::compact()
-    } else {
-        IrBuildConfig::default()
-    };
-    build_llmcc_ir_with_config::<L>(&cc, ir_config)?;
+    build_llmcc_ir_with_config::<L>(&cc, IrBuildConfig::default())?;
     let globals = cc.create_globals();
 
     if opts.print_ir {
