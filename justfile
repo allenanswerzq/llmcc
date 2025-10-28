@@ -69,7 +69,7 @@ release version:
 
     echo ""
     echo "Committing version bump..."
-    git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/crates/llmcc-bindings/pyproject.toml {{root}}/setup.py {{root}}/Cargo.lock
+    git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/crates/llmcc-bindings/pyproject.toml {{root}}/setup.py {{root}}/Cargo.lock || true
     git commit -m "chore: bump version to $VERSION"
     git push origin main
 
