@@ -339,6 +339,23 @@ jobs:
           find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
           find dist -type d -empty -delete
 
+      - name: Remove existing assets with same name
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          RELEASE="${{ github.ref_name }}"
+          existing_assets=$(gh release view "$RELEASE" --json assets --jq '.assets[].name' || true)
+          if [ -n "$existing_assets" ]; then
+            echo "Found existing assets, removing before upload:"
+            printf '%s\n' "$existing_assets"
+            for asset in $existing_assets; do
+              gh release delete-asset "$RELEASE" "$asset" -y || true
+            done
+          else
+            echo "No pre-existing assets to remove"
+          fi
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         with:
