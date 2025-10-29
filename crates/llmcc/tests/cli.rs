@@ -32,7 +32,6 @@ fn base_options(file: String) -> LlmccOptions {
         print_ir: false,
         print_block: false,
         design_graph: false,
-        pagerank: false,
         top_k: None,
         query: None,
         query_direction: QueryDirection::Depends,
@@ -139,36 +138,8 @@ fn summary_output_omits_source_code() {
         .expect("summary query run")
         .expect("summary output");
 
-    assert!(
-        output.contains("DEPENDENTS"),
-        "missing dependents header: {output}"
-    );
+    assert!(output.contains("DEPENDENTS"), "missing dependents header: {output}");
     assert!(output.contains("leaf"), "missing symbol name: {output}");
-    assert!(
-        output.contains(".rs:"),
-        "expected file path with line info: {output}"
-    );
-    assert!(
-        !output.contains("┌─"),
-        "summary should not include block rendering: {output}"
-    );
-}
-
-#[test]
-fn pagerank_requires_design_graph() {
-    let (dir, file) = write_fixture();
-    let dir_path = dir.path().display().to_string();
-
-    let mut opts = base_options(file);
-    opts.files.clear();
-    opts.dirs = vec![dir_path];
-    opts.pagerank = true;
-
-    let err =
-        run_main::<LangRust>(&opts).expect_err("--pagerank without --design-graph should fail");
-    assert!(
-        err.to_string()
-            .contains("--pagerank requires --design-graph"),
-        "unexpected error: {err}"
-    );
+    assert!(output.contains(".rs:"), "expected file path with line info: {output}");
+    assert!(!output.contains("┌─"), "summary should not include block rendering: {output}");
 }
