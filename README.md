@@ -41,11 +41,11 @@ llmcc [OPTIONS] < --file <FILE>...|--dir <DIR>... >
 **Examples:**
 ```bash
 # Design graph with PageRank ranking
-llmcc --dir crates/llmcc-core/src --lang rust --design-graph --pagerank --top-k 100
+llmcc --dir crates --lang rust --design-graph --pagerank --top-k 100
 
 # Dependencies and dependents of a symbol
-llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends
-llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --dependents --recursive
+llmcc --dir crates --lang rust --query CompileCtxt --depends
+llmcc --dir crates --lang rust --query CompileCtxt --dependents --recursive
 
 # Cross-directory analysis
 llmcc --dir crates/llmcc-core/src --dir crates/llmcc-rust/src --lang rust --design-graph --pagerank --top-k 25
