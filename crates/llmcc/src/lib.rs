@@ -6,12 +6,6 @@ use ignore::WalkBuilder;
 
 use llmcc_core::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum QueryDirection {
-    Depends,
-    Dependents,
-}
-
 pub struct LlmccOptions {
     pub files: Vec<String>,
     pub dirs: Vec<String>,
@@ -21,7 +15,8 @@ pub struct LlmccOptions {
     pub pagerank: bool,
     pub top_k: Option<usize>,
     pub query: Option<String>,
-    pub query_direction: QueryDirection,
+    pub depends: bool,
+    pub dependents: bool,
     pub recursive: bool,
     pub summary: bool,
 }
@@ -33,6 +28,10 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     if opts.pagerank && !opts.design_graph {
         return Err("--pagerank requires --design-graph".into());
+    }
+
+    if opts.depends && opts.dependents {
+        return Err("--depends and --dependents are mutually exclusive".into());
     }
 
     let mut seen = HashSet::new();
@@ -135,20 +134,17 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         outputs.push(pg.render_compact_graph());
     } else if let Some(name) = opts.query.as_ref() {
         let query = ProjectQuery::new(&pg);
-        let query_result = match opts.query_direction {
-            QueryDirection::Dependents => {
-                if opts.recursive {
-                    query.find_depended_recursive(name)
-                } else {
-                    query.find_depended(name)
-                }
+        let query_result = if opts.dependents {
+            if opts.recursive {
+                query.find_depended_recursive(name)
+            } else {
+                query.find_depended(name)
             }
-            QueryDirection::Depends => {
-                if opts.recursive {
-                    query.find_depends_recursive(name)
-                } else {
-                    query.find_depends(name)
-                }
+        } else {
+            if opts.recursive {
+                query.find_depends_recursive(name)
+            } else {
+                query.find_depends(name)
             }
         };
         let formatted = if opts.summary {
