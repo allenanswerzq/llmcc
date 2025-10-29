@@ -4,15 +4,15 @@
 
 llmcc is a universal context builder for any language, any document.
 
-## Abstract
+## abstract
 
 llmcc explores automated context generation through symbolic graph analysis. bridging the semantic gap between human-written code/documents and AI model understanding, using modern compiler design principles.
 
-## Design
+## design
 
 ![design](doc/design.svg)
 
-## Run
+## run
 
 - High level design graph with PageRank:
 
@@ -62,7 +62,7 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 	llmcc --file crates/llmcc/src/main.rs --file crates/llmcc/src/lib.rs --lang rust --query run_main
 	```
 
-## Python
+## python
 
 Install the published package from PyPI:
 
