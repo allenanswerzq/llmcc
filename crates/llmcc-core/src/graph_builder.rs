@@ -105,7 +105,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         Self {
             cc,
             units: Vec::new(),
-            compact_rank_limit: Some(80),
+            compact_rank_limit: None,
         }
     }
 
