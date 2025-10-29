@@ -153,3 +153,22 @@ fn summary_output_omits_source_code() {
         "summary should not include block rendering: {output}"
     );
 }
+
+#[test]
+fn pagerank_requires_design_graph() {
+    let (dir, file) = write_fixture();
+    let dir_path = dir.path().display().to_string();
+
+    let mut opts = base_options(file);
+    opts.files.clear();
+    opts.dirs = vec![dir_path];
+    opts.pagerank = true;
+
+    let err =
+        run_main::<LangRust>(&opts).expect_err("--pagerank without --design-graph should fail");
+    assert!(
+        err.to_string()
+            .contains("--pagerank requires --design-graph"),
+        "unexpected error: {err}"
+    );
+}

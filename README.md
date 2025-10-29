@@ -67,5 +67,5 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 - Combine several directories (Rust default):
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --pagerank --top-k 100
+	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --design-graph --pagerank --top-k 100
 	```

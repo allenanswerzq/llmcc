@@ -31,6 +31,10 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         return Err("Specify either --file or --dir, not both".into());
     }
 
+    if opts.pagerank && !opts.design_graph {
+        return Err("--pagerank requires --design-graph".into());
+    }
+
     let mut seen = HashSet::new();
     let mut requested_files = Vec::new();
 

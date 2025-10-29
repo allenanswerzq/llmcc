@@ -86,6 +86,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Warning: --depends/--dependents flags are ignored without --query");
     }
 
+    if args.pagerank && !args.design_graph {
+        return Err("--pagerank requires --design-graph".into());
+    }
+
     let query_direction = if args.dependents {
         QueryDirection::Dependents
     } else {
