@@ -15,7 +15,7 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 ## run
 
 ```bash
-llmcc [OPTIONS] <--file <FILE>...|--dir <DIR>...>
+llmcc [OPTIONS] < --file <FILE>...|--dir <DIR>... >
 ```
 
 **Input** (required, one of):
