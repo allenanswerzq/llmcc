@@ -49,7 +49,7 @@ impl UnitGraph {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct GraphBuildConfig {
     pub compact: bool,
 }
@@ -57,12 +57,6 @@ pub struct GraphBuildConfig {
 impl GraphBuildConfig {
     pub fn compact() -> Self {
         Self { compact: true }
-    }
-}
-
-impl Default for GraphBuildConfig {
-    fn default() -> Self {
-        Self { compact: false }
     }
 }
 
@@ -1132,8 +1126,7 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
 
     let mut output = String::from("digraph CompactProject {\n");
 
-    let mut subgraph_counter = 0;
-    for (crate_path, node_indices) in crate_groups.iter() {
+    for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter().enumerate() {
         output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));
         output.push_str(&format!(
             "    label=\"{}\";\n",
@@ -1157,7 +1150,6 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
         }
 
         output.push_str("  }\n");
-        subgraph_counter += 1;
     }
 
     for &(from, to) in edges {

@@ -12,6 +12,10 @@ build-bindings: uv-sync
 run-py: build-bindings
     uv run pytest "{{root}}/llmcc/test_basic.py"
 
+
+test: run-py
+    cargo test --workspace
+
 release version:
     #!/bin/bash
     set -e

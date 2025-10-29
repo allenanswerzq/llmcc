@@ -1849,7 +1849,7 @@ fn trait_impl_makes_trait_depend_on_struct() {
         }
     "#;
 
-    let (cc, unit, collection) = compile(source);
+    let (_cc, unit, collection) = compile(source);
 
     let review_symbol = struct_symbol(unit, &collection, "Review");
 
