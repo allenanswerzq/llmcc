@@ -1,21 +1,24 @@
-use clap::Parser;
+use clap::{ArgGroup, Parser};
 
-use llmcc::{run_main, LlmccOptions};
+use llmcc::{run_main, LlmccOptions, QueryDirection};
 use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
 
 #[derive(Parser, Debug)]
-#[command(name = "llmcc")]
-#[command(about = "llmcc: llm context compiler")]
-#[command(version)]
+#[command(
+    name = "llmcc",
+    about = "llmcc: llm context compiler",
+    version,
+    group = ArgGroup::new("inputs").required(true).args(["files", "dirs"])
+)]
 struct Args {
-    /// Files to compile
-    #[arg(value_name = "FILE", required_unless_present = "dir")]
+    /// Individual files to compile (repeatable)
+    #[arg(short = 'f', long = "file", value_name = "FILE", num_args = 1.., action = clap::ArgAction::Append)]
     files: Vec<String>,
 
-    /// Load all .rs files from a directory (recursive)
-    #[arg(short, long, value_name = "DIR")]
-    dir: Option<String>,
+    /// Directories to scan recursively (repeatable)
+    #[arg(short = 'd', long = "dir", value_name = "DIR", num_args = 1.., action = clap::ArgAction::Append)]
+    dirs: Vec<String>,
 
     /// Language to use: 'rust' or 'python'
     #[arg(long, value_name = "LANG", default_value = "rust")]
@@ -29,11 +32,11 @@ struct Args {
     #[arg(long, default_value_t = false)]
     print_block: bool,
 
-    /// Print a project level graph focused on class relationships for dir, good for understanding high-level design architecture
+    /// Print a high level graph focused on class relationships for dir, good for understanding high-level design architecture
     #[arg(long, default_value_t = false)]
     project_graph: bool,
 
-    /// Use page rank algorithm to filter the most important nodes in the project graph
+    /// Use page rank algorithm to filter the most important nodes in the high graph
     #[arg(long, default_value_t = false)]
     pagerank: bool,
 
@@ -41,33 +44,47 @@ struct Args {
     #[arg(long, value_name = "K", requires = "pagerank")]
     top_k: Option<usize>,
 
-    /// Name of the symbol/function to query (enables find_depends mode)
+    /// Name of the symbol/function to query
     #[arg(long, value_name = "NAME")]
     query: Option<String>,
 
     /// Search recursively for transitive dependencies (default: direct dependencies only)
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, conflicts_with = "dependents")]
     recursive: bool,
 
-    /// Return blocks that depend on the queried symbol instead of the ones it depends on
-    #[arg(long, default_value_t = false, conflicts_with = "recursive")]
+    /// Return blocks that the queried symbol depends on
+    #[arg(long, default_value_t = false, conflicts_with = "dependents")]
+    depends: bool,
+
+    /// Return blocks that depend on the queried symbol
+    #[arg(long, default_value_t = false, conflicts_with_all = ["depends", "recursive"])]
     dependents: bool,
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
+    if args.query.is_none() && (args.depends || args.dependents) {
+        eprintln!("Warning: --depends/--dependents flags are ignored without --query");
+    }
+
+    let query_direction = if args.dependents {
+        QueryDirection::Dependents
+    } else {
+        QueryDirection::Depends
+    };
+
     let opts = LlmccOptions {
         files: args.files,
-        dir: args.dir,
+        dirs: args.dirs,
         print_ir: args.print_ir,
         print_block: args.print_block,
         project_graph: args.project_graph,
         pagerank: args.pagerank,
         top_k: args.top_k,
         query: args.query,
+        query_direction,
         recursive: args.recursive,
-        dependents: args.dependents,
     };
 
     let result = match args.lang.as_str() {
