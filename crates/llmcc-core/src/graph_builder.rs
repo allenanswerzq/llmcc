@@ -483,6 +483,28 @@ impl<'tcx> ProjectGraph<'tcx> {
         visited
     }
 
+    pub fn find_depended_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
+        let mut visited = HashSet::new();
+        let mut stack = vec![node];
+        let relations = vec![BlockRelation::DependedBy];
+
+        while let Some(current) = stack.pop() {
+            if visited.contains(&current) {
+                continue;
+            }
+            visited.insert(current);
+
+            for related in self.find_related_blocks(current, relations.clone()) {
+                if !visited.contains(&related) {
+                    stack.push(related);
+                }
+            }
+        }
+
+        visited.remove(&node);
+        visited
+    }
+
     pub fn traverse_bfs<F>(&self, start: GraphNode, mut callback: F)
     where
         F: FnMut(GraphNode),
