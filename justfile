@@ -41,7 +41,7 @@ release version:
 
     echo "Updating workspace dependency versions..."
     tmpfile=$(mktemp)
-    sed -E "s/^(llmcc-[^=]*= \{[^}]*version = \")([^\"]+)/\1$VERSION/" "{{root}}/Cargo.toml" > "$tmpfile"
+    sed -E "s/^(llmcc(-[^=]*)? = \{[^}]*version = \")([^\"]+)/\1$VERSION/" "{{root}}/Cargo.toml" > "$tmpfile"
     if cmp -s "$tmpfile" "{{root}}/Cargo.toml"; then
         echo "  warning: no llmcc-* dependency versions updated"
         rm -f "$tmpfile"
