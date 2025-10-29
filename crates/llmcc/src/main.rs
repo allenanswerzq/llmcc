@@ -13,11 +13,25 @@ use llmcc_rust::LangRust;
 )]
 struct Args {
     /// Individual files to compile (repeatable)
-    #[arg(short = 'f', long = "file", value_name = "FILE", num_args = 1.., action = clap::ArgAction::Append)]
+    #[arg(
+        short = 'f',
+        long = "file",
+        value_name = "FILE",
+        num_args = 1..,
+        action = clap::ArgAction::Append,
+        conflicts_with = "dirs"
+    )]
     files: Vec<String>,
 
     /// Directories to scan recursively (repeatable)
-    #[arg(short = 'd', long = "dir", value_name = "DIR", num_args = 1.., action = clap::ArgAction::Append)]
+    #[arg(
+        short = 'd',
+        long = "dir",
+        value_name = "DIR",
+        num_args = 1..,
+        action = clap::ArgAction::Append,
+        conflicts_with = "files"
+    )]
     dirs: Vec<String>,
 
     /// Language to use: 'rust' or 'python'
@@ -32,9 +46,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     print_block: bool,
 
-    /// Print a high level graph focused on class relationships for dir, good for understanding high-level design architecture
-    #[arg(long, default_value_t = false)]
-    project_graph: bool,
+    /// Render a scoped design graph for the provided files or directories
+    #[arg(long = "design-graph", default_value_t = false)]
+    design_graph: bool,
 
     /// Use page rank algorithm to filter the most important nodes in the high graph
     #[arg(long, default_value_t = false)]
@@ -49,7 +63,7 @@ struct Args {
     query: Option<String>,
 
     /// Search recursively for transitive dependencies (default: direct dependencies only)
-    #[arg(long, default_value_t = false, conflicts_with = "dependents")]
+    #[arg(long, default_value_t = false)]
     recursive: bool,
 
     /// Return blocks that the queried symbol depends on
@@ -57,7 +71,7 @@ struct Args {
     depends: bool,
 
     /// Return blocks that depend on the queried symbol
-    #[arg(long, default_value_t = false, conflicts_with_all = ["depends", "recursive"])]
+    #[arg(long, default_value_t = false, conflicts_with = "depends")]
     dependents: bool,
 }
 
@@ -79,7 +93,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         dirs: args.dirs,
         print_ir: args.print_ir,
         print_block: args.print_block,
-        project_graph: args.project_graph,
+        design_graph: args.design_graph,
         pagerank: args.pagerank,
         top_k: args.top_k,
         query: args.query,

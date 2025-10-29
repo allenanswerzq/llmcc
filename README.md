@@ -14,11 +14,52 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 
 ## run
 
-eg. build a project level graph using pagerank pick the most important 100 nodes, this will give a pretty much high level architecutre design for a project
+`llmcc` accepts repeated `--file` inputs or repeated `--dir` inputs (choose one mode per run) and targets Rust by default. Sample commands covering the main CLI surfaces:
 
-```cargo run --release -- --dir ../codex/codex-rs --project-graph --pagerank --top-k 100```
+- High level design graph with PageRank:
 
+	```bash
+	llmcc --dir ../codex/codex-rs --design-graph --pagerank --top-k 100
+	```
 
-eg. find all depends of symbol `Codex` under codex-rs/core folder
+- Switch to Python analysis:
 
-```cargo run -- --dir ../codex/codex-rs/core --query Codex --recursive```
+	```bash
+	llmcc --dir ../proj --lang python
+	```
+
+- Direct dependencies of a symbol:
+
+	```bash
+	llmcc --dir ../codex/codex-rs/core --query Codex --depends
+	```
+
+- Transitive dependency fan-out:
+
+	```bash
+	llmcc --dir ../codex/codex-rs/core --query Codex --depends --recursive
+	```
+
+- Direct dependents of a symbol:
+
+	```bash
+	llmcc --dir ../codex/codex-rs/core --query Codex --dependents
+	```
+
+- Transitive dependents (callers) view:
+
+	```bash
+	llmcc --dir ../codex/codex-rs/core --query Codex --dependents --recursive
+	```
+
+- Analyze multiple files in one run:
+
+	```bash
+	llmcc --file src/main.rs --file src/lib.rs --query init_system
+	```
+
+- Combine several directories (Rust default):
+
+	```bash
+	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --pagerank --top-k 100
+	```

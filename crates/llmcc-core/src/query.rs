@@ -12,6 +12,7 @@ use crate::graph_builder::{GraphNode, ProjectGraph};
 #[derive(Debug, Clone)]
 pub struct GraphBlockInfo {
     pub name: String,
+    pub qualified_name: Option<String>,
     pub kind: String,
     pub file_path: Option<String>,
     pub source_code: Option<String>,
@@ -45,6 +46,12 @@ impl GraphBlockInfo {
             "┌─ {} [{}] at {}\n",
             self.name, self.kind, location
         ));
+
+        if let Some(fqn) = &self.qualified_name {
+            if fqn != &self.name {
+                output.push_str(&format!("│    aka {}\n", fqn));
+            }
+        }
 
         // Source code with line numbers
         if let Some(source) = &self.source_code {
@@ -240,6 +247,26 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
+    /// Find all blocks that depend on a given block recursively
+    pub fn find_depended_recursive(&self, name: &str) -> QueryResult {
+        let mut result = QueryResult::default();
+
+        if let Some(primary_node) = self.graph.block_by_name(name) {
+            if let Some(block_info) = self.node_to_block_info(primary_node) {
+                result.primary.push(block_info);
+
+                let all_related = self.graph.find_depended_blocks_recursive(primary_node);
+                for related_node in all_related {
+                    if let Some(related_info) = self.node_to_block_info(related_node) {
+                        result.depended.push(related_info);
+                    }
+                }
+            }
+        }
+
+        result
+    }
+
     /// Traverse graph with BFS from a starting block
     pub fn traverse_bfs(&self, start_name: &str) -> Vec<GraphBlockInfo> {
         let mut results = Vec::new();
@@ -289,20 +316,30 @@ impl<'tcx> ProjectQuery<'tcx> {
         let (unit_index, name, kind) = self.graph.block_info(node.block_id)?;
 
         // Try to get the fully qualified name from the symbol if available
-        let display_name =
+        let (display_name, qualified_name) =
             if let Some(symbol) = self.graph.cc.find_symbol_by_block_id(node.block_id) {
-                if let Some(ref base_name) = name {
-                    base_name.clone()
+                let fallback = name
+                    .clone()
+                    .unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0));
+                let base_name = if symbol.name.is_empty() {
+                    fallback
                 } else {
-                    let fqn = symbol.fqn_name.borrow();
-                    if !fqn.is_empty() {
-                        fqn.clone()
-                    } else {
-                        symbol.name.as_str().to_string()
-                    }
-                }
+                    symbol.name.clone()
+                };
+
+                let fqn = symbol.fqn_name.borrow().clone();
+                let qualified = if !fqn.is_empty() && fqn != base_name {
+                    Some(fqn)
+                } else {
+                    None
+                };
+
+                (base_name, qualified)
             } else {
-                name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
+                (
+                    name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
+                    None,
+                )
             };
 
         // Get file path from compile context
@@ -321,6 +358,7 @@ impl<'tcx> ProjectQuery<'tcx> {
 
         Some(GraphBlockInfo {
             name: display_name,
+            qualified_name,
             kind: format!("{:?}", kind),
             file_path,
             source_code,

@@ -21,7 +21,7 @@ def run(
     lang: str = "rust",
     print_ir: bool = False,
     print_block: bool = False,
-    project_graph: bool = False,
+    design_graph: bool = False,
     query: Optional[str] = None,
     recursive: bool = False,
     dependents: bool = False,
@@ -35,6 +35,8 @@ def run(
 
     if directory is None and files is None:
         raise ValueError("Either 'files' or 'directory' must be provided")
+    if directory is not None and files is not None:
+        raise ValueError("Provide either 'files' or 'directory', not both")
 
     file_list = _normalize_files(files) if files is not None else None
     dir_path = _normalize_directory(directory) if directory is not None else None
@@ -43,16 +45,13 @@ def run(
 
     query_value = str(query) if query is not None else None
 
-    if recursive and dependents:
-        raise ValueError("'recursive' and 'dependents' cannot be used together")
-
     return llmcc_bindings.run_llmcc(
         lang,
         file_list,
         dir_path,
         bool(print_ir),
         bool(print_block),
-        bool(project_graph),
+        bool(design_graph),
         query_value,
         bool(recursive),
         bool(dependents),

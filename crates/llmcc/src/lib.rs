@@ -17,7 +17,7 @@ pub struct LlmccOptions {
     pub dirs: Vec<String>,
     pub print_ir: bool,
     pub print_block: bool,
-    pub project_graph: bool,
+    pub design_graph: bool,
     pub pagerank: bool,
     pub top_k: Option<usize>,
     pub query: Option<String>,
@@ -26,6 +26,10 @@ pub struct LlmccOptions {
 }
 
 pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, Box<dyn Error>> {
+    if !opts.files.is_empty() && !opts.dirs.is_empty() {
+        return Err("Specify either --file or --dir, not both".into());
+    }
+
     let mut seen = HashSet::new();
     let mut requested_files = Vec::new();
 
@@ -78,7 +82,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     let cc = CompileCtxt::from_files::<L>(&requested_files)?;
     let files = cc.get_files();
 
-    let use_compact_builder = opts.project_graph && opts.query.is_none();
+    let use_compact_builder = opts.design_graph && opts.query.is_none();
 
     build_llmcc_ir::<L>(&cc)?;
     let globals = cc.create_globals();
@@ -116,13 +120,9 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     pg.link_units();
 
-    if opts.recursive && matches!(opts.query_direction, QueryDirection::Dependents) {
-        return Err("`--recursive` is not supported together with `--dependents`".into());
-    }
-
     let mut outputs = Vec::new();
 
-    if opts.project_graph {
+    if opts.design_graph {
         if opts.pagerank {
             let limit = Some(opts.top_k.unwrap_or(25));
             pg.set_compact_rank_limit(limit);
@@ -131,7 +131,13 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     } else if let Some(name) = opts.query.as_ref() {
         let query = ProjectQuery::new(&pg);
         let query_output = match opts.query_direction {
-            QueryDirection::Dependents => query.find_depended(name).format_for_llm(),
+            QueryDirection::Dependents => {
+                if opts.recursive {
+                    query.find_depended_recursive(name).format_for_llm()
+                } else {
+                    query.find_depended(name).format_for_llm()
+                }
+            }
             QueryDirection::Depends => {
                 if opts.recursive {
                     query.find_depends_recursive(name).format_for_llm()
