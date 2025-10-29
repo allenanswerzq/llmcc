@@ -1,12 +1,8 @@
-use pyo3::exceptions::PyValueError;
-use pyo3::prelude::*;
-
-use llmcc_core::{
-    build_llmcc_graph_with_config, build_llmcc_ir, lang_def::LanguageTrait, print_llmcc_graph,
-    print_llmcc_ir, CompileCtxt, GraphBuildConfig, ProjectGraph, ProjectQuery,
-};
+use llmcc::{run_main, LlmccOptions, QueryDirection};
+use llmcc_core::lang_def::LanguageTrait;
 use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
+use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
 use std::error::Error;
 
 /// Main llmcc module interface - Direct Rust API exposure
@@ -21,12 +17,13 @@ fn llmcc_bindings(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 fn run_workflow<L>(
-    lang_label: &str,
     files: Option<Vec<String>>,
-    dir: Option<String>,
+    dir_paths: Option<Vec<String>>,
     print_ir: bool,
     print_block: bool,
     print_design_graph: bool,
+    pagerank: bool,
+    top_k: Option<usize>,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -35,110 +32,51 @@ fn run_workflow<L>(
 where
     L: LanguageTrait,
 {
-    if dir.is_some() && files.as_ref().is_some() {
-        return Err("Provide either files or dir, not both".into());
-    }
-
-    let (cc, files) = if let Some(dir_path) = dir {
-        eprintln!(" loading {lang_label} files from directory: {}", dir_path);
-        let ctx = CompileCtxt::from_dir::<_, L>(dir_path.as_str())?;
-        let loaded_files = ctx.get_files();
-        if loaded_files.is_empty() {
-            return Err(format!("No source files found in {dir_path}").into());
-        }
-        eprintln!(" found {} files", loaded_files.len());
-        (ctx, loaded_files)
-    } else {
-        let Some(raw_files) = files else {
-            return Err("No input files provided".into());
-        };
-        if raw_files.is_empty() {
-            return Err("Input file list is empty".into());
-        }
-        let ctx = CompileCtxt::from_files::<L>(&raw_files)?;
-        (ctx, raw_files)
+    let opts = LlmccOptions {
+        files: files.unwrap_or_default(),
+        dirs: dir_paths.unwrap_or_default(),
+        print_ir,
+        print_block,
+        design_graph: print_design_graph,
+        pagerank,
+        top_k,
+        query,
+        query_direction: if dependents {
+            QueryDirection::Dependents
+        } else {
+            QueryDirection::Depends
+        },
+        recursive,
+        summary,
     };
 
-    build_llmcc_ir::<L>(&cc)?;
-
-    let globals = cc.create_globals();
-
-    if print_ir {
-        for (index, _) in files.iter().enumerate() {
-            let unit = cc.compile_unit(index);
-            print_llmcc_ir(unit);
-        }
-    }
-
-    for (index, _) in files.iter().enumerate() {
-        let unit = cc.compile_unit(index);
-        L::collect_symbols(unit, globals);
-    }
-
-    let mut pg = ProjectGraph::new(&cc);
-    let graph_config = if print_design_graph {
-        GraphBuildConfig::compact()
-    } else {
-        GraphBuildConfig::default()
-    };
-    for (index, _) in files.iter().enumerate() {
-        let unit = cc.compile_unit(index);
-        L::bind_symbols(unit, globals);
-        let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
-
-        if print_block {
-            print_llmcc_graph(unit_graph.root(), unit);
-        }
-
-        pg.add_child(unit_graph);
-    }
-
-    pg.link_units();
-
-    let mut outputs = Vec::new();
-
-    if print_design_graph {
-        outputs.push(pg.render_compact_graph());
-    }
-
-    if let Some(symbol_name) = query {
-        let query = ProjectQuery::new(&pg);
-        let result = if dependents {
-            if recursive {
-                query.find_depended_recursive(&symbol_name)
-            } else {
-                query.find_depended(&symbol_name)
-            }
-        } else if recursive {
-            query.find_depends_recursive(&symbol_name)
-        } else {
-            query.find_depends(&symbol_name)
-        };
-
-        let formatted = if summary {
-            result.format_summary()
-        } else {
-            result.format_for_llm()
-        };
-        outputs.push(formatted);
-    }
-
-    if outputs.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(outputs.join("\n")))
-    }
+    run_main::<L>(&opts)
 }
 
 #[pyfunction]
-#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, print_design_graph=false, query=None, recursive=false, dependents=false, summary=false))]
+#[pyo3(signature = (
+    lang,
+    files=None,
+    dirs=None,
+    print_ir=false,
+    print_block=false,
+    print_design_graph=false,
+    pagerank=false,
+    top_k=None,
+    query=None,
+    recursive=false,
+    dependents=false,
+    summary=false
+))]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
-    dir: Option<String>,
+    dirs: Option<Vec<String>>,
     print_ir: bool,
     print_block: bool,
     print_design_graph: bool,
+    pagerank: bool,
+    top_k: Option<usize>,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
@@ -146,24 +84,26 @@ fn run_llmcc(
 ) -> PyResult<Option<String>> {
     let result = match lang {
         "rust" => run_workflow::<LangRust>(
-            "rust",
             files.clone(),
-            dir.clone(),
+            dirs.clone(),
             print_ir,
             print_block,
             print_design_graph,
+            pagerank,
+            top_k,
             query.clone(),
             recursive,
             dependents,
             summary,
         ),
         "python" => run_workflow::<LangPython>(
-            "python",
             files.clone(),
-            dir.clone(),
+            dirs.clone(),
             print_ir,
             print_block,
             print_design_graph,
+            pagerank,
+            top_k,
             query.clone(),
             recursive,
             dependents,

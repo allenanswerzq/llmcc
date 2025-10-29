@@ -14,58 +14,64 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 
 ## run
 
-`llmcc` accepts repeated `--file` inputs or repeated `--dir` inputs (choose one mode per run) and targets Rust by default. Sample commands covering the main CLI surfaces:
-
 - High level design graph with PageRank:
 
 	```bash
-	llmcc --dir ../codex/codex-rs --design-graph --pagerank --top-k 100
-	```
-
-- Switch to Python analysis:
-
-	```bash
-	llmcc --dir ../proj --lang python
+	llmcc --dir ../codex/codex-rs --lang rust --design-graph --pagerank --top-k 100
 	```
 
 - Direct dependencies of a symbol:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --depends
+	llmcc --dir ../codex/codex-rs/core --lang rust --query Codex --depends
 	```
 
 - Transitive dependency fan-out:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --depends --recursive
+	llmcc --dir ../codex/codex-rs/core --lang rust --query Codex --depends --recursive
 	```
 
 - Direct dependents of a symbol:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --dependents
+	llmcc --dir ../codex/codex-rs/core --lang rust --query Codex --dependents
 	```
 
 - Transitive dependents (callers) view:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --dependents --recursive
+	llmcc --dir ../codex/codex-rs/core --lang rust --query Codex --dependents --recursive
 	```
 
-- Metadata-only summary (file + line ranges):
+- Metadata-only summary (file + line ranges), instead of code texts:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --depends --summary
+	llmcc --dir ../codex/codex-rs/core --lang rust --query Codex --depends --summary
+	```
+
+- Apply to multiple directories, analyze relation not only inside each dir, but also cross dir:
+
+	```bash
+	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --lang rust --design-graph --pagerank --top-k 100
 	```
 
 - Analyze multiple files in one run:
 
 	```bash
-	llmcc --file src/main.rs --file src/lib.rs --query init_system
+	llmcc --file src/main.rs --file src/lib.rs --lang rust --query init_system
 	```
 
-- Combine several directories (Rust default):
+## python bindings (uv)
 
-	```bash
-	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --design-graph --pagerank --top-k 100
-	```
+The Python workflow now relies on [uv](https://github.com/astral-sh/uv) for environment
+management. To build and exercise the bindings:
+
+```bash
+uv sync --extra dev
+uv run maturin develop --manifest-path crates/llmcc-bindings/Cargo.toml
+uv run python examples/basic.py
+```
+
+The script exercises the single-file, multi-file, and multi-directory cases along with the
+design-graph, PageRank, dependents, and summary options exposed through the CLI.
