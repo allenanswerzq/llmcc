@@ -12,8 +12,10 @@ pub struct PageRankConfig {
     pub max_iterations: usize,
     /// Convergence tolerance.
     pub tolerance: f64,
-    /// Edge relation to follow.
-    pub relation: BlockRelation,
+    /// Weight assigned to PageRank computed over `DependsOn` edges (foundational influence).
+    pub influence_weight: f64,
+    /// Weight assigned to PageRank computed over `DependedBy` edges (orchestration influence).
+    pub orchestration_weight: f64,
 }
 
 impl Default for PageRankConfig {
@@ -22,7 +24,8 @@ impl Default for PageRankConfig {
             damping_factor: 0.85,
             max_iterations: 100,
             tolerance: 1e-6,
-            relation: BlockRelation::DependedBy,
+            influence_weight: 0.2,
+            orchestration_weight: 0.8,
         }
     }
 }
@@ -31,7 +34,12 @@ impl Default for PageRankConfig {
 #[derive(Debug, Clone)]
 pub struct RankedBlock {
     pub node: GraphNode,
+    /// Blended score based on the configured influence/orchestration weights.
     pub score: f64,
+    /// PageRank following `DependsOn` edges – highlights foundational building blocks.
+    pub influence_score: f64,
+    /// PageRank following `DependedBy` edges – highlights orchestrators/entry points.
+    pub orchestration_score: f64,
     pub name: String,
     pub kind: BlockKind,
     pub file_path: Option<String>,
@@ -87,10 +95,35 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             };
         }
 
-        let adjacency = self.build_adjacency(&entries);
+        let adjacency_depends = self.build_adjacency(&entries, BlockRelation::DependsOn);
+        let adjacency_depended = self.build_adjacency(&entries, BlockRelation::DependedBy);
 
-        // Compute PageRank
-        let (scores, iterations, converged) = self.compute_pagerank(&adjacency);
+        // Compute PageRank for both dependency directions.
+        let (depends_scores, depends_iterations, depends_converged) =
+            self.compute_pagerank(&adjacency_depends);
+        let (depended_scores, depended_iterations, depended_converged) =
+            self.compute_pagerank(&adjacency_depended);
+
+        let total_weight = self.config.influence_weight + self.config.orchestration_weight;
+        let (influence_weight, orchestration_weight) = if total_weight <= f64::EPSILON {
+            (0.5, 0.5)
+        } else {
+            (
+                self.config.influence_weight / total_weight,
+                self.config.orchestration_weight / total_weight,
+            )
+        };
+
+        let blended_scores: Vec<f64> = depends_scores
+            .iter()
+            .zip(&depended_scores)
+            .map(|(influence, orchestration)| {
+                influence * influence_weight + orchestration * orchestration_weight
+            })
+            .collect();
+
+        let iterations = depends_iterations.max(depended_iterations);
+        let converged = depends_converged && depended_converged;
 
         // Build ranked results
         let mut ranked: Vec<RankedBlock> = entries
@@ -107,7 +140,9 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                         unit_index: entry.unit_index,
                         block_id: entry.block_id,
                     },
-                    score: scores[idx],
+                    score: blended_scores[idx],
+                    influence_score: depends_scores[idx],
+                    orchestration_score: depended_scores[idx],
                     name: display_name,
                     kind: entry.kind,
                     file_path: entry.file_path,
@@ -218,7 +253,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             .collect()
     }
 
-    fn build_adjacency(&self, entries: &[BlockEntry]) -> Vec<Vec<usize>> {
+    fn build_adjacency(&self, entries: &[BlockEntry], relation: BlockRelation) -> Vec<Vec<usize>> {
         let mut adjacency: Vec<Vec<usize>> = vec![Vec::new(); entries.len()];
         let mut index_by_block: HashMap<BlockId, usize> = HashMap::new();
 
@@ -233,7 +268,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
 
             let mut targets = unit_graph
                 .edges()
-                .get_related(entry.block_id, self.config.relation)
+                .get_related(entry.block_id, relation)
                 .into_iter()
                 .filter_map(|dep_id| index_by_block.get(&dep_id).copied())
                 .filter(|target_idx| *target_idx != idx)
