@@ -14,7 +14,7 @@ use crate::lang_def::LanguageTrait;
 /// Global atomic counter for HIR ID allocation
 static HIR_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct IrBuildConfig {
     pub compact: bool,
 }
@@ -22,12 +22,6 @@ pub struct IrBuildConfig {
 impl IrBuildConfig {
     pub fn compact() -> Self {
         Self { compact: true }
-    }
-}
-
-impl Default for IrBuildConfig {
-    fn default() -> Self {
-        Self { compact: false }
     }
 }
 

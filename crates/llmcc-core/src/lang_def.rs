@@ -22,6 +22,7 @@ pub trait LanguageTrait {
     fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
 }
 
+#[allow(clippy::crate_in_macro_def)]
 #[macro_export]
 macro_rules! define_tokens {
     (

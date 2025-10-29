@@ -14,53 +14,45 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 
 ## run
 
-- High level design graph with PageRank:
+```bash
+llmcc [OPTIONS] <--file <FILE>...|--dir <DIR>...>
+```
 
-	```bash
-	llmcc --dir crates/llmcc-core/src --lang rust --design-graph --pagerank --top-k 100
-	```
+**Input** (required, one of):
+- `-f, --file <FILE>...` — Individual files to compile (repeatable)
+- `-d, --dir <DIR>...` — Directories to scan recursively (repeatable)
 
-- Direct dependencies of a symbol:
+**Language** (optional):
+- `--lang <LANG>` — Language: 'rust' or 'python' [default: rust]
 
-	```bash
-	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends
-	```
+**Analysis** (optional):
+- `--design-graph` — Generate high-level design graph
+- `--pagerank --top-k <K>` — Rank by importance (PageRank) and limit to top K
+- `--query <NAME>` — Symbol/function to analyze
+- `--depends` — Show what the symbol depends on
+- `--dependents` — Show what depends on the symbol
+- `--recursive` — Include transitive dependencies (vs. direct only)
 
-- Transitive dependency fan-out:
+**Output format** (optional):
+- `--summary` — Show file paths and line ranges (vs. full code texts)
+- `--print-ir` — Internal: print intermediate representation
+- `--print-block` — Internal: print basic block graph
 
-	```bash
-	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends --recursive
-	```
+**Examples:**
+```bash
+# Design graph with PageRank ranking
+llmcc --dir crates/llmcc-core/src --lang rust --design-graph --pagerank --top-k 100
 
-- Direct dependents of a symbol:
+# Dependencies and dependents of a symbol
+llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends
+llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --dependents --recursive
 
-	```bash
-	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --dependents
-	```
+# Cross-directory analysis
+llmcc --dir crates/llmcc-core/src --dir crates/llmcc-rust/src --lang rust --design-graph --pagerank --top-k 25
 
-- Transitive dependents (callers) view:
-
-	```bash
-	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --dependents --recursive
-	```
-
-- Metadata-only summary (file + line ranges), instead of code texts:
-
-	```bash
-	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends --summary
-	```
-
-- Apply to multiple directories, analyze relation not only inside each dir, but also cross dir:
-
-	```bash
-	llmcc --dir crates/llmcc-core/src --dir crates/llmcc-rust/src --lang rust --design-graph --pagerank --top-k 25
-	```
-
-- Analyze multiple files in one run:
-
-	```bash
-	llmcc --file crates/llmcc/src/main.rs --file crates/llmcc/src/lib.rs --lang rust --query run_main
-	```
+# Multiple files
+llmcc --file crates/llmcc/src/main.rs --file crates/llmcc/src/lib.rs --lang rust --query run_main
+```
 
 ## python
 

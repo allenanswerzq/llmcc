@@ -599,12 +599,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                     continue;
                 }
 
-                if dep_symbol
-                    .depends
-                    .borrow()
-                    .iter()
-                    .any(|&id| id == parent.id)
-                {
+                if dep_symbol.depends.borrow().contains(&parent.id) {
                     continue;
                 }
 

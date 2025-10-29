@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::error::Error;
-use std::io::{self, ErrorKind};
+use std::io;
 
 use ignore::WalkBuilder;
 
@@ -53,10 +53,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
             let walker = WalkBuilder::new(dir).standard_filters(true).build();
             for entry in walker {
                 let entry = entry.map_err(|e| {
-                    io::Error::new(
-                        ErrorKind::Other,
-                        format!("Failed to walk directory {dir}: {e}"),
-                    )
+                    io::Error::other(format!("Failed to walk directory {dir}: {e}"))
                 })?;
 
                 if !entry
@@ -140,12 +137,10 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
             } else {
                 query.find_depended(name)
             }
+        } else if opts.recursive {
+            query.find_depends_recursive(name)
         } else {
-            if opts.recursive {
-                query.find_depends_recursive(name)
-            } else {
-                query.find_depends(name)
-            }
+            query.find_depends(name)
         };
         let formatted = if opts.summary {
             query_result.format_summary()

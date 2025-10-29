@@ -156,9 +156,9 @@ impl PythonFunctionDescriptor {
 
         // Handle *args and **kwargs
         let (param_str, _is_var_args) = if param_text.starts_with("**") {
-            (param_text[2..].to_string(), true)
+            (param_text.strip_prefix("**").unwrap().to_string(), true)
         } else if param_text.starts_with("*") {
-            (param_text[1..].to_string(), true)
+            (param_text.strip_prefix("*").unwrap().to_string(), true)
         } else {
             (param_text.to_string(), false)
         };
