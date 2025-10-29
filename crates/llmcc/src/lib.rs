@@ -81,7 +81,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     }
 
     if requested_files.is_empty() {
-        return Err("No input files provided. Use --file or --dir.".into());
+        return Err("No input files provided. --lang not set correct maybe".into());
     }
 
     let cc = CompileCtxt::from_files::<L>(&requested_files)?;

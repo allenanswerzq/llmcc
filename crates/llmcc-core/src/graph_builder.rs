@@ -98,6 +98,7 @@ pub struct ProjectGraph<'tcx> {
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
     compact_rank_limit: Option<usize>,
+    pagerank_enabled: bool,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -106,6 +107,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             cc,
             units: Vec::new(),
             compact_rank_limit: None,
+            pagerank_enabled: false,
         }
     }
 
@@ -119,6 +121,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             Some(0) => None,
             other => other,
         };
+        self.pagerank_enabled = self.compact_rank_limit.is_some();
     }
 
     pub fn link_units(&mut self) {
@@ -288,7 +291,11 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     fn collect_sorted_compact_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
-        let ranked_filter = self.ranked_block_filter(top_k, &COMPACT_INTERESTING_KINDS);
+        let ranked_filter = if self.pagerank_enabled {
+            self.ranked_block_filter(top_k, &COMPACT_INTERESTING_KINDS)
+        } else {
+            None
+        };
         let mut nodes =
             self.collect_compact_nodes(&COMPACT_INTERESTING_KINDS, ranked_filter.as_ref());
         nodes.sort_by(|a, b| a.name.cmp(&b.name));
