@@ -55,22 +55,26 @@ release version:
     if [ -f "{{root}}/pyproject.toml" ]; then
         sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/pyproject.toml"
         rm -f "{{root}}/pyproject.toml.bak"
+        git add "{{root}}/pyproject.toml"
         echo "  ok: pyproject.toml"
     fi
     if [ -f "{{root}}/llmcc/__init__.py" ]; then
         sed -i.bak 's/^__version__ = .*/__version__ = "'$VERSION'"/' "{{root}}/llmcc/__init__.py"
         rm -f "{{root}}/llmcc/__init__.py.bak"
+        git add "{{root}}/llmcc/__init__.py"
         echo "  ok: llmcc/__init__.py"
     fi
 
     if [ -f "{{root}}/crates/llmcc-bindings/pyproject.toml" ]; then
         sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/crates/llmcc-bindings/pyproject.toml"
         rm -f "{{root}}/crates/llmcc-bindings/pyproject.toml.bak"
+        git add "{{root}}/crates/llmcc-bindings/pyproject.toml"
         echo "  ok: crates/llmcc-bindings/pyproject.toml"
     fi
 
     if [ -f "{{root}}/setup.py" ]; then
         sed -i.bak 's/version=.*/version="'$VERSION'",/' "{{root}}/setup.py"
+        git add "{{root}}/setup.py"
         rm -f "{{root}}/setup.py.bak"
         echo "  ok: setup.py"
     fi
@@ -85,7 +89,6 @@ release version:
 
     echo ""
     echo "Committing version bump..."
-    git add {{root}}/Cargo.toml {{root}}/pyproject.toml {{root}}/crates/llmcc-bindings/pyproject.toml {{root}}/setup.py {{root}}/Cargo.lock || true
     git commit -m "chore: bump version to $VERSION"
     git push origin main
 
