@@ -12,8 +12,6 @@ pub struct LlmccOptions {
     pub project_graph: bool,
     pub pagerank: bool,
     pub top_k: Option<usize>,
-    pub pagerank_direction: String,
-    pub pagerank_iterations: usize,
     pub query: Option<String>,
     pub recursive: bool,
     pub dependents: bool,
@@ -30,7 +28,8 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     };
 
     let use_compact_builder = opts.project_graph && opts.query.is_none();
-    build_llmcc_ir_with_config::<L>(&cc, IrBuildConfig::default())?;
+    // build full hir nodes
+    build_llmcc_ir::<L>(&cc)?;
     let globals = cc.create_globals();
 
     if opts.print_ir {
@@ -76,13 +75,6 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         if opts.pagerank {
             let limit = Some(opts.top_k.unwrap_or(25));
             pg.set_compact_rank_limit(limit);
-
-            // Configure PageRank direction based on CLI option
-            let direction = match opts.pagerank_direction.as_str() {
-                "depends-on" => llmcc_core::PageRankDirection::DependsOn,
-                _ => llmcc_core::PageRankDirection::DependedBy, // default
-            };
-            pg.set_pagerank_direction(direction);
         }
         outputs.push(pg.render_compact_graph());
     } else {

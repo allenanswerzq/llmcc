@@ -11,7 +11,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
-use crate::pagerank::{PageRankDirection, PageRanker};
+use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 
@@ -98,7 +98,6 @@ pub struct ProjectGraph<'tcx> {
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
     compact_rank_limit: Option<usize>,
-    pagerank_direction: PageRankDirection,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -107,7 +106,6 @@ impl<'tcx> ProjectGraph<'tcx> {
             cc,
             units: Vec::new(),
             compact_rank_limit: None,
-            pagerank_direction: PageRankDirection::default(),
         }
     }
 
@@ -121,11 +119,6 @@ impl<'tcx> ProjectGraph<'tcx> {
             Some(0) => None,
             other => other,
         };
-    }
-
-    /// Configure the PageRank direction for ranking nodes.
-    pub fn set_pagerank_direction(&mut self, direction: PageRankDirection) {
-        self.pagerank_direction = direction;
     }
 
     pub fn link_units(&mut self) {
@@ -204,8 +197,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         interesting_kinds: &[BlockKind],
     ) -> Option<HashSet<BlockId>> {
         let ranked_order = top_k.and_then(|limit| {
-            let mut ranker = PageRanker::new(self);
-            ranker.config_mut().direction = self.pagerank_direction;
+            let ranker = PageRanker::new(self);
             let mut collected = Vec::new();
 
             for ranked in ranker.rank() {
@@ -676,17 +668,17 @@ struct GraphBuilder<'tcx, Language> {
     unit: CompileUnit<'tcx>,
     root: Option<BlockId>,
     children_stack: Vec<Vec<BlockId>>,
-    config: GraphBuildConfig,
+    _config: GraphBuildConfig,
     _marker: PhantomData<Language>,
 }
 
 impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
-    fn new(unit: CompileUnit<'tcx>, config: GraphBuildConfig) -> Self {
+    fn new(unit: CompileUnit<'tcx>, _config: GraphBuildConfig) -> Self {
         Self {
             unit,
             root: None,
             children_stack: Vec::new(),
-            config,
+            _config,
             _marker: PhantomData,
         }
     }
