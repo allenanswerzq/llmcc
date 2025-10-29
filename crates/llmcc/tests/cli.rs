@@ -1,6 +1,6 @@
 use std::fs;
 
-use llmcc::{run_main, LlmccOptions, QueryDirection};
+use llmcc::{run_main, LlmccOptions};
 use llmcc_rust::LangRust;
 use tempfile::tempdir;
 
@@ -35,7 +35,8 @@ fn base_options(file: String) -> LlmccOptions {
         pagerank: false,
         top_k: None,
         query: None,
-        query_direction: QueryDirection::Depends,
+        depends: false,
+        dependents: false,
         recursive: false,
         summary: false,
     }
@@ -47,7 +48,7 @@ fn depends_recursive_expands_results() {
 
     let mut opts = base_options(file.clone());
     opts.query = Some("root".to_string());
-    opts.query_direction = QueryDirection::Depends;
+    opts.depends = true;
     opts.recursive = false;
 
     let direct = run_main::<LangRust>(&opts)
@@ -82,7 +83,7 @@ fn dependents_recursive_expands_results() {
 
     let mut opts = base_options(file);
     opts.query = Some("leaf".to_string());
-    opts.query_direction = QueryDirection::Dependents;
+    opts.dependents = true;
     opts.recursive = false;
 
     let direct = run_main::<LangRust>(&opts)
@@ -132,7 +133,7 @@ fn summary_output_omits_source_code() {
 
     let mut opts = base_options(file);
     opts.query = Some("leaf".to_string());
-    opts.query_direction = QueryDirection::Dependents;
+    opts.dependents = true;
     opts.summary = true;
 
     let output = run_main::<LangRust>(&opts)

@@ -1,6 +1,6 @@
 use clap::{ArgGroup, Parser};
 
-use llmcc::{run_main, LlmccOptions, QueryDirection};
+use llmcc::{run_main, LlmccOptions};
 use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
 
@@ -47,7 +47,11 @@ struct Args {
     print_block: bool,
 
     /// Render a scoped design graph for the provided files or directories
-    #[arg(long = "design-graph", default_value_t = false)]
+    #[arg(
+        long = "design-graph",
+        default_value_t = false,
+        conflicts_with_all = ["depends", "dependents"]
+    )]
     design_graph: bool,
 
     /// Summarize query output with file path and line range instead of full code blocks
@@ -90,12 +94,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Err("--pagerank requires --design-graph".into());
     }
 
-    let query_direction = if args.dependents {
-        QueryDirection::Dependents
-    } else {
-        QueryDirection::Depends
-    };
-
     let opts = LlmccOptions {
         files: args.files,
         dirs: args.dirs,
@@ -105,7 +103,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         pagerank: args.pagerank,
         top_k: args.top_k,
         query: args.query,
-        query_direction,
+        depends: args.depends,
+        dependents: args.dependents,
         recursive: args.recursive,
         summary: args.summary,
     };

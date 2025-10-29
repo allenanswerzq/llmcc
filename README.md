@@ -4,68 +4,82 @@
 
 llmcc is a universal context builder for any language, any document.
 
-## abstract
+## Abstract
 
 llmcc explores automated context generation through symbolic graph analysis. bridging the semantic gap between human-written code/documents and AI model understanding, using modern compiler design principles.
 
-## design
+## Design
 
 ![design](doc/design.svg)
 
-## run
-
-`llmcc` accepts repeated `--file` inputs or repeated `--dir` inputs (choose one mode per run) and targets Rust by default. Sample commands covering the main CLI surfaces:
+## Run
 
 - High level design graph with PageRank:
 
 	```bash
-	llmcc --dir ../codex/codex-rs --design-graph --pagerank --top-k 100
-	```
-
-- Switch to Python analysis:
-
-	```bash
-	llmcc --dir ../proj --lang python
+	llmcc --dir crates/llmcc-core/src --lang rust --design-graph --pagerank --top-k 100
 	```
 
 - Direct dependencies of a symbol:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --depends
+	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends
 	```
 
 - Transitive dependency fan-out:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --depends --recursive
+	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends --recursive
 	```
 
 - Direct dependents of a symbol:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --dependents
+	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --dependents
 	```
 
 - Transitive dependents (callers) view:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --dependents --recursive
+	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --dependents --recursive
 	```
 
-- Metadata-only summary (file + line ranges):
+- Metadata-only summary (file + line ranges), instead of code texts:
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --query Codex --depends --summary
+	llmcc --dir crates/llmcc-core/src --lang rust --query CompileCtxt --depends --summary
+	```
+
+- Apply to multiple directories, analyze relation not only inside each dir, but also cross dir:
+
+	```bash
+	llmcc --dir crates/llmcc-core/src --dir crates/llmcc-rust/src --lang rust --design-graph --pagerank --top-k 25
 	```
 
 - Analyze multiple files in one run:
 
 	```bash
-	llmcc --file src/main.rs --file src/lib.rs --query init_system
+	llmcc --file crates/llmcc/src/main.rs --file crates/llmcc/src/lib.rs --lang rust --query run_main
 	```
 
-- Combine several directories (Rust default):
+## Python
 
-	```bash
-	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --design-graph --pagerank --top-k 100
-	```
+Install the published package from PyPI:
+
+```bash
+pip install llmcc
+```
+
+With the package available, invoke the API directly:
+
+```python
+import llmcc
+
+graph = llmcc.run(
+	dirs=["crates/llmcc-core/src"],
+	lang="rust",
+	query="CompileCtxt",
+	design_graph=True,
+)
+print(graph)
+```

@@ -2,19 +2,15 @@
 set shell := ["/bin/bash", "-c"]
 
 root := justfile_directory()
-venv := root + "/venv"
 
-ensure-venv:
-    if [ ! -d "{{venv}}" ]; then \
-        python3 -m venv "{{venv}}"; \
-        . "{{venv}}/bin/activate" && pip install -r "{{root}}/requirements.txt"; \
-    fi
+uv-sync:
+    PIP_NO_BINARY="mypy" uv sync --extra dev
 
-build-bindings: ensure-venv
-    . "{{venv}}/bin/activate" && maturin develop --manifest-path "{{root}}/crates/llmcc-bindings/Cargo.toml"
+build-bindings: uv-sync
+    uv run maturin develop --manifest-path "{{root}}/crates/llmcc-bindings/Cargo.toml"
 
-run-example: build-bindings
-    . "{{venv}}/bin/activate" && python "{{root}}/examples/basic.py"
+run-py: build-bindings
+    uv run pytest "{{root}}/llmcc/test_basic.py"
 
 release version:
     #!/bin/bash
@@ -57,6 +53,11 @@ release version:
         rm -f "{{root}}/pyproject.toml.bak"
         echo "  ok: pyproject.toml"
     fi
+    if [ -f "{{root}}/llmcc/__init__.py" ]; then
+        sed -i.bak 's/^__version__ = .*/__version__ = "'$VERSION'"/' "{{root}}/llmcc/__init__.py"
+        rm -f "{{root}}/llmcc/__init__.py.bak"
+        echo "  ok: llmcc/__init__.py"
+    fi
 
     if [ -f "{{root}}/crates/llmcc-bindings/pyproject.toml" ]; then
         sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/crates/llmcc-bindings/pyproject.toml"
@@ -91,4 +92,3 @@ release version:
     echo ""
     echo "Release $VERSION published!"
     echo ""
-
