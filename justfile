@@ -4,13 +4,13 @@ set shell := ["/bin/bash", "-c"]
 root := justfile_directory()
 
 uv-sync:
-    uv sync --extra dev
+    PIP_NO_BINARY="mypy" uv sync --extra dev
 
 build-bindings: uv-sync
     uv run maturin develop --manifest-path "{{root}}/crates/llmcc-bindings/Cargo.toml"
 
 run-py: build-bindings
-    uv run python "{{root}}/examples/basic.py"
+    uv run pytest "{{root}}/llmcc/test_basic.py"
 
 release version:
     #!/bin/bash

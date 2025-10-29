@@ -10,15 +10,14 @@ def _normalize_files(files: Iterable[str]) -> list[str]:
     return [str(Path(path)) for path in files]
 
 
-def _normalize_directory(directory: str) -> str:
+def _normalize_dir(directory: str) -> str:
     return str(Path(directory))
 
 
 def run(
     files: Optional[Iterable[str]] = None,
     *,
-    directory: Optional[str] = None,
-    directories: Optional[Iterable[str]] = None,
+    dirs: Optional[Iterable[str]] = None,
     lang: str = "rust",
     print_ir: bool = False,
     print_block: bool = False,
@@ -27,30 +26,23 @@ def run(
     top_k: Optional[int] = None,
     query: Optional[str] = None,
     recursive: bool = False,
+    depends: bool = False,
     dependents: bool = False,
     summary: bool = False,
 ) -> Optional[str]:
-    """Execute the core llmcc workflow from Python.
-    """
+    """Execute the core llmcc workflow from Python."""
 
-    if directory is None and files is None:
-        if directories is None:
-            raise ValueError("Either 'files', 'directory', or 'directories' must be provided")
-    if files is not None and (directory is not None or directories is not None):
-        raise ValueError("Provide either 'files' or directories, not both")
-    if directory is not None and directories is not None:
-        raise ValueError("Use either 'directory' or 'directories', not both")
+    if files is None and dirs is None:
+        raise ValueError("Either 'files' or 'dirs' must be provided")
+    if files is not None and dirs is not None:
+        raise ValueError("Provide either 'files' or 'dirs', not both")
     if pagerank and not design_graph:
         raise ValueError("'pagerank' requires 'design_graph=True'")
+    if depends and dependents:
+        raise ValueError("'depends' and 'dependents' are mutually exclusive")
 
     file_list = _normalize_files(files) if files is not None else None
-    dir_list: Optional[list[str]]
-    if directory is not None:
-        dir_list = [_normalize_directory(directory)]
-    elif directories is not None:
-        dir_list = [_normalize_directory(path) for path in directories]
-    else:
-        dir_list = None
+    dir_list = [_normalize_dir(path) for path in dirs] if dirs is not None else None
 
     import llmcc_bindings
 
@@ -67,6 +59,7 @@ def run(
         top_k=top_k,
         query=query_value,
         recursive=bool(recursive),
+        depends=bool(depends),
         dependents=bool(dependents),
         summary=bool(summary),
     )
