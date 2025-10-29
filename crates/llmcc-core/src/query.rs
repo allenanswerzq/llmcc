@@ -12,6 +12,7 @@ use crate::graph_builder::{GraphNode, ProjectGraph};
 #[derive(Debug, Clone)]
 pub struct GraphBlockInfo {
     pub name: String,
+    pub qualified_name: Option<String>,
     pub kind: String,
     pub file_path: Option<String>,
     pub source_code: Option<String>,
@@ -22,29 +23,40 @@ pub struct GraphBlockInfo {
 }
 
 impl GraphBlockInfo {
+    fn resolved_location(&self) -> String {
+        use std::env;
+        use std::path::Path;
+
+        if let Some(path) = &self.file_path {
+            let candidate = Path::new(path);
+            if candidate.is_absolute() {
+                candidate.display().to_string()
+            } else if let Ok(cwd) = env::current_dir() {
+                cwd.join(candidate).display().to_string()
+            } else {
+                path.clone()
+            }
+        } else {
+            format!("<file_unit_{}>", self.unit_index)
+        }
+    }
+
     pub fn format_for_llm(&self) -> String {
         let mut output = String::new();
 
         // Header line with name, kind, and location
-        let location = if let Some(path) = &self.file_path {
-            use std::path::Path;
-            let abs_path = Path::new(path);
-            if abs_path.is_absolute() {
-                path.clone()
-            } else {
-                match std::env::current_dir() {
-                    Ok(cwd) => cwd.join(path).display().to_string(),
-                    Err(_) => path.clone(),
-                }
-            }
-        } else {
-            format!("<file_unit_{}>", self.unit_index)
-        };
+        let location = self.resolved_location();
 
         output.push_str(&format!(
             "┌─ {} [{}] at {}\n",
             self.name, self.kind, location
         ));
+
+        if let Some(fqn) = &self.qualified_name {
+            if fqn != &self.name {
+                output.push_str(&format!("│    aka {}\n", fqn));
+            }
+        }
 
         // Source code with line numbers
         if let Some(source) = &self.source_code {
@@ -66,6 +78,22 @@ impl GraphBlockInfo {
         output.push_str("└─\n");
         output
     }
+
+    pub fn format_summary(&self) -> String {
+        let display_name = self
+            .qualified_name
+            .as_ref()
+            .filter(|name| !name.is_empty())
+            .cloned()
+            .unwrap_or_else(|| self.name.clone());
+
+        let location = self.resolved_location();
+
+        format!(
+            "{} @ {}:{}-{}",
+            display_name, location, self.start_line, self.end_line
+        )
+    }
 }
 
 /// Query results grouped by relevance and type
@@ -81,7 +109,7 @@ impl QueryResult {
         let mut output = String::new();
 
         if !self.primary.is_empty() {
-            output.push_str(" ------------- PRIMARY RESULTS ------------------- \n");
+            output.push_str(" ------------- ASK SYMBOL ------------------- \n");
             for block in &self.primary {
                 output.push_str(&block.format_for_llm());
                 output.push('\n');
@@ -104,6 +132,33 @@ impl QueryResult {
             }
         }
 
+        output
+    }
+
+    pub fn format_summary(&self) -> String {
+        fn push_section(output: &mut String, title: &str, blocks: &[GraphBlockInfo]) {
+            if blocks.is_empty() {
+                return;
+            }
+            if !output.is_empty() {
+                output.push('\n');
+            }
+            output.push_str(title);
+            output.push('\n');
+            for block in blocks {
+                output.push_str("  - ");
+                output.push_str(&block.format_summary());
+                output.push('\n');
+            }
+        }
+
+        let mut output = String::new();
+        push_section(&mut output, "SYMBOL:", &self.primary);
+        push_section(&mut output, "DEPENDS:", &self.depends);
+        push_section(&mut output, "DEPENDENTS:", &self.depended);
+        while output.ends_with('\n') {
+            output.pop();
+        }
         output
     }
 }
@@ -240,6 +295,26 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
+    /// Find all blocks that depend on a given block recursively
+    pub fn find_depended_recursive(&self, name: &str) -> QueryResult {
+        let mut result = QueryResult::default();
+
+        if let Some(primary_node) = self.graph.block_by_name(name) {
+            if let Some(block_info) = self.node_to_block_info(primary_node) {
+                result.primary.push(block_info);
+
+                let all_related = self.graph.find_depended_blocks_recursive(primary_node);
+                for related_node in all_related {
+                    if let Some(related_info) = self.node_to_block_info(related_node) {
+                        result.depended.push(related_info);
+                    }
+                }
+            }
+        }
+
+        result
+    }
+
     /// Traverse graph with BFS from a starting block
     pub fn traverse_bfs(&self, start_name: &str) -> Vec<GraphBlockInfo> {
         let mut results = Vec::new();
@@ -289,20 +364,30 @@ impl<'tcx> ProjectQuery<'tcx> {
         let (unit_index, name, kind) = self.graph.block_info(node.block_id)?;
 
         // Try to get the fully qualified name from the symbol if available
-        let display_name =
+        let (display_name, qualified_name) =
             if let Some(symbol) = self.graph.cc.find_symbol_by_block_id(node.block_id) {
-                if let Some(ref base_name) = name {
-                    base_name.clone()
+                let fallback = name
+                    .clone()
+                    .unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0));
+                let base_name = if symbol.name.is_empty() {
+                    fallback
                 } else {
-                    let fqn = symbol.fqn_name.borrow();
-                    if !fqn.is_empty() {
-                        fqn.clone()
-                    } else {
-                        symbol.name.as_str().to_string()
-                    }
-                }
+                    symbol.name.clone()
+                };
+
+                let fqn = symbol.fqn_name.borrow().clone();
+                let qualified = if !fqn.is_empty() && fqn != base_name {
+                    Some(fqn)
+                } else {
+                    None
+                };
+
+                (base_name, qualified)
             } else {
-                name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0))
+                (
+                    name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
+                    None,
+                )
             };
 
         // Get file path from compile context
@@ -321,6 +406,7 @@ impl<'tcx> ProjectQuery<'tcx> {
 
         Some(GraphBlockInfo {
             name: display_name,
+            qualified_name,
             kind: format!("{:?}", kind),
             file_path,
             source_code,

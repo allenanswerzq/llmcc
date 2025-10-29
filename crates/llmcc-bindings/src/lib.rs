@@ -26,16 +26,17 @@ fn run_workflow<L>(
     dir: Option<String>,
     print_ir: bool,
     print_block: bool,
-    print_project_graph: bool,
+    print_design_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
+    summary: bool,
 ) -> Result<Option<String>, Box<dyn Error>>
 where
     L: LanguageTrait,
 {
-    if recursive && dependents {
-        return Err("Recursive queries are not yet supported for dependents".into());
+    if dir.is_some() && files.as_ref().is_some() {
+        return Err("Provide either files or dir, not both".into());
     }
 
     let (cc, files) = if let Some(dir_path) = dir {
@@ -75,7 +76,7 @@ where
     }
 
     let mut pg = ProjectGraph::new(&cc);
-    let graph_config = if print_project_graph {
+    let graph_config = if print_design_graph {
         GraphBuildConfig::compact()
     } else {
         GraphBuildConfig::default()
@@ -96,20 +97,30 @@ where
 
     let mut outputs = Vec::new();
 
-    if print_project_graph {
+    if print_design_graph {
         outputs.push(pg.render_compact_graph());
     }
 
     if let Some(symbol_name) = query {
         let query = ProjectQuery::new(&pg);
         let result = if dependents {
-            query.find_depended(&symbol_name)
+            if recursive {
+                query.find_depended_recursive(&symbol_name)
+            } else {
+                query.find_depended(&symbol_name)
+            }
         } else if recursive {
             query.find_depends_recursive(&symbol_name)
         } else {
             query.find_depends(&symbol_name)
         };
-        outputs.push(result.format_for_llm());
+
+        let formatted = if summary {
+            result.format_summary()
+        } else {
+            result.format_for_llm()
+        };
+        outputs.push(formatted);
     }
 
     if outputs.is_empty() {
@@ -120,17 +131,18 @@ where
 }
 
 #[pyfunction]
-#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, print_project_graph=false, query=None, recursive=false, dependents=false))]
+#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, print_design_graph=false, query=None, recursive=false, dependents=false, summary=false))]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
     dir: Option<String>,
     print_ir: bool,
     print_block: bool,
-    print_project_graph: bool,
+    print_design_graph: bool,
     query: Option<String>,
     recursive: bool,
     dependents: bool,
+    summary: bool,
 ) -> PyResult<Option<String>> {
     let result = match lang {
         "rust" => run_workflow::<LangRust>(
@@ -139,10 +151,11 @@ fn run_llmcc(
             dir.clone(),
             print_ir,
             print_block,
-            print_project_graph,
+            print_design_graph,
             query.clone(),
             recursive,
             dependents,
+            summary,
         ),
         "python" => run_workflow::<LangPython>(
             "python",
@@ -150,10 +163,11 @@ fn run_llmcc(
             dir.clone(),
             print_ir,
             print_block,
-            print_project_graph,
+            print_design_graph,
             query.clone(),
             recursive,
             dependents,
+            summary,
         ),
         other => {
             return Err(PyErr::new::<PyValueError, _>(format!(

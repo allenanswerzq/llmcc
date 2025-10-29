@@ -4,6 +4,7 @@ use llmcc_core::graph_builder::{
 };
 use llmcc_core::ir_builder::{build_llmcc_ir_with_config, IrBuildConfig};
 use llmcc_core::LanguageTrait;
+use llmcc_core::ProjectQuery;
 use llmcc_rust::LangRust;
 
 #[test]
@@ -81,5 +82,62 @@ fn compact_project_graph_includes_enum_dependencies() {
     assert!(
         dependencies.contains(&approval_block),
         "Op dependencies missing AskForApproval: {dependencies:?}"
+    );
+}
+
+#[test]
+fn recursive_dependents_query_includes_transitive_callers() {
+    let source = r#"
+        fn c() {}
+
+        fn b() {
+            c();
+        }
+
+        fn a() {
+            b();
+        }
+    "#;
+
+    let cc = CompileCtxt::from_sources::<LangRust>(&[source.as_bytes().to_vec()]);
+    build_llmcc_ir_with_config::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
+    let globals = cc.create_globals();
+
+    for index in 0..cc.files.len() {
+        let unit = cc.compile_unit(index);
+        LangRust::collect_symbols(unit, globals);
+    }
+
+    let mut project = ProjectGraph::new(&cc);
+    for index in 0..cc.files.len() {
+        let unit = cc.compile_unit(index);
+        LangRust::bind_symbols(unit, globals);
+        let graph =
+            build_llmcc_graph_with_config::<LangRust>(unit, index, GraphBuildConfig::default())
+                .unwrap();
+        project.add_child(graph);
+    }
+    project.link_units();
+
+    let query = ProjectQuery::new(&project);
+
+    let direct = query.find_depended("c");
+    assert!(
+        direct.depended.iter().any(|block| block.name == "b"),
+        "direct dependents should include function b"
+    );
+    assert!(
+        !direct.depended.iter().any(|block| block.name == "a"),
+        "direct dependents should not include transitive caller a"
+    );
+
+    let recursive = query.find_depended_recursive("c");
+    assert!(
+        recursive.depended.iter().any(|block| block.name == "b"),
+        "recursive dependents should include direct caller b"
+    );
+    assert!(
+        recursive.depended.iter().any(|block| block.name == "a"),
+        "recursive dependents should include transitive caller a"
     );
 }
