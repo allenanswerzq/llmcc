@@ -79,14 +79,6 @@ release version:
         echo "  ok: setup.py"
     fi
 
-    # echo ""
-    # echo "Building all crates..."
-    # cargo build --release 2>&1 | grep -E "^(Compiling|Finished|error)" || true
-
-    # echo ""
-    # echo "Testing all crates..."
-    # cargo test --release 2>&1 | grep -E "^(running|test result)" || true
-
     echo ""
     echo "Committing version bump..."
     git commit -m "chore: bump version to $VERSION"
