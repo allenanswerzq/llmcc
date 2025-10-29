@@ -189,6 +189,43 @@ class Handler:
 }
 
 #[test]
+fn function_parameter_type_dependency() {
+    let source = r#"
+class User:
+    pass
+
+def process(user: User):
+    pass
+"#;
+    let (_, _, collection, globals) = compile(source);
+
+    let user_sym = class_symbol(globals, &collection, "User");
+    let process_sym = function_symbol(globals, &collection, "process");
+
+    assert_relation(process_sym, user_sym);
+}
+
+#[test]
+fn method_parameter_type_dependency_propagates_to_class() {
+    let source = r#"
+class Data:
+    pass
+
+class Handler:
+    def handle(self, item: Data):
+        pass
+"#;
+    let (_, _, collection, globals) = compile(source);
+
+    let data_sym = class_symbol(globals, &collection, "Data");
+    let handler_sym = class_symbol(globals, &collection, "Handler");
+    let handle_sym = function_symbol(globals, &collection, "handle");
+
+    assert_relation(handle_sym, data_sym);
+    assert_relation(handler_sym, data_sym);
+}
+
+#[test]
 fn function_chain_dependencies() {
     let source = r#"
 def level1():

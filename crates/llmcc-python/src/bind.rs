@@ -560,6 +560,58 @@ impl<'tcx> SymbolBinder<'tcx> {
             }
         }
     }
+
+    fn add_parameter_type_dependencies(&mut self, params_node: &HirNode<'tcx>) {
+        for child_id in params_node.children() {
+            let child = self.unit.hir_node(*child_id);
+            match child.kind_id() {
+                id if id == LangPython::typed_parameter
+                    || id == LangPython::typed_default_parameter =>
+                {
+                    self.collect_parameter_type_annotations(&child);
+                }
+                id if id == LangPython::type_node => {
+                    self.add_type_dependencies(&child);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn collect_parameter_type_annotations(&mut self, param_node: &HirNode<'tcx>) {
+        for child_id in param_node.children() {
+            let child = self.unit.hir_node(*child_id);
+            if child.kind_id() == LangPython::type_node {
+                self.add_type_dependencies(&child);
+            }
+        }
+    }
+
+    fn propagate_child_dependencies(&mut self, parent: &'tcx Symbol, child: &'tcx Symbol) {
+        let dependencies: Vec<_> = child.depends.borrow().iter().copied().collect();
+        for dep_id in dependencies {
+            if dep_id == parent.id {
+                continue;
+            }
+
+            if let Some(dep_symbol) = self.unit.opt_get_symbol(dep_id) {
+                if dep_symbol.kind() == SymbolKind::Function {
+                    continue;
+                }
+
+                if dep_symbol
+                    .depends
+                    .borrow()
+                    .iter()
+                    .any(|&id| id == parent.id)
+                {
+                    continue;
+                }
+
+                parent.add_dependency(dep_symbol);
+            }
+        }
+    }
 }
 
 impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
@@ -610,6 +662,15 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
                 if let Some(parent) = parent_symbol {
                     if parent.kind() == SymbolKind::Struct {
                         parent.add_dependency(current_symbol);
+                        self.propagate_child_dependencies(parent, current_symbol);
+                    }
+                }
+
+                for child_id in node.children() {
+                    let child = self.unit.hir_node(*child_id);
+                    if child.kind_id() == LangPython::parameters {
+                        self.add_parameter_type_dependencies(&child);
+                        break;
                     }
                 }
             }
