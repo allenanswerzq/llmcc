@@ -39,6 +39,17 @@ release version:
     rm -f "{{root}}/Cargo.toml.bak"
     echo "  ok: Cargo.toml"
 
+    echo "Updating workspace dependency versions..."
+    tmpfile=$(mktemp)
+    sed -E "s/^(llmcc-[^=]*= \{[^}]*version = \")([^\"]+)/\1$VERSION/" "{{root}}/Cargo.toml" > "$tmpfile"
+    if cmp -s "$tmpfile" "{{root}}/Cargo.toml"; then
+        echo "  warning: no llmcc-* dependency versions updated"
+        rm -f "$tmpfile"
+    else
+        mv "$tmpfile" "{{root}}/Cargo.toml"
+        echo "  ok: updated llmcc-* dependency version entries"
+    fi
+
     # Update Python package versions
     echo "Updating Python package versions..."
     if [ -f "{{root}}/pyproject.toml" ]; then
