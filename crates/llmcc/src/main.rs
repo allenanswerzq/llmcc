@@ -54,12 +54,8 @@ struct Args {
     #[arg(long, default_value_t = false)]
     summary: bool,
 
-    /// Use page rank algorithm to filter the most important nodes in the high graph
-    #[arg(long, default_value_t = false)]
-    pagerank: bool,
-
-    /// Top k nodes to select using PageRank algorithm
-    #[arg(long, value_name = "K", requires = "pagerank")]
+    /// Limit the number of nodes rendered in compact design graph output
+    #[arg(long, value_name = "K")]
     top_k: Option<usize>,
 
     /// Name of the symbol/function to query
@@ -86,10 +82,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Warning: --depends/--dependents flags are ignored without --query");
     }
 
-    if args.pagerank && !args.design_graph {
-        return Err("--pagerank requires --design-graph".into());
-    }
-
     let query_direction = if args.dependents {
         QueryDirection::Dependents
     } else {
@@ -102,7 +94,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         print_ir: args.print_ir,
         print_block: args.print_block,
         design_graph: args.design_graph,
-        pagerank: args.pagerank,
         top_k: args.top_k,
         query: args.query,
         query_direction,

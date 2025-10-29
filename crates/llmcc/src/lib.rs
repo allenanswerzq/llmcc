@@ -18,7 +18,6 @@ pub struct LlmccOptions {
     pub print_ir: bool,
     pub print_block: bool,
     pub design_graph: bool,
-    pub pagerank: bool,
     pub top_k: Option<usize>,
     pub query: Option<String>,
     pub query_direction: QueryDirection,
@@ -29,10 +28,6 @@ pub struct LlmccOptions {
 pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, Box<dyn Error>> {
     if !opts.files.is_empty() && !opts.dirs.is_empty() {
         return Err("Specify either --file or --dir, not both".into());
-    }
-
-    if opts.pagerank && !opts.design_graph {
-        return Err("--pagerank requires --design-graph".into());
     }
 
     let mut seen = HashSet::new();
@@ -128,9 +123,8 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     let mut outputs = Vec::new();
 
     if opts.design_graph {
-        if opts.pagerank {
-            let limit = Some(opts.top_k.unwrap_or(25));
-            pg.set_compact_rank_limit(limit);
+        if opts.top_k.is_some() {
+            pg.set_compact_rank_limit(opts.top_k);
         }
         outputs.push(pg.render_compact_graph());
     } else if let Some(name) = opts.query.as_ref() {

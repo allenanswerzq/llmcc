@@ -16,10 +16,10 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 
 `llmcc` accepts repeated `--file` inputs or repeated `--dir` inputs (choose one mode per run) and targets Rust by default. Sample commands covering the main CLI surfaces:
 
-- High level design graph with PageRank:
+- High level design graph focus (limit to top 100 nodes):
 
 	```bash
-	llmcc --dir ../codex/codex-rs --design-graph --pagerank --top-k 100
+	llmcc --dir ../codex/codex-rs --design-graph --top-k 100
 	```
 
 - Switch to Python analysis:
@@ -67,5 +67,5 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 - Combine several directories (Rust default):
 
 	```bash
-	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --design-graph --pagerank --top-k 100
+	llmcc --dir ../codex/codex-rs/core --dir ../codex/codex-rs/tui --design-graph --top-k 100
 	```
