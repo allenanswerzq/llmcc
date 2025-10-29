@@ -23,24 +23,29 @@ pub struct GraphBlockInfo {
 }
 
 impl GraphBlockInfo {
+    fn resolved_location(&self) -> String {
+        use std::env;
+        use std::path::Path;
+
+        if let Some(path) = &self.file_path {
+            let candidate = Path::new(path);
+            if candidate.is_absolute() {
+                candidate.display().to_string()
+            } else if let Ok(cwd) = env::current_dir() {
+                cwd.join(candidate).display().to_string()
+            } else {
+                path.clone()
+            }
+        } else {
+            format!("<file_unit_{}>", self.unit_index)
+        }
+    }
+
     pub fn format_for_llm(&self) -> String {
         let mut output = String::new();
 
         // Header line with name, kind, and location
-        let location = if let Some(path) = &self.file_path {
-            use std::path::Path;
-            let abs_path = Path::new(path);
-            if abs_path.is_absolute() {
-                path.clone()
-            } else {
-                match std::env::current_dir() {
-                    Ok(cwd) => cwd.join(path).display().to_string(),
-                    Err(_) => path.clone(),
-                }
-            }
-        } else {
-            format!("<file_unit_{}>", self.unit_index)
-        };
+        let location = self.resolved_location();
 
         output.push_str(&format!(
             "┌─ {} [{}] at {}\n",
@@ -73,6 +78,22 @@ impl GraphBlockInfo {
         output.push_str("└─\n");
         output
     }
+
+    pub fn format_summary(&self) -> String {
+        let display_name = self
+            .qualified_name
+            .as_ref()
+            .filter(|name| !name.is_empty())
+            .cloned()
+            .unwrap_or_else(|| self.name.clone());
+
+        let location = self.resolved_location();
+
+        format!(
+            "{} @ {}:{}-{}",
+            display_name, location, self.start_line, self.end_line
+        )
+    }
 }
 
 /// Query results grouped by relevance and type
@@ -88,7 +109,7 @@ impl QueryResult {
         let mut output = String::new();
 
         if !self.primary.is_empty() {
-            output.push_str(" ------------- PRIMARY RESULTS ------------------- \n");
+            output.push_str(" ------------- ASK SYMBOL ------------------- \n");
             for block in &self.primary {
                 output.push_str(&block.format_for_llm());
                 output.push('\n');
@@ -111,6 +132,33 @@ impl QueryResult {
             }
         }
 
+        output
+    }
+
+    pub fn format_summary(&self) -> String {
+        fn push_section(output: &mut String, title: &str, blocks: &[GraphBlockInfo]) {
+            if blocks.is_empty() {
+                return;
+            }
+            if !output.is_empty() {
+                output.push('\n');
+            }
+            output.push_str(title);
+            output.push('\n');
+            for block in blocks {
+                output.push_str("  - ");
+                output.push_str(&block.format_summary());
+                output.push('\n');
+            }
+        }
+
+        let mut output = String::new();
+        push_section(&mut output, "SYMBOL:", &self.primary);
+        push_section(&mut output, "DEPENDS:", &self.depends);
+        push_section(&mut output, "DEPENDENTS:", &self.depended);
+        while output.ends_with('\n') {
+            output.pop();
+        }
         output
     }
 }

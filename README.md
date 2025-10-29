@@ -52,6 +52,12 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 	llmcc --dir ../codex/codex-rs/core --query Codex --dependents --recursive
 	```
 
+- Metadata-only summary (file + line ranges):
+
+	```bash
+	llmcc --dir ../codex/codex-rs/core --query Codex --depends --summary
+	```
+
 - Analyze multiple files in one run:
 
 	```bash

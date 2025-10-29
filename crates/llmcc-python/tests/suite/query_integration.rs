@@ -400,8 +400,8 @@ def sample():
 
     // Check that formatted output contains primary section header
     assert!(
-        formatted.contains("PRIMARY RESULTS"),
-        "Formatted output should contain PRIMARY RESULTS header"
+        formatted.contains("ASK SYMBOL"),
+        "Formatted output should contain ASK SYMBOL header"
     );
 
     // Check that the function details are present

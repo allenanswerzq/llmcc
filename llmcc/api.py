@@ -25,6 +25,7 @@ def run(
     query: Optional[str] = None,
     recursive: bool = False,
     dependents: bool = False,
+    summary: bool = False,
 ) -> Optional[str]:
     """Execute the core llmcc workflow from Python.
 
@@ -55,6 +56,7 @@ def run(
         query_value,
         bool(recursive),
         bool(dependents),
+        bool(summary),
     )
 
 

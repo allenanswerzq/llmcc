@@ -37,6 +37,7 @@ fn base_options(file: String) -> LlmccOptions {
         query: None,
         query_direction: QueryDirection::Depends,
         recursive: false,
+        summary: false,
     }
 }
 
@@ -122,5 +123,33 @@ fn files_and_dirs_conflict() {
     assert!(
         err.to_string().contains("--file") && err.to_string().contains("--dir"),
         "unexpected error message: {err}"
+    );
+}
+
+#[test]
+fn summary_output_omits_source_code() {
+    let (_dir, file) = write_fixture();
+
+    let mut opts = base_options(file);
+    opts.query = Some("leaf".to_string());
+    opts.query_direction = QueryDirection::Dependents;
+    opts.summary = true;
+
+    let output = run_main::<LangRust>(&opts)
+        .expect("summary query run")
+        .expect("summary output");
+
+    assert!(
+        output.contains("DEPENDENTS"),
+        "missing dependents header: {output}"
+    );
+    assert!(output.contains("leaf"), "missing symbol name: {output}");
+    assert!(
+        output.contains(".rs:"),
+        "expected file path with line info: {output}"
+    );
+    assert!(
+        !output.contains("┌─"),
+        "summary should not include block rendering: {output}"
     );
 }

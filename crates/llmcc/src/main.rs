@@ -50,6 +50,10 @@ struct Args {
     #[arg(long = "design-graph", default_value_t = false)]
     design_graph: bool,
 
+    /// Summarize query output with file path and line range instead of full code blocks
+    #[arg(long, default_value_t = false)]
+    summary: bool,
+
     /// Use page rank algorithm to filter the most important nodes in the high graph
     #[arg(long, default_value_t = false)]
     pagerank: bool,
@@ -99,6 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         query: args.query,
         query_direction,
         recursive: args.recursive,
+        summary: args.summary,
     };
 
     let result = match args.lang.as_str() {

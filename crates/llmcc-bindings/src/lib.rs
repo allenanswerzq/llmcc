@@ -30,6 +30,7 @@ fn run_workflow<L>(
     query: Option<String>,
     recursive: bool,
     dependents: bool,
+    summary: bool,
 ) -> Result<Option<String>, Box<dyn Error>>
 where
     L: LanguageTrait,
@@ -113,7 +114,13 @@ where
         } else {
             query.find_depends(&symbol_name)
         };
-        outputs.push(result.format_for_llm());
+
+        let formatted = if summary {
+            result.format_summary()
+        } else {
+            result.format_for_llm()
+        };
+        outputs.push(formatted);
     }
 
     if outputs.is_empty() {
@@ -124,7 +131,7 @@ where
 }
 
 #[pyfunction]
-#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, print_design_graph=false, query=None, recursive=false, dependents=false))]
+#[pyo3(signature = (lang, files=None, dir=None, print_ir=false, print_block=false, print_design_graph=false, query=None, recursive=false, dependents=false, summary=false))]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
@@ -135,6 +142,7 @@ fn run_llmcc(
     query: Option<String>,
     recursive: bool,
     dependents: bool,
+    summary: bool,
 ) -> PyResult<Option<String>> {
     let result = match lang {
         "rust" => run_workflow::<LangRust>(
@@ -147,6 +155,7 @@ fn run_llmcc(
             query.clone(),
             recursive,
             dependents,
+            summary,
         ),
         "python" => run_workflow::<LangPython>(
             "python",
@@ -158,6 +167,7 @@ fn run_llmcc(
             query.clone(),
             recursive,
             dependents,
+            summary,
         ),
         other => {
             return Err(PyErr::new::<PyValueError, _>(format!(

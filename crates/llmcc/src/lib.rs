@@ -23,6 +23,7 @@ pub struct LlmccOptions {
     pub query: Option<String>,
     pub query_direction: QueryDirection,
     pub recursive: bool,
+    pub summary: bool,
 }
 
 pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, Box<dyn Error>> {
@@ -130,23 +131,28 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         outputs.push(pg.render_compact_graph());
     } else if let Some(name) = opts.query.as_ref() {
         let query = ProjectQuery::new(&pg);
-        let query_output = match opts.query_direction {
+        let query_result = match opts.query_direction {
             QueryDirection::Dependents => {
                 if opts.recursive {
-                    query.find_depended_recursive(name).format_for_llm()
+                    query.find_depended_recursive(name)
                 } else {
-                    query.find_depended(name).format_for_llm()
+                    query.find_depended(name)
                 }
             }
             QueryDirection::Depends => {
                 if opts.recursive {
-                    query.find_depends_recursive(name).format_for_llm()
+                    query.find_depends_recursive(name)
                 } else {
-                    query.find_depends(name).format_for_llm()
+                    query.find_depends(name)
                 }
             }
         };
-        outputs.push(query_output);
+        let formatted = if opts.summary {
+            query_result.format_summary()
+        } else {
+            query_result.format_for_llm()
+        };
+        outputs.push(formatted);
     }
 
     if outputs.is_empty() {
