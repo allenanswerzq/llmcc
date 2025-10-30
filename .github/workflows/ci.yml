@@ -56,9 +56,29 @@ jobs:
         run: |
           uv sync --extra dev
 
+      - name: Get Python configuration (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          PYTHON_PATH=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          PYTHON_LDVERSION=$(python -c "import sysconfig; print(sysconfig.get_config_var('LDVERSION'))")
+          echo "LDFLAGS=-L$PYTHON_PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$PYTHON_PATH:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "Python LIBDIR: $PYTHON_PATH"
+          echo "Python LDVERSION: $PYTHON_LDVERSION"
+
+      - name: Get Python configuration (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          PYTHON_PATH=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          echo "LDFLAGS=-L$PYTHON_PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$PYTHON_PATH:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
       - name: Build Python bindings
         run: |
           MACOSX_DEPLOYMENT_TARGET=11.0 uv run maturin develop --manifest-path "crates/llmcc-bindings/Cargo.toml"
+        env:
+          LDFLAGS: ${{ env.LDFLAGS }}
+          LD_LIBRARY_PATH: ${{ env.LD_LIBRARY_PATH }}
 
       - name: Run Python tests
         run: |
@@ -106,8 +126,18 @@ jobs:
 
       - uses: swatinem/rust-cache@v2
 
+      - name: Get Python configuration (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          PYTHON_PATH=$(python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          echo "LDFLAGS=-L$PYTHON_PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$PYTHON_PATH:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
       - name: Build release binaries
         run: cargo build --release --workspace --all-targets
+        env:
+          LDFLAGS: ${{ env.LDFLAGS }}
+          LD_LIBRARY_PATH: ${{ env.LD_LIBRARY_PATH }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
