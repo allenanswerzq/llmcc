@@ -9,9 +9,12 @@ uv-sync:
 build-bindings: uv-sync
     uv run maturin develop --manifest-path "{{root}}/crates/llmcc-bindings/Cargo.toml"
 
-run-py: build-bindings
-    uv run pytest "{{root}}/llmcc/test_basic.py"
+run-py: build-bindings verify-wheel
+    uv run pytest "{{root}}/tests/test_python_api.py"
 
+verify-wheel:
+    uv run maturin build --release
+    uv run python "{{root}}/scripts/verify_wheel.py"
 
 test: run-py
     cargo test --workspace
