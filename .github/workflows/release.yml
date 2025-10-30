@@ -68,6 +68,48 @@ jobs:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: crates/llmcc-bindings/dist/*.whl
 
+  build-binaries:
+    name: Build binaries
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+      - name: Build llmcc binary
+        run: cargo build --release --bin llmcc
+      - name: Package binary artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          case "${RUNNER_OS}" in
+            Windows)
+              SRC="target/release/llmcc.exe"
+              DEST="artifacts/llmcc-${{ matrix.os }}.exe"
+              ;;
+            macOS|Linux)
+              SRC="target/release/llmcc"
+              DEST="artifacts/llmcc-${{ matrix.os }}"
+              ;;
+            *)
+              echo "Unsupported runner OS: ${RUNNER_OS}"
+              exit 1
+              ;;
+          esac
+          if [ ! -f "${SRC}" ]; then
+            echo "Expected binary not found at ${SRC}"
+            exit 1
+          fi
+          cp "${SRC}" "${DEST}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: llmcc-binary-${{ matrix.os }}
+          path: artifacts/*
+
   build-sdist:
     name: Build sdist
     needs: test
@@ -108,7 +150,7 @@ jobs:
 
   collect-artifacts:
     name: Collect all artifacts
-    needs: [publish-crates, build-wheels, build-sdist]
+    needs: [publish-crates, build-wheels, build-sdist, build-binaries]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -117,7 +159,7 @@ jobs:
       - name: Flatten artifacts
         run: |
           mkdir -p final-dist
-          find all-artifacts -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} final-dist/ \;
+          find all-artifacts -type f -exec mv {} final-dist/ \;
       - uses: actions/upload-artifact@v4
         with:
           name: final-release-artifacts

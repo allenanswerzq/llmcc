@@ -13,7 +13,8 @@ run-py: build-bindings verify-wheel
     uv run pytest "{{root}}/tests/test_python_api.py"
 
 verify-wheel:
-    uv run maturin build --release
+    env PYO3_PYTHON="$(python3 -c 'import sys; print(sys.executable)')" \
+        uv run maturin build --release
     uv run python "{{root}}/scripts/verify_wheel.py"
 
 test: run-py
