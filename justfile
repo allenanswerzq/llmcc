@@ -82,12 +82,12 @@ release version:
         echo "  ok: setup.py"
     fi
 
-    echo ""
-    echo "Committing version bump..."
-
+    cargo build --release --workspace
     git add {{root}}/Cargo.toml
     git add {{root}}/Cargo.lock
 
+    echo ""
+    echo "Committing version bump..."
     git commit -m "chore: bump version to $VERSION"
     git push origin main
 
