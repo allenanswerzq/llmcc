@@ -24,6 +24,54 @@ fn main() {
             }
         }
 
+        // If provided, link directly against the detected Python library
+        fn sanitize_lib_name(raw: &str) -> Option<String> {
+            let trimmed = raw.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+
+            let mut candidate = trimmed;
+            if let Some(stripped) = candidate.strip_prefix("lib") {
+                candidate = stripped;
+            }
+
+            let candidate = candidate
+                .trim_end_matches(".dylib")
+                .trim_end_matches(".tbd")
+                .trim_end_matches(".a");
+
+            if candidate.is_empty() {
+                None
+            } else {
+                Some(candidate.to_string())
+            }
+        }
+
+        let mut python_lib_name = std::env::var("PYTHON_LIB_NAME")
+            .ok()
+            .and_then(|name| sanitize_lib_name(&name));
+
+        if python_lib_name.is_none() {
+            if let Ok(python_lib_dir) = std::env::var("PYTHON_LIB_DIR") {
+                if let Ok(entries) = std::fs::read_dir(&python_lib_dir) {
+                    for entry in entries.flatten() {
+                        let file_name = entry.file_name();
+                        if let Some(name) = file_name.to_str() {
+                            if let Some(parsed) = sanitize_lib_name(name) {
+                                python_lib_name = Some(parsed);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Some(lib) = python_lib_name {
+            println!("cargo:rustc-link-lib=dylib={}", lib);
+        }
+
         // Ensure MACOSX_DEPLOYMENT_TARGET is set if it's already in env
         if let Ok(deployment_target) = std::env::var("MACOSX_DEPLOYMENT_TARGET") {
             println!(

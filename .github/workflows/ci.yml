@@ -33,11 +33,13 @@ jobs:
           brew install python@3.11
           PYTHON_BIN=$(brew --prefix python@3.11)/bin/python3.11
           LIBDIR=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          LIBNAME=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))")
           echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
           echo "PYTHON_SYS_EXECUTABLE=$PYTHON_BIN" >> $GITHUB_ENV
           echo "LDFLAGS=-L$LIBDIR" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> $GITHUB_ENV
           echo "PYTHON_LIB_DIR=$LIBDIR" >> $GITHUB_ENV
+          echo "PYTHON_LIB_NAME=$LIBNAME" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
       - name: Run tests
@@ -86,11 +88,13 @@ jobs:
         run: |
           PYTHON_BIN=$(python -c "import sys; print(sys.executable)")
           LIBDIR=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          LIBNAME=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))")
           echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
           echo "PYTHON_SYS_EXECUTABLE=$PYTHON_BIN" >> $GITHUB_ENV
           echo "LDFLAGS=-L$LIBDIR" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> $GITHUB_ENV
           echo "PYTHON_LIB_DIR=$LIBDIR" >> $GITHUB_ENV
+          echo "PYTHON_LIB_NAME=$LIBNAME" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
       - name: Configure PyO3 (Linux)
@@ -113,6 +117,7 @@ jobs:
           LDFLAGS: ${{ env.LDFLAGS }}
           LD_LIBRARY_PATH: ${{ env.LD_LIBRARY_PATH }}
           PYTHON_LIB_DIR: ${{ env.PYTHON_LIB_DIR }}
+          PYTHON_LIB_NAME: ${{ env.PYTHON_LIB_NAME }}
           MACOSX_DEPLOYMENT_TARGET: ${{ env.MACOSX_DEPLOYMENT_TARGET }}
 
       - name: Run Python tests
@@ -216,11 +221,13 @@ jobs:
           brew install python@3.11 || brew upgrade python@3.11
           PYTHON_BIN=$(brew --prefix python@3.11)/bin/python3.11
           LIBDIR=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          LIBNAME=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))")
           echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
           echo "PYTHON_SYS_EXECUTABLE=$PYTHON_BIN" >> $GITHUB_ENV
           echo "LDFLAGS=-L$LIBDIR" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> $GITHUB_ENV
           echo "PYTHON_LIB_DIR=$LIBDIR" >> $GITHUB_ENV
+          echo "PYTHON_LIB_NAME=$LIBNAME" >> $GITHUB_ENV
 
       - name: Build release binaries
         run: cargo build --release --workspace --all-targets
@@ -229,6 +236,8 @@ jobs:
           PYTHON_SYS_EXECUTABLE: ${{ env.PYTHON_SYS_EXECUTABLE }}
           LDFLAGS: ${{ env.LDFLAGS }}
           LD_LIBRARY_PATH: ${{ env.LD_LIBRARY_PATH }}
+          PYTHON_LIB_DIR: ${{ env.PYTHON_LIB_DIR }}
+          PYTHON_LIB_NAME: ${{ env.PYTHON_LIB_NAME }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
