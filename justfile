@@ -88,7 +88,7 @@ release version:
 
     env \
         PYO3_PYTHON="$(python3 -c 'import sys; print(sys.executable)')" \
-        RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-undefined -C link-arg=dynamic_lookup" \
+        RUSTFLAGS="$(if [[ '$OSTYPE' == 'darwin'* ]]; then echo '-C link-arg=-undefined -C link-arg=dynamic_lookup'; fi)" \
         cargo build --release --workspace
     git add {{root}}/Cargo.toml
     git add {{root}}/Cargo.lock
