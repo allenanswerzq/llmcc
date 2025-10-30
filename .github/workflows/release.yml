@@ -43,29 +43,34 @@ jobs:
             sleep 10
           done
 
-  build-wheels:
-    name: Build wheels
+  publish-wheels:
+    name: Publish wheels
     needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
       - uses: dtolnay/rust-toolchain@stable
-      - name: Build wheels
+      - name: Publish wheels (no sdist)
+        if: matrix.os != 'ubuntu-latest'
         uses: PyO3/maturin-action@v1
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
-          args: --release --out dist --find-interpreter
+          command: publish
+          args: --release --find-interpreter --skip-existing --no-sdist
           sccache: 'true'
-      - uses: actions/upload-artifact@v4
+      - name: Publish wheels and sdist
+        if: matrix.os == 'ubuntu-latest'
+        uses: PyO3/maturin-action@v1
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
-          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: dist/*.whl
+          command: publish
+          args: --release --find-interpreter --skip-existing
+          sccache: 'true'
 
   build-binaries:
     name: Build binaries
@@ -109,62 +114,26 @@ jobs:
           name: llmcc-binary-${{ matrix.os }}
           path: artifacts/*
 
-  build-sdist:
-    name: Build sdist
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build sdist
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          args: --out dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: sdist
-          path: dist/*.tar.gz
-
-  publish-python:
-    name: Publish to PyPI
-    needs: [build-wheels, build-sdist]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          pattern: wheels-*
-          path: python-artifacts
-          merge-multiple: true
-      - uses: actions/download-artifact@v4
-        with:
-          name: sdist
-          path: python-artifacts
-      - name: Collect Python distributions
-        run: |
-          mkdir -p dist
-          find python-artifacts -type f -name "*.whl" -exec mv {} dist/ \;
-          find python-artifacts -type f -name "*.tar.gz" -exec mv {} dist/ \;
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages-dir: dist
-
   collect-artifacts:
     name: Collect all artifacts
-    needs: [publish-crates, build-wheels, build-sdist, build-binaries]
+    needs: [publish-crates, publish-wheels, build-binaries]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Determine version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+      - name: Download binaries
+        uses: actions/download-artifact@v4
         with:
-          path: all-artifacts
-      - name: Flatten artifacts
+          path: binary-artifacts
+      - name: Prepare artifact directory
         run: |
           mkdir -p final-dist
-          find all-artifacts -type f -exec mv {} final-dist/ \;
+          find binary-artifacts -type f -exec mv {} final-dist/ \;
+      - name: Download Python distributions from PyPI
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip download "llmcc==${{ steps.version.outputs.version }}" --dest final-dist
       - uses: actions/upload-artifact@v4
         with:
           name: final-release-artifacts
@@ -172,7 +141,7 @@ jobs:
 
   release:
     name: Create GitHub release
-    needs: [collect-artifacts, publish-python]
+    needs: [collect-artifacts, publish-wheels]
     runs-on: ubuntu-latest
     permissions:
       contents: write
