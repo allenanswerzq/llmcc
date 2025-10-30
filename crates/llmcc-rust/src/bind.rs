@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::ptr;
 
 use llmcc_core::context::CompileUnit;
@@ -15,13 +16,23 @@ use crate::token::{AstVisitorRust, LangRust};
 struct SymbolBinder<'tcx> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
+    preferred_crate: Option<String>,
 }
 
 impl<'tcx> SymbolBinder<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
         scopes.push(globals);
-        Self { unit, scopes }
+        let preferred_crate = unit
+            .file_path()
+            .or_else(|| unit.file().path())
+            .and_then(Self::extract_crate_key);
+
+        Self {
+            unit,
+            scopes,
+            preferred_crate,
+        }
     }
 
     fn interner(&self) -> &llmcc_core::interner::InternPool {
@@ -167,10 +178,19 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn collect_type_expr_symbols(&mut self, expr: &TypeExpr, symbols: &mut Vec<&'tcx Symbol>) {
         match expr {
             TypeExpr::Path { segments, generics } => {
-                let symbol = self
-                    .resolve_symbol(segments, Some(SymbolKind::Struct))
-                    .or_else(|| self.resolve_symbol(segments, Some(SymbolKind::Enum)))
-                    .or_else(|| self.resolve_symbol(segments, None));
+                let struct_symbol = self.resolve_symbol(segments, Some(SymbolKind::Struct));
+                let enum_symbol = if struct_symbol.is_none() {
+                    self.resolve_symbol(segments, Some(SymbolKind::Enum))
+                } else {
+                    None
+                };
+                let any_symbol = if struct_symbol.is_none() && enum_symbol.is_none() {
+                    self.resolve_symbol(segments, None)
+                } else {
+                    None
+                };
+
+                let symbol = struct_symbol.or(enum_symbol).or(any_symbol);
                 if let Some(symbol) = symbol {
                     if !symbols.iter().any(|existing| existing.id == symbol.id) {
                         symbols.push(symbol);
@@ -213,7 +233,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                 }
             }
             let symbols = scope.lookup_suffix_symbols(suffix);
-            if let Some(symbol) = Self::select_matching_symbol(&symbols, kind, file) {
+            if let Some(symbol) = self.select_matching_symbol(&symbols, kind, file) {
                 return Some(symbol);
             }
         }
@@ -228,17 +248,22 @@ impl<'tcx> SymbolBinder<'tcx> {
     ) -> Option<&'tcx Symbol> {
         if let Some(global_scope) = self.scopes.iter().next() {
             let symbols = global_scope.lookup_suffix_symbols(suffix);
-            Self::select_matching_symbol(&symbols, kind, file)
+            self.select_matching_symbol(&symbols, kind, file)
         } else {
             None
         }
     }
 
     fn select_matching_symbol(
+        &self,
         candidates: &[&'tcx Symbol],
         kind: Option<SymbolKind>,
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
+        if candidates.is_empty() {
+            return None;
+        }
+
         if let Some(kind) = kind {
             if let Some(file) = file {
                 if let Some(symbol) = candidates
@@ -250,10 +275,38 @@ impl<'tcx> SymbolBinder<'tcx> {
                 }
             }
 
-            return candidates
+            if let Some(preferred) = self.preferred_crate.as_ref() {
+                if let Some(symbol) = candidates
+                    .iter()
+                    .copied()
+                    .find(|symbol| symbol.kind() == kind && self.symbol_in_crate(symbol, preferred))
+                {
+                    return Some(symbol);
+                }
+            }
+
+            if let Some(symbol) = candidates
                 .iter()
                 .copied()
-                .find(|symbol| symbol.kind() == kind);
+                .find(|symbol| symbol.kind() == kind)
+            {
+                return Some(symbol);
+            }
+
+            // if candidates.iter().all(|symbol| symbol.kind() != kind) {
+            //     let details: Vec<_> = candidates
+            //         .iter()
+            //         .map(|symbol| {
+            //             (
+            //                 symbol.name.as_str().to_string(),
+            //                 symbol.kind(),
+            //                 symbol.unit_index(),
+            //             )
+            //         })
+            //         .collect();
+            // }
+
+            return None;
         }
 
         if let Some(file) = file {
@@ -266,7 +319,48 @@ impl<'tcx> SymbolBinder<'tcx> {
             }
         }
 
+        if let Some(preferred) = self.preferred_crate.as_ref() {
+            if let Some(symbol) = candidates
+                .iter()
+                .copied()
+                .find(|symbol| self.symbol_in_crate(symbol, preferred))
+            {
+                return Some(symbol);
+            }
+        }
+
         candidates.first().copied()
+    }
+
+    fn symbol_in_crate(&self, symbol: &'tcx Symbol, crate_key: &str) -> bool {
+        let Some(unit_index) = symbol.unit_index() else {
+            return false;
+        };
+
+        let path = self.unit.cc.file_path(unit_index);
+        let Some(path) = path else {
+            return false;
+        };
+
+        Self::extract_crate_key(path)
+            .as_deref()
+            .map_or(false, |key| key == crate_key)
+    }
+
+    fn extract_crate_key(path: &str) -> Option<String> {
+        let p = Path::new(path);
+        for (idx, component) in p.components().enumerate() {
+            if component.as_os_str() == "crates" {
+                return p
+                    .components()
+                    .nth(idx + 1)
+                    .map(|c| c.as_os_str().to_string_lossy().to_string());
+            }
+        }
+
+        p.parent()
+            .and_then(|parent| parent.file_name())
+            .map(|name| name.to_string_lossy().to_string())
     }
 
     fn record_call_target(&mut self, target: &CallTarget) {
