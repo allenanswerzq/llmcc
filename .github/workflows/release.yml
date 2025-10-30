@@ -138,12 +138,18 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          path: dist
-      - name: Flatten dist
+          pattern: wheels-*
+          path: python-artifacts
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: python-artifacts
+      - name: Collect Python distributions
         run: |
-          find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
-          find dist -type d -empty -delete
-          find dist -type f ! -name "*.whl" ! -name "*.tar.gz" -delete
+          mkdir -p dist
+          find python-artifacts -type f -name "*.whl" -exec mv {} dist/ \;
+          find python-artifacts -type f -name "*.tar.gz" -exec mv {} dist/ \;
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
