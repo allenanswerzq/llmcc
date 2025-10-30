@@ -86,7 +86,10 @@ release version:
         echo "  ok: setup.py"
     fi
 
-    cargo build --release --workspace
+    env \
+        PYO3_PYTHON="$(python3 -c 'import sys; print(sys.executable)')" \
+        RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-undefined -C link-arg=dynamic_lookup" \
+        cargo build --release --workspace
     git add {{root}}/Cargo.toml
     git add {{root}}/Cargo.lock
 
