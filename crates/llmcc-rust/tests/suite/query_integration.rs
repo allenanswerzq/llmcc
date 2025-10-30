@@ -49,7 +49,7 @@ fn test_query_find_function_basic() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("helper");
 
     // Should find the helper function
@@ -75,7 +75,7 @@ fn test_query_consistency() {
         fn test_func() {}
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results1 = query.find_by_name("test_func");
     let results2 = query.find_by_name("test_func");
 
@@ -93,7 +93,7 @@ fn test_query_nonexistent() {
         fn existing() {}
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("nonexistent_xyz_abc");
 
     assert!(results.primary.is_empty());
@@ -109,7 +109,7 @@ fn test_query_find_all_functions() {
         struct MyStruct;
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_all_functions();
 
     // Should have at least first and second functions
@@ -154,7 +154,7 @@ fn test_query_multiple_files() {
         "#,
     ]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Should be able to query both
     let results0 = query.find_by_name("file0_func");
@@ -192,7 +192,7 @@ fn test_query_file_structure() {
         "#,
     ]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.file_structure(0);
     let results_u1 = query.file_structure(1);
 
@@ -231,7 +231,7 @@ fn test_query_find_related() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends("caller");
 
     // Should find caller as primary result
@@ -272,7 +272,7 @@ fn test_query_find_related_recursive() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends_recursive("root");
 
     // Should find root as primary
@@ -315,7 +315,7 @@ fn test_query_traverse_bfs() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let traversal = query.traverse_bfs("root");
 
     // Should find root first (BFS order)
@@ -348,7 +348,7 @@ fn test_query_traverse_dfs() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let traversal = query.traverse_dfs("root");
 
     // Should find root first
@@ -369,7 +369,7 @@ fn test_query_format_headers() {
         fn sample() {}
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("sample");
 
     let formatted = results.format_for_llm();
@@ -403,7 +403,7 @@ fn test_query_large_source() {
     }
 
     let graph = build_graph(&[&source]);
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     let results = query.find_all_functions();
 
@@ -442,7 +442,7 @@ fn test_query_mixed_types() {
         const MAX_SIZE: i32 = 100;
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Query different things
     let func_results = query.find_by_name("process");
@@ -482,7 +482,7 @@ fn test_query_result_inspection() {
         fn test() {}
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("test");
 
     // Should be inspectable and contain data
@@ -528,7 +528,7 @@ fn test_multiple_queries_same_graph() {
         struct D;
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Run multiple queries
     let a_result = query.find_by_name("a");
@@ -557,7 +557,7 @@ fn test_query_result_format_consistency() {
         fn sample() {}
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("sample");
 
     // Multiple format calls should return identical results
@@ -579,7 +579,7 @@ fn test_query_find_depended() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depended("helper");
 
     // Should find helper as primary result

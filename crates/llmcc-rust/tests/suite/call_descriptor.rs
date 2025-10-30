@@ -57,7 +57,7 @@ fn chain_target(call: &CallDescriptor) -> (&String, &Vec<ChainSegment>) {
     (base, segments)
 }
 
-fn find_call<'a, F>(calls: &'a [CallDescriptor], predicate: F) -> &'a CallDescriptor
+fn find_call<F>(calls: &[CallDescriptor], predicate: F) -> &CallDescriptor
 where
     F: Fn(&CallDescriptor) -> bool,
 {

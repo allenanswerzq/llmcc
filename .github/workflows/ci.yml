@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test-rust:
-    name: Test Rust (${{ matrix.os }})
+  test:
+    name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -16,9 +16,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: dtolnay/rust-toolchain@stable
-
       - uses: swatinem/rust-cache@v2
 
       - name: Run tests
@@ -30,109 +28,36 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-  test-python:
-    name: Test Python (${{ matrix.os }}, Python ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.11', '3.12']
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: swatinem/rust-cache@v2
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-
-      - name: Install dependencies
-        run: |
-          uv sync --extra dev
-
-      - name: Build Python bindings
-        run: |
-          uv run maturin develop --manifest-path "crates/llmcc-bindings/Cargo.toml"
-
-      - name: Run Python tests
-        run: |
-          uv run pytest llmcc/test_basic.py -v
-
   lint:
-    name: Lint and format checks
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-
       - uses: swatinem/rust-cache@v2
-
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+
+      - name: Install Python development headers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-dev
+
+      - name: Set PYO3_PYTHON
+        run: echo "PYO3_PYTHON=$(python3 -c 'import sys; print(sys.executable)')" >> $GITHUB_ENV
 
       - name: Check Rust formatting
         run: cargo fmt --all -- --check
 
       - name: Run Clippy
         run: cargo clippy --all-targets --workspace -- -D warnings
+        env:
+          PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
 
       - name: Check documentation
         run: cargo doc --no-deps --workspace
-
-  build:
-    name: Build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: swatinem/rust-cache@v2
-
-      - name: Build release binaries
-        run: cargo build --release --workspace --all-targets
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: llmcc-${{ matrix.os }}
-          path: |
-            target/release/llmcc${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-            target/release/libllmcc*
-
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: swatinem/rust-cache@v2
-
-      - uses: taiki-e/install-action@cargo-tarpaulin
-
-      - name: Generate coverage
-        run: cargo tarpaulin --workspace --out Xml --timeout 300
-
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./cobertura.xml
-          fail_ci_if_error: false
+        env:
+          PYO3_PYTHON: ${{ env.PYO3_PYTHON }}

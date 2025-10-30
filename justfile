@@ -16,6 +16,9 @@ run-py: build-bindings
 test: run-py
     cargo test --workspace
 
+clippy:
+    cargo clippy --all-targets --workspace -- -D warnings
+
 release version:
     #!/bin/bash
     set -e
