@@ -48,7 +48,7 @@ fn example_find_related_code() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends("caller");
     let llm_output = results.format_for_llm();
 
@@ -72,7 +72,7 @@ fn example_recursive_dependencies() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends_recursive("root");
     let llm_output = results.format_for_llm();
 
@@ -100,7 +100,7 @@ fn example_complex_dependencies() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends_recursive("process_request");
     let llm_output = results.format_for_llm();
 
@@ -129,7 +129,7 @@ fn example_shared_dependencies() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends_recursive("coordinator");
     let llm_output = results.format_for_llm();
 
@@ -150,7 +150,7 @@ fn example_cross_file() {
         "#,
     ]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     println!("\n=== EXAMPLE 5: Cross-File Queries ===");
     println!("Query 1: Find 'producer' function");
@@ -180,7 +180,7 @@ fn example_type_dependencies() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("get_user");
     let llm_output = results.format_for_llm();
 
@@ -228,7 +228,7 @@ fn example_http_handler() {
         }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends_recursive("handle_http_request");
     let llm_output = results.format_for_llm();
 
@@ -252,7 +252,7 @@ fn example_file_structure() {
         "#,
     ]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     println!("\n=== EXAMPLE 8: File Structure ===");
     println!("Query: Get structure of file 0");
@@ -272,7 +272,7 @@ fn example_traversal_methods() {
         fn root() { l3a(); l3b(); }
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     println!("\n=== EXAMPLE 9: Traversal Methods ===");
 
@@ -296,7 +296,7 @@ fn example_nonexistent_function() {
         fn existing() {}
     "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("nonexistent");
     let llm_output = results.format_for_llm();
 
