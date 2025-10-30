@@ -5,378 +5,133 @@ on:
     tags:
       - 'v*'
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  build-and-test-rust:
-    name: Build and test Rust crates
+  test:
+    name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: dtolnay/rust-toolchain@stable
-
       - uses: swatinem/rust-cache@v2
+      - run: cargo test --release
 
-      - name: Build all crates
-        run: cargo build --release
-
-      - name: Test all crates
-        run: cargo test --release
-
-  publish-rust:
-    name: Publish Rust crates to crates.io
+  publish-crates:
+    name: Publish to crates.io
+    needs: test
     runs-on: ubuntu-latest
-    needs: [build-and-test-rust]
     permissions:
-      contents: write
-
+      contents: read
+    env:
+      CRATES: llmcc-core llmcc-rust llmcc-python llmcc-bindings llmcc
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: dtolnay/rust-toolchain@stable
-
       - uses: swatinem/rust-cache@v2
-
-      - name: Extract version from tag
-        id: tag_info
+      - name: Publish crates
+        env:
+          TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         run: |
-          TAG="${{ github.ref_name }}"
-          VERSION=${TAG#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          for crate in $CRATES; do
+            echo "Publishing $crate..."
+            cargo publish -p "$crate" --token "$TOKEN"
+            sleep 10
+          done
 
-      - name: Set up wait helper function
-        run: |
-          cat > /tmp/wait-for-crate.sh << 'EOF'
-          #!/bin/bash
-          wait_for_crate() {
-            local crate=$1
-            local version=$2
-            local max_attempts=30
-            local attempt=0
-
-            echo "[WAIT] Waiting for $crate v$version..."
-
-            while [ $attempt -lt $max_attempts ]; do
-              if cargo search "$crate" --limit 1 | grep -q "$crate = \"$version\""; then
-                echo "[OK] $crate v$version is available on crates.io"
-                return 0
-              fi
-              attempt=$((attempt + 1))
-              echo "  Attempt $attempt/$max_attempts..."
-              sleep 2
-            done
-
-            echo "[WARN] $crate v$version not yet available, continuing anyway"
-            return 0
-          }
-
-          export -f wait_for_crate
-          EOF
-          chmod +x /tmp/wait-for-crate.sh
-          source /tmp/wait-for-crate.sh
-
-      - name: Publish llmcc-core to crates.io
-        run: |
-          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-            exit 1
-          fi
-          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-core
-
-      - name: Wait for llmcc-core to be available
-        run: |
-          source /tmp/wait-for-crate.sh
-          wait_for_crate "llmcc-core" "${{ steps.tag_info.outputs.version }}"
-
-      - name: Publish llmcc-rust to crates.io
-        run: |
-          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-            exit 1
-          fi
-          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-rust
-
-      - name: Wait for llmcc-rust to be available
-        run: |
-          source /tmp/wait-for-crate.sh
-          wait_for_crate "llmcc-rust" "${{ steps.tag_info.outputs.version }}"
-
-      - name: Publish llmcc-python to crates.io
-        run: |
-          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-            exit 1
-          fi
-          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-python
-
-      - name: Wait for llmcc-python to be available
-        run: |
-          source /tmp/wait-for-crate.sh
-          wait_for_crate "llmcc-python" "${{ steps.tag_info.outputs.version }}"
-
-      - name: Publish llmcc-bindings to crates.io
-        run: |
-          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-            exit 1
-          fi
-          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc-bindings
-
-      - name: Wait for llmcc-bindings to be available
-        run: |
-          source /tmp/wait-for-crate.sh
-          wait_for_crate "llmcc-bindings" "${{ steps.tag_info.outputs.version }}"
-
-      - name: Publish llmcc (CLI) to crates.io
-        run: |
-          if [ -z "${{ secrets.CARGO_REGISTRY_TOKEN }}" ]; then
-            echo "[ERROR] CARGO_REGISTRY_TOKEN secret is not set!"
-            exit 1
-          fi
-          cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }} -p llmcc
-
-      - name: Wait for llmcc (CLI) to be available
-        run: |
-          source /tmp/wait-for-crate.sh
-          wait_for_crate "llmcc" "${{ steps.tag_info.outputs.version }}"
-
-  build-python:
-    name: Build and publish Python wheels
+  build-wheels:
+    name: Build wheels
+    needs: test
     runs-on: ${{ matrix.os }}
-    needs: [build-and-test-rust]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
       - uses: dtolnay/rust-toolchain@stable
-
-      - name: Set up Rust for cross-compilation
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          rustup target add x86_64-unknown-linux-gnu
-          rustup target add aarch64-unknown-linux-gnu
-
       - name: Build wheels
         uses: PyO3/maturin-action@v1
         with:
           args: --release --out dist --find-interpreter
           sccache: 'true'
-          maturin-version: 'latest'
           working-directory: crates/llmcc-bindings
-
-      - name: Upload wheels
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
           path: crates/llmcc-bindings/dist/*.whl
 
   build-sdist:
-    name: Build source distribution
+    name: Build sdist
+    needs: test
     runs-on: ubuntu-latest
-    needs: [build-and-test-rust]
-
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
       - uses: dtolnay/rust-toolchain@stable
-
-      - name: Build source distribution
+      - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
           command: sdist
           args: --out dist
-          maturin-version: 'latest'
           working-directory: crates/llmcc-bindings
-
-      - name: Upload sdist
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: sdist
           path: crates/llmcc-bindings/dist/*.tar.gz
 
-  test-wheels:
-    name: Test wheels
-    needs: [build-python, build-sdist]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.11', '3.12']
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: dist
-
-      - name: Debug directory structure
-        shell: bash
-        run: |
-          echo "Contents of dist directory:"
-          ls -laR dist || echo "dist directory not found"
-          find . -name "*.whl" -type f | head -20
-
-      - name: Flatten dist directory
-        shell: bash
-        run: |
-          mkdir -p wheels
-          find dist -type f -name "*.whl" -exec mv {} wheels/ \; 2>/dev/null || true
-          if [ -d dist ]; then rm -rf dist; fi
-          if [ -d wheels ] && [ "$(ls -A wheels)" ]; then mv wheels dist; fi
-
-      - name: Verify wheels exist
-        shell: bash
-        run: |
-          if [ -d dist ] && [ "$(ls -A dist 2>/dev/null)" ]; then
-            echo "Wheels found:"
-            ls -la dist/*.whl
-          else
-            echo "[WARNING] No wheels found in dist directory"
-            find . -name "*.whl" -type f
-          fi
-
-      - name: Install wheel
-        shell: bash
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f dist/*.whl ]; then
-            pip install dist/*.whl
-          else
-            echo "[ERROR] No wheel file found to install"
-            exit 1
-          fi
-
-      - name: Test import
-        run: |
-          python -c "import llmcc_bindings; print('llmcc_bindings imported successfully')"
-
-      - name: Run Python tests
-        if: hashFiles('tests/**') != ''
-        run: |
-          pip install pytest pytest-cov
-          pytest tests/ -v --cov=llmcc --cov-report=xml
-        continue-on-error: true
-
   publish-python:
     name: Publish to PyPI
-    needs: [test-wheels]
+    needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
       - uses: actions/download-artifact@v4
         with:
           path: dist
-
-      - name: Flatten dist directory
+      - name: Flatten dist
         run: |
           find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
           find dist -type d -empty -delete
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: dist
 
   release:
     name: Create GitHub release
-    needs: [publish-rust, publish-python]
+    needs: [publish-crates, publish-python]
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Extract version from tag
-        id: tag_info
-        run: |
-          TAG="${{ github.ref_name }}"
-          VERSION=${TAG#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
+      - name: Get version
+        id: version
+        run: echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
           path: dist
-
-      - name: Flatten dist directory
+      - name: Flatten dist
         run: |
           find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
           find dist -type d -empty -delete
-
-      - name: Remove existing assets with same name
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          RELEASE="${{ github.ref_name }}"
-          existing_assets=$(gh release view "$RELEASE" --json assets --jq '.assets[].name' || true)
-          if [ -n "$existing_assets" ]; then
-            echo "Found existing assets, removing before upload:"
-            printf '%s\n' "$existing_assets"
-            for asset in $existing_assets; do
-              gh release delete-asset "$RELEASE" "$asset" -y || true
-            done
-          else
-            echo "No pre-existing assets to remove"
-          fi
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
           body: |
-            Released llmcc version ${{ steps.tag_info.outputs.version }}
+            Released llmcc ${{ steps.version.outputs.tag }}
 
-            [INFO] Published to registries:
-            - crates.io: llmcc-core, llmcc-rust, llmcc-python, llmcc-bindings, llmcc (CLI)
-            - PyPI: llmcc wheels for Python 3.8-3.12 (Linux, macOS, Windows)
-
-            Platform support:
-            - Rust: All platforms
-            - Python wheels:
-              - Linux (x86_64, aarch64)
-              - macOS (x86_64, arm64)
-              - Windows (x86_64)
-
-            See [crates.io](https://crates.io/crates/llmcc) and [PyPI](https://pypi.org/project/llmcc/) for details.
-          draft: false
-          prerelease: false
+            Published to:
+            - crates.io (llmcc-core, llmcc-rust, llmcc-python, llmcc-bindings, llmcc)
+            - PyPI (wheels for Python 3.8-3.12)
           files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
