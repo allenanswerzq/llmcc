@@ -138,14 +138,17 @@ jobs:
         with:
           name: final-release-artifacts
           path: dist
-      - uses: softprops/action-gh-release@v1
-        with:
-          body: |
-            Released llmcc ${{ steps.version.outputs.tag }}
-
-            Published to:
-            - crates.io (llmcc-core, llmcc-rust, llmcc-python, llmcc-bindings, llmcc)
-            - PyPI (wheels for Python 3.8-3.12)
-          files: dist/*
+      - name: Verify artifacts exist
+        run: |
+          echo "Artifacts to upload:"
+          ls -lh dist/
+          [ $(ls dist/* 2>/dev/null | wc -l) -gt 0 ] || { echo "ERROR: No artifacts found!"; exit 1; }
+      - name: Create release with gh CLI
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          gh release create "$TAG" \
+            --title "Released llmcc $TAG" \
+            --notes "Published to crates.io and PyPI" \
+            dist/*
