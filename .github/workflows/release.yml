@@ -62,12 +62,11 @@ jobs:
         with:
           args: --release --out dist
           sccache: 'true'
-          working-directory: crates/llmcc-bindings
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
-          path: crates/llmcc-bindings/dist/*.whl
+          path: dist/*.whl
 
   build-sdist:
     name: Build sdist
@@ -84,11 +83,10 @@ jobs:
         with:
           command: sdist
           args: --out dist
-          working-directory: crates/llmcc-bindings
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
-          path: crates/llmcc-bindings/dist/*.tar.gz
+          path: dist/*.tar.gz
 
   publish-wheels:
     name: Publish wheels to PyPI
