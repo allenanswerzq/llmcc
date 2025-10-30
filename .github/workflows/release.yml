@@ -106,9 +106,26 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: dist
 
+  collect-artifacts:
+    name: Collect all artifacts
+    needs: [publish-crates, build-wheels, build-sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+      - name: Flatten artifacts
+        run: |
+          mkdir -p final-dist
+          find all-artifacts -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} final-dist/ \;
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-release-artifacts
+          path: final-dist/*
+
   release:
     name: Create GitHub release
-    needs: [publish-crates, publish-python, build-wheels, build-sdist]
+    needs: [collect-artifacts, publish-python]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -119,11 +136,8 @@ jobs:
         run: echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
+          name: final-release-artifacts
           path: dist
-      - name: Flatten dist
-        run: |
-          find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
-          find dist -type d -empty -delete
       - uses: softprops/action-gh-release@v1
         with:
           body: |
