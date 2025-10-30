@@ -50,7 +50,7 @@ struct Args {
     #[arg(
         long = "design-graph",
         default_value_t = false,
-        conflicts_with_all = ["depends", "dependents"]
+        conflicts_with_all = ["depends", "dependents", "query"]
     )]
     design_graph: bool,
 

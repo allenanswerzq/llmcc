@@ -82,11 +82,14 @@ With the package available, invoke the API directly:
 ```python
 import llmcc
 
+help(llmcc.run)
+
 graph = llmcc.run(
 	dirs=["crates/llmcc-core/src"],
 	lang="rust",
 	query="CompileCtxt",
-	design_graph=True,
+	depends=True,
+	summary=True,
 )
 print(graph)
 ```

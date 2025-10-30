@@ -30,7 +30,56 @@ def run(
     dependents: bool = False,
     summary: bool = False,
 ) -> Optional[str]:
-    """Execute the core llmcc workflow from Python."""
+    """Execute the core llmcc workflow from Python.
+
+    Analyzes source code and generates context information for LLM processing.
+
+    **Input** (required, one of):
+        files: Individual source files to analyze (repeatable list).
+        dirs: Directories to scan recursively (repeatable list).
+
+    **Language** (optional):
+        lang: Programming language - 'rust' or 'python' [default: 'rust'].
+
+    **Analysis** (optional):
+        design_graph: Generate high-level design graph [default: False].
+        pagerank: Rank by importance using PageRank [default: False].
+        top_k: Limit results to top K items [default: None (no limit)].
+        query: Symbol/function name to analyze [default: None].
+        depends: Show what the symbol depends on [default: False].
+        dependents: Show what depends on the symbol [default: False].
+        recursive: Include transitive dependencies (vs. direct only) [default: False].
+
+    **Output format** (optional):
+        summary: Show file paths and line ranges (vs. full code texts) [default: False].
+        print_ir: Internal: print intermediate representation [default: False].
+        print_block: Internal: print basic block graph [default: False].
+
+    Returns:
+        Analysis result as string, or None if no output generated.
+
+    Raises:
+        ValueError: If neither files nor dirs provided, both provided, or
+                   conflicting options (e.g., pagerank without design_graph,
+                   or both depends and dependents).
+
+    Examples:
+        Design graph with PageRank ranking:
+        >>> result = llmcc.run(dirs=['src'], lang='rust',
+        ...                    design_graph=True, pagerank=True, top_k=100)
+
+        Dependencies of a symbol:
+        >>> result = llmcc.run(dirs=['src'], lang='rust',
+        ...                    query='MyFunction', depends=True, summary=True)
+
+        Dependents with recursive analysis:
+        >>> result = llmcc.run(dirs=['src'], lang='rust',
+        ...                    query='MyFunction', dependents=True, recursive=True)
+
+        Multiple files:
+        >>> result = llmcc.run(files=['src/main.rs', 'src/lib.rs'],
+        ...                    lang='rust', query='run_main')
+    """
 
     if files is None and dirs is None:
         raise ValueError("Either 'files' or 'dirs' must be provided")
