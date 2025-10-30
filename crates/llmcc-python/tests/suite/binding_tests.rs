@@ -34,7 +34,7 @@ fn find_function_unwrap<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
 ) -> &'a llmcc_python::PythonFunctionDescriptor {
-    find_function(collection, name).expect(&format!("function '{}' not found", name))
+    find_function(collection, name).unwrap_or_else(|| panic!("function '{}' not found", name))
 }
 
 #[allow(dead_code)]
@@ -50,7 +50,7 @@ fn find_class_unwrap<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
 ) -> &'a llmcc_python::PythonClassDescriptor {
-    find_class(collection, name).expect(&format!("class '{}' not found", name))
+    find_class(collection, name).unwrap_or_else(|| panic!("class '{}' not found", name))
 }
 
 fn get_symbol<'tcx>(
@@ -71,7 +71,7 @@ fn function_symbol<'tcx>(
     name: &str,
 ) -> &'tcx Symbol {
     get_symbol(globals, name, llmcc_core::symbol::SymbolKind::Function)
-        .expect(&format!("function symbol '{}' not found in globals", name))
+        .unwrap_or_else(|| panic!("function symbol '{}' not found in globals", name))
 }
 
 fn class_symbol<'tcx>(
@@ -80,12 +80,12 @@ fn class_symbol<'tcx>(
     name: &str,
 ) -> &'tcx Symbol {
     get_symbol(globals, name, llmcc_core::symbol::SymbolKind::Struct)
-        .expect(&format!("class symbol '{}' not found in globals", name))
+        .unwrap_or_else(|| panic!("class symbol '{}' not found in globals", name))
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
     assert!(
-        symbol.depends.borrow().iter().any(|id| *id == target.id),
+        symbol.depends.borrow().contains(&target.id),
         "{} should depend on {}",
         symbol.name.as_str(),
         target.name.as_str()
@@ -94,7 +94,7 @@ fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
     assert!(
-        symbol.depended.borrow().iter().any(|id| *id == source.id),
+        symbol.depended.borrow().contains(&source.id),
         "{} should be depended on by {}",
         symbol.name.as_str(),
         source.name.as_str()

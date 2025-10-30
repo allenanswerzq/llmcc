@@ -104,24 +104,24 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
-    assert!(symbol.depends.borrow().iter().any(|id| *id == target.id));
+    assert!(symbol.depends.borrow().contains(&target.id));
 }
 
 fn assert_no_relation(symbol: &Symbol, target: &Symbol) {
     assert!(
-        !symbol.depends.borrow().iter().any(|id| *id == target.id),
+        !symbol.depends.borrow().contains(&target.id),
         "unexpected dependency on {}",
         target.name.as_str()
     );
     assert!(
-        !target.depended.borrow().iter().any(|id| *id == symbol.id),
+        !target.depended.borrow().contains(&symbol.id),
         "unexpected reverse dependency from {}",
         target.name.as_str()
     );
 }
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
-    assert!(symbol.depended.borrow().iter().any(|id| *id == source.id));
+    assert!(symbol.depended.borrow().contains(&source.id));
 }
 
 fn assert_relation(dependent: &Symbol, dependency: &Symbol) {
@@ -1203,13 +1203,13 @@ fn enum_depends_on_type_alias_target() {
         .collect();
 
     assert!(
-        dependency_ids.iter().any(|id| *id == effort_symbol.id),
+        dependency_ids.contains(&effort_symbol.id),
         "Op missing dependency on ReasoningEffort (ids: {:?}, names: {:?})",
         dependency_ids,
         dependency_names
     );
     assert!(
-        dependency_ids.iter().any(|id| *id == summary_symbol.id),
+        dependency_ids.contains(&summary_symbol.id),
         "Op missing dependency on ReasoningSummary (ids: {:?}, names: {:?})",
         dependency_ids,
         dependency_names
@@ -1619,7 +1619,7 @@ impl Builder {
     // We verify this by checking that the struct is in dependencies
     let dependencies = with_capacity_symbol.depends.borrow();
     assert!(
-        dependencies.iter().any(|id| *id == builder_symbol.id),
+        dependencies.contains(&builder_symbol.id),
         "with_capacity should depend on the Builder struct"
     );
 

@@ -58,7 +58,7 @@ jobs:
 
       - name: Build Python bindings
         run: |
-          uv run maturin develop --manifest-path "crates/llmcc-bindings/Cargo.toml"
+          MACOSX_DEPLOYMENT_TARGET=11.0 uv run maturin develop --manifest-path "crates/llmcc-bindings/Cargo.toml"
 
       - name: Run Python tests
         run: |
@@ -96,6 +96,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 11.0
 
     steps:
       - uses: actions/checkout@v4

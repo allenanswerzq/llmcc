@@ -1,0 +1,55 @@
+#!/bin/bash
+# Pre-commit hook for Rust projects
+# Performs code formatting and linting checks before commit
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}Running pre-commit checks...${NC}"
+
+# Check if we're in the root directory
+if [ ! -f "Cargo.toml" ]; then
+    echo -e "${RED}Error: Cargo.toml not found. Please run this hook from the project root.${NC}"
+    exit 1
+fi
+
+# Format check - ensure code is formatted
+echo -e "${YELLOW}Checking code formatting...${NC}"
+if ! cargo fmt --all -- --check > /dev/null 2>&1; then
+    echo -e "${RED}✗ Code formatting issues found${NC}"
+    echo -e "${YELLOW}Tip: Run 'cargo fmt --all' to fix formatting${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Code formatting OK${NC}"
+
+# Clippy linting
+echo -e "${YELLOW}Running clippy linter...${NC}"
+if ! cargo clippy --all-targets --workspace -- -D warnings > /dev/null 2>&1; then
+    echo -e "${RED}✗ Clippy found issues${NC}"
+    echo -e "${YELLOW}Tip: Run 'cargo clippy --all-targets --workspace -- -D warnings' to see details${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Clippy checks passed${NC}"
+
+# Check for common mistakes in staged files
+echo -e "${YELLOW}Checking for common mistakes...${NC}"
+
+# Check for debug prints
+if git diff --cached --name-only | grep -E "\.rs$" | xargs -I {} git diff --cached {} | grep -q "dbg!(" 2>/dev/null; then
+    echo -e "${RED}✗ Found dbg!() macro in staged code${NC}"
+    exit 1
+fi
+
+if git diff --cached --name-only | grep -E "\.rs$" | xargs -I {} git diff --cached {} | grep -q "println!" 2>/dev/null; then
+    echo -e "${YELLOW}⚠ Found println! in staged code (usually should be logging)${NC}"
+fi
+
+echo -e "${GREEN}✓ Common mistake checks passed${NC}"
+
+echo -e "${GREEN}All pre-commit checks passed!${NC}"
+exit 0

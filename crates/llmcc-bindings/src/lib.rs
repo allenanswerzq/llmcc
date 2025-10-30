@@ -1,3 +1,4 @@
+#![allow(clippy::useless_conversion)]
 use llmcc::{run_main, LlmccOptions};
 use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
@@ -30,6 +31,7 @@ fn llmcc_bindings(m: &Bound<'_, PyModule>) -> PyResult<()> {
     dependents=false,
     summary=false
 ))]
+#[allow(clippy::too_many_arguments)]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
@@ -44,9 +46,9 @@ fn run_llmcc(
     depends: bool,
     dependents: bool,
     summary: bool,
-) -> PyResult<Option<String>> {
+) -> Result<Option<String>, PyErr> {
     if depends && dependents {
-        return Err(PyErr::new::<PyValueError, _>(
+        return Err(PyValueError::new_err(
             "'depends' and 'dependents' are mutually exclusive",
         ));
     }
@@ -70,12 +72,12 @@ fn run_llmcc(
         "rust" => run_main::<LangRust>(&opts),
         "python" => run_main::<LangPython>(&opts),
         other => {
-            return Err(PyErr::new::<PyValueError, _>(format!(
+            return Err(PyValueError::new_err(format!(
                 "Unknown language: {}. Use 'rust' or 'python'",
                 other
             )));
         }
     };
 
-    result.map_err(|err| PyErr::new::<PyValueError, _>(err.to_string()))
+    result.map_err(|err| PyValueError::new_err(err.to_string()))
 }

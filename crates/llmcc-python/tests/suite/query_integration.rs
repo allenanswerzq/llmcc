@@ -50,7 +50,7 @@ def caller():
     helper()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("helper");
 
     // Should find the helper function
@@ -77,7 +77,7 @@ def test_func():
     pass
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results1 = query.find_by_name("test_func");
     let results2 = query.find_by_name("test_func");
 
@@ -96,7 +96,7 @@ def existing():
     pass
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("nonexistent_xyz_abc");
 
     assert!(results.primary.is_empty());
@@ -117,7 +117,7 @@ class MyClass:
     pass
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_all_functions();
 
     // Should have at least first and second functions
@@ -164,7 +164,7 @@ def file1_func():
 "#,
     ]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Should be able to query both
     let results0 = query.find_by_name("file0_func");
@@ -208,7 +208,7 @@ def handler_b():
 "#,
     ]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.file_structure(0);
     let results_u1 = query.file_structure(1);
 
@@ -248,7 +248,7 @@ def caller():
     dep()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends("caller");
 
     // Should find caller as primary result
@@ -290,7 +290,7 @@ def root():
     middle()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends_recursive("root");
 
     // Should find root as primary
@@ -334,7 +334,7 @@ def root():
     middle()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let traversal = query.traverse_bfs("root");
 
     // Should find root first (BFS order)
@@ -368,7 +368,7 @@ def root():
     middle()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let traversal = query.traverse_dfs("root");
 
     // Should find root first
@@ -390,7 +390,7 @@ def sample():
     pass
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("sample");
 
     let formatted = results.format_for_llm();
@@ -424,7 +424,7 @@ fn test_query_large_source() {
     }
 
     let graph = build_graph(&[&source]);
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     let results = query.find_all_functions();
 
@@ -465,7 +465,7 @@ def process():
 MAX_SIZE = 100
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Query different things
     let func_results = query.find_by_name("process");
@@ -506,7 +506,7 @@ def test():
     pass
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("test");
 
     // Should be inspectable and contain data
@@ -559,7 +559,7 @@ class D:
     pass
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Run multiple queries
     let a_result = query.find_by_name("a");
@@ -589,7 +589,7 @@ def sample():
     pass
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_by_name("sample");
 
     // Multiple format calls should return identical results
@@ -612,7 +612,7 @@ def caller():
     helper()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depended("helper");
 
     // Should find helper as primary result
@@ -652,7 +652,7 @@ class Service:
         self.helper()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Should find the class
     let class_results = query.find_by_name("Service");
@@ -686,7 +686,7 @@ def consumer():
     utility()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
 
     // Query the consumer function
     let results = query.find_depends("consumer");
@@ -720,7 +720,7 @@ def d():
     c()
 "#]);
 
-    let query = ProjectQuery::new(&graph);
+    let query = ProjectQuery::new(graph);
     let results = query.find_depends_recursive("d");
 
     // Should find all transitive dependencies

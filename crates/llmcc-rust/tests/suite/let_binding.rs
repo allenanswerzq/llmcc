@@ -87,7 +87,7 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
-    assert!(symbol.depends.borrow().iter().any(|id| *id == target.id));
+    assert!(symbol.depends.borrow().contains(&target.id));
 }
 
 fn assert_relation(dependent: &Symbol, dependency: &Symbol) {

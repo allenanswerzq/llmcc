@@ -342,9 +342,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             return false;
         };
 
-        Self::extract_crate_key(path)
-            .as_deref()
-            .map_or(false, |key| key == crate_key)
+        Self::extract_crate_key(path).as_deref() == Some(crate_key)
     }
 
     fn extract_crate_key(path: &str) -> Option<String> {

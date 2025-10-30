@@ -135,12 +135,14 @@ fn assert_depended_by_all(graph: &ProjectGraph<'static>, block: GraphNode, expec
 fn get_block_in_unit(graph: &ProjectGraph<'static>, unit_idx: usize, name: &str) -> GraphNode {
     graph
         .block_by_name_in(unit_idx, name)
-        .expect(&format!("{} in unit {}", name, unit_idx))
+        .unwrap_or_else(|| panic!("{} in unit {}", name, unit_idx))
 }
 
 /// Helper to get block by name across all units
 fn get_block(graph: &ProjectGraph<'static>, name: &str) -> GraphNode {
-    graph.block_by_name(name).expect(&format!("block {}", name))
+    graph
+        .block_by_name(name)
+        .unwrap_or_else(|| panic!("block {}", name))
 }
 
 #[test]
