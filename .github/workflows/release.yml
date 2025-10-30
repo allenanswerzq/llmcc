@@ -43,34 +43,70 @@ jobs:
             sleep 10
           done
 
-  publish-wheels:
-    name: Publish wheels
+  build-wheels:
+    name: Build wheels
     needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
       - uses: dtolnay/rust-toolchain@stable
-      - name: Publish wheels (no sdist)
-        if: matrix.os != 'ubuntu-latest'
+      - name: Build wheels
         uses: PyO3/maturin-action@v1
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
-          command: publish
-          args: --find-interpreter --skip-existing --no-sdist
+          args: --release --out dist
           sccache: 'true'
-      - name: Publish wheels and sdist
-        if: matrix.os == 'ubuntu-latest'
+          working-directory: crates/llmcc-bindings
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: crates/llmcc-bindings/dist/*.whl
+
+  build-sdist:
+    name: Build sdist
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build sdist
         uses: PyO3/maturin-action@v1
-        env:
-          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
-          command: publish
-          args: --find-interpreter --skip-existing
-          sccache: 'true'
+          command: sdist
+          args: --out dist
+          working-directory: crates/llmcc-bindings
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: crates/llmcc-bindings/dist/*.tar.gz
+
+  publish-wheels:
+    name: Publish wheels to PyPI
+    needs: [build-wheels, build-sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Flatten artifacts
+        run: |
+          mkdir -p final-wheels
+          find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} final-wheels/ \;
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: final-wheels
+          skip-existing: true
 
   build-binaries:
     name: Build binaries
@@ -126,14 +162,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: binary-artifacts
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: wheel-artifacts
       - name: Prepare artifact directory
         run: |
           mkdir -p final-dist
           find binary-artifacts -type f -exec mv {} final-dist/ \;
-      - name: Download Python distributions from PyPI
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip download "llmcc==${{ steps.version.outputs.version }}" --dest final-dist
+          find wheel-artifacts -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} final-dist/ \;
       - uses: actions/upload-artifact@v4
         with:
           name: final-release-artifacts
@@ -141,7 +178,7 @@ jobs:
 
   release:
     name: Create GitHub release
-    needs: [collect-artifacts, publish-wheels]
+    needs: [collect-artifacts]
     runs-on: ubuntu-latest
     permissions:
       contents: write
