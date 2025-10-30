@@ -192,6 +192,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-dev
 
+      - name: Install Python (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Configure PyO3 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $pythonBin = (Get-Command python).Source
+          $libDir = & python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
+          Add-Content -Path $env:GITHUB_ENV -Value "PYO3_PYTHON=$pythonBin"
+          Add-Content -Path $env:GITHUB_ENV -Value "PYTHON_SYS_EXECUTABLE=$pythonBin"
+          if ($libDir) {
+            Add-Content -Path $env:GITHUB_ENV -Value "PYTHON_LIB_DIR=$($libDir.Trim())"
+          }
+
       - name: Install Python@3.11 (macOS)
         if: runner.os == 'macOS'
         run: |
