@@ -39,8 +39,6 @@ release version:
     echo ""
     echo "Updating workspace version in Cargo.toml..."
     sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/Cargo.toml"
-    git add {{root}}/Cargo.toml
-    git add {{root}}/Cargo.lock
     rm -f "{{root}}/Cargo.toml.bak"
     echo "  ok: Cargo.toml"
 
@@ -86,6 +84,10 @@ release version:
 
     echo ""
     echo "Committing version bump..."
+
+    git add {{root}}/Cargo.toml
+    git add {{root}}/Cargo.lock
+
     git commit -m "chore: bump version to $VERSION"
     git push origin main
 
