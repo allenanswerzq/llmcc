@@ -125,7 +125,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     if opts.design_graph {
         if opts.pagerank {
-            let limit = Some(opts.top_k.unwrap_or(25));
+            let limit = Some(opts.top_k.unwrap_or(80));
             pg.set_compact_rank_limit(limit);
         }
         outputs.push(pg.render_compact_graph());

@@ -97,14 +97,14 @@ impl<'tcx> DeclCollector<'tcx> {
         let owner = node.hir_id();
 
         let symbol = match self.scopes.find_symbol_local(&ident.name) {
-            Some(existing) if Self::different_kind(existing.kind(), kind) => {
-                self.insert_into_scope(owner, ident, global, &fqn, kind)
+            Some(existing) if existing.unit_index() == Some(self.unit.index) => {
+                if Self::different_kind(existing.kind(), kind) {
+                    self.insert_into_scope(owner, ident, global, &fqn, kind)
+                } else {
+                    existing
+                }
             }
-            Some(existing) => {
-                // self.warn_duplicate_symbol(&ident.name, existing.kind(), kind);
-                existing
-            }
-            None => self.insert_into_scope(owner, ident, global, &fqn, kind),
+            _ => self.insert_into_scope(owner, ident, global, &fqn, kind),
         };
 
         Some((symbol, ident, fqn))
