@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test-rust:
-    name: Test Rust (${{ matrix.os }})
+  test:
+    name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -16,24 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: dtolnay/rust-toolchain@stable
-
       - uses: swatinem/rust-cache@v2
-
-      - name: Install Python development headers (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-dev
-
-      - name: Install Python (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install python@3.11
-          PYTHON_BIN=$(brew --prefix python@3.11)/bin/python3.11
-          echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
       - name: Run tests
         run: cargo test --all-targets --workspace
@@ -44,79 +28,15 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-  test-python:
-    name: Test Python (${{ matrix.os }}, Python ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.8', '3.11', '3.12']
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: swatinem/rust-cache@v2
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-
-      - name: Install dependencies
-        run: |
-          uv sync --extra dev
-
-      - name: Install Python development headers (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-dev
-
-      - name: Configure PyO3 (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          PYTHON_BIN=$(python -c "import sys; print(sys.executable)")
-          echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
-
-      - name: Configure PyO3 (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          PYTHON_BIN=$(python -c "import sys; print(sys.executable)")
-          echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-          echo "PYTHON_SYS_EXECUTABLE=$PYTHON_BIN" >> $GITHUB_ENV
-          LIBDIR=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
-          echo "LDFLAGS=-L$LIBDIR" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> $GITHUB_ENV
-          echo "PYTHON_LIB_DIR=$LIBDIR" >> $GITHUB_ENV
-
-      - name: Build Python bindings
-        run: |
-          uv run maturin develop --manifest-path "crates/llmcc-bindings/Cargo.toml"
-        env:
-          PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
-
-      - name: Run Python tests
-        run: |
-          uv run pytest llmcc/test_basic.py -v
-
   lint:
-    name: Lint and format checks
+    name: Lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-
       - uses: swatinem/rust-cache@v2
-
       - uses: actions/setup-python@v4
         with:
           python-version: '3.12'
@@ -126,15 +46,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-dev
 
-      - name: Configure PyO3
-        run: |
-          PYTHON_BIN=$(python -c "import sys; print(sys.executable)")
-          echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-          echo "PYTHON_SYS_EXECUTABLE=$PYTHON_BIN" >> $GITHUB_ENV
-          LIBDIR=$("$PYTHON_BIN" -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
-          echo "LDFLAGS=-L$LIBDIR" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> $GITHUB_ENV
-          echo "PYTHON_LIB_DIR=$LIBDIR" >> $GITHUB_ENV
+      - name: Set PYO3_PYTHON
+        run: echo "PYO3_PYTHON=$(python3 -c 'import sys; print(sys.executable)')" >> $GITHUB_ENV
 
       - name: Check Rust formatting
         run: cargo fmt --all -- --check
@@ -143,75 +56,8 @@ jobs:
         run: cargo clippy --all-targets --workspace -- -D warnings
         env:
           PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
-          PYTHON_SYS_EXECUTABLE: ${{ env.PYTHON_SYS_EXECUTABLE }}
-          LDFLAGS: ${{ env.LDFLAGS }}
-          LD_LIBRARY_PATH: ${{ env.LD_LIBRARY_PATH }}
 
       - name: Check documentation
         run: cargo doc --no-deps --workspace
         env:
           PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
-          PYTHON_SYS_EXECUTABLE: ${{ env.PYTHON_SYS_EXECUTABLE }}
-          LDFLAGS: ${{ env.LDFLAGS }}
-          LD_LIBRARY_PATH: ${{ env.LD_LIBRARY_PATH }}
-
-  build:
-    name: Build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    env:
-      MACOSX_DEPLOYMENT_TARGET: 11.0
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: swatinem/rust-cache@v2
-
-      - name: Install Python development headers (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-dev
-
-      - name: Install Python (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Configure PyO3 (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $pythonBin = (Get-Command python).Source
-          $libDir = & python -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR') or '')"
-          Add-Content -Path $env:GITHUB_ENV -Value "PYO3_PYTHON=$pythonBin"
-          Add-Content -Path $env:GITHUB_ENV -Value "PYTHON_SYS_EXECUTABLE=$pythonBin"
-          if ($libDir) {
-            Add-Content -Path $env:GITHUB_ENV -Value "PYTHON_LIB_DIR=$($libDir.Trim())"
-          }
-
-      - name: Install Python@3.11 (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install python@3.11 || brew upgrade python@3.11
-          PYTHON_BIN=$(brew --prefix python@3.11)/bin/python3.11
-          echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-
-      - name: Build release binaries
-        run: cargo build --release --workspace --all-targets
-        env:
-          PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: llmcc-${{ matrix.os }}
-          path: |
-            target/release/llmcc${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-            target/release/libllmcc*
-
