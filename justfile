@@ -39,6 +39,8 @@ release version:
     echo ""
     echo "Updating workspace version in Cargo.toml..."
     sed -i.bak 's/^version = .*/version = "'$VERSION'"/' "{{root}}/Cargo.toml"
+    git add {{root}}/Cargo.toml
+    git add {{root}}/Cargo.lock
     rm -f "{{root}}/Cargo.toml.bak"
     echo "  ok: Cargo.toml"
 
