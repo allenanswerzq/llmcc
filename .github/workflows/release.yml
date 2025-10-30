@@ -60,7 +60,7 @@ jobs:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
           command: publish
-          args: --release --find-interpreter --skip-existing --no-sdist
+          args: --find-interpreter --skip-existing --no-sdist
           sccache: 'true'
       - name: Publish wheels and sdist
         if: matrix.os == 'ubuntu-latest'
@@ -69,7 +69,7 @@ jobs:
           MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         with:
           command: publish
-          args: --release --find-interpreter --skip-existing
+          args: --find-interpreter --skip-existing
           sccache: 'true'
 
   build-binaries:
