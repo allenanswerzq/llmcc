@@ -143,6 +143,7 @@ jobs:
         run: |
           find dist -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
           find dist -type d -empty -delete
+          find dist -type f ! -name "*.whl" ! -name "*.tar.gz" -delete
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
