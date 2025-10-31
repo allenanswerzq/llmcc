@@ -1,6 +1,10 @@
-use clap::{ArgGroup, Parser};
+use anyhow::Result;
+use anyhow::anyhow;
+use clap::ArgGroup;
+use clap::Parser;
 
-use llmcc::{run_main, LlmccOptions};
+use llmcc::LlmccOptions;
+use llmcc::run_main;
 use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
 
@@ -11,7 +15,7 @@ use llmcc_rust::LangRust;
     version,
     group = ArgGroup::new("inputs").required(true).args(["files", "dirs"])
 )]
-struct Args {
+pub struct Args {
     /// Individual files to compile (repeatable)
     #[arg(
         short = 'f',
@@ -83,15 +87,13 @@ struct Args {
     dependents: bool,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
-
+pub fn run(args: Args) -> Result<()> {
     if args.query.is_none() && (args.depends || args.dependents) {
         eprintln!("Warning: --depends/--dependents flags are ignored without --query");
     }
 
     if args.pagerank && !args.design_graph {
-        return Err("--pagerank requires --design-graph".into());
+        return Err(anyhow!("--pagerank requires --design-graph"));
     }
 
     let opts = LlmccOptions {
@@ -113,11 +115,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "rust" => run_main::<LangRust>(&opts),
         "python" => run_main::<LangPython>(&opts),
         _ => Err(format!("Unknown language: {}", args.lang).into()),
-    }?;
+    };
 
-    if let Some(output) = result {
-        println!("{}", output);
+    if let Ok(Some(output)) = result {
+        println!("{output}");
     }
-
     Ok(())
+}
+
+pub fn main() -> Result<()> {
+    let args = Args::parse();
+    run(args)
 }
