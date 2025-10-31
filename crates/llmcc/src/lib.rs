@@ -9,6 +9,23 @@ use tracing::info;
 use llmcc_core::lang_def::ParallelSymbolCollect;
 use llmcc_core::*;
 
+fn should_skip_dir(name: &str) -> bool {
+    matches!(
+        name,
+        "test"
+            | "tests"
+            | "testing"
+            | "example"
+            | "examples"
+            | "doc"
+            | "docs"
+            | "bench"
+            | "benches"
+            | "benchmark"
+            | "benchmarks"
+    )
+}
+
 pub struct LlmccOptions {
     pub files: Vec<String>,
     pub dirs: Vec<String>,
@@ -55,8 +72,37 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
     let discovery_start = Instant::now();
     if !opts.dirs.is_empty() {
         let supported_exts = L::supported_extensions();
+        let walker_threads = std::thread::available_parallelism()
+            .map(|v| v.get())
+            .unwrap_or(1);
         for dir in &opts.dirs {
-            let walker = WalkBuilder::new(dir).standard_filters(true).build();
+            let mut builder = WalkBuilder::new(dir);
+            builder
+                .standard_filters(true)
+                .follow_links(false)
+                .threads(walker_threads)
+                .filter_entry(|entry| {
+                    if entry.depth() == 0 {
+                        return true;
+                    }
+
+                    let Some(file_type) = entry.file_type() else {
+                        return true;
+                    };
+
+                    if !file_type.is_dir() {
+                        return true;
+                    }
+
+                    let Some(name) = entry.file_name().to_str() else {
+                        return true;
+                    };
+
+                    let lowered = name.to_ascii_lowercase();
+                    !should_skip_dir(lowered.as_str())
+                });
+
+            let walker = builder.build();
             for entry in walker {
                 let entry = entry.map_err(|e| {
                     io::Error::other(format!("Failed to walk directory {dir}: {e}"))
