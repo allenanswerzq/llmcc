@@ -115,7 +115,10 @@ fn inserts_symbols_for_local_and_global_resolution() {
     let global_symbol = scope_stack
         .find_global_suffix(&[inner_key, outer_key])
         .unwrap();
-    assert_eq!(global_symbol.fqn_name.borrow().as_str(), "outer::inner");
+    assert_eq!(
+        global_symbol.fqn_name.read().unwrap().as_str(),
+        "outer::inner"
+    );
 
     let inner_desc = fixture
         .result

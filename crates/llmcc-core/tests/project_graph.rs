@@ -40,7 +40,7 @@ fn compact_project_graph_includes_enum_dependencies() {
 
     project.link_units();
 
-    let block_indexes = cc.block_indexes.borrow();
+    let block_indexes = cc.block_indexes.read().unwrap();
     let op_info = block_indexes.find_by_name("Op");
     assert_eq!(
         op_info.len(),
@@ -72,7 +72,11 @@ fn compact_project_graph_includes_enum_dependencies() {
         .find_symbol_by_block_id(approval_block)
         .expect("AskForApproval symbol");
     assert!(
-        op_symbol.depends.borrow().contains(&approval_symbol.id),
+        op_symbol
+            .depends
+            .read()
+            .unwrap()
+            .contains(&approval_symbol.id),
         "Symbol dependencies missing AskForApproval"
     );
     let dependencies = unit_graph

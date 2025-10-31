@@ -50,6 +50,8 @@ macro_rules! declare_arena {
                 value.allocate_on_mut(self)
             }
         }
+
+        unsafe impl<'tcx> Sync for Arena<'tcx> {}
     };
 }
 
