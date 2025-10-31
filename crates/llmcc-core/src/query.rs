@@ -443,21 +443,18 @@ impl<'tcx> ProjectQuery<'tcx> {
         let end_byte = hir_node.end_byte();
 
         // Get the file content and count lines
-        if let Some(content) = file.file.content.as_ref() {
-            let start_line = content[..start_byte.min(content.len())]
-                .iter()
-                .filter(|&&b| b == b'\n')
-                .count()
-                + 1;
-            let end_line = content[..end_byte.min(content.len())]
-                .iter()
-                .filter(|&&b| b == b'\n')
-                .count()
-                + 1;
-            (start_line, end_line)
-        } else {
-            (0, 0)
-        }
+        let content = file.content();
+        let start_line = content[..start_byte.min(content.len())]
+            .iter()
+            .filter(|&&b| b == b'\n')
+            .count()
+            + 1;
+        let end_line = content[..end_byte.min(content.len())]
+            .iter()
+            .filter(|&&b| b == b'\n')
+            .count()
+            + 1;
+        (start_line, end_line)
     }
 
     /// Extract the source code for a given block

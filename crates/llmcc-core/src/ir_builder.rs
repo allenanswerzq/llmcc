@@ -30,7 +30,7 @@ struct HirBuilder<'a, Language> {
     arena: &'a Arena<'a>,
     hir_map: HashMap<HirId, ParentedNode<'a>>,
     file_path: Option<String>,
-    file_content: String,
+    file_bytes: &'a [u8],
     config: IrBuildConfig,
     _language: PhantomData<Language>,
 }
@@ -40,14 +40,14 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     fn new(
         arena: &'a Arena<'a>,
         file_path: Option<String>,
-        file_content: String,
+        file_bytes: &'a [u8],
         config: IrBuildConfig,
     ) -> Self {
         Self {
             arena,
             hir_map: HashMap::new(),
             file_path,
-            file_content,
+            file_bytes,
             config,
             _language: PhantomData,
         }
@@ -192,8 +192,11 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     fn extract_text(&self, base: &HirBase<'a>) -> String {
         let start = base.node.start_byte();
         let end = base.node.end_byte();
-        if end > start && end <= self.file_content.len() {
-            self.file_content[start..end].to_string()
+        if end > start && end <= self.file_bytes.len() {
+            match std::str::from_utf8(&self.file_bytes[start..end]) {
+                Ok(text) => text.to_owned(),
+                Err(_) => String::from_utf8_lossy(&self.file_bytes[start..end]).into_owned(),
+            }
         } else {
             String::new()
         }
@@ -244,11 +247,11 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
 pub fn build_llmcc_ir_inner<'a, L: LanguageTrait>(
     arena: &'a Arena<'a>,
     file_path: Option<String>,
-    file_content: String,
+    file_bytes: &'a [u8],
     tree: &'a tree_sitter::Tree,
     config: IrBuildConfig,
 ) -> Result<(HirId, HashMap<HirId, ParentedNode<'a>>), Box<dyn std::error::Error>> {
-    let builder = HirBuilder::<L>::new(arena, file_path, file_content, config);
+    let builder = HirBuilder::<L>::new(arena, file_path, file_bytes, config);
     let root = tree.root_node();
     let result = builder.build(root);
     Ok(result)
@@ -270,11 +273,11 @@ pub fn build_llmcc_ir_with_config<'a, L: LanguageTrait>(
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
         let file_path = unit.file_path().map(|p| p.to_string());
-        let file_content = String::from_utf8_lossy(&unit.file().content()).to_string();
+        let file_bytes = unit.file().content();
         let tree = unit.tree();
 
         let (_file_start_id, hir_map) =
-            build_llmcc_ir_inner::<L>(&cc.arena, file_path, file_content, tree, config)?;
+            build_llmcc_ir_inner::<L>(&cc.arena, file_path, file_bytes, tree, config)?;
 
         // Insert all nodes into the compile context
         for (hir_id, parented_node) in hir_map {

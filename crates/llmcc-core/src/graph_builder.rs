@@ -256,15 +256,12 @@ impl<'tcx> ProjectGraph<'tcx> {
                     .map(|p| p.to_string_lossy().to_string())
                     .unwrap_or_else(|_| raw_path.to_string());
 
+                let file_bytes = unit.file().content();
                 let location = block
                     .opt_node()
-                    .and_then(|node| {
-                        unit.file()
-                            .file
-                            .content
-                            .as_ref()
-                            .map(|bytes| compact_byte_to_line(bytes.as_slice(), node.start_byte()))
-                            .map(|line| format!("{path}:{line}"))
+                    .map(|node| {
+                        let line = compact_byte_to_line(file_bytes, node.start_byte());
+                        format!("{path}:{line}")
                     })
                     .or(Some(path.clone()));
 
@@ -640,7 +637,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let nodes = self.collect_sorted_compact_nodes(top_k);
 
         if nodes.is_empty() {
-            return "digraph CompactProject {\n}\n".to_string();
+            return "digraph DesignGraph {\n}\n".to_string();
         }
 
         let node_index = build_compact_node_index(&nodes);
@@ -648,7 +645,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         let pruned = prune_compact_components(&nodes, &edges);
         if pruned.nodes.is_empty() {
-            return "digraph CompactProject {\n}\n".to_string();
+            return "digraph DesignGraph {\n}\n".to_string();
         }
 
         let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
@@ -1124,7 +1121,7 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
             .push(idx);
     }
 
-    let mut output = String::from("digraph CompactProject {\n");
+    let mut output = String::from("digraph DesignGraph {\n");
 
     for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter().enumerate() {
         output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));

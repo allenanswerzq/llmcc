@@ -324,7 +324,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             if kind_id == LangPython::decorator {
                 let content = self.unit.file().content();
                 let ts_node = child.inner_ts_node();
-                if let Ok(decorator_text) = ts_node.utf8_text(&content) {
+                if let Ok(decorator_text) = ts_node.utf8_text(content) {
                     let decorator_name = decorator_text.trim_start_matches('@').trim();
                     let key = self.interner().intern(decorator_name);
                     if let Some(decorator_symbol) =
@@ -432,7 +432,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             };
             let handled = match func_node.kind_id() {
                 id if id == LangPython::identifier => {
-                    if let Ok(name) = func_node.utf8_text(&content) {
+                    if let Ok(name) = func_node.utf8_text(content) {
                         record_target(name, self)
                     } else {
                         false
@@ -441,7 +441,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                 id if id == LangPython::attribute => {
                     // For attribute access (e.g., self.method()), extract the method name
                     if let Some(attr_node) = func_node.child_by_field_name("attribute") {
-                        if let Ok(name) = attr_node.utf8_text(&content) {
+                        if let Ok(name) = attr_node.utf8_text(content) {
                             record_target(name, self)
                         } else {
                             false
@@ -454,7 +454,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             };
 
             if !handled {
-                if let Ok(name) = func_node.utf8_text(&content) {
+                if let Ok(name) = func_node.utf8_text(content) {
                     let _ = record_target(name.trim(), self);
                 }
             }
@@ -546,7 +546,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                             base_node.inner_ts_node().child_by_field_name("attribute")
                         {
                             let content = self.unit.file().content();
-                            if let Ok(name) = attr_node.utf8_text(&content) {
+                            if let Ok(name) = attr_node.utf8_text(content) {
                                 let key = self.interner().intern(name);
                                 if let Some(base_symbol) =
                                     self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct))
@@ -756,13 +756,13 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
         for child in ts_node.children(&mut cursor) {
             match child.kind() {
                 "dotted_name" | "identifier" => {
-                    if let Ok(text) = child.utf8_text(&content) {
+                    if let Ok(text) = child.utf8_text(content) {
                         self.record_import_path(text);
                     }
                 }
                 "aliased_import" => {
                     if let Some(name_node) = child.child_by_field_name("name") {
-                        if let Ok(text) = name_node.utf8_text(&content) {
+                        if let Ok(text) = name_node.utf8_text(content) {
                             self.record_import_path(text);
                         }
                     }
@@ -782,13 +782,13 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
         for child in ts_node.children(&mut cursor) {
             match child.kind() {
                 "dotted_name" | "identifier" => {
-                    if let Ok(text) = child.utf8_text(&content) {
+                    if let Ok(text) = child.utf8_text(content) {
                         self.record_import_path(text);
                     }
                 }
                 "aliased_import" => {
                     if let Some(name_node) = child.child_by_field_name("name") {
-                        if let Ok(text) = name_node.utf8_text(&content) {
+                        if let Ok(text) = name_node.utf8_text(content) {
                             self.record_import_path(text);
                         }
                     }
