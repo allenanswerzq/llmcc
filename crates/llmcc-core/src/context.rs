@@ -1,8 +1,12 @@
 use rayon::prelude::*;
-use std::cell::{Cell, RefCell};
+use std::cmp::Ordering as CmpOrdering;
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
-use std::path::Path;
+use std::sync::{
+    atomic::{AtomicU32, Ordering},
+    RwLock,
+};
+use std::time::Instant;
 use tree_sitter::Tree;
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
@@ -77,7 +81,8 @@ impl<'tcx> CompileUnit<'tcx> {
     pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
         self.cc
             .hir_map
-            .borrow()
+            .read()
+            .unwrap()
             .get(&id)
             .map(|parented| parented.node)
     }
@@ -92,7 +97,8 @@ impl<'tcx> CompileUnit<'tcx> {
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
         self.cc
             .block_map
-            .borrow()
+            .read()
+            .unwrap()
             .get(&id)
             .map(|parented| parented.block.clone())
     }
@@ -107,23 +113,30 @@ impl<'tcx> CompileUnit<'tcx> {
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
         self.cc
             .hir_map
-            .borrow()
+            .read()
+            .unwrap()
             .get(&id)
             .and_then(|parented| parented.parent())
     }
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        self.cc.scope_map.borrow().get(&owner).copied()
+        self.cc.scope_map.read().unwrap().get(&owner).copied()
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.cc.symbol_map.borrow().get(&owner).copied()
+        self.cc.symbol_map.read().unwrap().get(&owner).copied()
     }
 
     /// Get an existing scope or None if it doesn't exist
     pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.cc.scope_map.borrow().get(&owner).copied().unwrap()
+        self.cc
+            .scope_map
+            .read()
+            .unwrap()
+            .get(&owner)
+            .copied()
+            .unwrap()
     }
 
     /// Find an existing scope or create a new one
@@ -134,7 +147,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Add a HIR node to the map
     pub fn insert_hir_node(self, id: HirId, node: HirNode<'tcx>) {
         let parented = ParentedNode::new(node);
-        self.cc.hir_map.borrow_mut().insert(id, parented);
+        self.cc.hir_map.write().unwrap().insert(id, parented);
     }
 
     /// Get all child nodes of a given parent
@@ -168,12 +181,12 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
-        self.cc.unresolve_symbols.borrow_mut().push(symbol);
+        self.cc.unresolve_symbols.write().unwrap().push(symbol);
     }
 
     pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
         let parented = ParentedBlock::new(parent, block.clone());
-        self.cc.block_map.borrow_mut().insert(id, parented);
+        self.cc.block_map.write().unwrap().insert(id, parented);
 
         // Register the block in the index maps
         let block_kind = block.kind();
@@ -184,7 +197,8 @@ impl<'tcx> CompileUnit<'tcx> {
 
         self.cc
             .block_indexes
-            .borrow_mut()
+            .write()
+            .unwrap()
             .insert_block(id, block_name, block_kind, self.index);
     }
 }
@@ -391,31 +405,50 @@ impl BlockIndexMaps {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct FileParseMetric {
+    pub path: String,
+    pub seconds: f64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct BuildMetrics {
+    pub file_read_seconds: f64,
+    pub parse_wall_seconds: f64,
+    pub parse_cpu_seconds: f64,
+    pub parse_avg_seconds: f64,
+    pub parse_file_count: usize,
+    pub parse_slowest: Vec<FileParseMetric>,
+}
+
 #[derive(Debug, Default)]
 pub struct CompileCtxt<'tcx> {
     pub arena: Arena<'tcx>,
     pub interner: InternPool,
     pub files: Vec<File>,
     pub trees: Vec<Option<Tree>>,
-    pub hir_next_id: Cell<u32>,
-    pub hir_start_ids: RefCell<Vec<Option<HirId>>>,
+    pub hir_next_id: AtomicU32,
+    pub hir_start_ids: RwLock<Vec<Option<HirId>>>,
 
     // HirId -> ParentedNode
-    pub hir_map: RefCell<HashMap<HirId, ParentedNode<'tcx>>>,
+    pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
     // HirId -> &Scope (scopes owned by this HIR node)
-    pub scope_map: RefCell<HashMap<HirId, &'tcx Scope<'tcx>>>,
+    pub scope_map: RwLock<HashMap<HirId, &'tcx Scope<'tcx>>>,
     // SymId -> &Symbol
-    pub symbol_map: RefCell<HashMap<SymId, &'tcx Symbol>>,
+    pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
-    pub block_next_id: Cell<u32>,
+    pub block_next_id: AtomicU32,
     // BlockId -> ParentedBlock
-    pub block_map: RefCell<HashMap<BlockId, ParentedBlock<'tcx>>>,
-    pub unresolve_symbols: RefCell<Vec<&'tcx Symbol>>,
+    pub block_map: RwLock<HashMap<BlockId, ParentedBlock<'tcx>>>,
+    pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 
     /// Index maps for efficient block lookups by name, kind, unit, and id
-    pub block_indexes: RefCell<BlockIndexMaps>,
+    pub block_indexes: RwLock<BlockIndexMaps>,
+
+    /// Metrics collected while building the compilation context
+    pub build_metrics: BuildMetrics,
 }
 
 impl<'tcx> CompileCtxt<'tcx> {
@@ -425,38 +458,49 @@ impl<'tcx> CompileCtxt<'tcx> {
             .iter()
             .map(|src| File::new_source(src.clone()))
             .collect();
-        let trees = sources.par_iter().map(|src| L::parse(src)).collect();
+        let (trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        metrics.file_read_seconds = 0.0;
         let count = files.len();
         Self {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
             trees,
-            hir_next_id: Cell::new(0),
-            hir_start_ids: RefCell::new(vec![None; count]),
-            hir_map: RefCell::new(HashMap::new()),
-            scope_map: RefCell::new(HashMap::new()),
-            symbol_map: RefCell::new(HashMap::new()),
+            hir_next_id: AtomicU32::new(0),
+            hir_start_ids: RwLock::new(vec![None; count]),
+            hir_map: RwLock::new(HashMap::new()),
+            scope_map: RwLock::new(HashMap::new()),
+            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_next_id: Cell::new(0),
-            block_map: RefCell::new(HashMap::new()),
-            unresolve_symbols: RefCell::new(Vec::new()),
+            block_next_id: AtomicU32::new(0),
+            block_map: RwLock::new(HashMap::new()),
+            unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
-            block_indexes: RefCell::new(BlockIndexMaps::new()),
+            block_indexes: RwLock::new(BlockIndexMaps::new()),
+            build_metrics: metrics,
         }
     }
 
     /// Create a new CompileCtxt from files
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
-        let mut files = Vec::new();
-        for path in paths {
-            files.push(File::new_file(path.clone())?);
-        }
+        let read_start = Instant::now();
 
-        let trees: Vec<_> = files
+        let mut files_with_index: Vec<(usize, File)> = paths
             .par_iter()
-            .map(|file| L::parse(file.content()))
-            .collect();
+            .enumerate()
+            .map(|(index, path)| -> std::io::Result<(usize, File)> {
+                let file = File::new_file(path.clone())?;
+                Ok((index, file))
+            })
+            .collect::<std::io::Result<Vec<_>>>()?;
+
+        files_with_index.sort_by_key(|(index, _)| *index);
+        let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
+
+        let file_read_seconds = read_start.elapsed().as_secs_f64();
+
+        let (trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        metrics.file_read_seconds = file_read_seconds;
 
         let count = files.len();
         Ok(Self {
@@ -464,67 +508,83 @@ impl<'tcx> CompileCtxt<'tcx> {
             interner: InternPool::default(),
             files,
             trees,
-            hir_next_id: Cell::new(0),
-            hir_start_ids: RefCell::new(vec![None; count]),
-            hir_map: RefCell::new(HashMap::new()),
-            scope_map: RefCell::new(HashMap::new()),
-            symbol_map: RefCell::new(HashMap::new()),
+            hir_next_id: AtomicU32::new(0),
+            hir_start_ids: RwLock::new(vec![None; count]),
+            hir_map: RwLock::new(HashMap::new()),
+            scope_map: RwLock::new(HashMap::new()),
+            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_next_id: Cell::new(0),
-            block_map: RefCell::new(HashMap::new()),
-            unresolve_symbols: RefCell::new(Vec::new()),
+            block_next_id: AtomicU32::new(0),
+            block_map: RwLock::new(HashMap::new()),
+            unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
-            block_indexes: RefCell::new(BlockIndexMaps::new()),
+            block_indexes: RwLock::new(BlockIndexMaps::new()),
+            build_metrics: metrics,
         })
     }
 
-    /// Create a new CompileCtxt from a directory, recursively finding files matching the language's supported extensions
-    pub fn from_dir<P: AsRef<Path>, L: LanguageTrait>(dir: P) -> std::io::Result<Self> {
-        let mut files = Vec::new();
-        let supported_exts = L::supported_extensions();
-
-        let walker = ignore::WalkBuilder::new(dir.as_ref())
-            .standard_filters(true)
-            .build();
-
-        for entry in walker {
-            let entry: ignore::DirEntry = entry
-                .map_err(|e| std::io::Error::other(format!("Failed to walk directory: {}", e)))?;
-            let path = entry.path();
-
-            let file_ext = path.extension().and_then(|ext| ext.to_str());
-            if let Some(ext) = file_ext {
-                if supported_exts.contains(&ext) {
-                    if let Ok(file) = File::new_file(path.to_string_lossy().to_string()) {
-                        files.push(file);
-                    }
-                }
-            }
+    fn parse_files_with_metrics<L: LanguageTrait>(
+        files: &[File],
+    ) -> (Vec<Option<Tree>>, BuildMetrics) {
+        struct ParseRecord {
+            tree: Option<Tree>,
+            elapsed: f64,
+            path: Option<String>,
         }
 
-        let trees: Vec<_> = files
+        let parse_wall_start = Instant::now();
+        let records: Vec<ParseRecord> = files
             .par_iter()
-            .map(|file| L::parse(file.content()))
+            .map(|file| {
+                let path = file.path().map(|p| p.to_string());
+                let per_file_start = Instant::now();
+                let tree = L::parse(file.content());
+                let elapsed = per_file_start.elapsed().as_secs_f64();
+                ParseRecord {
+                    tree,
+                    elapsed,
+                    path,
+                }
+            })
             .collect();
+        let parse_wall_seconds = parse_wall_start.elapsed().as_secs_f64();
 
-        let count = files.len();
-        Ok(Self {
-            arena: Arena::default(),
-            interner: InternPool::default(),
-            files,
-            trees,
-            hir_next_id: Cell::new(0),
-            hir_start_ids: RefCell::new(vec![None; count]),
-            hir_map: RefCell::new(HashMap::new()),
-            scope_map: RefCell::new(HashMap::new()),
-            symbol_map: RefCell::new(HashMap::new()),
-            block_arena: BlockArena::default(),
-            block_next_id: Cell::new(0),
-            block_map: RefCell::new(HashMap::new()),
-            unresolve_symbols: RefCell::new(Vec::new()),
-            related_map: BlockRelationMap::default(),
-            block_indexes: RefCell::new(BlockIndexMaps::new()),
-        })
+        let mut trees = Vec::with_capacity(records.len());
+        let parse_file_count = records.len();
+        let mut parse_cpu_seconds = 0.0;
+        let mut slowest = Vec::with_capacity(records.len());
+
+        for record in records {
+            parse_cpu_seconds += record.elapsed;
+            trees.push(record.tree);
+            let path = record.path.unwrap_or_else(|| "<memory>".to_string());
+            slowest.push(FileParseMetric {
+                path,
+                seconds: record.elapsed,
+            });
+        }
+
+        slowest.sort_by(|a, b| {
+            b.seconds
+                .partial_cmp(&a.seconds)
+                .unwrap_or(CmpOrdering::Equal)
+        });
+        slowest.truncate(5);
+
+        let metrics = BuildMetrics {
+            file_read_seconds: 0.0,
+            parse_wall_seconds,
+            parse_cpu_seconds,
+            parse_avg_seconds: if parse_file_count == 0 {
+                0.0
+            } else {
+                parse_cpu_seconds / parse_file_count as f64
+            },
+            parse_file_count,
+            parse_slowest: slowest,
+        };
+
+        (trees, metrics)
     }
 
     /// Create a context that references this CompileCtxt for a specific file index
@@ -537,57 +597,60 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.scope_map.borrow().get(&owner).unwrap()
+        self.scope_map.read().unwrap().get(&owner).copied().unwrap()
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.symbol_map.borrow().get(&owner).cloned()
+        self.symbol_map.read().unwrap().get(&owner).cloned()
     }
 
     /// Find the primary symbol associated with a block ID
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
         self.symbol_map
-            .borrow()
+            .read()
+            .unwrap()
             .values()
             .find(|symbol| symbol.block_id() == Some(block_id))
             .copied()
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        if let Some(existing) = self.scope_map.borrow().get(&owner) {
+        if let Some(existing) = self.scope_map.read().unwrap().get(&owner) {
             return existing;
         }
 
         let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.borrow_mut().insert(owner, scope);
+        self.scope_map.write().unwrap().insert(owner, scope);
         scope
     }
 
     pub fn reserve_hir_id(&self) -> HirId {
-        let id = self.hir_next_id.get();
-        self.hir_next_id.set(id + 1);
+        let id = self.hir_next_id.fetch_add(1, Ordering::Relaxed);
         HirId(id)
     }
 
     pub fn reserve_block_id(&self) -> BlockId {
-        let id = self.block_next_id.get();
-        self.block_next_id.set(id + 1);
+        let id = self.block_next_id.fetch_add(1, Ordering::Relaxed);
         BlockId::new(id)
     }
 
     pub fn current_hir_id(&self) -> HirId {
-        HirId(self.hir_next_id.get())
+        HirId(self.hir_next_id.load(Ordering::Relaxed))
     }
 
     pub fn set_file_start(&self, index: usize, start: HirId) {
-        let mut starts = self.hir_start_ids.borrow_mut();
+        let mut starts = self.hir_start_ids.write().unwrap();
         if index < starts.len() && starts[index].is_none() {
             starts[index] = Some(start);
         }
     }
 
     pub fn file_start(&self, index: usize) -> Option<HirId> {
-        self.hir_start_ids.borrow().get(index).and_then(|opt| *opt)
+        self.hir_start_ids
+            .read()
+            .unwrap()
+            .get(index)
+            .and_then(|opt| *opt)
     }
 
     pub fn file_path(&self, index: usize) -> Option<&str> {
@@ -605,7 +668,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Clear all maps (useful for testing)
     #[cfg(test)]
     pub fn clear(&self) {
-        self.hir_map.borrow_mut().clear();
-        self.scope_map.borrow_mut().clear();
+        self.hir_map.write().unwrap().clear();
+        self.scope_map.write().unwrap().clear();
     }
 }

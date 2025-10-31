@@ -85,7 +85,7 @@ fn class_symbol<'tcx>(
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
     assert!(
-        symbol.depends.borrow().contains(&target.id),
+        symbol.depends.read().unwrap().contains(&target.id),
         "{} should depend on {}",
         symbol.name.as_str(),
         target.name.as_str()
@@ -94,7 +94,7 @@ fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
     assert!(
-        symbol.depended.borrow().contains(&source.id),
+        symbol.depended.read().unwrap().contains(&source.id),
         "{} should be depended on by {}",
         symbol.name.as_str(),
         source.name.as_str()

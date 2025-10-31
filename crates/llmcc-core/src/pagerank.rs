@@ -220,7 +220,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
 
     fn collect_entries(&self) -> Vec<BlockEntry> {
         let mut raw_entries: Vec<(BlockId, usize, Option<String>, BlockKind)> = {
-            let indexes = self.graph.cc.block_indexes.borrow();
+            let indexes = self.graph.cc.block_indexes.read().unwrap();
             indexes
                 .block_id_index
                 .iter()

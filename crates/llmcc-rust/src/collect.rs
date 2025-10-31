@@ -1,8 +1,9 @@
-use std::mem;
+use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirBase, HirId, HirIdent, HirKind, HirNode};
-use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
+use llmcc_core::ir::{HirId, HirIdent, HirNode};
+use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 
 use crate::descriptor::function::parse_type_expr;
 use crate::descriptor::{
@@ -11,19 +12,60 @@ use crate::descriptor::{
 };
 use crate::token::{AstVisitorRust, LangRust};
 
-/// DeclCollector collects all symbol declarations (functions, structs, enums, variables, etc.)
-/// from the AST during the first pass of semantic analysis.
-///
-/// For each symbol encountered:
-/// 1. Insert it into the local scope stack for local name resolution
-/// 2. If it's public/global, also register it in the global symbol table for cross-file resolution
-///
-/// This enables later phases to resolve both local names (via scope stack) and qualified names
-/// (via global symbol table).
+#[derive(Debug)]
+pub struct CollectionResult {
+    pub functions: Vec<FunctionDescriptor>,
+    pub variables: Vec<VariableDescriptor>,
+    pub calls: Vec<CallDescriptor>,
+    pub structs: Vec<StructDescriptor>,
+    pub enums: Vec<EnumDescriptor>,
+}
+
+#[derive(Debug)]
+pub struct SymbolSpec {
+    pub owner: HirId,
+    pub name: String,
+    pub fqn: String,
+    pub kind: SymbolKind,
+    pub unit_index: usize,
+}
+
+#[derive(Debug)]
+pub struct ScopeSpec {
+    pub owner: Option<HirId>,
+    pub symbol_index: Option<usize>,
+    pub symbols: Vec<usize>,
+}
+
+#[derive(Debug)]
+pub struct CollectedSymbols {
+    pub result: CollectionResult,
+    pub symbols: Vec<SymbolSpec>,
+    pub scopes: Vec<ScopeSpec>,
+}
+
+#[derive(Debug)]
+pub struct SymbolBatch {
+    pub collected: CollectedSymbols,
+    pub total_time: Duration,
+    pub visit_time: Duration,
+}
+
+#[derive(Debug)]
+struct ScopeInfo {
+    owner: Option<HirId>,
+    symbol_index: Option<usize>,
+    symbols: Vec<usize>,
+    locals: HashMap<String, usize>,
+}
+
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
     unit: CompileUnit<'tcx>,
-    scopes: ScopeStack<'tcx>,
+    scope_infos: Vec<ScopeInfo>,
+    scope_lookup: HashMap<HirId, usize>,
+    scope_stack: Vec<usize>,
+    symbols: Vec<SymbolSpec>,
     functions: Vec<FunctionDescriptor>,
     variables: Vec<VariableDescriptor>,
     calls: Vec<CallDescriptor>,
@@ -32,13 +74,18 @@ struct DeclCollector<'tcx> {
 }
 
 impl<'tcx> DeclCollector<'tcx> {
-    pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
-        // TODO: make create a new symbol assoicate unit file name
-        scopes.push_with_symbol(globals, None);
+    pub fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {
             unit,
-            scopes,
+            scope_infos: vec![ScopeInfo {
+                owner: None,
+                symbol_index: None,
+                symbols: Vec::new(),
+                locals: HashMap::new(),
+            }],
+            scope_lookup: HashMap::new(),
+            scope_stack: vec![0],
+            symbols: Vec::new(),
             functions: Vec::new(),
             variables: Vec::new(),
             calls: Vec::new(),
@@ -47,41 +94,50 @@ impl<'tcx> DeclCollector<'tcx> {
         }
     }
 
-    fn parent_symbol(&self) -> Option<&'tcx Symbol> {
-        self.scopes.scoped_symbol()
+    fn current_scope_index(&self) -> usize {
+        *self
+            .scope_stack
+            .last()
+            .expect("scope stack should never be empty")
+    }
+
+    fn ensure_scope(&mut self, owner: HirId) -> usize {
+        if let Some(&idx) = self.scope_lookup.get(&owner) {
+            return idx;
+        }
+
+        let idx = self.scope_infos.len();
+        self.scope_infos.push(ScopeInfo {
+            owner: Some(owner),
+            symbol_index: None,
+            symbols: Vec::new(),
+            locals: HashMap::new(),
+        });
+        self.scope_lookup.insert(owner, idx);
+        idx
+    }
+
+    fn parent_symbol(&self) -> Option<&SymbolSpec> {
+        for &scope_idx in self.scope_stack.iter().rev() {
+            if let Some(symbol_idx) = self.scope_infos[scope_idx].symbol_index {
+                if let Some(symbol) = self.symbols.get(symbol_idx) {
+                    return Some(symbol);
+                }
+            }
+        }
+        None
     }
 
     fn scoped_fqn(&self, _node: &HirNode<'tcx>, name: &str) -> String {
         if let Some(parent) = self.parent_symbol() {
-            let parent_fqn = parent.fqn_name.borrow();
-            if parent_fqn.is_empty() {
+            if parent.fqn.is_empty() {
                 name.to_string()
             } else {
-                format!("{}::{}", parent_fqn.as_str(), name)
+                format!("{}::{}", parent.fqn, name)
             }
         } else {
             name.to_string()
         }
-    }
-
-    fn take_functions(&mut self) -> Vec<FunctionDescriptor> {
-        mem::take(&mut self.functions)
-    }
-
-    fn take_variables(&mut self) -> Vec<VariableDescriptor> {
-        mem::take(&mut self.variables)
-    }
-
-    fn take_calls(&mut self) -> Vec<CallDescriptor> {
-        mem::take(&mut self.calls)
-    }
-
-    fn take_structs(&mut self) -> Vec<StructDescriptor> {
-        mem::take(&mut self.structs)
-    }
-
-    fn take_enums(&mut self) -> Vec<EnumDescriptor> {
-        mem::take(&mut self.enums)
     }
 
     fn create_new_symbol(
@@ -90,54 +146,76 @@ impl<'tcx> DeclCollector<'tcx> {
         field_id: u16,
         global: bool,
         kind: SymbolKind,
-    ) -> Option<(&'tcx Symbol, &'tcx HirIdent<'tcx>, String)> {
+    ) -> Option<(usize, &'tcx HirIdent<'tcx>, String)> {
         let ident_node = node.opt_child_by_field(self.unit, field_id)?;
         let ident = ident_node.as_ident()?;
-        let fqn = self.scoped_fqn(node, &ident.name);
+        let name = ident.name.clone();
         let owner = node.hir_id();
 
-        let symbol = match self.scopes.find_symbol_local(&ident.name) {
-            Some(existing) if existing.unit_index() == Some(self.unit.index) => {
-                if Self::different_kind(existing.kind(), kind) {
-                    self.insert_into_scope(owner, ident, global, &fqn, kind)
-                } else {
-                    existing
-                }
+        if let Some(existing_idx) = self.find_symbol_local(&name) {
+            let existing_kind = self.symbols[existing_idx].kind;
+            if Self::different_kind(existing_kind, kind) {
+                let fqn = self.scoped_fqn(node, &name);
+                let idx = self.insert_symbol(owner, name.clone(), fqn.clone(), kind, global);
+                return Some((idx, ident, fqn));
+            } else {
+                let fqn = self.symbols[existing_idx].fqn.clone();
+                return Some((existing_idx, ident, fqn));
             }
-            _ => self.insert_into_scope(owner, ident, global, &fqn, kind),
-        };
+        }
 
-        Some((symbol, ident, fqn))
+        let fqn = self.scoped_fqn(node, &name);
+        let idx = self.insert_symbol(owner, name.clone(), fqn.clone(), kind, global);
+        Some((idx, ident, fqn))
     }
 
     fn different_kind(existing_kind: SymbolKind, new_kind: SymbolKind) -> bool {
         existing_kind != SymbolKind::Unknown && existing_kind != new_kind
     }
 
-    // fn warn_duplicate_symbol(&self, name: &str, existing_kind: SymbolKind, new_kind: SymbolKind) {
-    //     eprintln!(
-    //         "warning: duplicate symbol '{}' found in the same scope. existing kind: {:?}, new kind: {:?}. skipping insertion.",
-    //         name, existing_kind, new_kind
-    //     );
-    // }
-
-    fn insert_into_scope(
+    fn insert_symbol(
         &mut self,
         owner: HirId,
-        ident: &'tcx HirIdent<'tcx>,
-        global: bool,
-        fqn: &str,
+        name: String,
+        fqn: String,
         kind: SymbolKind,
-    ) -> &'tcx Symbol {
-        let interner = self.unit.interner();
-        let unit_index = self.unit.index;
+        global: bool,
+    ) -> usize {
+        let idx = self.symbols.len();
+        self.symbols.push(SymbolSpec {
+            owner,
+            name: name.clone(),
+            fqn,
+            kind,
+            unit_index: self.unit.index,
+        });
 
-        self.scopes.insert_with(owner, ident, global, |symbol| {
-            symbol.set_owner(owner);
-            symbol.set_fqn(fqn.to_string(), interner);
-            symbol.set_kind(kind);
-            symbol.set_unit_index(unit_index);
-        })
+        let current_scope = self.current_scope_index();
+        self.scope_infos[current_scope]
+            .locals
+            .insert(name.clone(), idx);
+        self.scope_infos[current_scope].symbols.push(idx);
+
+        if global {
+            self.scope_infos[0].locals.insert(name, idx);
+            self.scope_infos[0].symbols.push(idx);
+        }
+
+        idx
+    }
+
+    fn find_symbol_local(&self, name: &str) -> Option<usize> {
+        if self.scope_stack.len() <= 1 {
+            return None;
+        }
+
+        for &scope_idx in self.scope_stack[1..].iter().rev() {
+            if let Some(&symbol_idx) = self.scope_infos[scope_idx].locals.get(name) {
+                return Some(symbol_idx);
+            }
+        }
+
+        None
     }
 
     fn has_public_visibility(&self, node: &HirNode<'tcx>) -> bool {
@@ -159,30 +237,77 @@ impl<'tcx> DeclCollector<'tcx> {
     }
 
     fn enum_variant_should_register_globally(&self, _node: &HirNode<'tcx>) -> bool {
-        let Some(enum_symbol) = self.scopes.scoped_symbol() else {
+        let Some(enum_symbol) = self.parent_symbol() else {
             return false;
         };
 
-        if enum_symbol.kind() != SymbolKind::Enum {
+        if enum_symbol.kind != SymbolKind::Enum {
             return false;
         }
 
-        let parent_node = self.unit.hir_node(enum_symbol.owner());
+        let parent_node = self.unit.hir_node(enum_symbol.owner);
         self.has_public_visibility(&parent_node)
     }
 
-    fn visit_children_new_scope(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scoped_symbol: Option<&'tcx Symbol>,
-    ) {
-        let depth = self.scopes.depth();
-        let scope = self.unit.alloc_scope(node.hir_id());
+    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>, scoped_symbol: Option<usize>) {
+        let owner = node.hir_id();
+        let scope_idx = self.ensure_scope(owner);
+        if let Some(symbol_idx) = scoped_symbol {
+            self.scope_infos[scope_idx].symbol_index = Some(symbol_idx);
+        }
 
-        let symbol = scoped_symbol.or_else(|| self.scopes.scoped_symbol());
-        self.scopes.push_with_symbol(scope, symbol);
+        self.scope_stack.push(scope_idx);
         self.visit_children(node);
-        self.scopes.pop_until(depth);
+        self.scope_stack.pop();
+    }
+
+    fn visit_children(&mut self, node: &HirNode<'tcx>) {
+        for id in node.children() {
+            let child = self.unit.hir_node(*id);
+            self.visit_node(child);
+        }
+    }
+
+    fn find_symbol_by_fqn_in_unit(&self, fqn: &str) -> Option<usize> {
+        self.symbols
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, symbol)| symbol.fqn == fqn && symbol.unit_index == self.unit.index)
+            .map(|(idx, _)| idx)
+    }
+
+    fn find_symbol_by_fqn(&self, fqn: &str) -> Option<usize> {
+        self.symbols
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, symbol)| symbol.fqn == fqn)
+            .map(|(idx, _)| idx)
+    }
+
+    fn finish(self) -> CollectedSymbols {
+        let scopes = self
+            .scope_infos
+            .into_iter()
+            .map(|info| ScopeSpec {
+                owner: info.owner,
+                symbol_index: info.symbol_index,
+                symbols: info.symbols,
+            })
+            .collect();
+
+        CollectedSymbols {
+            result: CollectionResult {
+                functions: self.functions,
+                variables: self.variables,
+                calls: self.calls,
+                structs: self.structs,
+                enums: self.enums,
+            },
+            symbols: self.symbols,
+            scopes,
+        }
     }
 }
 
@@ -197,7 +322,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) = self.create_new_symbol(
+        if let Some((symbol_idx, _ident, fqn)) = self.create_new_symbol(
             &node,
             LangRust::field_name,
             register_globally,
@@ -206,14 +331,14 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             if let Some(desc) = FunctionDescriptor::from_hir(self.unit, &node, fqn.clone()) {
                 self.functions.push(desc);
             }
-            self.visit_children_new_scope(&node, Some(symbol));
+            self.visit_children_new_scope(&node, Some(symbol_idx));
         } else {
             self.visit_children(&node);
         }
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        if let Some((_symbol, ident, fqn)) =
+        if let Some((_symbol_idx, ident, fqn)) =
             self.create_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable)
         {
             let var =
@@ -233,14 +358,14 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self
+        let symbol_idx = self
             .create_new_symbol(&node, LangRust::field_name, true, SymbolKind::Module)
-            .map(|(symbol, _ident, _)| symbol);
-        self.visit_children_new_scope(&node, symbol);
+            .map(|(symbol_idx, _ident, _)| symbol_idx);
+        self.visit_children_new_scope(&node, symbol_idx);
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = node
+        let symbol_idx = node
             .opt_child_by_field(self.unit, LangRust::field_type)
             .and_then(|type_node| {
                 let segments = impl_type_segments(self.unit, &type_node)?;
@@ -248,59 +373,36 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     return None;
                 }
 
-                let keys: Vec<_> = segments
-                    .iter()
-                    .map(|segment| self.unit.interner().intern(segment))
-                    .collect();
+                let fqn = segments.join("::");
+                let impl_name = segments
+                    .last()
+                    .cloned()
+                    .unwrap_or_else(|| "impl".to_string());
 
-                if let Some(symbol) = self
-                    .scopes
-                    .find_global_suffix_in_unit(&keys, self.unit.index)
-                    .or_else(|| self.scopes.find_global_suffix(&keys))
-                {
-                    symbol.set_owner(node.hir_id());
-                    symbol.set_unit_index(self.unit.index);
-                    Some(symbol)
-                } else {
-                    let fqn = segments.join("::");
-                    let owner = node.hir_id();
-
-                    // For impl blocks with qualified types like `impl From<T> for module::Type`,
-                    // use the last segment (the actual type name) as the symbol name.
-                    // This ensures proper trie indexing.
-                    let impl_name = segments
-                        .last()
-                        .cloned()
-                        .unwrap_or_else(|| "impl".to_string());
-
-                    // Create a synthetic identifier using the impl target type name
-                    let synthetic_ident = self.unit.cc.arena.alloc(HirIdent::new(
-                        // Create a minimal HirBase using the impl node's information
-                        HirBase {
-                            hir_id: owner,
-                            parent: node.parent(),
-                            node: node.inner_ts_node(),
-                            kind: HirKind::Identifier,
-                            field_id: u16::MAX,
-                            children: Vec::new(),
-                        },
-                        impl_name,
-                    ));
-
-                    let global = false;
-                    let kind = SymbolKind::Impl;
-                    let symbol =
-                        self.scopes
-                            .insert_with(owner, synthetic_ident, global, |symbol| {
-                                symbol.set_owner(owner);
-                                symbol.set_fqn(fqn, self.unit.interner());
-                                symbol.set_kind(kind);
-                                symbol.set_unit_index(self.unit.index);
-                            });
-                    Some(symbol)
+                if let Some(idx) = self.find_symbol_by_fqn_in_unit(&fqn) {
+                    let symbol = &mut self.symbols[idx];
+                    symbol.owner = node.hir_id();
+                    symbol.unit_index = self.unit.index;
+                    return Some(idx);
                 }
+
+                if let Some(idx) = self.find_symbol_by_fqn(&fqn) {
+                    let symbol = &mut self.symbols[idx];
+                    symbol.owner = node.hir_id();
+                    symbol.unit_index = self.unit.index;
+                    return Some(idx);
+                }
+
+                if let Some(idx) = self.scope_infos[0].locals.get(&impl_name).copied() {
+                    let symbol = &mut self.symbols[idx];
+                    symbol.owner = node.hir_id();
+                    symbol.unit_index = self.unit.index;
+                    return Some(idx);
+                }
+
+                Some(self.insert_symbol(node.hir_id(), impl_name, fqn, SymbolKind::Impl, false))
             });
-        self.visit_children_new_scope(&node, symbol);
+        self.visit_children_new_scope(&node, symbol_idx);
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
@@ -312,9 +414,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
-        let enclosing = self
-            .parent_symbol()
-            .map(|symbol| symbol.fqn_name.borrow().clone());
+        let enclosing = self.parent_symbol().map(|symbol| symbol.fqn.clone());
         let desc = CallDescriptor::from_call(self.unit, &node, enclosing);
         self.calls.push(desc);
         self.visit_children(&node);
@@ -327,7 +427,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         } else {
             SymbolKind::Const
         };
-        if let Some((symbol, ident, fqn)) =
+        if let Some((symbol_idx, ident, fqn)) =
             self.create_new_symbol(&node, LangRust::field_name, true, symbol_kind)
         {
             let variable = match ts_kind {
@@ -346,7 +446,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 _ => return,
             };
             self.variables.push(variable);
-            self.visit_children_new_scope(&node, Some(symbol));
+            self.visit_children_new_scope(&node, Some(symbol_idx));
         } else {
             self.visit_children(&node);
         }
@@ -358,7 +458,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) = self.create_new_symbol(
+        if let Some((symbol_idx, _ident, fqn)) = self.create_new_symbol(
             &node,
             LangRust::field_name,
             register_globally,
@@ -367,7 +467,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             if let Some(desc) = StructDescriptor::from_struct(self.unit, &node, fqn.clone()) {
                 self.structs.push(desc);
             }
-            self.visit_children_new_scope(&node, Some(symbol));
+            self.visit_children_new_scope(&node, Some(symbol_idx));
         } else {
             eprintln!("Failed to create struct descriptor for: {:?}", node);
             self.visit_children(&node);
@@ -376,7 +476,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
         let register_globally = self.should_register_globally(&node);
-        if let Some((symbol, _ident, fqn)) = self.create_new_symbol(
+        if let Some((symbol_idx, _ident, fqn)) = self.create_new_symbol(
             &node,
             LangRust::field_name,
             register_globally,
@@ -385,7 +485,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             if let Some(desc) = EnumDescriptor::from_enum(self.unit, &node, fqn.clone()) {
                 self.enums.push(desc);
             }
-            self.visit_children_new_scope(&node, Some(symbol));
+            self.visit_children_new_scope(&node, Some(symbol_idx));
         } else {
             self.visit_children(&node);
         }
@@ -425,27 +525,113 @@ fn extract_path_segments(expr: &TypeExpr) -> Option<Vec<String>> {
     }
 }
 
-pub struct CollectionResult {
-    pub functions: Vec<FunctionDescriptor>,
-    pub variables: Vec<VariableDescriptor>,
-    pub calls: Vec<CallDescriptor>,
-    pub structs: Vec<StructDescriptor>,
-    pub enums: Vec<EnumDescriptor>,
+fn apply_collected_symbols<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+    collected: &CollectedSymbols,
+) {
+    let interner = unit.interner();
+    let mut created_symbols = Vec::with_capacity(collected.symbols.len());
+
+    {
+        let mut symbol_map = unit.cc.symbol_map.write().unwrap();
+        for spec in &collected.symbols {
+            let key = interner.intern(&spec.name);
+            let symbol = unit
+                .cc
+                .arena
+                .alloc(Symbol::new(spec.owner, spec.name.clone(), key));
+            symbol.set_kind(spec.kind);
+            symbol.set_unit_index(spec.unit_index);
+            symbol.set_fqn(spec.fqn.clone(), interner);
+            symbol_map.insert(symbol.id, symbol);
+            created_symbols.push(symbol);
+        }
+    }
+
+    for scope_spec in &collected.scopes {
+        let target_scope = match scope_spec.owner {
+            Some(owner) => unit.alloc_scope(owner),
+            None => globals,
+        };
+
+        if let Some(symbol_idx) = scope_spec.symbol_index {
+            if let Some(symbol) = created_symbols.get(symbol_idx) {
+                target_scope.set_symbol(Some(symbol));
+            }
+        }
+
+        for &symbol_idx in &scope_spec.symbols {
+            if let Some(symbol) = created_symbols.get(symbol_idx) {
+                target_scope.insert(symbol, interner);
+            }
+        }
+    }
+}
+
+pub fn collect_symbols_batch<'tcx>(unit: CompileUnit<'tcx>) -> SymbolBatch {
+    let collect_start = Instant::now();
+    let root = unit.file_start_hir_id().unwrap();
+    let node = unit.hir_node(root);
+    let mut decl_finder = DeclCollector::new(unit);
+
+    let visit_start = Instant::now();
+    decl_finder.visit_node(node);
+    let visit_time = visit_start.elapsed();
+
+    let collected = decl_finder.finish();
+    let total_time = collect_start.elapsed();
+
+    SymbolBatch {
+        collected,
+        total_time,
+        visit_time,
+    }
+}
+
+pub fn apply_symbol_batch<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+    batch: SymbolBatch,
+) -> CollectionResult {
+    let SymbolBatch {
+        collected,
+        total_time,
+        visit_time,
+    } = batch;
+
+    let counts = (
+        collected.result.functions.len(),
+        collected.result.structs.len(),
+        collected.result.variables.len(),
+        collected.result.enums.len(),
+        collected.result.calls.len(),
+    );
+
+    apply_collected_symbols(unit, globals, &collected);
+
+    if total_time.as_millis() > 10 {
+        tracing::trace!(
+            "[COLLECT][rust] File {:?}: total={:.2}ms, visit={:.2}ms, fns={}, structs={}, vars={}, enums={}, calls={}",
+            unit.file_path().unwrap_or("unknown"),
+            total_time.as_secs_f64() * 1000.0,
+            visit_time.as_secs_f64() * 1000.0,
+            counts.0,
+            counts.1,
+            counts.2,
+            counts.3,
+            counts.4,
+        );
+    }
+
+    let CollectedSymbols { result, .. } = collected;
+    result
 }
 
 pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
 ) -> CollectionResult {
-    let root = unit.file_start_hir_id().unwrap();
-    let node = unit.hir_node(root);
-    let mut decl_finder = DeclCollector::new(unit, globals);
-    decl_finder.visit_node(node);
-    CollectionResult {
-        functions: decl_finder.take_functions(),
-        variables: decl_finder.take_variables(),
-        calls: decl_finder.take_calls(),
-        structs: decl_finder.take_structs(),
-        enums: decl_finder.take_enums(),
-    }
+    let batch = collect_symbols_batch(unit);
+    apply_symbol_batch(unit, globals, batch)
 }

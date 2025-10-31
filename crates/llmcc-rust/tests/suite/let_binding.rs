@@ -87,7 +87,7 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
-    assert!(symbol.depends.borrow().contains(&target.id));
+    assert!(symbol.depends.read().unwrap().contains(&target.id));
 }
 
 fn assert_relation(dependent: &Symbol, dependency: &Symbol) {
@@ -146,7 +146,7 @@ fn let_without_type_annotation_still_works() {
     let simple_fn = function_symbol(unit, &collection, "simple");
 
     // Should not panic - just proceed without type dependency
-    let _deps = simple_fn.depends.borrow();
+    let _deps = simple_fn.depends.read().unwrap();
 }
 
 #[test]

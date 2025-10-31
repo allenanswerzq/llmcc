@@ -3,11 +3,9 @@ use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
 use crate::symbol::Scope;
 
-use tree_sitter::Tree;
-
 pub trait LanguageTrait {
     // TODO: add general parse result struct
-    fn parse(text: impl AsRef<[u8]>) -> Option<Tree>;
+    fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree>;
     fn hir_kind(kind_id: u16) -> HirKind;
     fn block_kind(kind_id: u16) -> BlockKind;
     fn token_str(kind_id: u16) -> Option<&'static str>;
@@ -20,6 +18,19 @@ pub trait LanguageTrait {
 
     fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
     fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
+}
+
+pub trait ParallelSymbolCollect: LanguageTrait {
+    const PARALLEL_SYMBOL_COLLECTION: bool;
+    type SymbolBatch: Send;
+
+    fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch;
+
+    fn apply_symbol_batch<'tcx>(
+        unit: CompileUnit<'tcx>,
+        globals: &'tcx Scope<'tcx>,
+        batch: Self::SymbolBatch,
+    );
 }
 
 #[allow(clippy::crate_in_macro_def)]
@@ -38,6 +49,16 @@ macro_rules! define_tokens {
         use crate::bind::bind_symbols;
 
         $crate::paste::paste! {
+            thread_local! {
+                static [<PARSER_ $suffix:upper>]: ::std::cell::RefCell<::tree_sitter::Parser> = {
+                    let mut parser = ::tree_sitter::Parser::new();
+                    parser
+                        .set_language(&[<tree_sitter_ $suffix:lower>]::LANGUAGE.into())
+                        .expect("failed to initialize tree-sitter parser");
+                    ::std::cell::RefCell::new(parser)
+                };
+            }
+
             /// Language context for HIR processing
             #[derive(Debug)]
             pub struct [<Lang $suffix>] {}
@@ -57,11 +78,14 @@ macro_rules! define_tokens {
 
             impl LanguageTrait for [<Lang $suffix>] {
                 /// Parse the text into a tree
-                fn parse(text: impl AsRef<[u8]>) -> Option<Tree> {
-                    let lang = [<tree_sitter_ $suffix:lower>]::LANGUAGE.into();
-                    let mut parser = Parser::new();
-                    parser.set_language(&lang).unwrap();
-                    parser.parse(text, None)
+                fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree> {
+                    let source = text.as_ref();
+                    paste::paste! {
+                        [<PARSER_ $suffix:upper>].with(|parser_cell| {
+                            let mut parser = parser_cell.borrow_mut();
+                            parser.parse(source, None)
+                        })
+                    }
                 }
 
                 /// Return the list of supported file extensions for this language

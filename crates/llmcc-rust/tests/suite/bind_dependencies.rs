@@ -104,24 +104,24 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
-    assert!(symbol.depends.borrow().contains(&target.id));
+    assert!(symbol.depends.read().unwrap().contains(&target.id));
 }
 
 fn assert_no_relation(symbol: &Symbol, target: &Symbol) {
     assert!(
-        !symbol.depends.borrow().contains(&target.id),
+        !symbol.depends.read().unwrap().contains(&target.id),
         "unexpected dependency on {}",
         target.name.as_str()
     );
     assert!(
-        !target.depended.borrow().contains(&symbol.id),
+        !target.depended.read().unwrap().contains(&symbol.id),
         "unexpected reverse dependency from {}",
         target.name.as_str()
     );
 }
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
-    assert!(symbol.depended.borrow().contains(&source.id));
+    assert!(symbol.depended.read().unwrap().contains(&source.id));
 }
 
 fn assert_relation(dependent: &Symbol, dependency: &Symbol) {
@@ -1195,11 +1195,11 @@ fn enum_depends_on_type_alias_target() {
     let effort_symbol = enum_symbol(unit, &collection, "ReasoningEffort");
     let summary_symbol = enum_symbol(unit, &collection, "ReasoningSummary");
 
-    let dependency_ids = op_symbol.depends.borrow().clone();
+    let dependency_ids = op_symbol.depends.read().unwrap().clone();
     let dependency_names: Vec<String> = dependency_ids
         .iter()
         .filter_map(|id| unit.cc.opt_get_symbol(*id))
-        .map(|symbol| symbol.fqn_name.borrow().clone())
+        .map(|symbol| symbol.fqn_name.read().unwrap().clone())
         .collect();
 
     assert!(
@@ -1395,8 +1395,8 @@ fn circular_type_references_via_pointers() {
     let node_symbol = struct_symbol(unit, &collection, "Node");
 
     // Verify node shouldn't depends on itself
-    assert!(node_symbol.depended.borrow().is_empty());
-    assert!(node_symbol.depends.borrow().is_empty());
+    assert!(node_symbol.depended.read().unwrap().is_empty());
+    assert!(node_symbol.depends.read().unwrap().is_empty());
 }
 
 #[test]
@@ -1617,9 +1617,12 @@ impl Builder {
 
     // The key point: with_capacity depends on the struct, not the impl block
     // We verify this by checking that the struct is in dependencies
-    let dependencies = with_capacity_symbol.depends.borrow();
     assert!(
-        dependencies.contains(&builder_symbol.id),
+        with_capacity_symbol
+            .depends
+            .read()
+            .unwrap()
+            .contains(&builder_symbol.id),
         "with_capacity should depend on the Builder struct"
     );
 
@@ -1716,7 +1719,7 @@ struct CompileCtxt<'tcx> {
     );
     println!(
         "CompileCtxt dependencies: {:?}",
-        compile_ctxt_symbol.depends.borrow()
+        compile_ctxt_symbol.depends.read().unwrap().clone()
     );
 
     // CompileCtxt should depend on Arena (field type)
@@ -1753,21 +1756,21 @@ struct CompileCtxt<'tcx> {
     println!(
         "Arena symbol: {:?} (FQN: {})",
         arena_symbol.id,
-        arena_symbol.fqn_name.borrow()
+        arena_symbol.fqn_name.read().unwrap().clone()
     );
     println!(
         "InternPool symbol: {:?} (FQN: {})",
         intern_pool_symbol.id,
-        intern_pool_symbol.fqn_name.borrow()
+        intern_pool_symbol.fqn_name.read().unwrap().clone()
     );
     println!(
         "CompileCtxt symbol: {:?} (FQN: {})",
         compile_ctxt_symbol.id,
-        compile_ctxt_symbol.fqn_name.borrow()
+        compile_ctxt_symbol.fqn_name.read().unwrap().clone()
     );
     println!(
         "CompileCtxt dependencies: {:?}",
-        compile_ctxt_symbol.depends.borrow()
+        compile_ctxt_symbol.depends.read().unwrap().clone()
     );
 
     // CompileCtxt should depend on Arena and InternPool even when imported
@@ -1811,15 +1814,15 @@ fn uses_compile_unit(unit: &CompileUnit) -> &File {
     println!("CompileUnit symbol: {:?}", compile_unit_symbol.id);
     println!(
         "CompileCtxt dependencies: {:?}",
-        compile_ctxt_symbol.depends.borrow()
+        compile_ctxt_symbol.depends.read().unwrap().clone()
     );
     println!(
         "CompileUnit dependencies: {:?}",
-        compile_unit_symbol.depends.borrow()
+        compile_unit_symbol.depends.read().unwrap().clone()
     );
     println!(
         "uses_compile_unit dependencies: {:?}",
-        uses_symbol.depends.borrow()
+        uses_symbol.depends.read().unwrap().clone()
     );
 
     // CompileCtxt should depend on File and Tree (field types inside Vec/Option)

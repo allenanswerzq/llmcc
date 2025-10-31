@@ -1,19 +1,28 @@
-use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
+use std::sync::RwLock;
 
 use crate::block::{BlockId, BlockRelation};
 
 /// Manages relationships between blocks in a clean, type-safe way
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct BlockRelationMap {
     /// BlockId -> (Relation -> Vec<BlockId>)
-    relations: RefCell<HashMap<BlockId, HashMap<BlockRelation, Vec<BlockId>>>>,
+    relations: RwLock<HashMap<BlockId, HashMap<BlockRelation, Vec<BlockId>>>>,
+}
+
+impl Clone for BlockRelationMap {
+    fn clone(&self) -> Self {
+        let snapshot = self.relations.read().unwrap().clone();
+        Self {
+            relations: RwLock::new(snapshot),
+        }
+    }
 }
 
 impl BlockRelationMap {
     /// Add a relationship between two blocks
     pub fn add_relation_impl(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
-        let mut relations = self.relations.borrow_mut();
+        let mut relations = self.relations.write().unwrap();
         relations
             .entry(from)
             .or_default()
@@ -24,7 +33,7 @@ impl BlockRelationMap {
 
     /// Add multiple relationships of the same type from one block
     pub fn add_relation_impls(&self, from: BlockId, relation: BlockRelation, targets: &[BlockId]) {
-        let mut relations = self.relations.borrow_mut();
+        let mut relations = self.relations.write().unwrap();
         let block_relations = relations.entry(from).or_default();
         let relation_vec = block_relations.entry(relation).or_default();
         relation_vec.extend_from_slice(targets);
@@ -37,7 +46,7 @@ impl BlockRelationMap {
         relation: BlockRelation,
         to: BlockId,
     ) -> bool {
-        let mut relations = self.relations.borrow_mut();
+        let mut relations = self.relations.write().unwrap();
         if let Some(block_relations) = relations.get_mut(&from) {
             if let Some(targets) = block_relations.get_mut(&relation) {
                 if let Some(pos) = targets.iter().position(|&x| x == to) {
@@ -59,7 +68,7 @@ impl BlockRelationMap {
 
     /// Remove all relationships of a specific type from a block
     pub fn remove_all_relations(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
-        let mut relations = self.relations.borrow_mut();
+        let mut relations = self.relations.write().unwrap();
         if let Some(block_relations) = relations.get_mut(&from) {
             if let Some(targets) = block_relations.remove(&relation) {
                 // Clean up empty maps
@@ -74,14 +83,15 @@ impl BlockRelationMap {
 
     /// Remove all relationships for a block (useful when deleting a block)
     pub fn remove_block_relations(&self, block_id: BlockId) {
-        let mut relations = self.relations.borrow_mut();
+        let mut relations = self.relations.write().unwrap();
         relations.remove(&block_id);
     }
 
     /// Get all blocks related to a given block with a specific relationship
     pub fn get_related(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
         self.relations
-            .borrow()
+            .read()
+            .unwrap()
             .get(&from)
             .and_then(|block_relations| block_relations.get(&relation))
             .cloned()
@@ -91,7 +101,8 @@ impl BlockRelationMap {
     /// Get all relationships for a specific block
     pub fn get_all_relations(&self, from: BlockId) -> HashMap<BlockRelation, Vec<BlockId>> {
         self.relations
-            .borrow()
+            .read()
+            .unwrap()
             .get(&from)
             .cloned()
             .unwrap_or_default()
@@ -100,7 +111,8 @@ impl BlockRelationMap {
     /// Check if a specific relationship exists
     pub fn has_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) -> bool {
         self.relations
-            .borrow()
+            .read()
+            .unwrap()
             .get(&from)
             .and_then(|block_relations| block_relations.get(&relation))
             .map(|targets| targets.contains(&to))
@@ -109,7 +121,7 @@ impl BlockRelationMap {
 
     /// Add a relation if it doesn't already exist (optimized: single borrow)
     pub fn add_relation_if_not_exists(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
-        let mut relations = self.relations.borrow_mut();
+        let mut relations = self.relations.write().unwrap();
         let block_relations = relations.entry(from).or_default();
         let targets = block_relations.entry(relation).or_default();
         if !targets.contains(&to) {
@@ -119,7 +131,7 @@ impl BlockRelationMap {
 
     /// Add bidirectional relation if it doesn't already exist (optimized: single borrow)
     pub fn add_bidirectional_if_not_exists(&self, caller: BlockId, callee: BlockId) {
-        let mut relations = self.relations.borrow_mut();
+        let mut relations = self.relations.write().unwrap();
 
         // Add caller -> callee (DependsOn)
         let caller_relations = relations.entry(caller).or_default();
@@ -143,7 +155,8 @@ impl BlockRelationMap {
     /// Check if any relationship of a type exists
     pub fn has_relation_type(&self, from: BlockId, relation: BlockRelation) -> bool {
         self.relations
-            .borrow()
+            .read()
+            .unwrap()
             .get(&from)
             .and_then(|block_relations| block_relations.get(&relation))
             .map(|targets| !targets.is_empty())
@@ -152,13 +165,13 @@ impl BlockRelationMap {
 
     /// Get all blocks that have any relationships
     pub fn get_connected_blocks(&self) -> Vec<BlockId> {
-        self.relations.borrow().keys().copied().collect()
+        self.relations.read().unwrap().keys().copied().collect()
     }
 
     /// Get all blocks related to a given block (regardless of relationship type)
     pub fn get_all_related_blocks(&self, from: BlockId) -> HashSet<BlockId> {
         let mut result = HashSet::new();
-        if let Some(block_relations) = self.relations.borrow().get(&from) {
+        if let Some(block_relations) = self.relations.read().unwrap().get(&from) {
             for targets in block_relations.values() {
                 result.extend(targets.iter().copied());
             }
@@ -169,7 +182,7 @@ impl BlockRelationMap {
     /// Find all blocks that point to a given block with a specific relationship
     pub fn find_reverse_relations(&self, to: BlockId, relation: BlockRelation) -> Vec<BlockId> {
         let mut result = Vec::new();
-        let relations = self.relations.borrow();
+        let relations = self.relations.read().unwrap();
 
         for (&from_block, block_relations) in relations.iter() {
             if let Some(targets) = block_relations.get(&relation) {
@@ -183,7 +196,7 @@ impl BlockRelationMap {
 
     /// Get statistics about relationships
     pub fn stats(&self) -> RelationStats {
-        let relations = self.relations.borrow();
+        let relations = self.relations.read().unwrap();
         let mut total_relations = 0;
         let mut by_relation: HashMap<BlockRelation, usize> = HashMap::new();
 
@@ -206,17 +219,17 @@ impl BlockRelationMap {
 
     /// Clear all relationships
     pub fn clear(&self) {
-        self.relations.borrow_mut().clear();
+        self.relations.write().unwrap().clear();
     }
 
     /// Check if the map is empty
     pub fn is_empty(&self) -> bool {
-        self.relations.borrow().is_empty()
+        self.relations.read().unwrap().is_empty()
     }
 
     /// Get the number of blocks with relationships
     pub fn len(&self) -> usize {
-        self.relations.borrow().len()
+        self.relations.read().unwrap().len()
     }
 }
 

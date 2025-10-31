@@ -33,7 +33,7 @@ pub struct SymbolTrie<'tcx> {
 
 impl<'tcx> SymbolTrie<'tcx> {
     pub fn insert_symbol(&mut self, symbol: &'tcx Symbol, interner: &InternPool) {
-        let fqn = symbol.fqn_name.borrow();
+        let fqn = symbol.fqn_name.read().unwrap();
         if fqn.is_empty() {
             return;
         }

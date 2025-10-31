@@ -1,9 +1,10 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Default)]
 pub struct FileId {
     pub path: Option<String>,
-    pub content: Option<Vec<u8>>,
+    content: Arc<[u8]>,
     pub content_hash: u64,
 }
 
@@ -17,7 +18,7 @@ impl FileId {
 
         Ok(FileId {
             path: Some(path),
-            content: Some(content),
+            content: Arc::from(content),
             content_hash,
         })
     }
@@ -29,13 +30,17 @@ impl FileId {
 
         FileId {
             path: None,
-            content: Some(content),
+            content: Arc::from(content),
             content_hash,
         }
     }
 
+    pub fn content(&self) -> &[u8] {
+        self.content.as_ref()
+    }
+
     pub fn get_text(&self, start_byte: usize, end_byte: usize) -> Option<String> {
-        let content_bytes = self.content.as_ref()?;
+        let content_bytes = self.content();
 
         if start_byte > end_byte
             || start_byte > content_bytes.len()
@@ -49,7 +54,7 @@ impl FileId {
     }
 
     pub fn get_full_text(&self) -> Option<String> {
-        let content_bytes = self.content.as_ref()?;
+        let content_bytes = self.content();
         Some(String::from_utf8_lossy(content_bytes).into_owned())
     }
 }
@@ -73,8 +78,8 @@ impl File {
         })
     }
 
-    pub fn content(&self) -> Vec<u8> {
-        self.file.content.as_ref().unwrap().to_vec()
+    pub fn content(&self) -> &[u8] {
+        self.file.content()
     }
 
     pub fn get_text(&self, start: usize, end: usize) -> String {
