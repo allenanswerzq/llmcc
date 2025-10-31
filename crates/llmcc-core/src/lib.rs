@@ -15,6 +15,8 @@ pub mod symbol;
 pub mod trie;
 pub mod visit;
 
+pub type DynError = Box<dyn std::error::Error + Send + Sync>;
+
 pub use context::{CompileCtxt, CompileUnit};
 pub use graph_builder::{
     build_llmcc_graph, build_llmcc_graph_with_config, BlockId, BlockRelation, GraphBuildConfig,

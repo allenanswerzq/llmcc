@@ -14,6 +14,7 @@ use crate::lang_def::LanguageTrait;
 use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
+use crate::DynError;
 
 const COMPACT_INTERESTING_KINDS: [BlockKind; 2] = [BlockKind::Class, BlockKind::Enum];
 
@@ -123,7 +124,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             return;
         }
 
-        let mut unresolved = self.cc.unresolve_symbols.borrow_mut();
+        let mut unresolved = self.cc.unresolve_symbols.write().unwrap();
 
         unresolved.retain(|symbol_ref| {
             let target = *symbol_ref;
@@ -131,7 +132,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                 return false;
             };
 
-            let dependents: Vec<SymId> = target.depended.borrow().clone();
+            let dependents: Vec<SymId> = target.depended.read().unwrap().clone();
             for dependent_id in dependents {
                 let Some(source_symbol) = self.cc.opt_get_symbol(dependent_id) else {
                     continue;
@@ -162,7 +163,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_by_name(&self, name: &str) -> Option<GraphNode> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         let matches = block_indexes.find_by_name(name);
 
         matches.first().map(|(unit_index, _, block_id)| GraphNode {
@@ -172,7 +173,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_name(&self, name: &str) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         let matches = block_indexes.find_by_name(name);
 
         matches
@@ -221,7 +222,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         interesting_kinds: &[BlockKind],
         ranked_filter: Option<&HashSet<BlockId>>,
     ) -> Vec<CompactNode> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         block_indexes
             .block_id_index
             .iter()
@@ -321,7 +322,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         let matches = block_indexes.find_by_name(name);
 
         matches
@@ -334,7 +335,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_kind(&self, block_kind: BlockKind) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         let matches = block_indexes.find_by_kind(block_kind);
 
         matches
@@ -347,7 +348,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_kind_in(&self, block_kind: BlockKind, unit_index: usize) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         let block_ids = block_indexes.find_by_kind_and_unit(block_kind, unit_index);
 
         block_ids
@@ -360,7 +361,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_in(&self, unit_index: usize) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         let matches = block_indexes.find_by_unit(unit_index);
 
         matches
@@ -373,7 +374,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
         block_indexes.get_block_info(block_id)
     }
 
@@ -396,7 +397,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     let dependencies = unit
                         .edges
                         .get_related(node.block_id, BlockRelation::DependsOn);
-                    let block_indexes = self.cc.block_indexes.borrow();
+                    let block_indexes = self.cc.block_indexes.read().unwrap();
                     for dep_block_id in dependencies {
                         let dep_unit_index = block_indexes
                             .get_block_info(dep_block_id)
@@ -416,7 +417,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                         .edges
                         .get_related(node.block_id, BlockRelation::DependedBy);
                     if !dependents.is_empty() {
-                        let indexes = self.cc.block_indexes.borrow();
+                        let indexes = self.cc.block_indexes.read().unwrap();
                         for dep_block_id in dependents {
                             if !seen.insert(dep_block_id) {
                                 continue;
@@ -566,7 +567,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut result = HashSet::new();
         let mut visited = HashSet::new();
         let mut stack = vec![node.block_id];
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -604,7 +605,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut result = HashSet::new();
         let mut visited = HashSet::new();
         let mut stack = vec![node.block_id];
-        let block_indexes = self.cc.block_indexes.borrow();
+        let block_indexes = self.cc.block_indexes.read().unwrap();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -808,7 +809,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             return;
         };
 
-        for &dep_id in symbol.depends.borrow().iter() {
+        let dependencies = symbol.depends.read().unwrap().clone();
+        for dep_id in dependencies {
             self.link_dependency(dep_id, from_block, edges, unresolved);
         }
     }
@@ -947,7 +949,7 @@ pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
     config: GraphBuildConfig,
-) -> Result<UnitGraph, Box<dyn std::error::Error>> {
+) -> Result<UnitGraph, DynError> {
     let root_hir = unit
         .file_start_hir_id()
         .ok_or("missing file start HIR id")?;
@@ -964,7 +966,7 @@ pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
-) -> Result<UnitGraph, Box<dyn std::error::Error>> {
+) -> Result<UnitGraph, DynError> {
     build_llmcc_graph_with_config::<L>(unit, unit_index, GraphBuildConfig::default())
 }
 

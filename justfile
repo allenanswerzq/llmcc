@@ -19,6 +19,7 @@ verify-wheel:
 
 test: run-py
     cargo test --workspace
+    cargo build --release
 
 clippy:
     cargo clippy --all-targets --workspace -- -D warnings

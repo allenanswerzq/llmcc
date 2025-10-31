@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU32, Ordering};
 
+use rayon::prelude::*;
 use tree_sitter::Node;
 
 use crate::block::BlockKind;
@@ -10,6 +11,7 @@ use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
 use crate::lang_def::LanguageTrait;
+use crate::DynError;
 
 /// Global atomic counter for HIR ID allocation
 static HIR_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -25,10 +27,38 @@ impl IrBuildConfig {
     }
 }
 
+#[derive(Clone)]
+struct HirNodeSpec<'hir> {
+    base: HirBase<'hir>,
+    variant: HirNodeVariantSpec<'hir>,
+}
+
+#[derive(Clone)]
+enum HirNodeVariantSpec<'hir> {
+    File {
+        file_path: String,
+    },
+    Text {
+        text: String,
+    },
+    Internal,
+    Scope {
+        ident: Option<HirScopeIdentSpec<'hir>>,
+    },
+    Ident {
+        name: String,
+    },
+}
+
+#[derive(Clone)]
+struct HirScopeIdentSpec<'hir> {
+    base: HirBase<'hir>,
+    name: String,
+}
+
 /// Builder that directly assigns HIR nodes to compile context
 struct HirBuilder<'a, Language> {
-    arena: &'a Arena<'a>,
-    hir_map: HashMap<HirId, ParentedNode<'a>>,
+    node_specs: HashMap<HirId, HirNodeSpec<'a>>,
     file_path: Option<String>,
     file_bytes: &'a [u8],
     config: IrBuildConfig,
@@ -37,15 +67,9 @@ struct HirBuilder<'a, Language> {
 
 impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     /// Create a new builder that directly assigns to context
-    fn new(
-        arena: &'a Arena<'a>,
-        file_path: Option<String>,
-        file_bytes: &'a [u8],
-        config: IrBuildConfig,
-    ) -> Self {
+    fn new(file_path: Option<String>, file_bytes: &'a [u8], config: IrBuildConfig) -> Self {
         Self {
-            arena,
-            hir_map: HashMap::new(),
+            node_specs: HashMap::new(),
             file_path,
             file_bytes,
             config,
@@ -59,9 +83,9 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         HirId(id)
     }
 
-    fn build(mut self, root: Node<'a>) -> (HirId, HashMap<HirId, ParentedNode<'a>>) {
+    fn build(mut self, root: Node<'a>) -> (HirId, HashMap<HirId, HirNodeSpec<'a>>) {
         let file_start_id = self.build_node(root, None);
-        (file_start_id, self.hir_map)
+        (file_start_id, self.node_specs)
     }
 
     fn build_node(&mut self, node: Node<'a>, parent: Option<HirId>) -> HirId {
@@ -76,36 +100,30 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         };
         let base = self.make_base(hir_id, parent, node, kind, child_ids);
 
-        let hir_node = match kind {
+        let variant = match kind {
             HirKind::File => {
                 let path = self.file_path.clone().unwrap_or_default();
-                let file_node = HirFile::new(base, path);
-                HirNode::File(self.arena.alloc(file_node))
+                HirNodeVariantSpec::File { file_path: path }
             }
             HirKind::Text => {
                 let text = self.extract_text(&base);
-                let text_node = HirText::new(base, text);
-                HirNode::Text(self.arena.alloc(text_node))
+                HirNodeVariantSpec::Text { text }
             }
-            HirKind::Internal => {
-                let internal = HirInternal::new(base);
-                HirNode::Internal(self.arena.alloc(internal))
-            }
+            HirKind::Internal => HirNodeVariantSpec::Internal,
             HirKind::Scope => {
                 // Try to extract the name identifier from the scope node
                 let ident = self.extract_scope_ident(&base, node);
-                let scope = HirScope::new(base, ident);
-                HirNode::Scope(self.arena.alloc(scope))
+                HirNodeVariantSpec::Scope { ident }
             }
             HirKind::Identifier => {
                 let text = self.extract_text(&base);
-                let ident = HirIdent::new(base, text);
-                HirNode::Ident(self.arena.alloc(ident))
+                HirNodeVariantSpec::Ident { name: text }
             }
             other => panic!("unsupported HIR kind for node {:?}", (other, node)),
         };
 
-        self.hir_map.insert(hir_id, ParentedNode::new(hir_node));
+        self.node_specs
+            .insert(hir_id, HirNodeSpec { base, variant });
         hir_id
     }
 
@@ -202,7 +220,11 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         }
     }
 
-    fn extract_scope_ident(&self, base: &HirBase<'a>, node: Node<'a>) -> Option<&'a HirIdent<'a>> {
+    fn extract_scope_ident(
+        &self,
+        base: &HirBase<'a>,
+        node: Node<'a>,
+    ) -> Option<HirScopeIdentSpec<'a>> {
         // Try to get the name field from the tree-sitter node
         // For Rust, the name field is typically "name"
         let name_node = node.child_by_field_name("name")?;
@@ -219,8 +241,10 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         };
 
         let text = self.extract_text(&ident_base);
-        let ident = HirIdent::new(ident_base, text);
-        Some(self.arena.alloc(ident))
+        Some(HirScopeIdentSpec {
+            base: ident_base,
+            name: text,
+        })
     }
 
     fn field_id_of(node: Node<'_>) -> Option<u16> {
@@ -244,46 +268,110 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     }
 }
 
-pub fn build_llmcc_ir_inner<'a, L: LanguageTrait>(
-    arena: &'a Arena<'a>,
+impl<'hir> HirNodeSpec<'hir> {
+    fn into_parented_node(self, arena: &'hir Arena<'hir>) -> ParentedNode<'hir> {
+        let HirNodeSpec { base, variant } = self;
+
+        let hir_node = match variant {
+            HirNodeVariantSpec::File { file_path } => {
+                let node = HirFile::new(base, file_path);
+                HirNode::File(arena.alloc(node))
+            }
+            HirNodeVariantSpec::Text { text } => {
+                let node = HirText::new(base, text);
+                HirNode::Text(arena.alloc(node))
+            }
+            HirNodeVariantSpec::Internal => {
+                let node = HirInternal::new(base);
+                HirNode::Internal(arena.alloc(node))
+            }
+            HirNodeVariantSpec::Scope { ident } => {
+                let ident_ref = ident.map(|spec| {
+                    let HirScopeIdentSpec { base, name } = spec;
+                    let ident_node = HirIdent::new(base, name);
+                    arena.alloc(ident_node)
+                });
+                let node = HirScope::new(base, ident_ref);
+                HirNode::Scope(arena.alloc(node))
+            }
+            HirNodeVariantSpec::Ident { name } => {
+                let node = HirIdent::new(base, name);
+                HirNode::Ident(arena.alloc(node))
+            }
+        };
+
+        ParentedNode::new(hir_node)
+    }
+}
+
+fn build_llmcc_ir_inner<'a, L: LanguageTrait>(
     file_path: Option<String>,
     file_bytes: &'a [u8],
     tree: &'a tree_sitter::Tree,
     config: IrBuildConfig,
-) -> Result<(HirId, HashMap<HirId, ParentedNode<'a>>), Box<dyn std::error::Error>> {
-    let builder = HirBuilder::<L>::new(arena, file_path, file_bytes, config);
+) -> Result<(HirId, HashMap<HirId, HirNodeSpec<'a>>), DynError> {
+    let builder = HirBuilder::<L>::new(file_path, file_bytes, config);
     let root = tree.root_node();
     let result = builder.build(root);
     Ok(result)
 }
 
 /// Build IR for all units in the context
-/// TODO: make this run in parallel
-pub fn build_llmcc_ir<'a, L: LanguageTrait>(
-    cc: &'a CompileCtxt<'a>,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn build_llmcc_ir<'a, L: LanguageTrait>(cc: &'a CompileCtxt<'a>) -> Result<(), DynError> {
     build_llmcc_ir_with_config::<L>(cc, IrBuildConfig::default())
+}
+
+struct FileIrBuildResult<'hir> {
+    index: usize,
+    file_start_id: HirId,
+    node_specs: HashMap<HirId, HirNodeSpec<'hir>>,
 }
 
 /// Build IR for all units in the context with custom config
 pub fn build_llmcc_ir_with_config<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: IrBuildConfig,
-) -> Result<(), Box<dyn std::error::Error>> {
-    for index in 0..cc.files.len() {
-        let unit = cc.compile_unit(index);
-        let file_path = unit.file_path().map(|p| p.to_string());
-        let file_bytes = unit.file().content();
-        let tree = unit.tree();
+) -> Result<(), DynError> {
+    let results: Vec<Result<FileIrBuildResult<'a>, DynError>> = (0..cc.files.len())
+        .into_par_iter()
+        .map(|index| {
+            let unit = cc.compile_unit(index);
+            let file_path = unit.file_path().map(|p| p.to_string());
+            let file_bytes = unit.file().content();
+            let tree = unit.tree();
 
-        let (_file_start_id, hir_map) =
-            build_llmcc_ir_inner::<L>(&cc.arena, file_path, file_bytes, tree, config)?;
+            build_llmcc_ir_inner::<L>(file_path, file_bytes, tree, config).map(
+                |(file_start_id, node_specs)| FileIrBuildResult {
+                    index,
+                    file_start_id,
+                    node_specs,
+                },
+            )
+        })
+        .collect();
 
-        // Insert all nodes into the compile context
-        for (hir_id, parented_node) in hir_map {
-            cc.hir_map.borrow_mut().insert(hir_id, parented_node);
+    let mut results: Vec<FileIrBuildResult<'a>> =
+        results.into_iter().collect::<Result<Vec<_>, _>>()?;
+
+    results.sort_by_key(|result| result.index);
+
+    for result in results {
+        let FileIrBuildResult {
+            index,
+            file_start_id,
+            node_specs,
+        } = result;
+
+        {
+            let mut hir_map = cc.hir_map.write().unwrap();
+            for (hir_id, spec) in node_specs {
+                let parented_node = spec.into_parented_node(&cc.arena);
+                hir_map.insert(hir_id, parented_node);
+            }
         }
-        cc.set_file_start(index, _file_start_id);
+
+        cc.set_file_start(index, file_start_id);
     }
+
     Ok(())
 }

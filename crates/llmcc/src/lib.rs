@@ -1,9 +1,12 @@
 use std::collections::HashSet;
-use std::error::Error;
 use std::io;
+use std::time::Instant;
 
 use ignore::WalkBuilder;
+use rayon::prelude::*;
+use tracing::info;
 
+use llmcc_core::lang_def::ParallelSymbolCollect;
 use llmcc_core::*;
 
 pub struct LlmccOptions {
@@ -21,7 +24,9 @@ pub struct LlmccOptions {
     pub summary: bool,
 }
 
-pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, Box<dyn Error>> {
+pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
+    let total_start = Instant::now();
+
     if !opts.files.is_empty() && !opts.dirs.is_empty() {
         return Err("Specify either --file or --dir, not both".into());
     }
@@ -47,6 +52,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         add_path(file.clone());
     }
 
+    let discovery_start = Instant::now();
     if !opts.dirs.is_empty() {
         let supported_exts = L::supported_extensions();
         for dir in &opts.dirs {
@@ -75,17 +81,56 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
             }
         }
     }
+    info!(
+        "[METRIC] File discovery: {:.2}s ({} files)",
+        discovery_start.elapsed().as_secs_f64(),
+        requested_files.len()
+    );
 
     if requested_files.is_empty() {
         return Err("No input files provided. --lang not set correct maybe".into());
     }
 
+    let parse_start = Instant::now();
     let cc = CompileCtxt::from_files::<L>(&requested_files)?;
+    info!(
+        "[METRIC] Parsing & tree-sitter: {:.2}s",
+        parse_start.elapsed().as_secs_f64()
+    );
+    let parse_metrics = &cc.build_metrics;
+    if parse_metrics.file_read_seconds > 0.0 {
+        info!(
+            "[METRIC]   File I/O: {:.2}s",
+            parse_metrics.file_read_seconds
+        );
+    }
+    if parse_metrics.parse_wall_seconds > 0.0 {
+        info!(
+            "[METRIC]   Tree-sitter wall: {:.2}s (cpu {:.2}s across {} files, avg {:.4}s)",
+            parse_metrics.parse_wall_seconds,
+            parse_metrics.parse_cpu_seconds,
+            parse_metrics.parse_file_count,
+            parse_metrics.parse_avg_seconds
+        );
+    }
+    if !parse_metrics.parse_slowest.is_empty() {
+        info!("[METRIC]   Slowest parses:");
+        for metric in &parse_metrics.parse_slowest {
+            info!("[METRIC]     {:.2}s {}", metric.seconds, metric.path);
+        }
+    }
+
     let files = cc.get_files();
 
     let use_compact_builder = opts.design_graph && opts.query.is_none();
 
+    let ir_start = Instant::now();
     build_llmcc_ir::<L>(&cc)?;
+    info!(
+        "[METRIC] IR building: {:.2}s",
+        ir_start.elapsed().as_secs_f64()
+    );
+
     let globals = cc.create_globals();
 
     if opts.print_ir {
@@ -95,10 +140,27 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         }
     }
 
-    for (index, _) in files.iter().enumerate() {
-        let unit = cc.compile_unit(index);
-        L::collect_symbols(unit, globals);
+    let symbols_start = Instant::now();
+    if L::PARALLEL_SYMBOL_COLLECTION {
+        let batches: Vec<_> = (0..files.len())
+            .into_par_iter()
+            .map(|index| L::collect_symbol_batch(cc.compile_unit(index)))
+            .collect();
+
+        for (index, batch) in batches.into_iter().enumerate() {
+            let unit = cc.compile_unit(index);
+            L::apply_symbol_batch(unit, globals, batch);
+        }
+    } else {
+        for (index, _) in files.iter().enumerate() {
+            let unit = cc.compile_unit(index);
+            L::collect_symbols(unit, globals);
+        }
     }
+    info!(
+        "[METRIC] Symbol collection: {:.2}s",
+        symbols_start.elapsed().as_secs_f64()
+    );
 
     let mut pg = ProjectGraph::new(&cc);
     let graph_config = if use_compact_builder {
@@ -107,19 +169,31 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         GraphBuildConfig::default()
     };
 
+    let graph_build_start = Instant::now();
     for (index, _) in files.iter().enumerate() {
         let unit = cc.compile_unit(index);
         L::bind_symbols(unit, globals);
-        let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
+    }
 
+    for (index, _) in files.iter().enumerate() {
+        let unit = cc.compile_unit(index);
+        let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
         if opts.print_block {
             print_llmcc_graph(unit_graph.root(), unit);
         }
-
         pg.add_child(unit_graph);
     }
+    info!(
+        "[METRIC] Graph building: {:.2}s",
+        graph_build_start.elapsed().as_secs_f64()
+    );
 
+    let link_start = Instant::now();
     pg.link_units();
+    info!(
+        "[METRIC] Linking units: {:.2}s",
+        link_start.elapsed().as_secs_f64()
+    );
 
     let mut outputs = Vec::new();
 
@@ -127,8 +201,22 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         if opts.pagerank {
             let limit = Some(opts.top_k.unwrap_or(80));
             pg.set_compact_rank_limit(limit);
+
+            let pagerank_start = Instant::now();
+            let result = pg.render_compact_graph();
+            info!(
+                "[METRIC] PageRank & graph rendering: {:.2}s",
+                pagerank_start.elapsed().as_secs_f64()
+            );
+            outputs.push(result);
+        } else {
+            let render_start = Instant::now();
+            outputs.push(pg.render_compact_graph());
+            info!(
+                "[METRIC] Graph rendering: {:.2}s",
+                render_start.elapsed().as_secs_f64()
+            );
         }
-        outputs.push(pg.render_compact_graph());
     } else if let Some(name) = opts.query.as_ref() {
         let query = ProjectQuery::new(&pg);
         let query_result = if opts.dependents {
@@ -149,6 +237,11 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         };
         outputs.push(formatted);
     }
+
+    info!(
+        "[METRIC] Total time: {:.2}s",
+        total_start.elapsed().as_secs_f64()
+    );
 
     if outputs.is_empty() {
         Ok(None)

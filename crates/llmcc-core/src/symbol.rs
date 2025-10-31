@@ -1,5 +1,5 @@
-use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
+use std::sync::RwLock;
 
 use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
@@ -37,19 +37,19 @@ pub enum SymbolKind {
 #[derive(Debug)]
 pub struct Scope<'tcx> {
     /// Trie for fast symbol lookup by suffix
-    trie: RefCell<SymbolTrie<'tcx>>,
+    trie: RwLock<SymbolTrie<'tcx>>,
     /// The HIR node that owns this scope
     owner: HirId,
     /// The symbol that introduced this scope, if any
-    symbol: Cell<Option<&'tcx Symbol>>,
+    symbol: RwLock<Option<&'tcx Symbol>>,
 }
 
 impl<'tcx> Scope<'tcx> {
     pub fn new(owner: HirId) -> Self {
         Self {
-            trie: RefCell::new(SymbolTrie::default()),
+            trie: RwLock::new(SymbolTrie::default()),
             owner,
-            symbol: Cell::new(None),
+            symbol: RwLock::new(None),
         }
     }
 
@@ -58,43 +58,44 @@ impl<'tcx> Scope<'tcx> {
     }
 
     pub fn symbol(&self) -> Option<&'tcx Symbol> {
-        self.symbol.get()
+        *self.symbol.read().unwrap()
     }
 
     pub fn set_symbol(&self, symbol: Option<&'tcx Symbol>) {
-        self.symbol.set(symbol);
+        *self.symbol.write().unwrap() = symbol;
     }
 
     pub fn insert(&self, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
         let sym_id = symbol.id;
-        self.trie.borrow_mut().insert_symbol(symbol, interner);
+        self.trie.write().unwrap().insert_symbol(symbol, interner);
         sym_id
     }
 
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
-        let hits = self.trie.borrow().lookup_symbol_suffix(&[key]);
+        let hits = self.trie.read().unwrap().lookup_symbol_suffix(&[key]);
         hits.first().map(|symbol| symbol.id)
     }
 
     pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
         self.trie
-            .borrow()
+            .read()
+            .unwrap()
             .lookup_symbol_suffix(suffix)
             .into_iter()
             .next()
     }
 
     pub fn lookup_suffix_symbols(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
-        self.trie.borrow().lookup_symbol_suffix(suffix)
+        self.trie.read().unwrap().lookup_symbol_suffix(suffix)
     }
 
     pub fn format_compact(&self) -> String {
-        let count = self.trie.borrow().total_symbols();
+        let count = self.trie.read().unwrap().total_symbols();
         format!("{}/{}", self.owner, count)
     }
 
     pub fn all_symbols(&self) -> Vec<&'tcx Symbol> {
-        self.trie.borrow().symbols()
+        self.trie.read().unwrap().symbols()
     }
 }
 
@@ -103,14 +104,14 @@ pub struct ScopeStack<'tcx> {
     arena: &'tcx Arena<'tcx>,
     interner: &'tcx InternPool,
     stack: Vec<&'tcx Scope<'tcx>>,
-    symbol_map: &'tcx RefCell<HashMap<SymId, &'tcx Symbol>>,
+    symbol_map: &'tcx RwLock<HashMap<SymId, &'tcx Symbol>>,
 }
 
 impl<'tcx> ScopeStack<'tcx> {
     pub fn new(
         arena: &'tcx Arena<'tcx>,
         interner: &'tcx InternPool,
-        symbol_map: &'tcx RefCell<HashMap<SymId, &'tcx Symbol>>,
+        symbol_map: &'tcx RwLock<HashMap<SymId, &'tcx Symbol>>,
     ) -> Self {
         Self {
             arena,
@@ -166,7 +167,7 @@ impl<'tcx> ScopeStack<'tcx> {
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
         for scope in self.iter().rev() {
-            let symbols = scope.trie.borrow().lookup_symbol_suffix(suffix);
+            let symbols = scope.trie.read().unwrap().lookup_symbol_suffix(suffix);
             if let Some(symbol) = select_symbol(symbols, kind, file) {
                 return Some(symbol);
             }
@@ -209,7 +210,8 @@ impl<'tcx> ScopeStack<'tcx> {
         scopes.iter().rev().find_map(|scope| {
             scope
                 .trie
-                .borrow()
+                .read()
+                .unwrap()
                 .lookup_symbol_suffix(&[key])
                 .into_iter()
                 .next()
@@ -224,7 +226,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn find_global_suffix_vec(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
-            .map(|scope| scope.trie.borrow().lookup_symbol_suffix(suffix))
+            .map(|scope| scope.trie.read().unwrap().lookup_symbol_suffix(suffix))
             .unwrap_or_default()
     }
 
@@ -279,37 +281,55 @@ impl<'tcx> ScopeStack<'tcx> {
     fn alloc_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>, key: InternedStr) -> &'tcx Symbol {
         let symbol = Symbol::new(owner, ident.name.clone(), key);
         let symbol = self.arena.alloc(symbol);
-        self.symbol_map.borrow_mut().insert(symbol.id, symbol);
+        self.symbol_map.write().unwrap().insert(symbol.id, symbol);
         symbol
     }
 }
 
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Symbol {
     /// Monotonic identifier assigned when the symbol is created.
     pub id: SymId,
     /// Owning HIR node that introduces the symbol (e.g. function, struct, module).
-    pub owner: Cell<HirId>,
+    pub owner: RwLock<HirId>,
     /// Unqualified name exactly as written in source.
     pub name: String,
     /// Interned key for `name`, used for fast lookup.
     pub name_key: InternedStr,
     /// Fully qualified name cached as a string (updated as scopes are resolved).
-    pub fqn_name: RefCell<String>,
+    pub fqn_name: RwLock<String>,
     /// Interned key for the fully qualified name.
-    pub fqn_key: RefCell<InternedStr>,
+    pub fqn_key: RwLock<InternedStr>,
     /// All symbols that this symbols depends on, most general relation, could be
     /// another relation, like field_of, type_of, called_by, calls etc.
     /// we dont do very clear sepration becase we want llm models to do that, we
     /// only need to tell models some symbols having depends relations
-    pub depends: RefCell<Vec<SymId>>,
-    pub depended: RefCell<Vec<SymId>>,
-    pub kind: Cell<SymbolKind>,
+    pub depends: RwLock<Vec<SymId>>,
+    pub depended: RwLock<Vec<SymId>>,
+    pub kind: RwLock<SymbolKind>,
     /// Which compile unit this symbol defined
-    pub unit_index: Cell<Option<usize>>,
+    pub unit_index: RwLock<Option<usize>>,
     /// Optional block id associated with this symbol (for graph building)
-    pub block_id: Cell<Option<BlockId>>,
+    pub block_id: RwLock<Option<BlockId>>,
+}
+
+impl Clone for Symbol {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            owner: RwLock::new(*self.owner.read().unwrap()),
+            name: self.name.clone(),
+            name_key: self.name_key,
+            fqn_name: RwLock::new(self.fqn_name.read().unwrap().clone()),
+            fqn_key: RwLock::new(*self.fqn_key.read().unwrap()),
+            depends: RwLock::new(self.depends.read().unwrap().clone()),
+            depended: RwLock::new(self.depended.read().unwrap().clone()),
+            kind: RwLock::new(*self.kind.read().unwrap()),
+            unit_index: RwLock::new(*self.unit_index.read().unwrap()),
+            block_id: RwLock::new(*self.block_id.read().unwrap()),
+        }
+    }
 }
 
 impl Symbol {
@@ -321,52 +341,54 @@ impl Symbol {
 
         Self {
             id: sym_id,
-            owner: Cell::new(owner),
+            owner: RwLock::new(owner),
             name: name.clone(),
             name_key,
-            fqn_name: RefCell::new(name),
-            fqn_key: RefCell::new(fqn_key),
-            depends: RefCell::new(Vec::new()),
-            depended: RefCell::new(Vec::new()),
-            kind: Cell::new(SymbolKind::Unknown),
-            unit_index: Cell::new(None),
-            block_id: Cell::new(None),
+            fqn_name: RwLock::new(name),
+            fqn_key: RwLock::new(fqn_key),
+            depends: RwLock::new(Vec::new()),
+            depended: RwLock::new(Vec::new()),
+            kind: RwLock::new(SymbolKind::Unknown),
+            unit_index: RwLock::new(None),
+            block_id: RwLock::new(None),
         }
     }
 
     pub fn owner(&self) -> HirId {
-        self.owner.get()
+        *self.owner.read().unwrap()
     }
 
     pub fn set_owner(&self, owner: HirId) {
-        self.owner.set(owner);
+        *self.owner.write().unwrap() = owner;
     }
 
     pub fn format_compact(&self) -> String {
-        format!("{}->{} \"{}\"", self.id, self.owner.get(), self.name)
+        let owner = *self.owner.read().unwrap();
+        format!("{}->{} \"{}\"", self.id, owner, self.name)
     }
 
     pub fn set_fqn(&self, fqn: String, interner: &InternPool) {
         let key = interner.intern(&fqn);
-        *self.fqn_name.borrow_mut() = fqn;
-        *self.fqn_key.borrow_mut() = key;
+        *self.fqn_name.write().unwrap() = fqn;
+        *self.fqn_key.write().unwrap() = key;
     }
 
     pub fn kind(&self) -> SymbolKind {
-        self.kind.get()
+        *self.kind.read().unwrap()
     }
 
     pub fn set_kind(&self, kind: SymbolKind) {
-        self.kind.set(kind);
+        *self.kind.write().unwrap() = kind;
     }
 
     pub fn unit_index(&self) -> Option<usize> {
-        self.unit_index.get()
+        *self.unit_index.read().unwrap()
     }
 
     pub fn set_unit_index(&self, file: usize) {
-        if self.unit_index.get().is_none() {
-            self.unit_index.set(Some(file));
+        let mut unit_index = self.unit_index.write().unwrap();
+        if unit_index.is_none() {
+            *unit_index = Some(file);
         }
     }
 
@@ -374,7 +396,7 @@ impl Symbol {
         if sym_id == self.id {
             return;
         }
-        let mut deps = self.depends.borrow_mut();
+        let mut deps = self.depends.write().unwrap();
         if deps.contains(&sym_id) {
             return;
         }
@@ -385,7 +407,7 @@ impl Symbol {
         if sym_id == self.id {
             return;
         }
-        let mut deps = self.depended.borrow_mut();
+        let mut deps = self.depended.write().unwrap();
         if deps.contains(&sym_id) {
             return;
         }
@@ -398,11 +420,11 @@ impl Symbol {
     }
 
     pub fn block_id(&self) -> Option<BlockId> {
-        self.block_id.get()
+        *self.block_id.read().unwrap()
     }
 
     pub fn set_block_id(&self, block_id: Option<BlockId>) {
-        self.block_id.set(block_id);
+        *self.block_id.write().unwrap() = block_id;
     }
 }
 

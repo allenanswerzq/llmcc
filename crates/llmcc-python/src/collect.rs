@@ -1,9 +1,10 @@
-use std::mem;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
+use llmcc_core::ir::HirNode;
+use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 
 use crate::descriptor::class::PythonClassDescriptor;
 use crate::descriptor::function::PythonFunctionDescriptor;
@@ -21,9 +22,50 @@ pub struct CollectionResult {
 }
 
 #[derive(Debug)]
+pub struct SymbolSpec {
+    pub owner: llmcc_core::ir::HirId,
+    pub name: String,
+    pub fqn: String,
+    pub kind: SymbolKind,
+    pub unit_index: usize,
+}
+
+#[derive(Debug)]
+pub struct ScopeSpec {
+    pub owner: Option<llmcc_core::ir::HirId>,
+    pub symbol_index: Option<usize>,
+    pub symbols: Vec<usize>,
+}
+
+#[derive(Debug)]
+pub struct CollectedSymbols {
+    pub result: CollectionResult,
+    pub symbols: Vec<SymbolSpec>,
+    pub scopes: Vec<ScopeSpec>,
+}
+
+#[derive(Debug)]
+pub struct SymbolBatch {
+    pub collected: CollectedSymbols,
+    pub total_time: Duration,
+    pub visit_time: Duration,
+}
+
+#[derive(Debug)]
+struct ScopeInfo {
+    owner: Option<llmcc_core::ir::HirId>,
+    symbol_index: Option<usize>,
+    symbols: Vec<usize>,
+    locals: HashMap<String, usize>,
+}
+
+#[derive(Debug)]
 struct DeclCollector<'tcx> {
     unit: CompileUnit<'tcx>,
-    scopes: ScopeStack<'tcx>,
+    scope_infos: Vec<ScopeInfo>,
+    scope_lookup: HashMap<llmcc_core::ir::HirId, usize>,
+    scope_stack: Vec<usize>,
+    symbols: Vec<SymbolSpec>,
     functions: Vec<PythonFunctionDescriptor>,
     classes: Vec<PythonClassDescriptor>,
     variables: Vec<VariableDescriptor>,
@@ -31,12 +73,20 @@ struct DeclCollector<'tcx> {
 }
 
 impl<'tcx> DeclCollector<'tcx> {
-    pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
-        scopes.push_with_symbol(globals, None);
+    pub fn new(unit: CompileUnit<'tcx>) -> Self {
+        let scope_infos = vec![ScopeInfo {
+            owner: None,
+            symbol_index: None,
+            symbols: Vec::new(),
+            locals: HashMap::new(),
+        }];
+
         Self {
             unit,
-            scopes,
+            scope_infos,
+            scope_lookup: HashMap::new(),
+            scope_stack: vec![0],
+            symbols: Vec::new(),
             functions: Vec::new(),
             classes: Vec::new(),
             variables: Vec::new(),
@@ -44,37 +94,48 @@ impl<'tcx> DeclCollector<'tcx> {
         }
     }
 
-    fn parent_symbol(&self) -> Option<&'tcx Symbol> {
-        self.scopes.scoped_symbol()
+    fn current_scope_index(&self) -> usize {
+        *self
+            .scope_stack
+            .last()
+            .expect("scope stack should never be empty")
+    }
+
+    fn ensure_scope(&mut self, owner: llmcc_core::ir::HirId) -> usize {
+        if let Some(&idx) = self.scope_lookup.get(&owner) {
+            return idx;
+        }
+
+        let idx = self.scope_infos.len();
+        self.scope_infos.push(ScopeInfo {
+            owner: Some(owner),
+            symbol_index: None,
+            symbols: Vec::new(),
+            locals: HashMap::new(),
+        });
+        self.scope_lookup.insert(owner, idx);
+        idx
+    }
+
+    fn parent_symbol(&self) -> Option<&SymbolSpec> {
+        for &scope_idx in self.scope_stack.iter().rev() {
+            if let Some(symbol_idx) = self.scope_infos[scope_idx].symbol_index {
+                return self.symbols.get(symbol_idx);
+            }
+        }
+        None
     }
 
     fn scoped_fqn(&self, _node: &HirNode<'tcx>, name: &str) -> String {
         if let Some(parent) = self.parent_symbol() {
-            let parent_fqn = parent.fqn_name.borrow();
-            if parent_fqn.is_empty() {
+            if parent.fqn.is_empty() {
                 name.to_string()
             } else {
-                format!("{}::{}", parent_fqn.as_str(), name)
+                format!("{}::{}", parent.fqn, name)
             }
         } else {
             name.to_string()
         }
-    }
-
-    fn take_functions(&mut self) -> Vec<PythonFunctionDescriptor> {
-        mem::take(&mut self.functions)
-    }
-
-    fn take_classes(&mut self) -> Vec<PythonClassDescriptor> {
-        mem::take(&mut self.classes)
-    }
-
-    fn take_variables(&mut self) -> Vec<VariableDescriptor> {
-        mem::take(&mut self.variables)
-    }
-
-    fn take_imports(&mut self) -> Vec<ImportDescriptor> {
-        mem::take(&mut self.imports)
     }
 
     fn create_new_symbol(
@@ -83,49 +144,106 @@ impl<'tcx> DeclCollector<'tcx> {
         field_id: u16,
         global: bool,
         kind: SymbolKind,
-    ) -> Option<(&'tcx Symbol, &'tcx HirIdent<'tcx>, String)> {
+    ) -> Option<(usize, String)> {
         let ident_node = node.opt_child_by_field(self.unit, field_id)?;
         let ident = ident_node.as_ident()?;
-        let fqn = self.scoped_fqn(node, &ident.name);
+        let name = ident.name.clone();
         let owner = node.hir_id();
 
-        let symbol = match self.scopes.find_symbol_local(&ident.name) {
-            Some(existing) if existing.kind() != SymbolKind::Unknown && existing.kind() != kind => {
-                self.insert_into_scope(owner, ident, global, &fqn, kind)
+        if let Some(existing_idx) = self.find_symbol_local(&name) {
+            let existing_kind = self.symbols[existing_idx].kind;
+            if existing_kind != SymbolKind::Unknown && existing_kind != kind {
+                let fqn = self.scoped_fqn(node, &name);
+                let idx = self.insert_symbol(owner, name.clone(), fqn, kind, global);
+                Some((idx, name))
+            } else {
+                Some((existing_idx, name))
             }
-            Some(existing) => existing,
-            None => self.insert_into_scope(owner, ident, global, &fqn, kind),
-        };
-
-        Some((symbol, ident, fqn))
+        } else {
+            let fqn = self.scoped_fqn(node, &name);
+            let idx = self.insert_symbol(owner, name.clone(), fqn, kind, global);
+            Some((idx, name))
+        }
     }
 
-    fn insert_into_scope(
+    fn find_symbol_local(&self, name: &str) -> Option<usize> {
+        if self.scope_stack.len() <= 1 {
+            return None;
+        }
+
+        for &scope_idx in self.scope_stack[1..].iter().rev() {
+            if let Some(&symbol_idx) = self.scope_infos[scope_idx].locals.get(name) {
+                return Some(symbol_idx);
+            }
+        }
+
+        None
+    }
+
+    fn insert_symbol(
         &mut self,
         owner: llmcc_core::ir::HirId,
-        ident: &'tcx HirIdent<'tcx>,
-        global: bool,
-        fqn: &str,
+        name: String,
+        fqn: String,
         kind: SymbolKind,
-    ) -> &'tcx Symbol {
-        let interner = self.unit.interner();
-        let unit_index = self.unit.index;
+        global: bool,
+    ) -> usize {
+        let idx = self.symbols.len();
+        self.symbols.push(SymbolSpec {
+            owner,
+            name: name.clone(),
+            fqn,
+            kind,
+            unit_index: self.unit.index,
+        });
 
-        self.scopes.insert_with(owner, ident, global, |symbol| {
-            symbol.set_owner(owner);
-            symbol.set_fqn(fqn.to_string(), interner);
-            symbol.set_kind(kind);
-            symbol.set_unit_index(unit_index);
-        })
+        let current_scope = self.current_scope_index();
+        self.scope_infos[current_scope]
+            .locals
+            .insert(name.clone(), idx);
+        self.scope_infos[current_scope].symbols.push(idx);
+
+        if global {
+            self.scope_infos[0].locals.insert(name.clone(), idx);
+            self.scope_infos[0].symbols.push(idx);
+        }
+
+        idx
     }
 
-    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
-        let depth = self.scopes.depth();
-        // Allocate scope for this node
-        let scope = self.unit.alloc_scope(node.hir_id());
-        self.scopes.push_with_symbol(scope, symbol);
+    fn finish(self) -> CollectedSymbols {
+        let scope_specs = self
+            .scope_infos
+            .into_iter()
+            .map(|info| ScopeSpec {
+                owner: info.owner,
+                symbol_index: info.symbol_index,
+                symbols: info.symbols,
+            })
+            .collect();
+
+        CollectedSymbols {
+            result: CollectionResult {
+                functions: self.functions,
+                classes: self.classes,
+                variables: self.variables,
+                imports: self.imports,
+            },
+            symbols: self.symbols,
+            scopes: scope_specs,
+        }
+    }
+
+    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<usize>) {
+        let owner = node.hir_id();
+        let scope_idx = self.ensure_scope(owner);
+        if let Some(symbol_idx) = symbol {
+            self.scope_infos[scope_idx].symbol_index = Some(symbol_idx);
+        }
+
+        self.scope_stack.push(scope_idx);
         self.visit_children(node);
-        self.scopes.pop_until(depth);
+        self.scope_stack.pop();
     }
 
     fn visit_children(&mut self, node: &HirNode<'tcx>) {
@@ -172,10 +290,11 @@ impl<'tcx> DeclCollector<'tcx> {
         segments
     }
 
-    fn ensure_module_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let scope = self.unit.alloc_scope(node.hir_id());
-        if let Some(symbol) = scope.symbol() {
-            return Some(symbol);
+    fn ensure_module_symbol(&mut self, node: &HirNode<'tcx>) -> Option<usize> {
+        let owner = node.hir_id();
+        let scope_idx = self.ensure_scope(owner);
+        if let Some(symbol_idx) = self.scope_infos[scope_idx].symbol_index {
+            return Some(symbol_idx);
         }
 
         let raw_path = self.unit.file_path().or_else(|| self.unit.file().path());
@@ -185,7 +304,6 @@ impl<'tcx> DeclCollector<'tcx> {
             .unwrap_or_else(|| PathBuf::from("__module__"));
 
         let segments = Self::module_segments_from_path(&path);
-        let interner = self.unit.interner();
 
         let (name, fqn) = if segments.is_empty() {
             let fallback = path
@@ -203,22 +321,21 @@ impl<'tcx> DeclCollector<'tcx> {
             (name, fqn)
         };
 
-        let key = interner.intern(&name);
-        let symbol = Symbol::new(node.hir_id(), name.clone(), key);
-        let symbol = self.unit.cc.arena.alloc(symbol);
-        symbol.set_kind(SymbolKind::Module);
-        symbol.set_unit_index(self.unit.index);
-        symbol.set_fqn(fqn, interner);
+        let idx = self.symbols.len();
+        self.symbols.push(SymbolSpec {
+            owner,
+            name: name.clone(),
+            fqn,
+            kind: SymbolKind::Module,
+            unit_index: self.unit.index,
+        });
 
-        self.unit
-            .cc
-            .symbol_map
-            .borrow_mut()
-            .insert(symbol.id, symbol);
+        // Module symbols live in the global scope for lookup.
+        self.scope_infos[0].locals.insert(name, idx);
+        self.scope_infos[0].symbols.push(idx);
 
-        let _ = self.scopes.insert_symbol(symbol, true);
-        scope.set_symbol(Some(symbol));
-        Some(symbol)
+        self.scope_infos[scope_idx].symbol_index = Some(idx);
+        Some(idx)
     }
 
     fn extract_base_classes(
@@ -435,10 +552,10 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
-        if let Some((symbol, ident, _fqn)) =
+        if let Some((symbol_idx, name)) =
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Function)
         {
-            let mut func = PythonFunctionDescriptor::new(ident.name.clone());
+            let mut func = PythonFunctionDescriptor::new(name.clone());
 
             // Extract parameters and return type using AST walking methods
             for child_id in node.children() {
@@ -454,15 +571,15 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
             func.extract_return_type_from_ast(&node, self.unit);
 
             self.functions.push(func);
-            self.visit_children_scope(&node, Some(symbol));
+            self.visit_children_scope(&node, Some(symbol_idx));
         }
     }
 
     fn visit_class_definition(&mut self, node: HirNode<'tcx>) {
-        if let Some((symbol, ident, _fqn)) =
+        if let Some((symbol_idx, name)) =
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
         {
-            let mut class = PythonClassDescriptor::new(ident.name.clone());
+            let mut class = PythonClassDescriptor::new(name.clone());
 
             // Look for base classes and body
             for child_id in node.children() {
@@ -479,7 +596,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
             }
 
             self.classes.push(class);
-            self.visit_children_scope(&node, Some(symbol));
+            self.visit_children_scope(&node, Some(symbol_idx));
         }
     }
 
@@ -539,11 +656,11 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     fn visit_assignment(&mut self, node: HirNode<'tcx>) {
         // Handle: x = value
         // In tree-sitter, the "left" side of assignment is the target
-        if let Some((_symbol, ident, _)) =
+        if let Some((_symbol_idx, name)) =
             self.create_new_symbol(&node, LangPython::field_left, false, SymbolKind::Variable)
         {
             use crate::descriptor::variable::VariableScope;
-            let var = VariableDescriptor::new(ident.name.clone(), VariableScope::FunctionLocal);
+            let var = VariableDescriptor::new(name, VariableScope::FunctionLocal);
             self.variables.push(var);
         }
     }
@@ -553,19 +670,115 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 }
 
+fn apply_collected_symbols<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+    collected: &CollectedSymbols,
+) {
+    let interner = unit.interner();
+    let mut created_symbols = Vec::with_capacity(collected.symbols.len());
+
+    {
+        let mut symbol_map = unit.cc.symbol_map.write().unwrap();
+        for spec in &collected.symbols {
+            let key = interner.intern(&spec.name);
+            let symbol = unit
+                .cc
+                .arena
+                .alloc(Symbol::new(spec.owner, spec.name.clone(), key));
+            symbol.set_kind(spec.kind);
+            symbol.set_unit_index(spec.unit_index);
+            symbol.set_fqn(spec.fqn.clone(), interner);
+            symbol_map.insert(symbol.id, symbol);
+            created_symbols.push(symbol);
+        }
+    }
+
+    for scope in &collected.scopes {
+        let target_scope = if let Some(owner) = scope.owner {
+            let scope_ref = unit.alloc_scope(owner);
+            if let Some(symbol_idx) = scope.symbol_index {
+                if let Some(symbol) = created_symbols.get(symbol_idx) {
+                    scope_ref.set_symbol(Some(symbol));
+                }
+            }
+            scope_ref
+        } else {
+            globals
+        };
+
+        for &symbol_idx in &scope.symbols {
+            if let Some(symbol) = created_symbols.get(symbol_idx) {
+                target_scope.insert(symbol, interner);
+            }
+        }
+    }
+
+    // created_symbols intentionally kept for scope insertion above
+}
+
+pub fn collect_symbols_batch<'tcx>(unit: CompileUnit<'tcx>) -> SymbolBatch {
+    let collect_start = Instant::now();
+    let root = unit.file_start_hir_id().unwrap();
+    let node = unit.hir_node(root);
+    let mut collector = DeclCollector::new(unit);
+
+    let visit_start = Instant::now();
+    collector.visit_node(node);
+    let visit_time = visit_start.elapsed();
+
+    let collected = collector.finish();
+
+    let total_time = collect_start.elapsed();
+
+    SymbolBatch {
+        collected,
+        total_time,
+        visit_time,
+    }
+}
+
+pub fn apply_symbol_batch<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+    batch: SymbolBatch,
+) -> CollectionResult {
+    let SymbolBatch {
+        collected,
+        total_time,
+        visit_time,
+    } = batch;
+
+    let counts = (
+        collected.result.functions.len(),
+        collected.result.classes.len(),
+        collected.result.variables.len(),
+        collected.result.imports.len(),
+    );
+
+    apply_collected_symbols(unit, globals, &collected);
+
+    if total_time.as_millis() > 10 {
+        tracing::trace!(
+            "[COLLECT] File {:?}: total={:.2}ms, visit={:.2}ms, syms={}, classes={}, vars={}, imports={}",
+            unit.file_path().unwrap_or("unknown"),
+            total_time.as_secs_f64() * 1000.0,
+            visit_time.as_secs_f64() * 1000.0,
+            counts.0,
+            counts.1,
+            counts.2,
+            counts.3
+        );
+    }
+
+    let CollectedSymbols { result, .. } = collected;
+    result
+}
+
 pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
 ) -> CollectionResult {
-    let root = unit.file_start_hir_id().unwrap();
-    let node = unit.hir_node(root);
-    let mut collector = DeclCollector::new(unit, globals);
-    collector.visit_node(node);
-
-    CollectionResult {
-        functions: collector.take_functions(),
-        classes: collector.take_classes(),
-        variables: collector.take_variables(),
-        imports: collector.take_imports(),
-    }
+    let batch = collect_symbols_batch(unit);
+    apply_symbol_batch(unit, globals, batch)
 }

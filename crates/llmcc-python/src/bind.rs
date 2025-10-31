@@ -124,7 +124,8 @@ impl<'tcx> SymbolBinder<'tcx> {
         self.unit
             .cc
             .symbol_map
-            .borrow_mut()
+            .write()
+            .unwrap()
             .insert(symbol.id, symbol);
 
         let _ = self.scopes.insert_symbol(symbol, true);
@@ -364,9 +365,9 @@ impl<'tcx> SymbolBinder<'tcx> {
                     this.add_symbol_relation(Some(target));
                     let caller_name = this
                         .current_symbol()
-                        .map(|s| s.fqn_name.borrow().clone())
+                        .map(|s| s.fqn_name.read().unwrap().clone())
                         .unwrap_or_else(|| "<module>".to_string());
-                    let target_name = target.fqn_name.borrow().clone();
+                    let target_name = target.fqn_name.read().unwrap().clone();
                     this.calls.push(CallBinding {
                         caller: caller_name,
                         target: target_name,
@@ -384,7 +385,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                 // If current symbol is a method, parent is the class
                 if let Some(current) = this.current_symbol() {
                     if current.kind() == SymbolKind::Function {
-                        let fqn = current.fqn_name.borrow();
+                        let fqn = current.fqn_name.read().unwrap().clone();
                         // Split "ClassName.method_name" to get class name
                         if let Some(dot_pos) = fqn.rfind("::") {
                             let class_name = &fqn[..dot_pos];
@@ -399,7 +400,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                                 if target.kind() == SymbolKind::Function {
                                     this.add_symbol_relation(Some(target));
                                     let caller_name = fqn.clone();
-                                    let target_name = target.fqn_name.borrow().clone();
+                                    let target_name = target.fqn_name.read().unwrap().clone();
                                     this.calls.push(CallBinding {
                                         caller: caller_name,
                                         target: target_name,
@@ -417,9 +418,9 @@ impl<'tcx> SymbolBinder<'tcx> {
                     if target.kind() == SymbolKind::Function {
                         let caller_name = this
                             .current_symbol()
-                            .map(|s| s.fqn_name.borrow().clone())
+                            .map(|s| s.fqn_name.read().unwrap().clone())
                             .unwrap_or_else(|| "<module>".to_string());
-                        let target_name = target.fqn_name.borrow().clone();
+                        let target_name = target.fqn_name.read().unwrap().clone();
                         this.calls.push(CallBinding {
                             caller: caller_name,
                             target: target_name,
@@ -588,7 +589,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn propagate_child_dependencies(&mut self, parent: &'tcx Symbol, child: &'tcx Symbol) {
-        let dependencies: Vec<_> = child.depends.borrow().iter().copied().collect();
+        let dependencies: Vec<_> = child.depends.read().unwrap().clone();
         for dep_id in dependencies {
             if dep_id == parent.id {
                 continue;
@@ -599,7 +600,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                     continue;
                 }
 
-                if dep_symbol.depends.borrow().contains(&parent.id) {
+                if dep_symbol.depends.read().unwrap().contains(&parent.id) {
                     continue;
                 }
 
