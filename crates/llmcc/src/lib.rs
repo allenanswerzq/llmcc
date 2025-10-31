@@ -82,7 +82,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         }
     }
     info!(
-        "[METRIC] File discovery: {:.2}s ({} files)",
+        "File discovery: {:.2}s ({} files)",
         discovery_start.elapsed().as_secs_f64(),
         requested_files.len()
     );
@@ -94,19 +94,16 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
     let parse_start = Instant::now();
     let cc = CompileCtxt::from_files::<L>(&requested_files)?;
     info!(
-        "[METRIC] Parsing & tree-sitter: {:.2}s",
+        "Parsing & tree-sitter: {:.2}s",
         parse_start.elapsed().as_secs_f64()
     );
     let parse_metrics = &cc.build_metrics;
     if parse_metrics.file_read_seconds > 0.0 {
-        info!(
-            "[METRIC]   File I/O: {:.2}s",
-            parse_metrics.file_read_seconds
-        );
+        info!("  File I/O: {:.2}s", parse_metrics.file_read_seconds);
     }
     if parse_metrics.parse_wall_seconds > 0.0 {
         info!(
-            "[METRIC]   Tree-sitter wall: {:.2}s (cpu {:.2}s across {} files, avg {:.4}s)",
+            "  Tree-sitter wall: {:.2}s (cpu {:.2}s across {} files, avg {:.4}s)",
             parse_metrics.parse_wall_seconds,
             parse_metrics.parse_cpu_seconds,
             parse_metrics.parse_file_count,
@@ -114,9 +111,9 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         );
     }
     if !parse_metrics.parse_slowest.is_empty() {
-        info!("[METRIC]   Slowest parses:");
+        info!("  Slowest parses:");
         for metric in &parse_metrics.parse_slowest {
-            info!("[METRIC]     {:.2}s {}", metric.seconds, metric.path);
+            info!("    {:.2}s {}", metric.seconds, metric.path);
         }
     }
 
@@ -126,10 +123,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
 
     let ir_start = Instant::now();
     build_llmcc_ir::<L>(&cc)?;
-    info!(
-        "[METRIC] IR building: {:.2}s",
-        ir_start.elapsed().as_secs_f64()
-    );
+    info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let globals = cc.create_globals();
 
@@ -158,7 +152,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         }
     }
     info!(
-        "[METRIC] Symbol collection: {:.2}s",
+        "Symbol collection: {:.2}s",
         symbols_start.elapsed().as_secs_f64()
     );
 
@@ -184,16 +178,13 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         pg.add_child(unit_graph);
     }
     info!(
-        "[METRIC] Graph building: {:.2}s",
+        "Graph building: {:.2}s",
         graph_build_start.elapsed().as_secs_f64()
     );
 
     let link_start = Instant::now();
     pg.link_units();
-    info!(
-        "[METRIC] Linking units: {:.2}s",
-        link_start.elapsed().as_secs_f64()
-    );
+    info!("Linking units: {:.2}s", link_start.elapsed().as_secs_f64());
 
     let mut outputs = Vec::new();
 
@@ -205,7 +196,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
             let pagerank_start = Instant::now();
             let result = pg.render_compact_graph();
             info!(
-                "[METRIC] PageRank & graph rendering: {:.2}s",
+                "PageRank & graph rendering: {:.2}s",
                 pagerank_start.elapsed().as_secs_f64()
             );
             outputs.push(result);
@@ -213,7 +204,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
             let render_start = Instant::now();
             outputs.push(pg.render_compact_graph());
             info!(
-                "[METRIC] Graph rendering: {:.2}s",
+                "Graph rendering: {:.2}s",
                 render_start.elapsed().as_secs_f64()
             );
         }
@@ -238,10 +229,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         outputs.push(formatted);
     }
 
-    info!(
-        "[METRIC] Total time: {:.2}s",
-        total_start.elapsed().as_secs_f64()
-    );
+    info!("Total time: {:.2}s", total_start.elapsed().as_secs_f64());
 
     if outputs.is_empty() {
         Ok(None)

@@ -88,14 +88,13 @@ pub struct Cli {
 }
 
 pub fn run(args: Cli) -> Result<()> {
-    // Initialize tracing subscriber for metrics logging
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive(tracing::Level::INFO.into()),
-        )
-        .with_writer(std::io::stderr)
-        .init();
+    // Initialize tracing subscriber for logging
+    if std::env::var("RUST_LOG").is_ok() {
+        tracing_subscriber::fmt()
+            .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+            .with_writer(std::io::stderr)
+            .init();
+    }
 
     if args.query.is_none() && (args.depends || args.dependents) {
         eprintln!("Warning: --depends/--dependents flags are ignored without --query");
