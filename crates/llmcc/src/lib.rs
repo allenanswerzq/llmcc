@@ -1,9 +1,11 @@
 use std::collections::HashSet;
 use std::io;
+use std::sync::Once;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
 use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 use tracing::info;
 
 use llmcc_core::lang_def::ParallelSymbolCollect;
@@ -26,6 +28,26 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
+static RAYON_INIT: Once = Once::new();
+
+fn init_rayon_pool() {
+    RAYON_INIT.call_once(|| {
+        let available = std::thread::available_parallelism()
+            .map(|v| v.get())
+            .unwrap_or(1);
+        let target = available.clamp(1, 12);
+        if let Err(err) = ThreadPoolBuilder::new()
+            .num_threads(target)
+            .thread_name(|index| format!("llmcc-worker-{index}"))
+            .build_global()
+        {
+            tracing::debug!(?err, "Rayon global pool already initialized");
+        } else {
+            tracing::debug!(threads = target, "Initialized Rayon global thread pool");
+        }
+    });
+}
+
 pub struct LlmccOptions {
     pub files: Vec<String>,
     pub dirs: Vec<String>,
@@ -43,6 +65,8 @@ pub struct LlmccOptions {
 
 pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
     let total_start = Instant::now();
+
+    init_rayon_pool();
 
     if !opts.files.is_empty() && !opts.dirs.is_empty() {
         return Err("Specify either --file or --dir, not both".into());
