@@ -1,13 +1,52 @@
 use std::collections::HashSet;
 use std::io;
+use std::sync::Once;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
 use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 use tracing::info;
 
 use llmcc_core::lang_def::ParallelSymbolCollect;
 use llmcc_core::*;
+
+fn should_skip_dir(name: &str) -> bool {
+    matches!(
+        name,
+        "test"
+            | "tests"
+            | "testing"
+            | "example"
+            | "examples"
+            | "doc"
+            | "docs"
+            | "bench"
+            | "benches"
+            | "benchmark"
+            | "benchmarks"
+    )
+}
+
+static RAYON_INIT: Once = Once::new();
+
+fn init_rayon_pool() {
+    RAYON_INIT.call_once(|| {
+        let available = std::thread::available_parallelism()
+            .map(|v| v.get())
+            .unwrap_or(1);
+        let target = available.clamp(1, 12);
+        if let Err(err) = ThreadPoolBuilder::new()
+            .num_threads(target)
+            .thread_name(|index| format!("llmcc-worker-{index}"))
+            .build_global()
+        {
+            tracing::debug!(?err, "Rayon global pool already initialized");
+        } else {
+            tracing::debug!(threads = target, "Initialized Rayon global thread pool");
+        }
+    });
+}
 
 pub struct LlmccOptions {
     pub files: Vec<String>,
@@ -26,6 +65,8 @@ pub struct LlmccOptions {
 
 pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
     let total_start = Instant::now();
+
+    init_rayon_pool();
 
     if !opts.files.is_empty() && !opts.dirs.is_empty() {
         return Err("Specify either --file or --dir, not both".into());
@@ -55,8 +96,37 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
     let discovery_start = Instant::now();
     if !opts.dirs.is_empty() {
         let supported_exts = L::supported_extensions();
+        let walker_threads = std::thread::available_parallelism()
+            .map(|v| v.get())
+            .unwrap_or(1);
         for dir in &opts.dirs {
-            let walker = WalkBuilder::new(dir).standard_filters(true).build();
+            let mut builder = WalkBuilder::new(dir);
+            builder
+                .standard_filters(true)
+                .follow_links(false)
+                .threads(walker_threads)
+                .filter_entry(|entry| {
+                    if entry.depth() == 0 {
+                        return true;
+                    }
+
+                    let Some(file_type) = entry.file_type() else {
+                        return true;
+                    };
+
+                    if !file_type.is_dir() {
+                        return true;
+                    }
+
+                    let Some(name) = entry.file_name().to_str() else {
+                        return true;
+                    };
+
+                    let lowered = name.to_ascii_lowercase();
+                    !should_skip_dir(lowered.as_str())
+                });
+
+            let walker = builder.build();
             for entry in walker {
                 let entry = entry.map_err(|e| {
                     io::Error::other(format!("Failed to walk directory {dir}: {e}"))
