@@ -1,12 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
 use std::path::Path;
+use std::mem;
 
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockRoot,
     BlockStmt,
 };
+use crate::block::Arena as BlockArena;
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
@@ -704,6 +706,16 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
+    fn alloc_from_block_arena<T, F>(&self, alloc: F) -> &'tcx T
+    where
+        F: for<'a> FnOnce(&'a BlockArena<'tcx>) -> &'a mut T,
+    {
+        let arena = self.unit.cc.block_arena.lock().unwrap();
+        let ptr = alloc(&arena);
+        let reference: &T = &*ptr;
+        unsafe { mem::transmute::<&T, &'tcx T>(reference) }
+    }
+
     fn next_id(&self) -> BlockId {
         self.unit.reserve_block_id()
     }
@@ -716,45 +728,52 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> BasicBlock<'tcx> {
-        let arena = &self.unit.cc.block_arena;
         match kind {
             BlockKind::Root => {
-                // Extract file_name from HirFile node if available
                 let file_name = node.as_file().map(|file| file.file_path.clone());
                 let block = BlockRoot::from_hir(id, node, parent, children, file_name);
-                BasicBlock::Root(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_root.alloc(block));
+                BasicBlock::Root(block_ref)
             }
             BlockKind::Func => {
                 let block = BlockFunc::from_hir(id, node, parent, children);
-                BasicBlock::Func(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_func.alloc(block));
+                BasicBlock::Func(block_ref)
             }
             BlockKind::Class => {
                 let block = BlockClass::from_hir(id, node, parent, children);
-                BasicBlock::Class(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_class.alloc(block));
+                BasicBlock::Class(block_ref)
             }
             BlockKind::Stmt => {
                 let stmt = BlockStmt::from_hir(id, node, parent, children);
-                BasicBlock::Stmt(arena.alloc(stmt))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_stmt.alloc(stmt));
+                BasicBlock::Stmt(block_ref)
             }
             BlockKind::Call => {
                 let stmt = BlockCall::from_hir(id, node, parent, children);
-                BasicBlock::Call(arena.alloc(stmt))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_call.alloc(stmt));
+                BasicBlock::Call(block_ref)
             }
             BlockKind::Enum => {
                 let enum_ty = BlockEnum::from_hir(id, node, parent, children);
-                BasicBlock::Enum(arena.alloc(enum_ty))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_enum.alloc(enum_ty));
+                BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {
                 let stmt = BlockConst::from_hir(id, node, parent, children);
-                BasicBlock::Const(arena.alloc(stmt))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_const.alloc(stmt));
+                BasicBlock::Const(block_ref)
             }
             BlockKind::Impl => {
                 let block = BlockImpl::from_hir(id, node, parent, children);
-                BasicBlock::Impl(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_impl.alloc(block));
+                BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
                 let block = BlockField::from_hir(id, node, parent, children);
-                BasicBlock::Field(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_field.alloc(block));
+                BasicBlock::Field(block_ref)
             }
             _ => {
                 panic!("unknown block kind: {}", kind)

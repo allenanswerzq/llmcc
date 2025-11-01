@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::sync::{
     atomic::{AtomicU32, Ordering},
-    RwLock,
+    Mutex, RwLock,
 };
 use std::time::Instant;
 use tree_sitter::Tree;
@@ -437,7 +437,7 @@ pub struct CompileCtxt<'tcx> {
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
-    pub block_arena: BlockArena<'tcx>,
+    pub block_arena: Mutex<BlockArena<'tcx>>,
     pub block_next_id: AtomicU32,
     // BlockId -> ParentedBlock
     pub block_map: RwLock<HashMap<BlockId, ParentedBlock<'tcx>>>,
@@ -471,7 +471,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
-            block_arena: BlockArena::default(),
+            block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(0),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
@@ -513,7 +513,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
-            block_arena: BlockArena::default(),
+            block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(0),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),

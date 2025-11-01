@@ -239,9 +239,22 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         L::bind_symbols(unit, globals);
     }
 
-    for (index, _) in files.iter().enumerate() {
+    let mut unit_graph_results: Vec<_> = (0..files.len())
+        .into_par_iter()
+        .map(|index| {
+            let unit = cc.compile_unit(index);
+            (index, build_llmcc_graph_with_config::<L>(unit, index, graph_config))
+        })
+        .collect();
+
+    unit_graph_results.sort_by_key(|(index, _)| *index);
+
+    for (index, graph_result) in unit_graph_results {
+        let unit_graph = match graph_result {
+            Ok(graph) => graph,
+            Err(err) => return Err(err),
+        };
         let unit = cc.compile_unit(index);
-        let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
         if opts.print_block {
             print_llmcc_graph(unit_graph.root(), unit);
         }

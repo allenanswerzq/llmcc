@@ -303,3 +303,21 @@ impl CompileCtxt {
         assert graph is not None, "Graph result should not be None"
         assert isinstance(graph, str), "Graph should be a string"
 
+
+class TestRepoRegression:
+    """Regression tests that exercise the real repository."""
+
+    def test_parallel_graph_build_on_repo(self):
+        """Graph build should handle full repo without borrow panics."""
+        repo_root = Path(__file__).resolve().parent.parent
+        crates_dir = repo_root / "crates"
+
+        result = llmcc.run(
+            dirs=[str(crates_dir)],
+            lang="rust",
+            query="CompileCtxt",
+            summary=True,
+        )
+
+        assert result is not None, "Result should not be None when querying real repo"
+        assert isinstance(result, str), "Result should be a string response"
