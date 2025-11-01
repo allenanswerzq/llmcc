@@ -1,11 +1,9 @@
+use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use std::cmp::Ordering as CmpOrdering;
 use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
-use std::sync::{
-    atomic::{AtomicU32, Ordering},
-    Mutex, RwLock,
-};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
 use tree_sitter::Tree;
 
@@ -121,11 +119,11 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        self.cc.scope_map.read().unwrap().get(&owner).copied()
+        self.cc.scope_map.read().get(&owner).copied()
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.cc.symbol_map.read().unwrap().get(&owner).copied()
+        self.cc.symbol_map.read().get(&owner).copied()
     }
 
     /// Get an existing scope or None if it doesn't exist
@@ -147,7 +145,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Add a HIR node to the map
     pub fn insert_hir_node(self, id: HirId, node: HirNode<'tcx>) {
         let parented = ParentedNode::new(node);
-        self.cc.hir_map.write().unwrap().insert(id, parented);
+        self.cc.hir_map.write().insert(id, parented);
     }
 
     /// Get all child nodes of a given parent
@@ -181,12 +179,12 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
-        self.cc.unresolve_symbols.write().unwrap().push(symbol);
+        self.cc.unresolve_symbols.write().push(symbol);
     }
 
     pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
         let parented = ParentedBlock::new(parent, block.clone());
-        self.cc.block_map.write().unwrap().insert(id, parented);
+        self.cc.block_map.write().insert(id, parented);
 
         // Register the block in the index maps
         let block_kind = block.kind();
@@ -597,11 +595,11 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.scope_map.read().unwrap().get(&owner).copied().unwrap()
+        self.scope_map.read().get(&owner).copied().unwrap()
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.symbol_map.read().unwrap().get(&owner).cloned()
+        self.symbol_map.read().get(&owner).cloned()
     }
 
     /// Find the primary symbol associated with a block ID
@@ -615,12 +613,12 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        if let Some(existing) = self.scope_map.read().unwrap().get(&owner) {
+        if let Some(existing) = self.scope_map.read().get(&owner) {
             return existing;
         }
 
         let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.write().unwrap().insert(owner, scope);
+        self.scope_map.write().insert(owner, scope);
         scope
     }
 
@@ -639,7 +637,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn set_file_start(&self, index: usize, start: HirId) {
-        let mut starts = self.hir_start_ids.write().unwrap();
+        let mut starts = self.hir_start_ids.write();
         if index < starts.len() && starts[index].is_none() {
             starts[index] = Some(start);
         }
@@ -668,7 +666,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Clear all maps (useful for testing)
     #[cfg(test)]
     pub fn clear(&self) {
-        self.hir_map.write().unwrap().clear();
-        self.scope_map.write().unwrap().clear();
+        self.hir_map.write().clear();
+        self.scope_map.write().clear();
     }
 }

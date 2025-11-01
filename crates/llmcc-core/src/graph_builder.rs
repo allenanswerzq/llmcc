@@ -1,3 +1,4 @@
+use parking_lot::Mutex;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
 use std::mem;
@@ -17,6 +18,7 @@ use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 use crate::DynError;
+use rayon::prelude::*;
 
 const COMPACT_INTERESTING_KINDS: [BlockKind; 2] = [BlockKind::Class, BlockKind::Enum];
 
@@ -118,32 +120,126 @@ impl<'tcx> ProjectGraph<'tcx> {
             return;
         }
 
-        let mut unresolved = self.cc.unresolve_symbols.write().unwrap();
+        let unresolved_symbols = {
+            let mut unresolved = self.cc.unresolve_symbols.write().unwrap();
+            std::mem::take(&mut *unresolved)
+        };
 
-        unresolved.retain(|symbol_ref| {
-            let target = *symbol_ref;
+        if unresolved_symbols.is_empty() {
+            return;
+        }
+
+        let mut unique_symbols = Vec::new();
+        let mut seen_targets = HashSet::new();
+        for symbol_ref in unresolved_symbols {
+            if seen_targets.insert(symbol_ref.id) {
+                unique_symbols.push(symbol_ref);
+            }
+        }
+
+        if unique_symbols.is_empty() {
+            return;
+        }
+
+        let cross_edges = Mutex::new(Vec::new());
+
+        unique_symbols.into_par_iter().for_each(|symbol_ref| {
+            let target = symbol_ref;
             let Some(target_block) = target.block_id() else {
-                return false;
+                return;
             };
 
-            let dependents: Vec<SymId> = target.depended.read().unwrap().clone();
-            for dependent_id in dependents {
+            let Some(target_unit) = target.unit_index() else {
+                return;
+            };
+
+            let dependents_guard = target.depended.read().unwrap();
+            if dependents_guard.is_empty() {
+                return;
+            }
+
+            let mut seen_dependents = HashSet::new();
+
+            for &dependent_id in dependents_guard.iter() {
+                if !seen_dependents.insert(dependent_id) {
+                    continue;
+                }
                 let Some(source_symbol) = self.cc.opt_get_symbol(dependent_id) else {
                     continue;
                 };
                 let Some(from_block) = source_symbol.block_id() else {
                     continue;
                 };
-                self.add_cross_edge(
-                    source_symbol.unit_index().unwrap(),
-                    target.unit_index().unwrap(),
-                    from_block,
-                    target_block,
-                );
-            }
+                let Some(from_unit) = source_symbol.unit_index() else {
+                    continue;
+                };
 
-            false
+                cross_edges
+                    .lock()
+                    .push((from_unit, target_unit, from_block, target_block));
+            }
         });
+
+        let collected_edges = cross_edges.into_inner();
+        if collected_edges.is_empty() {
+            return;
+        }
+
+        let unit_positions: HashMap<usize, usize> = self
+            .units
+            .iter()
+            .enumerate()
+            .map(|(pos, unit)| (unit.unit_index(), pos))
+            .collect();
+
+        let mut depends_map: HashMap<usize, HashMap<BlockId, Vec<BlockId>>> = HashMap::new();
+        let mut depended_map: HashMap<usize, HashMap<BlockId, Vec<BlockId>>> = HashMap::new();
+
+        for (from_unit, target_unit, from_block, target_block) in collected_edges {
+            depends_map
+                .entry(from_unit)
+                .or_default()
+                .entry(from_block)
+                .or_default()
+                .push(target_block);
+
+            depended_map
+                .entry(target_unit)
+                .or_default()
+                .entry(target_block)
+                .or_default()
+                .push(from_block);
+        }
+
+        for (unit_idx, mut edges) in depends_map {
+            if let Some(&pos) = unit_positions.get(&unit_idx) {
+                let unit_graph = &self.units[pos];
+                for (from_block, mut targets) in edges.drain() {
+                    targets.sort_unstable_by_key(|id| id.as_u32());
+                    targets.dedup();
+                    unit_graph.edges.add_relation_impls(
+                        from_block,
+                        BlockRelation::DependsOn,
+                        &targets,
+                    );
+                }
+            }
+        }
+
+        for (unit_idx, mut edges) in depended_map {
+            if let Some(&pos) = unit_positions.get(&unit_idx) {
+                let unit_graph = &self.units[pos];
+                for (from_block, mut targets) in edges.drain() {
+                    targets.sort_unstable_by_key(|id| id.as_u32());
+                    targets.dedup();
+                    unit_graph.edges.add_relation_impls(
+                        from_block,
+                        BlockRelation::DependedBy,
+                        &targets,
+                    );
+                }
+            }
+        }
     }
 
     pub fn units(&self) -> &[UnitGraph] {
@@ -647,35 +743,6 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         render_compact_dot(&pruned.nodes, &reduced_edges)
     }
-
-    fn add_cross_edge(
-        &self,
-        from_idx: usize,
-        to_idx: usize,
-        from_block: BlockId,
-        to_block: BlockId,
-    ) {
-        if from_idx == to_idx {
-            let unit = &self.units[from_idx];
-            if !unit
-                .edges
-                .has_relation(from_block, BlockRelation::DependsOn, to_block)
-            {
-                unit.edges.add_relation(from_block, to_block);
-            }
-            return;
-        }
-
-        let from_unit = &self.units[from_idx];
-        from_unit
-            .edges
-            .add_relation_if_not_exists(from_block, BlockRelation::DependsOn, to_block);
-
-        let to_unit = &self.units[to_idx];
-        to_unit
-            .edges
-            .add_relation_if_not_exists(to_block, BlockRelation::DependedBy, from_block);
-    }
 }
 
 #[derive(Debug)]
@@ -702,7 +769,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     where
         F: for<'a> FnOnce(&'a BlockArena<'tcx>) -> &'a mut T,
     {
-        let arena = self.unit.cc.block_arena.lock().unwrap();
+        let arena = self.unit.cc.block_arena.lock();
         let ptr = alloc(&arena);
         let reference: &T = &*ptr;
         unsafe { mem::transmute::<&T, &'tcx T>(reference) }
@@ -907,10 +974,15 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
     fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
-        if kind != BlockKind::Undefined {
-            self.build_block(node, parent, false);
-        } else {
-            self.visit_children(node, parent);
+        match kind {
+            BlockKind::Func
+            | BlockKind::Class
+            | BlockKind::Enum
+            | BlockKind::Const
+            | BlockKind::Impl
+            | BlockKind::Field
+            | BlockKind::Call => self.build_block(node, parent, false),
+            _ => self.visit_children(node, parent),
         }
     }
 

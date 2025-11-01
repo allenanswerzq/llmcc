@@ -114,7 +114,18 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     fn collect_children(&mut self, node: Node<'a>, parent_id: HirId) -> Vec<HirId> {
         let mut cursor = node.walk();
         node.children(&mut cursor)
-            .filter_map(|child| Some(self.build_node(child, Some(parent_id))))
+            .filter_map(|child| {
+                if child.is_error() || child.is_extra() || child.is_missing() || !child.is_named() {
+                    return None;
+                }
+
+                let child_kind = Language::hir_kind(child.kind_id());
+                if child_kind == HirKind::Text {
+                    return None;
+                }
+
+                Some(self.build_node(child, Some(parent_id)))
+            })
             .collect()
     }
 
