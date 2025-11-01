@@ -1,8 +1,7 @@
 /// Tests for let declaration type binding.
 /// This module verifies that visit_let_declaration properly extracts type annotations
 /// and establishes dependency relations between functions and the types used in let statements.
-use llmcc_core::ir::HirId;
-use llmcc_core::symbol::Symbol;
+use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -15,7 +14,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals);
@@ -87,7 +86,7 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
-    assert!(symbol.depends.read().unwrap().contains(&target.id));
+    assert!(symbol.depends.read().contains(&target.id));
 }
 
 fn assert_relation(dependent: &Symbol, dependency: &Symbol) {
@@ -146,7 +145,7 @@ fn let_without_type_annotation_still_works() {
     let simple_fn = function_symbol(unit, &collection, "simple");
 
     // Should not panic - just proceed without type dependency
-    let _deps = simple_fn.depends.read().unwrap();
+    let _deps = simple_fn.depends.read();
 }
 
 #[test]

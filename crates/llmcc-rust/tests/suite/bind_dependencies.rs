@@ -1,5 +1,4 @@
-use llmcc_core::ir::HirId;
-use llmcc_core::symbol::Symbol;
+use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -12,7 +11,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals);
@@ -104,24 +103,24 @@ fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'s
 }
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
-    assert!(symbol.depends.read().unwrap().contains(&target.id));
+    assert!(symbol.depends.read().contains(&target.id));
 }
 
 fn assert_no_relation(symbol: &Symbol, target: &Symbol) {
     assert!(
-        !symbol.depends.read().unwrap().contains(&target.id),
+        !symbol.depends.read().contains(&target.id),
         "unexpected dependency on {}",
         target.name.as_str()
     );
     assert!(
-        !target.depended.read().unwrap().contains(&symbol.id),
+        !target.depended.read().contains(&symbol.id),
         "unexpected reverse dependency from {}",
         target.name.as_str()
     );
 }
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
-    assert!(symbol.depended.read().unwrap().contains(&source.id));
+    assert!(symbol.depended.read().contains(&source.id));
 }
 
 fn assert_relation(dependent: &Symbol, dependency: &Symbol) {
@@ -1195,11 +1194,11 @@ fn enum_depends_on_type_alias_target() {
     let effort_symbol = enum_symbol(unit, &collection, "ReasoningEffort");
     let summary_symbol = enum_symbol(unit, &collection, "ReasoningSummary");
 
-    let dependency_ids = op_symbol.depends.read().unwrap().clone();
+    let dependency_ids = op_symbol.depends.read().clone();
     let dependency_names: Vec<String> = dependency_ids
         .iter()
         .filter_map(|id| unit.cc.opt_get_symbol(*id))
-        .map(|symbol| symbol.fqn_name.read().unwrap().clone())
+        .map(|symbol| symbol.fqn_name.read().clone())
         .collect();
 
     assert!(
@@ -1395,8 +1394,8 @@ fn circular_type_references_via_pointers() {
     let node_symbol = struct_symbol(unit, &collection, "Node");
 
     // Verify node shouldn't depends on itself
-    assert!(node_symbol.depended.read().unwrap().is_empty());
-    assert!(node_symbol.depends.read().unwrap().is_empty());
+    assert!(node_symbol.depended.read().is_empty());
+    assert!(node_symbol.depends.read().is_empty());
 }
 
 #[test]
@@ -1504,7 +1503,7 @@ impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings 
     let unit = cc.compile_unit(0);
 
     // Build IR
-    build_llmcc_ir::<LangRust>(&cc).expect("failed to build IR");
+    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).expect("failed to build IR");
 
     // Collect symbols
     let globals = cc.create_globals();
@@ -1621,7 +1620,6 @@ impl Builder {
         with_capacity_symbol
             .depends
             .read()
-            .unwrap()
             .contains(&builder_symbol.id),
         "with_capacity should depend on the Builder struct"
     );
@@ -1719,7 +1717,7 @@ struct CompileCtxt<'tcx> {
     );
     println!(
         "CompileCtxt dependencies: {:?}",
-        compile_ctxt_symbol.depends.read().unwrap().clone()
+        compile_ctxt_symbol.depends.read().clone()
     );
 
     // CompileCtxt should depend on Arena (field type)
@@ -1756,21 +1754,21 @@ struct CompileCtxt<'tcx> {
     println!(
         "Arena symbol: {:?} (FQN: {})",
         arena_symbol.id,
-        arena_symbol.fqn_name.read().unwrap().clone()
+        arena_symbol.fqn_name.read().clone()
     );
     println!(
         "InternPool symbol: {:?} (FQN: {})",
         intern_pool_symbol.id,
-        intern_pool_symbol.fqn_name.read().unwrap().clone()
+        intern_pool_symbol.fqn_name.read().clone()
     );
     println!(
         "CompileCtxt symbol: {:?} (FQN: {})",
         compile_ctxt_symbol.id,
-        compile_ctxt_symbol.fqn_name.read().unwrap().clone()
+        compile_ctxt_symbol.fqn_name.read().clone()
     );
     println!(
         "CompileCtxt dependencies: {:?}",
-        compile_ctxt_symbol.depends.read().unwrap().clone()
+        compile_ctxt_symbol.depends.read().clone()
     );
 
     // CompileCtxt should depend on Arena and InternPool even when imported
@@ -1814,15 +1812,15 @@ fn uses_compile_unit(unit: &CompileUnit) -> &File {
     println!("CompileUnit symbol: {:?}", compile_unit_symbol.id);
     println!(
         "CompileCtxt dependencies: {:?}",
-        compile_ctxt_symbol.depends.read().unwrap().clone()
+        compile_ctxt_symbol.depends.read().clone()
     );
     println!(
         "CompileUnit dependencies: {:?}",
-        compile_unit_symbol.depends.read().unwrap().clone()
+        compile_unit_symbol.depends.read().clone()
     );
     println!(
         "uses_compile_unit dependencies: {:?}",
-        uses_symbol.depends.read().unwrap().clone()
+        uses_symbol.depends.read().clone()
     );
 
     // CompileCtxt should depend on File and Tree (field types inside Vec/Option)

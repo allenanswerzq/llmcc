@@ -18,24 +18,3 @@ pub use llmcc_core::{
     ProjectGraph, ProjectQuery,
 };
 pub use token::LangPython;
-
-use llmcc_core::context::CompileUnit;
-use llmcc_core::lang_def::ParallelSymbolCollect;
-use llmcc_core::symbol::Scope;
-
-impl ParallelSymbolCollect for LangPython {
-    const PARALLEL_SYMBOL_COLLECTION: bool = true;
-    type SymbolBatch = crate::collect::SymbolBatch;
-
-    fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch {
-        collect_symbols_batch(unit)
-    }
-
-    fn apply_symbol_batch<'tcx>(
-        unit: CompileUnit<'tcx>,
-        globals: &'tcx Scope<'tcx>,
-        batch: Self::SymbolBatch,
-    ) {
-        let _ = apply_symbol_batch(unit, globals, batch);
-    }
-}

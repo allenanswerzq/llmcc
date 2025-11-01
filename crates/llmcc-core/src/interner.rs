@@ -1,4 +1,4 @@
-use std::sync::RwLock;
+use parking_lot::RwLock;
 
 use string_interner::backend::DefaultBackend;
 use string_interner::symbol::DefaultSymbol;
@@ -27,18 +27,14 @@ impl InternPool {
     where
         S: AsRef<str>,
     {
-        self.inner.write().unwrap().get_or_intern(value.as_ref())
+        self.inner.write().get_or_intern(value.as_ref())
     }
 
     /// Resolve an interned symbol back into an owned string.
     ///
     /// Clones the underlying string from the interner to avoid lifetime issues.
     pub fn resolve_owned(&self, symbol: InternedStr) -> Option<String> {
-        self.inner
-            .read()
-            .unwrap()
-            .resolve(symbol)
-            .map(|s| s.to_owned())
+        self.inner.read().resolve(symbol).map(|s| s.to_owned())
     }
 
     /// Resolve an interned symbol and apply a closure while the borrow is active.
@@ -46,7 +42,7 @@ impl InternPool {
     where
         F: FnOnce(&str) -> R,
     {
-        self.inner.read().unwrap().resolve(symbol).map(f)
+        self.inner.read().resolve(symbol).map(f)
     }
 }
 

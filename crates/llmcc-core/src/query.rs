@@ -375,7 +375,7 @@ impl<'tcx> ProjectQuery<'tcx> {
                     symbol.name.clone()
                 };
 
-                let fqn = symbol.fqn_name.read().unwrap().clone();
+                let fqn = symbol.fqn_name.read().clone();
                 let qualified = if !fqn.is_empty() && fqn != base_name {
                     Some(fqn)
                 } else {

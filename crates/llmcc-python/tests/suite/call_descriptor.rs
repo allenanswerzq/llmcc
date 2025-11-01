@@ -1,11 +1,11 @@
-use llmcc_core::context::CompileCtxt;
+use llmcc_core::{context::CompileCtxt, IrBuildConfig};
 use llmcc_python::{build_llmcc_ir, collect_symbols, LangPython};
 
 fn collect_calls(source: &str) -> Vec<llmcc_python::CallDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangPython>(&cc).ok();
+    build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).ok();
 
     let globals = cc.create_globals();
     collect_symbols(unit, globals).calls

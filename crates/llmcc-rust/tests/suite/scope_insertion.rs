@@ -1,7 +1,10 @@
-use llmcc_core::context::CompileUnit;
-use llmcc_core::interner::{InternPool, InternedStr};
-use llmcc_core::ir::HirKind;
-use llmcc_core::symbol::{Scope, ScopeStack};
+use llmcc_core::{
+    context::CompileUnit,
+    interner::{InternPool, InternedStr},
+    ir::HirKind,
+    symbol::{Scope, ScopeStack},
+    IrBuildConfig,
+};
 use llmcc_rust::{build_llmcc_ir, collect_symbols, CollectionResult, CompileCtxt, LangRust};
 
 struct Fixture<'tcx> {
@@ -16,7 +19,7 @@ fn build_fixture(source: &str) -> Fixture<'static> {
     let cc: &'static CompileCtxt<'static> =
         Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let result = collect_symbols(unit, globals);
     Fixture {
@@ -115,10 +118,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
     let global_symbol = scope_stack
         .find_global_suffix(&[inner_key, outer_key])
         .unwrap();
-    assert_eq!(
-        global_symbol.fqn_name.read().unwrap().as_str(),
-        "outer::inner"
-    );
+    assert_eq!(global_symbol.fqn_name.read().as_str(), "outer::inner");
 
     let inner_desc = fixture
         .result

@@ -1,5 +1,5 @@
+use parking_lot::RwLock;
 use std::collections::HashMap;
-use std::sync::RwLock;
 
 use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
@@ -58,44 +58,43 @@ impl<'tcx> Scope<'tcx> {
     }
 
     pub fn symbol(&self) -> Option<&'tcx Symbol> {
-        *self.symbol.read().unwrap()
+        *self.symbol.read()
     }
 
     pub fn set_symbol(&self, symbol: Option<&'tcx Symbol>) {
-        *self.symbol.write().unwrap() = symbol;
+        *self.symbol.write() = symbol;
     }
 
     pub fn insert(&self, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
         let sym_id = symbol.id;
-        self.trie.write().unwrap().insert_symbol(symbol, interner);
+        self.trie.write().insert_symbol(symbol, interner);
         sym_id
     }
 
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
-        let hits = self.trie.read().unwrap().lookup_symbol_suffix(&[key]);
+        let hits = self.trie.read().lookup_symbol_suffix(&[key]);
         hits.first().map(|symbol| symbol.id)
     }
 
     pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
         self.trie
             .read()
-            .unwrap()
             .lookup_symbol_suffix(suffix)
             .into_iter()
             .next()
     }
 
     pub fn lookup_suffix_symbols(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
-        self.trie.read().unwrap().lookup_symbol_suffix(suffix)
+        self.trie.read().lookup_symbol_suffix(suffix)
     }
 
     pub fn format_compact(&self) -> String {
-        let count = self.trie.read().unwrap().total_symbols();
+        let count = self.trie.read().total_symbols();
         format!("{}/{}", self.owner, count)
     }
 
     pub fn all_symbols(&self) -> Vec<&'tcx Symbol> {
-        self.trie.read().unwrap().symbols()
+        self.trie.read().symbols()
     }
 }
 
@@ -167,7 +166,7 @@ impl<'tcx> ScopeStack<'tcx> {
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
         for scope in self.iter().rev() {
-            let symbols = scope.trie.read().unwrap().lookup_symbol_suffix(suffix);
+            let symbols = scope.trie.read().lookup_symbol_suffix(suffix);
             if let Some(symbol) = select_symbol(symbols, kind, file) {
                 return Some(symbol);
             }
@@ -211,7 +210,6 @@ impl<'tcx> ScopeStack<'tcx> {
             scope
                 .trie
                 .read()
-                .unwrap()
                 .lookup_symbol_suffix(&[key])
                 .into_iter()
                 .next()
@@ -226,7 +224,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn find_global_suffix_vec(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
-            .map(|scope| scope.trie.read().unwrap().lookup_symbol_suffix(suffix))
+            .map(|scope| scope.trie.read().lookup_symbol_suffix(suffix))
             .unwrap_or_default()
     }
 
@@ -281,7 +279,7 @@ impl<'tcx> ScopeStack<'tcx> {
     fn alloc_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>, key: InternedStr) -> &'tcx Symbol {
         let symbol = Symbol::new(owner, ident.name.clone(), key);
         let symbol = self.arena.alloc(symbol);
-        self.symbol_map.write().unwrap().insert(symbol.id, symbol);
+        self.symbol_map.write().insert(symbol.id, symbol);
         symbol
     }
 }
@@ -318,16 +316,16 @@ impl Clone for Symbol {
     fn clone(&self) -> Self {
         Self {
             id: self.id,
-            owner: RwLock::new(*self.owner.read().unwrap()),
+            owner: RwLock::new(*self.owner.read()),
             name: self.name.clone(),
             name_key: self.name_key,
-            fqn_name: RwLock::new(self.fqn_name.read().unwrap().clone()),
-            fqn_key: RwLock::new(*self.fqn_key.read().unwrap()),
-            depends: RwLock::new(self.depends.read().unwrap().clone()),
-            depended: RwLock::new(self.depended.read().unwrap().clone()),
-            kind: RwLock::new(*self.kind.read().unwrap()),
-            unit_index: RwLock::new(*self.unit_index.read().unwrap()),
-            block_id: RwLock::new(*self.block_id.read().unwrap()),
+            fqn_name: RwLock::new(self.fqn_name.read().clone()),
+            fqn_key: RwLock::new(*self.fqn_key.read()),
+            depends: RwLock::new(self.depends.read().clone()),
+            depended: RwLock::new(self.depended.read().clone()),
+            kind: RwLock::new(*self.kind.read()),
+            unit_index: RwLock::new(*self.unit_index.read()),
+            block_id: RwLock::new(*self.block_id.read()),
         }
     }
 }
@@ -355,38 +353,38 @@ impl Symbol {
     }
 
     pub fn owner(&self) -> HirId {
-        *self.owner.read().unwrap()
+        *self.owner.read()
     }
 
     pub fn set_owner(&self, owner: HirId) {
-        *self.owner.write().unwrap() = owner;
+        *self.owner.write() = owner;
     }
 
     pub fn format_compact(&self) -> String {
-        let owner = *self.owner.read().unwrap();
+        let owner = *self.owner.read();
         format!("{}->{} \"{}\"", self.id, owner, self.name)
     }
 
     pub fn set_fqn(&self, fqn: String, interner: &InternPool) {
         let key = interner.intern(&fqn);
-        *self.fqn_name.write().unwrap() = fqn;
-        *self.fqn_key.write().unwrap() = key;
+        *self.fqn_name.write() = fqn;
+        *self.fqn_key.write() = key;
     }
 
     pub fn kind(&self) -> SymbolKind {
-        *self.kind.read().unwrap()
+        *self.kind.read()
     }
 
     pub fn set_kind(&self, kind: SymbolKind) {
-        *self.kind.write().unwrap() = kind;
+        *self.kind.write() = kind;
     }
 
     pub fn unit_index(&self) -> Option<usize> {
-        *self.unit_index.read().unwrap()
+        *self.unit_index.read()
     }
 
     pub fn set_unit_index(&self, file: usize) {
-        let mut unit_index = self.unit_index.write().unwrap();
+        let mut unit_index = self.unit_index.write();
         if unit_index.is_none() {
             *unit_index = Some(file);
         }
@@ -396,7 +394,7 @@ impl Symbol {
         if sym_id == self.id {
             return;
         }
-        let mut deps = self.depends.write().unwrap();
+        let mut deps = self.depends.write();
         if deps.contains(&sym_id) {
             return;
         }
@@ -407,7 +405,7 @@ impl Symbol {
         if sym_id == self.id {
             return;
         }
-        let mut deps = self.depended.write().unwrap();
+        let mut deps = self.depended.write();
         if deps.contains(&sym_id) {
             return;
         }
@@ -420,11 +418,11 @@ impl Symbol {
     }
 
     pub fn block_id(&self) -> Option<BlockId> {
-        *self.block_id.read().unwrap()
+        *self.block_id.read()
     }
 
     pub fn set_block_id(&self, block_id: Option<BlockId>) {
-        *self.block_id.write().unwrap() = block_id;
+        *self.block_id.write() = block_id;
     }
 }
 

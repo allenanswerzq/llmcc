@@ -1,11 +1,11 @@
-use llmcc_core::context::CompileCtxt;
+use llmcc_core::{context::CompileCtxt, IrBuildConfig};
 use llmcc_python::{build_llmcc_ir, collect_symbols, LangPython, PythonFunctionDescriptor};
 
 fn collect_functions(source: &str) -> Vec<PythonFunctionDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangPython>(&cc).unwrap();
+    build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     collect_symbols(unit, globals).functions
 }
