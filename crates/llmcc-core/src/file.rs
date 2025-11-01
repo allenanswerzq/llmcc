@@ -1,4 +1,6 @@
+use std::fs::File as StdFile;
 use std::hash::{DefaultHasher, Hash, Hasher};
+use std::io::Read;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Default)]
@@ -10,7 +12,10 @@ pub struct FileId {
 
 impl FileId {
     pub fn new_path(path: String) -> std::io::Result<Self> {
-        let content = std::fs::read(&path)?;
+        let mut file = StdFile::open(&path)?;
+        let capacity = file.metadata().map(|meta| meta.len() as usize).unwrap_or(0);
+        let mut content = Vec::with_capacity(capacity);
+        file.read_to_end(&mut content)?;
 
         let mut hasher = DefaultHasher::new();
         content.hash(&mut hasher);
