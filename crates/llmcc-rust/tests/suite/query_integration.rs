@@ -12,7 +12,7 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
         &source_bytes,
     )));
 
-    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
 
     let globals = cc.create_globals();
     let unit_count = sources.len();
@@ -21,7 +21,7 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
-        build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
+        build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
         collections.push(collect_symbols(unit, globals));
     }
 
@@ -29,8 +29,7 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
         let unit = graph.cc.compile_unit(unit_idx);
         bind_symbols(unit, globals);
 
-        let unit_graph =
-            build_llmcc_graph::<LangRust>(unit, unit_idx, GraphBuildConfig::default()).unwrap();
+        let unit_graph = build_llmcc_graph::<LangRust>(unit, unit_idx, GraphBuildConfig).unwrap();
         graph.add_child(unit_graph);
     }
 

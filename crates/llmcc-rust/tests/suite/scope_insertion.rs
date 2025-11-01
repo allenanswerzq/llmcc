@@ -19,7 +19,7 @@ fn build_fixture(source: &str) -> Fixture<'static> {
     let cc: &'static CompileCtxt<'static> =
         Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let result = collect_symbols(unit, globals);
     Fixture {

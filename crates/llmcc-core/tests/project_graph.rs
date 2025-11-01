@@ -18,7 +18,7 @@ fn compact_project_graph_includes_enum_dependencies() {
     "#;
 
     let cc = CompileCtxt::from_sources::<LangRust>(&[source.as_bytes().to_vec()]);
-    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
 
     for index in 0..cc.files.len() {
@@ -30,8 +30,7 @@ fn compact_project_graph_includes_enum_dependencies() {
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
         LangRust::bind_symbols(unit, globals);
-        let graph =
-            build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig::default()).unwrap();
+        let graph = build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig).unwrap();
         project.add_child(graph);
     }
 
@@ -97,7 +96,7 @@ fn recursive_dependents_query_includes_transitive_callers() {
     "#;
 
     let cc = CompileCtxt::from_sources::<LangRust>(&[source.as_bytes().to_vec()]);
-    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
 
     for index in 0..cc.files.len() {
@@ -109,8 +108,7 @@ fn recursive_dependents_query_includes_transitive_callers() {
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
         LangRust::bind_symbols(unit, globals);
-        let graph =
-            build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig::default()).unwrap();
+        let graph = build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig).unwrap();
         project.add_child(graph);
     }
     project.link_units();

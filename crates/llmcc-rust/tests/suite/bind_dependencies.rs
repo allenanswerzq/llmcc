@@ -11,7 +11,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals);
@@ -1503,7 +1503,7 @@ impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings 
     let unit = cc.compile_unit(0);
 
     // Build IR
-    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).expect("failed to build IR");
+    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).expect("failed to build IR");
 
     // Collect symbols
     let globals = cc.create_globals();

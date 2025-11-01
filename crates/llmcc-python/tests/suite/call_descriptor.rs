@@ -5,7 +5,7 @@ fn collect_calls(source: &str) -> Vec<llmcc_python::CallDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangPython>(&cc, IrBuildConfig::default()).ok();
+    build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).ok();
 
     let globals = cc.create_globals();
     collect_symbols(unit, globals).calls

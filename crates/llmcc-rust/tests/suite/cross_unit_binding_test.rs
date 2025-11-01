@@ -9,7 +9,7 @@ fn compile(sources: &[&str]) -> (&'static CompileCtxt<'static>, Vec<&'static Com
 
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&byte_sources)));
 
-    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
 
     let mut units = Vec::new();

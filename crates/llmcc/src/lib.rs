@@ -190,7 +190,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     let files = cc.get_files();
 
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc, IrBuildConfig::default())?;
+    build_llmcc_ir::<L>(&cc, IrBuildConfig)?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let globals = cc.create_globals();
@@ -223,7 +223,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     );
 
     let mut pg = ProjectGraph::new(&cc);
-    let graph_config = GraphBuildConfig::default();
+    let graph_config = GraphBuildConfig;
 
     let graph_build_start = Instant::now();
     for (index, _) in files.iter().enumerate() {
@@ -242,10 +242,7 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     unit_graph_results.sort_by_key(|(index, _)| *index);
 
     for (index, graph_result) in unit_graph_results {
-        let unit_graph = match graph_result {
-            Ok(graph) => graph,
-            Err(err) => return Err(err),
-        };
+        let unit_graph = graph_result?;
         let unit = cc.compile_unit(index);
         if opts.print_block {
             print_llmcc_graph(unit_graph.root(), unit);

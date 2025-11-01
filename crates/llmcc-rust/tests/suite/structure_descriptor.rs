@@ -7,7 +7,7 @@ fn collect_structs(source: &str) -> Vec<StructDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
 
     let globals = cc.create_globals();
     collect_symbols(unit, globals).structs

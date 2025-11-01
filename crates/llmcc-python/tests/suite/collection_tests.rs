@@ -8,7 +8,7 @@ fn collect_from_source(source: &str) -> CollectionResult {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangPython>(&cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     collect_symbols(unit, globals)
 }

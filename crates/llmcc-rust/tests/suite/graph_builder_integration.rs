@@ -18,7 +18,7 @@ fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> Projec
     let mut collections = Vec::new();
     let mut graph = ProjectGraph::new(cc);
 
-    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
@@ -43,7 +43,7 @@ fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> Projec
 /// Helper to build a project graph from multiple Rust source files
 /// Each source becomes a separate compilation unit in the graph
 fn build_graph(sources: &[&str]) -> ProjectGraph<'static> {
-    build_graph_with_config(sources, GraphBuildConfig::default())
+    build_graph_with_config(sources, GraphBuildConfig)
 }
 
 fn block_name(graph: &ProjectGraph<'static>, node: GraphNode) -> Option<String> {

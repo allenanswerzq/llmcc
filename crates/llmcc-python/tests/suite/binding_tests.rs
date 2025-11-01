@@ -12,7 +12,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangPython>(&sources)));
     let unit = cc.compile_unit(0);
-    let result = build_llmcc_ir::<LangPython>(cc, IrBuildConfig::default());
+    let result = build_llmcc_ir::<LangPython>(cc, IrBuildConfig);
     result.ok();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);

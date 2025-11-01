@@ -14,7 +14,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals);
