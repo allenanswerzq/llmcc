@@ -1,3 +1,4 @@
+use llmcc_core::IrBuildConfig;
 use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 #[test]
@@ -19,7 +20,7 @@ mod codex_app_server_protocol {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc).expect("build failed");
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig).expect("build failed");
 
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);

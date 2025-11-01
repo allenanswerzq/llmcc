@@ -534,7 +534,7 @@ fn apply_collected_symbols<'tcx>(
     let mut created_symbols = Vec::with_capacity(collected.symbols.len());
 
     {
-        let mut symbol_map = unit.cc.symbol_map.write().unwrap();
+        let mut symbol_map = unit.cc.symbol_map.write();
         for spec in &collected.symbols {
             let key = interner.intern(&spec.name);
             let symbol = unit

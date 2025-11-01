@@ -1,7 +1,10 @@
+use parking_lot::Mutex;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
+use std::mem;
 use std::path::Path;
 
+use crate::block::Arena as BlockArena;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockRoot,
@@ -15,6 +18,7 @@ use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
 use crate::DynError;
+use rayon::prelude::*;
 
 const COMPACT_INTERESTING_KINDS: [BlockKind; 2] = [BlockKind::Class, BlockKind::Enum];
 
@@ -51,15 +55,7 @@ impl UnitGraph {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct GraphBuildConfig {
-    pub compact: bool,
-}
-
-impl GraphBuildConfig {
-    pub fn compact() -> Self {
-        Self { compact: true }
-    }
-}
+pub struct GraphBuildConfig;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GraphNode {
@@ -124,32 +120,126 @@ impl<'tcx> ProjectGraph<'tcx> {
             return;
         }
 
-        let mut unresolved = self.cc.unresolve_symbols.write().unwrap();
+        let unresolved_symbols = {
+            let mut unresolved = self.cc.unresolve_symbols.write();
+            std::mem::take(&mut *unresolved)
+        };
 
-        unresolved.retain(|symbol_ref| {
-            let target = *symbol_ref;
+        if unresolved_symbols.is_empty() {
+            return;
+        }
+
+        let mut unique_symbols = Vec::new();
+        let mut seen_targets = HashSet::new();
+        for symbol_ref in unresolved_symbols {
+            if seen_targets.insert(symbol_ref.id) {
+                unique_symbols.push(symbol_ref);
+            }
+        }
+
+        if unique_symbols.is_empty() {
+            return;
+        }
+
+        let cross_edges = Mutex::new(Vec::new());
+
+        unique_symbols.into_par_iter().for_each(|symbol_ref| {
+            let target = symbol_ref;
             let Some(target_block) = target.block_id() else {
-                return false;
+                return;
             };
 
-            let dependents: Vec<SymId> = target.depended.read().unwrap().clone();
-            for dependent_id in dependents {
+            let Some(target_unit) = target.unit_index() else {
+                return;
+            };
+
+            let dependents_guard = target.depended.read();
+            if dependents_guard.is_empty() {
+                return;
+            }
+
+            let mut seen_dependents = HashSet::new();
+
+            for &dependent_id in dependents_guard.iter() {
+                if !seen_dependents.insert(dependent_id) {
+                    continue;
+                }
                 let Some(source_symbol) = self.cc.opt_get_symbol(dependent_id) else {
                     continue;
                 };
                 let Some(from_block) = source_symbol.block_id() else {
                     continue;
                 };
-                self.add_cross_edge(
-                    source_symbol.unit_index().unwrap(),
-                    target.unit_index().unwrap(),
-                    from_block,
-                    target_block,
-                );
-            }
+                let Some(from_unit) = source_symbol.unit_index() else {
+                    continue;
+                };
 
-            false
+                cross_edges
+                    .lock()
+                    .push((from_unit, target_unit, from_block, target_block));
+            }
         });
+
+        let collected_edges = cross_edges.into_inner();
+        if collected_edges.is_empty() {
+            return;
+        }
+
+        let unit_positions: HashMap<usize, usize> = self
+            .units
+            .iter()
+            .enumerate()
+            .map(|(pos, unit)| (unit.unit_index(), pos))
+            .collect();
+
+        let mut depends_map: HashMap<usize, HashMap<BlockId, Vec<BlockId>>> = HashMap::new();
+        let mut depended_map: HashMap<usize, HashMap<BlockId, Vec<BlockId>>> = HashMap::new();
+
+        for (from_unit, target_unit, from_block, target_block) in collected_edges {
+            depends_map
+                .entry(from_unit)
+                .or_default()
+                .entry(from_block)
+                .or_default()
+                .push(target_block);
+
+            depended_map
+                .entry(target_unit)
+                .or_default()
+                .entry(target_block)
+                .or_default()
+                .push(from_block);
+        }
+
+        for (unit_idx, mut edges) in depends_map {
+            if let Some(&pos) = unit_positions.get(&unit_idx) {
+                let unit_graph = &self.units[pos];
+                for (from_block, mut targets) in edges.drain() {
+                    targets.sort_unstable_by_key(|id| id.as_u32());
+                    targets.dedup();
+                    unit_graph.edges.add_relation_impls(
+                        from_block,
+                        BlockRelation::DependsOn,
+                        &targets,
+                    );
+                }
+            }
+        }
+
+        for (unit_idx, mut edges) in depended_map {
+            if let Some(&pos) = unit_positions.get(&unit_idx) {
+                let unit_graph = &self.units[pos];
+                for (from_block, mut targets) in edges.drain() {
+                    targets.sort_unstable_by_key(|id| id.as_u32());
+                    targets.dedup();
+                    unit_graph.edges.add_relation_impls(
+                        from_block,
+                        BlockRelation::DependedBy,
+                        &targets,
+                    );
+                }
+            }
+        }
     }
 
     pub fn units(&self) -> &[UnitGraph] {
@@ -163,7 +253,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_by_name(&self, name: &str) -> Option<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         let matches = block_indexes.find_by_name(name);
 
         matches.first().map(|(unit_index, _, block_id)| GraphNode {
@@ -173,7 +263,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_name(&self, name: &str) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         let matches = block_indexes.find_by_name(name);
 
         matches
@@ -222,7 +312,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         interesting_kinds: &[BlockKind],
         ranked_filter: Option<&HashSet<BlockId>>,
     ) -> Vec<CompactNode> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         block_indexes
             .block_id_index
             .iter()
@@ -322,7 +412,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         let matches = block_indexes.find_by_name(name);
 
         matches
@@ -335,7 +425,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_kind(&self, block_kind: BlockKind) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         let matches = block_indexes.find_by_kind(block_kind);
 
         matches
@@ -348,7 +438,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_kind_in(&self, block_kind: BlockKind, unit_index: usize) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         let block_ids = block_indexes.find_by_kind_and_unit(block_kind, unit_index);
 
         block_ids
@@ -361,7 +451,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_in(&self, unit_index: usize) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         let matches = block_indexes.find_by_unit(unit_index);
 
         matches
@@ -374,7 +464,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
         block_indexes.get_block_info(block_id)
     }
 
@@ -397,7 +487,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     let dependencies = unit
                         .edges
                         .get_related(node.block_id, BlockRelation::DependsOn);
-                    let block_indexes = self.cc.block_indexes.read().unwrap();
+                    let block_indexes = self.cc.block_indexes.read();
                     for dep_block_id in dependencies {
                         let dep_unit_index = block_indexes
                             .get_block_info(dep_block_id)
@@ -417,7 +507,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                         .edges
                         .get_related(node.block_id, BlockRelation::DependedBy);
                     if !dependents.is_empty() {
-                        let indexes = self.cc.block_indexes.read().unwrap();
+                        let indexes = self.cc.block_indexes.read();
                         for dep_block_id in dependents {
                             if !seen.insert(dep_block_id) {
                                 continue;
@@ -567,7 +657,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut result = HashSet::new();
         let mut visited = HashSet::new();
         let mut stack = vec![node.block_id];
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -605,7 +695,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut result = HashSet::new();
         let mut visited = HashSet::new();
         let mut stack = vec![node.block_id];
-        let block_indexes = self.cc.block_indexes.read().unwrap();
+        let block_indexes = self.cc.block_indexes.read();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -653,35 +743,6 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         render_compact_dot(&pruned.nodes, &reduced_edges)
     }
-
-    fn add_cross_edge(
-        &self,
-        from_idx: usize,
-        to_idx: usize,
-        from_block: BlockId,
-        to_block: BlockId,
-    ) {
-        if from_idx == to_idx {
-            let unit = &self.units[from_idx];
-            if !unit
-                .edges
-                .has_relation(from_block, BlockRelation::DependsOn, to_block)
-            {
-                unit.edges.add_relation(from_block, to_block);
-            }
-            return;
-        }
-
-        let from_unit = &self.units[from_idx];
-        from_unit
-            .edges
-            .add_relation_if_not_exists(from_block, BlockRelation::DependsOn, to_block);
-
-        let to_unit = &self.units[to_idx];
-        to_unit
-            .edges
-            .add_relation_if_not_exists(to_block, BlockRelation::DependedBy, from_block);
-    }
 }
 
 #[derive(Debug)]
@@ -704,6 +765,16 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
+    fn alloc_from_block_arena<T, F>(&self, alloc: F) -> &'tcx T
+    where
+        F: for<'a> FnOnce(&'a BlockArena<'tcx>) -> &'a mut T,
+    {
+        let arena = self.unit.cc.block_arena.lock();
+        let ptr = alloc(&arena);
+        let reference: &T = &*ptr;
+        unsafe { mem::transmute::<&T, &'tcx T>(reference) }
+    }
+
     fn next_id(&self) -> BlockId {
         self.unit.reserve_block_id()
     }
@@ -716,45 +787,52 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> BasicBlock<'tcx> {
-        let arena = &self.unit.cc.block_arena;
         match kind {
             BlockKind::Root => {
-                // Extract file_name from HirFile node if available
                 let file_name = node.as_file().map(|file| file.file_path.clone());
                 let block = BlockRoot::from_hir(id, node, parent, children, file_name);
-                BasicBlock::Root(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_root.alloc(block));
+                BasicBlock::Root(block_ref)
             }
             BlockKind::Func => {
                 let block = BlockFunc::from_hir(id, node, parent, children);
-                BasicBlock::Func(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_func.alloc(block));
+                BasicBlock::Func(block_ref)
             }
             BlockKind::Class => {
                 let block = BlockClass::from_hir(id, node, parent, children);
-                BasicBlock::Class(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_class.alloc(block));
+                BasicBlock::Class(block_ref)
             }
             BlockKind::Stmt => {
                 let stmt = BlockStmt::from_hir(id, node, parent, children);
-                BasicBlock::Stmt(arena.alloc(stmt))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_stmt.alloc(stmt));
+                BasicBlock::Stmt(block_ref)
             }
             BlockKind::Call => {
                 let stmt = BlockCall::from_hir(id, node, parent, children);
-                BasicBlock::Call(arena.alloc(stmt))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_call.alloc(stmt));
+                BasicBlock::Call(block_ref)
             }
             BlockKind::Enum => {
                 let enum_ty = BlockEnum::from_hir(id, node, parent, children);
-                BasicBlock::Enum(arena.alloc(enum_ty))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_enum.alloc(enum_ty));
+                BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {
                 let stmt = BlockConst::from_hir(id, node, parent, children);
-                BasicBlock::Const(arena.alloc(stmt))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_const.alloc(stmt));
+                BasicBlock::Const(block_ref)
             }
             BlockKind::Impl => {
                 let block = BlockImpl::from_hir(id, node, parent, children);
-                BasicBlock::Impl(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_impl.alloc(block));
+                BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
                 let block = BlockField::from_hir(id, node, parent, children);
-                BasicBlock::Field(arena.alloc(block))
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_field.alloc(block));
+                BasicBlock::Field(block_ref)
             }
             _ => {
                 panic!("unknown block kind: {}", kind)
@@ -809,7 +887,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             return;
         };
 
-        let dependencies = symbol.depends.read().unwrap().clone();
+        let dependencies = symbol.depends.read().clone();
         for dep_id in dependencies {
             self.link_dependency(dep_id, from_block, edges, unresolved);
         }
@@ -896,43 +974,20 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
     fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
-        // if self.config.compact {
-        //     if kind == BlockKind::Root {
-        //         self.build_block(node, parent, true);
-        //     } else {
-        //         self.visit_children(node, parent);
-        //     }
-        //     return;
-        // }
-
-        // Non-compact mode: process all defined kinds
-        if kind != BlockKind::Undefined {
-            self.build_block(node, parent, false);
-        } else {
-            self.visit_children(node, parent);
+        match kind {
+            BlockKind::Func
+            | BlockKind::Class
+            | BlockKind::Enum
+            | BlockKind::Const
+            | BlockKind::Impl
+            | BlockKind::Field
+            | BlockKind::Call => self.build_block(node, parent, false),
+            _ => self.visit_children(node, parent),
         }
     }
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
-        // if self.config.compact {
-        //     // In compact mode, only create blocks for major constructs (Class, Enum, Impl)
-        //     // Skip functions, fields, and scopes to reduce graph size
-        //     match kind {
-        //         BlockKind::Class | BlockKind::Enum => {
-        //             // Build with recursion enabled to capture nested major constructs
-        //             self.build_block(node, parent, true);
-        //         }
-        //         // Skip all other scopes - don't recurse
-        //         _ => {
-        //             // Stop here, do not visit children
-        //             // self.visit_children(node, parent);
-        //         }
-        //     }
-        //     return;
-        // }
-
-        // Non-compact mode: build blocks for all major constructs
         match kind {
             BlockKind::Func
             | BlockKind::Class
@@ -945,7 +1000,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
-pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
+pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
     config: GraphBuildConfig,
@@ -961,13 +1016,6 @@ pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
     let root_block = root_block.ok_or("graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
     Ok(UnitGraph::new(unit_index, root_block, edges))
-}
-
-pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
-    unit: CompileUnit<'tcx>,
-    unit_index: usize,
-) -> Result<UnitGraph, DynError> {
-    build_llmcc_graph_with_config::<L>(unit, unit_index, GraphBuildConfig::default())
 }
 
 #[derive(Clone)]

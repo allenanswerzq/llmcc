@@ -8,7 +8,7 @@ use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 use tracing::info;
 
-use llmcc_core::lang_def::ParallelSymbolCollect;
+use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::*;
 
 fn should_skip_dir(name: &str) -> bool {
@@ -63,7 +63,7 @@ pub struct LlmccOptions {
     pub summary: bool,
 }
 
-pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
+pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
     let total_start = Instant::now();
 
     init_rayon_pool();
@@ -189,10 +189,8 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
 
     let files = cc.get_files();
 
-    let use_compact_builder = opts.design_graph && opts.query.is_none();
-
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc)?;
+    build_llmcc_ir::<L>(&cc, IrBuildConfig)?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let globals = cc.create_globals();
@@ -205,21 +203,19 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
     }
 
     let symbols_start = Instant::now();
-    if L::PARALLEL_SYMBOL_COLLECTION {
-        let batches: Vec<_> = (0..files.len())
-            .into_par_iter()
-            .map(|index| L::collect_symbol_batch(cc.compile_unit(index)))
-            .collect();
+    let mut symbol_batches: Vec<_> = (0..files.len())
+        .into_par_iter()
+        .map(|index| {
+            let unit = cc.compile_unit(index);
+            (index, L::collect_symbol_batch(unit))
+        })
+        .collect();
 
-        for (index, batch) in batches.into_iter().enumerate() {
-            let unit = cc.compile_unit(index);
-            L::apply_symbol_batch(unit, globals, batch);
-        }
-    } else {
-        for (index, _) in files.iter().enumerate() {
-            let unit = cc.compile_unit(index);
-            L::collect_symbols(unit, globals);
-        }
+    symbol_batches.sort_by_key(|(index, _)| *index);
+
+    for (index, batch) in symbol_batches {
+        let unit = cc.compile_unit(index);
+        L::apply_symbol_batch(unit, globals, batch);
     }
     info!(
         "Symbol collection: {:.2}s",
@@ -227,11 +223,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
     );
 
     let mut pg = ProjectGraph::new(&cc);
-    let graph_config = if use_compact_builder {
-        GraphBuildConfig::compact()
-    } else {
-        GraphBuildConfig::default()
-    };
+    let graph_config = GraphBuildConfig;
 
     let graph_build_start = Instant::now();
     for (index, _) in files.iter().enumerate() {
@@ -239,9 +231,19 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         L::bind_symbols(unit, globals);
     }
 
-    for (index, _) in files.iter().enumerate() {
+    let mut unit_graph_results: Vec<_> = (0..files.len())
+        .into_par_iter()
+        .map(|index| {
+            let unit = cc.compile_unit(index);
+            (index, build_llmcc_graph::<L>(unit, index, graph_config))
+        })
+        .collect();
+
+    unit_graph_results.sort_by_key(|(index, _)| *index);
+
+    for (index, graph_result) in unit_graph_results {
+        let unit_graph = graph_result?;
         let unit = cc.compile_unit(index);
-        let unit_graph = build_llmcc_graph_with_config::<L>(unit, index, graph_config)?;
         if opts.print_block {
             print_llmcc_graph(unit_graph.root(), unit);
         }

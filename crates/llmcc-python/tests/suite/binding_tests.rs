@@ -1,5 +1,4 @@
-use llmcc_core::context::CompileCtxt;
-use llmcc_core::symbol::Symbol;
+use llmcc_core::{context::CompileCtxt, symbol::Symbol, IrBuildConfig};
 use llmcc_python::{bind_symbols, build_llmcc_ir, collect_symbols, LangPython};
 
 fn compile(
@@ -13,7 +12,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangPython>(&sources)));
     let unit = cc.compile_unit(0);
-    let result = build_llmcc_ir::<LangPython>(cc);
+    let result = build_llmcc_ir::<LangPython>(cc, IrBuildConfig);
     result.ok();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
@@ -85,7 +84,7 @@ fn class_symbol<'tcx>(
 
 fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
     assert!(
-        symbol.depends.read().unwrap().contains(&target.id),
+        symbol.depends.read().contains(&target.id),
         "{} should depend on {}",
         symbol.name.as_str(),
         target.name.as_str()
@@ -94,7 +93,7 @@ fn assert_depends_on(symbol: &Symbol, target: &Symbol) {
 
 fn assert_depended_by(symbol: &Symbol, source: &Symbol) {
     assert!(
-        symbol.depended.read().unwrap().contains(&source.id),
+        symbol.depended.read().contains(&source.id),
         "{} should be depended on by {}",
         symbol.name.as_str(),
         source.name.as_str()
