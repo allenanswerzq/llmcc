@@ -133,11 +133,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             .scopes
             .iter()
             .rev()
-            .filter_map(|scope| {
-                scope
-                    .symbol()
-                    .map(|symbol| symbol.fqn_name.read().unwrap().clone())
-            })
+            .filter_map(|scope| scope.symbol().map(|symbol| symbol.fqn_name.read().clone()))
             .collect();
 
         for fqn in owner_fqns {
@@ -424,7 +420,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn propagate_child_dependencies(&mut self, parent: &'tcx Symbol, child: &'tcx Symbol) {
-        let dependencies: Vec<_> = child.depends.read().unwrap().clone();
+        let dependencies: Vec<_> = child.depends.read().clone();
         for dep_id in dependencies {
             if dep_id == parent.id {
                 continue;
@@ -435,7 +431,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                     continue;
                 }
 
-                if dep_symbol.depends.read().unwrap().contains(&parent.id) {
+                if dep_symbol.depends.read().contains(&parent.id) {
                     continue;
                 }
 
@@ -578,7 +574,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         let enclosing = self
             .current_symbol()
-            .map(|symbol| symbol.fqn_name.read().unwrap().clone());
+            .map(|symbol| symbol.fqn_name.read().clone());
         let descriptor = CallDescriptor::from_call(self.unit, &node, enclosing);
         self.record_call_target(&descriptor.target);
         self.visit_children(&node);

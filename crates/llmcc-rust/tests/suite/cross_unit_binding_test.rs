@@ -84,7 +84,7 @@ fn caller() {
         .find_global_suffix(&[cc.interner().intern("caller")])
         .expect("caller should exist");
 
-    let depends = caller_sym.depends.read().unwrap().clone();
+    let depends = caller_sym.depends.read().clone();
     println!("Caller dependencies: {:?}", depends);
 
     // Should have at least one dependency (to MyStruct::new or MyStruct)

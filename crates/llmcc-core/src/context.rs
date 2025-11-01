@@ -80,7 +80,6 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc
             .hir_map
             .read()
-            .unwrap()
             .get(&id)
             .map(|parented| parented.node)
     }
@@ -96,7 +95,6 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc
             .block_map
             .read()
-            .unwrap()
             .get(&id)
             .map(|parented| parented.block.clone())
     }
@@ -112,7 +110,6 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc
             .hir_map
             .read()
-            .unwrap()
             .get(&id)
             .and_then(|parented| parented.parent())
     }
@@ -128,13 +125,7 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.cc
-            .scope_map
-            .read()
-            .unwrap()
-            .get(&owner)
-            .copied()
-            .unwrap()
+        self.cc.scope_map.read().get(&owner).copied().unwrap()
     }
 
     /// Find an existing scope or create a new one
@@ -196,7 +187,6 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc
             .block_indexes
             .write()
-            .unwrap()
             .insert_block(id, block_name, block_kind, self.index);
     }
 }
@@ -606,7 +596,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
         self.symbol_map
             .read()
-            .unwrap()
             .values()
             .find(|symbol| symbol.block_id() == Some(block_id))
             .copied()
@@ -644,11 +633,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn file_start(&self, index: usize) -> Option<HirId> {
-        self.hir_start_ids
-            .read()
-            .unwrap()
-            .get(index)
-            .and_then(|opt| *opt)
+        self.hir_start_ids.read().get(index).and_then(|opt| *opt)
     }
 
     pub fn file_path(&self, index: usize) -> Option<&str> {
