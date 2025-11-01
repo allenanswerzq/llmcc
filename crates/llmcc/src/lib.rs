@@ -189,10 +189,8 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
 
     let files = cc.get_files();
 
-    let use_compact_builder = opts.design_graph && opts.query.is_none();
-
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc)?;
+    build_llmcc_ir::<L>(&cc, IrBuildConfig::default())?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let globals = cc.create_globals();
@@ -227,11 +225,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
     );
 
     let mut pg = ProjectGraph::new(&cc);
-    let graph_config = if use_compact_builder {
-        GraphBuildConfig::compact()
-    } else {
-        GraphBuildConfig::default()
-    };
+    let graph_config = GraphBuildConfig::default();
 
     let graph_build_start = Instant::now();
     for (index, _) in files.iter().enumerate() {
@@ -243,7 +237,7 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
         .into_par_iter()
         .map(|index| {
             let unit = cc.compile_unit(index);
-            (index, build_llmcc_graph_with_config::<L>(unit, index, graph_config))
+            (index, build_llmcc_graph::<L>(unit, index, graph_config))
         })
         .collect();
 

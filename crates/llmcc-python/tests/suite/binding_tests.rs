@@ -1,5 +1,4 @@
-use llmcc_core::context::CompileCtxt;
-use llmcc_core::symbol::Symbol;
+use llmcc_core::{context::CompileCtxt, symbol::Symbol, IrBuildConfig};
 use llmcc_python::{bind_symbols, build_llmcc_ir, collect_symbols, LangPython};
 
 fn compile(
@@ -13,7 +12,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangPython>(&sources)));
     let unit = cc.compile_unit(0);
-    let result = build_llmcc_ir::<LangPython>(cc);
+    let result = build_llmcc_ir::<LangPython>(cc, IrBuildConfig::default());
     result.ok();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);

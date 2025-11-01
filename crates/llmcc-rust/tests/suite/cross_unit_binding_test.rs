@@ -1,5 +1,5 @@
+use llmcc_core::{symbol::SymbolKind, IrBuildConfig};
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
-use llmcc_core::symbol::SymbolKind;
 
 fn compile(sources: &[&str]) -> (&'static CompileCtxt<'static>, Vec<&'static CompileCtxt<'static>>) {
     let byte_sources: Vec<Vec<u8>> = sources
@@ -9,7 +9,7 @@ fn compile(sources: &[&str]) -> (&'static CompileCtxt<'static>, Vec<&'static Com
 
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&byte_sources)));
 
-    build_llmcc_ir::<LangRust>(cc).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
     let globals = cc.create_globals();
 
     let mut units = Vec::new();

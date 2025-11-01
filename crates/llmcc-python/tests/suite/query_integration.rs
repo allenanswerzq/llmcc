@@ -1,6 +1,6 @@
 use llmcc_core::{
     build_llmcc_graph, graph_builder::ProjectGraph, ir_builder::build_llmcc_ir,
-    query::ProjectQuery, CompileCtxt,
+    query::ProjectQuery, CompileCtxt, GraphBuildConfig, IrBuildConfig,
 };
 use llmcc_python::{bind_symbols, collect_symbols, LangPython};
 
@@ -12,7 +12,7 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
         &source_bytes,
     )));
 
-    build_llmcc_ir::<LangPython>(cc).unwrap();
+    build_llmcc_ir::<LangPython>(cc, IrBuildConfig::default()).unwrap();
 
     let globals = cc.create_globals();
     let unit_count = sources.len();
@@ -21,7 +21,7 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
-        build_llmcc_ir::<LangPython>(cc).unwrap();
+        build_llmcc_ir::<LangPython>(cc, IrBuildConfig::default()).unwrap();
         collections.push(collect_symbols(unit, globals));
     }
 
@@ -29,7 +29,8 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
         let unit = graph.cc.compile_unit(unit_idx);
         bind_symbols(unit, globals);
 
-        let unit_graph = build_llmcc_graph::<LangPython>(unit, unit_idx).unwrap();
+        let unit_graph =
+            build_llmcc_graph::<LangPython>(unit, unit_idx, GraphBuildConfig::default()).unwrap();
         graph.add_child(unit_graph);
     }
 

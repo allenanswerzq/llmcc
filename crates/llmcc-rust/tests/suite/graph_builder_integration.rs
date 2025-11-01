@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 
 use llmcc_core::{
-    build_llmcc_graph_with_config,
+    build_llmcc_graph,
     graph_builder::{BlockKind, GraphNode, ProjectGraph},
-    GraphBuildConfig,
+    GraphBuildConfig, IrBuildConfig,
 };
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
@@ -18,7 +18,7 @@ fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> Projec
     let mut collections = Vec::new();
     let mut graph = ProjectGraph::new(cc);
 
-    build_llmcc_ir::<LangRust>(cc).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
@@ -29,7 +29,7 @@ fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> Projec
         let unit = graph.cc.compile_unit(unit_idx);
         bind_symbols(unit, globals);
 
-        let unit_graph = build_llmcc_graph_with_config::<LangRust>(unit, unit_idx, config).unwrap();
+        let unit_graph = build_llmcc_graph::<LangRust>(unit, unit_idx, config).unwrap();
         graph.add_child(unit_graph);
     }
 

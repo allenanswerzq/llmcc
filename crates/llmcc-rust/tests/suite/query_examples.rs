@@ -1,6 +1,6 @@
 use llmcc_core::{
     build_llmcc_graph, graph_builder::ProjectGraph, ir_builder::build_llmcc_ir,
-    query::ProjectQuery, CompileCtxt,
+    query::ProjectQuery, CompileCtxt, GraphBuildConfig, IrBuildConfig,
 };
 use llmcc_rust::{bind_symbols, collect_symbols, LangRust};
 
@@ -11,7 +11,7 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
         &source_bytes,
     )));
 
-    build_llmcc_ir::<LangRust>(cc).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
 
     let globals = cc.create_globals();
     let unit_count = sources.len();
@@ -27,7 +27,8 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
         let unit = graph.cc.compile_unit(unit_idx);
         bind_symbols(unit, globals);
 
-        let unit_graph = build_llmcc_graph::<LangRust>(unit, unit_idx).unwrap();
+        let unit_graph =
+            build_llmcc_graph::<LangRust>(unit, unit_idx, GraphBuildConfig::default()).unwrap();
         graph.add_child(unit_graph);
     }
 

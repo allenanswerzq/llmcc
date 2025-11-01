@@ -1,8 +1,7 @@
 /// Tests for let declaration type binding.
 /// This module verifies that visit_let_declaration properly extracts type annotations
 /// and establishes dependency relations between functions and the types used in let statements.
-use llmcc_core::ir::HirId;
-use llmcc_core::symbol::Symbol;
+use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -15,7 +14,7 @@ fn compile(
     let sources = vec![source.as_bytes().to_vec()];
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
-    build_llmcc_ir::<LangRust>(cc).unwrap();
+    build_llmcc_ir::<LangRust>(cc, IrBuildConfig::default()).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals);

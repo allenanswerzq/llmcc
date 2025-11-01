@@ -1,14 +1,14 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
-use std::path::Path;
 use std::mem;
+use std::path::Path;
 
+use crate::block::Arena as BlockArena;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockRoot,
     BlockStmt,
 };
-use crate::block::Arena as BlockArena;
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
@@ -53,15 +53,7 @@ impl UnitGraph {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-pub struct GraphBuildConfig {
-    pub compact: bool,
-}
-
-impl GraphBuildConfig {
-    pub fn compact() -> Self {
-        Self { compact: true }
-    }
-}
+pub struct GraphBuildConfig;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GraphNode {
@@ -915,16 +907,6 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
     fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
-        // if self.config.compact {
-        //     if kind == BlockKind::Root {
-        //         self.build_block(node, parent, true);
-        //     } else {
-        //         self.visit_children(node, parent);
-        //     }
-        //     return;
-        // }
-
-        // Non-compact mode: process all defined kinds
         if kind != BlockKind::Undefined {
             self.build_block(node, parent, false);
         } else {
@@ -934,24 +916,6 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
 
     fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
-        // if self.config.compact {
-        //     // In compact mode, only create blocks for major constructs (Class, Enum, Impl)
-        //     // Skip functions, fields, and scopes to reduce graph size
-        //     match kind {
-        //         BlockKind::Class | BlockKind::Enum => {
-        //             // Build with recursion enabled to capture nested major constructs
-        //             self.build_block(node, parent, true);
-        //         }
-        //         // Skip all other scopes - don't recurse
-        //         _ => {
-        //             // Stop here, do not visit children
-        //             // self.visit_children(node, parent);
-        //         }
-        //     }
-        //     return;
-        // }
-
-        // Non-compact mode: build blocks for all major constructs
         match kind {
             BlockKind::Func
             | BlockKind::Class
@@ -964,7 +928,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
-pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
+pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
     config: GraphBuildConfig,
@@ -980,13 +944,6 @@ pub fn build_llmcc_graph_with_config<'tcx, L: LanguageTrait>(
     let root_block = root_block.ok_or("graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
     Ok(UnitGraph::new(unit_index, root_block, edges))
-}
-
-pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
-    unit: CompileUnit<'tcx>,
-    unit_index: usize,
-) -> Result<UnitGraph, DynError> {
-    build_llmcc_graph_with_config::<L>(unit, unit_index, GraphBuildConfig::default())
 }
 
 #[derive(Clone)]

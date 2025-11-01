@@ -1,8 +1,6 @@
 use llmcc_core::context::CompileCtxt;
-use llmcc_core::graph_builder::{
-    build_llmcc_graph_with_config, BlockRelation, GraphBuildConfig, ProjectGraph,
-};
-use llmcc_core::ir_builder::{build_llmcc_ir_with_config, IrBuildConfig};
+use llmcc_core::graph_builder::{build_llmcc_graph, BlockRelation, GraphBuildConfig, ProjectGraph};
+use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
 use llmcc_core::LanguageTrait;
 use llmcc_core::ProjectQuery;
 use llmcc_rust::LangRust;
@@ -20,7 +18,7 @@ fn compact_project_graph_includes_enum_dependencies() {
     "#;
 
     let cc = CompileCtxt::from_sources::<LangRust>(&[source.as_bytes().to_vec()]);
-    build_llmcc_ir_with_config::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
     let globals = cc.create_globals();
 
     for index in 0..cc.files.len() {
@@ -33,8 +31,7 @@ fn compact_project_graph_includes_enum_dependencies() {
         let unit = cc.compile_unit(index);
         LangRust::bind_symbols(unit, globals);
         let graph =
-            build_llmcc_graph_with_config::<LangRust>(unit, index, GraphBuildConfig::compact())
-                .unwrap();
+            build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig::default()).unwrap();
         project.add_child(graph);
     }
 
@@ -104,7 +101,7 @@ fn recursive_dependents_query_includes_transitive_callers() {
     "#;
 
     let cc = CompileCtxt::from_sources::<LangRust>(&[source.as_bytes().to_vec()]);
-    build_llmcc_ir_with_config::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
+    build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
     let globals = cc.create_globals();
 
     for index in 0..cc.files.len() {
@@ -117,8 +114,7 @@ fn recursive_dependents_query_includes_transitive_callers() {
         let unit = cc.compile_unit(index);
         LangRust::bind_symbols(unit, globals);
         let graph =
-            build_llmcc_graph_with_config::<LangRust>(unit, index, GraphBuildConfig::default())
-                .unwrap();
+            build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig::default()).unwrap();
         project.add_child(graph);
     }
     project.link_units();

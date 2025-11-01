@@ -18,6 +18,7 @@ verify-wheel:
     uv run python "{{root}}/scripts/verify_wheel.py"
 
 test: run-py
+    cargo fmt
     cargo test --workspace
     cargo build --release
 
