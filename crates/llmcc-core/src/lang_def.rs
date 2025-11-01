@@ -4,6 +4,8 @@ use crate::ir::HirKind;
 use crate::symbol::Scope;
 
 pub trait LanguageTrait {
+    type SymbolBatch: Send;
+
     // TODO: add general parse result struct
     fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree>;
     fn hir_kind(kind_id: u16) -> HirKind;
@@ -16,21 +18,14 @@ pub trait LanguageTrait {
     /// Return the list of supported file extensions for this language (e.g., ["rs"] for Rust)
     fn supported_extensions() -> &'static [&'static str];
 
-    fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
-    fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
-}
-
-pub trait ParallelSymbolCollect: LanguageTrait {
-    const PARALLEL_SYMBOL_COLLECTION: bool;
-    type SymbolBatch: Send;
-
     fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch;
-
     fn apply_symbol_batch<'tcx>(
         unit: CompileUnit<'tcx>,
         globals: &'tcx Scope<'tcx>,
         batch: Self::SymbolBatch,
     );
+    fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
+    fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>);
 }
 
 #[allow(clippy::crate_in_macro_def)]
@@ -45,8 +40,8 @@ macro_rules! define_tokens {
         use llmcc_core::ir::HirNode;
         use llmcc_core::symbol::Scope;
 
-        use crate::collect::collect_symbols;
-        use crate::bind::bind_symbols;
+        use crate::collect;
+        use crate::bind;
 
         $crate::paste::paste! {
             thread_local! {
@@ -77,6 +72,8 @@ macro_rules! define_tokens {
             }
 
             impl LanguageTrait for [<Lang $suffix>] {
+                type SymbolBatch = crate::collect::SymbolBatch;
+
                 /// Parse the text into a tree
                 fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree> {
                     let source = text.as_ref();
@@ -137,11 +134,23 @@ macro_rules! define_tokens {
                 }
 
                 fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
-                    let _ = collect_symbols(unit, globals);
+                    let _ = collect::collect_symbols(unit, globals);
                 }
 
                 fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
-                    let _ = bind_symbols(unit, globals);
+                    let _ = bind::bind_symbols(unit, globals);
+                }
+
+                fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch {
+                    collect::collect_symbols_batch(unit)
+                }
+
+                fn apply_symbol_batch<'tcx>(
+                    unit: CompileUnit<'tcx>,
+                    globals: &'tcx Scope<'tcx>,
+                    batch: Self::SymbolBatch,
+                ) {
+                    let _ = collect::apply_symbol_batch(unit, globals, batch);
                 }
             }
 

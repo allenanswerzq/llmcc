@@ -8,7 +8,7 @@ use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 use tracing::info;
 
-use llmcc_core::lang_def::ParallelSymbolCollect;
+use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::*;
 
 fn should_skip_dir(name: &str) -> bool {
@@ -63,7 +63,7 @@ pub struct LlmccOptions {
     pub summary: bool,
 }
 
-pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
+pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
     let total_start = Instant::now();
 
     init_rayon_pool();
@@ -203,21 +203,19 @@ pub fn run_main<L: ParallelSymbolCollect>(opts: &LlmccOptions) -> Result<Option<
     }
 
     let symbols_start = Instant::now();
-    if L::PARALLEL_SYMBOL_COLLECTION {
-        let batches: Vec<_> = (0..files.len())
-            .into_par_iter()
-            .map(|index| L::collect_symbol_batch(cc.compile_unit(index)))
-            .collect();
+    let mut symbol_batches: Vec<_> = (0..files.len())
+        .into_par_iter()
+        .map(|index| {
+            let unit = cc.compile_unit(index);
+            (index, L::collect_symbol_batch(unit))
+        })
+        .collect();
 
-        for (index, batch) in batches.into_iter().enumerate() {
-            let unit = cc.compile_unit(index);
-            L::apply_symbol_batch(unit, globals, batch);
-        }
-    } else {
-        for (index, _) in files.iter().enumerate() {
-            let unit = cc.compile_unit(index);
-            L::collect_symbols(unit, globals);
-        }
+    symbol_batches.sort_by_key(|(index, _)| *index);
+
+    for (index, batch) in symbol_batches {
+        let unit = cc.compile_unit(index);
+        L::apply_symbol_batch(unit, globals, batch);
     }
     info!(
         "Symbol collection: {:.2}s",
