@@ -9,9 +9,9 @@ pub use crate::collect::{
     SymbolBatch,
 };
 pub use crate::descriptor::{
-    CallArgument, CallDescriptor, CallTarget, ClassField, FunctionParameter, ImportDescriptor,
-    ImportKind, PythonClassDescriptor, PythonFunctionDescriptor, VariableDescriptor, VariableKind,
-    VariableScope,
+    CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
+    ClassField, FunctionParameter, ImportDescriptor, ImportKind, PythonClassDescriptor,
+    PythonFunctionDescriptor, VariableDescriptor, VariableKind, VariableScope,
 };
 pub use llmcc_core::{
     build_llmcc_graph, build_llmcc_ir, print_llmcc_graph, print_llmcc_ir, CompileCtxt,

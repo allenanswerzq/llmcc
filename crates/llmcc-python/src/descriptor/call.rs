@@ -1,42 +1,183 @@
-#[derive(Debug, Clone)]
-pub struct CallDescriptor {
-    pub target: CallTarget,
-    pub arguments: Vec<CallArgument>,
+use std::mem;
+
+use llmcc_core::context::CompileUnit;
+use llmcc_core::ir::HirNode;
+use llmcc_descriptor::{
+    CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
+    DescriptorOrigin, SourceLocation, SourceSpan, LANGUAGE_PYTHON,
+};
+use tree_sitter::Node;
+
+/// Build a shared call descriptor for a Python call expression.
+pub fn build_call_descriptor<'tcx, F>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    enclosing: Option<String>,
+    classify_symbol: F,
+) -> CallDescriptor
+where
+    F: Fn(&str) -> CallKind,
+{
+    let ts_node = node.inner_ts_node();
+    let origin = build_origin(unit, node, ts_node);
+    let arguments = ts_node
+        .child_by_field_name("arguments")
+        .map(|args| parse_arguments(unit, args))
+        .unwrap_or_default();
+
+    let function_node = ts_node.child_by_field_name("function");
+    let target = function_node
+        .and_then(|func| parse_chain(unit, func))
+        .or_else(|| parse_chain(unit, ts_node))
+        .or_else(|| {
+            function_node.and_then(|func| parse_symbol_target(unit, func, &classify_symbol))
+        })
+        .unwrap_or_else(|| CallTarget::Dynamic {
+            repr: clean(&node_text(unit, ts_node)),
+        });
+
+    let mut descriptor = CallDescriptor::new(origin, target);
+    descriptor.enclosing = enclosing;
+    descriptor.arguments = arguments;
+    descriptor
 }
 
-#[derive(Debug, Clone)]
-pub enum CallTarget {
-    Function(String),
-    Method(String, String), // object, method
-    Constructor(String),    // class name
+fn build_origin<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    ts_node: Node<'tcx>,
+) -> DescriptorOrigin {
+    let mut origin = DescriptorOrigin::new(LANGUAGE_PYTHON).with_id(node.hir_id().0 as u64);
+
+    let file = unit
+        .file_path()
+        .or_else(|| unit.file().path())
+        .map(|path| path.to_string());
+
+    let span = SourceSpan::new(ts_node.start_byte() as u32, ts_node.end_byte() as u32);
+    origin = origin.with_location(SourceLocation::new(file, Some(span)));
+    origin
 }
 
-#[derive(Debug, Clone)]
-pub struct CallArgument {
-    pub name: Option<String>,
-    pub value: String,
-}
+fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<CallTarget> {
+    let mut segments = Vec::new();
+    let mut pending_arguments = Vec::new();
 
-impl CallDescriptor {
-    pub fn new(target: CallTarget) -> Self {
-        Self {
-            target,
-            arguments: Vec::new(),
+    loop {
+        match node.kind() {
+            "call" => {
+                pending_arguments = node
+                    .child_by_field_name("arguments")
+                    .map(|args| parse_arguments(unit, args))
+                    .unwrap_or_default();
+                node = node.child_by_field_name("function")?;
+            }
+            "attribute" => {
+                let name_node = node.child_by_field_name("attribute")?;
+                let method = clean(&node_text(unit, name_node));
+                let arguments = mem::take(&mut pending_arguments);
+
+                segments.push(CallSegment {
+                    name: method,
+                    kind: CallKind::Method,
+                    type_arguments: Vec::new(),
+                    arguments,
+                });
+
+                node = node.child_by_field_name("object")?;
+            }
+            _ => break,
         }
     }
 
-    pub fn add_argument(&mut self, arg: CallArgument) {
-        self.arguments.push(arg);
+    if segments.is_empty() {
+        return None;
+    }
+
+    segments.reverse();
+    let root = clean(&node_text(unit, node));
+    let mut chain = CallChain::new(root);
+    chain.segments = segments;
+    Some(CallTarget::Chain(chain))
+}
+
+fn parse_symbol_target<'tcx, F>(
+    unit: CompileUnit<'tcx>,
+    node: Node<'tcx>,
+    classify_symbol: &F,
+) -> Option<CallTarget>
+where
+    F: Fn(&str) -> CallKind,
+{
+    match node.kind() {
+        "identifier" => {
+            let name = clean(&node_text(unit, node));
+            let mut symbol = CallSymbol::new(&name);
+            symbol.kind = classify_symbol(&symbol.name);
+            Some(CallTarget::Symbol(symbol))
+        }
+        "attribute" => {
+            let mut segments = flatten_attribute(unit, node)?;
+            let name = segments.pop().unwrap_or_default();
+            let mut symbol = CallSymbol::new(&name);
+            symbol.qualifiers = segments;
+            symbol.kind = classify_symbol(&symbol.name);
+            Some(CallTarget::Symbol(symbol))
+        }
+        _ => None,
     }
 }
 
-impl CallArgument {
-    pub fn new(value: String) -> Self {
-        Self { name: None, value }
+fn flatten_attribute<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Vec<String>> {
+    let mut segments = Vec::new();
+    loop {
+        if node.kind() != "attribute" {
+            break;
+        }
+
+        let attr_node = node.child_by_field_name("attribute")?;
+        segments.push(clean(&node_text(unit, attr_node)));
+        node = node.child_by_field_name("object")?;
     }
 
-    pub fn with_name(mut self, name: String) -> Self {
-        self.name = Some(name);
-        self
+    let root_text = clean(&node_text(unit, node));
+    if root_text.is_empty() {
+        return None;
     }
+    segments.push(root_text);
+    segments.reverse();
+    Some(segments)
+}
+
+fn parse_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<CallArgument> {
+    let mut cursor = node.walk();
+    node.named_children(&mut cursor)
+        .map(|child| parse_argument_node(unit, child))
+        .collect()
+}
+
+fn parse_argument_node<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> CallArgument {
+    match node.kind() {
+        "keyword_argument" => {
+            let name = node
+                .child_by_field_name("name")
+                .map(|name_node| clean(&node_text(unit, name_node)));
+            let value = node
+                .child_by_field_name("value")
+                .map(|value_node| clean(&node_text(unit, value_node)))
+                .unwrap_or_else(|| clean(&node_text(unit, node)));
+            let mut argument = CallArgument::new(value);
+            argument.name = name;
+            argument
+        }
+        _ => CallArgument::new(clean(&node_text(unit, node))),
+    }
+}
+
+fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
+    unit.get_text(node.start_byte(), node.end_byte())
+}
+
+fn clean(text: &str) -> String {
+    text.trim().to_string()
 }

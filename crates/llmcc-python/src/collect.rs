@@ -6,12 +6,13 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 
-use crate::descriptor::class::PythonClassDescriptor;
-use crate::descriptor::function::PythonFunctionDescriptor;
-use crate::descriptor::import::ImportDescriptor;
-use crate::descriptor::variable::VariableDescriptor;
+use crate::descriptor::{
+    build_call_descriptor, class::PythonClassDescriptor, function::PythonFunctionDescriptor,
+    import::ImportDescriptor, variable::VariableDescriptor, CallDescriptor,
+};
 use crate::token::AstVisitorPython;
 use crate::token::LangPython;
+use llmcc_descriptor::CallKind;
 
 #[derive(Debug)]
 pub struct CollectionResult {
@@ -19,6 +20,7 @@ pub struct CollectionResult {
     pub classes: Vec<PythonClassDescriptor>,
     pub variables: Vec<VariableDescriptor>,
     pub imports: Vec<ImportDescriptor>,
+    pub calls: Vec<CallDescriptor>,
 }
 
 #[derive(Debug)]
@@ -70,6 +72,7 @@ struct DeclCollector<'tcx> {
     classes: Vec<PythonClassDescriptor>,
     variables: Vec<VariableDescriptor>,
     imports: Vec<ImportDescriptor>,
+    calls: Vec<CallDescriptor>,
 }
 
 impl<'tcx> DeclCollector<'tcx> {
@@ -91,6 +94,7 @@ impl<'tcx> DeclCollector<'tcx> {
             classes: Vec::new(),
             variables: Vec::new(),
             imports: Vec::new(),
+            calls: Vec::new(),
         }
     }
 
@@ -124,6 +128,22 @@ impl<'tcx> DeclCollector<'tcx> {
             }
         }
         None
+    }
+
+    fn classify_symbol_call(&self, name: &str) -> CallKind {
+        if self
+            .symbols
+            .iter()
+            .any(|symbol| symbol.name == name && symbol.kind == SymbolKind::Struct)
+        {
+            return CallKind::Constructor;
+        }
+
+        if is_pascal_case(name) {
+            return CallKind::Constructor;
+        }
+
+        CallKind::Function
     }
 
     fn scoped_fqn(&self, _node: &HirNode<'tcx>, name: &str) -> String {
@@ -228,6 +248,7 @@ impl<'tcx> DeclCollector<'tcx> {
                 classes: self.classes,
                 variables: self.variables,
                 imports: self.imports,
+                calls: self.calls,
             },
             symbols: self.symbols,
             scopes: scope_specs,
@@ -541,6 +562,29 @@ impl<'tcx> DeclCollector<'tcx> {
     }
 }
 
+fn is_pascal_case(name: &str) -> bool {
+    let mut chars = name.chars();
+    let Some(first) = chars.next() else {
+        return false;
+    };
+
+    if !first.is_alphabetic() || !first.is_uppercase() {
+        return false;
+    }
+
+    let mut has_lowercase = false;
+    for ch in chars {
+        if ch == '_' {
+            return false;
+        }
+        if ch.is_lowercase() {
+            has_lowercase = true;
+        }
+    }
+
+    has_lowercase
+}
+
 impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     fn unit(&self) -> CompileUnit<'tcx> {
         self.unit
@@ -549,6 +593,15 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
         let module_symbol = self.ensure_module_symbol(&node);
         self.visit_children_scope(&node, module_symbol);
+    }
+
+    fn visit_call(&mut self, node: HirNode<'tcx>) {
+        let enclosing = self.parent_symbol().map(|symbol| symbol.fqn.clone());
+        let descriptor = build_call_descriptor(self.unit, &node, enclosing, |name| {
+            self.classify_symbol_call(name)
+        });
+        self.calls.push(descriptor);
+        self.visit_children(&node);
     }
 
     fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
@@ -754,20 +807,22 @@ pub fn apply_symbol_batch<'tcx>(
         collected.result.classes.len(),
         collected.result.variables.len(),
         collected.result.imports.len(),
+        collected.result.calls.len(),
     );
 
     apply_collected_symbols(unit, globals, &collected);
 
     if total_time.as_millis() > 10 {
         tracing::trace!(
-            "[COLLECT] File {:?}: total={:.2}ms, visit={:.2}ms, syms={}, classes={}, vars={}, imports={}",
+            "[COLLECT] File {:?}: total={:.2}ms, visit={:.2}ms, syms={}, classes={}, vars={}, imports={}, calls={}",
             unit.file_path().unwrap_or("unknown"),
             total_time.as_secs_f64() * 1000.0,
             visit_time.as_secs_f64() * 1000.0,
             counts.0,
             counts.1,
             counts.2,
-            counts.3
+            counts.3,
+            counts.4
         );
     }
 

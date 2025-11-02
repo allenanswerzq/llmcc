@@ -1,7 +1,9 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
-use llmcc_python::{build_llmcc_ir, collect_symbols, LangPython};
+use llmcc_python::{
+    build_llmcc_ir, collect_symbols, CallDescriptor, CallKind, CallTarget, LangPython,
+};
 
-fn collect_calls(source: &str) -> Vec<llmcc_python::CallDescriptor> {
+fn collect_calls(source: &str) -> Vec<CallDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
@@ -11,19 +13,44 @@ fn collect_calls(source: &str) -> Vec<llmcc_python::CallDescriptor> {
     collect_symbols(unit, globals).calls
 }
 
-fn call_key(call: &llmcc_python::CallDescriptor) -> String {
+fn call_key(call: &CallDescriptor) -> String {
     match &call.target {
-        llmcc_python::CallTarget::Function(name) => name.clone(),
-        llmcc_python::CallTarget::Method(obj, method) => format!("{}.{}", obj, method),
-        llmcc_python::CallTarget::Constructor(class_name) => class_name.clone(),
+        CallTarget::Symbol(symbol) => {
+            if symbol.qualifiers.is_empty() {
+                symbol.name.clone()
+            } else {
+                let mut parts = symbol.qualifiers.clone();
+                parts.push(symbol.name.clone());
+                parts.join("::")
+            }
+        }
+        CallTarget::Chain(chain) => {
+            let mut key = chain.root.clone();
+            for segment in &chain.segments {
+                key.push('.');
+                key.push_str(&segment.name);
+            }
+            key
+        }
+        CallTarget::Dynamic { repr } => repr.clone(),
     }
 }
 
-fn find_call<'a, F>(calls: &'a [llmcc_python::CallDescriptor], predicate: F) -> Option<&'a llmcc_python::CallDescriptor>
+fn find_call<'a, F>(calls: &'a [CallDescriptor], predicate: F) -> Option<&'a CallDescriptor>
 where
-    F: Fn(&llmcc_python::CallDescriptor) -> bool,
+    F: Fn(&CallDescriptor) -> bool,
 {
     calls.iter().find(|call| predicate(call))
+}
+
+fn has_chain_segment(call: &CallDescriptor, root: &str, method: &str) -> bool {
+    if let CallTarget::Chain(chain) = &call.target {
+        if chain.root != root {
+            return false;
+        }
+        return chain.segments.iter().any(|segment| segment.name == method);
+    }
+    false
 }
 
 #[test]
@@ -35,8 +62,8 @@ def caller():
     let calls = collect_calls(source);
     assert!(calls.len() > 0);
     let print_call = find_call(&calls, |call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "print"
+        if let CallTarget::Symbol(symbol) = &call.target {
+            symbol.kind == CallKind::Function && symbol.name == "print"
         } else {
             false
         }
@@ -52,8 +79,8 @@ def caller():
 "#;
     let calls = collect_calls(source);
     let helper_call = find_call(&calls, |call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "helper"
+        if let CallTarget::Symbol(symbol) = &call.target {
+            symbol.kind == CallKind::Function && symbol.name == "helper"
         } else {
             false
         }
@@ -72,8 +99,13 @@ def caller():
 "#;
     let calls = collect_calls(source);
     let method_call = find_call(&calls, |call| {
-        if let CallTarget::Method(obj, method) = &call.target {
-            obj == "obj" && method == "method"
+        if let CallTarget::Chain(chain) = &call.target {
+            chain.root == "obj"
+                && chain
+                    .segments
+                    .last()
+                    .map(|segment| segment.name.as_str())
+                    == Some("method")
         } else {
             false
         }
@@ -89,8 +121,8 @@ def caller():
 "#;
     let calls = collect_calls(source);
     let constructor_call = find_call(&calls, |call| {
-        if let CallTarget::Constructor(class_name) = &call.target {
-            class_name == "MyClass"
+        if let CallTarget::Symbol(symbol) = &call.target {
+            symbol.kind == CallKind::Constructor && symbol.name == "MyClass"
         } else {
             false
         }
@@ -106,21 +138,21 @@ def caller():
 "#;
     let calls = collect_calls(source);
 
-    let outer_calls = calls.iter().filter(|call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "outer"
-        } else {
-            false
-        }
-    }).count();
+    let outer_calls = calls
+        .iter()
+        .filter(|call| match &call.target {
+            CallTarget::Symbol(symbol) => symbol.name == "outer",
+            _ => false,
+        })
+        .count();
 
-    let inner_calls = calls.iter().filter(|call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "inner"
-        } else {
-            false
-        }
-    }).count();
+    let inner_calls = calls
+        .iter()
+        .filter(|call| match &call.target {
+            CallTarget::Symbol(symbol) => symbol.name == "inner",
+            _ => false,
+        })
+        .count();
 
     // Should have at least one outer and two inner calls
     assert!(outer_calls >= 1);
@@ -135,32 +167,12 @@ def caller():
 "#;
     let calls = collect_calls(source);
 
-    let strip_call = find_call(&calls, |call| {
-        if let CallTarget::Method(obj, method) = &call.target {
-            obj == "text" && method == "strip"
-        } else {
-            false
-        }
-    });
-
-    let upper_call = find_call(&calls, |call| {
-        if let CallTarget::Method(_, method) = &call.target {
-            method == "upper"
-        } else {
-            false
-        }
-    });
-
-    let split_call = find_call(&calls, |call| {
-        if let CallTarget::Method(_, method) = &call.target {
-            method == "split"
-        } else {
-            false
-        }
-    });
+    let strip_call = calls.iter().any(|call| has_chain_segment(call, "text", "strip"));
+    let upper_call = calls.iter().any(|call| has_chain_segment(call, "text", "upper"));
+    let split_call = calls.iter().any(|call| has_chain_segment(call, "text", "split"));
 
     // Should capture at least some of these method calls
-    assert!(strip_call.is_some() || upper_call.is_some() || split_call.is_some());
+    assert!(strip_call || upper_call || split_call);
 }
 
 #[test]
@@ -170,13 +182,7 @@ def caller():
     obj.process(10, "test", value=42)
 "#;
     let calls = collect_calls(source);
-    let process_call = find_call(&calls, |call| {
-        if let CallTarget::Method(obj, method) = &call.target {
-            obj == "obj" && method == "process"
-        } else {
-            false
-        }
-    });
+    let process_call = find_call(&calls, |call| has_chain_segment(call, "obj", "process"));
     assert!(process_call.is_some());
     if let Some(call) = process_call {
         assert_eq!(call.arguments.len(), 3);
@@ -193,14 +199,20 @@ def caller():
 "#;
     let calls = collect_calls(source);
 
-    let methods: Vec<_> = calls.iter().filter_map(|call| {
-        if let CallTarget::Method(obj, method) = &call.target {
-            if obj == "obj" {
-                return Some(method.as_str());
+    let methods: Vec<_> = calls
+        .iter()
+        .filter_map(|call| {
+            if let CallTarget::Chain(chain) = &call.target {
+                if chain.root == "obj" {
+                    return chain
+                        .segments
+                        .last()
+                        .map(|segment| segment.name.as_str());
+                }
             }
-        }
-        None
-    }).collect();
+            None
+        })
+        .collect();
 
     // Should have at least some method calls on obj
     assert!(methods.len() > 0);
@@ -219,11 +231,7 @@ class Handler:
     let calls = collect_calls(source);
 
     let helper_call = find_call(&calls, |call| {
-        if let CallTarget::Method(obj, method) = &call.target {
-            obj == "self" && method == "helper"
-        } else {
-            false
-        }
+        has_chain_segment(call, "self", "helper")
     });
 
     assert!(helper_call.is_some());
@@ -237,8 +245,8 @@ def caller():
 "#;
     let calls = collect_calls(source);
     let func_call = find_call(&calls, |call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "func"
+        if let CallTarget::Symbol(symbol) = &call.target {
+            symbol.kind == CallKind::Function && symbol.name == "func"
         } else {
             false
         }
@@ -262,28 +270,19 @@ def caller():
 "#;
     let calls = collect_calls(source);
 
-    let condition_call = find_call(&calls, |call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "condition"
-        } else {
-            false
-        }
+    let condition_call = find_call(&calls, |call| match &call.target {
+        CallTarget::Symbol(symbol) => symbol.name == "condition",
+        _ => false,
     });
 
-    let do_something_call = find_call(&calls, |call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "do_something"
-        } else {
-            false
-        }
+    let do_something_call = find_call(&calls, |call| match &call.target {
+        CallTarget::Symbol(symbol) => symbol.name == "do_something",
+        _ => false,
     });
 
-    let do_other_call = find_call(&calls, |call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "do_other"
-        } else {
-            false
-        }
+    let do_other_call = find_call(&calls, |call| match &call.target {
+        CallTarget::Symbol(symbol) => symbol.name == "do_other",
+        _ => false,
     });
 
     assert!(condition_call.is_some());
@@ -300,12 +299,9 @@ def caller():
 "#;
     let calls = collect_calls(source);
 
-    let process_call = find_call(&calls, |call| {
-        if let CallTarget::Function(name) = &call.target {
-            name == "process"
-        } else {
-            false
-        }
+    let process_call = find_call(&calls, |call| match &call.target {
+        CallTarget::Symbol(symbol) => symbol.name == "process",
+        _ => false,
     });
 
     assert!(process_call.is_some());
