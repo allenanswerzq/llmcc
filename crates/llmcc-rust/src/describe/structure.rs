@@ -12,10 +12,12 @@ pub fn build<'tcx>(
     node: &HirNode<'tcx>,
     fqn: Option<&str>,
 ) -> Option<StructDescriptor> {
-    let ts_node = match node.inner_ts_node() {
-        ts if ts.kind() == "struct_item" => ts,
-        _ => return None,
-    };
+    let ts_node = node.inner_ts_node();
+    let kind = ts_node.kind();
+    if kind != "struct_item" && kind != "trait_item" {
+        return None;
+    }
+    let is_trait = kind == "trait_item";
 
     let name_node = ts_node.child_by_field_name("name")?;
     let name = clean(&node_text(unit, name_node));
@@ -28,7 +30,17 @@ pub fn build<'tcx>(
         .child_by_field_name("type_parameters")
         .map(|n| clean(&node_text(unit, n)));
 
-    let (fields, kind) = parse_struct_fields(unit, ts_node);
+    let (fields, struct_kind) = if is_trait {
+        (Vec::new(), StructKind::Other)
+    } else {
+        let (fields, shape) = parse_struct_fields(unit, ts_node);
+        let kind = match shape {
+            StructShape::Named => StructKind::Record,
+            StructShape::Tuple => StructKind::Tuple,
+            StructShape::Unit => StructKind::Unit,
+        };
+        (fields, kind)
+    };
 
     let origin = build_origin(unit, node, ts_node);
 
@@ -36,11 +48,7 @@ pub fn build<'tcx>(
     descriptor.fqn = fqn.map(|value| value.to_string());
     descriptor.visibility = visibility;
     descriptor.generics = generics;
-    descriptor.kind = match kind {
-        StructShape::Named => StructKind::Record,
-        StructShape::Tuple => StructKind::Tuple,
-        StructShape::Unit => StructKind::Unit,
-    };
+    descriptor.kind = struct_kind;
     descriptor.fields = fields;
 
     Some(descriptor)
