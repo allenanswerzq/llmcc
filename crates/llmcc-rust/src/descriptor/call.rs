@@ -1,104 +1,57 @@
 use std::mem;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirNode};
+use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
-use super::function::{parse_type_expr, TypeExpr};
+use llmcc_descriptor::{
+    CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
+    TypeExpr,
+};
 
-/// Description of a function-style call expression discovered in the source.
-#[derive(Debug, Clone)]
-pub struct CallDescriptor {
-    /// HIR identifier for the call expression.
-    pub hir_id: HirId,
-    /// Best-effort classification of the call target.
-    pub target: CallTarget,
-    /// Raw argument snippets in call order.
-    pub arguments: Vec<CallArgument>,
-    /// Fully-qualified name of the function/method that owns this call, if any.
-    pub enclosing_function: Option<String>,
-}
+use super::function::{build_origin, parse_type_expr};
 
-/// Information about the call target expression.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CallTarget {
-    /// A path-based call such as `foo::bar()`.
-    Path {
-        segments: Vec<String>,
-        generics: Vec<TypeExpr>,
-    },
-    /// A method-style call `receiver.method()`.
-    Method {
-        receiver: String,
-        method: String,
-        generics: Vec<TypeExpr>,
-    },
-    /// A chained sequence like `obj.f1().f2::<T>()` packed as a single call.
-    Chain {
-        base: String,
-        segments: Vec<ChainSegment>,
-    },
-    /// Anything we could not recognise (stored verbatim).
-    Unknown(String),
-}
+/// Build a shared call descriptor from a Rust call expression.
+pub fn from_call<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    enclosing_function: Option<String>,
+) -> CallDescriptor {
+    let ts_node = node.inner_ts_node();
+    let function_node = ts_node.child_by_field_name("function");
+    let call_generics = ts_node
+        .child_by_field_name("type_arguments")
+        .map(|n| parse_type_arguments(unit, n))
+        .unwrap_or_default();
 
-/// Component of a chained call.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ChainSegment {
-    pub method: String,
-    pub generics: Vec<TypeExpr>,
-    pub arguments: Vec<CallArgument>,
-}
+    let target = function_node
+        .and_then(|func| parse_chain(unit, func, call_generics.clone()))
+        .or_else(|| parse_chain(unit, ts_node, call_generics.clone()))
+        .unwrap_or_else(|| match function_node {
+            Some(func) => parse_call_target(unit, func, call_generics.clone()),
+            None => CallTarget::Dynamic {
+                repr: clean(&node_text(unit, ts_node)),
+            },
+        });
 
-/// Lightweight view of call arguments.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CallArgument {
-    pub text: String,
-}
+    let arguments = ts_node
+        .child_by_field_name("arguments")
+        .map(|args| parse_arguments(unit, args))
+        .unwrap_or_default();
 
-impl CallDescriptor {
-    pub fn from_call<'tcx>(
-        unit: CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        enclosing_function: Option<String>,
-    ) -> Self {
-        let ts_node = node.inner_ts_node();
-        let function_node = ts_node.child_by_field_name("function");
-        let call_generics = ts_node
-            .child_by_field_name("type_arguments")
-            .map(|n| parse_type_arguments(unit, n))
-            .unwrap_or_default();
+    let origin = build_origin(unit, node, ts_node);
+    let mut descriptor = CallDescriptor::new(origin, target);
+    descriptor.enclosing = enclosing_function;
+    descriptor.arguments = arguments;
 
-        let target = function_node
-            .and_then(|func| parse_chain(unit, func, call_generics.clone()))
-            .or_else(|| parse_chain(unit, ts_node, call_generics.clone()))
-            .map(|(base, segments)| CallTarget::Chain { base, segments })
-            .unwrap_or_else(|| match function_node {
-                Some(func) => parse_call_target(unit, func, call_generics.clone()),
-                None => CallTarget::Unknown(clean(&node_text(unit, ts_node))),
-            });
-
-        let arguments = ts_node
-            .child_by_field_name("arguments")
-            .map(|args| parse_arguments(unit, args))
-            .unwrap_or_default();
-
-        CallDescriptor {
-            hir_id: node.hir_id(),
-            target,
-            arguments,
-            enclosing_function,
-        }
-    }
+    descriptor
 }
 
 fn parse_arguments<'tcx>(unit: CompileUnit<'tcx>, args_node: Node<'tcx>) -> Vec<CallArgument> {
     let mut cursor = args_node.walk();
     args_node
         .named_children(&mut cursor)
-        .map(|arg| CallArgument {
-            text: clean(&node_text(unit, arg)),
-        })
+        .map(|arg| CallArgument::new(clean(&node_text(unit, arg))))
         .collect()
 }
 
@@ -111,17 +64,16 @@ fn parse_call_target<'tcx>(
         "identifier" | "scoped_identifier" | "type_identifier" => {
             let segments: Vec<String> = clean(&node_text(unit, node))
                 .split("::")
+                .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
                 .collect();
-            CallTarget::Path {
-                segments,
-                generics: call_generics,
-            }
+            symbol_target_from_segments(segments, call_generics, CallKind::Function)
         }
         "generic_type" => {
             let base = node.child_by_field_name("type").unwrap_or(node);
             let mut segments: Vec<String> = clean(&node_text(unit, base))
                 .split("::")
+                .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
                 .collect();
             if segments.is_empty() {
@@ -131,7 +83,7 @@ fn parse_call_target<'tcx>(
                 .child_by_field_name("type_arguments")
                 .map(|args| parse_type_arguments(unit, args))
                 .unwrap_or(call_generics);
-            CallTarget::Path { segments, generics }
+            symbol_target_from_segments(segments, generics, CallKind::Function)
         }
         "generic_function" => {
             let generics = node
@@ -142,10 +94,8 @@ fn parse_call_target<'tcx>(
                 .child_by_field_name("function")
                 .unwrap_or(node.child(0).unwrap_or(node));
             let mut target = parse_call_target(unit, inner, call_generics);
-            match &mut target {
-                CallTarget::Path { generics: g, .. } => *g = generics,
-                CallTarget::Method { generics: g, .. } => *g = generics,
-                _ => {}
+            if let CallTarget::Symbol(symbol) = &mut target {
+                symbol.type_arguments = generics;
             }
             target
         }
@@ -162,24 +112,19 @@ fn parse_call_target<'tcx>(
                 .child_by_field_name("type_arguments")
                 .map(|n| parse_type_arguments(unit, n))
                 .unwrap_or(call_generics);
-            CallTarget::Method {
-                receiver,
-                method,
-                generics,
-            }
+
+            let mut chain = CallChain::new(receiver);
+            chain.segments.push(CallSegment {
+                name: method,
+                kind: CallKind::Method,
+                type_arguments: generics,
+                arguments: Vec::new(),
+            });
+            CallTarget::Chain(chain)
         }
-        _ => {
-            let text = clean(&node_text(unit, node));
-            if let Some((receiver, method)) = parse_method_from_text(&text) {
-                CallTarget::Method {
-                    receiver,
-                    method,
-                    generics: call_generics,
-                }
-            } else {
-                CallTarget::Unknown(text)
-            }
-        }
+        _ => CallTarget::Dynamic {
+            repr: clean(&node_text(unit, node)),
+        },
     }
 }
 
@@ -187,7 +132,7 @@ fn parse_chain<'tcx>(
     unit: CompileUnit<'tcx>,
     mut node: Node<'tcx>,
     call_generics: Vec<TypeExpr>,
-) -> Option<(String, Vec<ChainSegment>)> {
+) -> Option<CallTarget> {
     let mut segments = Vec::new();
     let mut pending_generics = call_generics;
     let mut pending_arguments = Vec::new();
@@ -203,16 +148,14 @@ fn parse_chain<'tcx>(
                     .child_by_field_name("arguments")
                     .map(|args| parse_arguments(unit, args))
                     .unwrap_or_default();
-                let function_node = node.child_by_field_name("function")?;
-                node = function_node;
+                node = node.child_by_field_name("function")?;
             }
             "generic_function" => {
                 pending_generics = node
                     .child_by_field_name("type_arguments")
                     .map(|n| parse_type_arguments(unit, n))
                     .unwrap_or_default();
-                let inner_function = node.child_by_field_name("function")?;
-                node = inner_function;
+                node = node.child_by_field_name("function")?;
             }
             "field_expression" => {
                 let method = node
@@ -221,24 +164,27 @@ fn parse_chain<'tcx>(
                     .unwrap_or_default();
                 let generics = mem::take(&mut pending_generics);
                 let arguments = mem::take(&mut pending_arguments);
-                segments.push(ChainSegment {
-                    method,
-                    generics,
+                segments.push(CallSegment {
+                    name: method,
+                    kind: CallKind::Method,
+                    type_arguments: generics,
                     arguments,
                 });
-                let argument_node = node.child_by_field_name("value")?;
-                node = argument_node;
+                node = node.child_by_field_name("value")?;
             }
-            _ => {
-                if segments.len() < 2 {
-                    return None;
-                }
-                let base = clean(&node_text(unit, node));
-                segments.reverse();
-                return Some((base, segments));
-            }
+            _ => break,
         }
     }
+
+    if segments.is_empty() {
+        return None;
+    }
+
+    segments.reverse();
+    let base = clean(&node_text(unit, node));
+    let mut chain = CallChain::new(base);
+    chain.segments = segments;
+    Some(CallTarget::Chain(chain))
 }
 
 fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<TypeExpr> {
@@ -266,6 +212,27 @@ fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<
         }
     }
     args
+}
+
+fn symbol_target_from_segments(
+    segments: Vec<String>,
+    generics: Vec<TypeExpr>,
+    kind: CallKind,
+) -> CallTarget {
+    if segments.is_empty() {
+        return CallTarget::Dynamic {
+            repr: String::new(),
+        };
+    }
+
+    let mut segments = segments;
+    let name = segments.pop().unwrap();
+
+    let mut symbol = CallSymbol::new(name);
+    symbol.qualifiers = segments;
+    symbol.kind = kind;
+    symbol.type_arguments = generics;
+    CallTarget::Symbol(symbol)
 }
 
 fn is_type_node(kind: &str) -> bool {
@@ -300,13 +267,4 @@ fn clean(text: &str) -> String {
         }
     }
     out.trim().to_string()
-}
-
-fn parse_method_from_text(text: &str) -> Option<(String, String)> {
-    let idx = text.rfind('.')?;
-    let (receiver, method_part) = text.split_at(idx);
-    Some((
-        receiver.trim().to_string(),
-        method_part.trim_start_matches('.').to_string(),
-    ))
 }

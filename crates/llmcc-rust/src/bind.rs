@@ -6,8 +6,8 @@ use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
-use crate::descriptor::function::parse_type_expr;
-use crate::descriptor::{CallDescriptor, CallTarget, TypeExpr};
+use crate::descriptor::function;
+use crate::descriptor::{CallKind, CallTarget, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
 
 /// `SymbolBinder` connects symbols with the items they reference so that later
@@ -162,13 +162,13 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn type_segments(&mut self, node: &HirNode<'tcx>) -> Option<Vec<String>> {
         let ts_node = node.inner_ts_node();
-        let expr = parse_type_expr(self.unit, ts_node);
+        let expr = function::parse_type_expr(self.unit, ts_node);
         extract_path_segments(&expr)
     }
 
     fn parse_type_expr_from_node(&self, node: &HirNode<'tcx>) -> TypeExpr {
         let ts_node = node.inner_ts_node();
-        parse_type_expr(self.unit, ts_node)
+        function::parse_type_expr(self.unit, ts_node)
     }
 
     fn collect_type_expr_symbols(&mut self, expr: &TypeExpr, symbols: &mut Vec<&'tcx Symbol>) {
@@ -204,7 +204,15 @@ impl<'tcx> SymbolBinder<'tcx> {
                     self.collect_type_expr_symbols(item, symbols);
                 }
             }
-            TypeExpr::ImplTrait { .. } | TypeExpr::Unknown(_) => {}
+            TypeExpr::Callable { parameters, result } => {
+                for parameter in parameters {
+                    self.collect_type_expr_symbols(parameter, symbols);
+                }
+                if let Some(result) = result.as_deref() {
+                    self.collect_type_expr_symbols(result, symbols);
+                }
+            }
+            TypeExpr::ImplTrait { .. } | TypeExpr::Opaque { .. } | TypeExpr::Unknown(_) => {}
         }
     }
 
@@ -359,32 +367,76 @@ impl<'tcx> SymbolBinder<'tcx> {
 
     fn record_call_target(&mut self, target: &CallTarget) {
         match target {
-            CallTarget::Path { segments, .. } => {
-                if let Some(symbol) = self.resolve_symbol(segments, Some(SymbolKind::Function)) {
-                    if symbol.kind() == SymbolKind::Function {
-                        self.add_symbol_relation(Some(symbol));
-                        self.add_type_dependency_for_segments(segments);
+            CallTarget::Symbol(symbol) => {
+                let mut segments = symbol.qualifiers.clone();
+                segments.push(symbol.name.clone());
+
+                match symbol.kind {
+                    CallKind::Method => {
+                        if let Some(method_symbol) = self.resolve_method_symbol(&symbol.name) {
+                            self.add_symbol_relation(Some(method_symbol));
+                        }
                     }
-                } else if segments.len() > 1 {
-                    self.add_type_dependency_for_segments(segments);
-                }
-            }
-            CallTarget::Method { method, .. } => {
-                if let Some(symbol) = self.resolve_method_symbol(method) {
-                    self.add_symbol_relation(Some(symbol));
-                }
-            }
-            CallTarget::Chain { base, segments } => {
-                if let Some(symbol) = self.resolve_path_text(base) {
-                    self.add_symbol_relation(Some(symbol));
-                }
-                for segment in segments {
-                    if let Some(symbol) = self.resolve_method_symbol(&segment.method) {
-                        self.add_symbol_relation(Some(symbol));
+                    CallKind::Constructor => {
+                        if let Some(struct_symbol) =
+                            self.resolve_symbol(&segments, Some(SymbolKind::Struct))
+                        {
+                            self.add_symbol_relation(Some(struct_symbol));
+                        } else if let Some(enum_symbol) =
+                            self.resolve_symbol(&segments, Some(SymbolKind::Enum))
+                        {
+                            self.add_symbol_relation(Some(enum_symbol));
+                        }
+                    }
+                    CallKind::Function | CallKind::Macro | CallKind::Unknown => {
+                        if let Some(function_symbol) =
+                            self.resolve_symbol(&segments, Some(SymbolKind::Function))
+                        {
+                            self.add_symbol_relation(Some(function_symbol));
+                            if segments.len() > 1 {
+                                self.add_type_dependency_for_segments(&segments);
+                            }
+                        } else if !segments.is_empty() {
+                            self.add_type_dependency_for_segments(&segments);
+                        }
                     }
                 }
             }
-            CallTarget::Unknown(_) => {}
+            CallTarget::Chain(chain) => {
+                if let Some(symbol) = self.resolve_path_text(&chain.root) {
+                    self.add_symbol_relation(Some(symbol));
+                } else {
+                    let segments: Vec<String> = chain
+                        .root
+                        .split("::")
+                        .filter(|segment| !segment.is_empty())
+                        .map(|segment| segment.trim().to_string())
+                        .collect();
+                    if segments.len() > 1 {
+                        self.add_type_dependency_for_segments(&segments);
+                    }
+                }
+
+                for segment in &chain.segments {
+                    match segment.kind {
+                        CallKind::Method | CallKind::Function => {
+                            if let Some(symbol) = self.resolve_method_symbol(&segment.name) {
+                                self.add_symbol_relation(Some(symbol));
+                            }
+                        }
+                        CallKind::Constructor => {
+                            if let Some(symbol) = self.resolve_symbol(
+                                std::slice::from_ref(&segment.name),
+                                Some(SymbolKind::Struct),
+                            ) {
+                                self.add_symbol_relation(Some(symbol));
+                            }
+                        }
+                        CallKind::Macro | CallKind::Unknown => {}
+                    }
+                }
+            }
+            CallTarget::Dynamic { .. } => {}
         }
     }
 
@@ -575,7 +627,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
         let enclosing = self
             .current_symbol()
             .map(|symbol| symbol.fqn_name.read().clone());
-        let descriptor = CallDescriptor::from_call(self.unit, &node, enclosing);
+        let descriptor = crate::descriptor::call::from_call(self.unit, &node, enclosing);
         self.record_call_target(&descriptor.target);
         self.visit_children(&node);
     }

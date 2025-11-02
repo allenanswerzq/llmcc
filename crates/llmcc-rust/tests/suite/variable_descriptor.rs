@@ -16,7 +16,7 @@ fn collect_variables(source: &str) -> HashMap<String, VariableDescriptor> {
     collect_symbols(unit, globals)
         .variables
         .into_iter()
-        .map(|desc| (desc.fqn.clone(), desc))
+        .map(|desc| (desc.fqn.clone().unwrap_or_else(|| desc.name.clone()), desc))
         .collect()
 }
 
@@ -24,10 +24,10 @@ fn collect_variables(source: &str) -> HashMap<String, VariableDescriptor> {
 fn captures_global_const() {
     let map = collect_variables("const MAX: i32 = 10;\n");
     let desc = map.get("MAX").unwrap();
-    assert_eq!(desc.kind, VariableKind::Const);
+    assert_eq!(desc.kind, VariableKind::Constant);
     assert_eq!(desc.scope, VariableScope::Global);
-    assert!(!desc.is_mut);
-    let ty = desc.ty.as_ref().unwrap();
+    assert_eq!(desc.is_mutable, Some(false));
+    let ty = desc.type_annotation.as_ref().unwrap();
     assert_path(ty, &["i32"]);
 }
 
@@ -37,8 +37,8 @@ fn captures_static_mut() {
     let desc = map.get("COUNTER").unwrap();
     assert_eq!(desc.kind, VariableKind::Static);
     assert_eq!(desc.scope, VariableScope::Global);
-    assert!(desc.is_mut);
-    let ty = desc.ty.as_ref().unwrap();
+    assert_eq!(desc.is_mutable, Some(true));
+    let ty = desc.type_annotation.as_ref().unwrap();
     assert_path(ty, &["usize"]);
 }
 
@@ -51,11 +51,11 @@ fn captures_local_let_with_type() {
     "#;
     let map = collect_variables(source);
     let desc = map.get("wrapper::value").unwrap();
-    assert_eq!(desc.kind, VariableKind::Let);
-    assert_eq!(desc.scope, VariableScope::Local);
-    assert!(desc.is_mut);
+    assert_eq!(desc.kind, VariableKind::Binding);
+    assert_eq!(desc.scope, VariableScope::Function);
+    assert_eq!(desc.is_mutable, Some(true));
 
-    let ty = desc.ty.as_ref().unwrap();
+    let ty = desc.type_annotation.as_ref().unwrap();
     let generics = assert_path(ty, &["Option"]);
     assert_eq!(generics.len(), 1);
     let inner = &generics[0];

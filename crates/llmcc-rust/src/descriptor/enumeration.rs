@@ -1,80 +1,47 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirNode};
+use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
-use super::function::{parse_type_expr, FnVisibility, TypeExpr};
+use llmcc_descriptor::{EnumDescriptor, EnumVariant, EnumVariantField, EnumVariantKind};
 
-/// Classification of enum variants.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EnumVariantKind {
-    Unit,
-    Tuple,
-    Struct,
-}
+use super::function::{build_origin, parse_type_expr, parse_visibility};
 
-/// Captures metadata for a single enum variant.
-#[derive(Debug, Clone)]
-pub struct EnumVariant {
-    pub name: String,
-    pub kind: EnumVariantKind,
-    pub fields: Vec<EnumVariantField>,
-    pub discriminant: Option<String>,
-}
+/// Build a shared enum descriptor for a Rust enum declaration.
+pub fn from_enum<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    fqn: String,
+) -> Option<EnumDescriptor> {
+    let ts_node = match node.inner_ts_node() {
+        ts if ts.kind() == "enum_item" => ts,
+        _ => return None,
+    };
 
-/// Field metadata for tuple or struct variants.
-#[derive(Debug, Clone)]
-pub struct EnumVariantField {
-    pub name: Option<String>,
-    pub ty: Option<TypeExpr>,
-}
+    let name_node = ts_node.child_by_field_name("name")?;
+    let name = clean(&node_text(unit, name_node));
+    let header_text = unit
+        .file()
+        .get_text(ts_node.start_byte(), name_node.start_byte());
+    let visibility = parse_visibility(&header_text);
 
-/// Structured metadata for Rust enums.
-#[derive(Debug, Clone)]
-pub struct EnumDescriptor {
-    pub hir_id: HirId,
-    pub name: String,
-    pub fqn: String,
-    pub visibility: FnVisibility,
-    pub generics: Option<String>,
-    pub variants: Vec<EnumVariant>,
-}
+    let generics = ts_node
+        .child_by_field_name("type_parameters")
+        .map(|n| clean(&node_text(unit, n)));
 
-impl EnumDescriptor {
-    pub fn from_enum<'tcx>(
-        unit: CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        fqn: String,
-    ) -> Option<Self> {
-        let ts_node = match node.inner_ts_node() {
-            ts if ts.kind() == "enum_item" => ts,
-            _ => return None,
-        };
+    let variants = ts_node
+        .child_by_field_name("body")
+        .map(|body| parse_enum_variants(unit, body))
+        .unwrap_or_default();
 
-        let name_node = ts_node.child_by_field_name("name")?;
-        let name = clean(&node_text(unit, name_node));
-        let header_text = unit
-            .file()
-            .get_text(ts_node.start_byte(), name_node.start_byte());
-        let visibility = FnVisibility::from_header(&header_text);
+    let origin = build_origin(unit, node, ts_node);
 
-        let generics = ts_node
-            .child_by_field_name("type_parameters")
-            .map(|n| clean(&node_text(unit, n)));
+    let mut descriptor = EnumDescriptor::new(origin, name);
+    descriptor.fqn = Some(fqn);
+    descriptor.visibility = visibility;
+    descriptor.generics = generics;
+    descriptor.variants = variants;
 
-        let variants = ts_node
-            .child_by_field_name("body")
-            .map(|body| parse_enum_variants(unit, body))
-            .unwrap_or_default();
-
-        Some(EnumDescriptor {
-            hir_id: node.hir_id(),
-            name,
-            fqn,
-            visibility,
-            generics,
-            variants,
-        })
-    }
+    Some(descriptor)
 }
 
 fn parse_enum_variants<'tcx>(unit: CompileUnit<'tcx>, body: Node<'tcx>) -> Vec<EnumVariant> {
@@ -113,12 +80,15 @@ fn parse_enum_variant<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> EnumVa
         None => (EnumVariantKind::Unit, Vec::new()),
     };
 
-    EnumVariant {
-        name,
-        kind,
-        fields,
-        discriminant,
+    let mut variant = EnumVariant::new(name, kind);
+    variant.fields = fields;
+    if let Some(value) = discriminant {
+        variant
+            .extras
+            .insert("rust.discriminant".to_string(), value);
     }
+
+    variant
 }
 
 fn parse_variant_body<'tcx>(
@@ -135,7 +105,7 @@ fn parse_variant_body<'tcx>(
             EnumVariantKind::Tuple,
             parse_tuple_variant_fields(unit, body),
         ),
-        _ => (EnumVariantKind::Unit, Vec::new()),
+        _ => (EnumVariantKind::Other, Vec::new()),
     }
 }
 
@@ -153,7 +123,10 @@ fn parse_named_variant_fields<'tcx>(
             let ty = child
                 .child_by_field_name("type")
                 .map(|n| parse_type_expr(unit, n));
-            fields.push(EnumVariantField { name, ty });
+
+            let mut field = EnumVariantField::new(name);
+            field.type_annotation = ty;
+            fields.push(field);
         }
     }
     fields
@@ -176,13 +149,14 @@ fn parse_tuple_variant_fields<'tcx>(
                             .children(&mut child.walk())
                             .find_map(|n| is_type_node(n.kind()).then(|| parse_type_expr(unit, n)))
                     });
-                fields.push(EnumVariantField { name: None, ty });
+                let mut field = EnumVariantField::new(None);
+                field.type_annotation = ty;
+                fields.push(field);
             }
             kind if is_type_node(kind) => {
-                fields.push(EnumVariantField {
-                    name: None,
-                    ty: Some(parse_type_expr(unit, child)),
-                });
+                let mut field = EnumVariantField::new(None);
+                field.type_annotation = Some(parse_type_expr(unit, child));
+                fields.push(field);
             }
             _ => {}
         }

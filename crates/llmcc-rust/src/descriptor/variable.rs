@@ -1,111 +1,80 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirNode};
+use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
-use super::function::parse_type_expr;
+use llmcc_descriptor::{VariableDescriptor, VariableKind, VariableScope};
 
-/// Classification for a variable-like binding.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VariableKind {
-    Let,
-    Const,
-    Static,
+use super::function::{build_origin, parse_type_expr};
+
+/// Build a shared descriptor for a local `let` binding.
+pub fn from_let<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    name: String,
+    fqn: String,
+) -> VariableDescriptor {
+    let ts_node = node.inner_ts_node();
+    let ty = ts_node
+        .child_by_field_name("type")
+        .map(|n| parse_type_expr(unit, n));
+    let is_mut = has_mutable_specifier(ts_node);
+    let origin = build_origin(unit, node, ts_node);
+
+    let mut descriptor = VariableDescriptor::new(origin, name);
+    descriptor.fqn = Some(fqn);
+    descriptor.kind = VariableKind::Binding;
+    descriptor.scope = VariableScope::Function;
+    descriptor.is_mutable = Some(is_mut);
+    descriptor.type_annotation = ty;
+
+    descriptor
 }
 
-/// Scope in which a variable lives.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VariableScope {
-    Global,
-    Local,
+/// Build a shared descriptor for a `const` item.
+pub fn from_const_item<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    name: String,
+    fqn: String,
+) -> VariableDescriptor {
+    let ts_node = node.inner_ts_node();
+    let ty = ts_node
+        .child_by_field_name("type")
+        .map(|n| parse_type_expr(unit, n));
+    let origin = build_origin(unit, node, ts_node);
+
+    let mut descriptor = VariableDescriptor::new(origin, name);
+    descriptor.fqn = Some(fqn);
+    descriptor.kind = VariableKind::Constant;
+    descriptor.scope = VariableScope::Global;
+    descriptor.is_mutable = Some(false);
+    descriptor.type_annotation = ty;
+
+    descriptor
 }
 
-/// Metadata captured for `let` bindings, `const` items, and `static` items.
-#[derive(Debug, Clone)]
-pub struct VariableDescriptor {
-    /// HIR identifier associated with the binding.
-    pub hir_id: HirId,
-    /// Name as written in source.
-    pub name: String,
-    /// Fully-qualified name derived from the current scope chain.
-    pub fqn: String,
-    /// Binding kind (`let`, `const`, or `static`).
-    pub kind: VariableKind,
-    /// Whether the binding is declared mutable.
-    pub is_mut: bool,
-    /// Whether the binding lives at module scope or inside a function.
-    pub scope: VariableScope,
-    /// Optional parsed type annotation.
-    pub ty: Option<super::function::TypeExpr>,
-}
+/// Build a shared descriptor for a `static` item.
+pub fn from_static_item<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    name: String,
+    fqn: String,
+) -> VariableDescriptor {
+    let ts_node = node.inner_ts_node();
+    let ty = ts_node
+        .child_by_field_name("type")
+        .map(|n| parse_type_expr(unit, n));
+    let is_mut = has_mutable_specifier(ts_node);
+    let origin = build_origin(unit, node, ts_node);
 
-impl VariableDescriptor {
-    pub(crate) fn from_let<'tcx>(
-        unit: CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        name: String,
-        fqn: String,
-    ) -> Self {
-        let ts_node = node.inner_ts_node();
-        let ty = ts_node
-            .child_by_field_name("type")
-            .map(|n| parse_type_expr(unit, n));
-        let is_mut = has_mutable_specifier(ts_node);
+    let mut descriptor = VariableDescriptor::new(origin, name);
+    descriptor.fqn = Some(fqn);
+    descriptor.kind = VariableKind::Static;
+    descriptor.scope = VariableScope::Global;
+    descriptor.is_mutable = Some(is_mut);
+    descriptor.type_annotation = ty;
 
-        VariableDescriptor {
-            hir_id: node.hir_id(),
-            name,
-            fqn,
-            kind: VariableKind::Let,
-            is_mut,
-            scope: VariableScope::Local,
-            ty,
-        }
-    }
-
-    pub(crate) fn from_const_item<'tcx>(
-        unit: CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        name: String,
-        fqn: String,
-    ) -> Self {
-        let ts_node = node.inner_ts_node();
-        let ty = ts_node
-            .child_by_field_name("type")
-            .map(|n| parse_type_expr(unit, n));
-
-        VariableDescriptor {
-            hir_id: node.hir_id(),
-            name,
-            fqn,
-            kind: VariableKind::Const,
-            is_mut: false,
-            scope: VariableScope::Global,
-            ty,
-        }
-    }
-
-    pub(crate) fn from_static_item<'tcx>(
-        unit: CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        name: String,
-        fqn: String,
-    ) -> Self {
-        let ts_node = node.inner_ts_node();
-        let ty = ts_node
-            .child_by_field_name("type")
-            .map(|n| parse_type_expr(unit, n));
-        let is_mut = has_mutable_specifier(ts_node);
-
-        VariableDescriptor {
-            hir_id: node.hir_id(),
-            name,
-            fqn,
-            kind: VariableKind::Static,
-            is_mut,
-            scope: VariableScope::Global,
-            ty,
-        }
-    }
+    descriptor
 }
 
 fn has_mutable_specifier(ts_node: Node<'_>) -> bool {

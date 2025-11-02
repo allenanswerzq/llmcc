@@ -2,6 +2,7 @@
 /// This module verifies that visit_let_declaration properly extracts type annotations
 /// and establishes dependency relations between functions and the types used in let statements.
 use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
+use llmcc_descriptor::DescriptorId;
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -60,7 +61,7 @@ fn struct_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_struct(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
 fn function_symbol(
@@ -69,7 +70,7 @@ fn function_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_function(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
 fn enum_symbol(
@@ -78,10 +79,24 @@ fn enum_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_enum(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
-fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'static Symbol {
+fn descriptor_hir_id(origin: &llmcc_descriptor::DescriptorOrigin) -> HirId {
+    match origin.id.as_ref().and_then(|id| match id {
+        DescriptorId::U64(value) => Some(*value as u32),
+        _ => None,
+    }) {
+        Some(value) => HirId(value),
+        None => panic!("descriptor missing numeric origin id: {:?}", origin.id),
+    }
+}
+
+fn symbol(
+    unit: llmcc_core::context::CompileUnit<'static>,
+    origin: &llmcc_descriptor::DescriptorOrigin,
+) -> &'static Symbol {
+    let hir_id = descriptor_hir_id(origin);
     unit.get_scope(hir_id).symbol().unwrap()
 }
 

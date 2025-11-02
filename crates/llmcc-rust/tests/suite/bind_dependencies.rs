@@ -1,4 +1,5 @@
 use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
+use llmcc_descriptor::DescriptorId;
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -47,7 +48,7 @@ fn find_function_by_fqn<'a>(
     collection
         .functions
         .iter()
-        .find(|desc| desc.fqn == fqn)
+        .find(|desc| desc.fqn.as_deref() == Some(fqn))
         .unwrap()
 }
 
@@ -68,7 +69,7 @@ fn struct_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_struct(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
 fn function_symbol(
@@ -77,7 +78,7 @@ fn function_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_function(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
 fn function_symbol_by_fqn(
@@ -86,7 +87,7 @@ fn function_symbol_by_fqn(
     fqn: &str,
 ) -> &'static Symbol {
     let desc = find_function_by_fqn(collection, fqn);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
 fn enum_symbol(
@@ -95,10 +96,24 @@ fn enum_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_enum(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
-fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'static Symbol {
+fn descriptor_hir_id(origin: &llmcc_descriptor::DescriptorOrigin) -> HirId {
+    match origin.id.as_ref().and_then(|id| match id {
+        DescriptorId::U64(value) => Some(*value as u32),
+        _ => None,
+    }) {
+        Some(value) => HirId(value),
+        None => panic!("descriptor missing numeric origin id: {:?}", origin.id),
+    }
+}
+
+fn symbol(
+    unit: llmcc_core::context::CompileUnit<'static>,
+    origin: &llmcc_descriptor::DescriptorOrigin,
+) -> &'static Symbol {
+    let hir_id = descriptor_hir_id(origin);
     unit.get_scope(hir_id).symbol().unwrap()
 }
 
@@ -219,7 +234,7 @@ fn const_initializer_records_dependencies() {
         .unwrap();
 
     let helper_symbol = function_symbol(unit, &collection, "helper");
-    let const_symbol = symbol(unit, const_desc.hir_id);
+    let const_symbol = symbol(unit, &const_desc.origin);
 
     assert_relation(const_symbol, helper_symbol);
 }
@@ -714,8 +729,8 @@ fn module_with_const_dependencies() {
         .unwrap();
 
     let config_symbol = struct_symbol(unit, &collection, "Config");
-    let default_size_symbol = symbol(unit, default_size_desc.hir_id);
-    let default_config_symbol = symbol(unit, default_config_desc.hir_id);
+    let default_size_symbol = symbol(unit, &default_size_desc.origin);
+    let default_config_symbol = symbol(unit, &default_config_desc.origin);
     let get_config_symbol = function_symbol(unit, &collection, "get_config");
 
     assert_relation(default_config_symbol, config_symbol);
@@ -1133,7 +1148,7 @@ fn const_depends_on_type_and_function() {
 
     let config_symbol = struct_symbol(unit, &collection, "Config");
     let create_symbol = function_symbol(unit, &collection, "create_config");
-    let const_symbol = symbol(unit, const_desc.hir_id);
+    let const_symbol = symbol(unit, &const_desc.origin);
 
     assert_relation(const_symbol, config_symbol);
     assert_relation(const_symbol, create_symbol);
@@ -1156,7 +1171,7 @@ fn static_variable_dependencies() {
         .unwrap();
 
     let init_symbol = function_symbol(unit, &collection, "init_value");
-    let static_symbol = symbol(unit, static_desc.hir_id);
+    let static_symbol = symbol(unit, &static_desc.origin);
 
     assert_relation(static_symbol, init_symbol);
 }
@@ -1462,8 +1477,8 @@ fn const_references_other_const() {
         .find(|desc| desc.name == "DERIVED")
         .unwrap();
 
-    let base_symbol = symbol(unit, base_desc.hir_id);
-    let derived_symbol = symbol(unit, derived_desc.hir_id);
+    let base_symbol = symbol(unit, &base_desc.origin);
+    let derived_symbol = symbol(unit, &derived_desc.origin);
 
     assert_relation(derived_symbol, base_symbol);
 }

@@ -9,10 +9,10 @@ pub use crate::collect::{
     SymbolBatch,
 };
 pub use crate::descriptor::{
-    CallArgument, CallDescriptor, CallTarget, ChainSegment, EnumDescriptor, EnumVariant,
-    EnumVariantField, EnumVariantKind, FnVisibility, FunctionDescriptor, FunctionParameter,
-    StructDescriptor, StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind,
-    VariableScope,
+    CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
+    EnumDescriptor, EnumVariant, EnumVariantField, EnumVariantKind, FunctionDescriptor,
+    FunctionParameter, FunctionQualifiers, ParameterKind, StructDescriptor, StructField,
+    StructKind, TypeExpr, VariableDescriptor, VariableKind, VariableScope, Visibility,
 };
 pub use llmcc_core::{
     build_llmcc_graph, build_llmcc_ir, print_llmcc_graph, print_llmcc_ir, CompileCtxt,

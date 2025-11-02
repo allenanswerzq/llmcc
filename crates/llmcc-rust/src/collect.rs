@@ -5,10 +5,10 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 
-use crate::descriptor::function::parse_type_expr;
+use crate::descriptor::function;
 use crate::descriptor::{
-    CallDescriptor, EnumDescriptor, FnVisibility, FunctionDescriptor, StructDescriptor, TypeExpr,
-    VariableDescriptor,
+    enumeration, structure, variable, CallDescriptor, EnumDescriptor, FunctionDescriptor,
+    StructDescriptor, TypeExpr, VariableDescriptor, Visibility,
 };
 use crate::token::{AstVisitorRust, LangRust};
 
@@ -229,7 +229,7 @@ impl<'tcx> DeclCollector<'tcx> {
             .opt_get_text(ts_node.start_byte(), name_node.start_byte())
             .unwrap_or_default();
 
-        !matches!(FnVisibility::from_header(&header), FnVisibility::Private)
+        !matches!(function::parse_visibility(&header), Visibility::Private)
     }
 
     fn should_register_globally(&self, node: &HirNode<'tcx>) -> bool {
@@ -328,7 +328,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             register_globally,
             SymbolKind::Function,
         ) {
-            if let Some(desc) = FunctionDescriptor::from_hir(self.unit, &node, fqn.clone()) {
+            if let Some(desc) = function::from_hir(self.unit, &node, fqn.clone()) {
                 self.functions.push(desc);
             }
             self.visit_children_new_scope(&node, Some(symbol_idx));
@@ -341,8 +341,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some((_symbol_idx, ident, fqn)) =
             self.create_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable)
         {
-            let var =
-                VariableDescriptor::from_let(self.unit, &node, ident.name.clone(), fqn.clone());
+            let var = variable::from_let(self.unit, &node, ident.name.clone(), fqn.clone());
             self.variables.push(var);
         }
         self.visit_children(&node);
@@ -415,7 +414,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         let enclosing = self.parent_symbol().map(|symbol| symbol.fqn.clone());
-        let desc = CallDescriptor::from_call(self.unit, &node, enclosing);
+        let desc = crate::descriptor::call::from_call(self.unit, &node, enclosing);
         self.calls.push(desc);
         self.visit_children(&node);
     }
@@ -431,18 +430,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             self.create_new_symbol(&node, LangRust::field_name, true, symbol_kind)
         {
             let variable = match ts_kind {
-                "const_item" => VariableDescriptor::from_const_item(
-                    self.unit,
-                    &node,
-                    ident.name.clone(),
-                    fqn.clone(),
-                ),
-                "static_item" => VariableDescriptor::from_static_item(
-                    self.unit,
-                    &node,
-                    ident.name.clone(),
-                    fqn.clone(),
-                ),
+                "const_item" => {
+                    variable::from_const_item(self.unit, &node, ident.name.clone(), fqn.clone())
+                }
+                "static_item" => {
+                    variable::from_static_item(self.unit, &node, ident.name.clone(), fqn.clone())
+                }
                 _ => return,
             };
             self.variables.push(variable);
@@ -464,7 +457,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             register_globally,
             SymbolKind::Struct,
         ) {
-            if let Some(desc) = StructDescriptor::from_struct(self.unit, &node, fqn.clone()) {
+            if let Some(desc) = structure::from_struct(self.unit, &node, fqn.clone()) {
                 self.structs.push(desc);
             }
             self.visit_children_new_scope(&node, Some(symbol_idx));
@@ -482,7 +475,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             register_globally,
             SymbolKind::Enum,
         ) {
-            if let Some(desc) = EnumDescriptor::from_enum(self.unit, &node, fqn.clone()) {
+            if let Some(desc) = enumeration::from_enum(self.unit, &node, fqn.clone()) {
                 self.enums.push(desc);
             }
             self.visit_children_new_scope(&node, Some(symbol_idx));
@@ -512,7 +505,7 @@ fn impl_type_segments<'tcx>(
     type_node: &HirNode<'tcx>,
 ) -> Option<Vec<String>> {
     let ts_node = type_node.inner_ts_node();
-    let expr = parse_type_expr(unit, ts_node);
+    let expr = function::parse_type_expr(unit, ts_node);
     extract_path_segments(&expr)
 }
 
