@@ -146,6 +146,7 @@ fn extract_class_field<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> O
 
     let mut field = ClassField::new(ident.name.clone());
 
+    let ts_node = node.inner_ts_node();
     let type_hint = node
         .opt_child_by_field(unit, LangPython::field_type)
         .map(|type_node| {
@@ -161,6 +162,10 @@ fn extract_class_field<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> O
             } else {
                 Some(trimmed.to_string())
             }
+        })
+        .or_else(|| {
+            let assignment_text = unit.get_text(ts_node.start_byte(), ts_node.end_byte());
+            parse_annotation_from_assignment_text(&assignment_text)
         });
 
     if let Some(type_hint) = type_hint {
@@ -210,6 +215,22 @@ fn upsert_field(fields: &mut BTreeMap<String, ClassField>, field: ClassField) {
             }
         })
         .or_insert(field);
+}
+
+fn parse_annotation_from_assignment_text(text: &str) -> Option<String> {
+    let colon_idx = text.find(':')?;
+    let after_colon = text[colon_idx + 1..].trim();
+    if after_colon.is_empty() {
+        return None;
+    }
+
+    let annotation = after_colon.split('=').next().map(str::trim).unwrap_or("");
+
+    if annotation.is_empty() {
+        None
+    } else {
+        Some(annotation.to_string())
+    }
 }
 
 fn extract_decorated_method_name<'tcx>(

@@ -7,7 +7,7 @@ use llmcc_descriptor::{EnumDescriptor, EnumVariant, EnumVariantField, EnumVarian
 use super::function::{build_origin, parse_type_expr, parse_visibility};
 
 /// Build a shared enum descriptor for a Rust enum declaration.
-pub fn from_enum<'tcx>(
+pub fn build<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     fqn: Option<&str>,

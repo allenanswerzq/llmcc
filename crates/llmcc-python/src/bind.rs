@@ -372,7 +372,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                 let mut segments = symbol.qualifiers.clone();
                 segments.push(symbol.name.clone());
                 if !self.handle_symbol_segments(&segments) {
-                    self.handle_symbol_segments(&[symbol.name.clone()]);
+                    self.handle_symbol_segments(std::slice::from_ref(&symbol.name));
                 }
             }
             llmcc_descriptor::CallTarget::Chain(chain) => {
@@ -380,7 +380,7 @@ impl<'tcx> SymbolBinder<'tcx> {
                     self.add_symbol_relation(Some(target));
                     self.record_call_binding(target);
                 } else if let Some(segment) = chain.segments.last() {
-                    self.handle_symbol_segments(&[segment.name.clone()]);
+                    self.handle_symbol_segments(std::slice::from_ref(&segment.name));
                 }
             }
             llmcc_descriptor::CallTarget::Dynamic { .. } => {}
@@ -434,14 +434,16 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn resolve_method_from_chain(&mut self, chain: &CallChain) -> Option<&'tcx Symbol> {
         let segment = chain.segments.last()?;
         if chain.root == "self" {
-            if let Some(class_symbol) = self
+            let class_fqn = self
                 .scopes
                 .iter()
                 .rev()
                 .filter_map(|scope| scope.symbol())
                 .find(|symbol| symbol.kind() == SymbolKind::Struct)
-            {
-                let method_fqn = format!("{}::{}", class_symbol.fqn_name.read(), segment.name);
+                .map(|symbol| symbol.fqn_name.read().clone());
+
+            if let Some(class_fqn) = class_fqn {
+                let method_fqn = format!("{}::{}", class_fqn, segment.name);
                 let key = self.interner().intern(&method_fqn);
                 return self
                     .lookup_symbol_suffix(&[key], Some(SymbolKind::Function))

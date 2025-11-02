@@ -7,7 +7,7 @@ use llmcc_descriptor::{VariableDescriptor, VariableKind, VariableScope};
 use super::function::{build_origin, parse_type_expr};
 
 /// Build a shared descriptor for a local `let` binding.
-pub fn from_let<'tcx>(
+pub fn build_let<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     name: String,
@@ -31,7 +31,7 @@ pub fn from_let<'tcx>(
 }
 
 /// Build a shared descriptor for a `const` item.
-pub fn from_const_item<'tcx>(
+pub fn build_const_item<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     name: String,
@@ -54,7 +54,7 @@ pub fn from_const_item<'tcx>(
 }
 
 /// Build a shared descriptor for a `static` item.
-pub fn from_static_item<'tcx>(
+pub fn build_static_item<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     name: String,

@@ -8,7 +8,7 @@ use llmcc_descriptor::{
 };
 
 /// Build a language-agnostic function descriptor from a Rust function item.
-pub fn from_hir<'tcx>(
+pub fn build<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     fqn: Option<&str>,

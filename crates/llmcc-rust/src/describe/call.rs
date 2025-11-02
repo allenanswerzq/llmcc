@@ -12,7 +12,7 @@ use llmcc_descriptor::{
 use super::function::{build_origin, parse_type_expr};
 
 /// Build a shared call descriptor from a Rust call expression.
-pub fn from_call<'tcx>(
+pub fn build<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     enclosing_function: Option<&str>,

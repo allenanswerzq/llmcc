@@ -217,13 +217,11 @@ fn extract_return_type<'tcx>(
 
     for child in ts_node.children(&mut cursor) {
         let kind = child.kind();
-        if found_arrow {
-            if child.is_named() {
-                let text = unit.get_text(child.start_byte(), child.end_byte());
-                let trimmed = text.trim();
-                if !trimmed.is_empty() {
-                    return Some(TypeExpr::opaque(LANGUAGE_PYTHON, trimmed.to_string()));
-                }
+        if found_arrow && child.is_named() {
+            let text = unit.get_text(child.start_byte(), child.end_byte());
+            let trimmed = text.trim();
+            if !trimmed.is_empty() {
+                return Some(TypeExpr::opaque(LANGUAGE_PYTHON, trimmed.to_string()));
             }
         }
 

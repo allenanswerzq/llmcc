@@ -6,8 +6,8 @@ use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
-use crate::descriptor::function;
-use crate::descriptor::{CallKind, CallTarget, RustDescriptorBuilder, TypeExpr};
+use crate::describe::function;
+use crate::describe::{CallKind, CallTarget, RustDescriptorBuilder, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
 use llmcc_descriptor::{DescriptorMeta, LanguageDescriptorBuilder};
 

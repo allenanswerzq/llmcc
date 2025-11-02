@@ -25,7 +25,7 @@ impl<'tcx> LanguageDescriptorBuilder<'tcx> for RustDescriptorBuilder {
             DescriptorMeta::Function { fqn } => fqn,
             _ => None,
         };
-        function::from_hir(unit, node, fqn)
+        function::build(unit, node, fqn)
     }
 
     fn build_struct_descriptor(
@@ -37,7 +37,7 @@ impl<'tcx> LanguageDescriptorBuilder<'tcx> for RustDescriptorBuilder {
             DescriptorMeta::Struct { fqn } => fqn,
             _ => None,
         };
-        structure::from_struct(unit, node, fqn)
+        structure::build(unit, node, fqn)
     }
 
     fn build_enum_descriptor(
@@ -49,7 +49,7 @@ impl<'tcx> LanguageDescriptorBuilder<'tcx> for RustDescriptorBuilder {
             DescriptorMeta::Enum { fqn } => fqn,
             _ => None,
         };
-        enumeration::from_enum(unit, node, fqn)
+        enumeration::build(unit, node, fqn)
     }
 
     fn build_variable_descriptor(
@@ -66,19 +66,19 @@ impl<'tcx> LanguageDescriptorBuilder<'tcx> for RustDescriptorBuilder {
         let name = name?;
         let kind = node.inner_ts_node().kind();
         match kind {
-            "let_declaration" => Some(variable::from_let(
+            "let_declaration" => Some(variable::build_let(
                 unit,
                 node,
                 name.to_string(),
                 fqn.to_string(),
             )),
-            "const_item" => Some(variable::from_const_item(
+            "const_item" => Some(variable::build_const_item(
                 unit,
                 node,
                 name.to_string(),
                 fqn.to_string(),
             )),
-            "static_item" => Some(variable::from_static_item(
+            "static_item" => Some(variable::build_static_item(
                 unit,
                 node,
                 name.to_string(),
@@ -94,9 +94,9 @@ impl<'tcx> LanguageDescriptorBuilder<'tcx> for RustDescriptorBuilder {
         meta: DescriptorMeta<'_>,
     ) -> Option<CallDescriptor> {
         if let DescriptorMeta::Call { enclosing, .. } = meta {
-            Some(call::from_call(unit, node, enclosing))
+            Some(call::build(unit, node, enclosing))
         } else {
-            Some(call::from_call(unit, node, None))
+            Some(call::build(unit, node, None))
         }
     }
 }

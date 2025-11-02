@@ -9,7 +9,7 @@ use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 use crate::describe::PythonDescriptorBuilder;
 use crate::token::{AstVisitorPython, LangPython};
 use llmcc_descriptor::{
-    CallDescriptor, CallKind, ClassDescriptor, DescriptorMeta, FunctionDescriptor,
+    CallDescriptor, CallKind, CallTarget, ClassDescriptor, DescriptorMeta, FunctionDescriptor,
     ImportDescriptor, LanguageDescriptorBuilder, VariableDescriptor, VariableScope,
 };
 
@@ -410,7 +410,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
-        if let Some((symbol_idx, name)) =
+        if let Some((symbol_idx, _name)) =
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Function)
         {
             let fqn = self.symbols[symbol_idx].fqn.clone();
@@ -426,7 +426,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_class_definition(&mut self, node: HirNode<'tcx>) {
-        if let Some((symbol_idx, name)) =
+        if let Some((symbol_idx, _name)) =
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
         {
             let fqn = self.symbols[symbol_idx].fqn.clone();

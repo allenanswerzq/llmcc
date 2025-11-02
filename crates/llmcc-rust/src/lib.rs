@@ -1,6 +1,6 @@
 mod bind;
 mod collect;
-pub mod descriptor;
+pub mod describe;
 pub mod token;
 
 pub use crate::bind::bind_symbols;
@@ -8,7 +8,7 @@ pub use crate::collect::{
     apply_symbol_batch, collect_symbols, collect_symbols_batch, CollectedSymbols, CollectionResult,
     SymbolBatch,
 };
-pub use crate::descriptor::{
+pub use crate::describe::{
     CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
     EnumDescriptor, EnumVariant, EnumVariantField, EnumVariantKind, FunctionDescriptor,
     FunctionParameter, FunctionQualifiers, ParameterKind, StructDescriptor, StructField,

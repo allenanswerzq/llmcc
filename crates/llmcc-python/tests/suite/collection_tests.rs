@@ -96,9 +96,7 @@ def greet(name, age=25):
         "Function should have parameters"
     );
     assert!(
-        func.parameters
-            .iter()
-            .all(|parameter| parameter_has_name(parameter)),
+        func.parameters.iter().all(parameter_has_name),
         "Parameter names should not be empty",
     );
 }
@@ -300,9 +298,7 @@ def typed_func(name: str, age: int) -> bool:
         "Function should have parameters"
     );
     assert!(
-        func.parameters
-            .iter()
-            .all(|parameter| parameter_has_name(parameter)),
+        func.parameters.iter().all(parameter_has_name),
         "Parameter names should not be empty",
     );
     let return_type = func
@@ -498,9 +494,7 @@ def func(a, b=10, *args, **kwargs):
         "Function should have parameters"
     );
     assert!(
-        func.parameters
-            .iter()
-            .all(|parameter| parameter_has_name(parameter)),
+        func.parameters.iter().all(parameter_has_name),
         "Parameter name should not be empty",
     );
 }

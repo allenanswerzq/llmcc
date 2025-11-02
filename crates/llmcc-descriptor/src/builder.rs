@@ -7,8 +7,9 @@ use crate::{
 };
 
 /// Additional metadata provided to descriptor builders.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum DescriptorMeta<'a> {
+    #[default]
     None,
     Function {
         fqn: Option<&'a str>,
@@ -34,12 +35,6 @@ pub enum DescriptorMeta<'a> {
         kind_hint: Option<CallKind>,
     },
     Custom(&'a str),
-}
-
-impl<'a> Default for DescriptorMeta<'a> {
-    fn default() -> Self {
-        DescriptorMeta::None
-    }
 }
 
 /// Trait implemented by language front-ends to construct shared descriptors from their HIR nodes.

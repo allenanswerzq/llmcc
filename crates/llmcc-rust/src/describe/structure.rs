@@ -7,7 +7,7 @@ use llmcc_descriptor::{StructDescriptor, StructField, StructKind};
 use super::function::{build_origin, parse_type_expr, parse_visibility};
 
 /// Build a shared struct descriptor from the Rust AST node.
-pub fn from_struct<'tcx>(
+pub fn build<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     fqn: Option<&str>,
