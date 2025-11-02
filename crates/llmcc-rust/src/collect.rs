@@ -7,10 +7,11 @@ use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 
 use crate::descriptor::function;
 use crate::descriptor::{
-    enumeration, structure, variable, CallDescriptor, EnumDescriptor, FunctionDescriptor,
-    StructDescriptor, TypeExpr, VariableDescriptor, Visibility,
+    CallDescriptor, EnumDescriptor, FunctionDescriptor, RustDescriptorBuilder, StructDescriptor,
+    TypeExpr, VariableDescriptor, VariableScope, Visibility,
 };
 use crate::token::{AstVisitorRust, LangRust};
+use llmcc_descriptor::{DescriptorMeta, LanguageDescriptorBuilder};
 
 #[derive(Debug)]
 pub struct CollectionResult {
@@ -328,7 +329,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             register_globally,
             SymbolKind::Function,
         ) {
-            if let Some(desc) = function::from_hir(self.unit, &node, fqn.clone()) {
+            if let Some(desc) = RustDescriptorBuilder::build_function_descriptor(
+                self.unit,
+                &node,
+                DescriptorMeta::Function { fqn: Some(&fqn) },
+            ) {
                 self.functions.push(desc);
             }
             self.visit_children_new_scope(&node, Some(symbol_idx));
@@ -341,8 +346,17 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some((_symbol_idx, ident, fqn)) =
             self.create_new_symbol(&node, LangRust::field_pattern, false, SymbolKind::Variable)
         {
-            let var = variable::from_let(self.unit, &node, ident.name.clone(), fqn.clone());
-            self.variables.push(var);
+            if let Some(var) = RustDescriptorBuilder::build_variable_descriptor(
+                self.unit,
+                &node,
+                DescriptorMeta::Variable {
+                    fqn: Some(&fqn),
+                    name: Some(&ident.name),
+                    scope: Some(VariableScope::Function),
+                },
+            ) {
+                self.variables.push(var);
+            }
         }
         self.visit_children(&node);
     }
@@ -413,9 +427,18 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
-        let enclosing = self.parent_symbol().map(|symbol| symbol.fqn.clone());
-        let desc = crate::descriptor::call::from_call(self.unit, &node, enclosing);
-        self.calls.push(desc);
+        let enclosing = self.parent_symbol().map(|symbol| symbol.fqn.as_str());
+        if let Some(desc) = RustDescriptorBuilder::build_call_descriptor(
+            self.unit,
+            &node,
+            DescriptorMeta::Call {
+                enclosing,
+                fqn: None,
+                kind_hint: None,
+            },
+        ) {
+            self.calls.push(desc);
+        }
         self.visit_children(&node);
     }
 
@@ -429,16 +452,21 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some((symbol_idx, ident, fqn)) =
             self.create_new_symbol(&node, LangRust::field_name, true, symbol_kind)
         {
-            let variable = match ts_kind {
-                "const_item" => {
-                    variable::from_const_item(self.unit, &node, ident.name.clone(), fqn.clone())
-                }
-                "static_item" => {
-                    variable::from_static_item(self.unit, &node, ident.name.clone(), fqn.clone())
-                }
-                _ => return,
-            };
-            self.variables.push(variable);
+            if let Some(variable) = RustDescriptorBuilder::build_variable_descriptor(
+                self.unit,
+                &node,
+                DescriptorMeta::Variable {
+                    fqn: Some(&fqn),
+                    name: Some(&ident.name),
+                    scope: match symbol_kind {
+                        SymbolKind::Const => Some(VariableScope::Global),
+                        SymbolKind::Static => Some(VariableScope::Global),
+                        _ => None,
+                    },
+                },
+            ) {
+                self.variables.push(variable);
+            }
             self.visit_children_new_scope(&node, Some(symbol_idx));
         } else {
             self.visit_children(&node);
@@ -457,7 +485,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             register_globally,
             SymbolKind::Struct,
         ) {
-            if let Some(desc) = structure::from_struct(self.unit, &node, fqn.clone()) {
+            if let Some(desc) = RustDescriptorBuilder::build_struct_descriptor(
+                self.unit,
+                &node,
+                DescriptorMeta::Struct { fqn: Some(&fqn) },
+            ) {
                 self.structs.push(desc);
             }
             self.visit_children_new_scope(&node, Some(symbol_idx));
@@ -475,7 +507,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             register_globally,
             SymbolKind::Enum,
         ) {
-            if let Some(desc) = enumeration::from_enum(self.unit, &node, fqn.clone()) {
+            if let Some(desc) = RustDescriptorBuilder::build_enum_descriptor(
+                self.unit,
+                &node,
+                DescriptorMeta::Enum { fqn: Some(&fqn) },
+            ) {
                 self.enums.push(desc);
             }
             self.visit_children_new_scope(&node, Some(symbol_idx));

@@ -11,7 +11,7 @@ use llmcc_descriptor::{
 pub fn from_hir<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
-    fqn: String,
+    fqn: Option<&str>,
 ) -> Option<FunctionDescriptor> {
     let ts_node = match node.inner_ts_node() {
         ts if ts.kind() == "function_item" => ts,
@@ -50,7 +50,7 @@ pub fn from_hir<'tcx>(
     let origin = build_origin(unit, node, ts_node);
 
     let mut descriptor = FunctionDescriptor::new(origin, name);
-    descriptor.fqn = Some(fqn);
+    descriptor.fqn = fqn.map(|value| value.to_string());
     descriptor.visibility = visibility;
     descriptor.qualifiers = qualifiers;
     descriptor.generics = generics;

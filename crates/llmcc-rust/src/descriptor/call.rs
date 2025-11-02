@@ -15,7 +15,7 @@ use super::function::{build_origin, parse_type_expr};
 pub fn from_call<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
-    enclosing_function: Option<String>,
+    enclosing_function: Option<&str>,
 ) -> CallDescriptor {
     let ts_node = node.inner_ts_node();
     let function_node = ts_node.child_by_field_name("function");
@@ -41,7 +41,7 @@ pub fn from_call<'tcx>(
 
     let origin = build_origin(unit, node, ts_node);
     let mut descriptor = CallDescriptor::new(origin, target);
-    descriptor.enclosing = enclosing_function;
+    descriptor.enclosing = enclosing_function.map(|value| value.to_string());
     descriptor.arguments = arguments;
 
     descriptor

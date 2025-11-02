@@ -5,7 +5,9 @@ use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use crate::describe::PythonDescriptorBuilder;
 use crate::token::{AstVisitorPython, LangPython};
+use llmcc_descriptor::{CallChain, DescriptorMeta, LanguageDescriptorBuilder};
 
 #[derive(Debug, Default)]
 pub struct BindingResult {
@@ -345,118 +347,109 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn visit_call_impl(&mut self, node: &HirNode<'tcx>) {
-        // Extract function being called
-        let ts_node = node.inner_ts_node();
+        let enclosing = self
+            .current_symbol()
+            .map(|symbol| symbol.fqn_name.read().clone());
 
-        // In tree-sitter-python, call has a `function` field
-        if let Some(func_node) = ts_node.child_by_field_name("function") {
-            let content = self.unit.file().content();
-            let record_target = |name: &str, this: &mut SymbolBinder<'tcx>| {
-                let key = this.interner().intern(name);
-
-                // First try to find in current scoped context (for method calls)
-                if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Function))
-                {
-                    this.add_symbol_relation(Some(target));
-                    let caller_name = this
-                        .current_symbol()
-                        .map(|s| s.fqn_name.read().clone())
-                        .unwrap_or_else(|| "<module>".to_string());
-                    let target_name = target.fqn_name.read().clone();
-                    this.calls.push(CallBinding {
-                        caller: caller_name,
-                        target: target_name,
-                    });
-                    return true;
-                }
-
-                // Try to find a struct (class) constructor call
-                if let Some(target) = this.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct)) {
-                    this.add_symbol_relation(Some(target));
-                    return true;
-                }
-
-                // For method calls (self.method()), try looking up within parent class
-                // If current symbol is a method, parent is the class
-                if let Some(current) = this.current_symbol() {
-                    if current.kind() == SymbolKind::Function {
-                        let fqn = current.fqn_name.read().clone();
-                        // Split "ClassName.method_name" to get class name
-                        if let Some(dot_pos) = fqn.rfind("::") {
-                            let class_name = &fqn[..dot_pos];
-                            // Build the method FQN: "ClassName.method_name"
-                            let method_fqn = format!("{}::{}", class_name, name);
-                            // Look up the method with no kind filter first
-                            if let Some(target) = this.scopes.find_global_suffix_with_filters(
-                                &[this.interner().intern(&method_fqn)],
-                                None,
-                                None,
-                            ) {
-                                if target.kind() == SymbolKind::Function {
-                                    this.add_symbol_relation(Some(target));
-                                    let caller_name = fqn.clone();
-                                    let target_name = target.fqn_name.read().clone();
-                                    this.calls.push(CallBinding {
-                                        caller: caller_name,
-                                        target: target_name,
-                                    });
-                                    return true;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // If not found, try looking with no kind filter (generic lookup)
-                if let Some(target) = this.lookup_symbol_suffix(&[key], None) {
-                    this.add_symbol_relation(Some(target));
-                    if target.kind() == SymbolKind::Function {
-                        let caller_name = this
-                            .current_symbol()
-                            .map(|s| s.fqn_name.read().clone())
-                            .unwrap_or_else(|| "<module>".to_string());
-                        let target_name = target.fqn_name.read().clone();
-                        this.calls.push(CallBinding {
-                            caller: caller_name,
-                            target: target_name,
-                        });
-                    }
-                    return true;
-                }
-
-                false
-            };
-            let handled = match func_node.kind_id() {
-                id if id == LangPython::identifier => {
-                    if let Ok(name) = func_node.utf8_text(content) {
-                        record_target(name, self)
-                    } else {
-                        false
-                    }
-                }
-                id if id == LangPython::attribute => {
-                    // For attribute access (e.g., self.method()), extract the method name
-                    if let Some(attr_node) = func_node.child_by_field_name("attribute") {
-                        if let Ok(name) = attr_node.utf8_text(content) {
-                            record_target(name, self)
-                        } else {
-                            false
-                        }
-                    } else {
-                        false
-                    }
-                }
-                _ => false,
-            };
-
-            if !handled {
-                if let Ok(name) = func_node.utf8_text(content) {
-                    let _ = record_target(name.trim(), self);
-                }
-            }
+        if let Some(descriptor) = PythonDescriptorBuilder::build_call_descriptor(
+            self.unit,
+            node,
+            DescriptorMeta::Call {
+                enclosing: enclosing.as_deref(),
+                fqn: None,
+                kind_hint: None,
+            },
+        ) {
+            self.process_call_descriptor(&descriptor);
         }
 
         self.visit_children(node);
+    }
+
+    fn process_call_descriptor(&mut self, descriptor: &llmcc_descriptor::CallDescriptor) {
+        match &descriptor.target {
+            llmcc_descriptor::CallTarget::Symbol(symbol) => {
+                let mut segments = symbol.qualifiers.clone();
+                segments.push(symbol.name.clone());
+                if !self.handle_symbol_segments(&segments) {
+                    self.handle_symbol_segments(&[symbol.name.clone()]);
+                }
+            }
+            llmcc_descriptor::CallTarget::Chain(chain) => {
+                if let Some(target) = self.resolve_method_from_chain(chain) {
+                    self.add_symbol_relation(Some(target));
+                    self.record_call_binding(target);
+                } else if let Some(segment) = chain.segments.last() {
+                    self.handle_symbol_segments(&[segment.name.clone()]);
+                }
+            }
+            llmcc_descriptor::CallTarget::Dynamic { .. } => {}
+        }
+    }
+
+    fn handle_symbol_segments(&mut self, segments: &[String]) -> bool {
+        if segments.is_empty() {
+            return false;
+        }
+
+        let keys: Vec<InternedStr> = segments
+            .iter()
+            .map(|segment| self.interner().intern(segment))
+            .collect();
+
+        if let Some(target) = self.lookup_symbol_suffix(&keys, Some(SymbolKind::Function)) {
+            self.add_symbol_relation(Some(target));
+            self.record_call_binding(target);
+            return true;
+        }
+
+        if let Some(target) = self.lookup_symbol_suffix(&keys, Some(SymbolKind::Struct)) {
+            self.add_symbol_relation(Some(target));
+            return true;
+        }
+
+        if let Some(target) = self.lookup_symbol_suffix(&keys, None) {
+            self.add_symbol_relation(Some(target));
+            if target.kind() == SymbolKind::Function {
+                self.record_call_binding(target);
+            }
+            return true;
+        }
+
+        false
+    }
+
+    fn record_call_binding(&mut self, target: &Symbol) {
+        let caller_name = self
+            .current_symbol()
+            .map(|s| s.fqn_name.read().clone())
+            .unwrap_or_else(|| "<module>".to_string());
+        let target_name = target.fqn_name.read().clone();
+        self.calls.push(CallBinding {
+            caller: caller_name,
+            target: target_name,
+        });
+    }
+
+    fn resolve_method_from_chain(&mut self, chain: &CallChain) -> Option<&'tcx Symbol> {
+        let segment = chain.segments.last()?;
+        if chain.root == "self" {
+            if let Some(class_symbol) = self
+                .scopes
+                .iter()
+                .rev()
+                .filter_map(|scope| scope.symbol())
+                .find(|symbol| symbol.kind() == SymbolKind::Struct)
+            {
+                let method_fqn = format!("{}::{}", class_symbol.fqn_name.read(), segment.name);
+                let key = self.interner().intern(&method_fqn);
+                return self
+                    .lookup_symbol_suffix(&[key], Some(SymbolKind::Function))
+                    .or_else(|| self.lookup_symbol_suffix(&[key], None));
+            }
+        }
+
+        None
     }
 
     fn visit_definition_node(&mut self, node: &HirNode<'tcx>, decorator_symbols: &[&'tcx Symbol]) {

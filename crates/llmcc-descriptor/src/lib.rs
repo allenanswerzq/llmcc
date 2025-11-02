@@ -3,6 +3,7 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+pub mod builder;
 pub mod call;
 pub mod class;
 pub mod enumeration;
@@ -14,6 +15,7 @@ pub mod types;
 pub mod variable;
 pub mod visibility;
 
+pub use builder::*;
 pub use call::*;
 pub use class::*;
 pub use enumeration::*;

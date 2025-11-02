@@ -10,7 +10,7 @@ use super::function::{build_origin, parse_type_expr, parse_visibility};
 pub fn from_enum<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
-    fqn: String,
+    fqn: Option<&str>,
 ) -> Option<EnumDescriptor> {
     let ts_node = match node.inner_ts_node() {
         ts if ts.kind() == "enum_item" => ts,
@@ -36,7 +36,7 @@ pub fn from_enum<'tcx>(
     let origin = build_origin(unit, node, ts_node);
 
     let mut descriptor = EnumDescriptor::new(origin, name);
-    descriptor.fqn = Some(fqn);
+    descriptor.fqn = fqn.map(|value| value.to_string());
     descriptor.visibility = visibility;
     descriptor.generics = generics;
     descriptor.variants = variants;

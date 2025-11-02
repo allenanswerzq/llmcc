@@ -7,8 +7,9 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::descriptor::function;
-use crate::descriptor::{CallKind, CallTarget, TypeExpr};
+use crate::descriptor::{CallKind, CallTarget, RustDescriptorBuilder, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
+use llmcc_descriptor::{DescriptorMeta, LanguageDescriptorBuilder};
 
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.
@@ -624,11 +625,20 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
-        let enclosing = self
+        let enclosing_owned = self
             .current_symbol()
             .map(|symbol| symbol.fqn_name.read().clone());
-        let descriptor = crate::descriptor::call::from_call(self.unit, &node, enclosing);
-        self.record_call_target(&descriptor.target);
+        if let Some(descriptor) = RustDescriptorBuilder::build_call_descriptor(
+            self.unit,
+            &node,
+            DescriptorMeta::Call {
+                enclosing: enclosing_owned.as_deref(),
+                fqn: None,
+                kind_hint: None,
+            },
+        ) {
+            self.record_call_target(&descriptor.target);
+        }
         self.visit_children(&node);
     }
 
