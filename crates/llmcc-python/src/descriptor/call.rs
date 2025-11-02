@@ -4,9 +4,10 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_descriptor::{
     CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
-    DescriptorOrigin, SourceLocation, SourceSpan, LANGUAGE_PYTHON,
 };
 use tree_sitter::Node;
+
+use super::origin::build_origin;
 
 /// Build a shared call descriptor for a Python call expression.
 pub fn build_call_descriptor<'tcx, F>(
@@ -40,23 +41,6 @@ where
     descriptor.enclosing = enclosing;
     descriptor.arguments = arguments;
     descriptor
-}
-
-fn build_origin<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    ts_node: Node<'tcx>,
-) -> DescriptorOrigin {
-    let mut origin = DescriptorOrigin::new(LANGUAGE_PYTHON).with_id(node.hir_id().0 as u64);
-
-    let file = unit
-        .file_path()
-        .or_else(|| unit.file().path())
-        .map(|path| path.to_string());
-
-    let span = SourceSpan::new(ts_node.start_byte() as u32, ts_node.end_byte() as u32);
-    origin = origin.with_location(SourceLocation::new(file, Some(span)));
-    origin
 }
 
 fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<CallTarget> {

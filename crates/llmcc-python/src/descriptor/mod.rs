@@ -1,14 +1,10 @@
 pub mod call;
-pub mod class;
-pub mod function;
-pub mod import;
-pub mod variable;
+pub mod origin;
 
 pub use call::build_call_descriptor;
-pub use class::{ClassField, PythonClassDescriptor};
-pub use function::{FunctionParameter, PythonFunctionDescriptor};
-pub use import::{ImportDescriptor, ImportKind};
 pub use llmcc_descriptor::{
     CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
+    ClassDescriptor, ClassField, FunctionDescriptor, FunctionParameter, FunctionQualifiers,
+    ImportDescriptor, ImportKind, TypeExpr, VariableDescriptor, VariableKind, VariableScope,
 };
-pub use variable::{VariableDescriptor, VariableKind, VariableScope};
+pub use origin::build_origin;

@@ -1,7 +1,7 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
 use llmcc_python::{
-    build_llmcc_ir, collect_symbols, CollectionResult, ImportDescriptor, LangPython,
-    PythonClassDescriptor, PythonFunctionDescriptor, VariableDescriptor,
+    build_llmcc_ir, collect_symbols, ClassDescriptor, CollectionResult, FunctionDescriptor,
+    ImportDescriptor, LangPython, TypeExpr, VariableDescriptor,
 };
 
 fn collect_from_source(source: &str) -> CollectionResult {
@@ -13,10 +13,7 @@ fn collect_from_source(source: &str) -> CollectionResult {
     collect_symbols(unit, globals)
 }
 
-fn expect_function<'a>(
-    collection: &'a CollectionResult,
-    name: &str,
-) -> &'a PythonFunctionDescriptor {
+fn expect_function<'a>(collection: &'a CollectionResult, name: &str) -> &'a FunctionDescriptor {
     collection
         .functions
         .iter()
@@ -24,7 +21,7 @@ fn expect_function<'a>(
         .unwrap_or_else(|| panic!("Function '{name}' should be found in collection"))
 }
 
-fn expect_class<'a>(collection: &'a CollectionResult, name: &str) -> &'a PythonClassDescriptor {
+fn expect_class<'a>(collection: &'a CollectionResult, name: &str) -> &'a ClassDescriptor {
     collection
         .classes
         .iter()
@@ -45,8 +42,31 @@ fn expect_import<'a>(collection: &'a CollectionResult, module: &str) -> &'a Impo
     collection
         .imports
         .iter()
-        .find(|descriptor| descriptor.module == module)
+        .find(|descriptor| descriptor.source == module)
         .unwrap_or_else(|| panic!("Import '{module}' should be found in collection"))
+}
+
+fn type_repr(expr: &TypeExpr) -> String {
+    match expr {
+        TypeExpr::Path { segments, .. } => segments.join("::"),
+        TypeExpr::Opaque { repr, .. } => repr.clone(),
+        TypeExpr::Unknown(repr) => repr.clone(),
+        other => format!("{:?}", other),
+    }
+}
+
+fn parameter_has_name(param: &llmcc_python::FunctionParameter) -> bool {
+    param
+        .name
+        .as_ref()
+        .map(|name| !name.is_empty())
+        .unwrap_or_else(|| {
+            param
+                .pattern
+                .as_ref()
+                .map(|pattern| !pattern.is_empty())
+                .unwrap_or(false)
+        })
 }
 
 #[test]
@@ -78,7 +98,7 @@ def greet(name, age=25):
     assert!(
         func.parameters
             .iter()
-            .all(|parameter| !parameter.name.is_empty()),
+            .all(|parameter| parameter_has_name(parameter)),
         "Parameter names should not be empty",
     );
 }
@@ -95,6 +115,7 @@ def get_value() -> int:
     let return_type = func
         .return_type
         .as_ref()
+        .map(type_repr)
         .expect("Return type should be present");
     assert!(!return_type.is_empty(), "Return type should not be empty");
 }
@@ -164,14 +185,14 @@ class Derived(Base):
 
     let derived = expect_class(&result, "Derived");
     assert!(
-        !derived.base_classes.is_empty(),
+        !derived.base_types.is_empty(),
         "Class should have base classes"
     );
     assert!(
         derived
-            .base_classes
+            .base_types
             .iter()
-            .all(|base_class| !base_class.is_empty()),
+            .all(|base_class| !type_repr(base_class).is_empty()),
         "Base class names should not be empty",
     );
 }
@@ -221,7 +242,7 @@ import os
     let result = collect_from_source(source);
 
     let import = expect_import(&result, "os");
-    assert!(!import.module.is_empty(), "Module name should not be empty");
+    assert!(!import.source.is_empty(), "Module name should not be empty");
 }
 
 #[test]
@@ -238,7 +259,7 @@ import json
         result
             .imports
             .iter()
-            .all(|import| !import.module.is_empty()),
+            .all(|import| !import.source.is_empty()),
         "Module name should not be empty",
     );
 }
@@ -281,12 +302,13 @@ def typed_func(name: str, age: int) -> bool:
     assert!(
         func.parameters
             .iter()
-            .all(|parameter| !parameter.name.is_empty()),
+            .all(|parameter| parameter_has_name(parameter)),
         "Parameter names should not be empty",
     );
     let return_type = func
         .return_type
         .as_ref()
+        .map(type_repr)
         .expect("Return type should be present");
     assert!(!return_type.is_empty(), "Return type should not be empty");
 }
@@ -405,14 +427,14 @@ class Derived(Base1, Base2):
 
     let derived = expect_class(&result, "Derived");
     assert!(
-        !derived.base_classes.is_empty(),
+        !derived.base_types.is_empty(),
         "Class should have base classes"
     );
     assert!(
         derived
-            .base_classes
+            .base_types
             .iter()
-            .all(|base_class| !base_class.is_empty()),
+            .all(|base_class| !type_repr(base_class).is_empty()),
         "Base class names should not be empty",
     );
 }
@@ -457,7 +479,7 @@ import os
         result
             .imports
             .iter()
-            .all(|descriptor| !descriptor.module.is_empty()),
+            .all(|descriptor| !descriptor.source.is_empty()),
         "Module names should not be empty",
     );
 }
@@ -478,7 +500,7 @@ def func(a, b=10, *args, **kwargs):
     assert!(
         func.parameters
             .iter()
-            .all(|parameter| !parameter.name.is_empty()),
+            .all(|parameter| parameter_has_name(parameter)),
         "Parameter name should not be empty",
     );
 }

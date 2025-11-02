@@ -1,13 +1,22 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
-use llmcc_python::{build_llmcc_ir, collect_symbols, LangPython, PythonFunctionDescriptor};
+use llmcc_python::{build_llmcc_ir, collect_symbols, FunctionDescriptor, LangPython, TypeExpr};
 
-fn collect_functions(source: &str) -> Vec<PythonFunctionDescriptor> {
+fn collect_functions(source: &str) -> Vec<FunctionDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     collect_symbols(unit, globals).functions
+}
+
+fn type_repr(expr: &TypeExpr) -> String {
+    match expr {
+        TypeExpr::Path { segments, .. } => segments.join("::"),
+        TypeExpr::Opaque { repr, .. } => repr.clone(),
+        TypeExpr::Unknown(text) => text.clone(),
+        other => format!("{:?}", other),
+    }
 }
 
 #[test]
@@ -31,8 +40,8 @@ def greet(name, age):
     let functions = collect_functions(source);
     let desc = functions.iter().find(|f| f.name == "greet").unwrap();
     assert_eq!(desc.parameters.len(), 2);
-    assert_eq!(desc.parameters[0].name, "name");
-    assert_eq!(desc.parameters[1].name, "age");
+    assert_eq!(desc.parameters[0].name.as_deref(), Some("name"));
+    assert_eq!(desc.parameters[1].name.as_deref(), Some("age"));
 }
 
 #[test]
@@ -57,9 +66,12 @@ def add(x: int, y: int) -> int:
     let functions = collect_functions(source);
     let desc = functions.iter().find(|f| f.name == "add").unwrap();
     assert_eq!(desc.parameters.len(), 2);
-    assert_eq!(desc.parameters[0].type_hint.as_deref(), Some("int"));
-    assert_eq!(desc.parameters[1].type_hint.as_deref(), Some("int"));
-    assert_eq!(desc.return_type.as_deref(), Some("int"));
+    let first_hint = desc.parameters[0].type_hint.as_ref().map(type_repr);
+    let second_hint = desc.parameters[1].type_hint.as_ref().map(type_repr);
+    let return_hint = desc.return_type.as_ref().map(type_repr);
+    assert_eq!(first_hint.as_deref(), Some("int"));
+    assert_eq!(second_hint.as_deref(), Some("int"));
+    assert_eq!(return_hint.as_deref(), Some("int"));
 }
 
 #[test]
@@ -101,8 +113,14 @@ def flexible(*args, **kwargs):
     let functions = collect_functions(source);
     let desc = functions.iter().find(|f| f.name == "flexible").unwrap();
     assert_eq!(desc.parameters.len(), 2);
-    assert!(desc.parameters.iter().any(|p| p.name == "args"));
-    assert!(desc.parameters.iter().any(|p| p.name == "kwargs"));
+    assert!(desc
+        .parameters
+        .iter()
+        .any(|p| p.name.as_deref() == Some("args")));
+    assert!(desc
+        .parameters
+        .iter()
+        .any(|p| p.name.as_deref() == Some("kwargs")));
 }
 
 #[test]
