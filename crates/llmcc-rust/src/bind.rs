@@ -6,16 +6,15 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::describe::function;
-use crate::describe::{CallKind, CallTarget, RustDescriptor, TypeExpr};
+use crate::describe::{CallKind, CallTarget, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
-use llmcc_descriptor::DescriptorTrait;
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.
 #[derive(Debug)]
 struct SymbolBinder<'tcx, 'a> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
-    _collection: &'a crate::CollectionResult,
+    collection: &'a crate::CollectionResult,
 }
 
 impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
@@ -30,7 +29,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         Self {
             unit,
             scopes,
-            _collection: collection,
+            collection,
         }
     }
 
@@ -98,30 +97,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.add_symbol_relation(symbol);
     }
 
-    fn resolve_symbol_from_fqn(&mut self, fqn: &str) -> Option<&'tcx Symbol> {
-        let segments: Vec<String> = fqn
-            .split("::")
-            .map(|segment| segment.trim().to_string())
-            .filter(|segment| !segment.is_empty())
-            .collect();
-        if segments.is_empty() {
-            return None;
-        }
-        self.resolve_symbol(&segments, Some(SymbolKind::Struct))
-            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
-            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Trait)))
-            .or_else(|| self.resolve_symbol(&segments, None))
-    }
-
-    fn resolve_impl_target(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let type_node = node.opt_child_by_field(self.unit, LangRust::field_type)?;
-        let segments = self.type_segments(&type_node)?;
-        self.resolve_symbol(&segments, Some(SymbolKind::Struct))
-            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
-            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Trait)))
-            .or_else(|| self.resolve_symbol(&segments, None))
-    }
-
     fn resolve_symbol(
         &mut self,
         segments: &[String],
@@ -140,8 +115,28 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.lookup_symbol_suffix(&suffix, kind)
     }
 
+    fn resolve_symbol_with_priority(
+        &mut self,
+        segments: &[String],
+        preferred_kinds: &[SymbolKind],
+    ) -> Option<&'tcx Symbol> {
+        if segments.is_empty() {
+            return None;
+        }
+
+        for kind in preferred_kinds {
+            if let Some(symbol) = self.resolve_symbol(segments, Some(*kind)) {
+                return Some(symbol);
+            }
+        }
+
+        self.resolve_symbol(segments, None)
+    }
+
     fn resolve_method_symbol(&mut self, method: &str) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = self.resolve_symbol(&[method.to_string()], Some(SymbolKind::Function))
+        let direct_segments = vec![method.to_string()];
+        if let Some(symbol) =
+            self.resolve_symbol_with_priority(&direct_segments, &[SymbolKind::Function])
         {
             return Some(symbol);
         }
@@ -163,7 +158,9 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 .map(|segment| segment.to_string())
                 .collect();
             segments.push(method.to_string());
-            if let Some(symbol) = self.resolve_symbol(&segments, Some(SymbolKind::Function)) {
+            if let Some(symbol) =
+                self.resolve_symbol_with_priority(&segments, &[SymbolKind::Function])
+            {
                 return Some(symbol);
             }
         }
@@ -173,8 +170,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn resolve_type_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let segments = self.type_segments(node)?;
-        self.resolve_symbol(&segments, Some(SymbolKind::Struct))
-            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
+        self.resolve_symbol_with_priority(&segments, &[SymbolKind::Struct, SymbolKind::Enum])
     }
 
     fn type_segments(&mut self, node: &HirNode<'tcx>) -> Option<Vec<String>> {
@@ -183,61 +179,61 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         expr.path_segments().map(|segments| segments.to_vec())
     }
 
-    fn parse_type_expr_from_node(&self, node: &HirNode<'tcx>) -> TypeExpr {
-        let ts_node = node.inner_ts_node();
-        function::parse_type_expr(self.unit, ts_node)
-    }
-
-    fn collect_type_expr_symbols(&mut self, expr: &TypeExpr, symbols: &mut Vec<&'tcx Symbol>) {
+    /// Traverse a type expression and collect every symbol the type mentions.
+    ///
+    /// To build intuition, consider a function that returns `Option<Result<MyStruct, MyError>>`.
+    /// This helper ensures all three symbols (`Option`, `Result`, `MyStruct`, `MyError`) end up in
+    /// the `symbols` vector so the binder can record dependencies.
+    fn resolve_symbols_from_type_expr(&mut self, expr: &TypeExpr, symbols: &mut Vec<&'tcx Symbol>) {
         match expr {
+            // Simple path types like `Foo` or qualified paths such as `crate::foo::Bar`.
+            // We first favor struct/enum resolution, but fall back to a generic lookup so we still
+            // record aliases or type aliases.
             TypeExpr::Path { segments, generics } => {
-                let struct_symbol = self.resolve_symbol(segments, Some(SymbolKind::Struct));
-                let enum_symbol = if struct_symbol.is_none() {
-                    self.resolve_symbol(segments, Some(SymbolKind::Enum))
-                } else {
-                    None
-                };
-                let any_symbol = if struct_symbol.is_none() && enum_symbol.is_none() {
-                    self.resolve_symbol(segments, None)
-                } else {
-                    None
-                };
-
-                let symbol = struct_symbol.or(enum_symbol).or(any_symbol);
+                let symbol = self.resolve_symbol_with_priority(
+                    segments,
+                    &[SymbolKind::Struct, SymbolKind::Enum],
+                );
                 if let Some(symbol) = symbol {
                     if !symbols.iter().any(|existing| existing.id == symbol.id) {
                         symbols.push(symbol);
                     }
                 }
+
+                // Example: `Option<Result<MyStruct, MyError>>` – recurse into each generic argument
+                // (`Result`, `MyStruct`, `MyError`).
                 for generic in generics {
-                    self.collect_type_expr_symbols(generic, symbols);
+                    self.resolve_symbols_from_type_expr(generic, symbols);
                 }
             }
+
+            // `&T` or `&mut T` still reference `T`, so we just recurse into the inner type.
             TypeExpr::Reference { inner, .. } => {
-                self.collect_type_expr_symbols(inner, symbols);
+                self.resolve_symbols_from_type_expr(inner, symbols);
             }
+
+            // Tuple types like `(Foo, Option<Bar>)` contain multiple elements; visit each one.
             TypeExpr::Tuple(items) => {
                 for item in items {
-                    self.collect_type_expr_symbols(item, symbols);
+                    self.resolve_symbols_from_type_expr(item, symbols);
                 }
             }
+
+            // Callable types (e.g., `fn(Foo, &Bar) -> Baz`) carry parameter and optional result types.
+            // We walk the parameters and the return type if present.
             TypeExpr::Callable { parameters, result } => {
                 for parameter in parameters {
-                    self.collect_type_expr_symbols(parameter, symbols);
+                    self.resolve_symbols_from_type_expr(parameter, symbols);
                 }
                 if let Some(result) = result.as_deref() {
-                    self.collect_type_expr_symbols(result, symbols);
+                    self.resolve_symbols_from_type_expr(result, symbols);
                 }
             }
+
+            // `impl Trait`, opaque types, or unknown nodes do not map cleanly to named symbols.
+            // We currently skip them, but we keep the branch explicit for future handling.
             TypeExpr::ImplTrait { .. } | TypeExpr::Opaque { .. } | TypeExpr::Unknown(_) => {}
         }
-    }
-
-    fn type_symbols_from_node(&mut self, node: &HirNode<'tcx>) -> Vec<&'tcx Symbol> {
-        let expr = self.parse_type_expr_from_node(node);
-        let mut symbols = Vec::new();
-        self.collect_type_expr_symbols(&expr, &mut symbols);
-        symbols
     }
 
     fn lookup_in_local_scopes(
@@ -304,19 +300,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 return Some(symbol);
             }
 
-            // if candidates.iter().all(|symbol| symbol.kind() != kind) {
-            //     let details: Vec<_> = candidates
-            //         .iter()
-            //         .map(|symbol| {
-            //             (
-            //                 symbol.name.as_str().to_string(),
-            //                 symbol.kind(),
-            //                 symbol.unit_index(),
-            //             )
-            //         })
-            //         .collect();
-            // }
-
             return None;
         }
 
@@ -333,7 +316,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         candidates.first().copied()
     }
 
-    fn record_call_target(&mut self, target: &CallTarget) {
+    fn add_call_target_dependencies(&mut self, target: &CallTarget) {
         match target {
             CallTarget::Symbol(symbol) => {
                 let mut segments = symbol.qualifiers.clone();
@@ -418,7 +401,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             .map(|segment| segment.trim().to_string())
             .filter(|segment| !segment.is_empty())
             .collect();
-        self.resolve_symbol(&segments, None)
+        self.resolve_symbol_with_priority(&segments, &[])
     }
 
     fn add_type_dependency_for_segments(&mut self, segments: &[String]) {
@@ -427,14 +410,10 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
 
         let base_segments = &segments[..segments.len() - 1];
-        let struct_sym = self.resolve_symbol(base_segments, Some(SymbolKind::Struct));
-        let enum_sym = if struct_sym.is_none() {
-            self.resolve_symbol(base_segments, Some(SymbolKind::Enum))
-        } else {
-            None
-        };
-
-        if let Some(sym) = struct_sym.or(enum_sym) {
+        let base_segments: Vec<String> = base_segments.to_vec();
+        if let Some(sym) = self
+            .resolve_symbol_with_priority(&base_segments, &[SymbolKind::Struct, SymbolKind::Enum])
+        {
             self.add_symbol_relation(Some(sym));
         }
     }
@@ -477,6 +456,21 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
+
+        if let Some(&descriptor_idx) = self.collection.struct_map.get(&node.hir_id()) {
+            if let Some(struct_descriptor) = self.collection.structs.get(descriptor_idx) {
+                for field in &struct_descriptor.fields {
+                    if let Some(type_expr) = field.type_annotation.as_ref() {
+                        let mut symbols = Vec::new();
+                        self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
+                        for type_symbol in symbols {
+                            self.add_symbol_relation(Some(type_symbol));
+                        }
+                    }
+                }
+            }
+        }
+
         self.visit_children_scope(node, symbol);
     }
 
@@ -488,18 +482,17 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
         let parent_symbol = self.current_symbol();
-        let function = RustDescriptor::build_function(self.unit, &node);
-
-        // Also extract return type as a dependency
         if let Some(func_symbol) = symbol {
-            if let Some(return_type) = function
-                .as_ref()
-                .and_then(|descriptor| descriptor.return_type.as_ref())
-            {
-                let mut symbols = Vec::new();
-                self.collect_type_expr_symbols(return_type, &mut symbols);
-                for return_type_sym in symbols {
-                    func_symbol.add_dependency(return_type_sym);
+            if let Some(&descriptor_idx) = self.collection.function_map.get(&node.hir_id()) {
+                if let Some(return_type) = self.collection.functions[descriptor_idx]
+                    .return_type
+                    .as_ref()
+                {
+                    let mut symbols = Vec::new();
+                    self.resolve_symbols_from_type_expr(return_type, &mut symbols);
+                    for return_type_sym in symbols {
+                        func_symbol.add_dependency(return_type_sym);
+                    }
                 }
             }
 
@@ -516,25 +509,48 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.visit_children_scope(node, symbol);
 
         if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
-            if matches!(
-                parent_symbol.kind(),
-                SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Impl
-            ) {
+            // When visiting `impl Foo { ... }`, `parent_symbol` refers to the synthetic
+            // impl symbol and `func_symbol` is the method we just bound. We copy the
+            // method’s dependencies back onto the impl so callers that link against the
+            // impl symbol (rather than the individual method) still receive transitive
+            // edges, e.g. `impl Foo` depends on `Foo` if the method returns that type.
+            if matches!(parent_symbol.kind(), SymbolKind::Impl) {
                 self.propagate_child_dependencies(parent_symbol, func_symbol);
             }
         }
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        let impl_descriptor = RustDescriptor::build_class(self.unit, &node);
+        let impl_descriptor = self
+            .collection
+            .impl_map
+            .get(&node.hir_id())
+            .and_then(|&idx| self.collection.impls.get(idx));
 
-        let symbol = impl_descriptor
-            .as_ref()
-            .and_then(|descriptor| descriptor.impl_target_fqn.as_ref())
-            .and_then(|fqn| self.resolve_symbol_from_fqn(fqn))
-            .or_else(|| self.resolve_impl_target(&node));
+        // Use the descriptor’s fully-qualified name to locate the target type symbol. The
+        // descriptor already normalized nested paths (e.g., `crate::foo::Bar`).
+        let symbol = impl_descriptor.and_then(|descriptor| {
+            descriptor.impl_target_fqn.as_ref().and_then(|fqn| {
+                let segments: Vec<String> = fqn
+                    .split("::")
+                    .map(|segment| segment.trim().to_string())
+                    .filter(|segment| !segment.is_empty())
+                    .collect();
+                if segments.is_empty() {
+                    None
+                } else {
+                    self.resolve_symbol_with_priority(
+                        &segments,
+                        &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait],
+                    )
+                }
+            })
+        });
 
-        if let (Some(descriptor), Some(target_symbol)) = (impl_descriptor.as_ref(), symbol) {
+        // If we know both the descriptor and the target symbol, record trait → type dependencies.
+        //    Example: `impl Display for Foo` should establish Display → Foo so trait queries reach Foo.
+        if let (Some(descriptor), Some(target_symbol)) = (impl_descriptor, symbol) {
+            // base_types is the traits being implemented
             for base in &descriptor.base_types {
                 if let Some(segments) = base.path_segments().map(|segments| segments.to_vec()) {
                     if let Some(trait_symbol) = self
@@ -562,14 +578,35 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        // Extract the type annotation if present and add it as a dependency
-        if let Some(type_node) = node.opt_child_by_field(self.unit, LangRust::field_type) {
-            for type_symbol in self.type_symbols_from_node(&type_node) {
-                self.add_symbol_relation(Some(type_symbol));
+        let hir_id = node.hir_id();
+        let mut recorded_descriptor_type = false;
+
+        if let Some(&descriptor_idx) = self.collection.variable_map.get(&hir_id) {
+            if let Some(type_expr) = self.collection.variables[descriptor_idx]
+                .type_annotation
+                .as_ref()
+            {
+                let mut symbols = Vec::new();
+                self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
+                for type_symbol in symbols {
+                    self.add_symbol_relation(Some(type_symbol));
+                }
+                recorded_descriptor_type = true;
             }
         }
 
-        // Visit children to handle method calls and other expressions in the initializer
+        if !recorded_descriptor_type {
+            if let Some(type_node) = node.opt_child_by_field(self.unit, LangRust::field_type) {
+                let ts_node = type_node.inner_ts_node();
+                let expr = function::parse_type_expr(self.unit, ts_node);
+                let mut symbols = Vec::new();
+                self.resolve_symbols_from_type_expr(&expr, &mut symbols);
+                for type_symbol in symbols {
+                    self.add_symbol_relation(Some(type_symbol));
+                }
+            }
+        }
+
         self.visit_children(&node);
     }
 
@@ -592,19 +629,14 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.visit_children(&node);
     }
 
-    fn visit_field_declaration(&mut self, node: HirNode<'tcx>) {
-        // Extract the type annotation from the field and add it as a dependency
-        if let Some(type_node) = node.opt_child_by_field(self.unit, LangRust::field_type) {
-            for type_symbol in self.type_symbols_from_node(&type_node) {
-                self.add_symbol_relation(Some(type_symbol));
-            }
-        }
-        self.visit_children(&node);
-    }
-
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
-        if let Some(descriptor) = RustDescriptor::build_call(self.unit, &node) {
-            self.record_call_target(&descriptor.target);
+        let call = self
+            .collection
+            .call_map
+            .get(&node.hir_id())
+            .and_then(|&idx| self.collection.calls.get(idx));
+        if let Some(descriptor) = call {
+            self.add_call_target_dependencies(&descriptor.target);
         }
         self.visit_children(&node);
     }
@@ -643,7 +675,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                     let parent = self.unit.hir_node(parent_id);
                     if parent.kind_id() == LangRust::call_expression {
                         // Parent is a call expression - skip adding this dependency
-                        // record_call_target will handle it
+                        // add_call_target_dependencies will handle it
                         self.visit_children(&node);
                         return;
                     }

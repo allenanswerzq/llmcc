@@ -226,14 +226,6 @@ pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -
         _ => TypeExpr::Unknown(clean(&node_text(unit, node))),
     };
 
-    if std::env::var("LLMCC_DEBUG_PARAMS").is_ok() {
-        eprintln!(
-            "[llmcc_rust] parse_type_expr kind={} expr={:?}",
-            node.kind(),
-            expr
-        );
-    }
-
     expr
 }
 
