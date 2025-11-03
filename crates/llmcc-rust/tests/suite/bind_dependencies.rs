@@ -209,6 +209,87 @@ fn method_depends_on_inherent_method() {
 }
 
 #[test]
+fn struct_inherits_method_type_dependencies() {
+    let source = r#"
+        struct Foo;
+
+        struct Bar;
+
+        impl Foo {
+            fn method(&self) -> Bar {
+                Bar
+            }
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let method_symbol = function_symbol(unit, &collection, "method");
+    let foo_symbol = struct_symbol(unit, &collection, "Foo");
+    let bar_symbol = struct_symbol(unit, &collection, "Bar");
+
+    assert_depends_on(method_symbol, bar_symbol);
+    assert_depends_on(foo_symbol, bar_symbol);
+}
+
+#[test]
+fn impl_method_parameter_dependencies() {
+    let source = r#"
+        struct Config;
+        struct AuthManager;
+        struct InitialHistory;
+        struct SessionSource;
+        struct Session;
+        struct Foo;
+
+        impl Session {
+            fn new(config: Config, auth: AuthManager, source: SessionSource) -> Session {
+                Session
+            }
+        }
+
+        struct Codex;
+
+        impl Codex {
+            fn spawn(
+                config: Config,
+                auth: AuthManager,
+                history: InitialHistory,
+                source: SessionSource,
+            ) -> Session {
+                drop(history);
+                let f = Foo::new();
+                Session::new(config, auth, source)
+            }
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let codex_symbol = struct_symbol(unit, &collection, "Codex");
+    let spawn_symbol = function_symbol(unit, &collection, "spawn");
+    let config_symbol = struct_symbol(unit, &collection, "Config");
+    let auth_symbol = struct_symbol(unit, &collection, "AuthManager");
+    let history_symbol = struct_symbol(unit, &collection, "InitialHistory");
+    let source_symbol = struct_symbol(unit, &collection, "SessionSource");
+    let session_symbol = struct_symbol(unit, &collection, "Session");
+    let foo_symbol = struct_symbol(unit, &collection, "Foo");
+
+    assert_relation(codex_symbol, spawn_symbol);
+    assert_depends_on(codex_symbol, config_symbol);
+    assert_depends_on(codex_symbol, auth_symbol);
+    assert_depends_on(codex_symbol, history_symbol);
+    assert_depends_on(codex_symbol, source_symbol);
+    assert_depends_on(codex_symbol, session_symbol);
+    assert_depends_on(codex_symbol, foo_symbol);
+    assert_depends_on(spawn_symbol, config_symbol);
+    assert_depends_on(spawn_symbol, auth_symbol);
+    assert_depends_on(spawn_symbol, history_symbol);
+    assert_depends_on(spawn_symbol, source_symbol);
+    assert_depends_on(spawn_symbol, session_symbol);
+}
+
+#[test]
 fn function_depends_on_called_function() {
     let source = r#"
         fn helper() {}

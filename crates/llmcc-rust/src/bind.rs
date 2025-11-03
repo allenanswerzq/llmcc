@@ -285,32 +285,22 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return None;
         }
 
-        // Helper that checks whether a candidate matches the requested kind and/or file.
-        let matches_all = |symbol: &&'tcx Symbol| -> bool {
-            let kind_ok = kind.map_or(true, |expected| symbol.kind() == expected);
-            let file_ok = file.map_or(true, |expected| symbol.unit_index() == Some(expected));
-            kind_ok && file_ok
-        };
-
-        // Helper that checks only the requested kind, ignoring file.
-        let matches_kind_only = |symbol: &&'tcx Symbol| -> bool {
-            kind.map_or(true, |expected| symbol.kind() == expected)
-        };
-
-        // Helper that checks only the requested file, ignoring kind.
-        let matches_file_only = |symbol: &&'tcx Symbol| -> bool {
-            file.map_or(true, |expected| symbol.unit_index() == Some(expected))
-        };
-
         // Prefer symbols that satisfy every requested filter.
-        if let Some(symbol) = candidates.iter().find(matches_all) {
-            return Some(*symbol);
+        for &symbol in candidates {
+            let kind_ok = kind.is_none_or(|expected| symbol.kind() == expected);
+            let file_ok = file.is_none_or(|expected| symbol.unit_index() == Some(expected));
+            if kind_ok && file_ok {
+                return Some(symbol);
+            }
         }
 
         // If we could not satisfy both filters together, fall back to matching by kind.
         if kind.is_some() {
-            if let Some(symbol) = candidates.iter().find(matches_kind_only) {
-                return Some(*symbol);
+            let expected_kind = kind.unwrap();
+            for &symbol in candidates {
+                if symbol.kind() == expected_kind {
+                    return Some(symbol);
+                }
             }
             // When a specific kind was requested but none matched, stop searching.
             return None;
@@ -318,8 +308,11 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
         // No kind restriction; if a file was requested, honour it before defaulting to the first match.
         if file.is_some() {
-            if let Some(symbol) = candidates.iter().find(matches_file_only) {
-                return Some(*symbol);
+            let expected_file = file.unwrap();
+            for &symbol in candidates {
+                if symbol.unit_index() == Some(expected_file) {
+                    return Some(symbol);
+                }
             }
         }
 
@@ -504,6 +497,16 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                         func_symbol.add_dependency(return_type_sym);
                     }
                 }
+
+                for parameter in &self.collection.functions[descriptor_idx].parameters {
+                    if let Some(type_expr) = parameter.type_hint.as_ref() {
+                        let mut symbols = Vec::new();
+                        self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
+                        for type_symbol in symbols {
+                            func_symbol.add_dependency(type_symbol);
+                        }
+                    }
+                }
             }
 
             // If this function is inside an impl block, it depends on the impl's target struct/enum
@@ -519,12 +522,17 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.visit_children_scope(node, symbol);
 
         if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
-            // When visiting `impl Foo { ... }`, `parent_symbol` refers to the synthetic
-            // impl symbol and `func_symbol` is the method we just bound. We copy the
-            // method’s dependencies back onto the impl so callers that link against the
-            // impl symbol (rather than the individual method) still receive transitive
-            // edges, e.g. `impl Foo` depends on `Foo` if the method returns that type.
-            if matches!(parent_symbol.kind(), SymbolKind::Impl) {
+            // When visiting `impl Foo { ... }`, `parent_symbol` refers to the synthetic impl symbol and
+            // `func_symbol` is the method we just bound. We copy the method’s dependencies back onto the
+            // impl so callers that link against the impl symbol (rather than the individual method) still
+            // receive transitive edges.
+            //
+            // We also mirror those dependencies onto the owning struct/enum so that type-level queries see
+            // the behaviour inherited from their inherent methods.
+            if matches!(
+                parent_symbol.kind(),
+                SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Impl
+            ) {
                 self.propagate_child_dependencies(parent_symbol, func_symbol);
             }
         }
