@@ -18,7 +18,7 @@ fn compile(
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
-    bind_symbols(unit, globals);
+    bind_symbols(unit, globals, &collection);
     (cc, unit, collection)
 }
 

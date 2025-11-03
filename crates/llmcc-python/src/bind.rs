@@ -784,7 +784,12 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx> {
     }
 }
 
-pub fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> BindingResult {
+pub fn bind_symbols<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+    collection: &crate::CollectionResult,
+) -> BindingResult {
+    let _ = collection;
     let mut binder = SymbolBinder::new(unit, globals);
 
     if let Some(file_start_id) = unit.file_start_hir_id() {

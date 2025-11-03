@@ -12,17 +12,26 @@ use llmcc_descriptor::DescriptorTrait;
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.
 #[derive(Debug)]
-struct SymbolBinder<'tcx> {
+struct SymbolBinder<'tcx, 'a> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
+    _collection: &'a crate::CollectionResult,
 }
 
-impl<'tcx> SymbolBinder<'tcx> {
-    pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
+impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
+    pub fn new(
+        unit: CompileUnit<'tcx>,
+        globals: &'tcx Scope<'tcx>,
+        collection: &'a crate::CollectionResult,
+    ) -> Self {
         let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
         scopes.push(globals);
 
-        Self { unit, scopes }
+        Self {
+            unit,
+            scopes,
+            _collection: collection,
+        }
     }
 
     fn interner(&self) -> &llmcc_core::interner::InternPool {
@@ -452,7 +461,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
+impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn unit(&self) -> CompileUnit<'tcx> {
         self.unit
     }
@@ -687,7 +696,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 }
 
-impl<'tcx> SymbolBinder<'tcx> {
+impl<'tcx> SymbolBinder<'tcx, '_> {
     fn identifier_is_call_function(&self, node: &HirNode<'tcx>) -> bool {
         let Some(parent_id) = node.parent() else {
             return false;
@@ -706,10 +715,14 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 }
 
-pub fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
+pub fn bind_symbols<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+    collection: &crate::CollectionResult,
+) {
     let root = unit.file_start_hir_id().unwrap();
     let node = unit.hir_node(root);
-    let mut binder = SymbolBinder::new(unit, globals);
+    let mut binder = SymbolBinder::new(unit, globals, collection);
     binder.visit_node(node);
 }
 

@@ -15,11 +15,17 @@ use crate::token::{AstVisitorRust, LangRust};
 #[derive(Debug)]
 pub struct CollectionResult {
     pub functions: Vec<FunctionDescriptor>,
+    pub function_map: HashMap<HirId, usize>,
     pub variables: Vec<VariableDescriptor>,
+    pub variable_map: HashMap<HirId, usize>,
     pub calls: Vec<CallDescriptor>,
+    pub call_map: HashMap<HirId, usize>,
     pub structs: Vec<StructDescriptor>,
+    pub struct_map: HashMap<HirId, usize>,
     pub impls: Vec<ClassDescriptor>,
+    pub impl_map: HashMap<HirId, usize>,
     pub enums: Vec<EnumDescriptor>,
+    pub enum_map: HashMap<HirId, usize>,
 }
 
 #[derive(Debug)]
@@ -69,11 +75,17 @@ struct DeclCollector<'tcx> {
     scope_stack: Vec<usize>,
     symbols: Vec<SymbolSpec>,
     functions: Vec<FunctionDescriptor>,
+    function_map: HashMap<HirId, usize>,
     variables: Vec<VariableDescriptor>,
+    variable_map: HashMap<HirId, usize>,
     calls: Vec<CallDescriptor>,
+    call_map: HashMap<HirId, usize>,
     structs: Vec<StructDescriptor>,
+    struct_map: HashMap<HirId, usize>,
     impls: Vec<ClassDescriptor>,
+    impl_map: HashMap<HirId, usize>,
     enums: Vec<EnumDescriptor>,
+    enum_map: HashMap<HirId, usize>,
 }
 
 #[allow(clippy::needless_lifetimes)]
@@ -91,11 +103,17 @@ impl<'tcx> DeclCollector<'tcx> {
             scope_stack: vec![0],
             symbols: Vec::new(),
             functions: Vec::new(),
+            function_map: HashMap::new(),
             variables: Vec::new(),
+            variable_map: HashMap::new(),
             calls: Vec::new(),
+            call_map: HashMap::new(),
             structs: Vec::new(),
+            struct_map: HashMap::new(),
             impls: Vec::new(),
+            impl_map: HashMap::new(),
             enums: Vec::new(),
+            enum_map: HashMap::new(),
         }
     }
 
@@ -333,11 +351,17 @@ impl<'tcx> DeclCollector<'tcx> {
         CollectedSymbols {
             result: CollectionResult {
                 functions: self.functions,
+                function_map: self.function_map,
                 variables: self.variables,
+                variable_map: self.variable_map,
                 calls: self.calls,
+                call_map: self.call_map,
                 structs: self.structs,
+                struct_map: self.struct_map,
                 impls: self.impls,
+                impl_map: self.impl_map,
                 enums: self.enums,
+                enum_map: self.enum_map,
             },
             symbols: self.symbols,
             scopes,
@@ -360,7 +384,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let (sym_idx, fqn) =
                 self.upsert_symbol(&node, &desc.name, SymbolKind::Function, is_global);
             desc.fqn = Some(fqn.clone());
+            let idx = self.functions.len();
             self.functions.push(desc);
+            self.function_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!("build function error");
@@ -371,7 +397,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some(mut var) = RustDescriptor::build_variable(self.unit, &node) {
             let (_, fqn) = self.upsert_symbol(&node, &var.name, SymbolKind::Variable, false);
             var.fqn = Some(fqn);
+            let idx = self.variables.len();
             self.variables.push(var);
+            self.variable_map.insert(node.hir_id(), idx);
             self.visit_children(&node);
             return;
         }
@@ -415,7 +443,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 .find_symbol_in_scopes(&impl_name, &target_kinds)
                 .or_else(|| self.find_symbol_by_fqn(&fqn_hint))
                 .or(Some(sym_idx));
+            let idx = self.impls.len();
             self.impls.push(desc);
+            self.impl_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, scope_symbol);
         } else {
             tracing::warn!("failed to build impl descriptor for: {:?}", node);
@@ -433,7 +463,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_call(self.unit, &node) {
             desc.enclosing = self.current_function_name().map(|name| name.to_string());
+            let idx = self.calls.len();
             self.calls.push(desc);
+            self.call_map.insert(node.hir_id(), idx);
         }
         self.visit_children(&node);
     }
@@ -444,7 +476,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let (sym_idx, fqn) =
                 self.upsert_symbol(&node, &variable.name, SymbolKind::Const, is_global);
             variable.fqn = Some(fqn);
+            let idx = self.variables.len();
             self.variables.push(variable);
+            self.variable_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, Some(sym_idx));
             return;
         }
@@ -461,7 +495,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let (sym_idx, fqn) =
                 self.upsert_symbol(&node, &desc.name, SymbolKind::Struct, is_global);
             desc.fqn = Some(fqn.clone());
+            let idx = self.structs.len();
             self.structs.push(desc);
+            self.struct_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!("failed to build struct descriptor for: {:?}", node);
@@ -473,7 +509,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let is_global = matches!(desc.visibility, Visibility::Public);
             let (sym_idx, fqn) = self.upsert_symbol(&node, &desc.name, SymbolKind::Enum, is_global);
             desc.fqn = Some(fqn.clone());
+            let idx = self.enums.len();
             self.enums.push(desc);
+            self.enum_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!("failed to build enum descriptor for: {:?}", node);

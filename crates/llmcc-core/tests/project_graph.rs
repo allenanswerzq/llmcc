@@ -21,15 +21,17 @@ fn compact_project_graph_includes_enum_dependencies() {
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
 
+    let mut collections = Vec::with_capacity(cc.files.len());
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
-        LangRust::collect_symbols(unit, globals);
+        let collection = LangRust::collect_symbols(unit, globals);
+        collections.push(collection);
     }
 
     let mut project = ProjectGraph::new(&cc);
-    for index in 0..cc.files.len() {
+    for (index, collection) in collections.iter().enumerate() {
         let unit = cc.compile_unit(index);
-        LangRust::bind_symbols(unit, globals);
+        LangRust::bind_symbols(unit, globals, collection);
         let graph = build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig).unwrap();
         project.add_child(graph);
     }
@@ -99,15 +101,17 @@ fn recursive_dependents_query_includes_transitive_callers() {
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
 
+    let mut collections = Vec::with_capacity(cc.files.len());
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
-        LangRust::collect_symbols(unit, globals);
+        let collection = LangRust::collect_symbols(unit, globals);
+        collections.push(collection);
     }
 
     let mut project = ProjectGraph::new(&cc);
-    for index in 0..cc.files.len() {
+    for (index, collection) in collections.iter().enumerate() {
         let unit = cc.compile_unit(index);
-        LangRust::bind_symbols(unit, globals);
+        LangRust::bind_symbols(unit, globals, collection);
         let graph = build_llmcc_graph::<LangRust>(unit, index, GraphBuildConfig).unwrap();
         project.add_child(graph);
     }
