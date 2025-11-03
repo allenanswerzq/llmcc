@@ -454,6 +454,25 @@ fn struct_field_creates_dependency() {
 }
 
 #[test]
+fn struct_field_dependency_through_generic_argument() {
+    let source = r#"
+        struct Wrapper<T>(T);
+        struct SessionState;
+
+        struct Session {
+            state: Wrapper<SessionState>,
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let session_symbol = struct_symbol(unit, &collection, "Session");
+    let state_symbol = struct_symbol(unit, &collection, "SessionState");
+
+    assert_relation(session_symbol, state_symbol);
+}
+
+#[test]
 fn struct_field_depends_on_enum_type() {
     let source = r#"
         enum Status {

@@ -1282,7 +1282,6 @@ fn has_alternative_path(
     false
 }
 
-
 struct PrunedGraph {
     nodes: Vec<CompactNode>,
     edges: BTreeSet<(usize, usize)>,
