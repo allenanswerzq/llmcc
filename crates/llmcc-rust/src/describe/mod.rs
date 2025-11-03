@@ -46,7 +46,7 @@ impl<'tcx> DescriptorTrait<'tcx> for RustDescriptor {
         Some(call::build(unit, node, None))
     }
 
-    fn build_class(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
+    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
         implementation::build(unit, node)
     }
 

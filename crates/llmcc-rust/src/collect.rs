@@ -433,7 +433,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        if let Some(mut desc) = RustDescriptor::build_class(self.unit, &node) {
+        if let Some(mut desc) = RustDescriptor::build_impl(self.unit, &node) {
             let fqn_hint = desc
                 .impl_target_fqn
                 .clone()
@@ -503,6 +503,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let (sym_idx, fqn) =
                 self.upsert_symbol(&node, &desc.name, SymbolKind::Struct, is_global);
             desc.fqn = Some(fqn.clone());
+            tracing::trace!(
+                "[collect][struct] collected {} (fqn={}) symbol_id={:?}",
+                desc.name,
+                desc.fqn.as_deref().unwrap_or("<unset>"),
+                sym_idx
+            );
             let idx = self.structs.len();
             self.structs.push(desc);
             self.struct_map.insert(node.hir_id(), idx);
@@ -571,6 +577,14 @@ fn apply_collected_symbols<'tcx>(
             symbol.set_fqn(spec.fqn.clone(), interner);
             symbol.set_is_global(spec.is_global);
             symbol_map.insert(symbol.id, symbol);
+            tracing::trace!(
+                "[collect][symbol] id={:?} name={} kind={:?} unit={:?} fqn={:?}",
+                symbol.id,
+                spec.name,
+                spec.kind,
+                spec.unit_index,
+                spec.fqn
+            );
             created_symbols.push(symbol);
         }
     }

@@ -131,7 +131,11 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             }
         }
 
-        self.resolve_symbol(segments, None)
+        if let Some(symbol) = self.resolve_symbol(segments, None) {
+            return Some(symbol);
+        }
+
+        None
     }
 
     fn resolve_symbol_method(&mut self, method: &str) -> Option<&'tcx Symbol> {
@@ -475,16 +479,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                     if let Some(type_expr) = field.type_annotation.as_ref() {
                         let mut symbols = Vec::new();
                         self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
-                        for type_symbol in symbols {
+                        for &type_symbol in &symbols {
                             if type_symbol.unit_index() == Some(self.unit.index) {
                                 tracing::trace!(
                                     "[bind][struct] {} depends on {:?}",
                                     struct_name,
                                     type_symbol.name.as_str()
                                 );
-                            }
-                            if let Some(struct_symbol) = symbol {
-                                struct_symbol.add_dependency(type_symbol);
                             }
                             self.add_symbol_relation(Some(type_symbol));
                         }
@@ -523,7 +524,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 {
                     let mut symbols = Vec::new();
                     self.resolve_symbols_from_type_expr(return_type, &mut symbols);
-                    for return_type_sym in symbols {
+                    for &return_type_sym in &symbols {
                         func_symbol.add_dependency(return_type_sym);
                     }
                 }
@@ -532,7 +533,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                     if let Some(type_expr) = parameter.type_hint.as_ref() {
                         let mut symbols = Vec::new();
                         self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
-                        for type_symbol in symbols {
+                        for &type_symbol in &symbols {
                             func_symbol.add_dependency(type_symbol);
                         }
                     }
@@ -633,7 +634,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             {
                 let mut symbols = Vec::new();
                 self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
-                for type_symbol in symbols {
+                for &type_symbol in &symbols {
                     self.add_symbol_relation(Some(type_symbol));
                 }
             }

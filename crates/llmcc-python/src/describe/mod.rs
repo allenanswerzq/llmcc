@@ -19,7 +19,7 @@ impl<'tcx> DescriptorTrait<'tcx> for PythonDescriptorBuilder {
         function::build(unit, node)
     }
 
-    fn build_class(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
+    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
         class::build(unit, node)
     }
 

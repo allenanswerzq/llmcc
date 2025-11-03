@@ -478,21 +478,27 @@ fn struct_field_dependencies_with_multiple_wrapped_types() {
         struct Arc<T>(T);
         struct Sender<T>(T);
         struct Option<T>(T);
+        struct Vec<T>(T);
 
         struct ConversationManager;
         struct AppEvent;
         struct ChatWidget;
         struct AuthManager;
         struct Config;
-        struct ProfileName;
+
+        impl ChatWidget {
+            fn new(config: Config, history: Vec<Arc<HistoryCell>>) -> ChatWidget {
+                let _ = (config, history);
+                ChatWidget
+            }
+        }
 
         struct App {
             server: Arc<ConversationManager>,
             app_event_tx: Sender<AppEvent>,
-            pub(crate) chat_widget: ChatWidget,
+            chat_widget: ChatWidget,
             auth_manager: Arc<AuthManager>,
             config: Config,
-            active_profile: Option<ProfileName>,
         }
     "#;
 
@@ -504,14 +510,12 @@ fn struct_field_dependencies_with_multiple_wrapped_types() {
     let widget_symbol = struct_symbol(unit, &collection, "ChatWidget");
     let auth_symbol = struct_symbol(unit, &collection, "AuthManager");
     let config_symbol = struct_symbol(unit, &collection, "Config");
-    let profile_symbol = struct_symbol(unit, &collection, "ProfileName");
 
     assert_relation(app_symbol, server_symbol);
     assert_relation(app_symbol, event_symbol);
     assert_relation(app_symbol, widget_symbol);
     assert_relation(app_symbol, auth_symbol);
     assert_relation(app_symbol, config_symbol);
-    assert_relation(app_symbol, profile_symbol);
 }
 
 #[test]

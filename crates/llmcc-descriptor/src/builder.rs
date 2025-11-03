@@ -16,7 +16,7 @@ pub trait DescriptorTrait<'tcx> {
         None
     }
 
-    fn build_class(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
+    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
         let _ = unit;
         let _ = node;
         None

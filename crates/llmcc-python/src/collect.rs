@@ -419,7 +419,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
         {
             let fqn = self.symbols[symbol_idx].fqn.clone();
-            if let Some(mut class) = PythonDescriptorBuilder::build_class(self.unit, &node) {
+            if let Some(mut class) = PythonDescriptorBuilder::build_impl(self.unit, &node) {
                 class.fqn = Some(fqn);
                 self.classes.push(class);
             }
