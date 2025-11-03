@@ -91,6 +91,10 @@ mod outer {
         fn greet(&self) -> String;
     }
 
+    pub trait Loud {
+        fn shout(&self) -> String;
+    }
+
     pub struct Widget;
 
     impl Greeter for Widget {
@@ -100,9 +104,23 @@ mod outer {
     }
 }
 
+impl crate::outer::Loud for crate::outer::Widget {
+    fn shout(&self) -> String {
+        \"HELLO\".to_string()
+    }
+}
+
+pub struct Foo;
+
 impl crate::outer::Widget {
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl crate::Foo {
+    pub fn build() -> Self {
+        Foo
     }
 }
 "#;
@@ -122,10 +140,8 @@ impl crate::outer::Widget {
             .or_insert(0usize) += 1;
     }
     assert_eq!(target_counts.get(&Some("Widget".into())), Some(&1));
-    assert_eq!(
-        target_counts.get(&Some("crate::outer::Widget".into())),
-        Some(&1)
-    );
+    assert_eq!(target_counts.get(&Some("crate::outer::Widget".into())), Some(&2));
+    assert_eq!(target_counts.get(&Some("crate::Foo".into())), Some(&1));
 
     let trait_impl = collection
         .impls
@@ -151,4 +167,24 @@ impl crate::outer::Widget {
                 .ends_with("Widget::new")
     });
     assert!(has_new_method, "expected inherent method `Widget::new`");
+
+    let has_loud_trait = collection.impls.iter().any(|desc| {
+        desc.base_types.iter().any(|ty| {
+            ty.path_segments()
+                .unwrap_or(&[])
+                .iter()
+                .any(|segment| segment == "Loud")
+        })
+    });
+    assert!(has_loud_trait, "expected trait impl for `Loud`");
+
+    let foo_builder = collection.functions.iter().any(|desc| {
+        desc.name == "build"
+            && desc
+                .fqn
+                .as_deref()
+                .unwrap_or_default()
+                .ends_with("Foo::build")
+    });
+    assert!(foo_builder, "expected inherent method `Foo::build`");
 }
