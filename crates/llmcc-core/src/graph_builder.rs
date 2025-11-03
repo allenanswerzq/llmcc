@@ -734,15 +734,14 @@ impl<'tcx> ProjectGraph<'tcx> {
         let node_index = build_compact_node_index(&nodes);
         let edges = self.collect_compact_edges(&nodes, &node_index);
 
-        // let pruned = prune_compact_components(&nodes, &edges);
-        // if pruned.nodes.is_empty() {
-        //     return "digraph DesignGraph {\n}\n".to_string();
-        // }
-        // let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-        // render_compact_dot(&pruned.nodes, &reduced_edges)
+        let pruned = prune_compact_components(&nodes, &edges);
+        if pruned.nodes.is_empty() {
+            return "digraph DesignGraph {\n}\n".to_string();
+        }
 
-        let reduced_edges = reduce_transitive_edges(&nodes, &edges);
-        render_compact_dot(&nodes, &reduced_edges)
+        let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
+
+        render_compact_dot(&pruned.nodes, &reduced_edges)
     }
 }
 
@@ -1215,6 +1214,116 @@ fn build_compact_node_index(nodes: &[CompactNode]) -> HashMap<BlockId, usize> {
         node_index.insert(node.block_id, idx);
     }
     node_index
+}
+
+struct PrunedGraph {
+    nodes: Vec<CompactNode>,
+    edges: BTreeSet<(usize, usize)>,
+}
+
+fn prune_compact_components(
+    nodes: &[CompactNode],
+    edges: &BTreeSet<(usize, usize)>,
+) -> PrunedGraph {
+    if nodes.is_empty() {
+        return PrunedGraph {
+            nodes: Vec::new(),
+            edges: BTreeSet::new(),
+        };
+    }
+
+    let components = find_connected_components(nodes.len(), edges);
+    if components.is_empty() {
+        return PrunedGraph {
+            nodes: nodes.to_vec(),
+            edges: edges.clone(),
+        };
+    }
+
+    let mut retained_indices = HashSet::new();
+    for component in components {
+        if component.len() == 1 {
+            let idx = component[0];
+            let has_edges = edges.iter().any(|&(from, to)| from == idx || to == idx);
+            if !has_edges {
+                continue;
+            }
+        }
+        retained_indices.extend(component);
+    }
+
+    if retained_indices.is_empty() {
+        return PrunedGraph {
+            nodes: Vec::new(),
+            edges: BTreeSet::new(),
+        };
+    }
+
+    let mut retained_nodes = Vec::new();
+    let mut old_to_new = HashMap::new();
+    for (new_idx, old_idx) in retained_indices.iter().enumerate() {
+        retained_nodes.push(nodes[*old_idx].clone());
+        old_to_new.insert(*old_idx, new_idx);
+    }
+
+    let mut retained_edges = BTreeSet::new();
+    for &(from, to) in edges {
+        if let (Some(&new_from), Some(&new_to)) = (old_to_new.get(&from), old_to_new.get(&to)) {
+            retained_edges.insert((new_from, new_to));
+        }
+    }
+
+    PrunedGraph {
+        nodes: retained_nodes,
+        edges: retained_edges,
+    }
+}
+
+fn find_connected_components(
+    node_count: usize,
+    edges: &BTreeSet<(usize, usize)>,
+) -> Vec<Vec<usize>> {
+    if node_count == 0 {
+        return Vec::new();
+    }
+
+    let mut graph: HashMap<usize, Vec<usize>> = HashMap::new();
+    for &(from, to) in edges.iter() {
+        graph.entry(from).or_default().push(to);
+        graph.entry(to).or_default().push(from);
+    }
+
+    let mut visited = HashSet::new();
+    let mut components = Vec::new();
+
+    for node in 0..node_count {
+        if visited.contains(&node) {
+            continue;
+        }
+
+        let mut component = Vec::new();
+        let mut stack = vec![node];
+
+        while let Some(current) = stack.pop() {
+            if !visited.insert(current) {
+                continue;
+            }
+
+            component.push(current);
+
+            if let Some(neighbors) = graph.get(&current) {
+                for &neighbor in neighbors {
+                    if !visited.contains(&neighbor) {
+                        stack.push(neighbor);
+                    }
+                }
+            }
+        }
+
+        components.push(component);
+    }
+
+    components
 }
 
 fn reduce_transitive_edges(
