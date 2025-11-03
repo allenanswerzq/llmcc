@@ -13,11 +13,21 @@ fn collect_variables(source: &str) -> HashMap<String, VariableDescriptor> {
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
 
     let globals = cc.create_globals();
-    collect_symbols(unit, globals)
-        .variables
-        .into_iter()
-        .map(|desc| (desc.fqn.clone().unwrap_or_else(|| desc.name.clone()), desc))
-        .collect()
+    let prefix = format!("unit{}::", unit.index);
+
+    let mut map = HashMap::new();
+    for desc in collect_symbols(unit, globals).variables {
+        if let Some(ref fqn) = desc.fqn {
+            map.insert(fqn.clone(), desc.clone());
+            if let Some(stripped) = fqn.strip_prefix(&prefix) {
+                map.insert(stripped.to_string(), desc.clone());
+            }
+        }
+
+        map.insert(desc.name.clone(), desc);
+    }
+
+    map
 }
 
 #[test]

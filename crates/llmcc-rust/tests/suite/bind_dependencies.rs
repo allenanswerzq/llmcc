@@ -41,14 +41,31 @@ fn find_function<'a>(
         .unwrap()
 }
 
+fn canonical_fqns(unit: llmcc_core::context::CompileUnit<'static>, fqn: &str) -> Vec<String> {
+    let mut values = vec![fqn.to_string()];
+    if !fqn.starts_with("unit") {
+        values.push(format!("unit{}::{}", unit.index, fqn));
+    }
+    values
+}
+
 fn find_function_by_fqn<'a>(
+    unit: llmcc_core::context::CompileUnit<'static>,
     collection: &'a llmcc_rust::CollectionResult,
     fqn: &str,
 ) -> &'a llmcc_rust::FunctionDescriptor {
+    let candidates = canonical_fqns(unit, fqn);
+
     collection
         .functions
         .iter()
-        .find(|desc| desc.fqn.as_deref() == Some(fqn))
+        .find(|desc| {
+            desc.fqn
+                .as_deref()
+                .map(|value| candidates.iter().any(|candidate| candidate == value))
+                .unwrap_or(false)
+        })
+        .or_else(|| collection.functions.iter().find(|desc| desc.name == fqn))
         .unwrap()
 }
 
@@ -86,7 +103,7 @@ fn function_symbol_by_fqn(
     collection: &llmcc_rust::CollectionResult,
     fqn: &str,
 ) -> &'static Symbol {
-    let desc = find_function_by_fqn(collection, fqn);
+    let desc = find_function_by_fqn(unit, collection, fqn);
     symbol(unit, &desc.origin)
 }
 
