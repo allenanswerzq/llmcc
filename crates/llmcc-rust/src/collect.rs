@@ -8,7 +8,7 @@ use llmcc_descriptor::DescriptorTrait;
 
 use crate::describe::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, RustDescriptor,
-    StructDescriptor, VariableDescriptor, Visibility,
+    StructDescriptor, TypeExpr, VariableDescriptor, Visibility,
 };
 use crate::token::{AstVisitorRust, LangRust};
 
@@ -325,6 +325,42 @@ impl<'tcx> DeclCollector<'tcx> {
             .map(|(idx, _)| idx)
     }
 
+    fn visibility_exports(visibility: &Visibility) -> bool {
+        match visibility {
+            Visibility::Public => true,
+            Visibility::Restricted { scope } => scope == "crate",
+            _ => false,
+        }
+    }
+
+    fn ensure_base_type_symbol(&mut self, node: &HirNode<'tcx>, base: &TypeExpr) {
+        match base {
+            TypeExpr::Path { segments, .. } => {
+                let segments: Vec<String> = segments
+                    .iter()
+                    .filter(|segment| !segment.is_empty())
+                    .cloned()
+                    .collect();
+                if segments.is_empty() {
+                    return;
+                }
+
+                let name = segments.last().cloned().unwrap();
+                let fqn = segments.join("::");
+                let _ = self.upsert_symbol_with_fqn(node, &name, SymbolKind::Trait, true, &fqn);
+            }
+            TypeExpr::Reference { inner, .. } => {
+                self.ensure_base_type_symbol(node, inner);
+            }
+            TypeExpr::Tuple(items) => {
+                for item in items {
+                    self.ensure_base_type_symbol(node, item);
+                }
+            }
+            _ => {}
+        }
+    }
+
     fn find_symbol_in_scopes(&self, name: &str, kinds: &[SymbolKind]) -> Option<usize> {
         for &scope_idx in self.scope_stack.iter().rev() {
             for &symbol_idx in self.scope_infos[scope_idx].symbols.iter().rev() {
@@ -380,7 +416,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_function(self.unit, &node) {
-            let is_global = matches!(desc.visibility, Visibility::Public);
+            let is_global = Self::visibility_exports(&desc.visibility);
             let (sym_idx, fqn) =
                 self.upsert_symbol(&node, &desc.name, SymbolKind::Function, is_global);
             desc.fqn = Some(fqn.clone());
@@ -442,6 +478,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let (sym_idx, fqn) =
                 self.upsert_symbol_with_fqn(&node, &impl_name, SymbolKind::Impl, false, &fqn_hint);
             desc.fqn = Some(fqn.clone());
+            for base in &desc.base_types {
+                self.ensure_base_type_symbol(&node, base);
+            }
             let target_kinds = [SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait];
             let scope_symbol = self
                 .find_symbol_in_scopes(&impl_name, &target_kinds)
@@ -480,7 +519,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut variable) = RustDescriptor::build_variable(self.unit, &node) {
-            let is_global = matches!(variable.visibility, Visibility::Public);
+            let is_global = Self::visibility_exports(&variable.visibility);
             let (sym_idx, fqn) =
                 self.upsert_symbol(&node, &variable.name, SymbolKind::Const, is_global);
             variable.fqn = Some(fqn);
@@ -499,16 +538,10 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_struct(self.unit, &node) {
-            let is_global = matches!(desc.visibility, Visibility::Public);
+            let is_global = Self::visibility_exports(&desc.visibility);
             let (sym_idx, fqn) =
                 self.upsert_symbol(&node, &desc.name, SymbolKind::Struct, is_global);
             desc.fqn = Some(fqn.clone());
-            tracing::trace!(
-                "[collect][struct] collected {} (fqn={}) symbol_id={:?}",
-                desc.name,
-                desc.fqn.as_deref().unwrap_or("<unset>"),
-                sym_idx
-            );
             let idx = self.structs.len();
             self.structs.push(desc);
             self.struct_map.insert(node.hir_id(), idx);
@@ -524,7 +557,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_enum(self.unit, &node) {
-            let is_global = matches!(desc.visibility, Visibility::Public);
+            let is_global = Self::visibility_exports(&desc.visibility);
             let (sym_idx, fqn) = self.upsert_symbol(&node, &desc.name, SymbolKind::Enum, is_global);
             desc.fqn = Some(fqn.clone());
             let idx = self.enums.len();
