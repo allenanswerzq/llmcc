@@ -299,8 +299,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
 
         // If we could not satisfy both filters together, fall back to matching by kind.
-        if kind.is_some() {
-            let expected_kind = kind.unwrap();
+        if let Some(expected_kind) = kind {
             for &symbol in candidates {
                 if symbol.kind() == expected_kind {
                     return Some(symbol);
@@ -311,8 +310,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
 
         // No kind restriction; if a file was requested, honour it before defaulting to the first match.
-        if file.is_some() {
-            let expected_file = file.unwrap();
+        if let Some(expected_file) = file {
             for &symbol in candidates {
                 if symbol.unit_index() == Some(expected_file) {
                     return Some(symbol);

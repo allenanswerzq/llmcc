@@ -203,6 +203,41 @@ fn module_struct_visibility() {
 }
 
 #[test]
+fn crate_restricted_items_are_exported() {
+    let source = r#"
+        pub(crate) struct Visible;
+
+        impl Visible {
+            pub(crate) fn make() {}
+        }
+
+        struct Hidden;
+
+        impl Hidden {
+            pub(crate) fn secret() {}
+        }
+
+        pub(crate) fn helper() {}
+    "#;
+
+    let fixture = build_fixture(source);
+
+    let visible_key = fixture.intern("Visible");
+    let helper_key = fixture.intern("helper");
+    let make_key = fixture.intern("make");
+    let hidden_key = fixture.intern("Hidden");
+
+    let scope_stack = fixture.scope_stack();
+
+    assert!(fixture.globals.get_id(visible_key).is_some());
+    assert!(fixture.globals.get_id(helper_key).is_some());
+    assert!(scope_stack
+        .find_global_suffix(&[make_key, visible_key])
+        .is_some());
+    assert!(fixture.globals.get_id(hidden_key).is_none());
+}
+
+#[test]
 fn module_enum_visibility() {
     let source = r#"
         mod outer {
