@@ -5,6 +5,7 @@ use llmcc_core::{
     symbol::{Scope, ScopeStack},
     IrBuildConfig,
 };
+use llmcc_descriptor::DescriptorId;
 use llmcc_rust::{build_llmcc_ir, collect_symbols, CollectionResult, CompileCtxt, LangRust};
 
 struct Fixture<'tcx> {
@@ -50,6 +51,16 @@ impl<'tcx> Fixture<'tcx> {
         let key = self.intern(name);
         let symbol = stack.find_global_suffix(&[key]).unwrap();
         self.unit.opt_get_scope(symbol.owner()).unwrap()
+    }
+}
+
+fn descriptor_hir_id(origin: &llmcc_descriptor::DescriptorOrigin) -> llmcc_core::ir::HirId {
+    match origin.id.as_ref().and_then(|id| match id {
+        DescriptorId::U64(value) => Some(*value as u32),
+        _ => None,
+    }) {
+        Some(value) => llmcc_core::ir::HirId(value),
+        None => panic!("descriptor missing numeric origin id: {:?}", origin.id),
     }
 }
 
@@ -101,7 +112,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
     let scope_stack = fixture.scope_stack();
 
     assert!(fixture.globals.get_id(outer_key).is_some());
-    assert!(fixture.globals.get_id(max_key).is_some());
+    assert!(fixture.globals.get_id(max_key).is_none());
     assert!(fixture.globals.get_id(foo_key).is_some());
     assert!(scope_stack
         .find_global_suffix(&[foo_method_key, foo_key])
@@ -109,28 +120,31 @@ fn inserts_symbols_for_local_and_global_resolution() {
     assert!(scope_stack
         .find_global_suffix(&[foo_private_method_key, foo_key])
         .is_none());
-    assert!(fixture.globals.get_id(bar_key).is_some());
+    assert!(fixture.globals.get_id(bar_key).is_none());
     assert!(scope_stack
         .find_global_suffix(&[bar_method_key, bar_key])
         .is_none());
     assert!(fixture.globals.get_id(private_inner_key).is_none());
 
+    let expected_fqn = format!("unit{}::outer::inner", fixture.unit.index);
+
     let global_symbol = scope_stack
         .find_global_suffix(&[inner_key, outer_key])
         .unwrap();
-    assert_eq!(global_symbol.fqn_name.read().as_str(), "outer::inner");
+    assert_eq!(global_symbol.fqn_name.read().as_str(), expected_fqn);
 
     let inner_desc = fixture
         .result
         .functions
         .iter()
-        .find(|desc| desc.fqn == "outer::inner")
+        .find(|desc| desc.fqn.as_deref() == Some(expected_fqn.as_str()))
         .unwrap();
 
-    let function_scope = fixture.unit.opt_get_scope(inner_desc.hir_id).unwrap();
+    let inner_hir_id = descriptor_hir_id(&inner_desc.origin);
+    let function_scope = fixture.unit.opt_get_scope(inner_hir_id).unwrap();
     assert!(function_scope.get_id(param_key).is_some());
 
-    let function_node = fixture.unit.hir_node(inner_desc.hir_id);
+    let function_node = fixture.unit.hir_node(inner_hir_id);
     let body_scope_id = function_node
         .children()
         .iter()
@@ -231,7 +245,8 @@ fn module_enum_visibility() {
         .iter()
         .find(|desc| desc.name == "Visible")
         .unwrap();
-    let visible_scope = fixture.unit.opt_get_scope(visible_desc.hir_id).unwrap();
+    let visible_hir_id = descriptor_hir_id(&visible_desc.origin);
+    let visible_scope = fixture.unit.opt_get_scope(visible_hir_id).unwrap();
     assert!(visible_scope.get_id(variant_a_key).is_some());
 
     let hidden_desc = fixture
@@ -240,7 +255,8 @@ fn module_enum_visibility() {
         .iter()
         .find(|desc| desc.name == "Hidden")
         .unwrap();
-    let hidden_scope = fixture.unit.opt_get_scope(hidden_desc.hir_id).unwrap();
+    let hidden_hir_id = descriptor_hir_id(&hidden_desc.origin);
+    let hidden_scope = fixture.unit.opt_get_scope(hidden_hir_id).unwrap();
     assert!(hidden_scope.get_id(variant_b_key).is_some());
 
     assert!(scope_stack
@@ -282,37 +298,33 @@ fn enum_variant_symbols_are_registered() {
         .find_global_suffix(&[not_found_key, status_key])
         .is_some());
 
-    assert!(fixture.globals.get_id(private_status_key).is_some());
+    assert!(fixture.globals.get_id(private_status_key).is_none());
     assert!(scope_stack
         .find_global_suffix(&[hidden_key, private_status_key])
         .is_none());
 
+    let status_desc = fixture
+        .result
+        .enums
+        .iter()
+        .find(|desc| desc.name == "Status")
+        .unwrap();
     let status_scope = fixture
         .unit
-        .opt_get_scope(
-            fixture
-                .result
-                .enums
-                .iter()
-                .find(|desc| desc.name == "Status")
-                .unwrap()
-                .hir_id,
-        )
+        .opt_get_scope(descriptor_hir_id(&status_desc.origin))
         .unwrap();
     assert!(status_scope.get_id(ok_key).is_some());
     assert!(status_scope.get_id(not_found_key).is_some());
 
+    let private_desc = fixture
+        .result
+        .enums
+        .iter()
+        .find(|desc| desc.name == "PrivateStatus")
+        .unwrap();
     let private_scope = fixture
         .unit
-        .opt_get_scope(
-            fixture
-                .result
-                .enums
-                .iter()
-                .find(|desc| desc.name == "PrivateStatus")
-                .unwrap()
-                .hir_id,
-        )
+        .opt_get_scope(descriptor_hir_id(&private_desc.origin))
         .unwrap();
     assert!(private_scope.get_id(hidden_key).is_some());
 }

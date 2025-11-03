@@ -16,7 +16,7 @@ fn compile(
     result.ok();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
-    bind_symbols(unit, globals);
+    bind_symbols(unit, globals, &collection);
     (cc, unit, collection, globals)
 }
 
@@ -24,7 +24,7 @@ fn compile(
 fn find_function<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
-) -> Option<&'a llmcc_python::PythonFunctionDescriptor> {
+) -> Option<&'a llmcc_python::FunctionDescriptor> {
     collection.functions.iter().find(|desc| desc.name == name)
 }
 
@@ -32,7 +32,7 @@ fn find_function<'a>(
 fn find_function_unwrap<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
-) -> &'a llmcc_python::PythonFunctionDescriptor {
+) -> &'a llmcc_python::FunctionDescriptor {
     find_function(collection, name).unwrap_or_else(|| panic!("function '{}' not found", name))
 }
 
@@ -40,7 +40,7 @@ fn find_function_unwrap<'a>(
 fn find_class<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
-) -> Option<&'a llmcc_python::PythonClassDescriptor> {
+) -> Option<&'a llmcc_python::ClassDescriptor> {
     collection.classes.iter().find(|desc| desc.name == name)
 }
 
@@ -48,7 +48,7 @@ fn find_class<'a>(
 fn find_class_unwrap<'a>(
     collection: &'a llmcc_python::CollectionResult,
     name: &str,
-) -> &'a llmcc_python::PythonClassDescriptor {
+) -> &'a llmcc_python::ClassDescriptor {
     find_class(collection, name).unwrap_or_else(|| panic!("class '{}' not found", name))
 }
 

@@ -213,9 +213,11 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
 
     symbol_batches.sort_by_key(|(index, _)| *index);
 
+    let mut collections = Vec::with_capacity(files.len());
     for (index, batch) in symbol_batches {
         let unit = cc.compile_unit(index);
-        L::apply_symbol_batch(unit, globals, batch);
+        let collection = L::apply_symbol_batch(unit, globals, batch);
+        collections.push(collection);
     }
     info!(
         "Symbol collection: {:.2}s",
@@ -226,9 +228,9 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     let graph_config = GraphBuildConfig;
 
     let graph_build_start = Instant::now();
-    for (index, _) in files.iter().enumerate() {
+    for (index, collection) in collections.iter().enumerate() {
         let unit = cc.compile_unit(index);
-        L::bind_symbols(unit, globals);
+        L::bind_symbols(unit, globals, collection);
     }
 
     let mut unit_graph_results: Vec<_> = (0..files.len())

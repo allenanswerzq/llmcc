@@ -30,6 +30,7 @@ impl RenderNode {
     }
 }
 
+#[allow(clippy::needless_lifetimes)]
 pub fn render_llmcc_ir<'tcx>(root: HirId, unit: CompileUnit<'tcx>) -> (String, String) {
     let hir_root = unit.hir_node(root);
     let ast_render = build_ast_render(hir_root.inner_ts_node(), unit);
@@ -39,6 +40,7 @@ pub fn render_llmcc_ir<'tcx>(root: HirId, unit: CompileUnit<'tcx>) -> (String, S
     (ast, hir)
 }
 
+#[allow(clippy::needless_lifetimes)]
 pub fn print_llmcc_ir<'tcx>(unit: CompileUnit<'tcx>) {
     let root = unit.file_start_hir_id().unwrap();
     let (ast, hir) = render_llmcc_ir(root, unit);
@@ -46,12 +48,14 @@ pub fn print_llmcc_ir<'tcx>(unit: CompileUnit<'tcx>) {
     println!("{}\n", hir);
 }
 
+#[allow(clippy::needless_lifetimes)]
 pub fn render_llmcc_graph<'tcx>(root: BlockId, unit: CompileUnit<'tcx>) -> String {
     let block = unit.bb(root);
     let render = build_block_render(&block, unit);
     render_lines(&render)
 }
 
+#[allow(clippy::needless_lifetimes)]
 pub fn print_llmcc_graph<'tcx>(root: BlockId, unit: CompileUnit<'tcx>) {
     let graph = render_llmcc_graph(root, unit);
     println!("{}\n", graph);

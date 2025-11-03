@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
-use tree_sitter::Tree;
+use tree_sitter::{Node, Tree};
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
@@ -73,6 +73,21 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get text from the file between start and end byte positions
     pub fn get_text(&self, start: usize, end: usize) -> String {
         self.file().get_text(start, end)
+    }
+
+    /// Convenience: extract text for a Tree-sitter node.
+    pub fn ts_text(&self, node: Node<'tcx>) -> String {
+        self.get_text(node.start_byte(), node.end_byte())
+    }
+
+    /// Convenience: extract text for a HIR node.
+    pub fn hir_text(&self, node: &HirNode<'tcx>) -> String {
+        self.get_text(node.start_byte(), node.end_byte())
+    }
+
+    /// Get the next HIR id that will be assigned (useful for diagnostics).
+    pub fn hir_next(&self) -> HirId {
+        self.cc.current_hir_id()
     }
 
     /// Get a HIR node by ID, returning None if not found
@@ -575,13 +590,17 @@ impl<'tcx> CompileCtxt<'tcx> {
         (trees, metrics)
     }
 
+    /// Sentinel owner id reserved for the global scope so that file-level scopes
+    /// (whose HIR id often defaults to 0) do not reuse the same `Scope` instance.
+    pub const GLOBAL_SCOPE_OWNER: HirId = HirId(u32::MAX);
+
     /// Create a context that references this CompileCtxt for a specific file index
     pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
         CompileUnit { cc: self, index }
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        self.alloc_scope(HirId(0))
+        self.alloc_scope(Self::GLOBAL_SCOPE_OWNER)
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

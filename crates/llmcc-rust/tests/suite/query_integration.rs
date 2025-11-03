@@ -25,16 +25,15 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
         collections.push(collect_symbols(unit, globals));
     }
 
-    for unit_idx in 0..unit_count {
+    for (unit_idx, collection) in collections.iter().enumerate().take(unit_count) {
         let unit = graph.cc.compile_unit(unit_idx);
-        bind_symbols(unit, globals);
+        bind_symbols(unit, globals, collection);
 
         let unit_graph = build_llmcc_graph::<LangRust>(unit, unit_idx, GraphBuildConfig).unwrap();
         graph.add_child(unit_graph);
     }
 
     graph.link_units();
-    drop(collections);
 
     Box::leak(Box::new(graph))
 }

@@ -1,13 +1,22 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
-use llmcc_python::{build_llmcc_ir, collect_symbols, LangPython, PythonClassDescriptor};
+use llmcc_python::{build_llmcc_ir, collect_symbols, ClassDescriptor, LangPython, TypeExpr};
 
-fn collect_classes(source: &str) -> Vec<PythonClassDescriptor> {
+fn collect_classes(source: &str) -> Vec<ClassDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     collect_symbols(unit, globals).classes
+}
+
+fn type_repr(expr: &TypeExpr) -> String {
+    match expr {
+        TypeExpr::Path { segments, .. } => segments.join("::"),
+        TypeExpr::Opaque { repr, .. } => repr.clone(),
+        TypeExpr::Unknown(repr) => repr.clone(),
+        other => format!("{:?}", other),
+    }
 }
 
 #[test]
@@ -20,7 +29,7 @@ class Point:
     assert_eq!(classes.len(), 1);
     let desc = &classes[0];
     assert_eq!(desc.name, "Point");
-    assert!(desc.base_classes.is_empty());
+    assert!(desc.base_types.is_empty());
     assert!(desc.methods.is_empty());
 }
 
@@ -35,8 +44,8 @@ class Derived(Base):
 "#;
     let classes = collect_classes(source);
     let derived = classes.iter().find(|c| c.name == "Derived").unwrap();
-    assert_eq!(derived.base_classes.len(), 1);
-    assert_eq!(derived.base_classes[0], "Base");
+    assert_eq!(derived.base_types.len(), 1);
+    assert_eq!(type_repr(&derived.base_types[0]), "Base");
 }
 
 #[test]
@@ -53,9 +62,10 @@ class Combined(Mixin1, Mixin2):
 "#;
     let classes = collect_classes(source);
     let combined = classes.iter().find(|c| c.name == "Combined").unwrap();
-    assert_eq!(combined.base_classes.len(), 2);
-    assert!(combined.base_classes.contains(&"Mixin1".to_string()));
-    assert!(combined.base_classes.contains(&"Mixin2".to_string()));
+    assert_eq!(combined.base_types.len(), 2);
+    let base_reprs: Vec<_> = combined.base_types.iter().map(type_repr).collect();
+    assert!(base_reprs.iter().any(|repr| repr == "Mixin1"));
+    assert!(base_reprs.iter().any(|repr| repr == "Mixin2"));
 }
 
 #[test]
@@ -113,7 +123,12 @@ class User:
     assert!(user.fields.iter().any(|f| f.name == "email"));
 
     let name_field = user.fields.iter().find(|f| f.name == "name").unwrap();
-    assert_eq!(name_field.type_hint.as_deref(), Some("str"));
+    let name_type = name_field
+        .type_annotation
+        .as_ref()
+        .map(type_repr)
+        .unwrap_or_default();
+    assert_eq!(name_type, "str");
 }
 
 #[test]

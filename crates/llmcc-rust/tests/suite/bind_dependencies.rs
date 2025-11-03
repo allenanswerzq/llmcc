@@ -1,4 +1,5 @@
 use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
+use llmcc_descriptor::DescriptorId;
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -14,7 +15,7 @@ fn compile(
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
-    bind_symbols(unit, globals);
+    bind_symbols(unit, globals, &collection);
     (cc, unit, collection)
 }
 
@@ -30,24 +31,49 @@ fn find_struct<'a>(
 }
 
 fn find_function<'a>(
+    unit: llmcc_core::context::CompileUnit<'static>,
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
 ) -> &'a llmcc_rust::FunctionDescriptor {
-    collection
-        .functions
-        .iter()
-        .find(|desc| desc.name == name)
-        .unwrap()
+    let mut fallback = None;
+    for desc in collection.functions.iter().filter(|desc| desc.name == name) {
+        let hir_id = descriptor_hir_id(&desc.origin);
+        let node = unit.hir_node(hir_id);
+        if node.kind_id() == LangRust::function_item {
+            return desc;
+        }
+        if fallback.is_none() {
+            fallback = Some(desc);
+        }
+    }
+    fallback.expect("function descriptor not found")
+}
+
+fn canonical_fqns(unit: llmcc_core::context::CompileUnit<'static>, fqn: &str) -> Vec<String> {
+    let mut values = vec![fqn.to_string()];
+    if !fqn.starts_with("unit") {
+        values.push(format!("unit{}::{}", unit.index, fqn));
+    }
+    values
 }
 
 fn find_function_by_fqn<'a>(
+    unit: llmcc_core::context::CompileUnit<'static>,
     collection: &'a llmcc_rust::CollectionResult,
     fqn: &str,
 ) -> &'a llmcc_rust::FunctionDescriptor {
+    let candidates = canonical_fqns(unit, fqn);
+
     collection
         .functions
         .iter()
-        .find(|desc| desc.fqn == fqn)
+        .find(|desc| {
+            desc.fqn
+                .as_deref()
+                .map(|value| candidates.iter().any(|candidate| candidate == value))
+                .unwrap_or(false)
+        })
+        .or_else(|| collection.functions.iter().find(|desc| desc.name == fqn))
         .unwrap()
 }
 
@@ -68,7 +94,7 @@ fn struct_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_struct(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
 fn function_symbol(
@@ -76,8 +102,8 @@ fn function_symbol(
     collection: &llmcc_rust::CollectionResult,
     name: &str,
 ) -> &'static Symbol {
-    let desc = find_function(collection, name);
-    symbol(unit, desc.hir_id)
+    let desc = find_function(unit, collection, name);
+    symbol(unit, &desc.origin)
 }
 
 fn function_symbol_by_fqn(
@@ -85,8 +111,8 @@ fn function_symbol_by_fqn(
     collection: &llmcc_rust::CollectionResult,
     fqn: &str,
 ) -> &'static Symbol {
-    let desc = find_function_by_fqn(collection, fqn);
-    symbol(unit, desc.hir_id)
+    let desc = find_function_by_fqn(unit, collection, fqn);
+    symbol(unit, &desc.origin)
 }
 
 fn enum_symbol(
@@ -95,10 +121,24 @@ fn enum_symbol(
     name: &str,
 ) -> &'static Symbol {
     let desc = find_enum(collection, name);
-    symbol(unit, desc.hir_id)
+    symbol(unit, &desc.origin)
 }
 
-fn symbol(unit: llmcc_core::context::CompileUnit<'static>, hir_id: HirId) -> &'static Symbol {
+fn descriptor_hir_id(origin: &llmcc_descriptor::DescriptorOrigin) -> HirId {
+    match origin.id.as_ref().and_then(|id| match id {
+        DescriptorId::U64(value) => Some(*value as u32),
+        _ => None,
+    }) {
+        Some(value) => HirId(value),
+        None => panic!("descriptor missing numeric origin id: {:?}", origin.id),
+    }
+}
+
+fn symbol(
+    unit: llmcc_core::context::CompileUnit<'static>,
+    origin: &llmcc_descriptor::DescriptorOrigin,
+) -> &'static Symbol {
+    let hir_id = descriptor_hir_id(origin);
     unit.get_scope(hir_id).symbol().unwrap()
 }
 
@@ -169,6 +209,87 @@ fn method_depends_on_inherent_method() {
 }
 
 #[test]
+fn struct_inherits_method_type_dependencies() {
+    let source = r#"
+        struct Foo;
+
+        struct Bar;
+
+        impl Foo {
+            fn method(&self) -> Bar {
+                Bar
+            }
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let method_symbol = function_symbol(unit, &collection, "method");
+    let foo_symbol = struct_symbol(unit, &collection, "Foo");
+    let bar_symbol = struct_symbol(unit, &collection, "Bar");
+
+    assert_depends_on(method_symbol, bar_symbol);
+    assert_depends_on(foo_symbol, bar_symbol);
+}
+
+#[test]
+fn impl_method_parameter_dependencies() {
+    let source = r#"
+        struct Config;
+        struct AuthManager;
+        struct InitialHistory;
+        struct SessionSource;
+        struct Session;
+        struct Foo;
+
+        impl Session {
+            fn new(config: Config, auth: AuthManager, source: SessionSource) -> Session {
+                Session
+            }
+        }
+
+        struct Codex;
+
+        impl Codex {
+            fn spawn(
+                config: Config,
+                auth: AuthManager,
+                history: InitialHistory,
+                source: SessionSource,
+            ) -> Session {
+                drop(history);
+                let f = Foo::new();
+                Session::new(config, auth, source)
+            }
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let codex_symbol = struct_symbol(unit, &collection, "Codex");
+    let spawn_symbol = function_symbol(unit, &collection, "spawn");
+    let config_symbol = struct_symbol(unit, &collection, "Config");
+    let auth_symbol = struct_symbol(unit, &collection, "AuthManager");
+    let history_symbol = struct_symbol(unit, &collection, "InitialHistory");
+    let source_symbol = struct_symbol(unit, &collection, "SessionSource");
+    let session_symbol = struct_symbol(unit, &collection, "Session");
+    let foo_symbol = struct_symbol(unit, &collection, "Foo");
+
+    assert_relation(codex_symbol, spawn_symbol);
+    assert_depends_on(codex_symbol, config_symbol);
+    assert_depends_on(codex_symbol, auth_symbol);
+    assert_depends_on(codex_symbol, history_symbol);
+    assert_depends_on(codex_symbol, source_symbol);
+    assert_depends_on(codex_symbol, session_symbol);
+    assert_depends_on(codex_symbol, foo_symbol);
+    assert_depends_on(spawn_symbol, config_symbol);
+    assert_depends_on(spawn_symbol, auth_symbol);
+    assert_depends_on(spawn_symbol, history_symbol);
+    assert_depends_on(spawn_symbol, source_symbol);
+    assert_depends_on(spawn_symbol, session_symbol);
+}
+
+#[test]
 fn function_depends_on_called_function() {
     let source = r#"
         fn helper() {}
@@ -219,7 +340,7 @@ fn const_initializer_records_dependencies() {
         .unwrap();
 
     let helper_symbol = function_symbol(unit, &collection, "helper");
-    let const_symbol = symbol(unit, const_desc.hir_id);
+    let const_symbol = symbol(unit, &const_desc.origin);
 
     assert_relation(const_symbol, helper_symbol);
 }
@@ -330,6 +451,71 @@ fn struct_field_creates_dependency() {
     let outer_symbol = struct_symbol(unit, &collection, "Outer");
 
     assert_relation(outer_symbol, inner_symbol);
+}
+
+#[test]
+fn struct_field_dependency_through_generic_argument() {
+    let source = r#"
+        struct Wrapper<T>(T);
+        struct SessionState;
+
+        struct Session {
+            state: Wrapper<SessionState>,
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let session_symbol = struct_symbol(unit, &collection, "Session");
+    let state_symbol = struct_symbol(unit, &collection, "SessionState");
+
+    assert_relation(session_symbol, state_symbol);
+}
+
+#[test]
+fn struct_field_dependencies_with_multiple_wrapped_types() {
+    let source = r#"
+        struct Arc<T>(T);
+        struct Sender<T>(T);
+        struct Option<T>(T);
+        struct Vec<T>(T);
+
+        struct ConversationManager;
+        struct AppEvent;
+        struct ChatWidget;
+        struct AuthManager;
+        struct Config;
+
+        impl ChatWidget {
+            fn new(config: Config, history: Vec<Arc<HistoryCell>>) -> ChatWidget {
+                let _ = (config, history);
+                ChatWidget
+            }
+        }
+
+        struct App {
+            server: Arc<ConversationManager>,
+            app_event_tx: Sender<AppEvent>,
+            chat_widget: ChatWidget,
+            auth_manager: Arc<AuthManager>,
+            config: Config,
+        }
+    "#;
+
+    let (_, unit, collection) = compile(source);
+
+    let app_symbol = struct_symbol(unit, &collection, "App");
+    let server_symbol = struct_symbol(unit, &collection, "ConversationManager");
+    let event_symbol = struct_symbol(unit, &collection, "AppEvent");
+    let widget_symbol = struct_symbol(unit, &collection, "ChatWidget");
+    let auth_symbol = struct_symbol(unit, &collection, "AuthManager");
+    let config_symbol = struct_symbol(unit, &collection, "Config");
+
+    assert_relation(app_symbol, server_symbol);
+    assert_relation(app_symbol, event_symbol);
+    assert_relation(app_symbol, widget_symbol);
+    assert_relation(app_symbol, auth_symbol);
+    assert_relation(app_symbol, config_symbol);
 }
 
 #[test]
@@ -714,8 +900,8 @@ fn module_with_const_dependencies() {
         .unwrap();
 
     let config_symbol = struct_symbol(unit, &collection, "Config");
-    let default_size_symbol = symbol(unit, default_size_desc.hir_id);
-    let default_config_symbol = symbol(unit, default_config_desc.hir_id);
+    let default_size_symbol = symbol(unit, &default_size_desc.origin);
+    let default_config_symbol = symbol(unit, &default_config_desc.origin);
     let get_config_symbol = function_symbol(unit, &collection, "get_config");
 
     assert_relation(default_config_symbol, config_symbol);
@@ -1133,7 +1319,7 @@ fn const_depends_on_type_and_function() {
 
     let config_symbol = struct_symbol(unit, &collection, "Config");
     let create_symbol = function_symbol(unit, &collection, "create_config");
-    let const_symbol = symbol(unit, const_desc.hir_id);
+    let const_symbol = symbol(unit, &const_desc.origin);
 
     assert_relation(const_symbol, config_symbol);
     assert_relation(const_symbol, create_symbol);
@@ -1156,7 +1342,7 @@ fn static_variable_dependencies() {
         .unwrap();
 
     let init_symbol = function_symbol(unit, &collection, "init_value");
-    let static_symbol = symbol(unit, static_desc.hir_id);
+    let static_symbol = symbol(unit, &static_desc.origin);
 
     assert_relation(static_symbol, init_symbol);
 }
@@ -1462,8 +1648,8 @@ fn const_references_other_const() {
         .find(|desc| desc.name == "DERIVED")
         .unwrap();
 
-    let base_symbol = symbol(unit, base_desc.hir_id);
-    let derived_symbol = symbol(unit, derived_desc.hir_id);
+    let base_symbol = symbol(unit, &base_desc.origin);
+    let derived_symbol = symbol(unit, &derived_desc.origin);
 
     assert_relation(derived_symbol, base_symbol);
 }
@@ -1507,10 +1693,10 @@ impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings 
 
     // Collect symbols
     let globals = cc.create_globals();
-    collect_symbols(unit, globals);
+    let _collection = collect_symbols(unit, globals);
 
     // Bind symbols
-    bind_symbols(unit, globals);
+    bind_symbols(unit, globals, &_collection);
 
     // Verify the impl block was processed without panicking
     let all_symbols = globals.all_symbols();

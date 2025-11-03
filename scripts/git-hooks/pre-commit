@@ -40,12 +40,12 @@ echo -e "${GREEN}✓ Clippy checks passed${NC}"
 echo -e "${YELLOW}Checking for common mistakes...${NC}"
 
 # Check for debug prints
-if git diff --cached --name-only | grep -E "\.rs$" | xargs -I {} git diff --cached {} | grep -q "dbg!(" 2>/dev/null; then
+if git diff --cached --diff-filter=ACM -- '*.rs' | grep -q "dbg!(" 2>/dev/null; then
     echo -e "${RED}✗ Found dbg!() macro in staged code${NC}"
     exit 1
 fi
 
-if git diff --cached --name-only | grep -E "\.rs$" | xargs -I {} git diff --cached {} | grep -q "println!" 2>/dev/null; then
+if git diff --cached --diff-filter=ACM -- '*.rs' | grep -q "println!" 2>/dev/null; then
     echo -e "${YELLOW}⚠ Found println! in staged code (usually should be logging)${NC}"
 fi
 
