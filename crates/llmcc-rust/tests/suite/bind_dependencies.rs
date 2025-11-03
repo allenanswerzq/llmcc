@@ -31,14 +31,22 @@ fn find_struct<'a>(
 }
 
 fn find_function<'a>(
+    unit: llmcc_core::context::CompileUnit<'static>,
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
 ) -> &'a llmcc_rust::FunctionDescriptor {
-    collection
-        .functions
-        .iter()
-        .find(|desc| desc.name == name)
-        .unwrap()
+    let mut fallback = None;
+    for desc in collection.functions.iter().filter(|desc| desc.name == name) {
+        let hir_id = descriptor_hir_id(&desc.origin);
+        let node = unit.hir_node(hir_id);
+        if node.kind_id() == LangRust::function_item {
+            return desc;
+        }
+        if fallback.is_none() {
+            fallback = Some(desc);
+        }
+    }
+    fallback.expect("function descriptor not found")
 }
 
 fn canonical_fqns(unit: llmcc_core::context::CompileUnit<'static>, fqn: &str) -> Vec<String> {
@@ -94,7 +102,7 @@ fn function_symbol(
     collection: &llmcc_rust::CollectionResult,
     name: &str,
 ) -> &'static Symbol {
-    let desc = find_function(collection, name);
+    let desc = find_function(unit, collection, name);
     symbol(unit, &desc.origin)
 }
 

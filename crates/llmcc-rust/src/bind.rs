@@ -134,7 +134,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.resolve_symbol(segments, None)
     }
 
-    fn resolve_method_symbol(&mut self, method: &str) -> Option<&'tcx Symbol> {
+    fn resolve_symbol_method(&mut self, method: &str) -> Option<&'tcx Symbol> {
         let direct_segments = vec![method.to_string()];
         if let Some(symbol) =
             self.resolve_symbol_with_priority(&direct_segments, &[SymbolKind::Function])
@@ -268,6 +268,13 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
     }
 
+    /// Pick the most specific match from a list of candidates.
+    ///
+    /// Selection priority:
+    /// 1. A candidate that matches both `kind` and `file` (when requested).
+    /// 2. Any candidate that matches the requested `kind`.
+    /// 3. Any candidate that matches the requested `file`.
+    /// 4. The first candidate in declaration order.
     fn select_matching_symbol(
         &self,
         candidates: &[&'tcx Symbol],
@@ -278,35 +285,41 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return None;
         }
 
-        if let Some(kind) = kind {
-            if let Some(file) = file {
-                if let Some(symbol) = candidates
-                    .iter()
-                    .copied()
-                    .find(|symbol| symbol.kind() == kind && symbol.unit_index() == Some(file))
-                {
-                    return Some(symbol);
-                }
-            }
+        // Helper that checks whether a candidate matches the requested kind and/or file.
+        let matches_all = |symbol: &&'tcx Symbol| -> bool {
+            let kind_ok = kind.map_or(true, |expected| symbol.kind() == expected);
+            let file_ok = file.map_or(true, |expected| symbol.unit_index() == Some(expected));
+            kind_ok && file_ok
+        };
 
-            if let Some(symbol) = candidates
-                .iter()
-                .copied()
-                .find(|symbol| symbol.kind() == kind)
-            {
-                return Some(symbol);
-            }
+        // Helper that checks only the requested kind, ignoring file.
+        let matches_kind_only = |symbol: &&'tcx Symbol| -> bool {
+            kind.map_or(true, |expected| symbol.kind() == expected)
+        };
 
+        // Helper that checks only the requested file, ignoring kind.
+        let matches_file_only = |symbol: &&'tcx Symbol| -> bool {
+            file.map_or(true, |expected| symbol.unit_index() == Some(expected))
+        };
+
+        // Prefer symbols that satisfy every requested filter.
+        if let Some(symbol) = candidates.iter().find(matches_all) {
+            return Some(*symbol);
+        }
+
+        // If we could not satisfy both filters together, fall back to matching by kind.
+        if kind.is_some() {
+            if let Some(symbol) = candidates.iter().find(matches_kind_only) {
+                return Some(*symbol);
+            }
+            // When a specific kind was requested but none matched, stop searching.
             return None;
         }
 
-        if let Some(file) = file {
-            if let Some(symbol) = candidates
-                .iter()
-                .copied()
-                .find(|symbol| symbol.unit_index() == Some(file))
-            {
-                return Some(symbol);
+        // No kind restriction; if a file was requested, honour it before defaulting to the first match.
+        if file.is_some() {
+            if let Some(symbol) = candidates.iter().find(matches_file_only) {
+                return Some(*symbol);
             }
         }
 
@@ -321,7 +334,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
                 match symbol.kind {
                     CallKind::Method => {
-                        if let Some(method_symbol) = self.resolve_method_symbol(&symbol.name) {
+                        if let Some(method_symbol) = self.resolve_symbol_method(&symbol.name) {
                             self.add_symbol_relation(Some(method_symbol));
                         }
                     }
@@ -368,7 +381,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 for segment in &chain.segments {
                     match segment.kind {
                         CallKind::Method | CallKind::Function => {
-                            if let Some(symbol) = self.resolve_method_symbol(&segment.name) {
+                            if let Some(symbol) = self.resolve_symbol_method(&segment.name) {
                                 self.add_symbol_relation(Some(symbol));
                             }
                         }
