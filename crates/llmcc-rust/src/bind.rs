@@ -459,19 +459,49 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
-
+        let struct_name = node
+            .opt_child_by_field(self.unit, LangRust::field_name)
+            .and_then(|child| child.as_ident())
+            .map(|ident| ident.name.clone())
+            .unwrap_or_else(|| "<unknown>".to_string());
         if let Some(&descriptor_idx) = self.collection.struct_map.get(&node.hir_id()) {
             if let Some(struct_descriptor) = self.collection.structs.get(descriptor_idx) {
+                tracing::trace!(
+                    "[bind][struct] {} fields={}",
+                    struct_name,
+                    struct_descriptor.fields.len()
+                );
                 for field in &struct_descriptor.fields {
                     if let Some(type_expr) = field.type_annotation.as_ref() {
                         let mut symbols = Vec::new();
                         self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
                         for type_symbol in symbols {
+                            if type_symbol.unit_index() == Some(self.unit.index) {
+                                tracing::trace!(
+                                    "[bind][struct] {} depends on {:?}",
+                                    struct_name,
+                                    type_symbol.name.as_str()
+                                );
+                            }
+                            if let Some(struct_symbol) = symbol {
+                                struct_symbol.add_dependency(type_symbol);
+                            }
                             self.add_symbol_relation(Some(type_symbol));
+                        }
+                        if symbols.is_empty() {
+                            tracing::trace!(
+                                "[bind][struct] {} unresolved field type {:?}",
+                                struct_name,
+                                type_expr
+                            );
                         }
                     }
                 }
+            } else {
+                tracing::trace!("[bind][struct] {} descriptor missing", struct_name);
             }
+        } else {
+            tracing::trace!("[bind][struct] {} not in struct_map", struct_name);
         }
 
         self.visit_children_scope(node, symbol);
