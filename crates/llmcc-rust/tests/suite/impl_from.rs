@@ -33,7 +33,14 @@ mod codex_app_server_protocol {
     println!("Has struct: {}", has_struct);
     assert!(has_struct, "should find SandboxWorkspaceWrite struct");
 
-    // The impl block should be registered successfully without panicking
-    // This is the main test - just compiling and collecting symbols without panic is the goal
-    println!("Test passed: qualified impl type handled correctly");
+    // The impl descriptor should carry the fully-qualified target type.
+    let impl_target_fqn = collection
+        .impls
+        .iter()
+        .find_map(|desc| desc.impl_target_fqn.as_deref());
+    assert_eq!(
+        impl_target_fqn,
+        Some("codex_app_server_protocol::SandboxSettings"),
+        "impl should target the fully-qualified type"
+    );
 }

@@ -76,6 +76,7 @@ struct DeclCollector<'tcx> {
     enums: Vec<EnumDescriptor>,
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'tcx> DeclCollector<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {
@@ -402,9 +403,8 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_class(self.unit, &node) {
             let fqn_hint = desc
-                .extras
-                .get("self_type_fqn")
-                .cloned()
+                .impl_target_fqn
+                .clone()
                 .unwrap_or_else(|| desc.name.clone());
             let impl_name = desc.name.clone();
             let (sym_idx, fqn) =
@@ -541,7 +541,7 @@ fn apply_collected_symbols<'tcx>(
     }
 }
 
-pub fn collect_symbols_batch<'tcx>(unit: CompileUnit<'tcx>) -> SymbolBatch {
+pub fn collect_symbols_batch(unit: CompileUnit<'_>) -> SymbolBatch {
     let collect_start = Instant::now();
     let root = unit.file_start_hir_id().unwrap();
     let node = unit.hir_node(root);
@@ -561,17 +561,21 @@ pub fn collect_symbols_batch<'tcx>(unit: CompileUnit<'tcx>) -> SymbolBatch {
     }
 }
 
+/// Applies a previously collected symbol batch into the current unit, wiring the
+/// newly created symbols back into the global scope and tracing timing metrics.
 pub fn apply_symbol_batch<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
     batch: SymbolBatch,
 ) -> CollectionResult {
+    // Destructure the batch so the intent (results and timings) is explicit.
     let SymbolBatch {
         collected,
         total_time,
         visit_time,
     } = batch;
 
+    // Pre-compute interesting counts that will be reported in the trace log.
     let counts = (
         collected.result.functions.len(),
         collected.result.structs.len(),
@@ -581,8 +585,11 @@ pub fn apply_symbol_batch<'tcx>(
         collected.result.calls.len(),
     );
 
+    // Materialize symbols and attach them to the appropriate scopes.
     apply_collected_symbols(unit, globals, &collected);
 
+    // Emit a trace entry when collection took a noticeable amount of time. This
+    // helps us diagnose slow files without flooding logs for trivial cases.
     if total_time.as_millis() > 10 {
         tracing::trace!(
             "[COLLECT][rust] File {:?}: total={:.2}ms, visit={:.2}ms, fns={}, structs={}, impls={}, vars={}, enums={}, calls={}",

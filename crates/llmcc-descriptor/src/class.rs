@@ -15,6 +15,9 @@ pub struct ClassDescriptor {
     pub fields: Vec<ClassField>,
     pub decorators: Vec<String>,
     pub docstring: Option<String>,
+    /// Optional fully-qualified name of the type targeted by an `impl` block.
+    /// Regular class declarations leave this empty.
+    pub impl_target_fqn: Option<String>,
     pub extras: DescriptorExtras,
 }
 
@@ -30,6 +33,7 @@ impl ClassDescriptor {
             fields: Vec::new(),
             decorators: Vec::new(),
             docstring: None,
+            impl_target_fqn: None,
             extras: DescriptorExtras::default(),
         }
     }

@@ -74,6 +74,7 @@ struct DeclCollector<'tcx> {
     calls: Vec<CallDescriptor>,
 }
 
+#[allow(clippy::needless_lifetimes)]
 impl<'tcx> DeclCollector<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>) -> Self {
         let scope_infos = vec![ScopeInfo {
@@ -469,7 +470,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         self.visit_children(&node);
     }
 }
-
+#[allow(clippy::needless_lifetimes)]
 impl<'tcx> DeclCollector<'tcx> {
     fn apply_call_kind_hint(&self, descriptor: &mut CallDescriptor) {
         if let CallTarget::Symbol(symbol) = &mut descriptor.target {
@@ -525,7 +526,7 @@ fn apply_collected_symbols<'tcx>(
     // created_symbols intentionally kept for scope insertion above
 }
 
-pub fn collect_symbols_batch<'tcx>(unit: CompileUnit<'tcx>) -> SymbolBatch {
+pub fn collect_symbols_batch(unit: CompileUnit<'_>) -> SymbolBatch {
     let collect_start = Instant::now();
     let root = unit.file_start_hir_id().unwrap();
     let node = unit.hir_node(root);

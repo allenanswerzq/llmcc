@@ -21,9 +21,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Clas
     let origin = build_origin(unit, node, ts_node);
 
     let mut descriptor = ClassDescriptor::new(origin, self_name);
-    descriptor
-        .extras
-        .insert("self_type_fqn".to_string(), self_fqn.clone());
+    descriptor.impl_target_fqn = Some(self_fqn.clone());
     descriptor
         .extras
         .insert("self_type_repr".to_string(), type_repr.clone());

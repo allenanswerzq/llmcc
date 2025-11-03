@@ -17,6 +17,7 @@ macro_rules! declare_arena {
             fn allocate_on(self, arena: &'tcx Arena<'tcx>) -> &'tcx Self;
         }
 
+        #[allow(clippy::mut_from_ref)]
         pub trait ArenaAllocatableMut<'tcx>: ArenaAllocatable<'tcx> {
             fn allocate_on_mut(self, arena: &'tcx Arena<'tcx>) -> &'tcx mut Self;
         }
@@ -107,6 +108,7 @@ mod tests {
         foo: &'tcx mut Foo,
     }
 
+    #[allow(clippy::needless_lifetimes)]
     impl<'tcx> Holder<'tcx> {
         fn bump(&mut self) {
             self.foo.0 += 1;

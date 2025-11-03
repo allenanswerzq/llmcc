@@ -95,7 +95,7 @@ pub(crate) fn parse_visibility(header: &str) -> Visibility {
     }
 }
 
-fn find_parameters_node<'tcx>(ts_node: Node<'tcx>) -> Option<Node<'tcx>> {
+fn find_parameters_node(ts_node: Node<'_>) -> Option<Node<'_>> {
     if let Some(node) = ts_node.child_by_field_name("parameters") {
         return Some(node);
     }

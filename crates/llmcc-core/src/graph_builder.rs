@@ -1000,6 +1000,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
+#[allow(clippy::needless_lifetimes)]
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
