@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::ptr;
 
 use llmcc_core::context::CompileUnit;
@@ -10,30 +9,20 @@ use crate::describe::function;
 use crate::describe::{CallKind, CallTarget, RustDescriptor, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
 use llmcc_descriptor::DescriptorTrait;
-
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.
 #[derive(Debug)]
 struct SymbolBinder<'tcx> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
-    preferred_crate: Option<String>,
 }
 
 impl<'tcx> SymbolBinder<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
         scopes.push(globals);
-        let preferred_crate = unit
-            .file_path()
-            .or_else(|| unit.file().path())
-            .and_then(Self::extract_crate_key);
 
-        Self {
-            unit,
-            scopes,
-            preferred_crate,
-        }
+        Self { unit, scopes }
     }
 
     fn interner(&self) -> &llmcc_core::interner::InternPool {
@@ -98,6 +87,21 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn add_symbol_relation_by_field(&mut self, node: &HirNode<'tcx>, field_id: u16) {
         let symbol = self.find_symbol_from_field(node, field_id, SymbolKind::EnumVariant);
         self.add_symbol_relation(symbol);
+    }
+
+    fn resolve_symbol_from_fqn(&mut self, fqn: &str) -> Option<&'tcx Symbol> {
+        let segments: Vec<String> = fqn
+            .split("::")
+            .map(|segment| segment.trim().to_string())
+            .filter(|segment| !segment.is_empty())
+            .collect();
+        if segments.is_empty() {
+            return None;
+        }
+        self.resolve_symbol(&segments, Some(SymbolKind::Struct))
+            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
+            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Trait)))
+            .or_else(|| self.resolve_symbol(&segments, None))
     }
 
     fn resolve_impl_target(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
@@ -167,7 +171,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn type_segments(&mut self, node: &HirNode<'tcx>) -> Option<Vec<String>> {
         let ts_node = node.inner_ts_node();
         let expr = function::parse_type_expr(self.unit, ts_node);
-        extract_path_segments(&expr)
+        expr.path_segments().map(|segments| segments.to_vec())
     }
 
     fn parse_type_expr_from_node(&self, node: &HirNode<'tcx>) -> TypeExpr {
@@ -283,16 +287,6 @@ impl<'tcx> SymbolBinder<'tcx> {
                 }
             }
 
-            if let Some(preferred) = self.preferred_crate.as_ref() {
-                if let Some(symbol) = candidates
-                    .iter()
-                    .copied()
-                    .find(|symbol| symbol.kind() == kind && self.symbol_in_crate(symbol, preferred))
-                {
-                    return Some(symbol);
-                }
-            }
-
             if let Some(symbol) = candidates
                 .iter()
                 .copied()
@@ -327,46 +321,7 @@ impl<'tcx> SymbolBinder<'tcx> {
             }
         }
 
-        if let Some(preferred) = self.preferred_crate.as_ref() {
-            if let Some(symbol) = candidates
-                .iter()
-                .copied()
-                .find(|symbol| self.symbol_in_crate(symbol, preferred))
-            {
-                return Some(symbol);
-            }
-        }
-
         candidates.first().copied()
-    }
-
-    fn symbol_in_crate(&self, symbol: &'tcx Symbol, crate_key: &str) -> bool {
-        let Some(unit_index) = symbol.unit_index() else {
-            return false;
-        };
-
-        let path = self.unit.cc.file_path(unit_index);
-        let Some(path) = path else {
-            return false;
-        };
-
-        Self::extract_crate_key(path).as_deref() == Some(crate_key)
-    }
-
-    fn extract_crate_key(path: &str) -> Option<String> {
-        let p = Path::new(path);
-        for (idx, component) in p.components().enumerate() {
-            if component.as_os_str() == "crates" {
-                return p
-                    .components()
-                    .nth(idx + 1)
-                    .map(|c| c.as_os_str().to_string_lossy().to_string());
-            }
-        }
-
-        p.parent()
-            .and_then(|parent| parent.file_name())
-            .map(|name| name.to_string_lossy().to_string())
     }
 
     fn record_call_target(&mut self, target: &CallTarget) {
@@ -524,15 +479,16 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
         let parent_symbol = self.current_symbol();
+        let function = RustDescriptor::build_function(self.unit, &node);
 
         // Also extract return type as a dependency
         if let Some(func_symbol) = symbol {
-            if let Some(return_type_node) =
-                node.opt_child_by_field(self.unit, LangRust::field_return_type)
+            if let Some(return_type) = function
+                .as_ref()
+                .and_then(|descriptor| descriptor.return_type.as_ref())
             {
-                let expr = self.parse_type_expr_from_node(&return_type_node);
                 let mut symbols = Vec::new();
-                self.collect_type_expr_symbols(&expr, &mut symbols);
+                self.collect_type_expr_symbols(return_type, &mut symbols);
                 for return_type_sym in symbols {
                     func_symbol.add_dependency(return_type_sym);
                 }
@@ -561,17 +517,27 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.resolve_impl_target(&node);
+        let impl_descriptor = RustDescriptor::build_class(self.unit, &node);
 
-        // If this is a trait impl (impl Trait for Type), make the trait depend on the type
-        let trait_node = node.inner_ts_node();
-        if let Some(trait_ts) = trait_node.child_by_field_name("trait") {
-            let trait_segments = extract_segments_from_ts_node(self.unit, trait_ts);
-            if let Some(trait_symbol) = self.resolve_symbol(&trait_segments, None) {
-                if let Some(target_symbol) = symbol {
-                    trait_symbol.add_dependency(target_symbol);
+        let symbol = impl_descriptor
+            .as_ref()
+            .and_then(|descriptor| descriptor.impl_target_fqn.as_ref())
+            .and_then(|fqn| self.resolve_symbol_from_fqn(fqn))
+            .or_else(|| self.resolve_impl_target(&node));
+
+        if let (Some(descriptor), Some(target_symbol)) = (impl_descriptor.as_ref(), symbol) {
+            for base in &descriptor.base_types {
+                if let Some(segments) = base.path_segments().map(|segments| segments.to_vec()) {
+                    if let Some(trait_symbol) = self
+                        .resolve_symbol(&segments, Some(SymbolKind::Trait))
+                        .or_else(|| self.resolve_symbol(&segments, None))
+                    {
+                        trait_symbol.add_dependency(target_symbol);
+                    }
                 }
             }
+        } else {
+            tracing::warn!("failed to build descriptor for impl");
         }
 
         self.visit_children_scope(node, symbol);
@@ -745,26 +711,6 @@ pub fn bind_symbols<'tcx>(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) {
     let node = unit.hir_node(root);
     let mut binder = SymbolBinder::new(unit, globals);
     binder.visit_node(node);
-}
-
-fn extract_path_segments(expr: &TypeExpr) -> Option<Vec<String>> {
-    match expr {
-        TypeExpr::Path { segments, .. } => Some(segments.clone()),
-        TypeExpr::Reference { inner, .. } => extract_path_segments(inner),
-        TypeExpr::Tuple(items) if items.len() == 1 => extract_path_segments(&items[0]),
-        _ => None,
-    }
-}
-
-fn extract_segments_from_ts_node<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: tree_sitter::Node<'tcx>,
-) -> Vec<String> {
-    let text = unit.file().get_text(node.start_byte(), node.end_byte());
-    text.split("::")
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect()
 }
 
 fn node_text_simple<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> String {
