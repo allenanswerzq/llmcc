@@ -1,6 +1,7 @@
 use llmcc_core::IrBuildConfig;
 use llmcc_rust::{
     build_llmcc_ir, collect_symbols, CompileCtxt, LangRust, StructDescriptor, StructKind,
+    Visibility,
 };
 
 fn collect_structs(source: &str) -> Vec<StructDescriptor> {
@@ -25,9 +26,9 @@ fn captures_named_struct() {
     assert_eq!(structs.len(), 1);
     let desc = &structs[0];
     assert_eq!(desc.name, "Point");
-    assert_eq!(desc.visibility, llmcc_rust::FnVisibility::Public);
+    assert_eq!(desc.visibility, Visibility::Public);
     assert_eq!(desc.generics.as_deref(), Some("<T>"));
-    assert_eq!(desc.kind, StructKind::Named);
+    assert_eq!(desc.kind, StructKind::Record);
     assert_eq!(desc.fields.len(), 2);
     assert_eq!(desc.fields[0].name.as_deref(), Some("x"));
     assert_eq!(desc.fields[1].name.as_deref(), Some("y"));

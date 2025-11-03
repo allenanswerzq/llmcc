@@ -19,13 +19,14 @@ fn compile(sources: &[&str]) -> (&'static CompileCtxt<'static>, Vec<&'static Com
     }
 
     // Collect
+    let mut collections = Vec::with_capacity(units.len());
     for unit in &units {
-        let _ = collect_symbols(*unit, globals);
+        collections.push(collect_symbols(*unit, globals));
     }
 
     // Bind
-    for unit in &units {
-        let _ = bind_symbols(*unit, globals);
+    for (unit, collection) in units.iter().zip(collections.iter()) {
+        let _ = bind_symbols(*unit, globals, collection);
     }
 
     (cc, units)

@@ -1,7 +1,7 @@
 use llmcc_core::IrBuildConfig;
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, CompileCtxt, EnumDescriptor, EnumVariantKind, FnVisibility,
-    LangRust,
+    build_llmcc_ir, collect_symbols, CompileCtxt, EnumDescriptor, EnumVariantKind, LangRust,
+    TypeExpr, Visibility,
 };
 
 fn collect_enums(source: &str) -> Vec<EnumDescriptor> {
@@ -28,7 +28,7 @@ fn captures_enum_metadata_and_variants() {
     assert_eq!(enums.len(), 1);
     let desc = &enums[0];
     assert_eq!(desc.name, "Message");
-    assert_eq!(desc.visibility, FnVisibility::Public);
+    assert_eq!(desc.visibility, Visibility::Public);
     assert_eq!(desc.generics.as_deref(), Some("<T>"));
     assert_eq!(desc.variants.len(), 4);
 
@@ -36,18 +36,14 @@ fn captures_enum_metadata_and_variants() {
     assert_eq!(quit.name, "Quit");
     assert_eq!(quit.kind, EnumVariantKind::Unit);
     assert!(quit.fields.is_empty());
-    assert!(quit.discriminant.is_none());
+    assert!(!quit.extras.contains_key("rust.discriminant"));
 
     let write = &desc.variants[1];
     assert_eq!(write.name, "Write");
     assert_eq!(write.kind, EnumVariantKind::Tuple);
     assert_eq!(write.fields.len(), 1);
-    let write_ty = write.fields[0]
-        .ty
-        .as_ref()
-        .and_then(|ty| ty.path_segments())
-        .map(|segs| segs.join("::"));
-    assert_eq!(write_ty.as_deref(), Some("String"));
+    let write_ty = write.fields[0].type_annotation.as_ref().unwrap();
+    assert_path(write_ty, &["String"]);
 
     let mv = &desc.variants[2];
     assert_eq!(mv.name, "Move");
@@ -75,6 +71,27 @@ fn captures_enum_variant_discriminant() {
     assert_eq!(enums.len(), 1);
     let status = &enums[0];
     assert_eq!(status.variants.len(), 2);
-    assert_eq!(status.variants[0].discriminant.as_deref(), Some("200"));
-    assert_eq!(status.variants[1].discriminant.as_deref(), Some("404"));
+    assert_eq!(
+        status.variants[0]
+            .extras
+            .get("rust.discriminant")
+            .map(String::as_str),
+        Some("200")
+    );
+    assert_eq!(
+        status.variants[1]
+            .extras
+            .get("rust.discriminant")
+            .map(String::as_str),
+        Some("404")
+    );
+}
+
+fn assert_path(expr: &TypeExpr, expected: &[&str]) {
+    if let TypeExpr::Path { segments, .. } = expr {
+        let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
+        assert_eq!(segments, &expected_vec);
+    } else {
+        panic!("expected path type");
+    }
 }

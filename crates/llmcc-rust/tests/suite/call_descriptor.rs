@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use llmcc_core::IrBuildConfig;
 use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, CallDescriptor, CallTarget, ChainSegment, CompileCtxt,
-    LangRust, TypeExpr,
+    build_llmcc_ir, collect_symbols, CallChain, CallDescriptor, CallKind, CallSymbol, CallTarget,
+    CompileCtxt, LangRust, TypeExpr,
 };
 
 fn collect_calls(source: &str) -> Vec<CallDescriptor> {
@@ -18,44 +18,35 @@ fn collect_calls(source: &str) -> Vec<CallDescriptor> {
 
 fn call_key(call: &CallDescriptor) -> String {
     match &call.target {
-        CallTarget::Path { segments, .. } => segments.join("::"),
-        CallTarget::Method { method, .. } => method.clone(),
-        CallTarget::Chain { base, segments } => {
-            let mut key = base.clone();
-            for segment in segments {
+        CallTarget::Symbol(symbol) => {
+            let mut parts = symbol.qualifiers.clone();
+            parts.push(symbol.name.clone());
+            parts.join("::")
+        }
+        CallTarget::Chain(chain) => {
+            let mut key = chain.root.clone();
+            for segment in &chain.segments {
                 key.push('.');
-                key.push_str(&segment.method);
+                key.push_str(&segment.name);
             }
             key
         }
-        CallTarget::Unknown(text) => text.clone(),
+        CallTarget::Dynamic { repr } => repr.clone(),
     }
 }
 
-fn path_target(call: &CallDescriptor) -> (&Vec<String>, &Vec<TypeExpr>) {
-    let CallTarget::Path { segments, generics } = &call.target else {
-        panic!();
-    };
-    (segments, generics)
+fn symbol_target(call: &CallDescriptor) -> &CallSymbol {
+    match &call.target {
+        CallTarget::Symbol(symbol) => symbol,
+        _ => panic!("expected symbol target"),
+    }
 }
 
-fn method_target(call: &CallDescriptor) -> (&String, &String, &Vec<TypeExpr>) {
-    let CallTarget::Method {
-        receiver,
-        method,
-        generics,
-    } = &call.target
-    else {
-        panic!();
-    };
-    (receiver, method, generics)
-}
-
-fn chain_target(call: &CallDescriptor) -> (&String, &Vec<ChainSegment>) {
-    let CallTarget::Chain { base, segments } = &call.target else {
-        panic!();
-    };
-    (base, segments)
+fn chain_target(call: &CallDescriptor) -> &CallChain {
+    match &call.target {
+        CallTarget::Chain(chain) => chain,
+        _ => panic!("expected chain target"),
+    }
 }
 
 fn find_call<F>(calls: &[CallDescriptor], predicate: F) -> &CallDescriptor
@@ -75,12 +66,13 @@ fn captures_simple_call() {
     let calls = collect_calls(source);
     assert_eq!(calls.len(), 1);
     let call = &calls[0];
-    let (segments, _) = path_target(call);
-    assert_eq!(segments, &vec!["foo".to_string(), "bar".to_string()]);
+    let symbol = symbol_target(call);
+    assert_eq!(symbol.qualifiers, vec!["foo".to_string()]);
+    assert_eq!(symbol.name, "bar");
     assert_eq!(call.arguments.len(), 2);
-    assert_eq!(call.arguments[0].text, "1");
-    assert_eq!(call.arguments[1].text, "2");
-    assert_eq!(call.enclosing_function.as_deref(), Some("wrapper"));
+    assert_eq!(call.arguments[0].value, "1");
+    assert_eq!(call.arguments[1].value, "2");
+    assert_eq!(call.enclosing.as_deref(), Some("wrapper"));
 }
 
 #[test]
@@ -93,12 +85,14 @@ fn captures_method_call() {
     let calls = collect_calls(source);
     assert_eq!(calls.len(), 1);
     let call = &calls[0];
-    let (receiver, method, generics) = method_target(call);
-    assert_eq!(receiver, "value");
-    assert_eq!(method, "compute");
-    assert_eq!(generics.len(), 1);
-    // Ensure argument captured
-    assert_eq!(call.arguments[0].text, "10");
+    let chain = chain_target(call);
+    assert_eq!(chain.root, "value");
+    assert_eq!(chain.segments.len(), 1);
+    let segment = &chain.segments[0];
+    assert_eq!(segment.name, "compute");
+    assert_eq!(segment.kind, CallKind::Method);
+    assert_eq!(segment.type_arguments.len(), 1);
+    assert_eq!(call.arguments[0].value, "10");
 }
 
 #[test]
@@ -109,7 +103,6 @@ fn captures_nested_calls() {
         }
     "#;
     let calls = collect_calls(source);
-    // Expect three calls: two inners and the outer
     assert_eq!(calls.len(), 3);
 
     let counts = calls.iter().fold(HashMap::new(), |mut acc, call| {
@@ -132,10 +125,10 @@ fn captures_lambda_argument() {
     let calls = collect_calls(source);
     assert_eq!(calls.len(), 1);
     let call = &calls[0];
-    assert_eq!(call.enclosing_function.as_deref(), Some("wrapper"));
+    assert_eq!(call.enclosing.as_deref(), Some("wrapper"));
     assert_eq!(call.arguments.len(), 2);
-    assert_eq!(call.arguments[0].text, "|x| x + 1");
-    assert_eq!(call.arguments[1].text, "5");
+    assert_eq!(call.arguments[0].value, "|x| x + 1");
+    assert_eq!(call.arguments[1].value, "5");
 }
 
 #[test]
@@ -146,33 +139,41 @@ fn captures_method_chain() {
         }
     "#;
     let calls = collect_calls(source);
-    // expect one chain call plus inner processor::handle
     assert!(calls.len() >= 2);
 
-    let chain = find_call(&calls, |call| {
-        matches!(call.target, CallTarget::Chain { .. })
-    });
-
-    let (base, segments) = chain_target(chain);
-    assert_eq!(base, "data");
-    assert_eq!(segments.len(), 3);
-    assert_eq!(segments[0].method, "iter");
-    assert!(segments[0].arguments.is_empty());
-    assert_eq!(segments[1].method, "map");
-    assert_eq!(segments[1].arguments.len(), 1);
-    assert_eq!(segments[1].arguments[0].text, "|v| processor::handle(v)");
-    assert_eq!(segments[2].method, "collect");
-    assert!(segments[2].arguments.is_empty());
-    assert_eq!(segments[2].generics.len(), 1);
+    let chain = find_call(&calls, |call| matches!(call.target, CallTarget::Chain(_)));
+    let chain = chain_target(chain);
+    assert_eq!(chain.root, "data");
+    assert_eq!(chain.segments.len(), 3);
+    assert_eq!(chain.segments[0].name, "iter");
+    assert_eq!(chain.segments[0].kind, CallKind::Method);
+    assert!(chain.segments[0].arguments.is_empty());
+    assert_eq!(chain.segments[1].name, "map");
+    assert_eq!(chain.segments[1].arguments.len(), 1);
+    assert_eq!(
+        chain.segments[1].arguments[0].value,
+        "|v| processor::handle(v)"
+    );
+    assert_eq!(chain.segments[2].name, "collect");
+    assert!(chain.segments[2].arguments.is_empty());
+    assert_eq!(chain.segments[2].type_arguments.len(), 1);
 
     let handle = find_call(&calls, |call| {
         matches!(
             &call.target,
-            CallTarget::Path { segments, .. } if segments.join("::") == "processor::handle"
+            CallTarget::Symbol(symbol)
+                if symbol
+                    .qualifiers
+                    .iter()
+                    .chain(std::iter::once(&symbol.name))
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("::")
+                    == "processor::handle"
         )
     });
     assert_eq!(handle.arguments.len(), 1);
-    assert_eq!(handle.arguments[0].text, "v");
+    assert_eq!(handle.arguments[0].value, "v");
 }
 
 #[test]
@@ -182,14 +183,13 @@ fn captures_deep_nested_calls() {
             let _ = outer(inner_a(inner_b(inner_c(inner_d(0)))));
         }
     "#;
-
     let calls = collect_calls(source);
     assert_eq!(calls.len(), 5);
 
     let call_map: HashMap<_, _> = calls
         .iter()
         .filter_map(|call| {
-            if matches!(call.target, CallTarget::Path { .. }) {
+            if matches!(call.target, CallTarget::Symbol(_)) {
                 Some((call_key(call), call))
             } else {
                 None
@@ -200,25 +200,25 @@ fn captures_deep_nested_calls() {
     let outer = call_map.get("outer").unwrap();
     assert_eq!(outer.arguments.len(), 1);
     assert_eq!(
-        outer.arguments[0].text,
+        outer.arguments[0].value,
         "inner_a(inner_b(inner_c(inner_d(0))))"
     );
 
     let inner_a = call_map.get("inner_a").unwrap();
     assert_eq!(inner_a.arguments.len(), 1);
-    assert_eq!(inner_a.arguments[0].text, "inner_b(inner_c(inner_d(0)))");
+    assert_eq!(inner_a.arguments[0].value, "inner_b(inner_c(inner_d(0)))");
 
     let inner_b = call_map.get("inner_b").unwrap();
     assert_eq!(inner_b.arguments.len(), 1);
-    assert_eq!(inner_b.arguments[0].text, "inner_c(inner_d(0))");
+    assert_eq!(inner_b.arguments[0].value, "inner_c(inner_d(0))");
 
     let inner_c = call_map.get("inner_c").unwrap();
     assert_eq!(inner_c.arguments.len(), 1);
-    assert_eq!(inner_c.arguments[0].text, "inner_d(0)");
+    assert_eq!(inner_c.arguments[0].value, "inner_d(0)");
 
     let inner_d = call_map.get("inner_d").unwrap();
     assert_eq!(inner_d.arguments.len(), 1);
-    assert_eq!(inner_d.arguments[0].text, "0");
+    assert_eq!(inner_d.arguments[0].value, "0");
 }
 
 #[test]
@@ -231,27 +231,28 @@ fn captures_generic_path_call() {
 
     let calls = collect_calls(source);
     let apply = find_call(&calls, |call| {
-        matches!(
-            &call.target,
-            CallTarget::Path { segments, .. } if segments.join("::") == "compute::apply"
-        )
+        matches!(&call.target, CallTarget::Symbol(symbol) if {
+            let mut parts = symbol.qualifiers.clone();
+            parts.push(symbol.name.clone());
+            parts.join("::") == "compute::apply"
+        })
     });
 
-    let (_, generics) = path_target(apply);
-    assert_eq!(generics.len(), 2);
-    if let TypeExpr::Path { segments, generics } = &generics[0] {
+    let symbol = symbol_target(apply);
+    assert_eq!(symbol.type_arguments.len(), 2);
+    if let TypeExpr::Path { segments, generics } = &symbol.type_arguments[0] {
         assert_eq!(segments, &vec!["Result".to_string()]);
         assert_eq!(generics.len(), 2);
     } else {
         panic!();
     }
-    if let TypeExpr::Tuple(items) = &generics[1] {
+    if let TypeExpr::Tuple(items) = &symbol.type_arguments[1] {
         assert_eq!(items.len(), 2);
     } else {
         panic!();
     }
 
     assert_eq!(apply.arguments.len(), 2);
-    assert_eq!(apply.arguments[0].text, "build_value()");
-    assert_eq!(apply.arguments[1].text, "99");
+    assert_eq!(apply.arguments[0].value, "build_value()");
+    assert_eq!(apply.arguments[1].value, "99");
 }

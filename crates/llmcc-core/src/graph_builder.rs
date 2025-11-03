@@ -738,9 +738,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         if pruned.nodes.is_empty() {
             return "digraph DesignGraph {\n}\n".to_string();
         }
-
         let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-
         render_compact_dot(&pruned.nodes, &reduced_edges)
     }
 }
@@ -1000,6 +998,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
+#[allow(clippy::needless_lifetimes)]
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
@@ -1215,6 +1214,74 @@ fn build_compact_node_index(nodes: &[CompactNode]) -> HashMap<BlockId, usize> {
     node_index
 }
 
+fn reduce_transitive_edges(
+    nodes: &[CompactNode],
+    edges: &BTreeSet<(usize, usize)>,
+) -> BTreeSet<(usize, usize)> {
+    if nodes.is_empty() {
+        return BTreeSet::new();
+    }
+
+    let mut adjacency: HashMap<usize, Vec<usize>> = HashMap::new();
+    for &(from, to) in edges.iter() {
+        adjacency.entry(from).or_default().push(to);
+    }
+
+    let mut minimal_edges = BTreeSet::new();
+
+    for &(from, to) in edges.iter() {
+        if !has_alternative_path(from, to, &adjacency, (from, to)) {
+            minimal_edges.insert((from, to));
+        }
+    }
+
+    minimal_edges
+}
+
+fn has_alternative_path(
+    start: usize,
+    target: usize,
+    adjacency: &HashMap<usize, Vec<usize>>,
+    edge_to_skip: (usize, usize),
+) -> bool {
+    let mut visited = HashSet::new();
+    let mut stack: Vec<usize> = adjacency
+        .get(&start)
+        .into_iter()
+        .flat_map(|neighbors| neighbors.iter())
+        .filter_map(|&neighbor| {
+            if (start, neighbor) == edge_to_skip {
+                None
+            } else {
+                Some(neighbor)
+            }
+        })
+        .collect();
+
+    while let Some(current) = stack.pop() {
+        if !visited.insert(current) {
+            continue;
+        }
+
+        if current == target {
+            return true;
+        }
+
+        if let Some(neighbors) = adjacency.get(&current) {
+            for &neighbor in neighbors {
+                if (current, neighbor) == edge_to_skip {
+                    continue;
+                }
+                if !visited.contains(&neighbor) {
+                    stack.push(neighbor);
+                }
+            }
+        }
+    }
+
+    false
+}
+
 struct PrunedGraph {
     nodes: Vec<CompactNode>,
     edges: BTreeSet<(usize, usize)>,
@@ -1323,72 +1390,4 @@ fn find_connected_components(
     }
 
     components
-}
-
-fn reduce_transitive_edges(
-    nodes: &[CompactNode],
-    edges: &BTreeSet<(usize, usize)>,
-) -> BTreeSet<(usize, usize)> {
-    if nodes.is_empty() {
-        return BTreeSet::new();
-    }
-
-    let mut adjacency: HashMap<usize, Vec<usize>> = HashMap::new();
-    for &(from, to) in edges.iter() {
-        adjacency.entry(from).or_default().push(to);
-    }
-
-    let mut minimal_edges = BTreeSet::new();
-
-    for &(from, to) in edges.iter() {
-        if !has_alternative_path(from, to, &adjacency, (from, to)) {
-            minimal_edges.insert((from, to));
-        }
-    }
-
-    minimal_edges
-}
-
-fn has_alternative_path(
-    start: usize,
-    target: usize,
-    adjacency: &HashMap<usize, Vec<usize>>,
-    edge_to_skip: (usize, usize),
-) -> bool {
-    let mut visited = HashSet::new();
-    let mut stack: Vec<usize> = adjacency
-        .get(&start)
-        .into_iter()
-        .flat_map(|neighbors| neighbors.iter())
-        .filter_map(|&neighbor| {
-            if (start, neighbor) == edge_to_skip {
-                None
-            } else {
-                Some(neighbor)
-            }
-        })
-        .collect();
-
-    while let Some(current) = stack.pop() {
-        if !visited.insert(current) {
-            continue;
-        }
-
-        if current == target {
-            return true;
-        }
-
-        if let Some(neighbors) = adjacency.get(&current) {
-            for &neighbor in neighbors {
-                if (current, neighbor) == edge_to_skip {
-                    continue;
-                }
-                if !visited.contains(&neighbor) {
-                    stack.push(neighbor);
-                }
-            }
-        }
-    }
-
-    false
 }
