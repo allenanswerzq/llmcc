@@ -15,7 +15,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Func
     };
 
     let name_node = ts_node.child_by_field_name("name")?;
-    let name = clean(&node_text(unit, name_node));
+    let name = unit.ts_text(name_node);
 
     let header_text = unit
         .file()
@@ -31,10 +31,10 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Func
 
     let generics = ts_node
         .child_by_field_name("type_parameters")
-        .map(|n| clean(&node_text(unit, n)));
+        .map(|n| unit.ts_text(n));
     let where_clause = ts_node
         .child_by_field_name("where_clause")
-        .map(|n| clean(&node_text(unit, n)))
+        .map(|n| unit.ts_text(n))
         .or_else(|| extract_where_clause(&signature));
     let parameters = find_parameters_node(ts_node)
         .map(|n| parse_parameters(unit, n))
@@ -158,8 +158,8 @@ fn parse_parameters<'tcx>(
             "parameter" => {
                 let pattern = child
                     .child_by_field_name("pattern")
-                    .map(|n| clean(&node_text(unit, n)))
-                    .unwrap_or_else(|| clean(&node_text(unit, child)));
+                    .map(|n| unit.ts_text(n))
+                    .unwrap_or_else(|| unit.ts_text(child));
                 let ty = child
                     .child_by_field_name("type")
                     .map(|n| parse_type_expr(unit, n));
@@ -170,7 +170,7 @@ fn parse_parameters<'tcx>(
                 params.push(param);
             }
             "self_parameter" => {
-                let text = clean(&node_text(unit, child));
+                let text = unit.ts_text(child);
                 let mut param = FunctionParameter::new(identifier_from_pattern(&text));
                 param.pattern = Some(text);
                 param.kind = ParameterKind::Receiver;
@@ -195,14 +195,16 @@ fn parse_parameters<'tcx>(
 pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     let expr = match node.kind() {
         "type_identifier" | "primitive_type" => TypeExpr::Path {
-            segments: clean(&node_text(unit, node))
+            segments: unit
+                .ts_text(node)
                 .split("::")
                 .map(|s| s.to_string())
                 .collect(),
             generics: Vec::new(),
         },
         "scoped_type_identifier" => TypeExpr::Path {
-            segments: clean(&node_text(unit, node))
+            segments: unit
+                .ts_text(node)
                 .split("::")
                 .map(|s| s.to_string())
                 .collect(),
@@ -221,9 +223,9 @@ pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -
             TypeExpr::Tuple(types)
         }
         "impl_trait_type" => TypeExpr::ImplTrait {
-            bounds: clean(&node_text(unit, node)),
+            bounds: unit.ts_text(node),
         },
-        _ => TypeExpr::Unknown(clean(&node_text(unit, node))),
+        _ => TypeExpr::Unknown(unit.ts_text(node)),
     };
 
     expr
@@ -236,7 +238,8 @@ fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeEx
     for child in node.named_children(&mut cursor) {
         match child.kind() {
             "type_identifier" | "scoped_type_identifier" => {
-                base_segments = clean(&node_text(unit, child))
+                base_segments = unit
+                    .ts_text(child)
                     .split("::")
                     .map(|s| s.to_string())
                     .collect();
@@ -248,7 +251,8 @@ fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeEx
         }
     }
     if base_segments.is_empty() {
-        base_segments = clean(&node_text(unit, node))
+        base_segments = unit
+            .ts_text(node)
             .split("::")
             .map(|s| s.to_string())
             .collect();
@@ -285,13 +289,13 @@ fn parse_reference_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Type
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         match child.kind() {
-            "lifetime" => lifetime = Some(clean(&node_text(unit, child))),
+            "lifetime" => lifetime = Some(unit.ts_text(child)),
             "mutable_specifier" => is_mut = true,
             kind if is_type_node(kind) => inner = Some(parse_type_expr(unit, child)),
             _ => {}
         }
     }
-    let inner = inner.unwrap_or_else(|| TypeExpr::Unknown(clean(&node_text(unit, node))));
+    let inner = inner.unwrap_or_else(|| TypeExpr::Unknown(unit.ts_text(node)));
     TypeExpr::Reference {
         is_mut,
         lifetime,
@@ -355,8 +359,4 @@ fn clean(text: &str) -> String {
         }
     }
     out.trim().to_string()
-}
-
-fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
-    unit.file().get_text(node.start_byte(), node.end_byte())
 }

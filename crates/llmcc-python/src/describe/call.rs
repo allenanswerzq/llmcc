@@ -29,7 +29,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Call
             function_node
                 .and_then(|func| parse_symbol_target(unit, func, None))
                 .unwrap_or_else(|| CallTarget::Dynamic {
-                    repr: clean(&node_text(unit, ts_node)),
+                    repr: unit.ts_text(ts_node),
                 })
         });
 
@@ -56,7 +56,7 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
             "attribute" => {
                 let method = node
                     .child_by_field_name("attribute")
-                    .map(|n| clean(&node_text(unit, n)))
+                    .map(|n| unit.ts_text(n))
                     .unwrap_or_default();
                 let arguments = mem::take(&mut pending_arguments);
                 segments.push(CallSegment {
@@ -76,7 +76,7 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
     }
 
     segments.reverse();
-    let root = clean(&node_text(unit, node));
+    let root = unit.ts_text(node);
     let mut chain = CallChain::new(root);
     chain.segments = segments;
     Some(CallTarget::Chain(chain))
@@ -89,7 +89,7 @@ fn parse_symbol_target<'tcx>(
 ) -> Option<CallTarget> {
     match node.kind() {
         "identifier" => {
-            let name = clean(&node_text(unit, node));
+            let name = unit.ts_text(node);
             let mut symbol = CallSymbol::new(&name);
             if let Some(kind) = kind_hint {
                 symbol.kind = kind;
@@ -118,11 +118,11 @@ fn flatten_attribute<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Opt
         }
 
         let attr_node = node.child_by_field_name("attribute")?;
-        segments.push(clean(&node_text(unit, attr_node)));
+        segments.push(unit.ts_text(attr_node));
         node = node.child_by_field_name("object")?;
     }
 
-    let root_text = clean(&node_text(unit, node));
+    let root_text = unit.ts_text(node);
     if root_text.is_empty() {
         return None;
     }
@@ -143,23 +143,15 @@ fn parse_argument_node<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> CallA
         "keyword_argument" => {
             let name = node
                 .child_by_field_name("name")
-                .map(|name_node| clean(&node_text(unit, name_node)));
+                .map(|name_node| unit.ts_text(name_node));
             let value = node
                 .child_by_field_name("value")
-                .map(|value_node| clean(&node_text(unit, value_node)))
-                .unwrap_or_else(|| clean(&node_text(unit, node)));
+                .map(|value_node| unit.ts_text(value_node))
+                .unwrap_or_else(|| unit.ts_text(node));
             let mut argument = CallArgument::new(value);
             argument.name = name;
             argument
         }
-        _ => CallArgument::new(clean(&node_text(unit, node))),
+        _ => CallArgument::new(unit.ts_text(node)),
     }
-}
-
-fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
-    unit.get_text(node.start_byte(), node.end_byte())
-}
-
-fn clean(text: &str) -> String {
-    text.trim().to_string()
 }

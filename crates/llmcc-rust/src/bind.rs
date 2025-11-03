@@ -578,29 +578,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        let hir_id = node.hir_id();
-        let mut recorded_descriptor_type = false;
-
-        if let Some(&descriptor_idx) = self.collection.variable_map.get(&hir_id) {
+        if let Some(&descriptor_idx) = self.collection.variable_map.get(&node.hir_id()) {
             if let Some(type_expr) = self.collection.variables[descriptor_idx]
                 .type_annotation
                 .as_ref()
             {
                 let mut symbols = Vec::new();
                 self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
-                for type_symbol in symbols {
-                    self.add_symbol_relation(Some(type_symbol));
-                }
-                recorded_descriptor_type = true;
-            }
-        }
-
-        if !recorded_descriptor_type {
-            if let Some(type_node) = node.opt_child_by_field(self.unit, LangRust::field_type) {
-                let ts_node = type_node.inner_ts_node();
-                let expr = function::parse_type_expr(self.unit, ts_node);
-                let mut symbols = Vec::new();
-                self.resolve_symbols_from_type_expr(&expr, &mut symbols);
                 for type_symbol in symbols {
                     self.add_symbol_relation(Some(type_symbol));
                 }
@@ -646,7 +630,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             self.visit_children(&node);
             return;
         }
-        let text = node_text_simple(self.unit, &node);
+        let text = self.unit.hir_text(&node);
         let segments: Vec<String> = text
             .split("::")
             .filter(|segment| !segment.is_empty())
@@ -687,11 +671,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_identifier(&mut self, node: HirNode<'tcx>) {
-        let Some(ident) = node.as_ident() else {
-            self.visit_children(&node);
-            return;
-        };
-
+        let ident = node.as_ident().unwrap();
         let key = self.interner().intern(&ident.name);
 
         let symbol = if let Some(local) = self.scopes.find_symbol_local(&ident.name) {
@@ -756,8 +736,4 @@ pub fn bind_symbols<'tcx>(
     let node = unit.hir_node(root);
     let mut binder = SymbolBinder::new(unit, globals, collection);
     binder.visit_node(node);
-}
-
-fn node_text_simple<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> String {
-    unit.file().get_text(node.start_byte(), node.end_byte())
 }

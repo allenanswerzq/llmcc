@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
-use tree_sitter::Tree;
+use tree_sitter::{Node, Tree};
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
@@ -73,6 +73,16 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get text from the file between start and end byte positions
     pub fn get_text(&self, start: usize, end: usize) -> String {
         self.file().get_text(start, end)
+    }
+
+    /// Convenience: extract text for a Tree-sitter node.
+    pub fn ts_text(&self, node: Node<'tcx>) -> String {
+        self.get_text(node.start_byte(), node.end_byte())
+    }
+
+    /// Convenience: extract text for a HIR node.
+    pub fn hir_text(&self, node: &HirNode<'tcx>) -> String {
+        self.get_text(node.start_byte(), node.end_byte())
     }
 
     /// Get a HIR node by ID, returning None if not found

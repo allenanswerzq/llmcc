@@ -14,7 +14,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Enum
     };
 
     let name_node = ts_node.child_by_field_name("name")?;
-    let name = clean(&node_text(unit, name_node));
+    let name = unit.ts_text(name_node);
     let header_text = unit
         .file()
         .get_text(ts_node.start_byte(), name_node.start_byte());
@@ -22,7 +22,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Enum
 
     let generics = ts_node
         .child_by_field_name("type_parameters")
-        .map(|n| clean(&node_text(unit, n)));
+        .map(|n| unit.ts_text(n));
 
     let variants = ts_node
         .child_by_field_name("body")
@@ -54,11 +54,9 @@ fn parse_enum_variant<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> EnumVa
     let name_node = node
         .child_by_field_name("name")
         .unwrap_or_else(|| node.child(0).unwrap_or(node));
-    let name = clean(&node_text(unit, name_node));
+    let name = unit.ts_text(name_node);
 
-    let discriminant = node
-        .child_by_field_name("value")
-        .map(|n| clean(&node_text(unit, n)));
+    let discriminant = node.child_by_field_name("value").map(|n| unit.ts_text(n));
 
     let (kind, fields) = match node.child_by_field_name("body") {
         Some(body) => match body.kind() {
@@ -112,9 +110,7 @@ fn parse_named_variant_fields<'tcx>(
     let mut cursor = list.walk();
     for child in list.named_children(&mut cursor) {
         if child.kind() == "field_declaration" {
-            let name = child
-                .child_by_field_name("name")
-                .map(|n| clean(&node_text(unit, n)));
+            let name = child.child_by_field_name("name").map(|n| unit.ts_text(n));
             let ty = child
                 .child_by_field_name("type")
                 .map(|n| parse_type_expr(unit, n));
@@ -170,25 +166,4 @@ fn is_type_node(kind: &str) -> bool {
             | "reference_type"
             | "impl_trait_type"
     )
-}
-
-fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
-    unit.file().get_text(node.start_byte(), node.end_byte())
-}
-
-fn clean(text: &str) -> String {
-    let mut out = String::new();
-    let mut last_was_ws = false;
-    for ch in text.chars() {
-        if ch.is_whitespace() {
-            if !last_was_ws && !out.is_empty() {
-                out.push(' ');
-            }
-            last_was_ws = true;
-        } else {
-            out.push(ch);
-            last_was_ws = false;
-        }
-    }
-    out.trim().to_string()
 }

@@ -14,7 +14,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Clas
     };
 
     let type_node = ts_node.child_by_field_name("type")?;
-    let type_repr = clean(&node_text(unit, type_node));
+    let type_repr = unit.ts_text(type_node);
     let self_type_expr = parse_type_expr(unit, type_node);
     let (self_name, self_fqn) = impl_target_info(&self_type_expr, &type_repr);
 
@@ -29,24 +29,21 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Clas
     if let Some(trait_node) = ts_node.child_by_field_name("trait") {
         let trait_expr = parse_type_expr(unit, trait_node);
         descriptor.base_types.push(trait_expr);
-        descriptor.extras.insert(
-            "trait_repr".to_string(),
-            clean(&node_text(unit, trait_node)),
-        );
+        descriptor
+            .extras
+            .insert("trait_repr".to_string(), unit.ts_text(trait_node));
     }
 
     if let Some(generics_node) = ts_node.child_by_field_name("type_parameters") {
-        descriptor.extras.insert(
-            "generics".to_string(),
-            clean(&node_text(unit, generics_node)),
-        );
+        descriptor
+            .extras
+            .insert("generics".to_string(), unit.ts_text(generics_node));
     }
 
     if let Some(where_node) = ts_node.child_by_field_name("where_clause") {
-        descriptor.extras.insert(
-            "where_clause".to_string(),
-            clean(&node_text(unit, where_node)),
-        );
+        descriptor
+            .extras
+            .insert("where_clause".to_string(), unit.ts_text(where_node));
     }
 
     if let Some(header) = impl_header(unit, ts_node) {
@@ -105,25 +102,4 @@ fn impl_header<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Option<String
     } else {
         Some(text)
     }
-}
-
-fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
-    unit.file().get_text(node.start_byte(), node.end_byte())
-}
-
-fn clean(text: &str) -> String {
-    let mut out = String::new();
-    let mut last_was_ws = false;
-    for ch in text.chars() {
-        if ch.is_whitespace() {
-            if !last_was_ws && !out.is_empty() {
-                out.push(' ');
-            }
-            last_was_ws = true;
-        } else {
-            out.push(ch);
-            last_was_ws = false;
-        }
-    }
-    out.trim().to_string()
 }

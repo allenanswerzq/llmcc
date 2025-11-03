@@ -30,7 +30,7 @@ pub fn build<'tcx>(
         .unwrap_or_else(|| match function_node {
             Some(func) => parse_call_target(unit, func, call_generics.clone()),
             None => CallTarget::Dynamic {
-                repr: clean(&node_text(unit, ts_node)),
+                repr: unit.ts_text(ts_node),
             },
         });
 
@@ -51,7 +51,7 @@ fn parse_arguments<'tcx>(unit: CompileUnit<'tcx>, args_node: Node<'tcx>) -> Vec<
     let mut cursor = args_node.walk();
     args_node
         .named_children(&mut cursor)
-        .map(|arg| CallArgument::new(clean(&node_text(unit, arg))))
+        .map(|arg| CallArgument::new(unit.ts_text(arg)))
         .collect()
 }
 
@@ -62,7 +62,8 @@ fn parse_call_target<'tcx>(
 ) -> CallTarget {
     match node.kind() {
         "identifier" | "scoped_identifier" | "type_identifier" => {
-            let segments: Vec<String> = clean(&node_text(unit, node))
+            let segments: Vec<String> = unit
+                .ts_text(node)
                 .split("::")
                 .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
@@ -71,13 +72,14 @@ fn parse_call_target<'tcx>(
         }
         "generic_type" => {
             let base = node.child_by_field_name("type").unwrap_or(node);
-            let mut segments: Vec<String> = clean(&node_text(unit, base))
+            let mut segments: Vec<String> = unit
+                .ts_text(base)
                 .split("::")
                 .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
                 .collect();
             if segments.is_empty() {
-                segments.push(clean(&node_text(unit, base)));
+                segments.push(unit.ts_text(base));
             }
             let generics = node
                 .child_by_field_name("type_arguments")
@@ -102,11 +104,11 @@ fn parse_call_target<'tcx>(
         "field_expression" => {
             let receiver = node
                 .child_by_field_name("value")
-                .map(|n| clean(&node_text(unit, n)))
-                .unwrap_or_else(|| clean(&node_text(unit, node)));
+                .map(|n| unit.ts_text(n))
+                .unwrap_or_else(|| unit.ts_text(node));
             let method = node
                 .child_by_field_name("field")
-                .map(|n| clean(&node_text(unit, n)))
+                .map(|n| unit.ts_text(n))
                 .unwrap_or_default();
             let generics = node
                 .child_by_field_name("type_arguments")
@@ -123,7 +125,7 @@ fn parse_call_target<'tcx>(
             CallTarget::Chain(chain)
         }
         _ => CallTarget::Dynamic {
-            repr: clean(&node_text(unit, node)),
+            repr: unit.ts_text(node),
         },
     }
 }
@@ -160,7 +162,7 @@ fn parse_chain<'tcx>(
             "field_expression" => {
                 let method = node
                     .child_by_field_name("field")
-                    .map(|n| clean(&node_text(unit, n)))
+                    .map(|n| unit.ts_text(n))
                     .unwrap_or_default();
                 let generics = mem::take(&mut pending_generics);
                 let arguments = mem::take(&mut pending_arguments);
@@ -181,7 +183,7 @@ fn parse_chain<'tcx>(
     }
 
     segments.reverse();
-    let base = clean(&node_text(unit, node));
+    let base = unit.ts_text(node);
     let mut chain = CallChain::new(base);
     chain.segments = segments;
     Some(CallTarget::Chain(chain))
@@ -246,25 +248,4 @@ fn is_type_node(kind: &str) -> bool {
             | "primitive_type"
             | "impl_trait_type"
     )
-}
-
-fn node_text<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> String {
-    unit.file().get_text(node.start_byte(), node.end_byte())
-}
-
-fn clean(text: &str) -> String {
-    let mut out = String::new();
-    let mut last_was_ws = false;
-    for ch in text.chars() {
-        if ch.is_whitespace() {
-            if !last_was_ws && !out.is_empty() {
-                out.push(' ');
-            }
-            last_was_ws = true;
-        } else {
-            out.push(ch);
-            last_was_ws = false;
-        }
-    }
-    out.trim().to_string()
 }
