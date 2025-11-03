@@ -389,7 +389,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             self.function_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, Some(sym_idx));
         } else {
-            tracing::warn!("build function error");
+            tracing::warn!(
+                "build function error {:?} next_hir={:?}",
+                self.unit.hir_text(&node),
+                self.unit.hir_next()
+            );
         }
     }
 
@@ -448,7 +452,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             self.impl_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, scope_symbol);
         } else {
-            tracing::warn!("failed to build impl descriptor for: {:?}", node);
+            tracing::warn!(
+                "failed to build impl descriptor for: {:?} next_hir={:?}",
+                node,
+                self.unit.hir_next()
+            );
         }
     }
 
@@ -500,7 +508,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             self.struct_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, Some(sym_idx));
         } else {
-            tracing::warn!("failed to build struct descriptor for: {:?}", node);
+            tracing::warn!(
+                "failed to build struct descriptor for: {:?} next_hir={:?}",
+                node,
+                self.unit.hir_next()
+            );
         }
     }
 
@@ -514,7 +526,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             self.enum_map.insert(node.hir_id(), idx);
             self.visit_children_new_scope(&node, Some(sym_idx));
         } else {
-            tracing::warn!("failed to build enum descriptor for: {:?}", node);
+            tracing::warn!(
+                "failed to build enum descriptor for: {:?} next_hir={:?}",
+                node,
+                self.unit.hir_next()
+            );
         }
     }
 

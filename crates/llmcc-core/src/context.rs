@@ -85,6 +85,11 @@ impl<'tcx> CompileUnit<'tcx> {
         self.get_text(node.start_byte(), node.end_byte())
     }
 
+    /// Get the next HIR id that will be assigned (useful for diagnostics).
+    pub fn hir_next(&self) -> HirId {
+        self.cc.current_hir_id()
+    }
+
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
         self.cc

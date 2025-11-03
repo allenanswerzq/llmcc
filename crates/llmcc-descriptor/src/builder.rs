@@ -1,9 +1,10 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
+use llmcc_core::Node;
 
 use crate::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
-    StructDescriptor, VariableDescriptor,
+    StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 /// Trait implemented by language front-ends to construct shared descriptors from their HIR nodes.
@@ -49,5 +50,9 @@ pub trait DescriptorTrait<'tcx> {
         let _ = unit;
         let _ = node;
         None
+    }
+
+    fn build_type_expr(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
+        TypeExpr::Unknown(unit.get_text(node.start_byte(), node.end_byte()))
     }
 }

@@ -4,8 +4,9 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
+use llmcc_descriptor::DescriptorTrait;
 
-use crate::describe::function;
+use crate::describe::RustDescriptor;
 use crate::describe::{CallKind, CallTarget, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
 /// `SymbolBinder` connects symbols with the items they reference so that later
@@ -168,15 +169,11 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         None
     }
 
-    fn resolve_type_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let segments = self.type_segments(node)?;
-        self.resolve_symbol_with_priority(&segments, &[SymbolKind::Struct, SymbolKind::Enum])
-    }
-
-    fn type_segments(&mut self, node: &HirNode<'tcx>) -> Option<Vec<String>> {
+    fn resolve_symbol_type_expr(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let ts_node = node.inner_ts_node();
-        let expr = function::parse_type_expr(self.unit, ts_node);
-        expr.path_segments().map(|segments| segments.to_vec())
+        let expr = RustDescriptor::build_type_expr(self.unit, ts_node);
+        let segments = expr.path_segments().map(|segments| segments.to_vec())?;
+        self.resolve_symbol_with_priority(&segments, &[SymbolKind::Struct, SymbolKind::Enum])
     }
 
     /// Traverse a type expression and collect every symbol the type mentions.
@@ -626,31 +623,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_scoped_identifier(&mut self, node: HirNode<'tcx>) {
-        if self.identifier_is_call_function(&node) {
-            self.visit_children(&node);
-            return;
-        }
-        let text = self.unit.hir_text(&node);
-        let segments: Vec<String> = text
-            .split("::")
-            .filter(|segment| !segment.is_empty())
-            .map(|segment| segment.trim().to_string())
-            .collect();
-        // Try to resolve as a function first (for calls), then as a struct (for types), then anything else
-        let target = self
-            .resolve_symbol(&segments, Some(SymbolKind::Function))
-            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Struct)))
-            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)));
-        self.add_symbol_relation(target);
-        self.visit_children(&node);
+        self.visit_type_identifier(node);
     }
 
     fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
-        if self.identifier_is_call_function(&node) {
-            self.visit_children(&node);
-            return;
-        }
-        if let Some(symbol) = self.resolve_type_symbol(&node) {
+        if let Some(symbol) = self.resolve_symbol_type_expr(&node) {
             // Skip struct/enum dependencies if this identifier is followed by parentheses (bare constructor call).
             // This is detected by checking if the parent is a call_expression.
             if matches!(symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
@@ -693,9 +670,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 })
         };
 
-        // Don't add struct/enum identifiers through visit_identifier. They should be added through
-        // visit_type_identifier (for type annotations) instead, or through special handling in contexts
-        // like let declarations.
         if let Some(sym) = symbol {
             if !matches!(sym.kind(), SymbolKind::Struct | SymbolKind::Enum) {
                 self.add_symbol_relation(Some(sym));
@@ -705,25 +679,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
-    }
-}
-
-impl<'tcx> SymbolBinder<'tcx, '_> {
-    fn identifier_is_call_function(&self, node: &HirNode<'tcx>) -> bool {
-        let Some(parent_id) = node.parent() else {
-            return false;
-        };
-        let parent = self.unit.hir_node(parent_id);
-        if parent.kind_id() != LangRust::call_expression {
-            return false;
-        }
-        let parent_ts = parent.inner_ts_node();
-        let Some(function_ts) = parent_ts.child_by_field_name("function") else {
-            return false;
-        };
-        let node_ts = node.inner_ts_node();
-        function_ts.start_byte() == node_ts.start_byte()
-            && function_ts.end_byte() == node_ts.end_byte()
     }
 }
 

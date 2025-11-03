@@ -7,6 +7,7 @@ pub mod variable;
 
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
+use llmcc_core::Node;
 use llmcc_descriptor::DescriptorTrait;
 
 pub use llmcc_descriptor::{
@@ -47,5 +48,9 @@ impl<'tcx> DescriptorTrait<'tcx> for RustDescriptor {
 
     fn build_class(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
         implementation::build(unit, node)
+    }
+
+    fn build_type_expr(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
+        function::parse_type_expr(unit, node)
     }
 }

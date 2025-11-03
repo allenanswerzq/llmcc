@@ -10,7 +10,7 @@ use llmcc_descriptor::{
 /// Build a language-agnostic function descriptor from a Rust function item.
 pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<FunctionDescriptor> {
     let ts_node = match node.inner_ts_node() {
-        ts if ts.kind() == "function_item" => ts,
+        ts if matches!(ts.kind(), "function_item" | "function_signature_item") => ts,
         _ => return None,
     };
 
