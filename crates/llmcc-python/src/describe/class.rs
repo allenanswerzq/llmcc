@@ -4,24 +4,16 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
-use llmcc_descriptor::{ClassDescriptor, ClassField, DescriptorMeta, TypeExpr, LANGUAGE_PYTHON};
+use llmcc_descriptor::{ClassDescriptor, ClassField, TypeExpr, LANGUAGE_PYTHON};
 
 use crate::token::LangPython;
 
 use super::origin::build_origin;
 
-pub fn build<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    meta: DescriptorMeta<'_>,
-) -> Option<ClassDescriptor> {
+pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
     if node.kind_id() != LangPython::class_definition {
         return None;
     }
-
-    let DescriptorMeta::Class { fqn } = meta else {
-        return None;
-    };
 
     let name_node = node.opt_child_by_field(unit, LangPython::field_name)?;
     let ident = name_node.as_ident()?;
@@ -29,7 +21,6 @@ pub fn build<'tcx>(
 
     let origin = build_origin(unit, node, ts_node);
     let mut descriptor = ClassDescriptor::new(origin, ident.name.clone());
-    descriptor.fqn = fqn.map(|value| value.to_string());
 
     descriptor.decorators = collect_decorators(unit, ts_node);
     descriptor.base_types = collect_base_types(unit, node);

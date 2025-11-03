@@ -575,13 +575,17 @@ impl<'tcx> CompileCtxt<'tcx> {
         (trees, metrics)
     }
 
+    /// Sentinel owner id reserved for the global scope so that file-level scopes
+    /// (whose HIR id often defaults to 0) do not reuse the same `Scope` instance.
+    pub const GLOBAL_SCOPE_OWNER: HirId = HirId(u32::MAX);
+
     /// Create a context that references this CompileCtxt for a specific file index
     pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
         CompileUnit { cc: self, index }
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        self.alloc_scope(HirId(0))
+        self.alloc_scope(Self::GLOBAL_SCOPE_OWNER)
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

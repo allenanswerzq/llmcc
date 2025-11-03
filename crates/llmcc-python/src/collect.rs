@@ -9,8 +9,8 @@ use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 use crate::describe::PythonDescriptorBuilder;
 use crate::token::{AstVisitorPython, LangPython};
 use llmcc_descriptor::{
-    CallDescriptor, CallKind, CallTarget, ClassDescriptor, DescriptorMeta, FunctionDescriptor,
-    ImportDescriptor, LanguageDescriptorBuilder, VariableDescriptor, VariableScope,
+    CallDescriptor, CallKind, CallTarget, ClassDescriptor, DescriptorTrait, FunctionDescriptor,
+    ImportDescriptor, VariableDescriptor, VariableScope,
 };
 
 #[derive(Debug)]
@@ -393,16 +393,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_call(&mut self, node: HirNode<'tcx>) {
-        let enclosing_owned = self.parent_symbol().map(|symbol| symbol.fqn.clone());
-        if let Some(mut descriptor) = PythonDescriptorBuilder::build_call_descriptor(
-            self.unit,
-            &node,
-            DescriptorMeta::Call {
-                enclosing: enclosing_owned.as_deref(),
-                fqn: None,
-                kind_hint: None,
-            },
-        ) {
+        if let Some(mut descriptor) = PythonDescriptorBuilder::build_call(self.unit, &node) {
             self.apply_call_kind_hint(&mut descriptor);
             self.calls.push(descriptor);
         }
@@ -414,11 +405,8 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Function)
         {
             let fqn = self.symbols[symbol_idx].fqn.clone();
-            if let Some(func) = PythonDescriptorBuilder::build_function_descriptor(
-                self.unit,
-                &node,
-                DescriptorMeta::Function { fqn: Some(&fqn) },
-            ) {
+            if let Some(mut func) = PythonDescriptorBuilder::build_function(self.unit, &node) {
+                func.fqn = Some(fqn);
                 self.functions.push(func);
             }
             self.visit_children_scope(&node, Some(symbol_idx));
@@ -430,11 +418,8 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
         {
             let fqn = self.symbols[symbol_idx].fqn.clone();
-            if let Some(class) = PythonDescriptorBuilder::build_class_descriptor(
-                self.unit,
-                &node,
-                DescriptorMeta::Class { fqn: Some(&fqn) },
-            ) {
+            if let Some(mut class) = PythonDescriptorBuilder::build_class(self.unit, &node) {
+                class.fqn = Some(fqn);
                 self.classes.push(class);
             }
             self.visit_children_scope(&node, Some(symbol_idx));
@@ -446,11 +431,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_import_statement(&mut self, node: HirNode<'tcx>) {
-        if let Some(descriptor) = PythonDescriptorBuilder::build_import_descriptor(
-            self.unit,
-            &node,
-            DescriptorMeta::Import,
-        ) {
+        if let Some(descriptor) = PythonDescriptorBuilder::build_import(self.unit, &node) {
             self.imports.push(descriptor);
         }
     }
@@ -475,15 +456,10 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                 _ => VariableScope::Unknown,
             };
 
-            if let Some(var) = PythonDescriptorBuilder::build_variable_descriptor(
-                self.unit,
-                &node,
-                DescriptorMeta::Variable {
-                    fqn: Some(&fqn),
-                    name: Some(&name),
-                    scope: Some(scope),
-                },
-            ) {
+            if let Some(mut var) = PythonDescriptorBuilder::build_variable(self.unit, &node) {
+                var.fqn = Some(fqn);
+                var.name = name.clone();
+                var.scope = scope;
                 self.variables.push(var);
             }
         }

@@ -3,25 +3,17 @@ use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
 use llmcc_descriptor::{
-    DescriptorMeta, FunctionDescriptor, FunctionParameter, ParameterKind, TypeExpr, LANGUAGE_PYTHON,
+    FunctionDescriptor, FunctionParameter, ParameterKind, TypeExpr, LANGUAGE_PYTHON,
 };
 
 use crate::token::LangPython;
 
 use super::origin::build_origin;
 
-pub fn build<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    meta: DescriptorMeta<'_>,
-) -> Option<FunctionDescriptor> {
+pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<FunctionDescriptor> {
     if node.kind_id() != LangPython::function_definition {
         return None;
     }
-
-    let DescriptorMeta::Function { fqn } = meta else {
-        return None;
-    };
 
     let name_node = node.opt_child_by_field(unit, LangPython::field_name)?;
     let ident = name_node.as_ident()?;
@@ -29,7 +21,6 @@ pub fn build<'tcx>(
 
     let origin = build_origin(unit, node, ts_node);
     let mut descriptor = FunctionDescriptor::new(origin, ident.name.clone());
-    descriptor.fqn = fqn.map(|value| value.to_string());
 
     descriptor.parameters = collect_parameters(unit, node);
     descriptor.return_type = extract_return_type(unit, node);

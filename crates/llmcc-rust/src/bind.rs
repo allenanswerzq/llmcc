@@ -7,9 +7,9 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use crate::describe::function;
-use crate::describe::{CallKind, CallTarget, RustDescriptorBuilder, TypeExpr};
+use crate::describe::{CallKind, CallTarget, RustDescriptor, TypeExpr};
 use crate::token::{AstVisitorRust, LangRust};
-use llmcc_descriptor::{DescriptorMeta, LanguageDescriptorBuilder};
+use llmcc_descriptor::DescriptorTrait;
 
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.
@@ -103,7 +103,10 @@ impl<'tcx> SymbolBinder<'tcx> {
     fn resolve_impl_target(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let type_node = node.opt_child_by_field(self.unit, LangRust::field_type)?;
         let segments = self.type_segments(&type_node)?;
-        self.resolve_symbol(&segments, None)
+        self.resolve_symbol(&segments, Some(SymbolKind::Struct))
+            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Enum)))
+            .or_else(|| self.resolve_symbol(&segments, Some(SymbolKind::Trait)))
+            .or_else(|| self.resolve_symbol(&segments, None))
     }
 
     fn resolve_symbol(
@@ -605,7 +608,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
-        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Static);
+        let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(node, symbol);
     }
 
@@ -625,18 +628,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx> {
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
-        let enclosing_owned = self
-            .current_symbol()
-            .map(|symbol| symbol.fqn_name.read().clone());
-        if let Some(descriptor) = RustDescriptorBuilder::build_call_descriptor(
-            self.unit,
-            &node,
-            DescriptorMeta::Call {
-                enclosing: enclosing_owned.as_deref(),
-                fqn: None,
-                kind_hint: None,
-            },
-        ) {
+        if let Some(descriptor) = RustDescriptor::build_call(self.unit, &node) {
             self.record_call_target(&descriptor.target);
         }
         self.visit_children(&node);

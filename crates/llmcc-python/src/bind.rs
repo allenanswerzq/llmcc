@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use crate::describe::PythonDescriptorBuilder;
 use crate::token::{AstVisitorPython, LangPython};
-use llmcc_descriptor::{CallChain, DescriptorMeta, LanguageDescriptorBuilder};
+use llmcc_descriptor::{CallChain, DescriptorTrait};
 
 #[derive(Debug, Default)]
 pub struct BindingResult {
@@ -347,19 +347,7 @@ impl<'tcx> SymbolBinder<'tcx> {
     }
 
     fn visit_call_impl(&mut self, node: &HirNode<'tcx>) {
-        let enclosing = self
-            .current_symbol()
-            .map(|symbol| symbol.fqn_name.read().clone());
-
-        if let Some(descriptor) = PythonDescriptorBuilder::build_call_descriptor(
-            self.unit,
-            node,
-            DescriptorMeta::Call {
-                enclosing: enclosing.as_deref(),
-                fqn: None,
-                kind_hint: None,
-            },
-        ) {
+        if let Some(descriptor) = PythonDescriptorBuilder::build_call(self.unit, node) {
             self.process_call_descriptor(&descriptor);
         }
 

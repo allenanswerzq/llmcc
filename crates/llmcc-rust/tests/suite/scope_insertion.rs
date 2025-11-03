@@ -112,7 +112,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
     let scope_stack = fixture.scope_stack();
 
     assert!(fixture.globals.get_id(outer_key).is_some());
-    assert!(fixture.globals.get_id(max_key).is_some());
+    assert!(fixture.globals.get_id(max_key).is_none());
     assert!(fixture.globals.get_id(foo_key).is_some());
     assert!(scope_stack
         .find_global_suffix(&[foo_method_key, foo_key])
@@ -120,22 +120,24 @@ fn inserts_symbols_for_local_and_global_resolution() {
     assert!(scope_stack
         .find_global_suffix(&[foo_private_method_key, foo_key])
         .is_none());
-    assert!(fixture.globals.get_id(bar_key).is_some());
+    assert!(fixture.globals.get_id(bar_key).is_none());
     assert!(scope_stack
         .find_global_suffix(&[bar_method_key, bar_key])
         .is_none());
     assert!(fixture.globals.get_id(private_inner_key).is_none());
 
+    let expected_fqn = format!("unit{}::outer::inner", fixture.unit.index);
+
     let global_symbol = scope_stack
         .find_global_suffix(&[inner_key, outer_key])
         .unwrap();
-    assert_eq!(global_symbol.fqn_name.read().as_str(), "outer::inner");
+    assert_eq!(global_symbol.fqn_name.read().as_str(), expected_fqn);
 
     let inner_desc = fixture
         .result
         .functions
         .iter()
-        .find(|desc| desc.fqn.as_deref() == Some("outer::inner"))
+        .find(|desc| desc.fqn.as_deref() == Some(expected_fqn.as_str()))
         .unwrap();
 
     let inner_hir_id = descriptor_hir_id(&inner_desc.origin);
@@ -296,7 +298,7 @@ fn enum_variant_symbols_are_registered() {
         .find_global_suffix(&[not_found_key, status_key])
         .is_some());
 
-    assert!(fixture.globals.get_id(private_status_key).is_some());
+    assert!(fixture.globals.get_id(private_status_key).is_none());
     assert!(scope_stack
         .find_global_suffix(&[hidden_key, private_status_key])
         .is_none());

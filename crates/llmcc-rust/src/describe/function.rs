@@ -8,11 +8,7 @@ use llmcc_descriptor::{
 };
 
 /// Build a language-agnostic function descriptor from a Rust function item.
-pub fn build<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    fqn: Option<&str>,
-) -> Option<FunctionDescriptor> {
+pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<FunctionDescriptor> {
     let ts_node = match node.inner_ts_node() {
         ts if ts.kind() == "function_item" => ts,
         _ => return None,
@@ -50,7 +46,6 @@ pub fn build<'tcx>(
     let origin = build_origin(unit, node, ts_node);
 
     let mut descriptor = FunctionDescriptor::new(origin, name);
-    descriptor.fqn = fqn.map(|value| value.to_string());
     descriptor.visibility = visibility;
     descriptor.qualifiers = qualifiers;
     descriptor.generics = generics;
@@ -58,14 +53,6 @@ pub fn build<'tcx>(
     descriptor.parameters = parameters;
     descriptor.return_type = return_type;
     descriptor.signature = Some(signature);
-
-    if std::env::var("LLMCC_DEBUG_PARAMS").is_ok() {
-        eprintln!(
-            "[llmcc_rust] built function descriptor name={} params={}",
-            descriptor.name,
-            descriptor.parameters.len()
-        );
-    }
 
     Some(descriptor)
 }

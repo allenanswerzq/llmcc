@@ -310,6 +310,8 @@ pub struct Symbol {
     pub unit_index: RwLock<Option<usize>>,
     /// Optional block id associated with this symbol (for graph building)
     pub block_id: RwLock<Option<BlockId>>,
+    /// Whether the symbol is globally visible/exported.
+    pub is_global: RwLock<bool>,
 }
 
 impl Clone for Symbol {
@@ -326,6 +328,7 @@ impl Clone for Symbol {
             kind: RwLock::new(*self.kind.read()),
             unit_index: RwLock::new(*self.unit_index.read()),
             block_id: RwLock::new(*self.block_id.read()),
+            is_global: RwLock::new(*self.is_global.read()),
         }
     }
 }
@@ -349,6 +352,7 @@ impl Symbol {
             kind: RwLock::new(SymbolKind::Unknown),
             unit_index: RwLock::new(None),
             block_id: RwLock::new(None),
+            is_global: RwLock::new(false),
         }
     }
 
@@ -388,6 +392,14 @@ impl Symbol {
         if unit_index.is_none() {
             *unit_index = Some(file);
         }
+    }
+
+    pub fn is_global(&self) -> bool {
+        *self.is_global.read()
+    }
+
+    pub fn set_is_global(&self, value: bool) {
+        *self.is_global.write() = value;
     }
 
     pub fn add_depends_on(&self, sym_id: SymId) {

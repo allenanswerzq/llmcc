@@ -1,19 +1,11 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 
-use llmcc_descriptor::{DescriptorMeta, ImportDescriptor, ImportKind};
+use llmcc_descriptor::{ImportDescriptor, ImportKind};
 
 use super::origin::build_origin;
 
-pub fn build<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    meta: DescriptorMeta<'_>,
-) -> Option<ImportDescriptor> {
-    if !matches!(meta, DescriptorMeta::Import) {
-        return None;
-    }
-
+pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ImportDescriptor> {
     let ts_node = node.inner_ts_node();
     if ts_node.kind() != "import_statement" && ts_node.kind() != "import_from_statement" {
         return None;

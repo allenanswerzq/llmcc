@@ -1,5 +1,6 @@
 use crate::meta::{DescriptorExtras, DescriptorOrigin};
 use crate::types::TypeExpr;
+use crate::visibility::Visibility;
 
 /// Description of a variable/binding declaration.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -8,6 +9,7 @@ pub struct VariableDescriptor {
     pub origin: DescriptorOrigin,
     pub name: String,
     pub fqn: Option<String>,
+    pub visibility: Visibility,
     pub kind: VariableKind,
     pub scope: VariableScope,
     pub is_mutable: Option<bool>,
@@ -22,6 +24,7 @@ impl VariableDescriptor {
             origin,
             name: name.into(),
             fqn: None,
+            visibility: Visibility::Unspecified,
             kind: VariableKind::Binding,
             scope: VariableScope::Unknown,
             is_mutable: None,

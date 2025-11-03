@@ -7,11 +7,7 @@ use llmcc_descriptor::{StructDescriptor, StructField, StructKind};
 use super::function::{build_origin, parse_type_expr, parse_visibility};
 
 /// Build a shared struct descriptor from the Rust AST node.
-pub fn build<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    fqn: Option<&str>,
-) -> Option<StructDescriptor> {
+pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<StructDescriptor> {
     let ts_node = node.inner_ts_node();
     let kind = ts_node.kind();
     if kind != "struct_item" && kind != "trait_item" {
@@ -45,7 +41,6 @@ pub fn build<'tcx>(
     let origin = build_origin(unit, node, ts_node);
 
     let mut descriptor = StructDescriptor::new(origin, name);
-    descriptor.fqn = fqn.map(|value| value.to_string());
     descriptor.visibility = visibility;
     descriptor.generics = generics;
     descriptor.kind = struct_kind;

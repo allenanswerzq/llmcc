@@ -7,11 +7,7 @@ use llmcc_descriptor::{EnumDescriptor, EnumVariant, EnumVariantField, EnumVarian
 use super::function::{build_origin, parse_type_expr, parse_visibility};
 
 /// Build a shared enum descriptor for a Rust enum declaration.
-pub fn build<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    fqn: Option<&str>,
-) -> Option<EnumDescriptor> {
+pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<EnumDescriptor> {
     let ts_node = match node.inner_ts_node() {
         ts if ts.kind() == "enum_item" => ts,
         _ => return None,
@@ -36,7 +32,6 @@ pub fn build<'tcx>(
     let origin = build_origin(unit, node, ts_node);
 
     let mut descriptor = EnumDescriptor::new(origin, name);
-    descriptor.fqn = fqn.map(|value| value.to_string());
     descriptor.visibility = visibility;
     descriptor.generics = generics;
     descriptor.variants = variants;

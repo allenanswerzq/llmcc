@@ -6,25 +6,11 @@ use tree_sitter::Node;
 
 use llmcc_descriptor::{
     CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
-    DescriptorMeta,
 };
 
 use super::origin::build_origin;
 
-pub fn build<'tcx>(
-    unit: CompileUnit<'tcx>,
-    node: &HirNode<'tcx>,
-    meta: DescriptorMeta<'_>,
-) -> Option<CallDescriptor> {
-    let DescriptorMeta::Call {
-        enclosing,
-        kind_hint,
-        ..
-    } = meta
-    else {
-        return None;
-    };
-
+pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<CallDescriptor> {
     let ts_node = node.inner_ts_node();
     if ts_node.kind() != "call" && ts_node.kind() != "call_expression" {
         return None;
@@ -40,9 +26,8 @@ pub fn build<'tcx>(
         .and_then(|func| parse_chain(unit, func))
         .or_else(|| parse_chain(unit, ts_node))
         .unwrap_or_else(|| {
-            let hint = kind_hint;
             function_node
-                .and_then(|func| parse_symbol_target(unit, func, hint))
+                .and_then(|func| parse_symbol_target(unit, func, None))
                 .unwrap_or_else(|| CallTarget::Dynamic {
                     repr: clean(&node_text(unit, ts_node)),
                 })
@@ -51,7 +36,6 @@ pub fn build<'tcx>(
     let origin = build_origin(unit, node, ts_node);
     let mut descriptor = CallDescriptor::new(origin, target);
     descriptor.arguments = arguments;
-    descriptor.enclosing = enclosing.map(|value| value.to_string());
 
     Some(descriptor)
 }
