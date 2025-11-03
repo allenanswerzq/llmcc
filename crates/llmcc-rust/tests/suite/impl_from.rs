@@ -68,14 +68,14 @@ impl outer::Widget {
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
 
-    let impl_fqns: Vec<_> = collection
+    let impl_fqns: Vec<String> = collection
         .impls
         .iter()
-        .filter_map(|desc| desc.impl_target_fqn.as_deref())
+        .filter_map(|desc| desc.impl_target_fqn.clone())
         .collect();
     assert_eq!(
         impl_fqns,
-        vec!["outer::Widget"],
+        vec!["outer::Widget".to_string()],
         "incorrect impl target FQN"
     );
 
@@ -99,14 +99,14 @@ mod outer {
 
     impl Greeter for Widget {
         fn greet(&self) -> String {
-            \"hello\".to_string()
+            "hello".to_string()
         }
     }
 }
 
 impl crate::outer::Loud for crate::outer::Widget {
     fn shout(&self) -> String {
-        \"HELLO\".to_string()
+        "HELLO".to_string()
     }
 }
 
@@ -140,7 +140,10 @@ impl crate::Foo {
             .or_insert(0usize) += 1;
     }
     assert_eq!(target_counts.get(&Some("Widget".into())), Some(&1));
-    assert_eq!(target_counts.get(&Some("crate::outer::Widget".into())), Some(&2));
+    assert_eq!(
+        target_counts.get(&Some("crate::outer::Widget".into())),
+        Some(&2)
+    );
     assert_eq!(target_counts.get(&Some("crate::Foo".into())), Some(&1));
 
     let trait_impl = collection
@@ -163,20 +166,31 @@ impl crate::Foo {
             && desc
                 .fqn
                 .as_deref()
-                .unwrap_or("Widget::new")
+                .unwrap_or_default()
                 .ends_with("Widget::new")
     });
     assert!(has_new_method, "expected inherent method `Widget::new`");
 
-    let has_loud_trait = collection.impls.iter().any(|desc| {
-        desc.base_types.iter().any(|ty| {
-            ty.path_segments()
-                .unwrap_or(&[])
+    let loud_trait_paths: Vec<String> = collection
+        .impls
+        .iter()
+        .flat_map(|desc| desc.base_types.iter())
+        .map(|ty| {
+            let segments = ty.path_segments().unwrap_or(&[]);
+            segments
                 .iter()
-                .any(|segment| segment == "Loud")
+                .map(|segment| segment.as_str())
+                .collect::<Vec<_>>()
+                .join("::")
         })
-    });
-    assert!(has_loud_trait, "expected trait impl for `Loud`");
+        .collect();
+    assert!(
+        loud_trait_paths
+            .iter()
+            .any(|path| path == "crate::outer::Loud"),
+        "expected trait impl for `Loud`, found {:?}",
+        loud_trait_paths
+    );
 
     let foo_builder = collection.functions.iter().any(|desc| {
         desc.name == "build"
