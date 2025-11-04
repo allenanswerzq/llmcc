@@ -131,18 +131,6 @@ impl<'tcx> DeclCollector<'tcx> {
         }
     }
 
-    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>, scoped_symbol: Option<usize>) {
-        let owner = node.hir_id();
-        let scope_idx = self.core.ensure_scope(owner);
-        if let Some(sym_idx) = scoped_symbol {
-            self.core.set_scope_symbol(scope_idx, Some(sym_idx));
-        }
-
-        self.core.push_scope(scope_idx);
-        self.visit_children(node);
-        self.core.pop_scope();
-    }
-
     fn finish(self) -> CollectedSymbols {
         let DeclCollector {
             core,
@@ -184,8 +172,20 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         self.unit()
     }
 
+    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>, scoped_symbol: Option<usize>) {
+        let owner = node.hir_id();
+        let scope_idx = self.core.ensure_scope(owner);
+        if let Some(sym_idx) = scoped_symbol {
+            self.core.set_scope_symbol(scope_idx, Some(sym_idx));
+        }
+
+        self.core.push_scope(scope_idx);
+        self.visit_children(node);
+        self.core.pop_scope();
+    }
+
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node, None);
+        self.visit_children_scope(&node, None);
     }
 
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
@@ -198,7 +198,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let idx = self.functions.len();
             self.functions.push(desc);
             self.function_map.insert(node.hir_id(), idx);
-            self.visit_children_new_scope(&node, Some(sym_idx));
+            self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
                 "build function error {:?} next_hir={:?}",
@@ -224,7 +224,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
-        self.visit_children_new_scope(&node, None);
+        self.visit_children_scope(&node, None);
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
@@ -245,7 +245,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                         .upsert_symbol(node.hir_id(), &ident.name, SymbolKind::Module, true);
                 sym_idx
             });
-        self.visit_children_new_scope(&node, sym_idx);
+        self.visit_children_scope(&node, sym_idx);
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
@@ -275,7 +275,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let idx = self.impls.len();
             self.impls.push(desc);
             self.impl_map.insert(node.hir_id(), idx);
-            self.visit_children_new_scope(&node, scope_symbol);
+            self.visit_children_scope(&node, scope_symbol);
         } else {
             tracing::warn!(
                 "failed to build impl descriptor for: {:?} next_hir={:?}",
@@ -316,7 +316,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let idx = self.variables.len();
             self.variables.push(variable);
             self.variable_map.insert(node.hir_id(), idx);
-            self.visit_children_new_scope(&node, Some(sym_idx));
+            self.visit_children_scope(&node, Some(sym_idx));
             return;
         }
         self.visit_children(&node);
@@ -336,7 +336,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let idx = self.structs.len();
             self.structs.push(desc);
             self.struct_map.insert(node.hir_id(), idx);
-            self.visit_children_new_scope(&node, Some(sym_idx));
+            self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
                 "failed to build struct descriptor for: {:?} next_hir={:?}",
@@ -356,7 +356,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let idx = self.enums.len();
             self.enums.push(desc);
             self.enum_map.insert(node.hir_id(), idx);
-            self.visit_children_new_scope(&node, Some(sym_idx));
+            self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
                 "failed to build enum descriptor for: {:?} next_hir={:?}",

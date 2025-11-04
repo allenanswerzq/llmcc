@@ -77,18 +77,6 @@ impl<'tcx> DeclCollector<'tcx> {
         }
     }
 
-    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<usize>) {
-        let owner = node.hir_id();
-        let scope_idx = self.core.ensure_scope(owner);
-        if let Some(sym_idx) = symbol {
-            self.core.set_scope_symbol(scope_idx, Some(sym_idx));
-        }
-
-        self.core.push_scope(scope_idx);
-        self.visit_children(node);
-        self.core.pop_scope();
-    }
-
     fn classify_symbol_call(&self, name: &str) -> CallKind {
         if self
             .core
@@ -297,9 +285,21 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         self.unit()
     }
 
+    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<usize>) {
+        let owner = node.hir_id();
+        let scope_idx = self.core.ensure_scope(owner);
+        if let Some(sym_idx) = symbol {
+            self.core.set_scope_symbol(scope_idx, Some(sym_idx));
+        }
+
+        self.core.push_scope(scope_idx);
+        self.visit_children(node);
+        self.core.pop_scope();
+    }
+
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
         let module_symbol = self.ensure_module_symbol(&node);
-        self.visit_children_scope(&node, module_symbol);
+        self.visit_children_new_scope(&node, module_symbol);
     }
 
     fn visit_call(&mut self, node: HirNode<'tcx>) {
@@ -322,7 +322,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                 self.functions.push(func);
                 self.function_map.insert(node.hir_id(), idx);
             }
-            self.visit_children_scope(&node, Some(symbol_idx));
+            self.visit_children_new_scope(&node, Some(symbol_idx));
         }
     }
 
@@ -336,7 +336,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                 self.classes.push(class);
                 self.class_map.insert(node.hir_id(), idx);
             }
-            self.visit_children_scope(&node, Some(symbol_idx));
+            self.visit_children_new_scope(&node, Some(symbol_idx));
         }
     }
 

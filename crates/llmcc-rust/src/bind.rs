@@ -47,6 +47,12 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
         self.core.current_symbol()
     }
+}
+
+impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
+    fn unit(&self) -> CompileUnit<'tcx> {
+        self.unit()
+    }
 
     fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
         let depth = self.scopes().depth();
@@ -67,12 +73,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         } else {
             self.visit_children(node);
         }
-    }
-}
-
-impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
-    fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit()
     }
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {

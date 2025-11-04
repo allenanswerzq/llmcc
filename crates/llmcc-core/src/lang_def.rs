@@ -192,6 +192,10 @@ macro_rules! define_tokens {
                     }
                 }
 
+
+                fn visit_children_scope(&mut self, _node: &HirNode<'tcx>, _symbol: Option<&'tcx Symbol>) {}
+                fn visit_children_new_scope(&mut self, _node: &HirNode<'tcx>, _scoped_symbol: Option<usize>) {}
+
                 /// Handle unknown/unrecognized token types
                 fn visit_unknown(&mut self, node: HirNode<'tcx>) {
                     self.visit_children(&node);
