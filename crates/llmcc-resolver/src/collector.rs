@@ -194,6 +194,20 @@ pub struct CollectedSymbols {
     pub scopes: Vec<ScopeSpec>,
 }
 
+impl Deref for CollectedSymbols {
+    type Target = CollectionResult;
+
+    fn deref(&self) -> &Self::Target {
+        &self.result
+    }
+}
+
+impl DerefMut for CollectedSymbols {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.result
+    }
+}
+
 #[derive(Debug)]
 struct ScopeInfo {
     owner: Option<HirId>,

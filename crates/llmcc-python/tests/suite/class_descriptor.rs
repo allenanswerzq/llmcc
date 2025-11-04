@@ -8,7 +8,8 @@ fn collect_classes(source: &str) -> ClassCollection {
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
-    collect_symbols(unit, globals).classes
+    let collection = collect_symbols(unit, globals).result;
+    collection.classes
 }
 
 fn type_repr(expr: &TypeExpr) -> String {

@@ -16,6 +16,7 @@ fn compile(
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
     bind_symbols(unit, globals, &collection);
+    let collection = collection.result;
     (cc, unit, collection)
 }
 

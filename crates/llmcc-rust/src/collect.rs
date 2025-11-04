@@ -3,9 +3,9 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, SymbolKind};
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
-    apply_symbol_batch, collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult,
-    CollectorCore, EnumCollection, FunctionCollection, ImplCollection, StructCollection,
-    SymbolSpec, VariableCollection,
+    collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult, CollectorCore,
+    EnumCollection, FunctionCollection, ImplCollection, StructCollection, SymbolSpec,
+    VariableCollection,
 };
 
 use crate::describe::{RustDescriptor, Visibility};
@@ -293,18 +293,17 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
 pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-) -> CollectionResult {
-    let batch = collect_symbols_batch(
+    _globals: &'tcx Scope<'tcx>,
+) -> CollectedSymbols {
+    let (collected, total_time, visit_time) = collect_symbols_batch(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),
         DeclCollector::finish,
     );
 
-    let (result, total_time, visit_time) = apply_symbol_batch(unit, globals, batch);
-
     if total_time.as_millis() > 10 {
+        let result = &collected.result;
         tracing::trace!(
             "[COLLECT][rust] File {:?}: total={:.2}ms, visit={:.2}ms, fns={}, structs={}, impls={}, vars={}, enums={}, calls={}",
             unit.file_path().unwrap_or("unknown"),
@@ -319,5 +318,5 @@ pub fn collect_symbols<'tcx>(
         );
     }
 
-    result
+    collected
 }

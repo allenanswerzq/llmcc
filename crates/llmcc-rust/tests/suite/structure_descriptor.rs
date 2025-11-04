@@ -9,7 +9,8 @@ fn collect_structs(source: &str) -> StructCollection {
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
 
     let globals = cc.create_globals();
-    collect_symbols(unit, globals).structs
+    let collection = collect_symbols(unit, globals).result;
+    collection.structs
 }
 
 #[test]

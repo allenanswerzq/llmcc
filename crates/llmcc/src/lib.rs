@@ -10,6 +10,7 @@ use tracing::info;
 
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::*;
+use llmcc_resolver::{apply_collected_symbols, CollectedSymbols};
 
 fn should_skip_dir(name: &str) -> bool {
     matches!(
@@ -63,7 +64,10 @@ pub struct LlmccOptions {
     pub summary: bool,
 }
 
-pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>, DynError> {
+pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
+where
+    L: LanguageTrait<SymbolCollection = CollectedSymbols>,
+{
     let total_start = Instant::now();
 
     init_rayon_pool();
@@ -212,10 +216,12 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
         .collect();
 
     indexed_collections.sort_by_key(|(index, _)| *index);
-    let collections: Vec<_> = indexed_collections
-        .into_iter()
-        .map(|(_, collection)| collection)
-        .collect();
+    let mut collections = Vec::with_capacity(indexed_collections.len());
+    for (index, collected) in indexed_collections {
+        let unit = cc.compile_unit(index);
+        apply_collected_symbols(unit, globals, &collected);
+        collections.push(collected);
+    }
     info!(
         "Symbol collection: {:.2}s",
         symbols_start.elapsed().as_secs_f64()

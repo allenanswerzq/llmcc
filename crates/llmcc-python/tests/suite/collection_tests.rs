@@ -11,7 +11,8 @@ fn collect_from_source(source: &str) -> CollectionResult {
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
-    collect_symbols(unit, globals)
+    let collection = collect_symbols(unit, globals);
+    collection.result
 }
 
 fn expect_function<'a>(collection: &'a CollectionResult, name: &str) -> &'a FunctionDescriptor {

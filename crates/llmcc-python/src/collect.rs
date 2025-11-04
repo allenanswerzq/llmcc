@@ -8,12 +8,11 @@ use llmcc_descriptor::{
     CallDescriptor, CallKind, CallTarget, DescriptorTrait, TypeExpr, VariableScope, LANGUAGE_PYTHON,
 };
 use llmcc_resolver::{
-    apply_symbol_batch, collect_symbols_batch, CallCollection, ClassCollection, CollectedSymbols,
-    CollectionResult, CollectorCore, FunctionCollection, ImportCollection, SymbolSpec,
-    VariableCollection,
+    collect_symbols_batch, CallCollection, ClassCollection, CollectedSymbols, CollectionResult,
+    CollectorCore, FunctionCollection, ImportCollection, SymbolSpec, VariableCollection,
 };
 
-use crate::describe::PythonDescriptorBuilder;
+use crate::describe::PythonDescriptor;
 use crate::token::{AstVisitorPython, LangPython};
 
 #[derive(Debug)]
@@ -270,7 +269,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_call(&mut self, node: HirNode<'tcx>) {
-        if let Some(mut descriptor) = PythonDescriptorBuilder::build_call(self.unit(), &node) {
+        if let Some(mut descriptor) = PythonDescriptor::build_call(self.unit(), &node) {
             self.apply_call_kind_hint(&mut descriptor);
             self.calls.add(node.hir_id(), descriptor);
         }
@@ -281,7 +280,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         if let Some((symbol_idx, _name, fqn)) =
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Function)
         {
-            if let Some(mut func) = PythonDescriptorBuilder::build_function(self.unit(), &node) {
+            if let Some(mut func) = PythonDescriptor::build_function(self.unit(), &node) {
                 func.fqn = Some(fqn);
                 self.functions.add(node.hir_id(), func);
             }
@@ -293,7 +292,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         if let Some((symbol_idx, _name, fqn)) =
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
         {
-            if let Some(mut class) = PythonDescriptorBuilder::build_impl(self.unit(), &node) {
+            if let Some(mut class) = PythonDescriptor::build_impl(self.unit(), &node) {
                 class.fqn = Some(fqn);
                 self.classes.add(node.hir_id(), class);
             }
@@ -306,13 +305,13 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_import_statement(&mut self, node: HirNode<'tcx>) {
-        if let Some(descriptor) = PythonDescriptorBuilder::build_import(self.unit(), &node) {
+        if let Some(descriptor) = PythonDescriptor::build_import(self.unit(), &node) {
             self.imports.add(node.hir_id(), descriptor);
         }
     }
 
     fn visit_import_from(&mut self, node: HirNode<'tcx>) {
-        if let Some(descriptor) = PythonDescriptorBuilder::build_import(self.unit(), &node) {
+        if let Some(descriptor) = PythonDescriptor::build_import(self.unit(), &node) {
             self.imports.add(node.hir_id(), descriptor);
         }
     }
@@ -328,7 +327,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                 _ => VariableScope::Unknown,
             };
 
-            if let Some(mut var) = PythonDescriptorBuilder::build_variable(self.unit(), &node) {
+            if let Some(mut var) = PythonDescriptor::build_variable(self.unit(), &node) {
                 var.fqn = Some(fqn);
                 var.name = name;
                 var.scope = scope;
@@ -351,18 +350,17 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
 
 pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-) -> CollectionResult {
-    let batch = collect_symbols_batch(
+    _globals: &'tcx Scope<'tcx>,
+) -> CollectedSymbols {
+    let (collected, total_time, visit_time) = collect_symbols_batch(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),
         DeclCollector::finish,
     );
 
-    let (result, total_time, visit_time) = apply_symbol_batch(unit, globals, batch);
-
     if total_time.as_millis() > 10 {
+        let result = &collected.result;
         tracing::trace!(
             "[COLLECT][python] File {:?}: total={:.2}ms, visit={:.2}ms, funcs={}, classes={}, vars={}, imports={}, calls={}",
             unit.file_path().unwrap_or("unknown"),
@@ -376,5 +374,5 @@ pub fn collect_symbols<'tcx>(
         );
     }
 
-    result
+    collected
 }
