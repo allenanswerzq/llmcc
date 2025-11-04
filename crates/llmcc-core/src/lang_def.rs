@@ -3,10 +3,8 @@ use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
 use crate::symbol::Scope;
 
-#[allow(clippy::needless_lifetimes)]
 pub trait LanguageTrait {
-    type SymbolBatch: Send;
-    type SymbolCollection;
+    type SymbolCollection: Send;
 
     // TODO: add general parse result struct
     fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree>;
@@ -20,16 +18,11 @@ pub trait LanguageTrait {
     /// Return the list of supported file extensions for this language (e.g., ["rs"] for Rust)
     fn supported_extensions() -> &'static [&'static str];
 
-    fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch;
-    fn apply_symbol_batch<'tcx>(
-        unit: CompileUnit<'tcx>,
-        globals: &'tcx Scope<'tcx>,
-        batch: Self::SymbolBatch,
-    ) -> Self::SymbolCollection;
     fn collect_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         globals: &'tcx Scope<'tcx>,
     ) -> Self::SymbolCollection;
+
     fn bind_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         globals: &'tcx Scope<'tcx>,
@@ -47,7 +40,7 @@ macro_rules! define_tokens {
         use llmcc_core::lang_def::LanguageTrait;
         use llmcc_core::context::CompileUnit;
         use llmcc_core::ir::HirNode;
-        use llmcc_core::symbol::Scope;
+        use llmcc_core::symbol::{Scope, Symbol};
 
         use crate::collect;
         use crate::bind;
@@ -81,8 +74,7 @@ macro_rules! define_tokens {
             }
 
             impl LanguageTrait for [<Lang $suffix>] {
-                type SymbolBatch = crate::collect::SymbolBatch;
-                type SymbolCollection = crate::collect::CollectionResult;
+                type SymbolCollection = llmcc_resolver::CollectionResult;
 
                 /// Parse the text into a tree
                 fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree> {
@@ -143,7 +135,6 @@ macro_rules! define_tokens {
                     Self::field_type
                 }
 
-                #[allow(clippy::needless_lifetimes)]
                 fn collect_symbols<'tcx>(
                     unit: CompileUnit<'tcx>,
                     globals: &'tcx Scope<'tcx>,
@@ -151,7 +142,6 @@ macro_rules! define_tokens {
                     collect::collect_symbols(unit, globals)
                 }
 
-                #[allow(clippy::needless_lifetimes)]
                 fn bind_symbols<'tcx>(
                     unit: CompileUnit<'tcx>,
                     globals: &'tcx Scope<'tcx>,
@@ -160,23 +150,12 @@ macro_rules! define_tokens {
                     let _ = bind::bind_symbols(unit, globals, collection);
                 }
 
-                #[allow(clippy::needless_lifetimes)]
-                fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch {
-                    collect::collect_symbols_batch(unit)
-                }
-
-                #[allow(clippy::needless_lifetimes)]
-                fn apply_symbol_batch<'tcx>(
-                    unit: CompileUnit<'tcx>,
-                    globals: &'tcx Scope<'tcx>,
-                    batch: Self::SymbolBatch,
-                ) -> Self::SymbolCollection {
-                    collect::apply_symbol_batch(unit, globals, batch)
-                }
             }
 
             /// Trait for visiting HIR nodes with type-specific dispatch
             pub trait [<AstVisitor $suffix>]<'tcx> {
+                type ScopedSymbol;
+
                 fn unit(&self) -> CompileUnit<'tcx>;
 
                 /// Visit a node, dispatching to the appropriate method based on token ID
@@ -197,6 +176,9 @@ macro_rules! define_tokens {
                     }
                 }
 
+
+                fn visit_children_scope(&mut self, _node: &HirNode<'tcx>, _symbol: Option<Self::ScopedSymbol>) {}
+
                 /// Handle unknown/unrecognized token types
                 fn visit_unknown(&mut self, node: HirNode<'tcx>) {
                     self.visit_children(&node);
@@ -209,7 +191,7 @@ macro_rules! define_tokens {
                             self.visit_children(&node)
                         }
                     }
-                )*
+               )*
             }
         }
     };

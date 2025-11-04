@@ -108,8 +108,7 @@ mod tests {
         foo: &'tcx mut Foo,
     }
 
-    #[allow(clippy::needless_lifetimes)]
-    impl<'tcx> Holder<'tcx> {
+    impl Holder<'_> {
         fn bump(&mut self) {
             self.foo.0 += 1;
         }

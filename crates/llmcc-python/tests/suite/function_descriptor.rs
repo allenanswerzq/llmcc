@@ -1,7 +1,8 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
-use llmcc_python::{build_llmcc_ir, collect_symbols, FunctionDescriptor, LangPython, TypeExpr};
+use llmcc_descriptor::TypeExpr;
+use llmcc_python::{build_llmcc_ir, collect_symbols, FunctionCollection, LangPython};
 
-fn collect_functions(source: &str) -> Vec<FunctionDescriptor> {
+fn collect_functions(source: &str) -> FunctionCollection {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
