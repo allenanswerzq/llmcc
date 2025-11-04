@@ -3,23 +3,28 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::HirNode;
+use llmcc_core::ir::{HirId, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 
 use crate::describe::PythonDescriptorBuilder;
 use crate::token::{AstVisitorPython, LangPython};
 use llmcc_descriptor::{
     CallDescriptor, CallKind, CallTarget, ClassDescriptor, DescriptorTrait, FunctionDescriptor,
-    ImportDescriptor, VariableDescriptor, VariableScope,
+    ImportDescriptor, TypeExpr, VariableDescriptor, VariableScope, LANGUAGE_PYTHON,
 };
 
 #[derive(Debug)]
 pub struct CollectionResult {
     pub functions: Vec<FunctionDescriptor>,
+    pub function_map: HashMap<HirId, usize>,
     pub classes: Vec<ClassDescriptor>,
+    pub class_map: HashMap<HirId, usize>,
     pub variables: Vec<VariableDescriptor>,
+    pub variable_map: HashMap<HirId, usize>,
     pub imports: Vec<ImportDescriptor>,
+    pub import_map: HashMap<HirId, usize>,
     pub calls: Vec<CallDescriptor>,
+    pub call_map: HashMap<HirId, usize>,
 }
 
 #[derive(Debug)]
@@ -29,6 +34,7 @@ pub struct SymbolSpec {
     pub fqn: String,
     pub kind: SymbolKind,
     pub unit_index: usize,
+    pub is_global: bool,
 }
 
 #[derive(Debug)]
@@ -68,10 +74,15 @@ struct DeclCollector<'tcx> {
     scope_stack: Vec<usize>,
     symbols: Vec<SymbolSpec>,
     functions: Vec<FunctionDescriptor>,
+    function_map: HashMap<HirId, usize>,
     classes: Vec<ClassDescriptor>,
+    class_map: HashMap<HirId, usize>,
     variables: Vec<VariableDescriptor>,
+    variable_map: HashMap<HirId, usize>,
     imports: Vec<ImportDescriptor>,
+    import_map: HashMap<HirId, usize>,
     calls: Vec<CallDescriptor>,
+    call_map: HashMap<HirId, usize>,
 }
 
 #[allow(clippy::needless_lifetimes)]
@@ -91,10 +102,15 @@ impl<'tcx> DeclCollector<'tcx> {
             scope_stack: vec![0],
             symbols: Vec::new(),
             functions: Vec::new(),
+            function_map: HashMap::new(),
             classes: Vec::new(),
+            class_map: HashMap::new(),
             variables: Vec::new(),
+            variable_map: HashMap::new(),
             imports: Vec::new(),
+            import_map: HashMap::new(),
             calls: Vec::new(),
+            call_map: HashMap::new(),
         }
     }
 
@@ -177,6 +193,9 @@ impl<'tcx> DeclCollector<'tcx> {
                 let idx = self.insert_symbol(owner, name.clone(), fqn, kind, global);
                 Some((idx, name))
             } else {
+                if global {
+                    self.symbols[existing_idx].is_global = true;
+                }
                 Some((existing_idx, name))
             }
         } else {
@@ -215,6 +234,7 @@ impl<'tcx> DeclCollector<'tcx> {
             fqn,
             kind,
             unit_index: self.unit.index,
+            is_global: global,
         });
 
         let current_scope = self.current_scope_index();
@@ -245,10 +265,15 @@ impl<'tcx> DeclCollector<'tcx> {
         CollectedSymbols {
             result: CollectionResult {
                 functions: self.functions,
+                function_map: self.function_map,
                 classes: self.classes,
+                class_map: self.class_map,
                 variables: self.variables,
+                variable_map: self.variable_map,
                 imports: self.imports,
+                import_map: self.import_map,
                 calls: self.calls,
+                call_map: self.call_map,
             },
             symbols: self.symbols,
             scopes: scope_specs,
@@ -349,6 +374,7 @@ impl<'tcx> DeclCollector<'tcx> {
             fqn,
             kind: SymbolKind::Module,
             unit_index: self.unit.index,
+            is_global: true,
         });
 
         // Module symbols live in the global scope for lookup.
@@ -357,6 +383,37 @@ impl<'tcx> DeclCollector<'tcx> {
 
         self.scope_infos[scope_idx].symbol_index = Some(idx);
         Some(idx)
+    }
+
+    fn extract_assignment_type(&self, node: &HirNode<'tcx>) -> Option<String> {
+        if let Some(type_node) = node.opt_child_by_field(self.unit, LangPython::field_type) {
+            let text = self.unit.get_text(
+                type_node.inner_ts_node().start_byte(),
+                type_node.inner_ts_node().end_byte(),
+            );
+            let trimmed = text.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+
+        let assignment_text = self.unit.get_text(
+            node.inner_ts_node().start_byte(),
+            node.inner_ts_node().end_byte(),
+        );
+        let colon_index = assignment_text.find(':')?;
+        let after_colon = assignment_text[colon_index + 1..].trim();
+        if after_colon.is_empty() {
+            return None;
+        }
+
+        let annotation = after_colon.split('=').next().map(str::trim).unwrap_or("");
+
+        if annotation.is_empty() {
+            None
+        } else {
+            Some(annotation.to_string())
+        }
     }
 }
 
@@ -396,7 +453,9 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     fn visit_call(&mut self, node: HirNode<'tcx>) {
         if let Some(mut descriptor) = PythonDescriptorBuilder::build_call(self.unit, &node) {
             self.apply_call_kind_hint(&mut descriptor);
+            let idx = self.calls.len();
             self.calls.push(descriptor);
+            self.call_map.insert(node.hir_id(), idx);
         }
         self.visit_children(&node);
     }
@@ -408,7 +467,9 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
             let fqn = self.symbols[symbol_idx].fqn.clone();
             if let Some(mut func) = PythonDescriptorBuilder::build_function(self.unit, &node) {
                 func.fqn = Some(fqn);
+                let idx = self.functions.len();
                 self.functions.push(func);
+                self.function_map.insert(node.hir_id(), idx);
             }
             self.visit_children_scope(&node, Some(symbol_idx));
         }
@@ -421,7 +482,9 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
             let fqn = self.symbols[symbol_idx].fqn.clone();
             if let Some(mut class) = PythonDescriptorBuilder::build_impl(self.unit, &node) {
                 class.fqn = Some(fqn);
+                let idx = self.classes.len();
                 self.classes.push(class);
+                self.class_map.insert(node.hir_id(), idx);
             }
             self.visit_children_scope(&node, Some(symbol_idx));
         }
@@ -433,14 +496,18 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
 
     fn visit_import_statement(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = PythonDescriptorBuilder::build_import(self.unit, &node) {
+            let idx = self.imports.len();
             self.imports.push(descriptor);
+            self.import_map.insert(node.hir_id(), idx);
         }
     }
 
-    fn visit_import_from(&mut self, _node: HirNode<'tcx>) {
-        // Handle: from x import y
-        // This is more complex - we need to parse module and names
-        // For now, simple implementation
+    fn visit_import_from(&mut self, node: HirNode<'tcx>) {
+        if let Some(descriptor) = PythonDescriptorBuilder::build_import(self.unit, &node) {
+            let idx = self.imports.len();
+            self.imports.push(descriptor);
+            self.import_map.insert(node.hir_id(), idx);
+        }
     }
 
     fn visit_assignment(&mut self, node: HirNode<'tcx>) {
@@ -461,9 +528,18 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                 var.fqn = Some(fqn);
                 var.name = name.clone();
                 var.scope = scope;
+                if var.type_annotation.is_none() {
+                    if let Some(annotation) = self.extract_assignment_type(&node) {
+                        var.type_annotation = Some(TypeExpr::opaque(LANGUAGE_PYTHON, annotation));
+                    }
+                }
+                let idx = self.variables.len();
                 self.variables.push(var);
+                self.variable_map.insert(node.hir_id(), idx);
             }
         }
+
+        self.visit_children(&node);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
@@ -498,6 +574,7 @@ fn apply_collected_symbols<'tcx>(
             symbol.set_kind(spec.kind);
             symbol.set_unit_index(spec.unit_index);
             symbol.set_fqn(spec.fqn.clone(), interner);
+            symbol.set_is_global(spec.is_global);
             symbol_map.insert(symbol.id, symbol);
             created_symbols.push(symbol);
         }

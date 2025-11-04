@@ -5,6 +5,7 @@ use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_descriptor::DescriptorTrait;
+use llmcc_resolver::BinderCore;
 
 use crate::describe::RustDescriptor;
 use crate::describe::{CallKind, CallTarget, TypeExpr};
@@ -13,9 +14,7 @@ use crate::token::{AstVisitorRust, LangRust};
 /// stages (or LLM consumers) can reason about dependency relationships.
 #[derive(Debug)]
 struct SymbolBinder<'tcx, 'a> {
-    unit: CompileUnit<'tcx>,
-    scopes: ScopeStack<'tcx>,
-    collection: &'a crate::CollectionResult,
+    core: BinderCore<'tcx, 'a, crate::CollectionResult>,
 }
 
 impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
@@ -24,40 +23,51 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         globals: &'tcx Scope<'tcx>,
         collection: &'a crate::CollectionResult,
     ) -> Self {
-        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
-        scopes.push(globals);
-
         Self {
-            unit,
-            scopes,
-            collection,
+            core: BinderCore::new(unit, globals, collection),
         }
     }
 
+    fn unit(&self) -> CompileUnit<'tcx> {
+        self.core.unit()
+    }
+
+    fn collection(&self) -> &'a crate::CollectionResult {
+        self.core.collection()
+    }
+
+    fn scopes(&self) -> &ScopeStack<'tcx> {
+        self.core.scopes()
+    }
+
+    fn scopes_mut(&mut self) -> &mut ScopeStack<'tcx> {
+        self.core.scopes_mut()
+    }
+
     fn interner(&self) -> &llmcc_core::interner::InternPool {
-        self.unit.interner()
+        self.core.interner()
     }
 
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
-        self.scopes.scoped_symbol()
+        self.core.current_symbol()
     }
 
     fn visit_children_scope(&mut self, node: HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
-        let depth = self.scopes.depth();
+        let depth = self.scopes().depth();
         if let Some(symbol) = symbol {
-            if let Some(parent) = self.scopes.scoped_symbol() {
+            if let Some(parent) = self.current_symbol() {
                 parent.add_dependency(symbol);
             }
         }
 
         // NOTE: scope should already be created during symbol collection, here we just
         // follow the tree structure again
-        let scope = self.unit.opt_get_scope(node.hir_id());
+        let scope = self.unit().opt_get_scope(node.hir_id());
 
         if let Some(scope) = scope {
-            self.scopes.push_with_symbol(scope, symbol);
+            self.scopes_mut().push_with_symbol(scope, symbol);
             self.visit_children(&node);
-            self.scopes.pop_until(depth);
+            self.scopes_mut().pop_until(depth);
         } else {
             self.visit_children(&node);
         }
@@ -68,7 +78,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
     ) -> Option<&'tcx Symbol> {
-        let file_index = self.unit.index;
+        let file_index = self.unit().index;
         self.lookup_in_local_scopes(suffix, kind, Some(file_index))
             .or_else(|| self.lookup_in_local_scopes(suffix, kind, None))
             .or_else(|| self.lookup_in_global_scope(suffix, kind, Some(file_index)))
@@ -81,7 +91,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         field_id: u16,
         expected: SymbolKind,
     ) -> Option<&'tcx Symbol> {
-        let child = node.opt_child_by_field(self.unit, field_id)?;
+        let child = node.opt_child_by_field(self.unit(), field_id)?;
         let ident = child.as_ident()?;
         let key = self.interner().intern(&ident.name);
         self.lookup_symbol_suffix(&[key], Some(expected))
@@ -147,7 +157,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
 
         let owner_fqns: Vec<String> = self
-            .scopes
+            .scopes()
             .iter()
             .rev()
             .filter_map(|scope| scope.symbol().map(|symbol| symbol.fqn_name.read().clone()))
@@ -175,7 +185,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn resolve_symbol_type_expr(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let ts_node = node.inner_ts_node();
-        let expr = RustDescriptor::build_type_expr(self.unit, ts_node);
+        let expr = RustDescriptor::build_type_expr(self.unit(), ts_node);
         let segments = expr.path_segments().map(|segments| segments.to_vec())?;
         self.resolve_symbol_with_priority(&segments, &[SymbolKind::Struct, SymbolKind::Enum])
     }
@@ -243,8 +253,8 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         kind: Option<SymbolKind>,
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        let global_scope = self.scopes.iter().next();
-        for scope in self.scopes.iter().rev() {
+        let global_scope = self.scopes().iter().next();
+        for scope in self.scopes().iter().rev() {
             if let Some(global) = global_scope {
                 if ptr::eq(scope, global) {
                     continue;
@@ -264,7 +274,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         kind: Option<SymbolKind>,
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        if let Some(global_scope) = self.scopes.iter().next() {
+        if let Some(global_scope) = self.scopes().iter().next() {
             let symbols = global_scope.lookup_suffix_symbols(suffix);
             self.select_matching_symbol(&symbols, kind, file)
         } else {
@@ -430,7 +440,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 continue;
             }
 
-            if let Some(dep_symbol) = self.unit.opt_get_symbol(dep_id) {
+            if let Some(dep_symbol) = self.unit().opt_get_symbol(dep_id) {
                 if dep_symbol.kind() == SymbolKind::Function {
                     continue;
                 }
@@ -447,7 +457,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit
+        self.unit()
     }
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
@@ -462,12 +472,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
         let struct_name = node
-            .opt_child_by_field(self.unit, LangRust::field_name)
+            .opt_child_by_field(self.unit(), LangRust::field_name)
             .and_then(|child| child.as_ident())
             .map(|ident| ident.name.clone())
             .unwrap_or_else(|| "<unknown>".to_string());
-        if let Some(&descriptor_idx) = self.collection.struct_map.get(&node.hir_id()) {
-            if let Some(struct_descriptor) = self.collection.structs.get(descriptor_idx) {
+        if let Some(&descriptor_idx) = self.collection().struct_map.get(&node.hir_id()) {
+            if let Some(struct_descriptor) = self.collection().structs.get(descriptor_idx) {
                 tracing::trace!(
                     "[bind][struct] {} fields={}",
                     struct_name,
@@ -478,7 +488,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                         let mut symbols = Vec::new();
                         self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
                         for &type_symbol in &symbols {
-                            if type_symbol.unit_index() == Some(self.unit.index) {
+                            if type_symbol.unit_index() == Some(self.unit().index) {
                                 tracing::trace!(
                                     "[bind][struct] {} depends on {:?}",
                                     struct_name,
@@ -515,8 +525,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         let symbol = self.find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
         let parent_symbol = self.current_symbol();
         if let Some(func_symbol) = symbol {
-            if let Some(&descriptor_idx) = self.collection.function_map.get(&node.hir_id()) {
-                if let Some(return_type) = self.collection.functions[descriptor_idx]
+            if let Some(&descriptor_idx) = self.collection().function_map.get(&node.hir_id()) {
+                if let Some(return_type) = self.collection().functions[descriptor_idx]
                     .return_type
                     .as_ref()
                 {
@@ -527,7 +537,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                     }
                 }
 
-                for parameter in &self.collection.functions[descriptor_idx].parameters {
+                for parameter in &self.collection().functions[descriptor_idx].parameters {
                     if let Some(type_expr) = parameter.type_hint.as_ref() {
                         let mut symbols = Vec::new();
                         self.resolve_symbols_from_type_expr(type_expr, &mut symbols);
@@ -569,10 +579,10 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         let impl_descriptor = self
-            .collection
+            .collection()
             .impl_map
             .get(&node.hir_id())
-            .and_then(|&idx| self.collection.impls.get(idx));
+            .and_then(|&idx| self.collection().impls.get(idx));
 
         // Use the descriptor’s fully-qualified name to locate the target type symbol. The
         // descriptor already normalized nested paths (e.g., `crate::foo::Bar`).
@@ -625,8 +635,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        if let Some(&descriptor_idx) = self.collection.variable_map.get(&node.hir_id()) {
-            if let Some(type_expr) = self.collection.variables[descriptor_idx]
+        if let Some(&descriptor_idx) = self.collection().variable_map.get(&node.hir_id()) {
+            if let Some(type_expr) = self.collection().variables[descriptor_idx]
                 .type_annotation
                 .as_ref()
             {
@@ -662,10 +672,10 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         let call = self
-            .collection
+            .collection()
             .call_map
             .get(&node.hir_id())
-            .and_then(|&idx| self.collection.calls.get(idx));
+            .and_then(|&idx| self.collection().calls.get(idx));
         if let Some(descriptor) = call {
             self.add_call_target_dependencies(&descriptor.target);
         }
@@ -683,7 +693,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             if matches!(symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
                 // Check parent - if it's a call_expression, this might be a bare constructor call
                 if let Some(parent_id) = node.parent() {
-                    let parent = self.unit.hir_node(parent_id);
+                    let parent = self.unit().hir_node(parent_id);
                     if parent.kind_id() == LangRust::call_expression {
                         // Parent is a call expression - skip adding this dependency
                         // add_call_target_dependencies will handle it
@@ -701,21 +711,24 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         let ident = node.as_ident().unwrap();
         let key = self.interner().intern(&ident.name);
 
-        let symbol = if let Some(local) = self.scopes.find_symbol_local(&ident.name) {
+        let symbol = if let Some(local) = self.scopes().find_symbol_local(&ident.name) {
             Some(local)
         } else {
-            self.scopes
-                .find_scoped_suffix_with_filters(&[key], None, Some(self.unit.index))
+            self.scopes()
+                .find_scoped_suffix_with_filters(&[key], None, Some(self.unit().index))
                 .or_else(|| {
-                    self.scopes
+                    self.scopes()
                         .find_scoped_suffix_with_filters(&[key], None, None)
                 })
                 .or_else(|| {
-                    self.scopes
-                        .find_global_suffix_with_filters(&[key], None, Some(self.unit.index))
+                    self.scopes().find_global_suffix_with_filters(
+                        &[key],
+                        None,
+                        Some(self.unit().index),
+                    )
                 })
                 .or_else(|| {
-                    self.scopes
+                    self.scopes()
                         .find_global_suffix_with_filters(&[key], None, None)
                 })
         };
