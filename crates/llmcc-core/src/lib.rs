@@ -8,6 +8,7 @@ pub mod interner;
 pub mod ir;
 pub mod ir_builder;
 pub mod lang_def;
+pub mod module_path;
 pub mod pagerank;
 pub mod printer;
 pub mod query;

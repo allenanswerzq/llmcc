@@ -14,6 +14,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
+use crate::module_path::module_group_from_location;
 use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
@@ -358,8 +359,8 @@ impl<'tcx> ProjectGraph<'tcx> {
 
                 let group = location
                     .as_ref()
-                    .map(|loc| extract_group_path(loc))
-                    .unwrap_or_else(|| extract_group_path(&path));
+                    .map(|loc| module_group_from_location(loc))
+                    .unwrap_or_else(|| module_group_from_location(&path));
 
                 Some(CompactNode {
                     block_id,
@@ -1070,94 +1071,6 @@ fn summarize_location(location: &str) -> (String, String) {
     };
 
     (display, location.to_string())
-}
-
-fn extract_crate_path(location: &str) -> String {
-    let path = location.split(':').next().unwrap_or(location);
-    let parts: Vec<&str> = path.split(['/', '\\']).collect();
-
-    if let Some(src_idx) = parts.iter().position(|&p| p == "src") {
-        if src_idx > 0 {
-            return parts[src_idx - 1].to_string();
-        }
-    }
-
-    if let Some(filename) = parts.last() {
-        if !filename.is_empty() {
-            return filename.split('.').next().unwrap_or("unknown").to_string();
-        }
-    }
-
-    "unknown".to_string()
-}
-
-fn extract_python_module_path(location: &str) -> String {
-    const MAX_MODULE_DEPTH: usize = 2;
-
-    let path_str = location.split(':').next().unwrap_or(location);
-    let path = Path::new(path_str);
-
-    if path.extension().and_then(|ext| ext.to_str()) != Some("py") {
-        return extract_crate_path(location);
-    }
-
-    let file_stem = path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .map(|s| s.to_string());
-
-    let mut packages: Vec<String> = Vec::new();
-    let mut current = path.parent();
-
-    while let Some(dir) = current {
-        let dir_name = match dir.file_name().and_then(|n| n.to_str()) {
-            Some(name) if !name.is_empty() => name.to_string(),
-            _ => break,
-        };
-
-        let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
-
-        if has_init {
-            packages.push(dir_name);
-        }
-
-        current = dir.parent();
-    }
-
-    if packages.is_empty() {
-        if let Some(stem) = file_stem
-            .as_ref()
-            .filter(|stem| stem.as_str() != "__init__")
-        {
-            return stem.clone();
-        }
-
-        if let Some(parent_name) = path
-            .parent()
-            .and_then(|dir| dir.file_name().and_then(|n| n.to_str()))
-            .map(|s| s.to_string())
-        {
-            return parent_name;
-        }
-
-        return "unknown".to_string();
-    }
-
-    packages.reverse();
-    if packages.len() > MAX_MODULE_DEPTH {
-        packages.truncate(MAX_MODULE_DEPTH);
-    }
-
-    packages.join(".")
-}
-
-fn extract_group_path(location: &str) -> String {
-    let path = location.split(':').next().unwrap_or(location);
-    if path.ends_with(".py") {
-        extract_python_module_path(location)
-    } else {
-        extract_crate_path(location)
-    }
 }
 
 fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -> String {
