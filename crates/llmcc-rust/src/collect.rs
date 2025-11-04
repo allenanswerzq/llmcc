@@ -1,53 +1,37 @@
-use std::collections::HashMap;
-
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirNode};
+use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, SymbolKind};
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
-    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult, CollectorCore,
-    SymbolSpec,
+    apply_symbol_batch, collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult,
+    CollectorCore, EnumCollection, FunctionCollection, ImplCollection, StructCollection,
+    SymbolSpec, VariableCollection,
 };
 
-use crate::describe::{
-    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, RustDescriptor,
-    StructDescriptor, TypeExpr, VariableDescriptor, Visibility,
-};
+use crate::describe::{RustDescriptor, TypeExpr, Visibility};
 use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
     core: CollectorCore<'tcx>,
-    functions: Vec<FunctionDescriptor>,
-    function_map: HashMap<HirId, usize>,
-    variables: Vec<VariableDescriptor>,
-    variable_map: HashMap<HirId, usize>,
-    calls: Vec<CallDescriptor>,
-    call_map: HashMap<HirId, usize>,
-    structs: Vec<StructDescriptor>,
-    struct_map: HashMap<HirId, usize>,
-    impls: Vec<ClassDescriptor>,
-    impl_map: HashMap<HirId, usize>,
-    enums: Vec<EnumDescriptor>,
-    enum_map: HashMap<HirId, usize>,
+    functions: FunctionCollection,
+    variables: VariableCollection,
+    calls: CallCollection,
+    structs: StructCollection,
+    impls: ImplCollection,
+    enums: EnumCollection,
 }
 
 impl<'tcx> DeclCollector<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {
             core: CollectorCore::new(unit),
-            functions: Vec::new(),
-            function_map: HashMap::new(),
-            variables: Vec::new(),
-            variable_map: HashMap::new(),
-            calls: Vec::new(),
-            call_map: HashMap::new(),
-            structs: Vec::new(),
-            struct_map: HashMap::new(),
-            impls: Vec::new(),
-            impl_map: HashMap::new(),
-            enums: Vec::new(),
-            enum_map: HashMap::new(),
+            functions: FunctionCollection::default(),
+            variables: VariableCollection::default(),
+            calls: CallCollection::default(),
+            structs: StructCollection::default(),
+            impls: ImplCollection::default(),
+            enums: EnumCollection::default(),
         }
     }
 
@@ -109,32 +93,20 @@ impl<'tcx> DeclCollector<'tcx> {
         let DeclCollector {
             core,
             functions,
-            function_map,
             variables,
-            variable_map,
             calls,
-            call_map,
             structs,
-            struct_map,
             impls,
-            impl_map,
             enums,
-            enum_map,
         } = self;
 
         core.finish(CollectionResult {
             functions,
-            function_map,
             variables,
-            variable_map,
             calls,
-            call_map,
             structs,
-            struct_map,
             impls,
-            impl_map,
             enums,
-            enum_map,
             ..CollectionResult::default()
         })
     }
@@ -174,9 +146,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 self.core
                     .upsert_symbol(node.hir_id(), &desc.name, SymbolKind::Function, is_global);
             desc.fqn = Some(fqn.clone());
-            let idx = self.functions.len();
-            self.functions.push(desc);
-            self.function_map.insert(node.hir_id(), idx);
+            self.functions.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
@@ -193,9 +163,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 self.core
                     .upsert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
             var.fqn = Some(fqn);
-            let idx = self.variables.len();
-            self.variables.push(var);
-            self.variable_map.insert(node.hir_id(), idx);
+            self.variables.add(node.hir_id(), var);
             self.visit_children(&node);
             return;
         }
@@ -252,9 +220,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 .find_symbol_in_scopes(&impl_name, &target_kinds)
                 .or_else(|| self.core.find_symbol_by_fqn(&fqn_hint))
                 .or(Some(sym_idx));
-            let idx = self.impls.len();
-            self.impls.push(desc);
-            self.impl_map.insert(node.hir_id(), idx);
+            self.impls.add(node.hir_id(), desc);
             self.visit_children_scope(&node, scope_symbol);
         } else {
             tracing::warn!(
@@ -276,9 +242,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_call(self.unit(), &node) {
             desc.enclosing = self.current_function_name().map(|name| name.to_string());
-            let idx = self.calls.len();
-            self.calls.push(desc);
-            self.call_map.insert(node.hir_id(), idx);
+            self.calls.add(node.hir_id(), desc);
         }
         self.visit_children(&node);
     }
@@ -293,9 +257,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 is_global,
             );
             variable.fqn = Some(fqn);
-            let idx = self.variables.len();
-            self.variables.push(variable);
-            self.variable_map.insert(node.hir_id(), idx);
+            self.variables.add(node.hir_id(), variable);
             self.visit_children_scope(&node, Some(sym_idx));
             return;
         }
@@ -313,9 +275,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 self.core
                     .upsert_symbol(node.hir_id(), &desc.name, SymbolKind::Struct, is_global);
             desc.fqn = Some(fqn.clone());
-            let idx = self.structs.len();
-            self.structs.push(desc);
-            self.struct_map.insert(node.hir_id(), idx);
+            self.structs.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
@@ -333,9 +293,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 self.core
                     .upsert_symbol(node.hir_id(), &desc.name, SymbolKind::Enum, is_global);
             desc.fqn = Some(fqn.clone());
-            let idx = self.enums.len();
-            self.enums.push(desc);
-            self.enum_map.insert(node.hir_id(), idx);
+            self.enums.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(

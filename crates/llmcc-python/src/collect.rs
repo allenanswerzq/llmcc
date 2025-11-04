@@ -1,17 +1,16 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirNode};
+use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, SymbolKind};
 
 use llmcc_descriptor::{
-    CallDescriptor, CallKind, CallTarget, ClassDescriptor, DescriptorTrait, FunctionDescriptor,
-    ImportDescriptor, TypeExpr, VariableDescriptor, VariableScope, LANGUAGE_PYTHON,
+    CallDescriptor, CallKind, CallTarget, DescriptorTrait, TypeExpr, VariableScope, LANGUAGE_PYTHON,
 };
 use llmcc_resolver::{
-    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult, CollectorCore,
-    SymbolSpec,
+    apply_symbol_batch, collect_symbols_batch, CallCollection, ClassCollection, CollectedSymbols,
+    CollectionResult, CollectorCore, FunctionCollection, ImportCollection, SymbolSpec,
+    VariableCollection,
 };
 
 use crate::describe::PythonDescriptorBuilder;
@@ -20,32 +19,22 @@ use crate::token::{AstVisitorPython, LangPython};
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
     core: CollectorCore<'tcx>,
-    functions: Vec<FunctionDescriptor>,
-    function_map: HashMap<HirId, usize>,
-    classes: Vec<ClassDescriptor>,
-    class_map: HashMap<HirId, usize>,
-    variables: Vec<VariableDescriptor>,
-    variable_map: HashMap<HirId, usize>,
-    imports: Vec<ImportDescriptor>,
-    import_map: HashMap<HirId, usize>,
-    calls: Vec<CallDescriptor>,
-    call_map: HashMap<HirId, usize>,
+    functions: FunctionCollection,
+    classes: ClassCollection,
+    variables: VariableCollection,
+    imports: ImportCollection,
+    calls: CallCollection,
 }
 
 impl<'tcx> DeclCollector<'tcx> {
     fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {
             core: CollectorCore::new(unit),
-            functions: Vec::new(),
-            function_map: HashMap::new(),
-            classes: Vec::new(),
-            class_map: HashMap::new(),
-            variables: Vec::new(),
-            variable_map: HashMap::new(),
-            imports: Vec::new(),
-            import_map: HashMap::new(),
-            calls: Vec::new(),
-            call_map: HashMap::new(),
+            functions: FunctionCollection::default(),
+            classes: ClassCollection::default(),
+            variables: VariableCollection::default(),
+            imports: ImportCollection::default(),
+            calls: CallCollection::default(),
         }
     }
 
@@ -216,28 +205,18 @@ impl<'tcx> DeclCollector<'tcx> {
         let DeclCollector {
             core,
             functions,
-            function_map,
             classes,
-            class_map,
             variables,
-            variable_map,
             imports,
-            import_map,
             calls,
-            call_map,
         } = self;
 
         core.finish(CollectionResult {
             functions,
-            function_map,
             classes,
-            class_map,
             variables,
-            variable_map,
             imports,
-            import_map,
             calls,
-            call_map,
             ..CollectionResult::default()
         })
     }
@@ -293,9 +272,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     fn visit_call(&mut self, node: HirNode<'tcx>) {
         if let Some(mut descriptor) = PythonDescriptorBuilder::build_call(self.unit(), &node) {
             self.apply_call_kind_hint(&mut descriptor);
-            let idx = self.calls.len();
-            self.calls.push(descriptor);
-            self.call_map.insert(node.hir_id(), idx);
+            self.calls.add(node.hir_id(), descriptor);
         }
         self.visit_children(&node);
     }
@@ -306,9 +283,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         {
             if let Some(mut func) = PythonDescriptorBuilder::build_function(self.unit(), &node) {
                 func.fqn = Some(fqn);
-                let idx = self.functions.len();
-                self.functions.push(func);
-                self.function_map.insert(node.hir_id(), idx);
+                self.functions.add(node.hir_id(), func);
             }
             self.visit_children_scope(&node, Some(symbol_idx));
         }
@@ -320,9 +295,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         {
             if let Some(mut class) = PythonDescriptorBuilder::build_impl(self.unit(), &node) {
                 class.fqn = Some(fqn);
-                let idx = self.classes.len();
-                self.classes.push(class);
-                self.class_map.insert(node.hir_id(), idx);
+                self.classes.add(node.hir_id(), class);
             }
             self.visit_children_scope(&node, Some(symbol_idx));
         }
@@ -334,17 +307,13 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
 
     fn visit_import_statement(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = PythonDescriptorBuilder::build_import(self.unit(), &node) {
-            let idx = self.imports.len();
-            self.imports.push(descriptor);
-            self.import_map.insert(node.hir_id(), idx);
+            self.imports.add(node.hir_id(), descriptor);
         }
     }
 
     fn visit_import_from(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = PythonDescriptorBuilder::build_import(self.unit(), &node) {
-            let idx = self.imports.len();
-            self.imports.push(descriptor);
-            self.import_map.insert(node.hir_id(), idx);
+            self.imports.add(node.hir_id(), descriptor);
         }
     }
 
@@ -368,9 +337,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                         var.type_annotation = Some(TypeExpr::opaque(LANGUAGE_PYTHON, annotation));
                     }
                 }
-                let idx = self.variables.len();
-                self.variables.push(var);
-                self.variable_map.insert(node.hir_id(), idx);
+                self.variables.add(node.hir_id(), var);
             }
         }
 

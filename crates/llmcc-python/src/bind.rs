@@ -612,21 +612,19 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
                     }
                 }
 
-                if let Some(&descriptor_idx) = self.collection().function_map.get(&node.hir_id()) {
-                    if let Some(descriptor) = self.collection().functions.get(descriptor_idx) {
-                        if let Some(return_type) = descriptor.return_type.as_ref() {
-                            self.add_type_expr_dependencies(return_type);
-                        }
+                if let Some(descriptor) = self.collection().functions.find(node.hir_id()) {
+                    if let Some(return_type) = descriptor.return_type.as_ref() {
+                        self.add_type_expr_dependencies(return_type);
+                    }
 
-                        for parameter in &descriptor.parameters {
-                            if let Some(type_expr) = parameter.type_hint.as_ref() {
-                                self.add_type_expr_dependencies(type_expr);
-                            }
+                    for parameter in &descriptor.parameters {
+                        if let Some(type_expr) = parameter.type_hint.as_ref() {
+                            self.add_type_expr_dependencies(type_expr);
                         }
+                    }
 
-                        for decorator in &descriptor.decorators {
-                            self.record_decorator_dependency(decorator);
-                        }
+                    for decorator in &descriptor.decorators {
+                        self.record_decorator_dependency(decorator);
                     }
                 } else {
                     for child_id in node.children() {
@@ -678,15 +676,12 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
             self.scopes_mut().push_with_symbol(scope, symbol);
 
             if let Some(current_symbol) = self.current_symbol() {
-                if let Some(&descriptor_idx) = self.collection().class_map.get(&node.hir_id()) {
-                    if let Some(descriptor) = self.collection().classes.get(descriptor_idx) {
-                        for base in &descriptor.base_types {
-                            self.add_type_expr_dependencies(base);
-                        }
-
-                        for decorator in &descriptor.decorators {
-                            self.record_decorator_dependency(decorator);
-                        }
+                if let Some(descriptor) = self.collection().classes.find(node.hir_id()) {
+                    for base in &descriptor.base_types {
+                        self.add_type_expr_dependencies(base);
+                    }
+                    for decorator in &descriptor.decorators {
+                        self.record_decorator_dependency(decorator);
                     }
                 } else {
                     self.add_base_class_dependencies(&node, current_symbol);
@@ -712,22 +707,18 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_call(&mut self, node: HirNode<'tcx>) {
-        if let Some(&idx) = self.collection().call_map.get(&node.hir_id()) {
-            if let Some(descriptor) = self.collection().calls.get(idx) {
-                self.process_call_descriptor(descriptor);
-            }
+        if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
+            self.process_call_descriptor(descriptor);
         }
         self.visit_children(&node);
     }
 
     fn visit_assignment(&mut self, node: HirNode<'tcx>) {
         let mut handled = false;
-        if let Some(&descriptor_idx) = self.collection().variable_map.get(&node.hir_id()) {
-            if let Some(descriptor) = self.collection().variables.get(descriptor_idx) {
-                if let Some(type_expr) = descriptor.type_annotation.as_ref() {
-                    self.add_type_expr_dependencies(type_expr);
-                    handled = true;
-                }
+        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
+            if let Some(type_expr) = descriptor.type_annotation.as_ref() {
+                self.add_type_expr_dependencies(type_expr);
+                handled = true;
             }
         }
 
@@ -748,19 +739,15 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_import_statement(&mut self, node: HirNode<'tcx>) {
-        if let Some(&descriptor_idx) = self.collection().import_map.get(&node.hir_id()) {
-            if let Some(descriptor) = self.collection().imports.get(descriptor_idx) {
-                self.record_import_path(&descriptor.source);
-            }
+        if let Some(descriptor) = self.collection().imports.find(node.hir_id()) {
+            self.record_import_path(&descriptor.source);
         }
         self.visit_children(&node);
     }
 
     fn visit_import_from(&mut self, node: HirNode<'tcx>) {
-        if let Some(&descriptor_idx) = self.collection().import_map.get(&node.hir_id()) {
-            if let Some(descriptor) = self.collection().imports.get(descriptor_idx) {
-                self.record_import_path(&descriptor.source);
-            }
+        if let Some(descriptor) = self.collection().imports.find(node.hir_id()) {
+            self.record_import_path(&descriptor.source);
         }
         self.visit_children(&node);
     }

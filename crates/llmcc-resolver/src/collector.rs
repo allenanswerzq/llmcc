@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::slice::{Iter, IterMut};
 use std::time::{Duration, Instant};
 
 use llmcc_core::context::CompileUnit;
@@ -26,24 +28,163 @@ pub struct ScopeSpec {
     pub symbols: Vec<usize>,
 }
 
+#[derive(Debug)]
+pub struct DescriptorCollection<T> {
+    descriptors: Vec<T>,
+    index_by_hir: HashMap<HirId, usize>,
+}
+
+impl<T> DescriptorCollection<T> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn len(&self) -> usize {
+        self.descriptors.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.descriptors.is_empty()
+    }
+
+    pub fn iter(&self) -> Iter<'_, T> {
+        self.descriptors.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+        self.descriptors.iter_mut()
+    }
+
+    pub fn add(&mut self, hir_id: HirId, descriptor: T) -> usize {
+        let index = self.descriptors.len();
+        self.descriptors.push(descriptor);
+        self.index_by_hir.insert(hir_id, index);
+        index
+    }
+
+    pub fn insert_index(&mut self, hir_id: HirId, index: usize) {
+        self.index_by_hir.insert(hir_id, index);
+    }
+
+    pub fn get_index(&self, hir_id: HirId) -> Option<usize> {
+        self.index_by_hir.get(&hir_id).copied()
+    }
+
+    pub fn find(&self, hir_id: HirId) -> Option<&T> {
+        self.get_index(hir_id)
+            .and_then(|idx| self.descriptors.get(idx))
+    }
+
+    pub fn find_mut(&mut self, hir_id: HirId) -> Option<&mut T> {
+        self.get_index(hir_id)
+            .and_then(move |idx| self.descriptors.get_mut(idx))
+    }
+
+    pub fn map(&self) -> &HashMap<HirId, usize> {
+        &self.index_by_hir
+    }
+
+    pub fn map_mut(&mut self) -> &mut HashMap<HirId, usize> {
+        &mut self.index_by_hir
+    }
+
+    pub fn into_vec(self) -> Vec<T> {
+        self.descriptors
+    }
+}
+
+impl<T> Default for DescriptorCollection<T> {
+    fn default() -> Self {
+        Self {
+            descriptors: Vec::new(),
+            index_by_hir: HashMap::new(),
+        }
+    }
+}
+
+impl<T> Deref for DescriptorCollection<T> {
+    type Target = [T];
+
+    fn deref(&self) -> &Self::Target {
+        &self.descriptors
+    }
+}
+
+impl<T> DerefMut for DescriptorCollection<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.descriptors
+    }
+}
+
+impl<T> Index<usize> for DescriptorCollection<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.descriptors[index]
+    }
+}
+
+impl<T> IndexMut<usize> for DescriptorCollection<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.descriptors[index]
+    }
+}
+
+impl<T> IntoIterator for DescriptorCollection<T> {
+    type Item = T;
+    type IntoIter = std::vec::IntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.descriptors.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a DescriptorCollection<T> {
+    type Item = &'a T;
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.descriptors.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut DescriptorCollection<T> {
+    type Item = &'a mut T;
+    type IntoIter = IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.descriptors.iter_mut()
+    }
+}
+
+impl<T: Clone> Clone for DescriptorCollection<T> {
+    fn clone(&self) -> Self {
+        Self {
+            descriptors: self.descriptors.clone(),
+            index_by_hir: self.index_by_hir.clone(),
+        }
+    }
+}
+
+pub type FunctionCollection = DescriptorCollection<FunctionDescriptor>;
+pub type ClassCollection = DescriptorCollection<ClassDescriptor>;
+pub type StructCollection = DescriptorCollection<StructDescriptor>;
+pub type ImplCollection = DescriptorCollection<ClassDescriptor>;
+pub type EnumCollection = DescriptorCollection<EnumDescriptor>;
+pub type VariableCollection = DescriptorCollection<VariableDescriptor>;
+pub type ImportCollection = DescriptorCollection<ImportDescriptor>;
+pub type CallCollection = DescriptorCollection<CallDescriptor>;
+
 #[derive(Debug, Default)]
 pub struct CollectionResult {
-    pub functions: Vec<FunctionDescriptor>,
-    pub function_map: HashMap<HirId, usize>,
-    pub classes: Vec<ClassDescriptor>,
-    pub class_map: HashMap<HirId, usize>,
-    pub structs: Vec<StructDescriptor>,
-    pub struct_map: HashMap<HirId, usize>,
-    pub impls: Vec<ClassDescriptor>,
-    pub impl_map: HashMap<HirId, usize>,
-    pub enums: Vec<EnumDescriptor>,
-    pub enum_map: HashMap<HirId, usize>,
-    pub variables: Vec<VariableDescriptor>,
-    pub variable_map: HashMap<HirId, usize>,
-    pub imports: Vec<ImportDescriptor>,
-    pub import_map: HashMap<HirId, usize>,
-    pub calls: Vec<CallDescriptor>,
-    pub call_map: HashMap<HirId, usize>,
+    pub functions: FunctionCollection,
+    pub classes: ClassCollection,
+    pub structs: StructCollection,
+    pub impls: ImplCollection,
+    pub enums: EnumCollection,
+    pub variables: VariableCollection,
+    pub imports: ImportCollection,
+    pub calls: CallCollection,
 }
 
 #[derive(Debug)]

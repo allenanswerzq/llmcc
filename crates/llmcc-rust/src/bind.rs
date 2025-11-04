@@ -6,6 +6,7 @@ use llmcc_resolver::{BinderCore, CollectionResult};
 
 use crate::describe::RustDescriptor;
 use crate::token::{AstVisitorRust, LangRust};
+
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.
 #[derive(Debug)]
@@ -97,45 +98,41 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             .and_then(|child| child.as_ident())
             .map(|ident| ident.name.clone())
             .unwrap_or_else(|| "<unknown>".to_string());
-        if let Some(&descriptor_idx) = self.collection().struct_map.get(&node.hir_id()) {
-            if let Some(struct_descriptor) = self.collection().structs.get(descriptor_idx) {
-                tracing::trace!(
-                    "[bind][struct] {} fields={}",
-                    struct_name,
-                    struct_descriptor.fields.len()
-                );
-                for field in &struct_descriptor.fields {
-                    if let Some(type_expr) = field.type_annotation.as_ref() {
-                        let mut symbols = Vec::new();
-                        self.core.collect_type_expr_symbols(
-                            type_expr,
-                            &[SymbolKind::Struct, SymbolKind::Enum],
-                            &mut symbols,
-                        );
-                        for &type_symbol in &symbols {
-                            if type_symbol.unit_index() == Some(self.unit().index) {
-                                tracing::trace!(
-                                    "[bind][struct] {} depends on {:?}",
-                                    struct_name,
-                                    type_symbol.name.as_str()
-                                );
-                            }
-                            self.core.add_symbol_dependency(Some(type_symbol));
-                        }
-                        if symbols.is_empty() {
+        if let Some(struct_descriptor) = self.collection().structs.find(node.hir_id()) {
+            tracing::trace!(
+                "[bind][struct] {} fields={}",
+                struct_name,
+                struct_descriptor.fields.len()
+            );
+            for field in &struct_descriptor.fields {
+                if let Some(type_expr) = field.type_annotation.as_ref() {
+                    let mut symbols = Vec::new();
+                    self.core.collect_type_expr_symbols(
+                        type_expr,
+                        &[SymbolKind::Struct, SymbolKind::Enum],
+                        &mut symbols,
+                    );
+                    for &type_symbol in &symbols {
+                        if type_symbol.unit_index() == Some(self.unit().index) {
                             tracing::trace!(
-                                "[bind][struct] {} unresolved field type {:?}",
+                                "[bind][struct] {} depends on {:?}",
                                 struct_name,
-                                type_expr
+                                type_symbol.name.as_str()
                             );
                         }
+                        self.core.add_symbol_dependency(Some(type_symbol));
+                    }
+                    if symbols.is_empty() {
+                        tracing::trace!(
+                            "[bind][struct] {} unresolved field type {:?}",
+                            struct_name,
+                            type_expr
+                        );
                     }
                 }
-            } else {
-                tracing::trace!("[bind][struct] {} descriptor missing", struct_name);
             }
         } else {
-            tracing::trace!("[bind][struct] {} not in struct_map", struct_name);
+            tracing::trace!("[bind][struct] {} descriptor missing", struct_name);
         }
 
         self.visit_children_scope(&node, symbol);
@@ -154,11 +151,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .find_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
         let parent_symbol = self.current_symbol();
         if let Some(func_symbol) = symbol {
-            if let Some(&descriptor_idx) = self.collection().function_map.get(&node.hir_id()) {
-                if let Some(return_type) = self.collection().functions[descriptor_idx]
-                    .return_type
-                    .as_ref()
-                {
+            if let Some(descriptor) = self.collection().functions.find(node.hir_id()) {
+                if let Some(return_type) = descriptor.return_type.as_ref() {
                     let mut symbols = Vec::new();
                     self.core.collect_type_expr_symbols(
                         return_type,
@@ -170,7 +164,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                     }
                 }
 
-                for parameter in &self.collection().functions[descriptor_idx].parameters {
+                for parameter in &descriptor.parameters {
                     if let Some(type_expr) = parameter.type_hint.as_ref() {
                         let mut symbols = Vec::new();
                         self.core.collect_type_expr_symbols(
@@ -216,11 +210,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        let impl_descriptor = self
-            .collection()
-            .impl_map
-            .get(&node.hir_id())
-            .and_then(|&idx| self.collection().impls.get(idx));
+        let impl_descriptor = self.collection().impls.find(node.hir_id());
 
         // Use the descriptor’s fully-qualified name to locate the target type symbol. The
         // descriptor already normalized nested paths (e.g., `crate::foo::Bar`).
@@ -277,11 +267,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        if let Some(&descriptor_idx) = self.collection().variable_map.get(&node.hir_id()) {
-            if let Some(type_expr) = self.collection().variables[descriptor_idx]
-                .type_annotation
-                .as_ref()
-            {
+        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
+            if let Some(type_expr) = descriptor.type_annotation.as_ref() {
                 let mut symbols = Vec::new();
                 self.core.collect_type_expr_symbols(
                     type_expr,
@@ -325,12 +312,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
-        let call = self
-            .collection()
-            .call_map
-            .get(&node.hir_id())
-            .and_then(|&idx| self.collection().calls.get(idx));
-        if let Some(descriptor) = call {
+        if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
             self.core.add_call_target_dependencies(&descriptor.target);
         }
         self.visit_children(&node);
