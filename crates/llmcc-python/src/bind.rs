@@ -6,7 +6,7 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
 use llmcc_descriptor::{CallChain, TypeExpr};
-use llmcc_resolver::BinderCore;
+use llmcc_resolver::{BinderCore, CollectionResult};
 
 use crate::token::{AstVisitorPython, LangPython};
 
@@ -23,7 +23,7 @@ pub struct CallBinding {
 
 #[derive(Debug)]
 struct SymbolBinder<'tcx, 'a> {
-    core: BinderCore<'tcx, 'a, crate::CollectionResult>,
+    core: BinderCore<'tcx, 'a, CollectionResult>,
     calls: Vec<CallBinding>,
     module_imports: Vec<&'tcx Symbol>,
 }
@@ -32,7 +32,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     pub fn new(
         unit: CompileUnit<'tcx>,
         globals: &'tcx Scope<'tcx>,
-        collection: &'a crate::CollectionResult,
+        collection: &'a CollectionResult,
     ) -> Self {
         Self {
             core: BinderCore::new(unit, globals, collection),
@@ -45,7 +45,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.core.unit()
     }
 
-    fn collection(&self) -> &'a crate::CollectionResult {
+    fn collection(&self) -> &'a CollectionResult {
         self.core.collection()
     }
 
@@ -773,7 +773,7 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
 pub fn bind_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
-    collection: &crate::CollectionResult,
+    collection: &CollectionResult,
 ) -> BindingResult {
     let mut binder = SymbolBinder::new(unit, globals, collection);
 

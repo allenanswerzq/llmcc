@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
 use llmcc_core::IrBuildConfig;
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust, TypeExpr, Visibility};
+use llmcc_descriptor::{FunctionDescriptor, TypeExpr, Visibility};
+use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
-fn collect_functions(source: &str) -> HashMap<String, llmcc_rust::FunctionDescriptor> {
+fn collect_functions(source: &str) -> HashMap<String, FunctionDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);

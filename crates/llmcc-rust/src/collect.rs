@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirIdent, HirNode};
+use llmcc_core::ir::{HirId, HirNode};
 use llmcc_core::symbol::{Scope, SymbolKind};
 use llmcc_descriptor::DescriptorTrait;
-pub use llmcc_resolver::{
-    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult,
+use llmcc_resolver::{
+    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult, CollectorCore,
+    SymbolSpec,
 };
-use llmcc_resolver::{CollectorCore, SymbolSpec};
 
 use crate::describe::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, RustDescriptor,
@@ -61,16 +61,6 @@ impl<'tcx> DeclCollector<'tcx> {
 
     fn current_function_name(&self) -> Option<&str> {
         self.core.current_function_name()
-    }
-
-    fn ident_from_field(
-        &self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-    ) -> Option<&'tcx HirIdent<'tcx>> {
-        let unit = self.unit();
-        let ident_node = node.opt_child_by_field(unit, field_id)?;
-        ident_node.as_ident()
     }
 
     fn visibility_exports(visibility: &Visibility) -> bool {
@@ -132,21 +122,21 @@ impl<'tcx> DeclCollector<'tcx> {
             enum_map,
         } = self;
 
-        let mut result = CollectionResult::default();
-        result.functions = functions;
-        result.function_map = function_map;
-        result.variables = variables;
-        result.variable_map = variable_map;
-        result.calls = calls;
-        result.call_map = call_map;
-        result.structs = structs;
-        result.struct_map = struct_map;
-        result.impls = impls;
-        result.impl_map = impl_map;
-        result.enums = enums;
-        result.enum_map = enum_map;
-
-        core.finish(result)
+        core.finish(CollectionResult {
+            functions,
+            function_map,
+            variables,
+            variable_map,
+            calls,
+            call_map,
+            structs,
+            struct_map,
+            impls,
+            impl_map,
+            enums,
+            enum_map,
+            ..CollectionResult::default()
+        })
     }
 }
 
@@ -217,7 +207,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        if let Some(ident) = self.ident_from_field(&node, LangRust::field_pattern) {
+        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_pattern) {
             let _ =
                 self.core
                     .upsert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
@@ -227,6 +217,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
         let sym_idx = self
+            .core
             .ident_from_field(&node, LangRust::field_name)
             .map(|ident| {
                 let (sym_idx, _fqn) =
@@ -360,7 +351,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             .parent_symbol()
             .map(|symbol| symbol.is_global)
             .unwrap_or(false);
-        if let Some(ident) = self.ident_from_field(&node, LangRust::field_name) {
+        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_name) {
             let _ = self.core.upsert_symbol(
                 node.hir_id(),
                 &ident.name,
@@ -380,14 +371,14 @@ pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
 ) -> CollectionResult {
-    let batch = llmcc_resolver::collect_symbols_batch(
+    let batch = collect_symbols_batch(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),
         DeclCollector::finish,
     );
 
-    let (result, total_time, visit_time) = llmcc_resolver::apply_symbol_batch(unit, globals, batch);
+    let (result, total_time, visit_time) = apply_symbol_batch(unit, globals, batch);
 
     if total_time.as_millis() > 10 {
         tracing::trace!(

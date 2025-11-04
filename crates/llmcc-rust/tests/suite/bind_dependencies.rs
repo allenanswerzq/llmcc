@@ -1,5 +1,5 @@
 use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
-use llmcc_descriptor::DescriptorId;
+use llmcc_descriptor::{DescriptorId, EnumDescriptor, FunctionDescriptor, StructDescriptor};
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -22,7 +22,7 @@ fn compile(
 fn find_struct<'a>(
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
-) -> &'a llmcc_rust::StructDescriptor {
+) -> &'a StructDescriptor {
     collection
         .structs
         .iter()
@@ -34,7 +34,7 @@ fn find_function<'a>(
     unit: llmcc_core::context::CompileUnit<'static>,
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
-) -> &'a llmcc_rust::FunctionDescriptor {
+) -> &'a FunctionDescriptor {
     let mut fallback = None;
     for desc in collection.functions.iter().filter(|desc| desc.name == name) {
         let hir_id = descriptor_hir_id(&desc.origin);
@@ -61,7 +61,7 @@ fn find_function_by_fqn<'a>(
     unit: llmcc_core::context::CompileUnit<'static>,
     collection: &'a llmcc_rust::CollectionResult,
     fqn: &str,
-) -> &'a llmcc_rust::FunctionDescriptor {
+) -> &'a FunctionDescriptor {
     let candidates = canonical_fqns(unit, fqn);
 
     collection
@@ -77,10 +77,7 @@ fn find_function_by_fqn<'a>(
         .unwrap()
 }
 
-fn find_enum<'a>(
-    collection: &'a llmcc_rust::CollectionResult,
-    name: &str,
-) -> &'a llmcc_rust::EnumDescriptor {
+fn find_enum<'a>(collection: &'a llmcc_rust::CollectionResult, name: &str) -> &'a EnumDescriptor {
     collection
         .enums
         .iter()

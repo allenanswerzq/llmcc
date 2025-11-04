@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirNode};
+use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
@@ -164,6 +164,16 @@ impl<'tcx> CollectorCore<'tcx> {
             }
         }
         None
+    }
+
+    pub fn ident_from_field(
+        &self,
+        node: &HirNode<'tcx>,
+        field_id: u16,
+    ) -> Option<&'tcx HirIdent<'tcx>> {
+        let unit = self.unit();
+        let ident_node = node.opt_child_by_field(unit, field_id)?;
+        ident_node.as_ident()
     }
 
     pub fn scoped_qualified_name(&self, name: &str) -> String {

@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 
 use llmcc_core::IrBuildConfig;
-use llmcc_rust::{
-    build_llmcc_ir, collect_symbols, CallChain, CallDescriptor, CallKind, CallSymbol, CallTarget,
-    CompileCtxt, LangRust, TypeExpr,
-};
+use llmcc_descriptor::{CallChain, CallDescriptor, CallKind, CallSymbol, CallTarget, TypeExpr};
+use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn collect_calls(source: &str) -> Vec<CallDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];

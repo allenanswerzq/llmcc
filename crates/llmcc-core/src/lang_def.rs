@@ -74,7 +74,7 @@ macro_rules! define_tokens {
             }
 
             impl LanguageTrait for [<Lang $suffix>] {
-                type SymbolCollection = crate::collect::CollectionResult;
+                type SymbolCollection = llmcc_resolver::CollectionResult;
 
                 /// Parse the text into a tree
                 fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree> {

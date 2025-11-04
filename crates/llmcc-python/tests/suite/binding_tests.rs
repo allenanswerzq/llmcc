@@ -1,12 +1,13 @@
 use llmcc_core::{context::CompileCtxt, symbol::Symbol, IrBuildConfig};
-use llmcc_python::{bind_symbols, build_llmcc_ir, collect_symbols, LangPython};
+use llmcc_descriptor::{ClassDescriptor, FunctionDescriptor};
+use llmcc_python::{bind_symbols, build_llmcc_ir, collect_symbols, CollectionResult, LangPython};
 
 fn compile(
     source: &str,
 ) -> (
     &'static CompileCtxt<'static>,
     llmcc_core::context::CompileUnit<'static>,
-    llmcc_python::CollectionResult,
+    CollectionResult,
     &'static llmcc_core::symbol::Scope<'static>,
 ) {
     let sources = vec![source.as_bytes().to_vec()];
@@ -22,33 +23,27 @@ fn compile(
 
 #[allow(dead_code)]
 fn find_function<'a>(
-    collection: &'a llmcc_python::CollectionResult,
+    collection: &'a CollectionResult,
     name: &str,
-) -> Option<&'a llmcc_python::FunctionDescriptor> {
+) -> Option<&'a FunctionDescriptor> {
     collection.functions.iter().find(|desc| desc.name == name)
 }
 
 #[allow(dead_code)]
 fn find_function_unwrap<'a>(
-    collection: &'a llmcc_python::CollectionResult,
+    collection: &'a CollectionResult,
     name: &str,
-) -> &'a llmcc_python::FunctionDescriptor {
+) -> &'a FunctionDescriptor {
     find_function(collection, name).unwrap_or_else(|| panic!("function '{}' not found", name))
 }
 
 #[allow(dead_code)]
-fn find_class<'a>(
-    collection: &'a llmcc_python::CollectionResult,
-    name: &str,
-) -> Option<&'a llmcc_python::ClassDescriptor> {
+fn find_class<'a>(collection: &'a CollectionResult, name: &str) -> Option<&'a ClassDescriptor> {
     collection.classes.iter().find(|desc| desc.name == name)
 }
 
 #[allow(dead_code)]
-fn find_class_unwrap<'a>(
-    collection: &'a llmcc_python::CollectionResult,
-    name: &str,
-) -> &'a llmcc_python::ClassDescriptor {
+fn find_class_unwrap<'a>(collection: &'a CollectionResult, name: &str) -> &'a ClassDescriptor {
     find_class(collection, name).unwrap_or_else(|| panic!("class '{}' not found", name))
 }
 
@@ -66,7 +61,7 @@ fn get_symbol<'tcx>(
 
 fn function_symbol<'tcx>(
     globals: &'tcx llmcc_core::symbol::Scope<'tcx>,
-    _collection: &llmcc_python::CollectionResult,
+    _collection: &CollectionResult,
     name: &str,
 ) -> &'tcx Symbol {
     get_symbol(globals, name, llmcc_core::symbol::SymbolKind::Function)
@@ -75,7 +70,7 @@ fn function_symbol<'tcx>(
 
 fn class_symbol<'tcx>(
     globals: &'tcx llmcc_core::symbol::Scope<'tcx>,
-    _collection: &llmcc_python::CollectionResult,
+    _collection: &CollectionResult,
     name: &str,
 ) -> &'tcx Symbol {
     get_symbol(globals, name, llmcc_core::symbol::SymbolKind::Struct)

@@ -5,16 +5,17 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use llmcc_core::symbol::{Scope, SymbolKind};
 
-use crate::describe::PythonDescriptorBuilder;
-use crate::token::{AstVisitorPython, LangPython};
 use llmcc_descriptor::{
     CallDescriptor, CallKind, CallTarget, ClassDescriptor, DescriptorTrait, FunctionDescriptor,
     ImportDescriptor, TypeExpr, VariableDescriptor, VariableScope, LANGUAGE_PYTHON,
 };
-pub use llmcc_resolver::{
-    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult,
+use llmcc_resolver::{
+    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult, CollectorCore,
+    SymbolSpec,
 };
-use llmcc_resolver::{CollectorCore, SymbolSpec};
+
+use crate::describe::PythonDescriptorBuilder;
+use crate::token::{AstVisitorPython, LangPython};
 
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
@@ -226,19 +227,19 @@ impl<'tcx> DeclCollector<'tcx> {
             call_map,
         } = self;
 
-        let mut result = CollectionResult::default();
-        result.functions = functions;
-        result.function_map = function_map;
-        result.classes = classes;
-        result.class_map = class_map;
-        result.variables = variables;
-        result.variable_map = variable_map;
-        result.imports = imports;
-        result.import_map = import_map;
-        result.calls = calls;
-        result.call_map = call_map;
-
-        core.finish(result)
+        core.finish(CollectionResult {
+            functions,
+            function_map,
+            classes,
+            class_map,
+            variables,
+            variable_map,
+            imports,
+            import_map,
+            calls,
+            call_map,
+            ..CollectionResult::default()
+        })
     }
 }
 
@@ -385,14 +386,14 @@ pub fn collect_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
 ) -> CollectionResult {
-    let batch = llmcc_resolver::collect_symbols_batch(
+    let batch = collect_symbols_batch(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),
         DeclCollector::finish,
     );
 
-    let (result, total_time, visit_time) = llmcc_resolver::apply_symbol_batch(unit, globals, batch);
+    let (result, total_time, visit_time) = apply_symbol_batch(unit, globals, batch);
 
     if total_time.as_millis() > 10 {
         tracing::trace!(
