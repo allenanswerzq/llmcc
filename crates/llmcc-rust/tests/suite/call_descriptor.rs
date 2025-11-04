@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use llmcc_core::IrBuildConfig;
 use llmcc_descriptor::{CallChain, CallDescriptor, CallKind, CallSymbol, CallTarget, TypeExpr};
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_rust::{build_llmcc_ir, collect_symbols, CallCollection, CompileCtxt, LangRust};
 
-fn collect_calls(source: &str) -> Vec<CallDescriptor> {
+fn collect_calls(source: &str) -> CallCollection {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);

@@ -1,8 +1,8 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
 use llmcc_descriptor::{CallDescriptor, CallKind, CallTarget};
-use llmcc_python::{build_llmcc_ir, collect_symbols, LangPython};
+use llmcc_python::{build_llmcc_ir, collect_symbols, CallCollection, LangPython};
 
-fn collect_calls(source: &str) -> Vec<CallDescriptor> {
+fn collect_calls(source: &str) -> CallCollection {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);

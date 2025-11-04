@@ -1,8 +1,8 @@
 use llmcc_core::IrBuildConfig;
-use llmcc_descriptor::{EnumDescriptor, EnumVariantKind, TypeExpr, Visibility};
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_descriptor::{EnumVariantKind, TypeExpr, Visibility};
+use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, EnumCollection, LangRust};
 
-fn collect_enums(source: &str) -> Vec<EnumDescriptor> {
+fn collect_enums(source: &str) -> EnumCollection {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
