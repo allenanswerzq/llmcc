@@ -4,6 +4,10 @@ use std::time::{Duration, Instant};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
+use llmcc_descriptor::{
+    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
+    StructDescriptor, VariableDescriptor,
+};
 
 #[derive(Debug, Clone)]
 pub struct SymbolSpec {
@@ -22,18 +26,31 @@ pub struct ScopeSpec {
     pub symbols: Vec<usize>,
 }
 
-#[derive(Debug)]
-pub struct CollectedSymbols<T> {
-    pub result: T,
-    pub symbols: Vec<SymbolSpec>,
-    pub scopes: Vec<ScopeSpec>,
+#[derive(Debug, Default)]
+pub struct CollectionResult {
+    pub functions: Vec<FunctionDescriptor>,
+    pub function_map: HashMap<HirId, usize>,
+    pub classes: Vec<ClassDescriptor>,
+    pub class_map: HashMap<HirId, usize>,
+    pub structs: Vec<StructDescriptor>,
+    pub struct_map: HashMap<HirId, usize>,
+    pub impls: Vec<ClassDescriptor>,
+    pub impl_map: HashMap<HirId, usize>,
+    pub enums: Vec<EnumDescriptor>,
+    pub enum_map: HashMap<HirId, usize>,
+    pub variables: Vec<VariableDescriptor>,
+    pub variable_map: HashMap<HirId, usize>,
+    pub imports: Vec<ImportDescriptor>,
+    pub import_map: HashMap<HirId, usize>,
+    pub calls: Vec<CallDescriptor>,
+    pub call_map: HashMap<HirId, usize>,
 }
 
 #[derive(Debug)]
-pub struct SymbolBatch<T> {
-    pub collected: CollectedSymbols<T>,
-    pub total_time: Duration,
-    pub visit_time: Duration,
+pub struct CollectedSymbols {
+    pub result: CollectionResult,
+    pub symbols: Vec<SymbolSpec>,
+    pub scopes: Vec<ScopeSpec>,
 }
 
 #[derive(Debug)]
@@ -268,7 +285,7 @@ impl<'tcx> CollectorCore<'tcx> {
         &mut self.symbols
     }
 
-    pub fn finish<T>(self, result: T) -> CollectedSymbols<T> {
+    pub fn finish(self, result: CollectionResult) -> CollectedSymbols {
         let scopes = self
             .scope_infos
             .into_iter()
@@ -328,26 +345,16 @@ impl<'tcx> CollectorCore<'tcx> {
     }
 }
 
-impl<T> SymbolBatch<T> {
-    pub fn new(collected: CollectedSymbols<T>, total_time: Duration, visit_time: Duration) -> Self {
-        Self {
-            collected,
-            total_time,
-            visit_time,
-        }
-    }
-}
-
-pub fn collect_symbols_batch<'tcx, T, C, MakeCollector, Visit, Finish>(
+pub fn collect_symbols_batch<'tcx, C, MakeCollector, Visit, Finish>(
     unit: CompileUnit<'tcx>,
     make_collector: MakeCollector,
     visit: Visit,
     finish: Finish,
-) -> SymbolBatch<T>
+) -> (CollectedSymbols, Duration, Duration)
 where
     MakeCollector: FnOnce(CompileUnit<'tcx>) -> C,
     Visit: FnOnce(&mut C, HirNode<'tcx>),
-    Finish: FnOnce(C) -> CollectedSymbols<T>,
+    Finish: FnOnce(C) -> CollectedSymbols,
 {
     let collect_start = Instant::now();
     let root = unit.file_start_hir_id().unwrap();
@@ -361,13 +368,13 @@ where
     let collected = finish(collector);
     let total_time = collect_start.elapsed();
 
-    SymbolBatch::new(collected, total_time, visit_time)
+    (collected, total_time, visit_time)
 }
 
-pub fn apply_collected_symbols<'tcx, T>(
+pub fn apply_collected_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
-    collected: &CollectedSymbols<T>,
+    collected: &CollectedSymbols,
 ) {
     let interner = unit.interner();
     let mut created_symbols = Vec::with_capacity(collected.symbols.len());
@@ -409,17 +416,12 @@ pub fn apply_collected_symbols<'tcx, T>(
     }
 }
 
-pub fn apply_symbol_batch<'tcx, T>(
+pub fn apply_symbol_batch<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
-    batch: SymbolBatch<T>,
-) -> (T, Duration, Duration) {
-    let SymbolBatch {
-        collected,
-        total_time,
-        visit_time,
-    } = batch;
-
+    batch: (CollectedSymbols, Duration, Duration),
+) -> (CollectionResult, Duration, Duration) {
+    let (collected, total_time, visit_time) = batch;
     apply_collected_symbols(unit, globals, &collected);
 
     (collected.result, total_time, visit_time)

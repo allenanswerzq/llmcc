@@ -11,24 +11,10 @@ use llmcc_descriptor::{
     CallDescriptor, CallKind, CallTarget, ClassDescriptor, DescriptorTrait, FunctionDescriptor,
     ImportDescriptor, TypeExpr, VariableDescriptor, VariableScope, LANGUAGE_PYTHON,
 };
+pub use llmcc_resolver::{
+    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult,
+};
 use llmcc_resolver::{CollectorCore, SymbolSpec};
-
-#[derive(Debug)]
-pub struct CollectionResult {
-    pub functions: Vec<FunctionDescriptor>,
-    pub function_map: HashMap<HirId, usize>,
-    pub classes: Vec<ClassDescriptor>,
-    pub class_map: HashMap<HirId, usize>,
-    pub variables: Vec<VariableDescriptor>,
-    pub variable_map: HashMap<HirId, usize>,
-    pub imports: Vec<ImportDescriptor>,
-    pub import_map: HashMap<HirId, usize>,
-    pub calls: Vec<CallDescriptor>,
-    pub call_map: HashMap<HirId, usize>,
-}
-
-pub type CollectedSymbols = llmcc_resolver::CollectedSymbols<CollectionResult>;
-pub type SymbolBatch = llmcc_resolver::SymbolBatch<CollectionResult>;
 
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
@@ -240,18 +226,17 @@ impl<'tcx> DeclCollector<'tcx> {
             call_map,
         } = self;
 
-        let result = CollectionResult {
-            functions,
-            function_map,
-            classes,
-            class_map,
-            variables,
-            variable_map,
-            imports,
-            import_map,
-            calls,
-            call_map,
-        };
+        let mut result = CollectionResult::default();
+        result.functions = functions;
+        result.function_map = function_map;
+        result.classes = classes;
+        result.class_map = class_map;
+        result.variables = variables;
+        result.variable_map = variable_map;
+        result.imports = imports;
+        result.import_map = import_map;
+        result.calls = calls;
+        result.call_map = call_map;
 
         core.finish(result)
     }
@@ -281,11 +266,13 @@ fn is_pascal_case(name: &str) -> bool {
 }
 
 impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
+    type ScopedSymbol = usize;
+
     fn unit(&self) -> CompileUnit<'tcx> {
         self.unit()
     }
 
-    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<usize>) {
+    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<Self::ScopedSymbol>) {
         let owner = node.hir_id();
         let scope_idx = self.core.ensure_scope(owner);
         if let Some(sym_idx) = symbol {
@@ -299,7 +286,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
 
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
         let module_symbol = self.ensure_module_symbol(&node);
-        self.visit_children_new_scope(&node, module_symbol);
+        self.visit_children_scope(&node, module_symbol);
     }
 
     fn visit_call(&mut self, node: HirNode<'tcx>) {
@@ -322,7 +309,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                 self.functions.push(func);
                 self.function_map.insert(node.hir_id(), idx);
             }
-            self.visit_children_new_scope(&node, Some(symbol_idx));
+            self.visit_children_scope(&node, Some(symbol_idx));
         }
     }
 
@@ -336,7 +323,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
                 self.classes.push(class);
                 self.class_map.insert(node.hir_id(), idx);
             }
-            self.visit_children_new_scope(&node, Some(symbol_idx));
+            self.visit_children_scope(&node, Some(symbol_idx));
         }
     }
 
@@ -394,20 +381,17 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 }
 
-pub fn collect_symbols_batch(unit: CompileUnit<'_>) -> SymbolBatch {
-    llmcc_resolver::collect_symbols_batch(
+pub fn collect_symbols<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+) -> CollectionResult {
+    let batch = llmcc_resolver::collect_symbols_batch(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),
         DeclCollector::finish,
-    )
-}
+    );
 
-pub fn apply_symbol_batch<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-    batch: SymbolBatch,
-) -> CollectionResult {
     let (result, total_time, visit_time) = llmcc_resolver::apply_symbol_batch(unit, globals, batch);
 
     if total_time.as_millis() > 10 {
@@ -425,12 +409,4 @@ pub fn apply_symbol_batch<'tcx>(
     }
 
     result
-}
-
-pub fn collect_symbols<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-) -> CollectionResult {
-    let batch = collect_symbols_batch(unit);
-    apply_symbol_batch(unit, globals, batch)
 }

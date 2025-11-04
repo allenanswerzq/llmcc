@@ -4,8 +4,7 @@ use crate::ir::HirKind;
 use crate::symbol::Scope;
 
 pub trait LanguageTrait {
-    type SymbolBatch: Send;
-    type SymbolCollection;
+    type SymbolCollection: Send;
 
     // TODO: add general parse result struct
     fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree>;
@@ -19,16 +18,11 @@ pub trait LanguageTrait {
     /// Return the list of supported file extensions for this language (e.g., ["rs"] for Rust)
     fn supported_extensions() -> &'static [&'static str];
 
-    fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch;
-    fn apply_symbol_batch<'tcx>(
-        unit: CompileUnit<'tcx>,
-        globals: &'tcx Scope<'tcx>,
-        batch: Self::SymbolBatch,
-    ) -> Self::SymbolCollection;
     fn collect_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         globals: &'tcx Scope<'tcx>,
     ) -> Self::SymbolCollection;
+
     fn bind_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
         globals: &'tcx Scope<'tcx>,
@@ -80,7 +74,6 @@ macro_rules! define_tokens {
             }
 
             impl LanguageTrait for [<Lang $suffix>] {
-                type SymbolBatch = crate::collect::SymbolBatch;
                 type SymbolCollection = crate::collect::CollectionResult;
 
                 /// Parse the text into a tree
@@ -157,21 +150,12 @@ macro_rules! define_tokens {
                     let _ = bind::bind_symbols(unit, globals, collection);
                 }
 
-                fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch {
-                    collect::collect_symbols_batch(unit)
-                }
-
-                fn apply_symbol_batch<'tcx>(
-                    unit: CompileUnit<'tcx>,
-                    globals: &'tcx Scope<'tcx>,
-                    batch: Self::SymbolBatch,
-                ) -> Self::SymbolCollection {
-                    collect::apply_symbol_batch(unit, globals, batch)
-                }
             }
 
             /// Trait for visiting HIR nodes with type-specific dispatch
             pub trait [<AstVisitor $suffix>]<'tcx> {
+                type ScopedSymbol;
+
                 fn unit(&self) -> CompileUnit<'tcx>;
 
                 /// Visit a node, dispatching to the appropriate method based on token ID
@@ -193,8 +177,7 @@ macro_rules! define_tokens {
                 }
 
 
-                fn visit_children_scope(&mut self, _node: &HirNode<'tcx>, _symbol: Option<&'tcx Symbol>) {}
-                fn visit_children_new_scope(&mut self, _node: &HirNode<'tcx>, _scoped_symbol: Option<usize>) {}
+                fn visit_children_scope(&mut self, _node: &HirNode<'tcx>, _symbol: Option<Self::ScopedSymbol>) {}
 
                 /// Handle unknown/unrecognized token types
                 fn visit_unknown(&mut self, node: HirNode<'tcx>) {

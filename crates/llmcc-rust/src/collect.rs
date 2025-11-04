@@ -4,32 +4,16 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, SymbolKind};
 use llmcc_descriptor::DescriptorTrait;
-use llmcc_resolver::{CollectedSymbols as ResolverCollectedSymbols, CollectorCore, SymbolSpec};
+pub use llmcc_resolver::{
+    apply_symbol_batch, collect_symbols_batch, CollectedSymbols, CollectionResult,
+};
+use llmcc_resolver::{CollectorCore, SymbolSpec};
 
 use crate::describe::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, RustDescriptor,
     StructDescriptor, TypeExpr, VariableDescriptor, Visibility,
 };
 use crate::token::{AstVisitorRust, LangRust};
-
-#[derive(Debug)]
-pub struct CollectionResult {
-    pub functions: Vec<FunctionDescriptor>,
-    pub function_map: HashMap<HirId, usize>,
-    pub variables: Vec<VariableDescriptor>,
-    pub variable_map: HashMap<HirId, usize>,
-    pub calls: Vec<CallDescriptor>,
-    pub call_map: HashMap<HirId, usize>,
-    pub structs: Vec<StructDescriptor>,
-    pub struct_map: HashMap<HirId, usize>,
-    pub impls: Vec<ClassDescriptor>,
-    pub impl_map: HashMap<HirId, usize>,
-    pub enums: Vec<EnumDescriptor>,
-    pub enum_map: HashMap<HirId, usize>,
-}
-
-pub type CollectedSymbols = ResolverCollectedSymbols<CollectionResult>;
-pub type SymbolBatch = llmcc_resolver::SymbolBatch<CollectionResult>;
 
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
@@ -148,31 +132,36 @@ impl<'tcx> DeclCollector<'tcx> {
             enum_map,
         } = self;
 
-        let result = CollectionResult {
-            functions,
-            function_map,
-            variables,
-            variable_map,
-            calls,
-            call_map,
-            structs,
-            struct_map,
-            impls,
-            impl_map,
-            enums,
-            enum_map,
-        };
+        let mut result = CollectionResult::default();
+        result.functions = functions;
+        result.function_map = function_map;
+        result.variables = variables;
+        result.variable_map = variable_map;
+        result.calls = calls;
+        result.call_map = call_map;
+        result.structs = structs;
+        result.struct_map = struct_map;
+        result.impls = impls;
+        result.impl_map = impl_map;
+        result.enums = enums;
+        result.enum_map = enum_map;
 
         core.finish(result)
     }
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
+    type ScopedSymbol = usize;
+
     fn unit(&self) -> CompileUnit<'tcx> {
         self.unit()
     }
 
-    fn visit_children_new_scope(&mut self, node: &HirNode<'tcx>, scoped_symbol: Option<usize>) {
+    fn visit_children_scope(
+        &mut self,
+        node: &HirNode<'tcx>,
+        scoped_symbol: Option<Self::ScopedSymbol>,
+    ) {
         let owner = node.hir_id();
         let scope_idx = self.core.ensure_scope(owner);
         if let Some(sym_idx) = scoped_symbol {
@@ -387,22 +376,17 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 }
 
-pub fn collect_symbols_batch(unit: CompileUnit<'_>) -> SymbolBatch {
-    llmcc_resolver::collect_symbols_batch(
+pub fn collect_symbols<'tcx>(
+    unit: CompileUnit<'tcx>,
+    globals: &'tcx Scope<'tcx>,
+) -> CollectionResult {
+    let batch = llmcc_resolver::collect_symbols_batch(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),
         DeclCollector::finish,
-    )
-}
+    );
 
-/// Applies a previously collected symbol batch into the current unit, wiring the
-/// newly created symbols back into the global scope and tracing timing metrics.
-pub fn apply_symbol_batch<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-    batch: SymbolBatch,
-) -> CollectionResult {
     let (result, total_time, visit_time) = llmcc_resolver::apply_symbol_batch(unit, globals, batch);
 
     if total_time.as_millis() > 10 {
@@ -421,12 +405,4 @@ pub fn apply_symbol_batch<'tcx>(
     }
 
     result
-}
-
-pub fn collect_symbols<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-) -> CollectionResult {
-    let batch = collect_symbols_batch(unit);
-    apply_symbol_batch(unit, globals, batch)
 }

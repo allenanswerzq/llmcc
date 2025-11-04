@@ -50,11 +50,13 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
+    type ScopedSymbol = &'tcx Symbol;
+
     fn unit(&self) -> CompileUnit<'tcx> {
         self.unit()
     }
 
-    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
+    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<Self::ScopedSymbol>) {
         let depth = self.scopes().depth();
         if let Some(symbol) = symbol {
             if let Some(parent) = self.current_symbol() {

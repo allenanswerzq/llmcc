@@ -203,22 +203,19 @@ pub fn run_main<L: LanguageTrait>(opts: &LlmccOptions) -> Result<Option<String>,
     }
 
     let symbols_start = Instant::now();
-    let mut symbol_batches: Vec<_> = (0..files.len())
+    let mut indexed_collections: Vec<_> = (0..files.len())
         .into_par_iter()
         .map(|index| {
             let unit = cc.compile_unit(index);
-            (index, L::collect_symbol_batch(unit))
+            (index, L::collect_symbols(unit, globals))
         })
         .collect();
 
-    symbol_batches.sort_by_key(|(index, _)| *index);
-
-    let mut collections = Vec::with_capacity(files.len());
-    for (index, batch) in symbol_batches {
-        let unit = cc.compile_unit(index);
-        let collection = L::apply_symbol_batch(unit, globals, batch);
-        collections.push(collection);
-    }
+    indexed_collections.sort_by_key(|(index, _)| *index);
+    let collections: Vec<_> = indexed_collections
+        .into_iter()
+        .map(|(_, collection)| collection)
+        .collect();
     info!(
         "Symbol collection: {:.2}s",
         symbols_start.elapsed().as_secs_f64()
