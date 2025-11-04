@@ -2,7 +2,7 @@
 /// This module verifies that visit_let_declaration properly extracts type annotations
 /// and establishes dependency relations between functions and the types used in let statements.
 use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
-use llmcc_descriptor::DescriptorId;
+use llmcc_descriptor::{DescriptorId, EnumDescriptor, FunctionDescriptor, StructDescriptor};
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -25,7 +25,7 @@ fn compile(
 fn find_struct<'a>(
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
-) -> &'a llmcc_rust::StructDescriptor {
+) -> &'a StructDescriptor {
     collection
         .structs
         .iter()
@@ -36,7 +36,7 @@ fn find_struct<'a>(
 fn find_function<'a>(
     collection: &'a llmcc_rust::CollectionResult,
     name: &str,
-) -> &'a llmcc_rust::FunctionDescriptor {
+) -> &'a FunctionDescriptor {
     collection
         .functions
         .iter()
@@ -44,10 +44,7 @@ fn find_function<'a>(
         .unwrap()
 }
 
-fn find_enum<'a>(
-    collection: &'a llmcc_rust::CollectionResult,
-    name: &str,
-) -> &'a llmcc_rust::EnumDescriptor {
+fn find_enum<'a>(collection: &'a llmcc_rust::CollectionResult, name: &str) -> &'a EnumDescriptor {
     collection
         .enums
         .iter()

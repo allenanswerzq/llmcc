@@ -1,7 +1,8 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
-use llmcc_python::{build_llmcc_ir, collect_symbols, ClassDescriptor, LangPython, TypeExpr};
+use llmcc_descriptor::TypeExpr;
+use llmcc_python::{build_llmcc_ir, collect_symbols, ClassCollection, LangPython};
 
-fn collect_classes(source: &str) -> Vec<ClassDescriptor> {
+fn collect_classes(source: &str) -> ClassCollection {
     let sources = vec![source.as_bytes().to_vec()];
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);

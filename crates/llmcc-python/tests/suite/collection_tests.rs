@@ -1,8 +1,9 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
-use llmcc_python::{
-    build_llmcc_ir, collect_symbols, ClassDescriptor, CollectionResult, FunctionDescriptor,
-    ImportDescriptor, LangPython, TypeExpr, VariableDescriptor,
+use llmcc_descriptor::{
+    ClassDescriptor, FunctionDescriptor, FunctionParameter, ImportDescriptor, TypeExpr,
+    VariableDescriptor,
 };
+use llmcc_python::{build_llmcc_ir, collect_symbols, CollectionResult, LangPython};
 
 fn collect_from_source(source: &str) -> CollectionResult {
     let sources = vec![source.as_bytes().to_vec()];
@@ -55,7 +56,7 @@ fn type_repr(expr: &TypeExpr) -> String {
     }
 }
 
-fn parameter_has_name(param: &llmcc_python::FunctionParameter) -> bool {
+fn parameter_has_name(param: &FunctionParameter) -> bool {
     param
         .name
         .as_ref()
