@@ -8,7 +8,7 @@ use llmcc_resolver::{
     SymbolSpec, VariableCollection,
 };
 
-use crate::describe::{RustDescriptor, TypeExpr, Visibility};
+use crate::describe::{RustDescriptor, Visibility};
 use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
@@ -52,40 +52,6 @@ impl<'tcx> DeclCollector<'tcx> {
             Visibility::Public => true,
             Visibility::Restricted { scope } => scope == "crate",
             _ => false,
-        }
-    }
-
-    fn ensure_base_type_symbol(&mut self, node: &HirNode<'tcx>, base: &TypeExpr) {
-        match base {
-            TypeExpr::Path { segments, .. } => {
-                let segments: Vec<String> = segments
-                    .iter()
-                    .filter(|segment| !segment.is_empty())
-                    .cloned()
-                    .collect();
-                if segments.is_empty() {
-                    return;
-                }
-
-                let name = segments.last().cloned().unwrap();
-                let fqn = segments.join("::");
-                let _ = self.core.upsert_symbol_with_fqn(
-                    node.hir_id(),
-                    &name,
-                    SymbolKind::Trait,
-                    true,
-                    &fqn,
-                );
-            }
-            TypeExpr::Reference { inner, .. } => {
-                self.ensure_base_type_symbol(node, inner);
-            }
-            TypeExpr::Tuple(items) => {
-                for item in items {
-                    self.ensure_base_type_symbol(node, item);
-                }
-            }
-            _ => {}
         }
     }
 
@@ -212,7 +178,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             );
             desc.fqn = Some(fqn.clone());
             for base in &desc.base_types {
-                self.ensure_base_type_symbol(&node, base);
+                self.core.upsert_symbol_from_type_expr(node.hir_id(), base);
             }
             let target_kinds = [SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait];
             let scope_symbol = self
