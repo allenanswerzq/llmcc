@@ -4,6 +4,7 @@ pub mod block_rel;
 pub mod context;
 pub mod file;
 pub mod graph_builder;
+pub(crate) mod graph_render;
 pub mod interner;
 pub mod ir;
 pub mod ir_builder;

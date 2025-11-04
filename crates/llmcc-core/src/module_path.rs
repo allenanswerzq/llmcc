@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::Path;
 
 const MAX_PYTHON_MODULE_DEPTH: usize = 2;
@@ -11,23 +12,49 @@ pub fn module_group_from_location(location: &str) -> String {
     module_group_from_path(Path::new(path))
 }
 
-/// Determine module groups for a collection of source locations.
-pub fn module_groups_from_locations<I, S>(locations: I) -> Vec<String>
+/// Determine a representative module group for a collection of source locations.
+///
+/// The result is the most frequently occurring module group across the provided locations.
+/// Ties fall back to lexicographical order to keep the outcome stable.
+pub fn module_group_from_locations<I, S>(locations: I) -> String
 where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
 {
-    locations
-        .into_iter()
-        .map(|location| module_group_from_location(location.as_ref()))
-        .collect()
+    let mut counts: HashMap<String, usize> = HashMap::new();
+
+    for location in locations {
+        let group = module_group_from_location(location.as_ref());
+        *counts.entry(group).or_default() += 1;
+    }
+
+    if counts.is_empty() {
+        return "unknown".to_string();
+    }
+
+    let mut best: Option<(String, usize)> = None;
+
+    for (group, count) in counts {
+        match &mut best {
+            None => best = Some((group, count)),
+            Some((best_group, best_count)) => {
+                if count > *best_count || (count == *best_count && group < *best_group) {
+                    *best_group = group;
+                    *best_count = count;
+                }
+            }
+        }
+    }
+
+    best.map(|(group, _)| group)
+        .unwrap_or_else(|| "unknown".to_string())
 }
 
 /// Determine a logical module or crate grouping for the provided filesystem path.
 ///
 /// Currently supports Rust and Python sources. For other extensions we fall back to the
 /// Rust-style crate inference which inspects the directory layout.
-fn module_group_from_path(path: &Path) -> String {
+pub(crate) fn module_group_from_path(path: &Path) -> String {
     match path.extension().and_then(|ext| ext.to_str()) {
         Some(ext) if is_python_extension(ext) => python_module_from_path(path),
         _ => rust_crate_from_path(path),
@@ -162,7 +189,7 @@ mod tests {
     }
 
     #[test]
-    fn multiple_locations_collect_groups() {
+    fn multiple_locations_choose_majority_group() {
         let base = tempdir().expect("create base temp dir");
 
         let rust_file = base.path().join("foo").join("src").join("lib.rs");
@@ -179,8 +206,18 @@ mod tests {
             .to_string_lossy()
             .into_owned();
 
-        let groups =
-            module_groups_from_locations([rust_location.as_str(), python_location.as_str()]);
-        assert_eq!(groups, vec!["foo".to_string(), "bar".to_string()]);
+        let group = module_group_from_locations([
+            rust_location.as_str(),
+            python_location.as_str(),
+            rust_location.as_str(),
+        ]);
+        assert_eq!(group, "foo");
+    }
+
+    #[test]
+    fn tied_groups_choose_lexicographically_smallest() {
+        let group =
+            module_group_from_locations(["/workspace/foo/src/lib.rs", "/workspace/bar/src/lib.rs"]);
+        assert_eq!(group, "bar");
     }
 }

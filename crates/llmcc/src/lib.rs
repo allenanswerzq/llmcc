@@ -338,7 +338,7 @@ fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>)
             pg.set_compact_rank_limit(limit);
 
             let pagerank_start = Instant::now();
-            let result = pg.render_compact_graph();
+            let result = pg.render_design_graph();
             info!(
                 "PageRank & graph rendering: {:.2}s",
                 pagerank_start.elapsed().as_secs_f64()
@@ -346,7 +346,7 @@ fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>)
             Some(result)
         } else {
             let render_start = Instant::now();
-            let result = pg.render_compact_graph();
+            let result = pg.render_design_graph();
             info!(
                 "Graph rendering: {:.2}s",
                 render_start.elapsed().as_secs_f64()
