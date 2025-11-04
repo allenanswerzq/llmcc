@@ -48,7 +48,6 @@ struct DeclCollector<'tcx> {
     enum_map: HashMap<HirId, usize>,
 }
 
-#[allow(clippy::needless_lifetimes)]
 impl<'tcx> DeclCollector<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {

@@ -3,7 +3,6 @@ use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
 use crate::symbol::Scope;
 
-#[allow(clippy::needless_lifetimes)]
 pub trait LanguageTrait {
     type SymbolBatch: Send;
     type SymbolCollection;
@@ -47,7 +46,7 @@ macro_rules! define_tokens {
         use llmcc_core::lang_def::LanguageTrait;
         use llmcc_core::context::CompileUnit;
         use llmcc_core::ir::HirNode;
-        use llmcc_core::symbol::Scope;
+        use llmcc_core::symbol::{Scope, Symbol};
 
         use crate::collect;
         use crate::bind;
@@ -143,7 +142,6 @@ macro_rules! define_tokens {
                     Self::field_type
                 }
 
-                #[allow(clippy::needless_lifetimes)]
                 fn collect_symbols<'tcx>(
                     unit: CompileUnit<'tcx>,
                     globals: &'tcx Scope<'tcx>,
@@ -151,7 +149,6 @@ macro_rules! define_tokens {
                     collect::collect_symbols(unit, globals)
                 }
 
-                #[allow(clippy::needless_lifetimes)]
                 fn bind_symbols<'tcx>(
                     unit: CompileUnit<'tcx>,
                     globals: &'tcx Scope<'tcx>,
@@ -160,12 +157,10 @@ macro_rules! define_tokens {
                     let _ = bind::bind_symbols(unit, globals, collection);
                 }
 
-                #[allow(clippy::needless_lifetimes)]
                 fn collect_symbol_batch<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolBatch {
                     collect::collect_symbols_batch(unit)
                 }
 
-                #[allow(clippy::needless_lifetimes)]
                 fn apply_symbol_batch<'tcx>(
                     unit: CompileUnit<'tcx>,
                     globals: &'tcx Scope<'tcx>,
@@ -209,7 +204,7 @@ macro_rules! define_tokens {
                             self.visit_children(&node)
                         }
                     }
-                )*
+               )*
             }
         }
     };

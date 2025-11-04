@@ -2,7 +2,6 @@ use std::collections::{BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
@@ -64,6 +63,24 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
         self.core.current_symbol()
+    }
+
+    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
+        let depth = self.scopes().depth();
+        if let Some(symbol) = symbol {
+            if let Some(parent) = self.current_symbol() {
+                parent.add_dependency(symbol);
+            }
+        }
+
+        let scope = self.unit().opt_get_scope(node.hir_id());
+        if let Some(scope) = scope {
+            self.scopes_mut().push_with_symbol(scope, symbol);
+            self.visit_children(node);
+            self.scopes_mut().pop_until(depth);
+        } else {
+            self.visit_children(node);
+        }
     }
 
     fn module_segments_from_path(path: &Path) -> Vec<String> {
@@ -149,54 +166,13 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         Some(symbol)
     }
 
-    #[allow(dead_code)]
-    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
-        let depth = self.scopes().depth();
-        if let Some(symbol) = symbol {
-            if let Some(parent) = self.current_symbol() {
-                parent.add_dependency(symbol);
-            }
-        }
-
-        let scope = self.unit().opt_get_scope(node.hir_id());
-        if let Some(scope) = scope {
-            self.scopes_mut().push_with_symbol(scope, symbol);
-            self.visit_children(node);
-            self.scopes_mut().pop_until(depth);
-        } else {
-            self.visit_children(node);
-        }
-    }
-
-    fn lookup_symbol_suffix(
-        &mut self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-    ) -> Option<&'tcx Symbol> {
-        let file_index = self.unit().index;
-        self.scopes()
-            .find_scoped_suffix_with_filters(suffix, kind, Some(file_index))
-            .or_else(|| {
-                self.scopes()
-                    .find_scoped_suffix_with_filters(suffix, kind, None)
-            })
-            .or_else(|| {
-                self.scopes()
-                    .find_global_suffix_with_filters(suffix, kind, Some(file_index))
-            })
-            .or_else(|| {
-                self.scopes()
-                    .find_global_suffix_with_filters(suffix, kind, None)
-            })
-    }
-
     fn add_symbol_relation(&mut self, symbol: Option<&'tcx Symbol>) {
+        self.core.add_symbol_dependency(symbol);
+
         let Some(target) = symbol else { return };
         let Some(current) = self.current_symbol() else {
             return;
         };
-
-        current.add_dependency(target);
 
         match current.kind() {
             SymbolKind::Function => {
@@ -225,14 +201,11 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return;
         }
 
-        let interner = self.interner();
-        let suffix: Vec<_> = segments.iter().rev().map(|s| interner.intern(s)).collect();
-
-        let target = self
-            .lookup_symbol_suffix(&suffix, Some(SymbolKind::Struct))
-            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Enum)))
-            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Module)))
-            .or_else(|| self.lookup_symbol_suffix(&suffix, None));
+        let target = self.core.lookup_segments_with_priority(
+            segments,
+            &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Module],
+            None,
+        );
 
         self.add_symbol_relation(target);
     }
@@ -246,7 +219,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         if base.is_empty() {
             return;
         }
-
         let segments: Vec<String> = base
             .split('.')
             .filter(|segment| !segment.is_empty())
@@ -405,24 +377,13 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return;
         }
 
-        let interner = self.interner();
-        let suffix: Vec<_> = segments.iter().rev().map(|s| interner.intern(s)).collect();
-
-        let target = self
-            .lookup_symbol_suffix(&suffix, Some(SymbolKind::Struct))
-            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Enum)))
-            .or_else(|| self.lookup_symbol_suffix(&suffix, Some(SymbolKind::Module)))
-            .or_else(|| self.lookup_symbol_suffix(&suffix, None));
+        let target = self.core.lookup_segments_with_priority(
+            &segments,
+            &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Module],
+            None,
+        );
 
         self.add_symbol_relation(target);
-    }
-
-    fn visit_children(&mut self, node: &HirNode<'tcx>) {
-        // Use HIR children instead of tree-sitter children
-        for child_id in node.children() {
-            let child = self.unit().hir_node(*child_id);
-            self.visit_node(child);
-        }
     }
 
     fn process_call_descriptor(&mut self, descriptor: &llmcc_descriptor::CallDescriptor) {
@@ -451,23 +412,19 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return false;
         }
 
-        let keys: Vec<InternedStr> = segments
-            .iter()
-            .map(|segment| self.interner().intern(segment))
-            .collect();
-
-        if let Some(target) = self.lookup_symbol_suffix(&keys, Some(SymbolKind::Function)) {
+        if let Some(target) = self.core.lookup_segments_with_priority(
+            segments,
+            &[SymbolKind::Function, SymbolKind::Struct],
+            None,
+        ) {
             self.add_symbol_relation(Some(target));
-            self.record_call_binding(target);
+            if target.kind() == SymbolKind::Function {
+                self.record_call_binding(target);
+            }
             return true;
         }
 
-        if let Some(target) = self.lookup_symbol_suffix(&keys, Some(SymbolKind::Struct)) {
-            self.add_symbol_relation(Some(target));
-            return true;
-        }
-
-        if let Some(target) = self.lookup_symbol_suffix(&keys, None) {
+        if let Some(target) = self.core.lookup_segments(segments, None, None) {
             self.add_symbol_relation(Some(target));
             if target.kind() == SymbolKind::Function {
                 self.record_call_binding(target);
@@ -505,8 +462,9 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 let method_fqn = format!("{}::{}", class_fqn, segment.name);
                 let key = self.interner().intern(&method_fqn);
                 return self
-                    .lookup_symbol_suffix(&[key], Some(SymbolKind::Function))
-                    .or_else(|| self.lookup_symbol_suffix(&[key], None));
+                    .core
+                    .lookup_symbol_suffix(&[key], Some(SymbolKind::Function), None)
+                    .or_else(|| self.core.lookup_symbol_suffix(&[key], None, None));
             }
         }
 
@@ -523,7 +481,8 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                     if let Some(ident) = base_node.as_ident() {
                         let key = self.interner().intern(&ident.name);
                         if let Some(base_symbol) =
-                            self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct))
+                            self.core
+                                .lookup_symbol_suffix(&[key], Some(SymbolKind::Struct), None)
                         {
                             class_symbol.add_dependency(base_symbol);
                         }
@@ -534,9 +493,11 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                             let content = self.unit().file().content();
                             if let Ok(name) = attr_node.utf8_text(content) {
                                 let key = self.interner().intern(name);
-                                if let Some(base_symbol) =
-                                    self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct))
-                                {
+                                if let Some(base_symbol) = self.core.lookup_symbol_suffix(
+                                    &[key],
+                                    Some(SymbolKind::Struct),
+                                    None,
+                                ) {
                                     class_symbol.add_dependency(base_symbol);
                                 }
                             }
@@ -624,7 +585,9 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
         };
 
         let key = self.interner().intern(&ident.name);
-        let mut symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Function));
+        let mut symbol = self
+            .core
+            .lookup_symbol_suffix(&[key], Some(SymbolKind::Function), None);
 
         // Get the parent symbol before pushing a new scope
         let parent_symbol = self.current_symbol();
@@ -699,7 +662,9 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
         };
 
         let key = self.interner().intern(&ident.name);
-        let mut symbol = self.lookup_symbol_suffix(&[key], Some(SymbolKind::Struct));
+        let mut symbol = self
+            .core
+            .lookup_symbol_suffix(&[key], Some(SymbolKind::Struct), None);
 
         if let Some(scope) = self.unit().opt_get_scope(node.hir_id()) {
             // If symbol not found by lookup, get it from the scope
