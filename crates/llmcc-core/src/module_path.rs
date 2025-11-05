@@ -8,7 +8,7 @@ const MAX_PYTHON_MODULE_DEPTH: usize = 2;
 /// The input may include line suffixes (e.g. `path/to/file.rs:42`) and this helper
 /// will strip them before delegating to the path-based variant.
 pub fn module_group_from_location(location: &str) -> String {
-    let path = location.split(':').next().unwrap_or(location);
+    let path = strip_line_suffix(location);
     module_group_from_path(Path::new(path))
 }
 
@@ -153,6 +153,22 @@ fn fallback_name(path: &Path) -> String {
         .unwrap_or_else(|| "unknown".to_string())
 }
 
+fn strip_line_suffix(location: &str) -> &str {
+    let mut end = location.len();
+
+    while let Some(idx) = location[..end].rfind(':') {
+        let suffix = &location[idx + 1..end];
+
+        if suffix.chars().all(|ch| ch.is_ascii_digit()) && !suffix.is_empty() {
+            end = idx;
+        } else {
+            break;
+        }
+    }
+
+    &location[..end]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -219,5 +235,26 @@ mod tests {
         let group =
             module_group_from_locations(["/workspace/foo/src/lib.rs", "/workspace/bar/src/lib.rs"]);
         assert_eq!(group, "bar");
+    }
+
+    #[test]
+    fn strip_line_suffix_preserves_windows_drive() {
+        let location = r"C:\workspace\foo\src\lib.rs";
+        assert_eq!(strip_line_suffix(location), location);
+
+        let with_line = format!("{}:128", location);
+        assert_eq!(strip_line_suffix(&with_line), location);
+
+        let with_line_col = format!("{}:128:7", location);
+        assert_eq!(strip_line_suffix(&with_line_col), location);
+    }
+
+    #[test]
+    fn strip_line_suffix_handles_unix_paths() {
+        let location = "/workspace/foo/src/lib.rs";
+        assert_eq!(strip_line_suffix(location), location);
+
+        let with_line = format!("{}:42", location);
+        assert_eq!(strip_line_suffix(&with_line), location);
     }
 }
