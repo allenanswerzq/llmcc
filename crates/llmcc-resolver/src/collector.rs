@@ -13,18 +13,27 @@ use llmcc_descriptor::{
 
 #[derive(Debug, Clone)]
 pub struct SymbolSpec {
+    /// HIR node that declared the symbol.
     pub owner: HirId,
+    /// Unqualified symbol name as it appears in source.
     pub name: String,
+    /// Fully-qualified path for the symbol.
     pub fqn: String,
+    /// Kind of symbol (function, struct, trait, etc.).
     pub kind: SymbolKind,
+    /// Index of the compile unit that produced this symbol.
     pub unit_index: usize,
+    /// Whether the symbol should be visible from the global scope.
     pub is_global: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct ScopeSpec {
+    /// Owning HIR node for the scope; None represents the root scope.
     pub owner: Option<HirId>,
+    /// Index of the symbol associated with this scope, if any.
     pub symbol_index: Option<usize>,
+    /// Symbols captured directly within this scope.
     pub symbols: Vec<usize>,
 }
 
@@ -210,18 +219,27 @@ impl DerefMut for CollectedSymbols {
 
 #[derive(Debug)]
 struct ScopeInfo {
+    /// HIR owner for this scope.
     owner: Option<HirId>,
+    /// Index into `symbols` for the scope's representative symbol.
     symbol_index: Option<usize>,
+    /// Indices of symbols declared inside this scope.
     symbols: Vec<usize>,
+    /// Map of local identifiers to their symbol indices in this scope.
     locals: HashMap<String, usize>,
 }
 
 #[derive(Debug)]
 pub struct CollectorCore<'tcx> {
+    /// Source compile unit currently being processed.
     unit: CompileUnit<'tcx>,
+    /// Scope bookkeeping indexed by scope identifier.
     scope_infos: Vec<ScopeInfo>,
+    /// Lookup table from HIR owner to scope index.
     scope_lookup: HashMap<HirId, usize>,
+    /// Stack of active scope indices while traversing the tree.
     scope_stack: Vec<usize>,
+    /// All symbols discovered so far, in creation order.
     symbols: Vec<SymbolSpec>,
 }
 
