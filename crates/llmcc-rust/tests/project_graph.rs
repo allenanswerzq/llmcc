@@ -3,6 +3,7 @@ use llmcc_core::graph_builder::{build_llmcc_graph, BlockRelation, GraphBuildConf
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
 use llmcc_core::LanguageTrait;
 use llmcc_core::ProjectQuery;
+use llmcc_resolver::apply_collected_symbols;
 use llmcc_rust::LangRust;
 
 #[test]
@@ -25,6 +26,7 @@ fn compact_project_graph_includes_enum_dependencies() {
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
         let collection = LangRust::collect_symbols(unit, globals);
+        apply_collected_symbols(unit, globals, &collection);
         collections.push(collection);
     }
 
@@ -105,6 +107,7 @@ fn recursive_dependents_query_includes_transitive_callers() {
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
         let collection = LangRust::collect_symbols(unit, globals);
+        apply_collected_symbols(unit, globals, &collection);
         collections.push(collection);
     }
 

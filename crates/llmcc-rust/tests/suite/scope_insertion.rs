@@ -6,6 +6,7 @@ use llmcc_core::{
     IrBuildConfig,
 };
 use llmcc_descriptor::DescriptorId;
+use llmcc_resolver::apply_collected_symbols;
 use llmcc_rust::{build_llmcc_ir, collect_symbols, CollectionResult, CompileCtxt, LangRust};
 
 struct Fixture<'tcx> {
@@ -23,6 +24,7 @@ fn build_fixture(source: &str) -> Fixture<'static> {
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
+    apply_collected_symbols(unit, globals, &collection);
     let result = collection.result;
     Fixture {
         cc,

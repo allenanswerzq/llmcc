@@ -1,6 +1,7 @@
 use llmcc_core::{context::CompileCtxt, symbol::Symbol, IrBuildConfig};
 use llmcc_descriptor::{ClassDescriptor, FunctionDescriptor};
 use llmcc_python::{bind_symbols, build_llmcc_ir, collect_symbols, CollectionResult, LangPython};
+use llmcc_resolver::apply_collected_symbols;
 
 fn compile(
     source: &str,
@@ -17,6 +18,7 @@ fn compile(
     result.ok();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
+    apply_collected_symbols(unit, globals, &collection);
     bind_symbols(unit, globals, &collection);
     let collection = collection.result;
     (cc, unit, collection, globals)

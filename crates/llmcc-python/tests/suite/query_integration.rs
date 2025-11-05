@@ -3,6 +3,7 @@ use llmcc_core::{
     query::ProjectQuery, CompileCtxt, GraphBuildConfig, IrBuildConfig,
 };
 use llmcc_python::{bind_symbols, collect_symbols, LangPython};
+use llmcc_resolver::apply_collected_symbols;
 
 /// Helper to build a project graph from multiple Python source files
 fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
@@ -22,7 +23,9 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
         build_llmcc_ir::<LangPython>(cc, IrBuildConfig).unwrap();
-        collections.push(collect_symbols(unit, globals));
+        let collection = collect_symbols(unit, globals);
+        apply_collected_symbols(unit, globals, &collection);
+        collections.push(collection);
     }
 
     for (unit_idx, collection) in collections.iter().enumerate().take(unit_count) {

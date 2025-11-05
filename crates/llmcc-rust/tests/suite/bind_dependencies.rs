@@ -1,5 +1,6 @@
 use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
 use llmcc_descriptor::{DescriptorId, EnumDescriptor, FunctionDescriptor, StructDescriptor};
+use llmcc_resolver::apply_collected_symbols;
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -15,6 +16,7 @@ fn compile(
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
     let collection = collect_symbols(unit, globals);
+    apply_collected_symbols(unit, globals, &collection);
     bind_symbols(unit, globals, &collection);
     let collection = collection.result;
     (cc, unit, collection)
@@ -1691,10 +1693,11 @@ impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings 
 
     // Collect symbols
     let globals = cc.create_globals();
-    let _collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit, globals);
+    apply_collected_symbols(unit, globals, &collection);
 
     // Bind symbols
-    bind_symbols(unit, globals, &_collection);
+    bind_symbols(unit, globals, &collection);
 
     // Verify the impl block was processed without panicking
     let all_symbols = globals.all_symbols();
