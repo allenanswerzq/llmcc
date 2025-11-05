@@ -18,10 +18,7 @@ pub trait LanguageTrait {
     /// Return the list of supported file extensions for this language (e.g., ["rs"] for Rust)
     fn supported_extensions() -> &'static [&'static str];
 
-    fn collect_symbols<'tcx>(
-        unit: CompileUnit<'tcx>,
-        globals: &'tcx Scope<'tcx>,
-    ) -> Self::SymbolCollection;
+    fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>) -> Self::SymbolCollection;
 
     fn bind_symbols<'tcx>(
         unit: CompileUnit<'tcx>,
@@ -137,9 +134,8 @@ macro_rules! define_tokens {
 
                 fn collect_symbols<'tcx>(
                     unit: CompileUnit<'tcx>,
-                    globals: &'tcx Scope<'tcx>,
                 ) -> Self::SymbolCollection {
-                    collect::collect_symbols(unit, globals)
+                    collect::collect_symbols(unit)
                 }
 
                 fn bind_symbols<'tcx>(

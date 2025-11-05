@@ -17,7 +17,7 @@ fn compile(
     let result = build_llmcc_ir::<LangPython>(cc, IrBuildConfig);
     result.ok();
     let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
     apply_collected_symbols(unit, globals, &collection);
     bind_symbols(unit, globals, &collection);
     let collection = collection.result;

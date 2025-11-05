@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
-use llmcc_core::symbol::{Scope, SymbolKind};
+use llmcc_core::symbol::SymbolKind;
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
     collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult, CollectorCore,
@@ -291,10 +291,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 }
 
-pub fn collect_symbols<'tcx>(
-    unit: CompileUnit<'tcx>,
-    _globals: &'tcx Scope<'tcx>,
-) -> CollectedSymbols {
+pub fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>) -> CollectedSymbols {
     let (collected, total_time, visit_time) = collect_symbols_batch(
         unit,
         DeclCollector::new,

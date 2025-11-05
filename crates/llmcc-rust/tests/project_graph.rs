@@ -25,7 +25,7 @@ fn compact_project_graph_includes_enum_dependencies() {
     let mut collections = Vec::with_capacity(cc.files.len());
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
-        let collection = LangRust::collect_symbols(unit, globals);
+        let collection = LangRust::collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collection);
         collections.push(collection);
     }
@@ -106,7 +106,7 @@ fn recursive_dependents_query_includes_transitive_callers() {
     let mut collections = Vec::with_capacity(cc.files.len());
     for index in 0..cc.files.len() {
         let unit = cc.compile_unit(index);
-        let collection = LangRust::collect_symbols(unit, globals);
+        let collection = LangRust::collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collection);
         collections.push(collection);
     }

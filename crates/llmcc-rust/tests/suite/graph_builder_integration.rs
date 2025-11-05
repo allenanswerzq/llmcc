@@ -23,7 +23,7 @@ fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> Projec
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
-        let collection = collect_symbols(unit, globals);
+        let collection = collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collection);
         collections.push(collection);
     }

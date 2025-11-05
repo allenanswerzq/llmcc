@@ -15,7 +15,7 @@ fn compile(
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
     apply_collected_symbols(unit, globals, &collection);
     bind_symbols(unit, globals, &collection);
     let collection = collection.result;
@@ -1693,7 +1693,7 @@ impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings 
 
     // Collect symbols
     let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
     apply_collected_symbols(unit, globals, &collection);
 
     // Bind symbols

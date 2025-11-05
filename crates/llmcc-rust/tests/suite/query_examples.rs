@@ -21,7 +21,7 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
-        let collection = collect_symbols(unit, globals);
+        let collection = collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collection);
         collections.push(collection);
     }

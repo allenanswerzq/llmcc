@@ -276,7 +276,7 @@ where
         .into_par_iter()
         .map(|index| {
             let unit = cc.compile_unit(index);
-            (index, L::collect_symbols(unit, globals))
+            (index, L::collect_symbols(unit))
         })
         .collect();
 

@@ -10,8 +10,7 @@ fn collect_from_source(source: &str) -> CollectionResult {
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
-    let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
     collection.result
 }
 

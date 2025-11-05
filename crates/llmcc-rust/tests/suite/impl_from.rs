@@ -21,9 +21,7 @@ mod codex_app_server_protocol {
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).expect("build failed");
-
-    let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
 
     // Find the struct SandboxWorkspaceWrite
     assert!(
@@ -64,9 +62,7 @@ impl outer::Widget {
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).expect("build failed");
-
-    let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
 
     let impl_fqns: Vec<String> = collection
         .impls
@@ -129,9 +125,7 @@ impl crate::Foo {
     let cc = Box::leak(Box::new(CompileCtxt::from_sources::<LangRust>(&sources)));
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).expect("build failed");
-
-    let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
 
     let mut target_counts = std::collections::HashMap::new();
     for desc in &collection.impls {
