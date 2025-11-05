@@ -9,12 +9,11 @@ fn collect_functions(source: &str) -> HashMap<String, FunctionDescriptor> {
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
-
-    let globals = cc.create_globals();
     let prefix = format!("unit{}::", unit.index);
 
     let mut map = HashMap::new();
-    for desc in collect_symbols(unit, globals).functions {
+    let collection = collect_symbols(unit).result;
+    for desc in collection.functions.into_iter() {
         if let Some(ref fqn) = desc.fqn {
             map.insert(fqn.clone(), desc.clone());
             if let Some(stripped) = fqn.strip_prefix(&prefix) {

@@ -12,9 +12,9 @@ use llmcc_descriptor::{
     VariableDescriptor,
 };
 
-pub struct PythonDescriptorBuilder;
+pub struct PythonDescriptor;
 
-impl<'tcx> DescriptorTrait<'tcx> for PythonDescriptorBuilder {
+impl<'tcx> DescriptorTrait<'tcx> for PythonDescriptor {
     fn build_function(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<FunctionDescriptor> {
         function::build(unit, node)
     }

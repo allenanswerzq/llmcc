@@ -7,9 +7,8 @@ fn collect_enums(source: &str) -> EnumCollection {
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
-
-    let globals = cc.create_globals();
-    collect_symbols(unit, globals).enums
+    let collection = collect_symbols(unit).result;
+    collection.enums
 }
 
 #[test]

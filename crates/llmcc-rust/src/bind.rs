@@ -2,7 +2,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_descriptor::DescriptorTrait;
-use llmcc_resolver::{BinderCore, CollectionResult};
+use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
 
 use crate::describe::RustDescriptor;
 use crate::token::{AstVisitorRust, LangRust};
@@ -11,7 +11,7 @@ use crate::token::{AstVisitorRust, LangRust};
 /// stages (or LLM consumers) can reason about dependency relationships.
 #[derive(Debug)]
 struct SymbolBinder<'tcx, 'a> {
-    core: BinderCore<'tcx, 'a, CollectionResult>,
+    core: BinderCore<'tcx, 'a>,
 }
 
 impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
@@ -388,10 +388,10 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 pub fn bind_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     globals: &'tcx Scope<'tcx>,
-    collection: &CollectionResult,
+    collection: &CollectedSymbols,
 ) {
     let root = unit.file_start_hir_id().unwrap();
     let node = unit.hir_node(root);
-    let mut binder = SymbolBinder::new(unit, globals, collection);
+    let mut binder = SymbolBinder::new(unit, globals, &collection.result);
     binder.visit_node(node);
 }

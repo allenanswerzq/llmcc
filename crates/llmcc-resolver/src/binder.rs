@@ -7,15 +7,21 @@ use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_core::Node;
 use llmcc_descriptor::{CallKind, CallTarget, TypeExpr};
 
+use crate::collector::CollectionResult;
+
 #[derive(Debug)]
-pub struct BinderCore<'tcx, 'a, C> {
+pub struct BinderCore<'tcx, 'a> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
-    collection: &'a C,
+    collection: &'a CollectionResult,
 }
 
-impl<'tcx, 'a, C> BinderCore<'tcx, 'a, C> {
-    pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>, collection: &'a C) -> Self {
+impl<'tcx, 'a> BinderCore<'tcx, 'a> {
+    pub fn new(
+        unit: CompileUnit<'tcx>,
+        globals: &'tcx Scope<'tcx>,
+        collection: &'a CollectionResult,
+    ) -> Self {
         let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner, &unit.cc.symbol_map);
         scopes.push(globals);
 
@@ -37,7 +43,7 @@ impl<'tcx, 'a, C> BinderCore<'tcx, 'a, C> {
     }
 
     #[inline]
-    pub fn collection(&self) -> &'a C {
+    pub fn collection(&self) -> &'a CollectionResult {
         self.collection
     }
 

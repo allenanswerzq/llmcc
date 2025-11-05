@@ -1,14 +1,14 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
-use llmcc_core::symbol::{Scope, SymbolKind};
+use llmcc_core::symbol::SymbolKind;
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
-    apply_symbol_batch, collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult,
-    CollectorCore, EnumCollection, FunctionCollection, ImplCollection, StructCollection,
-    SymbolSpec, VariableCollection,
+    collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult, CollectorCore,
+    EnumCollection, FunctionCollection, ImplCollection, StructCollection, SymbolSpec,
+    VariableCollection,
 };
 
-use crate::describe::{RustDescriptor, TypeExpr, Visibility};
+use crate::describe::{RustDescriptor, Visibility};
 use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
@@ -52,40 +52,6 @@ impl<'tcx> DeclCollector<'tcx> {
             Visibility::Public => true,
             Visibility::Restricted { scope } => scope == "crate",
             _ => false,
-        }
-    }
-
-    fn ensure_base_type_symbol(&mut self, node: &HirNode<'tcx>, base: &TypeExpr) {
-        match base {
-            TypeExpr::Path { segments, .. } => {
-                let segments: Vec<String> = segments
-                    .iter()
-                    .filter(|segment| !segment.is_empty())
-                    .cloned()
-                    .collect();
-                if segments.is_empty() {
-                    return;
-                }
-
-                let name = segments.last().cloned().unwrap();
-                let fqn = segments.join("::");
-                let _ = self.core.upsert_symbol_with_fqn(
-                    node.hir_id(),
-                    &name,
-                    SymbolKind::Trait,
-                    true,
-                    &fqn,
-                );
-            }
-            TypeExpr::Reference { inner, .. } => {
-                self.ensure_base_type_symbol(node, inner);
-            }
-            TypeExpr::Tuple(items) => {
-                for item in items {
-                    self.ensure_base_type_symbol(node, item);
-                }
-            }
-            _ => {}
         }
     }
 
@@ -212,7 +178,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             );
             desc.fqn = Some(fqn.clone());
             for base in &desc.base_types {
-                self.ensure_base_type_symbol(&node, base);
+                self.core.upsert_symbol_from_type_expr(node.hir_id(), base);
             }
             let target_kinds = [SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait];
             let scope_symbol = self
@@ -325,20 +291,16 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 }
 
-pub fn collect_symbols<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-) -> CollectionResult {
-    let batch = collect_symbols_batch(
+pub fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>) -> CollectedSymbols {
+    let (collected, total_time, visit_time) = collect_symbols_batch(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),
         DeclCollector::finish,
     );
 
-    let (result, total_time, visit_time) = apply_symbol_batch(unit, globals, batch);
-
     if total_time.as_millis() > 10 {
+        let result = &collected.result;
         tracing::trace!(
             "[COLLECT][rust] File {:?}: total={:.2}ms, visit={:.2}ms, fns={}, structs={}, impls={}, vars={}, enums={}, calls={}",
             unit.file_path().unwrap_or("unknown"),
@@ -353,5 +315,5 @@ pub fn collect_symbols<'tcx>(
         );
     }
 
-    result
+    collected
 }

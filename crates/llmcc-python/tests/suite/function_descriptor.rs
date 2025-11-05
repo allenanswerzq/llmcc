@@ -7,8 +7,8 @@ fn collect_functions(source: &str) -> FunctionCollection {
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
-    let globals = cc.create_globals();
-    collect_symbols(unit, globals).functions
+    let collection = collect_symbols(unit).result;
+    collection.functions
 }
 
 fn type_repr(expr: &TypeExpr) -> String {

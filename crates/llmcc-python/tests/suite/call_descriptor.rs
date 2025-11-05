@@ -8,8 +8,8 @@ fn collect_calls(source: &str) -> CallCollection {
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).ok();
 
-    let globals = cc.create_globals();
-    collect_symbols(unit, globals).calls
+    let collection = collect_symbols(unit).result;
+    collection.calls
 }
 
 fn call_key(call: &CallDescriptor) -> String {

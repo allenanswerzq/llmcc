@@ -5,28 +5,66 @@ use crate::meta::LanguageKey;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeExpr {
     /// A simple or qualified identifier with optional generic arguments.
+    ///
+    /// ```text
+    /// # Rust
+    /// Vec<String>
+    /// # Python (normalized)
+    /// typing.List[int]
+    /// ```
+    /// becomes `TypeExpr::Path { segments: ["Vec"], generics: [TypeExpr::Path { segments: ["String"], .. }] }`.
     Path {
         segments: Vec<String>,
         generics: Vec<TypeExpr>,
     },
     /// Reference-style types (e.g. pointers, borrowed references).
+    ///
+    /// ```text
+    /// &mut T
+    /// ```
+    /// becomes `TypeExpr::Reference { is_mut: true, lifetime: None, inner: Box::new(TypeExpr::Path { segments: ["T"], .. }) }`.
     Reference {
         is_mut: bool,
         lifetime: Option<String>,
         inner: Box<TypeExpr>,
     },
     /// Tuple or record types expressed positionally.
+    ///
+    /// ```text
+    /// (usize, String)
+    /// ```
+    /// becomes `TypeExpr::Tuple([TypeExpr::Path { segments: ["usize"], .. }, TypeExpr::Path { segments: ["String"], .. }])`.
     Tuple(Vec<TypeExpr>),
     /// Callable or function types.
+    ///
+    /// ```text
+    /// (i32, i32) -> i32
+    /// ```
+    /// becomes `TypeExpr::Callable { parameters: [TypeExpr::Path { segments: ["i32"], .. }, TypeExpr::Path { segments: ["i32"], .. }], result: Some(Box::new(TypeExpr::Path { segments: ["i32"], .. })) }`.
     Callable {
         parameters: Vec<TypeExpr>,
         result: Option<Box<TypeExpr>>,
     },
     /// `impl Trait` style opaque bounds.
+    ///
+    /// ```text
+    /// impl Display + Debug
+    /// ```
+    /// becomes `TypeExpr::ImplTrait { bounds: "Display + Debug".into() }`.
     ImplTrait { bounds: String },
     /// Type information provided verbatim for languages without structured parsing support.
+    ///
+    /// ```text
+    /// language = python, repr = "Callable[[int], str]"
+    /// ```
+    /// becomes `TypeExpr::Opaque { language, repr }`.
     Opaque { language: LanguageKey, repr: String },
     /// Fallback bucket for anything not yet modelled.
+    ///
+    /// ```text
+    /// "unknown raw type"
+    /// ```
+    /// becomes `TypeExpr::Unknown("unknown raw type".into())`.
     Unknown(String),
 }
 
