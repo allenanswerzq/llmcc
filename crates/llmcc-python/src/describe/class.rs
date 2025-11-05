@@ -4,7 +4,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
-use llmcc_descriptor::{ClassDescriptor, ClassField, TypeExpr, LANGUAGE_PYTHON};
+use llmcc_descriptor::{ClassDescriptor, ClassField, StructKind, TypeExpr, LANGUAGE_PYTHON};
 
 use crate::token::LangPython;
 
@@ -21,6 +21,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Clas
 
     let origin = build_origin(unit, node, ts_node);
     let mut descriptor = ClassDescriptor::new(origin, ident.name.clone());
+    descriptor.kind = StructKind::Class;
 
     descriptor.decorators = collect_decorators(unit, ts_node);
     descriptor.base_types = collect_base_types(unit, node);
@@ -198,14 +199,16 @@ fn extract_instance_field_from_assignment<'tcx>(
 }
 
 fn upsert_field(fields: &mut BTreeMap<String, ClassField>, field: ClassField) {
-    fields
-        .entry(field.name.clone())
-        .and_modify(|existing| {
-            if existing.type_annotation.is_none() {
-                existing.type_annotation = field.type_annotation.clone();
-            }
-        })
-        .or_insert(field);
+    if let Some(name) = field.name.clone() {
+        fields
+            .entry(name)
+            .and_modify(|existing| {
+                if existing.type_annotation.is_none() {
+                    existing.type_annotation = field.type_annotation.clone();
+                }
+            })
+            .or_insert(field);
+    }
 }
 
 fn parse_annotation_from_assignment_text(text: &str) -> Option<String> {

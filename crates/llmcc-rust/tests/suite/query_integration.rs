@@ -2,6 +2,7 @@ use llmcc_core::{
     build_llmcc_graph, graph_builder::ProjectGraph, ir_builder::build_llmcc_ir,
     query::ProjectQuery, CompileCtxt, GraphBuildConfig, IrBuildConfig,
 };
+use llmcc_resolver::apply_collected_symbols;
 use llmcc_rust::{bind_symbols, collect_symbols, LangRust};
 
 /// Helper to build a project graph from multiple Rust source files
@@ -22,7 +23,9 @@ fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
         build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
-        collections.push(collect_symbols(unit, globals));
+        let collection = collect_symbols(unit);
+        apply_collected_symbols(unit, globals, &collection);
+        collections.push(collection);
     }
 
     for (unit_idx, collection) in collections.iter().enumerate().take(unit_count) {

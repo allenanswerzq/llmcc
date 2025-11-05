@@ -5,6 +5,7 @@ use llmcc_core::{
     graph_builder::{BlockKind, GraphNode, ProjectGraph},
     GraphBuildConfig, IrBuildConfig,
 };
+use llmcc_resolver::apply_collected_symbols;
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> ProjectGraph<'static> {
@@ -22,7 +23,9 @@ fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> Projec
 
     for unit_idx in 0..unit_count {
         let unit = graph.cc.compile_unit(unit_idx);
-        collections.push(collect_symbols(unit, globals));
+        let collection = collect_symbols(unit);
+        apply_collected_symbols(unit, globals, &collection);
+        collections.push(collection);
     }
 
     for (unit_idx, collection) in collections.iter().enumerate().take(unit_count) {

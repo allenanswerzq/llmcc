@@ -10,8 +10,8 @@ fn collect_from_source(source: &str) -> CollectionResult {
     let cc = CompileCtxt::from_sources::<LangPython>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangPython>(&cc, IrBuildConfig).unwrap();
-    let globals = cc.create_globals();
-    collect_symbols(unit, globals)
+    let collection = collect_symbols(unit);
+    collection.result
 }
 
 fn expect_function<'a>(collection: &'a CollectionResult, name: &str) -> &'a FunctionDescriptor {
@@ -209,7 +209,10 @@ class Person:
     let class = expect_class(&result, "Person");
     assert!(!class.fields.is_empty(), "Class should have fields");
     assert!(
-        class.fields.iter().all(|field| !field.name.is_empty()),
+        class
+            .fields
+            .iter()
+            .all(|field| matches!(field.name.as_deref(), Some(name) if !name.is_empty())),
         "Field names should not be empty",
     );
 }

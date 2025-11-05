@@ -3,6 +3,7 @@
 /// and establishes dependency relations between functions and the types used in let statements.
 use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
 use llmcc_descriptor::{DescriptorId, EnumDescriptor, FunctionDescriptor, StructDescriptor};
+use llmcc_resolver::apply_collected_symbols;
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(
@@ -17,8 +18,10 @@ fn compile(
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(cc, IrBuildConfig).unwrap();
     let globals = cc.create_globals();
-    let collection = collect_symbols(unit, globals);
+    let collection = collect_symbols(unit);
+    apply_collected_symbols(unit, globals, &collection);
     bind_symbols(unit, globals, &collection);
+    let collection = collection.result;
     (cc, unit, collection)
 }
 

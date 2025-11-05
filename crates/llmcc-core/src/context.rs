@@ -459,7 +459,11 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
         let files: Vec<File> = sources
             .iter()
-            .map(|src| File::new_source(src.clone()))
+            .enumerate()
+            .map(|(index, src)| {
+                let path = format!("virtual://unit_{index}.rs");
+                File::new_virtual(path, src.clone())
+            })
             .collect();
         let (trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
         metrics.file_read_seconds = 0.0;

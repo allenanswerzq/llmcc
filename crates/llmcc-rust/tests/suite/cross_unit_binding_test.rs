@@ -1,4 +1,5 @@
 use llmcc_core::{symbol::SymbolKind, IrBuildConfig};
+use llmcc_resolver::apply_collected_symbols;
 use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 fn compile(sources: &[&str]) -> (&'static CompileCtxt<'static>, Vec<&'static CompileCtxt<'static>>) {
@@ -21,7 +22,9 @@ fn compile(sources: &[&str]) -> (&'static CompileCtxt<'static>, Vec<&'static Com
     // Collect
     let mut collections = Vec::with_capacity(units.len());
     for unit in &units {
-        collections.push(collect_symbols(*unit, globals));
+        let collection = collect_symbols(*unit, globals);
+        apply_collected_symbols(*unit, globals, &collection);
+        collections.push(collection);
     }
 
     // Bind

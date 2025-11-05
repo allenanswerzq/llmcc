@@ -1,5 +1,5 @@
 use parking_lot::Mutex;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
 use std::mem;
 use std::path::Path;
@@ -12,8 +12,10 @@ use crate::block::{
 };
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
+use crate::graph_render::{CompactNode, GraphRenderer};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
+use crate::module_path::{module_group_from_location, module_group_from_path};
 use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
@@ -88,7 +90,7 @@ pub struct ProjectGraph<'tcx> {
     pub cc: &'tcx CompileCtxt<'tcx>,
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
-    compact_rank_limit: Option<usize>,
+    top_k: Option<usize>,
     pagerank_enabled: bool,
 }
 
@@ -97,7 +99,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         Self {
             cc,
             units: Vec::new(),
-            compact_rank_limit: None,
+            top_k: None,
             pagerank_enabled: false,
         }
     }
@@ -108,11 +110,11 @@ impl<'tcx> ProjectGraph<'tcx> {
 
     /// Configure the number of PageRank-filtered nodes retained when rendering compact graphs.
     pub fn set_compact_rank_limit(&mut self, limit: Option<usize>) {
-        self.compact_rank_limit = match limit {
+        self.top_k = match limit {
             Some(0) => None,
             other => other,
         };
-        self.pagerank_enabled = self.compact_rank_limit.is_some();
+        self.pagerank_enabled = self.top_k.is_some();
     }
 
     pub fn link_units(&mut self) {
@@ -275,8 +277,19 @@ impl<'tcx> ProjectGraph<'tcx> {
             .collect()
     }
 
-    pub fn render_compact_graph(&self) -> String {
-        self.render_compact_graph_inner(self.compact_rank_limit)
+    pub fn render_design_graph(&self) -> String {
+        let top_k = self.top_k;
+        let nodes = self.collect_sorted_compact_nodes(top_k);
+
+        if nodes.is_empty() {
+            return "digraph DesignGraph {\n}\n".to_string();
+        }
+
+        let renderer = GraphRenderer::new(&nodes);
+        let node_index = renderer.build_node_index();
+        let edges = self.collect_compact_edges(renderer.nodes(), &node_index);
+
+        renderer.render(&edges)
     }
 
     fn ranked_block_filter(
@@ -358,8 +371,8 @@ impl<'tcx> ProjectGraph<'tcx> {
 
                 let group = location
                     .as_ref()
-                    .map(|loc| extract_group_path(loc))
-                    .unwrap_or_else(|| extract_group_path(&path));
+                    .map(|loc| module_group_from_location(loc))
+                    .unwrap_or_else(|| module_group_from_path(Path::new(&path)));
 
                 Some(CompactNode {
                     block_id,
@@ -723,24 +736,6 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         result
     }
-
-    fn render_compact_graph_inner(&self, top_k: Option<usize>) -> String {
-        let nodes = self.collect_sorted_compact_nodes(top_k);
-
-        if nodes.is_empty() {
-            return "digraph DesignGraph {\n}\n".to_string();
-        }
-
-        let node_index = build_compact_node_index(&nodes);
-        let edges = self.collect_compact_edges(&nodes, &node_index);
-
-        let pruned = prune_compact_components(&nodes, &edges);
-        if pruned.nodes.is_empty() {
-            return "digraph DesignGraph {\n}\n".to_string();
-        }
-        let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-        render_compact_dot(&pruned.nodes, &reduced_edges)
-    }
 }
 
 #[derive(Debug)]
@@ -1016,377 +1011,7 @@ pub fn build_llmcc_graph<L: LanguageTrait>(
     Ok(UnitGraph::new(unit_index, root_block, edges))
 }
 
-#[derive(Clone)]
-struct CompactNode {
-    block_id: BlockId,
-    unit_index: usize,
-    name: String,
-    location: Option<String>,
-    group: String,
-}
-
 fn compact_byte_to_line(content: &[u8], byte_pos: usize) -> usize {
     let clamped = byte_pos.min(content.len());
     content[..clamped].iter().filter(|&&ch| ch == b'\n').count() + 1
-}
-
-fn escape_dot_label(input: &str) -> String {
-    input
-        .replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', "\\n")
-}
-
-fn escape_dot_attr(input: &str) -> String {
-    input.replace('\\', "\\\\").replace('"', "\\\"")
-}
-
-fn summarize_location(location: &str) -> (String, String) {
-    let (path_part, line_part) = location
-        .rsplit_once(':')
-        .map(|(path, line)| (path, Some(line)))
-        .unwrap_or((location, None));
-
-    let path = Path::new(path_part);
-    let components: Vec<_> = path
-        .components()
-        .filter_map(|comp| comp.as_os_str().to_str())
-        .collect();
-
-    let start = components.len().saturating_sub(3);
-    let mut shortened = components[start..].join("/");
-    if shortened.is_empty() {
-        shortened = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or(path_part)
-            .to_string();
-    }
-
-    let display = if let Some(line) = line_part {
-        format!("{shortened}:{line}")
-    } else {
-        shortened
-    };
-
-    (display, location.to_string())
-}
-
-fn extract_crate_path(location: &str) -> String {
-    let path = location.split(':').next().unwrap_or(location);
-    let parts: Vec<&str> = path.split(['/', '\\']).collect();
-
-    if let Some(src_idx) = parts.iter().position(|&p| p == "src") {
-        if src_idx > 0 {
-            return parts[src_idx - 1].to_string();
-        }
-    }
-
-    if let Some(filename) = parts.last() {
-        if !filename.is_empty() {
-            return filename.split('.').next().unwrap_or("unknown").to_string();
-        }
-    }
-
-    "unknown".to_string()
-}
-
-fn extract_python_module_path(location: &str) -> String {
-    const MAX_MODULE_DEPTH: usize = 2;
-
-    let path_str = location.split(':').next().unwrap_or(location);
-    let path = Path::new(path_str);
-
-    if path.extension().and_then(|ext| ext.to_str()) != Some("py") {
-        return extract_crate_path(location);
-    }
-
-    let file_stem = path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .map(|s| s.to_string());
-
-    let mut packages: Vec<String> = Vec::new();
-    let mut current = path.parent();
-
-    while let Some(dir) = current {
-        let dir_name = match dir.file_name().and_then(|n| n.to_str()) {
-            Some(name) if !name.is_empty() => name.to_string(),
-            _ => break,
-        };
-
-        let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
-
-        if has_init {
-            packages.push(dir_name);
-        }
-
-        current = dir.parent();
-    }
-
-    if packages.is_empty() {
-        if let Some(stem) = file_stem
-            .as_ref()
-            .filter(|stem| stem.as_str() != "__init__")
-        {
-            return stem.clone();
-        }
-
-        if let Some(parent_name) = path
-            .parent()
-            .and_then(|dir| dir.file_name().and_then(|n| n.to_str()))
-            .map(|s| s.to_string())
-        {
-            return parent_name;
-        }
-
-        return "unknown".to_string();
-    }
-
-    packages.reverse();
-    if packages.len() > MAX_MODULE_DEPTH {
-        packages.truncate(MAX_MODULE_DEPTH);
-    }
-
-    packages.join(".")
-}
-
-fn extract_group_path(location: &str) -> String {
-    let path = location.split(':').next().unwrap_or(location);
-    if path.ends_with(".py") {
-        extract_python_module_path(location)
-    } else {
-        extract_crate_path(location)
-    }
-}
-
-fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -> String {
-    let mut crate_groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
-    for (idx, node) in nodes.iter().enumerate() {
-        crate_groups
-            .entry(node.group.clone())
-            .or_default()
-            .push(idx);
-    }
-
-    let mut output = String::from("digraph DesignGraph {\n");
-
-    for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter().enumerate() {
-        output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));
-        output.push_str(&format!(
-            "    label=\"{}\";\n",
-            escape_dot_label(crate_path)
-        ));
-        output.push_str("    style=filled;\n");
-        output.push_str("    color=lightgrey;\n");
-
-        for &idx in node_indices {
-            let node = &nodes[idx];
-            let label = escape_dot_label(&node.name);
-            let mut attrs = vec![format!("label=\"{}\"", label)];
-
-            if let Some(location) = &node.location {
-                let (_display, full) = summarize_location(location);
-                let escaped_full = escape_dot_attr(&full);
-                attrs.push(format!("full_path=\"{}\"", escaped_full));
-            }
-
-            output.push_str(&format!("    n{} [{}];\n", idx, attrs.join(", ")));
-        }
-
-        output.push_str("  }\n");
-    }
-
-    for &(from, to) in edges {
-        output.push_str(&format!("  n{} -> n{};\n", from, to));
-    }
-
-    output.push_str("}\n");
-    output
-}
-
-fn build_compact_node_index(nodes: &[CompactNode]) -> HashMap<BlockId, usize> {
-    let mut node_index = HashMap::with_capacity(nodes.len());
-    for (idx, node) in nodes.iter().enumerate() {
-        node_index.insert(node.block_id, idx);
-    }
-    node_index
-}
-
-fn reduce_transitive_edges(
-    nodes: &[CompactNode],
-    edges: &BTreeSet<(usize, usize)>,
-) -> BTreeSet<(usize, usize)> {
-    if nodes.is_empty() {
-        return BTreeSet::new();
-    }
-
-    let mut adjacency: HashMap<usize, Vec<usize>> = HashMap::new();
-    for &(from, to) in edges.iter() {
-        adjacency.entry(from).or_default().push(to);
-    }
-
-    let mut minimal_edges = BTreeSet::new();
-
-    for &(from, to) in edges.iter() {
-        if !has_alternative_path(from, to, &adjacency, (from, to)) {
-            minimal_edges.insert((from, to));
-        }
-    }
-
-    minimal_edges
-}
-
-fn has_alternative_path(
-    start: usize,
-    target: usize,
-    adjacency: &HashMap<usize, Vec<usize>>,
-    edge_to_skip: (usize, usize),
-) -> bool {
-    let mut visited = HashSet::new();
-    let mut stack: Vec<usize> = adjacency
-        .get(&start)
-        .into_iter()
-        .flat_map(|neighbors| neighbors.iter())
-        .filter_map(|&neighbor| {
-            if (start, neighbor) == edge_to_skip {
-                None
-            } else {
-                Some(neighbor)
-            }
-        })
-        .collect();
-
-    while let Some(current) = stack.pop() {
-        if !visited.insert(current) {
-            continue;
-        }
-
-        if current == target {
-            return true;
-        }
-
-        if let Some(neighbors) = adjacency.get(&current) {
-            for &neighbor in neighbors {
-                if (current, neighbor) == edge_to_skip {
-                    continue;
-                }
-                if !visited.contains(&neighbor) {
-                    stack.push(neighbor);
-                }
-            }
-        }
-    }
-
-    false
-}
-
-struct PrunedGraph {
-    nodes: Vec<CompactNode>,
-    edges: BTreeSet<(usize, usize)>,
-}
-
-fn prune_compact_components(
-    nodes: &[CompactNode],
-    edges: &BTreeSet<(usize, usize)>,
-) -> PrunedGraph {
-    if nodes.is_empty() {
-        return PrunedGraph {
-            nodes: Vec::new(),
-            edges: BTreeSet::new(),
-        };
-    }
-
-    let components = find_connected_components(nodes.len(), edges);
-    if components.is_empty() {
-        return PrunedGraph {
-            nodes: nodes.to_vec(),
-            edges: edges.clone(),
-        };
-    }
-
-    let mut retained_indices = HashSet::new();
-    for component in components {
-        if component.len() == 1 {
-            let idx = component[0];
-            let has_edges = edges.iter().any(|&(from, to)| from == idx || to == idx);
-            if !has_edges {
-                continue;
-            }
-        }
-        retained_indices.extend(component);
-    }
-
-    if retained_indices.is_empty() {
-        return PrunedGraph {
-            nodes: Vec::new(),
-            edges: BTreeSet::new(),
-        };
-    }
-
-    let mut retained_nodes = Vec::new();
-    let mut old_to_new = HashMap::new();
-    for (new_idx, old_idx) in retained_indices.iter().enumerate() {
-        retained_nodes.push(nodes[*old_idx].clone());
-        old_to_new.insert(*old_idx, new_idx);
-    }
-
-    let mut retained_edges = BTreeSet::new();
-    for &(from, to) in edges {
-        if let (Some(&new_from), Some(&new_to)) = (old_to_new.get(&from), old_to_new.get(&to)) {
-            retained_edges.insert((new_from, new_to));
-        }
-    }
-
-    PrunedGraph {
-        nodes: retained_nodes,
-        edges: retained_edges,
-    }
-}
-
-fn find_connected_components(
-    node_count: usize,
-    edges: &BTreeSet<(usize, usize)>,
-) -> Vec<Vec<usize>> {
-    if node_count == 0 {
-        return Vec::new();
-    }
-
-    let mut graph: HashMap<usize, Vec<usize>> = HashMap::new();
-    for &(from, to) in edges.iter() {
-        graph.entry(from).or_default().push(to);
-        graph.entry(to).or_default().push(from);
-    }
-
-    let mut visited = HashSet::new();
-    let mut components = Vec::new();
-
-    for node in 0..node_count {
-        if visited.contains(&node) {
-            continue;
-        }
-
-        let mut component = Vec::new();
-        let mut stack = vec![node];
-
-        while let Some(current) = stack.pop() {
-            if !visited.insert(current) {
-                continue;
-            }
-
-            component.push(current);
-
-            if let Some(neighbors) = graph.get(&current) {
-                for &neighbor in neighbors {
-                    if !visited.contains(&neighbor) {
-                        stack.push(neighbor);
-                    }
-                }
-            }
-        }
-
-        components.push(component);
-    }
-
-    components
 }

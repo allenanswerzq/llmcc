@@ -8,7 +8,7 @@ use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
-    StructDescriptor, VariableDescriptor,
+    StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 #[derive(Debug, Clone)]
@@ -194,6 +194,20 @@ pub struct CollectedSymbols {
     pub scopes: Vec<ScopeSpec>,
 }
 
+impl Deref for CollectedSymbols {
+    type Target = CollectionResult;
+
+    fn deref(&self) -> &Self::Target {
+        &self.result
+    }
+}
+
+impl DerefMut for CollectedSymbols {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.result
+    }
+}
+
 #[derive(Debug)]
 struct ScopeInfo {
     owner: Option<HirId>,
@@ -335,6 +349,34 @@ impl<'tcx> CollectorCore<'tcx> {
         } else {
             let unit_prefix = format!("unit{}", self.unit_index());
             format!("{}::{}", unit_prefix, name)
+        }
+    }
+
+    pub fn upsert_symbol_from_type_expr(&mut self, owner: HirId, expr: &TypeExpr) {
+        match expr {
+            TypeExpr::Path { segments, .. } => {
+                let segments: Vec<String> = segments
+                    .iter()
+                    .filter(|segment| !segment.is_empty())
+                    .cloned()
+                    .collect();
+                if segments.is_empty() {
+                    return;
+                }
+
+                let name = segments.last().cloned().unwrap();
+                let fqn = segments.join("::");
+                let _ = self.upsert_symbol_with_fqn(owner, &name, SymbolKind::Trait, true, &fqn);
+            }
+            TypeExpr::Reference { inner, .. } => {
+                self.upsert_symbol_from_type_expr(owner, inner);
+            }
+            TypeExpr::Tuple(items) => {
+                for item in items {
+                    self.upsert_symbol_from_type_expr(owner, item);
+                }
+            }
+            _ => {}
         }
     }
 

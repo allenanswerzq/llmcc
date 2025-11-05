@@ -9,9 +9,8 @@ fn collect_calls(source: &str) -> CallCollection {
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
-
-    let globals = cc.create_globals();
-    collect_symbols(unit, globals).calls
+    let collection = collect_symbols(unit).result;
+    collection.calls
 }
 
 fn call_key(call: &CallDescriptor) -> String {
