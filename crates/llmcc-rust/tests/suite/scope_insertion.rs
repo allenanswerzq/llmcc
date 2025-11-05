@@ -129,7 +129,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
         .is_none());
     assert!(fixture.globals.get_id(private_inner_key).is_none());
 
-    let expected_fqn = format!("unit{}::outer::inner", fixture.unit.index);
+    let expected_fqn = "outer::inner".to_string();
 
     let global_symbol = scope_stack
         .find_global_suffix(&[inner_key, outer_key])

@@ -347,8 +347,7 @@ impl<'tcx> CollectorCore<'tcx> {
         if let Some(prefix) = prefix {
             format!("{}::{}", prefix, name)
         } else {
-            let unit_prefix = format!("unit{}", self.unit_index());
-            format!("{}::{}", unit_prefix, name)
+            name.to_string()
         }
     }
 

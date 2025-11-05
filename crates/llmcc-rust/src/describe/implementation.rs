@@ -66,11 +66,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Clas
     Some(descriptor)
 }
 
-fn canonical_impl_target_fqn<'tcx>(unit: CompileUnit<'tcx>, value: &str) -> String {
-    if value.is_empty() {
-        return format!("unit{}", unit.index);
-    }
-
+fn canonical_impl_target_fqn<'tcx>(_unit: CompileUnit<'tcx>, value: &str) -> String {
     let trimmed = value.trim_start_matches("::");
     trimmed.to_string()
 }
