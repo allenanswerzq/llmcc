@@ -119,11 +119,24 @@ class User:
     let classes = collect_classes(source);
     let user = classes.iter().find(|c| c.name == "User").unwrap();
     assert_eq!(user.fields.len(), 3);
-    assert!(user.fields.iter().any(|f| f.name == "name"));
-    assert!(user.fields.iter().any(|f| f.name == "age"));
-    assert!(user.fields.iter().any(|f| f.name == "email"));
+    assert!(user
+        .fields
+        .iter()
+        .any(|f| matches!(f.name.as_deref(), Some("name"))));
+    assert!(user
+        .fields
+        .iter()
+        .any(|f| matches!(f.name.as_deref(), Some("age"))));
+    assert!(user
+        .fields
+        .iter()
+        .any(|f| matches!(f.name.as_deref(), Some("email"))));
 
-    let name_field = user.fields.iter().find(|f| f.name == "name").unwrap();
+    let name_field = user
+        .fields
+        .iter()
+        .find(|f| matches!(f.name.as_deref(), Some("name")))
+        .unwrap();
     let name_type = name_field
         .type_annotation
         .as_ref()

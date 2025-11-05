@@ -142,12 +142,12 @@ fn parse_tuple_fields<'tcx>(unit: CompileUnit<'tcx>, list: Node<'tcx>) -> Vec<St
                             .children(&mut child.walk())
                             .find_map(|n| is_type_kind(n.kind()).then(|| parse_type_expr(unit, n)))
                     });
-                let mut field = StructField::new(None);
+                let mut field = StructField::unnamed();
                 field.type_annotation = ty;
                 fields.push(field);
             }
             kind if is_type_kind(kind) => {
-                let mut field = StructField::new(None);
+                let mut field = StructField::unnamed();
                 field.type_annotation = Some(parse_type_expr(unit, child));
                 fields.push(field);
             }
@@ -184,7 +184,7 @@ fn parse_tuple_field_node<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> St
     let ty = node
         .child_by_field_name("type")
         .map(|n| parse_type_expr(unit, n));
-    let mut field = StructField::new(None);
+    let mut field = StructField::unnamed();
     field.type_annotation = ty;
     field
 }

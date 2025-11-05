@@ -209,7 +209,10 @@ class Person:
     let class = expect_class(&result, "Person");
     assert!(!class.fields.is_empty(), "Class should have fields");
     assert!(
-        class.fields.iter().all(|field| !field.name.is_empty()),
+        class
+            .fields
+            .iter()
+            .all(|field| matches!(field.name.as_deref(), Some(name) if !name.is_empty())),
         "Field names should not be empty",
     );
 }
