@@ -18,7 +18,7 @@ impl std::fmt::Display for SymId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum SymbolKind {
     Unknown,
     Module,
@@ -482,14 +482,16 @@ fn select_symbol(
     candidates.into_iter().next()
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SymbolKindMap<T> {
     inner: HashMap<SymbolKind, HashMap<String, T>>,
 }
 
 impl<T> SymbolKindMap<T> {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            inner: HashMap::new(),
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -564,6 +566,12 @@ impl<T> SymbolKindMap<T> {
 
     pub fn into_inner(self) -> HashMap<SymbolKind, HashMap<String, T>> {
         self.inner
+    }
+}
+
+impl<T> Default for SymbolKindMap<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

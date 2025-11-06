@@ -88,12 +88,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_children_scope(
         &mut self,
         node: &HirNode<'tcx>,
-        scoped_symbol: Option<Self::ScopedSymbol>,
+        owner_symbol: Option<Self::ScopedSymbol>,
     ) {
         let owner = node.hir_id();
         let scope_idx = self.core.ensure_scope(owner);
-        if let Some(sym_idx) = scoped_symbol {
-            self.core.set_scope_symbol(scope_idx, Some(sym_idx));
+        if let Some(sym_idx) = owner_symbol {
+            self.core.set_scope_owner_symbol(scope_idx, Some(sym_idx));
         }
 
         self.core.push_scope(scope_idx);
@@ -132,8 +132,13 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             self.variables.add(node.hir_id(), var);
             self.visit_children(&node);
             return;
+        } else {
+            tracing::warn!(
+                "build variable error {:?} next_hir={:?}",
+                self.unit().hir_text(&node),
+                self.unit().hir_next()
+            );
         }
-        self.visit_children(&node);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
@@ -150,16 +155,22 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
-        let sym_idx = self
-            .core
-            .ident_from_field(&node, LangRust::field_name)
-            .map(|ident| {
+        if let Some(module) = RustDescriptor::build_module(self.unit(), &node) {
+            let is_global = Self::visibility_exports(&module.visibility);
+            if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_name) {
                 let (sym_idx, _fqn) =
                     self.core
-                        .upsert_symbol(node.hir_id(), &ident.name, SymbolKind::Module, true);
-                sym_idx
-            });
-        self.visit_children_scope(&node, sym_idx);
+                        .upsert_symbol(node.hir_id(), &ident.name, SymbolKind::Module, is_global);
+                self.visit_children_scope(&node, Some(sym_idx));
+                return;
+            }
+        } else {
+            tracing::warn!(
+                "failed to build module descriptor for: {:?} next_hir={:?}",
+                node,
+                self.unit().hir_next()
+            );
+        }
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {

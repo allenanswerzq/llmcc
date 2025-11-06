@@ -144,7 +144,8 @@ impl<'tcx> DeclCollector<'tcx> {
             self.core
                 .upsert_symbol_with_fqn(owner, &name, SymbolKind::Module, true, &fqn);
 
-        self.core.set_scope_symbol(scope_idx, Some(symbol_idx));
+        self.core
+            .set_scope_owner_symbol(scope_idx, Some(symbol_idx));
         Some(symbol_idx)
     }
 
@@ -255,7 +256,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         let owner = node.hir_id();
         let scope_idx = self.core.ensure_scope(owner);
         if let Some(sym_idx) = symbol {
-            self.core.set_scope_symbol(scope_idx, Some(sym_idx));
+            self.core.set_scope_owner_symbol(scope_idx, Some(sym_idx));
         }
 
         self.core.push_scope(scope_idx);

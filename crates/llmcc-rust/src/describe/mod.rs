@@ -2,6 +2,7 @@ pub mod call;
 pub mod enumeration;
 pub mod function;
 pub mod implementation;
+pub mod module;
 pub mod structure;
 pub mod variable;
 
@@ -13,8 +14,9 @@ use llmcc_descriptor::DescriptorTrait;
 pub use llmcc_descriptor::{
     CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
     ClassDescriptor, EnumDescriptor, EnumVariant, EnumVariantField, EnumVariantKind,
-    FunctionDescriptor, FunctionParameter, FunctionQualifiers, ParameterKind, StructDescriptor,
-    StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind, VariableScope, Visibility,
+    FunctionDescriptor, FunctionParameter, FunctionQualifiers, ModuleDescriptor, ParameterKind,
+    StructDescriptor, StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind,
+    VariableScope, Visibility,
 };
 
 pub struct RustDescriptor;
@@ -30,6 +32,10 @@ impl<'tcx> DescriptorTrait<'tcx> for RustDescriptor {
 
     fn build_enum(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<EnumDescriptor> {
         enumeration::build(unit, node)
+    }
+
+    fn build_module(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ModuleDescriptor> {
+        module::build(unit, node)
     }
 
     fn build_variable(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<VariableDescriptor> {

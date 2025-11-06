@@ -4,7 +4,7 @@ use llmcc_core::Node;
 
 use crate::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
-    StructDescriptor, TypeExpr, VariableDescriptor,
+    ModuleDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 /// Trait implemented by language front-ends to construct shared descriptors from their HIR nodes.
@@ -29,6 +29,12 @@ pub trait DescriptorTrait<'tcx> {
     }
 
     fn build_enum(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<EnumDescriptor> {
+        let _ = unit;
+        let _ = node;
+        None
+    }
+
+    fn build_module(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ModuleDescriptor> {
         let _ = unit;
         let _ = node;
         None

@@ -8,7 +8,7 @@ use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
-    ModuleDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
+    StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 #[derive(Debug, Clone)]
@@ -227,6 +227,30 @@ struct ScopeInfo {
     symbols: Vec<usize>,
     /// Map of local identifiers to their symbol indices in this scope.
     locals: HashMap<String, usize>,
+    /// Cache of symbol indices grouped by kind for faster lookups.
+    locals_by_kind: SymbolKindMap<Vec<usize>>,
+}
+
+impl ScopeInfo {
+    fn new(owner: Option<HirId>) -> Self {
+        Self {
+            owner,
+            owner_symbol: None,
+            symbols: Vec::new(),
+            locals: HashMap::new(),
+            locals_by_kind: SymbolKindMap::new(),
+        }
+    }
+
+    fn record_symbol(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
+        self.locals.insert(name.to_string(), symbol_idx);
+        self.symbols.push(symbol_idx);
+        self.locals_by_kind
+            .ensure_kind(kind)
+            .entry(name.to_string())
+            .or_insert_with(Vec::new)
+            .push(symbol_idx);
+    }
 }
 
 #[derive(Debug)]
@@ -241,21 +265,19 @@ pub struct CollectorCore<'tcx> {
     scope_stack: Vec<usize>,
     /// All symbols discovered so far, in creation order.
     symbols: Vec<SymbolSpec>,
+    /// Lookup table of fully-qualified names to symbol indices for fast reuse.
+    symbols_by_fqn: HashMap<String, usize>,
 }
 
 impl<'tcx> CollectorCore<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {
             unit,
-            scope_infos: vec![ScopeInfo {
-                owner: None,
-                owner_symbol: None,
-                symbols: Vec::new(),
-                locals: HashMap::new(),
-            }],
+            scope_infos: vec![ScopeInfo::new(None)],
             scope_lookup: HashMap::new(),
             scope_stack: vec![0],
             symbols: Vec::new(),
+            symbols_by_fqn: HashMap::new(),
         }
     }
 
@@ -286,17 +308,12 @@ impl<'tcx> CollectorCore<'tcx> {
         }
 
         let idx = self.scope_infos.len();
-        self.scope_infos.push(ScopeInfo {
-            owner: Some(owner),
-            owner_symbol: None,
-            symbols: Vec::new(),
-            locals: HashMap::new(),
-        });
+        self.scope_infos.push(ScopeInfo::new(Some(owner)));
         self.scope_lookup.insert(owner, idx);
         idx
     }
 
-    pub fn set_scope_symbol(&mut self, scope_idx: usize, owner_symbol: Option<usize>) {
+    pub fn set_scope_owner_symbol(&mut self, scope_idx: usize, owner_symbol: Option<usize>) {
         self.scope_infos[scope_idx].owner_symbol = owner_symbol;
     }
 
@@ -378,25 +395,24 @@ impl<'tcx> CollectorCore<'tcx> {
         is_global: bool,
     ) -> usize {
         let idx = self.symbols.len();
+        let fqn_clone = fqn.clone();
         self.symbols.push(SymbolSpec {
             owner,
             name: name.clone(),
-            fqn,
+            fqn: fqn_clone,
             kind,
             unit_index: self.unit_index(),
             is_global,
         });
 
         let current_scope = self.current_scope_index();
-        self.scope_infos[current_scope]
-            .locals
-            .insert(name.clone(), idx);
-        self.scope_infos[current_scope].symbols.push(idx);
+        self.scope_infos[current_scope].record_symbol(&name, idx, kind);
 
         if is_global {
-            self.scope_infos[0].locals.insert(name, idx);
-            self.scope_infos[0].symbols.push(idx);
+            self.scope_infos[0].record_symbol(&name, idx, kind);
         }
+
+        self.symbols_by_fqn.insert(fqn, idx);
 
         idx
     }
@@ -437,7 +453,6 @@ impl<'tcx> CollectorCore<'tcx> {
 
                 if segments.len() == 1 {
                     let name = segments.last().cloned().unwrap();
-                    let fqn = segments.join("::");
                     let _ = self.upsert_symbol(owner, &name, kind, is_global);
                 } else {
                     tracing::warn!("skipping complex type expr symbol insertion: {:?}", expr);
@@ -457,10 +472,12 @@ impl<'tcx> CollectorCore<'tcx> {
 
     pub fn find_symbol_with(&self, name: &str, kind: SymbolKind) -> Option<usize> {
         for &scope_idx in self.scope_stack.iter().rev() {
-            for &symbol_idx in self.scope_infos[scope_idx].symbols.iter().rev() {
-                let symbol = &self.symbols[symbol_idx];
-                if symbol.name == name && kind == symbol.kind {
-                    return Some(symbol_idx);
+            let scope = &self.scope_infos[scope_idx];
+            if let Some(kind_bucket) = scope.locals_by_kind.kind_map(kind) {
+                if let Some(indices) = kind_bucket.get(name) {
+                    if let Some(&idx) = indices.last() {
+                        return Some(idx);
+                    }
                 }
             }
         }
