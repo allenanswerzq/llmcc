@@ -481,3 +481,115 @@ fn select_symbol(
 
     candidates.into_iter().next()
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct SymbolKindMap<T> {
+    inner: HashMap<SymbolKind, HashMap<String, T>>,
+}
+
+impl<T> SymbolKindMap<T> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.values().map(HashMap::len).sum()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.values().all(HashMap::is_empty)
+    }
+
+    pub fn kind_len(&self, kind: SymbolKind) -> usize {
+        self.inner.get(&kind).map(HashMap::len).unwrap_or(0)
+    }
+
+    pub fn contains(&self, kind: SymbolKind, name: &str) -> bool {
+        self.inner
+            .get(&kind)
+            .map(|bucket| bucket.contains_key(name))
+            .unwrap_or(false)
+    }
+
+    pub fn get(&self, kind: SymbolKind, name: &str) -> Option<&T> {
+        self.inner.get(&kind).and_then(|bucket| bucket.get(name))
+    }
+
+    pub fn get_mut(&mut self, kind: SymbolKind, name: &str) -> Option<&mut T> {
+        self.inner
+            .get_mut(&kind)
+            .and_then(|bucket| bucket.get_mut(name))
+    }
+
+    pub fn kind_map(&self, kind: SymbolKind) -> Option<&HashMap<String, T>> {
+        self.inner.get(&kind)
+    }
+
+    pub fn kind_map_mut(&mut self, kind: SymbolKind) -> Option<&mut HashMap<String, T>> {
+        self.inner.get_mut(&kind)
+    }
+
+    pub fn ensure_kind(&mut self, kind: SymbolKind) -> &mut HashMap<String, T> {
+        self.inner.entry(kind).or_insert_with(HashMap::new)
+    }
+
+    pub fn insert(&mut self, kind: SymbolKind, name: impl Into<String>, value: T) -> Option<T> {
+        self.ensure_kind(kind).insert(name.into(), value)
+    }
+
+    pub fn remove(&mut self, kind: SymbolKind, name: &str) -> Option<T> {
+        let bucket = self.inner.get_mut(&kind)?;
+        let removed = bucket.remove(name);
+        if bucket.is_empty() {
+            self.inner.remove(&kind);
+        }
+        removed
+    }
+
+    pub fn clear_kind(&mut self, kind: SymbolKind) -> Option<HashMap<String, T>> {
+        self.inner.remove(&kind)
+    }
+
+    pub fn kinds(&self) -> impl Iterator<Item = SymbolKind> + '_ {
+        self.inner.keys().copied()
+    }
+
+    pub fn inner(&self) -> &HashMap<SymbolKind, HashMap<String, T>> {
+        &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut HashMap<SymbolKind, HashMap<String, T>> {
+        &mut self.inner
+    }
+
+    pub fn into_inner(self) -> HashMap<SymbolKind, HashMap<String, T>> {
+        self.inner
+    }
+}
+
+impl<T> IntoIterator for SymbolKindMap<T> {
+    type Item = (SymbolKind, HashMap<String, T>);
+    type IntoIter = std::collections::hash_map::IntoIter<SymbolKind, HashMap<String, T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a SymbolKindMap<T> {
+    type Item = (&'a SymbolKind, &'a HashMap<String, T>);
+    type IntoIter = std::collections::hash_map::Iter<'a, SymbolKind, HashMap<String, T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut SymbolKindMap<T> {
+    type Item = (&'a SymbolKind, &'a mut HashMap<String, T>);
+    type IntoIter = std::collections::hash_map::IterMut<'a, SymbolKind, HashMap<String, T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter_mut()
+    }
+}

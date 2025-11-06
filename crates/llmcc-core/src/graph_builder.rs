@@ -885,6 +885,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             self.link_dependency(dep_id, from_block, edges, unresolved);
         }
     }
+
     fn link_dependency(
         &self,
         dep_id: SymId,
