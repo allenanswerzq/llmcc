@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
-use llmcc_descriptor::DescriptorTrait;
+use llmcc_descriptor::{DescriptorTrait, TypeExpr};
 use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
 
 use crate::describe::RustDescriptor;
@@ -215,30 +215,35 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         // Use the descriptor’s fully-qualified name to locate the target type symbol. The
         // descriptor already normalized nested paths (e.g., `crate::foo::Bar`).
         let symbol = impl_descriptor.and_then(|descriptor| {
-            descriptor.impl_target_fqn.as_ref().and_then(|fqn| {
-                let segments: Vec<String> = fqn
-                    .split("::")
-                    .map(|segment| segment.trim().to_string())
-                    .filter(|segment| !segment.is_empty())
-                    .collect();
-                if segments.is_empty() {
-                    None
-                } else {
-                    self.core.lookup_segments_with_priority(
-                        &segments,
-                        &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait],
-                        None,
-                    )
-                }
-            })
+            let segments = type_expr_segments(&descriptor.impl_target)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|segment| segment.trim().to_string())
+                .filter(|segment| !segment.is_empty())
+                .collect::<Vec<_>>();
+
+            if segments.is_empty() {
+                None
+            } else {
+                self.core.lookup_segments_with_priority(
+                    &segments,
+                    &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait],
+                    None,
+                )
+            }
         });
 
         // If we know both the descriptor and the target symbol, record trait → type dependencies.
         //    Example: `impl Display for Foo` should establish Display → Foo so trait queries reach Foo.
         if let (Some(descriptor), Some(target_symbol)) = (impl_descriptor, symbol) {
-            // base_types is the traits being implemented
-            for base in &descriptor.base_types {
-                if let Some(segments) = base.path_segments().map(|segments| segments.to_vec()) {
+            if let Some(trait_ty) = descriptor.trait_ty.as_ref() {
+                if let Some(segments) = type_expr_segments(trait_ty) {
+                    let segments: Vec<String> = segments
+                        .into_iter()
+                        .map(|segment| segment.trim().to_string())
+                        .filter(|segment| !segment.is_empty())
+                        .collect();
+
                     if let Some(trait_symbol) = self
                         .core
                         .lookup_segments(&segments, Some(SymbolKind::Trait), None)
@@ -382,6 +387,15 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
+    }
+}
+
+fn type_expr_segments(expr: &TypeExpr) -> Option<Vec<String>> {
+    match expr {
+        TypeExpr::Path { segments, .. } => Some(segments.clone()),
+        TypeExpr::Reference { inner, .. } => type_expr_segments(inner),
+        TypeExpr::Tuple(items) if items.len() == 1 => type_expr_segments(&items[0]),
+        _ => None,
     }
 }
 

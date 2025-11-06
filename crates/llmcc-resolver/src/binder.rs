@@ -62,17 +62,46 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         self.scopes.scoped_symbol()
     }
 
+    fn lookup_in_locals(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        unit_index: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        for scope in self.scopes[1..].iter().rev() {
+            let symbols = scope.lookup_suffix_symbols(suffix, unit_index);
+            if let Some(symbol) = self.select_matching_symbol(&symbols, kind, unit_index) {
+                return Some(symbol);
+            }
+        }
+
+        None
+    }
+
+    fn lookup_in_global_scope(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        file: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        if let Some(global_scope) = self.scopes.iter().next() {
+            let symbols = global_scope.lookup_suffix_symbols(suffix, file);
+            self.select_matching_symbol(&symbols, kind, file)
+        } else {
+            None
+        }
+    }
+
     pub fn lookup_symbol_suffix(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
         file_hint: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        let file_index = file_hint.unwrap_or(self.unit.index);
-
-        self.lookup_in_local_scopes(suffix, kind, Some(file_index))
-            .or_else(|| self.lookup_in_local_scopes(suffix, kind, None))
-            .or_else(|| self.lookup_in_global_scope(suffix, kind, Some(file_index)))
+        let unit_index = file_hint.unwrap_or(self.unit.index);
+        self.lookup_in_locals(suffix, kind, Some(unit_index))
+            .or_else(|| self.lookup_in_locals(suffix, kind, None))
+            .or_else(|| self.lookup_in_global_scope(suffix, kind, Some(unit_index)))
             .or_else(|| self.lookup_in_global_scope(suffix, kind, None))
     }
 
@@ -378,43 +407,6 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         let ident = child.as_ident()?;
         let key = self.interner().intern(&ident.name);
         self.lookup_symbol_suffix(&[key], Some(expected), None)
-    }
-
-    fn lookup_in_local_scopes(
-        &self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-        file: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        let global_scope = self.scopes.iter().next();
-        for scope in self.scopes.iter().rev() {
-            if let Some(global) = global_scope {
-                if ptr::eq(scope, global) {
-                    continue;
-                }
-            }
-
-            let symbols = scope.lookup_suffix_symbols(suffix);
-            if let Some(symbol) = self.select_matching_symbol(&symbols, kind, file) {
-                return Some(symbol);
-            }
-        }
-
-        None
-    }
-
-    fn lookup_in_global_scope(
-        &self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-        file: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        if let Some(global_scope) = self.scopes.iter().next() {
-            let symbols = global_scope.lookup_suffix_symbols(suffix);
-            self.select_matching_symbol(&symbols, kind, file)
-        } else {
-            None
-        }
     }
 
     fn select_matching_symbol(

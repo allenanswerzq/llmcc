@@ -72,20 +72,28 @@ impl<'tcx> Scope<'tcx> {
     }
 
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
-        let hits = self.trie.read().lookup_symbol_suffix(&[key]);
+        let hits = self.trie.read().lookup_symbol_suffix(&[key], None);
         hits.first().map(|symbol| symbol.id)
     }
 
-    pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
+    pub fn lookup_suffix_once(
+        &self,
+        suffix: &[InternedStr],
+        unit_filter: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
         self.trie
             .read()
-            .lookup_symbol_suffix(suffix)
+            .lookup_symbol_suffix(suffix, unit_filter)
             .into_iter()
             .next()
     }
 
-    pub fn lookup_suffix_symbols(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
-        self.trie.read().lookup_symbol_suffix(suffix)
+    pub fn lookup_suffix_symbols(
+        &self,
+        suffix: &[InternedStr],
+        unit_filter: Option<usize>,
+    ) -> Vec<&'tcx Symbol> {
+        self.trie.read().lookup_symbol_suffix(suffix, unit_filter)
     }
 
     pub fn format_compact(&self) -> String {
@@ -166,7 +174,7 @@ impl<'tcx> ScopeStack<'tcx> {
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
         for scope in self.iter().rev() {
-            let symbols = scope.trie.read().lookup_symbol_suffix(suffix);
+            let symbols = scope.trie.read().lookup_symbol_suffix(suffix, file);
             if let Some(symbol) = select_symbol(symbols, kind, file) {
                 return Some(symbol);
             }
@@ -210,7 +218,7 @@ impl<'tcx> ScopeStack<'tcx> {
             scope
                 .trie
                 .read()
-                .lookup_symbol_suffix(&[key])
+                .lookup_symbol_suffix(&[key], None)
                 .into_iter()
                 .next()
         })
@@ -224,7 +232,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn find_global_suffix_vec(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
-            .map(|scope| scope.trie.read().lookup_symbol_suffix(suffix))
+            .map(|scope| scope.trie.read().lookup_symbol_suffix(suffix, None))
             .unwrap_or_default()
     }
 

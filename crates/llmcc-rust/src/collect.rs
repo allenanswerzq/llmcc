@@ -158,9 +158,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some(module) = RustDescriptor::build_module(self.unit(), &node) {
             let is_global = Self::visibility_exports(&module.visibility);
             if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_name) {
-                let (sym_idx, _fqn) =
-                    self.core
-                        .upsert_symbol(node.hir_id(), &ident.name, SymbolKind::Module, is_global);
+                let (sym_idx, _fqn) = self.core.upsert_symbol(
+                    node.hir_id(),
+                    &ident.name,
+                    SymbolKind::Module,
+                    is_global,
+                );
                 self.visit_children_scope(&node, Some(sym_idx));
                 return;
             }
@@ -176,9 +179,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = RustDescriptor::build_impl(self.unit(), &node) {
             let hir_id = node.hir_id();
-            let sym_idx = self
-                .core
-                .upsert_expr_symbol(hir_id, &descriptor.target_ty, SymbolKind::Struct, false);
+            let sym_idx = self.core.upsert_expr_symbol(
+                hir_id,
+                &descriptor.target_ty,
+                SymbolKind::Struct,
+                false,
+            );
 
             self.impls.add(hir_id, descriptor);
             self.visit_children_scope(&node, Some(sym_idx));
@@ -322,4 +328,3 @@ pub fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>) -> CollectedSymbols {
 
     collected
 }
-

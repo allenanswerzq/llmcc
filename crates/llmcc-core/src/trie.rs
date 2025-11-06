@@ -54,7 +54,11 @@ impl<'tcx> SymbolTrie<'tcx> {
         node.add_symbol(symbol);
     }
 
-    pub fn lookup_symbol_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+    pub fn lookup_symbol_suffix(
+        &self,
+        suffix: &[InternedStr],
+        unit_filter: Option<usize>,
+    ) -> Vec<&'tcx Symbol> {
         let mut node = &self.root;
         for segment in suffix {
             match node.children.get(segment) {
@@ -63,7 +67,7 @@ impl<'tcx> SymbolTrie<'tcx> {
             }
         }
         let mut results = Vec::new();
-        self.collect_symbols(node, &mut results);
+        self.collect_symbols(node, unit_filter, &mut results);
         results
     }
 
@@ -83,10 +87,19 @@ impl<'tcx> SymbolTrie<'tcx> {
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    fn collect_symbols(&self, node: &SymbolTrieNode<'tcx>, out: &mut Vec<&'tcx Symbol>) {
-        out.extend(node.symbols.iter().copied());
+    fn collect_symbols(
+        &self,
+        node: &SymbolTrieNode<'tcx>,
+        unit_filter: Option<usize>,
+        out: &mut Vec<&'tcx Symbol>,
+    ) {
+        for symbol in node.symbols.iter().copied() {
+            if unit_filter.map_or(true, |expected| symbol.unit_index() == Some(expected)) {
+                out.push(symbol);
+            }
+        }
         for child in node.children.values() {
-            self.collect_symbols(child, out);
+            self.collect_symbols(child, unit_filter, out);
         }
     }
 
@@ -96,7 +109,7 @@ impl<'tcx> SymbolTrie<'tcx> {
 
     pub fn symbols(&self) -> Vec<&'tcx Symbol> {
         let mut results = Vec::new();
-        self.collect_symbols(&self.root, &mut results);
+        self.collect_symbols(&self.root, None, &mut results);
         results
     }
 
@@ -138,7 +151,7 @@ mod tests {
         trie.insert_symbol(symbol_a, &interner);
         trie.insert_symbol(symbol_b, &interner);
 
-        let suffix = trie.lookup_symbol_suffix(&[key_bar]);
+        let suffix = trie.lookup_symbol_suffix(&[key_bar], None);
         assert_eq!(suffix.len(), 1);
         assert_eq!(suffix[0].id, symbol_a.id);
 
