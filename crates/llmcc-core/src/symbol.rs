@@ -79,11 +79,10 @@ impl<'tcx> Scope<'tcx> {
     pub fn lookup_suffix_once(
         &self,
         suffix: &[InternedStr],
+        kind_filter: Option<SymbolKind>,
         unit_filter: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        self.trie
-            .read()
-            .lookup_symbol_suffix(suffix, unit_filter)
+        self.lookup_suffix_symbols(suffix, kind_filter, unit_filter)
             .into_iter()
             .next()
     }
@@ -91,9 +90,14 @@ impl<'tcx> Scope<'tcx> {
     pub fn lookup_suffix_symbols(
         &self,
         suffix: &[InternedStr],
+        kind_filter: Option<SymbolKind>,
         unit_filter: Option<usize>,
     ) -> Vec<&'tcx Symbol> {
-        self.trie.read().lookup_symbol_suffix(suffix, unit_filter)
+        let mut symbols = self.trie.read().lookup_symbol_suffix(suffix, unit_filter);
+        if let Some(kind) = kind_filter {
+            symbols.retain(|symbol| symbol.kind() == kind);
+        }
+        symbols
     }
 
     pub fn format_compact(&self) -> String {
@@ -174,7 +178,7 @@ impl<'tcx> ScopeStack<'tcx> {
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
         for scope in self.iter().rev() {
-            let symbols = scope.trie.read().lookup_symbol_suffix(suffix, file);
+            let symbols = scope.lookup_suffix_symbols(suffix, kind, file);
             if let Some(symbol) = select_symbol(symbols, kind, file) {
                 return Some(symbol);
             }
@@ -216,9 +220,7 @@ impl<'tcx> ScopeStack<'tcx> {
 
         scopes.iter().rev().find_map(|scope| {
             scope
-                .trie
-                .read()
-                .lookup_symbol_suffix(&[key], None)
+                .lookup_suffix_symbols(&[key], None, None)
                 .into_iter()
                 .next()
         })
@@ -232,7 +234,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn find_global_suffix_vec(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
-            .map(|scope| scope.trie.read().lookup_symbol_suffix(suffix, None))
+            .map(|scope| scope.lookup_suffix_symbols(suffix, None, None))
             .unwrap_or_default()
     }
 
@@ -433,6 +435,9 @@ impl Symbol {
     }
 
     pub fn add_dependency(&self, other: &Symbol) {
+        if self.id == other.id {
+            return;
+        }
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);
     }

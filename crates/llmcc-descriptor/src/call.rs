@@ -25,6 +25,20 @@ impl CallDescriptor {
 }
 
 /// The shape of the entity being invoked.
+///
+/// # Examples
+///
+/// a direct function call where the function like: `crate::math::sqrt`:
+/// a fluent-style chain like `foo.bar().baz::<T>()`:
+/// a raw textual representation when the callee cannot be resolved:
+/// ```rust
+/// use llmcc_descriptor::CallTarget;
+///
+/// let dynamic = CallTarget::Dynamic {
+///     repr: "some_macro!(expr)".into(),
+/// };
+/// assert!(matches!(dynamic, CallTarget::Dynamic { .. }));
+/// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CallTarget {
@@ -33,7 +47,12 @@ pub enum CallTarget {
     Dynamic { repr: String },
 }
 
-/// A symbol-style call (functions, free-standing methods, constructors).
+/// A resolved symbol-style call (free functions, inherent methods, constructors).
+///
+/// * `qualifiers` keeps the namespace path (e.g. `vec!["crate", "math"]`).
+/// * `name` is the final identifier (`"sqrt"`).
+/// * `kind` distinguishes between `CallKind::Function`, `CallKind::Method`, etc.
+/// * `type_arguments` carries any generic arguments (`Vec<TypeExpr>` for `foo::<T>()`).
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CallSymbol {

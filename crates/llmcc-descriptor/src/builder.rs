@@ -3,8 +3,8 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::Node;
 
 use crate::{
-    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
-    ImportDescriptor, ModuleDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
+    CallDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor, ImportDescriptor,
+    ModuleDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 /// Trait implemented by language front-ends to construct shared descriptors from their HIR nodes.
