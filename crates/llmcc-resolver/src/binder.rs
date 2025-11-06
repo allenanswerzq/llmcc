@@ -143,7 +143,26 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         self.lookup_symbol_suffix(&suffix, kind, unit_index)
     }
 
-    pub fn lookup_symbol_from_field(
+    pub fn lookup_symbol_kind_priority(
+        &self,
+        symbol: &[String],
+        kinds: &[SymbolKind],
+        unit_index: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        if symbol.is_empty() {
+            return None;
+        }
+
+        for &kind in kinds {
+            if let Some(found) = self.lookup_symbol(symbol, Some(kind), unit_index) {
+                return Some(found);
+            }
+        }
+
+        None
+    }
+
+    pub fn lookup_symbol_with(
         &self,
         node: &HirNode<'tcx>,
         field_id: u16,

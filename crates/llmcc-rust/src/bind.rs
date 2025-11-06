@@ -87,14 +87,14 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_from_field(&node, LangRust::field_name, SymbolKind::Module);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Module);
         self.visit_children_scope(&node, symbol);
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_from_field(&node, LangRust::field_name, SymbolKind::Struct);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Struct);
         self.visit_children_scope(&node, symbol);
 
         if let Some(desc) = self.collection().structs.find(node.hir_id())
@@ -114,7 +114,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_from_field(&node, LangRust::field_name, SymbolKind::Enum);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Enum);
         self.visit_children_scope(&node, symbol);
 
         if let Some(desc) = self.collection().enums.find(node.hir_id())
@@ -137,7 +137,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_from_field(&node, LangRust::field_name, SymbolKind::Function);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
 
         if let Some(descriptor) = self.collection().functions.find(node.hir_id())
@@ -188,10 +188,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(impl_descriptor) = self.collection().impls.find(node.hir_id()) {
             let impl_target = impl_descriptor.impl_target.clone();
-            let mut symbol = self.core.lookup_symbol(impl_target, SymbolKind::Struct, None);
-            if symbol.is_none() {
-                symbol = self.core.lookup_symbol(impl_target.clone(), SymbolKind::Enum, None);
-            }
+            let symbol = self.core.lookup_symbol_kind_priority(
+                impl_target,
+                &[SymbolKind::Struct, SymbolKind::Enum],
+                None,
+            );
             self.visit_children_scope(&node, symbol);
 
             // TODO: add dependencies from trait to impl target
@@ -203,7 +204,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_from_field(&node, LangRust::field_name, SymbolKind::Trait);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Trait);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -233,7 +234,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -244,7 +245,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_from_field(&node, LangRust::field_name, SymbolKind::Const);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(&node, symbol);
     }
 
