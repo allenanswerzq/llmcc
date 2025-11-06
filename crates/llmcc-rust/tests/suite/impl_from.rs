@@ -1,4 +1,5 @@
 use llmcc_core::IrBuildConfig;
+use llmcc_descriptor::TypeExpr;
 use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
 
 #[test]
@@ -36,9 +37,9 @@ mod codex_app_server_protocol {
     let impl_target_fqn = collection
         .impls
         .iter()
-        .find_map(|desc| desc.impl_target_fqn.as_deref());
+        .find_map(|desc| type_expr_fqn(&desc.impl_target));
     assert_eq!(
-        impl_target_fqn,
+        impl_target_fqn.as_deref(),
         Some("codex_app_server_protocol::SandboxSettings"),
         "impl should target the fully-qualified type"
     );
@@ -67,7 +68,7 @@ impl outer::Widget {
     let impl_fqns: Vec<String> = collection
         .impls
         .iter()
-        .filter_map(|desc| desc.impl_target_fqn.clone())
+        .filter_map(|desc| type_expr_fqn(&desc.impl_target))
         .collect();
     assert_eq!(
         impl_fqns,
@@ -130,7 +131,7 @@ impl crate::Foo {
     let mut target_counts = std::collections::HashMap::new();
     for desc in &collection.impls {
         *target_counts
-            .entry(desc.impl_target_fqn.clone())
+            .entry(type_expr_fqn(&desc.impl_target))
             .or_insert(0usize) += 1;
     }
     assert_eq!(target_counts.get(&Some("Widget".into())), Some(&1));
@@ -143,12 +144,13 @@ impl crate::Foo {
     let trait_impl = collection
         .impls
         .iter()
-        .find(|desc| desc.base_types.len() == 1)
+        .find(|desc| desc.trait_ty.is_some())
         .expect("expected trait impl descriptor");
-    let trait_segments: Vec<String> = trait_impl.base_types[0]
-        .path_segments()
-        .unwrap_or(&[])
-        .to_vec();
+    let trait_segments: Vec<String> = trait_impl
+        .trait_ty
+        .as_ref()
+        .and_then(type_expr_segments)
+        .unwrap_or_default();
     assert_eq!(
         trait_segments.last().map(|s| s.as_str()),
         Some("Greeter"),
@@ -168,15 +170,7 @@ impl crate::Foo {
     let loud_trait_paths: Vec<String> = collection
         .impls
         .iter()
-        .flat_map(|desc| desc.base_types.iter())
-        .map(|ty| {
-            let segments = ty.path_segments().unwrap_or(&[]);
-            segments
-                .iter()
-                .map(|segment| segment.as_str())
-                .collect::<Vec<_>>()
-                .join("::")
-        })
+        .filter_map(|desc| desc.trait_ty.as_ref().and_then(type_expr_fqn))
         .collect();
     assert!(
         loud_trait_paths
@@ -195,4 +189,17 @@ impl crate::Foo {
                 .ends_with("Foo::build")
     });
     assert!(foo_builder, "expected inherent method `Foo::build`");
+}
+
+fn type_expr_fqn(expr: &TypeExpr) -> Option<String> {
+    type_expr_segments(expr).map(|segments| segments.join("::"))
+}
+
+fn type_expr_segments(expr: &TypeExpr) -> Option<Vec<String>> {
+    match expr {
+        TypeExpr::Path { segments, .. } => Some(segments.clone()),
+        TypeExpr::Reference { inner, .. } => type_expr_segments(inner),
+        TypeExpr::Tuple(items) if items.len() == 1 => type_expr_segments(&items[0]),
+        _ => None,
+    }
 }

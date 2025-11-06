@@ -9,7 +9,7 @@ pub mod variable;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::Node;
-use llmcc_descriptor::DescriptorTrait;
+use llmcc_descriptor::{DescriptorTrait, ImplDescriptor};
 
 pub use llmcc_descriptor::{
     CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
@@ -52,7 +52,7 @@ impl<'tcx> DescriptorTrait<'tcx> for RustDescriptor {
         Some(call::build(unit, node, None))
     }
 
-    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
+    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ImplDescriptor> {
         implementation::build(unit, node)
     }
 

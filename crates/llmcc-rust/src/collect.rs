@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::SymbolKind;
-use llmcc_descriptor::DescriptorTrait;
+use llmcc_descriptor::{DescriptorTrait, ImplDescriptor, TypeExpr};
 use llmcc_resolver::{
     collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult, CollectorCore,
     EnumCollection, FunctionCollection, ImplCollection, StructCollection, SymbolSpec,
@@ -174,31 +174,14 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
-        if let Some(mut desc) = RustDescriptor::build_impl(self.unit(), &node) {
-            let fqn_hint = desc
-                .impl_target_fqn
-                .clone()
-                .unwrap_or_else(|| desc.name.clone());
-            let impl_name = desc.name.clone();
-            let (sym_idx, fqn) = self.core.upsert_symbol_with_fqn(
-                node.hir_id(),
-                &impl_name,
-                SymbolKind::Impl,
-                false,
-                &fqn_hint,
-            );
-            desc.fqn = Some(fqn.clone());
-            for base in &desc.base_types {
-                self.core.upsert_symbol_from_type_expr(node.hir_id(), base);
-            }
-            let target_kinds = [SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait];
-            let scope_symbol = self
+        if let Some(descriptor) = RustDescriptor::build_impl(self.unit(), &node) {
+            let hir_id = node.hir_id();
+            let sym_idx = self
                 .core
-                .find_symbol_in_scopes(&impl_name, &target_kinds)
-                .or_else(|| self.core.find_symbol_by_fqn(&fqn_hint))
-                .or(Some(sym_idx));
-            self.impls.add(node.hir_id(), desc);
-            self.visit_children_scope(&node, scope_symbol);
+                .upsert_expr_symbol(hir_id, &descriptor.target_ty, SymbolKind::Struct, false);
+
+            self.impls.add(hir_id, descriptor);
+            self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
                 "failed to build impl descriptor for: {:?} next_hir={:?}",
@@ -220,8 +203,14 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some(mut desc) = RustDescriptor::build_call(self.unit(), &node) {
             desc.enclosing = self.current_function_name().map(|name| name.to_string());
             self.calls.add(node.hir_id(), desc);
+            self.visit_children(&node);
+        } else {
+            tracing::warn!(
+                "failed to build call descriptor for: {:?} next_hir={:?}",
+                node,
+                self.unit().hir_next()
+            );
         }
-        self.visit_children(&node);
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
@@ -237,8 +226,13 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             self.variables.add(node.hir_id(), variable);
             self.visit_children_scope(&node, Some(sym_idx));
             return;
+        } else {
+            tracing::warn!(
+                "failed to build const descriptor for: {:?} next_hir={:?}",
+                node,
+                self.unit().hir_next()
+            );
         }
-        self.visit_children(&node);
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
@@ -328,3 +322,4 @@ pub fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>) -> CollectedSymbols {
 
     collected
 }
+

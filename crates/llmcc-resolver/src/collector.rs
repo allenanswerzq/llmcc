@@ -7,8 +7,8 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
 use llmcc_descriptor::{
-    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
-    StructDescriptor, TypeExpr, VariableDescriptor,
+    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
+    ImportDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 #[derive(Debug, Clone)]
@@ -178,7 +178,7 @@ impl<T: Clone> Clone for DescriptorCollection<T> {
 pub type FunctionCollection = DescriptorCollection<FunctionDescriptor>;
 pub type ClassCollection = DescriptorCollection<ClassDescriptor>;
 pub type StructCollection = DescriptorCollection<StructDescriptor>;
-pub type ImplCollection = DescriptorCollection<ClassDescriptor>;
+pub type ImplCollection = DescriptorCollection<ImplDescriptor>;
 pub type EnumCollection = DescriptorCollection<EnumDescriptor>;
 pub type VariableCollection = DescriptorCollection<VariableDescriptor>;
 pub type ImportCollection = DescriptorCollection<ImportDescriptor>;
@@ -265,8 +265,6 @@ pub struct CollectorCore<'tcx> {
     scope_stack: Vec<usize>,
     /// All symbols discovered so far, in creation order.
     symbols: Vec<SymbolSpec>,
-    /// Lookup table of fully-qualified names to symbol indices for fast reuse.
-    symbols_by_fqn: HashMap<String, usize>,
 }
 
 impl<'tcx> CollectorCore<'tcx> {
@@ -277,7 +275,6 @@ impl<'tcx> CollectorCore<'tcx> {
             scope_lookup: HashMap::new(),
             scope_stack: vec![0],
             symbols: Vec::new(),
-            symbols_by_fqn: HashMap::new(),
         }
     }
 
@@ -395,11 +392,10 @@ impl<'tcx> CollectorCore<'tcx> {
         is_global: bool,
     ) -> usize {
         let idx = self.symbols.len();
-        let fqn_clone = fqn.clone();
         self.symbols.push(SymbolSpec {
             owner,
             name: name.clone(),
-            fqn: fqn_clone,
+            fqn,
             kind,
             unit_index: self.unit_index(),
             is_global,
@@ -411,8 +407,6 @@ impl<'tcx> CollectorCore<'tcx> {
         if is_global {
             self.scope_infos[0].record_symbol(&name, idx, kind);
         }
-
-        self.symbols_by_fqn.insert(fqn, idx);
 
         idx
     }
@@ -442,7 +436,7 @@ impl<'tcx> CollectorCore<'tcx> {
         expr: &TypeExpr,
         kind: SymbolKind,
         is_global: bool,
-    ) {
+    ) -> Option<usize> {
         match expr {
             TypeExpr::Path { segments, .. } => {
                 let segments: Vec<String> = segments
@@ -453,20 +447,25 @@ impl<'tcx> CollectorCore<'tcx> {
 
                 if segments.len() == 1 {
                     let name = segments.last().cloned().unwrap();
-                    let _ = self.upsert_symbol(owner, &name, kind, is_global);
+                    let (idx, _) = self.upsert_symbol(owner, &name, kind, is_global);
+                    Some(idx)
                 } else {
                     tracing::warn!("skipping complex type expr symbol insertion: {:?}", expr);
+                    None
                 }
             }
             TypeExpr::Reference { inner, .. } => {
-                self.upsert_expr_symbol(owner, inner, kind, is_global);
+                self.upsert_expr_symbol(owner, inner, kind, is_global)
             }
             TypeExpr::Tuple(items) => {
                 for item in items {
-                    self.upsert_expr_symbol(owner, item, kind, is_global);
+                    if let Some(idx) = self.upsert_expr_symbol(owner, item, kind, is_global) {
+                        return Some(idx);
+                    }
                 }
+                None
             }
-            _ => {}
+            _ => None,
         }
     }
 

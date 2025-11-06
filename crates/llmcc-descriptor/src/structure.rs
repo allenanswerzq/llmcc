@@ -17,8 +17,6 @@ pub struct StructDescriptor {
     pub fields: Vec<StructField>,
     pub decorators: Vec<String>,
     pub docstring: Option<String>,
-    /// Optional fully-qualified name of the type targeted by an `impl` block.
-    pub impl_target_fqn: Option<String>,
     pub extras: DescriptorExtras,
 }
 
@@ -36,7 +34,6 @@ impl StructDescriptor {
             fields: Vec::new(),
             decorators: Vec::new(),
             docstring: None,
-            impl_target_fqn: None,
             extras: DescriptorExtras::default(),
         }
     }
