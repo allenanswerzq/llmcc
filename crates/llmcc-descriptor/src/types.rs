@@ -106,9 +106,7 @@ impl PathQualifier {
 
 impl Default for PathQualifier {
     fn default() -> Self {
-        PathQualifier::Relative {
-            parts: Vec::new(),
-        }
+        PathQualifier::Relative { parts: Vec::new() }
     }
 }
 

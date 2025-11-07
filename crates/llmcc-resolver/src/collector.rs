@@ -8,7 +8,7 @@ use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
-    ImportDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
+    ImportDescriptor, PathQualifier, StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 #[derive(Debug, Clone)]
@@ -386,16 +386,24 @@ impl<'tcx> CollectorCore<'tcx> {
     pub fn insert_symbol(
         &mut self,
         owner: HirId,
-        name: String,
-        fqn: String,
+        name: &str,
         kind: SymbolKind,
         is_global: bool,
-    ) -> usize {
+    ) -> (usize, String) {
+        if let Some(_idx) = self.lookup_from_scopes_with(name, kind) {
+            tracing::warn!(
+                "symbol '{}' of kind {:?} already exists in scope, source code probaly has duplicate declaration",
+                name,
+                kind
+            );
+        }
+
         let idx = self.symbols.len();
+        let fqn = self.scoped_qualified_name(name);
         self.symbols.push(SymbolSpec {
             owner,
-            name: name.clone(),
-            fqn,
+            name: name.to_owned(),
+            fqn: fqn.clone(),
             kind,
             unit_index: self.unit_index(),
             is_global,
@@ -408,29 +416,11 @@ impl<'tcx> CollectorCore<'tcx> {
             self.scope_infos[0].record_symbol(&name, idx, kind);
         }
 
-        idx
+        (idx, fqn)
     }
 
-    pub fn upsert_symbol(
-        &mut self,
-        owner: HirId,
-        name: &str,
-        kind: SymbolKind,
-        is_global: bool,
-    ) -> (usize, String) {
-        if let Some(existing_idx) = self.find_symbol_with(name, kind) {
-            let symbol = self.symbols.get_mut(existing_idx).unwrap();
-            symbol.is_global |= is_global;
-            let fqn = self.symbols[existing_idx].fqn.clone();
-            return (existing_idx, fqn);
-        } else {
-            let fqn = self.scoped_qualified_name(name);
-            let idx = self.insert_symbol(owner, name.to_string(), fqn.clone(), kind, is_global);
-            (idx, fqn)
-        }
-    }
 
-    pub fn upsert_expr_symbol(
+    pub fn insert_expr_symbol(
         &mut self,
         owner: HirId,
         expr: &TypeExpr,
@@ -439,53 +429,19 @@ impl<'tcx> CollectorCore<'tcx> {
     ) -> Option<usize> {
         match expr {
             TypeExpr::Path { qualifier, .. } => {
-                let normalized: Vec<String> = qualifier
-                    .parts()
-                    .iter()
-                    .filter(|part| !part.is_empty())
-                    .cloned()
-                    .collect();
-
-                if normalized.is_empty() {
-                    return None;
-                }
-
-                let name = normalized.last().cloned().unwrap();
-
-                if normalized.len() == 1 {
-                    let (idx, _) = self.upsert_symbol(owner, &name, kind, is_global);
-                    Some(idx)
-                } else {
-                    let candidate_fqn = normalized.join("::");
-
-                    if let Some(idx) = self.find_symbol_by_fqn(&candidate_fqn, kind) {
-                        return Some(idx);
-                    }
-
-                    if let Some(idx) = self.find_symbol_with(&name, kind) {
-                        return Some(idx);
-                    }
-
-                    let idx = self.insert_symbol(owner, name, candidate_fqn, kind, is_global);
-                    Some(idx)
-                }
+                todo!();
             }
             TypeExpr::Reference { inner, .. } => {
-                self.upsert_expr_symbol(owner, inner, kind, is_global)
+                self.insert_expr_symbol(owner, inner, kind, is_global)
             }
-            TypeExpr::Tuple(items) => {
-                for item in items {
-                    if let Some(idx) = self.upsert_expr_symbol(owner, item, kind, is_global) {
-                        return Some(idx);
-                    }
-                }
-                None
-            }
+            TypeExpr::Tuple(items) => items
+                .iter()
+                .find_map(|item| self.insert_expr_symbol(owner, item, kind, is_global)),
             _ => None,
         }
     }
 
-    pub fn find_symbol_with(&self, name: &str, kind: SymbolKind) -> Option<usize> {
+    pub fn lookup_from_scopes_with(&self, name: &str, kind: SymbolKind) -> Option<usize> {
         for &scope_idx in self.scope_stack.iter().rev() {
             let scope = &self.scope_infos[scope_idx];
             if let Some(kind_bucket) = scope.locals_by_kind.kind_map(kind) {
@@ -499,13 +455,62 @@ impl<'tcx> CollectorCore<'tcx> {
         None
     }
 
-    pub fn find_symbol_by_fqn(&self, fqn: &str, kind: SymbolKind) -> Option<usize> {
-        self.symbols
+    pub fn lookup_from_scopes_with_parts(
+        &self,
+        parts: &[&str],
+        kind: SymbolKind,
+        start_depth: Option<usize>,
+    ) -> Option<usize> {
+        let parts: Vec<_> = parts
             .iter()
-            .enumerate()
-            .rev()
-            .find(|(_, symbol)| symbol.kind == kind && symbol.fqn == fqn)
-            .map(|(idx, _)| idx)
+            .copied()
+            .filter(|part| !part.is_empty())
+            .collect();
+        if parts.is_empty() {
+            return None;
+        }
+
+        let mut scope_cursor = start_depth.unwrap_or(self.scope_stack.len());
+        scope_cursor = scope_cursor.min(self.scope_stack.len());
+        if scope_cursor == 0 {
+            return None;
+        }
+
+        let mut resolved_idx = None;
+        let mut restrict_kind = true;
+
+        for part in parts.iter().rev() {
+            let mut found: Option<(usize, usize)> = None;
+
+            while scope_cursor > 0 {
+                scope_cursor -= 1;
+                let scope_idx = self.scope_stack[scope_cursor];
+                let scope = &self.scope_infos[scope_idx];
+
+                if restrict_kind {
+                    if let Some(kind_bucket) = scope.locals_by_kind.kind_map(kind) {
+                        if let Some(indices) = kind_bucket.get(*part) {
+                            if let Some(&idx) = indices.last() {
+                                found = Some((scope_cursor, idx));
+                                break;
+                            }
+                        }
+                    }
+                } else if let Some(&idx) = scope.locals.get(*part) {
+                    found = Some((scope_cursor, idx));
+                    break;
+                }
+            }
+
+            let (matched_scope, symbol_idx) = found?;
+            if resolved_idx.is_none() {
+                resolved_idx = Some(symbol_idx);
+            }
+            scope_cursor = matched_scope;
+            restrict_kind = false;
+        }
+
+        resolved_idx
     }
 
     pub fn symbols(&self) -> &[SymbolSpec] {

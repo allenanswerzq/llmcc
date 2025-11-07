@@ -110,7 +110,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let is_global = Self::visibility_exports(&desc.visibility);
             let (sym_idx, fqn) =
                 self.core
-                    .upsert_symbol(node.hir_id(), &desc.name, SymbolKind::Function, is_global);
+                    .insert_symbol(node.hir_id(), &desc.name, SymbolKind::Function, is_global);
             desc.fqn = Some(fqn.clone());
             self.functions.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));
@@ -125,11 +125,22 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         if let Some(mut var) = RustDescriptor::build_variable(self.unit(), &node) {
+            if let Some(ty) = &var.type_annotation {
+                self.core.insert_expr_symbol(
+                    node.hir_id(),
+                    ty,
+                    SymbolKind::Struct,
+                    false,
+                );
+            }
+
             let (_, fqn) =
                 self.core
-                    .upsert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
+                    .insert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
             var.fqn = Some(fqn);
             self.variables.add(node.hir_id(), var);
+
+            self.visit_children(&node);
         } else {
             tracing::warn!(
                 "build variable error {:?} next_hir={:?}",
@@ -137,8 +148,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 self.unit().hir_next()
             );
         }
-
-        self.visit_children(&node);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {
@@ -149,24 +158,27 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_pattern) {
             let _ =
                 self.core
-                    .upsert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
+                    .insert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
+            self.visit_children(&node);
+        } else {
+            tracing::warn!(
+                "build parameter error {:?} next_hir={:?}",
+                self.unit().hir_text(&node),
+                self.unit().hir_next()
+            );
         }
-        self.visit_children(&node);
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
         if let Some(module) = RustDescriptor::build_module(self.unit(), &node) {
             let is_global = Self::visibility_exports(&module.visibility);
-            if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_name) {
-                let (sym_idx, _fqn) = self.core.upsert_symbol(
-                    node.hir_id(),
-                    &ident.name,
-                    SymbolKind::Module,
-                    is_global,
-                );
-                self.visit_children_scope(&node, Some(sym_idx));
-                return;
-            }
+            let (sym_idx, _fqn) = self.core.insert_symbol(
+                node.hir_id(),
+                &module.name,
+                SymbolKind::Module,
+                is_global,
+            );
+            self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
                 "failed to build module descriptor for: {:?} next_hir={:?}",
@@ -178,15 +190,25 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = RustDescriptor::build_impl(self.unit(), &node) {
-            let hir_id = node.hir_id();
-            let owner_symbol = self.core.upsert_expr_symbol(
-                hir_id,
+            // impl Foo {}
+            let owner_symbol = self.core.insert_expr_symbol(
+                node.hir_id(),
                 &descriptor.target_ty,
                 SymbolKind::Struct,
                 false,
             );
 
-            self.impls.add(hir_id, descriptor);
+            // impl Bar for Foo {}
+            if let Some(ty) = &descriptor.trait_ty {
+                self.core.insert_expr_symbol(
+                    node.hir_id(),
+                    ty,
+                    SymbolKind::Trait,
+                    false,
+                );
+            }
+
+            self.impls.add(node.hir_id(), descriptor);
             self.visit_children_scope(&node, owner_symbol);
         } else {
             tracing::warn!(
@@ -198,7 +220,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
-        // todo!("support trait declaration");
+        // todo!("support trait declration");
         self.visit_struct_item(node);
     }
 
@@ -209,6 +231,13 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_call(self.unit(), &node) {
             desc.enclosing = self.current_function_name().map(|name| name.to_string());
+            // TODO:
+            // self.core.insert_expr_symbol(
+            //     node.hir_id(),
+            //     &desc.target,
+            //     SymbolKind::Trait,
+            //     false,
+            // );
             self.calls.add(node.hir_id(), desc);
             self.visit_children(&node);
         } else {
@@ -223,7 +252,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut variable) = RustDescriptor::build_variable(self.unit(), &node) {
             let is_global = Self::visibility_exports(&variable.visibility);
-            let (sym_idx, fqn) = self.core.upsert_symbol(
+            let (sym_idx, fqn) = self.core.insert_symbol(
                 node.hir_id(),
                 &variable.name,
                 SymbolKind::Const,
@@ -251,7 +280,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let is_global = Self::visibility_exports(&desc.visibility);
             let (sym_idx, fqn) =
                 self.core
-                    .upsert_symbol(node.hir_id(), &desc.name, SymbolKind::Struct, is_global);
+                    .insert_symbol(node.hir_id(), &desc.name, SymbolKind::Struct, is_global);
             desc.fqn = Some(fqn.clone());
             self.structs.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));
@@ -269,7 +298,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let is_global = Self::visibility_exports(&desc.visibility);
             let (sym_idx, fqn) =
                 self.core
-                    .upsert_symbol(node.hir_id(), &desc.name, SymbolKind::Enum, is_global);
+                    .insert_symbol(node.hir_id(), &desc.name, SymbolKind::Enum, is_global);
             desc.fqn = Some(fqn.clone());
             self.enums.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));
@@ -288,7 +317,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             .map(|symbol| symbol.is_global)
             .unwrap_or(false);
         if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_name) {
-            let _ = self.core.upsert_symbol(
+            let _ = self.core.insert_symbol(
                 node.hir_id(),
                 &ident.name,
                 SymbolKind::EnumVariant,
