@@ -1,8 +1,8 @@
+use crate::token::{AstVisitorRust, LangRust};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
-use crate::token::{AstVisitorRust, LangRust};
 
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.
@@ -76,16 +76,16 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Module);
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Module);
         self.visit_children_scope(&node, symbol);
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Struct);
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Struct);
         self.visit_children_scope(&node, symbol);
 
         let descriptor = self.collection().structs.find(node.hir_id());
@@ -103,9 +103,9 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Enum);
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Enum);
         self.visit_children_scope(&node, symbol);
 
         let descriptor = self.collection().enums.find(node.hir_id());
@@ -198,9 +198,9 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Trait);
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Trait);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -228,9 +228,9 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -239,9 +239,9 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
-        let symbol =
-            self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -262,17 +262,51 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_scoped_identifier(&mut self, node: HirNode<'tcx>) {
-        self.visit_type_identifier(node);
+        self.record_identifier_reference(node);
     }
 
-    fn visit_type_identifier(&mut self, _node: HirNode<'tcx>) {
-    }
+    fn visit_type_identifier(&mut self, _node: HirNode<'tcx>) {}
 
-    fn visit_identifier(&mut self, _node: HirNode<'tcx>) {
+    fn visit_identifier(&mut self, node: HirNode<'tcx>) {
+        self.record_identifier_reference(node);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
+    }
+}
+
+impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
+    fn record_identifier_reference(&mut self, node: HirNode<'tcx>) {
+        let field_id = node.field_id();
+        if field_id == LangRust::field_name || field_id == LangRust::field_pattern {
+            return;
+        }
+
+        let text = self.unit().ts_text(node.inner_ts_node());
+        if text.is_empty() {
+            return;
+        }
+
+        if matches!(text.as_str(), "self" | "Self" | "super") {
+            return;
+        }
+
+        let segments: Vec<String> = text
+            .split("::")
+            .filter(|segment| !segment.is_empty())
+            .map(|segment| segment.to_string())
+            .collect();
+
+        if segments.is_empty() {
+            return;
+        }
+
+        if let Some(target_symbol) = self.core.lookup_symbol(&segments, None, None) {
+            if let Some(current) = self.current_symbol() {
+                current.add_dependency(target_symbol);
+            }
+        }
     }
 }
 

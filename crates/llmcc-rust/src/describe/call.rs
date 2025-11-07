@@ -5,8 +5,8 @@ use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
 use llmcc_descriptor::{
-    CallArgument, CallChain, CallChainRoot, CallDescriptor, CallInvocation, CallKind,
-    CallSegment, CallSymbol, CallTarget, TypeExpr,
+    CallArgument, CallChain, CallChainRoot, CallDescriptor, CallInvocation, CallKind, CallSegment,
+    CallSymbol, CallTarget, TypeExpr,
 };
 
 use super::function::{build_origin, parse_type_expr};
@@ -34,8 +34,7 @@ pub fn build<'tcx>(
             },
         });
 
-    let arguments = ts_node
-        .child_by_field_name("arguments")
+    let arguments = find_arguments_node(ts_node)
         .map(|args| parse_arguments(unit, args))
         .unwrap_or_default();
 
@@ -53,6 +52,21 @@ fn parse_arguments<'tcx>(unit: CompileUnit<'tcx>, args_node: Node<'tcx>) -> Vec<
         .named_children(&mut cursor)
         .map(|arg| CallArgument::new(unit.ts_text(arg)))
         .collect()
+}
+
+fn find_arguments_node(node: Node<'_>) -> Option<Node<'_>> {
+    if let Some(args) = node.child_by_field_name("arguments") {
+        return Some(args);
+    }
+
+    let mut cursor = node.walk();
+    for child in node.named_children(&mut cursor) {
+        if child.kind() == "arguments" {
+            return Some(child);
+        }
+    }
+
+    None
 }
 
 fn parse_call_target<'tcx>(

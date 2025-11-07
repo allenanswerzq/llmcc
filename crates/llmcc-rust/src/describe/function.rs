@@ -304,6 +304,10 @@ fn parse_reference_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Type
 }
 
 fn parse_return_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Option<TypeExpr> {
+    if is_type_node(node.kind()) {
+        return Some(parse_type_expr(unit, node));
+    }
+
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         if is_type_node(child.kind()) {

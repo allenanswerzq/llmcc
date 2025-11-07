@@ -253,6 +253,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                         {
                             self.push_symbol_unique(symbols, method_symbol);
                         }
+                        self.push_type_from_qualifiers(symbols, &call.qualifiers);
                     }
                     CallKind::Constructor => {
                         if let Some(sym) = self.lookup_symbol_kind_priority(
@@ -269,6 +270,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                         {
                             self.push_symbol_unique(symbols, sym);
                         }
+                        self.push_type_from_qualifiers(symbols, &call.qualifiers);
                     }
                 }
             }
@@ -287,21 +289,27 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                 for segment in &chain.segments {
                     match segment.kind {
                         CallKind::Constructor => {
-                            if let Some(sym) =
-                                self.lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Struct), None)
-                            {
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Struct),
+                                None,
+                            ) {
                                 self.push_symbol_unique(symbols, sym);
                             }
-                            if let Some(sym) =
-                                self.lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Enum), None)
-                            {
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Enum),
+                                None,
+                            ) {
                                 self.push_symbol_unique(symbols, sym);
                             }
                         }
                         CallKind::Function | CallKind::Macro => {
-                            if let Some(sym) =
-                                self.lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
-                            {
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Function),
+                                None,
+                            ) {
                                 self.push_symbol_unique(symbols, sym);
                             }
                         }
@@ -318,6 +326,24 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             return;
         }
         symbols.push(symbol);
+    }
+
+    fn push_type_from_qualifiers(&self, symbols: &mut Vec<&'tcx Symbol>, qualifiers: &[String]) {
+        if qualifiers.is_empty() {
+            return;
+        }
+
+        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Struct), None) {
+            self.push_symbol_unique(symbols, sym);
+        }
+
+        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Enum), None) {
+            self.push_symbol_unique(symbols, sym);
+        }
+
+        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Trait), None) {
+            self.push_symbol_unique(symbols, sym);
+        }
     }
 
     fn lookup_simple_path(&self, expr: &str) -> Option<&'tcx Symbol> {

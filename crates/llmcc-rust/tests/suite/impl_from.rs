@@ -37,7 +37,7 @@ mod codex_app_server_protocol {
     let impl_target_fqn = collection
         .impls
         .iter()
-    .find_map(|desc| type_expr_fqn(&desc.target_ty));
+        .find_map(|desc| type_expr_fqn(&desc.target_ty));
     assert_eq!(
         impl_target_fqn.as_deref(),
         Some("codex_app_server_protocol::SandboxSettings"),
@@ -68,7 +68,7 @@ impl outer::Widget {
     let impl_fqns: Vec<String> = collection
         .impls
         .iter()
-    .filter_map(|desc| type_expr_fqn(&desc.target_ty))
+        .filter_map(|desc| type_expr_fqn(&desc.target_ty))
         .collect();
     assert_eq!(
         impl_fqns,
