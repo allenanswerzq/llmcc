@@ -126,12 +126,8 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         if let Some(mut var) = RustDescriptor::build_variable(self.unit(), &node) {
             if let Some(ty) = &var.type_annotation {
-                self.core.insert_expr_symbol(
-                    node.hir_id(),
-                    ty,
-                    SymbolKind::Struct,
-                    false,
-                );
+                self.core
+                    .insert_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
             }
 
             let (_, fqn) =
@@ -172,12 +168,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
         if let Some(module) = RustDescriptor::build_module(self.unit(), &node) {
             let is_global = Self::visibility_exports(&module.visibility);
-            let (sym_idx, _fqn) = self.core.insert_symbol(
-                node.hir_id(),
-                &module.name,
-                SymbolKind::Module,
-                is_global,
-            );
+            let (sym_idx, _fqn) =
+                self.core
+                    .insert_symbol(node.hir_id(), &module.name, SymbolKind::Module, is_global);
             self.visit_children_scope(&node, Some(sym_idx));
         } else {
             tracing::warn!(
@@ -200,12 +193,8 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
             // impl Bar for Foo {}
             if let Some(ty) = &descriptor.trait_ty {
-                self.core.insert_expr_symbol(
-                    node.hir_id(),
-                    ty,
-                    SymbolKind::Trait,
-                    false,
-                );
+                self.core
+                    .insert_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
             }
 
             self.impls.add(node.hir_id(), descriptor);
