@@ -419,7 +419,6 @@ impl<'tcx> CollectorCore<'tcx> {
         (idx, fqn)
     }
 
-
     pub fn insert_expr_symbol(
         &mut self,
         owner: HirId,

@@ -12,6 +12,12 @@ llmcc explores automated context generation through symbolic graph analysis. bri
 
 ![design](doc/design.svg)
 
+## testing
+
+`llmcc-test` provides a corpus-style harness (similar to tree-sitter) for end-to-end
+parser+resolver checks. See [doc/testing.md](doc/testing.md) for the file format
+and CLI usage.
+
 ## examples
 
 Install with: ```cargo install llmcc```
