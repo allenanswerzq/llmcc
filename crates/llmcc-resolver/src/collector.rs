@@ -438,20 +438,47 @@ impl<'tcx> CollectorCore<'tcx> {
         is_global: bool,
     ) -> Option<usize> {
         match expr {
-            TypeExpr::Path { segments, .. } => {
-                let segments: Vec<String> = segments
+            TypeExpr::Path { parts, .. } => {
+                let parts: Vec<String> = parts
                     .iter()
                     .filter(|segment| !segment.is_empty())
                     .cloned()
                     .collect();
 
-                if segments.len() == 1 {
-                    let name = segments.last().cloned().unwrap();
+                if parts.is_empty() {
+                    return None;
+                }
+
+                let mut normalized = parts.clone();
+                while matches!(
+                    normalized.first().map(String::as_str),
+                    Some("crate" | "self" | "super")
+                ) {
+                    normalized.remove(0);
+                }
+
+                if normalized.is_empty() {
+                    normalized = parts;
+                }
+
+                let name = normalized.last().cloned().unwrap();
+
+                if normalized.len() == 1 {
                     let (idx, _) = self.upsert_symbol(owner, &name, kind, is_global);
                     Some(idx)
                 } else {
-                    tracing::warn!("skipping complex type expr symbol insertion: {:?}", expr);
-                    None
+                    let candidate_fqn = normalized.join("::");
+
+                    if let Some(idx) = self.find_symbol_by_fqn(&candidate_fqn, kind) {
+                        return Some(idx);
+                    }
+
+                    if let Some(idx) = self.find_symbol_with(&name, kind) {
+                        return Some(idx);
+                    }
+
+                    let idx = self.insert_symbol(owner, name, candidate_fqn, kind, is_global);
+                    Some(idx)
                 }
             }
             TypeExpr::Reference { inner, .. } => {
@@ -481,6 +508,15 @@ impl<'tcx> CollectorCore<'tcx> {
             }
         }
         None
+    }
+
+    pub fn find_symbol_by_fqn(&self, fqn: &str, kind: SymbolKind) -> Option<usize> {
+        self.symbols
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|(_, symbol)| symbol.kind == kind && symbol.fqn == fqn)
+            .map(|(idx, _)| idx)
     }
 
     pub fn symbols(&self) -> &[SymbolSpec] {

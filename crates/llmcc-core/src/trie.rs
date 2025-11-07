@@ -38,17 +38,17 @@ impl<'tcx> SymbolTrie<'tcx> {
             return;
         }
 
-        let segments: Vec<InternedStr> = fqn
+        let parts: Vec<InternedStr> = fqn
             .split("::")
             .filter(|segment| !segment.is_empty())
             .map(|segment| interner.intern(segment))
             .collect();
-        if segments.is_empty() {
+        if parts.is_empty() {
             return;
         }
 
         let mut node = &mut self.root;
-        for segment in segments.iter().rev().copied() {
+        for segment in parts.iter().rev().copied() {
             node = node.child_mut(segment);
         }
         node.add_symbol(symbol);

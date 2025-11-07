@@ -134,7 +134,38 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             return None;
         }
 
-        let suffix: Vec<_> = symbol
+        let mut parts: Vec<String> = symbol.to_vec();
+        while matches!(
+            parts.first().map(String::as_str),
+            Some("self" | "Self" | "super" | "crate")
+        ) {
+            parts.remove(0);
+        }
+
+        if parts.is_empty() {
+            return None;
+        }
+
+        if kind.is_none() {
+            const PRIORITIES: &[SymbolKind] = &[
+                SymbolKind::Struct,
+                SymbolKind::Enum,
+                SymbolKind::Function,
+                SymbolKind::Const,
+                SymbolKind::Trait,
+                SymbolKind::Module,
+            ];
+
+            for candidate in PRIORITIES {
+                if let Some(found) = self.lookup_symbol(&parts, Some(*candidate), unit_index) {
+                    return Some(found);
+                }
+            }
+
+            return None;
+        }
+
+        let suffix: Vec<_> = parts
             .iter()
             .rev()
             .map(|segment| self.interner().intern(segment))
@@ -188,8 +219,8 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         symbols: &mut Vec<&'tcx Symbol>,
     ) {
         match expr {
-            TypeExpr::Path { segments, generics } => {
-                if let Some(symbol) = self.lookup_symbol(segments, Some(kind), None) {
+            TypeExpr::Path { parts, generics } => {
+                if let Some(symbol) = self.lookup_symbol(parts, Some(kind), None) {
                     if !symbols.iter().any(|existing| existing.id == symbol.id) {
                         symbols.push(symbol);
                     }
@@ -286,7 +317,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                     }
                 }
 
-                for segment in &chain.segments {
+                for segment in &chain.parts {
                     match segment.kind {
                         CallKind::Constructor => {
                             if let Some(sym) = self.lookup_symbol(
@@ -313,7 +344,16 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                                 self.push_symbol_unique(symbols, sym);
                             }
                         }
-                        CallKind::Method | CallKind::Unknown => {}
+                        CallKind::Method => {
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Function),
+                                None,
+                            ) {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                        }
+                        CallKind::Unknown => {}
                     }
                 }
             }
@@ -361,16 +401,16 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             return None;
         }
 
-        let segments: Vec<String> = expr
+        let parts: Vec<String> = expr
             .split("::")
             .filter(|segment| !segment.is_empty())
             .map(|segment| segment.to_string())
             .collect();
 
-        if segments.is_empty() {
+        if parts.is_empty() {
             return None;
         }
 
-        self.lookup_symbol(&segments, None, None)
+        self.lookup_symbol(&parts, None, None)
     }
 }

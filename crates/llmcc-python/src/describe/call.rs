@@ -42,7 +42,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Call
 }
 
 fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<CallTarget> {
-    let mut segments = Vec::new();
+    let mut parts = Vec::new();
     let mut pending_arguments = Vec::new();
     let mut pending_invocation = false;
 
@@ -62,7 +62,7 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
                     .map(|n| unit.ts_text(n))
                     .unwrap_or_default();
                 let arguments = mem::take(&mut pending_arguments);
-                segments.push(CallSegment {
+                parts.push(CallSegment {
                     name: method,
                     kind: CallKind::Method,
                     type_arguments: Vec::new(),
@@ -75,11 +75,11 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
         }
     }
 
-    if segments.is_empty() {
+    if parts.is_empty() {
         return None;
     }
 
-    segments.reverse();
+    parts.reverse();
     let root = if pending_invocation {
         let target =
             parse_symbol_target(unit, node, Some(CallKind::Function)).unwrap_or_else(|| {
@@ -92,7 +92,7 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
         CallChainRoot::Expr(unit.ts_text(node))
     };
     let mut chain = CallChain::new(root);
-    chain.segments = segments;
+    chain.parts = parts;
     Some(CallTarget::Chain(chain))
 }
 
@@ -111,10 +111,10 @@ fn parse_symbol_target<'tcx>(
             Some(CallTarget::Symbol(symbol))
         }
         "attribute" => {
-            let mut segments = flatten_attribute(unit, node)?;
-            let name = segments.pop().unwrap_or_default();
+            let mut parts = flatten_attribute(unit, node)?;
+            let name = parts.pop().unwrap_or_default();
             let mut symbol = CallSymbol::new(&name);
-            symbol.qualifiers = segments;
+            symbol.qualifiers = parts;
             if let Some(kind) = kind_hint {
                 symbol.kind = kind;
             }
@@ -125,14 +125,14 @@ fn parse_symbol_target<'tcx>(
 }
 
 fn flatten_attribute<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Vec<String>> {
-    let mut segments = Vec::new();
+    let mut parts = Vec::new();
     loop {
         if node.kind() != "attribute" {
             break;
         }
 
         let attr_node = node.child_by_field_name("attribute")?;
-        segments.push(unit.ts_text(attr_node));
+        parts.push(unit.ts_text(attr_node));
         node = node.child_by_field_name("object")?;
     }
 
@@ -140,9 +140,9 @@ fn flatten_attribute<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Opt
     if root_text.is_empty() {
         return None;
     }
-    segments.push(root_text);
-    segments.reverse();
-    Some(segments)
+    parts.push(root_text);
+    parts.reverse();
+    Some(parts)
 }
 
 fn parse_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<CallArgument> {

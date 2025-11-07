@@ -130,8 +130,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     .upsert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
             var.fqn = Some(fqn);
             self.variables.add(node.hir_id(), var);
-            self.visit_children(&node);
-            return;
         } else {
             tracing::warn!(
                 "build variable error {:?} next_hir={:?}",
@@ -139,6 +137,8 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 self.unit().hir_next()
             );
         }
+
+        self.visit_children(&node);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {

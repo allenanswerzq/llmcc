@@ -12,9 +12,9 @@ pub enum TypeExpr {
     /// # Python (normalized)
     /// typing.List[int]
     /// ```
-    /// becomes `TypeExpr::Path { segments: ["Vec"], generics: [TypeExpr::Path { segments: ["String"], .. }] }`.
+    /// becomes `TypeExpr::Path { parts: ["Vec"], generics: [TypeExpr::Path { parts: ["String"], .. }] }`.
     Path {
-        segments: Vec<String>,
+        parts: Vec<String>,
         generics: Vec<TypeExpr>,
     },
     /// Reference-style types (e.g. pointers, borrowed references).
@@ -22,7 +22,7 @@ pub enum TypeExpr {
     /// ```text
     /// &mut T
     /// ```
-    /// becomes `TypeExpr::Reference { is_mut: true, lifetime: None, inner: Box::new(TypeExpr::Path { segments: ["T"], .. }) }`.
+    /// becomes `TypeExpr::Reference { is_mut: true, lifetime: None, inner: Box::new(TypeExpr::Path { parts: ["T"], .. }) }`.
     Reference {
         is_mut: bool,
         lifetime: Option<String>,
@@ -33,14 +33,14 @@ pub enum TypeExpr {
     /// ```text
     /// (usize, String)
     /// ```
-    /// becomes `TypeExpr::Tuple([TypeExpr::Path { segments: ["usize"], .. }, TypeExpr::Path { segments: ["String"], .. }])`.
+    /// becomes `TypeExpr::Tuple([TypeExpr::Path { parts: ["usize"], .. }, TypeExpr::Path { parts: ["String"], .. }])`.
     Tuple(Vec<TypeExpr>),
     /// Callable or function types.
     ///
     /// ```text
     /// (i32, i32) -> i32
     /// ```
-    /// becomes `TypeExpr::Callable { parameters: [TypeExpr::Path { segments: ["i32"], .. }, TypeExpr::Path { segments: ["i32"], .. }], result: Some(Box::new(TypeExpr::Path { segments: ["i32"], .. })) }`.
+    /// becomes `TypeExpr::Callable { parameters: [TypeExpr::Path { parts: ["i32"], .. }, TypeExpr::Path { parts: ["i32"], .. }], result: Some(Box::new(TypeExpr::Path { parts: ["i32"], .. })) }`.
     Callable {
         parameters: Vec<TypeExpr>,
         result: Option<Box<TypeExpr>>,
@@ -71,7 +71,7 @@ pub enum TypeExpr {
 impl TypeExpr {
     pub fn path_segments(&self) -> Option<&[String]> {
         match self {
-            TypeExpr::Path { segments, .. } => Some(segments),
+            TypeExpr::Path { parts, .. } => Some(parts),
             _ => None,
         }
     }

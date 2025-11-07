@@ -119,9 +119,9 @@ fn captures_async_const_and_unsafe_flags() {
 }
 
 fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
-    if let TypeExpr::Path { segments, generics } = expr {
+    if let TypeExpr::Path { parts, generics } = expr {
         let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
-        assert_eq!(segments, &expected_vec);
+        assert_eq!(parts, &expected_vec);
         generics
     } else {
         panic!();

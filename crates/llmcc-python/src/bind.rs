@@ -70,11 +70,11 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return Vec::new();
         }
 
-        let mut segments: Vec<String> = Vec::new();
+        let mut parts: Vec<String> = Vec::new();
 
         if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
             if stem != "__init__" && !stem.is_empty() {
-                segments.push(stem.to_string());
+                parts.push(stem.to_string());
             }
         }
 
@@ -87,19 +87,19 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
             let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
             if has_init {
-                segments.push(dir_name);
+                parts.push(dir_name);
                 current = dir.parent();
                 continue;
             }
 
-            if segments.is_empty() {
-                segments.push(dir_name);
+            if parts.is_empty() {
+                parts.push(dir_name);
             }
             break;
         }
 
-        segments.reverse();
-        segments
+        parts.reverse();
+        parts
     }
 
     fn ensure_module_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
@@ -115,10 +115,10 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             .and_then(|p| p.canonicalize().ok().or(Some(p)))
             .unwrap_or_else(|| PathBuf::from("__module__"));
 
-        let segments = Self::module_segments_from_path(&path);
+        let parts = Self::module_segments_from_path(&path);
         let interner = unit.interner();
 
-        let (name, fqn) = if segments.is_empty() {
+        let (name, fqn) = if parts.is_empty() {
             let fallback = path
                 .file_stem()
                 .and_then(|s| s.to_str())
@@ -126,11 +126,11 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 .to_string();
             (fallback.clone(), fallback)
         } else {
-            let name = segments
+            let name = parts
                 .last()
                 .cloned()
                 .unwrap_or_else(|| "__module__".to_string());
-            let fqn = segments.join("::");
+            let fqn = parts.join("::");
             (name, fqn)
         };
 
@@ -178,13 +178,13 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
     }
 
-    fn record_segments_dependency(&mut self, segments: &[String]) {
-        if segments.is_empty() {
+    fn record_segments_dependency(&mut self, parts: &[String]) {
+        if parts.is_empty() {
             return;
         }
 
         let target = self.core.lookup_segments_with_priority(
-            segments,
+            parts,
             &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Module],
             None,
         );
@@ -201,29 +201,29 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         if base.is_empty() {
             return;
         }
-        let segments: Vec<String> = base
+        let parts: Vec<String> = base
             .split('.')
             .filter(|segment| !segment.is_empty())
             .map(|segment| segment.to_string())
             .collect();
-        if segments.is_empty() {
+        if parts.is_empty() {
             return;
         }
 
-        self.record_segments_dependency(&segments);
+        self.record_segments_dependency(&parts);
     }
 
     fn record_type_repr_dependencies(&mut self, text: &str) {
-        for segments in Self::segments_from_type_repr(text) {
-            self.record_segments_dependency(&segments);
+        for parts in Self::segments_from_type_repr(text) {
+            self.record_segments_dependency(&parts);
         }
     }
 
     fn add_type_expr_dependencies(&mut self, expr: &TypeExpr) {
         match expr {
-            TypeExpr::Path { segments, generics } => {
-                if !segments.is_empty() {
-                    self.record_segments_dependency(segments);
+            TypeExpr::Path { parts, generics } => {
+                if !parts.is_empty() {
+                    self.record_segments_dependency(parts);
                 }
                 for generic in generics {
                     self.add_type_expr_dependencies(generic);
@@ -350,17 +350,17 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn record_import_path(&mut self, path: &str) {
         let normalized = path.replace("::", ".");
-        let segments: Vec<String> = normalized
+        let parts: Vec<String> = normalized
             .split('.')
             .filter(|segment| !segment.is_empty())
             .map(|segment| segment.trim().to_string())
             .collect();
-        if segments.is_empty() {
+        if parts.is_empty() {
             return;
         }
 
         let target = self.core.lookup_segments_with_priority(
-            &segments,
+            &parts,
             &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Module],
             None,
         );
@@ -371,9 +371,9 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     fn process_call_descriptor(&mut self, descriptor: &llmcc_descriptor::CallDescriptor) {
         match &descriptor.target {
             llmcc_descriptor::CallTarget::Symbol(symbol) => {
-                let mut segments = symbol.qualifiers.clone();
-                segments.push(symbol.name.clone());
-                if !self.handle_symbol_segments(&segments) {
+                let mut parts = symbol.qualifiers.clone();
+                parts.push(symbol.name.clone());
+                if !self.handle_symbol_segments(&parts) {
                     self.handle_symbol_segments(std::slice::from_ref(&symbol.name));
                 }
             }
@@ -381,7 +381,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 if let Some(target) = self.resolve_method_from_chain(chain) {
                     self.add_symbol_relation(Some(target));
                     self.record_call_binding(target);
-                } else if let Some(segment) = chain.segments.last() {
+                } else if let Some(segment) = chain.parts.last() {
                     self.handle_symbol_segments(std::slice::from_ref(&segment.name));
                 }
             }
@@ -389,13 +389,13 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
     }
 
-    fn handle_symbol_segments(&mut self, segments: &[String]) -> bool {
-        if segments.is_empty() {
+    fn handle_symbol_segments(&mut self, parts: &[String]) -> bool {
+        if parts.is_empty() {
             return false;
         }
 
         if let Some(target) = self.core.lookup_segments_with_priority(
-            segments,
+            parts,
             &[SymbolKind::Function, SymbolKind::Struct],
             None,
         ) {
@@ -406,7 +406,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return true;
         }
 
-        if let Some(target) = self.core.lookup_segments(segments, None, None) {
+        if let Some(target) = self.core.lookup_segments(parts, None, None) {
             self.add_symbol_relation(Some(target));
             if target.kind() == SymbolKind::Function {
                 self.record_call_binding(target);
@@ -430,7 +430,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     }
 
     fn resolve_method_from_chain(&mut self, chain: &CallChain) -> Option<&'tcx Symbol> {
-        let segment = chain.segments.last()?;
+        let segment = chain.parts.last()?;
         let root_is_self = matches!(
             &chain.root,
             CallChainRoot::Expr(expr) if expr == "self"

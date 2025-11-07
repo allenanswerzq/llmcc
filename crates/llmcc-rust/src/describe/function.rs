@@ -195,7 +195,7 @@ fn parse_parameters<'tcx>(
 pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     let expr = match node.kind() {
         "type_identifier" | "primitive_type" => TypeExpr::Path {
-            segments: unit
+            parts: unit
                 .ts_text(node)
                 .split("::")
                 .map(|s| s.to_string())
@@ -203,7 +203,7 @@ pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -
             generics: Vec::new(),
         },
         "scoped_type_identifier" => TypeExpr::Path {
-            segments: unit
+            parts: unit
                 .ts_text(node)
                 .split("::")
                 .map(|s| s.to_string())
@@ -258,7 +258,7 @@ fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeEx
             .collect();
     }
     TypeExpr::Path {
-        segments: base_segments,
+        parts: base_segments,
         generics,
     }
 }

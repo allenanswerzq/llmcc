@@ -32,7 +32,7 @@ fn call_key(call: &CallDescriptor) -> String {
 
 fn format_call_chain(chain: &CallChain) -> String {
     let mut key = format_chain_root(&chain.root);
-    for segment in &chain.segments {
+    for segment in &chain.parts {
         key.push('.');
         key.push_str(&segment.name);
     }
@@ -88,7 +88,7 @@ fn has_chain_segment(call: &CallDescriptor, root: &str, method: &str) -> bool {
         if !matches!(&chain.root, CallChainRoot::Expr(expr) if expr == root) {
             return false;
         }
-        return chain.segments.iter().any(|segment| segment.name == method);
+        return chain.parts.iter().any(|segment| segment.name == method);
     }
     false
 }
@@ -142,7 +142,7 @@ def caller():
         if let CallTarget::Chain(chain) = &call.target {
             matches!(&chain.root, CallChainRoot::Expr(expr) if expr == "obj")
                 && chain
-                    .segments
+                    .parts
                     .last()
                     .map(|segment| segment.name.as_str())
                     == Some("method")
@@ -245,7 +245,7 @@ def caller():
             if let CallTarget::Chain(chain) = &call.target {
                 if matches!(&chain.root, CallChainRoot::Expr(expr) if expr == "obj") {
                     return chain
-                        .segments
+                        .parts
                         .last()
                         .map(|segment| segment.name.as_str());
                 }
@@ -320,9 +320,9 @@ def caller():
             other => panic!("expected invocation root, got {:?}", other),
         }
 
-        assert_eq!(chain.segments.len(), 2);
-        assert_eq!(chain.segments[0].name, "builder");
-        assert_eq!(chain.segments[1].name, "finish");
+        assert_eq!(chain.parts.len(), 2);
+        assert_eq!(chain.parts[0].name, "builder");
+        assert_eq!(chain.parts[1].name, "finish");
     }
 }
 

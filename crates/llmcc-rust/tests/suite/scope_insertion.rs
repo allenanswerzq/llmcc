@@ -70,7 +70,7 @@ fn descriptor_hir_id(origin: &llmcc_descriptor::DescriptorOrigin) -> llmcc_core:
 #[test]
 fn inserts_symbols_for_local_and_global_resolution() {
     let source = r#"
-        mod outer {
+        pub mod outer {
             pub fn inner(param: i32) {
                 let local = param;
             }
@@ -169,7 +169,7 @@ fn inserts_symbols_for_local_and_global_resolution() {
 #[test]
 fn module_struct_visibility() {
     let source = r#"
-        mod outer {
+        pub mod outer {
             pub struct Foo;
             impl Foo {
                 pub fn create() {}
@@ -243,7 +243,7 @@ fn crate_restricted_items_are_exported() {
 #[test]
 fn module_enum_visibility() {
     let source = r#"
-        mod outer {
+        pub mod outer {
             pub enum Visible {
                 A,
             }

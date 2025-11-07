@@ -41,6 +41,73 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
         self.core.current_symbol()
     }
+
+    fn record_identifier_reference(&mut self, node: HirNode<'tcx>) {
+        let field_id = node.field_id();
+        if field_id == LangRust::field_pattern {
+            return;
+        }
+
+        let parent_kind = node.parent().map(|id| self.unit().hir_node(id).kind_id());
+
+        if parent_kind == Some(LangRust::call_expression) {
+            return;
+        }
+
+        if field_id == LangRust::field_name {
+            if matches!(
+                parent_kind,
+                Some(LangRust::struct_item)
+                    | Some(LangRust::enum_item)
+                    | Some(LangRust::function_item)
+                    | Some(LangRust::const_item)
+                    | Some(LangRust::static_item)
+                    | Some(LangRust::mod_item)
+                    | Some(LangRust::trait_item)
+                    | Some(LangRust::impl_item)
+                    | Some(LangRust::enum_variant)
+            ) {
+                return;
+            }
+        }
+
+        let text = self.unit().ts_text(node.inner_ts_node());
+        if text.is_empty() {
+            return;
+        }
+
+        if matches!(text.as_str(), "self" | "Self" | "super") {
+            return;
+        }
+
+        let parts: Vec<String> = text
+            .split("::")
+            .filter(|segment| !segment.is_empty())
+            .map(|segment| segment.to_string())
+            .collect();
+
+        if parts.is_empty() {
+            return;
+        }
+
+        let mut parts = parts;
+        while matches!(
+            parts.first().map(|s| s.as_str()),
+            Some("self" | "Self" | "super")
+        ) {
+            parts.remove(0);
+        }
+
+        if parts.is_empty() {
+            return;
+        }
+
+        if let Some(target_symbol) = self.core.lookup_symbol(&parts, None, None) {
+            if let Some(current) = self.current_symbol() {
+                current.add_dependency(target_symbol);
+            }
+        }
+    }
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
@@ -177,11 +244,19 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(impl_descriptor) = self.collection().impls.find(node.hir_id()) {
-            let target_symbol = self
-                .core
-                .lookup_expr_symbols(&impl_descriptor.target_ty)
-                .into_iter()
-                .next();
+            let symbols = self.core.lookup_expr_symbols(&impl_descriptor.target_ty);
+
+            let enum_symbol = symbols
+                .iter()
+                .copied()
+                .find(|symbol| symbol.kind() == SymbolKind::Enum);
+            let struct_symbol = symbols
+                .iter()
+                .copied()
+                .find(|symbol| symbol.kind() == SymbolKind::Struct);
+            let target_symbol = enum_symbol
+                .or(struct_symbol)
+                .or_else(|| symbols.into_iter().next());
 
             self.visit_children_scope(&node, target_symbol);
 
@@ -232,6 +307,16 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             .core
             .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(&node, symbol);
+
+        if let (Some(const_symbol), Some(descriptor)) =
+            (symbol, self.collection().variables.find(node.hir_id()))
+        {
+            if let Some(type_expr) = descriptor.type_annotation.as_ref() {
+                for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
+                    const_symbol.add_dependency(type_symbol);
+                }
+            }
+        }
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
@@ -265,7 +350,9 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.record_identifier_reference(node);
     }
 
-    fn visit_type_identifier(&mut self, _node: HirNode<'tcx>) {}
+    fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
+        self.record_identifier_reference(node);
+    }
 
     fn visit_identifier(&mut self, node: HirNode<'tcx>) {
         self.record_identifier_reference(node);
@@ -273,40 +360,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
-    }
-}
-
-impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
-    fn record_identifier_reference(&mut self, node: HirNode<'tcx>) {
-        let field_id = node.field_id();
-        if field_id == LangRust::field_name || field_id == LangRust::field_pattern {
-            return;
-        }
-
-        let text = self.unit().ts_text(node.inner_ts_node());
-        if text.is_empty() {
-            return;
-        }
-
-        if matches!(text.as_str(), "self" | "Self" | "super") {
-            return;
-        }
-
-        let segments: Vec<String> = text
-            .split("::")
-            .filter(|segment| !segment.is_empty())
-            .map(|segment| segment.to_string())
-            .collect();
-
-        if segments.is_empty() {
-            return;
-        }
-
-        if let Some(target_symbol) = self.core.lookup_symbol(&segments, None, None) {
-            if let Some(current) = self.current_symbol() {
-                current.add_dependency(target_symbol);
-            }
-        }
     }
 }
 

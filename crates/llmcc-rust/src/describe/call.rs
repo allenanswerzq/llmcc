@@ -76,30 +76,30 @@ fn parse_call_target<'tcx>(
 ) -> CallTarget {
     match node.kind() {
         "identifier" | "scoped_identifier" | "type_identifier" => {
-            let segments: Vec<String> = unit
+            let parts: Vec<String> = unit
                 .ts_text(node)
                 .split("::")
                 .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
                 .collect();
-            symbol_target_from_segments(segments, call_generics, CallKind::Function)
+            symbol_target_from_segments(parts, call_generics, CallKind::Function)
         }
         "generic_type" => {
             let base = node.child_by_field_name("type").unwrap_or(node);
-            let mut segments: Vec<String> = unit
+            let mut parts: Vec<String> = unit
                 .ts_text(base)
                 .split("::")
                 .filter(|s| !s.is_empty())
                 .map(|s| s.to_string())
                 .collect();
-            if segments.is_empty() {
-                segments.push(unit.ts_text(base));
+            if parts.is_empty() {
+                parts.push(unit.ts_text(base));
             }
             let generics = node
                 .child_by_field_name("type_arguments")
                 .map(|args| parse_type_arguments(unit, args))
                 .unwrap_or(call_generics);
-            symbol_target_from_segments(segments, generics, CallKind::Function)
+            symbol_target_from_segments(parts, generics, CallKind::Function)
         }
         "generic_function" => {
             let generics = node
@@ -130,7 +130,7 @@ fn parse_call_target<'tcx>(
                 .unwrap_or(call_generics);
 
             let mut chain = CallChain::new(receiver);
-            chain.segments.push(CallSegment {
+            chain.parts.push(CallSegment {
                 name: method,
                 kind: CallKind::Method,
                 type_arguments: generics,
@@ -149,7 +149,7 @@ fn parse_chain<'tcx>(
     mut node: Node<'tcx>,
     call_generics: Vec<TypeExpr>,
 ) -> Option<CallTarget> {
-    let mut segments = Vec::new();
+    let mut parts = Vec::new();
     let mut pending_generics = call_generics;
     let mut pending_arguments = Vec::new();
     let mut pending_invocation = false;
@@ -182,7 +182,7 @@ fn parse_chain<'tcx>(
                     .unwrap_or_default();
                 let generics = mem::take(&mut pending_generics);
                 let arguments = mem::take(&mut pending_arguments);
-                segments.push(CallSegment {
+                parts.push(CallSegment {
                     name: method,
                     kind: CallKind::Method,
                     type_arguments: generics,
@@ -195,11 +195,11 @@ fn parse_chain<'tcx>(
         }
     }
 
-    if segments.is_empty() {
+    if parts.is_empty() {
         return None;
     }
 
-    segments.reverse();
+    parts.reverse();
     let root = if pending_invocation {
         let target = parse_call_target(unit, node, pending_generics.clone());
         CallChainRoot::Invocation(CallInvocation::new(
@@ -211,7 +211,7 @@ fn parse_chain<'tcx>(
         CallChainRoot::Expr(unit.ts_text(node))
     };
     let mut chain = CallChain::new(root);
-    chain.segments = segments;
+    chain.parts = parts;
     Some(CallTarget::Chain(chain))
 }
 
@@ -243,21 +243,21 @@ fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<
 }
 
 fn symbol_target_from_segments(
-    segments: Vec<String>,
+    parts: Vec<String>,
     generics: Vec<TypeExpr>,
     kind: CallKind,
 ) -> CallTarget {
-    if segments.is_empty() {
+    if parts.is_empty() {
         return CallTarget::Dynamic {
             repr: String::new(),
         };
     }
 
-    let mut segments = segments;
-    let name = segments.pop().unwrap();
+    let mut parts = parts;
+    let name = parts.pop().unwrap();
 
     let mut symbol = CallSymbol::new(name);
-    symbol.qualifiers = segments;
+    symbol.qualifiers = parts;
     symbol.kind = kind;
     symbol.type_arguments = generics;
     CallTarget::Symbol(symbol)

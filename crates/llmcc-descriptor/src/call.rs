@@ -129,14 +129,14 @@ impl CallSymbol {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CallChain {
     pub root: CallChainRoot,
-    pub segments: Vec<CallSegment>,
+    pub parts: Vec<CallSegment>,
 }
 
 impl CallChain {
     pub fn new(root: impl Into<CallChainRoot>) -> Self {
         Self {
             root: root.into(),
-            segments: Vec::new(),
+            parts: Vec::new(),
         }
     }
 }

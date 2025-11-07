@@ -83,7 +83,7 @@ impl outer::Widget {
 #[test]
 fn test_impl_target_fqn_for_trait_impls_and_crate_paths() {
     let source = r#"
-mod outer {
+pub mod outer {
     pub trait Greeter {
         fn greet(&self) -> String;
     }
@@ -192,12 +192,12 @@ impl crate::Foo {
 }
 
 fn type_expr_fqn(expr: &TypeExpr) -> Option<String> {
-    type_expr_segments(expr).map(|segments| segments.join("::"))
+    type_expr_segments(expr).map(|parts| parts.join("::"))
 }
 
 fn type_expr_segments(expr: &TypeExpr) -> Option<Vec<String>> {
     match expr {
-        TypeExpr::Path { segments, .. } => Some(segments.clone()),
+        TypeExpr::Path { parts, .. } => Some(parts.clone()),
         TypeExpr::Reference { inner, .. } => type_expr_segments(inner),
         TypeExpr::Tuple(items) if items.len() == 1 => type_expr_segments(&items[0]),
         _ => None,

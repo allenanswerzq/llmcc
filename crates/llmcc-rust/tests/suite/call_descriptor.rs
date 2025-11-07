@@ -30,7 +30,7 @@ fn call_key(call: &CallDescriptor) -> String {
 
 fn format_call_chain(chain: &CallChain) -> String {
     let mut key = format_chain_root(&chain.root);
-    for segment in &chain.segments {
+    for segment in &chain.parts {
         key.push('.');
         key.push_str(&segment.name);
     }
@@ -128,8 +128,8 @@ fn captures_method_call() {
         &chain.root,
         CallChainRoot::Expr(root) if root == "value"
     ));
-    assert_eq!(chain.segments.len(), 1);
-    let segment = &chain.segments[0];
+    assert_eq!(chain.parts.len(), 1);
+    let segment = &chain.parts[0];
     assert_eq!(segment.name, "compute");
     assert_eq!(segment.kind, CallKind::Method);
     assert_eq!(segment.type_arguments.len(), 1);
@@ -188,19 +188,19 @@ fn captures_method_chain() {
         &chain.root,
         CallChainRoot::Expr(root) if root == "data"
     ));
-    assert_eq!(chain.segments.len(), 3);
-    assert_eq!(chain.segments[0].name, "iter");
-    assert_eq!(chain.segments[0].kind, CallKind::Method);
-    assert!(chain.segments[0].arguments.is_empty());
-    assert_eq!(chain.segments[1].name, "map");
-    assert_eq!(chain.segments[1].arguments.len(), 1);
+    assert_eq!(chain.parts.len(), 3);
+    assert_eq!(chain.parts[0].name, "iter");
+    assert_eq!(chain.parts[0].kind, CallKind::Method);
+    assert!(chain.parts[0].arguments.is_empty());
+    assert_eq!(chain.parts[1].name, "map");
+    assert_eq!(chain.parts[1].arguments.len(), 1);
     assert_eq!(
-        chain.segments[1].arguments[0].value,
+        chain.parts[1].arguments[0].value,
         "|v| processor::handle(v)"
     );
-    assert_eq!(chain.segments[2].name, "collect");
-    assert!(chain.segments[2].arguments.is_empty());
-    assert_eq!(chain.segments[2].type_arguments.len(), 1);
+    assert_eq!(chain.parts[2].name, "collect");
+    assert!(chain.parts[2].arguments.is_empty());
+    assert_eq!(chain.parts[2].type_arguments.len(), 1);
 
     let handle = find_call(&calls, |call| {
         matches!(
@@ -243,9 +243,9 @@ fn captures_chain_with_invoked_root() {
         other => panic!("expected invocation root, got {:?}", other),
     }
 
-    assert_eq!(chain.segments.len(), 2);
-    assert_eq!(chain.segments[0].name, "bar");
-    assert_eq!(chain.segments[1].name, "baz");
+    assert_eq!(chain.parts.len(), 2);
+    assert_eq!(chain.parts[0].name, "bar");
+    assert_eq!(chain.parts[1].name, "baz");
 }
 
 #[test]
@@ -312,8 +312,8 @@ fn captures_generic_path_call() {
 
     let symbol = symbol_target(apply);
     assert_eq!(symbol.type_arguments.len(), 2);
-    if let TypeExpr::Path { segments, generics } = &symbol.type_arguments[0] {
-        assert_eq!(segments, &vec!["Result".to_string()]);
+    if let TypeExpr::Path { parts, generics } = &symbol.type_arguments[0] {
+        assert_eq!(parts, &vec!["Result".to_string()]);
         assert_eq!(generics.len(), 2);
     } else {
         panic!();
