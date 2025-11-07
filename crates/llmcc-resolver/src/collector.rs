@@ -5,26 +5,35 @@ use std::time::{Duration, Instant};
 
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
+use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
 use llmcc_descriptor::{
-    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
-    StructDescriptor, TypeExpr, VariableDescriptor,
+    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
+    ImportDescriptor, PathQualifier, StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 #[derive(Debug, Clone)]
 pub struct SymbolSpec {
+    /// HIR node that declared the symbol.
     pub owner: HirId,
+    /// Unqualified symbol name as it appears in source.
     pub name: String,
+    /// Fully-qualified path for the symbol.
     pub fqn: String,
+    /// Kind of symbol (function, struct, trait, etc.).
     pub kind: SymbolKind,
+    /// Index of the compile unit that produced this symbol.
     pub unit_index: usize,
+    /// Whether the symbol should be visible from the global scope.
     pub is_global: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct ScopeSpec {
+    /// Owning HIR node for the scope; None represents the root scope.
     pub owner: Option<HirId>,
-    pub symbol_index: Option<usize>,
+    /// Index of the symbol associated with this scope, if any.
+    pub owner_symbol: Option<usize>,
+    /// Symbols captured directly within this scope.
     pub symbols: Vec<usize>,
 }
 
@@ -169,7 +178,7 @@ impl<T: Clone> Clone for DescriptorCollection<T> {
 pub type FunctionCollection = DescriptorCollection<FunctionDescriptor>;
 pub type ClassCollection = DescriptorCollection<ClassDescriptor>;
 pub type StructCollection = DescriptorCollection<StructDescriptor>;
-pub type ImplCollection = DescriptorCollection<ClassDescriptor>;
+pub type ImplCollection = DescriptorCollection<ImplDescriptor>;
 pub type EnumCollection = DescriptorCollection<EnumDescriptor>;
 pub type VariableCollection = DescriptorCollection<VariableDescriptor>;
 pub type ImportCollection = DescriptorCollection<ImportDescriptor>;
@@ -210,18 +219,51 @@ impl DerefMut for CollectedSymbols {
 
 #[derive(Debug)]
 struct ScopeInfo {
+    /// HIR owner for this scope.
     owner: Option<HirId>,
-    symbol_index: Option<usize>,
+    /// Index into `symbols` for the scope's representative symbol.
+    owner_symbol: Option<usize>,
+    /// Indices of symbols declared inside this scope.
     symbols: Vec<usize>,
+    /// Map of local identifiers to their symbol indices in this scope.
     locals: HashMap<String, usize>,
+    /// Cache of symbol indices grouped by kind for faster lookups.
+    locals_by_kind: SymbolKindMap<Vec<usize>>,
+}
+
+impl ScopeInfo {
+    fn new(owner: Option<HirId>) -> Self {
+        Self {
+            owner,
+            owner_symbol: None,
+            symbols: Vec::new(),
+            locals: HashMap::new(),
+            locals_by_kind: SymbolKindMap::new(),
+        }
+    }
+
+    fn record_symbol(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
+        self.locals.insert(name.to_string(), symbol_idx);
+        self.symbols.push(symbol_idx);
+        self.locals_by_kind
+            .ensure_kind(kind)
+            .entry(name.to_string())
+            .or_insert_with(Vec::new)
+            .push(symbol_idx);
+    }
 }
 
 #[derive(Debug)]
 pub struct CollectorCore<'tcx> {
+    /// Source compile unit currently being processed.
     unit: CompileUnit<'tcx>,
+    /// Scope bookkeeping indexed by scope identifier.
     scope_infos: Vec<ScopeInfo>,
+    /// Lookup table from HIR owner to scope index.
     scope_lookup: HashMap<HirId, usize>,
+    /// Stack of active scope indices while traversing the tree.
     scope_stack: Vec<usize>,
+    /// All symbols discovered so far, in creation order.
     symbols: Vec<SymbolSpec>,
 }
 
@@ -229,12 +271,7 @@ impl<'tcx> CollectorCore<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>) -> Self {
         Self {
             unit,
-            scope_infos: vec![ScopeInfo {
-                owner: None,
-                symbol_index: None,
-                symbols: Vec::new(),
-                locals: HashMap::new(),
-            }],
+            scope_infos: vec![ScopeInfo::new(None)],
             scope_lookup: HashMap::new(),
             scope_stack: vec![0],
             symbols: Vec::new(),
@@ -268,18 +305,13 @@ impl<'tcx> CollectorCore<'tcx> {
         }
 
         let idx = self.scope_infos.len();
-        self.scope_infos.push(ScopeInfo {
-            owner: Some(owner),
-            symbol_index: None,
-            symbols: Vec::new(),
-            locals: HashMap::new(),
-        });
+        self.scope_infos.push(ScopeInfo::new(Some(owner)));
         self.scope_lookup.insert(owner, idx);
         idx
     }
 
-    pub fn set_scope_symbol(&mut self, scope_idx: usize, symbol_index: Option<usize>) {
-        self.scope_infos[scope_idx].symbol_index = symbol_index;
+    pub fn set_scope_owner_symbol(&mut self, scope_idx: usize, owner_symbol: Option<usize>) {
+        self.scope_infos[scope_idx].owner_symbol = owner_symbol;
     }
 
     pub fn push_scope(&mut self, scope_idx: usize) {
@@ -298,7 +330,7 @@ impl<'tcx> CollectorCore<'tcx> {
 
     pub fn parent_symbol(&self) -> Option<&SymbolSpec> {
         for &scope_idx in self.scope_stack.iter().rev() {
-            if let Some(sym_idx) = self.scope_infos[scope_idx].symbol_index {
+            if let Some(sym_idx) = self.scope_infos[scope_idx].owner_symbol {
                 if let Some(symbol) = self.symbols.get(sym_idx) {
                     return Some(symbol);
                 }
@@ -310,7 +342,7 @@ impl<'tcx> CollectorCore<'tcx> {
     pub fn current_function_name(&self) -> Option<&str> {
         for &scope_idx in self.scope_stack.iter().rev() {
             let info = &self.scope_infos[scope_idx];
-            if let Some(sym_idx) = info.symbol_index {
+            if let Some(sym_idx) = info.owner_symbol {
                 if let Some(symbol) = self.symbols.get(sym_idx) {
                     if symbol.kind == SymbolKind::Function {
                         return Some(symbol.name.as_str());
@@ -334,7 +366,7 @@ impl<'tcx> CollectorCore<'tcx> {
     pub fn scoped_qualified_name(&self, name: &str) -> String {
         let mut prefix = None;
         for &scope_idx in self.scope_stack.iter().rev() {
-            if let Some(sym_idx) = self.scope_infos[scope_idx].symbol_index {
+            if let Some(sym_idx) = self.scope_infos[scope_idx].owner_symbol {
                 if let Some(symbol) = self.symbols.get(sym_idx) {
                     if !symbol.fqn.is_empty() {
                         prefix = Some(symbol.fqn.as_str());
@@ -347,127 +379,138 @@ impl<'tcx> CollectorCore<'tcx> {
         if let Some(prefix) = prefix {
             format!("{}::{}", prefix, name)
         } else {
-            let unit_prefix = format!("unit{}", self.unit_index());
-            format!("{}::{}", unit_prefix, name)
+            name.to_string()
         }
     }
 
-    pub fn upsert_symbol_from_type_expr(&mut self, owner: HirId, expr: &TypeExpr) {
-        match expr {
-            TypeExpr::Path { segments, .. } => {
-                let segments: Vec<String> = segments
-                    .iter()
-                    .filter(|segment| !segment.is_empty())
-                    .cloned()
-                    .collect();
-                if segments.is_empty() {
-                    return;
-                }
-
-                let name = segments.last().cloned().unwrap();
-                let fqn = segments.join("::");
-                let _ = self.upsert_symbol_with_fqn(owner, &name, SymbolKind::Trait, true, &fqn);
-            }
-            TypeExpr::Reference { inner, .. } => {
-                self.upsert_symbol_from_type_expr(owner, inner);
-            }
-            TypeExpr::Tuple(items) => {
-                for item in items {
-                    self.upsert_symbol_from_type_expr(owner, item);
-                }
-            }
-            _ => {}
-        }
-    }
-
-    pub fn upsert_symbol_internal(
+    pub fn insert_symbol(
         &mut self,
         owner: HirId,
         name: &str,
         kind: SymbolKind,
         is_global: bool,
-        fqn_hint: Option<&str>,
     ) -> (usize, String) {
-        if let Some(fqn) = fqn_hint {
-            if let Some(idx) = self.find_symbol_by_fqn(fqn) {
-                self.symbol_update(idx, owner, is_global);
-                return (idx, fqn.to_string());
-            }
-        } else if let Some(existing_idx) = self.find_symbol_local(name) {
-            let existing_kind = self.symbols[existing_idx].kind;
-            if existing_kind != SymbolKind::Unknown && existing_kind != kind {
-                let fqn = self.scoped_qualified_name(name);
-                let idx = self.insert_symbol(owner, name.to_string(), fqn.clone(), kind, is_global);
-                return (idx, fqn);
-            } else {
-                if let Some(symbol) = self.symbols.get_mut(existing_idx) {
-                    symbol.is_global |= is_global;
-                }
-                let fqn = self.symbols[existing_idx].fqn.clone();
-                return (existing_idx, fqn);
-            }
+        if let Some(_idx) = self.lookup_from_scopes_with(name, kind) {
+            tracing::warn!(
+                "symbol '{}' of kind {:?} already exists in scope, source code probaly has duplicate declaration",
+                name,
+                kind
+            );
         }
 
-        let fqn = fqn_hint
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| self.scoped_qualified_name(name));
-        let idx = self.insert_symbol(owner, name.to_string(), fqn.clone(), kind, is_global);
+        let idx = self.symbols.len();
+        let fqn = self.scoped_qualified_name(name);
+        self.symbols.push(SymbolSpec {
+            owner,
+            name: name.to_owned(),
+            fqn: fqn.clone(),
+            kind,
+            unit_index: self.unit_index(),
+            is_global,
+        });
+
+        let current_scope = self.current_scope_index();
+        self.scope_infos[current_scope].record_symbol(&name, idx, kind);
+
+        if is_global {
+            self.scope_infos[0].record_symbol(&name, idx, kind);
+        }
+
         (idx, fqn)
     }
 
-    pub fn upsert_symbol(
+
+    pub fn insert_expr_symbol(
         &mut self,
         owner: HirId,
-        name: &str,
+        expr: &TypeExpr,
         kind: SymbolKind,
         is_global: bool,
-    ) -> (usize, String) {
-        self.upsert_symbol_internal(owner, name, kind, is_global, None)
-    }
-
-    pub fn upsert_symbol_with_fqn(
-        &mut self,
-        owner: HirId,
-        name: &str,
-        kind: SymbolKind,
-        is_global: bool,
-        fqn: &str,
-    ) -> (usize, String) {
-        self.upsert_symbol_internal(owner, name, kind, is_global, Some(fqn))
-    }
-
-    pub fn find_symbol_by_fqn(&self, fqn: &str) -> Option<usize> {
-        self.symbols
-            .iter()
-            .enumerate()
-            .rev()
-            .find(|(_, symbol)| symbol.fqn == fqn)
-            .map(|(idx, _)| idx)
-    }
-
-    pub fn find_symbol_local(&self, name: &str) -> Option<usize> {
-        if self.scope_stack.len() <= 1 {
-            return None;
-        }
-
-        for &scope_idx in self.scope_stack[1..].iter().rev() {
-            if let Some(&sym_idx) = self.scope_infos[scope_idx].locals.get(name) {
-                return Some(sym_idx);
+    ) -> Option<usize> {
+        match expr {
+            TypeExpr::Path { qualifier, .. } => {
+                todo!();
             }
+            TypeExpr::Reference { inner, .. } => {
+                self.insert_expr_symbol(owner, inner, kind, is_global)
+            }
+            TypeExpr::Tuple(items) => items
+                .iter()
+                .find_map(|item| self.insert_expr_symbol(owner, item, kind, is_global)),
+            _ => None,
         }
-        None
     }
 
-    pub fn find_symbol_in_scopes(&self, name: &str, kinds: &[SymbolKind]) -> Option<usize> {
+    pub fn lookup_from_scopes_with(&self, name: &str, kind: SymbolKind) -> Option<usize> {
         for &scope_idx in self.scope_stack.iter().rev() {
-            for &symbol_idx in self.scope_infos[scope_idx].symbols.iter().rev() {
-                let symbol = &self.symbols[symbol_idx];
-                if symbol.name == name && kinds.contains(&symbol.kind) {
-                    return Some(symbol_idx);
+            let scope = &self.scope_infos[scope_idx];
+            if let Some(kind_bucket) = scope.locals_by_kind.kind_map(kind) {
+                if let Some(indices) = kind_bucket.get(name) {
+                    if let Some(&idx) = indices.last() {
+                        return Some(idx);
+                    }
                 }
             }
         }
         None
+    }
+
+    pub fn lookup_from_scopes_with_parts(
+        &self,
+        parts: &[&str],
+        kind: SymbolKind,
+        start_depth: Option<usize>,
+    ) -> Option<usize> {
+        let parts: Vec<_> = parts
+            .iter()
+            .copied()
+            .filter(|part| !part.is_empty())
+            .collect();
+        if parts.is_empty() {
+            return None;
+        }
+
+        let mut scope_cursor = start_depth.unwrap_or(self.scope_stack.len());
+        scope_cursor = scope_cursor.min(self.scope_stack.len());
+        if scope_cursor == 0 {
+            return None;
+        }
+
+        let mut resolved_idx = None;
+        let mut restrict_kind = true;
+
+        for part in parts.iter().rev() {
+            let mut found: Option<(usize, usize)> = None;
+
+            while scope_cursor > 0 {
+                scope_cursor -= 1;
+                let scope_idx = self.scope_stack[scope_cursor];
+                let scope = &self.scope_infos[scope_idx];
+
+                if restrict_kind {
+                    if let Some(kind_bucket) = scope.locals_by_kind.kind_map(kind) {
+                        if let Some(indices) = kind_bucket.get(*part) {
+                            if let Some(&idx) = indices.last() {
+                                found = Some((scope_cursor, idx));
+                                break;
+                            }
+                        }
+                    }
+                } else if let Some(&idx) = scope.locals.get(*part) {
+                    found = Some((scope_cursor, idx));
+                    break;
+                }
+            }
+
+            let (matched_scope, symbol_idx) = found?;
+            if resolved_idx.is_none() {
+                resolved_idx = Some(symbol_idx);
+            }
+            scope_cursor = matched_scope;
+            restrict_kind = false;
+        }
+
+        resolved_idx
     }
 
     pub fn symbols(&self) -> &[SymbolSpec] {
@@ -484,7 +527,7 @@ impl<'tcx> CollectorCore<'tcx> {
             .into_iter()
             .map(|info| ScopeSpec {
                 owner: info.owner,
-                symbol_index: info.symbol_index,
+                owner_symbol: info.owner_symbol,
                 symbols: info.symbols,
             })
             .collect();
@@ -493,47 +536,6 @@ impl<'tcx> CollectorCore<'tcx> {
             result,
             symbols: self.symbols,
             scopes,
-        }
-    }
-
-    fn insert_symbol(
-        &mut self,
-        owner: HirId,
-        name: String,
-        fqn: String,
-        kind: SymbolKind,
-        is_global: bool,
-    ) -> usize {
-        let idx = self.symbols.len();
-        self.symbols.push(SymbolSpec {
-            owner,
-            name: name.clone(),
-            fqn,
-            kind,
-            unit_index: self.unit_index(),
-            is_global,
-        });
-
-        let current_scope = self.current_scope_index();
-        self.scope_infos[current_scope]
-            .locals
-            .insert(name.clone(), idx);
-        self.scope_infos[current_scope].symbols.push(idx);
-
-        if is_global {
-            self.scope_infos[0].locals.insert(name, idx);
-            self.scope_infos[0].symbols.push(idx);
-        }
-
-        idx
-    }
-
-    fn symbol_update(&mut self, idx: usize, owner: HirId, is_global: bool) {
-        let unit_index = self.unit_index();
-        if let Some(symbol) = self.symbols.get_mut(idx) {
-            symbol.owner = owner;
-            symbol.unit_index = unit_index;
-            symbol.is_global |= is_global;
         }
     }
 }
@@ -595,7 +597,7 @@ pub fn apply_collected_symbols<'tcx>(
             None => globals,
         };
 
-        if let Some(sym_idx) = scope_spec.symbol_index {
+        if let Some(sym_idx) = scope_spec.owner_symbol {
             if let Some(symbol) = created_symbols.get(sym_idx) {
                 target_scope.set_symbol(Some(symbol));
             }

@@ -85,9 +85,9 @@ fn captures_enum_variant_discriminant() {
 }
 
 fn assert_path(expr: &TypeExpr, expected: &[&str]) {
-    if let TypeExpr::Path { segments, .. } = expr {
+    if let TypeExpr::Path { qualifier, .. } = expr {
         let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
-        assert_eq!(segments, &expected_vec);
+        assert_eq!(qualifier.parts(), &expected_vec);
     } else {
         panic!("expected path type");
     }

@@ -18,7 +18,7 @@ impl std::fmt::Display for SymId {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum SymbolKind {
     Unknown,
     Module,
@@ -72,20 +72,30 @@ impl<'tcx> Scope<'tcx> {
     }
 
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
-        let hits = self.trie.read().lookup_symbol_suffix(&[key]);
+        let hits = self.trie.read().lookup_symbol_suffix(&[key], None, None);
         hits.first().map(|symbol| symbol.id)
     }
 
-    pub fn lookup_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.trie
-            .read()
-            .lookup_symbol_suffix(suffix)
+    pub fn lookup_suffix_once(
+        &self,
+        suffix: &[InternedStr],
+        kind_filter: Option<SymbolKind>,
+        unit_filter: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        self.lookup_suffix_symbols(suffix, kind_filter, unit_filter)
             .into_iter()
             .next()
     }
 
-    pub fn lookup_suffix_symbols(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
-        self.trie.read().lookup_symbol_suffix(suffix)
+    pub fn lookup_suffix_symbols(
+        &self,
+        suffix: &[InternedStr],
+        kind_filter: Option<SymbolKind>,
+        unit_filter: Option<usize>,
+    ) -> Vec<&'tcx Symbol> {
+        self.trie
+            .read()
+            .lookup_symbol_suffix(suffix, kind_filter, unit_filter)
     }
 
     pub fn format_compact(&self) -> String {
@@ -166,7 +176,7 @@ impl<'tcx> ScopeStack<'tcx> {
         file: Option<usize>,
     ) -> Option<&'tcx Symbol> {
         for scope in self.iter().rev() {
-            let symbols = scope.trie.read().lookup_symbol_suffix(suffix);
+            let symbols = scope.lookup_suffix_symbols(suffix, kind, file);
             if let Some(symbol) = select_symbol(symbols, kind, file) {
                 return Some(symbol);
             }
@@ -208,9 +218,7 @@ impl<'tcx> ScopeStack<'tcx> {
 
         scopes.iter().rev().find_map(|scope| {
             scope
-                .trie
-                .read()
-                .lookup_symbol_suffix(&[key])
+                .lookup_suffix_symbols(&[key], None, None)
                 .into_iter()
                 .next()
         })
@@ -224,7 +232,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn find_global_suffix_vec(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
         self.stack
             .first()
-            .map(|scope| scope.trie.read().lookup_symbol_suffix(suffix))
+            .map(|scope| scope.lookup_suffix_symbols(suffix, None, None))
             .unwrap_or_default()
     }
 
@@ -425,6 +433,9 @@ impl Symbol {
     }
 
     pub fn add_dependency(&self, other: &Symbol) {
+        if self.id == other.id {
+            return;
+        }
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);
     }
@@ -480,4 +491,124 @@ fn select_symbol(
     }
 
     candidates.into_iter().next()
+}
+
+#[derive(Debug, Clone)]
+pub struct SymbolKindMap<T> {
+    inner: HashMap<SymbolKind, HashMap<String, T>>,
+}
+
+impl<T> SymbolKindMap<T> {
+    pub fn new() -> Self {
+        Self {
+            inner: HashMap::new(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.inner.values().map(HashMap::len).sum()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.inner.values().all(HashMap::is_empty)
+    }
+
+    pub fn kind_len(&self, kind: SymbolKind) -> usize {
+        self.inner.get(&kind).map(HashMap::len).unwrap_or(0)
+    }
+
+    pub fn contains(&self, kind: SymbolKind, name: &str) -> bool {
+        self.inner
+            .get(&kind)
+            .map(|bucket| bucket.contains_key(name))
+            .unwrap_or(false)
+    }
+
+    pub fn get(&self, kind: SymbolKind, name: &str) -> Option<&T> {
+        self.inner.get(&kind).and_then(|bucket| bucket.get(name))
+    }
+
+    pub fn get_mut(&mut self, kind: SymbolKind, name: &str) -> Option<&mut T> {
+        self.inner
+            .get_mut(&kind)
+            .and_then(|bucket| bucket.get_mut(name))
+    }
+
+    pub fn kind_map(&self, kind: SymbolKind) -> Option<&HashMap<String, T>> {
+        self.inner.get(&kind)
+    }
+
+    pub fn kind_map_mut(&mut self, kind: SymbolKind) -> Option<&mut HashMap<String, T>> {
+        self.inner.get_mut(&kind)
+    }
+
+    pub fn ensure_kind(&mut self, kind: SymbolKind) -> &mut HashMap<String, T> {
+        self.inner.entry(kind).or_insert_with(HashMap::new)
+    }
+
+    pub fn insert(&mut self, kind: SymbolKind, name: impl Into<String>, value: T) -> Option<T> {
+        self.ensure_kind(kind).insert(name.into(), value)
+    }
+
+    pub fn remove(&mut self, kind: SymbolKind, name: &str) -> Option<T> {
+        let bucket = self.inner.get_mut(&kind)?;
+        let removed = bucket.remove(name);
+        if bucket.is_empty() {
+            self.inner.remove(&kind);
+        }
+        removed
+    }
+
+    pub fn clear_kind(&mut self, kind: SymbolKind) -> Option<HashMap<String, T>> {
+        self.inner.remove(&kind)
+    }
+
+    pub fn kinds(&self) -> impl Iterator<Item = SymbolKind> + '_ {
+        self.inner.keys().copied()
+    }
+
+    pub fn inner(&self) -> &HashMap<SymbolKind, HashMap<String, T>> {
+        &self.inner
+    }
+
+    pub fn inner_mut(&mut self) -> &mut HashMap<SymbolKind, HashMap<String, T>> {
+        &mut self.inner
+    }
+
+    pub fn into_inner(self) -> HashMap<SymbolKind, HashMap<String, T>> {
+        self.inner
+    }
+}
+
+impl<T> Default for SymbolKindMap<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> IntoIterator for SymbolKindMap<T> {
+    type Item = (SymbolKind, HashMap<String, T>);
+    type IntoIter = std::collections::hash_map::IntoIter<SymbolKind, HashMap<String, T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a SymbolKindMap<T> {
+    type Item = (&'a SymbolKind, &'a HashMap<String, T>);
+    type IntoIter = std::collections::hash_map::Iter<'a, SymbolKind, HashMap<String, T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut SymbolKindMap<T> {
+    type Item = (&'a SymbolKind, &'a mut HashMap<String, T>);
+    type IntoIter = std::collections::hash_map::IterMut<'a, SymbolKind, HashMap<String, T>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.inner.iter_mut()
+    }
 }

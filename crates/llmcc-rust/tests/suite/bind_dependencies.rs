@@ -52,10 +52,11 @@ fn find_function<'a>(
     fallback.expect("function descriptor not found")
 }
 
-fn canonical_fqns(unit: llmcc_core::context::CompileUnit<'static>, fqn: &str) -> Vec<String> {
+fn canonical_fqns(_unit: llmcc_core::context::CompileUnit<'static>, fqn: &str) -> Vec<String> {
     let mut values = vec![fqn.to_string()];
-    if !fqn.starts_with("unit") {
-        values.push(format!("unit{}::{}", unit.index, fqn));
+    let trimmed = fqn.trim_start_matches("::");
+    if trimmed != fqn {
+        values.push(trimmed.to_string());
     }
     values
 }

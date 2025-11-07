@@ -9,16 +9,11 @@ fn collect_variables(source: &str) -> HashMap<String, VariableDescriptor> {
     let cc = CompileCtxt::from_sources::<LangRust>(&sources);
     let unit = cc.compile_unit(0);
     build_llmcc_ir::<LangRust>(&cc, IrBuildConfig).unwrap();
-    let prefix = format!("unit{}::", unit.index);
-
     let mut map = HashMap::new();
     let collection = collect_symbols(unit).result;
     for desc in collection.variables.into_iter() {
         if let Some(ref fqn) = desc.fqn {
             map.insert(fqn.clone(), desc.clone());
-            if let Some(stripped) = fqn.strip_prefix(&prefix) {
-                map.insert(stripped.to_string(), desc.clone());
-            }
         }
 
         map.insert(desc.name.clone(), desc);
@@ -84,9 +79,13 @@ fn captures_local_let_with_type() {
 }
 
 fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
-    if let TypeExpr::Path { segments, generics } = expr {
+    if let TypeExpr::Path {
+        qualifier,
+        generics,
+    } = expr
+    {
         let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
-        assert_eq!(segments, &expected_vec);
+        assert_eq!(qualifier.parts(), &expected_vec);
         generics
     } else {
         panic!();

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::interner::{InternPool, InternedStr};
-use crate::symbol::Symbol;
+use crate::symbol::{Symbol, SymbolKind};
 
 /// A trie structure to store and lookup symbols by their fully qualified names.
 /// The trie is built in reverse order to facilitate suffix-based lookups.
@@ -38,23 +38,28 @@ impl<'tcx> SymbolTrie<'tcx> {
             return;
         }
 
-        let segments: Vec<InternedStr> = fqn
+        let parts: Vec<InternedStr> = fqn
             .split("::")
             .filter(|segment| !segment.is_empty())
             .map(|segment| interner.intern(segment))
             .collect();
-        if segments.is_empty() {
+        if parts.is_empty() {
             return;
         }
 
         let mut node = &mut self.root;
-        for segment in segments.iter().rev().copied() {
+        for segment in parts.iter().rev().copied() {
             node = node.child_mut(segment);
         }
         node.add_symbol(symbol);
     }
 
-    pub fn lookup_symbol_suffix(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
+    pub fn lookup_symbol_suffix(
+        &self,
+        suffix: &[InternedStr],
+        kind_filter: Option<SymbolKind>,
+        unit_filter: Option<usize>,
+    ) -> Vec<&'tcx Symbol> {
         let mut node = &self.root;
         for segment in suffix {
             match node.children.get(segment) {
@@ -63,7 +68,7 @@ impl<'tcx> SymbolTrie<'tcx> {
             }
         }
         let mut results = Vec::new();
-        self.collect_symbols(node, &mut results);
+        self.collect_symbols(node, kind_filter, unit_filter, &mut results);
         results
     }
 
@@ -83,10 +88,23 @@ impl<'tcx> SymbolTrie<'tcx> {
     }
 
     #[allow(clippy::only_used_in_recursion)]
-    fn collect_symbols(&self, node: &SymbolTrieNode<'tcx>, out: &mut Vec<&'tcx Symbol>) {
-        out.extend(node.symbols.iter().copied());
+    fn collect_symbols(
+        &self,
+        node: &SymbolTrieNode<'tcx>,
+        kind_filter: Option<SymbolKind>,
+        unit_filter: Option<usize>,
+        out: &mut Vec<&'tcx Symbol>,
+    ) {
+        for symbol in node.symbols.iter().copied() {
+            let kind_matches = kind_filter.map_or(true, |expected| symbol.kind() == expected);
+            let unit_matches =
+                unit_filter.map_or(true, |expected| symbol.unit_index() == Some(expected));
+            if kind_matches && unit_matches {
+                out.push(symbol);
+            }
+        }
         for child in node.children.values() {
-            self.collect_symbols(child, out);
+            self.collect_symbols(child, kind_filter, unit_filter, out);
         }
     }
 
@@ -96,7 +114,7 @@ impl<'tcx> SymbolTrie<'tcx> {
 
     pub fn symbols(&self) -> Vec<&'tcx Symbol> {
         let mut results = Vec::new();
-        self.collect_symbols(&self.root, &mut results);
+        self.collect_symbols(&self.root, None, None, &mut results);
         results
     }
 
@@ -138,7 +156,7 @@ mod tests {
         trie.insert_symbol(symbol_a, &interner);
         trie.insert_symbol(symbol_b, &interner);
 
-        let suffix = trie.lookup_symbol_suffix(&[key_bar]);
+        let suffix = trie.lookup_symbol_suffix(&[key_bar], None, None);
         assert_eq!(suffix.len(), 1);
         assert_eq!(suffix[0].id, symbol_a.id);
 

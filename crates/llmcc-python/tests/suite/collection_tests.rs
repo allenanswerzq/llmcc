@@ -49,7 +49,7 @@ fn expect_import<'a>(collection: &'a CollectionResult, module: &str) -> &'a Impo
 
 fn type_repr(expr: &TypeExpr) -> String {
     match expr {
-        TypeExpr::Path { segments, .. } => segments.join("::"),
+        TypeExpr::Path { qualifier, .. } => qualifier.parts().join("::"),
         TypeExpr::Opaque { repr, .. } => repr.clone(),
         TypeExpr::Unknown(repr) => repr.clone(),
         other => format!("{:?}", other),

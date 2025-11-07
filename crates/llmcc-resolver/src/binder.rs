@@ -4,8 +4,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
-use llmcc_core::Node;
-use llmcc_descriptor::{CallKind, CallTarget, TypeExpr};
+use llmcc_descriptor::{CallChainRoot, CallKind, CallTarget, TypeExpr};
 
 use crate::collector::CollectionResult;
 
@@ -62,285 +61,192 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         self.scopes.scoped_symbol()
     }
 
+    fn lookup_in_locals(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        unit_index: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        let scopes: Vec<_> = self.scopes.iter().collect();
+        for scope in scopes.into_iter().skip(1).rev() {
+            let symbols = scope.lookup_suffix_symbols(suffix, kind, unit_index);
+            if symbols.len() == 1 {
+                return Some(symbols[0]);
+            } else {
+                tracing::warn!(
+                    "multiple local symbols found for suffix {:?} (kind={:?}, unit={:?}): {:?}",
+                    suffix,
+                    kind,
+                    unit_index,
+                    symbols
+                        .iter()
+                        .map(|symbol| symbol.fqn_name.read().clone())
+                        .collect::<Vec<_>>()
+                );
+            }
+        }
+        None
+    }
+
+    fn lookup_in_globals(
+        &self,
+        suffix: &[InternedStr],
+        kind: Option<SymbolKind>,
+        unit_index: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        if let Some(global_scope) = self.scopes.iter().next() {
+            let symbols = global_scope.lookup_suffix_symbols(suffix, kind, unit_index);
+            if symbols.len() == 1 {
+                return Some(symbols[0]);
+            } else {
+                tracing::warn!(
+                    "multiple global symbols found for suffix {:?} (kind={:?}, unit={:?}): {:?}",
+                    suffix,
+                    kind,
+                    unit_index,
+                    symbols
+                        .iter()
+                        .map(|symbol| symbol.fqn_name.read().clone())
+                        .collect::<Vec<_>>()
+                );
+            }
+        }
+        None
+    }
+
     pub fn lookup_symbol_suffix(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
-        file_hint: Option<usize>,
+        unit_index: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        let file_index = file_hint.unwrap_or(self.unit.index);
-
-        self.lookup_in_local_scopes(suffix, kind, Some(file_index))
-            .or_else(|| self.lookup_in_local_scopes(suffix, kind, None))
-            .or_else(|| self.lookup_in_global_scope(suffix, kind, Some(file_index)))
-            .or_else(|| self.lookup_in_global_scope(suffix, kind, None))
+        self.lookup_in_locals(suffix, kind, unit_index)
+            .or_else(|| self.lookup_in_globals(suffix, kind, unit_index))
     }
 
-    pub fn add_symbol_dependency(&self, target: Option<&'tcx Symbol>) {
-        if let (Some(current), Some(target)) = (self.current_symbol(), target) {
-            current.add_dependency(target);
-        }
-    }
-
-    pub fn add_symbol_dependency_by_field(
+    pub fn lookup_symbol(
         &self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-        expected: SymbolKind,
-    ) -> Option<&'tcx Symbol> {
-        let symbol = self.find_symbol_from_field(node, field_id, expected);
-        self.add_symbol_dependency(symbol);
-        symbol
-    }
-
-    pub fn lookup_segments(
-        &self,
-        segments: &[String],
+        symbol: &[String],
         kind: Option<SymbolKind>,
-        file_hint: Option<usize>,
+        unit_index: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        if segments.is_empty() {
+        if symbol.is_empty() {
             return None;
         }
 
-        let suffix: Vec<_> = segments
+        let mut parts: Vec<String> = symbol.to_vec();
+        while matches!(
+            parts.first().map(String::as_str),
+            Some("self" | "Self" | "super" | "crate")
+        ) {
+            parts.remove(0);
+        }
+
+        if parts.is_empty() {
+            return None;
+        }
+
+        if kind.is_none() {
+            const PRIORITIES: &[SymbolKind] = &[
+                SymbolKind::Struct,
+                SymbolKind::Enum,
+                SymbolKind::Function,
+                SymbolKind::Const,
+                SymbolKind::Trait,
+                SymbolKind::Module,
+            ];
+
+            for candidate in PRIORITIES {
+                if let Some(found) = self.lookup_symbol(&parts, Some(*candidate), unit_index) {
+                    return Some(found);
+                }
+            }
+
+            return None;
+        }
+
+        let suffix: Vec<_> = parts
             .iter()
             .rev()
             .map(|segment| self.interner().intern(segment))
             .collect();
 
-        self.lookup_symbol_suffix(&suffix, kind, file_hint)
+        self.lookup_symbol_suffix(&suffix, kind, unit_index)
     }
 
-    pub fn lookup_segments_with_priority(
+    pub fn lookup_symbol_kind_priority(
         &self,
-        segments: &[String],
-        preferred_kinds: &[SymbolKind],
-        file_hint: Option<usize>,
+        symbol: &[String],
+        kinds: &[SymbolKind],
+        unit_index: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        if segments.is_empty() {
+        if symbol.is_empty() {
             return None;
         }
 
-        for &kind in preferred_kinds {
-            if let Some(symbol) = self.lookup_segments(segments, Some(kind), file_hint) {
-                return Some(symbol);
-            }
-        }
-
-        self.lookup_segments(segments, None, file_hint)
-    }
-
-    pub fn lookup_method(&self, method: &str) -> Option<&'tcx Symbol> {
-        let direct_segments = vec![method.to_string()];
-        if let Some(symbol) =
-            self.lookup_segments_with_priority(&direct_segments, &[SymbolKind::Function], None)
-        {
-            return Some(symbol);
-        }
-
-        let owner_fqns: Vec<String> = self
-            .scopes()
-            .iter()
-            .rev()
-            .filter_map(|scope| scope.symbol().map(|symbol| symbol.fqn_name.read().clone()))
-            .collect();
-
-        for fqn in owner_fqns {
-            if fqn.is_empty() {
-                continue;
-            }
-
-            let mut segments: Vec<String> = fqn
-                .split("::")
-                .filter(|segment| !segment.is_empty())
-                .map(|segment| segment.to_string())
-                .collect();
-            segments.push(method.to_string());
-
-            if let Some(symbol) =
-                self.lookup_segments_with_priority(&segments, &[SymbolKind::Function], None)
-            {
-                return Some(symbol);
+        for &kind in kinds {
+            if let Some(found) = self.lookup_symbol(symbol, Some(kind), unit_index) {
+                return Some(found);
             }
         }
 
         None
     }
 
-    pub fn resolve_path_text(&self, text: &str) -> Option<&'tcx Symbol> {
-        if text.is_empty() {
-            return None;
-        }
-
-        let cleaned = text.split('<').next().unwrap_or(text);
-        let segments: Vec<String> = cleaned
-            .split("::")
-            .map(|segment| segment.trim().to_string())
-            .filter(|segment| !segment.is_empty())
-            .collect();
-
-        self.lookup_segments_with_priority(&segments, &[], None)
-    }
-
-    pub fn add_type_dependency_for_segments(
-        &self,
-        segments: &[String],
-        preferred_kinds: &[SymbolKind],
-    ) {
-        if segments.len() <= 1 {
-            return;
-        }
-
-        let base_segments = &segments[..segments.len() - 1];
-        if let Some(symbol) =
-            self.lookup_segments_with_priority(base_segments, preferred_kinds, None)
-        {
-            self.add_symbol_dependency(Some(symbol));
-        }
-    }
-
-    pub fn add_call_target_dependencies(&self, target: &CallTarget) {
-        match target {
-            CallTarget::Symbol(symbol) => {
-                let mut segments = symbol.qualifiers.clone();
-                segments.push(symbol.name.clone());
-
-                match symbol.kind {
-                    CallKind::Method => {
-                        if let Some(method_symbol) = self.lookup_method(&symbol.name) {
-                            self.add_symbol_dependency(Some(method_symbol));
-                        }
-                    }
-                    CallKind::Constructor => {
-                        if let Some(struct_symbol) =
-                            self.lookup_segments(&segments, Some(SymbolKind::Struct), None)
-                        {
-                            self.add_symbol_dependency(Some(struct_symbol));
-                        } else if let Some(enum_symbol) =
-                            self.lookup_segments(&segments, Some(SymbolKind::Enum), None)
-                        {
-                            self.add_symbol_dependency(Some(enum_symbol));
-                        }
-                    }
-                    CallKind::Function | CallKind::Macro | CallKind::Unknown => {
-                        if let Some(function_symbol) =
-                            self.lookup_segments(&segments, Some(SymbolKind::Function), None)
-                        {
-                            self.add_symbol_dependency(Some(function_symbol));
-                            if segments.len() > 1 {
-                                self.add_type_dependency_for_segments(
-                                    &segments,
-                                    &[SymbolKind::Struct, SymbolKind::Enum],
-                                );
-                            }
-                        } else if !segments.is_empty() {
-                            self.add_type_dependency_for_segments(
-                                &segments,
-                                &[SymbolKind::Struct, SymbolKind::Enum],
-                            );
-                        }
-                    }
-                }
-            }
-            CallTarget::Chain(chain) => {
-                if let Some(symbol) = self.resolve_path_text(&chain.root) {
-                    self.add_symbol_dependency(Some(symbol));
-                } else {
-                    let segments: Vec<String> = chain
-                        .root
-                        .split("::")
-                        .filter(|segment| !segment.is_empty())
-                        .map(|segment| segment.trim().to_string())
-                        .collect();
-                    if segments.len() > 1 {
-                        self.add_type_dependency_for_segments(
-                            &segments,
-                            &[SymbolKind::Struct, SymbolKind::Enum],
-                        );
-                    }
-                }
-
-                for segment in &chain.segments {
-                    match segment.kind {
-                        CallKind::Method | CallKind::Function => {
-                            if let Some(symbol) = self.lookup_method(&segment.name) {
-                                self.add_symbol_dependency(Some(symbol));
-                            }
-                        }
-                        CallKind::Constructor => {
-                            if let Some(symbol) = self.lookup_segments(
-                                std::slice::from_ref(&segment.name),
-                                Some(SymbolKind::Struct),
-                                None,
-                            ) {
-                                self.add_symbol_dependency(Some(symbol));
-                            }
-                        }
-                        CallKind::Macro | CallKind::Unknown => {}
-                    }
-                }
-            }
-            CallTarget::Dynamic { .. } => {}
-        }
-    }
-
-    pub fn resolve_type_expr_symbol(
-        &self,
-        expr: &TypeExpr,
-        preferred_kinds: &[SymbolKind],
-    ) -> Option<&'tcx Symbol> {
-        let segments = expr.path_segments()?.to_vec();
-        self.lookup_segments_with_priority(&segments, preferred_kinds, None)
-    }
-
-    pub fn resolve_symbol_type_expr_with<F>(
+    pub fn lookup_symbol_with(
         &self,
         node: &HirNode<'tcx>,
-        builder: F,
-        preferred_kinds: &[SymbolKind],
-    ) -> Option<&'tcx Symbol>
-    where
-        F: Fn(CompileUnit<'tcx>, Node<'tcx>) -> TypeExpr,
-    {
-        let expr = builder(self.unit(), node.inner_ts_node());
-        self.resolve_type_expr_symbol(&expr, preferred_kinds)
+        field_id: u16,
+        kind: SymbolKind,
+    ) -> Option<&'tcx Symbol> {
+        let child = node.opt_child_by_field(self.unit(), field_id)?;
+        let ident = child.as_ident()?;
+        let key = self.interner().intern(&ident.name);
+        self.lookup_symbol_suffix(&[key], Some(kind), None)
     }
 
-    pub fn collect_type_expr_symbols(
+    pub fn lookup_expr_symbols(&self, expr: &TypeExpr) -> Vec<&'tcx Symbol> {
+        let mut symbols = Vec::new();
+        self.lookup_expr_symbols_with(expr, SymbolKind::Struct, &mut symbols);
+        self.lookup_expr_symbols_with(expr, SymbolKind::Enum, &mut symbols);
+        symbols
+    }
+
+    fn lookup_expr_symbols_with(
         &self,
         expr: &TypeExpr,
-        preferred_kinds: &[SymbolKind],
+        kind: SymbolKind,
         symbols: &mut Vec<&'tcx Symbol>,
     ) {
         match expr {
-            TypeExpr::Path { segments, generics } => {
-                if let Some(symbol) =
-                    self.lookup_segments_with_priority(segments, preferred_kinds, None)
-                {
+            TypeExpr::Path {
+                qualifier,
+                generics,
+            } => {
+                if let Some(symbol) = self.lookup_symbol(qualifier.parts(), Some(kind), None) {
                     if !symbols.iter().any(|existing| existing.id == symbol.id) {
                         symbols.push(symbol);
                     }
                 }
 
                 for generic in generics {
-                    self.collect_type_expr_symbols(generic, preferred_kinds, symbols);
+                    self.lookup_expr_symbols_with(generic, kind, symbols);
                 }
             }
             TypeExpr::Reference { inner, .. } => {
-                self.collect_type_expr_symbols(inner, preferred_kinds, symbols);
+                self.lookup_expr_symbols_with(inner, kind, symbols);
             }
             TypeExpr::Tuple(items) => {
                 for item in items {
-                    self.collect_type_expr_symbols(item, preferred_kinds, symbols);
+                    self.lookup_expr_symbols_with(item, kind, symbols);
                 }
             }
             TypeExpr::Callable { parameters, result } => {
                 for parameter in parameters {
-                    self.collect_type_expr_symbols(parameter, preferred_kinds, symbols);
+                    self.lookup_expr_symbols_with(parameter, kind, symbols);
                 }
                 if let Some(result) = result.as_deref() {
-                    self.collect_type_expr_symbols(result, preferred_kinds, symbols);
+                    self.lookup_expr_symbols_with(result, kind, symbols);
                 }
             }
             TypeExpr::ImplTrait { .. } | TypeExpr::Opaque { .. } | TypeExpr::Unknown(_) => {}
@@ -368,90 +274,146 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         }
     }
 
-    pub fn find_symbol_from_field(
-        &self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-        expected: SymbolKind,
-    ) -> Option<&'tcx Symbol> {
-        let child = node.opt_child_by_field(self.unit(), field_id)?;
-        let ident = child.as_ident()?;
-        let key = self.interner().intern(&ident.name);
-        self.lookup_symbol_suffix(&[key], Some(expected), None)
-    }
+    pub fn lookup_call_symbols(&self, target: &CallTarget, symbols: &mut Vec<&'tcx Symbol>) {
+        match target {
+            CallTarget::Symbol(call) => {
+                let mut parts = call.qualifiers.clone();
+                parts.push(call.name.clone());
 
-    fn lookup_in_local_scopes(
-        &self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-        file: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        let global_scope = self.scopes.iter().next();
-        for scope in self.scopes.iter().rev() {
-            if let Some(global) = global_scope {
-                if ptr::eq(scope, global) {
-                    continue;
+                match call.kind {
+                    CallKind::Method => {
+                        if let Some(method_symbol) =
+                            self.lookup_symbol(&parts, Some(SymbolKind::Function), None)
+                        {
+                            self.push_symbol_unique(symbols, method_symbol);
+                        }
+                        self.push_type_from_qualifiers(symbols, &call.qualifiers);
+                    }
+                    CallKind::Constructor => {
+                        if let Some(sym) = self.lookup_symbol_kind_priority(
+                            &parts,
+                            &[SymbolKind::Struct, SymbolKind::Enum],
+                            None,
+                        ) {
+                            self.push_symbol_unique(symbols, sym);
+                        }
+                    }
+                    CallKind::Function | CallKind::Macro | CallKind::Unknown => {
+                        if let Some(sym) =
+                            self.lookup_symbol(&parts, Some(SymbolKind::Function), None)
+                        {
+                            self.push_symbol_unique(symbols, sym);
+                        }
+                        self.push_type_from_qualifiers(symbols, &call.qualifiers);
+                    }
                 }
             }
+            CallTarget::Chain(chain) => {
+                match &chain.root {
+                    CallChainRoot::Expr(expr) => {
+                        if let Some(symbol) = self.lookup_simple_path(expr) {
+                            self.push_symbol_unique(symbols, symbol);
+                        }
+                    }
+                    CallChainRoot::Invocation(invocation) => {
+                        self.lookup_call_symbols(invocation.target.as_ref(), symbols);
+                    }
+                }
 
-            let symbols = scope.lookup_suffix_symbols(suffix);
-            if let Some(symbol) = self.select_matching_symbol(&symbols, kind, file) {
-                return Some(symbol);
+                for segment in &chain.parts {
+                    match segment.kind {
+                        CallKind::Constructor => {
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Struct),
+                                None,
+                            ) {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Enum),
+                                None,
+                            ) {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                        }
+                        CallKind::Function | CallKind::Macro => {
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Function),
+                                None,
+                            ) {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                        }
+                        CallKind::Method => {
+                            if let Some(sym) = self.lookup_symbol(
+                                &[segment.name.clone()],
+                                Some(SymbolKind::Function),
+                                None,
+                            ) {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                        }
+                        CallKind::Unknown => {}
+                    }
+                }
             }
-        }
-
-        None
-    }
-
-    fn lookup_in_global_scope(
-        &self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-        file: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        if let Some(global_scope) = self.scopes.iter().next() {
-            let symbols = global_scope.lookup_suffix_symbols(suffix);
-            self.select_matching_symbol(&symbols, kind, file)
-        } else {
-            None
+            CallTarget::Dynamic { .. } => {}
         }
     }
 
-    fn select_matching_symbol(
-        &self,
-        candidates: &[&'tcx Symbol],
-        kind: Option<SymbolKind>,
-        file: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        if candidates.is_empty() {
+    fn push_symbol_unique(&self, symbols: &mut Vec<&'tcx Symbol>, symbol: &'tcx Symbol) {
+        if symbols.iter().any(|existing| ptr::eq(*existing, symbol)) {
+            return;
+        }
+        symbols.push(symbol);
+    }
+
+    fn push_type_from_qualifiers(&self, symbols: &mut Vec<&'tcx Symbol>, qualifiers: &[String]) {
+        if qualifiers.is_empty() {
+            return;
+        }
+
+        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Struct), None) {
+            self.push_symbol_unique(symbols, sym);
+        }
+
+        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Enum), None) {
+            self.push_symbol_unique(symbols, sym);
+        }
+
+        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Trait), None) {
+            self.push_symbol_unique(symbols, sym);
+        }
+    }
+
+    fn lookup_simple_path(&self, expr: &str) -> Option<&'tcx Symbol> {
+        if expr.is_empty()
+            || expr.contains('(')
+            || expr.contains(')')
+            || expr.contains('.')
+            || expr.contains(' ')
+            || matches!(expr, "self" | "Self" | "super")
+        {
             return None;
         }
 
-        for &symbol in candidates {
-            let kind_ok = kind.is_none_or(|expected| symbol.kind() == expected);
-            let file_ok = file.is_none_or(|expected| symbol.unit_index() == Some(expected));
-            if kind_ok && file_ok {
-                return Some(symbol);
-            }
-        }
-
-        if let Some(expected_kind) = kind {
-            for &symbol in candidates {
-                if symbol.kind() == expected_kind {
-                    return Some(symbol);
-                }
-            }
+        if !expr.contains("::") {
             return None;
         }
 
-        if let Some(expected_file) = file {
-            for &symbol in candidates {
-                if symbol.unit_index() == Some(expected_file) {
-                    return Some(symbol);
-                }
-            }
+        let parts: Vec<String> = expr
+            .split("::")
+            .filter(|segment| !segment.is_empty())
+            .map(|segment| segment.to_string())
+            .collect();
+
+        if parts.is_empty() {
+            return None;
         }
 
-        candidates.first().copied()
+        self.lookup_symbol(&parts, None, None)
     }
 }
