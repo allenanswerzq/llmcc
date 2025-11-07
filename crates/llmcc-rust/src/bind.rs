@@ -252,8 +252,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
 
+        let parent = self.current_symbol();
         if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
-            self.core.add_call_dependencies(&descriptor.target);
+            let symbols = Vec::new();
+            self.core.lookup_call_symbols(&descriptor.target, symbols);
+            for symbol in symbols {
+                parent.add_dependency(symbol);
+            }
         }
     }
 

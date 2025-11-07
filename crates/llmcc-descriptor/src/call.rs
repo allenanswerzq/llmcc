@@ -47,6 +47,57 @@ pub enum CallTarget {
     Dynamic { repr: String },
 }
 
+/// Representation of the starting point for a fluent call chain.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CallChainRoot {
+    /// Raw expression used as the receiver (e.g. `value` or `self.items()[0]`).
+    Expr(String),
+    /// An invocation that feeds its result into the next segment (e.g. `foo()`).
+    Invocation(CallInvocation),
+}
+
+impl From<String> for CallChainRoot {
+    fn from(value: String) -> Self {
+        CallChainRoot::Expr(value)
+    }
+}
+
+impl From<&str> for CallChainRoot {
+    fn from(value: &str) -> Self {
+        CallChainRoot::Expr(value.to_string())
+    }
+}
+
+impl From<CallInvocation> for CallChainRoot {
+    fn from(value: CallInvocation) -> Self {
+        CallChainRoot::Invocation(value)
+    }
+}
+
+/// Captures an invocation inside a call chain.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CallInvocation {
+    pub target: Box<CallTarget>,
+    pub type_arguments: Vec<TypeExpr>,
+    pub arguments: Vec<CallArgument>,
+}
+
+impl CallInvocation {
+    pub fn new(
+        target: CallTarget,
+        type_arguments: Vec<TypeExpr>,
+        arguments: Vec<CallArgument>,
+    ) -> Self {
+        Self {
+            target: Box::new(target),
+            type_arguments,
+            arguments,
+        }
+    }
+}
+
 /// A resolved symbol-style call (free functions, inherent methods, constructors).
 ///
 /// * `qualifiers` keeps the namespace path (e.g. `vec!["crate", "math"]`).
@@ -77,12 +128,12 @@ impl CallSymbol {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CallChain {
-    pub root: String,
+    pub root: CallChainRoot,
     pub segments: Vec<CallSegment>,
 }
 
 impl CallChain {
-    pub fn new(root: impl Into<String>) -> Self {
+    pub fn new(root: impl Into<CallChainRoot>) -> Self {
         Self {
             root: root.into(),
             segments: Vec::new(),

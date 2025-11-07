@@ -1,5 +1,5 @@
 use llmcc_core::{context::CompileCtxt, IrBuildConfig};
-use llmcc_descriptor::{CallDescriptor, CallKind, CallTarget};
+use llmcc_descriptor::{CallChain, CallChainRoot, CallDescriptor, CallInvocation, CallKind, CallTarget};
 use llmcc_python::{build_llmcc_ir, collect_symbols, CallCollection, LangPython};
 
 fn collect_calls(source: &str) -> CallCollection {
@@ -24,13 +24,54 @@ fn call_key(call: &CallDescriptor) -> String {
             }
         }
         CallTarget::Chain(chain) => {
-            let mut key = chain.root.clone();
-            for segment in &chain.segments {
-                key.push('.');
-                key.push_str(&segment.name);
-            }
-            key
+            format_call_chain(chain)
         }
+        CallTarget::Dynamic { repr } => repr.clone(),
+    }
+}
+
+fn format_call_chain(chain: &CallChain) -> String {
+    let mut key = format_chain_root(&chain.root);
+    for segment in &chain.segments {
+        key.push('.');
+        key.push_str(&segment.name);
+    }
+    key
+}
+
+fn format_chain_root(root: &CallChainRoot) -> String {
+    match root {
+        CallChainRoot::Expr(expr) => expr.clone(),
+        CallChainRoot::Invocation(invocation) => format_invocation(invocation),
+    }
+}
+
+fn format_invocation(invocation: &CallInvocation) -> String {
+    let mut base = format_call_target(invocation.target.as_ref());
+    base.push('(');
+    let args = invocation
+        .arguments
+        .iter()
+        .map(|arg| arg.value.clone())
+        .collect::<Vec<_>>()
+        .join(", ");
+    base.push_str(&args);
+    base.push(')');
+    base
+}
+
+fn format_call_target(target: &CallTarget) -> String {
+    match target {
+        CallTarget::Symbol(symbol) => {
+            if symbol.qualifiers.is_empty() {
+                symbol.name.clone()
+            } else {
+                let mut parts = symbol.qualifiers.clone();
+                parts.push(symbol.name.clone());
+                parts.join("::")
+            }
+        }
+        CallTarget::Chain(chain) => format_call_chain(chain),
         CallTarget::Dynamic { repr } => repr.clone(),
     }
 }
@@ -44,7 +85,7 @@ where
 
 fn has_chain_segment(call: &CallDescriptor, root: &str, method: &str) -> bool {
     if let CallTarget::Chain(chain) = &call.target {
-        if chain.root != root {
+        if !matches!(&chain.root, CallChainRoot::Expr(expr) if expr == root) {
             return false;
         }
         return chain.segments.iter().any(|segment| segment.name == method);
@@ -99,7 +140,7 @@ def caller():
     let calls = collect_calls(source);
     let method_call = find_call(&calls, |call| {
         if let CallTarget::Chain(chain) = &call.target {
-            chain.root == "obj"
+            matches!(&chain.root, CallChainRoot::Expr(expr) if expr == "obj")
                 && chain
                     .segments
                     .last()
@@ -202,7 +243,7 @@ def caller():
         .iter()
         .filter_map(|call| {
             if let CallTarget::Chain(chain) = &call.target {
-                if chain.root == "obj" {
+                if matches!(&chain.root, CallChainRoot::Expr(expr) if expr == "obj") {
                     return chain
                         .segments
                         .last()
@@ -255,6 +296,33 @@ def caller():
         assert_eq!(call.arguments.len(), 3);
         // Keyword arguments should be captured
         assert!(call.arguments.iter().any(|arg| arg.name.is_some()));
+    }
+}
+
+#[test]
+fn captures_chain_with_invoked_root() {
+    let source = r#"
+def caller():
+    factory().builder().finish()
+"#;
+    let calls = collect_calls(source);
+    let chain_call = find_call(&calls, |call| matches!(call.target, CallTarget::Chain(_)));
+    let chain_call = chain_call.expect("expected a chain call");
+
+    if let CallTarget::Chain(chain) = &chain_call.target {
+        match &chain.root {
+            CallChainRoot::Invocation(invocation) => {
+                match invocation.target.as_ref() {
+                    CallTarget::Symbol(symbol) => assert_eq!(symbol.name, "factory"),
+                    other => panic!("unexpected root target: {:?}", other),
+                }
+            }
+            other => panic!("expected invocation root, got {:?}", other),
+        }
+
+        assert_eq!(chain.segments.len(), 2);
+        assert_eq!(chain.segments[0].name, "builder");
+        assert_eq!(chain.segments[1].name, "finish");
     }
 }
 

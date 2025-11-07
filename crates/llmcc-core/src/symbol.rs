@@ -72,7 +72,7 @@ impl<'tcx> Scope<'tcx> {
     }
 
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
-        let hits = self.trie.read().lookup_symbol_suffix(&[key], None);
+        let hits = self.trie.read().lookup_symbol_suffix(&[key], None, None);
         hits.first().map(|symbol| symbol.id)
     }
 
@@ -93,11 +93,9 @@ impl<'tcx> Scope<'tcx> {
         kind_filter: Option<SymbolKind>,
         unit_filter: Option<usize>,
     ) -> Vec<&'tcx Symbol> {
-        let mut symbols = self.trie.read().lookup_symbol_suffix(suffix, unit_filter);
-        if let Some(kind) = kind_filter {
-            symbols.retain(|symbol| symbol.kind() == kind);
-        }
-        symbols
+        self.trie
+            .read()
+            .lookup_symbol_suffix(suffix, kind_filter, unit_filter)
     }
 
     pub fn format_compact(&self) -> String {

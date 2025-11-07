@@ -5,7 +5,7 @@ use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{self, Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_core::Node;
-use llmcc_descriptor::{CallKind, CallTarget, TypeExpr};
+use llmcc_descriptor::{CallChainRoot, CallKind, CallTarget, TypeExpr};
 
 use crate::collector::CollectionResult;
 
@@ -242,90 +242,111 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         }
     }
 
-    pub fn add_call_dependencies(&self, target: &CallTarget) {
+    pub fn lookup_call_symbols(&self, target: &CallTarget, symbols: &mut Vec<&'tcx Symbol>) {
         match target {
-            CallTarget::Symbol(symbol) => {
-                let mut segments = symbol.qualifiers.clone();
-                segments.push(symbol.name.clone());
+            CallTarget::Symbol(call) => {
+                let mut parts = call.qualifiers.clone();
+                parts.push(call.name.clone());
 
-                match symbol.kind {
+                match call.kind {
                     CallKind::Method => {
                         if let Some(method_symbol) =
-                            self.lookup_symbol(&segments, Some(SymbolKind::Function), None)
+                            self.lookup_symbol(&parts, Some(SymbolKind::Function), None)
                         {
-                            self.add_symbol_dependency(Some(method_symbol));
+                            self.push_symbol_unique(symbols, method_symbol);
                         }
                     }
                     CallKind::Constructor => {
-                        if let Some(struct_symbol) =
-                            self.lookup_segments(&segments, Some(SymbolKind::Struct), None)
-                        {
-                            self.add_symbol_dependency(Some(struct_symbol));
-                        } else if let Some(enum_symbol) =
-                            self.lookup_segments(&segments, Some(SymbolKind::Enum), None)
-                        {
-                            self.add_symbol_dependency(Some(enum_symbol));
+                        if let Some(sym) = self.lookup_symbol_kind_priority(
+                            &parts,
+                            &[SymbolKind::Struct, SymbolKind::Enum],
+                            None,
+                        ) {
+                            self.push_symbol_unique(symbols, sym);
                         }
                     }
                     CallKind::Function | CallKind::Macro | CallKind::Unknown => {
-                        if let Some(function_symbol) =
-                            self.lookup_segments(&segments, Some(SymbolKind::Function), None)
+                        if let Some(sym) =
+                            self.lookup_symbol(&parts, Some(SymbolKind::Function), None)
                         {
-                            self.add_symbol_dependency(Some(function_symbol));
-                            if segments.len() > 1 {
-                                self.add_type_dependency_for_segments(
-                                    &segments,
-                                    &[SymbolKind::Struct, SymbolKind::Enum],
-                                );
-                            }
-                        } else if !segments.is_empty() {
-                            self.add_type_dependency_for_segments(
-                                &segments,
-                                &[SymbolKind::Struct, SymbolKind::Enum],
-                            );
+                            self.push_symbol_unique(symbols, sym);
                         }
                     }
                 }
             }
             CallTarget::Chain(chain) => {
-                if let Some(symbol) = self.resolve_path_text(&chain.root) {
-                    self.add_symbol_dependency(Some(symbol));
-                } else {
-                    let segments: Vec<String> = chain
-                        .root
-                        .split("::")
-                        .filter(|segment| !segment.is_empty())
-                        .map(|segment| segment.trim().to_string())
-                        .collect();
-                    if segments.len() > 1 {
-                        self.add_type_dependency_for_segments(
-                            &segments,
-                            &[SymbolKind::Struct, SymbolKind::Enum],
-                        );
+                match &chain.root {
+                    CallChainRoot::Expr(expr) => {
+                        if let Some(symbol) = self.lookup_simple_path(expr) {
+                            self.push_symbol_unique(symbols, symbol);
+                        }
+                    }
+                    CallChainRoot::Invocation(invocation) => {
+                        self.lookup_call_symbols(invocation.target.as_ref(), symbols);
                     }
                 }
 
                 for segment in &chain.segments {
                     match segment.kind {
-                        CallKind::Method | CallKind::Function => {
-                            if let Some(symbol) = self.lookup_method(&segment.name) {
-                                self.add_symbol_dependency(Some(symbol));
-                            }
-                        }
                         CallKind::Constructor => {
-                            if let Some(symbol) = self.lookup_segments(
-                                std::slice::from_ref(&segment.name),
-                                Some(SymbolKind::Struct),
-                                None,
-                            ) {
-                                self.add_symbol_dependency(Some(symbol));
+                            if let Some(sym) =
+                                self.lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Struct), None)
+                            {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                            if let Some(sym) =
+                                self.lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Enum), None)
+                            {
+                                self.push_symbol_unique(symbols, sym);
                             }
                         }
-                        CallKind::Macro | CallKind::Unknown => {}
+                        CallKind::Function | CallKind::Macro => {
+                            if let Some(sym) =
+                                self.lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
+                            {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                        }
+                        CallKind::Method | CallKind::Unknown => {}
                     }
                 }
             }
             CallTarget::Dynamic { .. } => {}
         }
+    }
+
+    fn push_symbol_unique(&self, symbols: &mut Vec<&'tcx Symbol>, symbol: &'tcx Symbol) {
+        if symbols.iter().any(|existing| ptr::eq(*existing, symbol)) {
+            return;
+        }
+        symbols.push(symbol);
+    }
+
+    fn lookup_simple_path(&self, expr: &str) -> Option<&'tcx Symbol> {
+        if expr.is_empty()
+            || expr.contains('(')
+            || expr.contains(')')
+            || expr.contains('.')
+            || expr.contains(' ')
+            || matches!(expr, "self" | "Self" | "super")
+        {
+            return None;
+        }
+
+        if !expr.contains("::") {
+            return None;
+        }
+
+        let segments: Vec<String> = expr
+            .split("::")
+            .filter(|segment| !segment.is_empty())
+            .map(|segment| segment.to_string())
+            .collect();
+
+        if segments.is_empty() {
+            return None;
+        }
+
+        self.lookup_symbol(&segments, None, None)
     }
 }

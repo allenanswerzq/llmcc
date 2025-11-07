@@ -5,8 +5,8 @@ use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
 use llmcc_descriptor::{
-    CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
-    TypeExpr,
+    CallArgument, CallChain, CallChainRoot, CallDescriptor, CallInvocation, CallKind,
+    CallSegment, CallSymbol, CallTarget, TypeExpr,
 };
 
 use super::function::{build_origin, parse_type_expr};
@@ -138,6 +138,7 @@ fn parse_chain<'tcx>(
     let mut segments = Vec::new();
     let mut pending_generics = call_generics;
     let mut pending_arguments = Vec::new();
+    let mut pending_invocation = false;
 
     loop {
         match node.kind() {
@@ -150,6 +151,7 @@ fn parse_chain<'tcx>(
                     .child_by_field_name("arguments")
                     .map(|args| parse_arguments(unit, args))
                     .unwrap_or_default();
+                pending_invocation = true;
                 node = node.child_by_field_name("function")?;
             }
             "generic_function" => {
@@ -172,6 +174,7 @@ fn parse_chain<'tcx>(
                     type_arguments: generics,
                     arguments,
                 });
+                pending_invocation = false;
                 node = node.child_by_field_name("value")?;
             }
             _ => break,
@@ -183,8 +186,17 @@ fn parse_chain<'tcx>(
     }
 
     segments.reverse();
-    let base = unit.ts_text(node);
-    let mut chain = CallChain::new(base);
+    let root = if pending_invocation {
+        let target = parse_call_target(unit, node, pending_generics.clone());
+        CallChainRoot::Invocation(CallInvocation::new(
+            target,
+            pending_generics,
+            pending_arguments,
+        ))
+    } else {
+        CallChainRoot::Expr(unit.ts_text(node))
+    };
+    let mut chain = CallChain::new(root);
     chain.segments = segments;
     Some(CallTarget::Chain(chain))
 }

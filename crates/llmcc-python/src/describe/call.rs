@@ -5,7 +5,8 @@ use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
 use llmcc_descriptor::{
-    CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
+    CallArgument, CallChain, CallChainRoot, CallDescriptor, CallInvocation, CallKind, CallSegment,
+    CallSymbol, CallTarget,
 };
 
 use super::origin::build_origin;
@@ -43,6 +44,7 @@ pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<Call
 fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<CallTarget> {
     let mut segments = Vec::new();
     let mut pending_arguments = Vec::new();
+    let mut pending_invocation = false;
 
     loop {
         match node.kind() {
@@ -51,6 +53,7 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
                     .child_by_field_name("arguments")
                     .map(|args| parse_arguments(unit, args))
                     .unwrap_or_default();
+                pending_invocation = true;
                 node = node.child_by_field_name("function")?;
             }
             "attribute" => {
@@ -65,6 +68,7 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
                     type_arguments: Vec::new(),
                     arguments,
                 });
+                pending_invocation = false;
                 node = node.child_by_field_name("object")?;
             }
             _ => break,
@@ -76,7 +80,17 @@ fn parse_chain<'tcx>(unit: CompileUnit<'tcx>, mut node: Node<'tcx>) -> Option<Ca
     }
 
     segments.reverse();
-    let root = unit.ts_text(node);
+    let root = if pending_invocation {
+        let target =
+            parse_symbol_target(unit, node, Some(CallKind::Function)).unwrap_or_else(|| {
+                CallTarget::Dynamic {
+                    repr: unit.ts_text(node),
+                }
+            });
+        CallChainRoot::Invocation(CallInvocation::new(target, Vec::new(), pending_arguments))
+    } else {
+        CallChainRoot::Expr(unit.ts_text(node))
+    };
     let mut chain = CallChain::new(root);
     chain.segments = segments;
     Some(CallTarget::Chain(chain))

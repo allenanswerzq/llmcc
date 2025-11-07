@@ -5,7 +5,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 
-use llmcc_descriptor::{CallChain, TypeExpr};
+use llmcc_descriptor::{CallChain, CallChainRoot, TypeExpr};
 use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
 
 use crate::token::{AstVisitorPython, LangPython};
@@ -431,7 +431,12 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn resolve_method_from_chain(&mut self, chain: &CallChain) -> Option<&'tcx Symbol> {
         let segment = chain.segments.last()?;
-        if chain.root == "self" {
+        let root_is_self = matches!(
+            &chain.root,
+            CallChainRoot::Expr(expr) if expr == "self"
+        );
+
+        if root_is_self {
             let class_fqn = self
                 .scopes()
                 .iter()

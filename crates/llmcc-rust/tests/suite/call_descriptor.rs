@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 
 use llmcc_core::IrBuildConfig;
-use llmcc_descriptor::{CallChain, CallDescriptor, CallKind, CallSymbol, CallTarget, TypeExpr};
+use llmcc_descriptor::{
+    CallChain, CallChainRoot, CallDescriptor, CallInvocation, CallKind, CallSymbol, CallTarget,
+    TypeExpr,
+};
 use llmcc_rust::{build_llmcc_ir, collect_symbols, CallCollection, CompileCtxt, LangRust};
 
 fn collect_calls(source: &str) -> CallCollection {
@@ -20,14 +23,52 @@ fn call_key(call: &CallDescriptor) -> String {
             parts.push(symbol.name.clone());
             parts.join("::")
         }
-        CallTarget::Chain(chain) => {
-            let mut key = chain.root.clone();
-            for segment in &chain.segments {
-                key.push('.');
-                key.push_str(&segment.name);
-            }
-            key
+        CallTarget::Chain(chain) => format_call_chain(chain),
+        CallTarget::Dynamic { repr } => repr.clone(),
+    }
+}
+
+fn format_call_chain(chain: &CallChain) -> String {
+    let mut key = format_chain_root(&chain.root);
+    for segment in &chain.segments {
+        key.push('.');
+        key.push_str(&segment.name);
+    }
+    key
+}
+
+fn format_chain_root(root: &CallChainRoot) -> String {
+    match root {
+        CallChainRoot::Expr(expr) => expr.clone(),
+        CallChainRoot::Invocation(inv) => format_invocation(inv),
+    }
+}
+
+fn format_invocation(invocation: &CallInvocation) -> String {
+    let mut base = format_call_target(invocation.target.as_ref());
+    if !invocation.type_arguments.is_empty() {
+        base.push_str("::<..>");
+    }
+    base.push('(');
+    let args = invocation
+        .arguments
+        .iter()
+        .map(|arg| arg.value.clone())
+        .collect::<Vec<_>>()
+        .join(", ");
+    base.push_str(&args);
+    base.push(')');
+    base
+}
+
+fn format_call_target(target: &CallTarget) -> String {
+    match target {
+        CallTarget::Symbol(symbol) => {
+            let mut parts = symbol.qualifiers.clone();
+            parts.push(symbol.name.clone());
+            parts.join("::")
         }
+        CallTarget::Chain(chain) => format_call_chain(chain),
         CallTarget::Dynamic { repr } => repr.clone(),
     }
 }
@@ -83,7 +124,10 @@ fn captures_method_call() {
     assert_eq!(calls.len(), 1);
     let call = &calls[0];
     let chain = chain_target(call);
-    assert_eq!(chain.root, "value");
+    assert!(matches!(
+        &chain.root,
+        CallChainRoot::Expr(root) if root == "value"
+    ));
     assert_eq!(chain.segments.len(), 1);
     let segment = &chain.segments[0];
     assert_eq!(segment.name, "compute");
@@ -140,7 +184,10 @@ fn captures_method_chain() {
 
     let chain = find_call(&calls, |call| matches!(call.target, CallTarget::Chain(_)));
     let chain = chain_target(chain);
-    assert_eq!(chain.root, "data");
+    assert!(matches!(
+        &chain.root,
+        CallChainRoot::Expr(root) if root == "data"
+    ));
     assert_eq!(chain.segments.len(), 3);
     assert_eq!(chain.segments[0].name, "iter");
     assert_eq!(chain.segments[0].kind, CallKind::Method);
@@ -171,6 +218,34 @@ fn captures_method_chain() {
     });
     assert_eq!(handle.arguments.len(), 1);
     assert_eq!(handle.arguments[0].value, "v");
+}
+
+#[test]
+fn captures_chain_with_invoked_root() {
+    let source = r#"
+        fn wrapper() {
+            foo().bar().baz();
+        }
+    "#;
+
+    let calls = collect_calls(source);
+    let chain = find_call(&calls, |call| matches!(call.target, CallTarget::Chain(_)));
+    let chain = chain_target(chain);
+
+    match &chain.root {
+        CallChainRoot::Invocation(invocation) => {
+            match invocation.target.as_ref() {
+                CallTarget::Symbol(symbol) => assert_eq!(symbol.name, "foo"),
+                other => panic!("unexpected root target: {:?}", other),
+            }
+            assert!(invocation.arguments.is_empty());
+        }
+        other => panic!("expected invocation root, got {:?}", other),
+    }
+
+    assert_eq!(chain.segments.len(), 2);
+    assert_eq!(chain.segments[0].name, "bar");
+    assert_eq!(chain.segments[1].name, "baz");
 }
 
 #[test]
