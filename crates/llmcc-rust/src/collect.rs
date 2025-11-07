@@ -198,6 +198,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
+        // todo!("support trait declaration");
         self.visit_struct_item(node);
     }
 

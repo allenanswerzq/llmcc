@@ -45,7 +45,6 @@ fn detects_pub_crate_visibility() {
 }
 
 #[test]
-#[ignore = "todo"]
 fn captures_parameters_and_return_type() {
     let source = r#"
         fn transform(value: i32, label: Option<&str>) -> Result<i32, &'static str> {

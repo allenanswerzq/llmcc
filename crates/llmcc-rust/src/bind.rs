@@ -250,10 +250,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .iter()
                 .copied()
                 .find(|symbol| symbol.kind() == SymbolKind::Enum);
+
             let struct_symbol = symbols
                 .iter()
                 .copied()
                 .find(|symbol| symbol.kind() == SymbolKind::Struct);
+
             let target_symbol = enum_symbol
                 .or(struct_symbol)
                 .or_else(|| symbols.into_iter().next());

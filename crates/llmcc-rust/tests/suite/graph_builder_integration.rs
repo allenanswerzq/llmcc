@@ -569,7 +569,6 @@ fn trait_impl_method_dependencies() {
 }
 
 #[test]
-#[ignore = "todo"]
 fn associated_function_depends_on_type() {
     let graph = build_graph(&[r#"
         struct Builder;
