@@ -6,7 +6,9 @@ cases that materialize an in-memory project, run part of the llmcc pipeline, and
 compare the result against inline expectations.
 
 ```
-=== basic function symbols ===
+===============================================================================
+basic function symbols
+===============================================================================
 lang: rust
 
 --- file: src/lib.rs ---
@@ -38,8 +40,15 @@ cargo run -p llmcc-test -- list      # discover case ids
 
 ## File format
 
-* `=== case name ===` starts a new case. Cases are scoped by their file path,
-  so the full id is `<relative/path>::<case name>`.
+* Each case is wrapped by banner lines of `=` characters (similar to tree-sitter
+  corpuses):
+  ```
+  ===============================================================================
+  Case name
+  ===============================================================================
+  ```
+  Cases are scoped by their file path, so the full id is
+  `<relative/path>::<case name>`.
 * Optional metadata:
 - `lang: rust|python` (defaults to `rust`; other languages will be wired up once their pipelines expose the new resolver APIs)
   - `args: ...` (reserved for future CLI-based assertions)

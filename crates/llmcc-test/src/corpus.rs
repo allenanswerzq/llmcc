@@ -5,6 +5,9 @@ use anyhow::{anyhow, Context, Result};
 use shell_words::{join, split};
 use walkdir::WalkDir;
 
+const CASE_BANNER: &str =
+    "===============================================================================";
+
 /// Top-level corpus container discovered under a directory (e.g. `tests/corpus`).
 pub struct Corpus {
     files: Vec<CorpusFile>,
@@ -147,7 +150,13 @@ impl CorpusCase {
 
     pub fn render(&self) -> String {
         let mut buf = String::new();
-        buf.push_str(&format!("=== {} ===\n", self.name));
+        buf.push_str(CASE_BANNER);
+        buf.push('\n');
+        buf.push_str(&self.name);
+        buf.push('\n');
+        buf.push_str(CASE_BANNER);
+        buf.push('\n');
+        buf.push('\n');
         if self.lang != "rust" {
             buf.push_str(&format!("lang: {}\n", self.lang));
         }
@@ -155,7 +164,6 @@ impl CorpusCase {
             buf.push_str(&format!("args: {}\n", join(&self.args)));
         }
         buf.push('\n');
-
         for file in &self.files {
             buf.push_str(&format!("--- file: {} ---\n", file.path));
             buf.push_str(&file.contents);
@@ -195,9 +203,63 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
     let mut current: Option<CorpusCase> = None;
     let mut pending_section: Option<SectionHeader> = None;
     let mut section_lines: Vec<String> = Vec::new();
+    let mut awaiting_banner_name = false;
+    let mut awaiting_banner_close = false;
 
     for raw_line in content.lines() {
         let line = raw_line.trim_end_matches('\r');
+        let trimmed = line.trim();
+
+        if awaiting_banner_close {
+            if trimmed.is_empty() {
+                continue;
+            }
+            if is_banner_line(line) {
+                awaiting_banner_close = false;
+                continue;
+            } else {
+                return Err(anyhow!(
+                    "expected closing banner after case '{}' in {}",
+                    current
+                        .as_ref()
+                        .map(|c| c.name.as_str())
+                        .unwrap_or("unknown"),
+                    path.display()
+                ));
+            }
+        }
+
+        if awaiting_banner_name {
+            if trimmed.is_empty() {
+                continue;
+            }
+
+            finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
+            if let Some(case) = current.take() {
+                cases.push(case);
+            }
+
+            current = Some(CorpusCase {
+                suite: suite.to_string(),
+                name: trimmed.to_string(),
+                lang: "rust".to_string(),
+                args: Vec::new(),
+                files: Vec::new(),
+                expectations: Vec::new(),
+            });
+            awaiting_banner_name = false;
+            awaiting_banner_close = true;
+            continue;
+        }
+
+        if is_banner_line(line) {
+            finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
+            if let Some(case) = current.take() {
+                cases.push(case);
+            }
+            awaiting_banner_name = true;
+            continue;
+        }
 
         if let Some(header) = parse_case_header(line) {
             finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
@@ -227,7 +289,6 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
             continue;
         }
 
-        let trimmed = line.trim();
         if trimmed.is_empty() {
             continue;
         }
@@ -268,6 +329,12 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
     }
 
     finalize_section(&mut current, &mut pending_section, &mut section_lines)?;
+    if awaiting_banner_name || awaiting_banner_close {
+        return Err(anyhow!(
+            "unterminated banner in {} (missing case name or closing separator)",
+            path.display()
+        ));
+    }
     if let Some(case) = current.take() {
         cases.push(case);
     }
@@ -304,6 +371,14 @@ fn parse_case_header(line: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+fn is_banner_line(line: &str) -> bool {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+    trimmed.chars().all(|ch| ch == '=') && trimmed.len() >= 5
 }
 
 #[derive(Debug, Clone)]
