@@ -4,7 +4,7 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use llmcc_core::context::CompileCtxt;
-use llmcc_core::graph_builder::{build_llmcc_graph, GraphBuildConfig, ProjectGraph};
+use llmcc_core::graph_builder::{build_llmcc_graph, BlockRelation, GraphBuildConfig, ProjectGraph};
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_resolver::apply_collected_symbols;
@@ -160,14 +160,17 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
         .expectations
         .iter()
         .any(|expect| expect.kind == "graph");
+    let needs_bind = case.expectations.iter().any(|expect| expect.kind == "bind");
 
-    if !needs_symbols && !needs_graph {
+    if !needs_symbols && !needs_graph && !needs_bind {
         return Ok(PipelineSummary::default());
     }
 
     let project = materialize_case(case)?;
     let summary = match case.lang.as_str() {
-        "rust" => collect_pipeline::<LangRust>(&project.paths, needs_symbols, needs_graph)?,
+        "rust" => {
+            collect_pipeline::<LangRust>(&project.paths, needs_symbols, needs_graph, needs_bind)?
+        }
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -185,6 +188,7 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
 struct PipelineSummary {
     symbols: Option<Vec<CollectedSymbols>>,
     graph_dot: Option<String>,
+    bindings: Option<String>,
 }
 
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
@@ -199,6 +203,12 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
         "graph" => summary.graph_dot.clone().ok_or_else(|| {
             anyhow!(
                 "case {} requested graph output but summary missing",
+                case_id
+            )
+        }),
+        "bind" => summary.bindings.clone().ok_or_else(|| {
+            anyhow!(
+                "case {} requested binding output but summary missing",
                 case_id
             )
         }),
@@ -322,6 +332,7 @@ fn collect_pipeline<L>(
     files: &[String],
     keep_symbols: bool,
     build_graph: bool,
+    build_bindings: bool,
 ) -> Result<PipelineSummary>
 where
     L: LanguageTrait<SymbolCollection = CollectedSymbols>,
@@ -338,7 +349,7 @@ where
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
     }
-    let mut project_graph = if build_graph {
+    let mut project_graph = if build_graph || build_bindings {
         Some(ProjectGraph::new(&cc))
     } else {
         None
@@ -352,11 +363,21 @@ where
             project.add_child(unit_graph);
         }
     }
-    let graph_dot = if let Some(mut project) = project_graph {
+    let (graph_dot, bindings) = if let Some(mut project) = project_graph {
         project.link_units();
-        Some(project.render_design_graph())
+        let graph = if build_graph {
+            Some(project.render_design_graph())
+        } else {
+            None
+        };
+        let binding = if build_bindings {
+            Some(render_binding_summary(&project))
+        } else {
+            None
+        };
+        (graph, binding)
     } else {
-        None
+        (None, None)
     };
 
     Ok(PipelineSummary {
@@ -366,5 +387,50 @@ where
             None
         },
         graph_dot,
+        bindings,
     })
+}
+
+fn render_binding_summary(project: &ProjectGraph) -> String {
+    let indexes = project.cc.block_indexes.read();
+    let mut lines = Vec::new();
+    for unit_graph in project.units() {
+        let unit_index = unit_graph.unit_index();
+        for block_id in unit_graph.edges().get_connected_blocks() {
+            let mut targets = unit_graph
+                .edges()
+                .get_related(block_id, BlockRelation::DependsOn);
+            if targets.is_empty() {
+                continue;
+            }
+            targets.sort_unstable_by_key(|id| id.as_u32());
+            let src_label = format_block_label(block_id, &indexes);
+            let target_labels: Vec<String> = targets
+                .into_iter()
+                .map(|id| format_block_label(id, &indexes))
+                .collect();
+            lines.push(format!(
+                "unit {unit_index}: {src_label} -> [{}]",
+                target_labels.join(", ")
+            ));
+        }
+    }
+    if lines.is_empty() {
+        "<no-bindings>\n".to_string()
+    } else {
+        lines.sort();
+        lines.join("\n")
+    }
+}
+
+fn format_block_label(
+    block_id: llmcc_core::graph_builder::BlockId,
+    indexes: &llmcc_core::context::BlockIndexMaps,
+) -> String {
+    if let Some((unit, name, kind)) = indexes.get_block_info(block_id) {
+        let display_name = name.unwrap_or_else(|| format!("(anonymous #{block_id})"));
+        format!("{display_name}<{kind:?}>#u{unit}")
+    } else {
+        format!("block#{block_id}")
+    }
 }
