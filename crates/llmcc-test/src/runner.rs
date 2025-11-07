@@ -59,6 +59,11 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
     Ok(outcomes)
 }
 
+pub fn run_cases_for_file(file: &mut CorpusFile, update: bool) -> Result<Vec<CaseOutcome>> {
+    let mut matched = 0usize;
+    run_cases_in_file(file, update, None, &mut matched)
+}
+
 fn run_cases_in_file(
     file: &mut CorpusFile,
     update: bool,
@@ -392,45 +397,95 @@ where
 }
 
 fn render_binding_summary(project: &ProjectGraph) -> String {
+    use std::collections::BTreeMap;
+
     let indexes = project.cc.block_indexes.read();
-    let mut lines = Vec::new();
+    let mut units: BTreeMap<usize, Vec<(BlockDescriptor, Vec<BlockDescriptor>)>> = BTreeMap::new();
+
     for unit_graph in project.units() {
         let unit_index = unit_graph.unit_index();
+        let mut entries = Vec::new();
         for block_id in unit_graph.edges().get_connected_blocks() {
-            let mut targets = unit_graph
+            let Some(src_desc) = describe_block(block_id, &indexes) else {
+                continue;
+            };
+            let mut deps = unit_graph
                 .edges()
                 .get_related(block_id, BlockRelation::DependsOn);
-            if targets.is_empty() {
-                continue;
-            }
-            targets.sort_unstable_by_key(|id| id.as_u32());
-            let src_label = format_block_label(block_id, &indexes);
-            let target_labels: Vec<String> = targets
+            deps.sort_unstable_by_key(|id| id.as_u32());
+            deps.dedup();
+            let mut dep_descs: Vec<BlockDescriptor> = deps
                 .into_iter()
-                .map(|id| format_block_label(id, &indexes))
+                .filter_map(|id| describe_block(id, &indexes))
                 .collect();
-            lines.push(format!(
-                "unit {unit_index}: {src_label} -> [{}]",
-                target_labels.join(", ")
-            ));
+            dep_descs.sort_by(|a, b| (a.unit, &a.name).cmp(&(b.unit, &b.name)));
+            entries.push((src_desc, dep_descs));
+        }
+        entries.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+        if !entries.is_empty() {
+            units.insert(unit_index, entries);
         }
     }
-    if lines.is_empty() {
-        "<no-bindings>\n".to_string()
-    } else {
-        lines.sort();
-        lines.join("\n")
+
+    if units.is_empty() {
+        return "(bindings)\n".to_string();
     }
+
+    let mut out = String::new();
+    out.push_str("(bindings\n");
+    for (unit, blocks) in units {
+        let _ = writeln!(out, "  (unit {unit}");
+        for (block, deps) in blocks {
+            let _ = writeln!(
+                out,
+                "    (block {} {} {}",
+                quote(&block.name),
+                block.kind,
+                block.unit
+            );
+            if deps.is_empty() {
+                out.push_str("      (depends_on))\n");
+            } else {
+                out.push_str("      (depends_on\n");
+                for dep in deps {
+                    let _ = writeln!(
+                        out,
+                        "        ({} {} {})",
+                        quote(&dep.name),
+                        dep.kind,
+                        dep.unit
+                    );
+                }
+                out.push_str("      ))\n");
+            }
+        }
+        out.push_str("  )\n");
+    }
+    out.push_str(")\n");
+    out
 }
 
-fn format_block_label(
+#[derive(Clone)]
+struct BlockDescriptor {
+    name: String,
+    kind: String,
+    unit: usize,
+}
+
+fn describe_block(
     block_id: llmcc_core::graph_builder::BlockId,
     indexes: &llmcc_core::context::BlockIndexMaps,
-) -> String {
-    if let Some((unit, name, kind)) = indexes.get_block_info(block_id) {
-        let display_name = name.unwrap_or_else(|| format!("(anonymous #{block_id})"));
-        format!("{display_name}<{kind:?}>#u{unit}")
-    } else {
-        format!("block#{block_id}")
-    }
+) -> Option<BlockDescriptor> {
+    let (unit, name, kind) = indexes.get_block_info(block_id)?;
+    let name = name.unwrap_or_else(|| format!("block#{block_id}"));
+    Some(BlockDescriptor {
+        name,
+        kind: kind.to_string(),
+        unit,
+    })
+}
+
+fn quote(text: &str) -> String {
+    let escaped = text.replace('"', "\\\"");
+    format!("\"{escaped}\"")
 }
