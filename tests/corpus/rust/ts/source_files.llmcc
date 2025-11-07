@@ -1,0 +1,259 @@
+================================================================================
+Block comments
+================================================================================
+
+--- file: src/main.rs ---
+/*
+ * Block comments
+ */
+
+/* Comment with asterisks **/
+
+/** Outer block comment */
+
+
+/*! Inner block comment */
+/**/
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Nested block comments
+================================================================================
+
+--- file: src/main.rs ---
+/* /* double nested */ */
+
+// ---
+
+/*/*/* triple nested */*/*/
+
+// ---
+
+/****
+  /****
+    nested with extra stars which makes it a regular block comment
+    and not a block doc comment
+  ****/
+****/
+
+// ---
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Line comments
+================================================================================
+
+--- file: src/main.rs ---
+// Comment
+
+/// Outer line doc comment
+
+//! Inner line doc comment
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Line doc comments
+================================================================================
+
+--- file: src/main.rs ---
+//!  - Inner line doc
+//!! - Still an inner line doc (but with a bang at the beginning)
+
+//   - Only a comment
+///  - Outer line doc (exactly 3 slashes)
+///
+//// - Only a comment
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Block doc comments
+================================================================================
+
+--- file: src/main.rs ---
+/*!  - Inner block doc */
+/*!! - Still an inner block doc (but with a bang at the beginning) */
+
+/*   - Only a comment */
+/**  - Outer block doc (exactly) 2 asterisks */
+/*** - Only a comment */
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Nested doc block comments
+================================================================================
+
+--- file: src/main.rs ---
+/*   /* */  /** */  /*! */  */
+/*!  /* */  /** */  /*! */  */
+/**  /* */  /** */  /*! */  */
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Comments degenerate cases
+================================================================================
+
+--- file: src/main.rs ---
+//!
+
+/*!*/
+
+//
+
+///
+let x; // <- immediate item after an empty line doc comment
+
+/**/
+
+/***/
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Line doc comment with no EOL
+================================================================================
+
+--- file: src/main.rs ---
+//! Doc comment
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Greek letters in identifiers
+================================================================================
+
+--- file: src/main.rs ---
+const σ1 : Σ = 0;
+const ψ_2 : Ψ = 1;
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Shebang line containing spaces
+================================================================================
+
+--- file: src/main.rs ---
+#!/usr/bin/env -S cargo +nightly -Zscript
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Empty shebang with code after
+================================================================================
+
+--- file: src/main.rs ---
+#!
+fn main() {}
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Immediate inner attribute
+================================================================================
+
+--- file: src/main.rs ---
+#![feature(thing)]
+fn main() {}
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+

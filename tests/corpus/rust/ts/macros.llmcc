@@ -1,0 +1,118 @@
+================================================================================
+Macro invocation - no arguments
+================================================================================
+
+--- file: src/main.rs ---
+a!();
+b![];
+c!{};
+d::e!();
+f::g::h!{};
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Macro invocation - arbitrary tokens
+================================================================================
+
+--- file: src/main.rs ---
+a!(* a *);
+a!(& a &);
+a!(- a -);
+a!(b + c + +);
+a!('a'..='z');
+a!('\u{0}'..='\u{2}');
+a!('lifetime)
+default!(a);
+union!(a);
+a!($);
+a!($());
+a!($ a $);
+a!(${$([ a ])});
+a!($a $a:ident $($a);*);
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Macro invocation with comments
+================================================================================
+
+--- file: src/main.rs ---
+ok! {
+  // one
+  /* two */
+}
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+
+
+================================================================================
+Macro definition
+================================================================================
+
+--- file: src/main.rs ---
+macro_rules! say_hello {
+    () => (
+        println!("Hello!");
+    )
+}
+
+macro_rules! four {
+    () => {1 + 3};
+}
+
+macro_rules! foo {
+    (x => $e:expr) => (println!("mode X: {}", $e));
+    (y => $e:expr) => (println!("mode Y: {}", $e))
+}
+
+macro_rules! o_O {
+    (
+      $($x:expr; [ $( $y:expr ),* ]);*
+    ) => {
+      $($($x + $e),*),*
+    }
+}
+
+macro_rules! zero_or_one {
+    ($($e:expr),?) => {
+        $($e),?
+    };
+}
+
+macro_rules! empty [
+    () => {};
+];
+
+--- expect:symbols ---
+
+
+--- expect:graph ---
+
+
+--- expect:bind ---
+
+

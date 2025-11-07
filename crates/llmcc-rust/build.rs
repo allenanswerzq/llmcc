@@ -12,8 +12,12 @@ fn main() -> Result<()> {
     println!("cargo:rerun-if-changed={}", config_path.display());
     println!("cargo:rerun-if-changed={}", node_types.display());
 
-    let contents =
-        llmcc_tree::generate_tokens("Rust", tree_sitter_rust::LANGUAGE.into(), &node_types, &config_path)?;
+    let contents = llmcc_tree::generate_tokens(
+        "Rust",
+        tree_sitter_rust::LANGUAGE.into(),
+        &node_types,
+        &config_path,
+    )?;
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let out_file = out_dir.join("rust_tokens.rs");

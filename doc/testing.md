@@ -23,6 +23,9 @@ pub fn add(a: i32, b: i32) -> i32 {
 digraph DesignGraph {
     // adjacency snapshot here
 }
+
+--- expect:bind ---
+unit 0: add<Func>#u0 -> []
 ```
 
 ## CLI
@@ -57,7 +60,10 @@ cargo run -p llmcc-test -- list      # discover case ids
 * `--- expect:symbols ---` stores a textual snapshot of the symbol table derived
   from the resolver.
 * `--- expect:graph ---` records the DOT output from `ProjectGraph::render_design_graph()`,
-  allowing callers to lock down dependency edges.
+  allowing callers to lock down dependency edges visually.
+* `--- expect:bind ---` lists the block-level dependency relations (the
+  `DependsOn` edges) in a stable textual format, useful when you care about
+  relationships but not the DOT syntax.
 * Additional expectation kinds (parse trees, CLI output, etc.) can be layered on
   later; unsupported kinds trigger a helpful error.
 
