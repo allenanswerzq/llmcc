@@ -1,12 +1,7 @@
-use core::str;
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
-use llmcc_descriptor::{DescriptorTrait, TypeExpr};
 use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
-
-use crate::describe::RustDescriptor;
 use crate::token::{AstVisitorRust, LangRust};
 
 /// `SymbolBinder` connects symbols with the items they reference so that later
@@ -41,10 +36,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn scopes_mut(&mut self) -> &mut ScopeStack<'tcx> {
         self.core.scopes_mut()
-    }
-
-    fn interner(&self) -> &llmcc_core::interner::InternPool {
-        self.core.interner()
     }
 
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
@@ -97,8 +88,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Struct);
         self.visit_children_scope(&node, symbol);
 
-        if let Some(desc) = self.collection().structs.find(node.hir_id())
-            && let Some(struct_symbol) = symbol {
+        let descriptor = self.collection().structs.find(node.hir_id());
+        if let (Some(struct_symbol), Some(desc)) = (symbol, descriptor) {
             for field in &desc.fields {
                 if let Some(type_expr) = field.type_annotation.as_ref() {
                     for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
@@ -117,9 +108,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Enum);
         self.visit_children_scope(&node, symbol);
 
-        if let Some(desc) = self.collection().enums.find(node.hir_id())
-            && let Some(enum_symbol) = symbol {
-
+        let descriptor = self.collection().enums.find(node.hir_id());
+        if let (Some(enum_symbol), Some(desc)) = (symbol, descriptor) {
             for variant in &desc.variants {
                 for field in &variant.fields {
                     if let Some(type_expr) = field.type_annotation.as_ref() {
@@ -140,30 +130,30 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
 
-        if let Some(descriptor) = self.collection().functions.find(node.hir_id())
-            && let Some(func) = symbol {
+        let parent_symbol = self.current_symbol();
 
-            if let Some(return_type) = descriptor.return_type.as_ref() {
-                for &type_symbol in &self.core.lookup_expr_symbols(return_type) {
-                    func.add_dependency(type_symbol);
+        if let Some(func_symbol) = symbol {
+            if let Some(descriptor) = self.collection().functions.find(node.hir_id()) {
+                if let Some(return_type) = descriptor.return_type.as_ref() {
+                    for &type_symbol in &self.core.lookup_expr_symbols(return_type) {
+                        func_symbol.add_dependency(type_symbol);
+                    }
                 }
-            }
 
-            for parameter in &descriptor.parameters {
-                if let Some(type_expr) = parameter.type_hint.as_ref() {
-                    for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
-                        func.add_dependency(type_symbol);
+                for parameter in &descriptor.parameters {
+                    if let Some(type_expr) = parameter.type_hint.as_ref() {
+                        for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
+                            func_symbol.add_dependency(type_symbol);
+                        }
                     }
                 }
             }
-        }
 
-        let parent_symbol = self.current_symbol();
-        if let Some(parent_symbol) = parent_symbol {
-            // If this function is inside an impl block, it depends on the impl's target struct/enum
-            // The current_symbol() when visiting impl children is the target struct/enum
-            if matches!(parent_symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
-                func.add_dependency(parent_symbol);
+            if let Some(parent_symbol) = parent_symbol {
+                // If this function is inside an impl block, it depends on the impl's target struct/enum
+                if matches!(parent_symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
+                    func_symbol.add_dependency(parent_symbol);
+                }
             }
         }
 
@@ -187,15 +177,21 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(impl_descriptor) = self.collection().impls.find(node.hir_id()) {
-            let impl_target = impl_descriptor.impl_target.clone();
-            let symbol = self.core.lookup_symbol_kind_priority(
-                impl_target,
-                &[SymbolKind::Struct, SymbolKind::Enum],
-                None,
-            );
-            self.visit_children_scope(&node, symbol);
+            let target_symbol = self
+                .core
+                .lookup_expr_symbols(&impl_descriptor.target_ty)
+                .into_iter()
+                .next();
 
-            // TODO: add dependencies from trait to impl target
+            self.visit_children_scope(&node, target_symbol);
+
+            if let (Some(target_symbol), Some(trait_ty)) =
+                (target_symbol, impl_descriptor.trait_ty.as_ref())
+            {
+                for &trait_symbol in &self.core.lookup_expr_symbols(trait_ty) {
+                    target_symbol.add_dependency(trait_symbol);
+                }
+            }
         } else {
             tracing::warn!("failed to build descriptor for impl: {}", node.hir_id());
         }
@@ -216,12 +212,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.visit_children(&node);
 
         let parent = self.current_symbol();
-        if let Some(descriptor) = self.collection().variables.find(node.hir_id())
-            && let Some(parent_symbol) = parent {
-
-            if let Some(type_expr) = descriptor.type_annotation.as_ref() {
-                for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
-                    parent_symbol.add_dependency(type_symbol);
+        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
+            if let Some(parent_symbol) = parent {
+                if let Some(type_expr) = descriptor.type_annotation.as_ref() {
+                    for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
+                        parent_symbol.add_dependency(type_symbol);
+                    }
                 }
             }
         }
@@ -254,10 +250,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
         let parent = self.current_symbol();
         if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
-            let symbols = Vec::new();
-            self.core.lookup_call_symbols(&descriptor.target, symbols);
-            for symbol in symbols {
-                parent.add_dependency(symbol);
+            let mut symbols = Vec::new();
+            self.core
+                .lookup_call_symbols(&descriptor.target, &mut symbols);
+            if let Some(parent_symbol) = parent {
+                for symbol in symbols {
+                    parent_symbol.add_dependency(symbol);
+                }
             }
         }
     }
@@ -266,10 +265,10 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.visit_type_identifier(node);
     }
 
-    fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
+    fn visit_type_identifier(&mut self, _node: HirNode<'tcx>) {
     }
 
-    fn visit_identifier(&mut self, node: HirNode<'tcx>) {
+    fn visit_identifier(&mut self, _node: HirNode<'tcx>) {
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {

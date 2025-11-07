@@ -1,5 +1,5 @@
 use crate::meta::DescriptorOrigin;
-use crate::types::TyExpr;
+use crate::types::TypeExpr;
 
 /// Descriptor capturing metadata for Rust `impl` blocks.
 ///
@@ -7,12 +7,12 @@ use crate::types::TyExpr;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImplDescriptor {
     pub origin: DescriptorOrigin,
-    pub target_ty: TyExpr,
-    pub trait_ty: Option<TyExpr>,
+    pub target_ty: TypeExpr,
+    pub trait_ty: Option<TypeExpr>,
 }
 
 impl ImplDescriptor {
-    pub fn new(origin: DescriptorOrigin, target_ty: TyExpr) -> Self {
+    pub fn new(origin: DescriptorOrigin, target_ty: TypeExpr) -> Self {
         Self {
             origin,
             target_ty,

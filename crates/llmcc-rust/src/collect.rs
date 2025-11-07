@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::SymbolKind;
-use llmcc_descriptor::{DescriptorTrait, ImplDescriptor, TypeExpr};
+use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
     collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult, CollectorCore,
     EnumCollection, FunctionCollection, ImplCollection, StructCollection, SymbolSpec,
@@ -179,7 +179,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = RustDescriptor::build_impl(self.unit(), &node) {
             let hir_id = node.hir_id();
-            let sym_idx = self.core.upsert_expr_symbol(
+            let owner_symbol = self.core.upsert_expr_symbol(
                 hir_id,
                 &descriptor.target_ty,
                 SymbolKind::Struct,
@@ -187,7 +187,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             );
 
             self.impls.add(hir_id, descriptor);
-            self.visit_children_scope(&node, Some(sym_idx));
+            self.visit_children_scope(&node, owner_symbol);
         } else {
             tracing::warn!(
                 "failed to build impl descriptor for: {:?} next_hir={:?}",

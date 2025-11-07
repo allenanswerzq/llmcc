@@ -3,8 +3,7 @@ use std::ptr;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
-use llmcc_core::symbol::{self, Scope, ScopeStack, Symbol, SymbolKind};
-use llmcc_core::Node;
+use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_descriptor::{CallChainRoot, CallKind, CallTarget, TypeExpr};
 
 use crate::collector::CollectionResult;
@@ -68,7 +67,8 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         kind: Option<SymbolKind>,
         unit_index: Option<usize>,
     ) -> Option<&'tcx Symbol> {
-        for scope in self.scopes[1..].iter().rev() {
+        let scopes: Vec<_> = self.scopes.iter().collect();
+        for scope in scopes.into_iter().skip(1).rev() {
             let symbols = scope.lookup_suffix_symbols(suffix, kind, unit_index);
             if symbols.len() == 1 {
                 return Some(symbols[0]);
@@ -176,10 +176,8 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
 
     pub fn lookup_expr_symbols(&self, expr: &TypeExpr) -> Vec<&'tcx Symbol> {
         let mut symbols = Vec::new();
-        self.core
-            .lookup_expr_symbols_with(expr, SymbolKind::Struct, &mut symbols);
-        self.core
-            .lookup_expr_symbols_with(expr, SymbolKind::Enum, &mut symbols);
+        self.lookup_expr_symbols_with(expr, SymbolKind::Struct, &mut symbols);
+        self.lookup_expr_symbols_with(expr, SymbolKind::Enum, &mut symbols);
         symbols
     }
 
@@ -191,7 +189,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
     ) {
         match expr {
             TypeExpr::Path { segments, generics } => {
-                if let Some(symbol) = self.lookup_symbol(segments, kind, None) {
+                if let Some(symbol) = self.lookup_symbol(segments, Some(kind), None) {
                     if !symbols.iter().any(|existing| existing.id == symbol.id) {
                         symbols.push(symbol);
                     }

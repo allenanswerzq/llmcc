@@ -15,6 +15,7 @@ pub mod structure;
 pub mod types;
 pub mod variable;
 pub mod visibility;
+pub mod implementation;
 
 pub use builder::*;
 pub use call::*;
@@ -22,6 +23,7 @@ pub use class::*;
 pub use enumeration::*;
 pub use function::*;
 pub use import::*;
+pub use implementation::*;
 pub use meta::*;
 pub use module::*;
 pub use structure::*;
