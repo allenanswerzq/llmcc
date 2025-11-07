@@ -79,9 +79,13 @@ fn captures_local_let_with_type() {
 }
 
 fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
-    if let TypeExpr::Path { parts, generics } = expr {
+    if let TypeExpr::Path {
+        qualifier,
+        generics,
+    } = expr
+    {
         let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
-        assert_eq!(parts, &expected_vec);
+        assert_eq!(qualifier.segments(), &expected_vec);
         generics
     } else {
         panic!();

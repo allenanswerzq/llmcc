@@ -221,9 +221,13 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn add_type_expr_dependencies(&mut self, expr: &TypeExpr) {
         match expr {
-            TypeExpr::Path { parts, generics } => {
-                if !parts.is_empty() {
-                    self.record_segments_dependency(parts);
+            TypeExpr::Path {
+                qualifier,
+                generics,
+            } => {
+                let segments = qualifier.segments();
+                if !segments.is_empty() {
+                    self.record_segments_dependency(segments);
                 }
                 for generic in generics {
                     self.add_type_expr_dependencies(generic);

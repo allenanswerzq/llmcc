@@ -438,10 +438,11 @@ impl<'tcx> CollectorCore<'tcx> {
         is_global: bool,
     ) -> Option<usize> {
         match expr {
-            TypeExpr::Path { parts, .. } => {
-                let parts: Vec<String> = parts
+            TypeExpr::Path { qualifier, .. } => {
+                let parts: Vec<String> = qualifier
+                    .segments()
                     .iter()
-                    .filter(|segment| !segment.is_empty())
+                    .filter(|part| !part.is_empty())
                     .cloned()
                     .collect();
 

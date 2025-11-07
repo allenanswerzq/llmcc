@@ -197,7 +197,11 @@ fn type_expr_fqn(expr: &TypeExpr) -> Option<String> {
 
 fn type_expr_segments(expr: &TypeExpr) -> Option<Vec<String>> {
     match expr {
-        TypeExpr::Path { parts, .. } => Some(parts.clone()),
+        TypeExpr::Path { qualifier, .. } => {
+            let mut segments = qualifier.prefix_segments();
+            segments.extend_from_slice(qualifier.segments());
+            Some(segments)
+        }
         TypeExpr::Reference { inner, .. } => type_expr_segments(inner),
         TypeExpr::Tuple(items) if items.len() == 1 => type_expr_segments(&items[0]),
         _ => None,

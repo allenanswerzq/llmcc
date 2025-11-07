@@ -1,3 +1,4 @@
+use crate::path::parse_rust_path;
 use crate::token::{AstVisitorRust, LangRust};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
@@ -76,27 +77,8 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return;
         }
 
-        if matches!(text.as_str(), "self" | "Self" | "super") {
-            return;
-        }
-
-        let parts: Vec<String> = text
-            .split("::")
-            .filter(|segment| !segment.is_empty())
-            .map(|segment| segment.to_string())
-            .collect();
-
-        if parts.is_empty() {
-            return;
-        }
-
-        let mut parts = parts;
-        while matches!(
-            parts.first().map(|s| s.as_str()),
-            Some("self" | "Self" | "super")
-        ) {
-            parts.remove(0);
-        }
+        let mut parts = parse_rust_path(&text).segments().to_vec();
+        parts.retain(|segment| !segment.is_empty());
 
         if parts.is_empty() {
             return;

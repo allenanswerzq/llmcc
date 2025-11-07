@@ -7,6 +7,8 @@ use llmcc_descriptor::{
     SourceLocation, SourceSpan, TypeExpr, Visibility, LANGUAGE_RUST,
 };
 
+use crate::path::parse_rust_path;
+
 /// Build a language-agnostic function descriptor from a Rust function item.
 pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<FunctionDescriptor> {
     let ts_node = match node.inner_ts_node() {
@@ -194,22 +196,8 @@ fn parse_parameters<'tcx>(
 
 pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
     let expr = match node.kind() {
-        "type_identifier" | "primitive_type" => TypeExpr::Path {
-            parts: unit
-                .ts_text(node)
-                .split("::")
-                .map(|s| s.to_string())
-                .collect(),
-            generics: Vec::new(),
-        },
-        "scoped_type_identifier" => TypeExpr::Path {
-            parts: unit
-                .ts_text(node)
-                .split("::")
-                .map(|s| s.to_string())
-                .collect(),
-            generics: Vec::new(),
-        },
+        "type_identifier" | "primitive_type" => build_path_expr(unit.ts_text(node), Vec::new()),
+        "scoped_type_identifier" => build_path_expr(unit.ts_text(node), Vec::new()),
         "generic_type" => parse_generic_type(unit, node),
         "reference_type" => parse_reference_type(unit, node),
         "tuple_type" => {
@@ -232,17 +220,13 @@ pub(crate) fn parse_type_expr<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -
 }
 
 fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
-    let mut base_segments: Vec<String> = Vec::new();
+    let mut base = None;
     let mut generics = Vec::new();
     let mut cursor = node.walk();
     for child in node.named_children(&mut cursor) {
         match child.kind() {
             "type_identifier" | "scoped_type_identifier" => {
-                base_segments = unit
-                    .ts_text(child)
-                    .split("::")
-                    .map(|s| s.to_string())
-                    .collect();
+                base = Some(parse_rust_path(&unit.ts_text(child)));
             }
             "type_arguments" => {
                 generics = parse_type_arguments(unit, child);
@@ -250,15 +234,9 @@ fn parse_generic_type<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeEx
             _ => {}
         }
     }
-    if base_segments.is_empty() {
-        base_segments = unit
-            .ts_text(node)
-            .split("::")
-            .map(|s| s.to_string())
-            .collect();
-    }
+    let qualifier = base.unwrap_or_else(|| parse_rust_path(&unit.ts_text(node)));
     TypeExpr::Path {
-        parts: base_segments,
+        qualifier,
         generics,
     }
 }
@@ -363,4 +341,12 @@ fn clean(text: &str) -> String {
         }
     }
     out.trim().to_string()
+}
+
+fn build_path_expr(raw: String, generics: Vec<TypeExpr>) -> TypeExpr {
+    let qualifier = parse_rust_path(&raw);
+    TypeExpr::Path {
+        qualifier,
+        generics,
+    }
 }

@@ -9,6 +9,8 @@ use llmcc_descriptor::{
     CallSymbol, CallTarget, TypeExpr,
 };
 
+use crate::path::parse_rust_path;
+
 use super::function::{build_origin, parse_type_expr};
 
 /// Build a shared call descriptor from a Rust call expression.
@@ -76,30 +78,16 @@ fn parse_call_target<'tcx>(
 ) -> CallTarget {
     match node.kind() {
         "identifier" | "scoped_identifier" | "type_identifier" => {
-            let parts: Vec<String> = unit
-                .ts_text(node)
-                .split("::")
-                .filter(|s| !s.is_empty())
-                .map(|s| s.to_string())
-                .collect();
-            symbol_target_from_segments(parts, call_generics, CallKind::Function)
+            symbol_target_from_path(&unit.ts_text(node), call_generics, CallKind::Function)
         }
         "generic_type" => {
             let base = node.child_by_field_name("type").unwrap_or(node);
-            let mut parts: Vec<String> = unit
-                .ts_text(base)
-                .split("::")
-                .filter(|s| !s.is_empty())
-                .map(|s| s.to_string())
-                .collect();
-            if parts.is_empty() {
-                parts.push(unit.ts_text(base));
-            }
+            let base_text = unit.ts_text(base);
             let generics = node
                 .child_by_field_name("type_arguments")
                 .map(|args| parse_type_arguments(unit, args))
                 .unwrap_or(call_generics);
-            symbol_target_from_segments(parts, generics, CallKind::Function)
+            symbol_target_from_path(&base_text, generics, CallKind::Function)
         }
         "generic_function" => {
             let generics = node
@@ -242,22 +230,29 @@ fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<
     args
 }
 
-fn symbol_target_from_segments(
-    parts: Vec<String>,
-    generics: Vec<TypeExpr>,
-    kind: CallKind,
-) -> CallTarget {
-    if parts.is_empty() {
+fn symbol_target_from_path(raw: &str, generics: Vec<TypeExpr>, kind: CallKind) -> CallTarget {
+    let qualifier = parse_rust_path(raw);
+    let mut segments = qualifier.segments().to_vec();
+    if segments.is_empty() {
+        segments = raw
+            .split("::")
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .collect();
+    }
+
+    if segments.is_empty() {
         return CallTarget::Dynamic {
-            repr: String::new(),
+            repr: raw.to_string(),
         };
     }
 
-    let mut parts = parts;
-    let name = parts.pop().unwrap();
+    let name = segments.pop().unwrap();
 
     let mut symbol = CallSymbol::new(name);
-    symbol.qualifiers = parts;
+    let mut qualifiers = qualifier.prefix_segments();
+    qualifiers.extend(segments);
+    symbol.qualifiers = qualifiers;
     symbol.kind = kind;
     symbol.type_arguments = generics;
     CallTarget::Symbol(symbol)

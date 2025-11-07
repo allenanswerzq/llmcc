@@ -312,8 +312,13 @@ fn captures_generic_path_call() {
 
     let symbol = symbol_target(apply);
     assert_eq!(symbol.type_arguments.len(), 2);
-    if let TypeExpr::Path { parts, generics } = &symbol.type_arguments[0] {
-        assert_eq!(parts, &vec!["Result".to_string()]);
+    if let TypeExpr::Path {
+        qualifier,
+        generics,
+    } = &symbol.type_arguments[0]
+    {
+        let expected = vec!["Result".to_string()];
+        assert_eq!(qualifier.segments(), &expected);
         assert_eq!(generics.len(), 2);
     } else {
         panic!();

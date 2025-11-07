@@ -219,8 +219,11 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         symbols: &mut Vec<&'tcx Symbol>,
     ) {
         match expr {
-            TypeExpr::Path { parts, generics } => {
-                if let Some(symbol) = self.lookup_symbol(parts, Some(kind), None) {
+            TypeExpr::Path {
+                qualifier,
+                generics,
+            } => {
+                if let Some(symbol) = self.lookup_symbol(qualifier.segments(), Some(kind), None) {
                     if !symbols.iter().any(|existing| existing.id == symbol.id) {
                         symbols.push(symbol);
                     }
