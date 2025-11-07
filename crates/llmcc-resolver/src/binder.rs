@@ -223,7 +223,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                 qualifier,
                 generics,
             } => {
-                if let Some(symbol) = self.lookup_symbol(qualifier.segments(), Some(kind), None) {
+                if let Some(symbol) = self.lookup_symbol(qualifier.parts(), Some(kind), None) {
                     if !symbols.iter().any(|existing| existing.id == symbol.id) {
                         symbols.push(symbol);
                     }

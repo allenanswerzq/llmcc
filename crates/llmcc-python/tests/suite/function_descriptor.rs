@@ -13,7 +13,7 @@ fn collect_functions(source: &str) -> FunctionCollection {
 
 fn type_repr(expr: &TypeExpr) -> String {
     match expr {
-        TypeExpr::Path { qualifier, .. } => qualifier.segments().join("::"),
+        TypeExpr::Path { qualifier, .. } => qualifier.parts().join("::"),
         TypeExpr::Opaque { repr, .. } => repr.clone(),
         TypeExpr::Unknown(text) => text.clone(),
         other => format!("{:?}", other),

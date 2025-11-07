@@ -439,27 +439,15 @@ impl<'tcx> CollectorCore<'tcx> {
     ) -> Option<usize> {
         match expr {
             TypeExpr::Path { qualifier, .. } => {
-                let parts: Vec<String> = qualifier
-                    .segments()
+                let normalized: Vec<String> = qualifier
+                    .parts()
                     .iter()
                     .filter(|part| !part.is_empty())
                     .cloned()
                     .collect();
 
-                if parts.is_empty() {
-                    return None;
-                }
-
-                let mut normalized = parts.clone();
-                while matches!(
-                    normalized.first().map(String::as_str),
-                    Some("crate" | "self" | "super")
-                ) {
-                    normalized.remove(0);
-                }
-
                 if normalized.is_empty() {
-                    normalized = parts;
+                    return None;
                 }
 
                 let name = normalized.last().cloned().unwrap();

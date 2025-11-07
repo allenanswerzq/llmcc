@@ -225,9 +225,9 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
                 qualifier,
                 generics,
             } => {
-                let segments = qualifier.segments();
-                if !segments.is_empty() {
-                    self.record_segments_dependency(segments);
+                let parts = qualifier.parts();
+                if !parts.is_empty() {
+                    self.record_segments_dependency(parts);
                 }
                 for generic in generics {
                     self.add_type_expr_dependencies(generic);

@@ -43,41 +43,9 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.core.current_symbol()
     }
 
-    fn record_identifier_reference(&mut self, node: HirNode<'tcx>) {
-        let field_id = node.field_id();
-        if field_id == LangRust::field_pattern {
-            return;
-        }
-
-        let parent_kind = node.parent().map(|id| self.unit().hir_node(id).kind_id());
-
-        if parent_kind == Some(LangRust::call_expression) {
-            return;
-        }
-
-        if field_id == LangRust::field_name {
-            if matches!(
-                parent_kind,
-                Some(LangRust::struct_item)
-                    | Some(LangRust::enum_item)
-                    | Some(LangRust::function_item)
-                    | Some(LangRust::const_item)
-                    | Some(LangRust::static_item)
-                    | Some(LangRust::mod_item)
-                    | Some(LangRust::trait_item)
-                    | Some(LangRust::impl_item)
-                    | Some(LangRust::enum_variant)
-            ) {
-                return;
-            }
-        }
-
-        let text = self.unit().ts_text(node.inner_ts_node());
-        if text.is_empty() {
-            return;
-        }
-
-        let mut parts = parse_rust_path(&text).segments().to_vec();
+    fn handle_identifier(&mut self, node: HirNode<'tcx>) {
+        let text = self.unit().hir_text(&node);
+        let mut parts = parse_rust_path(&text).parts().to_vec();
         parts.retain(|segment| !segment.is_empty());
 
         if parts.is_empty() {
@@ -331,15 +299,15 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_scoped_identifier(&mut self, node: HirNode<'tcx>) {
-        self.record_identifier_reference(node);
+        self.handle_identifier(node);
     }
 
     fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
-        self.record_identifier_reference(node);
+        self.handle_identifier(node);
     }
 
     fn visit_identifier(&mut self, node: HirNode<'tcx>) {
-        self.record_identifier_reference(node);
+        self.handle_identifier(node);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {

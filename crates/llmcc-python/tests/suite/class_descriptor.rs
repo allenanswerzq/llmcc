@@ -13,7 +13,7 @@ fn collect_classes(source: &str) -> ClassCollection {
 
 fn type_repr(expr: &TypeExpr) -> String {
     match expr {
-        TypeExpr::Path { qualifier, .. } => qualifier.segments().join("::"),
+        TypeExpr::Path { qualifier, .. } => qualifier.parts().join("::"),
         TypeExpr::Opaque { repr, .. } => repr.clone(),
         TypeExpr::Unknown(repr) => repr.clone(),
         other => format!("{:?}", other),

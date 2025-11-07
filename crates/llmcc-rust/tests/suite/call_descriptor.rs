@@ -318,7 +318,7 @@ fn captures_generic_path_call() {
     } = &symbol.type_arguments[0]
     {
         let expected = vec!["Result".to_string()];
-        assert_eq!(qualifier.segments(), &expected);
+        assert_eq!(qualifier.parts(), &expected);
         assert_eq!(generics.len(), 2);
     } else {
         panic!();

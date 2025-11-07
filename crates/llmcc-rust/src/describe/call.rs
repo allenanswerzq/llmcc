@@ -232,26 +232,26 @@ fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<
 
 fn symbol_target_from_path(raw: &str, generics: Vec<TypeExpr>, kind: CallKind) -> CallTarget {
     let qualifier = parse_rust_path(raw);
-    let mut segments = qualifier.segments().to_vec();
-    if segments.is_empty() {
-        segments = raw
+    let mut parts = qualifier.parts().to_vec();
+    if parts.is_empty() {
+        parts = raw
             .split("::")
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string())
             .collect();
     }
 
-    if segments.is_empty() {
+    if parts.is_empty() {
         return CallTarget::Dynamic {
             repr: raw.to_string(),
         };
     }
 
-    let name = segments.pop().unwrap();
+    let name = parts.pop().unwrap();
 
     let mut symbol = CallSymbol::new(name);
     let mut qualifiers = qualifier.prefix_segments();
-    qualifiers.extend(segments);
+    qualifiers.extend(parts);
     symbol.qualifiers = qualifiers;
     symbol.kind = kind;
     symbol.type_arguments = generics;

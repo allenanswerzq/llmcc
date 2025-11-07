@@ -124,7 +124,7 @@ fn assert_path<'a>(expr: &'a TypeExpr, expected: &[&str]) -> &'a [TypeExpr] {
     } = expr
     {
         let expected_vec: Vec<String> = expected.iter().map(|s| s.to_string()).collect();
-        assert_eq!(qualifier.segments(), &expected_vec);
+        assert_eq!(qualifier.parts(), &expected_vec);
         generics
     } else {
         panic!();
