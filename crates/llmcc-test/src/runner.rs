@@ -4,6 +4,7 @@ use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use llmcc_core::context::CompileCtxt;
+use llmcc_core::graph_builder::{build_llmcc_graph, GraphBuildConfig, ProjectGraph};
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_resolver::apply_collected_symbols;
@@ -155,14 +156,18 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
         .expectations
         .iter()
         .any(|expect| expect.kind == "symbols");
+    let needs_graph = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "graph");
 
-    if !needs_symbols {
-        return Ok(PipelineSummary { symbols: None });
+    if !needs_symbols && !needs_graph {
+        return Ok(PipelineSummary::default());
     }
 
     let project = materialize_case(case)?;
-    let symbol_sets = match case.lang.as_str() {
-        "rust" => collect_symbols::<LangRust>(&project.paths)?,
+    let summary = match case.lang.as_str() {
+        "rust" => collect_pipeline::<LangRust>(&project.paths, needs_symbols, needs_graph)?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -173,13 +178,13 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
     };
     drop(project);
 
-    Ok(PipelineSummary {
-        symbols: Some(symbol_sets),
-    })
+    Ok(summary)
 }
 
+#[derive(Default)]
 struct PipelineSummary {
     symbols: Option<Vec<CollectedSymbols>>,
+    graph_dot: Option<String>,
 }
 
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
@@ -191,6 +196,12 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 .ok_or_else(|| anyhow!("case {} requested symbols but summary missing", case_id))?;
             Ok(render_symbol_snapshot(symbols))
         }
+        "graph" => summary.graph_dot.clone().ok_or_else(|| {
+            anyhow!(
+                "case {} requested graph output but summary missing",
+                case_id
+            )
+        }),
         other => Err(anyhow!(
             "case {} uses unsupported expectation '{}'",
             case_id,
@@ -307,7 +318,11 @@ fn materialize_case(case: &CorpusCase) -> Result<MaterializedProject> {
     Ok(MaterializedProject { temp_dir, paths })
 }
 
-fn collect_symbols<L>(files: &[String]) -> Result<Vec<CollectedSymbols>>
+fn collect_pipeline<L>(
+    files: &[String],
+    keep_symbols: bool,
+    build_graph: bool,
+) -> Result<PipelineSummary>
 where
     L: LanguageTrait<SymbolCollection = CollectedSymbols>,
 {
@@ -323,9 +338,33 @@ where
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
     }
+    let mut project_graph = if build_graph {
+        Some(ProjectGraph::new(&cc))
+    } else {
+        None
+    };
     for (index, collection) in collections.iter().enumerate() {
         let unit = cc.compile_unit(index);
         L::bind_symbols(unit, globals, collection);
+        if let Some(project) = project_graph.as_mut() {
+            let unit_graph = build_llmcc_graph::<L>(unit, index, GraphBuildConfig)
+                .map_err(|err| anyhow!(err))?;
+            project.add_child(unit_graph);
+        }
     }
-    Ok(collections)
+    let graph_dot = if let Some(mut project) = project_graph {
+        project.link_units();
+        Some(project.render_design_graph())
+    } else {
+        None
+    };
+
+    Ok(PipelineSummary {
+        symbols: if keep_symbols {
+            Some(collections)
+        } else {
+            None
+        },
+        graph_dot,
+    })
 }

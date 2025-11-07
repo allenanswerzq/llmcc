@@ -16,6 +16,11 @@ pub fn add(a: i32, b: i32) -> i32 {
 
 --- expect:symbols ---
  0 | Function     | crate::add [global]
+
+--- expect:graph ---
+digraph DesignGraph {
+    // adjacency snapshot here
+}
 ```
 
 ## CLI
@@ -41,8 +46,11 @@ cargo run -p llmcc-test -- list      # discover case ids
 * `--- file: relative/path ---` declares a virtual source file. Multiple files
   may exist per case, allowing cross-file relationships.
 * `--- expect:symbols ---` stores a textual snapshot of the symbol table derived
-  from the resolver. Additional expectation kinds will be added as the harness
-  evolves (e.g. parse trees, design graphs, CLI output).
+  from the resolver.
+* `--- expect:graph ---` records the DOT output from `ProjectGraph::render_design_graph()`,
+  allowing callers to lock down dependency edges.
+* Additional expectation kinds (parse trees, CLI output, etc.) can be layered on
+  later; unsupported kinds trigger a helpful error.
 
 All sections are separated by blank lines. The runner re-serializes files when
 `--update` is used, so the format is canonical.
