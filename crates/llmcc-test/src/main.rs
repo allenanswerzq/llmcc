@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand};
 
-use llmcc_test::{run_cases, CaseStatus, Corpus, RunnerConfig};
+use llmcc_test::{run_cases, run_cases_for_file, CaseOutcome, CaseStatus, Corpus, RunnerConfig};
 
 #[derive(Parser, Debug)]
 #[command(name = "llmcc-test", about = "Corpus runner for llmcc", version)]
@@ -18,8 +18,17 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// Run the corpus expectations
+    /// Run every case contained in a single corpus file
     Run {
+        /// Path to the `.llmcc` file (relative to --root or absolute)
+        #[arg(value_name = "FILE")]
+        file: PathBuf,
+        /// Update expectation sections with current output (bless)
+        #[arg(long)]
+        update: bool,
+    },
+    /// Run the entire corpus (optionally filtered by case id)
+    RunAll {
         /// Only run cases whose id contains this substring
         #[arg(long)]
         filter: Option<String>,
@@ -37,12 +46,13 @@ enum Command {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Run { filter, update } => run_command(cli.root, filter, update),
+        Command::Run { file, update } => run_single_command(cli.root, file, update),
+        Command::RunAll { filter, update } => run_all_command(cli.root, filter, update),
         Command::List { filter } => list_command(cli.root, filter),
     }
 }
 
-fn run_command(root: PathBuf, filter: Option<String>, update: bool) -> Result<()> {
+fn run_all_command(root: PathBuf, filter: Option<String>, update: bool) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let outcomes = run_cases(
         &mut corpus,
@@ -52,47 +62,69 @@ fn run_command(root: PathBuf, filter: Option<String>, update: bool) -> Result<()
         },
     )?;
 
-    let mut passed = 0usize;
-    let mut updated_cases = 0usize;
-    let mut failed = 0usize;
-    let mut no_expect = 0usize;
-
-    for outcome in &outcomes {
-        match outcome.status {
-            CaseStatus::Passed => {
-                passed += 1;
-                println!("[PASS] {}", outcome.id);
-            }
-            CaseStatus::Updated => {
-                updated_cases += 1;
-                println!("[UPD ] {}", outcome.id);
-            }
-            CaseStatus::Failed => {
-                failed += 1;
-                println!("[FAIL] {}", outcome.id);
-                if let Some(message) = &outcome.message {
-                    for line in message.lines() {
-                        println!("        {line}");
-                    }
-                }
-            }
-            CaseStatus::NoExpectations => {
-                no_expect += 1;
-                println!("[SKIP] {} (no expectations)", outcome.id);
-            }
-        }
-    }
+    let summary = print_outcomes(&outcomes);
 
     if update {
         corpus.write_updates()?;
     }
 
-    println!(
-        "\nSummary: {passed} passed, {updated_cases} updated, {failed} failed, {no_expect} skipped"
-    );
+    print_summary(&summary);
 
-    if failed > 0 {
-        anyhow::bail!("{} case(s) failed", failed);
+    if summary.failed > 0 {
+        anyhow::bail!("{} case(s) failed", summary.failed);
+    }
+
+    Ok(())
+}
+
+fn run_single_command(root: PathBuf, file: PathBuf, update: bool) -> Result<()> {
+    let mut corpus = Corpus::load(&root)?;
+    let root_canon = root
+        .canonicalize()
+        .with_context(|| format!("failed to resolve root {}", root.display()))?;
+
+    let canonical = if file.is_absolute() {
+        file.canonicalize()
+            .with_context(|| format!("corpus file '{}' not found", file.display()))?
+    } else {
+        match file.canonicalize() {
+            Ok(path) => path,
+            Err(_) => {
+                let joined = root_canon.join(&file);
+                joined.canonicalize().with_context(|| {
+                    format!(
+                        "corpus file '{}' (joined with {}) not found",
+                        file.display(),
+                        root_canon.display()
+                    )
+                })?
+            }
+        }
+    };
+
+    let Some(entry) = corpus
+        .files_mut()
+        .iter_mut()
+        .find(|candidate| candidate.path == canonical)
+    else {
+        return Err(anyhow!(
+            "file '{}' is not registered under {}",
+            file.display(),
+            root.display()
+        ));
+    };
+
+    let outcomes = run_cases_for_file(entry, update)?;
+    let summary = print_outcomes(&outcomes);
+
+    if update {
+        corpus.write_updates()?;
+    }
+
+    print_summary(&summary);
+
+    if summary.failed > 0 {
+        anyhow::bail!("{} case(s) failed", summary.failed);
     }
 
     Ok(())
@@ -123,4 +155,49 @@ fn list_command(root: PathBuf, filter: Option<String>) -> Result<()> {
         );
     }
     Ok(())
+}
+
+#[derive(Default)]
+struct OutcomeSummary {
+    passed: usize,
+    updated: usize,
+    failed: usize,
+    skipped: usize,
+}
+
+fn print_outcomes(outcomes: &[CaseOutcome]) -> OutcomeSummary {
+    let mut summary = OutcomeSummary::default();
+    for outcome in outcomes {
+        match outcome.status {
+            CaseStatus::Passed => {
+                summary.passed += 1;
+                println!("[PASS] {}", outcome.id);
+            }
+            CaseStatus::Updated => {
+                summary.updated += 1;
+                println!("[UPD ] {}", outcome.id);
+            }
+            CaseStatus::Failed => {
+                summary.failed += 1;
+                println!("[FAIL] {}", outcome.id);
+                if let Some(message) = &outcome.message {
+                    for line in message.lines() {
+                        println!("        {line}");
+                    }
+                }
+            }
+            CaseStatus::NoExpectations => {
+                summary.skipped += 1;
+                println!("[SKIP] {} (no expectations)", outcome.id);
+            }
+        }
+    }
+    summary
+}
+
+fn print_summary(summary: &OutcomeSummary) {
+    println!(
+        "\nSummary: {} passed, {} updated, {} failed, {} skipped",
+        summary.passed, summary.updated, summary.failed, summary.skipped
+    );
 }
