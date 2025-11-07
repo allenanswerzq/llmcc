@@ -35,11 +35,15 @@ impl Corpus {
                 .strip_prefix(&root)
                 .unwrap_or_else(|_| entry.path());
             let suite = rel.with_extension("").to_string_lossy().replace('\\', "/");
-            let content = fs::read_to_string(entry.path())
-                .with_context(|| format!("failed to read {}", entry.path().display()))?;
-            let cases = parse_corpus_file(&suite, entry.path(), &content)?;
+            let canonical = entry
+                .path()
+                .canonicalize()
+                .with_context(|| format!("failed to resolve {}", entry.path().display()))?;
+            let content = fs::read_to_string(&canonical)
+                .with_context(|| format!("failed to read {}", canonical.display()))?;
+            let cases = parse_corpus_file(&suite, &canonical, &content)?;
             files.push(CorpusFile {
-                path: entry.path().to_path_buf(),
+                path: canonical,
                 suite,
                 cases,
                 dirty: false,
