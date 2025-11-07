@@ -8,15 +8,6 @@ llmcc is a universal context builder for any language, any document.
 
 llmcc explores automated context generation through symbolic graph analysis. bridging the semantic gap between human-written code/documents and AI model understanding, using modern compiler design principles.
 
-## design
-
-![design](doc/design.png)
-
-## testing
-
-`llmcc-test` provides a corpus-style harness (similar to tree-sitter) for end-to-end
-parser+resolver checks. See [doc/testing.md](doc/testing.md) for the file format
-and CLI usage.
 
 ## examples
 
@@ -115,3 +106,10 @@ output = llmcc.run(
 )
 print(output)
 ```
+
+
+## testing
+
+`llmcc-test` provides a corpus-style harness (similar to tree-sitter) for end-to-end
+parser+resolver checks. See [doc/testing.md](doc/testing.md) for the file format
+and CLI usage.
