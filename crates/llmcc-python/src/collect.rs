@@ -74,11 +74,11 @@ impl<'tcx> DeclCollector<'tcx> {
             return Vec::new();
         }
 
-        let mut segments: Vec<String> = Vec::new();
+        let mut parts: Vec<String> = Vec::new();
 
         if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
             if stem != "__init__" && !stem.is_empty() {
-                segments.push(stem.to_string());
+                parts.push(stem.to_string());
             }
         }
 
@@ -91,19 +91,19 @@ impl<'tcx> DeclCollector<'tcx> {
 
             let has_init = dir.join("__init__.py").exists() || dir.join("__init__.pyi").exists();
             if has_init {
-                segments.push(dir_name);
+                parts.push(dir_name);
                 current = dir.parent();
                 continue;
             }
 
-            if segments.is_empty() {
-                segments.push(dir_name);
+            if parts.is_empty() {
+                parts.push(dir_name);
             }
             break;
         }
 
-        segments.reverse();
-        segments
+        parts.reverse();
+        parts
     }
 
     fn ensure_module_symbol(&mut self, node: &HirNode<'tcx>) -> Option<usize> {
@@ -122,9 +122,9 @@ impl<'tcx> DeclCollector<'tcx> {
             .and_then(|p| p.canonicalize().ok().or(Some(p)))
             .unwrap_or_else(|| PathBuf::from("__module__"));
 
-        let segments = Self::module_segments_from_path(&path);
+        let parts = Self::module_segments_from_path(&path);
 
-        let (name, fqn) = if segments.is_empty() {
+        let (name, fqn) = if parts.is_empty() {
             let fallback = path
                 .file_stem()
                 .and_then(|s| s.to_str())
@@ -132,11 +132,11 @@ impl<'tcx> DeclCollector<'tcx> {
                 .to_string();
             (fallback.clone(), fallback)
         } else {
-            let name = segments
+            let name = parts
                 .last()
                 .cloned()
                 .unwrap_or_else(|| "__module__".to_string());
-            let fqn = segments.join("::");
+            let fqn = parts.join("::");
             (name, fqn)
         };
 
@@ -144,7 +144,8 @@ impl<'tcx> DeclCollector<'tcx> {
             self.core
                 .upsert_symbol_with_fqn(owner, &name, SymbolKind::Module, true, &fqn);
 
-        self.core.set_scope_symbol(scope_idx, Some(symbol_idx));
+        self.core
+            .set_scope_owner_symbol(scope_idx, Some(symbol_idx));
         Some(symbol_idx)
     }
 
@@ -255,7 +256,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         let owner = node.hir_id();
         let scope_idx = self.core.ensure_scope(owner);
         if let Some(sym_idx) = symbol {
-            self.core.set_scope_symbol(scope_idx, Some(sym_idx));
+            self.core.set_scope_owner_symbol(scope_idx, Some(sym_idx));
         }
 
         self.core.push_scope(scope_idx);

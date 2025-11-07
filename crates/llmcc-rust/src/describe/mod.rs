@@ -2,19 +2,21 @@ pub mod call;
 pub mod enumeration;
 pub mod function;
 pub mod implementation;
+pub mod module;
 pub mod structure;
 pub mod variable;
 
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::Node;
-use llmcc_descriptor::DescriptorTrait;
+use llmcc_descriptor::{DescriptorTrait, ImplDescriptor};
 
 pub use llmcc_descriptor::{
     CallArgument, CallChain, CallDescriptor, CallKind, CallSegment, CallSymbol, CallTarget,
     ClassDescriptor, EnumDescriptor, EnumVariant, EnumVariantField, EnumVariantKind,
-    FunctionDescriptor, FunctionParameter, FunctionQualifiers, ParameterKind, StructDescriptor,
-    StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind, VariableScope, Visibility,
+    FunctionDescriptor, FunctionParameter, FunctionQualifiers, ModuleDescriptor, ParameterKind,
+    StructDescriptor, StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind,
+    VariableScope, Visibility,
 };
 
 pub struct RustDescriptor;
@@ -32,6 +34,10 @@ impl<'tcx> DescriptorTrait<'tcx> for RustDescriptor {
         enumeration::build(unit, node)
     }
 
+    fn build_module(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ModuleDescriptor> {
+        module::build(unit, node)
+    }
+
     fn build_variable(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<VariableDescriptor> {
         let kind = node.inner_ts_node().kind();
         match kind {
@@ -46,7 +52,7 @@ impl<'tcx> DescriptorTrait<'tcx> for RustDescriptor {
         Some(call::build(unit, node, None))
     }
 
-    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
+    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ImplDescriptor> {
         implementation::build(unit, node)
     }
 

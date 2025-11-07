@@ -148,6 +148,24 @@ fn get_block(graph: &ProjectGraph<'static>, name: &str) -> GraphNode {
         .unwrap_or_else(|| panic!("block {}", name))
 }
 
+fn get_block_by_fqn(graph: &ProjectGraph<'static>, fqn: &str) -> GraphNode {
+    let symbols = graph.cc.symbol_map.read();
+    let symbol = symbols
+        .values()
+        .find(|sym| sym.fqn_name.read().as_str() == fqn)
+        .unwrap_or_else(|| panic!("symbol {}", fqn));
+    let block_id = symbol
+        .block_id()
+        .unwrap_or_else(|| panic!("block id for symbol {}", fqn));
+    let unit_index = symbol
+        .unit_index()
+        .unwrap_or_else(|| panic!("unit index for symbol {}", fqn));
+    GraphNode {
+        unit_index,
+        block_id,
+    }
+}
+
 #[test]
 fn collects_function_blocks_in_unit() {
     let graph = build_graph(&[r#"
@@ -569,7 +587,6 @@ fn trait_impl_method_dependencies() {
 }
 
 #[test]
-#[ignore = "todo"]
 fn associated_function_depends_on_type() {
     let graph = build_graph(&[r#"
         struct Builder;
@@ -964,7 +981,6 @@ fn nested_module_cross_dependency() {
 }
 
 #[test]
-#[ignore = "check later"]
 fn trait_impl_with_type_parameter_dependency() {
     let graph = build_graph(&[r#"
         trait Handler<T> {
@@ -982,7 +998,7 @@ fn trait_impl_with_type_parameter_dependency() {
 
     let my_type = get_block(&graph, "MyType");
     let my_handler = get_block(&graph, "MyHandler");
-    let handle_method = get_block(&graph, "handle");
+    let handle_method = get_block_by_fqn(&graph, "MyHandler::handle");
 
     // handler depends on both MyType and MyHandler
     let my_handler_deps = get_depends_on(&graph, my_handler);

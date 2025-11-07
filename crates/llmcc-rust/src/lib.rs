@@ -1,6 +1,7 @@
 mod bind;
 mod collect;
 pub mod describe;
+mod path;
 pub mod token;
 
 pub use crate::bind::bind_symbols;

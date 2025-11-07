@@ -3,8 +3,8 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::Node;
 
 use crate::{
-    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImportDescriptor,
-    StructDescriptor, TypeExpr, VariableDescriptor,
+    CallDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor, ImportDescriptor,
+    ModuleDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 /// Trait implemented by language front-ends to construct shared descriptors from their HIR nodes.
@@ -16,7 +16,7 @@ pub trait DescriptorTrait<'tcx> {
         None
     }
 
-    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
+    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ImplDescriptor> {
         let _ = unit;
         let _ = node;
         None
@@ -29,6 +29,12 @@ pub trait DescriptorTrait<'tcx> {
     }
 
     fn build_enum(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<EnumDescriptor> {
+        let _ = unit;
+        let _ = node;
+        None
+    }
+
+    fn build_module(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ModuleDescriptor> {
         let _ = unit;
         let _ = node;
         None
