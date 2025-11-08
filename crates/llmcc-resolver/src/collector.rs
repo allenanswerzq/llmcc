@@ -421,21 +421,75 @@ impl<'tcx> CollectorCore<'tcx> {
 
     pub fn insert_expr_symbol(
         &mut self,
-        owner: HirId,
+        _owner: HirId,
         expr: &TypeExpr,
         kind: SymbolKind,
-        is_global: bool,
+        _is_global: bool,
     ) -> Option<usize> {
         match expr {
             TypeExpr::Path { qualifier, .. } => {
-                todo!();
+                let parts: Vec<String> = qualifier.parts().to_vec();
+
+                if parts.is_empty() {
+                    return None;
+                }
+
+                let part_refs: Vec<&str> = parts.iter().map(String::as_str).collect();
+
+                let start_depth = match qualifier {
+                    // `super::` paths need to start their lookup from an ancestor scope.
+                    // Example: `impl super::outer::Widget` should skip the current module scope first.
+                    PathQualifier::Super { levels, .. } => {
+                        let depth = self.scope_stack.len();
+                        if depth == 0 {
+                            None
+                        } else {
+                            let levels = (*levels as usize).min(depth);
+                            depth.checked_sub(levels).filter(|d| *d > 0)
+                        }
+                    }
+                    _ => None,
+                };
+
+                // Try resolving the full segmented path relative to the inferred scope depth.
+                // Example: `impl codex::workspace::Sandbox` walks `["codex","workspace","Sandbox"]`.
+                if let Some(idx) = self.lookup_from_scopes_with_parts(&part_refs, kind, start_depth) {
+                    return Some(idx);
+                }
+
+                // Fall back to matching the canonical FQN we have already recorded.
+                // Example: when `parts` resolve to `"crate::outer::Widget"` exactly as stored.
+                let canonical = parts.join("::");
+                if !canonical.is_empty() {
+                    if let Some((idx, _)) = self
+                        .symbols
+                        .iter()
+                        .enumerate()
+                        .rev()
+                        .find(|(_, symbol)| symbol.kind == kind && symbol.fqn == canonical)
+                    {
+                        return Some(idx);
+                    }
+                }
+
+                // As a last resort use only the terminal segment.
+                // Example: `impl Widget` inside the same module finds the nearest `Widget`.
+                if let Some(name) = part_refs.last().copied() {
+                    if let Some(idx) = self.lookup_from_scopes_with(name, kind) {
+                        return Some(idx);
+                    }
+                }
+
+                None
             }
             TypeExpr::Reference { inner, .. } => {
-                self.insert_expr_symbol(owner, inner, kind, is_global)
+                // Peel references like `&T` or `&&mut T` until we reach the underlying path.
+                self.insert_expr_symbol(_owner, inner, kind, _is_global)
             }
             TypeExpr::Tuple(items) => items
                 .iter()
-                .find_map(|item| self.insert_expr_symbol(owner, item, kind, is_global)),
+                // Tuple singletons show up during parsing for `impl (Foo,)` in Rust.
+                .find_map(|item| self.insert_expr_symbol(_owner, item, kind, _is_global)),
             _ => None,
         }
     }

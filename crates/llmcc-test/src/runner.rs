@@ -238,7 +238,7 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
 
 fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
     if entries.is_empty() {
-        return "<no-symbols>\n".to_string();
+        return "none\n".to_string();
     }
 
     let mut rows = entries.to_vec();

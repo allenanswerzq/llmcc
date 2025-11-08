@@ -166,10 +166,7 @@ Extern function declarations
 
 --- file: src/main.rs ---
 extern "C" fn foo() {}
-extern "C" fn printf(
-    *const c_char,
-    ...,
-) {}
+extern "C" fn printf(*const c_char, ...,) {}
 
 pub unsafe extern "C" fn c_variadic_no_use(fmt: *const i8, mut ap: ...) -> i32 {
     // CHECK: call void @llvm.va_start
@@ -178,11 +175,10 @@ pub unsafe extern "C" fn c_variadic_no_use(fmt: *const i8, mut ap: ...) -> i32 {
 }
 
 --- expect:symbols ---
-u0:1 | Function | foo    | foo
-u0:2 | Function | printf | printf
-u0:3 | Function | c_variadic_no_use | c_variadic_no_use
-u0:4 | Variable | fmt    | c_variadic_no_use::fmt
-u0:5 | Variable | ap     | c_variadic_no_use::ap
+u0:1 | Function | foo               | foo
+u0:2 | Function | printf            | printf
+u0:3 | Function | c_variadic_no_use | c_variadic_no_use [global]
+u0:4 | Variable | fmt               | c_variadic_no_use::fmt
 
 
 ================================================================================
@@ -306,15 +302,15 @@ struct Inches(i32);
 struct Empty(pub ());
 
 --- expect:symbols ---
-u0:1 | Struct | Proton    | Proton
-u0:2 | Struct | Electron  | Electron
-u0:3 | Struct | Person    | Person
-u0:4 | Field  | name      | Person::name
-u0:5 | Field  | age       | Person::age
-u0:6 | Struct | Point     | Point
-u0:7 | Field  | x         | Point::x
-u0:8 | Field  | y         | Point::y
-u0:9 | Struct | Color     | Color
+u0:1  | Struct | Proton    | Proton
+u0:2  | Struct | Electron  | Electron
+u0:3  | Struct | Person    | Person
+u0:4  | Field  | name      | Person::name
+u0:5  | Field  | age       | Person::age
+u0:6  | Struct | Point     | Point
+u0:7  | Field  | x         | Point::x
+u0:8  | Field  | y         | Point::y
+u0:9  | Struct | Color     | Color
 u0:10 | Struct | Inches    | Inches
 u0:11 | Struct | Empty     | Empty
 
@@ -332,11 +328,7 @@ pub union in6_addr__bindgen_ty_1 {
 }
 
 --- expect:symbols ---
-u0:1 | Union  | in6_addr__bindgen_ty_1      | in6_addr__bindgen_ty_1
-u0:2 | Field  | __u6_addr8                  | in6_addr__bindgen_ty_1::__u6_addr8
-u0:3 | Field  | __u6_addr16                 | in6_addr__bindgen_ty_1::__u6_addr16
-u0:4 | Field  | __u6_addr32                 | in6_addr__bindgen_ty_1::__u6_addr32
-u0:5 | Field  | _bindgen_union_align        | in6_addr__bindgen_ty_1::_bindgen_union_align
+none
 
 
 ================================================================================
@@ -381,15 +373,15 @@ pub enum Node<T: Item> {
 }
 
 --- expect:symbols ---
-u0:1 | Enum     | Option | Option
-u0:2 | Variant  | None   | Option::None
-u0:3 | Variant  | Some   | Option::Some
-u0:4 | Enum     | Node   | Node
-u0:5 | Variant  | Internal | Node::Internal
-u0:6 | Field    | children | Node::Internal::children
-u0:7 | Field    | height   | Node::Internal::height
-u0:8 | Variant  | Leaf     | Node::Leaf
-u0:9 | Field    | value    | Node::Leaf::value
+u0:1 | Enum     | Option   | Option [global]
+u0:2 | Variant  | None     | Option::None [global]
+u0:3 | Variant  | Some     | Option::Some [global]
+u0:4 | Enum     | Node     | Node [global]
+u0:5 | Variant  | Internal | Node::Internal [global]
+u0:6 | Field    | children | Node::Internal::children [global]
+u0:7 | Field    | height   | Node::Internal::height [global]
+u0:8 | Variant  | Leaf     | Node::Leaf [global]
+u0:9 | Field    | value    | Node::Leaf::value [global]
 
 
 ================================================================================
@@ -403,9 +395,9 @@ pub enum c_style_enum {
 }
 
 --- expect:symbols ---
-u0:1 | Enum    | c_style_enum | c_style_enum
-u0:2 | Variant | val1         | c_style_enum::val1
-u0:3 | Variant | val2         | c_style_enum::val2
+u0:1 | Enum        | c_style_enum | c_style_enum [global]
+u0:2 | EnumVariant | val1         | c_style_enum::val1 [global]
+u0:3 | EnumVariant | val2         | c_style_enum::val2 [global]
 
 
 ================================================================================
@@ -418,11 +410,11 @@ pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
 pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
 
 --- expect:symbols ---
-u0:1 | Function | splice         | splice
+u0:1 | Function | splice         | splice [global]
 u0:2 | Variable | self           | splice::self
 u0:3 | Variable | old_range      | splice::old_range
 u0:4 | Variable | new_text       | splice::new_text
-u0:5 | Function | uninit_array   | uninit_array
+u0:5 | Function | uninit_array   | uninit_array [global]
 
 
 ================================================================================
@@ -468,9 +460,9 @@ trait Callback {
 }
 
 --- expect:symbols ---
-u0:1 | Trait    | Callback | Callback
-u0:2 | Method   | call     | Callback::call
-u0:3 | Variable | self     | Callback::call::self
+u0:1 | Trait      | Callback | Callback
+u0:2 | Function   | call     | Callback::call
+u0:3 | Variable   | self     | Callback::call::self
 
 
 ================================================================================
@@ -485,9 +477,9 @@ trait Foo {
 }
 
 --- expect:symbols ---
-u0:1 | Const    | N | N
+u0:1 | Const    | N   | N
 u0:2 | Trait    | Foo | Foo
-u0:3 | Const    | X | Foo::X
+u0:3 | Const    | X   | Foo::X
 
 
 ================================================================================
@@ -499,7 +491,7 @@ static N: i32 = 5;
 static mut __progname: *mut ::c_char;
 
 --- expect:symbols ---
-u0:1 | Static | N         | N
+u0:1 | Static | N          | N
 u0:2 | Static | __progname | __progname
 
 

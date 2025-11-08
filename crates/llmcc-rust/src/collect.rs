@@ -301,6 +301,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
+        self.visit_children(&node);
         let is_global = self
             .parent_symbol()
             .map(|symbol| symbol.is_global)
@@ -313,7 +314,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 is_global,
             );
         }
-        self.visit_children(&node);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
