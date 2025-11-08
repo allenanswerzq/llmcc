@@ -31,15 +31,6 @@ extern crate std;
 extern crate std as ruststd;
 pub extern crate futures;
 
---- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
-
 
 ================================================================================
 Function declarations
@@ -77,13 +68,23 @@ fn accumulate(self) -> Machine<{State::Accumulate}> {}
 fn foo(bar: impl for<'a> Baz<Quux<'a>>) {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1  | Function | main        | main
+u0:2  | Function | add         | add
+u0:3  | Variable | x           | add::x
+u0:4  | Variable | y           | add::y
+u0:5  | Function | takes_slice | takes_slice
+u0:6  | Variable | slice       | takes_slice::slice
+u0:7  | Function | foo         | foo
+u0:8  | Function | foo         | foo
+u0:9  | Function | foo         | foo
+u0:10 | Function | foo         | foo
+u0:11 | Variable | x           | foo::x
+u0:12 | Function | foo         | foo
+u0:13 | Variable | x           | foo::x
+u0:14 | Variable | x           | foo::x
+u0:15 | Function | accumulate  | accumulate
+u0:16 | Function | foo         | foo
+u0:17 | Variable | bar         | foo::bar
 
 
 ================================================================================
@@ -94,13 +95,7 @@ Const function declarations
 const fn main() {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1  | Function | main        | main
 
 
 ================================================================================
@@ -112,13 +107,8 @@ fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | triples | triples
+u0:2 | Variable | a       | triples::a
 
 
 ================================================================================
@@ -129,13 +119,8 @@ Impl with lifetimes first
 fn foo<'a>(x: impl 'a + Clone) {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | foo | foo
+u0:2 | Variable | x   | foo::x
 
 
 ================================================================================
@@ -147,13 +132,8 @@ fn capture<T>(&self) -> impl Iterator<Item = usize> + use<'_, T> {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | capture | capture
+u0:2 | Variable | self    | capture::self
 
 
 ================================================================================
@@ -165,13 +145,8 @@ fn capture(&self) -> impl Iterator<Item = usize> + use<> {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | capture | capture
+u0:2 | Variable | self    | capture::self
 
 
 ================================================================================
@@ -182,13 +157,7 @@ Diverging functions
 fn aborts() -> ! {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | aborts | aborts
 
 
 ================================================================================
@@ -209,13 +178,11 @@ pub unsafe extern "C" fn c_variadic_no_use(fmt: *const i8, mut ap: ...) -> i32 {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | foo    | foo
+u0:2 | Function | printf | printf
+u0:3 | Function | c_variadic_no_use | c_variadic_no_use
+u0:4 | Variable | fmt    | c_variadic_no_use::fmt
+u0:5 | Variable | ap     | c_variadic_no_use::ap
 
 
 ================================================================================
@@ -237,12 +204,7 @@ use my::{*};
 use ::*;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+<no-symbols>
 
 
 
@@ -261,13 +223,14 @@ let bool: bool = false;
 let u32: str = "";
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Variable | x    | x
+u0:2 | Variable | x    | x
+u0:3 | Variable | x    | x
+u0:4 | Variable | x    | x
+u0:5 | Variable | x    | x
+u0:6 | Variable | y    | y
+u0:7 | Variable | bool | bool
+u0:8 | Variable | u32  | u32
 
 
 ================================================================================
@@ -291,13 +254,9 @@ let Some(x) = y else {
 };
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Variable | texts  | texts
+u0:2 | Variable | values | values
+u0:3 | Variable | x      | x
 
 
 ================================================================================
@@ -312,13 +271,7 @@ let a = if b {
 };
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Variable | a | a
 
 
 ================================================================================
@@ -330,13 +283,8 @@ let default = 1;
 let union = 2;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Variable | default | default
+u0:2 | Variable | union   | union
 
 
 ================================================================================
@@ -358,13 +306,17 @@ struct Inches(i32);
 struct Empty(pub ());
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Struct | Proton    | Proton
+u0:2 | Struct | Electron  | Electron
+u0:3 | Struct | Person    | Person
+u0:4 | Field  | name      | Person::name
+u0:5 | Field  | age       | Person::age
+u0:6 | Struct | Point     | Point
+u0:7 | Field  | x         | Point::x
+u0:8 | Field  | y         | Point::y
+u0:9 | Struct | Color     | Color
+u0:10 | Struct | Inches    | Inches
+u0:11 | Struct | Empty     | Empty
 
 
 ================================================================================
@@ -380,13 +332,11 @@ pub union in6_addr__bindgen_ty_1 {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Union  | in6_addr__bindgen_ty_1      | in6_addr__bindgen_ty_1
+u0:2 | Field  | __u6_addr8                  | in6_addr__bindgen_ty_1::__u6_addr8
+u0:3 | Field  | __u6_addr16                 | in6_addr__bindgen_ty_1::__u6_addr16
+u0:4 | Field  | __u6_addr32                 | in6_addr__bindgen_ty_1::__u6_addr32
+u0:5 | Field  | _bindgen_union_align        | in6_addr__bindgen_ty_1::_bindgen_union_align
 
 
 ================================================================================
@@ -401,13 +351,11 @@ struct D<const SIZE: usize> {}
 struct E<#[attr] T> {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Struct | A | A
+u0:2 | Struct | C | C
+u0:3 | Struct | C | C
+u0:4 | Struct | D | D
+u0:5 | Struct | E | E
 
 
 ================================================================================
@@ -433,13 +381,15 @@ pub enum Node<T: Item> {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Enum     | Option | Option
+u0:2 | Variant  | None   | Option::None
+u0:3 | Variant  | Some   | Option::Some
+u0:4 | Enum     | Node   | Node
+u0:5 | Variant  | Internal | Node::Internal
+u0:6 | Field    | children | Node::Internal::children
+u0:7 | Field    | height   | Node::Internal::height
+u0:8 | Variant  | Leaf     | Node::Leaf
+u0:9 | Field    | value    | Node::Leaf::value
 
 
 ================================================================================
@@ -453,13 +403,9 @@ pub enum c_style_enum {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Enum    | c_style_enum | c_style_enum
+u0:2 | Variant | val1         | c_style_enum::val1
+u0:3 | Variant | val2         | c_style_enum::val2
 
 
 ================================================================================
@@ -472,13 +418,11 @@ pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
 pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | splice         | splice
+u0:2 | Variable | self           | splice::self
+u0:3 | Variable | old_range      | splice::old_range
+u0:4 | Variable | new_text       | splice::new_text
+u0:5 | Function | uninit_array   | uninit_array
 
 
 ================================================================================
@@ -490,13 +434,8 @@ fn foo(mut x : u32) {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | foo | foo
+u0:2 | Variable | x   | foo::x
 
 
 ================================================================================
@@ -509,13 +448,14 @@ fn f2(&x: &Y) {}
 fn f3((x, y): (T, U)) {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | f1 | f1
+u0:2 | Variable | x  | f1::x
+u0:3 | Variable | y  | f1::y
+u0:4 | Function | f2 | f2
+u0:5 | Variable | x  | f2::x
+u0:6 | Function | f3 | f3
+u0:7 | Variable | x  | f3::x
+u0:8 | Variable | y  | f3::y
 
 
 ================================================================================
@@ -528,13 +468,9 @@ trait Callback {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait    | Callback | Callback
+u0:2 | Method   | call     | Callback::call
+u0:3 | Variable | self     | Callback::call::self
 
 
 ================================================================================
@@ -549,13 +485,9 @@ trait Foo {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Const    | N | N
+u0:2 | Trait    | Foo | Foo
+u0:3 | Const    | X | Foo::X
 
 
 ================================================================================
@@ -567,13 +499,8 @@ static N: i32 = 5;
 static mut __progname: *mut ::c_char;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Static | N         | N
+u0:2 | Static | __progname | __progname
 
 
 ================================================================================
@@ -584,13 +511,7 @@ Static 'ref' items using lazy_static
 static ref ONE: usize = 0;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Static | ONE | ONE
 
 
 ================================================================================
@@ -603,13 +524,9 @@ type Name<T> = Vec<T>;
 type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | TypeAlias | Inch         | Inch
+u0:2 | TypeAlias | Name         | Name
+u0:3 | TypeAlias | LazyResolve  | LazyResolve
 
 
 ================================================================================
@@ -621,13 +538,8 @@ type Foo<T> where T: Copy = Box<T>;
 type Assoc3 where = () where;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | TypeAlias | Foo     | Foo
+u0:2 | TypeAlias | Assoc3  | Assoc3
 
 
 ================================================================================
@@ -640,13 +552,7 @@ fn main() {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | main | main
 
 
 ================================================================================
@@ -671,13 +577,9 @@ mod macos_only {}
 #[clippy::cyclomatic_complexity = "100"]
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | test_foo | test_foo
+u0:2 | Struct   | Baz      | Baz
+u0:3 | Struct   | Foo      | Foo
 
 
 ================================================================================
@@ -695,13 +597,7 @@ match ty {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Module | macos_only | macos_only
 
 
 ================================================================================
@@ -716,13 +612,8 @@ fn foo() {}
 fn baz() {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | foo | foo
+u0:2 | Function | baz | baz
 
 
 ================================================================================
@@ -735,13 +626,6 @@ foo(#[attr(=> arbitrary tokens <=)] x, y);
 foo(#[bar(some tokens are special in other contexts: $/';()*()+.)] x);
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
 
 
 ================================================================================
@@ -762,13 +646,13 @@ pub enum Error {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | UseDecl | Error | thiserror::Error
+u0:2 | Enum   | Error | Error
+u0:3 | Variant | WrongCase | Error::WrongCase
+u0:4 | Field | | Error::WrongCase::0
+u0:5 | Variant | OutOfBounds | Error::OutOfBounds
+u0:6 | Field | idx | Error::OutOfBounds::idx
+u0:7 | Field | limits | Error::OutOfBounds::limits
 
 
 ================================================================================
@@ -785,13 +669,7 @@ fn foo() {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | foo | foo
 
 
 ================================================================================
@@ -811,13 +689,17 @@ impl Person {
 impl Machine<{State::Init}> {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl     | Person | Person
+u0:2 | Const    | leg_count | Person::leg_count
+u0:3 | Method   | walk   | Person::walk
+u0:4 | Variable | self   | Person::walk::self
+u0:5 | Method   | walk_mut | Person::walk_mut
+u0:6 | Variable | self   | Person::walk_mut::self
+u0:7 | Method   | talk   | Person::talk
+u0:8 | Variable | self   | Person::talk::self
+u0:9 | Method   | talk_mut | Person::talk_mut
+u0:10 | Variable | self   | Person::talk_mut::self
+u0:11 | Impl     | Machine | Machine
 
 
 ================================================================================
@@ -833,13 +715,10 @@ impl ConvertTo<i64> for i32 {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl | Iterator | iter::Iterator
+u0:2 | Impl | ConvertTo | ConvertTo
+u0:3 | Method | convert | ConvertTo::convert
+u0:4 | Variable | self | ConvertTo::convert::self
 
 
 ================================================================================
@@ -851,13 +730,7 @@ unsafe impl Foo {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl | Foo | Foo
 
 
 ================================================================================
@@ -868,13 +741,7 @@ Disable automatically derived trait impls
 impl !Send for Foo {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl | Send | Send
 
 
 ================================================================================
@@ -887,13 +754,8 @@ pub unsafe trait Trait {}
 unsafe impl Trait for dyn (::std::any::Any) + Send { }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait | Trait | Trait
+u0:2 | Impl  | Trait | Trait
 
 
 ================================================================================
@@ -905,13 +767,8 @@ impl<K: Debug + Ord> Debug for OccupiedError<K>;
 impl<K: Debug + Ord> Display for OccupiedError<K>;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl | Debug   | OccupiedError
+u0:2 | Impl | Display | OccupiedError
 
 
 ================================================================================
@@ -927,13 +784,8 @@ impl Foo {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl     | Foo | Foo
+u0:2 | Method   | bar | Foo::bar
 
 
 ================================================================================
@@ -948,13 +800,9 @@ pub trait Item: Clone + Eq + fmt::Debug {
 unsafe trait Foo { }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait  | Item      | Item
+u0:2 | Method | summarize | Item::summarize
+u0:3 | Trait  | Foo       | Foo
 
 
 ================================================================================
@@ -968,13 +816,11 @@ trait Add<RHS=Self> {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait     | Add    | Add
+u0:2 | AssocType | Output | Add::Output
+u0:3 | Method    | add    | Add::add
+u0:4 | Variable  | self   | Add::add::self
+u0:5 | Variable  | rhs    | Add::add::rhs
 
 
 ================================================================================
@@ -988,13 +834,10 @@ trait Foo<T: ?Sized> {
 fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait    | Foo        | Foo
+u0:2 | Function | univariant | univariant
+u0:3 | Variable | this       | univariant::this
+u0:4 | Variable | that       | univariant::that
 
 
 ================================================================================
@@ -1005,13 +848,7 @@ Trait bounds in type arguments in trait
 impl<T: AstDeref<Target: HasNodeId>> HasNodeId for T {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl | HasNodeId | HasNodeId
 
 
 ================================================================================
@@ -1025,13 +862,8 @@ pub trait A: B + C + D {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait  | A | A
+u0:2 | Method | f | A::f
 
 
 ================================================================================
@@ -1045,13 +877,9 @@ pub trait Graph {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait     | Graph | Graph
+u0:2 | AssocType | N     | Graph::N
+u0:3 | AssocType | E     | Graph::E
 
 
 ================================================================================
@@ -1064,13 +892,8 @@ impl Trait for T {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Impl      | Trait | Trait
+u0:2 | AssocType | Associated | Trait::Associated
 
 
 ================================================================================
@@ -1094,13 +917,12 @@ where
 {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait     | Database | Database
+u0:2 | AssocType | F        | Database::F
+u0:3 | Impl      | Database | Database
+u0:4 | AssocType | F        | Database::F
+u0:5 | Function  | use_database1 | use_database1
+u0:6 | Function  | use_database2 | use_database2
 
 
 ================================================================================
@@ -1114,13 +936,8 @@ trait T: for<'a> AddAssign<&'a usize> {
 type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Trait     | T       | T
+u0:2 | TypeAlias | FnObject | FnObject
 
 
 ================================================================================
@@ -1135,13 +952,11 @@ pub(crate) fn c() {}
 pub(in crate::d) fn e() {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | a | a
+u0:2 | Function | b | b
+u0:3 | Function | c | c
+u0:4 | Function | c | c
+u0:5 | Function | e | e
 
 
 ================================================================================
@@ -1153,13 +968,10 @@ fn foo(str: *const c_char) {}
 fn bar(bool: bool) {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | foo  | foo
+u0:2 | Variable | str  | foo::str
+u0:3 | Function | bar  | bar
+u0:4 | Variable | bool | bar::bool
 
 
 ================================================================================
@@ -1204,13 +1016,14 @@ fn foo<A>() where A: B + As<f64>, f64: As<A> {}
 impl<A> Default for B<A> where *mut A: C + D {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | walk      | walk
+u0:2 | Variable | self      | walk::self
+u0:3 | Variable | it        | walk::it
+u0:4 | Impl     | Iterator  | Iterator
+u0:5 | Impl     | Read      | Read
+u0:6 | Impl     | A         | A
+u0:7 | Trait    | A         | A
+u0:8 | Function | foo       | foo
 
 
 ================================================================================
@@ -1227,13 +1040,8 @@ extern "C" {}
 unsafe extern "C" {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | napi_module_register | napi_module_register
+u0:2 | Variable | mod_                  | napi_module_register::mod_
 
 
 ================================================================================
@@ -1247,13 +1055,10 @@ crate fn foo() { }
 crate const X: u32 = 0;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Module   | foo | foo
+u0:2 | Struct   | Foo | Foo
+u0:3 | Function | foo | foo
+u0:4 | Const    | X   | X
 
 
 ================================================================================
@@ -1267,13 +1072,9 @@ struct A {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Struct | A | A
+u0:2 | Field  | a | A::a
+u0:3 | Field  | b | A::b
 
 
 ================================================================================
@@ -1288,13 +1089,8 @@ where
 {}
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
+u0:1 | Function | foo | foo
+u0:2 | Variable | val | foo::val
 
 
 ================================================================================
@@ -1305,11 +1101,6 @@ Const generics with default
 pub struct Loaf<T: Sized, const N: usize = 1>([T; N]);
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+u0:1 | Struct | Loaf | Loaf
 
 

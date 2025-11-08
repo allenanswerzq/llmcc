@@ -251,6 +251,14 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
             .then_with(|| a.fqn.cmp(&b.fqn))
     });
 
+    let label_width = rows
+        .iter()
+        .map(|row| format!("u{}:{}", row.unit, row.id).len())
+        .max()
+        .unwrap_or(0);
+    let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
+    let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
+
     let mut buf = String::new();
     for row in rows {
         let fqn_display = if row.is_global {
@@ -258,10 +266,17 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
         } else {
             row.fqn.clone()
         };
+        let label = format!("u{}:{}", row.unit, row.id);
         let _ = writeln!(
             buf,
-            "u{}:{} | {:<12} | {} | {}",
-            row.unit, row.id, row.kind, row.name, fqn_display
+            "{:<label_width$} | {:kind_width$} | {:name_width$} | {}",
+            label,
+            row.kind,
+            row.name,
+            fqn_display,
+            label_width = label_width,
+            kind_width = kind_width,
+            name_width = name_width,
         );
     }
     buf
