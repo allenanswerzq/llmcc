@@ -1,9 +1,10 @@
-use crate::path::parse_rust_path;
-use crate::token::{AstVisitorRust, LangRust};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
+
+use crate::path::parse_rust_path;
+use crate::token::{AstVisitorRust, LangRust};
 
 /// `SymbolBinder` connects symbols with the items they reference so that later
 /// stages (or LLM consumers) can reason about dependency relationships.

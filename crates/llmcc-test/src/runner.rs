@@ -15,6 +15,16 @@ use tempfile::TempDir;
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
 
+#[derive(Clone)]
+struct SymbolSnapshot {
+    unit: usize,
+    id: u32,
+    kind: String,
+    name: String,
+    fqn: String,
+    is_global: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct RunnerConfig {
     pub filter: Option<String>,
@@ -118,9 +128,10 @@ fn evaluate_case(case: &mut CorpusCase, update: bool) -> Result<(CaseOutcome, bo
     let mut failures = Vec::new();
 
     for expect in &mut case.expectations {
-        let actual = render_expectation(expect.kind.as_str(), &summary, &case_id)?;
-        let expected_norm = normalize(&expect.value);
-        let actual_norm = normalize(&actual);
+        let kind = expect.kind.as_str();
+        let actual = render_expectation(kind, &summary, &case_id)?;
+        let expected_norm = normalize(kind, &expect.value);
+        let actual_norm = normalize(kind, &actual);
 
         if expected_norm == actual_norm {
             continue;
@@ -191,7 +202,7 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
 
 #[derive(Default)]
 struct PipelineSummary {
-    symbols: Option<Vec<CollectedSymbols>>,
+    symbols: Option<Vec<SymbolSnapshot>>,
     graph_dot: Option<String>,
     bindings: Option<String>,
 }
@@ -225,52 +236,32 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
     }
 }
 
-fn render_symbol_snapshot(collections: &[CollectedSymbols]) -> String {
-    #[derive(Clone)]
-    struct Row {
-        unit: usize,
-        kind: String,
-        fqn: String,
-        is_global: bool,
-    }
-
-    let mut rows: Vec<Row> = collections
-        .iter()
-        .enumerate()
-        .flat_map(|(unit, collection)| {
-            collection.symbols.iter().map(move |symbol| Row {
-                unit,
-                kind: format!("{:?}", symbol.kind),
-                fqn: if symbol.fqn.is_empty() {
-                    symbol.name.clone()
-                } else {
-                    symbol.fqn.clone()
-                },
-                is_global: symbol.is_global,
-            })
-        })
-        .collect();
-
-    rows.sort_by(|a, b| {
-        a.fqn
-            .cmp(&b.fqn)
-            .then_with(|| a.kind.cmp(&b.kind))
-            .then_with(|| a.unit.cmp(&b.unit))
-    });
-
-    if rows.is_empty() {
+fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
+    if entries.is_empty() {
         return "<no-symbols>\n".to_string();
     }
 
+    let mut rows = entries.to_vec();
+    rows.sort_by(|a, b| {
+        a.unit
+            .cmp(&b.unit)
+            .then_with(|| a.id.cmp(&b.id))
+            .then_with(|| a.kind.cmp(&b.kind))
+            .then_with(|| a.name.cmp(&b.name))
+            .then_with(|| a.fqn.cmp(&b.fqn))
+    });
+
     let mut buf = String::new();
     for row in rows {
+        let fqn_display = if row.is_global {
+            format!("{} [global]", row.fqn)
+        } else {
+            row.fqn.clone()
+        };
         let _ = writeln!(
             buf,
-            "{:>2} | {:<12} | {}{}",
-            row.unit,
-            row.kind,
-            row.fqn,
-            if row.is_global { " [global]" } else { "" }
+            "u{}:{} | {:<12} | {} | {}",
+            row.unit, row.id, row.kind, row.name, fqn_display
         );
     }
     buf
@@ -291,10 +282,60 @@ fn format_expectation_diff(kind: &str, expected: &str, actual: &str) -> String {
     buf
 }
 
-fn normalize(text: &str) -> String {
-    text.replace("\r\n", "\n")
+fn normalize(kind: &str, text: &str) -> String {
+    let canonical = text
+        .replace("\r\n", "\n")
         .trim_end_matches('\n')
-        .to_string()
+        .to_string();
+
+    match kind {
+        "symbols" => normalize_symbols(&canonical),
+        _ => canonical,
+    }
+}
+
+fn normalize_symbols(text: &str) -> String {
+    let mut rows: Vec<(usize, u32, String)> = text
+        .lines()
+        .filter_map(|line| {
+            if line.trim().is_empty() {
+                return None;
+            }
+
+            let parts: Vec<_> = line.split('|').map(|part| part.trim()).collect();
+            if parts.is_empty() {
+                return None;
+            }
+
+            let head = parts[0];
+            let (unit, id) = parse_unit_and_id(head);
+            let canonical = parts.join(" | ");
+            Some((unit, id, canonical))
+        })
+        .collect();
+
+    rows.sort_by(|a, b| {
+        a.0.cmp(&b.0)
+            .then_with(|| a.1.cmp(&b.1))
+            .then_with(|| a.2.cmp(&b.2))
+    });
+
+    rows.into_iter()
+        .map(|(_, _, row)| row)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn parse_unit_and_id(token: &str) -> (usize, u32) {
+    if let Some(stripped) = token.strip_prefix('u') {
+        if let Some((unit_str, id_str)) = stripped.split_once(':') {
+            if let (Ok(unit), Ok(id)) = (unit_str.parse::<usize>(), id_str.parse::<u32>()) {
+                return (unit, id);
+            }
+        }
+    }
+
+    (usize::MAX, u32::MAX)
 }
 
 fn ensure_trailing_newline(mut text: String) -> String {
@@ -385,15 +426,39 @@ where
         (None, None)
     };
 
+    let symbols = if keep_symbols {
+        Some(snapshot_symbols(&cc))
+    } else {
+        None
+    };
+
     Ok(PipelineSummary {
-        symbols: if keep_symbols {
-            Some(collections)
-        } else {
-            None
-        },
+        symbols,
         graph_dot,
         bindings,
     })
+}
+
+fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
+    let symbol_map = cc.symbol_map.read();
+    let mut rows = Vec::with_capacity(symbol_map.len());
+    for (sym_id, symbol) in symbol_map.iter() {
+        let mut fqn = symbol.fqn_name.read().clone();
+        if fqn.is_empty() {
+            fqn = symbol.name.clone();
+        }
+
+        rows.push(SymbolSnapshot {
+            unit: symbol.unit_index().unwrap_or_default(),
+            id: sym_id.0,
+            kind: format!("{:?}", symbol.kind()),
+            name: symbol.name.clone(),
+            fqn,
+            is_global: symbol.is_global(),
+        });
+    }
+
+    rows
 }
 
 fn render_binding_summary(project: &ProjectGraph) -> String {
