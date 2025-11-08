@@ -15,6 +15,7 @@ pub struct VariableDescriptor {
     pub is_mutable: Option<bool>,
     pub type_annotation: Option<TypeExpr>,
     pub value_repr: Option<String>,
+    pub extra_binding_names: Option<Vec<String>>,
     pub extras: DescriptorExtras,
 }
 
@@ -30,6 +31,7 @@ impl VariableDescriptor {
             is_mutable: None,
             type_annotation: None,
             value_repr: None,
+            extra_binding_names: None,
             extras: DescriptorExtras::default(),
         }
     }

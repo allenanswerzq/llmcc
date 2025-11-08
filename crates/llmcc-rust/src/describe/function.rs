@@ -146,13 +146,6 @@ fn parse_parameters<'tcx>(
     unit: CompileUnit<'tcx>,
     params_node: Node<'tcx>,
 ) -> Vec<FunctionParameter> {
-    if std::env::var("LLMCC_DEBUG_PARAMS").is_ok() {
-        eprintln!(
-            "[llmcc_rust] parsing parameters node kind={} sexp={}",
-            params_node.kind(),
-            params_node.to_sexp()
-        );
-    }
     let mut params = Vec::new();
     let mut cursor = params_node.walk();
     for child in params_node.named_children(&mut cursor) {

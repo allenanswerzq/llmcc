@@ -9,7 +9,7 @@ use llmcc_test::{run_cases, run_cases_for_file, CaseOutcome, CaseStatus, Corpus,
 #[command(name = "llmcc-test", about = "Corpus runner for llmcc", version)]
 struct Cli {
     /// Root directory containing `.llmcc` corpus files
-    #[arg(long, value_name = "DIR", default_value = "tests/corpus")]
+    #[arg(long, value_name = "DIR", default_value = "tests")]
     root: PathBuf,
 
     #[command(subcommand)]
