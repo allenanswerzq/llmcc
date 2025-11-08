@@ -8,6 +8,35 @@ use walkdir::WalkDir;
 const CASE_BANNER: &str =
     "===============================================================================";
 
+fn slugify_case_name(raw: &str) -> String {
+    let mut slug = String::new();
+    let mut pending_dash = false;
+
+    for ch in raw.chars() {
+        if ch.is_ascii_alphanumeric() {
+            if pending_dash && !slug.is_empty() {
+                slug.push('-');
+            }
+            slug.push(ch.to_ascii_lowercase());
+            pending_dash = false;
+        } else {
+            if !slug.is_empty() {
+                pending_dash = true;
+            }
+        }
+    }
+
+    while slug.ends_with('-') {
+        slug.pop();
+    }
+
+    if slug.is_empty() {
+        "case".to_string()
+    } else {
+        slug
+    }
+}
+
 /// Top-level corpus container discovered under a directory (e.g. `tests/corpus`).
 pub struct Corpus {
     files: Vec<CorpusFile>,
@@ -245,7 +274,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
 
             current = Some(CorpusCase {
                 suite: suite.to_string(),
-                name: trimmed.to_string(),
+                name: slugify_case_name(trimmed),
                 lang: "rust".to_string(),
                 args: Vec::new(),
                 files: Vec::new(),
@@ -370,7 +399,7 @@ fn parse_case_header(line: &str) -> Option<String> {
         if name.is_empty() {
             None
         } else {
-            Some(name.to_string())
+            Some(slugify_case_name(name))
         }
     } else {
         None
