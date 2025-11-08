@@ -1,0 +1,45 @@
+===============================================================================
+function-call-dependencies
+===============================================================================
+
+
+--- file: src/main.rs ---
+fn leaf() {}
+
+fn middle() {
+    leaf();
+}
+
+fn root() {
+    middle();
+}
+
+--- expect:symbols ---
+u0:1 | Function | leaf   | leaf
+u0:2 | Function | middle | middle
+u0:3 | Function | root   | root
+
+--- expect:symbol-deps ---
+u0:1 -> []
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
+u0:3 <- []
+
+--- expect:blocks ---
+u0:1 | func | leaf  
+u0:2 | func | middle
+u0:4 | func | root  
+
+--- expect:block-deps ---
+u0:1 -> []
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+u0:2 <- [u0:4]
+u0:4 -> [u0:2]
+u0:4 <- []
+
+--- expect:graph ---
+digraph DesignGraph {
+}

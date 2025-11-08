@@ -26,6 +26,20 @@ struct SymbolSnapshot {
     is_global: bool,
 }
 
+#[derive(Clone)]
+struct SymbolDependencySnapshot {
+    label: String,
+    depends_on: Vec<String>,
+    depended_by: Vec<String>,
+}
+
+#[derive(Clone)]
+struct BlockSnapshot {
+    label: String,
+    kind: String,
+    name: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct RunnerConfig {
     pub filter: Option<String>,
@@ -178,16 +192,29 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
         .expectations
         .iter()
         .any(|expect| expect.kind == "graph");
-    let needs_bind = case.expectations.iter().any(|expect| expect.kind == "bind");
+    let needs_block_reports = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "blocks" || expect.kind == "block-deps");
+    let needs_symbol_deps = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "symbol-deps");
 
-    if !needs_symbols && !needs_graph && !needs_bind {
+    if !needs_symbols && !needs_graph && !needs_block_reports && !needs_symbol_deps {
         return Ok(PipelineSummary::default());
     }
 
     let project = materialize_case(case)?;
     let summary = match case.lang.as_str() {
         "rust" => {
-            collect_pipeline::<LangRust>(&project.paths, needs_symbols, needs_graph, needs_bind)?
+            collect_pipeline::<LangRust>(
+                &project.paths,
+                needs_symbols,
+                needs_graph,
+                needs_block_reports,
+                needs_symbol_deps,
+            )?
         }
         other => {
             return Err(anyhow!(
@@ -206,7 +233,9 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
 struct PipelineSummary {
     symbols: Option<Vec<SymbolSnapshot>>,
     graph_dot: Option<String>,
-    bindings: Option<String>,
+    block_list: Option<Vec<BlockSnapshot>>,
+    block_deps: Option<Vec<SymbolDependencySnapshot>>,
+    symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
 }
 
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
@@ -224,12 +253,33 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 case_id
             )
         }),
-        "bind" => summary.bindings.clone().ok_or_else(|| {
+        "blocks" => summary
+            .block_list
+            .as_ref()
+            .map(|list| render_block_snapshot(list))
+            .ok_or_else(|| {
             anyhow!(
-                "case {} requested binding output but summary missing",
+                "case {} requested blocks output but summary missing",
                 case_id
             )
         }),
+        "block-deps" => summary
+            .block_deps
+            .as_ref()
+            .map(|deps| render_symbol_dependencies(deps))
+            .ok_or_else(|| {
+                anyhow!(
+                    "case {} requested block-deps output but summary missing",
+                    case_id
+                )
+            }),
+        "symbol-deps" => {
+            let deps = summary
+                .symbol_deps
+                .as_ref()
+                .ok_or_else(|| anyhow!("case {} requested symbol-deps but summary missing", case_id))?;
+            Ok(render_symbol_dependencies(deps))
+        }
         other => Err(anyhow!(
             "case {} uses unsupported expectation '{}'",
             case_id,
@@ -284,6 +334,63 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
     buf
 }
 
+fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
+    if entries.is_empty() {
+        return "none\n".to_string();
+    }
+
+    let mut rows = entries.to_vec();
+    rows.sort_by(|a, b| {
+        a.label
+            .cmp(&b.label)
+            .then_with(|| a.kind.cmp(&b.kind))
+            .then_with(|| a.name.cmp(&b.name))
+    });
+
+    let label_width = rows
+        .iter()
+        .map(|row| row.label.len())
+        .max()
+        .unwrap_or(0);
+    let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
+    let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
+
+    let mut buf = String::new();
+    for row in rows {
+        let _ = writeln!(
+            buf,
+            "{:<label_width$} | {:kind_width$} | {:name_width$}",
+            row.label,
+            row.kind,
+            row.name,
+            label_width = label_width,
+            kind_width = kind_width,
+            name_width = name_width,
+        );
+    }
+    buf
+}
+
+fn render_symbol_dependencies(entries: &[SymbolDependencySnapshot]) -> String {
+    if entries.is_empty() {
+        return "none\n".to_string();
+    }
+
+    let mut rows = entries.to_vec();
+    rows.sort_by(|a, b| a.label.cmp(&b.label));
+
+    let mut buf = String::new();
+    for row in rows {
+        let mut depends = row.depends_on.clone();
+        depends.sort();
+        let mut depended = row.depended_by.clone();
+        depended.sort();
+        let _ = writeln!(buf, "{} -> [{}]", row.label, depends.join(", "));
+        let _ = writeln!(buf, "{} <- [{}]", row.label, depended.join(", "));
+    }
+    buf
+}
+
 fn format_expectation_diff(kind: &str, expected: &str, actual: &str) -> String {
     let diff = TextDiff::from_lines(expected, actual);
     let mut buf = String::new();
@@ -306,7 +413,8 @@ fn normalize(kind: &str, text: &str) -> String {
         .to_string();
 
     match kind {
-        "symbols" => normalize_symbols(&canonical),
+        "symbols" | "blocks" => normalize_symbols(&canonical),
+        "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
         _ => canonical,
     }
 }
@@ -341,6 +449,16 @@ fn normalize_symbols(text: &str) -> String {
         .map(|(_, _, row)| row)
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn normalize_symbol_deps(text: &str) -> String {
+    let mut rows: Vec<_> = text
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| line.trim().to_string())
+        .collect();
+    rows.sort();
+    rows.join("\n")
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -395,7 +513,8 @@ fn collect_pipeline<L>(
     files: &[String],
     keep_symbols: bool,
     build_graph: bool,
-    build_bindings: bool,
+    build_block_reports: bool,
+    keep_symbol_deps: bool,
 ) -> Result<PipelineSummary>
 where
     L: LanguageTrait<SymbolCollection = CollectedSymbols>,
@@ -412,7 +531,7 @@ where
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
     }
-    let mut project_graph = if build_graph || build_bindings {
+    let mut project_graph = if build_graph || build_block_reports {
         Some(ProjectGraph::new(&cc))
     } else {
         None
@@ -426,21 +545,22 @@ where
             project.add_child(unit_graph);
         }
     }
-    let (graph_dot, bindings) = if let Some(mut project) = project_graph {
+    let (graph_dot, block_list, block_deps) = if let Some(mut project) = project_graph {
         project.link_units();
         let graph = if build_graph {
             Some(project.render_design_graph())
         } else {
             None
         };
-        let binding = if build_bindings {
-            Some(render_binding_summary(&project))
+        let (list, deps) = if build_block_reports {
+            let (blocks, deps) = render_block_reports(&project);
+            (Some(blocks), Some(deps))
         } else {
-            None
+            (None, None)
         };
-        (graph, binding)
+        (graph, list, deps)
     } else {
-        (None, None)
+        (None, None, None)
     };
 
     let symbols = if keep_symbols {
@@ -449,10 +569,18 @@ where
         None
     };
 
+    let symbol_deps = if keep_symbol_deps {
+        Some(snapshot_symbol_dependencies(&cc))
+    } else {
+        None
+    };
+
     Ok(PipelineSummary {
         symbols,
         graph_dot,
-        bindings,
+        block_list,
+        block_deps,
+        symbol_deps,
     })
 }
 
@@ -478,8 +606,61 @@ fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
     rows
 }
 
-fn render_binding_summary(project: &ProjectGraph) -> String {
+fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySnapshot> {
+    use std::collections::HashMap;
+
+    let symbol_map = cc.symbol_map.read();
+    let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
+
+    for (sym_id, symbol) in symbol_map.iter() {
+        let label = format!(
+            "u{}:{}",
+            symbol.unit_index().unwrap_or_default(),
+            sym_id.0
+        );
+        cache.insert(
+            sym_id.0,
+            SymbolDependencySnapshot {
+                label,
+                depends_on: Vec::new(),
+                depended_by: Vec::new(),
+            },
+        );
+    }
+
+    for (sym_id, symbol) in symbol_map.iter() {
+        let deps = symbol.depends.read().clone();
+        for dep in deps {
+            if let Some(target) = symbol_map.get(&dep) {
+                let dep_label = format!(
+                    "u{}:{}",
+                    target.unit_index().unwrap_or_default(),
+                    dep.0
+                );
+                if let Some(entry) = cache.get_mut(&sym_id.0) {
+                    entry.depends_on.push(dep_label.clone());
+                }
+                if let Some(target_entry) = cache.get_mut(&dep.0) {
+                    target_entry.depended_by.push(format!(
+                        "u{}:{}",
+                        symbol.unit_index().unwrap_or_default(),
+                        sym_id.0
+                    ));
+                }
+            }
+        }
+    }
+
+    let mut output: Vec<_> = cache.into_values().collect();
+    for entry in &mut output {
+        entry.depends_on.sort();
+        entry.depended_by.sort();
+    }
+    output
+}
+fn render_block_reports(project: &ProjectGraph) -> (Vec<BlockSnapshot>, Vec<SymbolDependencySnapshot>) {
     use std::collections::BTreeMap;
+    use std::collections::HashMap;
 
     let indexes = project.cc.block_indexes.read();
     let mut units: BTreeMap<usize, Vec<(BlockDescriptor, Vec<BlockDescriptor>)>> = BTreeMap::new();
@@ -509,42 +690,58 @@ fn render_binding_summary(project: &ProjectGraph) -> String {
         }
     }
 
-    if units.is_empty() {
-        return "(bindings)\n".to_string();
-    }
+    let mut block_rows = Vec::new();
+    let mut dep_map: HashMap<String, SymbolDependencySnapshot> = HashMap::new();
 
-    let mut out = String::new();
-    out.push_str("(bindings\n");
-    for (unit, blocks) in units {
-        let _ = writeln!(out, "  (unit {unit}");
+    for (_unit, blocks) in units {
         for (block, deps) in blocks {
-            let _ = writeln!(
-                out,
-                "    (block {} {} {}",
-                quote(&block.name),
-                block.kind,
-                block.unit
-            );
-            if deps.is_empty() {
-                out.push_str("      (depends_on))\n");
-            } else {
-                out.push_str("      (depends_on\n");
-                for dep in deps {
-                    let _ = writeln!(
-                        out,
-                        "        ({} {} {})",
-                        quote(&dep.name),
-                        dep.kind,
-                        dep.unit
-                    );
+            let label = format!("u{}:{}", block.unit, block.id.as_u32());
+            block_rows.push(BlockSnapshot {
+                label: label.clone(),
+                kind: block.kind.clone(),
+                name: block.name.clone(),
+            });
+
+            {
+                let entry = dep_map
+                    .entry(label.clone())
+                    .or_insert(SymbolDependencySnapshot {
+                        label: label.clone(),
+                        depends_on: Vec::new(),
+                        depended_by: Vec::new(),
+                    });
+
+                for dep in &deps {
+                    let dep_label = format!("u{}:{}", dep.unit, dep.id.as_u32());
+                    entry.depends_on.push(dep_label.clone());
                 }
-                out.push_str("      ))\n");
+            }
+
+            for dep in deps {
+                let dep_label = format!("u{}:{}", dep.unit, dep.id.as_u32());
+                dep_map
+                    .entry(dep_label.clone())
+                    .or_insert(SymbolDependencySnapshot {
+                        label: dep_label.clone(),
+                        depends_on: Vec::new(),
+                        depended_by: Vec::new(),
+                    })
+                    .depended_by
+                    .push(label.clone());
             }
         }
-        out.push_str("  )\n");
     }
-    out.push_str(")\n");
-    out
+
+    for snapshot in dep_map.values_mut() {
+        snapshot.depends_on.sort();
+        snapshot.depended_by.sort();
+    }
+
+    block_rows.sort_by(|a, b| a.label.cmp(&b.label));
+    let mut deps: Vec<_> = dep_map.into_values().collect();
+    deps.sort_by(|a, b| a.label.cmp(&b.label));
+
+    (block_rows, deps)
 }
 
 #[derive(Clone)]
@@ -552,6 +749,7 @@ struct BlockDescriptor {
     name: String,
     kind: String,
     unit: usize,
+    id: llmcc_core::graph_builder::BlockId,
 }
 
 fn describe_block(
@@ -564,10 +762,6 @@ fn describe_block(
         name,
         kind: kind.to_string(),
         unit,
+        id: block_id,
     })
-}
-
-fn quote(text: &str) -> String {
-    let escaped = text.replace('"', "\\\"");
-    format!("\"{escaped}\"")
 }
