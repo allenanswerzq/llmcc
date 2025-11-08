@@ -7,6 +7,7 @@ use llmcc_core::context::CompileCtxt;
 use llmcc_core::graph_builder::{build_llmcc_graph, BlockRelation, GraphBuildConfig, ProjectGraph};
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
 use llmcc_core::lang_def::LanguageTrait;
+use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_resolver::apply_collected_symbols;
 use llmcc_resolver::collector::CollectedSymbols;
 use llmcc_rust::LangRust;
@@ -122,6 +123,7 @@ fn evaluate_case(case: &mut CorpusCase, update: bool) -> Result<(CaseOutcome, bo
         ));
     }
 
+    reset_symbol_id_counter();
     let summary = build_pipeline_summary(case)?;
     let mut mutated = false;
     let mut status = CaseStatus::Passed;

@@ -1,15 +1,13 @@
+use crate::describe::{parameter::ParameterDescriptor, RustDescriptor, Visibility};
+use crate::token::{AstVisitorRust, LangRust};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::SymbolKind;
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
     collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult, CollectorCore,
-    EnumCollection, FunctionCollection, ImplCollection, StructCollection, SymbolSpec,
-    VariableCollection,
+    EnumCollection, FunctionCollection, ImplCollection, StructCollection, VariableCollection,
 };
-
-use crate::describe::{RustDescriptor, Visibility};
-use crate::token::{AstVisitorRust, LangRust};
 
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
@@ -39,10 +37,6 @@ impl<'tcx> DeclCollector<'tcx> {
         self.core.unit()
     }
 
-    fn parent_symbol(&self) -> Option<&SymbolSpec> {
-        self.core.parent_symbol()
-    }
-
     fn current_function_name(&self) -> Option<&str> {
         self.core.current_function_name()
     }
@@ -64,6 +58,7 @@ impl<'tcx> DeclCollector<'tcx> {
             structs,
             impls,
             enums,
+            ..
         } = self;
 
         core.finish(CollectionResult {
@@ -130,11 +125,20 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     .insert_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
             }
 
+            let extra_bindings = var.extra_binding_names.clone();
+
             let (_, fqn) =
                 self.core
                     .insert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
             var.fqn = Some(fqn);
             self.variables.add(node.hir_id(), var);
+
+            if let Some(bindings) = extra_bindings {
+                for name in bindings {
+                    self.core
+                        .insert_symbol(node.hir_id(), &name, SymbolKind::Variable, false);
+                }
+            }
 
             self.visit_children(&node);
         } else {
@@ -151,18 +155,20 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_pattern) {
-            let _ =
-                self.core
-                    .insert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
-            self.visit_children(&node);
-        } else {
-            tracing::warn!(
-                "build parameter error {:?} next_hir={:?}",
-                self.unit().hir_text(&node),
-                self.unit().hir_next()
-            );
+        let descriptor = ParameterDescriptor::build(self.unit(), &node);
+        for name in descriptor.names() {
+            let _ = self
+                .core
+                .insert_symbol(node.hir_id(), name, SymbolKind::Variable, false);
         }
+        self.visit_children(&node);
+    }
+
+    fn visit_self_parameter(&mut self, node: HirNode<'tcx>) {
+        let _ = self
+            .core
+            .insert_symbol(node.hir_id(), "self", SymbolKind::Variable, false);
+        self.visit_children(&node);
     }
 
     fn visit_mod_item(&mut self, node: HirNode<'tcx>) {
@@ -300,19 +306,27 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         }
     }
 
-    fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
+    fn visit_field_declaration(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
-        let is_global = self
-            .parent_symbol()
-            .map(|symbol| symbol.is_global)
-            .unwrap_or(false);
-        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_name) {
-            let _ = self.core.insert_symbol(
-                node.hir_id(),
-                &ident.name,
-                SymbolKind::EnumVariant,
-                is_global,
-            );
+        let kind = match self.core.parent_symbol().map(|sym| sym.kind) {
+            Some(SymbolKind::EnumVariant) => SymbolKind::Field,
+            _ => SymbolKind::Variable,
+        };
+        let _ = self
+            .core
+            .insert_field_symbol(&node, LangRust::field_name, kind);
+    }
+
+    fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
+        let owner_symbol = self
+            .core
+            .insert_field_symbol(&node, LangRust::field_name, SymbolKind::EnumVariant)
+            .map(|(idx, _)| idx);
+
+        if let Some(sym_idx) = owner_symbol {
+            self.visit_children_scope(&node, Some(sym_idx));
+        } else {
+            self.visit_children(&node);
         }
     }
 

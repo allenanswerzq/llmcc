@@ -363,6 +363,20 @@ impl<'tcx> CollectorCore<'tcx> {
         ident_node.as_ident()
     }
 
+    pub fn insert_field_symbol(
+        &mut self,
+        node: &HirNode<'tcx>,
+        field_id: u16,
+        kind: SymbolKind,
+    ) -> Option<(usize, String)> {
+        let is_global = self
+            .parent_symbol()
+            .map(|symbol| symbol.is_global)
+            .unwrap_or(false);
+        let ident = self.ident_from_field(node, field_id)?;
+        Some(self.insert_symbol(node.hir_id(), &ident.name, kind, is_global))
+    }
+
     pub fn scoped_qualified_name(&self, name: &str) -> String {
         let mut prefix = None;
         for &scope_idx in self.scope_stack.iter().rev() {
@@ -453,7 +467,8 @@ impl<'tcx> CollectorCore<'tcx> {
 
                 // Try resolving the full segmented path relative to the inferred scope depth.
                 // Example: `impl codex::workspace::Sandbox` walks `["codex","workspace","Sandbox"]`.
-                if let Some(idx) = self.lookup_from_scopes_with_parts(&part_refs, kind, start_depth) {
+                if let Some(idx) = self.lookup_from_scopes_with_parts(&part_refs, kind, start_depth)
+                {
                     return Some(idx);
                 }
 

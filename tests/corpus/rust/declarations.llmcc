@@ -1,6 +1,7 @@
-================================================================================
-Modules
-================================================================================
+===============================================================================
+modules
+===============================================================================
+
 
 --- file: src/main.rs ---
 mod english;
@@ -22,9 +23,13 @@ u0:4 | Module       | greetings | english::greetings
 u0:5 | Module       | farewells | english::farewells
 u0:6 | Module       | english   | english [global]
 
-================================================================================
-Extern crate declarations
-================================================================================
+
+
+
+===============================================================================
+extern-crate-declarations
+===============================================================================
+
 
 --- file: src/main.rs ---
 extern crate std;
@@ -32,9 +37,13 @@ extern crate std as ruststd;
 pub extern crate futures;
 
 
-================================================================================
-Function declarations
-================================================================================
+
+
+
+===============================================================================
+function-declarations
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn main() {}
@@ -83,24 +92,29 @@ u0:12 | Function | foo         | foo
 u0:13 | Variable | x           | foo::x
 u0:14 | Variable | x           | foo::x
 u0:15 | Function | accumulate  | accumulate
-u0:16 | Function | foo         | foo
-u0:17 | Variable | bar         | foo::bar
+u0:16 | Variable | self        | accumulate::self
+u0:17 | Function | foo         | foo
+u0:18 | Variable | bar         | foo::bar
 
 
-================================================================================
-Const function declarations
-================================================================================
+
+===============================================================================
+const-function-declarations
+===============================================================================
+
 
 --- file: src/main.rs ---
 const fn main() {}
 
 --- expect:symbols ---
-u0:1  | Function | main        | main
+u0:1 | Function | main | main
 
 
-================================================================================
-Functions with abstract return types
-================================================================================
+
+===============================================================================
+functions-with-abstract-return-types
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
@@ -111,9 +125,11 @@ u0:1 | Function | triples | triples
 u0:2 | Variable | a       | triples::a
 
 
-================================================================================
-Impl with lifetimes first
-================================================================================
+
+===============================================================================
+impl-with-lifetimes-first
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn foo<'a>(x: impl 'a + Clone) {}
@@ -123,9 +139,11 @@ u0:1 | Function | foo | foo
 u0:2 | Variable | x   | foo::x
 
 
-================================================================================
-Functions with precise capture syntax
-================================================================================
+
+===============================================================================
+functions-with-precise-capture-syntax
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn capture<T>(&self) -> impl Iterator<Item = usize> + use<'_, T> {
@@ -136,9 +154,11 @@ u0:1 | Function | capture | capture
 u0:2 | Variable | self    | capture::self
 
 
-================================================================================
-Functions with empty precise capture syntax
-================================================================================
+
+===============================================================================
+functions-with-empty-precise-capture-syntax
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn capture(&self) -> impl Iterator<Item = usize> + use<> {
@@ -149,9 +169,11 @@ u0:1 | Function | capture | capture
 u0:2 | Variable | self    | capture::self
 
 
-================================================================================
-Diverging functions
-================================================================================
+
+===============================================================================
+diverging-functions
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn aborts() -> ! {}
@@ -160,9 +182,11 @@ fn aborts() -> ! {}
 u0:1 | Function | aborts | aborts
 
 
-================================================================================
-Extern function declarations
-================================================================================
+
+===============================================================================
+extern-function-declarations
+===============================================================================
+
 
 --- file: src/main.rs ---
 extern "C" fn foo() {}
@@ -181,9 +205,11 @@ u0:3 | Function | c_variadic_no_use | c_variadic_no_use [global]
 u0:4 | Variable | fmt               | c_variadic_no_use::fmt
 
 
-================================================================================
-Use declarations
-================================================================================
+
+===============================================================================
+use-declarations
+===============================================================================
+
 
 --- file: src/main.rs ---
 use abc;
@@ -200,13 +226,15 @@ use my::{*};
 use ::*;
 
 --- expect:symbols ---
-<no-symbols>
+none
 
 
 
-================================================================================
-Variable bindings
-================================================================================
+
+===============================================================================
+variable-bindings
+===============================================================================
+
 
 --- file: src/main.rs ---
 let x;
@@ -229,9 +257,11 @@ u0:7 | Variable | bool | bool
 u0:8 | Variable | u32  | u32
 
 
-================================================================================
-Let-else Statements
-================================================================================
+
+===============================================================================
+let-else-statements
+===============================================================================
+
 
 --- file: src/main.rs ---
 let Foo::Bar {
@@ -255,9 +285,11 @@ u0:2 | Variable | values | values
 u0:3 | Variable | x      | x
 
 
-================================================================================
-Let declarations with if expressions as the value
-================================================================================
+
+===============================================================================
+let-declarations-with-if-expressions-as-the-value
+===============================================================================
+
 
 --- file: src/main.rs ---
 let a = if b {
@@ -270,9 +302,11 @@ let a = if b {
 u0:1 | Variable | a | a
 
 
-================================================================================
-Let declarations with contextual keywords as names
-================================================================================
+
+===============================================================================
+let-declarations-with-contextual-keywords-as-names
+===============================================================================
+
 
 --- file: src/main.rs ---
 let default = 1;
@@ -283,9 +317,11 @@ u0:1 | Variable | default | default
 u0:2 | Variable | union   | union
 
 
-================================================================================
-Structs
-================================================================================
+
+===============================================================================
+structs
+===============================================================================
+
 
 --- file: src/main.rs ---
 struct Proton;
@@ -302,22 +338,23 @@ struct Inches(i32);
 struct Empty(pub ());
 
 --- expect:symbols ---
-u0:1  | Struct | Proton    | Proton
-u0:2  | Struct | Electron  | Electron
-u0:3  | Struct | Person    | Person
-u0:4  | Field  | name      | Person::name
-u0:5  | Field  | age       | Person::age
-u0:6  | Struct | Point     | Point
-u0:7  | Field  | x         | Point::x
-u0:8  | Field  | y         | Point::y
-u0:9  | Struct | Color     | Color
-u0:10 | Struct | Inches    | Inches
-u0:11 | Struct | Empty     | Empty
+u0:1  | Struct   | Proton   | Proton
+u0:2  | Struct   | Electron | Electron
+u0:3  | Struct   | Person   | Person
+u0:4  | Variable | name     | Person::name
+u0:5  | Variable | age      | Person::age
+u0:6  | Struct   | Point    | Point
+u0:7  | Variable | x        | Point::x
+u0:8  | Variable | y        | Point::y
+u0:9  | Struct   | Color    | Color
+u0:10 | Struct   | Inches   | Inches
+u0:11 | Struct   | Empty    | Empty
 
 
-================================================================================
-Unions
-================================================================================
+===============================================================================
+unions
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub union in6_addr__bindgen_ty_1 {
@@ -328,12 +365,16 @@ pub union in6_addr__bindgen_ty_1 {
 }
 
 --- expect:symbols ---
-none
+u0:1 | Variable | __u6_addr8           | __u6_addr8
+u0:2 | Variable | __u6_addr16          | __u6_addr16
+u0:3 | Variable | __u6_addr32          | __u6_addr32
+u0:4 | Variable | _bindgen_union_align | _bindgen_union_align
 
 
-================================================================================
-Generic structs
-================================================================================
+===============================================================================
+generic-structs
+===============================================================================
+
 
 --- file: src/main.rs ---
 struct A<B> {}
@@ -350,9 +391,10 @@ u0:4 | Struct | D | D
 u0:5 | Struct | E | E
 
 
-================================================================================
-Enums
-================================================================================
+===============================================================================
+enums
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub enum Option<T> {
@@ -373,20 +415,21 @@ pub enum Node<T: Item> {
 }
 
 --- expect:symbols ---
-u0:1 | Enum     | Option   | Option [global]
-u0:2 | Variant  | None     | Option::None [global]
-u0:3 | Variant  | Some     | Option::Some [global]
-u0:4 | Enum     | Node     | Node [global]
-u0:5 | Variant  | Internal | Node::Internal [global]
-u0:6 | Field    | children | Node::Internal::children [global]
-u0:7 | Field    | height   | Node::Internal::height [global]
-u0:8 | Variant  | Leaf     | Node::Leaf [global]
-u0:9 | Field    | value    | Node::Leaf::value [global]
+u0:1 | Enum        | Option   | Option [global]
+u0:2 | EnumVariant | None     | Option::None [global]
+u0:3 | EnumVariant | Some     | Option::Some [global]
+u0:4 | Enum        | Node     | Node [global]
+u0:5 | EnumVariant | Internal | Node::Internal [global]
+u0:6 | Field       | children | Node::Internal::children [global]
+u0:7 | Field       | height   | Node::Internal::height [global]
+u0:8 | EnumVariant | Leaf     | Node::Leaf [global]
+u0:9 | Field       | value    | Node::Leaf::value [global]
 
 
-================================================================================
-Enums with values specified
-================================================================================
+===============================================================================
+enums-with-values-specified
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub enum c_style_enum {
@@ -400,9 +443,11 @@ u0:2 | EnumVariant | val1         | c_style_enum::val1 [global]
 u0:3 | EnumVariant | val2         | c_style_enum::val2 [global]
 
 
-================================================================================
-Generic functions
-================================================================================
+
+===============================================================================
+generic-functions
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
@@ -410,16 +455,18 @@ pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
 pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
 
 --- expect:symbols ---
-u0:1 | Function | splice         | splice [global]
-u0:2 | Variable | self           | splice::self
-u0:3 | Variable | old_range      | splice::old_range
-u0:4 | Variable | new_text       | splice::new_text
-u0:5 | Function | uninit_array   | uninit_array [global]
+u0:1 | Function | splice       | splice [global]
+u0:2 | Variable | self         | splice::self
+u0:3 | Variable | old_range    | splice::old_range
+u0:4 | Variable | new_text     | splice::new_text
+u0:5 | Function | uninit_array | uninit_array [global]
 
 
-================================================================================
-Functions with mutable parameters
-================================================================================
+
+===============================================================================
+functions-with-mutable-parameters
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn foo(mut x : u32) {
@@ -430,9 +477,11 @@ u0:1 | Function | foo | foo
 u0:2 | Variable | x   | foo::x
 
 
-================================================================================
-Functions with destructured parameters
-================================================================================
+
+===============================================================================
+functions-with-destructured-parameters
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn f1([x, y]: [u32; 2]) {}
@@ -450,9 +499,11 @@ u0:7 | Variable | x  | f3::x
 u0:8 | Variable | y  | f3::y
 
 
-================================================================================
-Functions with custom types for self
-================================================================================
+
+===============================================================================
+functions-with-custom-types-for-self
+===============================================================================
+
 
 --- file: src/main.rs ---
 trait Callback {
@@ -460,14 +511,15 @@ trait Callback {
 }
 
 --- expect:symbols ---
-u0:1 | Trait      | Callback | Callback
-u0:2 | Function   | call     | Callback::call
-u0:3 | Variable   | self     | Callback::call::self
+u0:1 | Struct   | Callback | Callback
+u0:2 | Function | call     | Callback::call
 
 
-================================================================================
-Constant items
-================================================================================
+
+===============================================================================
+constant-items
+===============================================================================
+
 
 --- file: src/main.rs ---
 const N: i32 = 5;
@@ -477,38 +529,44 @@ trait Foo {
 }
 
 --- expect:symbols ---
-u0:1 | Const    | N   | N
-u0:2 | Trait    | Foo | Foo
-u0:3 | Const    | X   | Foo::X
+u0:1 | Const  | N   | N
+u0:2 | Struct | Foo | Foo
+u0:3 | Const  | X   | Foo::X
 
 
-================================================================================
-Static items
-================================================================================
+
+===============================================================================
+static-items
+===============================================================================
+
 
 --- file: src/main.rs ---
 static N: i32 = 5;
 static mut __progname: *mut ::c_char;
 
 --- expect:symbols ---
-u0:1 | Static | N          | N
-u0:2 | Static | __progname | __progname
+u0:1 | Const | N          | N
+u0:2 | Const | __progname | __progname
 
 
-================================================================================
-Static 'ref' items using lazy_static
-================================================================================
+
+===============================================================================
+static-ref-items-using-lazy-static
+===============================================================================
+
 
 --- file: src/main.rs ---
 static ref ONE: usize = 0;
 
 --- expect:symbols ---
-u0:1 | Static | ONE | ONE
+u0:1 | Const | ONE | ONE
 
 
-================================================================================
-Type aliases
-================================================================================
+
+===============================================================================
+type-aliases
+===============================================================================
+
 
 --- file: src/main.rs ---
 type Inch = u64;
@@ -516,27 +574,30 @@ type Name<T> = Vec<T>;
 type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
 
 --- expect:symbols ---
-u0:1 | TypeAlias | Inch         | Inch
-u0:2 | TypeAlias | Name         | Name
-u0:3 | TypeAlias | LazyResolve  | LazyResolve
+none
 
 
-================================================================================
-Type alias where clauses
-================================================================================
+
+
+===============================================================================
+type-alias-where-clauses
+===============================================================================
+
 
 --- file: src/main.rs ---
 type Foo<T> where T: Copy = Box<T>;
 type Assoc3 where = () where;
 
 --- expect:symbols ---
-u0:1 | TypeAlias | Foo     | Foo
-u0:2 | TypeAlias | Assoc3  | Assoc3
+none
 
 
-================================================================================
-Empty statements
-================================================================================
+
+
+===============================================================================
+empty-statements
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn main() {
@@ -547,9 +608,11 @@ fn main() {
 u0:1 | Function | main | main
 
 
-================================================================================
-Attributes
-================================================================================
+
+===============================================================================
+attributes
+===============================================================================
+
 
 --- file: src/main.rs ---
 #[test]
@@ -569,14 +632,17 @@ mod macos_only {}
 #[clippy::cyclomatic_complexity = "100"]
 
 --- expect:symbols ---
-u0:1 | Function | test_foo | test_foo
-u0:2 | Struct   | Baz      | Baz
-u0:3 | Struct   | Foo      | Foo
+u0:1 | Function | test_foo   | test_foo
+u0:2 | Struct   | Baz        | Baz
+u0:3 | Struct   | Foo        | Foo
+u0:4 | Module   | macos_only | macos_only
 
 
-================================================================================
-Inner attributes
-================================================================================
+
+===============================================================================
+inner-attributes
+===============================================================================
+
 
 --- file: src/main.rs ---
 mod macos_only {
@@ -592,9 +658,11 @@ match ty {
 u0:1 | Module | macos_only | macos_only
 
 
-================================================================================
-Key-Value Attribute Expressions
-================================================================================
+
+===============================================================================
+key-value-attribute-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 #[doc = include_str!("foo-doc.md")]
@@ -608,9 +676,11 @@ u0:1 | Function | foo | foo
 u0:2 | Function | baz | baz
 
 
-================================================================================
-Attribute macros
-================================================================================
+
+===============================================================================
+attribute-macros
+===============================================================================
+
 
 --- file: src/main.rs ---
 foo(#[attr(=> arbitrary tokens <=)] x, y);
@@ -618,11 +688,15 @@ foo(#[attr(=> arbitrary tokens <=)] x, y);
 foo(#[bar(some tokens are special in other contexts: $/';()*()+.)] x);
 
 --- expect:symbols ---
+none
 
 
-================================================================================
-Derive macro helper attributes
-================================================================================
+
+
+===============================================================================
+derive-macro-helper-attributes
+===============================================================================
+
 
 --- file: src/main.rs ---
 // Example from https://github.com/dtolnay/thiserror/blob/21c26903e29cb92ba1a7ff11e82ae2001646b60d/README.md
@@ -638,18 +712,17 @@ pub enum Error {
 }
 
 --- expect:symbols ---
-u0:1 | UseDecl | Error | thiserror::Error
-u0:2 | Enum   | Error | Error
-u0:3 | Variant | WrongCase | Error::WrongCase
-u0:4 | Field | | Error::WrongCase::0
-u0:5 | Variant | OutOfBounds | Error::OutOfBounds
-u0:6 | Field | idx | Error::OutOfBounds::idx
-u0:7 | Field | limits | Error::OutOfBounds::limits
+u0:1 | Enum        | Error       | Error [global]
+u0:2 | EnumVariant | WrongCase   | Error::WrongCase [global]
+u0:3 | EnumVariant | OutOfBounds | Error::OutOfBounds [global]
+u0:4 | Field       | idx         | Error::OutOfBounds::idx [global]
+u0:5 | Field       | limits      | Error::OutOfBounds::limits [global]
 
 
-================================================================================
-Attributes and Expressions
-================================================================================
+===============================================================================
+attributes-and-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn foo() {
@@ -662,11 +735,15 @@ fn foo() {
 
 --- expect:symbols ---
 u0:1 | Function | foo | foo
+u0:2 | Variable | z   | foo::z
+u0:3 | Variable | t   | foo::t
 
 
-================================================================================
-Inherent Impls
-================================================================================
+
+===============================================================================
+inherent-impls
+===============================================================================
+
 
 --- file: src/main.rs ---
 impl Person {
@@ -681,22 +758,22 @@ impl Person {
 impl Machine<{State::Init}> {}
 
 --- expect:symbols ---
-u0:1 | Impl     | Person | Person
-u0:2 | Const    | leg_count | Person::leg_count
-u0:3 | Method   | walk   | Person::walk
-u0:4 | Variable | self   | Person::walk::self
-u0:5 | Method   | walk_mut | Person::walk_mut
-u0:6 | Variable | self   | Person::walk_mut::self
-u0:7 | Method   | talk   | Person::talk
-u0:8 | Variable | self   | Person::talk::self
-u0:9 | Method   | talk_mut | Person::talk_mut
-u0:10 | Variable | self   | Person::talk_mut::self
-u0:11 | Impl     | Machine | Machine
+u0:1 | Const    | leg_count | leg_count
+u0:2 | Function | walk      | walk
+u0:3 | Variable | self      | walk::self
+u0:4 | Function | walk_mut  | walk_mut
+u0:5 | Variable | self      | walk_mut::self
+u0:6 | Function | talk      | talk
+u0:7 | Variable | self      | talk::self
+u0:8 | Function | talk_mut  | talk_mut
+u0:9 | Variable | self      | talk_mut::self
 
 
-================================================================================
-Trait impls
-================================================================================
+
+===============================================================================
+trait-impls
+===============================================================================
+
 
 --- file: src/main.rs ---
 impl<'a> iter::Iterator for Self::Iter<'a> {
@@ -707,38 +784,44 @@ impl ConvertTo<i64> for i32 {
 }
 
 --- expect:symbols ---
-u0:1 | Impl | Iterator | iter::Iterator
-u0:2 | Impl | ConvertTo | ConvertTo
-u0:3 | Method | convert | ConvertTo::convert
-u0:4 | Variable | self | ConvertTo::convert::self
+u0:1 | Function | convert | convert
+u0:2 | Variable | self    | convert::self
 
 
-================================================================================
-Unsafe impls
-================================================================================
+
+===============================================================================
+unsafe-impls
+===============================================================================
+
 
 --- file: src/main.rs ---
 unsafe impl Foo {
 }
 
 --- expect:symbols ---
-u0:1 | Impl | Foo | Foo
+none
 
 
-================================================================================
-Disable automatically derived trait impls
-================================================================================
+
+
+===============================================================================
+disable-automatically-derived-trait-impls
+===============================================================================
+
 
 --- file: src/main.rs ---
 impl !Send for Foo {}
 
 --- expect:symbols ---
-u0:1 | Impl | Send | Send
+none
 
 
-================================================================================
-Impl dyn with parentheses
-================================================================================
+
+
+===============================================================================
+impl-dyn-with-parentheses
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub unsafe trait Trait {}
@@ -746,26 +829,29 @@ pub unsafe trait Trait {}
 unsafe impl Trait for dyn (::std::any::Any) + Send { }
 
 --- expect:symbols ---
-u0:1 | Trait | Trait | Trait
-u0:2 | Impl  | Trait | Trait
+u0:1 | Struct | Trait | Trait [global]
 
 
-================================================================================
-Trait impl signature
-================================================================================
+
+===============================================================================
+trait-impl-signature
+===============================================================================
+
 
 --- file: src/main.rs ---
 impl<K: Debug + Ord> Debug for OccupiedError<K>;
 impl<K: Debug + Ord> Display for OccupiedError<K>;
 
 --- expect:symbols ---
-u0:1 | Impl | Debug   | OccupiedError
-u0:2 | Impl | Display | OccupiedError
+none
 
 
-================================================================================
-Impls with default functions
-================================================================================
+
+
+===============================================================================
+impls-with-default-functions
+===============================================================================
+
 
 --- file: src/main.rs ---
 impl Foo {
@@ -776,13 +862,14 @@ impl Foo {
 }
 
 --- expect:symbols ---
-u0:1 | Impl     | Foo | Foo
-u0:2 | Method   | bar | Foo::bar
+u0:1 | Function | bar | bar
 
 
-================================================================================
-Trait declarations
-================================================================================
+
+===============================================================================
+trait-declarations
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub trait Item: Clone + Eq + fmt::Debug {
@@ -792,14 +879,17 @@ pub trait Item: Clone + Eq + fmt::Debug {
 unsafe trait Foo { }
 
 --- expect:symbols ---
-u0:1 | Trait  | Item      | Item
-u0:2 | Method | summarize | Item::summarize
-u0:3 | Trait  | Foo       | Foo
+u0:1 | Struct   | Item      | Item [global]
+u0:2 | Function | summarize | Item::summarize
+u0:3 | Variable | self      | Item::summarize::self
+u0:4 | Struct   | Foo       | Foo
 
 
-================================================================================
-Trait declarations with optional type parameters
-================================================================================
+
+===============================================================================
+trait-declarations-with-optional-type-parameters
+===============================================================================
+
 
 --- file: src/main.rs ---
 trait Add<RHS=Self> {
@@ -808,16 +898,17 @@ trait Add<RHS=Self> {
 }
 
 --- expect:symbols ---
-u0:1 | Trait     | Add    | Add
-u0:2 | AssocType | Output | Add::Output
-u0:3 | Method    | add    | Add::add
-u0:4 | Variable  | self   | Add::add::self
-u0:5 | Variable  | rhs    | Add::add::rhs
+u0:1 | Struct   | Add  | Add
+u0:2 | Function | add  | Add::add
+u0:3 | Variable | self | Add::add::self
+u0:4 | Variable | rhs  | Add::add::rhs
 
 
-================================================================================
-Unsized types in trait bounds
-================================================================================
+
+===============================================================================
+unsized-types-in-trait-bounds
+===============================================================================
+
 
 --- file: src/main.rs ---
 trait Foo<T: ?Sized> {
@@ -826,26 +917,31 @@ trait Foo<T: ?Sized> {
 fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
 
 --- expect:symbols ---
-u0:1 | Trait    | Foo        | Foo
+u0:1 | Struct   | Foo        | Foo
 u0:2 | Function | univariant | univariant
 u0:3 | Variable | this       | univariant::this
 u0:4 | Variable | that       | univariant::that
 
 
-================================================================================
-Trait bounds in type arguments in trait
-================================================================================
+
+===============================================================================
+trait-bounds-in-type-arguments-in-trait
+===============================================================================
+
 
 --- file: src/main.rs ---
 impl<T: AstDeref<Target: HasNodeId>> HasNodeId for T {}
 
 --- expect:symbols ---
-u0:1 | Impl | HasNodeId | HasNodeId
+none
 
 
-================================================================================
-Macro invocations inside trait declarations
-================================================================================
+
+
+===============================================================================
+macro-invocations-inside-trait-declarations
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub trait A: B + C + D {
@@ -854,13 +950,16 @@ pub trait A: B + C + D {
 }
 
 --- expect:symbols ---
-u0:1 | Trait  | A | A
-u0:2 | Method | f | A::f
+u0:1 | Struct   | A    | A [global]
+u0:2 | Function | f    | A::f
+u0:3 | Variable | self | A::f::self
 
 
-================================================================================
-Associated Types
-================================================================================
+
+===============================================================================
+associated-types
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub trait Graph {
@@ -869,14 +968,14 @@ pub trait Graph {
 }
 
 --- expect:symbols ---
-u0:1 | Trait     | Graph | Graph
-u0:2 | AssocType | N     | Graph::N
-u0:3 | AssocType | E     | Graph::E
+u0:1 | Struct | Graph | Graph [global]
 
 
-================================================================================
-Associated Type Definitions
-================================================================================
+
+===============================================================================
+associated-type-definitions
+===============================================================================
+
 
 --- file: src/main.rs ---
 impl Trait for T {
@@ -884,13 +983,15 @@ impl Trait for T {
 }
 
 --- expect:symbols ---
-u0:1 | Impl      | Trait | Trait
-u0:2 | AssocType | Associated | Trait::Associated
+none
 
 
-================================================================================
-Generic Associated Types
-================================================================================
+
+
+===============================================================================
+generic-associated-types
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub trait Database {
@@ -909,17 +1010,16 @@ where
 {}
 
 --- expect:symbols ---
-u0:1 | Trait     | Database | Database
-u0:2 | AssocType | F        | Database::F
-u0:3 | Impl      | Database | Database
-u0:4 | AssocType | F        | Database::F
-u0:5 | Function  | use_database1 | use_database1
-u0:6 | Function  | use_database2 | use_database2
+u0:1 | Struct   | Database      | Database [global]
+u0:2 | Function | use_database1 | use_database1
+u0:3 | Function | use_database2 | use_database2
 
 
-================================================================================
-Higher-ranked types
-================================================================================
+
+===============================================================================
+higher-ranked-types
+===============================================================================
+
 
 --- file: src/main.rs ---
 trait T: for<'a> AddAssign<&'a usize> {
@@ -928,13 +1028,14 @@ trait T: for<'a> AddAssign<&'a usize> {
 type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
 
 --- expect:symbols ---
-u0:1 | Trait     | T       | T
-u0:2 | TypeAlias | FnObject | FnObject
+u0:1 | Struct | T | T
 
 
-================================================================================
-Visibility modifiers
-================================================================================
+
+===============================================================================
+visibility-modifiers
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub fn a() {}
@@ -944,16 +1045,18 @@ pub(crate) fn c() {}
 pub(in crate::d) fn e() {}
 
 --- expect:symbols ---
-u0:1 | Function | a | a
+u0:1 | Function | a | a [global]
 u0:2 | Function | b | b
 u0:3 | Function | c | c
-u0:4 | Function | c | c
+u0:4 | Function | c | c [global]
 u0:5 | Function | e | e
 
 
-================================================================================
-Function parameter names that match built-in type names
-================================================================================
+
+===============================================================================
+function-parameter-names-that-match-built-in-type-names
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn foo(str: *const c_char) {}
@@ -966,9 +1069,11 @@ u0:3 | Function | bar  | bar
 u0:4 | Variable | bool | bar::bool
 
 
-================================================================================
-Where clauses
-================================================================================
+
+===============================================================================
+where-clauses
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn walk<F>(&self, it: &mut F) -> bool
@@ -1008,19 +1113,18 @@ fn foo<A>() where A: B + As<f64>, f64: As<A> {}
 impl<A> Default for B<A> where *mut A: C + D {}
 
 --- expect:symbols ---
-u0:1 | Function | walk      | walk
-u0:2 | Variable | self      | walk::self
-u0:3 | Variable | it        | walk::it
-u0:4 | Impl     | Iterator  | Iterator
-u0:5 | Impl     | Read      | Read
-u0:6 | Impl     | A         | A
-u0:7 | Trait    | A         | A
-u0:8 | Function | foo       | foo
+u0:1 | Function | walk | walk
+u0:2 | Variable | self | walk::self
+u0:3 | Variable | it   | walk::it
+u0:4 | Struct   | A    | A [global]
+u0:5 | Function | foo  | foo
 
 
-================================================================================
-External Modules
-================================================================================
+
+===============================================================================
+external-modules
+===============================================================================
+
 
 --- file: src/main.rs ---
 extern {
@@ -1032,13 +1136,15 @@ extern "C" {}
 unsafe extern "C" {}
 
 --- expect:symbols ---
-u0:1 | Function | napi_module_register | napi_module_register
-u0:2 | Variable | mod_                  | napi_module_register::mod_
+u0:1 | Function | napi_module_register | napi_module_register [global]
+u0:2 | Variable | mod_                 | napi_module_register::mod_
 
 
-================================================================================
-Crate visibility
-================================================================================
+
+===============================================================================
+crate-visibility
+===============================================================================
+
 
 --- file: src/main.rs ---
 crate mod foo;
@@ -1053,9 +1159,11 @@ u0:3 | Function | foo | foo
 u0:4 | Const    | X   | X
 
 
-================================================================================
-Reserved keywords in path
-================================================================================
+
+===============================================================================
+reserved-keywords-in-path
+===============================================================================
+
 
 --- file: src/main.rs ---
 struct A {
@@ -1064,14 +1172,15 @@ struct A {
 }
 
 --- expect:symbols ---
-u0:1 | Struct | A | A
-u0:2 | Field  | a | A::a
-u0:3 | Field  | b | A::b
+u0:1 | Struct   | A | A
+u0:2 | Variable | a | A::a
+u0:3 | Variable | b | A::b
 
 
-================================================================================
-Array Constraint in Where Clause
-================================================================================
+===============================================================================
+array-constraint-in-where-clause
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn foo<D>(val: D)
@@ -1085,14 +1194,14 @@ u0:1 | Function | foo | foo
 u0:2 | Variable | val | foo::val
 
 
-================================================================================
-Const generics with default
-================================================================================
+
+===============================================================================
+const-generics-with-default
+===============================================================================
+
 
 --- file: src/main.rs ---
 pub struct Loaf<T: Sized, const N: usize = 1>([T; N]);
 
 --- expect:symbols ---
-u0:1 | Struct | Loaf | Loaf
-
-
+u0:1 | Struct | Loaf | Loaf [global]
