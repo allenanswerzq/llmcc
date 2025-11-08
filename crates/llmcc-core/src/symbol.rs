@@ -9,6 +9,14 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 static NEXT_SYMBOL_ID: AtomicU32 = AtomicU32::new(1);
 
+/// Reset the global symbol identifier counter back to 1.
+///
+/// This is primarily intended for deterministic test harnesses that execute many
+/// isolated compilations within the same process.
+pub fn reset_symbol_id_counter() {
+    NEXT_SYMBOL_ID.store(1, Ordering::SeqCst);
+}
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub struct SymId(pub u32);
 
@@ -26,6 +34,7 @@ pub enum SymbolKind {
     Enum,
     Function,
     Variable,
+    Field,
     Const,
     Static,
     Trait,

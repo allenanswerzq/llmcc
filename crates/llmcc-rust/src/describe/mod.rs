@@ -3,6 +3,7 @@ pub mod enumeration;
 pub mod function;
 pub mod implementation;
 pub mod module;
+pub mod parameter;
 pub mod structure;
 pub mod variable;
 
