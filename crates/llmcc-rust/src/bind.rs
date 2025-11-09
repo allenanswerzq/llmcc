@@ -107,6 +107,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.visit_children_scope(&node, symbol);
     }
 
+    fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::EnumVariant);
+        self.visit_children_scope(&node, symbol);
+    }
+
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self
             .core
@@ -135,49 +142,16 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
 
-        let parent_symbol = self.current_symbol();
-
-        if let Some(func_symbol) = symbol {
-            if let Some(descriptor) = self.collection().functions.find(node.hir_id()) {
-                if let Some(return_type) = descriptor.return_type.as_ref() {
-                    for &type_symbol in &self.core.lookup_expr_symbols(return_type) {
-                        func_symbol.add_dependency(type_symbol);
-                    }
-                }
-
-                for parameter in &descriptor.parameters {
-                    if let Some(type_expr) = parameter.type_hint.as_ref() {
-                        for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
-                            func_symbol.add_dependency(type_symbol);
-                        }
-                    }
-                }
-            }
-
-            if let Some(parent_symbol) = parent_symbol {
-                // If this function is inside an impl block, it depends on the impl's target struct/enum
-                if matches!(parent_symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
-                    func_symbol.add_dependency(parent_symbol);
-                }
-            }
-        }
-
-        if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
-            // When visiting `impl Foo { ... }`, `parent_symbol` refers to the synthetic impl symbol and
-            // `func_symbol` is the method we just bound. We copy the method’s dependencies back onto the
-            // impl so callers that link against the impl symbol (rather than the individual method) still
-            // receive transitive edges.
-            //
-            // We also mirror those dependencies onto the owning struct/enum so that type-level queries see
-            // the behaviour inherited from their inherent methods.
-            if matches!(
-                parent_symbol.kind(),
-                SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Impl
-            ) {
-                self.core
-                    .propagate_child_dependencies(parent_symbol, func_symbol);
-            }
-        }
+        // let parent_symbol = self.current_symbol();
+        // if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
+        //     if matches!(
+        //         parent_symbol.kind(),
+        //         SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Impl
+        //     ) {
+        //         self.core
+        //             .propagate_child_dependencies(parent_symbol, func_symbol);
+        //     }
+        // }
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
@@ -247,28 +221,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             .core
             .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
         self.visit_children_scope(&node, symbol);
-
-        if let (Some(const_symbol), Some(descriptor)) =
-            (symbol, self.collection().variables.find(node.hir_id()))
-        {
-            if let Some(type_expr) = descriptor.type_annotation.as_ref() {
-                for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
-                    const_symbol.add_dependency(type_symbol);
-                }
-            }
-        }
     }
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
         self.visit_const_item(node);
     }
 
-    fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
-        let symbol = self
-            .core
-            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Const);
-        self.visit_children_scope(&node, symbol);
-    }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);

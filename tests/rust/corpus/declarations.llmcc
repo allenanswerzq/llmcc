@@ -117,12 +117,24 @@ functions-with-abstract-return-types
 
 
 --- file: src/main.rs ---
-fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
+trait B {}
+
+struct Foo;
+
+fn triples(a: impl B) -> impl Iterator<Item=(Foo)> {
 }
 
 --- expect:symbols ---
-u0:1 | Function | triples | triples
-u0:2 | Variable | a       | triples::a
+u0:1 | Struct   | B       | B          |
+u0:2 | Struct   | Foo     | Foo        |
+u0:3 | Function | triples | triples    |
+u0:4 | Variable | a       | triples::a |
+
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 <- [u0:3]
+u0:3 -> [u0:1, u0:2]
 
 
 
@@ -247,15 +259,31 @@ let bool: bool = false;
 let u32: str = "";
 
 --- expect:symbols ---
-u0:1 | Variable | x    | x
-u0:2 | Variable | x    | x
-u0:3 | Variable | x    | x
-u0:4 | Variable | x    | x
-u0:5 | Variable | x    | x
-u0:6 | Variable | y    | y
-u0:7 | Variable | bool | bool
-u0:8 | Variable | u32  | u32
+none
 
+===============================================================================
+function-variable-bindings
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Baz;
+struct Foo;
+
+fn func() {
+    let x: Foo = Foo::new();
+    let mut y = Baz::new();
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Baz  | Baz     |
+u0:2 | Struct   | Foo  | Foo     |
+u0:3 | Function | func | func    |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 <- [u0:3]
+u0:3 -> [u0:1, u0:2]
 
 
 ===============================================================================
@@ -264,26 +292,42 @@ let-else-statements
 
 
 --- file: src/main.rs ---
-let Foo::Bar {
-    texts,
-    values,
-} = foo().bar().await? else {
-    return Err(index)
-};
+mod Foo {
+    struct Bar;
+}
+struct Baz;
 
-let Some(x) = y else {
-    let None = z else {
-        foo();
-        break;
+fn func() {
+    let y = Baz::new(); 
+    let Foo::Bar {
+        texts,
+        values,
+    } = foo().bar().await? else {
+        return Err(index)
     };
-    continue;
-};
+
+    let Some(x) = y else {
+        let None = z else {
+            foo();
+            break;
+        };
+        continue;
+    };
+}
 
 --- expect:symbols ---
-u0:1 | Variable | texts  | texts
-u0:2 | Variable | values | values
-u0:3 | Variable | x      | x
+u0:1 | Module   | Foo    | Foo          |
+u0:2 | Struct   | Bar    | Foo::Bar     |
+u0:3 | Struct   | Baz    | Baz          |
+u0:4 | Function | func   | func         |
 
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2]
+u0:2 <- [u0:1]
+u0:1 <- [u0:4]
+u0:3 <- [u0:4]
+u0:4 -> [u0:1, u0:3]
 
 
 ===============================================================================
@@ -299,7 +343,7 @@ let a = if b {
 };
 
 --- expect:symbols ---
-u0:1 | Variable | a | a
+none
 
 
 
@@ -313,8 +357,7 @@ let default = 1;
 let union = 2;
 
 --- expect:symbols ---
-u0:1 | Variable | default | default
-u0:2 | Variable | union   | union
+none
 
 
 
@@ -341,14 +384,10 @@ struct Empty(pub ());
 u0:1  | Struct   | Proton   | Proton
 u0:2  | Struct   | Electron | Electron
 u0:3  | Struct   | Person   | Person
-u0:4  | Variable | name     | Person::name
-u0:5  | Variable | age      | Person::age
-u0:6  | Struct   | Point    | Point
-u0:7  | Variable | x        | Point::x
-u0:8  | Variable | y        | Point::y
-u0:9  | Struct   | Color    | Color
-u0:10 | Struct   | Inches   | Inches
-u0:11 | Struct   | Empty    | Empty
+u0:4  | Struct   | Point    | Point
+u0:5  | Struct   | Color    | Color
+u0:6  | Struct   | Inches   | Inches
+u0:7  | Struct   | Empty    | Empty
 
 
 ===============================================================================
@@ -365,10 +404,7 @@ pub union in6_addr__bindgen_ty_1 {
 }
 
 --- expect:symbols ---
-u0:1 | Variable | __u6_addr8           | __u6_addr8
-u0:2 | Variable | __u6_addr16          | __u6_addr16
-u0:3 | Variable | __u6_addr32          | __u6_addr32
-u0:4 | Variable | _bindgen_union_align | _bindgen_union_align
+none
 
 
 ===============================================================================
@@ -392,11 +428,13 @@ u0:5 | Struct | E | E
 
 
 ===============================================================================
-enums
+enums-basic
 ===============================================================================
 
 
 --- file: src/main.rs ---
+struct Tree;
+
 pub enum Option<T> {
     None,
     Some(T),
@@ -415,16 +453,33 @@ pub enum Node<T: Item> {
 }
 
 --- expect:symbols ---
-u0:1 | Enum        | Option   | Option [global]
-u0:2 | EnumVariant | None     | Option::None [global]
-u0:3 | EnumVariant | Some     | Option::Some [global]
-u0:4 | Enum        | Node     | Node [global]
-u0:5 | EnumVariant | Internal | Node::Internal [global]
-u0:6 | Field       | children | Node::Internal::children [global]
-u0:7 | Field       | height   | Node::Internal::height [global]
-u0:8 | EnumVariant | Leaf     | Node::Leaf [global]
-u0:9 | Field       | value    | Node::Leaf::value [global]
+u0:1 | Struct      | Tree     | Tree           |
+u0:2 | Enum        | Option   | Option         | [global]
+u0:3 | EnumVariant | None     | Option::None   | [global]
+u0:4 | EnumVariant | Some     | Option::Some   | [global]
+u0:5 | Enum        | Node     | Node           | [global]
+u0:6 | EnumVariant | Internal | Node::Internal | [global]
+u0:7 | EnumVariant | Leaf     | Node::Leaf     | [global]
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:5, u0:6]
+u0:2 -> [u0:3, u0:4]
+u0:3 <- [u0:2]
+u0:4 <- [u0:2]
+u0:5 -> [u0:1, u0:6, u0:7]
+u0:6 -> [u0:1]
+u0:6 <- [u0:5]
+u0:7 <- [u0:5]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Tree
+u0:3 | enum  | Option
+u0:4 | enum  | Node
+
+--- expect:block-deps ---
+u0:2 <- [u0:4]
+u0:4 -> [u0:2]
 
 ===============================================================================
 enums-with-values-specified
@@ -438,30 +493,45 @@ pub enum c_style_enum {
 }
 
 --- expect:symbols ---
-u0:1 | Enum        | c_style_enum | c_style_enum [global]
-u0:2 | EnumVariant | val1         | c_style_enum::val1 [global]
-u0:3 | EnumVariant | val2         | c_style_enum::val2 [global]
-
+u0:1 | Enum        | c_style_enum | c_style_enum        | [global]
+u0:2 | EnumVariant | val1         | c_style_enum::val1  | [global]
+u0:3 | EnumVariant | val2         | c_style_enum::val2  | [global]
 
 
 ===============================================================================
-generic-functions
+generic-functions-one
 ===============================================================================
 
 
 --- file: src/main.rs ---
+struct Text;
+
 pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
 }
 pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
 
 --- expect:symbols ---
-u0:1 | Function | splice       | splice [global]
-u0:2 | Variable | self         | splice::self
-u0:3 | Variable | old_range    | splice::old_range
-u0:4 | Variable | new_text     | splice::new_text
-u0:5 | Function | uninit_array | uninit_array [global]
+u0:1 | Struct   | Text         | Text
+u0:2 | Function | splice       | splice                 | [global]
+u0:3 | Variable | self         | splice::self
+u0:4 | Variable | old_range    | splice::old_range
+u0:5 | Variable | new_text     | splice::new_text
+u0:6 | Function | uninit_array | uninit_array           | [global]
 
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Text
+u0:3 | func  | splice
+u0:4 | func  | uninit_array
+
+--- expect:block-deps ---
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
 
 ===============================================================================
 functions-with-mutable-parameters
@@ -484,23 +554,62 @@ functions-with-destructured-parameters
 
 
 --- file: src/main.rs ---
-fn f1([x, y]: [u32; 2]) {}
+struct Foo;
+struct Y;
+struct T;
+struct U;
+
+fn f1([x, y]: [Foo; 2]) {}
+
 fn f2(&x: &Y) {}
+
 fn f3((x, y): (T, U)) {}
 
 --- expect:symbols ---
-u0:1 | Function | f1 | f1
-u0:2 | Variable | x  | f1::x
-u0:3 | Variable | y  | f1::y
-u0:4 | Function | f2 | f2
-u0:5 | Variable | x  | f2::x
-u0:6 | Function | f3 | f3
-u0:7 | Variable | x  | f3::x
-u0:8 | Variable | y  | f3::y
+u0:1  | Struct   | Foo | Foo   |
+u0:2  | Struct   | Y   | Y     |
+u0:3  | Struct   | T   | T     |
+u0:4  | Struct   | U   | U     |
+u0:5  | Function | f1  | f1    |
+u0:6  | Variable | x   | f1::x |
+u0:7  | Variable | y   | f1::y |
+u0:8  | Function | f2  | f2    |
+u0:9  | Variable | x   | f2::x |
+u0:10 | Function | f3  | f3    |
+u0:11 | Variable | x   | f3::x |
+u0:12 | Variable | y   | f3::y |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:5]
+u0:10 -> [u0:3, u0:4]
+u0:2 <- [u0:8]
+u0:3 <- [u0:10]
+u0:4 <- [u0:10]
+u0:5 -> [u0:1]
+u0:8 -> [u0:2]
 
 
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Foo
+u0:3 | class | Y
+u0:4 | class | T
+u0:5 | class | U
+u0:6 | func  | f1
+u0:7 | func  | f2
+u0:8 | func  | f3
 
-===============================================================================
+--- expect:block-deps ---
+u0:2 <- [u0:6]
+u0:3 <- [u0:7]
+u0:4 <- [u0:8]
+u0:5 <- [u0:8]
+u0:6 -> [u0:2]
+u0:7 -> [u0:3]
+u0:8 -> [u0:4, u0:5]
+
+
+=============================================================================== 
 functions-with-custom-types-for-self
 ===============================================================================
 
@@ -528,11 +637,20 @@ trait Foo {
     const X: u8;
 }
 
---- expect:symbols ---
-u0:1 | Const  | N   | N
-u0:2 | Struct | Foo | Foo
-u0:3 | Const  | X   | Foo::X
+fn func() {
+    println!("{}", N);
+}
 
+--- expect:symbols ---
+u0:1 | Const    | N    | N
+u0:2 | Struct   | Foo  | Foo
+u0:3 | Const    | X    | Foo::X
+u0:4 | Function | func | func
+
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:4]
+u0:4 -> [u0:1]
 
 
 ===============================================================================
@@ -544,11 +662,19 @@ static-items
 static N: i32 = 5;
 static mut __progname: *mut ::c_char;
 
+fn func() {
+    println!("{}", N);
+}
+
 --- expect:symbols ---
-u0:1 | Const | N          | N
-u0:2 | Const | __progname | __progname
+u0:1 | Const    | N          | N
+u0:2 | Const    | __progname | __progname
+u0:3 | Function | func       | func
 
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:3 -> [u0:1]
 
 ===============================================================================
 static-ref-items-using-lazy-static
@@ -558,9 +684,17 @@ static-ref-items-using-lazy-static
 --- file: src/main.rs ---
 static ref ONE: usize = 0;
 
---- expect:symbols ---
-u0:1 | Const | ONE | ONE
+fn func() {
+    println!("{}", ONE);
+}
 
+--- expect:symbols ---
+u0:1 | Const    | ONE        | ONE
+u0:2 | Function | func       | func
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
 
 
 ===============================================================================
@@ -703,6 +837,8 @@ derive-macro-helper-attributes
 
 use thiserror::Error;
 
+pub struct Limits;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("first letter must be lowercase but was {:?}", first_char(.0))]
@@ -712,11 +848,17 @@ pub enum Error {
 }
 
 --- expect:symbols ---
-u0:1 | Enum        | Error       | Error [global]
-u0:2 | EnumVariant | WrongCase   | Error::WrongCase [global]
-u0:3 | EnumVariant | OutOfBounds | Error::OutOfBounds [global]
-u0:4 | Field       | idx         | Error::OutOfBounds::idx [global]
-u0:5 | Field       | limits      | Error::OutOfBounds::limits [global]
+u0:1 | Struct      | Limits      | Limits                       | [global]
+u0:2 | Enum        | Error       | Error                        | [global]
+u0:3 | EnumVariant | WrongCase   | Error::WrongCase             | [global]
+u0:4 | EnumVariant | OutOfBounds | Error::OutOfBounds           | [global]
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2, u0:4]
+u0:2 -> [u0:1, u0:3, u0:4]
+u0:3 <- [u0:2]
+u0:4 <- [u0:2]
+u0:4 -> [u0:1]
 
 
 ===============================================================================
@@ -733,11 +875,17 @@ fn foo() {
    let t = (#[hello] 2, 7, 8);
 }
 
+fn bar(x: i32, y: i32) {}
+
 --- expect:symbols ---
 u0:1 | Function | foo | foo
-u0:2 | Variable | z   | foo::z
-u0:3 | Variable | t   | foo::t
+u0:2 | Function | bar | bar
+u0:3 | Variable | x   | bar::x |
+u0:4 | Variable | y   | bar::y |
 
+--- expect:symbol-deps ---
+u0:1 -> [u0:2]
+u0:2 <- [u0:1]
 
 
 ===============================================================================

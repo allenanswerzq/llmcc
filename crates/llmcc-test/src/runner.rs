@@ -8,6 +8,7 @@ use llmcc_core::graph_builder::{
     build_llmcc_graph, BlockId, BlockRelation, GraphBuildConfig, ProjectGraph,
 };
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
+use llmcc_core::{print_llmcc_ir, print_llmcc_graph};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
 
@@ -747,6 +748,7 @@ where
     let mut collections = Vec::with_capacity(unit_count);
     for index in 0..unit_count {
         let unit = cc.compile_unit(index);
+        print_llmcc_ir(unit);
         let collected = L::collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
@@ -762,6 +764,7 @@ where
         if let Some(project) = project_graph.as_mut() {
             let unit_graph = build_llmcc_graph::<L>(unit, index, GraphBuildConfig)
                 .map_err(|err| anyhow!(err))?;
+            print_llmcc_graph(unit_graph.root(), unit);
             project.add_child(unit_graph);
         }
     }
@@ -947,13 +950,13 @@ fn render_block_reports(
     for unit_graph in project.units() {
         let unit_index = unit_graph.unit_index();
         let mut entries = Vec::new();
-        for block_id in unit_graph.edges().get_connected_blocks() {
-            let Some(src_desc) = describe_block(block_id, &indexes) else {
+
+        for (_name_opt, kind, block_id) in indexes.find_by_unit(unit_index) {
+            let Some(mut desc) = describe_block(block_id, &indexes) else {
                 continue;
             };
-            if src_desc.unit != unit_index {
-                continue;
-            }
+            desc.kind = kind.to_string();
+
             let mut deps = unit_graph
                 .edges()
                 .get_related(block_id, BlockRelation::DependsOn);
@@ -964,8 +967,9 @@ fn render_block_reports(
                 .filter_map(|id| describe_block(id, &indexes))
                 .collect();
             dep_descs.sort_by(|a, b| (a.unit, &a.name).cmp(&(b.unit, &b.name)));
-            entries.push((src_desc, dep_descs));
+            entries.push((desc, dep_descs));
         }
+
         entries.sort_by(|a, b| a.0.name.cmp(&b.0.name));
         if !entries.is_empty() {
             units.insert(unit_index, entries);

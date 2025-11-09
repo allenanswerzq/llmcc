@@ -119,27 +119,13 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        if let Some(mut var) = RustDescriptor::build_variable(self.unit(), &node) {
+        if let Some(var) = RustDescriptor::build_variable(self.unit(), &node) {
             if let Some(ty) = &var.type_annotation {
                 self.core
                     .insert_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
             }
 
-            let extra_bindings = var.extra_binding_names.clone();
-
-            let (_, fqn) =
-                self.core
-                    .insert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
-            var.fqn = Some(fqn);
             self.variables.add(node.hir_id(), var);
-
-            if let Some(bindings) = extra_bindings {
-                for name in bindings {
-                    self.core
-                        .insert_symbol(node.hir_id(), &name, SymbolKind::Variable, false);
-                }
-            }
-
             self.visit_children(&node);
         } else {
             tracing::warn!(
