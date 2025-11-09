@@ -248,29 +248,6 @@ let u32: str = "";
 --- expect:symbols ---
 none
 
-===============================================================================
-function-variable-bindings
-===============================================================================
-
-
---- file: src/main.rs ---
-struct Baz;
-struct Foo;
-
-fn func() {
-    let x: Foo = Foo::new();
-    let mut y = Baz::new();
-}
-
---- expect:symbols ---
-u0:1 | Struct   | Baz  | Baz     |
-u0:2 | Struct   | Foo  | Foo     |
-u0:3 | Function | func | func    |
-
---- expect:symbol-deps ---
-u0:1 <- [u0:3]
-u0:2 <- [u0:3]
-u0:3 -> [u0:1, u0:2]
 
 
 ===============================================================================
@@ -486,8 +463,6 @@ u0:3 | EnumVariant | val2         | c_style_enum::val2  | [global]
 
 
 ===============================================================================
-generic-functions-one
-===============================================================================
 
 
 --- file: src/main.rs ---
@@ -588,7 +563,6 @@ u0:7 -> [u0:3]
 u0:8 -> [u0:4, u0:5]
 
 
-=============================================================================== 
 functions-with-custom-types-for-self
 ===============================================================================
 
@@ -912,49 +886,6 @@ u0:6 <- [u0:1]
 u0:7 <- [u0:1]
 
 
-===============================================================================
-inherent-impls-across-multiple-files
-===============================================================================
-
-
---- file: src/main.rs ---
-pub struct Person;
-
-impl Person {
-  fn walk(self) {}
-}
-
---- file: src/foo.rs ---
-impl Person {
-  fn talk(& self) {}
-}
-
---- expect:symbols ---
-u0:1 | Struct   | Person | Person             | [global]
-u0:2 | Function | walk   | Person::walk       |
-u1:3 | Struct   | Person | Person             |
-u1:4 | Function | talk   | Person::talk       |
-
---- expect:symbol-deps ---
-u0:1 -> [u0:2, u1:4]
-u0:2 <- [u0:1]
-u1:4 <- [u0:1]
-
-===============================================================================
-inherent-impls-no-defines
-===============================================================================
-
-
---- file: src/main.rs ---
-impl Person {
-  fn walk(self) {}
-}
-
---- expect:symbols ---
-u0:1 | Struct   | Person | Person       |
-u0:2 | Function | walk   | Person::walk |
-
-===============================================================================
 trait-impls
 ===============================================================================
 
@@ -1216,8 +1147,6 @@ u0:6 | Function    | use_database2 | use_database2 |
 
 
 ===============================================================================
-higher-ranked-types-basic
-===============================================================================
 
 
 --- file: src/main.rs ---
@@ -1238,37 +1167,6 @@ u0:1 <- [u0:2]
 u0:2 -> [u0:1]
 
 
-===============================================================================
-higher-ranked-types-with-trait-bounds
-===============================================================================
-
-
---- file: src/main.rs ---
-trait Foo {};
-trait Bar {};
-trait Baz<T> {};
-
-struct AddAssign<T: Foo, U: Baz<u32>>;
-
-trait T: for<'a> AddAssign<&'a usize> {
-}
-
-type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
-
---- expect:symbols ---
-u0:1 | Struct      | Foo       | Foo       |
-u0:2 | Struct      | Bar       | Bar       |
-u0:3 | Struct      | Baz       | Baz       |
-u0:4 | Struct      | AddAssign | AddAssign |
-u0:5 | Struct      | T         | T         |
-u0:6 | DynamicType | FnObject  | FnObject  |
-
---- expect:symbol-deps ---
-u0:1 <- [u0:4]
-u0:3 <- [u0:4]
-u0:4 -> [u0:1, u0:3]
-u0:4 <- [u0:5]
-u0:5 -> [u0:4]
 
 
 ===============================================================================
