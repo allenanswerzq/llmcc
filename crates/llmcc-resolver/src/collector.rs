@@ -518,7 +518,8 @@ impl<'tcx> CollectorCore<'tcx> {
 
                 if upsert {
                     // We tried our best but couldn't find a matching symbol, then we inert a new one.
-                    let (idx, _fqn) = self.insert_symbol(owner, parts.last().unwrap(), kind, is_global);
+                    let (idx, _fqn) =
+                        self.insert_symbol(owner, parts.last().unwrap(), kind, is_global);
                     return Some(idx);
                 }
 
@@ -531,7 +532,9 @@ impl<'tcx> CollectorCore<'tcx> {
             TypeExpr::Tuple(items) => items
                 .iter()
                 // Tuple singletons show up during parsing for `impl (Foo,)` in Rust.
-                .find_map(|item| self.find_or_insert_expr_symbol(owner, item, kind, is_global, upsert)),
+                .find_map(|item| {
+                    self.find_or_insert_expr_symbol(owner, item, kind, is_global, upsert)
+                }),
             _ => None,
         }
     }

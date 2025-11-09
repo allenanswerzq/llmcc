@@ -24,7 +24,7 @@ digraph project {
     // adjacency snapshot here
 }
 
---- expect:bind ---
+
 unit 0: add<Func>#u0 -> []
 ```
 
@@ -61,7 +61,7 @@ cargo run -p llmcc-test -- list      # discover case ids
   from the resolver.
 * `--- expect:graph ---` records the DOT output from `ProjectGraph::render_design_graph()`,
   allowing callers to lock down dependency edges visually.
-* `--- expect:bind ---` lists the block-level dependency relations (the
+* `` lists the block-level dependency relations (the
   `DependsOn` edges) in a stable textual format, useful when you care about
   relationships but not the DOT syntax.
 * Additional expectation kinds (parse trees, CLI output, etc.) can be layered on

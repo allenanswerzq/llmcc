@@ -169,9 +169,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
-        if let Some((sym_idx, _)) = self
-            .core
-            .insert_field_symbol(&node, LangRust::field_name, SymbolKind::DynamicType)
+        if let Some((sym_idx, _)) =
+            self.core
+                .insert_field_symbol(&node, LangRust::field_name, SymbolKind::DynamicType)
         {
             self.visit_children_scope(&node, Some(sym_idx));
         } else {
