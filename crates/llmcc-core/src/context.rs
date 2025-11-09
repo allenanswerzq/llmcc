@@ -521,7 +521,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             scope_map: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
-            block_next_id: AtomicU32::new(0),
+            block_next_id: AtomicU32::new(1),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),

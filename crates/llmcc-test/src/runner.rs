@@ -10,7 +10,7 @@ use llmcc_core::graph_builder::{
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
-use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
+
 use llmcc_resolver::apply_collected_symbols;
 use llmcc_resolver::collector::CollectedSymbols;
 use llmcc_rust::LangRust;
@@ -433,6 +433,7 @@ fn normalize(kind: &str, text: &str) -> String {
         "symbols" | "blocks" => normalize_symbols(&canonical),
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
         "graph" => normalize_graph(&canonical),
+        "block-graph" => normalize_block_graph(&canonical),
         _ => canonical,
     }
 }
@@ -497,6 +498,22 @@ fn normalize_symbol_deps(text: &str) -> String {
     rows.join("\n")
 }
 
+fn normalize_block_graph(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    match parse_sexpr(trimmed) {
+        Ok(exprs) => exprs
+            .into_iter()
+            .map(|expr| format_sexpr(&expr))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        Err(_) => trimmed.to_string(),
+    }
+}
+
 fn is_empty_relation(line: &str) -> bool {
     if let Some((_, rhs)) = line.split_once("->") {
         if rhs.trim() == "[]" {
@@ -512,32 +529,65 @@ fn is_empty_relation(line: &str) -> bool {
 }
 
 fn normalize_graph(text: &str) -> String {
-    const PLACEHOLDER: &str = ".tmpLLMCC";
+    let trimmed = text.trim();
+    if trimmed.starts_with("digraph") {
+        normalize_dot_paths(trimmed)
+    } else {
+        trimmed.to_string()
+    }
+}
 
-    let mut normalized = String::with_capacity(text.len());
-    let chars: Vec<char> = text.chars().collect();
-    let mut idx = 0;
+fn normalize_graph_path(path: &str) -> String {
+    use std::path::Path;
 
-    while idx < chars.len() {
-        if chars[idx] == '.'
-            && idx + 3 < chars.len()
-            && chars[idx + 1] == 't'
-            && chars[idx + 2] == 'm'
-            && chars[idx + 3] == 'p'
-        {
-            normalized.push_str(PLACEHOLDER);
-            idx += 4;
-
-            while idx < chars.len() && chars[idx].is_ascii_alphanumeric() {
-                idx += 1;
-            }
-        } else {
-            normalized.push(chars[idx]);
-            idx += 1;
+    let (path_part, line_part) = match path.rsplit_once(':') {
+        Some((p, line)) if line.chars().all(|ch| ch.is_ascii_digit()) => {
+            (p, format!(":{line}"))
         }
+        _ => (path, String::new()),
+    };
+
+    let path_obj = Path::new(path_part);
+    let components: Vec<_> = path_obj
+        .components()
+        .filter_map(|comp| comp.as_os_str().to_str())
+        .collect();
+
+    let start = components
+        .iter()
+        .rposition(|comp| *comp == "src")
+        .map(|idx| idx.saturating_sub(1))
+        .unwrap_or(components.len().saturating_sub(3));
+
+    let mut shortened = components[start..].join("/");
+    if shortened.is_empty() {
+        shortened = path_obj
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(path_part)
+            .to_string();
     }
 
-    normalized
+    format!("{shortened}{line_part}")
+}
+
+fn normalize_dot_paths(dot: &str) -> String {
+    dot.lines()
+        .map(|line| {
+            if let Some(start) = line.find("full_path=") {
+                let prefix = &line[..start];
+                let rest = &line[start..];
+                if let Some((before_path, after_path)) = rest.split_once('"') {
+                    if let Some((path, suffix)) = after_path.split_once('"') {
+                        let normalized = normalize_graph_path(path);
+                        return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
+                    }
+                }
+            }
+            line.to_string()
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -557,6 +607,98 @@ fn ensure_trailing_newline(mut text: String) -> String {
         text.push('\n');
     }
     text
+}
+
+#[derive(Debug, Clone)]
+enum SExpr {
+    Atom(String),
+    List(Vec<SExpr>),
+}
+
+fn parse_sexpr(input: &str) -> Result<Vec<SExpr>, ()> {
+    let tokens = tokenize(input);
+    let mut idx = 0;
+    let mut exprs = Vec::new();
+    while idx < tokens.len() {
+        exprs.push(parse_expr(&tokens, &mut idx)?);
+    }
+    Ok(exprs)
+}
+
+fn tokenize(input: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = input.chars().peekable();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '(' | ')' => {
+                if !current.trim().is_empty() {
+                    tokens.push(current.trim().to_string());
+                }
+                current.clear();
+                tokens.push(ch.to_string());
+            }
+            '"' => {
+                if !current.trim().is_empty() {
+                    tokens.push(current.trim().to_string());
+                }
+                current.clear();
+                let mut literal = String::new();
+                while let Some(&next) = chars.peek() {
+                    chars.next();
+                    if next == '"' {
+                        break;
+                    }
+                    literal.push(next);
+                }
+                tokens.push(literal);
+            }
+            _ if ch.is_whitespace() => {
+                if !current.trim().is_empty() {
+                    tokens.push(current.trim().to_string());
+                }
+                current.clear();
+            }
+            _ => current.push(ch),
+        }
+    }
+    if !current.trim().is_empty() {
+        tokens.push(current.trim().to_string());
+    }
+    tokens
+}
+
+fn parse_expr(tokens: &[String], idx: &mut usize) -> Result<SExpr, ()> {
+    if *idx >= tokens.len() {
+        return Err(());
+    }
+    let token = tokens[*idx].clone();
+    *idx += 1;
+    match token.as_str() {
+        "(" => {
+            let mut items = Vec::new();
+            while *idx < tokens.len() && tokens[*idx] != ")" {
+                items.push(parse_expr(tokens, idx)?);
+            }
+            if *idx >= tokens.len() || tokens[*idx] != ")" {
+                return Err(());
+            }
+            *idx += 1;
+            Ok(SExpr::List(items))
+        }
+        ")" => Err(()),
+        literal => Ok(SExpr::Atom(literal.to_string())),
+    }
+}
+
+fn format_sexpr(expr: &SExpr) -> String {
+    match expr {
+        SExpr::Atom(atom) => atom.clone(),
+        SExpr::List(items) => {
+            let parts: Vec<String> = items.iter().map(format_sexpr).collect();
+            format!("({})", parts.join(" "))
+        }
+    }
 }
 
 struct MaterializedProject {
@@ -607,7 +749,6 @@ where
     let mut collections = Vec::with_capacity(unit_count);
     for index in 0..unit_count {
         let unit = cc.compile_unit(index);
-        print_llmcc_ir(unit);
         let collected = L::collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
@@ -623,7 +764,6 @@ where
         if let Some(project) = project_graph.as_mut() {
             let unit_graph = build_llmcc_graph::<L>(unit, index, GraphBuildConfig)
                 .map_err(|err| anyhow!(err))?;
-            print_llmcc_graph(unit_graph.root(), unit);
             project.add_child(unit_graph);
         }
     }

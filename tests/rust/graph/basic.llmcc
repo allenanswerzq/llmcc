@@ -3,7 +3,7 @@ struct-binding
 ===============================================================================
 
 
---- file: src/main.rs ---
+--- file: app/src/main.rs ---
 struct Foo;
 
 struct Bar {
@@ -23,23 +23,23 @@ u0:2 -> [u0:1]
 u0:2 <- []
 
 --- expect:blocks ---
-u0:1 | class | Foo
-u0:2 | class | Bar
+u0:2 | class | Foo
+u0:3 | class | Bar
 
 --- expect:block-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
 
 --- expect:graph ---
 digraph DesignGraph {
   subgraph cluster_0 {
-    label=".tmp3neR8g";
+    label="app";
     style=filled;
     color=lightgrey;
-    n0 [label="Bar", full_path="/tmp/.tmp3neR8g/src/main.rs:3"];
-    n1 [label="Foo", full_path="/tmp/.tmp3neR8g/src/main.rs:1"];
+    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="Bar", full_path="$TMP/app/src/main.rs:3"];
   }
-  n0 -> n1;
+  n2 -> n1;
 }
 
 
@@ -49,10 +49,10 @@ struct-binding-multiple-files
 ===============================================================================
 
 
---- file: src/foo.rs ---
+--- file: app/src/foo.rs ---
 pub struct Foo;
 
---- file: src/main.rs ---
+--- file: app/src/main.rs ---
 struct Bar {
     a: i32,
     b: Vec<Foo>,
@@ -74,29 +74,27 @@ u0:2 | class | Foo
 u1:4 | class | Bar
 
 --- expect:block-deps ---
-u0:1 -> []
-u0:1 <- [u1:2]
-u1:2 -> [u0:1]
-u1:2 <- []
+u0:2 <- [u1:4]
+u1:4 -> [u0:2]
 
 --- expect:block-graph ---
 (root:1
     (class:2 Foo)
 )
 
-(root:3
+(root:3 
     (class:4 Bar)
 )
 
 --- expect:graph ---
 digraph DesignGraph {
   subgraph cluster_0 {
-    label=".tmpJkKMpE";
+    label="app";
     style=filled;
     color=lightgrey;
-    n1 [label="Foo", full_path="/tmp/.tmpJkKMpE/src/foo.rs:1"];
-    n0 [label="Bar", full_path="/tmp/.tmpJkKMpE/src/main.rs:1"];
+    n1 [label="Foo", full_path="$TMP/app/src/foo.rs:1"];
+    n2 [label="Bar", full_path="$TMP/app/src/main.rs:1"];
   }
-  n0 -> n1;
+  n2 -> n1;
 }
 
