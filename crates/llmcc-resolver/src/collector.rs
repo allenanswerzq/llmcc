@@ -445,10 +445,10 @@ impl<'tcx> CollectorCore<'tcx> {
 
     pub fn upsert_expr_symbol(
         &mut self,
-        _owner: HirId,
+        owner: HirId,
         expr: &TypeExpr,
         kind: SymbolKind,
-        _is_global: bool,
+        is_global: bool,
     ) -> Option<usize> {
         self.find_or_insert_expr_symbol(owner, expr, kind, is_global, true)
     }

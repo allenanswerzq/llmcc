@@ -1,5 +1,20 @@
 ===============================================================================
 struct-binding
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Foo;
+
+struct Bar {
+    a: i32,
+    b: Vec<Foo>,
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Foo | Foo
+u0:2 | Struct   | Bar | Bar
+
 
 --- expect:symbol-deps ---
 u0:1 -> []
@@ -28,4 +43,58 @@ digraph project {
 }
 
 
+
+===============================================================================
+struct-binding-multiple-files
+===============================================================================
+
+
+--- file: app/src/foo.rs ---
+pub struct Foo;
+
+--- file: app/src/main.rs ---
+struct Bar {
+    a: i32,
+    b: Vec<Foo>,
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Foo | Foo  | [global]
+u1:2 | Struct   | Bar | Bar
+
+
+--- expect:symbol-deps ---
+u0:1 -> []
+u0:1 <- [u1:2]
+u1:2 -> [u0:1]
+u1:2 <- []
+
+--- expect:blocks ---
+u0:2 | class | Foo
+u1:4 | class | Bar
+
+--- expect:block-deps ---
+u0:2 <- [u1:4]
+u1:4 -> [u0:2]
+
+--- expect:block-graph ---
+(root:1
+    (class:2 Foo)
+)
+
+(root:3 
+    (class:4 Bar)
+)
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Foo", full_path="$TMP/app/src/foo.rs:1"];
+    n2 [label="Bar", full_path="$TMP/app/src/main.rs:1"];
+  }
+  n2 -> n1;
+}
 
