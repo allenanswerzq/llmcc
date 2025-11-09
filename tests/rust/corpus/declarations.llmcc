@@ -134,7 +134,8 @@ u0:4 | Variable | a       | triples::a |
 --- expect:symbol-deps ---
 u0:1 <- [u0:3]
 u0:2 <- [u0:3]
-u0:3 -> [u0:1, u0:2]
+u0:3 -> [u0:1, u0:2, u0:4]
+u0:4 <- [u0:3]
 
 
 
@@ -521,7 +522,9 @@ u0:6 | Function | uninit_array | uninit_array           | [global]
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+u0:2 -> [u0:1, u0:4, u0:5]
+u0:4 <- [u0:2]
+u0:5 <- [u0:2]
 
 --- expect:blocks ---
 u0:1 | root  | block#1
@@ -581,12 +584,17 @@ u0:12 | Variable | y   | f3::y |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:5]
-u0:10 -> [u0:3, u0:4]
+u0:10 -> [u0:11, u0:12, u0:3, u0:4]
+u0:11 <- [u0:10]
+u0:12 <- [u0:10]
 u0:2 <- [u0:8]
 u0:3 <- [u0:10]
 u0:4 <- [u0:10]
-u0:5 -> [u0:1]
-u0:8 -> [u0:2]
+u0:5 -> [u0:1, u0:6, u0:7]
+u0:6 <- [u0:5]
+u0:7 <- [u0:5]
+u0:8 -> [u0:2, u0:9]
+u0:9 <- [u0:8]
 
 
 --- expect:blocks ---
@@ -885,8 +893,10 @@ u0:4 | Variable | y   | bar::y |
 
 --- expect:symbol-deps ---
 u0:1 -> [u0:2]
+u0:2 -> [u0:3, u0:4]
 u0:2 <- [u0:1]
-
+u0:3 <- [u0:2]
+u0:4 <- [u0:2]
 
 ===============================================================================
 inherent-impls
@@ -894,6 +904,9 @@ inherent-impls
 
 
 --- file: src/main.rs ---
+struct Person;
+struct Machine<const STATE: State>;
+
 impl Person {
   const leg_count : u32 = 2;
 
@@ -906,17 +919,69 @@ impl Person {
 impl Machine<{State::Init}> {}
 
 --- expect:symbols ---
-u0:1 | Const    | leg_count | leg_count
-u0:2 | Function | walk      | walk
-u0:3 | Variable | self      | walk::self
-u0:4 | Function | walk_mut  | walk_mut
-u0:5 | Variable | self      | walk_mut::self
-u0:6 | Function | talk      | talk
-u0:7 | Variable | self      | talk::self
-u0:8 | Function | talk_mut  | talk_mut
-u0:9 | Variable | self      | talk_mut::self
+u0:1  | Struct   | Person    | Person                 |
+u0:2  | Struct   | Machine   | Machine                |
+u0:3  | Const    | leg_count | Person::leg_count      |
+u0:4  | Function | walk      | Person::walk           |
+u0:5  | Variable | self      | Person::walk::self     |
+u0:6  | Function | walk_mut  | Person::walk_mut       |
+u0:7  | Variable | self      | Person::walk_mut::self |
+u0:8  | Function | talk      | Person::talk           |
+u0:9  | Variable | self      | Person::talk::self     |
+u0:10 | Function | talk_mut  | Person::talk_mut       |
+u0:11 | Variable | self      | Person::talk_mut::self |
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:10, u0:3, u0:4, u0:6, u0:8]
+u0:10 <- [u0:1]
+u0:3 <- [u0:1]
+u0:4 <- [u0:1]
+u0:6 <- [u0:1]
+u0:8 <- [u0:1]
 
 
+===============================================================================
+inherent-impls-across-multiple-files
+===============================================================================
+
+
+--- file: src/main.rs ---
+pub struct Person;
+
+impl Person {
+  fn walk(self) {}
+}
+
+--- file: src/foo.rs ---
+impl Person {
+  fn talk(& self) {}
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Person | Person             | [global]
+u0:2 | Function | walk   | Person::walk       |
+u0:3 | Variable | self   | Person::walk::self |
+u1:4 | Struct   | Person | Person             |
+u1:5 | Function | talk   | Person::talk       |
+u1:6 | Variable | self   | Person::talk::self |
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2, u1:5]
+u0:2 <- [u0:1]
+u1:5 <- [u0:1]
+
+===============================================================================
+inherent-impls-no-defines
+===============================================================================
+
+
+--- file: src/main.rs ---
+impl Person {
+  fn walk(self) {}
+}
+
+--- expect:symbols ---
+none
 
 ===============================================================================
 trait-impls

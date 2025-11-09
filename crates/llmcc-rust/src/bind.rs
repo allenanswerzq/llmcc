@@ -158,6 +158,25 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         if let Some(impl_descriptor) = self.collection().impls.find(node.hir_id()) {
             let symbols = self.core.lookup_expr_symbols(&impl_descriptor.target_ty);
 
+            // Impl blocks can appear in files that do not define the target type
+            // (e.g. `impl Person` inside `src/foo.rs` while `struct Person` lives
+            // elsewhere). When that happens the collector may have only recorded a
+            // placeholder symbol scoped to the current unit. Before we descend into
+            // the block, try to resolve the canonical global symbol for the target
+            // type so every impl shares the same owner symbol regardless of which
+            // file declared it.
+            let global_target_symbol = impl_descriptor
+                .target_ty
+                .path_segments()
+                .and_then(|segments| {
+                    [SymbolKind::Struct, SymbolKind::Enum]
+                        .into_iter()
+                        .find_map(|kind| {
+                            self.core
+                                .lookup_symbol_in_globals(segments, Some(kind), None)
+                        })
+                });
+
             let enum_symbol = symbols
                 .iter()
                 .copied()
@@ -168,7 +187,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .copied()
                 .find(|symbol| symbol.kind() == SymbolKind::Struct);
 
-            let target_symbol = enum_symbol
+            let target_symbol = global_target_symbol
+                .or(enum_symbol)
                 .or(struct_symbol)
                 .or_else(|| symbols.into_iter().next());
 

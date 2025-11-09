@@ -122,7 +122,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some(var) = RustDescriptor::build_variable(self.unit(), &node) {
             if let Some(ty) = &var.type_annotation {
                 self.core
-                    .insert_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
+                    .find_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
             }
 
             self.variables.add(node.hir_id(), var);
@@ -141,12 +141,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        let descriptor = ParameterDescriptor::build(self.unit(), &node);
-        for name in descriptor.names() {
-            let _ = self
-                .core
-                .insert_symbol(node.hir_id(), name, SymbolKind::Variable, false);
-        }
         self.visit_children(&node);
     }
 
@@ -176,17 +170,21 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = RustDescriptor::build_impl(self.unit(), &node) {
             // impl Foo {}
-            let owner_symbol = self.core.insert_expr_symbol(
+            let owner_symbol = self.core.upsert_expr_symbol(
                 node.hir_id(),
                 &descriptor.target_ty,
                 SymbolKind::Struct,
                 false,
             );
 
+            if owner_symbol.is_none() {
+                return;
+            }
+
             // impl Bar for Foo {}
             if let Some(ty) = &descriptor.trait_ty {
                 self.core
-                    .insert_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
+                    .upsert_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
             }
 
             self.impls.add(node.hir_id(), descriptor);

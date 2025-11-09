@@ -433,12 +433,33 @@ impl<'tcx> CollectorCore<'tcx> {
         (idx, fqn)
     }
 
-    pub fn insert_expr_symbol(
+    pub fn find_expr_symbol(
         &mut self,
-        _owner: HirId,
+        owner: HirId,
         expr: &TypeExpr,
         kind: SymbolKind,
-        _is_global: bool,
+        is_global: bool,
+    ) -> Option<usize> {
+        self.find_or_insert_expr_symbol(owner, expr, kind, is_global, false)
+    }
+
+    pub fn upsert_expr_symbol(
+        &mut self,
+        owner: HirId,
+        expr: &TypeExpr,
+        kind: SymbolKind,
+        is_global: bool,
+    ) -> Option<usize> {
+        self.find_or_insert_expr_symbol(owner, expr, kind, is_global, true)
+    }
+
+    fn find_or_insert_expr_symbol(
+        &mut self,
+        owner: HirId,
+        expr: &TypeExpr,
+        kind: SymbolKind,
+        is_global: bool,
+        upsert: bool,
     ) -> Option<usize> {
         match expr {
             TypeExpr::Path { qualifier, .. } => {
@@ -495,16 +516,22 @@ impl<'tcx> CollectorCore<'tcx> {
                     }
                 }
 
+                if upsert {
+                    // We tried our best but couldn't find a matching symbol, then we inert a new one.
+                    let (idx, _fqn) = self.insert_symbol(owner, parts.last().unwrap(), kind, is_global);
+                    return Some(idx);
+                }
+
                 None
             }
             TypeExpr::Reference { inner, .. } => {
                 // Peel references like `&T` or `&&mut T` until we reach the underlying path.
-                self.insert_expr_symbol(_owner, inner, kind, _is_global)
+                self.find_or_insert_expr_symbol(owner, inner, kind, is_global, upsert)
             }
             TypeExpr::Tuple(items) => items
                 .iter()
                 // Tuple singletons show up during parsing for `impl (Foo,)` in Rust.
-                .find_map(|item| self.insert_expr_symbol(_owner, item, kind, _is_global)),
+                .find_map(|item| self.find_or_insert_expr_symbol(owner, item, kind, is_global, upsert)),
             _ => None,
         }
     }

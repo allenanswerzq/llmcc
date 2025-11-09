@@ -403,8 +403,12 @@ fn render_symbol_dependencies(entries: &[SymbolDependencySnapshot]) -> String {
         depends.sort();
         let mut depended = row.depended_by.clone();
         depended.sort();
-        let _ = writeln!(buf, "{} -> [{}]", row.label, depends.join(", "));
-        let _ = writeln!(buf, "{} <- [{}]", row.label, depended.join(", "));
+        if !depends.is_empty() {
+            let _ = writeln!(buf, "{} -> [{}]", row.label, depends.join(", "));
+        }
+        if !depended.is_empty() {
+            let _ = writeln!(buf, "{} <- [{}]", row.label, depended.join(", "));
+        }
     }
     buf
 }

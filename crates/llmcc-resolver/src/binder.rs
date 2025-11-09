@@ -61,7 +61,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         self.scopes.scoped_symbol()
     }
 
-    fn lookup_in_locals(
+    pub fn lookup_in_locals(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -88,7 +88,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         None
     }
 
-    fn lookup_in_globals(
+    pub fn lookup_in_globals(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -114,6 +114,8 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         None
     }
 
+    /// Look up a symbol by its suffix parts, optionally filtering by kind and unit index.
+    /// This method first searches in local scopes, then in global scope.
     pub fn lookup_symbol_suffix(
         &self,
         suffix: &[InternedStr],
@@ -122,6 +124,25 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
     ) -> Option<&'tcx Symbol> {
         self.lookup_in_locals(suffix, kind, unit_index)
             .or_else(|| self.lookup_in_globals(suffix, kind, unit_index))
+    }
+
+    pub fn lookup_symbol_in_globals(
+        &self,
+        symbol: &[String],
+        kind: Option<SymbolKind>,
+        unit_index: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        if symbol.is_empty() {
+            return None;
+        }
+
+        let suffix: Vec<_> = symbol
+            .iter()
+            .rev()
+            .map(|segment| self.interner().intern(segment))
+            .collect();
+
+        self.lookup_in_globals(&suffix, kind, unit_index)
     }
 
     pub fn lookup_symbol(
@@ -134,38 +155,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             return None;
         }
 
-        let mut parts: Vec<String> = symbol.to_vec();
-        while matches!(
-            parts.first().map(String::as_str),
-            Some("self" | "Self" | "super" | "crate")
-        ) {
-            parts.remove(0);
-        }
-
-        if parts.is_empty() {
-            return None;
-        }
-
-        if kind.is_none() {
-            const PRIORITIES: &[SymbolKind] = &[
-                SymbolKind::Struct,
-                SymbolKind::Enum,
-                SymbolKind::Function,
-                SymbolKind::Const,
-                SymbolKind::Trait,
-                SymbolKind::Module,
-            ];
-
-            for candidate in PRIORITIES {
-                if let Some(found) = self.lookup_symbol(&parts, Some(*candidate), unit_index) {
-                    return Some(found);
-                }
-            }
-
-            return None;
-        }
-
-        let suffix: Vec<_> = parts
+        let suffix: Vec<_> = symbol
             .iter()
             .rev()
             .map(|segment| self.interner().intern(segment))
