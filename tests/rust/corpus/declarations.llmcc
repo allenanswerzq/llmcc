@@ -77,24 +77,16 @@ fn accumulate(self) -> Machine<{State::Accumulate}> {}
 fn foo(bar: impl for<'a> Baz<Quux<'a>>) {}
 
 --- expect:symbols ---
-u0:1  | Function | main        | main
-u0:2  | Function | add         | add
-u0:3  | Variable | x           | add::x
-u0:4  | Variable | y           | add::y
-u0:5  | Function | takes_slice | takes_slice
-u0:6  | Variable | slice       | takes_slice::slice
-u0:7  | Function | foo         | foo
-u0:8  | Function | foo         | foo
-u0:9  | Function | foo         | foo
-u0:10 | Function | foo         | foo
-u0:11 | Variable | x           | foo::x
-u0:12 | Function | foo         | foo
-u0:13 | Variable | x           | foo::x
-u0:14 | Variable | x           | foo::x
-u0:15 | Function | accumulate  | accumulate
-u0:16 | Variable | self        | accumulate::self
-u0:17 | Function | foo         | foo
-u0:18 | Variable | bar         | foo::bar
+u0:1  | Function | main        | main        |
+u0:2  | Function | add         | add         |
+u0:3  | Function | takes_slice | takes_slice |
+u0:4  | Function | foo         | foo         |
+u0:5  | Function | foo         | foo         |
+u0:6  | Function | foo         | foo         |
+u0:7  | Function | foo         | foo         |
+u0:8  | Function | foo         | foo         |
+u0:9  | Function | accumulate  | accumulate  |
+u0:10 | Function | foo         | foo         |
 
 
 
@@ -128,14 +120,12 @@ fn triples(a: impl B) -> impl Iterator<Item=(Foo)> {
 u0:1 | Struct   | B       | B          |
 u0:2 | Struct   | Foo     | Foo        |
 u0:3 | Function | triples | triples    |
-u0:4 | Variable | a       | triples::a |
 
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:3]
 u0:2 <- [u0:3]
-u0:3 -> [u0:1, u0:2, u0:4]
-u0:4 <- [u0:3]
+u0:3 -> [u0:1, u0:2]
 
 
 
@@ -149,7 +139,6 @@ fn foo<'a>(x: impl 'a + Clone) {}
 
 --- expect:symbols ---
 u0:1 | Function | foo | foo
-u0:2 | Variable | x   | foo::x
 
 
 
@@ -164,7 +153,6 @@ fn capture<T>(&self) -> impl Iterator<Item = usize> + use<'_, T> {
 
 --- expect:symbols ---
 u0:1 | Function | capture | capture
-u0:2 | Variable | self    | capture::self
 
 
 
@@ -179,7 +167,6 @@ fn capture(&self) -> impl Iterator<Item = usize> + use<> {
 
 --- expect:symbols ---
 u0:1 | Function | capture | capture
-u0:2 | Variable | self    | capture::self
 
 
 
@@ -215,7 +202,6 @@ pub unsafe extern "C" fn c_variadic_no_use(fmt: *const i8, mut ap: ...) -> i32 {
 u0:1 | Function | foo               | foo
 u0:2 | Function | printf            | printf
 u0:3 | Function | c_variadic_no_use | c_variadic_no_use [global]
-u0:4 | Variable | fmt               | c_variadic_no_use::fmt
 
 
 
@@ -514,17 +500,12 @@ pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
 --- expect:symbols ---
 u0:1 | Struct   | Text         | Text
 u0:2 | Function | splice       | splice                 | [global]
-u0:3 | Variable | self         | splice::self
-u0:4 | Variable | old_range    | splice::old_range
-u0:5 | Variable | new_text     | splice::new_text
-u0:6 | Function | uninit_array | uninit_array           | [global]
+u0:3 | Function | uninit_array | uninit_array           | [global]
 
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:2]
-u0:2 -> [u0:1, u0:4, u0:5]
-u0:4 <- [u0:2]
-u0:5 <- [u0:2]
+u0:2 -> [u0:1]
 
 --- expect:blocks ---
 u0:1 | root  | block#1
@@ -547,7 +528,6 @@ fn foo(mut x : u32) {
 
 --- expect:symbols ---
 u0:1 | Function | foo | foo
-u0:2 | Variable | x   | foo::x
 
 
 
@@ -574,27 +554,17 @@ u0:2  | Struct   | Y   | Y     |
 u0:3  | Struct   | T   | T     |
 u0:4  | Struct   | U   | U     |
 u0:5  | Function | f1  | f1    |
-u0:6  | Variable | x   | f1::x |
-u0:7  | Variable | y   | f1::y |
-u0:8  | Function | f2  | f2    |
-u0:9  | Variable | x   | f2::x |
-u0:10 | Function | f3  | f3    |
-u0:11 | Variable | x   | f3::x |
-u0:12 | Variable | y   | f3::y |
+u0:6  | Function | f2  | f2    |
+u0:7  | Function | f3  | f3    |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:5]
-u0:10 -> [u0:11, u0:12, u0:3, u0:4]
-u0:11 <- [u0:10]
-u0:12 <- [u0:10]
-u0:2 <- [u0:8]
-u0:3 <- [u0:10]
-u0:4 <- [u0:10]
-u0:5 -> [u0:1, u0:6, u0:7]
-u0:6 <- [u0:5]
-u0:7 <- [u0:5]
-u0:8 -> [u0:2, u0:9]
-u0:9 <- [u0:8]
+u0:2 <- [u0:6]
+u0:3 <- [u0:7]
+u0:4 <- [u0:7]
+u0:5 -> [u0:1]
+u0:6 -> [u0:2]
+u0:7 -> [u0:3, u0:4]
 
 
 --- expect:blocks ---
@@ -606,6 +576,7 @@ u0:5 | class | U
 u0:6 | func  | f1
 u0:7 | func  | f2
 u0:8 | func  | f3
+
 
 --- expect:block-deps ---
 u0:2 <- [u0:6]
@@ -658,6 +629,8 @@ u0:4 | Function | func | func
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:4]
+u0:2 -> [u0:3]
+u0:3 <- [u0:2]
 u0:4 -> [u0:1]
 
 
@@ -711,14 +684,21 @@ type-aliases
 
 
 --- file: src/main.rs ---
+struct Tree<T>;
+
 type Inch = u64;
-type Name<T> = Vec<T>;
+type Name<T> = Tree<T>;
 type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
 
 --- expect:symbols ---
-none
+u0:1 | Struct      | Tree        | Tree        |
+u0:2 | DynamicType | Inch        | Inch        |
+u0:3 | DynamicType | Name        | Name        |
+u0:4 | DynamicType | LazyResolve | LazyResolve |
 
-
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:3 -> [u0:1]
 
 
 ===============================================================================
@@ -731,7 +711,8 @@ type Foo<T> where T: Copy = Box<T>;
 type Assoc3 where = () where;
 
 --- expect:symbols ---
-none
+u0:1 | DynamicType | Foo    | Foo    |
+u0:2 | DynamicType | Assoc3 | Assoc3 |
 
 
 
@@ -888,15 +869,10 @@ fn bar(x: i32, y: i32) {}
 --- expect:symbols ---
 u0:1 | Function | foo | foo
 u0:2 | Function | bar | bar
-u0:3 | Variable | x   | bar::x |
-u0:4 | Variable | y   | bar::y |
 
 --- expect:symbol-deps ---
 u0:1 -> [u0:2]
-u0:2 -> [u0:3, u0:4]
 u0:2 <- [u0:1]
-u0:3 <- [u0:2]
-u0:4 <- [u0:2]
 
 ===============================================================================
 inherent-impls
@@ -923,21 +899,17 @@ u0:1  | Struct   | Person    | Person                 |
 u0:2  | Struct   | Machine   | Machine                |
 u0:3  | Const    | leg_count | Person::leg_count      |
 u0:4  | Function | walk      | Person::walk           |
-u0:5  | Variable | self      | Person::walk::self     |
-u0:6  | Function | walk_mut  | Person::walk_mut       |
-u0:7  | Variable | self      | Person::walk_mut::self |
-u0:8  | Function | talk      | Person::talk           |
-u0:9  | Variable | self      | Person::talk::self     |
-u0:10 | Function | talk_mut  | Person::talk_mut       |
-u0:11 | Variable | self      | Person::talk_mut::self |
+u0:5  | Function | walk_mut  | Person::walk_mut       |
+u0:6  | Function | talk      | Person::talk           |
+u0:7  | Function | talk_mut  | Person::talk_mut       |
 
 --- expect:symbol-deps ---
-u0:1 -> [u0:10, u0:3, u0:4, u0:6, u0:8]
-u0:10 <- [u0:1]
+u0:1 -> [u0:3, u0:4, u0:5, u0:6, u0:7]
 u0:3 <- [u0:1]
 u0:4 <- [u0:1]
+u0:5 <- [u0:1]
 u0:6 <- [u0:1]
-u0:8 <- [u0:1]
+u0:7 <- [u0:1]
 
 
 ===============================================================================
@@ -960,15 +932,13 @@ impl Person {
 --- expect:symbols ---
 u0:1 | Struct   | Person | Person             | [global]
 u0:2 | Function | walk   | Person::walk       |
-u0:3 | Variable | self   | Person::walk::self |
-u1:4 | Struct   | Person | Person             |
-u1:5 | Function | talk   | Person::talk       |
-u1:6 | Variable | self   | Person::talk::self |
+u1:3 | Struct   | Person | Person             |
+u1:4 | Function | talk   | Person::talk       |
 
 --- expect:symbol-deps ---
-u0:1 -> [u0:2, u1:5]
+u0:1 -> [u0:2, u1:4]
 u0:2 <- [u0:1]
-u1:5 <- [u0:1]
+u1:4 <- [u0:1]
 
 ===============================================================================
 inherent-impls-no-defines
@@ -981,7 +951,8 @@ impl Person {
 }
 
 --- expect:symbols ---
-none
+u0:1 | Struct   | Person | Person       |
+u0:2 | Function | walk   | Person::walk |
 
 ===============================================================================
 trait-impls
@@ -997,8 +968,9 @@ impl ConvertTo<i64> for i32 {
 }
 
 --- expect:symbols ---
-u0:1 | Function | convert | convert
-u0:2 | Variable | self    | convert::self
+u0:1 | Struct   | Iter      | Iter         |
+u0:2 | Struct   | i32       | i32          |
+u0:3 | Function | convert   | i32::convert |
 
 
 
@@ -1012,7 +984,7 @@ unsafe impl Foo {
 }
 
 --- expect:symbols ---
-none
+u0:1 | Struct | Foo | Foo |
 
 
 
@@ -1026,7 +998,7 @@ disable-automatically-derived-trait-impls
 impl !Send for Foo {}
 
 --- expect:symbols ---
-none
+u0:1 | Struct | Foo | Foo |
 
 
 
@@ -1056,7 +1028,7 @@ impl<K: Debug + Ord> Debug for OccupiedError<K>;
 impl<K: Debug + Ord> Display for OccupiedError<K>;
 
 --- expect:symbols ---
-none
+u0:1 | Struct | OccupiedError | OccupiedError |
 
 
 
@@ -1075,7 +1047,8 @@ impl Foo {
 }
 
 --- expect:symbols ---
-u0:1 | Function | bar | bar
+u0:1 | Struct   | Foo | Foo      |
+u0:2 | Function | bar | Foo::bar |
 
 
 
@@ -1092,10 +1065,9 @@ pub trait Item: Clone + Eq + fmt::Debug {
 unsafe trait Foo { }
 
 --- expect:symbols ---
-u0:1 | Struct   | Item      | Item [global]
-u0:2 | Function | summarize | Item::summarize
-u0:3 | Variable | self      | Item::summarize::self
-u0:4 | Struct   | Foo       | Foo
+u0:1 | Struct   | Item      | Item            | [global]
+u0:2 | Function | summarize | Item::summarize |
+u0:3 | Struct   | Foo       | Foo             |
 
 
 
@@ -1105,18 +1077,25 @@ trait-declarations-with-optional-type-parameters
 
 
 --- file: src/main.rs ---
-trait Add<RHS=Self> {
+struct Foo;
+
+trait Add<RHS=Foo> {
     type Output;
     fn add(self, rhs: RHS) -> Self::Output;
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Add  | Add
-u0:2 | Function | add  | Add::add
-u0:3 | Variable | self | Add::add::self
-u0:4 | Variable | rhs  | Add::add::rhs
+u0:1 | Struct      | Foo    | Foo         |
+u0:2 | Struct      | Add    | Add         |
+u0:3 | DynamicType | Output | Add::Output |
+u0:4 | Function    | add    | Add::add    |
 
-
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1, u0:3, u0:4]
+u0:3 <- [u0:2, u0:4]
+u0:4 -> [u0:3]
+u0:4 <- [u0:2]
 
 ===============================================================================
 unsized-types-in-trait-bounds
@@ -1132,8 +1111,6 @@ fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
 --- expect:symbols ---
 u0:1 | Struct   | Foo        | Foo
 u0:2 | Function | univariant | univariant
-u0:3 | Variable | this       | univariant::this
-u0:4 | Variable | that       | univariant::that
 
 
 
@@ -1146,7 +1123,7 @@ trait-bounds-in-type-arguments-in-trait
 impl<T: AstDeref<Target: HasNodeId>> HasNodeId for T {}
 
 --- expect:symbols ---
-none
+u0:1 | Struct | T | T |
 
 
 
@@ -1165,7 +1142,6 @@ pub trait A: B + C + D {
 --- expect:symbols ---
 u0:1 | Struct   | A    | A [global]
 u0:2 | Function | f    | A::f
-u0:3 | Variable | self | A::f::self
 
 
 
@@ -1181,7 +1157,9 @@ pub trait Graph {
 }
 
 --- expect:symbols ---
-u0:1 | Struct | Graph | Graph [global]
+u0:1 | Struct      | Graph | Graph    | [global]
+u0:2 | DynamicType | N     | Graph::N | [global]
+u0:3 | DynamicType | E     | Graph::E | [global]
 
 
 
@@ -1196,9 +1174,14 @@ impl Trait for T {
 }
 
 --- expect:symbols ---
-none
+u0:1 | Struct | T | T |
+u0:2 | DynamicType | Associated | T::Associated |
 
-
+--- expect:symbol-deps ---
+u0:1 -> [u0:2]
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+u0:2 <- [u0:1]
 
 
 ===============================================================================
@@ -1223,26 +1206,69 @@ where
 {}
 
 --- expect:symbols ---
-u0:1 | Struct   | Database      | Database [global]
-u0:2 | Function | use_database1 | use_database1
-u0:3 | Function | use_database2 | use_database2
+u0:1 | Struct      | Database      | Database      | [global]
+u0:2 | DynamicType | F             | Database::F   | [global]
+u0:3 | Struct      | Foo           | Foo           |
+u0:4 | DynamicType | F             | Foo::F        |
+u0:5 | Function    | use_database1 | use_database1 |
+u0:6 | Function    | use_database2 | use_database2 |
 
 
 
 ===============================================================================
-higher-ranked-types
+higher-ranked-types-basic
 ===============================================================================
 
 
 --- file: src/main.rs ---
+struct AddAssign<T>;
+
 trait T: for<'a> AddAssign<&'a usize> {
 }
 
 type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
 
 --- expect:symbols ---
-u0:1 | Struct | T | T
+u0:1 | Struct      | AddAssign  | AddAssign |
+u0:2 | Struct      | T          | T         |
+u0:3 | DynamicType | FnObject   | FnObject  |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+
+===============================================================================
+higher-ranked-types-with-trait-bounds
+===============================================================================
+
+
+--- file: src/main.rs ---
+trait Foo {};
+trait Bar {};
+trait Baz<T> {};
+
+struct AddAssign<T: Foo, U: Baz<u32>>;
+
+trait T: for<'a> AddAssign<&'a usize> {
+}
+
+type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
+
+--- expect:symbols ---
+u0:1 | Struct      | Foo       | Foo       |
+u0:2 | Struct      | Bar       | Bar       |
+u0:3 | Struct      | Baz       | Baz       |
+u0:4 | Struct      | AddAssign | AddAssign |
+u0:5 | Struct      | T         | T         |
+u0:6 | DynamicType | FnObject  | FnObject  |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:4]
+u0:3 <- [u0:4]
+u0:4 -> [u0:1, u0:3]
+u0:4 <- [u0:5]
+u0:5 -> [u0:4]
 
 
 ===============================================================================
@@ -1258,10 +1284,10 @@ pub(crate) fn c() {}
 pub(in crate::d) fn e() {}
 
 --- expect:symbols ---
-u0:1 | Function | a | a [global]
+u0:1 | Function | a | a | [global]
 u0:2 | Function | b | b
 u0:3 | Function | c | c
-u0:4 | Function | c | c [global]
+u0:4 | Function | c | c | [global]
 u0:5 | Function | e | e
 
 
@@ -1277,9 +1303,7 @@ fn bar(bool: bool) {}
 
 --- expect:symbols ---
 u0:1 | Function | foo  | foo
-u0:2 | Variable | str  | foo::str
-u0:3 | Function | bar  | bar
-u0:4 | Variable | bool | bar::bool
+u0:2 | Function | bar  | bar
 
 
 
@@ -1321,17 +1345,28 @@ pub trait A<B> where B: C,
 {
 }
 
-fn foo<A>() where A: B + As<f64>, f64: As<A> {}
+struct Foo;
+
+fn foo<A>() where A: Foo + As<f64>, f64: As<A> {}
 
 impl<A> Default for B<A> where *mut A: C + D {}
 
 --- expect:symbols ---
-u0:1 | Function | walk | walk
-u0:2 | Variable | self | walk::self
-u0:3 | Variable | it   | walk::it
-u0:4 | Struct   | A    | A [global]
-u0:5 | Function | foo  | foo
+u0:1 | Function | walk | walk |
+u0:2 | Struct   | Iter | Iter |
+u0:3 | Struct   | B    | B    |
+u0:4 | Struct   | Read | Read |
+u0:5 | Struct   | A    | A    | [global]
+u0:6 | Struct   | Foo  | Foo  |
+u0:7 | Function | foo  | foo  |
 
+--- expect:symbol-deps ---
+u0:3 -> [u0:5]
+u0:3 <- [u0:5]
+u0:5 -> [u0:3]
+u0:5 <- [u0:3, u0:7]
+u0:6 <- [u0:7]
+u0:7 -> [u0:5, u0:6]
 
 
 ===============================================================================
@@ -1350,7 +1385,6 @@ unsafe extern "C" {}
 
 --- expect:symbols ---
 u0:1 | Function | napi_module_register | napi_module_register [global]
-u0:2 | Variable | mod_                 | napi_module_register::mod_
 
 
 
@@ -1379,16 +1413,23 @@ reserved-keywords-in-path
 
 
 --- file: src/main.rs ---
+struct B;
+struct C;
+
 struct A {
   a: default::B,
   b: union::C,
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | A | A
-u0:2 | Variable | a | A::a
-u0:3 | Variable | b | A::b
+u0:1 | Struct | B | B |
+u0:2 | Struct | C | C |
+u0:3 | Struct | A | A |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 <- [u0:3]
+u0:3 -> [u0:1, u0:2]
 
 ===============================================================================
 array-constraint-in-where-clause
@@ -1396,6 +1437,8 @@ array-constraint-in-where-clause
 
 
 --- file: src/main.rs ---
+struct D;
+
 fn foo<D>(val: D)
 where
     [u8; 32]: From<D>,
@@ -1403,9 +1446,12 @@ where
 {}
 
 --- expect:symbols ---
-u0:1 | Function | foo | foo
-u0:2 | Variable | val | foo::val
+u0:1 | Struct   | D   | D
+u0:2 | Function | foo | foo
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
 
 
 ===============================================================================

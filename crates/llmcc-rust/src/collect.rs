@@ -1,4 +1,4 @@
-use crate::describe::{parameter::ParameterDescriptor, RustDescriptor, Visibility};
+use crate::describe::{RustDescriptor, Visibility};
 use crate::token::{AstVisitorRust, LangRust};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
@@ -145,9 +145,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_self_parameter(&mut self, node: HirNode<'tcx>) {
-        let _ = self
-            .core
-            .insert_symbol(node.hir_id(), "self", SymbolKind::Variable, false);
         self.visit_children(&node);
     }
 
@@ -164,6 +161,21 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 node,
                 self.unit().hir_next()
             );
+        }
+    }
+
+    fn visit_type_item(&mut self, node: HirNode<'tcx>) {
+        self.visit_associated_type(node);
+    }
+
+    fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
+        if let Some((sym_idx, _)) = self
+            .core
+            .insert_field_symbol(&node, LangRust::field_name, SymbolKind::DynamicType)
+        {
+            self.visit_children_scope(&node, Some(sym_idx));
+        } else {
+            self.visit_children(&node);
         }
     }
 
@@ -184,7 +196,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             // impl Bar for Foo {}
             if let Some(ty) = &descriptor.trait_ty {
                 self.core
-                    .upsert_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
+                    .find_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
             }
 
             self.impls.add(node.hir_id(), descriptor);
@@ -252,6 +264,18 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
         self.visit_const_item(node);
+    }
+
+    fn visit_type_parameter(&mut self, node: HirNode<'tcx>) {
+        let child = node.opt_child_by_field(self.unit(), LangRust::field_default_type);
+        if let Some(_child) = child {
+            self.visit_children(&node);
+        } else {
+            let child = node.opt_child_by_field(self.unit(), LangRust::field_bounds);
+            if let Some(child) = child {
+                self.visit_children(&child);
+            }
+        }
     }
 
     fn visit_struct_item(&mut self, node: HirNode<'tcx>) {

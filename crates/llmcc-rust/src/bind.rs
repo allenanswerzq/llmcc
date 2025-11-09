@@ -146,12 +146,35 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         // if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
         //     if matches!(
         //         parent_symbol.kind(),
-        //         SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Impl
+        //         SymbolKind::Struct | SymbolKind::Enum
         //     ) {
         //         self.core
         //             .propagate_child_dependencies(parent_symbol, func_symbol);
         //     }
         // }
+    }
+
+    fn visit_type_parameter(&mut self, node: HirNode<'tcx>) {
+        let child = node.opt_child_by_field(self.unit(), LangRust::field_default_type);
+        if let Some(_child) = child {
+            self.visit_children(&node);
+        } else {
+            let child = node.opt_child_by_field(self.unit(), LangRust::field_bounds);
+            if let Some(child) = child {
+                self.visit_children(&child);
+            }
+        }
+    }
+
+    fn visit_type_item(&mut self, node: HirNode<'tcx>) {
+       self.visit_associated_type(node); 
+    }
+
+    fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::DynamicType);
+        self.visit_children_scope(&node, symbol);
     }
 
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
@@ -209,8 +232,16 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_trait_item(&mut self, node: HirNode<'tcx>) {
         let symbol = self
             .core
-            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Trait);
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Trait)
+            .or_else(|| {
+                self.core
+                    .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Struct)
+            });
         self.visit_children_scope(&node, symbol);
+    }
+
+    fn visit_function_signature_item(&mut self, node: HirNode<'tcx>) {
+        self.visit_function_item(node);
     }
 
     fn visit_block(&mut self, node: HirNode<'tcx>) {

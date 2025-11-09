@@ -199,6 +199,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         let mut symbols = Vec::new();
         self.lookup_expr_symbols_with(expr, SymbolKind::Struct, &mut symbols);
         self.lookup_expr_symbols_with(expr, SymbolKind::Enum, &mut symbols);
+        self.lookup_expr_symbols_with(expr, SymbolKind::DynamicType, &mut symbols);
         symbols
     }
 

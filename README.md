@@ -8,6 +8,12 @@ llmcc is a universal context builder for any language, any document.
 
 llmcc explores automated context generation through symbolic graph analysis. bridging the semantic gap between human-written code/documents and AI model understanding, using modern compiler design principles.
 
+## design
+
+<p align="left">
+  <img src="doc/design.png" alt="llmcc design diagram" style="max-width:900px; width:50%; height:auto;">
+</p>
+
 
 ## examples
 
