@@ -541,9 +541,7 @@ fn normalize_graph_path(path: &str) -> String {
     use std::path::Path;
 
     let (path_part, line_part) = match path.rsplit_once(':') {
-        Some((p, line)) if line.chars().all(|ch| ch.is_ascii_digit()) => {
-            (p, format!(":{line}"))
-        }
+        Some((p, line)) if line.chars().all(|ch| ch.is_ascii_digit()) => (p, format!(":{line}")),
         _ => (path, String::new()),
     };
 

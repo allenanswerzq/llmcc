@@ -3,7 +3,7 @@ use std::path::Path;
 
 use crate::BlockId;
 
-const EMPTY_GRAPH_DOT: &str = "digraph DesignGraph {\n}\n";
+const EMPTY_GRAPH_DOT: &str = "digraph project {\n}\n";
 
 #[derive(Clone)]
 pub(crate) struct CompactNode {
@@ -59,7 +59,7 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
             .push(idx);
     }
 
-    let mut output = String::from("digraph DesignGraph {\n");
+    let mut output = String::from("digraph project {\n");
 
     for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter_mut().enumerate() {
         node_indices.sort_by(|&a, &b| {

@@ -20,7 +20,7 @@ pub fn add(a: i32, b: i32) -> i32 {
  0 | Function     | crate::add [global]
 
 --- expect:graph ---
-digraph DesignGraph {
+digraph project {
     // adjacency snapshot here
 }
 
