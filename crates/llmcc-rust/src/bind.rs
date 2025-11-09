@@ -106,18 +106,18 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Struct);
         self.visit_children_scope(&node, symbol);
 
-        let descriptor = self.collection().structs.find(node.hir_id());
-        if let (Some(struct_symbol), Some(desc)) = (symbol, descriptor) {
-            for field in &desc.fields {
-                if let Some(type_expr) = field.type_annotation.as_ref() {
-                    for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
-                        struct_symbol.add_dependency(type_symbol);
-                    }
-                }
-            }
-        } else {
-            tracing::warn!("failed to build descriptor for struct: {}", node.hir_id());
-        }
+        // let descriptor = self.collection().structs.find(node.hir_id());
+        // if let (Some(struct_symbol), Some(desc)) = (symbol, descriptor) {
+        //     for field in &desc.fields {
+        //         if let Some(type_expr) = field.type_annotation.as_ref() {
+        //             for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
+        //                 struct_symbol.add_dependency(type_symbol);
+        //             }
+        //         }
+        //     }
+        // } else {
+        //     tracing::warn!("failed to build descriptor for struct: {}", node.hir_id());
+        // }
     }
 
     fn visit_enum_item(&mut self, node: HirNode<'tcx>) {

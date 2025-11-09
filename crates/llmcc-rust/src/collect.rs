@@ -306,17 +306,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         }
     }
 
-    fn visit_field_declaration(&mut self, node: HirNode<'tcx>) {
-        self.visit_children(&node);
-        let kind = match self.core.parent_symbol().map(|sym| sym.kind) {
-            Some(SymbolKind::EnumVariant) => SymbolKind::Field,
-            _ => SymbolKind::Variable,
-        };
-        let _ = self
-            .core
-            .insert_field_symbol(&node, LangRust::field_name, kind);
-    }
-
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
         let owner_symbol = self
             .core

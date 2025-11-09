@@ -1,45 +1,43 @@
 ===============================================================================
-function-call-dependencies
+struct-binding
 ===============================================================================
 
 
 --- file: src/main.rs ---
-fn leaf() {}
+struct Foo;
 
-fn middle() {
-    leaf();
-}
-
-fn root() {
-    middle();
+struct Bar {
+    a: i32,
+    b: Vec<Foo>,
 }
 
 --- expect:symbols ---
-u0:1 | Function | leaf   | leaf
-u0:2 | Function | middle | middle
-u0:3 | Function | root   | root
+u0:1 | Struct   | Foo | Foo
+u0:2 | Struct   | Bar | Bar
+
 
 --- expect:symbol-deps ---
 u0:1 -> []
 u0:1 <- [u0:2]
 u0:2 -> [u0:1]
-u0:2 <- [u0:3]
-u0:3 -> [u0:2]
-u0:3 <- []
+u0:2 <- []
 
 --- expect:blocks ---
-u0:1 | func | leaf  
-u0:2 | func | middle
-u0:4 | func | root  
+u0:1 | class | Foo
+u0:2 | class | Bar
 
 --- expect:block-deps ---
-u0:1 -> []
 u0:1 <- [u0:2]
 u0:2 -> [u0:1]
-u0:2 <- [u0:4]
-u0:4 -> [u0:2]
-u0:4 <- []
 
 --- expect:graph ---
 digraph DesignGraph {
+  subgraph cluster_0 {
+    label=".tmp3neR8g";
+    style=filled;
+    color=lightgrey;
+    n0 [label="Bar", full_path="/tmp/.tmp3neR8g/src/main.rs:3"];
+    n1 [label="Foo", full_path="/tmp/.tmp3neR8g/src/main.rs:1"];
+  }
+  n0 -> n1;
 }

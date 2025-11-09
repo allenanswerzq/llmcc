@@ -6,6 +6,7 @@ use anyhow::{anyhow, Context, Result};
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::graph_builder::{build_llmcc_graph, BlockRelation, GraphBuildConfig, ProjectGraph};
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
+use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_resolver::apply_collected_symbols;
@@ -415,6 +416,7 @@ fn normalize(kind: &str, text: &str) -> String {
     match kind {
         "symbols" | "blocks" => normalize_symbols(&canonical),
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
+        "graph" => normalize_graph(&canonical),
         _ => canonical,
     }
 }
@@ -454,11 +456,59 @@ fn normalize_symbols(text: &str) -> String {
 fn normalize_symbol_deps(text: &str) -> String {
     let mut rows: Vec<_> = text
         .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| line.trim().to_string())
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || is_empty_relation(trimmed) {
+                return None;
+            }
+            Some(trimmed.to_string())
+        })
         .collect();
     rows.sort();
     rows.join("\n")
+}
+
+fn is_empty_relation(line: &str) -> bool {
+    if let Some((_, rhs)) = line.split_once("->") {
+        if rhs.trim() == "[]" {
+            return true;
+        }
+    }
+    if let Some((_, rhs)) = line.split_once("<-") {
+        if rhs.trim() == "[]" {
+            return true;
+        }
+    }
+    false
+}
+
+fn normalize_graph(text: &str) -> String {
+    const PLACEHOLDER: &str = ".tmpLLMCC";
+
+    let mut normalized = String::with_capacity(text.len());
+    let chars: Vec<char> = text.chars().collect();
+    let mut idx = 0;
+
+    while idx < chars.len() {
+        if chars[idx] == '.'
+            && idx + 3 < chars.len()
+            && chars[idx + 1] == 't'
+            && chars[idx + 2] == 'm'
+            && chars[idx + 3] == 'p'
+        {
+            normalized.push_str(PLACEHOLDER);
+            idx += 4;
+
+            while idx < chars.len() && chars[idx].is_ascii_alphanumeric() {
+                idx += 1;
+            }
+        } else {
+            normalized.push(chars[idx]);
+            idx += 1;
+        }
+    }
+
+    normalized
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -527,6 +577,7 @@ where
     let mut collections = Vec::with_capacity(unit_count);
     for index in 0..unit_count {
         let unit = cc.compile_unit(index);
+        print_llmcc_ir(unit);
         let collected = L::collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
@@ -542,6 +593,7 @@ where
         if let Some(project) = project_graph.as_mut() {
             let unit_graph = build_llmcc_graph::<L>(unit, index, GraphBuildConfig)
                 .map_err(|err| anyhow!(err))?;
+            print_llmcc_graph(unit_graph.root(), unit);
             project.add_child(unit_graph);
         }
     }
