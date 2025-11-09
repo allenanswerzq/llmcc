@@ -3,12 +3,14 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
-use llmcc_core::context::CompileCtxt;
-use llmcc_core::graph_builder::{build_llmcc_graph, BlockRelation, GraphBuildConfig, ProjectGraph};
+use llmcc_core::context::{CompileCtxt, CompileUnit};
+use llmcc_core::graph_builder::{
+    build_llmcc_graph, BlockId, BlockRelation, GraphBuildConfig, ProjectGraph,
+};
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
-use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
+use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
 use llmcc_resolver::apply_collected_symbols;
 use llmcc_resolver::collector::CollectedSymbols;
 use llmcc_rust::LangRust;
@@ -197,26 +199,34 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
         .expectations
         .iter()
         .any(|expect| expect.kind == "blocks" || expect.kind == "block-deps");
+    let needs_block_graph = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "block-graph");
     let needs_symbol_deps = case
         .expectations
         .iter()
         .any(|expect| expect.kind == "symbol-deps");
 
-    if !needs_symbols && !needs_graph && !needs_block_reports && !needs_symbol_deps {
+    if !needs_symbols
+        && !needs_graph
+        && !needs_block_reports
+        && !needs_block_graph
+        && !needs_symbol_deps
+    {
         return Ok(PipelineSummary::default());
     }
 
     let project = materialize_case(case)?;
     let summary = match case.lang.as_str() {
-        "rust" => {
-            collect_pipeline::<LangRust>(
-                &project.paths,
-                needs_symbols,
-                needs_graph,
-                needs_block_reports,
-                needs_symbol_deps,
-            )?
-        }
+        "rust" => collect_pipeline::<LangRust>(
+            &project.paths,
+            needs_symbols,
+            needs_graph,
+            needs_block_reports,
+            needs_block_graph,
+            needs_symbol_deps,
+        )?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -237,6 +247,7 @@ struct PipelineSummary {
     block_list: Option<Vec<BlockSnapshot>>,
     block_deps: Option<Vec<SymbolDependencySnapshot>>,
     symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
+    block_graph: Option<String>,
 }
 
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
@@ -259,11 +270,11 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
             .as_ref()
             .map(|list| render_block_snapshot(list))
             .ok_or_else(|| {
-            anyhow!(
-                "case {} requested blocks output but summary missing",
-                case_id
-            )
-        }),
+                anyhow!(
+                    "case {} requested blocks output but summary missing",
+                    case_id
+                )
+            }),
         "block-deps" => summary
             .block_deps
             .as_ref()
@@ -274,11 +285,16 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                     case_id
                 )
             }),
+        "block-graph" => summary.block_graph.clone().ok_or_else(|| {
+            anyhow!(
+                "case {} requested block-graph output but summary missing",
+                case_id
+            )
+        }),
         "symbol-deps" => {
-            let deps = summary
-                .symbol_deps
-                .as_ref()
-                .ok_or_else(|| anyhow!("case {} requested symbol-deps but summary missing", case_id))?;
+            let deps = summary.symbol_deps.as_ref().ok_or_else(|| {
+                anyhow!("case {} requested symbol-deps but summary missing", case_id)
+            })?;
             Ok(render_symbol_dependencies(deps))
         }
         other => Err(anyhow!(
@@ -311,25 +327,29 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
         .unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
     let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
+    let fqn_width = rows.iter().map(|row| row.fqn.len()).max().unwrap_or(0);
+    let global_width = if rows.iter().any(|row| row.is_global) {
+        "[global]".len()
+    } else {
+        0
+    };
 
     let mut buf = String::new();
     for row in rows {
-        let fqn_display = if row.is_global {
-            format!("{} [global]", row.fqn)
-        } else {
-            row.fqn.clone()
-        };
         let label = format!("u{}:{}", row.unit, row.id);
         let _ = writeln!(
             buf,
-            "{:<label_width$} | {:kind_width$} | {:name_width$} | {}",
+            "{:<label_width$} | {:kind_width$} | {:name_width$} | {:fqn_width$} | {:global_width$}",
             label,
             row.kind,
             row.name,
-            fqn_display,
+            row.fqn,
+            if row.is_global { "[global]" } else { "" },
             label_width = label_width,
             kind_width = kind_width,
             name_width = name_width,
+            fqn_width = fqn_width,
+            global_width = global_width,
         );
     }
     buf
@@ -348,11 +368,7 @@ fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
             .then_with(|| a.name.cmp(&b.name))
     });
 
-    let label_width = rows
-        .iter()
-        .map(|row| row.label.len())
-        .max()
-        .unwrap_or(0);
+    let label_width = rows.iter().map(|row| row.label.len()).max().unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
     let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
 
@@ -425,7 +441,8 @@ fn normalize_symbols(text: &str) -> String {
     let mut rows: Vec<(usize, u32, String)> = text
         .lines()
         .filter_map(|line| {
-            if line.trim().is_empty() {
+            let line = line.trim();
+            if line.is_empty() {
                 return None;
             }
 
@@ -434,9 +451,21 @@ fn normalize_symbols(text: &str) -> String {
                 return None;
             }
 
-            let head = parts[0];
-            let (unit, id) = parse_unit_and_id(head);
-            let canonical = parts.join(" | ");
+            let label = parts[0];
+            let (unit, id) = parse_unit_and_id(label);
+            let kind = parts.get(1).copied().unwrap_or("");
+            let name = parts.get(2).copied().unwrap_or("");
+            let mut fqn = parts.get(3).copied().unwrap_or("");
+            let mut global = parts.get(4).copied().unwrap_or("");
+
+            if parts.len() == 4 && fqn.ends_with("[global]") {
+                if let Some(stripped) = fqn.strip_suffix(" [global]") {
+                    fqn = stripped.trim_end();
+                }
+                global = "[global]";
+            }
+
+            let canonical = format!("{label} | {kind} | {name} | {fqn} | {global}");
             Some((unit, id, canonical))
         })
         .collect();
@@ -564,6 +593,7 @@ fn collect_pipeline<L>(
     keep_symbols: bool,
     build_graph: bool,
     build_block_reports: bool,
+    build_block_graph: bool,
     keep_symbol_deps: bool,
 ) -> Result<PipelineSummary>
 where
@@ -582,7 +612,7 @@ where
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
     }
-    let mut project_graph = if build_graph || build_block_reports {
+    let mut project_graph = if build_graph || build_block_reports || build_block_graph {
         Some(ProjectGraph::new(&cc))
     } else {
         None
@@ -597,7 +627,8 @@ where
             project.add_child(unit_graph);
         }
     }
-    let (graph_dot, block_list, block_deps) = if let Some(mut project) = project_graph {
+    let (graph_dot, block_list, block_deps, block_graph) = if let Some(mut project) = project_graph
+    {
         project.link_units();
         let graph = if build_graph {
             Some(project.render_design_graph())
@@ -610,9 +641,14 @@ where
         } else {
             (None, None)
         };
-        (graph, list, deps)
+        let block_graph = if build_block_graph {
+            Some(render_block_graph(&project))
+        } else {
+            None
+        };
+        (graph, list, deps, block_graph)
     } else {
-        (None, None, None)
+        (None, None, None, None)
     };
 
     let symbols = if keep_symbols {
@@ -633,7 +669,66 @@ where
         block_list,
         block_deps,
         symbol_deps,
+        block_graph,
     })
+}
+
+fn render_block_graph(project: &ProjectGraph) -> String {
+    let mut units: Vec<_> = project.units().iter().collect();
+    if units.is_empty() {
+        return "none\n".to_string();
+    }
+
+    units.sort_by_key(|unit| unit.unit_index());
+
+    let mut sections = Vec::new();
+    for unit_graph in units {
+        let unit = project.cc.compile_unit(unit_graph.unit_index());
+        let mut buf = String::new();
+        render_block_graph_node(unit_graph.root(), unit, 0, &mut buf);
+        sections.push(buf.trim_end().to_string());
+    }
+
+    if sections.is_empty() {
+        "none\n".to_string()
+    } else {
+        let mut joined = sections.join("\n\n");
+        joined.push('\n');
+        joined
+    }
+}
+
+fn render_block_graph_node(
+    block_id: BlockId,
+    unit: CompileUnit<'_>,
+    depth: usize,
+    buf: &mut String,
+) {
+    let block = unit.bb(block_id);
+    let indent = "    ".repeat(depth);
+    let kind = block.kind().to_string();
+    let _ = write!(buf, "{}({}:{}", indent, kind, block_id.as_u32());
+
+    if let Some(name) = block
+        .base()
+        .and_then(|base| base.opt_get_name())
+        .filter(|name| !name.is_empty())
+    {
+        let _ = write!(buf, " {}", name);
+    }
+
+    let children = block.children();
+    if children.is_empty() {
+        buf.push_str(")\n");
+        return;
+    }
+
+    buf.push('\n');
+    for &child_id in children {
+        render_block_graph_node(child_id, unit, depth + 1, buf);
+    }
+    buf.push_str(&indent);
+    buf.push_str(")\n");
 }
 
 fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
@@ -665,11 +760,7 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
 
     for (sym_id, symbol) in symbol_map.iter() {
-        let label = format!(
-            "u{}:{}",
-            symbol.unit_index().unwrap_or_default(),
-            sym_id.0
-        );
+        let label = format!("u{}:{}", symbol.unit_index().unwrap_or_default(), sym_id.0);
         cache.insert(
             sym_id.0,
             SymbolDependencySnapshot {
@@ -684,11 +775,7 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
         let deps = symbol.depends.read().clone();
         for dep in deps {
             if let Some(target) = symbol_map.get(&dep) {
-                let dep_label = format!(
-                    "u{}:{}",
-                    target.unit_index().unwrap_or_default(),
-                    dep.0
-                );
+                let dep_label = format!("u{}:{}", target.unit_index().unwrap_or_default(), dep.0);
                 if let Some(entry) = cache.get_mut(&sym_id.0) {
                     entry.depends_on.push(dep_label.clone());
                 }
@@ -710,7 +797,9 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     }
     output
 }
-fn render_block_reports(project: &ProjectGraph) -> (Vec<BlockSnapshot>, Vec<SymbolDependencySnapshot>) {
+fn render_block_reports(
+    project: &ProjectGraph,
+) -> (Vec<BlockSnapshot>, Vec<SymbolDependencySnapshot>) {
     use std::collections::BTreeMap;
     use std::collections::HashMap;
 
@@ -724,6 +813,9 @@ fn render_block_reports(project: &ProjectGraph) -> (Vec<BlockSnapshot>, Vec<Symb
             let Some(src_desc) = describe_block(block_id, &indexes) else {
                 continue;
             };
+            if src_desc.unit != unit_index {
+                continue;
+            }
             let mut deps = unit_graph
                 .edges()
                 .get_related(block_id, BlockRelation::DependsOn);
