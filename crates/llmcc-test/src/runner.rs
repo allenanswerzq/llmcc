@@ -789,7 +789,7 @@ where
         let block_graph = if build_block_graph {
             Some(render_block_graph(&project))
         } else {
-            (None, None)
+            None
         };
         (graph, list, deps, block_graph)
     } else {
