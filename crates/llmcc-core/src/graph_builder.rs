@@ -282,7 +282,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let nodes = self.collect_sorted_compact_nodes(top_k);
 
         if nodes.is_empty() {
-            return "digraph DesignGraph {\n}\n".to_string();
+            return "digraph project {\n}\n".to_string();
         }
 
         let renderer = GraphRenderer::new(&nodes);
@@ -974,7 +974,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             | BlockKind::Enum
             | BlockKind::Const
             | BlockKind::Impl
-            | BlockKind::Field
+            // | BlockKind::Field
             | BlockKind::Call => self.build_block(node, parent, false),
             _ => self.visit_children(node, parent),
         }

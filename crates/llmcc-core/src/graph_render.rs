@@ -3,7 +3,7 @@ use std::path::Path;
 
 use crate::BlockId;
 
-const EMPTY_GRAPH_DOT: &str = "digraph DesignGraph {\n}\n";
+const EMPTY_GRAPH_DOT: &str = "digraph project {\n}\n";
 
 #[derive(Clone)]
 pub(crate) struct CompactNode {
@@ -59,9 +59,21 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
             .push(idx);
     }
 
-    let mut output = String::from("digraph DesignGraph {\n");
+    let mut output = String::from("digraph project {\n");
 
-    for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter().enumerate() {
+    for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter_mut().enumerate() {
+        node_indices.sort_by(|&a, &b| {
+            let node_a = &nodes[a];
+            let node_b = &nodes[b];
+
+            node_a
+                .location
+                .as_ref()
+                .cmp(&node_b.location.as_ref())
+                .then_with(|| node_a.name.cmp(&node_b.name))
+                .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
+        });
+
         output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));
         output.push_str(&format!(
             "    label=\"{}\";\n",
@@ -70,7 +82,7 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
         output.push_str("    style=filled;\n");
         output.push_str("    color=lightgrey;\n");
 
-        for &idx in node_indices {
+        for &idx in node_indices.iter() {
             let node = &nodes[idx];
             let label = escape_dot_label(&node.name);
             let mut attrs = vec![format!("label=\"{}\"", label)];
@@ -81,14 +93,14 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
                 attrs.push(format!("full_path=\"{}\"", escaped_full));
             }
 
-            output.push_str(&format!("    n{} [{}];\n", idx, attrs.join(", ")));
+            output.push_str(&format!("    n{} [{}];\n", idx + 1, attrs.join(", ")));
         }
 
         output.push_str("  }\n");
     }
 
     for &(from, to) in edges {
-        output.push_str(&format!("  n{} -> n{};\n", from, to));
+        output.push_str(&format!("  n{} -> n{};\n", from + 1, to + 1));
     }
 
     output.push_str("}\n");
@@ -118,8 +130,12 @@ fn summarize_location(location: &str) -> (String, String) {
         .filter_map(|comp| comp.as_os_str().to_str())
         .collect();
 
-    let start = components.len().saturating_sub(3);
-    let mut shortened = components[start..].join("/");
+    let mut shortened = if let Some(idx) = components.iter().rposition(|comp| *comp == "src") {
+        let start = idx.saturating_sub(1);
+        components[start..].join("/")
+    } else {
+        components[components.len().saturating_sub(3)..].join("/")
+    };
     if shortened.is_empty() {
         shortened = path
             .file_name()
@@ -248,9 +264,22 @@ fn prune_compact_components(
         };
     }
 
-    let mut retained_nodes = Vec::new();
+    let mut retained_nodes = Vec::with_capacity(retained_indices.len());
     let mut old_to_new = HashMap::new();
-    for (new_idx, old_idx) in retained_indices.iter().enumerate() {
+
+    let mut ordered_indices: Vec<usize> = retained_indices.into_iter().collect();
+    ordered_indices.sort_unstable_by(|a, b| {
+        let node_a = &nodes[*a];
+        let node_b = &nodes[*b];
+        node_a
+            .unit_index
+            .cmp(&node_b.unit_index)
+            .then_with(|| node_a.location.as_ref().cmp(&node_b.location.as_ref()))
+            .then_with(|| node_a.name.cmp(&node_b.name))
+            .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
+    });
+
+    for (new_idx, old_idx) in ordered_indices.iter().enumerate() {
         retained_nodes.push(nodes[*old_idx].clone());
         old_to_new.insert(*old_idx, new_idx);
     }

@@ -2,9 +2,10 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
-use llmcc_descriptor::{VariableDescriptor, VariableKind, VariableScope, Visibility};
+use llmcc_descriptor::{TypeExpr, VariableDescriptor, VariableKind, VariableScope, Visibility};
 
 use super::function::{build_origin, parse_type_expr, parse_visibility};
+use crate::path::parse_rust_path;
 use crate::token::LangRust;
 
 fn push_binding_name<'tcx>(
@@ -78,6 +79,31 @@ fn binding_names_from_pattern<'tcx>(unit: CompileUnit<'tcx>, pattern: Node<'tcx>
     names.into_iter().map(|(_, name)| name).collect()
 }
 
+fn pattern_type_expr<'tcx>(unit: CompileUnit<'tcx>, pattern: Node<'tcx>) -> Option<TypeExpr> {
+    let mut cursor = pattern.walk();
+    let ty_node = match pattern.kind() {
+        "struct_pattern" | "tuple_struct_pattern" => pattern.named_children(&mut cursor).next(),
+        _ => None,
+    }?;
+
+    match ty_node.kind() {
+        "type_identifier" | "scoped_type_identifier" | "generic_type" => {
+            Some(parse_type_expr(unit, ty_node))
+        }
+        _ => {
+            let raw = unit.ts_text(ty_node);
+            if raw.is_empty() {
+                None
+            } else {
+                Some(TypeExpr::Path {
+                    qualifier: parse_rust_path(&raw),
+                    generics: Vec::new(),
+                })
+            }
+        }
+    }
+}
+
 fn ident_name_from_field<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
@@ -102,6 +128,7 @@ pub fn build_let<'tcx>(
 
     let pattern_node = node.opt_child_by_field(unit, LangRust::field_pattern)?;
     let mut names = binding_names_from_pattern(unit, pattern_node.inner_ts_node());
+    let pattern_type = pattern_type_expr(unit, pattern_node.inner_ts_node());
     if names.is_empty() {
         return None;
     }
@@ -111,7 +138,7 @@ pub fn build_let<'tcx>(
     descriptor.kind = VariableKind::Binding;
     descriptor.scope = VariableScope::Function;
     descriptor.is_mutable = Some(is_mut);
-    descriptor.type_annotation = ty;
+    descriptor.type_annotation = ty.or(pattern_type);
     descriptor.visibility = Visibility::Private;
     if !names.is_empty() {
         descriptor.extra_binding_names = Some(names);
