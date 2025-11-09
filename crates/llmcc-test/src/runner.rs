@@ -3,11 +3,15 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
-use llmcc_core::context::CompileCtxt;
-use llmcc_core::graph_builder::{build_llmcc_graph, BlockRelation, GraphBuildConfig, ProjectGraph};
+use llmcc_core::context::{CompileCtxt, CompileUnit};
+use llmcc_core::graph_builder::{
+    build_llmcc_graph, BlockId, BlockRelation, GraphBuildConfig, ProjectGraph,
+};
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
+use llmcc_core::{print_llmcc_ir, print_llmcc_graph};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
+
 use llmcc_resolver::apply_collected_symbols;
 use llmcc_resolver::collector::CollectedSymbols;
 use llmcc_rust::LangRust;
@@ -196,26 +200,34 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
         .expectations
         .iter()
         .any(|expect| expect.kind == "blocks" || expect.kind == "block-deps");
+    let needs_block_graph = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "block-graph");
     let needs_symbol_deps = case
         .expectations
         .iter()
         .any(|expect| expect.kind == "symbol-deps");
 
-    if !needs_symbols && !needs_graph && !needs_block_reports && !needs_symbol_deps {
+    if !needs_symbols
+        && !needs_graph
+        && !needs_block_reports
+        && !needs_block_graph
+        && !needs_symbol_deps
+    {
         return Ok(PipelineSummary::default());
     }
 
     let project = materialize_case(case)?;
     let summary = match case.lang.as_str() {
-        "rust" => {
-            collect_pipeline::<LangRust>(
-                &project.paths,
-                needs_symbols,
-                needs_graph,
-                needs_block_reports,
-                needs_symbol_deps,
-            )?
-        }
+        "rust" => collect_pipeline::<LangRust>(
+            &project.paths,
+            needs_symbols,
+            needs_graph,
+            needs_block_reports,
+            needs_block_graph,
+            needs_symbol_deps,
+        )?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -236,6 +248,7 @@ struct PipelineSummary {
     block_list: Option<Vec<BlockSnapshot>>,
     block_deps: Option<Vec<SymbolDependencySnapshot>>,
     symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
+    block_graph: Option<String>,
 }
 
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
@@ -258,11 +271,11 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
             .as_ref()
             .map(|list| render_block_snapshot(list))
             .ok_or_else(|| {
-            anyhow!(
-                "case {} requested blocks output but summary missing",
-                case_id
-            )
-        }),
+                anyhow!(
+                    "case {} requested blocks output but summary missing",
+                    case_id
+                )
+            }),
         "block-deps" => summary
             .block_deps
             .as_ref()
@@ -273,11 +286,16 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                     case_id
                 )
             }),
+        "block-graph" => summary.block_graph.clone().ok_or_else(|| {
+            anyhow!(
+                "case {} requested block-graph output but summary missing",
+                case_id
+            )
+        }),
         "symbol-deps" => {
-            let deps = summary
-                .symbol_deps
-                .as_ref()
-                .ok_or_else(|| anyhow!("case {} requested symbol-deps but summary missing", case_id))?;
+            let deps = summary.symbol_deps.as_ref().ok_or_else(|| {
+                anyhow!("case {} requested symbol-deps but summary missing", case_id)
+            })?;
             Ok(render_symbol_dependencies(deps))
         }
         other => Err(anyhow!(
@@ -310,25 +328,29 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
         .unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
     let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
+    let fqn_width = rows.iter().map(|row| row.fqn.len()).max().unwrap_or(0);
+    let global_width = if rows.iter().any(|row| row.is_global) {
+        "[global]".len()
+    } else {
+        0
+    };
 
     let mut buf = String::new();
     for row in rows {
-        let fqn_display = if row.is_global {
-            format!("{} [global]", row.fqn)
-        } else {
-            row.fqn.clone()
-        };
         let label = format!("u{}:{}", row.unit, row.id);
         let _ = writeln!(
             buf,
-            "{:<label_width$} | {:kind_width$} | {:name_width$} | {}",
+            "{:<label_width$} | {:kind_width$} | {:name_width$} | {:fqn_width$} | {:global_width$}",
             label,
             row.kind,
             row.name,
-            fqn_display,
+            row.fqn,
+            if row.is_global { "[global]" } else { "" },
             label_width = label_width,
             kind_width = kind_width,
             name_width = name_width,
+            fqn_width = fqn_width,
+            global_width = global_width,
         );
     }
     buf
@@ -347,11 +369,7 @@ fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
             .then_with(|| a.name.cmp(&b.name))
     });
 
-    let label_width = rows
-        .iter()
-        .map(|row| row.label.len())
-        .max()
-        .unwrap_or(0);
+    let label_width = rows.iter().map(|row| row.label.len()).max().unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
     let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
 
@@ -385,8 +403,12 @@ fn render_symbol_dependencies(entries: &[SymbolDependencySnapshot]) -> String {
         depends.sort();
         let mut depended = row.depended_by.clone();
         depended.sort();
-        let _ = writeln!(buf, "{} -> [{}]", row.label, depends.join(", "));
-        let _ = writeln!(buf, "{} <- [{}]", row.label, depended.join(", "));
+        if !depends.is_empty() {
+            let _ = writeln!(buf, "{} -> [{}]", row.label, depends.join(", "));
+        }
+        if !depended.is_empty() {
+            let _ = writeln!(buf, "{} <- [{}]", row.label, depended.join(", "));
+        }
     }
     buf
 }
@@ -415,6 +437,8 @@ fn normalize(kind: &str, text: &str) -> String {
     match kind {
         "symbols" | "blocks" => normalize_symbols(&canonical),
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
+        "graph" => normalize_graph(&canonical),
+        "block-graph" => normalize_block_graph(&canonical),
         _ => canonical,
     }
 }
@@ -423,7 +447,8 @@ fn normalize_symbols(text: &str) -> String {
     let mut rows: Vec<(usize, u32, String)> = text
         .lines()
         .filter_map(|line| {
-            if line.trim().is_empty() {
+            let line = line.trim();
+            if line.is_empty() {
                 return None;
             }
 
@@ -432,9 +457,21 @@ fn normalize_symbols(text: &str) -> String {
                 return None;
             }
 
-            let head = parts[0];
-            let (unit, id) = parse_unit_and_id(head);
-            let canonical = parts.join(" | ");
+            let label = parts[0];
+            let (unit, id) = parse_unit_and_id(label);
+            let kind = parts.get(1).copied().unwrap_or("");
+            let name = parts.get(2).copied().unwrap_or("");
+            let mut fqn = parts.get(3).copied().unwrap_or("");
+            let mut global = parts.get(4).copied().unwrap_or("");
+
+            if parts.len() == 4 && fqn.ends_with("[global]") {
+                if let Some(stripped) = fqn.strip_suffix(" [global]") {
+                    fqn = stripped.trim_end();
+                }
+                global = "[global]";
+            }
+
+            let canonical = format!("{label} | {kind} | {name} | {fqn} | {global}");
             Some((unit, id, canonical))
         })
         .collect();
@@ -454,11 +491,106 @@ fn normalize_symbols(text: &str) -> String {
 fn normalize_symbol_deps(text: &str) -> String {
     let mut rows: Vec<_> = text
         .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| line.trim().to_string())
+        .filter_map(|line| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() || is_empty_relation(trimmed) {
+                return None;
+            }
+            Some(trimmed.to_string())
+        })
         .collect();
     rows.sort();
     rows.join("\n")
+}
+
+fn normalize_block_graph(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+
+    match parse_sexpr(trimmed) {
+        Ok(exprs) => exprs
+            .into_iter()
+            .map(|expr| format_sexpr(&expr))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        Err(_) => trimmed.to_string(),
+    }
+}
+
+fn is_empty_relation(line: &str) -> bool {
+    if let Some((_, rhs)) = line.split_once("->") {
+        if rhs.trim() == "[]" {
+            return true;
+        }
+    }
+    if let Some((_, rhs)) = line.split_once("<-") {
+        if rhs.trim() == "[]" {
+            return true;
+        }
+    }
+    false
+}
+
+fn normalize_graph(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.starts_with("digraph") {
+        normalize_dot_paths(trimmed)
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn normalize_graph_path(path: &str) -> String {
+    use std::path::Path;
+
+    let (path_part, line_part) = match path.rsplit_once(':') {
+        Some((p, line)) if line.chars().all(|ch| ch.is_ascii_digit()) => (p, format!(":{line}")),
+        _ => (path, String::new()),
+    };
+
+    let path_obj = Path::new(path_part);
+    let components: Vec<_> = path_obj
+        .components()
+        .filter_map(|comp| comp.as_os_str().to_str())
+        .collect();
+
+    let start = components
+        .iter()
+        .rposition(|comp| *comp == "src")
+        .map(|idx| idx.saturating_sub(1))
+        .unwrap_or(components.len().saturating_sub(3));
+
+    let mut shortened = components[start..].join("/");
+    if shortened.is_empty() {
+        shortened = path_obj
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(path_part)
+            .to_string();
+    }
+
+    format!("{shortened}{line_part}")
+}
+
+fn normalize_dot_paths(dot: &str) -> String {
+    dot.lines()
+        .map(|line| {
+            if let Some(start) = line.find("full_path=") {
+                let prefix = &line[..start];
+                let rest = &line[start..];
+                if let Some((before_path, after_path)) = rest.split_once('"') {
+                    if let Some((path, suffix)) = after_path.split_once('"') {
+                        let normalized = normalize_graph_path(path);
+                        return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
+                    }
+                }
+            }
+            line.to_string()
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -478,6 +610,98 @@ fn ensure_trailing_newline(mut text: String) -> String {
         text.push('\n');
     }
     text
+}
+
+#[derive(Debug, Clone)]
+enum SExpr {
+    Atom(String),
+    List(Vec<SExpr>),
+}
+
+fn parse_sexpr(input: &str) -> Result<Vec<SExpr>, ()> {
+    let tokens = tokenize(input);
+    let mut idx = 0;
+    let mut exprs = Vec::new();
+    while idx < tokens.len() {
+        exprs.push(parse_expr(&tokens, &mut idx)?);
+    }
+    Ok(exprs)
+}
+
+fn tokenize(input: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    let mut current = String::new();
+    let mut chars = input.chars().peekable();
+    while let Some(ch) = chars.next() {
+        match ch {
+            '(' | ')' => {
+                if !current.trim().is_empty() {
+                    tokens.push(current.trim().to_string());
+                }
+                current.clear();
+                tokens.push(ch.to_string());
+            }
+            '"' => {
+                if !current.trim().is_empty() {
+                    tokens.push(current.trim().to_string());
+                }
+                current.clear();
+                let mut literal = String::new();
+                while let Some(&next) = chars.peek() {
+                    chars.next();
+                    if next == '"' {
+                        break;
+                    }
+                    literal.push(next);
+                }
+                tokens.push(literal);
+            }
+            _ if ch.is_whitespace() => {
+                if !current.trim().is_empty() {
+                    tokens.push(current.trim().to_string());
+                }
+                current.clear();
+            }
+            _ => current.push(ch),
+        }
+    }
+    if !current.trim().is_empty() {
+        tokens.push(current.trim().to_string());
+    }
+    tokens
+}
+
+fn parse_expr(tokens: &[String], idx: &mut usize) -> Result<SExpr, ()> {
+    if *idx >= tokens.len() {
+        return Err(());
+    }
+    let token = tokens[*idx].clone();
+    *idx += 1;
+    match token.as_str() {
+        "(" => {
+            let mut items = Vec::new();
+            while *idx < tokens.len() && tokens[*idx] != ")" {
+                items.push(parse_expr(tokens, idx)?);
+            }
+            if *idx >= tokens.len() || tokens[*idx] != ")" {
+                return Err(());
+            }
+            *idx += 1;
+            Ok(SExpr::List(items))
+        }
+        ")" => Err(()),
+        literal => Ok(SExpr::Atom(literal.to_string())),
+    }
+}
+
+fn format_sexpr(expr: &SExpr) -> String {
+    match expr {
+        SExpr::Atom(atom) => atom.clone(),
+        SExpr::List(items) => {
+            let parts: Vec<String> = items.iter().map(format_sexpr).collect();
+            format!("({})", parts.join(" "))
+        }
+    }
 }
 
 struct MaterializedProject {
@@ -514,6 +738,7 @@ fn collect_pipeline<L>(
     keep_symbols: bool,
     build_graph: bool,
     build_block_reports: bool,
+    build_block_graph: bool,
     keep_symbol_deps: bool,
 ) -> Result<PipelineSummary>
 where
@@ -527,11 +752,12 @@ where
     let mut collections = Vec::with_capacity(unit_count);
     for index in 0..unit_count {
         let unit = cc.compile_unit(index);
+        print_llmcc_ir(unit);
         let collected = L::collect_symbols(unit);
         apply_collected_symbols(unit, globals, &collected);
         collections.push(collected);
     }
-    let mut project_graph = if build_graph || build_block_reports {
+    let mut project_graph = if build_graph || build_block_reports || build_block_graph {
         Some(ProjectGraph::new(&cc))
     } else {
         None
@@ -542,10 +768,12 @@ where
         if let Some(project) = project_graph.as_mut() {
             let unit_graph = build_llmcc_graph::<L>(unit, index, GraphBuildConfig)
                 .map_err(|err| anyhow!(err))?;
+            print_llmcc_graph(unit_graph.root(), unit);
             project.add_child(unit_graph);
         }
     }
-    let (graph_dot, block_list, block_deps) = if let Some(mut project) = project_graph {
+    let (graph_dot, block_list, block_deps, block_graph) = if let Some(mut project) = project_graph
+    {
         project.link_units();
         let graph = if build_graph {
             Some(project.render_design_graph())
@@ -558,9 +786,14 @@ where
         } else {
             (None, None)
         };
-        (graph, list, deps)
+        let block_graph = if build_block_graph {
+            Some(render_block_graph(&project))
+        } else {
+            (None, None)
+        };
+        (graph, list, deps, block_graph)
     } else {
-        (None, None, None)
+        (None, None, None, None)
     };
 
     let symbols = if keep_symbols {
@@ -581,7 +814,66 @@ where
         block_list,
         block_deps,
         symbol_deps,
+        block_graph,
     })
+}
+
+fn render_block_graph(project: &ProjectGraph) -> String {
+    let mut units: Vec<_> = project.units().iter().collect();
+    if units.is_empty() {
+        return "none\n".to_string();
+    }
+
+    units.sort_by_key(|unit| unit.unit_index());
+
+    let mut sections = Vec::new();
+    for unit_graph in units {
+        let unit = project.cc.compile_unit(unit_graph.unit_index());
+        let mut buf = String::new();
+        render_block_graph_node(unit_graph.root(), unit, 0, &mut buf);
+        sections.push(buf.trim_end().to_string());
+    }
+
+    if sections.is_empty() {
+        "none\n".to_string()
+    } else {
+        let mut joined = sections.join("\n\n");
+        joined.push('\n');
+        joined
+    }
+}
+
+fn render_block_graph_node(
+    block_id: BlockId,
+    unit: CompileUnit<'_>,
+    depth: usize,
+    buf: &mut String,
+) {
+    let block = unit.bb(block_id);
+    let indent = "    ".repeat(depth);
+    let kind = block.kind().to_string();
+    let _ = write!(buf, "{}({}:{}", indent, kind, block_id.as_u32());
+
+    if let Some(name) = block
+        .base()
+        .and_then(|base| base.opt_get_name())
+        .filter(|name| !name.is_empty())
+    {
+        let _ = write!(buf, " {}", name);
+    }
+
+    let children = block.children();
+    if children.is_empty() {
+        buf.push_str(")\n");
+        return;
+    }
+
+    buf.push('\n');
+    for &child_id in children {
+        render_block_graph_node(child_id, unit, depth + 1, buf);
+    }
+    buf.push_str(&indent);
+    buf.push_str(")\n");
 }
 
 fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
@@ -613,11 +905,7 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
 
     for (sym_id, symbol) in symbol_map.iter() {
-        let label = format!(
-            "u{}:{}",
-            symbol.unit_index().unwrap_or_default(),
-            sym_id.0
-        );
+        let label = format!("u{}:{}", symbol.unit_index().unwrap_or_default(), sym_id.0);
         cache.insert(
             sym_id.0,
             SymbolDependencySnapshot {
@@ -632,11 +920,7 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
         let deps = symbol.depends.read().clone();
         for dep in deps {
             if let Some(target) = symbol_map.get(&dep) {
-                let dep_label = format!(
-                    "u{}:{}",
-                    target.unit_index().unwrap_or_default(),
-                    dep.0
-                );
+                let dep_label = format!("u{}:{}", target.unit_index().unwrap_or_default(), dep.0);
                 if let Some(entry) = cache.get_mut(&sym_id.0) {
                     entry.depends_on.push(dep_label.clone());
                 }
@@ -658,7 +942,9 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     }
     output
 }
-fn render_block_reports(project: &ProjectGraph) -> (Vec<BlockSnapshot>, Vec<SymbolDependencySnapshot>) {
+fn render_block_reports(
+    project: &ProjectGraph,
+) -> (Vec<BlockSnapshot>, Vec<SymbolDependencySnapshot>) {
     use std::collections::BTreeMap;
     use std::collections::HashMap;
 
@@ -668,10 +954,13 @@ fn render_block_reports(project: &ProjectGraph) -> (Vec<BlockSnapshot>, Vec<Symb
     for unit_graph in project.units() {
         let unit_index = unit_graph.unit_index();
         let mut entries = Vec::new();
-        for block_id in unit_graph.edges().get_connected_blocks() {
-            let Some(src_desc) = describe_block(block_id, &indexes) else {
+
+        for (_name_opt, kind, block_id) in indexes.find_by_unit(unit_index) {
+            let Some(mut desc) = describe_block(block_id, &indexes) else {
                 continue;
             };
+            desc.kind = kind.to_string();
+
             let mut deps = unit_graph
                 .edges()
                 .get_related(block_id, BlockRelation::DependsOn);
@@ -682,8 +971,9 @@ fn render_block_reports(project: &ProjectGraph) -> (Vec<BlockSnapshot>, Vec<Symb
                 .filter_map(|id| describe_block(id, &indexes))
                 .collect();
             dep_descs.sort_by(|a, b| (a.unit, &a.name).cmp(&(b.unit, &b.name)));
-            entries.push((src_desc, dep_descs));
+            entries.push((desc, dep_descs));
         }
+
         entries.sort_by(|a, b| a.0.name.cmp(&b.0.name));
         if !entries.is_empty() {
             units.insert(unit_index, entries);

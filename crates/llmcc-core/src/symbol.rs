@@ -40,6 +40,7 @@ pub enum SymbolKind {
     Trait,
     Impl,
     EnumVariant,
+    DynamicType,
 }
 
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
@@ -444,6 +445,13 @@ impl Symbol {
     pub fn add_dependency(&self, other: &Symbol) {
         if self.id == other.id {
             return;
+        }
+        if self.kind() == other.kind() {
+            let self_fqn = self.fqn_name.read().clone();
+            let other_fqn = other.fqn_name.read().clone();
+            if !self_fqn.is_empty() && self_fqn == other_fqn {
+                return;
+            }
         }
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);
