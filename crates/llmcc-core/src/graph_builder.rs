@@ -22,7 +22,8 @@ use crate::visit::HirVisitor;
 use crate::DynError;
 use rayon::prelude::*;
 
-const BLOCK_INTERESTING_KINDS: [BlockKind; 3] = [BlockKind::Class, BlockKind::Enum, BlockKind::Func];
+const BLOCK_INTERESTING_KINDS: [BlockKind; 3] =
+    [BlockKind::Class, BlockKind::Enum, BlockKind::Func];
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {

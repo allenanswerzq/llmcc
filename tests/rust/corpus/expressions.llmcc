@@ -903,10 +903,11 @@ field-expressions
 ===============================================================================
 
 
---- file: src/main.rs ---
+--- file: app/src/main.rs ---
 struct Foo;
+struct Far;
 struct Baz {
-  x: i32,
+  x: Far,
 }
 
 struct MyStruct {
@@ -918,6 +919,7 @@ fn foo() -> Baz {
 }
 
 fn bar() {
+  let mystruct = MyStruct { myfield: Foo };
   let x = mystruct.myfield;
   let y = foo().x;
   value.0.1.iter();
@@ -925,12 +927,66 @@ fn bar() {
 }
 
 --- expect:symbols ---
-none
+u0:1 | Struct   | Foo      | Foo      |
+u0:2 | Struct   | Far      | Far      |
+u0:3 | Struct   | Baz      | Baz      |
+u0:4 | Struct   | MyStruct | MyStruct |
+u0:5 | Function | foo      | foo      |
+u0:6 | Function | bar      | bar      |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:4, u0:6]
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
+u0:3 <- [u0:5]
+u0:4 -> [u0:1]
+u0:4 <- [u0:6]
+u0:5 -> [u0:3]
+u0:5 <- [u0:6]
+u0:6 -> [u0:1, u0:4, u0:5]
+
+--- expect:blocks ---
+u0:1  | root  | block#1
+u0:10 | call  | block#10
+u0:2  | class | Foo
+u0:3  | class | Far
+u0:4  | class | Baz
+u0:5  | class | MyStruct
+u0:6  | func  | foo
+u0:7  | func  | bar
+u0:8  | call  | block#8
+u0:9  | call  | block#9
+
+--- expect:block-deps ---
+u0:2 <- [u0:5, u0:7]
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
+u0:4 <- [u0:6]
+u0:5 -> [u0:2]
+u0:5 <- [u0:7]
+u0:6 -> [u0:4]
+u0:6 <- [u0:7]
+u0:7 -> [u0:2, u0:5, u0:6]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="foo", full_path="$TMP/app/src/main.rs:11"];
+    n3 [label="bar", full_path="$TMP/app/src/main.rs:15"];
+    n4 [label="Far", full_path="$TMP/app/src/main.rs:2"];
+    n5 [label="Baz", full_path="$TMP/app/src/main.rs:3"];
+    n6 [label="MyStruct", full_path="$TMP/app/src/main.rs:7"];
+  }
+  n2 -> n5;
+  n3 -> n2;
+  n3 -> n6;
+  n5 -> n4;
+  n6 -> n1;
 }
-
 
 
 ===============================================================================
@@ -939,15 +995,32 @@ method-call-expressions
 
 
 --- file: src/main.rs ---
-mystruct.foo();
+struct Foo;
 
---- expect:symbols ---
-none
+struct MyStruct;
 
---- expect:graph ---
-digraph project {
+impl MyStruct {
+  fn foo(&self) -> Foo {}
 }
 
+fn func() {
+    let mystruct = MyStruct::new();
+    let x = mystruct.foo();
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Foo      | Foo           |
+u0:2 | Struct   | MyStruct | MyStruct      |
+u0:3 | Function | foo      | MyStruct::foo |
+u0:4 | Function | func     | func           |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 -> [u0:3]
+u0:2 <- [u0:4]
+u0:3 -> [u0:1]
+u0:3 <- [u0:2]
+u0:4 -> [u0:2]
 
 
 ===============================================================================
@@ -963,29 +1036,92 @@ arr[n];
 --- expect:symbols ---
 none
 
---- expect:graph ---
-digraph project {
-}
-
-
 
 ===============================================================================
 scoped-functions
 ===============================================================================
 
+--- file: app/src/foo.rs ---
+pub fn f() {}
 
---- file: src/main.rs ---
-a::b();
-C::<D>::e();
-::f();
-::g::h();
+pub mod g {
+  pub fn h() {}
+}
+
+--- file: app/src/main.rs ---
+struct a;
+impl a {
+  fn b() {}
+}
+
+struct C;
+impl C {
+  fn e() {}
+}
+
+fn foo() {
+  a::b();
+  C::<D>::e();
+  ::f();
+  ::g::h();
+}
 
 --- expect:symbols ---
-none
+u0:1 | Function | f   | f    | [global]
+u0:2 | Module   | g   | g    | [global]
+u0:3 | Function | h   | g::h | [global]
+u1:4 | Struct   | a   | a    |
+u1:5 | Function | b   | a::b |
+u1:6 | Struct   | C   | C    |
+u1:7 | Function | e   | C::e |
+u1:8 | Function | foo | foo  |
 
---- expect:graph ---
-digraph project {
-}
+
+--- expect:symbol-deps ---
+u0:1 <- [u1:8]
+u0:2 -> [u0:3]
+u0:3 <- [u0:2, u1:8]
+u1:4 -> [u1:5]
+u1:4 <- [u1:8]
+u1:5 <- [u1:4, u1:8]
+u1:6 -> [u1:7]
+u1:6 <- [u1:8]
+u1:7 <- [u1:6, u1:8]
+u1:8 -> [u0:1, u0:3, u1:4, u1:5, u1:6, u1:7]
+
+--- expect:block-graph ---
+(root:1
+    (func:2 f)
+    (func:3 h)
+)
+
+(root:4
+    (class:5 a)
+    (impl:6
+        (func:7 b)
+    )
+    (class:8 C)
+    (impl:9
+        (func:10 e)
+    )
+    (func:11 foo
+        (call:12)
+        (call:13)
+        (call:14)
+        (call:15)
+    )
+)
+
+--- expect:block-deps ---
+u0:2 <- [u1:11]
+u0:3 <- [u1:11]
+u1:10 <- [u1:11, u1:8]
+u1:11 -> [u0:2, u0:3, u1:10, u1:5, u1:7, u1:8]
+u1:5 -> [u1:7]
+u1:5 <- [u1:11]
+u1:7 <- [u1:11, u1:5]
+u1:8 -> [u1:10]
+u1:8 <- [u1:11]
 
 
 
@@ -1000,12 +1136,6 @@ scoped-functions-with-fully-qualified-syntax
 --- expect:symbols ---
 none
 
---- expect:graph ---
-digraph project {
-}
-
-
-
 ===============================================================================
 scoped-functions-with-macros-as-types
 ===============================================================================
@@ -1017,10 +1147,6 @@ scoped-functions-with-macros-as-types
 --- expect:symbols ---
 none
 
---- expect:graph ---
-digraph project {
-}
-
 
 
 ===============================================================================
@@ -1029,15 +1155,35 @@ scoped-identifier-with-nested-super
 
 
 --- file: src/main.rs ---
-super::super::foo();
-
---- expect:symbols ---
-none
-
---- expect:graph ---
-digraph project {
+pub fn foo() {}
+pub mod m1 {
+  mod m2 {
+    fn bar() {
+      super::super::foo();
+    }
 }
 
+
+--- expect:symbols ---
+u0:1 | Function | foo | foo         | [global]
+u0:2 | Module   | m1  | m1          | [global]
+u0:3 | Module   | m2  | m1::m2      |
+u0:4 | Function | bar | m1::m2::bar |
+
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:4]
+u0:2 -> [u0:3]
+u0:3 -> [u0:4]
+u0:3 <- [u0:2]
+u0:4 -> [u0:1]
+u0:4 <- [u0:3]
+
+--- expect:blocks ---
+u0:1 | root | block#1
+u0:2 | func | foo
+u0:3 | func | bar
+u0:4 | call | block#4
 
 
 ===============================================================================
@@ -1051,11 +1197,6 @@ foo::<8>();
 
 --- expect:symbols ---
 none
-
---- expect:graph ---
-digraph project {
-}
-
 
 
 ===============================================================================
@@ -1074,10 +1215,6 @@ h(|| -> i { j });
 --- expect:symbols ---
 none
 
---- expect:graph ---
-digraph project {
-}
-
 
 
 ===============================================================================
@@ -1090,11 +1227,6 @@ a.map(|b: usize| b.push(c));
 
 --- expect:symbols ---
 none
-
---- expect:graph ---
-digraph project {
-}
-
 
 
 ===============================================================================
@@ -1114,11 +1246,6 @@ move || {
 --- expect:symbols ---
 none
 
---- expect:graph ---
-digraph project {
-}
-
-
 
 ===============================================================================
 unsafe-blocks
@@ -1126,15 +1253,17 @@ unsafe-blocks
 
 
 --- file: src/main.rs ---
+fn foo() {}
 const a : A = unsafe { foo() };
 
 --- expect:symbols ---
-u0:1 | Const | a | a |
+u0:1 | Function | foo | foo |
+u0:2 | Const    | a   | a   |
 
---- expect:graph ---
-digraph project {
-}
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
 
 
 ===============================================================================
@@ -1150,10 +1279,6 @@ let three_ranges = [const { (0..=5).into_inner() }; 3];
 --- expect:symbols ---
 none
 
---- expect:graph ---
-digraph project {
-}
-
 
 
 ===============================================================================
@@ -1167,8 +1292,3 @@ let a = &raw const b;
 
 --- expect:symbols ---
 none
-
---- expect:graph ---
-digraph project {
-}
-
