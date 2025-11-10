@@ -248,7 +248,7 @@ impl ScopeInfo {
         self.locals_by_kind
             .ensure_kind(kind)
             .entry(name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(symbol_idx);
     }
 }
@@ -424,10 +424,10 @@ impl<'tcx> CollectorCore<'tcx> {
         });
 
         let current_scope = self.current_scope_index();
-        self.scope_infos[current_scope].record_symbol(&name, idx, kind);
+        self.scope_infos[current_scope].record_symbol(name, idx, kind);
 
         if is_global {
-            self.scope_infos[0].record_symbol(&name, idx, kind);
+            self.scope_infos[0].record_symbol(name, idx, kind);
         }
 
         (idx, fqn)
