@@ -1,77 +1,105 @@
-================================================================================
-Macro invocation - no arguments
-================================================================================
+===============================================================================
+macro-invocation-no-arguments
+===============================================================================
+
 
 --- file: src/main.rs ---
-a!();
-b![];
-c!{};
-d::e!();
-f::g::h!{};
+macro_rules! a [];
+mod d {
+    macro_rules! e [];
+}
+mod f {
+    mod g {
+        macro_rules! h [];
+    }
+}
 
---- expect:symbols ---
-
-
---- expect:graph ---
-
-
-
-
-
-
-================================================================================
-Macro invocation - arbitrary tokens
-================================================================================
-
---- file: src/main.rs ---
-a!(* a *);
-a!(& a &);
-a!(- a -);
-a!(b + c + +);
-a!('a'..='z');
-a!('\u{0}'..='\u{2}');
-a!('lifetime)
-default!(a);
-union!(a);
-a!($);
-a!($());
-a!($ a $);
-a!(${$([ a ])});
-a!($a $a:ident $($a);*);
-
---- expect:symbols ---
-
-
---- expect:graph ---
-
-
-
-
-
-
-================================================================================
-Macro invocation with comments
-================================================================================
-
---- file: src/main.rs ---
-ok! {
-  // one
-  /* two */
+fn foo() {
+    a!();
+    b![];
+    c!{};
+    d::e!();
+    f::g::h!{};
 }
 
 --- expect:symbols ---
+u0:1 | Macro    | a   | a       | [global]
+u0:2 | Module   | d   | d       |
+u0:3 | Macro    | e   | d::e    | [global]
+u0:4 | Module   | f   | f       |
+u0:5 | Module   | g   | f::g    |
+u0:6 | Macro    | h   | f::g::h | [global]
+u0:7 | Function | foo | foo     |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:7]
+u0:2 -> [u0:3]
+u0:3 <- [u0:2, u0:7]
+u0:4 -> [u0:5]
+u0:5 -> [u0:6]
+u0:5 <- [u0:4]
+u0:6 <- [u0:5, u0:7]
+u0:7 -> [u0:1, u0:3, u0:6]
 
 
---- expect:graph ---
+===============================================================================
+macro-invocation-arbitrary-tokens
+===============================================================================
 
 
+--- file: src/main.rs ---
+macro_rules! a [];
+fn foo() {
+    a!(* a *);
+    a!(& a &);
+    a!(- a -);
+    a!(b + c + +);
+    a!('a'..='z');
+    a!('\u{0}'..='\u{2}');
+    a!('lifetime)
+    default!(a);
+    union!(a);
+    a!($);
+    a!($());
+    a!($ a $);
+    a!(${$([ a ])});
+    a!($a $a:ident $($a);*);
+}
+
+--- expect:symbols ---
+u0:1 | Macro    | a   | a   | [global]
+u0:2 | Function | foo | foo |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+===============================================================================
+macro-invocation-with-comments
+===============================================================================
 
 
+--- file: src/main.rs ---
+macro_rules! ok [];
+fn foo() {
+    ok! {
+    // one
+    /* two */
+    }
+}
 
+--- expect:symbols ---
+u0:1 | Macro    | ok  | ok  | [global]
+u0:2 | Function | foo | foo |
 
-================================================================================
-Macro definition
-================================================================================
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+===============================================================================
+macro-definition
+===============================================================================
+
 
 --- file: src/main.rs ---
 macro_rules! say_hello {
@@ -108,11 +136,10 @@ macro_rules! empty [
 ];
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
-
-
+u0:1 | Macro | say_hello   | say_hello   | [global]
+u0:2 | Macro | four        | four        | [global]
+u0:3 | Macro | foo         | foo         | [global]
+u0:4 | Macro | o_O         | o_O         | [global]
+u0:5 | Macro | zero_or_one | zero_or_one | [global]
+u0:6 | Macro | empty       | empty       | [global]
 

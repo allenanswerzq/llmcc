@@ -98,3 +98,36 @@ digraph project {
   n2 -> n1;
 }
 
+
+===============================================================================
+function-resolve
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Bar;
+struct Foo;
+
+struct Slice;
+impl Slice {
+    fn binary_search(&self, x: &i32) -> Option<Foo> {
+      Some(Foo)
+    }
+
+    fn fake_method() {}
+}
+
+fn func() {
+  let slice = Slice::new();
+  let f = slice.binary_search(&x);
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Bar           | Bar                  |
+u0:2 | Struct   | Foo           | Foo                  |
+u0:3 | Struct   | Slice         | Slice                |
+u0:4 | Function | binary_search | Slice::binary_search |
+u0:5 | Function | fake_method   | Slice::fake_method |
+u0:6 | Function | func          | func                 |
+
+--- expect:symbol-deps ---

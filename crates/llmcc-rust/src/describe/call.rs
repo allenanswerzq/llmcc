@@ -20,6 +20,18 @@ pub fn build<'tcx>(
     enclosing_function: Option<&str>,
 ) -> CallDescriptor {
     let ts_node = node.inner_ts_node();
+    match ts_node.kind() {
+        "macro_invocation" => build_macro_invocation(unit, node, ts_node, enclosing_function),
+        _ => build_call_expression(unit, node, ts_node, enclosing_function),
+    }
+}
+
+fn build_call_expression<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    ts_node: Node<'tcx>,
+    enclosing_function: Option<&str>,
+) -> CallDescriptor {
     let function_node = ts_node.child_by_field_name("function");
     let call_generics = ts_node
         .child_by_field_name("type_arguments")
@@ -48,6 +60,42 @@ pub fn build<'tcx>(
     descriptor
 }
 
+fn build_macro_invocation<'tcx>(
+    unit: CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    ts_node: Node<'tcx>,
+    enclosing_function: Option<&str>,
+) -> CallDescriptor {
+    let macro_node = ts_node.child_by_field_name("macro").unwrap_or(ts_node);
+    let macro_text = unit.ts_text(macro_node);
+    let target = match macro_node.kind() {
+        "identifier" | "scoped_identifier" => {
+            symbol_target_from_path(&macro_text, Vec::new(), CallKind::Macro)
+        }
+        _ => CallTarget::Dynamic {
+            repr: unit.ts_text(ts_node),
+        },
+    };
+
+    let arguments = ts_node
+        .child_by_field_name("token_tree")
+        .and_then(|tree| {
+            let text = unit.ts_text(tree);
+            if text.trim().is_empty() {
+                None
+            } else {
+                Some(vec![CallArgument::new(text)])
+            }
+        })
+        .unwrap_or_default();
+
+    let origin = build_origin(unit, node, ts_node);
+    let mut descriptor = CallDescriptor::new(origin, target);
+    descriptor.enclosing = enclosing_function.map(|value| value.to_string());
+    descriptor.arguments = arguments;
+    descriptor
+}
+
 fn parse_arguments<'tcx>(unit: CompileUnit<'tcx>, args_node: Node<'tcx>) -> Vec<CallArgument> {
     let mut cursor = args_node.walk();
     args_node
@@ -62,13 +110,10 @@ fn find_arguments_node(node: Node<'_>) -> Option<Node<'_>> {
     }
 
     let mut cursor = node.walk();
-    for child in node.named_children(&mut cursor) {
-        if child.kind() == "arguments" {
-            return Some(child);
-        }
-    }
-
-    None
+    let result = node
+        .named_children(&mut cursor)
+        .find(|child| child.kind() == "arguments");
+    result
 }
 
 fn parse_call_target<'tcx>(
@@ -235,7 +280,7 @@ fn symbol_target_from_path(raw: &str, generics: Vec<TypeExpr>, kind: CallKind) -
     let mut parts: Vec<String> = qualifier
         .parts()
         .iter()
-        .map(|part| strip_generics(part))
+        .map(strip_generics)
         .filter(|segment| !segment.is_empty())
         .collect();
     if parts.is_empty() {

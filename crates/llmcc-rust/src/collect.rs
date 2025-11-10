@@ -219,6 +219,17 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         self.visit_function_item(node);
     }
 
+    fn visit_macro_definition(&mut self, node: HirNode<'tcx>) {
+        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_name) {
+            let (sym_idx, _fqn) =
+                self.core
+                    .insert_symbol(node.hir_id(), &ident.name, SymbolKind::Macro, true);
+            self.visit_children_scope(&node, Some(sym_idx));
+        } else {
+            self.visit_children(&node);
+        }
+    }
+
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_call(self.unit(), &node) {
             desc.enclosing = self.current_function_name().map(|name| name.to_string());
@@ -233,6 +244,14 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         }
     }
 
+    fn visit_macro_invocation(&mut self, node: HirNode<'tcx>) {
+        if let Some(mut desc) = RustDescriptor::build_call(self.unit(), &node) {
+            desc.enclosing = self.current_function_name().map(|name| name.to_string());
+            self.calls.add(node.hir_id(), desc);
+        }
+        self.visit_children(&node);
+    }
+
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut variable) = RustDescriptor::build_variable(self.unit(), &node) {
             let is_global = Self::visibility_exports(&variable.visibility);
@@ -245,7 +264,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             variable.fqn = Some(fqn);
             self.variables.add(node.hir_id(), variable);
             self.visit_children_scope(&node, Some(sym_idx));
-            return;
         } else {
             tracing::warn!(
                 "failed to build const descriptor for: {:?} next_hir={:?}",
@@ -325,7 +343,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 }
 
-pub fn collect_symbols<'tcx>(unit: CompileUnit<'tcx>) -> CollectedSymbols {
+pub fn collect_symbols(unit: CompileUnit<'_>) -> CollectedSymbols {
     let (collected, total_time, visit_time) = collect_symbols_batch(
         unit,
         DeclCollector::new,
