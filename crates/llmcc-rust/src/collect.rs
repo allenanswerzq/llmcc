@@ -169,9 +169,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
-        if let Some((sym_idx, _)) = self
-            .core
-            .insert_field_symbol(&node, LangRust::field_name, SymbolKind::DynamicType)
+        if let Some((sym_idx, _)) =
+            self.core
+                .insert_field_symbol(&node, LangRust::field_name, SymbolKind::DynamicType)
         {
             self.visit_children_scope(&node, Some(sym_idx));
         } else {
@@ -222,13 +222,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_call(self.unit(), &node) {
             desc.enclosing = self.current_function_name().map(|name| name.to_string());
-            // TODO:
-            // self.core.insert_expr_symbol(
-            //     node.hir_id(),
-            //     &desc.target,
-            //     SymbolKind::Trait,
-            //     false,
-            // );
             self.calls.add(node.hir_id(), desc);
             self.visit_children(&node);
         } else {

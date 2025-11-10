@@ -1,6 +1,7 @@
-================================================================================
-Identifiers
-================================================================================
+===============================================================================
+basic-identifiers
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn main() {
@@ -8,18 +9,15 @@ fn main() {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+u0:1 | Function | main | main |
 
 
 
-================================================================================
-Raw identifiers
-================================================================================
+
+===============================================================================
+raw-identifiers
+===============================================================================
+
 
 --- file: src/main.rs ---
 fn main() {
@@ -27,18 +25,15 @@ fn main() {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+u0:1 | Function | main | main |
 
 
 
-================================================================================
-Unary operator expressions
-================================================================================
+
+===============================================================================
+unary-operator-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 -num;
@@ -46,18 +41,14 @@ Unary operator expressions
 *boxed_thing;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Reference expressions
-================================================================================
+===============================================================================
+reference-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 &a;
@@ -66,36 +57,28 @@ Reference expressions
 &raw mut self.age;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Try expressions
-================================================================================
+===============================================================================
+try-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 a.unwrap()?;
 &a?;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Binary operator expressions
-================================================================================
+===============================================================================
+binary-operator-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 a * b;
@@ -110,36 +93,29 @@ a && b;
 a || b;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Grouped expressions
-================================================================================
+
+===============================================================================
+grouped-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 (0);
 (2 * (3 + 4));
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Range expressions
-================================================================================
+===============================================================================
+range-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 1..2;
@@ -156,416 +132,901 @@ for i in 1.. {
 }
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Assignment expressions
-================================================================================
+===============================================================================
+assignment-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 x = y;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Compound assignment expressions
-================================================================================
+
+===============================================================================
+compound-assignment-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 x += 1;
 x += y;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Type cast expressions
-================================================================================
+===============================================================================
+type-cast-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
-1000 as u8;
-let character = integer as char;
-let size: f64 = 1.0 + -len(values) as f64 + 1.0;
+struct Foo;
+
+fn func() {
+  1000 as u8;
+  let character = integer as Foo;
+  let size: f64 = 1.0 + -len(values) as f64 + 1.0;
+}
 
 --- expect:symbols ---
+u0:1 | Struct   | Foo  | Foo  |
+u0:2 | Function | func | func |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
 
 
---- expect:graph ---
 
+===============================================================================
+call-expressions
+===============================================================================
 
---- expect:bind ---
-
-
-
-================================================================================
-Call expressions
-================================================================================
 
 --- file: src/main.rs ---
-foo();
-add(1i32, 2i32);
-add(
-    1i32,
-    2i32,
-);
+struct Foo;
+struct Bar;
+
+fn func() {
+  let f = Foo::new();
+  let b: Bar = Bar::new(42);
+  foo();
+  add(f, b);
+}
 
 --- expect:symbols ---
+u0:1 | Struct   | Foo  | Foo  |
+u0:2 | Struct   | Bar  | Bar  |
+u0:3 | Function | func | func |
 
 
---- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-Array expressions
-================================================================================
-
---- file: src/main.rs ---
-[];
-[1, 2, 3];
-["a", "b", "c"];
-[0; 128];
-[
-    #[cfg(foo)]
-    "foo",
-    #[cfg(bar)]
-    "bar",
-];
-
---- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 <- [u0:3]
+u0:3 -> [u0:1, u0:2]
 
 
 
-================================================================================
-Tuple expressions
-================================================================================
 
---- file: src/main.rs ---
-();
-(0,);
-let (x, y, z) = (1, 2, 3);
+===============================================================================
+call-expressions-chained
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Foo;
+struct Bar;
+
+fn func() {
+  let f = Foo::new();
+  let b: Bar = Bar::new(42);
+  foo();
+  add(f).compute(b).finalize();
+}
 
 --- expect:symbols ---
+u0:1 | Struct   | Foo  | Foo  |
+u0:2 | Struct   | Bar  | Bar  |
+u0:3 | Function | func | func |
 
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 <- [u0:3]
+u0:3 -> [u0:1, u0:2]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Foo
+u0:3 | class | Bar
+u0:4 | func  | func
+u0:5 | call  | block#5
+u0:6 | call  | block#6
+u0:7 | call  | block#7
+u0:8 | call  | block#8
+
+--- expect:block-deps ---
+u0:2 <- [u0:4]
+u0:3 <- [u0:4]
+u0:4 -> [u0:2, u0:3]
 
 --- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="Bar", full_path="$TMP/app/src/main.rs:2"];
+    n3 [label="func", full_path="$TMP/app/src/main.rs:4"];
+  }
+  n3 -> n1;
+  n3 -> n2;
+}
 
 
---- expect:bind ---
+
+===============================================================================
+call-expressions-nested
+===============================================================================
 
 
+--- file: app/src/main.rs ---
+struct Foo;
+struct Bar;
 
-================================================================================
-Struct expressions
-================================================================================
-
---- file: src/main.rs ---
-NothingInMe {};
-Point {x: 10.0, y: 20.0};
-let a = SomeStruct { field1, field2: expression, field3, };
-let u = game::User {name: "Joe", age: 35, score: 100_000};
-let i = Instant { 0: Duration::from_millis(0) };
+fn func() {
+  let f = Foo::new();
+  let b: Bar = Bar::new(42);
+  foo();
+  add(f, compute(b));
+}
 
 --- expect:symbols ---
+u0:1 | Struct   | Foo  | Foo  |
+u0:2 | Struct   | Bar  | Bar  |
+u0:3 | Function | func | func |
 
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 <- [u0:3]
+u0:3 -> [u0:1, u0:2]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Foo
+u0:3 | class | Bar
+u0:4 | func  | func
+u0:5 | call  | block#5
+u0:6 | call  | block#6
+u0:7 | call  | block#7
+u0:8 | call  | block#8
+
+--- expect:block-deps ---
+u0:2 <- [u0:4]
+u0:3 <- [u0:4]
+u0:4 -> [u0:2, u0:3]
 
 --- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="Bar", full_path="$TMP/app/src/main.rs:2"];
+    n3 [label="func", full_path="$TMP/app/src/main.rs:4"];
+  }
+  n3 -> n1;
+  n3 -> n2;
+}
 
 
---- expect:bind ---
+
+===============================================================================
+array-expressions
+===============================================================================
 
 
+--- file: app/src/main.rs ---
+struct Foo;
 
-================================================================================
-Struct expressions with update initializers
-================================================================================
-
---- file: src/main.rs ---
-let u = User{name, ..current_user()};
+fn foo() {
+  let a = Foo::new();
+  [];
+  let b = [1, a, 3];
+  ["a", "b", "c"];
+  [0; 128];
+  [
+      #[cfg(foo)]
+      "foo",
+      #[cfg(bar)]
+      "bar",
+  ];
+}
 
 --- expect:symbols ---
+u0:1 | Struct   | Foo | Foo |
+u0:2 | Function | foo | foo |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Foo
+u0:3 | func  | foo
+u0:4 | call  | block#4
+
+--- expect:block-deps ---
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
 
 --- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="foo", full_path="$TMP/app/src/main.rs:3"];
+  }
+  n2 -> n1;
+}
 
 
---- expect:bind ---
+
+===============================================================================
+tuple-expressions
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct TupleThing;
+
+fn make_tuples() {
+  let empty = ();
+  let single = (TupleThing,);
+  let triple = (TupleThing, 2, 3);
+  let nested = ((1, 2), (3, 4));
+  let destructured = match triple {
+    (a, b, c) => (a, b, c),
+  };
+  let _all = (empty, single, nested, destructured);
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | TupleThing  | TupleThing  |
+u0:2 | Function | make_tuples | make_tuples |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | TupleThing
+u0:3 | func  | make_tuples
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="TupleThing", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="make_tuples", full_path="$TMP/app/src/main.rs:3"];
+  }
+  n2 -> n1;
+}
 
 
 
-================================================================================
-If expressions
-================================================================================
+===============================================================================
+struct-expressions
+===============================================================================
 
---- file: src/main.rs ---
+
+--- file: app/src/main.rs ---
+struct SomeStruct {
+    field1: i32,
+    field2: String,
+    field3: f64,
+}
+
+fn func() {
+  NothingInMe {};
+  Point {x: 10.0, y: 20.0};
+  let a = SomeStruct { field1, field2: expression, field3, };
+  let u = game::User {name: "Joe", age: 35, score: 100_000};
+  let i = Instant { 0: Duration::from_millis(0) };
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | SomeStruct | SomeStruct |
+u0:2 | Function | func       | func       |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | SomeStruct
+u0:3 | func  | func
+u0:4 | call  | block#4
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="SomeStruct", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="func", full_path="$TMP/app/src/main.rs:7"];
+  }
+  n2 -> n1;
+}
+
+
+
+
+
+===============================================================================
+struct-expressions-with-update-initializers
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct User {
+    id: u32,
+    score: u32,
+}
+
+fn build_user(score: u32) -> User {
+  let base = User { id: 1, score: 10 };
+  User {
+    score,
+    ..base
+  }
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | User       | User       |
+u0:2 | Function | build_user | build_user |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | User
+u0:3 | func  | build_user
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="User", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="build_user", full_path="$TMP/app/src/main.rs:6"];
+  }
+  n2 -> n1;
+}
+
+
+===============================================================================
+if-expressions
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Config {
+  n: i32,
+  x: i32,
+}
+
 fn main() {
-  if n == 1 {
-  } else if n == 2 {
+  let cfg = Config { n: 1, x: 5 };
+  if cfg.n == 1 {
+  } else if cfg.n == 2 {
   } else {
   }
-}
 
-let y = if x == 5 { 10 } else { 15 };
+  let y = if cfg.x == 5 { 10 } else { 15 };
 
-if foo && bar {}
+  if cfg.x > 0 && cfg.n > 0 {}
 
-if foo && bar || baz {}
-
---- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-Basic if let expressions
-================================================================================
-
---- file: src/main.rs ---
-if let Some(a) = b
-    && c
-    && d
-    && let Some(e) = f
-{
+  if cfg.x > 0 || cfg.n > 0 {}
 }
 
 --- expect:symbols ---
+u0:1 | Struct   | Config | Config |
+u0:2 | Function | main   | main   |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
 
---- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-If let expressions
-================================================================================
-
---- file: src/main.rs ---
-if let ("Bacon", b) = dish {
-}
-
-if let Some("chained") = a && b && let (C, D) = e {
-}
-
-if foo && let bar = || baz && quux {}
-
-if a && let b = || c || d && e {}
-
---- expect:symbols ---
-
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Config
+u0:3 | func  | main
 
 --- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-While let expressions
-================================================================================
-
---- file: src/main.rs ---
-while let ("Bacon", b) = dish {
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Config", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="main", full_path="$TMP/app/src/main.rs:6"];
+  }
+  n2 -> n1;
 }
 
---- expect:symbols ---
 
 
---- expect:graph ---
+===============================================================================
+basic-if-let-expressions
+===============================================================================
 
 
---- expect:bind ---
-
-
-
-================================================================================
-Match expressions
-================================================================================
-
---- file: src/main.rs ---
-match x {
-    1 => { "one" }
-    2 => "two",
-    -1 => 1,
-    -3.14 => 3,
-
-    #[attr1]
-    3 => "three",
-    macro!(4) => "four",
-    _ => "something else",
+--- file: app/src/main.rs ---
+struct Guard {
+  val: Option<i32>,
 }
 
-let msg = match x {
-    0 | 1 | 10 => "one of zero, one, or ten",
-    y if y < 20 => "less than 20, but not zero, one, or ten",
-    y if y == 200 =>
-      if a {
-        "200 (but this is not very stylish)"
-      }
-    y if let Some(z) = foo && z && let Some(w) = bar => "very chained",
-    _ => "something else",
-};
-
---- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-While expressions
-================================================================================
-
---- file: src/main.rs ---
-while !done {
-  done = true;
-}
-
---- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-Loop expressions
-================================================================================
-
---- file: src/main.rs ---
-'outer: loop {
-  'inner: loop {
-    break 'outer;
-    break true;
+fn check() {
+  let guard = Guard { val: Some(42) };
+  if let Some(a) = guard.val
+    && a > 0
+  {
   }
 }
 
 --- expect:symbols ---
+u0:1 | Struct   | Guard | Guard |
+u0:2 | Function | check | check |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Guard
+u0:3 | func  | check
+u0:4 | call  | block#4
 
 --- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-For expressions
-================================================================================
-
---- file: src/main.rs ---
-for e in v {
-  bar(e);
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Guard", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="check", full_path="$TMP/app/src/main.rs:5"];
+  }
+  n2 -> n1;
 }
 
-for i in 0..256 {
-  bar(i);
+
+
+===============================================================================
+if-let-expressions
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Dish;
+fn parse() {
+  let dish_opt = Some(Dish);
+  if let Some(dish) = dish_opt {
+  }
+
+  if let Some("chained") = a && b && let (C, D) = e {
+  }
+
+  if foo && let bar = || baz && quux {}
+  if a && let b = || c || d && e {}
 }
 
-'outer: for x in 0..10 {
-    'inner: for y in 0..10 {
-        if x % 2 == 0 { continue 'outer; }
-        if y % 2 == 0 { continue 'inner; }
+--- expect:symbols ---
+u0:1 | Struct   | Dish  | Dish  |
+u0:2 | Function | parse | parse |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Dish
+u0:3 | func  | parse
+u0:4 | call  | block#4
+
+--- expect:block-deps ---
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Dish", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="parse", full_path="$TMP/app/src/main.rs:2"];
+  }
+  n2 -> n1;
+}
+
+
+
+
+===============================================================================
+while-let-expressions
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Queue {
+  items: Option<Vec<i32>>,
+}
+
+fn process() {
+  let queue = Queue { items: Some(vec![]) };
+  while let Some(items) = queue.items {
+    let _ = items;
+  }
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Queue   | Queue   |
+u0:2 | Function | process | process |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Queue
+u0:3 | func  | process
+u0:4 | call  | block#4
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Queue", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="process", full_path="$TMP/app/src/main.rs:5"];
+  }
+  n2 -> n1;
+}
+
+
+
+===============================================================================
+match-expressions
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Value;
+
+fn process_value() {
+  let val = Value;
+  match val {
+    _ => {},
+  }
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Value   | Value   |
+u0:2 | Function | process_value | process_value |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Value
+u0:3 | func  | process_value
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Value", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="process_value", full_path="$TMP/app/src/main.rs:3"];
+  }
+  n2 -> n1;
+}
+
+
+
+===============================================================================
+while-expressions
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct State {
+  done: bool,
+}
+
+fn loop_until() {
+  let state = State { done: false };
+  while !state.done {
+    let _ = state.done;
+  }
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | State      | State      |
+u0:2 | Function | loop_until | loop_until |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | State
+u0:3 | func  | loop_until
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="State", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="loop_until", full_path="$TMP/app/src/main.rs:5"];
+  }
+  n2 -> n1;
+}
+
+
+
+===============================================================================
+loop-expressions
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Counter {
+  limit: i32,
+}
+
+fn count() {
+  let counter = Counter { limit: 10 };
+  'outer: loop {
+    'inner: loop {
+      break 'outer;
     }
+  }
 }
 
 --- expect:symbols ---
+u0:1 | Struct   | Counter | Counter |
+u0:2 | Function | count   | count   |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Counter
+u0:3 | func  | count
 
 --- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Counter", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="count", full_path="$TMP/app/src/main.rs:5"];
+  }
+  n2 -> n1;
+}
 
 
---- expect:bind ---
+
+===============================================================================
+for-expressions
+===============================================================================
 
 
+--- file: app/src/main.rs ---
+struct Container;
 
-================================================================================
-Field expressions
-================================================================================
-
---- file: src/main.rs ---
-mystruct.myfield;
-foo().x;
-value.0.1.iter();
-1.max(2);
+fn iterate() {
+  let container = Container;
+  for i in 0..10 {
+    let _ = i;
+  }
+}
 
 --- expect:symbols ---
+u0:1 | Struct   | Container | Container |
+u0:2 | Function | iterate   | iterate   |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+--- expect:blocks ---
+u0:1 | root  | block#1
+u0:2 | class | Container
+u0:3 | func  | iterate
 
 --- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Container", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="iterate", full_path="$TMP/app/src/main.rs:3"];
+  }
+  n2 -> n1;
+}
 
 
---- expect:bind ---
+
+===============================================================================
+field-expressions
+===============================================================================
 
 
+--- file: app/src/main.rs ---
+struct Foo;
+struct Far;
+struct Baz {
+  x: Far,
+}
 
-================================================================================
-Method call expressions
-================================================================================
+struct MyStruct {
+  myfield: Foo,
+}
 
---- file: src/main.rs ---
-mystruct.foo();
+fn foo() -> Baz {
+  Baz
+}
+
+fn bar() {
+  let mystruct = MyStruct { myfield: Foo };
+  let x = mystruct.myfield;
+  let y = foo().x;
+  value.0.1.iter();
+  1.max(2);
+}
 
 --- expect:symbols ---
+u0:1 | Struct   | Foo      | Foo      |
+u0:2 | Struct   | Far      | Far      |
+u0:3 | Struct   | Baz      | Baz      |
+u0:4 | Struct   | MyStruct | MyStruct |
+u0:5 | Function | foo      | foo      |
+u0:6 | Function | bar      | bar      |
 
+--- expect:symbol-deps ---
+u0:1 <- [u0:4, u0:6]
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
+u0:3 <- [u0:5]
+u0:4 -> [u0:1]
+u0:4 <- [u0:6]
+u0:5 -> [u0:3]
+u0:5 <- [u0:6]
+u0:6 -> [u0:1, u0:4, u0:5]
+
+--- expect:blocks ---
+u0:1  | root  | block#1
+u0:10 | call  | block#10
+u0:2  | class | Foo
+u0:3  | class | Far
+u0:4  | class | Baz
+u0:5  | class | MyStruct
+u0:6  | func  | foo
+u0:7  | func  | bar
+u0:8  | call  | block#8
+u0:9  | call  | block#9
+
+--- expect:block-deps ---
+u0:2 <- [u0:5, u0:7]
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
+u0:4 <- [u0:6]
+u0:5 -> [u0:2]
+u0:5 <- [u0:7]
+u0:6 -> [u0:4]
+u0:6 <- [u0:7]
+u0:7 -> [u0:2, u0:5, u0:6]
 
 --- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
+    n2 [label="foo", full_path="$TMP/app/src/main.rs:11"];
+    n3 [label="bar", full_path="$TMP/app/src/main.rs:15"];
+    n4 [label="Far", full_path="$TMP/app/src/main.rs:2"];
+    n5 [label="Baz", full_path="$TMP/app/src/main.rs:3"];
+    n6 [label="MyStruct", full_path="$TMP/app/src/main.rs:7"];
+  }
+  n2 -> n5;
+  n3 -> n2;
+  n3 -> n6;
+  n5 -> n4;
+  n6 -> n1;
+}
 
 
---- expect:bind ---
+===============================================================================
+method-call-expressions
+===============================================================================
 
 
+--- file: src/main.rs ---
+struct Foo;
 
-================================================================================
-Index expressions
-================================================================================
+struct MyStruct;
+
+impl MyStruct {
+  fn foo(&self) -> Foo {}
+}
+
+fn func() {
+    let mystruct = MyStruct::new();
+    let x = mystruct.foo();
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Foo      | Foo           |
+u0:2 | Struct   | MyStruct | MyStruct      |
+u0:3 | Function | foo      | MyStruct::foo |
+u0:4 | Function | func     | func           |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:3]
+u0:2 -> [u0:3]
+u0:2 <- [u0:4]
+u0:3 -> [u0:1]
+u0:3 <- [u0:2]
+u0:4 -> [u0:2]
+
+
+===============================================================================
+index-expressions
+===============================================================================
+
 
 --- file: src/main.rs ---
 ([1, 2, 3, 4])[0];
@@ -573,107 +1034,175 @@ arr[10];
 arr[n];
 
 --- expect:symbols ---
+none
 
 
---- expect:graph ---
+===============================================================================
+scoped-functions
+===============================================================================
 
+--- file: app/src/foo.rs ---
+pub fn f() {}
 
---- expect:bind ---
+pub mod g {
+  pub fn h() {}
+}
 
+--- file: app/src/main.rs ---
+struct a;
+impl a {
+  fn b() {}
+}
 
+struct C;
+impl C {
+  fn e() {}
+}
 
-================================================================================
-Scoped functions
-================================================================================
-
---- file: src/main.rs ---
-a::b();
-C::<D>::e();
-::f();
-::g::h();
+fn foo() {
+  a::b();
+  C::<D>::e();
+  ::f();
+  ::g::h();
+}
 
 --- expect:symbols ---
+u0:1 | Function | f   | f    | [global]
+u0:2 | Module   | g   | g    | [global]
+u0:3 | Function | h   | g::h | [global]
+u1:4 | Struct   | a   | a    |
+u1:5 | Function | b   | a::b |
+u1:6 | Struct   | C   | C    |
+u1:7 | Function | e   | C::e |
+u1:8 | Function | foo | foo  |
 
 
---- expect:graph ---
+--- expect:symbol-deps ---
+u0:1 <- [u1:8]
+u0:2 -> [u0:3]
+u0:3 <- [u0:2, u1:8]
+u1:4 -> [u1:5]
+u1:4 <- [u1:8]
+u1:5 <- [u1:4, u1:8]
+u1:6 -> [u1:7]
+u1:6 <- [u1:8]
+u1:7 <- [u1:6, u1:8]
+u1:8 -> [u0:1, u0:3, u1:4, u1:5, u1:6, u1:7]
+
+--- expect:block-graph ---
+(root:1
+    (func:2 f)
+    (func:3 h)
+)
+
+(root:4
+    (class:5 a)
+    (impl:6
+        (func:7 b)
+    )
+    (class:8 C)
+    (impl:9
+        (func:10 e)
+    )
+    (func:11 foo
+        (call:12)
+        (call:13)
+        (call:14)
+        (call:15)
+    )
+)
+
+--- expect:block-deps ---
+u0:2 <- [u1:11]
+u0:3 <- [u1:11]
+u1:10 <- [u1:11, u1:8]
+u1:11 -> [u0:2, u0:3, u1:10, u1:5, u1:7, u1:8]
+u1:5 -> [u1:7]
+u1:5 <- [u1:11]
+u1:7 <- [u1:11, u1:5]
+u1:8 -> [u1:10]
+u1:8 <- [u1:11]
 
 
---- expect:bind ---
 
+===============================================================================
+scoped-functions-with-fully-qualified-syntax
+===============================================================================
 
-
-================================================================================
-Scoped functions with fully qualified syntax
-================================================================================
 
 --- file: src/main.rs ---
 <Dog as Animal>::eat(d);
 
 --- expect:symbols ---
+none
 
+===============================================================================
+scoped-functions-with-macros-as-types
+===============================================================================
 
---- expect:graph ---
-
-
---- expect:bind ---
-
-
-
-================================================================================
-Scoped functions with macros as types
-================================================================================
 
 --- file: src/main.rs ---
 <Token![]>::foo();
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Scoped identifier with nested super
-================================================================================
+===============================================================================
+scoped-identifier-with-nested-super
+===============================================================================
+
 
 --- file: src/main.rs ---
-super::super::foo();
+pub fn foo() {}
+pub mod m1 {
+  mod m2 {
+    fn bar() {
+      super::super::foo();
+    }
+}
+
 
 --- expect:symbols ---
+u0:1 | Function | foo | foo         | [global]
+u0:2 | Module   | m1  | m1          | [global]
+u0:3 | Module   | m2  | m1::m2      |
+u0:4 | Function | bar | m1::m2::bar |
 
 
---- expect:graph ---
+--- expect:symbol-deps ---
+u0:1 <- [u0:4]
+u0:2 -> [u0:3]
+u0:3 -> [u0:4]
+u0:3 <- [u0:2]
+u0:4 -> [u0:1]
+u0:4 <- [u0:3]
+
+--- expect:blocks ---
+u0:1 | root | block#1
+u0:2 | func | foo
+u0:3 | func | bar
+u0:4 | call | block#4
 
 
---- expect:bind ---
+===============================================================================
+generic-functions
+===============================================================================
 
-
-
-================================================================================
-Generic functions
-================================================================================
 
 --- file: src/main.rs ---
 std::sizeof::<u32>();
 foo::<8>();
 
 --- expect:symbols ---
+none
 
 
---- expect:graph ---
+===============================================================================
+closures
+===============================================================================
 
-
---- expect:bind ---
-
-
-
-================================================================================
-Closures
-================================================================================
 
 --- file: src/main.rs ---
 a.map(|(b, c)| b.push(c));
@@ -684,35 +1213,26 @@ d.map(move |mut e| {
 h(|| -> i { j });
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Closures with typed parameteres
-================================================================================
+===============================================================================
+closures-with-typed-parameteres
+===============================================================================
+
 
 --- file: src/main.rs ---
 a.map(|b: usize| b.push(c));
 
 --- expect:symbols ---
+none
 
 
---- expect:graph ---
+===============================================================================
+generators
+===============================================================================
 
-
---- expect:bind ---
-
-
-
-================================================================================
-Generators
-================================================================================
 
 --- file: src/main.rs ---
 move || {
@@ -724,35 +1244,32 @@ move || {
 };
 
 --- expect:symbols ---
+none
 
 
---- expect:graph ---
+===============================================================================
+unsafe-blocks
+===============================================================================
 
-
---- expect:bind ---
-
-
-
-================================================================================
-Unsafe blocks
-================================================================================
 
 --- file: src/main.rs ---
+fn foo() {}
 const a : A = unsafe { foo() };
 
 --- expect:symbols ---
+u0:1 | Function | foo | foo |
+u0:2 | Const    | a   | a   |
 
 
---- expect:graph ---
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
 
 
---- expect:bind ---
+===============================================================================
+inline-const-or-const-blocks-as-expression
+===============================================================================
 
-
-
-================================================================================
-Inline const or Const blocks as expression
-================================================================================
 
 --- file: src/main.rs ---
 const { 1 + 3 };
@@ -760,29 +1277,18 @@ if *x < 0 { const { &4i32.pow(4) } } else { x }
 let three_ranges = [const { (0..=5).into_inner() }; 3];
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
+none
 
 
 
-================================================================================
-Raw reference expression conflicts
-================================================================================
+===============================================================================
+raw-reference-expression-conflicts
+===============================================================================
+
 
 --- file: src/main.rs ---
 some_call(&raw);
 let a = &raw const b;
 
 --- expect:symbols ---
-
-
---- expect:graph ---
-
-
---- expect:bind ---
-
-
+none

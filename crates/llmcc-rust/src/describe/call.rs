@@ -232,12 +232,18 @@ fn parse_type_arguments<'tcx>(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> Vec<
 
 fn symbol_target_from_path(raw: &str, generics: Vec<TypeExpr>, kind: CallKind) -> CallTarget {
     let qualifier = parse_rust_path(raw);
-    let mut parts = qualifier.parts().to_vec();
+    let mut parts: Vec<String> = qualifier
+        .parts()
+        .iter()
+        .map(|part| strip_generics(part))
+        .filter(|segment| !segment.is_empty())
+        .collect();
     if parts.is_empty() {
         parts = raw
             .split("::")
             .filter(|s| !s.is_empty())
-            .map(|s| s.to_string())
+            .map(strip_generics)
+            .filter(|segment| !segment.is_empty())
             .collect();
     }
 
@@ -256,6 +262,14 @@ fn symbol_target_from_path(raw: &str, generics: Vec<TypeExpr>, kind: CallKind) -
     symbol.kind = kind;
     symbol.type_arguments = generics;
     CallTarget::Symbol(symbol)
+}
+
+fn strip_generics(segment: impl AsRef<str>) -> String {
+    let s = segment.as_ref();
+    match s.find('<') {
+        Some(idx) => s[..idx].to_string(),
+        None => s.to_string(),
+    }
 }
 
 fn is_type_node(kind: &str) -> bool {

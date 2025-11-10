@@ -248,7 +248,7 @@ impl ScopeInfo {
         self.locals_by_kind
             .ensure_kind(kind)
             .entry(name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(symbol_idx);
     }
 }
@@ -424,10 +424,10 @@ impl<'tcx> CollectorCore<'tcx> {
         });
 
         let current_scope = self.current_scope_index();
-        self.scope_infos[current_scope].record_symbol(&name, idx, kind);
+        self.scope_infos[current_scope].record_symbol(name, idx, kind);
 
         if is_global {
-            self.scope_infos[0].record_symbol(&name, idx, kind);
+            self.scope_infos[0].record_symbol(name, idx, kind);
         }
 
         (idx, fqn)
@@ -518,7 +518,8 @@ impl<'tcx> CollectorCore<'tcx> {
 
                 if upsert {
                     // We tried our best but couldn't find a matching symbol, then we inert a new one.
-                    let (idx, _fqn) = self.insert_symbol(owner, parts.last().unwrap(), kind, is_global);
+                    let (idx, _fqn) =
+                        self.insert_symbol(owner, parts.last().unwrap(), kind, is_global);
                     return Some(idx);
                 }
 
@@ -531,7 +532,9 @@ impl<'tcx> CollectorCore<'tcx> {
             TypeExpr::Tuple(items) => items
                 .iter()
                 // Tuple singletons show up during parsing for `impl (Foo,)` in Rust.
-                .find_map(|item| self.find_or_insert_expr_symbol(owner, item, kind, is_global, upsert)),
+                .find_map(|item| {
+                    self.find_or_insert_expr_symbol(owner, item, kind, is_global, upsert)
+                }),
             _ => None,
         }
     }
