@@ -245,6 +245,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.visit_function_item(node);
     }
 
+    fn visit_macro_definition(&mut self, node: HirNode<'tcx>) {
+        let symbol = self
+            .core
+            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Macro);
+        self.visit_children_scope(&node, symbol);
+    }
+
     fn visit_block(&mut self, node: HirNode<'tcx>) {
         self.visit_children_scope(&node, None);
     }
@@ -280,6 +287,22 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
+        self.visit_children(&node);
+
+        let parent = self.current_symbol();
+        if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
+            let mut symbols = Vec::new();
+            self.core
+                .lookup_call_symbols(&descriptor.target, &mut symbols);
+            if let Some(parent_symbol) = parent {
+                for symbol in symbols {
+                    parent_symbol.add_dependency(symbol);
+                }
+            }
+        }
+    }
+
+    fn visit_macro_invocation(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
 
         let parent = self.current_symbol();

@@ -306,7 +306,15 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                             self.push_symbol_unique(symbols, sym);
                         }
                     }
-                    CallKind::Function | CallKind::Macro | CallKind::Unknown => {
+                    CallKind::Macro => {
+                        let symbol = self
+                            .lookup_symbol(&parts, Some(SymbolKind::Macro), None)
+                            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Macro));
+                        if let Some(sym) = symbol {
+                            self.push_symbol_unique(symbols, sym);
+                        }
+                    }
+                    CallKind::Function | CallKind::Unknown => {
                         let symbol = self
                             .lookup_symbol(&parts, Some(SymbolKind::Function), None)
                             .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Function));
@@ -347,7 +355,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                                 self.push_symbol_unique(symbols, sym);
                             }
                         }
-                        CallKind::Function | CallKind::Macro => {
+                        CallKind::Function => {
                             let symbol = self
                                 .lookup_symbol(
                                     &[segment.name.clone()],
@@ -358,6 +366,23 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                                     self.lookup_symbol_fqn(
                                         &[segment.name.clone()],
                                         SymbolKind::Function,
+                                    )
+                                });
+                            if let Some(sym) = symbol {
+                                self.push_symbol_unique(symbols, sym);
+                            }
+                        }
+                        CallKind::Macro => {
+                            let symbol = self
+                                .lookup_symbol(
+                                    &[segment.name.clone()],
+                                    Some(SymbolKind::Macro),
+                                    None,
+                                )
+                                .or_else(|| {
+                                    self.lookup_symbol_fqn(
+                                        &[segment.name.clone()],
+                                        SymbolKind::Macro,
                                     )
                                 });
                             if let Some(sym) = symbol {
