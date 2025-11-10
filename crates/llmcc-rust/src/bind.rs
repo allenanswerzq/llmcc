@@ -108,9 +108,9 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_enum_variant(&mut self, node: HirNode<'tcx>) {
-        let symbol = self
-            .core
-            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::EnumVariant);
+        let symbol =
+            self.core
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::EnumVariant);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -167,13 +167,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_type_item(&mut self, node: HirNode<'tcx>) {
-       self.visit_associated_type(node); 
+        self.visit_associated_type(node);
     }
 
     fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
-        let symbol = self
-            .core
-            .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::DynamicType);
+        let symbol =
+            self.core
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::DynamicType);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -188,17 +188,18 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             // the block, try to resolve the canonical global symbol for the target
             // type so every impl shares the same owner symbol regardless of which
             // file declared it.
-            let global_target_symbol = impl_descriptor
-                .target_ty
-                .path_segments()
-                .and_then(|segments| {
-                    [SymbolKind::Struct, SymbolKind::Enum]
-                        .into_iter()
-                        .find_map(|kind| {
-                            self.core
-                                .lookup_symbol_in_globals(segments, Some(kind), None)
-                        })
-                });
+            let global_target_symbol =
+                impl_descriptor
+                    .target_ty
+                    .path_segments()
+                    .and_then(|segments| {
+                        [SymbolKind::Struct, SymbolKind::Enum]
+                            .into_iter()
+                            .find_map(|kind| {
+                                self.core
+                                    .lookup_symbol_in_globals(segments, Some(kind), None)
+                            })
+                    });
 
             let enum_symbol = symbols
                 .iter()
@@ -277,7 +278,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_static_item(&mut self, node: HirNode<'tcx>) {
         self.visit_const_item(node);
     }
-
 
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);

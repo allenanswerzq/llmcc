@@ -22,7 +22,8 @@ use crate::visit::HirVisitor;
 use crate::DynError;
 use rayon::prelude::*;
 
-const COMPACT_INTERESTING_KINDS: [BlockKind; 2] = [BlockKind::Class, BlockKind::Enum];
+const BLOCK_INTERESTING_KINDS: [BlockKind; 3] =
+    [BlockKind::Class, BlockKind::Enum, BlockKind::Func];
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -387,12 +388,12 @@ impl<'tcx> ProjectGraph<'tcx> {
 
     fn collect_sorted_compact_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
         let ranked_filter = if self.pagerank_enabled {
-            self.ranked_block_filter(top_k, &COMPACT_INTERESTING_KINDS)
+            self.ranked_block_filter(top_k, &BLOCK_INTERESTING_KINDS)
         } else {
             None
         };
         let mut nodes =
-            self.collect_compact_nodes(&COMPACT_INTERESTING_KINDS, ranked_filter.as_ref());
+            self.collect_compact_nodes(&BLOCK_INTERESTING_KINDS, ranked_filter.as_ref());
         nodes.sort_by(|a, b| a.name.cmp(&b.name));
         nodes
     }

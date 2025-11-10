@@ -96,9 +96,9 @@ impl<'tcx> SymbolTrie<'tcx> {
         out: &mut Vec<&'tcx Symbol>,
     ) {
         for symbol in node.symbols.iter().copied() {
-            let kind_matches = kind_filter.map_or(true, |expected| symbol.kind() == expected);
+            let kind_matches = kind_filter.is_none_or(|expected| symbol.kind() == expected);
             let unit_matches =
-                unit_filter.map_or(true, |expected| symbol.unit_index() == Some(expected));
+                unit_filter.is_none_or(|expected| symbol.unit_index() == Some(expected));
             if kind_matches && unit_matches {
                 out.push(symbol);
             }

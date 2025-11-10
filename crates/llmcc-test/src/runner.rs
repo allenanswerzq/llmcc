@@ -8,9 +8,9 @@ use llmcc_core::graph_builder::{
     build_llmcc_graph, BlockId, BlockRelation, GraphBuildConfig, ProjectGraph,
 };
 use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
-use llmcc_core::{print_llmcc_ir, print_llmcc_graph};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
+use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
 
 use llmcc_resolver::apply_collected_symbols;
 use llmcc_resolver::collector::CollectedSymbols;

@@ -560,7 +560,7 @@ impl<T> SymbolKindMap<T> {
     }
 
     pub fn ensure_kind(&mut self, kind: SymbolKind) -> &mut HashMap<String, T> {
-        self.inner.entry(kind).or_insert_with(HashMap::new)
+        self.inner.entry(kind).or_default()
     }
 
     pub fn insert(&mut self, kind: SymbolKind, name: impl Into<String>, value: T) -> Option<T> {
