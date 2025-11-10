@@ -33,6 +33,7 @@ pub enum SymbolKind {
     Struct,
     Enum,
     Function,
+    Macro,
     Variable,
     Field,
     Const,
