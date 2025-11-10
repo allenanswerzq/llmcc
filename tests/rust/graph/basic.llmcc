@@ -82,7 +82,7 @@ u1:4 -> [u0:2]
     (class:2 Foo)
 )
 
-(root:3 
+(root:3
     (class:4 Bar)
 )
 
@@ -123,11 +123,15 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Bar           | Bar                  |
-u0:2 | Struct   | Foo           | Foo                  |
-u0:3 | Struct   | Slice         | Slice                |
-u0:4 | Function | binary_search | Slice::binary_search |
-u0:5 | Function | fake_method   | Slice::fake_method |
-u0:6 | Function | func          | func                 |
+u0:1  | Struct   | Bar           | Bar                        |
+u0:2  | Struct   | Foo           | Foo                        |
+u0:3  | Struct   | Slice         | Slice                      |
+u0:4  | Function | binary_search | Slice::binary_search       |
+u0:5  | Variable | self          | Slice::binary_search::self |
+u0:6  | Variable | x             | Slice::binary_search::x    |
+u0:7  | Function | fake_method   | Slice::fake_method         |
+u0:8  | Function | func          | func                       |
+u0:9  | Variable | slice         | func::slice                |
+u0:10 | Variable | f             | func::f
 
 --- expect:symbol-deps ---

@@ -54,7 +54,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
 
         if let Some(target_symbol) = self.core.lookup_symbol(&parts, None, None) {
-            if let Some(current) = self.current_symbol() {
+            if let Some(current) = self.current_symbol() && current.kind() != SymbolKind::Variable {
                 current.add_dependency(target_symbol);
             }
         }

@@ -119,12 +119,16 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
-        if let Some(var) = RustDescriptor::build_variable(self.unit(), &node) {
-            if let Some(ty) = &var.type_annotation {
+        if let Some(mut var) = RustDescriptor::build_variable(self.unit(), &node) {
+            //
+            // if let Some(ty) = &var.type_annotation {
+            //     self.core
+            //         .find_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
+            // }
+            let (_, fqn) =
                 self.core
-                    .find_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
-            }
-
+                    .insert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
+            var.fqn = Some(fqn);
             self.variables.add(node.hir_id(), var);
             self.visit_children(&node);
         } else {
@@ -141,10 +145,24 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.visit_children(&node);
+        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_pattern) {
+            let _ =
+                self.core
+                    .insert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
+            self.visit_children(&node);
+        } else {
+            tracing::warn!(
+                "build parameter error {:?} next_hir={:?}",
+                self.unit().hir_text(&node),
+                self.unit().hir_next()
+            );
+        }
     }
 
     fn visit_self_parameter(&mut self, node: HirNode<'tcx>) {
+      let _ = self
+            .core
+            .insert_symbol(node.hir_id(), "self", SymbolKind::Variable, false);
         self.visit_children(&node);
     }
 
