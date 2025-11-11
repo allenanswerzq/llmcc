@@ -37,7 +37,7 @@ fn slugify_case_name(raw: &str) -> String {
     }
 }
 
-/// Top-level corpus container discovered under a directory (e.g. `tests/corpus`).
+///  Top-level corpus container discovered under a directory (e.g. `tests/corpus`).
 pub struct Corpus {
     files: Vec<CorpusFile>,
 }
@@ -242,6 +242,10 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
     for raw_line in content.lines() {
         let line = raw_line.trim_end_matches('\r');
         let trimmed = line.trim();
+
+        if trimmed.starts_with("$//") {
+            continue;
+        }
 
         if awaiting_banner_close {
             if trimmed.is_empty() {

@@ -466,6 +466,9 @@ impl Symbol {
                 return;
             }
         }
+        if other.depends.read().contains(&self.id) {
+            return;
+        }
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);
     }

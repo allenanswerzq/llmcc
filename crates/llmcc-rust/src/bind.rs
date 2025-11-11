@@ -148,16 +148,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
 
-        // let parent_symbol = self.current_symbol();
-        // if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
-        //     if matches!(
-        //         parent_symbol.kind(),
-        //         SymbolKind::Struct | SymbolKind::Enum
-        //     ) {
-        //         self.core
-        //             .propagate_child_dependencies(parent_symbol, func_symbol);
-        //     }
-        // }
+        let parent_symbol = self.current_symbol();
+        if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
+            if matches!(parent_symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
+                self.core
+                    .propagate_child_dependencies(parent_symbol, func_symbol);
+            }
+        }
     }
 
     fn visit_type_parameter(&mut self, node: HirNode<'tcx>) {

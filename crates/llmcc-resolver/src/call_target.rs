@@ -30,20 +30,29 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         }
     }
 
+    ///
+    /// # Example
+    ///
+    /// ```text
+    /// use foo::Bar;
+    ///
+    /// Bar::builder().finish();
+    /// ```
+    ///
+    /// `builder` is emitted as a `CallSymbol` whose qualifiers are `["foo", "Bar"]`
+    /// and name is `"builder"`. `resolve_symbol_target` first tries the full path
+    /// `foo::Bar::builder`, pushing the resolved symbol into `out`. The qualifiers
+    /// are also recorded as potential receiver types (here, `foo::Bar`) so the
+    /// next segment such as `.finish()` can find the correct implementation.
     fn resolve_symbol_target(&self, call: &CallSymbol, out: &mut Vec<&'tcx Symbol>) {
         let mut parts = call.qualifiers.clone();
         parts.push(call.name.clone());
-
         match call.kind {
+            // Treat `receiver.method()` targets. Example: `user.clone()`.
             CallKind::Method => {
-                if let Some(method) =
-                    self.binder
-                        .lookup_symbol(&parts, Some(SymbolKind::Function), None)
-                {
-                    self.push_symbol_unique(out, method);
-                }
-                self.push_type_from_qualifiers(out, &call.qualifiers);
+                panic!("CallKind::Method should be handled in CallChain resolution");
             }
+            // Struct/enum constructors, e.g. `Vec::new()` or `Color::Red`.
             CallKind::Constructor => {
                 if let Some(sym) = self.binder.lookup_symbol_kind_priority(
                     &parts,
@@ -53,6 +62,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
                     self.push_symbol_unique(out, sym);
                 }
             }
+            // Macro invocations such as `println!` or `debug::log!`.
             CallKind::Macro => {
                 if let Some(sym) = self
                     .binder
@@ -62,6 +72,8 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
                     self.push_symbol_unique(out, sym);
                 }
             }
+            // Regular free functions (default) and unknown classifications.
+            // Example: `std::mem::drop(value)`.
             CallKind::Function | CallKind::Unknown => {
                 if let Some(sym) = self
                     .binder

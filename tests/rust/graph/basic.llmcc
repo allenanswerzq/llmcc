@@ -23,8 +23,9 @@ u0:2 -> [u0:1]
 u0:2 <- []
 
 --- expect:blocks ---
-u0:2 | class | Foo
-u0:3 | class | Bar
+u0:1 | root  | block#1
+u0:2 | class | Foo    
+u0:3 | class | Bar    
 
 --- expect:block-deps ---
 u0:2 <- [u0:3]
@@ -41,6 +42,9 @@ digraph project {
   }
   n2 -> n1;
 }
+
+
+
 
 
 
@@ -70,8 +74,10 @@ u1:2 -> [u0:1]
 u1:2 <- []
 
 --- expect:blocks ---
-u0:2 | class | Foo
-u1:4 | class | Bar
+u0:1 | root  | block#1
+u0:2 | class | Foo    
+u1:3 | root  | block#3
+u1:4 | class | Bar    
 
 --- expect:block-deps ---
 u0:2 <- [u1:4]
@@ -97,6 +103,9 @@ digraph project {
   }
   n2 -> n1;
 }
+
+
+
 
 
 ===============================================================================
@@ -136,3 +145,312 @@ u0:9  | Variable | slice         | func::slice                |
 u0:10 | Variable | f             | func::f
 
 --- expect:symbol-deps ---
+u0:2 <- [u0:4]
+u0:3 -> [u0:4, u0:7]
+u0:3 <- [u0:8]
+u0:4 -> [u0:2]
+u0:4 <- [u0:3]
+u0:7 <- [u0:3]
+u0:8 -> [u0:3]
+
+
+
+
+===============================================================================
+call-target-method
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Buffer;
+
+impl Buffer {
+    fn push(&mut self, value: u8) -> &mut Self {
+        let _ = value;
+        self
+    }
+
+    fn finish(&self) {}
+}
+
+fn method_demo(mut buffer: Buffer) {
+    buffer.push(1);
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Buffer      | Buffer               | 
+u0:2 | Function | push        | Buffer::push         | 
+u0:3 | Variable | self        | Buffer::push::self   | 
+u0:4 | Variable | value       | Buffer::push::value  | 
+u0:5 | Function | finish      | Buffer::finish       | 
+u0:6 | Variable | self        | Buffer::finish::self | 
+u0:7 | Function | method_demo | method_demo          | 
+u0:8 | Variable | buffer      | method_demo::buffer  | 
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2, u0:5]
+u0:1 <- [u0:7]
+u0:2 <- [u0:1]
+u0:5 <- [u0:1]
+u0:7 -> [u0:1]
+
+
+
+
+===============================================================================
+call-target-constructor
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Widget;
+
+impl Widget {
+    fn new() -> Self {
+        Widget
+    }
+}
+
+enum Mode {
+    Active,
+}
+
+fn constructor_demo() {
+    let _widget = Widget::new();
+    let _mode = Mode::Active;
+}
+
+--- expect:symbols ---
+u0:1 | Struct      | Widget           | Widget                    | 
+u0:2 | Function    | new              | Widget::new               | 
+u0:3 | Enum        | Mode             | Mode                      | 
+u0:4 | EnumVariant | Active           | Mode::Active              | 
+u0:5 | Function    | constructor_demo | constructor_demo          | 
+u0:6 | Variable    | _widget          | constructor_demo::_widget | 
+u0:7 | Variable    | _mode            | constructor_demo::_mode   | 
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2]
+u0:1 <- [u0:5]
+u0:2 <- [u0:1, u0:5]
+u0:3 -> [u0:4]
+u0:4 <- [u0:3]
+u0:5 -> [u0:1, u0:2]
+
+
+
+===============================================================================
+call-target-macro
+===============================================================================
+
+
+--- file: src/main.rs ---
+macro_rules! log_value {
+    ($value:expr) => {{
+        let _captured = $value;
+    }};
+}
+
+fn macro_demo() {
+    log_value!("hi");
+}
+
+--- expect:symbols ---
+u0:1 | Macro    | log_value  | log_value  | [global]
+u0:2 | Function | macro_demo | macro_demo |         
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+
+
+
+===============================================================================
+call-target-function
+===============================================================================
+
+
+--- file: src/main.rs ---
+mod helpers {
+    pub fn compute() {}
+}
+
+fn function_demo() {
+    helpers::compute();
+}
+
+--- expect:symbols ---
+u0:1 | Module   | helpers       | helpers          |         
+u0:2 | Function | compute       | helpers::compute | [global]
+u0:3 | Function | function_demo | function_demo    |         
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2]
+u0:2 <- [u0:1, u0:3]
+u0:3 -> [u0:2]
+
+
+
+
+===============================================================================
+call-target-chain-invocation
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Builder;
+
+impl Builder {
+    fn new() -> Self {
+        Builder
+    }
+
+    fn step(self) -> Self {
+        self
+    }
+
+    fn finish(self) {}
+}
+
+fn chain_invocation_demo() {
+    Builder::new().step().finish();
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Builder               | Builder               | 
+u0:2 | Function | new                   | Builder::new          | 
+u0:3 | Function | step                  | Builder::step         | 
+u0:4 | Variable | self                  | Builder::step::self   | 
+u0:5 | Function | finish                | Builder::finish       | 
+u0:6 | Variable | self                  | Builder::finish::self | 
+u0:7 | Function | chain_invocation_demo | chain_invocation_demo | 
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2, u0:3, u0:5]
+u0:1 <- [u0:7]
+u0:2 <- [u0:1, u0:7]
+u0:3 <- [u0:1]
+u0:5 <- [u0:1]
+u0:7 -> [u0:1, u0:2]
+
+
+
+===============================================================================
+call-target-chain-variable
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Stream;
+
+impl Stream {
+    fn advance(&mut self) -> &mut Self {
+        self
+    }
+
+    fn flush(&self) {}
+}
+
+fn chain_variable_demo(mut stream: Stream) {
+    let cursor = stream.advance();
+    cursor.flush();
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Stream              | Stream                      | 
+u0:2 | Function | advance             | Stream::advance             | 
+u0:3 | Variable | self                | Stream::advance::self       | 
+u0:4 | Function | flush               | Stream::flush               | 
+u0:5 | Variable | self                | Stream::flush::self         | 
+u0:6 | Function | chain_variable_demo | chain_variable_demo         | 
+u0:7 | Variable | stream              | chain_variable_demo::stream | 
+u0:8 | Variable | cursor              | chain_variable_demo::cursor | 
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2, u0:4]
+u0:1 <- [u0:6]
+u0:2 <- [u0:1]
+u0:4 <- [u0:1]
+u0:6 -> [u0:1]
+
+
+
+===============================================================================
+call-target-qualified-function
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Foo;
+struct SessionBuilder;
+
+impl SessionBuilder {
+    fn new() -> Self {
+        SessionBuilder
+    }
+
+    fn static_func() -> Foo {
+        Foo
+    }
+}
+
+fn qualified_call() {
+    SessionBuilder::new();
+    let x = SessionBuilder::static_func();
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Foo            | Foo                         |
+u0:2 | Struct   | SessionBuilder | SessionBuilder              |
+u0:3 | Function | new            | SessionBuilder::new         |
+u0:4 | Function | static_func    | SessionBuilder::static_func |
+u0:5 | Function | qualified_call | qualified_call              |
+u0:6 | Variable | x              | qualified_call::x           |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:4]
+u0:2 -> [u0:3, u0:4]
+u0:2 <- [u0:5]
+u0:3 <- [u0:2, u0:5]
+u0:4 -> [u0:1]
+u0:4 <- [u0:2, u0:5]
+u0:5 -> [u0:3, u0:4]
+
+--- expect:blocks ---
+u0:1 | root   | block#1
+u0:2 | class  | Foo
+u0:3 | class  | SessionBuilder
+u0:4 | impl   | block#4
+u0:5 | method | new
+u0:6 | method | static_func
+u0:7 | func   | qualified_call
+u0:8 | call   | block#8
+u0:9 | call   | block#9
+
+--- expect:block-deps ---
+u0:2 <- [u0:6]
+u0:3 -> [u0:5, u0:6]
+u0:3 <- [u0:7]
+u0:5 <- [u0:3, u0:7]
+u0:6 -> [u0:2]
+u0:6 <- [u0:3, u0:7]
+u0:7 -> [u0:3, u0:5, u0:6]
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="$TMP";
+    style=filled;
+    color=lightgrey;
+    n1 [label="Foo", full_path="$TMP/src/main.rs:1"];
+    n2 [label="qualified_call", full_path="$TMP/src/main.rs:12"];
+    n3 [label="SessionBuilder", full_path="$TMP/src/main.rs:2"];
+    n4 [label="new", full_path="$TMP/src/main.rs:5"];
+    n5 [label="static_func", full_path="$TMP/src/main.rs:9"];
+  }
+  n2 -> n3;
+  n3 -> n4;
+  n3 -> n5;
+  n5 -> n1;
+}
