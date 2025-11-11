@@ -1,12 +1,11 @@
 use std::collections::HashSet;
 
 use llmcc_core::{
-    build_llmcc_graph,
+    GraphBuildConfig, IrBuildConfig, build_llmcc_graph,
     graph_builder::{BlockKind, GraphNode, ProjectGraph},
-    GraphBuildConfig, IrBuildConfig,
 };
 use llmcc_resolver::apply_collected_symbols;
-use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_rust::{CompileCtxt, LangRust, bind_symbols, build_llmcc_ir, collect_symbols};
 
 fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> ProjectGraph<'static> {
     let source_bytes: Vec<Vec<u8>> = sources.iter().map(|s| s.as_bytes().to_vec()).collect();
@@ -277,7 +276,15 @@ fn filters_blocks_by_kind_and_unit() {
         .collect();
 
     assert!(unit0_funcs.contains("top_level"));
-    assert!(unit0_funcs.contains("method"));
+    assert!(!unit0_funcs.contains("method"));
+
+    let unit0_methods: HashSet<_> = graph
+        .blocks_by_kind_in(BlockKind::Method, 0)
+        .into_iter()
+        .filter_map(|node| block_name(&graph, node))
+        .collect();
+
+    assert!(unit0_methods.contains("method"));
 
     let unit1_consts: HashSet<_> = graph
         .blocks_by_kind_in(BlockKind::Const, 1)
@@ -310,7 +317,7 @@ fn type_records_dependencies_on_methods() {
 
     // method should exist and belong to Foo
     let method_info = graph.block_info(method.block_id).unwrap();
-    assert_eq!(method_info.2, BlockKind::Func);
+    assert_eq!(method_info.2, BlockKind::Method);
 }
 
 #[test]
@@ -583,7 +590,7 @@ fn trait_impl_method_dependencies() {
 
     // process method should exist
     let process_info = graph.block_info(process.block_id).unwrap();
-    assert_eq!(process_info.2, BlockKind::Func);
+    assert_eq!(process_info.2, BlockKind::Method);
 }
 
 #[test]
@@ -1034,10 +1041,10 @@ fn struct_with_private_and_public_methods() {
     // Both methods are defined in impl blocks, which may not create direct dependencies
     // in the current implementation. Just verify they exist and their basic properties.
     let public_info = graph.block_info(public_method.block_id).unwrap();
-    assert_eq!(public_info.2, BlockKind::Func);
+    assert_eq!(public_info.2, BlockKind::Method);
 
     let private_info = graph.block_info(private_method.block_id).unwrap();
-    assert_eq!(private_info.2, BlockKind::Func);
+    assert_eq!(private_info.2, BlockKind::Method);
 
     let container_info = graph.block_info(container.block_id).unwrap();
     assert_eq!(container_info.2, BlockKind::Class);
@@ -1090,10 +1097,10 @@ fn multiple_impl_blocks_same_type() {
 
     // Both methods should exist
     let x_info = graph.block_info(x_method.block_id).unwrap();
-    assert_eq!(x_info.2, BlockKind::Func);
+    assert_eq!(x_info.2, BlockKind::Method);
 
     let y_info = graph.block_info(y_method.block_id).unwrap();
-    assert_eq!(y_info.2, BlockKind::Func);
+    assert_eq!(y_info.2, BlockKind::Method);
 
     let point_info = graph.block_info(point.block_id).unwrap();
     assert_eq!(point_info.2, BlockKind::Class);

@@ -40,24 +40,8 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.core.scopes_mut()
     }
 
-    fn current_symbol(&self) -> Option<&'tcx Symbol> {
-        self.core.current_symbol()
-    }
-
-    fn handle_identifier(&mut self, node: HirNode<'tcx>) {
-        let text = self.unit().hir_text(&node);
-        let mut parts = parse_rust_path(&text).parts().to_vec();
-        parts.retain(|segment| !segment.is_empty());
-
-        if parts.is_empty() {
-            return;
-        }
-
-        if let Some(target_symbol) = self.core.lookup_symbol(&parts, None, None) {
-            if let Some(current) = self.current_symbol() {
-                current.add_dependency(target_symbol);
-            }
-        }
+    fn scope_symbol(&self) -> Option<&'tcx Symbol> {
+        self.core.scope_symbol()
     }
 }
 
@@ -71,7 +55,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<Self::ScopedSymbol>) {
         let depth = self.scopes().depth();
         if let Some(symbol) = symbol {
-            if let Some(parent) = self.current_symbol() {
+            if let Some(parent) = self.scope_symbol() {
                 parent.add_dependency(symbol);
             }
         }
@@ -142,16 +126,13 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
 
-        // let parent_symbol = self.current_symbol();
-        // if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
-        //     if matches!(
-        //         parent_symbol.kind(),
-        //         SymbolKind::Struct | SymbolKind::Enum
-        //     ) {
-        //         self.core
-        //             .propagate_child_dependencies(parent_symbol, func_symbol);
-        //     }
-        // }
+        let parent_symbol = self.scope_symbol();
+        if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
+            if matches!(parent_symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
+                self.core
+                    .propagate_child_dependencies(parent_symbol, func_symbol);
+            }
+        }
     }
 
     fn visit_type_parameter(&mut self, node: HirNode<'tcx>) {
@@ -173,7 +154,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::DynamicType);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::InferredType);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -258,21 +239,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
-
-        let parent = self.current_symbol();
-        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
-            if let Some(parent_symbol) = parent {
-                if let Some(type_expr) = descriptor.type_annotation.as_ref() {
-                    for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
-                        parent_symbol.add_dependency(type_symbol);
-                    }
-                }
-            }
-        }
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
+        self.core.set_backward_relation();
         self.visit_children(&node);
+        self.core.set_backward_relation();
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
@@ -289,7 +261,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
 
-        let parent = self.current_symbol();
+        let parent = self.scope_symbol();
         if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
             let mut symbols = Vec::new();
             self.core
@@ -305,7 +277,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_macro_invocation(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
 
-        let parent = self.current_symbol();
+        let parent = self.scope_symbol();
         if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
             let mut symbols = Vec::new();
             self.core
@@ -319,15 +291,15 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_scoped_identifier(&mut self, node: HirNode<'tcx>) {
-        self.handle_identifier(node);
+        self.core.resolve_identifier_with(node, parse_rust_path);
     }
 
     fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
-        self.handle_identifier(node);
+        self.core.resolve_identifier_with(node, parse_rust_path);
     }
 
     fn visit_identifier(&mut self, node: HirNode<'tcx>) {
-        self.handle_identifier(node);
+        self.core.resolve_identifier_with(node, parse_rust_path);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {

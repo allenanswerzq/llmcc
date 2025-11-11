@@ -284,7 +284,7 @@ mod Foo {
 struct Baz;
 
 fn func() {
-    let y = Baz::new(); 
+    let y = Baz::new();
     let Foo::Bar {
         texts,
         values,
@@ -587,7 +587,7 @@ u0:7 -> [u0:3]
 u0:8 -> [u0:4, u0:5]
 
 
-=============================================================================== 
+===============================================================================
 functions-with-custom-types-for-self
 ===============================================================================
 
@@ -691,9 +691,9 @@ type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
 
 --- expect:symbols ---
 u0:1 | Struct      | Tree        | Tree        |
-u0:2 | DynamicType | Inch        | Inch        |
-u0:3 | DynamicType | Name        | Name        |
-u0:4 | DynamicType | LazyResolve | LazyResolve |
+u0:2 | InferredType | Inch        | Inch        |
+u0:3 | InferredType | Name        | Name        |
+u0:4 | InferredType | LazyResolve | LazyResolve |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:3]
@@ -710,8 +710,8 @@ type Foo<T> where T: Copy = Box<T>;
 type Assoc3 where = () where;
 
 --- expect:symbols ---
-u0:1 | DynamicType | Foo    | Foo    |
-u0:2 | DynamicType | Assoc3 | Assoc3 |
+u0:1 | InferredType | Foo    | Foo    |
+u0:2 | InferredType | Assoc3 | Assoc3 |
 
 
 
@@ -1086,7 +1086,7 @@ trait Add<RHS=Foo> {
 --- expect:symbols ---
 u0:1 | Struct      | Foo    | Foo         |
 u0:2 | Struct      | Add    | Add         |
-u0:3 | DynamicType | Output | Add::Output |
+u0:3 | InferredType | Output | Add::Output |
 u0:4 | Function    | add    | Add::add    |
 
 --- expect:symbol-deps ---
@@ -1157,8 +1157,8 @@ pub trait Graph {
 
 --- expect:symbols ---
 u0:1 | Struct      | Graph | Graph    | [global]
-u0:2 | DynamicType | N     | Graph::N | [global]
-u0:3 | DynamicType | E     | Graph::E | [global]
+u0:2 | InferredType | N     | Graph::N | [global]
+u0:3 | InferredType | E     | Graph::E | [global]
 
 
 
@@ -1174,7 +1174,7 @@ impl Trait for T {
 
 --- expect:symbols ---
 u0:1 | Struct | T | T |
-u0:2 | DynamicType | Associated | T::Associated |
+u0:2 | InferredType | Associated | T::Associated |
 
 --- expect:symbol-deps ---
 u0:1 -> [u0:2]
@@ -1206,9 +1206,9 @@ where
 
 --- expect:symbols ---
 u0:1 | Struct      | Database      | Database      | [global]
-u0:2 | DynamicType | F             | Database::F   | [global]
+u0:2 | InferredType | F             | Database::F   | [global]
 u0:3 | Struct      | Foo           | Foo           |
-u0:4 | DynamicType | F             | Foo::F        |
+u0:4 | InferredType | F             | Foo::F        |
 u0:5 | Function    | use_database1 | use_database1 |
 u0:6 | Function    | use_database2 | use_database2 |
 
@@ -1230,7 +1230,7 @@ type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
 --- expect:symbols ---
 u0:1 | Struct      | AddAssign  | AddAssign |
 u0:2 | Struct      | T          | T         |
-u0:3 | DynamicType | FnObject   | FnObject  |
+u0:3 | InferredType | FnObject   | FnObject  |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:2]
@@ -1260,7 +1260,7 @@ u0:2 | Struct      | Bar       | Bar       |
 u0:3 | Struct      | Baz       | Baz       |
 u0:4 | Struct      | AddAssign | AddAssign |
 u0:5 | Struct      | T         | T         |
-u0:6 | DynamicType | FnObject  | FnObject  |
+u0:6 | InferredType | FnObject  | FnObject  |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:4]

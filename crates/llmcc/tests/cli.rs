@@ -1,6 +1,6 @@
 use std::fs;
 
-use llmcc::{run_main, LlmccOptions};
+use llmcc::{LlmccOptions, run_main};
 use llmcc_rust::LangRust;
 use tempfile::tempdir;
 

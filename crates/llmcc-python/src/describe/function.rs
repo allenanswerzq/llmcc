@@ -3,7 +3,7 @@ use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
 use llmcc_descriptor::{
-    FunctionDescriptor, FunctionParameter, ParameterKind, TypeExpr, LANGUAGE_PYTHON,
+    FunctionDescriptor, FunctionParameter, LANGUAGE_PYTHON, ParameterKind, TypeExpr,
 };
 
 use crate::token::LangPython;

@@ -4,11 +4,12 @@ use std::marker::PhantomData;
 use std::mem;
 use std::path::Path;
 
+use crate::DynError;
 use crate::block::Arena as BlockArena;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
-    BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockRoot,
-    BlockStmt,
+    BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockMethod,
+    BlockRoot, BlockStmt,
 };
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
@@ -19,11 +20,14 @@ use crate::module_path::{module_group_from_location, module_group_from_path};
 use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
-use crate::DynError;
 use rayon::prelude::*;
 
-const BLOCK_INTERESTING_KINDS: [BlockKind; 3] =
-    [BlockKind::Class, BlockKind::Enum, BlockKind::Func];
+const COMPACT_INTERESTING_KINDS: [BlockKind; 3] = [
+    BlockKind::Class,
+    BlockKind::Enum,
+    BlockKind::Func,
+    // BlockKind::Method,
+];
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -283,7 +287,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let nodes = self.collect_sorted_compact_nodes(top_k);
 
         if nodes.is_empty() {
-            return "digraph project {\n}\n".to_string();
+            return "digraph DesignGraph {\n}\n".to_string();
         }
 
         let renderer = GraphRenderer::new(&nodes);
@@ -388,12 +392,12 @@ impl<'tcx> ProjectGraph<'tcx> {
 
     fn collect_sorted_compact_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
         let ranked_filter = if self.pagerank_enabled {
-            self.ranked_block_filter(top_k, &BLOCK_INTERESTING_KINDS)
+            self.ranked_block_filter(top_k, &COMPACT_INTERESTING_KINDS)
         } else {
             None
         };
         let mut nodes =
-            self.collect_compact_nodes(&BLOCK_INTERESTING_KINDS, ranked_filter.as_ref());
+            self.collect_compact_nodes(&COMPACT_INTERESTING_KINDS, ranked_filter.as_ref());
         nodes.sort_by(|a, b| a.name.cmp(&b.name));
         nodes
     }
@@ -793,6 +797,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block_ref = self.alloc_from_block_arena(|arena| arena.blk_func.alloc(block));
                 BasicBlock::Func(block_ref)
             }
+            BlockKind::Method => {
+                let block = BlockMethod::from_hir(id, node, parent, children);
+                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_method.alloc(block));
+                BasicBlock::Method(block_ref)
+            }
             BlockKind::Class => {
                 let block = BlockClass::from_hir(id, node, parent, children);
                 let block_ref = self.alloc_from_block_arena(|arena| arena.blk_class.alloc(block));
@@ -923,7 +932,23 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
     fn build_block(&mut self, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
         let id = self.next_id();
-        let block_kind = Language::block_kind(node.kind_id());
+        let mut block_kind = Language::block_kind(node.kind_id());
+        if block_kind == BlockKind::Func {
+            let mut current_parent = node.parent();
+            while let Some(parent_id) = current_parent {
+                let parent_node = self.unit.hir_node(parent_id);
+                let parent_kind = Language::block_kind(parent_node.kind_id());
+                if matches!(parent_kind, BlockKind::Class | BlockKind::Impl) {
+                    block_kind = BlockKind::Method;
+                    break;
+                }
+                if parent_kind == BlockKind::Root {
+                    break;
+                }
+                current_parent = parent_node.parent();
+            }
+        }
+
         assert_ne!(block_kind, BlockKind::Undefined);
 
         if self.root.is_none() {
@@ -971,11 +996,12 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
         let kind = Language::block_kind(node.kind_id());
         match kind {
             BlockKind::Func
+            | BlockKind::Method
             | BlockKind::Class
             | BlockKind::Enum
             | BlockKind::Const
             | BlockKind::Impl
-            // | BlockKind::Field
+            | BlockKind::Field
             | BlockKind::Call => self.build_block(node, parent, false),
             _ => self.visit_children(node, parent),
         }
@@ -985,6 +1011,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
         let kind = Language::block_kind(node.kind_id());
         match kind {
             BlockKind::Func
+            | BlockKind::Method
             | BlockKind::Class
             | BlockKind::Enum
             | BlockKind::Const

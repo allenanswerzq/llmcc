@@ -62,7 +62,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     }
 
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
-        self.core.current_symbol()
+        self.core.scope_symbol()
     }
 
     fn module_segments_from_path(path: &Path) -> Vec<String> {
@@ -149,10 +149,10 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     }
 
     fn add_symbol_relation(&mut self, symbol: Option<&'tcx Symbol>) {
-        self.core.add_symbol_dependency(symbol);
+        // self.core.add_symbol_dependency(symbol);
 
         let Some(target) = symbol else { return };
-        let Some(current) = self.current_symbol() else {
+        let Some(current) = self.scope_symbol() else {
             return;
         };
 
@@ -423,7 +423,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
 
     fn record_call_binding(&mut self, target: &Symbol) {
         let caller_name = self
-            .current_symbol()
+            .scope_symbol()
             .map(|s| s.fqn_name.read().clone())
             .unwrap_or_else(|| "<module>".to_string());
         let target_name = target.fqn_name.read().clone();
@@ -557,7 +557,7 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<Self::ScopedSymbol>) {
         let depth = self.scopes().depth();
         if let Some(symbol) = symbol {
-            if let Some(parent) = self.current_symbol() {
+            if let Some(parent) = self.scope_symbol() {
                 parent.add_dependency(symbol);
             }
         }
@@ -601,7 +601,7 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
             .lookup_symbol_suffix(&[key], Some(SymbolKind::Function), None);
 
         // Get the parent symbol before pushing a new scope
-        let parent_symbol = self.current_symbol();
+        let parent_symbol = self.scope_symbol();
 
         if let Some(scope) = self.unit().opt_get_scope(node.hir_id()) {
             // If symbol not found by lookup, get it from the scope
@@ -612,7 +612,7 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
             let depth = self.scopes().depth();
             self.scopes_mut().push_with_symbol(scope, symbol);
 
-            if let Some(current_symbol) = self.current_symbol() {
+            if let Some(current_symbol) = self.scope_symbol() {
                 // If parent is a class, class depends on method
                 if let Some(parent) = parent_symbol {
                     if parent.kind() == SymbolKind::Struct {
@@ -684,7 +684,7 @@ impl<'tcx> AstVisitorPython<'tcx> for SymbolBinder<'tcx, '_> {
             let depth = self.scopes().depth();
             self.scopes_mut().push_with_symbol(scope, symbol);
 
-            if let Some(current_symbol) = self.current_symbol() {
+            if let Some(current_symbol) = self.scope_symbol() {
                 if let Some(descriptor) = self.collection().classes.find(node.hir_id()) {
                     for base in &descriptor.base_types {
                         self.add_type_expr_dependencies(base);

@@ -1,9 +1,9 @@
-use llmcc_core::{context::CompileCtxt, IrBuildConfig};
+use llmcc_core::{IrBuildConfig, context::CompileCtxt};
 use llmcc_descriptor::{
     ClassDescriptor, FunctionDescriptor, FunctionParameter, ImportDescriptor, TypeExpr,
     VariableDescriptor,
 };
-use llmcc_python::{build_llmcc_ir, collect_symbols, CollectionResult, LangPython};
+use llmcc_python::{CollectionResult, LangPython, build_llmcc_ir, collect_symbols};
 
 fn collect_from_source(source: &str) -> CollectionResult {
     let sources = vec![source.as_bytes().to_vec()];

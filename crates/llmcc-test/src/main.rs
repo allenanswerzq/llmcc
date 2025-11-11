@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 
-use llmcc_test::{run_cases, run_cases_for_file, CaseOutcome, CaseStatus, Corpus, RunnerConfig};
+use llmcc_test::{CaseOutcome, CaseStatus, Corpus, RunnerConfig, run_cases, run_cases_for_file};
 
 #[derive(Parser, Debug)]
 #[command(name = "llmcc-test", about = "Corpus runner for llmcc", version)]

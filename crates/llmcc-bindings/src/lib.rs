@@ -1,5 +1,5 @@
 #![allow(clippy::useless_conversion)]
-use llmcc::{run_main, LlmccOptions};
+use llmcc::{LlmccOptions, run_main};
 use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
 use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};

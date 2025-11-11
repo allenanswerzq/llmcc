@@ -1,6 +1,6 @@
+use crate::CompileUnit;
 use crate::graph_builder::BlockId;
 use crate::ir::{HirKind, HirNode};
-use crate::CompileUnit;
 
 pub trait HirVisitor<'v> {
     fn unit(&self) -> CompileUnit<'v>;

@@ -4,7 +4,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
-use llmcc_descriptor::{ClassDescriptor, ClassField, StructKind, TypeExpr, LANGUAGE_PYTHON};
+use llmcc_descriptor::{ClassDescriptor, ClassField, LANGUAGE_PYTHON, StructKind, TypeExpr};
 
 use crate::token::LangPython;
 

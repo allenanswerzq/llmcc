@@ -1,8 +1,8 @@
 use parking_lot::RwLock;
 
+use string_interner::StringInterner;
 use string_interner::backend::DefaultBackend;
 use string_interner::symbol::DefaultSymbol;
-use string_interner::StringInterner;
 
 /// Interned string symbol backed by a `StringInterner`.
 pub type InternedStr = DefaultSymbol;
