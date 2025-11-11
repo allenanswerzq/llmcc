@@ -30,37 +30,24 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         }
     }
 
-    ///
-    /// # Example
-    ///
-    /// ```text
-    /// use foo::Bar;
-    ///
-    /// Bar::builder().finish();
-    /// ```
-    ///
-    /// `builder` is emitted as a `CallSymbol` whose qualifiers are `["foo", "Bar"]`
-    /// and name is `"builder"`. `resolve_symbol_target` first tries the full path
-    /// `foo::Bar::builder`, pushing the resolved symbol into `out`. The qualifiers
-    /// are also recorded as potential receiver types (here, `foo::Bar`) so the
-    /// next segment such as `.finish()` can find the correct implementation.
     fn resolve_symbol_target(&self, call: &CallSymbol, out: &mut Vec<&'tcx Symbol>) {
         let mut parts = call.qualifiers.clone();
         parts.push(call.name.clone());
         match call.kind {
             // Treat `receiver.method()` targets. Example: `user.clone()`.
             CallKind::Method => {
-                panic!("CallKind::Method should be handled in CallChain resolution");
+                panic!("symbol target CallKind::Method");
             }
             // Struct/enum constructors, e.g. `Vec::new()` or `Color::Red`.
             CallKind::Constructor => {
-                if let Some(sym) = self.binder.lookup_symbol_kind_priority(
-                    &parts,
-                    &[SymbolKind::Struct, SymbolKind::Enum],
-                    None,
-                ) {
-                    self.push_symbol_unique(out, sym);
-                }
+                panic!("symbol target CallKind::Constructorn");
+                // if let Some(sym) = self.binder.lookup_symbol_kind_priority(
+                //     &parts,
+                //     &[SymbolKind::Struct, SymbolKind::Enum],
+                //     None,
+                // ) {
+                //     self.push_symbol_unique(out, sym);
+                // }
             }
             // Macro invocations such as `println!` or `debug::log!`.
             CallKind::Macro => {
@@ -74,7 +61,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             }
             // Regular free functions (default) and unknown classifications.
             // Example: `std::mem::drop(value)`.
-            CallKind::Function | CallKind::Unknown => {
+            CallKind::Function => {
                 if let Some(sym) = self
                     .binder
                     .lookup_symbol(&parts, Some(SymbolKind::Function), None)
@@ -84,6 +71,9 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
                 }
                 self.push_type_from_qualifiers(out, &call.qualifiers);
             }
+            CallKind::Unknown => {
+                panic!("symbol target CallKind::Unknown");
+            }
         }
     }
 
@@ -91,6 +81,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         let mut receivers = self.seed_receivers_from_root(chain, out);
 
         for segment in &chain.parts {
+            println!("Resolving call segment: {:?}", chain);
             receivers = match segment.kind {
                 CallKind::Constructor => self.handle_constructor_segment(segment, out),
                 CallKind::Function => self.handle_function_segment(segment, out),

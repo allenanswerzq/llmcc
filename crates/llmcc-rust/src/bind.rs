@@ -43,7 +43,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     fn scope_symbol(&self) -> Option<&'tcx Symbol> {
         self.core.scope_symbol()
     }
-
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {

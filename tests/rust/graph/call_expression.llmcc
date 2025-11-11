@@ -1,5 +1,42 @@
 ===============================================================================
-call-target-callkind-constructor
+call-target-callkind-function-one
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+mod helpers {
+    pub fn compute() {}
+}
+
+fn function_demo() {
+    helpers::compute();
+}
+
+--- expect:symbols ---
+u0:1 | Module   | helpers       | helpers          |
+u0:2 | Function | compute       | helpers::compute | [global]
+u0:3 | Function | function_demo | function_demo    |
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2]
+u0:2 <- [u0:1, u0:3]
+u0:3 -> [u0:2]
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n2 [label="compute", full_path="$TMP/app/src/main.rs:2"];
+    n3 [label="function_demo", full_path="$TMP/app/src/main.rs:5"];
+  }
+  n3 -> n2;
+}
+
+
+===============================================================================
+call-target-callkind-function-two
 ===============================================================================
 
 
@@ -84,3 +121,56 @@ digraph project {
   n3 -> n8;
   n4 -> n2;
 }
+
+
+===============================================================================
+call-target-callkind-macro
+===============================================================================
+
+
+--- file: src/main.rs ---
+macro_rules! log_value {
+    ($value:expr) => {{
+        let _captured = $value;
+    }};
+}
+
+fn macro_demo() {
+    log_value!("hi");
+}
+
+--- expect:symbols ---
+u0:1 | Macro    | log_value  | log_value  | [global]
+u0:2 | Function | macro_demo | macro_demo |         
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:2]
+u0:2 -> [u0:1]
+
+
+
+===============================================================================
+call-target-callkind-chain-method
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Builder;
+
+impl Builder {
+    fn new() -> Self {
+        Builder
+    }
+
+    fn step(self) -> Self {
+        self
+    }
+
+    fn finish(self) {}
+}
+
+fn chain_invocation_demo() {
+    Builder::new().step().finish();
+}
+
+--- expect:symbols ---

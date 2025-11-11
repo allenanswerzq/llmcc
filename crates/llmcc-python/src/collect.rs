@@ -5,7 +5,8 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::SymbolKind;
 
 use llmcc_descriptor::{
-    CallDescriptor, CallKind, CallTarget, DescriptorTrait, LANGUAGE_PYTHON, TypeExpr, VariableScope,
+    CallDescriptor, CallKind, CallTarget, DescriptorTrait, LANGUAGE_PYTHON, TypeExpr,
+    VariableScope, Visibility,
 };
 use llmcc_resolver::{
     CallCollection, ClassCollection, CollectedSymbols, CollectionResult, CollectorCore,
@@ -164,6 +165,24 @@ impl<'tcx> DeclCollector<'tcx> {
         Some((symbol_idx, name, fqn))
     }
 
+    fn visibility_exports(&self, visibility: &Visibility) -> bool {
+        let parent_exports = self
+            .core
+            .parent_symbol()
+            .map(|symbol| symbol.is_global)
+            .unwrap_or(true);
+
+        if !parent_exports {
+            return false;
+        }
+
+        match visibility {
+            Visibility::Private => false,
+            Visibility::Restricted { .. } | Visibility::Public => true,
+            Visibility::Unspecified => parent_exports,
+        }
+    }
+
     fn apply_call_kind_hint(&self, descriptor: &mut CallDescriptor) {
         if let CallTarget::Symbol(symbol) = &mut descriptor.target {
             symbol.kind = self.classify_symbol_call(&symbol.name);
@@ -278,25 +297,25 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_function_definition(&mut self, node: HirNode<'tcx>) {
-        if let Some((symbol_idx, _name, fqn)) =
-            self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Function)
-        {
-            if let Some(mut func) = PythonDescriptor::build_function(self.unit(), &node) {
-                func.fqn = Some(fqn);
-                self.functions.add(node.hir_id(), func);
-            }
+        if let Some(mut func) = PythonDescriptor::build_function(self.unit(), &node) {
+            let is_global = self.visibility_exports(&func.visibility);
+            let (symbol_idx, fqn) =
+                self.core
+                    .insert_symbol(node.hir_id(), &func.name, SymbolKind::Function, is_global);
+            func.fqn = Some(fqn);
+            self.functions.add(node.hir_id(), func);
             self.visit_children_scope(&node, Some(symbol_idx));
         }
     }
 
     fn visit_class_definition(&mut self, node: HirNode<'tcx>) {
-        if let Some((symbol_idx, _name, fqn)) =
-            self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
-        {
-            if let Some(mut class) = describe::class::build(self.unit(), &node) {
-                class.fqn = Some(fqn);
-                self.classes.add(node.hir_id(), class);
-            }
+        if let Some(mut class) = describe::class::build(self.unit(), &node) {
+            let is_global = self.visibility_exports(&class.visibility);
+            let (symbol_idx, fqn) =
+                self.core
+                    .insert_symbol(node.hir_id(), &class.name, SymbolKind::Struct, is_global);
+            class.fqn = Some(fqn);
+            self.classes.add(node.hir_id(), class);
             self.visit_children_scope(&node, Some(symbol_idx));
         }
     }

@@ -312,23 +312,15 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         resolver.resolve(target, symbols);
     }
 
-    pub fn set_backward_relation(
-        &mut self,
-    ) {
+    pub fn set_backward_relation(&mut self) {
         self.relation_direction = RelationDirection::Backward;
     }
 
-    pub fn set_forward_relation(
-        &mut self,
-    ) {
+    pub fn set_forward_relation(&mut self) {
         self.relation_direction = RelationDirection::Forward;
     }
 
-    fn add_relation(
-        &self,
-        segments: &[String],
-        scope_symbol: Option<&'tcx Symbol>,
-    ) {
+    fn add_relation(&self, segments: &[String], scope_symbol: Option<&'tcx Symbol>) {
         if segments.is_empty() {
             return;
         }
