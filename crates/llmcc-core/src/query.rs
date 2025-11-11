@@ -187,9 +187,14 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
-    /// Find all functions in the project
+    /// Find all functions and methods in the project
     pub fn find_all_functions(&self) -> QueryResult {
-        self.find_by_kind(BlockKind::Func)
+        let mut result = self.find_by_kind(BlockKind::Func);
+        let methods = self.find_by_kind(BlockKind::Method);
+        result.primary.extend(methods.primary);
+        result.depends.extend(methods.depends);
+        result.depended.extend(methods.depended);
+        result
     }
 
     /// Find all structs in the project
@@ -494,15 +499,14 @@ impl<'tcx> ProjectQuery<'tcx> {
         // Get the full class source
         let full_text = file.opt_get_text(class_start_byte, class_end_byte)?;
 
-        // Collect byte positions of all methods (BlockKind::Func children)
+        // Collect byte positions of all methods (Func/Method children)
         let mut method_start_bytes = Vec::new();
 
         for child_id in &class_block.base.children {
             let child_bb = unit.opt_bb(*child_id)?;
             let child_kind = child_bb.kind();
 
-            // If this child is a method (Func block), record its start byte
-            if child_kind == BlockKind::Func {
+            if matches!(child_kind, BlockKind::Method | BlockKind::Func) {
                 if let Some(child_base) = child_bb.base() {
                     let child_node = child_base.node;
                     let child_start = child_node.start_byte();

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use llmcc_core::IrBuildConfig;
 use llmcc_descriptor::{TypeExpr, VariableDescriptor, VariableKind, VariableScope};
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_rust::{CompileCtxt, LangRust, build_llmcc_ir, collect_symbols};
 
 fn collect_variables(source: &str) -> HashMap<String, VariableDescriptor> {
     let sources = vec![source.as_bytes().to_vec()];

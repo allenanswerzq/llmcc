@@ -6,7 +6,7 @@ use serde::Deserialize;
 use tree_sitter::Language;
 
 use crate::node_types::NodeTypes;
-use crate::{format_block, format_hir, resolve_field_id, resolve_kind_id, TokenEntry};
+use crate::{TokenEntry, format_block, format_hir, resolve_field_id, resolve_kind_id};
 
 #[derive(Debug, Deserialize)]
 pub struct TokenConfig {

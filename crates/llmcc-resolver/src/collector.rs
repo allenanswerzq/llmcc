@@ -3,12 +3,13 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice::{Iter, IterMut};
 use std::time::{Duration, Instant};
 
+use crate::type_expr::TypeExprSymbolResolver;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
+use llmcc_core::symbol::{Scope, SymId, Symbol, SymbolKind, SymbolKindMap};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
-    ImportDescriptor, PathQualifier, StructDescriptor, TypeExpr, VariableDescriptor,
+    ImportDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
 };
 
 #[derive(Debug, Clone)]
@@ -25,6 +26,8 @@ pub struct SymbolSpec {
     pub unit_index: usize,
     /// Whether the symbol should be visible from the global scope.
     pub is_global: bool,
+    /// Optional index pointing to the symbol that represents this symbol's type.
+    pub type_of: Option<usize>,
 }
 
 #[derive(Debug, Clone)]
@@ -421,6 +424,7 @@ impl<'tcx> CollectorCore<'tcx> {
             kind,
             unit_index: self.unit_index(),
             is_global,
+            type_of: None,
         });
 
         let current_scope = self.current_scope_index();
@@ -431,6 +435,62 @@ impl<'tcx> CollectorCore<'tcx> {
         }
 
         (idx, fqn)
+    }
+
+    pub fn upsert_symbol(
+        &mut self,
+        owner: HirId,
+        name: &str,
+        kind: SymbolKind,
+        is_global: bool,
+    ) -> (usize, String) {
+        if let Some(idx) = self.lookup_from_scopes_with(name, kind) {
+            if let Some(existing) = self.symbols.get_mut(idx) {
+                existing.owner = owner;
+                if is_global {
+                    existing.is_global = true;
+                }
+                return (idx, existing.fqn.clone());
+            }
+        }
+
+        self.insert_symbol(owner, name, kind, is_global)
+    }
+
+    pub fn upsert_symbol_with_fqn(
+        &mut self,
+        owner: HirId,
+        name: &str,
+        kind: SymbolKind,
+        is_global: bool,
+        fqn: &str,
+    ) -> (usize, String) {
+        if let Some((idx, _)) = self
+            .symbols
+            .iter()
+            .enumerate()
+            .find(|(_, spec)| spec.fqn == fqn && spec.kind == kind)
+        {
+            if let Some(existing) = self.symbols.get_mut(idx) {
+                existing.owner = owner;
+                if is_global {
+                    existing.is_global = true;
+                }
+            }
+            return (idx, fqn.to_string());
+        }
+
+        let (idx, _) = self.insert_symbol(owner, name, kind, is_global);
+        if let Some(symbol) = self.symbols.get_mut(idx) {
+            symbol.fqn = fqn.to_string();
+        }
+        (idx, fqn.to_string())
+    }
+
+    pub fn set_symbol_type_of(&mut self, symbol_idx: usize, type_idx: usize) {
+        if let Some(symbol) = self.symbols.get_mut(symbol_idx) {
+            symbol.type_of = Some(type_idx);
+        }
     }
 
     pub fn find_expr_symbol(
@@ -453,6 +513,15 @@ impl<'tcx> CollectorCore<'tcx> {
         self.find_or_insert_expr_symbol(owner, expr, kind, is_global, true)
     }
 
+    /// Resolve the canonical symbol for a language-agnostic `TypeExpr`, optionally inserting a
+    /// placeholder.
+    ///
+    /// Front-ends normalize each language's type syntax into `TypeExpr` variants (paths,
+    /// references, tuples, …). Path expressions try progressively broader matches (qualified
+    /// path, canonical FQN, terminal identifier) before optionally creating a synthetic symbol
+    /// when `upsert` is true. Reference and tuple expressions strip to their underlying path so
+    /// constructs like Rust's `impl &Foo` or Python's `tuple[T]` reuse the same lookup rules as
+    /// plain identifiers.
     fn find_or_insert_expr_symbol(
         &mut self,
         owner: HirId,
@@ -461,82 +530,8 @@ impl<'tcx> CollectorCore<'tcx> {
         is_global: bool,
         upsert: bool,
     ) -> Option<usize> {
-        match expr {
-            TypeExpr::Path { qualifier, .. } => {
-                let parts: Vec<String> = qualifier.parts().to_vec();
-
-                if parts.is_empty() {
-                    return None;
-                }
-
-                let part_refs: Vec<&str> = parts.iter().map(String::as_str).collect();
-
-                let start_depth = match qualifier {
-                    // `super::` paths need to start their lookup from an ancestor scope.
-                    // Example: `impl super::outer::Widget` should skip the current module scope first.
-                    PathQualifier::Super { levels, .. } => {
-                        let depth = self.scope_stack.len();
-                        if depth == 0 {
-                            None
-                        } else {
-                            let levels = (*levels as usize).min(depth);
-                            depth.checked_sub(levels).filter(|d| *d > 0)
-                        }
-                    }
-                    _ => None,
-                };
-
-                // Try resolving the full segmented path relative to the inferred scope depth.
-                // Example: `impl codex::workspace::Sandbox` walks `["codex","workspace","Sandbox"]`.
-                if let Some(idx) = self.lookup_from_scopes_with_parts(&part_refs, kind, start_depth)
-                {
-                    return Some(idx);
-                }
-
-                // Fall back to matching the canonical FQN we have already recorded.
-                // Example: when `parts` resolve to `"crate::outer::Widget"` exactly as stored.
-                let canonical = parts.join("::");
-                if !canonical.is_empty() {
-                    if let Some((idx, _)) = self
-                        .symbols
-                        .iter()
-                        .enumerate()
-                        .rev()
-                        .find(|(_, symbol)| symbol.kind == kind && symbol.fqn == canonical)
-                    {
-                        return Some(idx);
-                    }
-                }
-
-                // As a last resort use only the terminal segment.
-                // Example: `impl Widget` inside the same module finds the nearest `Widget`.
-                if let Some(name) = part_refs.last().copied() {
-                    if let Some(idx) = self.lookup_from_scopes_with(name, kind) {
-                        return Some(idx);
-                    }
-                }
-
-                if upsert {
-                    // We tried our best but couldn't find a matching symbol, then we inert a new one.
-                    let (idx, _fqn) =
-                        self.insert_symbol(owner, parts.last().unwrap(), kind, is_global);
-                    return Some(idx);
-                }
-
-                None
-            }
-            TypeExpr::Reference { inner, .. } => {
-                // Peel references like `&T` or `&&mut T` until we reach the underlying path.
-                self.find_or_insert_expr_symbol(owner, inner, kind, is_global, upsert)
-            }
-            TypeExpr::Tuple(items) => items
-                .iter()
-                // Tuple singletons show up during parsing for `impl (Foo,)` in Rust.
-                .find_map(|item| {
-                    self.find_or_insert_expr_symbol(owner, item, kind, is_global, upsert)
-                }),
-            _ => None,
-        }
+        let mut resolver = TypeExprSymbolResolver::new(self, owner, kind, is_global, upsert);
+        resolver.resolve(expr)
     }
 
     pub fn lookup_from_scopes_with(&self, name: &str, kind: SymbolKind) -> Option<usize> {
@@ -684,6 +679,7 @@ pub fn apply_collected_symbols<'tcx>(
             symbol.set_unit_index(spec.unit_index);
             symbol.set_fqn(spec.fqn.clone(), interner);
             symbol.set_is_global(spec.is_global);
+            symbol.set_type_of(spec.type_of.map(|id| SymId(id as u32)));
             symbol_map.insert(symbol.id, symbol);
             created_symbols.push(symbol);
         }

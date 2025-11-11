@@ -8,7 +8,7 @@ pub mod variable;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_descriptor::{
-    CallDescriptor, ClassDescriptor, DescriptorTrait, FunctionDescriptor, ImportDescriptor,
+    CallDescriptor, DescriptorTrait, FunctionDescriptor, ImplDescriptor, ImportDescriptor,
     VariableDescriptor,
 };
 
@@ -19,8 +19,8 @@ impl<'tcx> DescriptorTrait<'tcx> for PythonDescriptor {
         function::build(unit, node)
     }
 
-    fn build_impl(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<ClassDescriptor> {
-        class::build(unit, node)
+    fn build_impl(_unit: CompileUnit<'tcx>, _node: &HirNode<'tcx>) -> Option<ImplDescriptor> {
+        None
     }
 
     fn build_variable(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<VariableDescriptor> {

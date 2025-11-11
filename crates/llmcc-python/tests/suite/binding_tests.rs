@@ -1,6 +1,6 @@
-use llmcc_core::{context::CompileCtxt, symbol::Symbol, IrBuildConfig};
+use llmcc_core::{IrBuildConfig, context::CompileCtxt, symbol::Symbol};
 use llmcc_descriptor::{ClassDescriptor, FunctionDescriptor};
-use llmcc_python::{bind_symbols, build_llmcc_ir, collect_symbols, CollectionResult, LangPython};
+use llmcc_python::{CollectionResult, LangPython, bind_symbols, build_llmcc_ir, collect_symbols};
 use llmcc_resolver::apply_collected_symbols;
 
 fn compile(

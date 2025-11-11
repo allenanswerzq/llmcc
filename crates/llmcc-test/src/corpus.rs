@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use shell_words::{join, split};
 use walkdir::WalkDir;
 
@@ -37,7 +37,7 @@ fn slugify_case_name(raw: &str) -> String {
     }
 }
 
-/// Top-level corpus container discovered under a directory (e.g. `tests/corpus`).
+///  Top-level corpus container discovered under a directory (e.g. `tests/corpus`).
 pub struct Corpus {
     files: Vec<CorpusFile>,
 }
@@ -243,6 +243,10 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
         let line = raw_line.trim_end_matches('\r');
         let trimmed = line.trim();
 
+        if trimmed.starts_with("$//") {
+            continue;
+        }
+
         if awaiting_banner_close {
             if trimmed.is_empty() {
                 continue;
@@ -348,7 +352,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
                         other,
                         path.display(),
                         case.name
-                    ))
+                    ));
                 }
             }
         } else {

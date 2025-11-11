@@ -7,6 +7,7 @@ use crate::ir::HirNode;
 declare_arena!([
     blk_root: BlockRoot<'tcx>,
     blk_func: BlockFunc<'tcx>,
+    blk_method: BlockMethod<'tcx>,
     blk_class: BlockClass<'tcx>,
     blk_impl: BlockImpl<'tcx>,
     blk_stmt: BlockStmt<'tcx>,
@@ -25,6 +26,7 @@ pub enum BlockKind {
     Undefined,
     Root,
     Func,
+    Method,
     Stmt,
     Call,
     Class,
@@ -40,6 +42,7 @@ pub enum BasicBlock<'blk> {
     Undefined,
     Root(&'blk BlockRoot<'blk>),
     Func(&'blk BlockFunc<'blk>),
+    Method(&'blk BlockMethod<'blk>),
     Stmt(&'blk BlockStmt<'blk>),
     Call(&'blk BlockCall<'blk>),
     Enum(&'blk BlockEnum<'blk>),
@@ -75,6 +78,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Undefined | BasicBlock::Block => None,
             BasicBlock::Root(block) => Some(&block.base),
             BasicBlock::Func(block) => Some(&block.base),
+            BasicBlock::Method(block) => Some(&block.base),
             BasicBlock::Class(block) => Some(&block.base),
             BasicBlock::Impl(block) => Some(&block.base),
             BasicBlock::Stmt(block) => Some(&block.base),
@@ -251,6 +255,29 @@ impl<'blk> BlockFunc<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Func, parent, children);
+        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self::new(base, name)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockMethod<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+}
+
+impl<'blk> BlockMethod<'blk> {
+    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
+        Self { base, name }
+    }
+
+    pub fn from_hir(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Method, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
     }

@@ -84,6 +84,7 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
 
         for &idx in node_indices.iter() {
             let node = &nodes[idx];
+            let node_name = format!("n{}", node.block_id.as_u32());
             let label = escape_dot_label(&node.name);
             let mut attrs = vec![format!("label=\"{}\"", label)];
 
@@ -93,14 +94,16 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
                 attrs.push(format!("full_path=\"{}\"", escaped_full));
             }
 
-            output.push_str(&format!("    n{} [{}];\n", idx + 1, attrs.join(", ")));
+            output.push_str(&format!("    {} [{}];\n", node_name, attrs.join(", ")));
         }
 
         output.push_str("  }\n");
     }
 
     for &(from, to) in edges {
-        output.push_str(&format!("  n{} -> n{};\n", from + 1, to + 1));
+        let from_name = format!("n{}", nodes[from].block_id.as_u32());
+        let to_name = format!("n{}", nodes[to].block_id.as_u32());
+        output.push_str(&format!("  {} -> {};\n", from_name, to_name));
     }
 
     output.push_str("}\n");

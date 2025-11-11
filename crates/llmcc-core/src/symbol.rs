@@ -41,7 +41,7 @@ pub enum SymbolKind {
     Trait,
     Impl,
     EnumVariant,
-    DynamicType,
+    InferredType,
 }
 
 /// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
@@ -324,6 +324,8 @@ pub struct Symbol {
     /// only need to tell models some symbols having depends relations
     pub depends: RwLock<Vec<SymId>>,
     pub depended: RwLock<Vec<SymId>>,
+    /// Optional backing type for this symbol (e.g. variable type, alias target).
+    pub type_of: RwLock<Option<SymId>>,
     pub kind: RwLock<SymbolKind>,
     /// Which compile unit this symbol defined
     pub unit_index: RwLock<Option<usize>>,
@@ -344,6 +346,7 @@ impl Clone for Symbol {
             fqn_key: RwLock::new(*self.fqn_key.read()),
             depends: RwLock::new(self.depends.read().clone()),
             depended: RwLock::new(self.depended.read().clone()),
+            type_of: RwLock::new(*self.type_of.read()),
             kind: RwLock::new(*self.kind.read()),
             unit_index: RwLock::new(*self.unit_index.read()),
             block_id: RwLock::new(*self.block_id.read()),
@@ -368,6 +371,7 @@ impl Symbol {
             fqn_key: RwLock::new(fqn_key),
             depends: RwLock::new(Vec::new()),
             depended: RwLock::new(Vec::new()),
+            type_of: RwLock::new(None),
             kind: RwLock::new(SymbolKind::Unknown),
             unit_index: RwLock::new(None),
             block_id: RwLock::new(None),
@@ -400,6 +404,14 @@ impl Symbol {
 
     pub fn set_kind(&self, kind: SymbolKind) {
         *self.kind.write() = kind;
+    }
+
+    pub fn type_of(&self) -> Option<SymId> {
+        *self.type_of.read()
+    }
+
+    pub fn set_type_of(&self, ty: Option<SymId>) {
+        *self.type_of.write() = ty;
     }
 
     pub fn unit_index(&self) -> Option<usize> {
@@ -453,6 +465,9 @@ impl Symbol {
             if !self_fqn.is_empty() && self_fqn == other_fqn {
                 return;
             }
+        }
+        if other.depends.read().contains(&self.id) {
+            return;
         }
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);

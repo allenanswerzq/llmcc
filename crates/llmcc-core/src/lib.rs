@@ -21,10 +21,10 @@ pub type DynError = Box<dyn std::error::Error + Send + Sync>;
 
 pub use context::{CompileCtxt, CompileUnit};
 pub use graph_builder::{
-    build_llmcc_graph, BlockId, BlockRelation, GraphBuildConfig, GraphNode, ProjectGraph, UnitGraph,
+    BlockId, BlockRelation, GraphBuildConfig, GraphNode, ProjectGraph, UnitGraph, build_llmcc_graph,
 };
 pub use ir::HirId;
-pub use ir_builder::{build_llmcc_ir, IrBuildConfig};
+pub use ir_builder::{IrBuildConfig, build_llmcc_ir};
 pub use lang_def::LanguageTrait;
 pub use pagerank::{PageRankConfig, PageRanker, RankedBlock};
 pub use paste;

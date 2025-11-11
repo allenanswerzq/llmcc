@@ -7,9 +7,9 @@ pub mod parameter;
 pub mod structure;
 pub mod variable;
 
+use llmcc_core::Node;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
-use llmcc_core::Node;
 use llmcc_descriptor::{DescriptorTrait, ImplDescriptor};
 
 pub use llmcc_descriptor::{

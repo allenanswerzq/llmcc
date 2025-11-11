@@ -1,8 +1,8 @@
 use llmcc_core::{
-    build_llmcc_graph, graph_builder::ProjectGraph, ir_builder::build_llmcc_ir,
-    query::ProjectQuery, CompileCtxt, GraphBuildConfig, IrBuildConfig,
+    CompileCtxt, GraphBuildConfig, IrBuildConfig, build_llmcc_graph, graph_builder::ProjectGraph,
+    ir_builder::build_llmcc_ir, query::ProjectQuery,
 };
-use llmcc_python::{bind_symbols, collect_symbols, LangPython};
+use llmcc_python::{LangPython, bind_symbols, collect_symbols};
 use llmcc_resolver::apply_collected_symbols;
 
 /// Helper to build a project graph from multiple Python source files

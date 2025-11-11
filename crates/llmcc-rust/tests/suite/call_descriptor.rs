@@ -5,7 +5,7 @@ use llmcc_descriptor::{
     CallChain, CallChainRoot, CallDescriptor, CallInvocation, CallKind, CallSymbol, CallTarget,
     TypeExpr,
 };
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CallCollection, CompileCtxt, LangRust};
+use llmcc_rust::{CallCollection, CompileCtxt, LangRust, build_llmcc_ir, collect_symbols};
 
 fn collect_calls(source: &str) -> CallCollection {
     let sources = vec![source.as_bytes().to_vec()];

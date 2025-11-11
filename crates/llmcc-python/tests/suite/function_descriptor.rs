@@ -1,6 +1,6 @@
-use llmcc_core::{context::CompileCtxt, IrBuildConfig};
+use llmcc_core::{IrBuildConfig, context::CompileCtxt};
 use llmcc_descriptor::TypeExpr;
-use llmcc_python::{build_llmcc_ir, collect_symbols, FunctionCollection, LangPython};
+use llmcc_python::{FunctionCollection, LangPython, build_llmcc_ir, collect_symbols};
 
 fn collect_functions(source: &str) -> FunctionCollection {
     let sources = vec![source.as_bytes().to_vec()];
@@ -114,14 +114,16 @@ def flexible(*args, **kwargs):
     let functions = collect_functions(source);
     let desc = functions.iter().find(|f| f.name == "flexible").unwrap();
     assert_eq!(desc.parameters.len(), 2);
-    assert!(desc
-        .parameters
-        .iter()
-        .any(|p| p.name.as_deref() == Some("args")));
-    assert!(desc
-        .parameters
-        .iter()
-        .any(|p| p.name.as_deref() == Some("kwargs")));
+    assert!(
+        desc.parameters
+            .iter()
+            .any(|p| p.name.as_deref() == Some("args"))
+    );
+    assert!(
+        desc.parameters
+            .iter()
+            .any(|p| p.name.as_deref() == Some("kwargs"))
+    );
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use llmcc_core::IrBuildConfig;
 use llmcc_descriptor::{StructKind, Visibility};
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust, StructCollection};
+use llmcc_rust::{CompileCtxt, LangRust, StructCollection, build_llmcc_ir, collect_symbols};
 
 fn collect_structs(source: &str) -> StructCollection {
     let sources = vec![source.as_bytes().to_vec()];

@@ -3,8 +3,8 @@ use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
 use llmcc_descriptor::{
-    DescriptorOrigin, FunctionDescriptor, FunctionParameter, FunctionQualifiers, ParameterKind,
-    SourceLocation, SourceSpan, TypeExpr, Visibility, LANGUAGE_RUST,
+    DescriptorOrigin, FunctionDescriptor, FunctionParameter, FunctionQualifiers, LANGUAGE_RUST,
+    ParameterKind, SourceLocation, SourceSpan, TypeExpr, Visibility,
 };
 
 use crate::path::parse_rust_path;

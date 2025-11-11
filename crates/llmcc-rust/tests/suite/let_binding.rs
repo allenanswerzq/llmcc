@@ -1,10 +1,10 @@
 /// Tests for let declaration type binding.
 /// This module verifies that visit_let_declaration properly extracts type annotations
 /// and establishes dependency relations between functions and the types used in let statements.
-use llmcc_core::{ir::HirId, symbol::Symbol, IrBuildConfig};
+use llmcc_core::{IrBuildConfig, ir::HirId, symbol::Symbol};
 use llmcc_descriptor::{DescriptorId, EnumDescriptor, FunctionDescriptor, StructDescriptor};
 use llmcc_resolver::apply_collected_symbols;
-use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_rust::{CompileCtxt, LangRust, bind_symbols, build_llmcc_ir, collect_symbols};
 
 fn compile(
     source: &str,
