@@ -61,9 +61,9 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             // Regular free functions (default) and unknown classifications.
             // Example: `std::mem::drop(value)`.
             CallKind::Function => {
-                if let Some(sym) = self
-                    .binder
-                    .lookup_symbol(&parts, Some(SymbolKind::Function), None)
+                if let Some(sym) =
+                    self.binder
+                        .lookup_symbol(&parts, Some(SymbolKind::Function), None)
                 {
                     self.push_symbol_unique(out, sym);
                 }
@@ -177,9 +177,9 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
         println!("handle_function_segment: {}", segment.name);
-        if let Some(sym) = self
-            .binder
-            .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
+        if let Some(sym) =
+            self.binder
+                .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
         {
             self.push_symbol_unique(out, sym);
             return self.symbol_type_of(sym).into_iter().collect();
@@ -194,9 +194,9 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
         println!("handle_macro_segment: {}", segment.name);
-        if let Some(sym) = self
-            .binder
-            .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Macro), None)
+        if let Some(sym) =
+            self.binder
+                .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Macro), None)
         {
             self.push_symbol_unique(out, sym);
         }
@@ -233,9 +233,9 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             return next_receivers;
         }
 
-        if let Some(sym) = self
-            .binder
-            .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
+        if let Some(sym) =
+            self.binder
+                .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
         {
             self.push_symbol_unique(out, sym);
             return self.receiver_types_for_symbol(sym);
@@ -298,7 +298,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
                 if let Some(result) = self.symbol_type_of(symbol) {
                     return vec![result];
                 }
-                if let Some(receiver) = self.receiver_from_symbol_path(symbol) {
+                if let Some(receiver) = self.lookup_receiver_from_symbol(symbol) {
                     return vec![receiver];
                 }
                 Vec::new()
@@ -307,7 +307,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         }
     }
 
-    fn receiver_from_symbol_path(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+    fn lookup_receiver_from_symbol(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
         let mut parts = symbol.path_segments();
         if parts.len() <= 1 {
             return None;

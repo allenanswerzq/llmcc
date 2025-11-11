@@ -1,6 +1,11 @@
 use llmcc_descriptor::PathQualifier;
 
 /// Parse a Rust `::`-separated path into a qualifier that carries its parts.
+/// Handles: ::std::vec::Vec    (Absolute)
+/// Handles: crate::module      (Crate root)
+/// Handles: self::item         (Self reference)
+/// Handles: super::super::x    (Super levels)
+/// Handles: just_name          (Relative)
 pub fn parse_rust_path(raw: &str) -> PathQualifier {
     if raw.is_empty() {
         return PathQualifier::relative(Vec::new());

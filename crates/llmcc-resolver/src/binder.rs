@@ -283,26 +283,28 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             .and_then(|sym_id| self.unit().opt_get_symbol(sym_id))
     }
 
-    fn receiver_from_symbol_path(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+    fn lookup_receiver_from_symbol(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
         let mut parts = symbol.path_segments();
         if parts.len() <= 1 {
             return None;
         }
         parts.pop();
 
-        self.lookup_symbol(&parts, Some(SymbolKind::Struct), None)
-            .or_else(|| self.lookup_symbol(&parts, Some(SymbolKind::Enum), None))
-            .or_else(|| self.lookup_symbol(&parts, Some(SymbolKind::Trait), None))
+        self.lookup_symbol_kind_priority(
+            &parts,
+            &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait],
+            None,
+        )
     }
 
-    pub fn return_receivers(&self, symbol: &'tcx Symbol) -> Vec<&'tcx Symbol> {
+    pub fn lookup_return_receivers(&self, symbol: &'tcx Symbol) -> Vec<&'tcx Symbol> {
         match symbol.kind() {
             SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait => vec![symbol],
             SymbolKind::Function => {
                 if let Some(result) = self.symbol_type_of(symbol) {
                     return vec![result];
                 }
-                if let Some(receiver) = self.receiver_from_symbol_path(symbol) {
+                if let Some(receiver) = self.lookup_receiver_from_symbol(symbol) {
                     return vec![receiver];
                 }
                 Vec::new()
@@ -360,5 +362,46 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             .collect();
         let current = self.scope_symbol();
         self.add_relation(&segments, current);
+    }
+
+    /// Binds the return type of a function call to a variable in a variable assignment.
+    pub fn bind_call_receivers_to_variable(
+        &self,
+        var_name: &str,
+        resolved_symbols: &[&'tcx Symbol],
+    ) {
+        if resolved_symbols.is_empty() {
+            return;
+        }
+
+        // Look up the variable in the current scope
+        if let Some(variable) =
+            self.lookup_symbol(&[var_name.to_string()], Some(SymbolKind::Variable), None)
+        {
+            // For each resolved symbol (the function that was called)
+            for symbol in resolved_symbols {
+                // Get what that function returns (its receiver type)
+                for receiver in self.lookup_return_receivers(symbol) {
+                    // Set the variable's type to the return type
+                    variable.set_type_of(Some(receiver.id));
+
+                    // Note: Language-specific binders will create the alias in their scope
+                    // using bind_variable_type_alias after this method returns
+                    break;
+                }
+                break;
+            }
+        }
+    }
+
+    /// Helper to insert a type alias for a variable in a given scope.
+    pub fn bind_variable_type_alias(
+        &self,
+        scope: &'tcx Scope<'tcx>,
+        var_name: &str,
+        receiver_symbol: &'tcx Symbol,
+    ) {
+        let alias_parts = vec![var_name.to_string()];
+        scope.insert_alias(&alias_parts, self.interner(), receiver_symbol);
     }
 }

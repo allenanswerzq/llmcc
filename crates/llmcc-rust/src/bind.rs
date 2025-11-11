@@ -44,66 +44,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.core.scope_symbol()
     }
 
-    fn bind_call_receivers_to_lhs(&mut self, call: &HirNode<'tcx>, resolved: &[&'tcx Symbol]) {
-        if resolved.is_empty() {
-            return;
-        }
-
-        let Some(parent_id) = call.parent() else {
-            return;
-        };
-        let parent = self.unit().hir_node(parent_id);
-        if parent.inner_ts_node().kind() != "let_declaration" {
-            return;
-        }
-
-        let Some(pattern_node) = parent.opt_child_by_field(self.unit(), LangRust::field_pattern)
-        else {
-            return;
-        };
-        let Some(ident) = pattern_node.find_ident(self.unit()) else {
-            return;
-        };
-        let name = ident.name.clone();
-
-        if let Some(variable) =
-            self.core
-                .lookup_symbol(&[name.clone()], Some(SymbolKind::Variable), None)
-        {
-            for symbol in resolved {
-                for receiver in self.core.return_receivers(symbol) {
-                    variable.set_type_of(Some(receiver.id));
-                    if let Some(scope) = self.scopes_mut().top() {
-                        let alias = vec![name.clone()];
-                        scope.insert_alias(&alias, self.core.interner(), receiver);
-                    }
-                    return;
-                }
-            }
-        }
-    }
-
-    fn handle_identifier(&mut self, node: HirNode<'tcx>) {
-        let text = self.unit().hir_text(&node);
-        let mut parts = parse_rust_path(&text).parts().to_vec();
-        parts.retain(|segment| !segment.is_empty());
-
-        if parts.is_empty() {
-            return;
-        }
-
-        if let Some(target_symbol) = self.core.lookup_symbol(&parts, None, None) {
-            if target_symbol.kind() == SymbolKind::Variable {
-                return;
-            }
-
-            if let Some(current) = self.current_symbol() {
-                if current.kind() != SymbolKind::Variable {
-                    current.add_dependency(target_symbol);
-                }
-            }
-        }
-    }
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
@@ -186,17 +126,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             self.core
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
-
-        // let parent_symbol = self.current_symbol();
-        // if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
-        //     if matches!(
-        //         parent_symbol.kind(),
-        //         SymbolKind::Struct | SymbolKind::Enum
-        //     ) {
-        //         self.core
-        //             .propagate_child_dependencies(parent_symbol, func_symbol);
-        //     }
-        // }
     }
 
     fn visit_type_parameter(&mut self, node: HirNode<'tcx>) {
@@ -328,7 +257,46 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             let mut symbols = Vec::new();
             self.core
                 .lookup_call_symbols(&descriptor.target, &mut symbols);
-            self.bind_call_receivers_to_lhs(&node, &symbols);
+
+            // Inline type binding for variables assigned from function calls (let x = func())
+            // This handles Rust's type inference for assignments without explicit type annotations
+            if !symbols.is_empty() {
+                // Check if this call is inside a let declaration
+                if let Some(parent_id) = node.parent() {
+                    let parent_node = self.unit().hir_node(parent_id);
+                    if parent_node.inner_ts_node().kind() == "let_declaration" {
+                        // Extract the variable name from the pattern (e.g., `cfg` in `let cfg = ...`)
+                        if let Some(pattern_node) =
+                            parent_node.opt_child_by_field(self.unit(), LangRust::field_pattern)
+                        {
+                            if let Some(ident) = pattern_node.find_ident(self.unit()) {
+                                let var_name = &ident.name;
+
+                                // Use BinderCore APIs to bind variable type from function return type
+                                self.core.bind_call_receivers_to_variable(var_name, &symbols);
+
+                                // Create type alias in current scope for future lookups
+                                if let Some(_variable) = self.core.lookup_symbol(
+                                    &[var_name.clone()],
+                                    Some(SymbolKind::Variable),
+                                    None,
+                                ) {
+                                    for symbol in &symbols {
+                                        for receiver in self.core.lookup_return_receivers(symbol) {
+                                            if let Some(scope) = self.scopes_mut().top() {
+                                                self.core.bind_variable_type_alias(scope, var_name, receiver);
+                                            }
+                                            break;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if let Some(parent_symbol) = parent {
                 for symbol in symbols {
                     parent_symbol.add_dependency(symbol);
@@ -354,15 +322,15 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_scoped_identifier(&mut self, node: HirNode<'tcx>) {
-        self.handle_identifier(node);
+        self.core.resolve_identifier_with(node, parse_rust_path);
     }
 
     fn visit_type_identifier(&mut self, node: HirNode<'tcx>) {
-        self.handle_identifier(node);
+        self.core.resolve_identifier_with(node, parse_rust_path);
     }
 
     fn visit_identifier(&mut self, node: HirNode<'tcx>) {
-        self.handle_identifier(node);
+        self.core.resolve_identifier_with(node, parse_rust_path);
     }
 
     fn visit_unknown(&mut self, node: HirNode<'tcx>) {
