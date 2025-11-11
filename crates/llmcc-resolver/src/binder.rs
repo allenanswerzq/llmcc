@@ -68,7 +68,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         self.scopes.scoped_symbol()
     }
 
-    pub fn lookup_in_locals(
+    fn lookup_in_locals(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -95,7 +95,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         None
     }
 
-    pub fn lookup_in_globals(
+    fn lookup_in_globals(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -123,7 +123,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
 
     /// Look up a symbol by its suffix parts, optionally filtering by kind and unit index.
     /// This method first searches in local scopes, then in global scope.
-    pub fn lookup_symbol_suffix(
+    fn lookup_symbol_suffix(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -133,7 +133,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             .or_else(|| self.lookup_in_globals(suffix, kind, unit_index))
     }
 
-    pub fn lookup_symbol_in_globals(
+    pub fn lookup_symbol_only_in_globals(
         &self,
         symbol: &[String],
         kind: Option<SymbolKind>,
@@ -188,41 +188,6 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         }
 
         None
-    }
-
-    pub fn lookup_segments_with_priority(
-        &self,
-        symbol: &[String],
-        kinds: &[SymbolKind],
-        unit_index: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        self.lookup_symbol_kind_priority(symbol, kinds, unit_index)
-    }
-
-    pub fn lookup_segments(
-        &self,
-        symbol: &[String],
-        kind: Option<SymbolKind>,
-        unit_index: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        self.lookup_symbol(symbol, kind, unit_index)
-    }
-
-    pub fn lookup_symbol_fqn(&self, symbol: &[String], kind: SymbolKind) -> Option<&'tcx Symbol> {
-        if symbol.is_empty() {
-            return None;
-        }
-
-        let fqn = symbol.join("::");
-        if fqn.is_empty() {
-            return None;
-        }
-
-        let symbol_map = self.unit().cc.symbol_map.read();
-        symbol_map
-            .values()
-            .find(|sym| sym.kind() == kind && sym.fqn_name.read().as_str() == fqn)
-            .copied()
     }
 
     pub fn lookup_symbol_with(
@@ -312,27 +277,14 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         resolver.resolve(target, symbols);
     }
 
-    fn symbol_type_symbol(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+    fn symbol_type_of(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
         symbol
             .type_of()
             .and_then(|sym_id| self.unit().opt_get_symbol(sym_id))
     }
 
-    fn symbol_path_parts(&self, symbol: &'tcx Symbol) -> Vec<String> {
-        let fqn = symbol.fqn_name.read().clone();
-        let mut parts: Vec<String> = fqn
-            .split("::")
-            .filter(|part| !part.is_empty())
-            .map(|part| part.to_string())
-            .collect();
-        if parts.is_empty() {
-            parts.push(symbol.name.clone());
-        }
-        parts
-    }
-
     fn receiver_from_symbol_path(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
-        let mut parts = self.symbol_path_parts(symbol);
+        let mut parts = symbol.path_segments();
         if parts.len() <= 1 {
             return None;
         }
@@ -341,16 +293,13 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         self.lookup_symbol(&parts, Some(SymbolKind::Struct), None)
             .or_else(|| self.lookup_symbol(&parts, Some(SymbolKind::Enum), None))
             .or_else(|| self.lookup_symbol(&parts, Some(SymbolKind::Trait), None))
-            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Struct))
-            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Enum))
-            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Trait))
     }
 
     pub fn return_receivers(&self, symbol: &'tcx Symbol) -> Vec<&'tcx Symbol> {
         match symbol.kind() {
             SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait => vec![symbol],
             SymbolKind::Function => {
-                if let Some(result) = self.symbol_type_symbol(symbol) {
+                if let Some(result) = self.symbol_type_of(symbol) {
                     return vec![result];
                 }
                 if let Some(receiver) = self.receiver_from_symbol_path(symbol) {
@@ -358,7 +307,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
                 }
                 Vec::new()
             }
-            _ => self.symbol_type_symbol(symbol).into_iter().collect(),
+            _ => self.symbol_type_of(symbol).into_iter().collect(),
         }
     }
 

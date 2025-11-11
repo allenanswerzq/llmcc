@@ -415,6 +415,21 @@ impl Symbol {
         *self.fqn_key.write() = key;
     }
 
+    pub fn path_segments(&self) -> Vec<String> {
+        let fqn = self.fqn_name.read().clone();
+        let mut parts: Vec<String> = fqn
+            .split("::")
+            .filter(|part| !part.is_empty())
+            .map(|part| part.to_string())
+            .collect();
+
+        if parts.is_empty() {
+            parts.push(self.name.clone());
+        }
+
+        parts
+    }
+
     pub fn kind(&self) -> SymbolKind {
         *self.kind.read()
     }
@@ -482,6 +497,9 @@ impl Symbol {
             if !self_fqn.is_empty() && self_fqn == other_fqn {
                 return;
             }
+        }
+        if other.depends.read().contains(&self.id) {
+            return;
         }
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);

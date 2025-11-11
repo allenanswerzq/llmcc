@@ -183,7 +183,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return;
         }
 
-        let target = self.core.lookup_segments_with_priority(
+        let target = self.core.lookup_symbol_kind_priority(
             parts,
             &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Module],
             None,
@@ -363,7 +363,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return;
         }
 
-        let target = self.core.lookup_segments_with_priority(
+        let target = self.core.lookup_symbol_kind_priority(
             &parts,
             &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Module],
             None,
@@ -398,7 +398,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return false;
         }
 
-        if let Some(target) = self.core.lookup_segments_with_priority(
+        if let Some(target) = self.core.lookup_symbol_kind_priority(
             parts,
             &[SymbolKind::Function, SymbolKind::Struct],
             None,
@@ -410,7 +410,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
             return true;
         }
 
-        if let Some(target) = self.core.lookup_segments(parts, None, None) {
+        if let Some(target) = self.core.lookup_symbol(parts, None, None) {
             self.add_symbol_relation(Some(target));
             if target.kind() == SymbolKind::Function {
                 self.record_call_binding(target);

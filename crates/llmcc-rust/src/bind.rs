@@ -242,7 +242,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                             .into_iter()
                             .find_map(|kind| {
                                 self.core
-                                    .lookup_symbol_in_globals(segments, Some(kind), None)
+                                    .lookup_symbol_only_in_globals(segments, Some(kind), None)
                             })
                     });
 
