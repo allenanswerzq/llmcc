@@ -252,6 +252,48 @@ fn captures_builder_chain() {
 }
 
 #[test]
+fn captures_expr_chain_segments() {
+    let source = r#"
+        struct Data;
+        struct Iter;
+
+        impl Data {
+            fn iter(&self) -> Iter { Iter }
+        }
+
+        impl Iter {
+            fn map(&self) -> Iter { Iter }
+            fn count(&self) -> usize { 0 }
+        }
+
+        fn expr_chain() {
+            let data = Data::new();
+            data.iter().map().count();
+        }
+    "#;
+
+    let calls = collect_calls(source);
+    let mut chain_lengths = Vec::new();
+    for call in calls.iter() {
+        if let CallTarget::Chain(chain) = &call.target {
+            let names: Vec<_> = chain
+                .parts
+                .iter()
+                .map(|segment| segment.name.clone())
+                .collect();
+            chain_lengths.push(names);
+        }
+    }
+    assert!(
+        chain_lengths
+            .iter()
+            .any(|names| names.contains(&"count".to_string())),
+        "expected to capture count segment, got {:?}",
+        chain_lengths
+    );
+}
+
+#[test]
 fn captures_chain_with_invoked_root() {
     let source = r#"
         fn wrapper() {

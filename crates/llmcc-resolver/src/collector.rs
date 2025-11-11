@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use crate::type_expr::TypeExprSymbolResolver;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, SymId, Symbol, SymbolKind, SymbolKindMap};
+use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
     ImportDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
@@ -679,9 +679,19 @@ pub fn apply_collected_symbols<'tcx>(
             symbol.set_unit_index(spec.unit_index);
             symbol.set_fqn(spec.fqn.clone(), interner);
             symbol.set_is_global(spec.is_global);
-            symbol.set_type_of(spec.type_of.map(|id| SymId(id as u32)));
+            symbol.set_type_of(None);
             symbol_map.insert(symbol.id, symbol);
             created_symbols.push(symbol);
+        }
+    }
+
+    for (idx, spec) in collected.symbols.iter().enumerate() {
+        if let Some(type_idx) = spec.type_of {
+            if let (Some(symbol), Some(target)) =
+                (created_symbols.get(idx), created_symbols.get(type_idx))
+            {
+                symbol.set_type_of(Some(target.id));
+            }
         }
     }
 

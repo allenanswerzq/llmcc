@@ -135,16 +135,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             self.binder
                 .lookup_symbol(&[trimmed.to_string()], Some(SymbolKind::Variable), None)
         {
-            let type_of = local.type_of();
-            let receivers = self.receiver_types_for_symbol(local);
-            println!(
-                "resolve_chain_root_expr resolved {} kind={:?} type_of={:?} receivers={}",
-                trimmed,
-                local.kind(),
-                type_of,
-                receivers.len()
-            );
-            return receivers;
+            return self.receiver_types_for_symbol(local);
         }
 
         if let Some(symbol) = self.lookup_simple_path(trimmed) {
@@ -226,11 +217,6 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
         receivers: Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
-        println!(
-            "handle {:?} receivers={}",
-            segment.name,
-            receivers.len()
-        );
         let mut next_receivers = Vec::new();
 
         for receiver in &receivers {

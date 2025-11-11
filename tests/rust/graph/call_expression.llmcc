@@ -211,7 +211,7 @@ call-target-callkind-chain-method-callchainroot-expr
 ===============================================================================
 
 
---- file: src/main.rs ---
+--- file: app/src/main.rs ---
 struct Data;
 struct Iter;
 
@@ -254,7 +254,34 @@ u0:1 <- [u0:9]
 u0:2 -> [u0:5, u0:7]
 u0:2 <- [u0:1, u0:3]
 u0:3 -> [u0:2]
-u0:3 <- [u0:1]
-u0:5 <- [u0:2]
-u0:7 <- [u0:2]
+u0:3 <- [u0:1, u0:9]
+u0:5 <- [u0:2, u0:9]
+u0:7 <- [u0:2, u0:9]
 u0:9 -> [u0:1, u0:3, u0:5, u0:7]
+
+--- expect:blocks ---
+u0:1  | root   | block#1
+u0:2  | class  | Data
+u0:3  | class  | Iter
+u0:4  | impl   | block#4
+u0:5  | method | iter
+u0:6  | impl   | block#6
+u0:7  | method | map
+u0:8  | method | count
+u0:9  | func   | expr_chain
+u0:10 | call   | block#10
+u0:11 | call   | block#11
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n2 [label="Data", full_path="$TMP/app/src/main.rs:1"];
+    n3 [label="Iter", full_path="$TMP/app/src/main.rs:2"];
+    n9 [label="expr_chain", full_path="$TMP/app/src/main.rs:20"];
+  }
+  n2 -> n3;
+  n9 -> n2;
+}

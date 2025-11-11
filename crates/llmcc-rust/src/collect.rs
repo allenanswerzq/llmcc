@@ -10,6 +10,7 @@ use llmcc_resolver::{
     FunctionCollection, ImplCollection, StructCollection, VariableCollection,
     collect_symbols_batch,
 };
+use tree_sitter::Node;
 
 #[derive(Debug)]
 struct DeclCollector<'tcx> {
@@ -82,11 +83,7 @@ impl<'tcx> DeclCollector<'tcx> {
         self.resolve_type_expr_symbol(owner, &ty_expr)
     }
 
-    fn infer_symbol_from_value_node(
-        &mut self,
-        owner: HirId,
-        ts_node: tree_sitter::Node<'tcx>,
-    ) -> Option<usize> {
+    fn infer_symbol_from_value_node(&mut self, owner: HirId, ts_node: Node<'tcx>) -> Option<usize> {
         let unit = self.unit();
         match ts_node.kind() {
             "call_expression" => {
@@ -114,13 +111,7 @@ impl<'tcx> DeclCollector<'tcx> {
     fn infer_let_type_from_value(&mut self, node: &HirNode<'tcx>) -> Option<usize> {
         let ts_node = node.inner_ts_node();
         let value = ts_node.child_by_field_name("value")?;
-        let result = self.infer_symbol_from_value_node(node.hir_id(), value);
-        println!(
-            "infer let type {:?} -> {:?}",
-            self.unit().hir_text(node),
-            result
-        );
-        result
+        self.infer_symbol_from_value_node(node.hir_id(), value)
     }
 
     fn current_function_name(&self) -> Option<&str> {
@@ -192,6 +183,11 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let (sym_idx, fqn) =
                 self.core
                     .insert_symbol(node.hir_id(), &desc.name, SymbolKind::Function, is_global);
+            if let Some(ret_ty) = desc.return_type.as_ref() {
+                if let Some(ret_idx) = self.resolve_type_expr_symbol(node.hir_id(), ret_ty) {
+                    self.core.set_symbol_type_of(sym_idx, ret_idx);
+                }
+            }
             desc.fqn = Some(fqn.clone());
             self.functions.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));
@@ -221,9 +217,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
             if let Some(type_of) = type_of {
                 self.core.set_symbol_type_of(name_sym, type_of);
-                if let Some(spec) = self.core.symbols().get(type_of) {
-                    println!("let {} type set to {}", var.name, spec.name);
-                }
             }
 
             var.fqn = Some(fqn);
