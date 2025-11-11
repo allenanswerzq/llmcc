@@ -151,6 +151,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         segment: &CallSegment,
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
+        println!("handle_constructor_segment: {}", segment.name);
         let mut receivers = Vec::new();
 
         if let Some(struct_sym) =
@@ -177,6 +178,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         segment: &CallSegment,
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
+        println!("handle_function_segment: {}", segment.name);
         if let Some(sym) = self
             .binder
             .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
@@ -197,6 +199,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         segment: &CallSegment,
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
+        println!("handle_macro_segment: {}", segment.name);
         if let Some(sym) = self
             .binder
             .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Macro), None)
@@ -217,6 +220,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
         receivers: Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
+        println!("handle_method_segment: {}", segment.name);
         let mut next_receivers = Vec::new();
 
         for receiver in &receivers {

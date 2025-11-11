@@ -50,7 +50,7 @@ impl SessionBuilder {
     fn new() -> Self {
         SessionBuilder
     }
-    
+
     fn static_func() -> Foo {}
 }
 
@@ -141,7 +141,7 @@ fn macro_demo() {
 
 --- expect:symbols ---
 u0:1 | Macro    | log_value  | log_value  | [global]
-u0:2 | Function | macro_demo | macro_demo |         
+u0:2 | Function | macro_demo | macro_demo |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:2]
@@ -237,16 +237,16 @@ fn expr_chain() {
 }
 
 --- expect:symbols ---
-u0:1  | Struct   | Data       | Data              | 
-u0:2  | Struct   | Iter       | Iter              | 
-u0:3  | Function | iter       | Data::iter        | 
-u0:4  | Variable | self       | Data::iter::self  | 
-u0:5  | Function | map        | Iter::map         | 
-u0:6  | Variable | self       | Iter::map::self   | 
-u0:7  | Function | count      | Iter::count       | 
-u0:8  | Variable | self       | Iter::count::self | 
-u0:9  | Function | expr_chain | expr_chain        | 
-u0:10 | Variable | data       | expr_chain::data  | 
+u0:1  | Struct   | Data       | Data              |
+u0:2  | Struct   | Iter       | Iter              |
+u0:3  | Function | iter       | Data::iter        |
+u0:4  | Variable | self       | Data::iter::self  |
+u0:5  | Function | map        | Iter::map         |
+u0:6  | Variable | self       | Iter::map::self   |
+u0:7  | Function | count      | Iter::count       |
+u0:8  | Variable | self       | Iter::count::self |
+u0:9  | Function | expr_chain | expr_chain        |
+u0:10 | Variable | data       | expr_chain::data  |
 
 --- expect:symbol-deps ---
 u0:1 -> [u0:2, u0:3]
@@ -284,4 +284,76 @@ digraph project {
   }
   n2 -> n3;
   n9 -> n2;
+}
+
+
+
+===============================================================================
+call-target-callkind-chain-variable
+===============================================================================
+
+
+--- file: app/src/main.rs ---
+struct Stream;
+
+impl Stream {
+    fn advance(&mut self) -> &mut Self {
+        self
+    }
+
+    fn flush(&self) {}
+}
+
+fn chain_variable_demo(mut stream: Stream) {
+    let cursor = stream.advance();
+    cursor.flush();
+}
+
+--- expect:symbols ---
+u0:1 | Struct   | Stream              | Stream                      |
+u0:2 | Function | advance             | Stream::advance             |
+u0:3 | Variable | self                | Stream::advance::self       |
+u0:4 | Function | flush               | Stream::flush               |
+u0:5 | Variable | self                | Stream::flush::self         |
+u0:6 | Function | chain_variable_demo | chain_variable_demo         |
+u0:7 | Variable | stream              | chain_variable_demo::stream |
+u0:8 | Variable | cursor              | chain_variable_demo::cursor |
+
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2, u0:4]
+u0:1 <- [u0:6]
+u0:2 <- [u0:1, u0:6]
+u0:4 <- [u0:1, u0:6]
+u0:6 -> [u0:1, u0:2, u0:4]
+
+
+--- expect:blocks ---
+u0:1 | root   | block#1
+u0:2 | class  | Stream
+u0:3 | impl   | block#3
+u0:4 | method | advance
+u0:5 | method | flush
+u0:6 | func   | chain_variable_demo
+u0:7 | call   | block#7
+u0:8 | call   | block#8
+
+
+--- expect:block-deps ---
+u0:2 -> [u0:4, u0:5]
+u0:2 <- [u0:6]
+u0:4 <- [u0:2, u0:6]
+u0:5 <- [u0:2, u0:6]
+u0:6 -> [u0:2, u0:4, u0:5]
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n2 [label="Stream", full_path="$TMP/app/src/main.rs:1"];
+    n6 [label="chain_variable_demo", full_path="$TMP/app/src/main.rs:11"];
+  }
+  n6 -> n2;
 }

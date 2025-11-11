@@ -312,6 +312,56 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         resolver.resolve(target, symbols);
     }
 
+    fn symbol_type_symbol(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+        symbol
+            .type_of()
+            .and_then(|sym_id| self.unit().opt_get_symbol(sym_id))
+    }
+
+    fn symbol_path_parts(&self, symbol: &'tcx Symbol) -> Vec<String> {
+        let fqn = symbol.fqn_name.read().clone();
+        let mut parts: Vec<String> = fqn
+            .split("::")
+            .filter(|part| !part.is_empty())
+            .map(|part| part.to_string())
+            .collect();
+        if parts.is_empty() {
+            parts.push(symbol.name.clone());
+        }
+        parts
+    }
+
+    fn receiver_from_symbol_path(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+        let mut parts = self.symbol_path_parts(symbol);
+        if parts.len() <= 1 {
+            return None;
+        }
+        parts.pop();
+
+        self.lookup_symbol(&parts, Some(SymbolKind::Struct), None)
+            .or_else(|| self.lookup_symbol(&parts, Some(SymbolKind::Enum), None))
+            .or_else(|| self.lookup_symbol(&parts, Some(SymbolKind::Trait), None))
+            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Struct))
+            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Enum))
+            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Trait))
+    }
+
+    pub fn return_receivers(&self, symbol: &'tcx Symbol) -> Vec<&'tcx Symbol> {
+        match symbol.kind() {
+            SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait => vec![symbol],
+            SymbolKind::Function => {
+                if let Some(result) = self.symbol_type_symbol(symbol) {
+                    return vec![result];
+                }
+                if let Some(receiver) = self.receiver_from_symbol_path(symbol) {
+                    return vec![receiver];
+                }
+                Vec::new()
+            }
+            _ => self.symbol_type_symbol(symbol).into_iter().collect(),
+        }
+    }
+
     pub fn set_backward_relation(&mut self) {
         self.relation_direction = RelationDirection::Backward;
     }

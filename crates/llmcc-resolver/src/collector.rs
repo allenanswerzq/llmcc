@@ -38,6 +38,16 @@ pub struct ScopeSpec {
     pub owner_symbol: Option<usize>,
     /// Symbols captured directly within this scope.
     pub symbols: Vec<usize>,
+    /// String paths that should map to symbols already declared elsewhere.
+    pub aliases: Vec<ScopeAliasSpec>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ScopeAliasSpec {
+    /// Segments that make up the alias path (e.g. `["Self"]`).
+    pub parts: Vec<String>,
+    /// Index into the collected symbol list for the aliased target.
+    pub symbol_idx: usize,
 }
 
 #[derive(Debug)]
@@ -232,6 +242,8 @@ struct ScopeInfo {
     locals: HashMap<String, usize>,
     /// Cache of symbol indices grouped by kind for faster lookups.
     locals_by_kind: SymbolKindMap<Vec<usize>>,
+    /// String aliases that should resolve to existing symbol indices.
+    aliases: Vec<ScopeAliasSpec>,
 }
 
 impl ScopeInfo {
@@ -242,6 +254,7 @@ impl ScopeInfo {
             symbols: Vec::new(),
             locals: HashMap::new(),
             locals_by_kind: SymbolKindMap::new(),
+            aliases: Vec::new(),
         }
     }
 
@@ -253,6 +266,27 @@ impl ScopeInfo {
             .entry(name.to_string())
             .or_default()
             .push(symbol_idx);
+    }
+
+    fn add_alias(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
+        self.locals.insert(name.to_string(), symbol_idx);
+        let entries = self
+            .locals_by_kind
+            .ensure_kind(kind)
+            .entry(name.to_string())
+            .or_default();
+        if !entries.contains(&symbol_idx) {
+            entries.push(symbol_idx);
+        }
+
+        if !self.aliases.iter().any(|alias| {
+            alias.symbol_idx == symbol_idx && alias.parts.len() == 1 && alias.parts[0] == name
+        }) {
+            self.aliases.push(ScopeAliasSpec {
+                parts: vec![name.to_string()],
+                symbol_idx,
+            });
+        }
     }
 }
 
@@ -493,6 +527,11 @@ impl<'tcx> CollectorCore<'tcx> {
         }
     }
 
+    pub fn add_scope_alias(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
+        let scope_idx = self.current_scope_index();
+        self.scope_infos[scope_idx].add_alias(name, symbol_idx, kind);
+    }
+
     pub fn find_expr_symbol(
         &mut self,
         owner: HirId,
@@ -622,6 +661,7 @@ impl<'tcx> CollectorCore<'tcx> {
                 owner: info.owner,
                 owner_symbol: info.owner_symbol,
                 symbols: info.symbols,
+                aliases: info.aliases,
             })
             .collect();
 
@@ -679,18 +719,15 @@ pub fn apply_collected_symbols<'tcx>(
             symbol.set_unit_index(spec.unit_index);
             symbol.set_fqn(spec.fqn.clone(), interner);
             symbol.set_is_global(spec.is_global);
-            symbol.set_type_of(None);
             symbol_map.insert(symbol.id, symbol);
             created_symbols.push(symbol);
         }
     }
 
-    for (idx, spec) in collected.symbols.iter().enumerate() {
+    for (spec, symbol) in collected.symbols.iter().zip(created_symbols.iter()) {
         if let Some(type_idx) = spec.type_of {
-            if let (Some(symbol), Some(target)) =
-                (created_symbols.get(idx), created_symbols.get(type_idx))
-            {
-                symbol.set_type_of(Some(target.id));
+            if let Some(target_symbol) = created_symbols.get(type_idx) {
+                symbol.set_type_of(Some(target_symbol.id));
             }
         }
     }
@@ -710,6 +747,12 @@ pub fn apply_collected_symbols<'tcx>(
         for &sym_idx in &scope_spec.symbols {
             if let Some(symbol) = created_symbols.get(sym_idx) {
                 target_scope.insert(symbol, interner);
+            }
+        }
+
+        for alias in &scope_spec.aliases {
+            if let Some(symbol) = created_symbols.get(alias.symbol_idx) {
+                target_scope.insert_alias(&alias.parts, interner, symbol);
             }
         }
     }

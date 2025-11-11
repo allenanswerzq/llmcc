@@ -82,6 +82,23 @@ impl<'tcx> Scope<'tcx> {
         sym_id
     }
 
+    pub fn insert_alias(&self, parts: &[String], interner: &InternPool, symbol: &'tcx Symbol) {
+        let mut segments = Vec::new();
+        for segment in parts {
+            let trimmed = segment.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            segments.push(interner.intern(trimmed));
+        }
+
+        if segments.is_empty() {
+            return;
+        }
+
+        self.trie.write().insert_alias_path(&segments, symbol);
+    }
+
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
         let hits = self.trie.read().lookup_symbol_suffix(&[key], None, None);
         hits.first().map(|symbol| symbol.id)
@@ -465,9 +482,6 @@ impl Symbol {
             if !self_fqn.is_empty() && self_fqn == other_fqn {
                 return;
             }
-        }
-        if other.depends.read().contains(&self.id) {
-            return;
         }
         self.add_depends_on(other.id);
         other.add_depended_by(self.id);

@@ -61,7 +61,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.core.interner()
     }
 
-    fn current_symbol(&self) -> Option<&'tcx Symbol> {
+    fn scope_symbol(&self) -> Option<&'tcx Symbol> {
         self.core.scope_symbol()
     }
 
