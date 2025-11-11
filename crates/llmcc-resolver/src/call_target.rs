@@ -81,7 +81,6 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         let mut receivers = self.seed_receivers_from_root(chain, out);
 
         for segment in &chain.parts {
-            println!("Resolving call segment: {:?}", chain);
             receivers = match segment.kind {
                 CallKind::Constructor => self.handle_constructor_segment(segment, out),
                 CallKind::Function => self.handle_function_segment(segment, out),
@@ -211,16 +210,27 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
         receivers: Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
+        let mut next_receivers = Vec::new();
+
         for receiver in &receivers {
             let mut parts = self.symbol_path_parts(receiver);
             parts.push(segment.name.clone());
             if let Some(sym) = self
                 .binder
                 .lookup_symbol(&parts, Some(SymbolKind::Function), None)
+                .or_else(|| self.binder.lookup_symbol_fqn(&parts, SymbolKind::Function))
             {
                 self.push_symbol_unique(out, sym);
-                return self.symbol_type_symbol(sym).into_iter().collect();
+                if let Some(ret) = self.symbol_type_symbol(sym) {
+                    self.push_receiver_unique(&mut next_receivers, ret);
+                } else {
+                    self.push_receiver_unique(&mut next_receivers, receiver);
+                }
             }
+        }
+
+        if !next_receivers.is_empty() {
+            return next_receivers;
         }
 
         if let Some(sym) = self
@@ -232,7 +242,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             })
         {
             self.push_symbol_unique(out, sym);
-            return self.symbol_type_symbol(sym).into_iter().collect();
+            return self.receiver_types_for_symbol(sym);
         }
 
         Vec::new()
@@ -243,6 +253,13 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             return;
         }
         out.push(symbol);
+    }
+
+    fn push_receiver_unique(&self, list: &mut Vec<&'tcx Symbol>, symbol: &'tcx Symbol) {
+        if list.iter().any(|existing| ptr::eq(*existing, symbol)) {
+            return;
+        }
+        list.push(symbol);
     }
 
     fn push_type_from_qualifiers(&self, out: &mut Vec<&'tcx Symbol>, qualifiers: &[String]) {
@@ -294,8 +311,39 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
     fn receiver_types_for_symbol(&self, symbol: &'tcx Symbol) -> Vec<&'tcx Symbol> {
         match symbol.kind() {
             SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait => vec![symbol],
+            SymbolKind::Function => {
+                if let Some(result) = self.symbol_type_symbol(symbol) {
+                    return vec![result];
+                }
+                if let Some(receiver) = self.receiver_from_symbol_path(symbol) {
+                    return vec![receiver];
+                }
+                Vec::new()
+            }
             _ => self.symbol_type_symbol(symbol).into_iter().collect(),
         }
+    }
+
+    fn receiver_from_symbol_path(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+        let mut parts = self.symbol_path_parts(symbol);
+        if parts.len() <= 1 {
+            return None;
+        }
+        parts.pop();
+
+        self.binder
+            .lookup_symbol(&parts, Some(SymbolKind::Struct), None)
+            .or_else(|| {
+                self.binder
+                    .lookup_symbol(&parts, Some(SymbolKind::Enum), None)
+            })
+            .or_else(|| {
+                self.binder
+                    .lookup_symbol(&parts, Some(SymbolKind::Trait), None)
+            })
+            .or_else(|| self.binder.lookup_symbol_fqn(&parts, SymbolKind::Struct))
+            .or_else(|| self.binder.lookup_symbol_fqn(&parts, SymbolKind::Enum))
+            .or_else(|| self.binder.lookup_symbol_fqn(&parts, SymbolKind::Trait))
     }
 
     fn lookup_simple_path(&self, expr: &str) -> Option<&'tcx Symbol> {

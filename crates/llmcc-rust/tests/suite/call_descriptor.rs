@@ -221,6 +221,37 @@ fn captures_method_chain() {
 }
 
 #[test]
+fn captures_builder_chain() {
+    let source = r#"
+        struct Builder;
+
+        impl Builder {
+            fn new() -> Self { Builder }
+            fn step(self) -> Self { self }
+            fn finish(self) {}
+        }
+
+        fn wrapper() {
+            Builder::new().step().finish();
+        }
+    "#;
+
+    let calls = collect_calls(source);
+    let chains: Vec<_> = calls
+        .iter()
+        .filter(|call| matches!(call.target, CallTarget::Chain(_)))
+        .collect();
+    assert_eq!(chains.len(), 2);
+
+    let mut part_lengths: Vec<usize> = chains
+        .iter()
+        .map(|call| chain_target(call).parts.len())
+        .collect();
+    part_lengths.sort();
+    assert_eq!(part_lengths, vec![1, 2]);
+}
+
+#[test]
 fn captures_chain_with_invoked_root() {
     let source = r#"
         fn wrapper() {

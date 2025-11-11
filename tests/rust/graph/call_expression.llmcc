@@ -154,7 +154,7 @@ call-target-callkind-chain-method
 ===============================================================================
 
 
---- file: src/main.rs ---
+--- file: app/src/main.rs ---
 struct Builder;
 
 impl Builder {
@@ -174,3 +174,31 @@ fn chain_invocation_demo() {
 }
 
 --- expect:symbols ---
+u0:1 | Struct   | Builder               | Builder               |
+u0:2 | Function | new                   | Builder::new          |
+u0:3 | Function | step                  | Builder::step         |
+u0:4 | Variable | self                  | Builder::step::self   |
+u0:5 | Function | finish                | Builder::finish       |
+u0:6 | Variable | self                  | Builder::finish::self |
+u0:7 | Function | chain_invocation_demo | chain_invocation_demo |
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2, u0:3, u0:5]
+u0:1 <- [u0:7]
+u0:2 <- [u0:1, u0:7]
+u0:3 <- [u0:1, u0:7]
+u0:5 <- [u0:1, u0:7]
+u0:7 -> [u0:1, u0:2, u0:3, u0:5]
+
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="app";
+    style=filled;
+    color=lightgrey;
+    n2 [label="Builder", full_path="$TMP/app/src/main.rs:1"];
+    n7 [label="chain_invocation_demo", full_path="$TMP/app/src/main.rs:15"];
+  }
+  n7 -> n2;
+}
