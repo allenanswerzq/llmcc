@@ -1,9 +1,10 @@
-use crate::describe::{RustDescriptor, Visibility};
+use crate::describe::{RustDescriptor, Visibility, function::parse_type_expr};
+use crate::path::parse_rust_path;
 use crate::token::{AstVisitorRust, LangRust};
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::HirNode;
+use llmcc_core::ir::{HirId, HirNode};
 use llmcc_core::symbol::SymbolKind;
-use llmcc_descriptor::DescriptorTrait;
+use llmcc_descriptor::{DescriptorTrait, TypeExpr};
 use llmcc_resolver::{
     CallCollection, CollectedSymbols, CollectionResult, CollectorCore, EnumCollection,
     FunctionCollection, ImplCollection, StructCollection, VariableCollection,
@@ -36,6 +37,90 @@ impl<'tcx> DeclCollector<'tcx> {
 
     fn unit(&self) -> CompileUnit<'tcx> {
         self.core.unit()
+    }
+
+    fn resolve_type_expr_symbol(&mut self, owner: HirId, ty: &TypeExpr) -> Option<usize> {
+        self.core
+            .find_expr_symbol(owner, ty, SymbolKind::Struct, false)
+            .or_else(|| {
+                self.core
+                    .find_expr_symbol(owner, ty, SymbolKind::Enum, false)
+            })
+            .or_else(|| {
+                self.core
+                    .find_expr_symbol(owner, ty, SymbolKind::Trait, false)
+            })
+            .or_else(|| {
+                self.core
+                    .find_expr_symbol(owner, ty, SymbolKind::InferredType, false)
+            })
+    }
+
+    fn resolve_symbol_from_path(
+        &mut self,
+        owner: HirId,
+        raw: &str,
+        drop_last: bool,
+    ) -> Option<usize> {
+        if raw.trim().is_empty() {
+            return None;
+        }
+
+        let mut qualifier = parse_rust_path(raw);
+        if drop_last {
+            let segments = qualifier.segments_mut();
+            if segments.len() <= 1 {
+                return None;
+            }
+            segments.pop();
+        }
+
+        let ty_expr = TypeExpr::Path {
+            qualifier,
+            generics: Vec::new(),
+        };
+        self.resolve_type_expr_symbol(owner, &ty_expr)
+    }
+
+    fn infer_symbol_from_value_node(
+        &mut self,
+        owner: HirId,
+        ts_node: tree_sitter::Node<'tcx>,
+    ) -> Option<usize> {
+        let unit = self.unit();
+        match ts_node.kind() {
+            "call_expression" => {
+                if let Some(function_node) = ts_node.child_by_field_name("function") {
+                    return self.resolve_symbol_from_path(
+                        owner,
+                        &unit.ts_text(function_node),
+                        true,
+                    );
+                }
+            }
+            "scoped_identifier" | "identifier" => {
+                return self.resolve_symbol_from_path(owner, &unit.ts_text(ts_node), false);
+            }
+            "struct_expression" => {
+                if let Some(name_node) = ts_node.child_by_field_name("name") {
+                    return self.resolve_symbol_from_path(owner, &unit.ts_text(name_node), false);
+                }
+            }
+            _ => {}
+        }
+        None
+    }
+
+    fn infer_let_type_from_value(&mut self, node: &HirNode<'tcx>) -> Option<usize> {
+        let ts_node = node.inner_ts_node();
+        let value = ts_node.child_by_field_name("value")?;
+        let result = self.infer_symbol_from_value_node(node.hir_id(), value);
+        println!(
+            "infer let type {:?} -> {:?}",
+            self.unit().hir_text(node),
+            result
+        );
+        result
     }
 
     fn current_function_name(&self) -> Option<&str> {
@@ -123,18 +208,22 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
         if let Some(mut var) = RustDescriptor::build_variable(self.unit(), &node) {
             let mut type_of = None;
             if let Some(ty) = &var.type_annotation {
-                // Infer the type symbol if possible
-                type_of =
-                    self.core
-                        .find_expr_symbol(node.hir_id(), ty, SymbolKind::InferredType, false);
+                type_of = self.resolve_type_expr_symbol(node.hir_id(), ty);
             }
 
             let (name_sym, fqn) =
                 self.core
                     .insert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
 
+            if type_of.is_none() {
+                type_of = self.infer_let_type_from_value(&node);
+            }
+
             if let Some(type_of) = type_of {
                 self.core.set_symbol_type_of(name_sym, type_of);
+                if let Some(spec) = self.core.symbols().get(type_of) {
+                    println!("let {} type set to {}", var.name, spec.name);
+                }
             }
 
             var.fqn = Some(fqn);
@@ -155,9 +244,33 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
         if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_pattern) {
-            let _ =
+            let (sym_idx, _) =
                 self.core
                     .insert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
+
+            if let Some(type_node) = node.opt_child_by_field(self.unit(), LangRust::field_type) {
+                let ty_expr = parse_type_expr(self.unit(), type_node.inner_ts_node());
+                let type_symbol = self
+                    .core
+                    .find_expr_symbol(node.hir_id(), &ty_expr, SymbolKind::Struct, false)
+                    .or_else(|| {
+                        self.core
+                            .find_expr_symbol(node.hir_id(), &ty_expr, SymbolKind::Enum, false)
+                    })
+                    .or_else(|| {
+                        self.core.find_expr_symbol(
+                            node.hir_id(),
+                            &ty_expr,
+                            SymbolKind::Trait,
+                            false,
+                        )
+                    });
+
+                if let Some(type_idx) = type_symbol {
+                    self.core.set_symbol_type_of(sym_idx, type_idx);
+                }
+            }
+
             self.visit_children(&node);
         } else {
             tracing::warn!(

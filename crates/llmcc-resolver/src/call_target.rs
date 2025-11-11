@@ -101,8 +101,15 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
         match &chain.root {
-            CallChainRoot::Expr(expr) => self.resolve_chain_root_expr(expr, out),
+            CallChainRoot::Expr(expr) => {
+                // - `value.iter().map(...)`: root is `CallChainRoot::Expr("value")`, so we try resolve
+                //   `value` as a local variable and use its type as the starting receiver.
+                self.resolve_chain_root_expr(expr, out)
+            }
             CallChainRoot::Invocation(invocation) => {
+                // - `Builder::new().step()`: root is an invocation, so we resolve `Builder::new`
+                //   first, append it to `out`, then treat the constructor's return symbol as
+                //   the receiver for the next segment (`step`).
                 let start_len = out.len();
                 self.resolve(invocation.target.as_ref(), out);
                 out.iter()
@@ -128,7 +135,16 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             self.binder
                 .lookup_symbol(&[trimmed.to_string()], Some(SymbolKind::Variable), None)
         {
-            return self.receiver_types_for_symbol(local);
+            let type_of = local.type_of();
+            let receivers = self.receiver_types_for_symbol(local);
+            println!(
+                "resolve_chain_root_expr resolved {} kind={:?} type_of={:?} receivers={}",
+                trimmed,
+                local.kind(),
+                type_of,
+                receivers.len()
+            );
+            return receivers;
         }
 
         if let Some(symbol) = self.lookup_simple_path(trimmed) {
@@ -210,6 +226,11 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
         receivers: Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
+        println!(
+            "handle {:?} receivers={}",
+            segment.name,
+            receivers.len()
+        );
         let mut next_receivers = Vec::new();
 
         for receiver in &receivers {

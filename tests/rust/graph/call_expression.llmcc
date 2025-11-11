@@ -35,6 +35,7 @@ digraph project {
 }
 
 
+
 ===============================================================================
 call-target-callkind-function-two
 ===============================================================================
@@ -76,8 +77,6 @@ u0:3 <- [u0:6]
 u0:4 <- [u0:3, u0:6]
 u0:5 -> [u0:1]
 u0:5 <- [u0:3, u0:6]
-$// Here u0:3 -> [u0:4, u0:5], when building context, we can reduce the u0:23
-$// becase u0:4 and u0:5 are both under u0:3, and more specific.
 u0:6 -> [u0:3, u0:4, u0:5]
 u0:6 <- [u0:2]
 
@@ -123,6 +122,7 @@ digraph project {
 }
 
 
+
 ===============================================================================
 call-target-callkind-macro
 ===============================================================================
@@ -149,8 +149,9 @@ u0:2 -> [u0:1]
 
 
 
+
 ===============================================================================
-call-target-callkind-chain-method
+call-target-callkind-chain-method-callchainroot-invocation
 ===============================================================================
 
 
@@ -202,3 +203,58 @@ digraph project {
   }
   n7 -> n2;
 }
+
+
+
+===============================================================================
+call-target-callkind-chain-method-callchainroot-expr
+===============================================================================
+
+
+--- file: src/main.rs ---
+struct Data;
+struct Iter;
+
+impl Data {
+    fn iter(&self) -> Iter {
+        Iter
+    }
+}
+
+impl Iter {
+    fn map(&self) -> Iter {
+        Iter
+    }
+
+    fn count(&self) -> usize {
+        0
+    }
+}
+
+fn expr_chain() {
+    let data = Data::new();
+    data.iter().map().count();
+}
+
+--- expect:symbols ---
+u0:1  | Struct   | Data       | Data              | 
+u0:2  | Struct   | Iter       | Iter              | 
+u0:3  | Function | iter       | Data::iter        | 
+u0:4  | Variable | self       | Data::iter::self  | 
+u0:5  | Function | map        | Iter::map         | 
+u0:6  | Variable | self       | Iter::map::self   | 
+u0:7  | Function | count      | Iter::count       | 
+u0:8  | Variable | self       | Iter::count::self | 
+u0:9  | Function | expr_chain | expr_chain        | 
+u0:10 | Variable | data       | expr_chain::data  | 
+
+--- expect:symbol-deps ---
+u0:1 -> [u0:2, u0:3]
+u0:1 <- [u0:9]
+u0:2 -> [u0:5, u0:7]
+u0:2 <- [u0:1, u0:3]
+u0:3 -> [u0:2]
+u0:3 <- [u0:1]
+u0:5 <- [u0:2]
+u0:7 <- [u0:2]
+u0:9 -> [u0:1, u0:3, u0:5, u0:7]
