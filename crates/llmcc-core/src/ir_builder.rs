@@ -5,12 +5,12 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use rayon::prelude::*;
 use tree_sitter::Node;
 
+use crate::DynError;
 use crate::context::{CompileCtxt, ParentedNode};
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
 use crate::lang_def::LanguageTrait;
-use crate::DynError;
 
 /// Global atomic counter for HIR ID allocation
 static HIR_ID_COUNTER: AtomicU32 = AtomicU32::new(0);

@@ -1,9 +1,9 @@
 use llmcc_core::{
-    build_llmcc_graph, graph_builder::ProjectGraph, ir_builder::build_llmcc_ir,
-    query::ProjectQuery, CompileCtxt, GraphBuildConfig, IrBuildConfig,
+    CompileCtxt, GraphBuildConfig, IrBuildConfig, build_llmcc_graph, graph_builder::ProjectGraph,
+    ir_builder::build_llmcc_ir, query::ProjectQuery,
 };
 use llmcc_resolver::apply_collected_symbols;
-use llmcc_rust::{bind_symbols, collect_symbols, LangRust};
+use llmcc_rust::{LangRust, bind_symbols, collect_symbols};
 
 /// Helper to build a project graph from multiple Rust source files
 fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {

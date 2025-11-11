@@ -4,6 +4,7 @@ use std::marker::PhantomData;
 use std::mem;
 use std::path::Path;
 
+use crate::DynError;
 use crate::block::Arena as BlockArena;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
@@ -19,7 +20,6 @@ use crate::module_path::{module_group_from_location, module_group_from_path};
 use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
-use crate::DynError;
 use rayon::prelude::*;
 
 const BLOCK_INTERESTING_KINDS: [BlockKind; 3] =

@@ -1,9 +1,9 @@
 use llmcc_core::{
-    build_llmcc_graph, graph_builder::ProjectGraph, ir_builder::build_llmcc_ir,
-    query::ProjectQuery, CompileCtxt, GraphBuildConfig, IrBuildConfig,
+    CompileCtxt, GraphBuildConfig, IrBuildConfig, build_llmcc_graph, graph_builder::ProjectGraph,
+    ir_builder::build_llmcc_ir, query::ProjectQuery,
 };
 use llmcc_resolver::apply_collected_symbols;
-use llmcc_rust::{bind_symbols, collect_symbols, LangRust};
+use llmcc_rust::{LangRust, bind_symbols, collect_symbols};
 
 fn build_graph(sources: &[&str]) -> &'static ProjectGraph<'static> {
     let source_bytes: Vec<Vec<u8>> = sources.iter().map(|s| s.as_bytes().to_vec()).collect();

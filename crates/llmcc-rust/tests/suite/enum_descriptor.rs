@@ -1,6 +1,6 @@
 use llmcc_core::IrBuildConfig;
 use llmcc_descriptor::{EnumVariantKind, TypeExpr, Visibility};
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, EnumCollection, LangRust};
+use llmcc_rust::{CompileCtxt, EnumCollection, LangRust, build_llmcc_ir, collect_symbols};
 
 fn collect_enums(source: &str) -> EnumCollection {
     let sources = vec![source.as_bytes().to_vec()];

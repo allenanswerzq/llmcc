@@ -1,11 +1,10 @@
-use std::ptr;
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
-use llmcc_descriptor::{CallChainRoot, CallKind, CallTarget, TypeExpr};
+use llmcc_descriptor::{CallTarget, TypeExpr};
 
+use crate::call_target::CallTargetResolver;
 use crate::collector::CollectionResult;
 
 #[derive(Debug)]
@@ -183,6 +182,24 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         None
     }
 
+    pub fn lookup_segments_with_priority(
+        &self,
+        symbol: &[String],
+        kinds: &[SymbolKind],
+        unit_index: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        self.lookup_symbol_kind_priority(symbol, kinds, unit_index)
+    }
+
+    pub fn lookup_segments(
+        &self,
+        symbol: &[String],
+        kind: Option<SymbolKind>,
+        unit_index: Option<usize>,
+    ) -> Option<&'tcx Symbol> {
+        self.lookup_symbol(symbol, kind, unit_index)
+    }
+
     pub fn lookup_symbol_fqn(&self, symbol: &[String], kind: SymbolKind) -> Option<&'tcx Symbol> {
         if symbol.is_empty() {
             return None;
@@ -216,7 +233,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         let mut symbols = Vec::new();
         self.lookup_expr_symbols_with(expr, SymbolKind::Struct, &mut symbols);
         self.lookup_expr_symbols_with(expr, SymbolKind::Enum, &mut symbols);
-        self.lookup_expr_symbols_with(expr, SymbolKind::DynamicType, &mut symbols);
+        self.lookup_expr_symbols_with(expr, SymbolKind::InferredType, &mut symbols);
         symbols
     }
 
@@ -282,188 +299,14 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         }
     }
 
+    pub fn add_symbol_dependency(&self, symbol: Option<&'tcx Symbol>) {
+        if let (Some(current), Some(target)) = (self.current_symbol(), symbol) {
+            current.add_dependency(target);
+        }
+    }
+
     pub fn lookup_call_symbols(&self, target: &CallTarget, symbols: &mut Vec<&'tcx Symbol>) {
-        match target {
-            CallTarget::Symbol(call) => {
-                let mut parts = call.qualifiers.clone();
-                parts.push(call.name.clone());
-
-                match call.kind {
-                    CallKind::Method => {
-                        if let Some(method_symbol) =
-                            self.lookup_symbol(&parts, Some(SymbolKind::Function), None)
-                        {
-                            self.push_symbol_unique(symbols, method_symbol);
-                        }
-                        self.push_type_from_qualifiers(symbols, &call.qualifiers);
-                    }
-                    CallKind::Constructor => {
-                        if let Some(sym) = self.lookup_symbol_kind_priority(
-                            &parts,
-                            &[SymbolKind::Struct, SymbolKind::Enum],
-                            None,
-                        ) {
-                            self.push_symbol_unique(symbols, sym);
-                        }
-                    }
-                    CallKind::Macro => {
-                        let symbol = self
-                            .lookup_symbol(&parts, Some(SymbolKind::Macro), None)
-                            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Macro));
-                        if let Some(sym) = symbol {
-                            self.push_symbol_unique(symbols, sym);
-                        }
-                    }
-                    CallKind::Function | CallKind::Unknown => {
-                        let symbol = self
-                            .lookup_symbol(&parts, Some(SymbolKind::Function), None)
-                            .or_else(|| self.lookup_symbol_fqn(&parts, SymbolKind::Function));
-                        if let Some(sym) = symbol {
-                            self.push_symbol_unique(symbols, sym);
-                        }
-                        self.push_type_from_qualifiers(symbols, &call.qualifiers);
-                    }
-                }
-            }
-            CallTarget::Chain(chain) => {
-                match &chain.root {
-                    CallChainRoot::Expr(expr) => {
-                        if let Some(symbol) = self.lookup_simple_path(expr) {
-                            self.push_symbol_unique(symbols, symbol);
-                        }
-                    }
-                    CallChainRoot::Invocation(invocation) => {
-                        self.lookup_call_symbols(invocation.target.as_ref(), symbols);
-                    }
-                }
-
-                for segment in &chain.parts {
-                    match segment.kind {
-                        CallKind::Constructor => {
-                            if let Some(sym) = self.lookup_symbol(
-                                &[segment.name.clone()],
-                                Some(SymbolKind::Struct),
-                                None,
-                            ) {
-                                self.push_symbol_unique(symbols, sym);
-                            }
-                            if let Some(sym) = self.lookup_symbol(
-                                &[segment.name.clone()],
-                                Some(SymbolKind::Enum),
-                                None,
-                            ) {
-                                self.push_symbol_unique(symbols, sym);
-                            }
-                        }
-                        CallKind::Function => {
-                            let symbol = self
-                                .lookup_symbol(
-                                    &[segment.name.clone()],
-                                    Some(SymbolKind::Function),
-                                    None,
-                                )
-                                .or_else(|| {
-                                    self.lookup_symbol_fqn(
-                                        &[segment.name.clone()],
-                                        SymbolKind::Function,
-                                    )
-                                });
-                            if let Some(sym) = symbol {
-                                self.push_symbol_unique(symbols, sym);
-                            }
-                        }
-                        CallKind::Macro => {
-                            let symbol = self
-                                .lookup_symbol(
-                                    &[segment.name.clone()],
-                                    Some(SymbolKind::Macro),
-                                    None,
-                                )
-                                .or_else(|| {
-                                    self.lookup_symbol_fqn(
-                                        &[segment.name.clone()],
-                                        SymbolKind::Macro,
-                                    )
-                                });
-                            if let Some(sym) = symbol {
-                                self.push_symbol_unique(symbols, sym);
-                            }
-                        }
-                        CallKind::Method => {
-                            let symbol = self
-                                .lookup_symbol(
-                                    &[segment.name.clone()],
-                                    Some(SymbolKind::Function),
-                                    None,
-                                )
-                                .or_else(|| {
-                                    self.lookup_symbol_fqn(
-                                        &[segment.name.clone()],
-                                        SymbolKind::Function,
-                                    )
-                                });
-                            if let Some(sym) = symbol {
-                                self.push_symbol_unique(symbols, sym);
-                            }
-                        }
-                        CallKind::Unknown => {}
-                    }
-                }
-            }
-            CallTarget::Dynamic { .. } => {}
-        }
-    }
-
-    fn push_symbol_unique(&self, symbols: &mut Vec<&'tcx Symbol>, symbol: &'tcx Symbol) {
-        if symbols.iter().any(|existing| ptr::eq(*existing, symbol)) {
-            return;
-        }
-        symbols.push(symbol);
-    }
-
-    fn push_type_from_qualifiers(&self, symbols: &mut Vec<&'tcx Symbol>, qualifiers: &[String]) {
-        if qualifiers.is_empty() {
-            return;
-        }
-
-        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Struct), None) {
-            self.push_symbol_unique(symbols, sym);
-        }
-
-        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Enum), None) {
-            self.push_symbol_unique(symbols, sym);
-        }
-
-        if let Some(sym) = self.lookup_symbol(qualifiers, Some(SymbolKind::Trait), None) {
-            self.push_symbol_unique(symbols, sym);
-        }
-    }
-
-    fn lookup_simple_path(&self, expr: &str) -> Option<&'tcx Symbol> {
-        if expr.is_empty()
-            || expr.contains('(')
-            || expr.contains(')')
-            || expr.contains('.')
-            || expr.contains(' ')
-            || matches!(expr, "self" | "Self" | "super")
-        {
-            return None;
-        }
-
-        if !expr.contains("::") {
-            return None;
-        }
-
-        let parts: Vec<String> = expr
-            .split("::")
-            .filter(|segment| !segment.is_empty())
-            .map(|segment| segment.to_string())
-            .collect();
-
-        if parts.is_empty() {
-            return None;
-        }
-
-        self.lookup_symbol(&parts, None, None)
+        let resolver = CallTargetResolver::new(self);
+        resolver.resolve(target, symbols);
     }
 }

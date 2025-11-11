@@ -2,12 +2,12 @@ use std::fmt::Write as _;
 use std::fs;
 use std::path::Path;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{
-    build_llmcc_graph, BlockId, BlockRelation, GraphBuildConfig, ProjectGraph,
+    BlockId, BlockRelation, GraphBuildConfig, ProjectGraph, build_llmcc_graph,
 };
-use llmcc_core::ir_builder::{build_llmcc_ir, IrBuildConfig};
+use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
@@ -233,7 +233,7 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
                 "unsupported lang '{}' requested by {}",
                 other,
                 case.id()
-            ))
+            ));
         }
     };
     drop(project);

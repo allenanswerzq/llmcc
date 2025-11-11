@@ -5,14 +5,14 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::SymbolKind;
 
 use llmcc_descriptor::{
-    CallDescriptor, CallKind, CallTarget, DescriptorTrait, TypeExpr, VariableScope, LANGUAGE_PYTHON,
+    CallDescriptor, CallKind, CallTarget, DescriptorTrait, LANGUAGE_PYTHON, TypeExpr, VariableScope,
 };
 use llmcc_resolver::{
-    collect_symbols_batch, CallCollection, ClassCollection, CollectedSymbols, CollectionResult,
-    CollectorCore, FunctionCollection, ImportCollection, SymbolSpec, VariableCollection,
+    CallCollection, ClassCollection, CollectedSymbols, CollectionResult, CollectorCore,
+    FunctionCollection, ImportCollection, SymbolSpec, VariableCollection, collect_symbols_batch,
 };
 
-use crate::describe::PythonDescriptor;
+use crate::describe::{self, PythonDescriptor};
 use crate::token::{AstVisitorPython, LangPython};
 
 #[derive(Debug)]
@@ -293,7 +293,7 @@ impl<'tcx> AstVisitorPython<'tcx> for DeclCollector<'tcx> {
         if let Some((symbol_idx, _name, fqn)) =
             self.create_new_symbol(&node, LangPython::field_name, true, SymbolKind::Struct)
         {
-            if let Some(mut class) = PythonDescriptor::build_impl(self.unit(), &node) {
+            if let Some(mut class) = describe::class::build(self.unit(), &node) {
                 class.fqn = Some(fqn);
                 self.classes.add(node.hir_id(), class);
             }

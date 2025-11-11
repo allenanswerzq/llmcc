@@ -5,8 +5,9 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::SymbolKind;
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
-    collect_symbols_batch, CallCollection, CollectedSymbols, CollectionResult, CollectorCore,
-    EnumCollection, FunctionCollection, ImplCollection, StructCollection, VariableCollection,
+    CallCollection, CollectedSymbols, CollectionResult, CollectorCore, EnumCollection,
+    FunctionCollection, ImplCollection, StructCollection, VariableCollection,
+    collect_symbols_batch,
 };
 
 #[derive(Debug)]
@@ -120,14 +121,22 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         if let Some(mut var) = RustDescriptor::build_variable(self.unit(), &node) {
-            //
-            // if let Some(ty) = &var.type_annotation {
-            //     self.core
-            //         .find_expr_symbol(node.hir_id(), ty, SymbolKind::Struct, false);
-            // }
-            let (_, fqn) =
+            let mut type_of = None;
+            if let Some(ty) = &var.type_annotation {
+                // Infer the type symbol if possible
+                type_of =
+                    self.core
+                        .find_expr_symbol(node.hir_id(), ty, SymbolKind::InferredType, false);
+            }
+
+            let (name_sym, fqn) =
                 self.core
                     .insert_symbol(node.hir_id(), &var.name, SymbolKind::Variable, false);
+
+            if let Some(type_of) = type_of {
+                self.core.set_symbol_type_of(name_sym, type_of);
+            }
+
             var.fqn = Some(fqn);
             self.variables.add(node.hir_id(), var);
             self.visit_children(&node);
@@ -160,7 +169,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_self_parameter(&mut self, node: HirNode<'tcx>) {
-      let _ = self
+        let _ = self
             .core
             .insert_symbol(node.hir_id(), "self", SymbolKind::Variable, false);
         self.visit_children(&node);
@@ -189,7 +198,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
         if let Some((sym_idx, _)) =
             self.core
-                .insert_field_symbol(&node, LangRust::field_name, SymbolKind::DynamicType)
+                .insert_field_symbol(&node, LangRust::field_name, SymbolKind::InferredType)
         {
             self.visit_children_scope(&node, Some(sym_idx));
         } else {

@@ -1,7 +1,7 @@
 use llmcc_core::{context::CompileUnit, ir::HirNode};
 use tree_sitter::Node;
 
-use llmcc_descriptor::{DescriptorOrigin, SourceLocation, SourceSpan, LANGUAGE_PYTHON};
+use llmcc_descriptor::{DescriptorOrigin, LANGUAGE_PYTHON, SourceLocation, SourceSpan};
 
 pub fn build_origin<'tcx>(
     unit: CompileUnit<'tcx>,

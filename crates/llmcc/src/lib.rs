@@ -4,14 +4,14 @@ use std::sync::Once;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
-use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
+use rayon::prelude::*;
 use tracing::info;
 
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::Scope;
 use llmcc_core::*;
-use llmcc_resolver::{apply_collected_symbols, CollectedSymbols};
+use llmcc_resolver::{CollectedSymbols, apply_collected_symbols};
 
 fn should_skip_dir(name: &str) -> bool {
     matches!(

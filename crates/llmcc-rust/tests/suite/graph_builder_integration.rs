@@ -1,12 +1,11 @@
 use std::collections::HashSet;
 
 use llmcc_core::{
-    build_llmcc_graph,
+    GraphBuildConfig, IrBuildConfig, build_llmcc_graph,
     graph_builder::{BlockKind, GraphNode, ProjectGraph},
-    GraphBuildConfig, IrBuildConfig,
 };
 use llmcc_resolver::apply_collected_symbols;
-use llmcc_rust::{bind_symbols, build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_rust::{CompileCtxt, LangRust, bind_symbols, build_llmcc_ir, collect_symbols};
 
 fn build_graph_with_config(sources: &[&str], config: GraphBuildConfig) -> ProjectGraph<'static> {
     let source_bytes: Vec<Vec<u8>> = sources.iter().map(|s| s.as_bytes().to_vec()).collect();

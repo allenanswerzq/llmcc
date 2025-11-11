@@ -1,6 +1,6 @@
-use llmcc_core::{context::CompileCtxt, IrBuildConfig};
+use llmcc_core::{IrBuildConfig, context::CompileCtxt};
 use llmcc_descriptor::TypeExpr;
-use llmcc_python::{build_llmcc_ir, collect_symbols, ClassCollection, LangPython};
+use llmcc_python::{ClassCollection, LangPython, build_llmcc_ir, collect_symbols};
 
 fn collect_classes(source: &str) -> ClassCollection {
     let sources = vec![source.as_bytes().to_vec()];
@@ -119,18 +119,21 @@ class User:
     let classes = collect_classes(source);
     let user = classes.iter().find(|c| c.name == "User").unwrap();
     assert_eq!(user.fields.len(), 3);
-    assert!(user
-        .fields
-        .iter()
-        .any(|f| matches!(f.name.as_deref(), Some("name"))));
-    assert!(user
-        .fields
-        .iter()
-        .any(|f| matches!(f.name.as_deref(), Some("age"))));
-    assert!(user
-        .fields
-        .iter()
-        .any(|f| matches!(f.name.as_deref(), Some("email"))));
+    assert!(
+        user.fields
+            .iter()
+            .any(|f| matches!(f.name.as_deref(), Some("name")))
+    );
+    assert!(
+        user.fields
+            .iter()
+            .any(|f| matches!(f.name.as_deref(), Some("age")))
+    );
+    assert!(
+        user.fields
+            .iter()
+            .any(|f| matches!(f.name.as_deref(), Some("email")))
+    );
 
     let name_field = user
         .fields

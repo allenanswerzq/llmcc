@@ -63,7 +63,7 @@ fn parse_struct_fields<'tcx>(
     match node.kind() {
         "field_declaration_list" => return (parse_named_fields(unit, node), StructShape::Named),
         "tuple_field_declaration_list" | "ordered_field_declaration_list" => {
-            return (parse_tuple_fields(unit, node), StructShape::Tuple)
+            return (parse_tuple_fields(unit, node), StructShape::Tuple);
         }
         _ => {}
     }
@@ -75,10 +75,10 @@ fn parse_struct_fields<'tcx>(
         if let Some(child) = node.child(i) {
             match child.kind() {
                 "field_declaration_list" => {
-                    return (parse_named_fields(unit, child), StructShape::Named)
+                    return (parse_named_fields(unit, child), StructShape::Named);
                 }
                 "tuple_field_declaration_list" | "ordered_field_declaration_list" => {
-                    return (parse_tuple_fields(unit, child), StructShape::Tuple)
+                    return (parse_tuple_fields(unit, child), StructShape::Tuple);
                 }
                 "field_declaration" => named.push(parse_named_field_node(unit, child)),
                 "tuple_field_declaration" | "ordered_field_declaration" => {
@@ -88,10 +88,10 @@ fn parse_struct_fields<'tcx>(
                     let (fields, kind) = parse_struct_fields(unit, child);
                     match kind {
                         StructShape::Named if !fields.is_empty() => {
-                            return (fields, StructShape::Named)
+                            return (fields, StructShape::Named);
                         }
                         StructShape::Tuple if !fields.is_empty() => {
-                            return (fields, StructShape::Tuple)
+                            return (fields, StructShape::Tuple);
                         }
                         _ => {}
                     }

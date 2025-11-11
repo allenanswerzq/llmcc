@@ -1,6 +1,6 @@
 use llmcc_core::IrBuildConfig;
 use llmcc_descriptor::TypeExpr;
-use llmcc_rust::{build_llmcc_ir, collect_symbols, CompileCtxt, LangRust};
+use llmcc_rust::{CompileCtxt, LangRust, build_llmcc_ir, collect_symbols};
 
 #[test]
 fn test_impl_from_with_qualified_type() {

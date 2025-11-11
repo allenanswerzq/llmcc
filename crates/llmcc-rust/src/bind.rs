@@ -54,8 +54,14 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         }
 
         if let Some(target_symbol) = self.core.lookup_symbol(&parts, None, None) {
-            if let Some(current) = self.current_symbol() && current.kind() != SymbolKind::Variable {
-                current.add_dependency(target_symbol);
+            if target_symbol.kind() == SymbolKind::Variable {
+                return;
+            }
+
+            if let Some(current) = self.current_symbol() {
+                if current.kind() != SymbolKind::Variable {
+                    current.add_dependency(target_symbol);
+                }
             }
         }
     }
@@ -173,7 +179,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_associated_type(&mut self, node: HirNode<'tcx>) {
         let symbol =
             self.core
-                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::DynamicType);
+                .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::InferredType);
         self.visit_children_scope(&node, symbol);
     }
 
@@ -258,17 +264,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
-
-        let parent = self.current_symbol();
-        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
-            if let Some(parent_symbol) = parent {
-                if let Some(type_expr) = descriptor.type_annotation.as_ref() {
-                    for &type_symbol in &self.core.lookup_expr_symbols(type_expr) {
-                        parent_symbol.add_dependency(type_symbol);
-                    }
-                }
-            }
-        }
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {

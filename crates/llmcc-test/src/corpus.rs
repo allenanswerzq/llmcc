@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use shell_words::{join, split};
 use walkdir::WalkDir;
 
@@ -348,7 +348,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
                         other,
                         path.display(),
                         case.name
-                    ))
+                    ));
                 }
             }
         } else {

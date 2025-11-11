@@ -1,6 +1,6 @@
+use llmcc_core::Node;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
-use llmcc_core::Node;
 
 use crate::{
     CallDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor, ImportDescriptor,
