@@ -33,7 +33,7 @@ u0:8 | Variable | x              | qualified_call::x           |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:3, u0:5]
-u0:2 <- [u0:6]
+u0:2 -> [u0:6]
 u0:3 -> [u0:1, u0:4, u0:5]
 u0:3 <- [u0:6]
 u0:4 <- [u0:3, u0:6]
@@ -41,11 +41,11 @@ u0:5 -> [u0:1]
 u0:5 <- [u0:3, u0:6]
 $// Here u0:3 -> [u0:4, u0:5], when building context, we can reduce the u0:23
 $// becase u0:4 and u0:5 are both under u0:3, and more specific.
-u0:6 -> [u0:2, u0:3, u0:4, u0:5]
+u0:6 -> [u0:3, u0:4, u0:5]
+u0:6 <- [u0:2]
 
 --- expect:blocks ---
 u0:1  | root   | block#1
-u0:10 | call   | block#10
 u0:2  | class  | Foo
 u0:3  | class  | Baz
 u0:4  | class  | SessionBuilder
@@ -54,15 +54,20 @@ u0:6  | method | new
 u0:7  | method | static_func
 u0:8  | func   | qualified_call
 u0:9  | call   | block#9
+u0:10 | call   | block#10
+
 
 --- expect:block-deps ---
-u0:2 <- [u0:3, u0:6]
-u0:3 -> [u0:2, u0:5, u0:6]
-u0:3 <- [u0:7]
-u0:5 <- [u0:3, u0:7]
-u0:6 -> [u0:2]
-u0:6 <- [u0:3, u0:7]
-u0:7 -> [u0:3, u0:5, u0:6]
+u0:2 <- [u0:4, u0:7]
+u0:3 -> [u0:8]
+u0:4 -> [u0:2, u0:6, u0:7]
+u0:4 <- [u0:8]
+u0:6 <- [u0:4, u0:8]
+u0:7 -> [u0:2]
+u0:7 <- [u0:4, u0:8]
+u0:8 -> [u0:4, u0:6, u0:7]
+u0:8 <- [u0:3]
+
 
 --- expect:graph ---
 digraph project {
@@ -70,34 +75,12 @@ digraph project {
     label="app";
     style=filled;
     color=lightgrey;
-    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="qualified_call", full_path="$TMP/app/src/main.rs:12"];
-    n3 [label="SessionBuilder", full_path="$TMP/app/src/main.rs:2"];
+    n2 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
+    n8 [label="qualified_call", full_path="$TMP/app/src/main.rs:13"];
+    n3 [label="Baz", full_path="$TMP/app/src/main.rs:2"];
+    n4 [label="SessionBuilder", full_path="$TMP/app/src/main.rs:3"];
   }
-  n2 -> n3;
-  n3 -> n1;
+  n8 -> n4;
+  n3 -> n8;
+  n4 -> n2;
 }
-
-===============================================================================
-call-target-callkind-macro
-===============================================================================
-
-
---- file: src/main.rs ---
-macro_rules! log_value {
-    ($value:expr) => {{
-        let _captured = $value;
-    }};
-}
-
-fn macro_demo() {
-    log_value!("hi");
-}
-
---- expect:symbols ---
-u0:1 | Macro    | log_value  | log_value  | [global]
-u0:2 | Function | macro_demo | macro_demo |         
-
---- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]

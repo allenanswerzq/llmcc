@@ -2,16 +2,23 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
-use llmcc_descriptor::{CallTarget, TypeExpr};
+use llmcc_descriptor::{CallTarget, PathQualifier, TypeExpr};
 
 use crate::call_target::CallTargetResolver;
 use crate::collector::CollectionResult;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RelationDirection {
+    Forward,
+    Backward,
+}
 
 #[derive(Debug)]
 pub struct BinderCore<'tcx, 'a> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
     collection: &'a CollectionResult,
+    relation_direction: RelationDirection,
 }
 
 impl<'tcx, 'a> BinderCore<'tcx, 'a> {
@@ -27,6 +34,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             unit,
             scopes,
             collection,
+            relation_direction: RelationDirection::Forward,
         }
     }
 
@@ -56,7 +64,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
     }
 
     #[inline]
-    pub fn current_symbol(&self) -> Option<&'tcx Symbol> {
+    pub fn scope_symbol(&self) -> Option<&'tcx Symbol> {
         self.scopes.scoped_symbol()
     }
 
@@ -299,14 +307,67 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         }
     }
 
-    pub fn add_symbol_dependency(&self, symbol: Option<&'tcx Symbol>) {
-        if let (Some(current), Some(target)) = (self.current_symbol(), symbol) {
-            current.add_dependency(target);
-        }
-    }
-
     pub fn lookup_call_symbols(&self, target: &CallTarget, symbols: &mut Vec<&'tcx Symbol>) {
         let resolver = CallTargetResolver::new(self);
         resolver.resolve(target, symbols);
+    }
+
+    pub fn set_backward_relation(
+        &mut self,
+    ) {
+        self.relation_direction = RelationDirection::Backward;
+    }
+
+    pub fn set_forward_relation(
+        &mut self,
+    ) {
+        self.relation_direction = RelationDirection::Forward;
+    }
+
+    fn add_relation(
+        &self,
+        segments: &[String],
+        scope_symbol: Option<&'tcx Symbol>,
+    ) {
+        if segments.is_empty() {
+            return;
+        }
+
+        let Some(target_symbol) = self.lookup_symbol(segments, None, None) else {
+            return;
+        };
+
+        if target_symbol.kind() == SymbolKind::Variable {
+            return;
+        }
+
+        let Some(scope_symbol) = scope_symbol else {
+            return;
+        };
+
+        if scope_symbol.kind() == SymbolKind::Variable {
+            return;
+        }
+
+        match self.relation_direction {
+            RelationDirection::Forward => scope_symbol.add_dependency(target_symbol),
+            RelationDirection::Backward => target_symbol.add_dependency(scope_symbol),
+        }
+    }
+
+    pub fn resolve_identifier_with<F>(&self, node: HirNode<'tcx>, parser: F)
+    where
+        F: FnOnce(&str) -> PathQualifier,
+    {
+        let text = self.unit.hir_text(&node);
+        let qualifier = parser(&text);
+        let segments: Vec<String> = qualifier
+            .parts()
+            .iter()
+            .map(|segment| segment.trim().to_string())
+            .filter(|segment| !segment.is_empty())
+            .collect();
+        let current = self.scope_symbol();
+        self.add_relation(&segments, current);
     }
 }

@@ -356,18 +356,15 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
     buf
 }
 
+use std::cmp::Ordering;
+
 fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
     if entries.is_empty() {
         return "none\n".to_string();
     }
 
     let mut rows = entries.to_vec();
-    rows.sort_by(|a, b| {
-        a.label
-            .cmp(&b.label)
-            .then_with(|| a.kind.cmp(&b.kind))
-            .then_with(|| a.name.cmp(&b.name))
-    });
+    rows.sort_by(|a, b| compare_block_snapshots(a, b));
 
     let label_width = rows.iter().map(|row| row.label.len()).max().unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
@@ -387,6 +384,31 @@ fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
         );
     }
     buf
+}
+
+fn compare_block_snapshots(a: &BlockSnapshot, b: &BlockSnapshot) -> Ordering {
+    match (parse_block_label(&a.label), parse_block_label(&b.label)) {
+        (Some(ka), Some(kb)) => ka
+            .cmp(&kb)
+            .then_with(|| a.kind.cmp(&b.kind))
+            .then_with(|| a.name.cmp(&b.name)),
+        (Some(_), None) => Ordering::Less,
+        (None, Some(_)) => Ordering::Greater,
+        (None, None) => a
+            .label
+            .cmp(&b.label)
+            .then_with(|| a.kind.cmp(&b.kind))
+            .then_with(|| a.name.cmp(&b.name)),
+    }
+}
+
+fn parse_block_label(label: &str) -> Option<(usize, usize)> {
+    let mut parts = label.split(':');
+    let unit_part = parts.next()?.strip_prefix('u')?;
+    let block_part = parts.next()?;
+    let unit = unit_part.parse().ok()?;
+    let block = block_part.parse().ok()?;
+    Some((unit, block))
 }
 
 fn render_symbol_dependencies(entries: &[SymbolDependencySnapshot]) -> String {
