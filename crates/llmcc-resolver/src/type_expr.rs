@@ -4,7 +4,7 @@ use llmcc_descriptor::{PathQualifier, TypeExpr};
 
 use crate::collector::CollectorCore;
 
-pub(crate) struct TypeExprSymbolResolver<'a, 'tcx> {
+pub(crate) struct TypeExprResolver<'a, 'tcx> {
     core: &'a mut CollectorCore<'tcx>,
     owner: HirId,
     kind: SymbolKind,
@@ -12,7 +12,7 @@ pub(crate) struct TypeExprSymbolResolver<'a, 'tcx> {
     upsert: bool,
 }
 
-impl<'a, 'tcx> TypeExprSymbolResolver<'a, 'tcx> {
+impl<'a, 'tcx> TypeExprResolver<'a, 'tcx> {
     pub(crate) fn new(
         core: &'a mut CollectorCore<'tcx>,
         owner: HirId,

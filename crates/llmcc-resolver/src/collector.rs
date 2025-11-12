@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice::{Iter, IterMut};
 use std::time::{Duration, Instant};
 
-use crate::type_expr::TypeExprSymbolResolver;
+use crate::type_expr::TypeExprResolver;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
 use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
@@ -532,14 +532,14 @@ impl<'tcx> CollectorCore<'tcx> {
         self.scope_infos[scope_idx].add_alias(name, symbol_idx, kind);
     }
 
-    pub fn find_expr_symbol(
+    pub fn lookup_type_expr_symbol(
         &mut self,
         owner: HirId,
         expr: &TypeExpr,
         kind: SymbolKind,
         is_global: bool,
     ) -> Option<usize> {
-        self.find_or_insert_expr_symbol(owner, expr, kind, is_global, false)
+        self.lookup_or_insert_expr_symbol(owner, expr, kind, is_global, false)
     }
 
     pub fn upsert_expr_symbol(
@@ -549,7 +549,7 @@ impl<'tcx> CollectorCore<'tcx> {
         kind: SymbolKind,
         is_global: bool,
     ) -> Option<usize> {
-        self.find_or_insert_expr_symbol(owner, expr, kind, is_global, true)
+        self.lookup_or_insert_expr_symbol(owner, expr, kind, is_global, true)
     }
 
     /// Resolve the canonical symbol for a language-agnostic `TypeExpr`, optionally inserting a
@@ -561,7 +561,7 @@ impl<'tcx> CollectorCore<'tcx> {
     /// when `upsert` is true. Reference and tuple expressions strip to their underlying path so
     /// constructs like Rust's `impl &Foo` or Python's `tuple[T]` reuse the same lookup rules as
     /// plain identifiers.
-    fn find_or_insert_expr_symbol(
+    fn lookup_or_insert_expr_symbol(
         &mut self,
         owner: HirId,
         expr: &TypeExpr,
@@ -569,7 +569,7 @@ impl<'tcx> CollectorCore<'tcx> {
         is_global: bool,
         upsert: bool,
     ) -> Option<usize> {
-        let mut resolver = TypeExprSymbolResolver::new(self, owner, kind, is_global, upsert);
+        let mut resolver = TypeExprResolver::new(self, owner, kind, is_global, upsert);
         resolver.resolve(expr)
     }
 

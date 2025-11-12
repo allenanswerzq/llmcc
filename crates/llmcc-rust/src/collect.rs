@@ -159,7 +159,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 // Infer the type symbol if possible
                 type_of =
                     self.core
-                        .find_expr_symbol(node.hir_id(), ty, SymbolKind::InferredType, false);
+                        .lookup_type_expr_symbol(node.hir_id(), ty, SymbolKind::InferredType, false);
             }
 
             let (name_sym, fqn) =
@@ -198,7 +198,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 ] {
                     if let Some(idx) =
                         self.core
-                            .find_expr_symbol(node.hir_id(), ty, kind, false)
+                            .lookup_type_expr_symbol(node.hir_id(), ty, kind, false)
                     {
                         type_of = Some(idx);
                         break;
@@ -288,7 +288,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             // impl Bar for Foo {}
             if let Some(ty) = &descriptor.trait_ty {
                 self.core
-                    .find_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
+                    .lookup_type_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
             }
 
             self.impls.add(node.hir_id(), descriptor);
