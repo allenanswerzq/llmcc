@@ -137,9 +137,25 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_function_item(&mut self, node: HirNode<'tcx>) {
         if let Some(mut desc) = RustDescriptor::build_function(self.unit(), &node) {
             let is_global = Self::visibility_exports(&desc.visibility);
+            let mut needs_global_alias = false;
+            if !is_global {
+                let mut ts_parent = node.inner_ts_node().parent();
+                while let Some(parent) = ts_parent {
+                    if matches!(parent.kind(), "impl_item" | "trait_item") {
+                        // Methods need a global alias so call resolution can find them via `Type::method`.
+                        needs_global_alias = true;
+                        break;
+                    }
+                    ts_parent = parent.parent();
+                }
+            }
             let (sym_idx, fqn) =
                 self.core
                     .insert_symbol(node.hir_id(), &desc.name, SymbolKind::Function, is_global);
+            if needs_global_alias && !is_global {
+                self.core
+                    .register_symbol_globally(&desc.name, sym_idx, SymbolKind::Function);
+            }
             desc.fqn = Some(fqn.clone());
             self.functions.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));

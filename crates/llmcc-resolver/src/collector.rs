@@ -471,6 +471,15 @@ impl<'tcx> CollectorCore<'tcx> {
         (idx, fqn)
     }
 
+    pub fn register_symbol_globally(
+        &mut self,
+        name: &str,
+        symbol_idx: usize,
+        kind: SymbolKind,
+    ) {
+        self.scope_infos[0].record_symbol(name, symbol_idx, kind);
+    }
+
     pub fn upsert_symbol(
         &mut self,
         owner: HirId,

@@ -71,14 +71,13 @@ u0:8 | Variable | x              | qualified_call::x           |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:3, u0:5]
-u0:2 -> [u0:6]
+u0:2 <- [u0:6]
 u0:3 -> [u0:1, u0:4, u0:5]
 u0:3 <- [u0:6]
 u0:4 <- [u0:3, u0:6]
 u0:5 -> [u0:1]
 u0:5 <- [u0:3, u0:6]
-u0:6 -> [u0:3, u0:4, u0:5]
-u0:6 <- [u0:2]
+u0:6 -> [u0:2, u0:3, u0:4, u0:5]
 
 --- expect:blocks ---
 u0:1  | root   | block#1
@@ -95,14 +94,13 @@ u0:10 | call   | block#10
 
 --- expect:block-deps ---
 u0:2 <- [u0:4, u0:7]
-u0:3 -> [u0:8]
+u0:3 <- [u0:8]
 u0:4 -> [u0:2, u0:6, u0:7]
 u0:4 <- [u0:8]
 u0:6 <- [u0:4, u0:8]
 u0:7 -> [u0:2]
 u0:7 <- [u0:4, u0:8]
-u0:8 -> [u0:4, u0:6, u0:7]
-u0:8 <- [u0:3]
+u0:8 -> [u0:3, u0:4, u0:6, u0:7]
 
 
 --- expect:graph ---
@@ -116,11 +114,10 @@ digraph project {
     n3 [label="Baz", full_path="$TMP/app/src/main.rs:2"];
     n4 [label="SessionBuilder", full_path="$TMP/app/src/main.rs:3"];
   }
+  n8 -> n3;
   n8 -> n4;
-  n3 -> n8;
   n4 -> n2;
 }
-
 
 
 ===============================================================================

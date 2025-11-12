@@ -126,6 +126,12 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             self.core
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
+
+        if let Some(parent) = self.core.scope_symbol(){
+            if let Some(child) = symbol {
+                self.core.propagate_child_dependencies(parent, child);
+            }
+        }
     }
 
     fn visit_type_parameter(&mut self, node: HirNode<'tcx>) {
@@ -232,9 +238,33 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
+
+        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
+            if let Some(type_expr) = descriptor.type_annotation.as_ref() {
+                if let Some(type_symbol) = self.core.lookup_expr_symbols(type_expr).first() {
+                    let mut names = vec![descriptor.name.clone()];
+                    if let Some(extra) = descriptor.extra_binding_names.as_ref() {
+                        names.extend(extra.iter().cloned());
+                    }
+
+                    for name in names {
+                        if let Some(symbol) = self
+                            .core
+                            .lookup_symbol(&[name.clone()], Some(SymbolKind::Variable), None)
+                        {
+                            if symbol.type_of().is_none() {
+                                symbol.set_type_of(Some(type_symbol.id));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
+        self.visit_children(&node);
+
         if let Some(param) = RustDescriptor::build_parameter(self.unit(), &node) {
             if let Some(type_expr) = param.type_annotation() {
                 if let Some(type_symbol) = self.core.lookup_expr_symbols(type_expr).first() {
@@ -250,8 +280,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                     }
                 }
             }
-
-            self.visit_children(&node);
         } else {
             tracing::warn!(
                 "build parameter error {:?} next_hir={:?}",

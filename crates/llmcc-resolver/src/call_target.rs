@@ -133,6 +133,12 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             self.binder
                 .lookup_symbol(&[trimmed.to_string()], Some(SymbolKind::Variable), None)
         {
+            tracing::trace!(
+                "[call-resolver] root expr '{}' resolved local var {} (type_of {:?})",
+                trimmed,
+                local.fqn_name.read().clone(),
+                local.type_of()
+            );
             return self.receiver_types_for_symbol(local);
         }
 
@@ -224,7 +230,7 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
                 } else {
                     self.push_receiver_unique(&mut next_receivers, receiver);
                 }
-            }
+            } 
         }
 
         if !next_receivers.is_empty() {
