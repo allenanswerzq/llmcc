@@ -187,15 +187,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_pattern) {
-            let (sym_idx, _) =
-                self.core
-                    .insert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
-
-            if let Some(ty_node) = node.opt_child_by_field(self.unit(), LangRust::field_type) {
-                let type_expr =
-                    RustDescriptor::build_type_expr(self.unit(), ty_node.inner_ts_node());
-                let mut resolved = None;
+        if let Some(param) = RustDescriptor::build_parameter(self.unit(), &node) {
+            let mut type_of = None;
+            if let Some(ty) = param.type_annotation() {
                 for kind in [
                     SymbolKind::Struct,
                     SymbolKind::Enum,
@@ -204,13 +198,19 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 ] {
                     if let Some(idx) =
                         self.core
-                            .find_expr_symbol(node.hir_id(), &type_expr, kind, false)
+                            .find_expr_symbol(node.hir_id(), ty, kind, false)
                     {
-                        resolved = Some(idx);
+                        type_of = Some(idx);
                         break;
                     }
                 }
-                if let Some(type_idx) = resolved {
+            }
+
+            for name in param.names() {
+                let (sym_idx, _) =
+                    self.core
+                        .insert_symbol(node.hir_id(), name, SymbolKind::Variable, false);
+                if let Some(type_idx) = type_of {
                     self.core.set_symbol_type_of(sym_idx, type_idx);
                 }
             }

@@ -2,15 +2,22 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use tree_sitter::Node;
 
+use llmcc_descriptor::TypeExpr;
+
+use super::function::parse_type_expr;
 use crate::token::LangRust;
 
 #[derive(Debug, Default, Clone)]
 pub struct ParameterDescriptor {
     names: Vec<String>,
+    type_annotation: Option<TypeExpr>,
 }
 
 impl ParameterDescriptor {
-    pub fn build<'tcx>(unit: CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Self {
+    pub fn build<'tcx>(
+        unit: CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+    ) -> Option<ParameterDescriptor> {
         let mut descriptor = ParameterDescriptor::default();
 
         if let Some(pattern) = node.opt_child_by_field(unit, LangRust::field_pattern) {
@@ -26,11 +33,23 @@ impl ParameterDescriptor {
             }
         }
 
-        descriptor
+        descriptor.type_annotation = node
+            .opt_child_by_field(unit, LangRust::field_type)
+            .map(|child| parse_type_expr(unit, child.inner_ts_node()));
+
+        if descriptor.names.is_empty() {
+            return None;
+        }
+
+        Some(descriptor)
     }
 
     pub fn names(&self) -> &[String] {
         &self.names
+    }
+
+    pub fn type_annotation(&self) -> Option<&TypeExpr> {
+        self.type_annotation.as_ref()
     }
 }
 
