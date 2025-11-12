@@ -6,8 +6,8 @@ use llmcc_core::symbol::SymbolKind;
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
     CallCollection, CollectedSymbols, CollectionResult, CollectorCore, EnumCollection,
-    FunctionCollection, ImplCollection, MiddleSymbolIndex, MiddleVisibility, StructCollection,
-    VariableCollection, collect_symbols_batch,
+    FunctionCollection, ImplCollection, StructCollection, VariableCollection,
+    collect_symbols_batch,
 };
 
 #[derive(Debug)]
@@ -19,7 +19,6 @@ struct DeclCollector<'tcx> {
     structs: StructCollection,
     impls: ImplCollection,
     enums: EnumCollection,
-    middle_symbols: MiddleSymbolIndex,
 }
 
 impl<'tcx> DeclCollector<'tcx> {
@@ -32,7 +31,6 @@ impl<'tcx> DeclCollector<'tcx> {
             structs: StructCollection::default(),
             impls: ImplCollection::default(),
             enums: EnumCollection::default(),
-            middle_symbols: MiddleSymbolIndex::default(),
         }
     }
 
@@ -50,26 +48,6 @@ impl<'tcx> DeclCollector<'tcx> {
             Visibility::Restricted { scope } => scope == "crate",
             _ => false,
         }
-    }
-
-    fn record_middle_symbol(
-        &mut self,
-        fqn: &str,
-        kind: SymbolKind,
-        hir_id: llmcc_core::ir::HirId,
-        visibility: &Visibility,
-    ) {
-        if fqn.is_empty() {
-            return;
-        }
-
-        let level = match visibility {
-            Visibility::Public | Visibility::Restricted { .. } => MiddleVisibility::Crate,
-            _ => MiddleVisibility::File,
-        };
-
-        self.middle_symbols
-            .add(fqn, kind, hir_id, self.core.unit_index(), level);
     }
 
     fn insert_self_aliases(&mut self, owner_symbol_idx: usize) {
@@ -114,7 +92,6 @@ impl<'tcx> DeclCollector<'tcx> {
             structs,
             impls,
             enums,
-            middle_symbols,
             ..
         } = self;
 
@@ -125,7 +102,6 @@ impl<'tcx> DeclCollector<'tcx> {
             structs,
             impls,
             enums,
-            middle_symbols,
             ..CollectionResult::default()
         })
     }
@@ -164,7 +140,6 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let (sym_idx, fqn) =
                 self.core
                     .insert_symbol(node.hir_id(), &desc.name, SymbolKind::Function, is_global);
-            self.record_middle_symbol(&fqn, SymbolKind::Function, node.hir_id(), &desc.visibility);
             desc.fqn = Some(fqn.clone());
             self.functions.add(node.hir_id(), desc);
             self.visit_children_scope(&node, Some(sym_idx));

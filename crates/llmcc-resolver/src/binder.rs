@@ -5,7 +5,7 @@ use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_descriptor::{CallTarget, PathQualifier, TypeExpr};
 
 use crate::call_target::CallTargetResolver;
-use crate::collector::{CollectionResult, MiddleVisibility};
+use crate::collector::CollectionResult;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationDirection {
@@ -95,51 +95,6 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         None
     }
 
-    fn lookup_in_middle(
-        &self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-        unit_index: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        let interner = self.interner();
-        let mut parts: Vec<String> = Vec::with_capacity(suffix.len());
-        for segment in suffix.iter().rev() {
-            if let Some(text) = interner.resolve_owned(*segment) {
-                if !text.is_empty() {
-                    parts.push(text);
-                }
-            }
-        }
-
-        if parts.is_empty() {
-            return None;
-        }
-
-        let key = parts.join("::");
-        let current_unit = unit_index.unwrap_or(self.unit.index);
-
-        let entries = self.collection().middle_symbols.get(&key)?;
-        for entry in entries {
-            if let Some(expected_kind) = kind {
-                if entry.kind != expected_kind {
-                    continue;
-                }
-            }
-
-            if entry.visibility == MiddleVisibility::File && entry.unit_index != current_unit {
-                continue;
-            }
-
-            if let Some(scope) = self.unit().opt_get_scope(entry.hir_id) {
-                if let Some(symbol) = scope.symbol() {
-                    return Some(symbol);
-                }
-            }
-        }
-
-        None
-    }
-
     fn lookup_in_globals(
         &self,
         suffix: &[InternedStr],
@@ -175,7 +130,6 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         unit_index: Option<usize>,
     ) -> Option<&'tcx Symbol> {
         self.lookup_in_locals(suffix, kind, unit_index)
-            .or_else(|| self.lookup_in_middle(suffix, kind, unit_index))
             .or_else(|| self.lookup_in_globals(suffix, kind, unit_index))
     }
 

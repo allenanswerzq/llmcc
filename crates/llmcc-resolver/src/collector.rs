@@ -50,58 +50,6 @@ pub struct ScopeAliasSpec {
     pub symbol_idx: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MiddleVisibility {
-    /// Symbol should only be visible to lookups originating from the same compile unit.
-    File,
-    /// Symbol can be resolved from any file within the crate.
-    Crate,
-}
-
-#[derive(Debug, Clone)]
-pub struct MiddleSymbolEntry {
-    pub hir_id: HirId,
-    pub kind: SymbolKind,
-    pub unit_index: usize,
-    pub visibility: MiddleVisibility,
-}
-
-#[derive(Debug, Default)]
-pub struct MiddleSymbolIndex {
-    map: HashMap<String, Vec<MiddleSymbolEntry>>,
-}
-
-impl MiddleSymbolIndex {
-    pub fn add(
-        &mut self,
-        fqn: &str,
-        kind: SymbolKind,
-        hir_id: HirId,
-        unit_index: usize,
-        visibility: MiddleVisibility,
-    ) {
-        if fqn.is_empty() {
-            return;
-        }
-
-        let bucket = self.map.entry(fqn.to_string()).or_default();
-        if bucket.iter().any(|entry| entry.hir_id == hir_id) {
-            return;
-        }
-
-        bucket.push(MiddleSymbolEntry {
-            hir_id,
-            kind,
-            unit_index,
-            visibility,
-        });
-    }
-
-    pub fn get(&self, key: &str) -> Option<&[MiddleSymbolEntry]> {
-        self.map.get(key).map(|bucket| bucket.as_slice())
-    }
-}
-
 #[derive(Debug)]
 pub struct DescriptorCollection<T> {
     descriptors: Vec<T>,
@@ -259,7 +207,6 @@ pub struct CollectionResult {
     pub variables: VariableCollection,
     pub imports: ImportCollection,
     pub calls: CallCollection,
-    pub middle_symbols: MiddleSymbolIndex,
 }
 
 #[derive(Debug)]

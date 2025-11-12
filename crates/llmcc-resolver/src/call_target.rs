@@ -1,8 +1,6 @@
 use std::ptr;
 
-use llmcc_core::ir::HirId;
 use llmcc_core::symbol::{Symbol, SymbolKind};
-use llmcc_descriptor::meta::DescriptorId;
 use llmcc_descriptor::{CallChain, CallChainRoot, CallKind, CallSegment, CallSymbol, CallTarget};
 
 use crate::binder::BinderCore;
