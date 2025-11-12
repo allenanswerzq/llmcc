@@ -19,6 +19,7 @@ pub use llmcc_descriptor::{
     StructDescriptor, StructField, StructKind, TypeExpr, VariableDescriptor, VariableKind,
     VariableScope, Visibility,
 };
+pub use parameter::ParameterDescriptor;
 
 pub struct RustDescriptor;
 
@@ -59,5 +60,14 @@ impl<'tcx> DescriptorTrait<'tcx> for RustDescriptor {
 
     fn build_type_expr(unit: CompileUnit<'tcx>, node: Node<'tcx>) -> TypeExpr {
         function::parse_type_expr(unit, node)
+    }
+}
+
+impl RustDescriptor {
+    pub fn build_parameter<'tcx>(
+        unit: CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+    ) -> Option<ParameterDescriptor> {
+        parameter::ParameterDescriptor::build(unit, node)
     }
 }

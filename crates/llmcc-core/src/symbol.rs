@@ -82,6 +82,23 @@ impl<'tcx> Scope<'tcx> {
         sym_id
     }
 
+    pub fn insert_alias(&self, parts: &[String], interner: &InternPool, symbol: &'tcx Symbol) {
+        let mut segments = Vec::new();
+        for segment in parts {
+            let trimmed = segment.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            segments.push(interner.intern(trimmed));
+        }
+
+        if segments.is_empty() {
+            return;
+        }
+
+        self.trie.write().insert_alias_path(&segments, symbol);
+    }
+
     pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
         let hits = self.trie.read().lookup_symbol_suffix(&[key], None, None);
         hits.first().map(|symbol| symbol.id)
@@ -333,6 +350,8 @@ pub struct Symbol {
     pub block_id: RwLock<Option<BlockId>>,
     /// Whether the symbol is globally visible/exported.
     pub is_global: RwLock<bool>,
+    /// Optional member table keyed by interned identifier (used for type namespaces).
+    pub members: RwLock<HashMap<InternedStr, Vec<SymId>>>,
 }
 
 impl Clone for Symbol {
@@ -351,6 +370,7 @@ impl Clone for Symbol {
             unit_index: RwLock::new(*self.unit_index.read()),
             block_id: RwLock::new(*self.block_id.read()),
             is_global: RwLock::new(*self.is_global.read()),
+            members: RwLock::new(self.members.read().clone()),
         }
     }
 }
@@ -376,6 +396,7 @@ impl Symbol {
             unit_index: RwLock::new(None),
             block_id: RwLock::new(None),
             is_global: RwLock::new(false),
+            members: RwLock::new(HashMap::new()),
         }
     }
 
@@ -396,6 +417,21 @@ impl Symbol {
         let key = interner.intern(&fqn);
         *self.fqn_name.write() = fqn;
         *self.fqn_key.write() = key;
+    }
+
+    pub fn path_segments(&self) -> Vec<String> {
+        let fqn = self.fqn_name.read().clone();
+        let mut parts: Vec<String> = fqn
+            .split("::")
+            .filter(|part| !part.is_empty())
+            .map(|part| part.to_string())
+            .collect();
+
+        if parts.is_empty() {
+            parts.push(self.name.clone());
+        }
+
+        parts
     }
 
     pub fn kind(&self) -> SymbolKind {
@@ -431,6 +467,19 @@ impl Symbol {
 
     pub fn set_is_global(&self, value: bool) {
         *self.is_global.write() = value;
+    }
+
+    pub fn add_member(&self, name: InternedStr, sym_id: SymId) {
+        let mut members = self.members.write();
+        members.entry(name).or_default().push(sym_id);
+    }
+
+    pub fn members(&self, name: InternedStr) -> Vec<SymId> {
+        self.members
+            .read()
+            .get(&name)
+            .cloned()
+            .unwrap_or_default()
     }
 
     pub fn add_depends_on(&self, sym_id: SymId) {

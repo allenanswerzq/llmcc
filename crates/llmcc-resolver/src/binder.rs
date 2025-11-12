@@ -68,7 +68,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         self.scopes.scoped_symbol()
     }
 
-    pub fn lookup_in_locals(
+    fn lookup_in_locals(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -95,7 +95,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         None
     }
 
-    pub fn lookup_in_globals(
+    fn lookup_in_globals(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -123,7 +123,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
 
     /// Look up a symbol by its suffix parts, optionally filtering by kind and unit index.
     /// This method first searches in local scopes, then in global scope.
-    pub fn lookup_symbol_suffix(
+    fn lookup_symbol_suffix(
         &self,
         suffix: &[InternedStr],
         kind: Option<SymbolKind>,
@@ -133,7 +133,7 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             .or_else(|| self.lookup_in_globals(suffix, kind, unit_index))
     }
 
-    pub fn lookup_symbol_in_globals(
+    pub fn lookup_symbol_only_in_globals(
         &self,
         symbol: &[String],
         kind: Option<SymbolKind>,
@@ -188,41 +188,6 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         }
 
         None
-    }
-
-    pub fn lookup_segments_with_priority(
-        &self,
-        symbol: &[String],
-        kinds: &[SymbolKind],
-        unit_index: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        self.lookup_symbol_kind_priority(symbol, kinds, unit_index)
-    }
-
-    pub fn lookup_segments(
-        &self,
-        symbol: &[String],
-        kind: Option<SymbolKind>,
-        unit_index: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        self.lookup_symbol(symbol, kind, unit_index)
-    }
-
-    pub fn lookup_symbol_fqn(&self, symbol: &[String], kind: SymbolKind) -> Option<&'tcx Symbol> {
-        if symbol.is_empty() {
-            return None;
-        }
-
-        let fqn = symbol.join("::");
-        if fqn.is_empty() {
-            return None;
-        }
-
-        let symbol_map = self.unit().cc.symbol_map.read();
-        symbol_map
-            .values()
-            .find(|sym| sym.kind() == kind && sym.fqn_name.read().as_str() == fqn)
-            .copied()
     }
 
     pub fn lookup_symbol_with(
@@ -312,6 +277,42 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         resolver.resolve(target, symbols);
     }
 
+    fn symbol_type_of(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+        symbol
+            .type_of()
+            .and_then(|sym_id| self.unit().opt_get_symbol(sym_id))
+    }
+
+    fn lookup_receiver_from_symbol(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
+        let mut parts = symbol.path_segments();
+        if parts.len() <= 1 {
+            return None;
+        }
+        parts.pop();
+
+        self.lookup_symbol_kind_priority(
+            &parts,
+            &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait],
+            None,
+        )
+    }
+
+    pub fn lookup_return_receivers(&self, symbol: &'tcx Symbol) -> Vec<&'tcx Symbol> {
+        match symbol.kind() {
+            SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait => vec![symbol],
+            SymbolKind::Function => {
+                if let Some(result) = self.symbol_type_of(symbol) {
+                    return vec![result];
+                }
+                if let Some(receiver) = self.lookup_receiver_from_symbol(symbol) {
+                    return vec![receiver];
+                }
+                Vec::new()
+            }
+            _ => self.symbol_type_of(symbol).into_iter().collect(),
+        }
+    }
+
     pub fn set_backward_relation(&mut self) {
         self.relation_direction = RelationDirection::Backward;
     }
@@ -361,5 +362,46 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
             .collect();
         let current = self.scope_symbol();
         self.add_relation(&segments, current);
+    }
+
+    /// Binds the return type of a function call to a variable in a variable assignment.
+    pub fn bind_call_receivers_to_variable(
+        &self,
+        var_name: &str,
+        resolved_symbols: &[&'tcx Symbol],
+    ) {
+        if resolved_symbols.is_empty() {
+            return;
+        }
+
+        // Look up the variable in the current scope
+        if let Some(variable) =
+            self.lookup_symbol(&[var_name.to_string()], Some(SymbolKind::Variable), None)
+        {
+            // For each resolved symbol (the function that was called)
+            for symbol in resolved_symbols {
+                // Get what that function returns (its receiver type)
+                for receiver in self.lookup_return_receivers(symbol) {
+                    // Set the variable's type to the return type
+                    variable.set_type_of(Some(receiver.id));
+
+                    // Note: Language-specific binders will create the alias in their scope
+                    // using bind_variable_type_alias after this method returns
+                    break;
+                }
+                break;
+            }
+        }
+    }
+
+    /// Helper to insert a type alias for a variable in a given scope.
+    pub fn bind_variable_type_alias(
+        &self,
+        scope: &'tcx Scope<'tcx>,
+        var_name: &str,
+        receiver_symbol: &'tcx Symbol,
+    ) {
+        let alias_parts = vec![var_name.to_string()];
+        scope.insert_alias(&alias_parts, self.interner(), receiver_symbol);
     }
 }

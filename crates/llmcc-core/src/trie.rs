@@ -54,6 +54,19 @@ impl<'tcx> SymbolTrie<'tcx> {
         node.add_symbol(symbol);
     }
 
+    /// Add a new symbol that share the same name suffix as an existing symbol.
+    pub fn insert_alias_path(&mut self, parts: &[InternedStr], symbol: &'tcx Symbol) {
+        if parts.is_empty() {
+            return;
+        }
+
+        let mut node = &mut self.root;
+        for segment in parts.iter().rev().copied() {
+            node = node.child_mut(segment);
+        }
+        node.add_symbol(symbol);
+    }
+
     pub fn lookup_symbol_suffix(
         &self,
         suffix: &[InternedStr],
