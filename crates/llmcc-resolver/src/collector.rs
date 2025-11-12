@@ -751,6 +751,24 @@ pub fn apply_collected_symbols<'tcx>(
             if let Some(symbol) = created_symbols.get(sym_idx) {
                 target_scope.set_symbol(Some(symbol));
             }
+
+            if let Some(owner_symbol) = created_symbols.get(sym_idx) {
+                if matches!(
+                    owner_symbol.kind(),
+                    SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait
+                ) {
+                    for &member_idx in &scope_spec.symbols {
+                        if member_idx == sym_idx {
+                            continue;
+                        }
+                        if let Some(member_symbol) = created_symbols.get(member_idx) {
+                            if member_symbol.kind() == SymbolKind::Function {
+                                owner_symbol.add_member(member_symbol.name_key, member_symbol.id);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         for &sym_idx in &scope_spec.symbols {

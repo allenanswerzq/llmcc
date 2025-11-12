@@ -350,6 +350,8 @@ pub struct Symbol {
     pub block_id: RwLock<Option<BlockId>>,
     /// Whether the symbol is globally visible/exported.
     pub is_global: RwLock<bool>,
+    /// Optional member table keyed by interned identifier (used for type namespaces).
+    pub members: RwLock<HashMap<InternedStr, Vec<SymId>>>,
 }
 
 impl Clone for Symbol {
@@ -368,6 +370,7 @@ impl Clone for Symbol {
             unit_index: RwLock::new(*self.unit_index.read()),
             block_id: RwLock::new(*self.block_id.read()),
             is_global: RwLock::new(*self.is_global.read()),
+            members: RwLock::new(self.members.read().clone()),
         }
     }
 }
@@ -393,6 +396,7 @@ impl Symbol {
             unit_index: RwLock::new(None),
             block_id: RwLock::new(None),
             is_global: RwLock::new(false),
+            members: RwLock::new(HashMap::new()),
         }
     }
 
@@ -463,6 +467,19 @@ impl Symbol {
 
     pub fn set_is_global(&self, value: bool) {
         *self.is_global.write() = value;
+    }
+
+    pub fn add_member(&self, name: InternedStr, sym_id: SymId) {
+        let mut members = self.members.write();
+        members.entry(name).or_default().push(sym_id);
+    }
+
+    pub fn members(&self, name: InternedStr) -> Vec<SymId> {
+        self.members
+            .read()
+            .get(&name)
+            .cloned()
+            .unwrap_or_default()
     }
 
     pub fn add_depends_on(&self, sym_id: SymId) {

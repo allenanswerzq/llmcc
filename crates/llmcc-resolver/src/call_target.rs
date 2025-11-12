@@ -61,12 +61,27 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
             // Regular free functions (default) and unknown classifications.
             // Example: `std::mem::drop(value)`.
             CallKind::Function => {
+                let mut resolved = false;
                 if let Some(sym) =
                     self.binder
                         .lookup_symbol(&parts, Some(SymbolKind::Function), None)
                 {
                     self.push_symbol_unique(out, sym);
+                    resolved = true;
+                } else if let Some(type_symbol) = self.lookup_type_symbol(&call.qualifiers) {
+                    for member in self.lookup_type_members(type_symbol, &call.name) {
+                        self.push_symbol_unique(out, member);
+                        resolved = true;
+                    }
                 }
+
+                if !resolved {
+                    tracing::trace!(
+                        "[call-resolver] failed to resolve function target {:?}",
+                        parts
+                    );
+                }
+
                 self.push_type_from_qualifiers(out, &call.qualifiers);
             }
             CallKind::Unknown => {
@@ -216,6 +231,22 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         let mut next_receivers = Vec::new();
 
         for receiver in &receivers {
+            let mut resolved = false;
+
+            for sym in self.lookup_type_members(receiver, &segment.name) {
+                resolved = true;
+                self.push_symbol_unique(out, sym);
+                if let Some(ret) = self.symbol_type_of(sym) {
+                    self.push_receiver_unique(&mut next_receivers, ret);
+                } else {
+                    self.push_receiver_unique(&mut next_receivers, receiver);
+                }
+            }
+
+            if resolved {
+                continue;
+            }
+
             let mut parts = receiver.path_segments();
             parts.push(segment.name.clone());
 
@@ -356,5 +387,31 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         }
 
         self.binder.lookup_symbol(&parts, None, None)
+    }
+
+    fn lookup_type_symbol(&self, qualifiers: &[String]) -> Option<&'tcx Symbol> {
+        if qualifiers.is_empty() {
+            return None;
+        }
+        self.binder.lookup_symbol_kind_priority(
+            qualifiers,
+            &[SymbolKind::Struct, SymbolKind::Enum, SymbolKind::Trait],
+            None,
+        )
+    }
+
+    fn lookup_type_members(
+        &self,
+        receiver: &'tcx Symbol,
+        method_name: &str,
+    ) -> Vec<&'tcx Symbol> {
+        let method_key = self.binder.interner().intern(method_name);
+        let mut symbols = Vec::new();
+        for sym_id in receiver.members(method_key) {
+            if let Some(symbol) = self.binder.unit().opt_get_symbol(sym_id) {
+                self.push_symbol_unique(&mut symbols, symbol);
+            }
+        }
+        symbols
     }
 }
