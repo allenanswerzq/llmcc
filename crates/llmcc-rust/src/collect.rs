@@ -50,6 +50,39 @@ impl<'tcx> DeclCollector<'tcx> {
         }
     }
 
+    fn insert_self_aliases(&mut self, owner_symbol_idx: usize) {
+        let owner_kind = {
+            let symbols = self.core.symbols();
+            let Some(spec) = symbols.get(owner_symbol_idx) else {
+                return;
+            };
+            if !matches!(spec.kind, SymbolKind::Struct | SymbolKind::Enum) {
+                return;
+            }
+            spec.kind
+        };
+
+        // Alias `Self` to the owner symbol so lookups resolve without duplicating entries.
+        self.core
+            .add_scope_alias("Self", owner_symbol_idx, owner_kind);
+
+        // Alias `self` (value form) to the same symbol so implicit receivers resolve.
+        self.core
+            .add_scope_alias("self", owner_symbol_idx, SymbolKind::Variable);
+    }
+
+    fn visit_children_scope_with_self(&mut self, node: &HirNode<'tcx>, owner_symbol: usize) {
+        let owner = node.hir_id();
+        let scope_idx = self.core.ensure_scope(owner);
+        self.core
+            .set_scope_owner_symbol(scope_idx, Some(owner_symbol));
+
+        self.core.push_scope(scope_idx);
+        self.insert_self_aliases(owner_symbol);
+        self.visit_children(node);
+        self.core.pop_scope();
+    }
+
     fn finish(self) -> CollectedSymbols {
         let DeclCollector {
             core,
@@ -126,7 +159,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                 // Infer the type symbol if possible
                 type_of =
                     self.core
-                        .find_expr_symbol(node.hir_id(), ty, SymbolKind::InferredType, false);
+                        .lookup_type_expr_symbol(node.hir_id(), ty, SymbolKind::InferredType, false);
             }
 
             let (name_sym, fqn) =
@@ -154,10 +187,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        if let Some(ident) = self.core.ident_from_field(&node, LangRust::field_pattern) {
-            let _ =
-                self.core
-                    .insert_symbol(node.hir_id(), &ident.name, SymbolKind::Variable, false);
+        if let Some(param) = RustDescriptor::build_parameter(self.unit(), &node) {
+            for name in param.names() {
+                let _ =
+                    self.core
+                        .insert_symbol(node.hir_id(), name, SymbolKind::Variable, false);
+            }
             self.visit_children(&node);
         } else {
             tracing::warn!(
@@ -169,9 +204,19 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     }
 
     fn visit_self_parameter(&mut self, node: HirNode<'tcx>) {
-        let _ = self
+        let (sym_idx, _) =
+            self.core
+                .insert_symbol(node.hir_id(), "self", SymbolKind::Variable, false);
+
+        let owner_symbol_idx = self
             .core
-            .insert_symbol(node.hir_id(), "self", SymbolKind::Variable, false);
+            .lookup_from_scopes_with("Self", SymbolKind::Struct)
+            .or_else(|| self.core.lookup_from_scopes_with("Self", SymbolKind::Enum));
+
+        if let Some(owner_idx) = owner_symbol_idx {
+            self.core.set_symbol_type_of(sym_idx, owner_idx);
+        }
+
         self.visit_children(&node);
     }
 
@@ -209,25 +254,24 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_impl_item(&mut self, node: HirNode<'tcx>) {
         if let Some(descriptor) = RustDescriptor::build_impl(self.unit(), &node) {
             // impl Foo {}
-            let owner_symbol = self.core.upsert_expr_symbol(
+            let owner_symbol = match self.core.upsert_expr_symbol(
                 node.hir_id(),
                 &descriptor.target_ty,
                 SymbolKind::Struct,
                 false,
-            );
-
-            if owner_symbol.is_none() {
-                return;
-            }
+            ) {
+                Some(symbol) => symbol,
+                None => return,
+            };
 
             // impl Bar for Foo {}
             if let Some(ty) = &descriptor.trait_ty {
                 self.core
-                    .find_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
+                    .lookup_type_expr_symbol(node.hir_id(), ty, SymbolKind::Trait, false);
             }
 
             self.impls.add(node.hir_id(), descriptor);
-            self.visit_children_scope(&node, owner_symbol);
+            self.visit_children_scope_with_self(&node, owner_symbol);
         } else {
             tracing::warn!(
                 "failed to build impl descriptor for: {:?} next_hir={:?}",
@@ -324,7 +368,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
                     .insert_symbol(node.hir_id(), &desc.name, SymbolKind::Struct, is_global);
             desc.fqn = Some(fqn.clone());
             self.structs.add(node.hir_id(), desc);
-            self.visit_children_scope(&node, Some(sym_idx));
+            self.visit_children_scope_with_self(&node, sym_idx);
         } else {
             tracing::warn!(
                 "failed to build struct descriptor for: {:?} next_hir={:?}",

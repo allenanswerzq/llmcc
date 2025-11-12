@@ -3,10 +3,10 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice::{Iter, IterMut};
 use std::time::{Duration, Instant};
 
-use crate::type_expr::TypeExprSymbolResolver;
+use crate::type_expr::TypeExprResolver;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, SymId, Symbol, SymbolKind, SymbolKindMap};
+use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
     ImportDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
@@ -38,6 +38,16 @@ pub struct ScopeSpec {
     pub owner_symbol: Option<usize>,
     /// Symbols captured directly within this scope.
     pub symbols: Vec<usize>,
+    /// String paths that should map to symbols already declared elsewhere.
+    pub aliases: Vec<ScopeAliasSpec>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ScopeAliasSpec {
+    /// Segments that make up the alias path (e.g. `["Self"]`).
+    pub parts: Vec<String>,
+    /// Index into the collected symbol list for the aliased target.
+    pub symbol_idx: usize,
 }
 
 #[derive(Debug)]
@@ -232,6 +242,8 @@ struct ScopeInfo {
     locals: HashMap<String, usize>,
     /// Cache of symbol indices grouped by kind for faster lookups.
     locals_by_kind: SymbolKindMap<Vec<usize>>,
+    /// String aliases that should resolve to existing symbol indices.
+    aliases: Vec<ScopeAliasSpec>,
 }
 
 impl ScopeInfo {
@@ -242,6 +254,7 @@ impl ScopeInfo {
             symbols: Vec::new(),
             locals: HashMap::new(),
             locals_by_kind: SymbolKindMap::new(),
+            aliases: Vec::new(),
         }
     }
 
@@ -253,6 +266,27 @@ impl ScopeInfo {
             .entry(name.to_string())
             .or_default()
             .push(symbol_idx);
+    }
+
+    fn add_alias(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
+        self.locals.insert(name.to_string(), symbol_idx);
+        let entries = self
+            .locals_by_kind
+            .ensure_kind(kind)
+            .entry(name.to_string())
+            .or_default();
+        if !entries.contains(&symbol_idx) {
+            entries.push(symbol_idx);
+        }
+
+        if !self.aliases.iter().any(|alias| {
+            alias.symbol_idx == symbol_idx && alias.parts.len() == 1 && alias.parts[0] == name
+        }) {
+            self.aliases.push(ScopeAliasSpec {
+                parts: vec![name.to_string()],
+                symbol_idx,
+            });
+        }
     }
 }
 
@@ -437,6 +471,15 @@ impl<'tcx> CollectorCore<'tcx> {
         (idx, fqn)
     }
 
+    pub fn register_symbol_globally(
+        &mut self,
+        name: &str,
+        symbol_idx: usize,
+        kind: SymbolKind,
+    ) {
+        self.scope_infos[0].record_symbol(name, symbol_idx, kind);
+    }
+
     pub fn upsert_symbol(
         &mut self,
         owner: HirId,
@@ -493,14 +536,19 @@ impl<'tcx> CollectorCore<'tcx> {
         }
     }
 
-    pub fn find_expr_symbol(
+    pub fn add_scope_alias(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
+        let scope_idx = self.current_scope_index();
+        self.scope_infos[scope_idx].add_alias(name, symbol_idx, kind);
+    }
+
+    pub fn lookup_type_expr_symbol(
         &mut self,
         owner: HirId,
         expr: &TypeExpr,
         kind: SymbolKind,
         is_global: bool,
     ) -> Option<usize> {
-        self.find_or_insert_expr_symbol(owner, expr, kind, is_global, false)
+        self.lookup_or_insert_expr_symbol(owner, expr, kind, is_global, false)
     }
 
     pub fn upsert_expr_symbol(
@@ -510,7 +558,7 @@ impl<'tcx> CollectorCore<'tcx> {
         kind: SymbolKind,
         is_global: bool,
     ) -> Option<usize> {
-        self.find_or_insert_expr_symbol(owner, expr, kind, is_global, true)
+        self.lookup_or_insert_expr_symbol(owner, expr, kind, is_global, true)
     }
 
     /// Resolve the canonical symbol for a language-agnostic `TypeExpr`, optionally inserting a
@@ -522,7 +570,7 @@ impl<'tcx> CollectorCore<'tcx> {
     /// when `upsert` is true. Reference and tuple expressions strip to their underlying path so
     /// constructs like Rust's `impl &Foo` or Python's `tuple[T]` reuse the same lookup rules as
     /// plain identifiers.
-    fn find_or_insert_expr_symbol(
+    fn lookup_or_insert_expr_symbol(
         &mut self,
         owner: HirId,
         expr: &TypeExpr,
@@ -530,7 +578,7 @@ impl<'tcx> CollectorCore<'tcx> {
         is_global: bool,
         upsert: bool,
     ) -> Option<usize> {
-        let mut resolver = TypeExprSymbolResolver::new(self, owner, kind, is_global, upsert);
+        let mut resolver = TypeExprResolver::new(self, owner, kind, is_global, upsert);
         resolver.resolve(expr)
     }
 
@@ -622,6 +670,7 @@ impl<'tcx> CollectorCore<'tcx> {
                 owner: info.owner,
                 owner_symbol: info.owner_symbol,
                 symbols: info.symbols,
+                aliases: info.aliases,
             })
             .collect();
 
@@ -679,9 +728,16 @@ pub fn apply_collected_symbols<'tcx>(
             symbol.set_unit_index(spec.unit_index);
             symbol.set_fqn(spec.fqn.clone(), interner);
             symbol.set_is_global(spec.is_global);
-            symbol.set_type_of(spec.type_of.map(|id| SymId(id as u32)));
             symbol_map.insert(symbol.id, symbol);
             created_symbols.push(symbol);
+        }
+    }
+
+    for (spec, symbol) in collected.symbols.iter().zip(created_symbols.iter()) {
+        if let Some(type_idx) = spec.type_of {
+            if let Some(target_symbol) = created_symbols.get(type_idx) {
+                symbol.set_type_of(Some(target_symbol.id));
+            }
         }
     }
 
@@ -695,11 +751,35 @@ pub fn apply_collected_symbols<'tcx>(
             if let Some(symbol) = created_symbols.get(sym_idx) {
                 target_scope.set_symbol(Some(symbol));
             }
+
+            if let Some(owner_symbol) = created_symbols.get(sym_idx) {
+                if matches!(
+                    owner_symbol.kind(),
+                    SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait
+                ) {
+                    for &member_idx in &scope_spec.symbols {
+                        if member_idx == sym_idx {
+                            continue;
+                        }
+                        if let Some(member_symbol) = created_symbols.get(member_idx) {
+                            if member_symbol.kind() == SymbolKind::Function {
+                                owner_symbol.add_member(member_symbol.name_key, member_symbol.id);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         for &sym_idx in &scope_spec.symbols {
             if let Some(symbol) = created_symbols.get(sym_idx) {
                 target_scope.insert(symbol, interner);
+            }
+        }
+
+        for alias in &scope_spec.aliases {
+            if let Some(symbol) = created_symbols.get(alias.symbol_idx) {
+                target_scope.insert_alias(&alias.parts, interner, symbol);
             }
         }
     }

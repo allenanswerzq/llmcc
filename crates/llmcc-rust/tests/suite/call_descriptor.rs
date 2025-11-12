@@ -221,6 +221,79 @@ fn captures_method_chain() {
 }
 
 #[test]
+fn captures_builder_chain() {
+    let source = r#"
+        struct Builder;
+
+        impl Builder {
+            fn new() -> Self { Builder }
+            fn step(self) -> Self { self }
+            fn finish(self) {}
+        }
+
+        fn wrapper() {
+            Builder::new().step().finish();
+        }
+    "#;
+
+    let calls = collect_calls(source);
+    let chains: Vec<_> = calls
+        .iter()
+        .filter(|call| matches!(call.target, CallTarget::Chain(_)))
+        .collect();
+    assert_eq!(chains.len(), 2);
+
+    let mut part_lengths: Vec<usize> = chains
+        .iter()
+        .map(|call| chain_target(call).parts.len())
+        .collect();
+    part_lengths.sort();
+    assert_eq!(part_lengths, vec![1, 2]);
+}
+
+#[test]
+fn captures_expr_chain_segments() {
+    let source = r#"
+        struct Data;
+        struct Iter;
+
+        impl Data {
+            fn iter(&self) -> Iter { Iter }
+        }
+
+        impl Iter {
+            fn map(&self) -> Iter { Iter }
+            fn count(&self) -> usize { 0 }
+        }
+
+        fn expr_chain() {
+            let data = Data::new();
+            data.iter().map().count();
+        }
+    "#;
+
+    let calls = collect_calls(source);
+    let mut chain_lengths = Vec::new();
+    for call in calls.iter() {
+        if let CallTarget::Chain(chain) = &call.target {
+            let names: Vec<_> = chain
+                .parts
+                .iter()
+                .map(|segment| segment.name.clone())
+                .collect();
+            chain_lengths.push(names);
+        }
+    }
+    assert!(
+        chain_lengths
+            .iter()
+            .any(|names| names.contains(&"count".to_string())),
+        "expected to capture count segment, got {:?}",
+        chain_lengths
+    );
+}
+
+#[test]
 fn captures_chain_with_invoked_root() {
     let source = r#"
         fn wrapper() {

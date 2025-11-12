@@ -3,6 +3,7 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
 
+use crate::describe::RustDescriptor;
 use crate::path::parse_rust_path;
 use crate::token::{AstVisitorRust, LangRust};
 
@@ -40,7 +41,7 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
         self.core.scopes_mut()
     }
 
-    fn scope_symbol(&self) -> Option<&'tcx Symbol> {
+    fn current_symbol(&self) -> Option<&'tcx Symbol> {
         self.core.scope_symbol()
     }
 }
@@ -55,7 +56,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<Self::ScopedSymbol>) {
         let depth = self.scopes().depth();
         if let Some(symbol) = symbol {
-            if let Some(parent) = self.scope_symbol() {
+            if let Some(parent) = self.current_symbol() {
                 parent.add_dependency(symbol);
             }
         }
@@ -126,11 +127,9 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
 
-        let parent_symbol = self.scope_symbol();
-        if let (Some(parent_symbol), Some(func_symbol)) = (parent_symbol, symbol) {
-            if matches!(parent_symbol.kind(), SymbolKind::Struct | SymbolKind::Enum) {
-                self.core
-                    .propagate_child_dependencies(parent_symbol, func_symbol);
+        if let Some(parent) = self.core.scope_symbol(){
+            if let Some(child) = symbol {
+                self.core.propagate_child_dependencies(parent, child);
             }
         }
     }
@@ -178,7 +177,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                             .into_iter()
                             .find_map(|kind| {
                                 self.core
-                                    .lookup_symbol_in_globals(segments, Some(kind), None)
+                                    .lookup_symbol_only_in_globals(segments, Some(kind), None)
                             })
                     });
 
@@ -239,12 +238,55 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
     fn visit_let_declaration(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
+
+        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
+            if let Some(type_expr) = descriptor.type_annotation.as_ref() {
+                if let Some(type_symbol) = self.core.lookup_expr_symbols(type_expr).first() {
+                    let mut names = vec![descriptor.name.clone()];
+                    if let Some(extra) = descriptor.extra_binding_names.as_ref() {
+                        names.extend(extra.iter().cloned());
+                    }
+
+                    for name in names {
+                        if let Some(symbol) = self
+                            .core
+                            .lookup_symbol(&[name.clone()], Some(SymbolKind::Variable), None)
+                        {
+                            if symbol.type_of().is_none() {
+                                symbol.set_type_of(Some(type_symbol.id));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.core.set_backward_relation();
         self.visit_children(&node);
-        self.core.set_backward_relation();
+
+        if let Some(param) = RustDescriptor::build_parameter(self.unit(), &node) {
+            if let Some(type_expr) = param.type_annotation() {
+                if let Some(type_symbol) = self.core.lookup_expr_symbols(type_expr).first() {
+                    for name in param.names() {
+                        if let Some(symbol) = self
+                            .core
+                            .lookup_symbol(&[name.clone()], Some(SymbolKind::Variable), None)
+                        {
+                            if symbol.type_of().is_none() {
+                                symbol.set_type_of(Some(type_symbol.id));
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            tracing::warn!(
+                "build parameter error {:?} next_hir={:?}",
+                self.unit().hir_text(&node),
+                self.unit().hir_next()
+            );
+        }
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
@@ -261,11 +303,58 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_call_expression(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
 
-        let parent = self.scope_symbol();
+        let parent = self.current_symbol();
         if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
             let mut symbols = Vec::new();
             self.core
                 .lookup_call_symbols(&descriptor.target, &mut symbols);
+
+            // Inline type binding for variables assigned from function calls (let x = func())
+            // This handles Rust's type inference for assignments without explicit type annotations
+            if !symbols.is_empty() {
+                // Check if this call is inside a let declaration
+                if let Some(parent_id) = node.parent() {
+                    let parent_node = self.unit().hir_node(parent_id);
+                    if parent_node.inner_ts_node().kind() == "let_declaration" {
+                        // Extract the variable name from the pattern (e.g., `cfg` in `let cfg = ...`)
+                        if let Some(pattern_node) =
+                            parent_node.opt_child_by_field(self.unit(), LangRust::field_pattern)
+                        {
+                            if let Some(ident) = pattern_node.find_ident(self.unit()) {
+                                let var_name = &ident.name;
+
+                                // Use BinderCore APIs to bind variable type from function return type
+                                self.core
+                                    .bind_call_receivers_to_variable(var_name, &symbols);
+
+                                // Create type alias in current scope for future lookups
+                                if let Some(_variable) = self.core.lookup_symbol(
+                                    &[var_name.clone()],
+                                    Some(SymbolKind::Variable),
+                                    None,
+                                ) {
+                                    if let Some(scope) = self.scopes().top() {
+                                        for symbol in &symbols {
+                                            if let Some(receiver) = self
+                                                .core
+                                                .lookup_return_receivers(symbol)
+                                                .into_iter()
+                                                .next()
+                                            {
+                                                self.core.bind_variable_type_alias(
+                                                    scope, var_name, receiver,
+                                                );
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if let Some(parent_symbol) = parent {
                 for symbol in symbols {
                     parent_symbol.add_dependency(symbol);
@@ -277,7 +366,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     fn visit_macro_invocation(&mut self, node: HirNode<'tcx>) {
         self.visit_children(&node);
 
-        let parent = self.scope_symbol();
+        let parent = self.current_symbol();
         if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
             let mut symbols = Vec::new();
             self.core
