@@ -3,6 +3,7 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{Scope, ScopeStack, Symbol, SymbolKind};
 use llmcc_resolver::{BinderCore, CollectedSymbols, CollectionResult};
 
+use crate::describe::RustDescriptor;
 use crate::path::parse_rust_path;
 use crate::token::{AstVisitorRust, LangRust};
 
@@ -234,7 +235,30 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
     }
 
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
-        self.visit_children(&node);
+        if let Some(param) = RustDescriptor::build_parameter(self.unit(), &node) {
+            if let Some(type_expr) = param.type_annotation() {
+                if let Some(type_symbol) = self.core.lookup_expr_symbols(type_expr).first() {
+                    for name in param.names() {
+                        if let Some(symbol) = self
+                            .core
+                            .lookup_symbol(&[name.clone()], Some(SymbolKind::Variable), None)
+                        {
+                            if symbol.type_of().is_none() {
+                                symbol.set_type_of(Some(type_symbol.id));
+                            }
+                        }
+                    }
+                }
+            }
+
+            self.visit_children(&node);
+        } else {
+            tracing::warn!(
+                "build parameter error {:?} next_hir={:?}",
+                self.unit().hir_text(&node),
+                self.unit().hir_next()
+            );
+        }
     }
 
     fn visit_const_item(&mut self, node: HirNode<'tcx>) {
