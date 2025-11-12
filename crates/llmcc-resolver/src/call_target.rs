@@ -1,6 +1,8 @@
 use std::ptr;
 
+use llmcc_core::ir::HirId;
 use llmcc_core::symbol::{Symbol, SymbolKind};
+use llmcc_descriptor::meta::DescriptorId;
 use llmcc_descriptor::{CallChain, CallChainRoot, CallKind, CallSegment, CallSymbol, CallTarget};
 
 use crate::binder::BinderCore;
@@ -149,7 +151,6 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         segment: &CallSegment,
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
-        println!("handle_constructor_segment: {}", segment.name);
         let mut receivers = Vec::new();
 
         if let Some(struct_sym) =
@@ -176,7 +177,6 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         segment: &CallSegment,
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
-        println!("handle_function_segment: {}", segment.name);
         if let Some(sym) =
             self.binder
                 .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Function), None)
@@ -193,7 +193,6 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         segment: &CallSegment,
         out: &mut Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
-        println!("handle_macro_segment: {}", segment.name);
         if let Some(sym) =
             self.binder
                 .lookup_symbol(&[segment.name.clone()], Some(SymbolKind::Macro), None)
@@ -210,16 +209,17 @@ impl<'core, 'tcx, 'collection> CallTargetResolver<'core, 'tcx, 'collection> {
         out: &mut Vec<&'tcx Symbol>,
         receivers: Vec<&'tcx Symbol>,
     ) -> Vec<&'tcx Symbol> {
-        println!("handle_method_segment: {}", segment.name);
         let mut next_receivers = Vec::new();
 
         for receiver in &receivers {
             let mut parts = receiver.path_segments();
             parts.push(segment.name.clone());
-            if let Some(sym) = self
+
+            let symbol = self
                 .binder
-                .lookup_symbol(&parts, Some(SymbolKind::Function), None)
-            {
+                .lookup_symbol(&parts, Some(SymbolKind::Function), None);
+
+            if let Some(sym) = symbol {
                 self.push_symbol_unique(out, sym);
                 if let Some(ret) = self.symbol_type_of(sym) {
                     self.push_receiver_unique(&mut next_receivers, ret);

@@ -43,7 +43,6 @@ impl<'tcx, 'a> SymbolBinder<'tcx, 'a> {
     fn current_symbol(&self) -> Option<&'tcx Symbol> {
         self.core.scope_symbol()
     }
-
 }
 
 impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
@@ -273,7 +272,8 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                                 let var_name = &ident.name;
 
                                 // Use BinderCore APIs to bind variable type from function return type
-                                self.core.bind_call_receivers_to_variable(var_name, &symbols);
+                                self.core
+                                    .bind_call_receivers_to_variable(var_name, &symbols);
 
                                 // Create type alias in current scope for future lookups
                                 if let Some(_variable) = self.core.lookup_symbol(
@@ -281,14 +281,20 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                                     Some(SymbolKind::Variable),
                                     None,
                                 ) {
-                                    for symbol in &symbols {
-                                        for receiver in self.core.lookup_return_receivers(symbol) {
-                                            if let Some(scope) = self.scopes_mut().top() {
-                                                self.core.bind_variable_type_alias(scope, var_name, receiver);
+                                    if let Some(scope) = self.scopes().top() {
+                                        for symbol in &symbols {
+                                            if let Some(receiver) = self
+                                                .core
+                                                .lookup_return_receivers(symbol)
+                                                .into_iter()
+                                                .next()
+                                            {
+                                                self.core.bind_variable_type_alias(
+                                                    scope, var_name, receiver,
+                                                );
                                             }
                                             break;
                                         }
-                                        break;
                                     }
                                 }
                             }
