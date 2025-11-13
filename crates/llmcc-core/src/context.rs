@@ -5,14 +5,14 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
-use tree_sitter::{Node, Tree};
+use tree_sitter::Node;
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
-use crate::lang_def::LanguageTrait;
+use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
 use crate::symbol::{SymId, Symbol};
 
@@ -27,8 +27,9 @@ impl<'tcx> CompileUnit<'tcx> {
         &self.cc.files[self.index]
     }
 
-    pub fn tree(&self) -> &'tcx Tree {
-        self.cc.trees[self.index].as_ref().unwrap()
+    /// Get the generic parse tree for this compilation unit
+    pub fn parse_tree(&self) -> Option<&Box<dyn ParseTree>> {
+        self.cc.parse_trees.get(self.index).and_then(|t| t.as_ref())
     }
 
     /// Access the shared string interner.
@@ -425,12 +426,13 @@ pub struct BuildMetrics {
     pub parse_slowest: Vec<FileParseMetric>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct CompileCtxt<'tcx> {
     pub arena: Arena<'tcx>,
     pub interner: InternPool,
     pub files: Vec<File>,
-    pub trees: Vec<Option<Tree>>,
+    /// Generic parse trees from language-specific parsers
+    pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
     pub hir_next_id: AtomicU32,
     pub hir_start_ids: RwLock<Vec<Option<HirId>>>,
 
@@ -455,6 +457,17 @@ pub struct CompileCtxt<'tcx> {
     pub build_metrics: BuildMetrics,
 }
 
+impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CompileCtxt")
+            .field("files", &self.files.len())
+            .field("parse_trees", &self.parse_trees.len())
+            .field("hir_next_id", &self.hir_next_id)
+            .field("build_metrics", &self.build_metrics)
+            .finish()
+    }
+}
+
 impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from source code
     pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
@@ -466,14 +479,14 @@ impl<'tcx> CompileCtxt<'tcx> {
                 File::new_virtual(path, src.clone())
             })
             .collect();
-        let (trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
         metrics.file_read_seconds = 0.0;
         let count = files.len();
         Self {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
-            trees,
+            parse_trees,
             hir_next_id: AtomicU32::new(0),
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
@@ -507,7 +520,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
 
-        let (trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
         metrics.file_read_seconds = file_read_seconds;
 
         let count = files.len();
@@ -515,7 +528,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
-            trees,
+            parse_trees,
             hir_next_id: AtomicU32::new(0),
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
@@ -533,9 +546,9 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     fn parse_files_with_metrics<L: LanguageTrait>(
         files: &[File],
-    ) -> (Vec<Option<Tree>>, BuildMetrics) {
+    ) -> (Vec<Option<Box<dyn ParseTree>>>, BuildMetrics) {
         struct ParseRecord {
-            tree: Option<Tree>,
+            tree: Option<Box<dyn ParseTree>>,
             elapsed: f64,
             path: Option<String>,
         }
@@ -662,6 +675,11 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn file_path(&self, index: usize) -> Option<&str> {
         self.files.get(index).and_then(|file| file.path())
+    }
+
+    /// Get the generic parse tree for a specific file
+    pub fn get_parse_tree(&self, index: usize) -> Option<&Box<dyn ParseTree>> {
+        self.parse_trees.get(index).and_then(|t| t.as_ref())
     }
 
     /// Get all file paths from the compilation context

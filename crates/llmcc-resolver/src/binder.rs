@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirNode;
+use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::Symbol;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -70,5 +70,4 @@ impl<'tcx> BinderCore<'tcx> {
             self.visit_children(node);
         }
     }
-
 }

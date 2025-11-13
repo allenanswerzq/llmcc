@@ -10,7 +10,7 @@ use crate::context::{CompileCtxt, ParentedNode};
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
-use crate::lang_def::LanguageTrait;
+use crate::lang_def::{LanguageTrait, ParseTree};
 
 /// Global atomic counter for HIR ID allocation
 static HIR_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -248,9 +248,13 @@ impl<'hir> HirNodeSpec<'hir> {
 fn build_llmcc_ir_inner<'a, L: LanguageTrait>(
     file_path: Option<String>,
     file_bytes: &'a [u8],
-    tree: &'a tree_sitter::Tree,
+    parse_tree: &'a dyn ParseTree,
     config: IrBuildConfig,
 ) -> Result<(HirId, HashMap<HirId, HirNodeSpec<'a>>), DynError> {
+    // Extract tree-sitter tree from the generic ParseTree
+    let tree = parse_tree.tree()
+        .ok_or_else(|| "ParseTree does not provide a tree-sitter tree".to_string())?;
+
     let builder = HirBuilder::<L>::new(file_path, file_bytes, config);
     let root = tree.root_node();
     let result = builder.build(root);
@@ -275,9 +279,12 @@ pub fn build_llmcc_ir<'a, L: LanguageTrait>(
             let unit = cc.compile_unit(index);
             let file_path = unit.file_path().map(|p| p.to_string());
             let file_bytes = unit.file().content();
-            let tree = unit.tree();
 
-            build_llmcc_ir_inner::<L>(file_path, file_bytes, tree, config).map(
+            // Get parse tree directly from cc to avoid lifetime issues
+            let parse_tree = cc.get_parse_tree(index)
+                .ok_or_else(|| format!("No parse tree for unit {}", index))?;
+
+            build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree.as_ref(), config).map(
                 |(file_start_id, node_specs)| FileIrBuildResult {
                     index,
                     file_start_id,
