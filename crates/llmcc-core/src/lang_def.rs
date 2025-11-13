@@ -4,9 +4,6 @@ use crate::ir::HirKind;
 use crate::scope::Scope;
 
 pub trait LanguageTrait {
-    type SymbolCollection: Send;
-
-    // TODO: add general parse result struct
     fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree>;
     fn hir_kind(kind_id: u16) -> HirKind;
     fn block_kind(kind_id: u16) -> BlockKind;
@@ -14,17 +11,7 @@ pub trait LanguageTrait {
     fn is_valid_token(kind_id: u16) -> bool;
     fn name_field() -> u16;
     fn type_field() -> u16;
-
-    /// Return the list of supported file extensions for this language (e.g., ["rs"] for Rust)
     fn supported_extensions() -> &'static [&'static str];
-
-    fn collect_symbols(unit: CompileUnit<'_>) -> Self::SymbolCollection;
-
-    fn bind_symbols<'tcx>(
-        unit: CompileUnit<'tcx>,
-        globals: &'tcx Scope<'tcx>,
-        collection: &Self::SymbolCollection,
-    );
 }
 
 #[allow(clippy::crate_in_macro_def)]
@@ -37,7 +24,8 @@ macro_rules! define_tokens {
         use llmcc_core::lang_def::LanguageTrait;
         use llmcc_core::context::CompileUnit;
         use llmcc_core::ir::HirNode;
-        use llmcc_core::symbol::{Scope, Symbol};
+        use llmcc_core::symbol::Symbol;
+        use llmcc_core::scope::Scope;
 
         use crate::collect;
         use crate::bind;
