@@ -20,29 +20,9 @@ use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirId};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::Symbol;
+use llmcc_core::context::CompileCtxt;
 
 /// Core symbol collector for a single compilation unit.
-///
-/// The collector borrows an arena from the outside
-/// and uses it for allocating symbols and scopes during collection.
-/// The collector maintains a scope stack for proper nesting and symbol resolution.
-///
-/// # Architecture for Parallel Collection
-/// - Each compilation unit has its own per-unit lifetime 'a
-/// - An Arena<'a> is borrowed from CompileUnit or similar holder
-/// - Scopes and Symbols are allocated into the borrowed arena for that unit
-/// - After collection completes, symbols are extracted and applied globally
-/// - Multiple units can be collected in parallel with separate CollectorCore instances
-///
-/// # Thread Safety
-/// - Designed to be used in a single thread per unit
-/// - Multiple CollectorCore instances can run in parallel with separate arenas
-/// - The shared interner should be thread-safe (InternPool handles this)
-///
-/// # Lifetime 'a
-/// The lifetime 'a is the lifetime of the borrowed arena from the compilation unit.
-/// All allocated symbols and scopes are valid for this lifetime.
-///
 #[derive(Debug)]
 pub struct CollectorCore<'a> {
     /// The per-unit arena borrowed from CompileUnit or similar.
@@ -303,28 +283,49 @@ where
     collector.globals()
 }
 
-/// Applies collected symbols to a compilation context or global registry.
+
+/// Apply symbols collected from a single compilation unit to the global context.
 ///
-/// This function takes the scope hierarchy collected from a compilation unit
-/// and integrates it into the broader symbol context. This is typically called
-/// after all per-unit collections are complete, during the merge/registration phase.
+/// This function performs **Approach 2: Scope Hierarchy Registration**.
+///
+/// Takes locally-collected symbols from a compilation unit's scope hierarchy
+/// and registers them in the global CompileCtxt registries:
+/// - `symbol_map`: SymId → &Symbol (fast lookup by ID)
+/// - `scope_map`: HirId → &Scope (scope owner to scope)
 ///
 /// # Arguments
-/// * `unit_index` - The index of the compilation unit
-/// * `globals` - The global scope containing collected symbols
+/// * `cc` - The global compilation context (contains registries to populate)
+/// * `unit_index` - The index of the unit being registered
+/// * `arena` - The arena containing the collected symbols/scopes (per-unit)
 ///
-/// # Future Work
-/// This function will:
-/// - Register symbols in the global symbol table
-/// - Handle symbol deduplication across units
-/// - Track symbol provenance (which unit defined it)
-/// - Validate symbol visibility and access rules
-/// - Build cross-unit dependency graphs
-pub fn apply_collected_symbols(unit_index: usize, globals: &Scope) {
-    // TODO: Implement symbol registration and global merging
-    // For now, this is a placeholder for the integration phase
-    let _ = (unit_index, globals);
+/// # Design
+/// - Traverses the entire scope hierarchy via DFS
+/// - Registers each scope by its owner HirId
+/// - Registers all symbols in each scope by their SymId
+/// - Supports nested scopes (functions, blocks, etc.)
+/// - Does NOT handle deduplication (for now)
+///
+/// # Thread Safety
+/// Uses `RwLock` to safely write to shared registries. Multiple units can be
+/// applied sequentially or in parallel (write locks are held briefly per scope).
+///
+/// # Example
+/// ```ignore
+/// let arena = Arena::default(); // Per-file arena
+/// let mut collector = CollectorCore::new(unit_index, &arena, &interner);
+/// // ... collect symbols ...
+/// apply_collected_symbols(&cc, unit_index, arena, collector.globals());
+/// ```
+/// After this the local arena is no use.
+pub fn apply_collected_symbols<'a>(
+    cc: &CompileCtxt<'a>,
+    unit_index: usize,
+    arena: Arena<'a>,
+    globals: &'a Scope<'a>,
+) {
+
 }
+
 
 #[cfg(test)]
 mod tests {

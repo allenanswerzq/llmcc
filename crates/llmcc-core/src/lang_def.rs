@@ -74,8 +74,8 @@ pub trait ParseTree: Send + Sync + 'static {
     /// Debug representation
     fn debug_info(&self) -> String;
 
-    /// Extract the underlying tree-sitter tree if available
-    fn tree(&self) -> Option<&::tree_sitter::Tree> {
+    /// Get the root ParseNode of this tree
+    fn root_node(&self) -> Option<Box<dyn ParseNode + '_>> {
         None
     }
 }
@@ -95,8 +95,146 @@ impl ParseTree for TreeSitterParseTree {
         format!("TreeSitter(root_id: {})", self.tree.root_node().id())
     }
 
-    fn tree(&self) -> Option<&::tree_sitter::Tree> {
-        Some(&self.tree)
+    fn root_node(&self) -> Option<Box<dyn ParseNode + '_>> {
+        Some(Box::new(TreeSitterParseNode::new(self.tree.root_node())))
+    }
+}
+
+/// Generic trait for parse tree nodes (individual AST nodes).
+///
+/// Implementations can wrap tree-sitter nodes, custom AST nodes, or other parse representations.
+/// This abstraction allows IR building to work with any parser backend.
+///
+/// Note: Unlike ParseTree, ParseNode can have lifetime parameters to match the lifetime
+/// of the underlying parser's borrowed nodes (e.g., tree-sitter::Node<'tree>).
+pub trait ParseNode: Send + Sync {
+    /// Get the node's kind ID (language-specific token ID)
+    fn kind_id(&self) -> u16;
+
+    /// Get the start byte offset of this node in the source
+    fn start_byte(&self) -> usize;
+
+    /// Get the end byte offset of this node in the source
+    fn end_byte(&self) -> usize;
+
+    /// Get the number of children this node has
+    fn child_count(&self) -> usize;
+
+    /// Get the child at the specified index
+    fn child(&self, index: usize) -> Option<Box<dyn ParseNode + '_>>;
+
+    /// Get a child by field name (if supported by the parser)
+    fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>>;
+
+    /// Get a child by field ID (if supported by the parser)
+    fn child_by_field_id(&self, _field_id: u16) -> Option<Box<dyn ParseNode + '_>> {
+        None
+    }
+
+    /// Check if this node represents a parse error
+    fn is_error(&self) -> bool {
+        false
+    }
+
+    /// Check if this node is "extra" (typically whitespace/comments)
+    fn is_extra(&self) -> bool {
+        false
+    }
+
+    /// Check if this node is missing (e.g., implicit tokens)
+    fn is_missing(&self) -> bool {
+        false
+    }
+
+    /// Check if this node is a named token (vs anonymous)
+    fn is_named(&self) -> bool {
+        true
+    }
+
+    /// Get the parent node if available
+    fn parent(&self) -> Option<Box<dyn ParseNode + '_>> {
+        None
+    }
+
+    /// Debug representation of this node
+    fn debug_info(&self) -> String;
+}
+
+/// Wrapper implementation of ParseNode for tree-sitter nodes
+pub struct TreeSitterParseNode<'tree> {
+    node: ::tree_sitter::Node<'tree>,
+}
+
+impl<'tree> TreeSitterParseNode<'tree> {
+    /// Create a new wrapper around a tree-sitter node
+    pub fn new(node: ::tree_sitter::Node<'tree>) -> Self {
+        Self { node }
+    }
+}
+
+impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
+    fn kind_id(&self) -> u16 {
+        self.node.kind_id()
+    }
+
+    fn start_byte(&self) -> usize {
+        self.node.start_byte()
+    }
+
+    fn end_byte(&self) -> usize {
+        self.node.end_byte()
+    }
+
+    fn child_count(&self) -> usize {
+        self.node.child_count()
+    }
+
+    fn child(&self, index: usize) -> Option<Box<dyn ParseNode + '_>> {
+        self.node
+            .child(index)
+            .map(|child| Box::new(TreeSitterParseNode::new(child)) as Box<dyn ParseNode + '_>)
+    }
+
+    fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>> {
+        self.node
+            .child_by_field_name(field_name)
+            .map(|child| Box::new(TreeSitterParseNode::new(child)) as Box<dyn ParseNode + '_>)
+    }
+
+    fn child_by_field_id(&self, _field_id: u16) -> Option<Box<dyn ParseNode + '_>> {
+        None
+    }
+
+    fn is_error(&self) -> bool {
+        self.node.is_error()
+    }
+
+    fn is_extra(&self) -> bool {
+        self.node.is_extra()
+    }
+
+    fn is_missing(&self) -> bool {
+        self.node.is_missing()
+    }
+
+    fn is_named(&self) -> bool {
+        self.node.is_named()
+    }
+
+    fn parent(&self) -> Option<Box<dyn ParseNode + '_>> {
+        self.node
+            .parent()
+            .map(|parent| Box::new(TreeSitterParseNode::new(parent)) as Box<dyn ParseNode + '_>)
+    }
+
+    fn debug_info(&self) -> String {
+        format!(
+            "TreeSitterNode(kind: {}, kind_id: {}, bytes: {}..{})",
+            self.node.kind(),
+            self.node.kind_id(),
+            self.start_byte(),
+            self.end_byte()
+        )
     }
 }
 
@@ -315,17 +453,51 @@ mod tests {
 
     /// Simple custom AST node representation
     #[derive(Debug, Clone)]
-    pub struct SimpleAstNode {
+    pub struct SimpleParseNode {
         pub kind_id: u16,
         pub text: String,
-        pub children: Vec<SimpleAstNode>,
+        pub children: Vec<SimpleParseNode>,
+    }
+
+    impl ParseNode for SimpleParseNode {
+        fn kind_id(&self) -> u16 {
+            self.kind_id
+        }
+
+        fn start_byte(&self) -> usize {
+            0 // Simplified for example
+        }
+
+        fn end_byte(&self) -> usize {
+            self.text.len()
+        }
+
+        fn child_count(&self) -> usize {
+            self.children.len()
+        }
+
+        fn child(&self, index: usize) -> Option<Box<dyn ParseNode + '_>> {
+            self.children
+                .get(index)
+                .map(|child| Box::new(child.clone()) as Box<dyn ParseNode + '_>)
+        }
+
+        fn child_by_field_name(&self, _field_name: &str) -> Option<Box<dyn ParseNode + '_>> {
+            None // Simplified for example
+        }
+
+        fn debug_info(&self) -> String {
+            format!(
+                "SimpleParseNode(kind_id: {}, text: {})",
+                self.kind_id, self.text
+            )
+        }
     }
 
     /// Custom parse tree for simple language
-    /// Wraps both the simple AST and a tree-sitter tree for IR building
+    /// Wraps the simple AST structure for IR building
     pub struct SimpleParseTree {
-        pub root: SimpleAstNode,
-        pub tree: ::tree_sitter::Tree,
+        pub root: SimpleParseNode,
     }
 
     impl ParseTree for SimpleParseTree {
@@ -334,12 +506,15 @@ mod tests {
         }
 
         fn debug_info(&self) -> String {
-            format!("SimpleParse(kind: {}, text_len: {})",
-                self.root.kind_id, self.root.text.len())
+            format!(
+                "SimpleParse(kind: {}, text_len: {})",
+                self.root.kind_id,
+                self.root.text.len()
+            )
         }
 
-        fn tree(&self) -> Option<&::tree_sitter::Tree> {
-            Some(&self.tree)
+        fn root_node(&self) -> Option<Box<dyn ParseNode + '_>> {
+            Some(Box::new(self.root.clone()))
         }
     }
 
@@ -347,7 +522,7 @@ mod tests {
     mod simple_parser {
         use super::*;
 
-        pub fn parse(source: &[u8]) -> Option<SimpleAstNode> {
+        pub fn parse(source: &[u8]) -> Option<SimpleParseNode> {
             let text = std::str::from_utf8(source).ok()?;
             let mut children = Vec::new();
 
@@ -355,16 +530,12 @@ mod tests {
             for line in text.lines() {
                 let trimmed = line.trim();
                 if trimmed.starts_with("fn ") {
-                    let func_name = trimmed
-                        .split('(')
-                        .next()
-                        .unwrap_or("")
-                        .replace("fn ", "");
+                    let func_name = trimmed.split('(').next().unwrap_or("").replace("fn ", "");
 
-                    children.push(SimpleAstNode {
+                    children.push(SimpleParseNode {
                         kind_id: LangSimple::function,
                         text: trimmed.to_string(),
-                        children: vec![SimpleAstNode {
+                        children: vec![SimpleParseNode {
                             kind_id: LangSimple::identifier,
                             text: func_name,
                             children: Vec::new(),
@@ -372,7 +543,7 @@ mod tests {
                     });
                 } else if !trimmed.is_empty() && !trimmed.starts_with("//") {
                     // Other non-empty, non-comment lines as statements
-                    children.push(SimpleAstNode {
+                    children.push(SimpleParseNode {
                         kind_id: LangSimple::statement,
                         text: trimmed.to_string(),
                         children: Vec::new(),
@@ -380,7 +551,7 @@ mod tests {
                 }
             }
 
-            Some(SimpleAstNode {
+            Some(SimpleParseNode {
                 kind_id: LangSimple::module,
                 text: text.to_string(),
                 children,
@@ -398,20 +569,14 @@ mod tests {
             let source = text.as_ref();
             let root = simple_parser::parse(source)?;
 
-            // Also create a tree-sitter tree as fallback for IR building
-            // Use Rust language for the tree-sitter parse
-            let mut parser = ::tree_sitter::Parser::new();
-            parser.set_language(&tree_sitter_rust::LANGUAGE.into()).ok()?;
-            let tree = parser.parse(source, None)?;
-
-            Some(Box::new(SimpleParseTree { root, tree }))
+            Some(Box::new(SimpleParseTree { root }))
         }
     }
 
     #[test]
     fn test_language_define_and_visitor() {
         use crate::context::CompileCtxt;
-        use crate::ir_builder::{build_llmcc_ir, IrBuildConfig};
+        use crate::ir_builder::{IrBuildConfig, build_llmcc_ir};
 
         // Create a CompileCtxt with our simple language
         let source_code = b"fn main() {}\nfn helper() {}\nlet x = 42;";
@@ -444,7 +609,10 @@ mod tests {
 
         // Verify HIR was built
         let file_start = unit.file_start_hir_id();
-        assert!(file_start.is_some(), "File start HIR ID should be set after IR building");
+        assert!(
+            file_start.is_some(),
+            "File start HIR ID should be set after IR building"
+        );
 
         // Define a visitor implementation
         struct CountingVisitor<'tcx> {
@@ -500,9 +668,7 @@ mod tests {
         let mut collector = Collector::new();
         visitor.visit_node(node, &mut collector, None);
 
-        // The tree-sitter Rust parser finds more function-like nodes than our simple parser
-        // (e.g., it parses the actual Rust syntax more thoroughly)
-        assert!(visitor.function_count > 0, "Should find at least one function");
-        assert!(collector.func.len() > 0, "Collector should have visited functions");
+        assert_eq!(visitor.function_count, 2);
+        assert_eq!(collector.func.len(), 2);
     }
 }

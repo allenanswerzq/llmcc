@@ -14,7 +14,7 @@ use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
-use crate::symbol::{SymId, Symbol};
+use crate::symbol::{SymId, Symbol, ScopeId};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -438,8 +438,10 @@ pub struct CompileCtxt<'tcx> {
 
     // HirId -> ParentedNode
     pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // HirId -> &Scope (scopes owned by this HIR node)
-    pub scope_map: RwLock<HashMap<HirId, &'tcx Scope<'tcx>>>,
+    // ScopeId -> Scope
+    pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
+    // HirId -> ScopeId
+    pub hir_scope_map: RwLock<HashMap<HirId, ScopeId>>,
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
