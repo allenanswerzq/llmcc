@@ -1220,7 +1220,7 @@ mod tests {
             let mut visitor = SimpleVisitor::new();
 
             // Visit and create symbols, then query them
-            visitor.visit_module(
+            visitor.visit_modue(
                 collector,
                 HirId(0),
                 vec![("PUBLIC_API", HirId(1)), ("INTERNAL_CONST", HirId(2))],

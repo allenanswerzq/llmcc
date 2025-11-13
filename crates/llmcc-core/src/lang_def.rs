@@ -1,7 +1,5 @@
-use crate::context::CompileUnit;
 use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
-use crate::scope::Scope;
 
 pub trait LanguageTrait {
     fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree>;
@@ -31,16 +29,6 @@ macro_rules! define_tokens {
         use crate::bind;
 
         $crate::paste::paste! {
-            thread_local! {
-                static [<PARSER_ $suffix:upper>]: ::std::cell::RefCell<::tree_sitter::Parser> = {
-                    let mut parser = ::tree_sitter::Parser::new();
-                    parser
-                        .set_language(&[<tree_sitter_ $suffix:lower>]::LANGUAGE.into())
-                        .expect("failed to initialize tree-sitter parser");
-                    ::std::cell::RefCell::new(parser)
-                };
-            }
-
             /// Language context for HIR processing
             #[derive(Debug)]
             pub struct [<Lang $suffix>] {}
@@ -59,16 +47,15 @@ macro_rules! define_tokens {
             }
 
             impl LanguageTrait for [<Lang $suffix>] {
-                type SymbolCollection = llmcc_resolver::CollectedSymbols;
-
                 /// Parse the text into a tree
                 fn parse(text: impl AsRef<[u8]>) -> Option<::tree_sitter::Tree> {
                     let source = text.as_ref();
                     paste::paste! {
-                        [<PARSER_ $suffix:upper>].with(|parser_cell| {
-                            let mut parser = parser_cell.borrow_mut();
-                            parser.parse(source, None)
-                        })
+                        let mut parser = ::tree_sitter::Parser::new();
+                        parser
+                            .set_language(&[<tree_sitter_ $suffix:lower>]::LANGUAGE.into())
+                            .expect("failed to initialize tree-sitter parser");
+                        parser.parse(source, None)
                     }
                 }
 
@@ -120,59 +107,40 @@ macro_rules! define_tokens {
                     Self::field_type
                 }
 
-                fn collect_symbols(
-                    unit: CompileUnit<'_>,
-                ) -> Self::SymbolCollection {
-                    collect::collect_symbols(unit)
-                }
-
-                fn bind_symbols<'tcx>(
-                    unit: CompileUnit<'tcx>,
-                    globals: &'tcx Scope<'tcx>,
-                    collection: &Self::SymbolCollection,
-                ) {
-                    let _ = bind::bind_symbols(unit, globals, collection);
-                }
-
             }
 
             /// Trait for visiting HIR nodes with type-specific dispatch
-            pub trait [<AstVisitor $suffix>]<'tcx> {
-                type ScopedSymbol;
-
-                fn unit(&self) -> CompileUnit<'tcx>;
+            pub trait [<AstVisitor $suffix>]<'a, T> {
+                fn unit(&self) -> CompileUnit<'a>;
 
                 /// Visit a node, dispatching to the appropriate method based on token ID
-                fn visit_node(&mut self, node: HirNode<'tcx>) {
+                fn visit_node(&mut self, node: HirNode<'a>, t: &mut T,  parent: Option<&Symbol>) {
                     match node.kind_id() {
                         $(
-                            [<Lang $suffix>]::$const => paste::paste! { self.[<visit_ $const>](node) },
+                            [<Lang $suffix>]::$const => paste::paste! { self.[<visit_ $const>](node, t, parent) },
                         )*
-                        _ => self.visit_unknown(node),
+                        _ => self.visit_unknown(node, t, parent),
                     }
                 }
 
                 /// Visit all children of a node
-                fn visit_children(&mut self, node: &HirNode<'tcx>) {
+                fn visit_children(&mut self, node: &HirNode<'a>, t: &mut T, parent: Option<&Symbol>) {
                     for id in node.children() {
                         let child = self.unit().hir_node(*id);
-                        self.visit_node(child);
+                        self.visit_node(child, t, parent);
                     }
                 }
 
-
-                fn visit_children_scope(&mut self, _node: &HirNode<'tcx>, _symbol: Option<Self::ScopedSymbol>) {}
-
                 /// Handle unknown/unrecognized token types
-                fn visit_unknown(&mut self, node: HirNode<'tcx>) {
-                    self.visit_children(&node);
+                fn visit_unknown(&mut self, node: HirNode<'a>, t: &mut T, parent: Option<&Symbol>) {
+                    self.visit_children(&node, t, parent);
                 }
 
                 // Generate visit methods for each token type with visit_ prefix
                 $(
                     paste::paste! {
-                        fn [<visit_ $const>](&mut self, node: HirNode<'tcx>) {
-                            self.visit_children(&node)
+                        fn [<visit_ $const>](&mut self, node: HirNode<'a>, t: &mut T, parent: Option<&Symbol>) {
+                            self.visit_children(&node, t, parent);
                         }
                     }
                )*

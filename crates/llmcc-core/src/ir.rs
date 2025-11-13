@@ -303,10 +303,10 @@ impl<'hir> HirNode<'hir> {
     ///
     /// # Example
     /// ```ignore
-    /// let ts_node = node.inner_ts_node();
+    /// let ts_node = node.inner();
     /// let text = ts_node.utf8_byte_range();
     /// ```
-    pub fn inner_ts_node(&self) -> Node<'hir> {
+    pub fn inner(&self) -> Node<'hir> {
         self.base().unwrap().node
     }
 
@@ -470,12 +470,10 @@ impl<'hir> HirNode<'hir> {
         // Otherwise, search through children of any node that has them
         let children = match self {
             HirNode::Root(r) => &r.base.children,
-            HirNode::Text(_) => return None,
             HirNode::Internal(i) => &i.base.children,
             HirNode::Scope(s) => &s.base.children,
             HirNode::File(f) => &f.base.children,
-            HirNode::Ident(_) => return None,
-            HirNode::Undefined => return None,
+            _ => return None,
         };
 
         // Recursively search all children

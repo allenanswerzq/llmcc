@@ -32,7 +32,7 @@ impl RenderNode {
 
 pub fn render_llmcc_ir(root: HirId, unit: CompileUnit<'_>) -> (String, String) {
     let hir_root = unit.hir_node(root);
-    let ast_render = build_ast_render(hir_root.inner_ts_node(), unit);
+    let ast_render = build_ast_render(hir_root.inner(), unit);
     let hir_render = build_hir_render(&hir_root, unit);
     let ast = render_lines(&ast_render);
     let hir = render_lines(&hir_render);
