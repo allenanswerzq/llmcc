@@ -1,22 +1,49 @@
+//! Symbol and scope management for the code graph.
+//!
+//! This module defines the core data structures for tracking named entities (symbols) in source code:
+//! - `Symbol`: Represents a named entity (function, struct, variable, etc.) with metadata
+//! - `SymId`: Unique identifier for symbols
+//! - `ScopeId`: Unique identifier for scopes
+//!
+//! Symbols are allocated in an arena for efficient memory management and are thread-safe via RwLock.
+//! Names are interned for fast equality comparisons.
+
 use parking_lot::RwLock;
 use std::collections::HashMap;
 
 use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirIdent};
-use crate::trie::SymbolTrie;
 use std::sync::atomic::{AtomicU32, Ordering};
 
+/// Global atomic counter for assigning unique symbol IDs.
+/// Incremented on each new symbol creation to ensure uniqueness.
+/// Global atomic counter for assigning unique symbol IDs.
+/// Incremented on each new symbol creation to ensure uniqueness.
 static NEXT_SYMBOL_ID: AtomicU32 = AtomicU32::new(1);
 
-/// Reset the global symbol identifier counter back to 1.
-///
-/// This is primarily intended for deterministic test harnesses that execute many
-/// isolated compilations within the same process.
+/// Resets the global symbol ID counter to 1.
+/// Use this only during testing or when resetting the entire symbol table.
+#[inline]
 pub fn reset_symbol_id_counter() {
     NEXT_SYMBOL_ID.store(1, Ordering::SeqCst);
 }
 
+/// Global atomic counter for assigning unique scope IDs.
+/// Incremented on each new scope creation to ensure uniqueness.
+/// Global atomic counter for assigning unique scope IDs.
+/// Incremented on each new scope creation to ensure uniqueness.
+pub(crate) static NEXT_SCOPE_ID: AtomicU32 = AtomicU32::new(1);
+
+/// Resets the global scope ID counter to 1.
+/// Use this only during testing or when resetting the entire scope table.
+#[inline]
+pub fn reset_scope_id_counter() {
+    NEXT_SCOPE_ID.store(1, Ordering::SeqCst);
+}
+
+/// Unique identifier for symbols within a compilation unit.
+/// Symbols are allocated sequentially, starting from ID 1.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
 pub struct SymId(pub u32);
 
@@ -26,6 +53,33 @@ impl std::fmt::Display for SymId {
     }
 }
 
+/// Unique identifier for scopes within a compilation unit.
+/// Scopes are allocated sequentially, starting from ID 1.
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+pub struct ScopeId(pub u32);
+
+impl std::fmt::Display for ScopeId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// Classification of what kind of named entity a symbol represents.
+///
+/// Used for semantic analysis and filtering operations.
+/// - `Unknown`: Symbol kind not yet determined
+/// - `Module`: A module/namespace/package
+/// - `Struct`: A struct/class definition
+/// - `Enum`: An enum type definition
+/// - `Function`: A function/method definition
+/// - `Macro`: A macro definition
+/// - `Variable`: A variable binding
+/// - `Field`: A struct/class field
+/// - `Const`: A constant binding
+/// - `Static`: A static variable
+/// - `Trait`: A trait/interface definition
+/// - `Impl`: An implementation block
+/// - `EnumVariant`: A variant of an enum
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum SymbolKind {
     Unknown,
@@ -41,317 +95,79 @@ pub enum SymbolKind {
     Trait,
     Impl,
     EnumVariant,
-    InferredType,
 }
 
-/// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
-#[derive(Debug)]
-pub struct Scope<'tcx> {
-    /// Trie for fast symbol lookup by suffix
-    trie: RwLock<SymbolTrie<'tcx>>,
-    /// The HIR node that owns this scope
-    owner: HirId,
-    /// The symbol that introduced this scope, if any
-    symbol: RwLock<Option<&'tcx Symbol>>,
-}
-
-impl<'tcx> Scope<'tcx> {
-    pub fn new(owner: HirId) -> Self {
-        Self {
-            trie: RwLock::new(SymbolTrie::default()),
-            owner,
-            symbol: RwLock::new(None),
-        }
-    }
-
-    pub fn owner(&self) -> HirId {
-        self.owner
-    }
-
-    pub fn symbol(&self) -> Option<&'tcx Symbol> {
-        *self.symbol.read()
-    }
-
-    pub fn set_symbol(&self, symbol: Option<&'tcx Symbol>) {
-        *self.symbol.write() = symbol;
-    }
-
-    pub fn insert(&self, symbol: &'tcx Symbol, interner: &InternPool) -> SymId {
-        let sym_id = symbol.id;
-        self.trie.write().insert_symbol(symbol, interner);
-        sym_id
-    }
-
-    pub fn insert_alias(&self, parts: &[String], interner: &InternPool, symbol: &'tcx Symbol) {
-        let mut segments = Vec::new();
-        for segment in parts {
-            let trimmed = segment.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
-            segments.push(interner.intern(trimmed));
-        }
-
-        if segments.is_empty() {
-            return;
-        }
-
-        self.trie.write().insert_alias_path(&segments, symbol);
-    }
-
-    pub fn get_id(&self, key: InternedStr) -> Option<SymId> {
-        let hits = self.trie.read().lookup_symbol_suffix(&[key], None, None);
-        hits.first().map(|symbol| symbol.id)
-    }
-
-    pub fn lookup_suffix_once(
-        &self,
-        suffix: &[InternedStr],
-        kind_filter: Option<SymbolKind>,
-        unit_filter: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        self.lookup_suffix_symbols(suffix, kind_filter, unit_filter)
-            .into_iter()
-            .next()
-    }
-
-    pub fn lookup_suffix_symbols(
-        &self,
-        suffix: &[InternedStr],
-        kind_filter: Option<SymbolKind>,
-        unit_filter: Option<usize>,
-    ) -> Vec<&'tcx Symbol> {
-        self.trie
-            .read()
-            .lookup_symbol_suffix(suffix, kind_filter, unit_filter)
-    }
-
-    pub fn format_compact(&self) -> String {
-        let count = self.trie.read().total_symbols();
-        format!("{}/{}", self.owner, count)
-    }
-
-    pub fn all_symbols(&self) -> Vec<&'tcx Symbol> {
-        self.trie.read().symbols()
-    }
-}
-
-#[derive(Debug)]
-pub struct ScopeStack<'tcx> {
-    arena: &'tcx Arena<'tcx>,
-    interner: &'tcx InternPool,
-    stack: Vec<&'tcx Scope<'tcx>>,
-    symbol_map: &'tcx RwLock<HashMap<SymId, &'tcx Symbol>>,
-}
-
-impl<'tcx> ScopeStack<'tcx> {
-    pub fn new(
-        arena: &'tcx Arena<'tcx>,
-        interner: &'tcx InternPool,
-        symbol_map: &'tcx RwLock<HashMap<SymId, &'tcx Symbol>>,
-    ) -> Self {
-        Self {
-            arena,
-            interner,
-            stack: Vec::new(),
-            symbol_map,
-        }
-    }
-
-    pub fn depth(&self) -> usize {
-        self.stack.len()
-    }
-
-    pub fn push(&mut self, scope: &'tcx Scope<'tcx>) {
-        self.push_with_symbol(scope, None);
-    }
-
-    pub fn push_with_symbol(&mut self, scope: &'tcx Scope<'tcx>, symbol: Option<&'tcx Symbol>) {
-        scope.set_symbol(symbol);
-        self.stack.push(scope);
-    }
-
-    pub fn pop(&mut self) -> Option<&'tcx Scope<'tcx>> {
-        self.stack.pop()
-    }
-
-    pub fn pop_until(&mut self, depth: usize) {
-        while self.depth() > depth {
-            self.pop();
-        }
-    }
-
-    pub fn top(&self) -> Option<&'tcx Scope<'tcx>> {
-        self.stack.last().copied()
-    }
-
-    pub fn scoped_symbol(&self) -> Option<&'tcx Symbol> {
-        self.stack.iter().rev().find_map(|scope| scope.symbol())
-    }
-
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &'tcx Scope<'tcx>> + '_ {
-        self.stack.iter().copied()
-    }
-
-    pub fn lookup_scoped_suffix_once(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.find_scoped_suffix_with_filters(suffix, None, None)
-    }
-
-    pub fn find_scoped_suffix_with_filters(
-        &self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-        file: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        for scope in self.iter().rev() {
-            let symbols = scope.lookup_suffix_symbols(suffix, kind, file);
-            if let Some(symbol) = select_symbol(symbols, kind, file) {
-                return Some(symbol);
-            }
-        }
-        None
-    }
-
-    fn scope_for_insertion(&mut self, global: bool) -> Result<&'tcx Scope<'tcx>, &'static str> {
-        if global {
-            self.stack.first().copied().ok_or("no global scope exists")
-        } else {
-            self.stack
-                .last()
-                .copied()
-                .ok_or("no active scope available")
-        }
-    }
-
-    pub fn insert_symbol(
-        &mut self,
-        symbol: &'tcx Symbol,
-        global: bool,
-    ) -> Result<SymId, &'static str> {
-        let scope = self.scope_for_insertion(global)?;
-        Ok(scope.insert(symbol, self.interner))
-    }
-
-    pub fn find_symbol_id(&self, name: &str) -> Option<SymId> {
-        let key = self.interner.intern(name);
-        self.iter().rev().find_map(|scope| scope.get_id(key))
-    }
-
-    fn find_symbol_local_by_key(&self, key: InternedStr) -> Option<&'tcx Symbol> {
-        let scopes = if self.stack.len() > 1 {
-            &self.stack[1..]
-        } else {
-            &self.stack[..]
-        };
-
-        scopes.iter().rev().find_map(|scope| {
-            scope
-                .lookup_suffix_symbols(&[key], None, None)
-                .into_iter()
-                .next()
-        })
-    }
-
-    pub fn find_symbol_local(&self, name: &str) -> Option<&'tcx Symbol> {
-        let key = self.interner.intern(name);
-        self.find_symbol_local_by_key(key)
-    }
-
-    pub fn find_global_suffix_vec(&self, suffix: &[InternedStr]) -> Vec<&'tcx Symbol> {
-        self.stack
-            .first()
-            .map(|scope| scope.lookup_suffix_symbols(suffix, None, None))
-            .unwrap_or_default()
-    }
-
-    pub fn find_global_suffix(&self, suffix: &[InternedStr]) -> Option<&'tcx Symbol> {
-        self.find_global_suffix_with_filters(suffix, None, None)
-    }
-
-    pub fn find_global_suffix_with_filters(
-        &self,
-        suffix: &[InternedStr],
-        kind: Option<SymbolKind>,
-        file: Option<usize>,
-    ) -> Option<&'tcx Symbol> {
-        let symbols = self.find_global_suffix_vec(suffix);
-        select_symbol(symbols, kind, file)
-    }
-
-    /// Find a global symbol that matches the provided suffix but restrict results to a unit index.
-    pub fn find_global_suffix_in_unit(
-        &self,
-        suffix: &[InternedStr],
-        unit_index: usize,
-    ) -> Option<&'tcx Symbol> {
-        self.find_global_suffix_with_filters(suffix, None, Some(unit_index))
-    }
-
-    pub fn insert_with<F>(
-        &mut self,
-        owner: HirId,
-        ident: &HirIdent<'tcx>,
-        global: bool,
-        init: F,
-    ) -> &'tcx Symbol
-    where
-        F: FnOnce(&'tcx Symbol),
-    {
-        let key = self.interner.intern(&ident.name);
-
-        let symbol = self.alloc_symbol(owner, ident, key);
-        init(symbol);
-
-        self.insert_symbol(symbol, false)
-            .expect("failed to insert symbol into scope");
-        if global {
-            self.insert_symbol(symbol, true)
-                .expect("failed to insert symbol into global scope");
-        }
-
-        symbol
-    }
-
-    fn alloc_symbol(&self, owner: HirId, ident: &HirIdent<'tcx>, key: InternedStr) -> &'tcx Symbol {
-        let symbol = Symbol::new(owner, ident.name.clone(), key);
-        let symbol = self.arena.alloc(symbol);
-        self.symbol_map.write().insert(symbol.id, symbol);
-        symbol
-    }
-}
-
-/// Canonical representation of an item bound in a scope (functions, variables, types, etc.).
+/// Represents a named entity in source code.
+///
+/// Symbols track metadata about functions, structs, variables, and other named elements.
+/// Each symbol has:
+/// - An immutable unique ID
+/// - A name (interned for fast comparison)
+/// - Metadata (kind, location, type, dependencies)
+/// - Relationships to other symbols (dependencies, scope hierarchy)
+///
+/// Symbols support shadowing and multi-definition tracking via the `previous` field,
+/// which forms a chain of symbol definitions in nested scopes.
+///
+/// # Thread Safety
+/// Most fields use `RwLock` for thread-safe interior mutability.
+/// The ID and name are immutable once created.
+///
+/// # Example
+/// ```ignore
+/// let symbol = Symbol::new(hir_id, interned_name);
+/// symbol.set_kind(SymbolKind::Function);
+/// symbol.set_is_global(true);
+/// ```
 #[derive(Debug)]
 pub struct Symbol {
-    /// Monotonic identifier assigned when the symbol is created.
+    /// Monotonic id assigned when the symbol is created.
     pub id: SymId,
-    /// Owning HIR node that introduces the symbol (e.g. function, struct, module).
-    pub owner: RwLock<HirId>,
-    /// Unqualified name exactly as written in source.
-    pub name: String,
-    /// Interned key for `name`, used for fast lookup.
-    pub name_key: InternedStr,
-    /// Fully qualified name cached as a string (updated as scopes are resolved).
-    pub fqn_name: RwLock<String>,
-    /// Interned key for the fully qualified name.
-    pub fqn_key: RwLock<InternedStr>,
-    /// All symbols that this symbols depends on, most general relation, could be
-    /// another relation, like field_of, type_of, called_by, calls etc.
-    /// we dont do very clear sepration becase we want llm models to do that, we
-    /// only need to tell models some symbols having depends relations
-    pub depends: RwLock<Vec<SymId>>,
-    pub depended: RwLock<Vec<SymId>>,
-    /// Optional backing type for this symbol (e.g. variable type, alias target).
-    pub type_of: RwLock<Option<SymId>>,
-    pub kind: RwLock<SymbolKind>,
-    /// Which compile unit this symbol defined
+    /// Interned key for the symbol name, used for fast lookup and comparison.
+    /// Interned names allow O(1) equality checks.
+    pub name: InternedStr,
+    /// Interned key for the fully qualified name (module path + name).
+    /// Updated when the symbol's scope is determined.
+    pub fqn: RwLock<InternedStr>,
+    /// Which compile unit this symbol is defined in.
+    /// May be updated during compilation if the symbol spans multiple files.
     pub unit_index: RwLock<Option<usize>>,
-    /// Optional block id associated with this symbol (for graph building)
+    /// Owning HIR node that introduces the symbol (e.g. function def, struct def).
+    /// Immutable once set; represents the primary definition location.
+    pub owner: RwLock<HirId>,
+    /// Additional defining locations for this symbol.
+    /// For example, a struct can have multiple impl blocks in different files.
+    /// Used for symbols with multiple definitions.
+    pub defining: RwLock<Vec<HirId>>,
+    /// The scope that this symbol belongs to.
+    /// Used to quickly find the scope during binding and type resolution.
+    pub scope: RwLock<Option<ScopeId>>,
+    /// The parent scope of this symbol (for scope hierarchy).
+    /// Enables upward traversal of the scope chain.
+    pub parent_scope: RwLock<Option<ScopeId>>,
+    /// The kind of symbol this represents (function, struct, variable, etc.).
+    /// Initially Unknown, updated as the symbol is processed.
+    pub kind: RwLock<SymbolKind>,
+    /// Optional backing type for this symbol (e.g. variable type, alias target).
+    /// Set during type analysis if applicable.
+    pub type_of: RwLock<Option<SymId>>,
+    /// Optional block id associated with this symbol (for graph building).
+    /// Links the symbol to its corresponding block in the code graph.
     pub block_id: RwLock<Option<BlockId>>,
     /// Whether the symbol is globally visible/exported.
+    /// Used to distinguish public symbols from private ones.
     pub is_global: RwLock<bool>,
-    /// Optional member table keyed by interned identifier (used for type namespaces).
-    pub members: RwLock<HashMap<InternedStr, Vec<SymId>>>,
+    /// Symbols that this symbol depends on (general dependency relation).
+    /// Can represent various relationships: field_of, type_of, called_by, calls, etc.
+    pub depends: RwLock<Vec<SymId>>,
+    /// Symbols that depend on this symbol (reverse dependency relation).
+    /// Used for reverse lookups and impact analysis.
+    pub depended: RwLock<Vec<SymId>>,
+    /// Previous version/definition of this symbol (for shadowing and multi-definition tracking).
+    /// Used to chain multiple definitions of the same symbol in different scopes or contexts.
+    /// Example: inner definition shadows outer definition in nested scope.
+    /// Forms a linked list of definitions traversable via following `previous` pointers.
+    pub previous: RwLock<Option<SymId>>,
 }
 
 impl Clone for Symbol {
@@ -359,101 +175,154 @@ impl Clone for Symbol {
         Self {
             id: self.id,
             owner: RwLock::new(*self.owner.read()),
-            name: self.name.clone(),
-            name_key: self.name_key,
-            fqn_name: RwLock::new(self.fqn_name.read().clone()),
-            fqn_key: RwLock::new(*self.fqn_key.read()),
-            depends: RwLock::new(self.depends.read().clone()),
-            depended: RwLock::new(self.depended.read().clone()),
-            type_of: RwLock::new(*self.type_of.read()),
-            kind: RwLock::new(*self.kind.read()),
+            name: self.name,
+            fqn: RwLock::new(*self.fqn.read()),
             unit_index: RwLock::new(*self.unit_index.read()),
+            defining: RwLock::new(self.defining.read().clone()),
+            scope: RwLock::new(*self.scope.read()),
+            parent_scope: RwLock::new(*self.parent_scope.read()),
+            kind: RwLock::new(*self.kind.read()),
+            type_of: RwLock::new(*self.type_of.read()),
             block_id: RwLock::new(*self.block_id.read()),
             is_global: RwLock::new(*self.is_global.read()),
-            members: RwLock::new(self.members.read().clone()),
+            depends: RwLock::new(self.depends.read().clone()),
+            depended: RwLock::new(self.depended.read().clone()),
+            previous: RwLock::new(*self.previous.read()),
         }
     }
 }
 
 impl Symbol {
-    pub fn new(owner: HirId, name: String, name_key: InternedStr) -> Self {
+    /// Creates a new symbol with the given HIR node owner and interned name.
+    ///
+    /// Assigns a unique monotonic ID to the symbol. The symbol is initialized with:
+    /// - Unknown kind
+    /// - No unit index
+    /// - No scope or parent scope
+    /// - No type information
+    /// - Not marked as global
+    /// - Empty dependency lists
+    /// - No previous definition
+    ///
+    /// # Arguments
+    /// * `owner` - The HIR node that introduces this symbol
+    /// * `name_key` - The interned name of the symbol
+    ///
+    /// # Example
+    /// ```ignore
+    /// let symbol = Symbol::new(hir_id, interned_name);
+    /// assert_eq!(symbol.kind(), SymbolKind::Unknown);
+    /// assert!(!symbol.is_global());
+    /// ```
+    pub fn new(owner: HirId, name_key: InternedStr) -> Self {
         let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
         let sym_id = SymId(id);
-
-        let fqn_key = name_key;
 
         Self {
             id: sym_id,
             owner: RwLock::new(owner),
-            name: name.clone(),
-            name_key,
-            fqn_name: RwLock::new(name),
-            fqn_key: RwLock::new(fqn_key),
-            depends: RwLock::new(Vec::new()),
-            depended: RwLock::new(Vec::new()),
-            type_of: RwLock::new(None),
-            kind: RwLock::new(SymbolKind::Unknown),
+            name: name_key,
+            fqn: RwLock::new(name_key),
             unit_index: RwLock::new(None),
+            defining: RwLock::new(Vec::new()),
+            scope: RwLock::new(None),
+            parent_scope: RwLock::new(None),
+            kind: RwLock::new(SymbolKind::Unknown),
+            type_of: RwLock::new(None),
             block_id: RwLock::new(None),
             is_global: RwLock::new(false),
-            members: RwLock::new(HashMap::new()),
+            depends: RwLock::new(Vec::new()),
+            depended: RwLock::new(Vec::new()),
+            previous: RwLock::new(None),
         }
     }
 
+    /// Gets the owner HIR node of this symbol.
+    #[inline]
     pub fn owner(&self) -> HirId {
         *self.owner.read()
     }
 
+    /// Sets the owner HIR node of this symbol.
+    /// Typically only updated once during symbol creation.
+    #[inline]
     pub fn set_owner(&self, owner: HirId) {
         *self.owner.write() = owner;
     }
 
+    /// Returns a compact string representation for debugging.
+    /// Format: `{symbol_id}->{owner} <{name}>`
     pub fn format_compact(&self) -> String {
         let owner = *self.owner.read();
-        format!("{}->{} \"{}\"", self.id, owner, self.name)
+        format!("{}->{} <{:?}>", self.id, owner, self.name)
     }
 
-    pub fn set_fqn(&self, fqn: String, interner: &InternPool) {
-        let key = interner.intern(&fqn);
-        *self.fqn_name.write() = fqn;
-        *self.fqn_key.write() = key;
+    /// Sets the fully qualified name for this symbol.
+    /// Should be called when the symbol's scope hierarchy is determined.
+    #[inline]
+    pub fn set_fqn(&self, fqn: InternedStr) {
+        *self.fqn.write() = fqn;
     }
 
-    pub fn path_segments(&self) -> Vec<String> {
-        let fqn = self.fqn_name.read().clone();
-        let mut parts: Vec<String> = fqn
-            .split("::")
-            .filter(|part| !part.is_empty())
-            .map(|part| part.to_string())
-            .collect();
-
-        if parts.is_empty() {
-            parts.push(self.name.clone());
-        }
-
-        parts
+    /// Gets the scope ID this symbol belongs to.
+    #[inline]
+    pub fn scope(&self) -> Option<ScopeId> {
+        *self.scope.read()
     }
 
+    /// Sets the scope ID this symbol belongs to.
+    #[inline]
+    pub fn set_scope(&self, scope_id: Option<ScopeId>) {
+        *self.scope.write() = scope_id;
+    }
+
+    /// Gets the parent scope ID in the scope hierarchy.
+    #[inline]
+    pub fn parent_scope(&self) -> Option<ScopeId> {
+        *self.parent_scope.read()
+    }
+
+    /// Sets the parent scope ID in the scope hierarchy.
+    #[inline]
+    pub fn set_parent_scope(&self, scope_id: Option<ScopeId>) {
+        *self.parent_scope.write() = scope_id;
+    }
+
+    /// Gets the symbol kind (function, struct, variable, etc.).
+    #[inline]
     pub fn kind(&self) -> SymbolKind {
         *self.kind.read()
     }
 
+    /// Sets the symbol kind after analysis.
+    #[inline]
     pub fn set_kind(&self, kind: SymbolKind) {
         *self.kind.write() = kind;
     }
 
+    /// Gets the type of this symbol (if it has one).
+    /// For variables, this is their declared type.
+    /// For type aliases, this is the target type.
+    #[inline]
     pub fn type_of(&self) -> Option<SymId> {
         *self.type_of.read()
     }
 
+    /// Sets the type of this symbol.
+    #[inline]
     pub fn set_type_of(&self, ty: Option<SymId>) {
         *self.type_of.write() = ty;
     }
 
+    /// Gets the compile unit index this symbol is defined in.
+    #[inline]
     pub fn unit_index(&self) -> Option<usize> {
         *self.unit_index.read()
     }
 
+    /// Sets the compile unit index, but only if not already set.
+    /// Prevents overwriting the original definition location.
+    #[inline]
     pub fn set_unit_index(&self, file: usize) {
         let mut unit_index = self.unit_index.write();
         if unit_index.is_none() {
@@ -461,23 +330,20 @@ impl Symbol {
         }
     }
 
+    /// Checks if this symbol is globally visible/exported.
+    #[inline]
     pub fn is_global(&self) -> bool {
         *self.is_global.read()
     }
 
+    /// Sets the global visibility flag.
+    #[inline]
     pub fn set_is_global(&self, value: bool) {
         *self.is_global.write() = value;
     }
 
-    pub fn add_member(&self, name: InternedStr, sym_id: SymId) {
-        let mut members = self.members.write();
-        members.entry(name).or_default().push(sym_id);
-    }
-
-    pub fn members(&self, name: InternedStr) -> Vec<SymId> {
-        self.members.read().get(&name).cloned().unwrap_or_default()
-    }
-
+    /// Adds a symbol that this symbol depends on.
+    /// Ignores self-dependencies and duplicate entries.
     pub fn add_depends_on(&self, sym_id: SymId) {
         if sym_id == self.id {
             return;
@@ -489,6 +355,8 @@ impl Symbol {
         deps.push(sym_id);
     }
 
+    /// Adds a symbol that depends on this symbol (reverse dependency).
+    /// Ignores self-dependencies and duplicate entries.
     pub fn add_depended_by(&self, sym_id: SymId) {
         if sym_id == self.id {
             return;
@@ -500,16 +368,28 @@ impl Symbol {
         deps.push(sym_id);
     }
 
+    /// Adds a HIR node as an additional definition location.
+    /// Prevents duplicate entries.
+    pub fn add_defining(&self, hir_id: HirId) {
+        let mut defs = self.defining.write();
+        if !defs.contains(&hir_id) {
+            defs.push(hir_id);
+        }
+    }
+
+    /// Gets all HIR nodes that define this symbol.
+    pub fn defining_hir_nodes(&self) -> Vec<HirId> {
+        self.defining.read().clone()
+    }
+
+    /// Adds a bidirectional dependency between this symbol and another.
+    /// Ignores self-dependencies, duplicates, and circular references.
     pub fn add_dependency(&self, other: &Symbol) {
         if self.id == other.id {
             return;
         }
-        if self.kind() == other.kind() {
-            let self_fqn = self.fqn_name.read().clone();
-            let other_fqn = other.fqn_name.read().clone();
-            if !self_fqn.is_empty() && self_fqn == other_fqn {
-                return;
-            }
+        if self.kind() == other.kind() && self.name == other.name {
+            return;
         }
         if other.depends.read().contains(&self.id) {
             return;
@@ -518,175 +398,311 @@ impl Symbol {
         other.add_depended_by(self.id);
     }
 
+    /// Gets the block ID associated with this symbol.
+    #[inline]
     pub fn block_id(&self) -> Option<BlockId> {
         *self.block_id.read()
     }
 
+    /// Sets the block ID associated with this symbol.
+    #[inline]
     pub fn set_block_id(&self, block_id: Option<BlockId>) {
         *self.block_id.write() = block_id;
     }
-}
 
-fn select_symbol(
-    candidates: Vec<&Symbol>,
-    kind: Option<SymbolKind>,
-    file: Option<usize>,
-) -> Option<&Symbol> {
-    if candidates.is_empty() {
-        return None;
+    /// Gets the previous definition of this symbol (for shadowing).
+    /// Symbols with the same name in nested scopes form a chain via this field.
+    #[inline]
+    pub fn previous(&self) -> Option<SymId> {
+        *self.previous.read()
     }
 
-    if let Some(kind) = kind {
-        let matches: Vec<&Symbol> = candidates
-            .iter()
-            .copied()
-            .filter(|symbol| symbol.kind() == kind)
-            .collect();
-
-        if let Some(file) = file {
-            if let Some(symbol) = matches
-                .iter()
-                .copied()
-                .find(|symbol| symbol.unit_index() == Some(file))
-            {
-                return Some(symbol);
-            }
-        }
-
-        if !matches.is_empty() {
-            return Some(matches[0]);
-        }
-    }
-
-    if let Some(file) = file {
-        if let Some(symbol) = candidates
-            .iter()
-            .copied()
-            .find(|candidate| candidate.unit_index() == Some(file))
-        {
-            return Some(symbol);
-        }
-    }
-
-    candidates.into_iter().next()
-}
-
-#[derive(Debug, Clone)]
-pub struct SymbolKindMap<T> {
-    inner: HashMap<SymbolKind, HashMap<String, T>>,
-}
-
-impl<T> SymbolKindMap<T> {
-    pub fn new() -> Self {
-        Self {
-            inner: HashMap::new(),
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.inner.values().map(HashMap::len).sum()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.inner.values().all(HashMap::is_empty)
-    }
-
-    pub fn kind_len(&self, kind: SymbolKind) -> usize {
-        self.inner.get(&kind).map(HashMap::len).unwrap_or(0)
-    }
-
-    pub fn contains(&self, kind: SymbolKind, name: &str) -> bool {
-        self.inner
-            .get(&kind)
-            .map(|bucket| bucket.contains_key(name))
-            .unwrap_or(false)
-    }
-
-    pub fn get(&self, kind: SymbolKind, name: &str) -> Option<&T> {
-        self.inner.get(&kind).and_then(|bucket| bucket.get(name))
-    }
-
-    pub fn get_mut(&mut self, kind: SymbolKind, name: &str) -> Option<&mut T> {
-        self.inner
-            .get_mut(&kind)
-            .and_then(|bucket| bucket.get_mut(name))
-    }
-
-    pub fn kind_map(&self, kind: SymbolKind) -> Option<&HashMap<String, T>> {
-        self.inner.get(&kind)
-    }
-
-    pub fn kind_map_mut(&mut self, kind: SymbolKind) -> Option<&mut HashMap<String, T>> {
-        self.inner.get_mut(&kind)
-    }
-
-    pub fn ensure_kind(&mut self, kind: SymbolKind) -> &mut HashMap<String, T> {
-        self.inner.entry(kind).or_default()
-    }
-
-    pub fn insert(&mut self, kind: SymbolKind, name: impl Into<String>, value: T) -> Option<T> {
-        self.ensure_kind(kind).insert(name.into(), value)
-    }
-
-    pub fn remove(&mut self, kind: SymbolKind, name: &str) -> Option<T> {
-        let bucket = self.inner.get_mut(&kind)?;
-        let removed = bucket.remove(name);
-        if bucket.is_empty() {
-            self.inner.remove(&kind);
-        }
-        removed
-    }
-
-    pub fn clear_kind(&mut self, kind: SymbolKind) -> Option<HashMap<String, T>> {
-        self.inner.remove(&kind)
-    }
-
-    pub fn kinds(&self) -> impl Iterator<Item = SymbolKind> + '_ {
-        self.inner.keys().copied()
-    }
-
-    pub fn inner(&self) -> &HashMap<SymbolKind, HashMap<String, T>> {
-        &self.inner
-    }
-
-    pub fn inner_mut(&mut self) -> &mut HashMap<SymbolKind, HashMap<String, T>> {
-        &mut self.inner
-    }
-
-    pub fn into_inner(self) -> HashMap<SymbolKind, HashMap<String, T>> {
-        self.inner
+    /// Sets the previous definition of this symbol.
+    /// Used to build shadowing chains when a symbol name is reused in a nested scope.
+    #[inline]
+    pub fn set_previous(&self, sym_id: Option<SymId>) {
+        *self.previous.write() = sym_id;
     }
 }
 
-impl<T> Default for SymbolKindMap<T> {
-    fn default() -> Self {
-        Self::new()
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_hir_id(index: u32) -> HirId {
+        HirId(index)
     }
-}
 
-impl<T> IntoIterator for SymbolKindMap<T> {
-    type Item = (SymbolKind, HashMap<String, T>);
-    type IntoIter = std::collections::hash_map::IntoIter<SymbolKind, HashMap<String, T>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.into_iter()
+    fn create_test_intern_pool() -> InternPool {
+        InternPool::default()
     }
-}
 
-impl<'a, T> IntoIterator for &'a SymbolKindMap<T> {
-    type Item = (&'a SymbolKind, &'a HashMap<String, T>);
-    type IntoIter = std::collections::hash_map::Iter<'a, SymbolKind, HashMap<String, T>>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.iter()
+    #[test]
+    fn test_sym_id_creation() {
+        reset_symbol_id_counter();
+        let id1 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
+        let id2 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
+        assert_eq!(id1.0, 1);
+        assert_eq!(id2.0, 2);
     }
-}
 
-impl<'a, T> IntoIterator for &'a mut SymbolKindMap<T> {
-    type Item = (&'a SymbolKind, &'a mut HashMap<String, T>);
-    type IntoIter = std::collections::hash_map::IterMut<'a, SymbolKind, HashMap<String, T>>;
+    #[test]
+    fn test_sym_id_display() {
+        let id = SymId(42);
+        assert_eq!(id.to_string(), "42");
+    }
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.inner.iter_mut()
+    #[test]
+    fn test_sym_id_equality() {
+        let id1 = SymId(42);
+        let id2 = SymId(42);
+        let id3 = SymId(43);
+        assert_eq!(id1, id2);
+        assert_ne!(id1, id3);
+    }
+
+    #[test]
+    fn test_scope_id_creation() {
+        let id = ScopeId(10);
+        assert_eq!(id.0, 10);
+    }
+
+    #[test]
+    fn test_scope_id_display() {
+        let id = ScopeId(99);
+        assert_eq!(id.to_string(), "99");
+    }
+
+    #[test]
+    fn test_symbol_kind_equality() {
+        assert_eq!(SymbolKind::Function, SymbolKind::Function);
+        assert_ne!(SymbolKind::Function, SymbolKind::Struct);
+    }
+
+    #[test]
+    fn test_symbol_creation() {
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+        let pool = create_test_intern_pool();
+        let hir_id = create_test_hir_id(1);
+        let name = pool.intern("test_symbol");
+
+        let symbol = Symbol::new(hir_id, name);
+
+        // Verify basic properties regardless of counter state
+        assert_eq!(symbol.owner(), hir_id);
+        assert_eq!(symbol.kind(), SymbolKind::Unknown);
+        assert!(!symbol.is_global());
+        assert_eq!(symbol.unit_index(), None);
+        assert_eq!(symbol.type_of(), None);
+        assert_eq!(symbol.block_id(), None);
+        assert_eq!(symbol.previous(), None);
+    }
+
+    #[test]
+    fn test_symbol_monotonic_ids() {
+        // Note: This test verifies monotonic IDs but is order-dependent.
+        // IDs should only increase: if this test runs after others that create symbols,
+        // the ID will be higher than 1.
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let hir_id = create_test_hir_id(1);
+        let name = pool.intern("symbol");
+
+        let sym1 = Symbol::new(hir_id, name);
+        let sym2 = Symbol::new(hir_id, name);
+
+        // Verify they have different IDs
+        assert_ne!(sym1.id, sym2.id);
+        // Verify sym2 is greater than sym1
+        assert!(sym2.id.0 > sym1.id.0);
+    }
+
+    #[test]
+    fn test_symbol_kind_setter_getter() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("func"));
+
+        symbol.set_kind(SymbolKind::Function);
+        assert_eq!(symbol.kind(), SymbolKind::Function);
+
+        symbol.set_kind(SymbolKind::Struct);
+        assert_eq!(symbol.kind(), SymbolKind::Struct);
+    }
+
+    #[test]
+    fn test_symbol_global_flag() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("global_var"));
+
+        assert!(!symbol.is_global());
+        symbol.set_is_global(true);
+        assert!(symbol.is_global());
+    }
+
+    #[test]
+    fn test_symbol_unit_index_only_set_once() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
+
+        symbol.set_unit_index(1);
+        assert_eq!(symbol.unit_index(), Some(1));
+
+        // Second call should not change the value
+        symbol.set_unit_index(2);
+        assert_eq!(symbol.unit_index(), Some(1));
+    }
+
+    #[test]
+    fn test_symbol_fqn() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("symbol"));
+        let fqn = pool.intern("module::symbol");
+
+        symbol.set_fqn(fqn);
+        assert_eq!(*symbol.fqn.read(), fqn);
+    }
+
+    #[test]
+    fn test_symbol_type_of() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("var"));
+        let type_id = SymId(42);
+
+        symbol.set_type_of(Some(type_id));
+        assert_eq!(symbol.type_of(), Some(type_id));
+    }
+
+    #[test]
+    fn test_symbol_scope_hierarchy() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
+        let scope_id = ScopeId(10);
+        let parent_scope_id = ScopeId(5);
+
+        symbol.set_scope(Some(scope_id));
+        symbol.set_parent_scope(Some(parent_scope_id));
+
+        assert_eq!(symbol.scope(), Some(scope_id));
+        assert_eq!(symbol.parent_scope(), Some(parent_scope_id));
+    }
+
+    #[test]
+    fn test_symbol_add_dependency() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("func1"));
+        let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("func2"));
+
+        sym1.add_dependency(&sym2);
+
+        assert!(sym1.depends.read().contains(&sym2.id));
+        assert!(sym2.depended.read().contains(&sym1.id));
+    }
+
+    #[test]
+    fn test_symbol_ignore_self_dependency() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
+
+        symbol.add_depends_on(symbol.id);
+        assert!(!symbol.depends.read().contains(&symbol.id));
+    }
+
+    #[test]
+    fn test_symbol_duplicate_dependency() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("sym1"));
+        let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("sym2"));
+
+        sym1.add_depends_on(sym2.id);
+        sym1.add_depends_on(sym2.id);
+
+        // Should only have one entry
+        assert_eq!(sym1.depends.read().len(), 1);
+    }
+
+    #[test]
+    fn test_symbol_add_defining_locations() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("struct"));
+        let hir_id_1 = create_test_hir_id(10);
+        let hir_id_2 = create_test_hir_id(20);
+
+        symbol.add_defining(hir_id_1);
+        symbol.add_defining(hir_id_2);
+        symbol.add_defining(hir_id_1); // Duplicate
+
+        let defs = symbol.defining_hir_nodes();
+        assert_eq!(defs.len(), 2);
+        assert!(defs.contains(&hir_id_1));
+        assert!(defs.contains(&hir_id_2));
+    }
+
+    #[test]
+    fn test_symbol_previous_chain() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("var"));
+        let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("var"));
+        let sym3 = Symbol::new(create_test_hir_id(3), pool.intern("var"));
+
+        sym2.set_previous(Some(sym1.id));
+        sym3.set_previous(Some(sym2.id));
+
+        assert_eq!(sym2.previous(), Some(sym1.id));
+        assert_eq!(sym3.previous(), Some(sym2.id));
+        assert_eq!(sym1.previous(), None);
+    }
+
+    #[test]
+    fn test_symbol_format_compact() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let hir_id = create_test_hir_id(5);
+        let symbol = Symbol::new(hir_id, pool.intern("test"));
+
+        let formatted = symbol.format_compact();
+        assert!(formatted.contains("->"));
+        assert!(formatted.contains("5")); // hir_id
+    }
+
+    #[test]
+    fn test_symbol_clone() {
+        reset_symbol_id_counter();
+        let pool = create_test_intern_pool();
+        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
+
+        symbol.set_kind(SymbolKind::Function);
+        symbol.set_is_global(true);
+        symbol.set_unit_index(0);
+
+        let cloned = symbol.clone();
+
+        assert_eq!(cloned.id, symbol.id);
+        assert_eq!(cloned.kind(), symbol.kind());
+        assert_eq!(cloned.is_global(), symbol.is_global());
+        assert_eq!(cloned.unit_index(), symbol.unit_index());
+    }
+
+    #[test]
+    fn test_reset_counters() {
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+
+        let id1 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
+        let scope_id1 = ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::SeqCst));
+
+        assert_eq!(id1.0, 1);
+        assert_eq!(scope_id1.0, 1);
     }
 }
