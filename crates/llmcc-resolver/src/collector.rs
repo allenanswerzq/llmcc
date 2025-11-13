@@ -164,18 +164,18 @@ impl<'a> CollectorCore<'a> {
 
     /// Find or insert symbol in the current scope.
     ///
-    /// If a symbol with this name already exists in the current scope,
-    /// returns the existing one. Otherwise, creates a new symbol.
+    /// If a symbol with this name exists in the current scope, returns it.
+    /// Otherwise, creates a new symbol and inserts it into the current scope.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert(&self, node: HirId, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert(node, name)
+    pub fn lookup_or_insert(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert(name, node)
     }
 
     /// Find or insert symbol with chaining enabled for shadowing support.
@@ -185,14 +185,14 @@ impl<'a> CollectorCore<'a> {
     /// shadowing relationships in nested scopes.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert_chained(&self, node: HirId, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_chained(node, name)
+    pub fn lookup_or_insert_chained(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert_chained(name, node)
     }
 
     /// Find or insert symbol in the parent scope.
@@ -201,15 +201,15 @@ impl<'a> CollectorCore<'a> {
     /// Useful for lifting definitions out of the current scope.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty and parent scope exists,
     /// None if name is empty or no parent scope available
     #[inline]
-    pub fn lookup_or_insert_parent(&self, node: HirId, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_parent(node, name)
+    pub fn lookup_or_insert_parent(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert_parent(name, node)
     }
 
     /// Find or insert symbol in the global scope.
@@ -218,14 +218,14 @@ impl<'a> CollectorCore<'a> {
     /// Used for module-level definitions.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert_global(&self, node: HirId, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_global(node, name)
+    pub fn lookup_or_insert_global(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert_global(name, node)
     }
 
     /// Full control API for symbol lookup and insertion with custom options.
@@ -234,8 +234,8 @@ impl<'a> CollectorCore<'a> {
     /// controlled via the `LookupOptions` parameter.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name (None for anonymous if force=true)
+    /// * `node` - The HIR node for the symbol
     /// * `options` - Lookup options controlling scope selection and behavior
     ///
     /// # Returns
@@ -245,16 +245,16 @@ impl<'a> CollectorCore<'a> {
     /// ```ignore
     /// use llmcc_core::scope::LookupOptions;
     /// let opts = LookupOptions::global().with_force(true);
-    /// let symbol = collector.lookup_or_insert_with(node_id, None, opts)?;
+    /// let symbol = collector.lookup_or_insert_with(None, node_id, opts)?;
     /// ```
     #[inline]
     pub fn lookup_or_insert_with(
         &self,
-        node: HirId,
         name: Option<&str>,
+        node: HirId,
         options: llmcc_core::scope::LookupOptions,
     ) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_with(node, name, options)
+        self.scopes.lookup_or_insert_with(name, node, options)
     }
 
 }
@@ -395,11 +395,11 @@ mod tests {
         let collector = CollectorCore::new(0, &arena, &interner);
 
         // Insert a symbol in the global scope
-        let sym1 = collector.lookup_or_insert(HirId(1), "foo");
+        let sym1 = collector.lookup_or_insert("foo", HirId(1));
         assert!(sym1.is_some());
 
         // Each call to lookup_or_insert creates a new symbol, even with the same name
-        let sym2 = collector.lookup_or_insert(HirId(2), "foo");
+        let sym2 = collector.lookup_or_insert("foo", HirId(2));
         assert!(sym2.is_some());
 
         // They will be different symbols (lookup_or_insert always creates new)
@@ -413,7 +413,7 @@ mod tests {
         let collector = CollectorCore::new(0, &arena, &interner);
 
         // Empty name should return None
-        let sym = collector.lookup_or_insert(HirId(1), "");
+        let sym = collector.lookup_or_insert("", HirId(1));
         assert!(sym.is_none());
     }
 
@@ -424,7 +424,7 @@ mod tests {
         let mut collector = CollectorCore::new(0, &arena, &interner);
 
         // Insert first symbol
-        let sym1 = collector.lookup_or_insert_chained(HirId(1), "x");
+        let sym1 = collector.lookup_or_insert_chained("x", HirId(1));
         assert!(sym1.is_some());
 
         // Push a new scope
@@ -432,7 +432,7 @@ mod tests {
         collector.push_scope(scope);
 
         // Insert chained symbol with same name
-        let sym2 = collector.lookup_or_insert_chained(HirId(2), "x");
+        let sym2 = collector.lookup_or_insert_chained("x", HirId(2));
         assert!(sym2.is_some());
 
         // The second symbol should be different from the first
@@ -451,11 +451,11 @@ mod tests {
         assert_eq!(collector.scope_depth(), 2);
 
         // Insert symbol in global scope from nested scope
-        let sym = collector.lookup_or_insert_global(HirId(1), "global_var");
+        let sym = collector.lookup_or_insert_global("global_var", HirId(1));
         assert!(sym.is_some());
 
         // Each call creates new symbols
-        let sym2 = collector.lookup_or_insert_global(HirId(2), "global_var");
+        let sym2 = collector.lookup_or_insert_global("global_var", HirId(2));
         assert!(sym2.is_some());
         // They are different symbols (lookup_or_insert always creates new)
         assert_ne!(sym.unwrap() as *const _, sym2.unwrap() as *const _);
@@ -477,7 +477,7 @@ mod tests {
         assert_eq!(collector.scope_depth(), 2);
 
         // Now we have depth 2, parent should be the first scope (global)
-        let sym_parent = collector.lookup_or_insert_parent(HirId(1), "parent_var");
+        let sym_parent = collector.lookup_or_insert_parent("parent_var", HirId(1));
         assert!(sym_parent.is_some());
 
         // Push another scope to have depth 3
@@ -486,7 +486,7 @@ mod tests {
         assert_eq!(collector.scope_depth(), 3);
 
         // Parent lookup at depth 3 should return the scope at depth 2
-        let sym_parent2 = collector.lookup_or_insert_parent(HirId(2), "another_parent_var");
+        let sym_parent2 = collector.lookup_or_insert_parent("another_parent_var", HirId(2));
         assert!(sym_parent2.is_some());
     }
 
@@ -498,11 +498,11 @@ mod tests {
 
         // Use current scope option
         let opts = LookupOptions::current();
-        let sym1 = collector.lookup_or_insert_with(HirId(1), Some("opt_var"), opts);
+        let sym1 = collector.lookup_or_insert_with(Some("opt_var"), HirId(1), opts);
         assert!(sym1.is_some());
 
         // Each call creates a new symbol
-        let sym2 = collector.lookup_or_insert_with(HirId(2), Some("opt_var"), opts);
+        let sym2 = collector.lookup_or_insert_with(Some("opt_var"), HirId(2), opts);
         assert!(sym2.is_some());
         // They are different symbols
         assert_ne!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
@@ -515,7 +515,7 @@ mod tests {
         let mut collector = CollectorCore::new(0, &arena, &interner);
 
         // Insert symbol in global scope
-        let global_sym = collector.lookup_or_insert(HirId(1), "var");
+        let global_sym = collector.lookup_or_insert("var", HirId(1));
         assert!(global_sym.is_some());
 
         // Push nested scope
@@ -523,14 +523,14 @@ mod tests {
         collector.push_scope(scope1);
 
         // Insert different symbol in nested scope
-        let nested_sym = collector.lookup_or_insert(HirId(2), "nested_var");
+        let nested_sym = collector.lookup_or_insert("nested_var", HirId(2));
         assert!(nested_sym.is_some());
 
         // Different names should be different symbols
         assert_ne!(global_sym.unwrap() as *const _, nested_sym.unwrap() as *const _);
 
         // Each call creates a new symbol
-        let nested_sym2 = collector.lookup_or_insert(HirId(3), "nested_var");
+        let nested_sym2 = collector.lookup_or_insert("nested_var", HirId(3));
         assert!(nested_sym2.is_some());
         // They are different symbols (different calls to lookup_or_insert)
         assert_ne!(nested_sym.unwrap() as *const _, nested_sym2.unwrap() as *const _);
@@ -577,9 +577,9 @@ mod tests {
         let collector = CollectorCore::new(0, &arena, &interner);
 
         // Insert multiple symbols
-        let sym_a = collector.lookup_or_insert(HirId(1), "a");
-        let sym_b = collector.lookup_or_insert(HirId(2), "b");
-        let sym_c = collector.lookup_or_insert(HirId(3), "c");
+        let sym_a = collector.lookup_or_insert("a", HirId(1));
+        let sym_b = collector.lookup_or_insert("b", HirId(2));
+        let sym_c = collector.lookup_or_insert("c", HirId(3));
 
         assert!(sym_a.is_some());
         assert!(sym_b.is_some());
@@ -591,7 +591,7 @@ mod tests {
         assert_ne!(sym_a.unwrap() as *const _, sym_c.unwrap() as *const _);
 
         // Each subsequent call with same name also creates new symbols
-        let sym_a2 = collector.lookup_or_insert(HirId(4), "a");
+        let sym_a2 = collector.lookup_or_insert("a", HirId(4));
         assert!(sym_a2.is_some());
         assert_ne!(sym_a.unwrap() as *const _, sym_a2.unwrap() as *const _);
     }
@@ -603,12 +603,12 @@ mod tests {
         let mut collector = CollectorCore::new(0, &arena, &interner);
 
         // Insert in global
-        collector.lookup_or_insert(HirId(1), "global_only");
+        collector.lookup_or_insert("global_only", HirId(1));
 
         // Push scope 1 and insert
         let scope1 = arena.alloc(Scope::new(HirId(10)));
         collector.push_scope(scope1);
-        let sym_in_scope1 = collector.lookup_or_insert(HirId(2), "scope1_var");
+        let sym_in_scope1 = collector.lookup_or_insert("scope1_var", HirId(2));
 
         // Pop and push scope 2
         collector.pop_scope();
@@ -616,7 +616,7 @@ mod tests {
         collector.push_scope(scope2);
 
         // Lookup scope1_var in scope2 should create new symbol (different scope)
-        let sym_in_scope2 = collector.lookup_or_insert(HirId(3), "scope1_var");
+        let sym_in_scope2 = collector.lookup_or_insert("scope1_var", HirId(3));
 
         // They should be different (different scopes)
         assert_ne!(sym_in_scope1.unwrap() as *const _, sym_in_scope2.unwrap() as *const _);
@@ -658,8 +658,8 @@ mod tests {
         // Collect symbols using the batch function
         let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
             // Simulate visiting and collecting symbols
-            let _sym1 = collector.lookup_or_insert(HirId(1), "foo");
-            let _sym2 = collector.lookup_or_insert(HirId(2), "bar");
+            let _sym1 = collector.lookup_or_insert("foo", HirId(1));
+            let _sym2 = collector.lookup_or_insert("bar", HirId(2));
         });
 
         // Verify we got back a scope
@@ -672,7 +672,7 @@ mod tests {
         let interner = InternPool::default();
 
         let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
-            let sym = collector.lookup_or_insert(HirId(1), "single");
+            let sym = collector.lookup_or_insert("single", HirId(1));
             assert!(sym.is_some());
         });
 
@@ -686,10 +686,10 @@ mod tests {
         let interner = InternPool::default();
 
         let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
-            let sym1 = collector.lookup_or_insert(HirId(1), "var1");
-            let sym2 = collector.lookup_or_insert(HirId(2), "var2");
-            let sym3 = collector.lookup_or_insert(HirId(3), "var3");
-            let sym4 = collector.lookup_or_insert(HirId(4), "var4");
+            let sym1 = collector.lookup_or_insert("var1", HirId(1));
+            let sym2 = collector.lookup_or_insert("var2", HirId(2));
+            let sym3 = collector.lookup_or_insert("var3", HirId(3));
+            let sym4 = collector.lookup_or_insert("var4", HirId(4));
 
             assert!(sym1.is_some());
             assert!(sym2.is_some());
@@ -715,7 +715,7 @@ mod tests {
             assert_eq!(collector.scope_depth(), 1);
 
             // Collect in global scope
-            let _global_sym = collector.lookup_or_insert_global(HirId(1), "module_level");
+            let _global_sym = collector.lookup_or_insert_global("module_level", HirId(1));
 
             // Create nested scope
             let scope = arena.alloc(Scope::new(HirId(10)));
@@ -723,7 +723,7 @@ mod tests {
             assert_eq!(collector.scope_depth(), 2);
 
             // Collect in nested scope
-            let _nested_sym = collector.lookup_or_insert(HirId(2), "inner");
+            let _nested_sym = collector.lookup_or_insert("inner", HirId(2));
 
             // Pop back to global
             collector.pop_scope();
@@ -740,21 +740,21 @@ mod tests {
 
         let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
             // Global scope
-            let _global = collector.lookup_or_insert(HirId(1), "global_func");
+            let _global = collector.lookup_or_insert("global_func", HirId(1));
 
             // First nested scope
             let scope1 = arena.alloc(Scope::new(HirId(10)));
             collector.push_scope(scope1);
-            let _local1 = collector.lookup_or_insert(HirId(2), "local1");
+            let _local1 = collector.lookup_or_insert("local1", HirId(2));
 
             // Second nested scope (inside first)
             let scope2 = arena.alloc(Scope::new(HirId(20)));
             collector.push_scope(scope2);
-            let _local2 = collector.lookup_or_insert(HirId(3), "local2");
+            let _local2 = collector.lookup_or_insert("local2", HirId(3));
 
             // Pop one level
             collector.pop_scope();
-            let _local1_again = collector.lookup_or_insert(HirId(4), "after_inner");
+            let _local1_again = collector.lookup_or_insert("after_inner", HirId(4));
 
             // Pop to global
             collector.pop_scope();
@@ -774,13 +774,13 @@ mod tests {
         // Collect for unit 0
         let scope1 = collect_symbols_batch(0, &arena1, &interner, |collector| {
             assert_eq!(collector.unit_index(), 0);
-            let _ = collector.lookup_or_insert(HirId(1), "unit0_var");
+            let _ = collector.lookup_or_insert("unit0_var", HirId(1));
         });
 
         // Collect for unit 1
         let scope2 = collect_symbols_batch(1, &arena2, &interner, |collector| {
             assert_eq!(collector.unit_index(), 1);
-            let _ = collector.lookup_or_insert(HirId(1), "unit1_var");
+            let _ = collector.lookup_or_insert("unit1_var", HirId(1));
         });
 
         // Both should be valid but different scopes
@@ -798,8 +798,8 @@ mod tests {
             let _ = globals;
 
             // Insert symbols
-            let sym1 = collector.lookup_or_insert_global(HirId(1), "pub_func");
-            let sym2 = collector.lookup_or_insert_global(HirId(2), "pub_const");
+            let sym1 = collector.lookup_or_insert_global("pub_func", HirId(1));
+            let sym2 = collector.lookup_or_insert_global("pub_const", HirId(2));
 
             assert!(sym1.is_some());
             assert!(sym2.is_some());
@@ -826,7 +826,7 @@ mod tests {
             assert_eq!(collector.scope_depth(), 2);
 
             // Can still insert symbols
-            let sym = collector.lookup_or_insert(HirId(100), "after_pop");
+            let sym = collector.lookup_or_insert("after_pop", HirId(100));
             assert!(sym.is_some());
 
             // Pop back to global
@@ -853,7 +853,7 @@ mod tests {
             assert_eq!(interner_ref as *const _, &interner as *const _);
 
             // Insert with a name
-            let sym = collector.lookup_or_insert(HirId(1), "shared_name");
+            let sym = collector.lookup_or_insert("shared_name", HirId(1));
             assert!(sym.is_some());
         });
 
@@ -874,26 +874,26 @@ mod tests {
             //   │   └─ class
             //   └─ const
 
-            let _global_const = collector.lookup_or_insert_global(HirId(1), "GLOBAL_CONST");
+            let _global_const = collector.lookup_or_insert_global("GLOBAL_CONST", HirId(1));
 
             let module_scope = arena.alloc(Scope::new(HirId(10)));
             collector.push_scope(module_scope);
-            let _module_fn = collector.lookup_or_insert(HirId(2), "module_function");
+            let _module_fn = collector.lookup_or_insert("module_function", HirId(2));
 
             let fn_scope = arena.alloc(Scope::new(HirId(20)));
             collector.push_scope(fn_scope);
-            let _fn_param = collector.lookup_or_insert(HirId(3), "param");
+            let _fn_param = collector.lookup_or_insert("param", HirId(3));
 
             let block_scope = arena.alloc(Scope::new(HirId(30)));
             collector.push_scope(block_scope);
-            let _loop_var = collector.lookup_or_insert(HirId(4), "i");
+            let _loop_var = collector.lookup_or_insert("i", HirId(4));
             collector.pop_scope(); // exit block
 
             collector.pop_scope(); // exit function
 
             let class_scope = arena.alloc(Scope::new(HirId(40)));
             collector.push_scope(class_scope);
-            let _field = collector.lookup_or_insert(HirId(5), "field");
+            let _field = collector.lookup_or_insert("field", HirId(5));
             collector.pop_scope(); // exit class
 
             collector.pop_scope(); // exit module
@@ -925,9 +925,9 @@ mod tests {
 
         let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
             // Create symbols with different HirIds
-            let sym1 = collector.lookup_or_insert(HirId(1), "name");
-            let sym2 = collector.lookup_or_insert(HirId(2), "name");
-            let sym3 = collector.lookup_or_insert(HirId(u32::MAX), "name");
+            let sym1 = collector.lookup_or_insert("name", HirId(1));
+            let sym2 = collector.lookup_or_insert("name", HirId(2));
+            let sym3 = collector.lookup_or_insert("name", HirId(u32::MAX));
 
             // All should be created (each HirId creates a new symbol)
             assert!(sym1.is_some());
@@ -949,7 +949,7 @@ mod tests {
 
         // Collect symbols
         let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
-            let _sym = collector.lookup_or_insert(HirId(1), "test_var");
+            let _sym = collector.lookup_or_insert("test_var", HirId(1));
         });
 
         // Apply collected symbols (currently a no-op, but should not panic)
@@ -963,11 +963,11 @@ mod tests {
         let interner = InternPool::default();
 
         let scope1 = collect_symbols_batch(0, &arena1, &interner, |collector| {
-            let _ = collector.lookup_or_insert(HirId(1), "unit0_var");
+            let _ = collector.lookup_or_insert("unit0_var", HirId(1));
         });
 
         let scope2 = collect_symbols_batch(1, &arena2, &interner, |collector| {
-            let _ = collector.lookup_or_insert(HirId(1), "unit1_var");
+            let _ = collector.lookup_or_insert("unit1_var", HirId(1));
         });
 
         // Apply both (should not panic)
@@ -993,7 +993,7 @@ mod tests {
 
             // Collect module-level symbols
             for (name, hir_id) in symbols {
-                let _ = collector.lookup_or_insert_global(hir_id, name);
+                let _ = collector.lookup_or_insert_global(name, hir_id);
             }
         }
 
@@ -1009,7 +1009,7 @@ mod tests {
             self.visited_nodes.push(fn_id);
 
             // Declare the function in current scope
-            let _ = collector.lookup_or_insert(fn_id, fn_name);
+            let _ = collector.lookup_or_insert(fn_name, fn_id);
 
             // Create a nested scope for function body
             let fn_scope = arena.alloc(Scope::new(fn_id));
@@ -1017,7 +1017,7 @@ mod tests {
 
             // Collect function parameters
             for (param_name, param_id) in params {
-                let _ = collector.lookup_or_insert(param_id, param_name);
+                let _ = collector.lookup_or_insert(param_name, param_id);
             }
         }
 
@@ -1031,7 +1031,7 @@ mod tests {
 
             // Collect local variables in block
             for (local_name, local_id) in locals {
-                let _ = collector.lookup_or_insert(local_id, local_name);
+                let _ = collector.lookup_or_insert(local_name, local_id);
             }
         }
 
