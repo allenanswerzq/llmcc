@@ -1,11 +1,3 @@
-//! Binder stub for symbol resolution.
-//!
-//! This module provides a placeholder for the binder functionality.
-//! Full implementation pending integration with:
-//! - llmcc_descriptor for type expressions and call targets
-//! - Symbol lookup and resolution across scopes
-//! - Type binding and relationship establishment
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::scope::{Scope, ScopeStack};
 
@@ -45,16 +37,6 @@ impl<'tcx> BinderCore<'tcx> {
     #[inline]
     pub fn interner(&self) -> &llmcc_core::interner::InternPool {
         self.unit.interner()
-    }
-
-    #[inline]
-    pub fn scopes(&self) -> &ScopeStack<'tcx> {
-        &self.scopes
-    }
-
-    #[inline]
-    pub fn scopes_mut(&mut self) -> &mut ScopeStack<'tcx> {
-        &mut self.scopes
     }
 
     pub fn set_forward_relation(&mut self) {

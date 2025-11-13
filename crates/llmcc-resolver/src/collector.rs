@@ -17,9 +17,9 @@
 //! 5. After collection, apply collected symbols to global registry
 //!
 use llmcc_core::interner::InternPool;
-use llmcc_core::ir::{HirId, Arena};
+use llmcc_core::ir::{Arena, HirId};
+use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::Symbol;
-use llmcc_core::scope::{Scope, ScopeStack, LookupOptions};
 
 /// Core symbol collector for a single compilation unit.
 ///
@@ -256,7 +256,6 @@ impl<'a> CollectorCore<'a> {
     ) -> Option<&'a Symbol> {
         self.scopes.lookup_or_insert_with(name, node, options)
     }
-
 }
 
 /// Collects symbols from a compilation unit into a scope hierarchy.
@@ -280,7 +279,7 @@ impl<'a> CollectorCore<'a> {
 ///
 /// # Example
 /// ```ignore
-/// let collected_scope = collect_symbols_batch(
+/// let collected_scope = collect_symbols_with(
 ///     0,
 ///     &arena,
 ///     &interner,
@@ -290,7 +289,7 @@ impl<'a> CollectorCore<'a> {
 ///     }
 /// );
 /// ```
-pub fn collect_symbols_batch<'a, F>(
+pub fn collect_symbols_with<'a, F>(
     unit_index: usize,
     arena: &'a Arena<'a>,
     interner: &'a InternPool,
@@ -321,15 +320,11 @@ where
 /// - Track symbol provenance (which unit defined it)
 /// - Validate symbol visibility and access rules
 /// - Build cross-unit dependency graphs
-pub fn apply_collected_symbols(
-    unit_index: usize,
-    globals: &Scope,
-) {
+pub fn apply_collected_symbols(unit_index: usize, globals: &Scope) {
     // TODO: Implement symbol registration and global merging
     // For now, this is a placeholder for the integration phase
     let _ = (unit_index, globals);
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -528,13 +523,19 @@ mod tests {
         assert!(nested_sym.is_some());
 
         // Different names should be different symbols
-        assert_ne!(global_sym.unwrap() as *const _, nested_sym.unwrap() as *const _);
+        assert_ne!(
+            global_sym.unwrap() as *const _,
+            nested_sym.unwrap() as *const _
+        );
 
         // Calling with the SAME name in the SAME scope returns the same symbol
         let nested_sym2 = collector.lookup_or_insert("nested_var", HirId(3));
         assert!(nested_sym2.is_some());
         // They should be the same symbol (same name in same scope)
-        assert_eq!(nested_sym.unwrap() as *const _, nested_sym2.unwrap() as *const _);
+        assert_eq!(
+            nested_sym.unwrap() as *const _,
+            nested_sym2.unwrap() as *const _
+        );
     }
 
     #[test]
@@ -620,7 +621,10 @@ mod tests {
         let sym_in_scope2 = collector.lookup_or_insert("scope1_var", HirId(3));
 
         // They should be different (different scopes)
-        assert_ne!(sym_in_scope1.unwrap() as *const _, sym_in_scope2.unwrap() as *const _);
+        assert_ne!(
+            sym_in_scope1.unwrap() as *const _,
+            sym_in_scope2.unwrap() as *const _
+        );
     }
 
     #[test]
@@ -657,7 +661,7 @@ mod tests {
         let interner = InternPool::default();
 
         // Collect symbols using the batch function
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // Simulate visiting and collecting symbols
             let _sym1 = collector.lookup_or_insert("foo", HirId(1));
             let _sym2 = collector.lookup_or_insert("bar", HirId(2));
@@ -672,7 +676,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             let sym = collector.lookup_or_insert("single", HirId(1));
             assert!(sym.is_some());
         });
@@ -686,7 +690,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             let sym1 = collector.lookup_or_insert("var1", HirId(1));
             let sym2 = collector.lookup_or_insert("var2", HirId(2));
             let sym3 = collector.lookup_or_insert("var3", HirId(3));
@@ -711,7 +715,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // Initial depth should be 1 (global)
             assert_eq!(collector.scope_depth(), 1);
 
@@ -739,7 +743,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // Global scope
             let _global = collector.lookup_or_insert("global_func", HirId(1));
 
@@ -773,13 +777,13 @@ mod tests {
         let interner = InternPool::default();
 
         // Collect for unit 0
-        let scope1 = collect_symbols_batch(0, &arena1, &interner, |collector| {
+        let scope1 = collect_symbols_with(0, &arena1, &interner, |collector| {
             assert_eq!(collector.unit_index(), 0);
             let _ = collector.lookup_or_insert("unit0_var", HirId(1));
         });
 
         // Collect for unit 1
-        let scope2 = collect_symbols_batch(1, &arena2, &interner, |collector| {
+        let scope2 = collect_symbols_with(1, &arena2, &interner, |collector| {
             assert_eq!(collector.unit_index(), 1);
             let _ = collector.lookup_or_insert("unit1_var", HirId(1));
         });
@@ -793,7 +797,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // Access global scope directly
             let globals = collector.globals();
             let _ = globals;
@@ -814,7 +818,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // Build up scope stack
             for i in 1..=3 {
                 let scope = arena.alloc(Scope::new(HirId(i as u32 * 10)));
@@ -846,7 +850,7 @@ mod tests {
         // Pre-intern a string
         let _interned_key = interner.intern("shared_name");
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // Access interner through collector
             let interner_ref = collector.interner();
 
@@ -866,7 +870,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // Simulate a complex scope hierarchy:
             // global
             //   ├─ module
@@ -911,7 +915,7 @@ mod tests {
         let interner = InternPool::default();
 
         // Collect with empty visitor (no symbols collected)
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |_collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |_collector| {
             // Do nothing
         });
 
@@ -924,7 +928,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             // lookup_or_insert returns the SAME symbol if called with the same name in the same scope
             let sym1 = collector.lookup_or_insert("name", HirId(1));
             let sym2 = collector.lookup_or_insert("name", HirId(2));
@@ -949,7 +953,7 @@ mod tests {
         let interner = InternPool::default();
 
         // Collect symbols
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             let _sym = collector.lookup_or_insert("test_var", HirId(1));
         });
 
@@ -963,11 +967,11 @@ mod tests {
         let arena2 = Arena::default();
         let interner = InternPool::default();
 
-        let scope1 = collect_symbols_batch(0, &arena1, &interner, |collector| {
+        let scope1 = collect_symbols_with(0, &arena1, &interner, |collector| {
             let _ = collector.lookup_or_insert("unit0_var", HirId(1));
         });
 
-        let scope2 = collect_symbols_batch(1, &arena2, &interner, |collector| {
+        let scope2 = collect_symbols_with(1, &arena2, &interner, |collector| {
             let _ = collector.lookup_or_insert("unit1_var", HirId(1));
         });
 
@@ -989,7 +993,12 @@ mod tests {
         }
 
         /// Visit a module-like node and collect symbols
-        fn visit_module<'a>(&mut self, collector: &mut CollectorCore<'a>, module_id: HirId, symbols: Vec<(&str, HirId)>) {
+        fn visit_module<'a>(
+            &mut self,
+            collector: &mut CollectorCore<'a>,
+            module_id: HirId,
+            symbols: Vec<(&str, HirId)>,
+        ) {
             self.visited_nodes.push(module_id);
 
             // Collect module-level symbols
@@ -1023,7 +1032,13 @@ mod tests {
         }
 
         /// Visit a block-like node with nested scope
-        fn visit_block<'a>(&mut self, collector: &mut CollectorCore<'a>, arena: &'a Arena<'a>, block_id: HirId, locals: Vec<(&str, HirId)>) {
+        fn visit_block<'a>(
+            &mut self,
+            collector: &mut CollectorCore<'a>,
+            arena: &'a Arena<'a>,
+            block_id: HirId,
+            locals: Vec<(&str, HirId)>,
+        ) {
             self.visited_nodes.push(block_id);
 
             // Create a nested scope for block
@@ -1047,7 +1062,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             let mut visitor = SimpleVisitor::new();
 
             // Visit module structure:
@@ -1140,7 +1155,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             let mut visitor = SimpleVisitor::new();
 
             // Visit class hierarchy:
@@ -1156,7 +1171,13 @@ mod tests {
             visitor.visit_module(collector, HirId(0), vec![]);
 
             // Class (as a "function" for scope purposes)
-            visitor.visit_function(collector, &arena, HirId(100), "MyClass", vec![("field1", HirId(101))]);
+            visitor.visit_function(
+                collector,
+                &arena,
+                HirId(100),
+                "MyClass",
+                vec![("field1", HirId(101))],
+            );
 
             // Method in class
             visitor.visit_function(
@@ -1195,7 +1216,7 @@ mod tests {
         let arena = Arena::default();
         let interner = InternPool::default();
 
-        let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
             let mut visitor = SimpleVisitor::new();
 
             // Visit and create symbols, then query them
@@ -1210,13 +1231,23 @@ mod tests {
             let _ = queried_global;
 
             // Visit function and locals
-            visitor.visit_function(collector, &arena, HirId(10), "process_data", vec![("input", HirId(11))]);
+            visitor.visit_function(
+                collector,
+                &arena,
+                HirId(10),
+                "process_data",
+                vec![("input", HirId(11))],
+            );
 
             visitor.visit_block(
                 collector,
                 &arena,
                 HirId(20),
-                vec![("result", HirId(21)), ("temp", HirId(22)), ("buffer", HirId(23))],
+                vec![
+                    ("result", HirId(21)),
+                    ("temp", HirId(22)),
+                    ("buffer", HirId(23)),
+                ],
             );
 
             // Can still access interner and arena

@@ -6,8 +6,7 @@ use llmcc_core::symbol::SymbolKind;
 use llmcc_descriptor::DescriptorTrait;
 use llmcc_resolver::{
     CallCollection, CollectedSymbols, CollectionResult, CollectorCore, EnumCollection,
-    FunctionCollection, ImplCollection, StructCollection, VariableCollection,
-    collect_symbols_batch,
+    FunctionCollection, ImplCollection, StructCollection, VariableCollection, collect_symbols_with,
 };
 
 #[derive(Debug)]
@@ -418,7 +417,7 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
 }
 
 pub fn collect_symbols(unit: CompileUnit<'_>) -> CollectedSymbols {
-    let (collected, total_time, visit_time) = collect_symbols_batch(
+    let (collected, total_time, visit_time) = collect_symbols_with(
         unit,
         DeclCollector::new,
         |collector, node| collector.visit_node(node),

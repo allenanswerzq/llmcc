@@ -8,7 +8,7 @@ pub use collector::CollectorCore;
 
 // Language-specific collection types will be exported here once implemented
 // pub use collector::{
-//     apply_collected_symbols, apply_symbol_batch, collect_symbols_batch, CallCollection,
+//     apply_collected_symbols, apply_symbol_batch, collect_symbols_with, CallCollection,
 //     ClassCollection, CollectedSymbols, CollectionResult, CollectorCore, DescriptorCollection,
 //     EnumCollection, FunctionCollection, ImplCollection, ImportCollection, ScopeSpec,
 //     StructCollection, SymbolSpec, VariableCollection,
