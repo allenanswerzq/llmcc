@@ -12,9 +12,10 @@ pub mod lang_def;
 pub mod module_path;
 pub mod pagerank;
 pub mod printer;
-pub mod query;
+// pub mod query;
+pub mod scope;
 pub mod symbol;
-pub mod trie;
+// pub mod trie;  // TODO: Missing trie.rs
 pub mod visit;
 
 pub type DynError = Box<dyn std::error::Error + Send + Sync>;
@@ -29,5 +30,5 @@ pub use lang_def::LanguageTrait;
 pub use pagerank::{PageRankConfig, PageRanker, RankedBlock};
 pub use paste;
 pub use printer::{print_llmcc_graph, print_llmcc_ir};
-pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
+// pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

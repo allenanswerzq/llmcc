@@ -13,7 +13,8 @@ use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::LanguageTrait;
-use crate::symbol::{Scope, SymId, Symbol};
+use crate::scope::Scope;
+use crate::symbol::{SymId, Symbol};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {

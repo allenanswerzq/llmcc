@@ -157,9 +157,12 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
             let mut type_of = None;
             if let Some(ty) = &var.type_annotation {
                 // Infer the type symbol if possible
-                type_of =
-                    self.core
-                        .lookup_type_expr_symbol(node.hir_id(), ty, SymbolKind::InferredType, false);
+                type_of = self.core.lookup_type_expr_symbol(
+                    node.hir_id(),
+                    ty,
+                    SymbolKind::InferredType,
+                    false,
+                );
             }
 
             let (name_sym, fqn) =
@@ -189,9 +192,9 @@ impl<'tcx> AstVisitorRust<'tcx> for DeclCollector<'tcx> {
     fn visit_parameter(&mut self, node: HirNode<'tcx>) {
         if let Some(param) = RustDescriptor::build_parameter(self.unit(), &node) {
             for name in param.names() {
-                let _ =
-                    self.core
-                        .insert_symbol(node.hir_id(), name, SymbolKind::Variable, false);
+                let _ = self
+                    .core
+                    .insert_symbol(node.hir_id(), name, SymbolKind::Variable, false);
             }
             self.visit_children(&node);
         } else {
