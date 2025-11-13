@@ -398,12 +398,12 @@ mod tests {
         let sym1 = collector.lookup_or_insert("foo", HirId(1));
         assert!(sym1.is_some());
 
-        // Each call to lookup_or_insert creates a new symbol, even with the same name
+        // Calling lookup_or_insert with the same name returns the SAME symbol
         let sym2 = collector.lookup_or_insert("foo", HirId(2));
         assert!(sym2.is_some());
 
-        // They will be different symbols (lookup_or_insert always creates new)
-        assert_ne!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+        // They should be the same symbol (same name in same scope)
+        assert_eq!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
     }
 
     #[test]
@@ -431,11 +431,12 @@ mod tests {
         let scope = arena.alloc(Scope::new(HirId(10)));
         collector.push_scope(scope);
 
-        // Insert chained symbol with same name
+        // lookup_or_insert_chained creates a NEW symbol and chains it to the previous one
+        // (different from normal lookup_or_insert which would return the existing one)
         let sym2 = collector.lookup_or_insert_chained("x", HirId(2));
         assert!(sym2.is_some());
 
-        // The second symbol should be different from the first
+        // The second symbol should be different from the first (chaining creates new)
         assert_ne!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
     }
 
@@ -454,11 +455,11 @@ mod tests {
         let sym = collector.lookup_or_insert_global("global_var", HirId(1));
         assert!(sym.is_some());
 
-        // Each call creates new symbols
+        // Calling with same name returns the SAME symbol
         let sym2 = collector.lookup_or_insert_global("global_var", HirId(2));
         assert!(sym2.is_some());
-        // They are different symbols (lookup_or_insert always creates new)
-        assert_ne!(sym.unwrap() as *const _, sym2.unwrap() as *const _);
+        // They should be the same symbol (same name in global scope)
+        assert_eq!(sym.unwrap() as *const _, sym2.unwrap() as *const _);
     }
 
     #[test]
@@ -501,11 +502,11 @@ mod tests {
         let sym1 = collector.lookup_or_insert_with(Some("opt_var"), HirId(1), opts);
         assert!(sym1.is_some());
 
-        // Each call creates a new symbol
+        // Calling with same name returns the SAME symbol
         let sym2 = collector.lookup_or_insert_with(Some("opt_var"), HirId(2), opts);
         assert!(sym2.is_some());
-        // They are different symbols
-        assert_ne!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+        // They should be the same symbol (same name in same scope)
+        assert_eq!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
     }
 
     #[test]
@@ -522,18 +523,18 @@ mod tests {
         let scope1 = arena.alloc(Scope::new(HirId(10)));
         collector.push_scope(scope1);
 
-        // Insert different symbol in nested scope
+        // Insert different symbol name in nested scope
         let nested_sym = collector.lookup_or_insert("nested_var", HirId(2));
         assert!(nested_sym.is_some());
 
         // Different names should be different symbols
         assert_ne!(global_sym.unwrap() as *const _, nested_sym.unwrap() as *const _);
 
-        // Each call creates a new symbol
+        // Calling with the SAME name in the SAME scope returns the same symbol
         let nested_sym2 = collector.lookup_or_insert("nested_var", HirId(3));
         assert!(nested_sym2.is_some());
-        // They are different symbols (different calls to lookup_or_insert)
-        assert_ne!(nested_sym.unwrap() as *const _, nested_sym2.unwrap() as *const _);
+        // They should be the same symbol (same name in same scope)
+        assert_eq!(nested_sym.unwrap() as *const _, nested_sym2.unwrap() as *const _);
     }
 
     #[test]
@@ -576,7 +577,7 @@ mod tests {
         let interner = InternPool::default();
         let collector = CollectorCore::new(0, &arena, &interner);
 
-        // Insert multiple symbols
+        // Insert multiple symbols with different names
         let sym_a = collector.lookup_or_insert("a", HirId(1));
         let sym_b = collector.lookup_or_insert("b", HirId(2));
         let sym_c = collector.lookup_or_insert("c", HirId(3));
@@ -585,15 +586,15 @@ mod tests {
         assert!(sym_b.is_some());
         assert!(sym_c.is_some());
 
-        // All should be different (each call creates a new symbol)
+        // All should be different (different names in same scope)
         assert_ne!(sym_a.unwrap() as *const _, sym_b.unwrap() as *const _);
         assert_ne!(sym_b.unwrap() as *const _, sym_c.unwrap() as *const _);
         assert_ne!(sym_a.unwrap() as *const _, sym_c.unwrap() as *const _);
 
-        // Each subsequent call with same name also creates new symbols
+        // Calling with same name returns the SAME symbol
         let sym_a2 = collector.lookup_or_insert("a", HirId(4));
         assert!(sym_a2.is_some());
-        assert_ne!(sym_a.unwrap() as *const _, sym_a2.unwrap() as *const _);
+        assert_eq!(sym_a.unwrap() as *const _, sym_a2.unwrap() as *const _);
     }
 
     #[test]
@@ -924,19 +925,19 @@ mod tests {
         let interner = InternPool::default();
 
         let global_scope = collect_symbols_batch(0, &arena, &interner, |collector| {
-            // Create symbols with different HirIds
+            // lookup_or_insert returns the SAME symbol if called with the same name in the same scope
             let sym1 = collector.lookup_or_insert("name", HirId(1));
             let sym2 = collector.lookup_or_insert("name", HirId(2));
             let sym3 = collector.lookup_or_insert("name", HirId(u32::MAX));
 
-            // All should be created (each HirId creates a new symbol)
+            // All should be Some
             assert!(sym1.is_some());
             assert!(sym2.is_some());
             assert!(sym3.is_some());
 
-            // All should be different (different HirIds)
-            assert_ne!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
-            assert_ne!(sym2.unwrap() as *const _, sym3.unwrap() as *const _);
+            // They should all be the SAME symbol (same name in same scope)
+            assert_eq!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+            assert_eq!(sym2.unwrap() as *const _, sym3.unwrap() as *const _);
         });
 
         let _ = global_scope;

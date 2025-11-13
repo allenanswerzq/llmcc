@@ -378,6 +378,10 @@ impl<'tcx> ScopeStack<'tcx> {
     /// - `options`: Lookup options controlling scope selection and behavior
     ///
     /// Returns: `Some(symbol)` if found or created, `None` if name is empty/null and force is false.
+    ///
+    /// # Behavior
+    /// - If `options.top` is true: Always creates a NEW symbol and chains it to the existing one (if any)
+    /// - If `options.top` is false: Returns existing symbol if found, only creates new if not found
     fn lookup_or_insert_impl(
         &self,
         node: HirId,
@@ -393,13 +397,22 @@ impl<'tcx> ScopeStack<'tcx> {
         // Look up existing symbols in the scope
         let existing_symbols = self.lookup_symbols_in_scope(scope, name_key);
 
-        // Create new symbol
+        // If top flag is NOT set and we found existing symbols, return the most recent one
+        if !options.top && !existing_symbols.is_empty() {
+            if let Some(existing) = existing_symbols.last() {
+                return Some(existing);
+            }
+        }
+
+        // Create new symbol (either no existing found, or top flag set for chaining)
         let symbol = Symbol::new(node, name_key);
         let allocated = self.arena.alloc(symbol);
 
         // If top flag is set, chain to the most recent existing symbol
-        if options.top && !existing_symbols.is_empty() && let Some(prev_sym) = existing_symbols.last() {
-            allocated.set_previous(Some(prev_sym.id));
+        if options.top && !existing_symbols.is_empty() {
+            if let Some(prev_sym) = existing_symbols.last() {
+                allocated.set_previous(Some(prev_sym.id));
+            }
         }
 
         // Insert into scope
