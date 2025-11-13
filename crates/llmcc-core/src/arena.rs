@@ -50,6 +50,17 @@ macro_rules! declare_arena {
             pub fn alloc_mut<T: ArenaAllocatableMut<'tcx>>(&'tcx self, value: T) -> &'tcx mut T {
                 value.allocate_on_mut(self)
             }
+
+            $(
+                paste::paste! {
+                    /// Iterate mutably over all allocated values of type `$ty`.
+                    /// Items are yielded in the order they were allocated.
+                    #[inline]
+                    pub fn [<iter_mut_ $name>](&'tcx mut self) -> typed_arena::IterMut<'tcx, $ty> {
+                        self.$name.iter_mut()
+                    }
+                }
+            )*
         }
 
         unsafe impl<'tcx> Sync for Arena<'tcx> {}
@@ -156,5 +167,24 @@ mod tests {
 
         recursive_decrement(&mut holder, 2);
         assert_eq!(holder.foo.0, 2);
+    }
+
+    #[test]
+    fn iterate_over_allocated_values() {
+        let mut arena = Arena::default();
+
+        // Allocate multiple values
+        arena.alloc(Foo(1));
+        arena.alloc(Foo(2));
+        arena.alloc(Foo(3));
+
+        // Iterate mutably over Foo values and collect modified values
+        let mut modified = Vec::new();
+        for foo in arena.iter_mut_foos() {
+            foo.0 *= 2;
+            modified.push(foo.0);
+        }
+
+        assert_eq!(modified, vec![2, 4, 6]);
     }
 }

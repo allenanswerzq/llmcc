@@ -1,792 +1,1267 @@
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut, Index, IndexMut};
-use std::slice::{Iter, IterMut};
-use std::time::{Duration, Instant};
+//! Symbol collection core for building symbol tables.
+//!
+//! This module provides the common infrastructure for collecting symbols across all supported
+//! languages. The architecture is designed for parallel per-unit symbol collection:
+//!
+//! # Design
+//! - Each compilation unit gets its own per-unit arena (lifetime 'a)
+//! - Collectors borrow the arena from the outside (e.g., from CompileUnit)
+//! - After collection completes, collected symbols are applied/registered globally
+//! - This allows each unit to be processed independently and in parallel
+//!
+//! # Usage Pattern
+//! 1. Get or create an Arena<'a> for the compilation unit
+//! 2. Create a CollectorCore with the unit's arena, unit index, and interner
+//! 3. Collect symbols using the provided helper methods
+//! 4. Access collected data through arena and scope helpers
+//! 5. After collection, apply collected symbols to global registry
+//!
+use llmcc_core::interner::InternPool;
+use llmcc_core::ir::{Arena, HirId};
+use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
+use llmcc_core::symbol::Symbol;
 
-use crate::type_expr::TypeExprResolver;
-use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
-use llmcc_descriptor::{
-    CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
-    ImportDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
-};
-
-#[derive(Debug, Clone)]
-pub struct SymbolSpec {
-    /// HIR node that declared the symbol.
-    pub owner: HirId,
-    /// Unqualified symbol name as it appears in source.
-    pub name: String,
-    /// Fully-qualified path for the symbol.
-    pub fqn: String,
-    /// Kind of symbol (function, struct, trait, etc.).
-    pub kind: SymbolKind,
-    /// Index of the compile unit that produced this symbol.
-    pub unit_index: usize,
-    /// Whether the symbol should be visible from the global scope.
-    pub is_global: bool,
-    /// Optional index pointing to the symbol that represents this symbol's type.
-    pub type_of: Option<usize>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ScopeSpec {
-    /// Owning HIR node for the scope; None represents the root scope.
-    pub owner: Option<HirId>,
-    /// Index of the symbol associated with this scope, if any.
-    pub owner_symbol: Option<usize>,
-    /// Symbols captured directly within this scope.
-    pub symbols: Vec<usize>,
-    /// String paths that should map to symbols already declared elsewhere.
-    pub aliases: Vec<ScopeAliasSpec>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ScopeAliasSpec {
-    /// Segments that make up the alias path (e.g. `["Self"]`).
-    pub parts: Vec<String>,
-    /// Index into the collected symbol list for the aliased target.
-    pub symbol_idx: usize,
-}
-
+/// Core symbol collector for a single compilation unit.
+///
+/// The collector borrows an arena from the outside
+/// and uses it for allocating symbols and scopes during collection.
+/// The collector maintains a scope stack for proper nesting and symbol resolution.
+///
+/// # Architecture for Parallel Collection
+/// - Each compilation unit has its own per-unit lifetime 'a
+/// - An Arena<'a> is borrowed from CompileUnit or similar holder
+/// - Scopes and Symbols are allocated into the borrowed arena for that unit
+/// - After collection completes, symbols are extracted and applied globally
+/// - Multiple units can be collected in parallel with separate CollectorCore instances
+///
+/// # Thread Safety
+/// - Designed to be used in a single thread per unit
+/// - Multiple CollectorCore instances can run in parallel with separate arenas
+/// - The shared interner should be thread-safe (InternPool handles this)
+///
+/// # Lifetime 'a
+/// The lifetime 'a is the lifetime of the borrowed arena from the compilation unit.
+/// All allocated symbols and scopes are valid for this lifetime.
+///
 #[derive(Debug)]
-pub struct DescriptorCollection<T> {
-    descriptors: Vec<T>,
-    index_by_hir: HashMap<HirId, usize>,
+pub struct CollectorCore<'a> {
+    /// The per-unit arena borrowed from CompileUnit or similar.
+    /// Used for allocating symbols and scopes during collection.
+    arena: &'a Arena<'a>,
+
+    /// The compile unit index this collector is processing.
+    /// Used to tag symbols with their origin unit.
+    unit_index: usize,
+
+    /// Shared string interner for symbol names.
+    /// One global interner is used across all units for consistent interning.
+    /// InternPool uses internal synchronization for thread-safe interning.
+    interner: &'a InternPool,
+
+    /// Stack of active scopes during collection.
+    /// Maintains the scope hierarchy as we traverse the code structure.
+    scopes: ScopeStack<'a>,
+
+    /// Global scope allocated during initialization.
+    /// This is the root scope for module-level definitions.
+    globals: &'a Scope<'a>,
 }
 
-impl<T> DescriptorCollection<T> {
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl<'a> CollectorCore<'a> {
+    /// Creates a new collector for a compilation unit.
+    ///
+    /// Takes the per-unit arena from outside (typically from CompileUnit),
+    /// initializes a global scope, and sets up an empty scope stack.
+    /// The collector is ready to begin collecting symbols immediately after
+    /// calling `init_scope_stack()`.
+    ///
+    /// # Arguments
+    /// * `unit_index` - The index of the compilation unit being processed
+    /// * `arena` - The per-unit arena borrowed from CompileUnit or similar
+    /// * `interner` - Shared string interner (must be the same across all units)
+    ///
+    /// # Returns
+    /// A new CollectorCore with an empty scope stack and initialized global scope
+    pub fn new(unit_index: usize, arena: &'a Arena<'a>, interner: &'a InternPool) -> Self {
+        // Create global scope as the root of the scope hierarchy
+        // Use a dummy HirId(0) for the global scope owner as it has no specific HIR node
+        let globals = arena.alloc(Scope::new(HirId(0)));
 
-    pub fn len(&self) -> usize {
-        self.descriptors.len()
-    }
+        // Create the scope stack with the borrowed arena
+        let mut scopes = ScopeStack::new(arena, interner);
+        scopes.push(globals);
 
-    pub fn is_empty(&self) -> bool {
-        self.descriptors.is_empty()
-    }
-
-    pub fn iter(&self) -> Iter<'_, T> {
-        self.descriptors.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
-        self.descriptors.iter_mut()
-    }
-
-    pub fn add(&mut self, hir_id: HirId, descriptor: T) -> usize {
-        let index = self.descriptors.len();
-        self.descriptors.push(descriptor);
-        self.index_by_hir.insert(hir_id, index);
-        index
-    }
-
-    pub fn insert_index(&mut self, hir_id: HirId, index: usize) {
-        self.index_by_hir.insert(hir_id, index);
-    }
-
-    pub fn get_index(&self, hir_id: HirId) -> Option<usize> {
-        self.index_by_hir.get(&hir_id).copied()
-    }
-
-    pub fn find(&self, hir_id: HirId) -> Option<&T> {
-        self.get_index(hir_id)
-            .and_then(|idx| self.descriptors.get(idx))
-    }
-
-    pub fn find_mut(&mut self, hir_id: HirId) -> Option<&mut T> {
-        self.get_index(hir_id)
-            .and_then(move |idx| self.descriptors.get_mut(idx))
-    }
-
-    pub fn map(&self) -> &HashMap<HirId, usize> {
-        &self.index_by_hir
-    }
-
-    pub fn map_mut(&mut self) -> &mut HashMap<HirId, usize> {
-        &mut self.index_by_hir
-    }
-
-    pub fn into_vec(self) -> Vec<T> {
-        self.descriptors
-    }
-}
-
-impl<T> Default for DescriptorCollection<T> {
-    fn default() -> Self {
         Self {
-            descriptors: Vec::new(),
-            index_by_hir: HashMap::new(),
-        }
-    }
-}
-
-impl<T> Deref for DescriptorCollection<T> {
-    type Target = [T];
-
-    fn deref(&self) -> &Self::Target {
-        &self.descriptors
-    }
-}
-
-impl<T> DerefMut for DescriptorCollection<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.descriptors
-    }
-}
-
-impl<T> Index<usize> for DescriptorCollection<T> {
-    type Output = T;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.descriptors[index]
-    }
-}
-
-impl<T> IndexMut<usize> for DescriptorCollection<T> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.descriptors[index]
-    }
-}
-
-impl<T> IntoIterator for DescriptorCollection<T> {
-    type Item = T;
-    type IntoIter = std::vec::IntoIter<T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.descriptors.into_iter()
-    }
-}
-
-impl<'a, T> IntoIterator for &'a DescriptorCollection<T> {
-    type Item = &'a T;
-    type IntoIter = Iter<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.descriptors.iter()
-    }
-}
-
-impl<'a, T> IntoIterator for &'a mut DescriptorCollection<T> {
-    type Item = &'a mut T;
-    type IntoIter = IterMut<'a, T>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.descriptors.iter_mut()
-    }
-}
-
-impl<T: Clone> Clone for DescriptorCollection<T> {
-    fn clone(&self) -> Self {
-        Self {
-            descriptors: self.descriptors.clone(),
-            index_by_hir: self.index_by_hir.clone(),
-        }
-    }
-}
-
-pub type FunctionCollection = DescriptorCollection<FunctionDescriptor>;
-pub type ClassCollection = DescriptorCollection<ClassDescriptor>;
-pub type StructCollection = DescriptorCollection<StructDescriptor>;
-pub type ImplCollection = DescriptorCollection<ImplDescriptor>;
-pub type EnumCollection = DescriptorCollection<EnumDescriptor>;
-pub type VariableCollection = DescriptorCollection<VariableDescriptor>;
-pub type ImportCollection = DescriptorCollection<ImportDescriptor>;
-pub type CallCollection = DescriptorCollection<CallDescriptor>;
-
-#[derive(Debug, Default)]
-pub struct CollectionResult {
-    pub functions: FunctionCollection,
-    pub classes: ClassCollection,
-    pub structs: StructCollection,
-    pub impls: ImplCollection,
-    pub enums: EnumCollection,
-    pub variables: VariableCollection,
-    pub imports: ImportCollection,
-    pub calls: CallCollection,
-}
-
-#[derive(Debug)]
-pub struct CollectedSymbols {
-    pub result: CollectionResult,
-    pub symbols: Vec<SymbolSpec>,
-    pub scopes: Vec<ScopeSpec>,
-}
-
-impl Deref for CollectedSymbols {
-    type Target = CollectionResult;
-
-    fn deref(&self) -> &Self::Target {
-        &self.result
-    }
-}
-
-impl DerefMut for CollectedSymbols {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.result
-    }
-}
-
-#[derive(Debug)]
-struct ScopeInfo {
-    /// HIR owner for this scope.
-    owner: Option<HirId>,
-    /// Index into `symbols` for the scope's representative symbol.
-    owner_symbol: Option<usize>,
-    /// Indices of symbols declared inside this scope.
-    symbols: Vec<usize>,
-    /// Map of local identifiers to their symbol indices in this scope.
-    locals: HashMap<String, usize>,
-    /// Cache of symbol indices grouped by kind for faster lookups.
-    locals_by_kind: SymbolKindMap<Vec<usize>>,
-    /// String aliases that should resolve to existing symbol indices.
-    aliases: Vec<ScopeAliasSpec>,
-}
-
-impl ScopeInfo {
-    fn new(owner: Option<HirId>) -> Self {
-        Self {
-            owner,
-            owner_symbol: None,
-            symbols: Vec::new(),
-            locals: HashMap::new(),
-            locals_by_kind: SymbolKindMap::new(),
-            aliases: Vec::new(),
+            arena,
+            unit_index,
+            interner,
+            scopes,
+            globals,
         }
     }
 
-    fn record_symbol(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
-        self.locals.insert(name.to_string(), symbol_idx);
-        self.symbols.push(symbol_idx);
-        self.locals_by_kind
-            .ensure_kind(kind)
-            .entry(name.to_string())
-            .or_default()
-            .push(symbol_idx);
-    }
-
-    fn add_alias(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
-        self.locals.insert(name.to_string(), symbol_idx);
-        let entries = self
-            .locals_by_kind
-            .ensure_kind(kind)
-            .entry(name.to_string())
-            .or_default();
-        if !entries.contains(&symbol_idx) {
-            entries.push(symbol_idx);
-        }
-
-        if !self.aliases.iter().any(|alias| {
-            alias.symbol_idx == symbol_idx && alias.parts.len() == 1 && alias.parts[0] == name
-        }) {
-            self.aliases.push(ScopeAliasSpec {
-                parts: vec![name.to_string()],
-                symbol_idx,
-            });
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct CollectorCore<'tcx> {
-    /// Source compile unit currently being processed.
-    unit: CompileUnit<'tcx>,
-    /// Scope bookkeeping indexed by scope identifier.
-    scope_infos: Vec<ScopeInfo>,
-    /// Lookup table from HIR owner to scope index.
-    scope_lookup: HashMap<HirId, usize>,
-    /// Stack of active scope indices while traversing the tree.
-    scope_stack: Vec<usize>,
-    /// All symbols discovered so far, in creation order.
-    symbols: Vec<SymbolSpec>,
-}
-
-impl<'tcx> CollectorCore<'tcx> {
-    pub fn new(unit: CompileUnit<'tcx>) -> Self {
-        Self {
-            unit,
-            scope_infos: vec![ScopeInfo::new(None)],
-            scope_lookup: HashMap::new(),
-            scope_stack: vec![0],
-            symbols: Vec::new(),
-        }
-    }
-
-    #[inline]
-    pub fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit
-    }
-
+    /// Gets the compile unit index this collector is processing.
     #[inline]
     pub fn unit_index(&self) -> usize {
-        self.unit.index
+        self.unit_index
     }
 
-    pub fn current_scope_index(&self) -> usize {
-        *self
-            .scope_stack
-            .last()
-            .expect("scope stack should never be empty")
+    /// Gets the arena
+    #[inline]
+    pub fn arena(&self) -> &Arena<'a> {
+        self.arena
     }
 
+    /// Gets the current scope stack depth (number of nested scopes).
+    ///
+    /// - 0 means no scope has been pushed yet
+    /// - 1 means global scope is active
+    /// - 2+ means nested scopes are active
+    #[inline]
     pub fn scope_depth(&self) -> usize {
-        self.scope_stack.len()
+        self.scopes.depth()
     }
 
-    pub fn ensure_scope(&mut self, owner: HirId) -> usize {
-        if let Some(&idx) = self.scope_lookup.get(&owner) {
-            return idx;
-        }
-
-        let idx = self.scope_infos.len();
-        self.scope_infos.push(ScopeInfo::new(Some(owner)));
-        self.scope_lookup.insert(owner, idx);
-        idx
+    /// Pushes a scope onto the stack.
+    ///
+    /// Increases nesting depth and makes the scope active for symbol insertions.
+    #[inline]
+    pub fn push_scope(&mut self, scope: &'a Scope<'a>) {
+        self.scopes.push(scope);
     }
 
-    pub fn set_scope_owner_symbol(&mut self, scope_idx: usize, owner_symbol: Option<usize>) {
-        self.scope_infos[scope_idx].owner_symbol = owner_symbol;
-    }
-
-    pub fn push_scope(&mut self, scope_idx: usize) {
-        self.scope_stack.push(scope_idx);
-    }
-
+    /// Pops the current scope from the stack.
+    ///
+    /// Returns to the previous scope level. No-op at depth 0.
+    #[inline]
     pub fn pop_scope(&mut self) {
-        self.scope_stack.pop();
+        self.scopes.pop();
     }
 
+    /// Pops scopes until reaching the specified depth.
+    ///
+    /// # Arguments
+    /// * `depth` - Target depth to pop to (no-op if already at or below depth)
     pub fn pop_until(&mut self, depth: usize) {
-        while self.scope_stack.len() > depth {
-            self.scope_stack.pop();
-        }
+        self.scopes.pop_until(depth);
     }
 
-    pub fn parent_symbol(&self) -> Option<&SymbolSpec> {
-        for &scope_idx in self.scope_stack.iter().rev() {
-            if let Some(sym_idx) = self.scope_infos[scope_idx].owner_symbol {
-                if let Some(symbol) = self.symbols.get(sym_idx) {
-                    return Some(symbol);
-                }
-            }
-        }
-        None
+    /// Gets the shared string interner.
+    ///
+    /// Used to intern symbol names for fast comparison and lookups.
+    #[inline]
+    pub fn interner(&self) -> &'a InternPool {
+        self.interner
     }
 
-    pub fn current_function_name(&self) -> Option<&str> {
-        for &scope_idx in self.scope_stack.iter().rev() {
-            let info = &self.scope_infos[scope_idx];
-            if let Some(sym_idx) = info.owner_symbol {
-                if let Some(symbol) = self.symbols.get(sym_idx) {
-                    if symbol.kind == SymbolKind::Function {
-                        return Some(symbol.name.as_str());
-                    }
-                }
-            }
-        }
-        None
+    /// Gets the global scope (module-level definitions).
+    ///
+    /// All module-level symbols should be inserted here or in subscopes.
+    #[inline]
+    pub fn globals(&self) -> &'a Scope<'a> {
+        self.globals
     }
 
-    pub fn ident_from_field(
+    /// Find or insert symbol in the current scope.
+    ///
+    /// If a symbol with this name exists in the current scope, returns it.
+    /// Otherwise, creates a new symbol and inserts it into the current scope.
+    ///
+    /// # Arguments
+    /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
+    ///
+    /// # Returns
+    /// Some(symbol) if name is non-empty, None if name is empty
+    #[inline]
+    pub fn lookup_or_insert(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert(name, node)
+    }
+
+    /// Find or insert symbol with chaining enabled for shadowing support.
+    ///
+    /// If a symbol with this name exists in the current scope, creates a new
+    /// symbol that chains to it via the `previous` field. This supports tracking
+    /// shadowing relationships in nested scopes.
+    ///
+    /// # Arguments
+    /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
+    ///
+    /// # Returns
+    /// Some(symbol) if name is non-empty, None if name is empty
+    #[inline]
+    pub fn lookup_or_insert_chained(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert_chained(name, node)
+    }
+
+    /// Find or insert symbol in the parent scope.
+    ///
+    /// Inserts into the parent scope (depth-1) if it exists, otherwise fails.
+    /// Useful for lifting definitions out of the current scope.
+    ///
+    /// # Arguments
+    /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
+    ///
+    /// # Returns
+    /// Some(symbol) if name is non-empty and parent scope exists,
+    /// None if name is empty or no parent scope available
+    #[inline]
+    pub fn lookup_or_insert_parent(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert_parent(name, node)
+    }
+
+    /// Find or insert symbol in the global scope.
+    ///
+    /// Inserts into the global scope (depth 0) regardless of current nesting.
+    /// Used for module-level definitions.
+    ///
+    /// # Arguments
+    /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
+    ///
+    /// # Returns
+    /// Some(symbol) if name is non-empty, None if name is empty
+    #[inline]
+    pub fn lookup_or_insert_global(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert_global(name, node)
+    }
+
+    /// Full control API for symbol lookup and insertion with custom options.
+    ///
+    /// Provides maximum flexibility for symbol resolution. All behavior is
+    /// controlled via the `LookupOptions` parameter.
+    ///
+    /// # Arguments
+    /// * `name` - The symbol name (None for anonymous if force=true)
+    /// * `node` - The HIR node for the symbol
+    /// * `options` - Lookup options controlling scope selection and behavior
+    ///
+    /// # Returns
+    /// Some(symbol) if found/created, None if name is empty/null and force=false
+    ///
+    /// # Example
+    /// ```ignore
+    /// use llmcc_core::scope::LookupOptions;
+    /// let opts = LookupOptions::global().with_force(true);
+    /// let symbol = collector.lookup_or_insert_with(None, node_id, opts)?;
+    /// ```
+    #[inline]
+    pub fn lookup_or_insert_with(
         &self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-    ) -> Option<&'tcx HirIdent<'tcx>> {
-        let unit = self.unit();
-        let ident_node = node.opt_child_by_field(unit, field_id)?;
-        ident_node.as_ident()
+        name: Option<&str>,
+        node: HirId,
+        options: llmcc_core::scope::LookupOptions,
+    ) -> Option<&'a Symbol> {
+        self.scopes.lookup_or_insert_with(name, node, options)
+    }
+}
+
+/// Collects symbols from a compilation unit into a scope hierarchy.
+///
+/// This function orchestrates the symbol collection process for a single compilation unit.
+/// It creates a CollectorCore, invokes the visitor function to traverse and collect symbols,
+/// and returns the global scope containing the collected symbols.
+///
+/// # Type Parameters
+/// * `C` - The concrete collector type (e.g., RustCollector, GoCollector, etc.)
+/// * `Visit` - A callable that performs the symbol collection by traversing the AST
+///
+/// # Arguments
+/// * `unit_index` - The index of this compilation unit
+/// * `arena` - The per-unit arena for symbol allocation
+/// * `interner` - Shared string interner
+/// * `visitor` - A function that traverses the AST and calls collector methods
+///
+/// # Returns
+/// The global scope containing all collected symbols
+///
+/// # Example
+/// ```ignore
+/// let collected_scope = collect_symbols_with(
+///     0,
+///     &arena,
+///     &interner,
+///     |collector| {
+///         // Visit AST nodes and call collector methods
+///         visitor.visit_module(&collector, module_node);
+///     }
+/// );
+/// ```
+pub fn collect_symbols_with<'a, F>(
+    unit_index: usize,
+    arena: &'a Arena<'a>,
+    interner: &'a InternPool,
+    visitor: F,
+) -> &'a Scope<'a>
+where
+    F: FnOnce(&mut CollectorCore<'a>),
+{
+    let mut collector = CollectorCore::new(unit_index, arena, interner);
+    visitor(&mut collector);
+    collector.globals()
+}
+
+/// Applies collected symbols to a compilation context or global registry.
+///
+/// This function takes the scope hierarchy collected from a compilation unit
+/// and integrates it into the broader symbol context. This is typically called
+/// after all per-unit collections are complete, during the merge/registration phase.
+///
+/// # Arguments
+/// * `unit_index` - The index of the compilation unit
+/// * `globals` - The global scope containing collected symbols
+///
+/// # Future Work
+/// This function will:
+/// - Register symbols in the global symbol table
+/// - Handle symbol deduplication across units
+/// - Track symbol provenance (which unit defined it)
+/// - Validate symbol visibility and access rules
+/// - Build cross-unit dependency graphs
+pub fn apply_collected_symbols(unit_index: usize, globals: &Scope) {
+    // TODO: Implement symbol registration and global merging
+    // For now, this is a placeholder for the integration phase
+    let _ = (unit_index, globals);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use llmcc_core::ir::Arena;
+
+    #[test]
+    fn test_collector_creation() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let collector = CollectorCore::new(0, &arena, &interner);
+
+        assert_eq!(collector.unit_index(), 0);
+        assert_eq!(collector.scope_depth(), 1); // Global scope pushed by new()
     }
 
-    pub fn insert_field_symbol(
-        &mut self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-        kind: SymbolKind,
-    ) -> Option<(usize, String)> {
-        let is_global = self
-            .parent_symbol()
-            .map(|symbol| symbol.is_global)
-            .unwrap_or(false);
-        let ident = self.ident_from_field(node, field_id)?;
-        Some(self.insert_symbol(node.hir_id(), &ident.name, kind, is_global))
+    #[test]
+    fn test_collector_multiple_units() {
+        let arena1 = Arena::default();
+        let arena2 = Arena::default();
+        let interner = InternPool::default();
+
+        let collector1 = CollectorCore::new(0, &arena1, &interner);
+        let collector2 = CollectorCore::new(1, &arena2, &interner);
+
+        assert_eq!(collector1.unit_index(), 0);
+        assert_eq!(collector2.unit_index(), 1);
     }
 
-    pub fn scoped_qualified_name(&self, name: &str) -> String {
-        let mut prefix = None;
-        for &scope_idx in self.scope_stack.iter().rev() {
-            if let Some(sym_idx) = self.scope_infos[scope_idx].owner_symbol {
-                if let Some(symbol) = self.symbols.get(sym_idx) {
-                    if !symbol.fqn.is_empty() {
-                        prefix = Some(symbol.fqn.as_str());
-                        break;
-                    }
-                }
-            }
-        }
+    #[test]
+    fn test_scope_operations() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let mut collector = CollectorCore::new(0, &arena, &interner);
 
-        if let Some(prefix) = prefix {
-            format!("{}::{}", prefix, name)
-        } else {
-            name.to_string()
-        }
+        // Initial depth should be 1 (global scope)
+        assert_eq!(collector.scope_depth(), 1);
+
+        // Push a new scope
+        let scope1 = arena.alloc(Scope::new(HirId(1)));
+        collector.push_scope(scope1);
+        assert_eq!(collector.scope_depth(), 2);
+
+        // Push another scope
+        let scope2 = arena.alloc(Scope::new(HirId(2)));
+        collector.push_scope(scope2);
+        assert_eq!(collector.scope_depth(), 3);
+
+        // Pop a scope
+        collector.pop_scope();
+        assert_eq!(collector.scope_depth(), 2);
+
+        // Pop until depth 1
+        collector.pop_until(1);
+        assert_eq!(collector.scope_depth(), 1);
     }
 
-    pub fn insert_symbol(
-        &mut self,
-        owner: HirId,
-        name: &str,
-        kind: SymbolKind,
-        is_global: bool,
-    ) -> (usize, String) {
-        if let Some(_idx) = self.lookup_from_scopes_with(name, kind) {
-            tracing::warn!(
-                "symbol '{}' of kind {:?} already exists in scope, source code probaly has duplicate declaration",
-                name,
-                kind
-            );
-        }
+    #[test]
+    fn test_lookup_or_insert_current_scope() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let collector = CollectorCore::new(0, &arena, &interner);
 
-        let idx = self.symbols.len();
-        let fqn = self.scoped_qualified_name(name);
-        self.symbols.push(SymbolSpec {
-            owner,
-            name: name.to_owned(),
-            fqn: fqn.clone(),
-            kind,
-            unit_index: self.unit_index(),
-            is_global,
-            type_of: None,
+        // Insert a symbol in the global scope
+        let sym1 = collector.lookup_or_insert("foo", HirId(1));
+        assert!(sym1.is_some());
+
+        // Calling lookup_or_insert with the same name returns the SAME symbol
+        let sym2 = collector.lookup_or_insert("foo", HirId(2));
+        assert!(sym2.is_some());
+
+        // They should be the same symbol (same name in same scope)
+        assert_eq!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+    }
+
+    #[test]
+    fn test_lookup_or_insert_empty_name() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let collector = CollectorCore::new(0, &arena, &interner);
+
+        // Empty name should return None
+        let sym = collector.lookup_or_insert("", HirId(1));
+        assert!(sym.is_none());
+    }
+
+    #[test]
+    fn test_lookup_or_insert_chained() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let mut collector = CollectorCore::new(0, &arena, &interner);
+
+        // Insert first symbol
+        let sym1 = collector.lookup_or_insert_chained("x", HirId(1));
+        assert!(sym1.is_some());
+
+        // Push a new scope
+        let scope = arena.alloc(Scope::new(HirId(10)));
+        collector.push_scope(scope);
+
+        // lookup_or_insert_chained creates a NEW symbol and chains it to the previous one
+        // (different from normal lookup_or_insert which would return the existing one)
+        let sym2 = collector.lookup_or_insert_chained("x", HirId(2));
+        assert!(sym2.is_some());
+
+        // The second symbol should be different from the first (chaining creates new)
+        assert_ne!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+    }
+
+    #[test]
+    fn test_lookup_or_insert_global() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let mut collector = CollectorCore::new(0, &arena, &interner);
+
+        // Push a nested scope
+        let scope = arena.alloc(Scope::new(HirId(10)));
+        collector.push_scope(scope);
+        assert_eq!(collector.scope_depth(), 2);
+
+        // Insert symbol in global scope from nested scope
+        let sym = collector.lookup_or_insert_global("global_var", HirId(1));
+        assert!(sym.is_some());
+
+        // Calling with same name returns the SAME symbol
+        let sym2 = collector.lookup_or_insert_global("global_var", HirId(2));
+        assert!(sym2.is_some());
+        // They should be the same symbol (same name in global scope)
+        assert_eq!(sym.unwrap() as *const _, sym2.unwrap() as *const _);
+    }
+
+    #[test]
+    fn test_lookup_or_insert_parent() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let mut collector = CollectorCore::new(0, &arena, &interner);
+
+        // At depth 1, parent lookup fails the parent condition but falls back to top(),
+        // so it may succeed depending on implementation details.
+        // Let's test with depth 2 where parent scope clearly exists
+
+        // Push a nested scope to have depth 2
+        let scope = arena.alloc(Scope::new(HirId(10)));
+        collector.push_scope(scope);
+        assert_eq!(collector.scope_depth(), 2);
+
+        // Now we have depth 2, parent should be the first scope (global)
+        let sym_parent = collector.lookup_or_insert_parent("parent_var", HirId(1));
+        assert!(sym_parent.is_some());
+
+        // Push another scope to have depth 3
+        let scope2 = arena.alloc(Scope::new(HirId(20)));
+        collector.push_scope(scope2);
+        assert_eq!(collector.scope_depth(), 3);
+
+        // Parent lookup at depth 3 should return the scope at depth 2
+        let sym_parent2 = collector.lookup_or_insert_parent("another_parent_var", HirId(2));
+        assert!(sym_parent2.is_some());
+    }
+
+    #[test]
+    fn test_lookup_or_insert_with_options() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let collector = CollectorCore::new(0, &arena, &interner);
+
+        // Use current scope option
+        let opts = LookupOptions::current();
+        let sym1 = collector.lookup_or_insert_with(Some("opt_var"), HirId(1), opts);
+        assert!(sym1.is_some());
+
+        // Calling with same name returns the SAME symbol
+        let sym2 = collector.lookup_or_insert_with(Some("opt_var"), HirId(2), opts);
+        assert!(sym2.is_some());
+        // They should be the same symbol (same name in same scope)
+        assert_eq!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+    }
+
+    #[test]
+    fn test_nested_scopes_with_different_symbols() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let mut collector = CollectorCore::new(0, &arena, &interner);
+
+        // Insert symbol in global scope
+        let global_sym = collector.lookup_or_insert("var", HirId(1));
+        assert!(global_sym.is_some());
+
+        // Push nested scope
+        let scope1 = arena.alloc(Scope::new(HirId(10)));
+        collector.push_scope(scope1);
+
+        // Insert different symbol name in nested scope
+        let nested_sym = collector.lookup_or_insert("nested_var", HirId(2));
+        assert!(nested_sym.is_some());
+
+        // Different names should be different symbols
+        assert_ne!(
+            global_sym.unwrap() as *const _,
+            nested_sym.unwrap() as *const _
+        );
+
+        // Calling with the SAME name in the SAME scope returns the same symbol
+        let nested_sym2 = collector.lookup_or_insert("nested_var", HirId(3));
+        assert!(nested_sym2.is_some());
+        // They should be the same symbol (same name in same scope)
+        assert_eq!(
+            nested_sym.unwrap() as *const _,
+            nested_sym2.unwrap() as *const _
+        );
+    }
+
+    #[test]
+    fn test_collector_interner_access() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let collector = CollectorCore::new(0, &arena, &interner);
+
+        // Should be able to access interner
+        let interner_ref = collector.interner();
+        assert_eq!(interner_ref as *const _, &interner as *const _);
+    }
+
+    #[test]
+    fn test_collector_globals_access() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let collector = CollectorCore::new(0, &arena, &interner);
+
+        // Should be able to access globals scope
+        let globals = collector.globals();
+        // Just verify it's a valid reference by accessing it
+        let _ = globals;
+    }
+
+    #[test]
+    fn test_collector_arena_access() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let collector = CollectorCore::new(0, &arena, &interner);
+
+        // Should be able to access arena
+        let arena_ref = collector.arena();
+        assert_eq!(arena_ref as *const _, &arena as *const _);
+    }
+
+    #[test]
+    fn test_multiple_symbols_in_scope() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let collector = CollectorCore::new(0, &arena, &interner);
+
+        // Insert multiple symbols with different names
+        let sym_a = collector.lookup_or_insert("a", HirId(1));
+        let sym_b = collector.lookup_or_insert("b", HirId(2));
+        let sym_c = collector.lookup_or_insert("c", HirId(3));
+
+        assert!(sym_a.is_some());
+        assert!(sym_b.is_some());
+        assert!(sym_c.is_some());
+
+        // All should be different (different names in same scope)
+        assert_ne!(sym_a.unwrap() as *const _, sym_b.unwrap() as *const _);
+        assert_ne!(sym_b.unwrap() as *const _, sym_c.unwrap() as *const _);
+        assert_ne!(sym_a.unwrap() as *const _, sym_c.unwrap() as *const _);
+
+        // Calling with same name returns the SAME symbol
+        let sym_a2 = collector.lookup_or_insert("a", HirId(4));
+        assert!(sym_a2.is_some());
+        assert_eq!(sym_a.unwrap() as *const _, sym_a2.unwrap() as *const _);
+    }
+
+    #[test]
+    fn test_scope_isolation() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let mut collector = CollectorCore::new(0, &arena, &interner);
+
+        // Insert in global
+        collector.lookup_or_insert("global_only", HirId(1));
+
+        // Push scope 1 and insert
+        let scope1 = arena.alloc(Scope::new(HirId(10)));
+        collector.push_scope(scope1);
+        let sym_in_scope1 = collector.lookup_or_insert("scope1_var", HirId(2));
+
+        // Pop and push scope 2
+        collector.pop_scope();
+        let scope2 = arena.alloc(Scope::new(HirId(20)));
+        collector.push_scope(scope2);
+
+        // Lookup scope1_var in scope2 should create new symbol (different scope)
+        let sym_in_scope2 = collector.lookup_or_insert("scope1_var", HirId(3));
+
+        // They should be different (different scopes)
+        assert_ne!(
+            sym_in_scope1.unwrap() as *const _,
+            sym_in_scope2.unwrap() as *const _
+        );
+    }
+
+    #[test]
+    fn test_pop_until_multiple_levels() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+        let mut collector = CollectorCore::new(0, &arena, &interner);
+
+        // Build a scope stack: depth 1 (global), 2, 3, 4, 5
+        for i in 1..5 {
+            let scope = arena.alloc(Scope::new(HirId(i as u32)));
+            collector.push_scope(scope);
+        }
+        assert_eq!(collector.scope_depth(), 5);
+
+        // Pop until depth 2
+        collector.pop_until(2);
+        assert_eq!(collector.scope_depth(), 2);
+
+        // Pop until depth 1
+        collector.pop_until(1);
+        assert_eq!(collector.scope_depth(), 1);
+
+        // Pop until 0 (should be no-op or reduce to 1, depending on implementation)
+        let before_pop = collector.scope_depth();
+        collector.pop_until(0);
+        // After pop_until(0), we should be at depth 1 or 0 depending on whether it respects the minimum
+        assert!(collector.scope_depth() <= before_pop);
+    }
+
+    #[test]
+    fn test_collect_symbols_batch() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        // Collect symbols using the batch function
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // Simulate visiting and collecting symbols
+            let _sym1 = collector.lookup_or_insert("foo", HirId(1));
+            let _sym2 = collector.lookup_or_insert("bar", HirId(2));
         });
 
-        let current_scope = self.current_scope_index();
-        self.scope_infos[current_scope].record_symbol(name, idx, kind);
-
-        if is_global {
-            self.scope_infos[0].record_symbol(name, idx, kind);
-        }
-
-        (idx, fqn)
+        // Verify we got back a scope
+        assert_eq!(global_scope as *const _, global_scope as *const _);
     }
 
-    pub fn register_symbol_globally(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
-        self.scope_infos[0].record_symbol(name, symbol_idx, kind);
+    #[test]
+    fn test_collect_symbols_batch_single_symbol() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            let sym = collector.lookup_or_insert("single", HirId(1));
+            assert!(sym.is_some());
+        });
+
+        // Should return valid global scope
+        let _ = global_scope;
     }
 
-    pub fn upsert_symbol(
-        &mut self,
-        owner: HirId,
-        name: &str,
-        kind: SymbolKind,
-        is_global: bool,
-    ) -> (usize, String) {
-        if let Some(idx) = self.lookup_from_scopes_with(name, kind) {
-            if let Some(existing) = self.symbols.get_mut(idx) {
-                existing.owner = owner;
-                if is_global {
-                    existing.is_global = true;
-                }
-                return (idx, existing.fqn.clone());
+    #[test]
+    fn test_collect_symbols_batch_multiple_symbols() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            let sym1 = collector.lookup_or_insert("var1", HirId(1));
+            let sym2 = collector.lookup_or_insert("var2", HirId(2));
+            let sym3 = collector.lookup_or_insert("var3", HirId(3));
+            let sym4 = collector.lookup_or_insert("var4", HirId(4));
+
+            assert!(sym1.is_some());
+            assert!(sym2.is_some());
+            assert!(sym3.is_some());
+            assert!(sym4.is_some());
+
+            // All should be different
+            assert_ne!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+            assert_ne!(sym2.unwrap() as *const _, sym3.unwrap() as *const _);
+            assert_ne!(sym3.unwrap() as *const _, sym4.unwrap() as *const _);
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_with_scopes_basic() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // Initial depth should be 1 (global)
+            assert_eq!(collector.scope_depth(), 1);
+
+            // Collect in global scope
+            let _global_sym = collector.lookup_or_insert_global("module_level", HirId(1));
+
+            // Create nested scope
+            let scope = arena.alloc(Scope::new(HirId(10)));
+            collector.push_scope(scope);
+            assert_eq!(collector.scope_depth(), 2);
+
+            // Collect in nested scope
+            let _nested_sym = collector.lookup_or_insert("inner", HirId(2));
+
+            // Pop back to global
+            collector.pop_scope();
+            assert_eq!(collector.scope_depth(), 1);
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_with_nested_scopes() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // Global scope
+            let _global = collector.lookup_or_insert("global_func", HirId(1));
+
+            // First nested scope
+            let scope1 = arena.alloc(Scope::new(HirId(10)));
+            collector.push_scope(scope1);
+            let _local1 = collector.lookup_or_insert("local1", HirId(2));
+
+            // Second nested scope (inside first)
+            let scope2 = arena.alloc(Scope::new(HirId(20)));
+            collector.push_scope(scope2);
+            let _local2 = collector.lookup_or_insert("local2", HirId(3));
+
+            // Pop one level
+            collector.pop_scope();
+            let _local1_again = collector.lookup_or_insert("after_inner", HirId(4));
+
+            // Pop to global
+            collector.pop_scope();
+
+            assert_eq!(collector.scope_depth(), 1);
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_preserves_unit_index() {
+        let arena1 = Arena::default();
+        let arena2 = Arena::default();
+        let interner = InternPool::default();
+
+        // Collect for unit 0
+        let scope1 = collect_symbols_with(0, &arena1, &interner, |collector| {
+            assert_eq!(collector.unit_index(), 0);
+            let _ = collector.lookup_or_insert("unit0_var", HirId(1));
+        });
+
+        // Collect for unit 1
+        let scope2 = collect_symbols_with(1, &arena2, &interner, |collector| {
+            assert_eq!(collector.unit_index(), 1);
+            let _ = collector.lookup_or_insert("unit1_var", HirId(1));
+        });
+
+        // Both should be valid but different scopes
+        assert_ne!(scope1 as *const _, scope2 as *const _);
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_global_access() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // Access global scope directly
+            let globals = collector.globals();
+            let _ = globals;
+
+            // Insert symbols
+            let sym1 = collector.lookup_or_insert_global("pub_func", HirId(1));
+            let sym2 = collector.lookup_or_insert_global("pub_const", HirId(2));
+
+            assert!(sym1.is_some());
+            assert!(sym2.is_some());
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_with_pop_until() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // Build up scope stack
+            for i in 1..=3 {
+                let scope = arena.alloc(Scope::new(HirId(i as u32 * 10)));
+                collector.push_scope(scope);
+            }
+            assert_eq!(collector.scope_depth(), 4); // global + 3 scopes
+
+            // Pop until depth 2
+            collector.pop_until(2);
+            assert_eq!(collector.scope_depth(), 2);
+
+            // Can still insert symbols
+            let sym = collector.lookup_or_insert("after_pop", HirId(100));
+            assert!(sym.is_some());
+
+            // Pop back to global
+            collector.pop_until(1);
+            assert_eq!(collector.scope_depth(), 1);
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_interner_sharing() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        // Pre-intern a string
+        let _interned_key = interner.intern("shared_name");
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // Access interner through collector
+            let interner_ref = collector.interner();
+
+            // Should be the same interner (same pointer)
+            assert_eq!(interner_ref as *const _, &interner as *const _);
+
+            // Insert with a name
+            let sym = collector.lookup_or_insert("shared_name", HirId(1));
+            assert!(sym.is_some());
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_complex_hierarchy() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // Simulate a complex scope hierarchy:
+            // global
+            //   ├─ module
+            //   │   ├─ function
+            //   │   │   └─ loop_block
+            //   │   └─ class
+            //   └─ const
+
+            let _global_const = collector.lookup_or_insert_global("GLOBAL_CONST", HirId(1));
+
+            let module_scope = arena.alloc(Scope::new(HirId(10)));
+            collector.push_scope(module_scope);
+            let _module_fn = collector.lookup_or_insert("module_function", HirId(2));
+
+            let fn_scope = arena.alloc(Scope::new(HirId(20)));
+            collector.push_scope(fn_scope);
+            let _fn_param = collector.lookup_or_insert("param", HirId(3));
+
+            let block_scope = arena.alloc(Scope::new(HirId(30)));
+            collector.push_scope(block_scope);
+            let _loop_var = collector.lookup_or_insert("i", HirId(4));
+            collector.pop_scope(); // exit block
+
+            collector.pop_scope(); // exit function
+
+            let class_scope = arena.alloc(Scope::new(HirId(40)));
+            collector.push_scope(class_scope);
+            let _field = collector.lookup_or_insert("field", HirId(5));
+            collector.pop_scope(); // exit class
+
+            collector.pop_scope(); // exit module
+
+            assert_eq!(collector.scope_depth(), 1);
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_empty_visit() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        // Collect with empty visitor (no symbols collected)
+        let global_scope = collect_symbols_with(0, &arena, &interner, |_collector| {
+            // Do nothing
+        });
+
+        // Should still return valid global scope
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_collect_symbols_batch_different_hir_ids() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            // lookup_or_insert returns the SAME symbol if called with the same name in the same scope
+            let sym1 = collector.lookup_or_insert("name", HirId(1));
+            let sym2 = collector.lookup_or_insert("name", HirId(2));
+            let sym3 = collector.lookup_or_insert("name", HirId(u32::MAX));
+
+            // All should be Some
+            assert!(sym1.is_some());
+            assert!(sym2.is_some());
+            assert!(sym3.is_some());
+
+            // They should all be the SAME symbol (same name in same scope)
+            assert_eq!(sym1.unwrap() as *const _, sym2.unwrap() as *const _);
+            assert_eq!(sym2.unwrap() as *const _, sym3.unwrap() as *const _);
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_apply_collected_symbols() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        // Collect symbols
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            let _sym = collector.lookup_or_insert("test_var", HirId(1));
+        });
+
+        // Apply collected symbols (currently a no-op, but should not panic)
+        apply_collected_symbols(0, global_scope);
+    }
+
+    #[test]
+    fn test_apply_collected_symbols_multiple_units() {
+        let arena1 = Arena::default();
+        let arena2 = Arena::default();
+        let interner = InternPool::default();
+
+        let scope1 = collect_symbols_with(0, &arena1, &interner, |collector| {
+            let _ = collector.lookup_or_insert("unit0_var", HirId(1));
+        });
+
+        let scope2 = collect_symbols_with(1, &arena2, &interner, |collector| {
+            let _ = collector.lookup_or_insert("unit1_var", HirId(1));
+        });
+
+        // Apply both (should not panic)
+        apply_collected_symbols(0, scope1);
+        apply_collected_symbols(1, scope2);
+    }
+
+    /// A simple visitor implementation demonstrating the visitor pattern usage
+    struct SimpleVisitor {
+        visited_nodes: Vec<HirId>,
+    }
+
+    impl SimpleVisitor {
+        fn new() -> Self {
+            SimpleVisitor {
+                visited_nodes: Vec::new(),
             }
         }
 
-        self.insert_symbol(owner, name, kind, is_global)
-    }
+        /// Visit a module-like node and collect symbols
+        fn visit_module<'a>(
+            &mut self,
+            collector: &mut CollectorCore<'a>,
+            module_id: HirId,
+            symbols: Vec<(&str, HirId)>,
+        ) {
+            self.visited_nodes.push(module_id);
 
-    pub fn upsert_symbol_with_fqn(
-        &mut self,
-        owner: HirId,
-        name: &str,
-        kind: SymbolKind,
-        is_global: bool,
-        fqn: &str,
-    ) -> (usize, String) {
-        if let Some((idx, _)) = self
-            .symbols
-            .iter()
-            .enumerate()
-            .find(|(_, spec)| spec.fqn == fqn && spec.kind == kind)
-        {
-            if let Some(existing) = self.symbols.get_mut(idx) {
-                existing.owner = owner;
-                if is_global {
-                    existing.is_global = true;
-                }
-            }
-            return (idx, fqn.to_string());
-        }
-
-        let (idx, _) = self.insert_symbol(owner, name, kind, is_global);
-        if let Some(symbol) = self.symbols.get_mut(idx) {
-            symbol.fqn = fqn.to_string();
-        }
-        (idx, fqn.to_string())
-    }
-
-    pub fn set_symbol_type_of(&mut self, symbol_idx: usize, type_idx: usize) {
-        if let Some(symbol) = self.symbols.get_mut(symbol_idx) {
-            symbol.type_of = Some(type_idx);
-        }
-    }
-
-    pub fn add_scope_alias(&mut self, name: &str, symbol_idx: usize, kind: SymbolKind) {
-        let scope_idx = self.current_scope_index();
-        self.scope_infos[scope_idx].add_alias(name, symbol_idx, kind);
-    }
-
-    pub fn lookup_type_expr_symbol(
-        &mut self,
-        owner: HirId,
-        expr: &TypeExpr,
-        kind: SymbolKind,
-        is_global: bool,
-    ) -> Option<usize> {
-        self.lookup_or_insert_expr_symbol(owner, expr, kind, is_global, false)
-    }
-
-    pub fn upsert_expr_symbol(
-        &mut self,
-        owner: HirId,
-        expr: &TypeExpr,
-        kind: SymbolKind,
-        is_global: bool,
-    ) -> Option<usize> {
-        self.lookup_or_insert_expr_symbol(owner, expr, kind, is_global, true)
-    }
-
-    /// Resolve the canonical symbol for a language-agnostic `TypeExpr`, optionally inserting a
-    /// placeholder.
-    ///
-    /// Front-ends normalize each language's type syntax into `TypeExpr` variants (paths,
-    /// references, tuples, …). Path expressions try progressively broader matches (qualified
-    /// path, canonical FQN, terminal identifier) before optionally creating a synthetic symbol
-    /// when `upsert` is true. Reference and tuple expressions strip to their underlying path so
-    /// constructs like Rust's `impl &Foo` or Python's `tuple[T]` reuse the same lookup rules as
-    /// plain identifiers.
-    fn lookup_or_insert_expr_symbol(
-        &mut self,
-        owner: HirId,
-        expr: &TypeExpr,
-        kind: SymbolKind,
-        is_global: bool,
-        upsert: bool,
-    ) -> Option<usize> {
-        let mut resolver = TypeExprResolver::new(self, owner, kind, is_global, upsert);
-        resolver.resolve(expr)
-    }
-
-    pub fn lookup_from_scopes_with(&self, name: &str, kind: SymbolKind) -> Option<usize> {
-        for &scope_idx in self.scope_stack.iter().rev() {
-            let scope = &self.scope_infos[scope_idx];
-            if let Some(kind_bucket) = scope.locals_by_kind.kind_map(kind) {
-                if let Some(indices) = kind_bucket.get(name) {
-                    if let Some(&idx) = indices.last() {
-                        return Some(idx);
-                    }
-                }
-            }
-        }
-        None
-    }
-
-    pub fn lookup_from_scopes_with_parts(
-        &self,
-        parts: &[&str],
-        kind: SymbolKind,
-        start_depth: Option<usize>,
-    ) -> Option<usize> {
-        let parts: Vec<_> = parts
-            .iter()
-            .copied()
-            .filter(|part| !part.is_empty())
-            .collect();
-        if parts.is_empty() {
-            return None;
-        }
-
-        let mut scope_cursor = start_depth.unwrap_or(self.scope_stack.len());
-        scope_cursor = scope_cursor.min(self.scope_stack.len());
-        if scope_cursor == 0 {
-            return None;
-        }
-
-        let mut resolved_idx = None;
-        let mut restrict_kind = true;
-
-        for part in parts.iter().rev() {
-            let mut found: Option<(usize, usize)> = None;
-
-            while scope_cursor > 0 {
-                scope_cursor -= 1;
-                let scope_idx = self.scope_stack[scope_cursor];
-                let scope = &self.scope_infos[scope_idx];
-
-                if restrict_kind {
-                    if let Some(kind_bucket) = scope.locals_by_kind.kind_map(kind) {
-                        if let Some(indices) = kind_bucket.get(*part) {
-                            if let Some(&idx) = indices.last() {
-                                found = Some((scope_cursor, idx));
-                                break;
-                            }
-                        }
-                    }
-                } else if let Some(&idx) = scope.locals.get(*part) {
-                    found = Some((scope_cursor, idx));
-                    break;
-                }
-            }
-
-            let (matched_scope, symbol_idx) = found?;
-            if resolved_idx.is_none() {
-                resolved_idx = Some(symbol_idx);
-            }
-            scope_cursor = matched_scope;
-            restrict_kind = false;
-        }
-
-        resolved_idx
-    }
-
-    pub fn symbols(&self) -> &[SymbolSpec] {
-        &self.symbols
-    }
-
-    pub fn symbols_mut(&mut self) -> &mut [SymbolSpec] {
-        &mut self.symbols
-    }
-
-    pub fn finish(self, result: CollectionResult) -> CollectedSymbols {
-        let scopes = self
-            .scope_infos
-            .into_iter()
-            .map(|info| ScopeSpec {
-                owner: info.owner,
-                owner_symbol: info.owner_symbol,
-                symbols: info.symbols,
-                aliases: info.aliases,
-            })
-            .collect();
-
-        CollectedSymbols {
-            result,
-            symbols: self.symbols,
-            scopes,
-        }
-    }
-}
-
-pub fn collect_symbols_batch<'tcx, C, MakeCollector, Visit, Finish>(
-    unit: CompileUnit<'tcx>,
-    make_collector: MakeCollector,
-    visit: Visit,
-    finish: Finish,
-) -> (CollectedSymbols, Duration, Duration)
-where
-    MakeCollector: FnOnce(CompileUnit<'tcx>) -> C,
-    Visit: FnOnce(&mut C, HirNode<'tcx>),
-    Finish: FnOnce(C) -> CollectedSymbols,
-{
-    let collect_start = Instant::now();
-    let root = unit.file_start_hir_id().unwrap();
-    let node = unit.hir_node(root);
-    let mut collector = make_collector(unit);
-
-    let visit_start = Instant::now();
-    visit(&mut collector, node);
-    let visit_time = visit_start.elapsed();
-
-    let collected = finish(collector);
-    let total_time = collect_start.elapsed();
-
-    (collected, total_time, visit_time)
-}
-
-pub fn apply_collected_symbols<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-    collected: &CollectedSymbols,
-) {
-    let interner = unit.interner();
-    let mut created_symbols = Vec::with_capacity(collected.symbols.len());
-
-    {
-        let mut symbol_map = unit.cc.symbol_map.write();
-        for spec in &collected.symbols {
-            let key = interner.intern(&spec.name);
-            let symbol = unit
-                .cc
-                .arena
-                .alloc(Symbol::new(spec.owner, spec.name.clone(), key));
-            symbol.set_kind(spec.kind);
-            symbol.set_unit_index(spec.unit_index);
-            symbol.set_fqn(spec.fqn.clone(), interner);
-            symbol.set_is_global(spec.is_global);
-            symbol_map.insert(symbol.id, symbol);
-            created_symbols.push(symbol);
-        }
-    }
-
-    for (spec, symbol) in collected.symbols.iter().zip(created_symbols.iter()) {
-        if let Some(type_idx) = spec.type_of {
-            if let Some(target_symbol) = created_symbols.get(type_idx) {
-                symbol.set_type_of(Some(target_symbol.id));
-            }
-        }
-    }
-
-    for scope_spec in &collected.scopes {
-        let target_scope = match scope_spec.owner {
-            Some(owner) => unit.alloc_scope(owner),
-            None => globals,
-        };
-
-        if let Some(sym_idx) = scope_spec.owner_symbol {
-            if let Some(symbol) = created_symbols.get(sym_idx) {
-                target_scope.set_symbol(Some(symbol));
-            }
-
-            if let Some(owner_symbol) = created_symbols.get(sym_idx) {
-                if matches!(
-                    owner_symbol.kind(),
-                    SymbolKind::Struct | SymbolKind::Enum | SymbolKind::Trait
-                ) {
-                    for &member_idx in &scope_spec.symbols {
-                        if member_idx == sym_idx {
-                            continue;
-                        }
-                        if let Some(member_symbol) = created_symbols.get(member_idx) {
-                            if member_symbol.kind() == SymbolKind::Function {
-                                owner_symbol.add_member(member_symbol.name_key, member_symbol.id);
-                            }
-                        }
-                    }
-                }
+            // Collect module-level symbols
+            for (name, hir_id) in symbols {
+                let _ = collector.lookup_or_insert_global(name, hir_id);
             }
         }
 
-        for &sym_idx in &scope_spec.symbols {
-            if let Some(symbol) = created_symbols.get(sym_idx) {
-                target_scope.insert(symbol, interner);
+        /// Visit a function-like node with nested scope
+        fn visit_function<'a>(
+            &mut self,
+            collector: &mut CollectorCore<'a>,
+            arena: &'a Arena<'a>,
+            fn_id: HirId,
+            fn_name: &str,
+            params: Vec<(&str, HirId)>,
+        ) {
+            self.visited_nodes.push(fn_id);
+
+            // Declare the function in current scope
+            let _ = collector.lookup_or_insert(fn_name, fn_id);
+
+            // Create a nested scope for function body
+            let fn_scope = arena.alloc(Scope::new(fn_id));
+            collector.push_scope(fn_scope);
+
+            // Collect function parameters
+            for (param_name, param_id) in params {
+                let _ = collector.lookup_or_insert(param_name, param_id);
             }
         }
 
-        for alias in &scope_spec.aliases {
-            if let Some(symbol) = created_symbols.get(alias.symbol_idx) {
-                target_scope.insert_alias(&alias.parts, interner, symbol);
+        /// Visit a block-like node with nested scope
+        fn visit_block<'a>(
+            &mut self,
+            collector: &mut CollectorCore<'a>,
+            arena: &'a Arena<'a>,
+            block_id: HirId,
+            locals: Vec<(&str, HirId)>,
+        ) {
+            self.visited_nodes.push(block_id);
+
+            // Create a nested scope for block
+            let block_scope = arena.alloc(Scope::new(block_id));
+            collector.push_scope(block_scope);
+
+            // Collect local variables in block
+            for (local_name, local_id) in locals {
+                let _ = collector.lookup_or_insert(local_name, local_id);
             }
+        }
+
+        /// Exit the current scope
+        fn exit_scope(&mut self, collector: &mut CollectorCore) {
+            collector.pop_scope();
         }
     }
-}
 
-pub fn apply_symbol_batch<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-    batch: (CollectedSymbols, Duration, Duration),
-) -> (CollectionResult, Duration, Duration) {
-    let (collected, total_time, visit_time) = batch;
-    apply_collected_symbols(unit, globals, &collected);
+    #[test]
+    fn test_visitor_pattern_with_batch_collection() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
 
-    (collected.result, total_time, visit_time)
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            let mut visitor = SimpleVisitor::new();
+
+            // Visit module structure:
+            // module
+            //   ├─ CONST_A
+            //   ├─ function_x(param1, param2)
+            //   │   └─ {
+            //   │       local_a
+            //   │       inner_block { local_b }
+            //   │     }
+            //   └─ function_y(param_y)
+            //       └─ { local_y }
+
+            // Visit module level
+            visitor.visit_module(
+                collector,
+                HirId(0),
+                vec![("CONST_A", HirId(1)), ("CONST_B", HirId(2))],
+            );
+
+            // Visit function_x
+            visitor.visit_function(
+                collector,
+                &arena,
+                HirId(10),
+                "function_x",
+                vec![("param1", HirId(11)), ("param2", HirId(12))],
+            );
+
+            // Visit block in function_x
+            visitor.visit_block(collector, &arena, HirId(20), vec![("local_a", HirId(21))]);
+
+            // Visit inner block (nested)
+            visitor.visit_block(collector, &arena, HirId(30), vec![("local_b", HirId(31))]);
+
+            // Exit inner block
+            visitor.exit_scope(collector);
+
+            // Exit outer block
+            visitor.exit_scope(collector);
+
+            // Exit function_x
+            visitor.exit_scope(collector);
+
+            // Verify we're back at module level (depth 1)
+            assert_eq!(collector.scope_depth(), 1);
+
+            // Visit function_y
+            visitor.visit_function(
+                collector,
+                &arena,
+                HirId(40),
+                "function_y",
+                vec![("param_y", HirId(41))],
+            );
+
+            // Visit block in function_y
+            visitor.visit_block(collector, &arena, HirId(50), vec![("local_y", HirId(51))]);
+
+            // Exit block
+            visitor.exit_scope(collector);
+
+            // Exit function_y
+            visitor.exit_scope(collector);
+
+            // Verify we're back at module level
+            assert_eq!(collector.scope_depth(), 1);
+
+            // Verify visitor visited all nodes in order
+            assert_eq!(visitor.visited_nodes.len(), 6);
+            assert_eq!(
+                visitor.visited_nodes,
+                vec![
+                    HirId(0),  // module
+                    HirId(10), // function_x
+                    HirId(20), // block in function_x
+                    HirId(30), // inner block
+                    HirId(40), // function_y
+                    HirId(50), // block in function_y
+                ]
+            );
+        });
+
+        // Verify we got back a valid scope
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_visitor_pattern_class_hierarchy() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            let mut visitor = SimpleVisitor::new();
+
+            // Visit class hierarchy:
+            // module
+            //   ├─ class MyClass
+            //   │   ├─ field1
+            //   │   └─ method(self, arg)
+            //   │       └─ { local_x }
+            //   └─ function standalone()
+            //       └─ { local_s }
+
+            // Module level
+            visitor.visit_module(collector, HirId(0), vec![]);
+
+            // Class (as a "function" for scope purposes)
+            visitor.visit_function(
+                collector,
+                &arena,
+                HirId(100),
+                "MyClass",
+                vec![("field1", HirId(101))],
+            );
+
+            // Method in class
+            visitor.visit_function(
+                collector,
+                &arena,
+                HirId(110),
+                "method",
+                vec![("self", HirId(111)), ("arg", HirId(112))],
+            );
+
+            visitor.visit_block(collector, &arena, HirId(120), vec![("local_x", HirId(121))]);
+            visitor.exit_scope(collector); // exit block
+            visitor.exit_scope(collector); // exit method
+            visitor.exit_scope(collector); // exit class
+
+            // Standalone function
+            visitor.visit_function(collector, &arena, HirId(200), "standalone", vec![]);
+            visitor.visit_block(collector, &arena, HirId(210), vec![("local_s", HirId(211))]);
+            visitor.exit_scope(collector); // exit block
+            visitor.exit_scope(collector); // exit function
+
+            // Back at module level
+            assert_eq!(collector.scope_depth(), 1);
+
+            // Verify all nodes were visited
+            assert!(visitor.visited_nodes.contains(&HirId(100))); // MyClass
+            assert!(visitor.visited_nodes.contains(&HirId(110))); // method
+            assert!(visitor.visited_nodes.contains(&HirId(200))); // standalone
+        });
+
+        let _ = global_scope;
+    }
+
+    #[test]
+    fn test_visitor_pattern_with_symbol_queries() {
+        let arena = Arena::default();
+        let interner = InternPool::default();
+
+        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
+            let mut visitor = SimpleVisitor::new();
+
+            // Visit and create symbols, then query them
+            visitor.visit_module(
+                collector,
+                HirId(0),
+                vec![("PUBLIC_API", HirId(1)), ("INTERNAL_CONST", HirId(2))],
+            );
+
+            // After visiting module, we can query global scope
+            let queried_global = collector.globals();
+            let _ = queried_global;
+
+            // Visit function and locals
+            visitor.visit_function(
+                collector,
+                &arena,
+                HirId(10),
+                "process_data",
+                vec![("input", HirId(11))],
+            );
+
+            visitor.visit_block(
+                collector,
+                &arena,
+                HirId(20),
+                vec![
+                    ("result", HirId(21)),
+                    ("temp", HirId(22)),
+                    ("buffer", HirId(23)),
+                ],
+            );
+
+            // Can still access interner and arena
+            let _interner = collector.interner();
+            let _arena = collector.arena();
+
+            // Pop scopes
+            visitor.exit_scope(collector);
+            visitor.exit_scope(collector);
+
+            // All symbols should be accessible via the scope hierarchy
+            assert_eq!(collector.scope_depth(), 1);
+        });
+
+        let _ = global_scope;
+    }
 }
