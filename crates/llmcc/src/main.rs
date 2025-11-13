@@ -5,7 +5,7 @@ use clap::Parser;
 
 use llmcc::LlmccOptions;
 use llmcc::run_main;
-use llmcc_python::LangPython;
+// use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
 
 #[derive(Parser, Debug)]
@@ -121,7 +121,7 @@ pub fn run(args: Cli) -> Result<()> {
 
     let result = match args.lang.as_str() {
         "rust" => run_main::<LangRust>(&opts),
-        "python" => run_main::<LangPython>(&opts),
+        // "python" => run_main::<LangPython>(&opts),
         _ => Err(format!("Unknown language: {}", args.lang).into()),
     };
 

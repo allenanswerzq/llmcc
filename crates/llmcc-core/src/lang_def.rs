@@ -1,7 +1,7 @@
 use crate::context::CompileUnit;
 use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
-use crate::symbol::Scope;
+use crate::scope::Scope;
 
 pub trait LanguageTrait {
     type SymbolCollection: Send;

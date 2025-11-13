@@ -3,7 +3,8 @@ use tree_sitter::Node;
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
-use crate::symbol::{Scope, Symbol};
+use crate::scope::Scope;
+use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
 declare_arena!([

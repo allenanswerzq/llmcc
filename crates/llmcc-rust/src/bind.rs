@@ -127,7 +127,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                 .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Function);
         self.visit_children_scope(&node, symbol);
 
-        if let Some(parent) = self.core.scope_symbol(){
+        if let Some(parent) = self.core.scope_symbol() {
             if let Some(child) = symbol {
                 self.core.propagate_child_dependencies(parent, child);
             }
@@ -248,10 +248,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
                     }
 
                     for name in names {
-                        if let Some(symbol) = self
-                            .core
-                            .lookup_symbol(&[name.clone()], Some(SymbolKind::Variable), None)
-                        {
+                        if let Some(symbol) = self.core.lookup_symbol(
+                            &[name.clone()],
+                            Some(SymbolKind::Variable),
+                            None,
+                        ) {
                             if symbol.type_of().is_none() {
                                 symbol.set_type_of(Some(type_symbol.id));
                             }
@@ -269,10 +270,11 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
             if let Some(type_expr) = param.type_annotation() {
                 if let Some(type_symbol) = self.core.lookup_expr_symbols(type_expr).first() {
                     for name in param.names() {
-                        if let Some(symbol) = self
-                            .core
-                            .lookup_symbol(&[name.clone()], Some(SymbolKind::Variable), None)
-                        {
+                        if let Some(symbol) = self.core.lookup_symbol(
+                            &[name.clone()],
+                            Some(SymbolKind::Variable),
+                            None,
+                        ) {
                             if symbol.type_of().is_none() {
                                 symbol.set_type_of(Some(type_symbol.id));
                             }
@@ -305,55 +307,33 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
         let parent = self.current_symbol();
         if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
-            let mut symbols = Vec::new();
-            self.core
-                .lookup_call_symbols(&descriptor.target, &mut symbols);
+            let mut assigned_var: Option<String> = None;
 
-            // Inline type binding for variables assigned from function calls (let x = func())
-            // This handles Rust's type inference for assignments without explicit type annotations
-            if !symbols.is_empty() {
-                // Check if this call is inside a let declaration
-                if let Some(parent_id) = node.parent() {
-                    let parent_node = self.unit().hir_node(parent_id);
-                    if parent_node.inner_ts_node().kind() == "let_declaration" {
-                        // Extract the variable name from the pattern (e.g., `cfg` in `let cfg = ...`)
-                        if let Some(pattern_node) =
-                            parent_node.opt_child_by_field(self.unit(), LangRust::field_pattern)
-                        {
-                            if let Some(ident) = pattern_node.find_ident(self.unit()) {
-                                let var_name = &ident.name;
-
-                                // Use BinderCore APIs to bind variable type from function return type
-                                self.core
-                                    .bind_call_receivers_to_variable(var_name, &symbols);
-
-                                // Create type alias in current scope for future lookups
-                                if let Some(_variable) = self.core.lookup_symbol(
-                                    &[var_name.clone()],
-                                    Some(SymbolKind::Variable),
-                                    None,
-                                ) {
-                                    if let Some(scope) = self.scopes().top() {
-                                        for symbol in &symbols {
-                                            if let Some(receiver) = self
-                                                .core
-                                                .lookup_return_receivers(symbol)
-                                                .into_iter()
-                                                .next()
-                                            {
-                                                self.core.bind_variable_type_alias(
-                                                    scope, var_name, receiver,
-                                                );
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
+            if let Some(parent_id) = node.parent() {
+                let parent_node = self.unit().hir_node(parent_id);
+                if parent_node.inner_ts_node().kind() == "let_declaration" {
+                    if let Some(pattern_node) =
+                        parent_node.opt_child_by_field(self.unit(), LangRust::field_pattern)
+                    {
+                        if let Some(ident) = pattern_node.find_ident(self.unit()) {
+                            assigned_var = Some(ident.name.clone());
                         }
                     }
                 }
             }
+
+            let symbols = if let Some(var_name) = assigned_var.as_deref() {
+                self.core.lookup_call_and_bind_variable(
+                    &descriptor.target,
+                    var_name,
+                    self.scopes().top(),
+                )
+            } else {
+                let mut resolved = Vec::new();
+                self.core
+                    .lookup_call_symbols(&descriptor.target, &mut resolved);
+                resolved
+            };
 
             if let Some(parent_symbol) = parent {
                 for symbol in symbols {
