@@ -3,52 +3,14 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice::{Iter, IterMut};
 use std::time::{Duration, Instant};
 
-use crate::type_expr::TypeExprResolver;
-use llmcc_core::context::CompileUnit;
+use crate::unit_arena::UnitSymbolArena;
+use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{HirId, HirIdent, HirNode};
-use llmcc_core::symbol::{Scope, Symbol, SymbolKind, SymbolKindMap};
+use llmcc_core::symbol::{Scope, Symbol, SymbolKind};
 use llmcc_descriptor::{
     CallDescriptor, ClassDescriptor, EnumDescriptor, FunctionDescriptor, ImplDescriptor,
     ImportDescriptor, StructDescriptor, TypeExpr, VariableDescriptor,
 };
-
-#[derive(Debug, Clone)]
-pub struct SymbolSpec {
-    /// HIR node that declared the symbol.
-    pub owner: HirId,
-    /// Unqualified symbol name as it appears in source.
-    pub name: String,
-    /// Fully-qualified path for the symbol.
-    pub fqn: String,
-    /// Kind of symbol (function, struct, trait, etc.).
-    pub kind: SymbolKind,
-    /// Index of the compile unit that produced this symbol.
-    pub unit_index: usize,
-    /// Whether the symbol should be visible from the global scope.
-    pub is_global: bool,
-    /// Optional index pointing to the symbol that represents this symbol's type.
-    pub type_of: Option<usize>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ScopeSpec {
-    /// Owning HIR node for the scope; None represents the root scope.
-    pub owner: Option<HirId>,
-    /// Index of the symbol associated with this scope, if any.
-    pub owner_symbol: Option<usize>,
-    /// Symbols captured directly within this scope.
-    pub symbols: Vec<usize>,
-    /// String paths that should map to symbols already declared elsewhere.
-    pub aliases: Vec<ScopeAliasSpec>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ScopeAliasSpec {
-    /// Segments that make up the alias path (e.g. `["Self"]`).
-    pub parts: Vec<String>,
-    /// Index into the collected symbol list for the aliased target.
-    pub symbol_idx: usize,
-}
 
 #[derive(Debug)]
 pub struct DescriptorCollection<T> {
@@ -209,14 +171,23 @@ pub struct CollectionResult {
     pub calls: CallCollection,
 }
 
+/// Result of collecting symbols for a single compilation unit.
+///
+/// Contains the per-unit arena with all allocated symbols and scopes,
+/// plus the collected descriptors. The symbols and scopes are owned by
+/// the arena and referenced by lifetime 'unit.
 #[derive(Debug)]
-pub struct CollectedSymbols {
+pub struct CollectedSymbols<'unit> {
     pub result: CollectionResult,
-    pub symbols: Vec<SymbolSpec>,
-    pub scopes: Vec<ScopeSpec>,
+    /// Per-unit arena holding all allocated Symbol and Scope objects
+    pub arena: UnitSymbolArena<'unit>,
+    /// All symbols collected, allocated in the unit arena
+    pub symbols: Vec<&'unit Symbol>,
+    /// All scopes collected, allocated in the unit arena
+    pub scopes: Vec<&'unit Scope<'unit>>,
 }
 
-impl Deref for CollectedSymbols {
+impl<'unit> Deref for CollectedSymbols<'unit> {
     type Target = CollectionResult;
 
     fn deref(&self) -> &Self::Target {
@@ -224,7 +195,7 @@ impl Deref for CollectedSymbols {
     }
 }
 
-impl DerefMut for CollectedSymbols {
+impl<'unit> DerefMut for CollectedSymbols<'unit> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.result
     }
