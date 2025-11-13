@@ -378,6 +378,10 @@ impl<'tcx> ScopeStack<'tcx> {
     /// - `options`: Lookup options controlling scope selection and behavior
     ///
     /// Returns: `Some(symbol)` if found or created, `None` if name is empty/null and force is false.
+    ///
+    /// # Behavior
+    /// - If `options.top` is true: Always creates a NEW symbol and chains it to the existing one (if any)
+    /// - If `options.top` is false: Returns existing symbol if found, only creates new if not found
     fn lookup_or_insert_impl(
         &self,
         node: HirId,
@@ -393,13 +397,22 @@ impl<'tcx> ScopeStack<'tcx> {
         // Look up existing symbols in the scope
         let existing_symbols = self.lookup_symbols_in_scope(scope, name_key);
 
-        // Create new symbol
+        // If top flag is NOT set and we found existing symbols, return the most recent one
+        if !options.top && !existing_symbols.is_empty() {
+            if let Some(existing) = existing_symbols.last() {
+                return Some(existing);
+            }
+        }
+
+        // Create new symbol (either no existing found, or top flag set for chaining)
         let symbol = Symbol::new(node, name_key);
         let allocated = self.arena.alloc(symbol);
 
         // If top flag is set, chain to the most recent existing symbol
-        if options.top && !existing_symbols.is_empty() && let Some(prev_sym) = existing_symbols.last() {
-            allocated.set_previous(Some(prev_sym.id));
+        if options.top && !existing_symbols.is_empty() {
+            if let Some(prev_sym) = existing_symbols.last() {
+                allocated.set_previous(Some(prev_sym.id));
+            }
         }
 
         // Insert into scope
@@ -416,12 +429,12 @@ impl<'tcx> ScopeStack<'tcx> {
     /// Otherwise, creates a new symbol and inserts it into the current scope.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert(&self, node: HirId, name: &str) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node, Some(name), LookupOptions::current())
     }
 
@@ -432,12 +445,12 @@ impl<'tcx> ScopeStack<'tcx> {
     /// shadowing relationships in nested scopes.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert_chained(&self, node: HirId, name: &str) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert_chained(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node, Some(name), LookupOptions::chained())
     }
 
@@ -447,13 +460,13 @@ impl<'tcx> ScopeStack<'tcx> {
     /// Useful for lifting definitions out of the current scope.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty and parent scope exists,
     /// None if name is empty or no parent scope available
-    pub fn lookup_or_insert_parent(&self, node: HirId, name: &str) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert_parent(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node, Some(name), LookupOptions::parent())
     }
 
@@ -463,12 +476,12 @@ impl<'tcx> ScopeStack<'tcx> {
     /// Used for module-level definitions.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name
+    /// * `node` - The HIR node for the symbol
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert_global(&self, node: HirId, name: &str) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert_global(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node, Some(name), LookupOptions::global())
     }
 
@@ -478,8 +491,8 @@ impl<'tcx> ScopeStack<'tcx> {
     /// controlled via the `LookupOptions` parameter.
     ///
     /// # Arguments
-    /// * `node` - The HIR node for the symbol
     /// * `name` - The symbol name (None for anonymous if force=true)
+    /// * `node` - The HIR node for the symbol
     /// * `options` - Lookup options controlling scope selection and behavior
     ///
     /// # Returns
@@ -488,12 +501,12 @@ impl<'tcx> ScopeStack<'tcx> {
     /// # Example
     /// ```ignore
     /// let opts = LookupOptions::global().with_force(true);
-    /// let symbol = scope_stack.lookup_or_insert_with(node_id, None, opts)?;
+    /// let symbol = scope_stack.lookup_or_insert_with(None, node_id, opts)?;
     /// ```
     pub fn lookup_or_insert_with(
         &self,
-        node: HirId,
         name: Option<&str>,
+        node: HirId,
         options: LookupOptions,
     ) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node, name, options)
