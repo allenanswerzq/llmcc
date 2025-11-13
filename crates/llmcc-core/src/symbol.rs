@@ -475,11 +475,7 @@ impl Symbol {
     }
 
     pub fn members(&self, name: InternedStr) -> Vec<SymId> {
-        self.members
-            .read()
-            .get(&name)
-            .cloned()
-            .unwrap_or_default()
+        self.members.read().get(&name).cloned().unwrap_or_default()
     }
 
     pub fn add_depends_on(&self, sym_id: SymId) {

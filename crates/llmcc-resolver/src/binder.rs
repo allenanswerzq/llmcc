@@ -277,6 +277,42 @@ impl<'tcx, 'a> BinderCore<'tcx, 'a> {
         resolver.resolve(target, symbols);
     }
 
+    /// Resolves the call target, then binds the inferred return type to a variable assignment.
+    /// The resolved symbols are returned so callers can continue building dependency graphs.
+    pub fn lookup_call_and_bind_variable(
+        &self,
+        target: &CallTarget,
+        var_name: &str,
+        scope: Option<&'tcx Scope<'tcx>>,
+    ) -> Vec<&'tcx Symbol> {
+        let mut symbols = Vec::new();
+        self.lookup_call_symbols(target, &mut symbols);
+
+        if symbols.is_empty() {
+            return symbols;
+        }
+
+        self.bind_call_receivers_to_variable(var_name, &symbols);
+
+        if let Some(scope) = scope {
+            let var_key = vec![var_name.to_string()];
+            if self
+                .lookup_symbol(&var_key, Some(SymbolKind::Variable), None)
+                .is_some()
+            {
+                for symbol in &symbols {
+                    if let Some(receiver) = self.lookup_return_receivers(symbol).into_iter().next()
+                    {
+                        self.bind_variable_type_alias(scope, var_name, receiver);
+                        break;
+                    }
+                }
+            }
+        }
+
+        symbols
+    }
+
     fn symbol_type_of(&self, symbol: &'tcx Symbol) -> Option<&'tcx Symbol> {
         symbol
             .type_of()
