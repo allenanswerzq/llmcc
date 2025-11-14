@@ -320,77 +320,43 @@ where
 pub fn apply_collected_symbols<'tcx, 'unit>(
     cc: &'tcx CompileCtxt<'tcx>,
     unit_index: usize,
-    arena: &mut Arena<'unit>,
+    arena: &'unit mut Arena<'unit>,
     globals: &'unit Scope<'unit>,
 ) -> &'tcx Scope<'tcx> {
     use std::collections::HashMap;
 
-    // Create the final global scope that merges all units' globals
     let final_globals = cc.create_globals();
-    let mut scope_rebindings: HashMap<ScopeId, &'tcx Scope<'tcx>> = HashMap::new();
-    let mut cloned_symbols: HashMap<SymId, &'tcx Symbol> = HashMap::new();
-    let mut scope_symbol_links: Vec<(ScopeId, Option<SymId>)> = Vec::new();
+    let mut scope_map: HashMap<ScopeId, &'tcx Scope<'tcx>> = HashMap::new();
+    let mut scope_cache: HashMap<HirId, &'tcx Scope<'tcx>> = HashMap::new();
+    let mut symbol_map: HashMap<SymId, &'tcx Symbol> = HashMap::new();
 
-    // Single pass through the arena to collect and process all data
-    {
-        let mut symbol_map = cc.symbol_map.write();
+    // NOTE: even arena is the per-file, but the sym_id and scope_id is actually
+    // global applied, beause we use atomic to assign value each time when we create
+    for scope in arena.iter_mut_scope() {
+        // Lets think about it: scope and symbol right now are in the per-unit arena,
+        // we need to clone them into the global arena. those symbols and scopes
+        // are already properly linked in the collector phase. we dont want to br
+        // eak those links.
 
-        for scope in arena.iter_mut_scope() {
-            // Step 1: Create target scope and build rebindings
-            let target = if std::ptr::eq(scope as *const _, globals as *const _) {
-                final_globals
-            } else {
-                cc.alloc_scope(scope.owner())
-            };
-            let scope_id = scope.id();
-            scope_rebindings.insert(scope_id, target);
-
-            // Step 2: Process symbols in this scope
-            scope.for_each_symbol(|symbol| {
-                let cloned = symbol.clone();
-                let mut cloned = cloned;
-                cloned.set_unit_index(unit_index);
-
-                // Update scope IDs in the cloned symbol
-                if let Some(old_scope_id) = cloned.scope() {
-                    if let Some(&new_scope) = scope_rebindings.get(&old_scope_id) {
-                        cloned.set_scope(Some(new_scope.id()));
-                    }
-                } else {
-                    cloned.set_scope(Some(scope_id));
-                }
-
-                // Update parent scope IDs
-                if let Some(old_parent_id) = cloned.parent_scope() {
-                    if let Some(&new_parent) = scope_rebindings.get(&old_parent_id) {
-                        cloned.set_parent_scope(Some(new_parent.id()));
-                    }
-                }
-
-                let allocated = cc.arena.alloc(cloned);
-                cloned_symbols.insert(symbol.id, allocated);
-                symbol_map.insert(symbol.id, allocated);
-                target.insert(allocated);
-            });
-
-            // Step 3: Collect scope symbol links for later (store IDs only, not references)
-            let symbol_id = scope.symbol().map(|s| s.id);
-            scope_symbol_links.push((scope_id, symbol_id));
-        }
+        // let scope_id = scope.id();
+        // let scope = if scope_id == globals.id() {
+        //     final_globals.merge(scope)
+        // } else {
+        //     cc.alloc_scope(scope.owner())
+        // };
+        // scope_map.insert(scope_id, scope);
+        // scope_cache.insert(scope.owner(), scope);
+        // scope.visits_symbols(|symbol| {
+        //     let cloned = symbol.clone();
+        //     let mut cloned = cloned;
+        //     cloned.set_unit_index(unit_index);
+        //     let final_symbol = cc.alloc_symbol(cloned);
+        //     symbol_map.insert(final_symbol.id, final_symbol);
+        // });
     }
 
-    // Step 4: Link scope symbols back to their associated scope
-    // (The per-unit arena is now dropped, so we only work with cc.arena data)
-    for (scope_id, old_symbol_id_opt) in scope_symbol_links {
-        if let Some(old_symbol_id) = old_symbol_id_opt {
-            if let (Some(&target_scope), Some(&new_symbol)) = (
-                scope_rebindings.get(&scope_id),
-                cloned_symbols.get(&old_symbol_id),
-            ) {
-                target_scope.set_symbol(Some(new_symbol));
-            }
-        }
-    }
+    scope_map.insert(final_globals.id(), final_globals);
+    scope_cache.insert(final_globals.owner(), final_globals);
 
     final_globals
 }

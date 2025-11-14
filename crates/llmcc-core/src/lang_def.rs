@@ -526,7 +526,7 @@ mod tests {
         let mut visitor = CountingVisitor::new(unit);
 
         let root = file_start.unwrap();
-        let node = unit.hir_node(root);
+        let node: crate::ir::HirNode<'_> = unit.hir_node(root);
         let mut collector = Collector::new();
         visitor.visit_node(node, &mut collector, None);
 

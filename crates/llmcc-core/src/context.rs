@@ -133,10 +133,8 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        // First find the ScopeId for this HirId owner
-        let scope_id = self.cc.hir_scope_map.read().get(&owner).copied()?;
-        // Then look up the actual Scope using the ScopeId
-        self.cc.scope_map.read().get(&scope_id).copied()
+        // Direct lookup from cache
+        self.cc.scope_cache.read().get(&owner).copied()
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
@@ -145,21 +143,9 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        // First find the ScopeId for this HirId owner
-        let scope_id = self
-            .cc
-            .hir_scope_map
-            .read()
-            .get(&owner)
+        self.cc.scope_cache.read().get(&owner)
             .copied()
-            .expect("HirId not mapped to ScopeId in CompileCtxt");
-        // Then look up the actual Scope using the ScopeId
-        self.cc
-            .scope_map
-            .read()
-            .get(&scope_id)
-            .copied()
-            .expect("ScopeId not found in scope_map")
+            .expect("HirId not mapped to Scope in CompileCtxt")
     }
 
     /// Find an existing scope or create a new one
@@ -455,10 +441,10 @@ pub struct CompileCtxt<'tcx> {
 
     // HirId -> ParentedNode
     pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // ScopeId -> Scope
+    // ScopeId -> Scope (used internally for allocation)
     pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
-    // HirId -> ScopeId
-    pub hir_scope_map: RwLock<HashMap<HirId, ScopeId>>,
+    // HirId -> Scope (direct single-step lookup)
+    pub scope_cache: RwLock<HashMap<HirId, &'tcx Scope<'tcx>>>,
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
@@ -510,7 +496,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
-            hir_scope_map: RwLock::new(HashMap::new()),
+            scope_cache: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -553,7 +539,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
-            hir_scope_map: RwLock::new(HashMap::new()),
+            scope_cache: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -643,17 +629,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        let scope_id = self
-            .hir_scope_map
-            .read()
-            .get(&owner)
+        self.scope_cache.read().get(&owner)
             .copied()
-            .expect("HirId not mapped to ScopeId in CompileCtxt");
-        self.scope_map
-            .read()
-            .get(&scope_id)
-            .copied()
-            .expect("ScopeId not found in scope_map")
+            .expect("HirId not mapped to Scope in CompileCtxt")
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
@@ -669,17 +647,48 @@ impl<'tcx> CompileCtxt<'tcx> {
             .copied()
     }
 
+    /// Access the arena for allocations
+    pub fn arena(&'tcx self) -> &'tcx Arena<'tcx> {
+        &self.arena
+    }
+
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        if let Some(existing_id) = self.hir_scope_map.read().get(&owner).copied() {
-            if let Some(existing) = self.scope_map.read().get(&existing_id) {
-                return existing;
-            }
+        // Check cache first
+        if let Some(existing) = self.scope_cache.read().get(&owner) {
+            return existing;
         }
 
+        // Allocate new scope
+        let scope_id = ScopeId(self.scope_map.read().len() as u32);
         let scope = self.arena.alloc(Scope::new(owner));
-        let scope_id = scope.id();
+
+        // Update both maps
         self.scope_map.write().insert(scope_id, scope);
-        self.hir_scope_map.write().insert(owner, scope_id);
+        self.scope_cache.write().insert(owner, scope);
+
+        scope
+    }
+
+    /// Allocate a new scope based on an existing one, cloning its contents.
+    ///
+    /// The existing ones are from the other arena, and we want to allocate in
+    /// this arena.
+    pub fn alloc_scope_with(&'tcx self, existing: &Scope<'tcx>) -> &'tcx Scope<'tcx> {
+        let owner = existing.owner();
+        // Check cache first
+        if let Some(existing) = self.scope_cache.read().get(&owner) {
+            return existing;
+        }
+
+        // Allocate new scope
+        let scope_id = existing.id();
+        let scope = Scope::new_from(existing, self.arena());
+        let scope = self.arena.alloc(scope);
+
+        // Update both maps
+        self.scope_map.write().insert(scope_id, scope);
+        self.scope_cache.write().insert(owner, scope);
+
         scope
     }
 
@@ -730,6 +739,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn clear(&self) {
         self.hir_map.write().clear();
         self.scope_map.write().clear();
-        self.hir_scope_map.write().clear();
+        self.scope_cache.write().clear();
     }
 }
