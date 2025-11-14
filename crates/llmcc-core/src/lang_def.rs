@@ -306,10 +306,16 @@ macro_rules! define_lang {
         $( ($const:ident, $id:expr, $str:expr, $kind:expr $(, $block:expr)? ) ),* $(,)?
     ) => {
         $crate::paste::paste! {
+            // ============================================================
+            // Language Struct Definition
+            // ============================================================
             /// Language context for HIR processing
             #[derive(Debug)]
             pub struct [<Lang $suffix>] {}
 
+            // ============================================================
+            // Language Constants
+            // ============================================================
             #[allow(non_upper_case_globals)]
             impl [<Lang $suffix>] {
                 /// Create a new Language instance
@@ -321,25 +327,25 @@ macro_rules! define_lang {
                 $(
                     pub const $const: u16 = $id;
                 )*
-
-                // Supported file extensions (test default)
-                pub const SUPPORTED_EXTENSIONS: &'static [&'static str] = &[];
             }
 
+            // ============================================================
+            // Language Trait Implementation
+            // ============================================================
             impl $crate::lang_def::LanguageTrait for [<Lang $suffix>] {
                 /// Parse source code and return a generic parse tree.
                 ///
                 /// First tries the custom parse_impl from LanguageTraitExt.
                 /// If that returns None, falls back to tree-sitter parsing if available.
-                fn parse(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
-                    // Try custom parser first
-                    <Self as LanguageTraitExt>::parse_impl(text.as_ref())
+                fn parse(text: impl AsRef<[u8]>) -> Option<Box<dyn $crate::lang_def::ParseTree>> {
+                    <Self as $crate::lang_def::LanguageTraitExt>::parse_impl(text.as_ref())
                 }
 
                 /// Return the list of supported file extensions for this language
                 fn supported_extensions() -> &'static [&'static str] {
-                    paste::paste! { [<Lang $suffix>]::SUPPORTED_EXTENSIONS }
+                    [<Lang $suffix>]::SUPPORTED_EXTENSIONS
                 }
+
                 /// Get the HIR kind for a given token ID
                 fn hir_kind(kind_id: u16) -> $crate::ir::HirKind {
                     match kind_id {
@@ -382,53 +388,87 @@ macro_rules! define_lang {
                 fn type_field() -> u16 {
                     Self::field_type
                 }
-
             }
 
+            // ============================================================
+            // Visitor Trait Definition
+            // ============================================================
             /// Trait for visiting HIR nodes with type-specific dispatch
             pub trait [<AstVisitor $suffix>]<'a, T> {
+                /// Get the compilation unit for this visitor
                 fn unit(&self) -> $crate::context::CompileUnit<'a>;
 
                 /// Visit a node, dispatching to the appropriate method based on token ID
-                fn visit_node(&mut self, node: $crate::ir::HirNode<'a>, t: &mut T,  parent: Option<&$crate::symbol::Symbol>) {
+                /// NOTE: scope stack is for lookup convenience, the actual namespace in
+                /// which names should be mangled and declared.
+                /// So namespace is semantic home scope for name resolution/mangling,
+                /// independent of the push stack.
+                fn visit_node(
+                    &mut self,
+                    node: $crate::ir::HirNode<'a>,
+                    core: &mut T,
+                    namespace: &'a $crate::scope::Scope<'a>,
+                    parent: Option<&$crate::symbol::Symbol>,
+                ) {
                     match node.kind_id() {
                         $(
-                            [<Lang $suffix>]::$const => paste::paste! { self.[<visit_ $const>](node, t, parent) },
+                            [<Lang $suffix>]::$const => $crate::paste::paste! {
+                                self.[<visit_ $const>](node, core, namespace, parent)
+                            },
                         )*
-                        _ => self.visit_unknown(node, t, parent),
+                        _ => self.visit_unknown(node, core, namespace, parent),
                     }
                 }
 
                 /// Visit all children of a node
-                fn visit_children(&mut self, node: &$crate::ir::HirNode<'a>, t: &mut T, parent: Option<&$crate::symbol::Symbol>) {
+                fn visit_children(
+                    &mut self,
+                    node: &$crate::ir::HirNode<'a>,
+                    core: &mut T,
+                    namespace: &'a $crate::scope::Scope<'a>,
+                    parent: Option<&$crate::symbol::Symbol>,
+                ) {
                     for id in node.children() {
                         let child = self.unit().hir_node(*id);
-                        self.visit_node(child, t, parent);
+                        self.visit_node(child, core, namespace, parent);
                     }
                 }
 
                 /// Handle unknown/unrecognized token types
-                fn visit_unknown(&mut self, node: $crate::ir::HirNode<'a>, t: &mut T, parent: Option<&$crate::symbol::Symbol>) {
-                    self.visit_children(&node, t, parent);
+                fn visit_unknown(
+                    &mut self,
+                    node: $crate::ir::HirNode<'a>,
+                    core: &mut T,
+                    namespace: &'a $crate::scope::Scope<'a>,
+                    parent: Option<&$crate::symbol::Symbol>,
+                ) {
+                    self.visit_children(&node, core, namespace, parent);
                 }
 
                 // Generate visit methods for each token type with visit_ prefix
                 $(
-                    paste::paste! {
-                        fn [<visit_ $const>](&mut self, node: $crate::ir::HirNode<'a>, t: &mut T, parent: Option<&$crate::symbol::Symbol>) {
-                            self.visit_children(&node, t, parent);
+                    $crate::paste::paste! {
+                        fn [<visit_ $const>](
+                            &mut self,
+                            node: $crate::ir::HirNode<'a>,
+                            core: &mut T,
+                            namespace: &'a $crate::scope::Scope<'a>,
+                            parent: Option<&$crate::symbol::Symbol>,
+                        ) {
+                            self.visit_children(&node, core, namespace, parent);
                         }
                     }
-               )*
+                )*
             }
         }
     };
 
-    // Helper: expand to given block or default
+    // ================================================================
+    // Helper Rules
+    // ================================================================
     (@unwrap_block $block:expr) => { $block };
-    (@unwrap_block) => { BlockKind::Undefined };
+    (@unwrap_block) => { $crate::graph_builder::BlockKind::Undefined };
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
