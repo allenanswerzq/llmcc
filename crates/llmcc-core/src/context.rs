@@ -14,7 +14,7 @@ use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
-use crate::symbol::{SymId, Symbol, ScopeId};
+use crate::symbol::{ScopeId, SymId, Symbol};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -143,7 +143,10 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.cc.scope_cache.read().get(&owner)
+        self.cc
+            .scope_cache
+            .read()
+            .get(&owner)
             .copied()
             .expect("HirId not mapped to Scope in CompileCtxt")
     }
@@ -632,14 +635,14 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.scope_cache
             .write()
             .insert(Self::GLOBAL_SCOPE_OWNER, scope);
-        self.scope_map
-            .write()
-            .insert(scope.id(), scope);
+        self.scope_map.write().insert(scope.id(), scope);
         scope
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.scope_cache.read().get(&owner)
+        self.scope_cache
+            .read()
+            .get(&owner)
             .copied()
             .expect("HirId not mapped to Scope in CompileCtxt")
     }
@@ -693,11 +696,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// - The symbol_map is updated to point all merged symbols to the symbol_map
     /// - The scope_map is updated to redirect second's scope ID to first
     /// - The scope_cache is updated to redirect second's owner to first
-    pub fn merge_two_scopes<'src>(
-        &'tcx self,
-        first: &'tcx Scope<'tcx>,
-        second: &'src Scope<'src>,
-    ) {
+    pub fn merge_two_scopes<'src>(&'tcx self, first: &'tcx Scope<'tcx>, second: &'src Scope<'src>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
 
