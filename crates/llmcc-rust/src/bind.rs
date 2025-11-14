@@ -53,27 +53,6 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
         self.unit()
     }
 
-    fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<Self::ScopedSymbol>) {
-        let depth = self.scopes().depth();
-        if let Some(symbol) = symbol {
-            if let Some(parent) = self.current_symbol() {
-                parent.add_dependency(symbol);
-            }
-        }
-
-        // NOTE: scope should already be created during symbol collection, here we just
-        // follow the tree structure again
-        let scope = self.unit().opt_get_scope(node.hir_id());
-
-        if let Some(scope) = scope {
-            self.scopes_mut().push_with_symbol(scope, symbol);
-            self.visit_children(node);
-            self.scopes_mut().pop_until(depth);
-        } else {
-            self.visit_children(node);
-        }
-    }
-
     fn visit_source_file(&mut self, node: HirNode<'tcx>) {
         self.visit_children_scope(&node, None);
     }
@@ -311,7 +290,7 @@ impl<'tcx> AstVisitorRust<'tcx> for SymbolBinder<'tcx, '_> {
 
             if let Some(parent_id) = node.parent() {
                 let parent_node = self.unit().hir_node(parent_id);
-                if parent_node.inner_ts_node().kind() == "let_declaration" {
+                if parent_node.inner().kind() == "let_declaration" {
                     if let Some(pattern_node) =
                         parent_node.opt_child_by_field(self.unit(), LangRust::field_pattern)
                     {

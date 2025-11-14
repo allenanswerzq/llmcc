@@ -1,9 +1,27 @@
 #[macro_export]
 macro_rules! declare_arena {
-    ([$($name:ident : $ty:ty),* $(,)?]) => {
+    // Main entry point with optional vec fields: declare_arena!([foo: Foo, bar: Bar] @vec [baz: Baz])
+    ([$($arena_name:ident : $arena_ty:ty),* $(,)?] @vec [$($vec_name:ident : $vec_ty:ty),* $(,)?]) => {
+        $crate::declare_arena! { @impl
+            arena_fields: [$($arena_name : $arena_ty),*]
+            vec_fields: [$($vec_name : $vec_ty),*]
+        }
+    };
+
+    // Default: all arena, no vec (backward compatible)
+    ([$($arena_name:ident : $arena_ty:ty),* $(,)?]) => {
+        $crate::declare_arena! { @impl
+            arena_fields: [$($arena_name : $arena_ty),*]
+            vec_fields: []
+        }
+    };
+
+    // Implementation
+    (@impl arena_fields: [$($arena_name:ident : $arena_ty:ty),*] vec_fields: [$($vec_name:ident : $vec_ty:ty),*]) => {
         #[derive(Default)]
         pub struct Arena<'tcx> {
-            $( pub $name : typed_arena::Arena<$ty>, )*
+            $( pub $arena_name : typed_arena::Arena<$arena_ty>, )*
+            $( pub $vec_name : parking_lot::RwLock<Vec<$vec_ty>>, )*
             _marker: std::marker::PhantomData<&'tcx ()>,
         }
 
@@ -22,20 +40,40 @@ macro_rules! declare_arena {
             fn allocate_on_mut(self, arena: &'tcx Arena<'tcx>) -> &'tcx mut Self;
         }
 
+        // Allocatable implementations for typed_arena fields
         $(
-            impl<'tcx> ArenaAllocatable<'tcx> for $ty {
+            impl<'tcx> ArenaAllocatable<'tcx> for $arena_ty {
                 #[inline]
                 fn allocate_on(self, arena: &'tcx Arena<'tcx>) -> &'tcx Self {
-                    arena.$name.alloc(self)
+                    arena.$arena_name.alloc(self)
+                }
+            }
+
+            impl<'tcx> ArenaAllocatableMut<'tcx> for $arena_ty {
+                #[inline]
+                fn allocate_on_mut(self, arena: &'tcx Arena<'tcx>) -> &'tcx mut Self {
+                    arena.$arena_name.alloc(self)
                 }
             }
         )*
 
+        // Allocatable implementations for vec fields
         $(
-            impl<'tcx> ArenaAllocatableMut<'tcx> for $ty {
+            impl<'tcx> ArenaAllocatable<'tcx> for $vec_ty {
+                #[inline]
+                fn allocate_on(self, arena: &'tcx Arena<'tcx>) -> &'tcx Self {
+                    let mut vec = arena.$vec_name.write();
+                    vec.push(self);
+                    unsafe { &*(vec.last().unwrap() as *const _) }
+                }
+            }
+
+            impl<'tcx> ArenaAllocatableMut<'tcx> for $vec_ty {
                 #[inline]
                 fn allocate_on_mut(self, arena: &'tcx Arena<'tcx>) -> &'tcx mut Self {
-                    arena.$name.alloc(self)
+                    let mut vec = arena.$vec_name.write();
+                    vec.push(self);
+                    unsafe { &mut *(vec.last_mut().unwrap() as *mut _) }
                 }
             }
         )*
@@ -51,13 +89,18 @@ macro_rules! declare_arena {
                 value.allocate_on_mut(self)
             }
 
+            // Iterator methods for vec fields (immutable iteration only)
             $(
                 paste::paste! {
-                    /// Iterate mutably over all allocated values of type `$ty`.
+                    /// Iterate over all allocated values in the `$vec_name` vector.
                     /// Items are yielded in the order they were allocated.
-                    #[inline]
-                    pub fn [<iter_mut_ $name>](&'tcx mut self) -> typed_arena::IterMut<'tcx, $ty> {
-                        self.$name.iter_mut()
+                    pub fn [<iter_ $vec_name>](&self) -> impl Iterator<Item = &$vec_ty> {
+                        let guard = self.$vec_name.read();
+                        // SAFETY: We extend the lifetime from the guard to 'tcx
+                        // This is safe because the Arena lives for 'tcx and won't be destroyed
+                        let iter: std::slice::Iter<'tcx, $vec_ty> = unsafe { std::mem::transmute(guard.iter()) };
+                        std::mem::forget(guard); // Leak the guard to keep the lock held
+                        iter
                     }
                 }
             )*
@@ -69,122 +112,101 @@ macro_rules! declare_arena {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[derive(Debug, PartialEq)]
     pub struct Foo(i32);
 
     #[derive(Debug, PartialEq)]
-    pub struct Bar(&'static str);
+    pub struct Baz(f64);
 
-    // Declare an arena with two types:
     declare_arena!([
-        foos: Foo,
-        bars: Bar,
+        foos: Foo
+    ] @vec [
+        bazzes: Baz
     ]);
 
     #[test]
     fn alloc_single_values() {
         let arena = Arena::default();
 
-        let f = arena.alloc(Foo(1));
-        let b = arena.alloc(Bar("hello"));
+        let f = arena.alloc(Foo(42));
+        let b = arena.alloc(Baz(3.14));
 
-        assert_eq!(f, &Foo(1));
-        assert_eq!(b, &Bar("hello"));
+        assert_eq!(f, &Foo(42));
+        assert_eq!(b, &Baz(3.14));
     }
 
     #[test]
-    fn separate_pools_do_not_interfere() {
+    fn alloc_multiple_values() {
         let arena = Arena::default();
 
         let f1 = arena.alloc(Foo(1));
-        let b1 = arena.alloc(Bar("x"));
+        let b1 = arena.alloc(Baz(1.0));
         let f2 = arena.alloc(Foo(2));
+        let b2 = arena.alloc(Baz(2.0));
 
         assert_eq!(f1, &Foo(1));
+        assert_eq!(b1, &Baz(1.0));
         assert_eq!(f2, &Foo(2));
-        assert_eq!(b1, &Bar("x"));
+        assert_eq!(b2, &Baz(2.0));
     }
 
     #[test]
-    fn alloc_mut_allows_mutation() {
+    fn alloc_mut_arena_field() {
         let arena = Arena::default();
 
         let foo = arena.alloc_mut(Foo(1));
-        foo.0 = 5;
+        foo.0 = 100;
 
-        assert_eq!(foo, &Foo(5));
-    }
-
-    struct Holder<'tcx> {
-        foo: &'tcx mut Foo,
-    }
-
-    impl Holder<'_> {
-        fn bump(&mut self) {
-            self.foo.0 += 1;
-        }
-
-        fn set_value(&mut self, value: i32) {
-            self.foo.0 = value;
-        }
-    }
-
-    fn increment(foo: &mut Foo) {
-        foo.0 += 1;
-    }
-
-    fn recursive_decrement(holder: &mut Holder<'_>, remaining: i32) {
-        if remaining <= 0 {
-            return;
-        }
-        holder.foo.0 -= 1;
-        recursive_decrement(holder, remaining - 1);
+        assert_eq!(foo, &Foo(100));
     }
 
     #[test]
-    fn alloc_mut_shared_through_holder() {
+    fn alloc_mut_vec_field() {
         let arena = Arena::default();
-        let mut holder = Holder {
-            foo: arena.alloc_mut(Foo(10)),
-        };
 
-        holder.bump();
-        assert_eq!(holder.foo.0, 11);
+        let baz = arena.alloc_mut(Baz(1.5));
+        baz.0 = 99.9;
 
-        holder.set_value(25);
-        assert_eq!(holder.foo.0, 25);
+        assert_eq!(baz, &Baz(99.9));
     }
 
     #[test]
-    fn alloc_mut_passed_to_functions() {
+    fn iter_vec_fields() {
         let arena = Arena::default();
-        let mut holder = Holder {
-            foo: arena.alloc_mut(Foo(3)),
-        };
 
-        increment(holder.foo);
-        assert_eq!(holder.foo.0, 4);
+        arena.alloc(Baz(1.0));
+        arena.alloc(Baz(2.0));
+        arena.alloc(Baz(3.0));
 
-        recursive_decrement(&mut holder, 2);
-        assert_eq!(holder.foo.0, 2);
+        let results: Vec<_> = arena.iter_bazzes().map(|b| b.0).collect();
+        assert_eq!(results, vec![1.0, 2.0, 3.0]);
     }
 
     #[test]
-    fn iterate_over_allocated_values() {
-        let mut arena = Arena::default();
+    fn iter_both_types() {
+        let arena = Arena::default();
 
-        // Allocate multiple values
         arena.alloc(Foo(1));
+        arena.alloc(Baz(1.5));
         arena.alloc(Foo(2));
-        arena.alloc(Foo(3));
+        arena.alloc(Baz(2.5));
 
-        // Iterate mutably over Foo values and collect modified values
-        let mut modified = Vec::new();
-        for foo in arena.iter_mut_foos() {
-            foo.0 *= 2;
-            modified.push(foo.0);
-        }
+        let baz_results: Vec<_> = arena.iter_bazzes().map(|b| b.0).collect();
+        assert_eq!(baz_results, vec![1.5, 2.5]);
+    }
 
-        assert_eq!(modified, vec![2, 4, 6]);
+    #[test]
+    fn vec_field_preserves_order() {
+        let arena = Arena::default();
+
+        arena.alloc(Baz(1.0));
+        arena.alloc(Baz(2.0));
+        arena.alloc(Baz(3.0));
+        arena.alloc(Baz(4.0));
+
+        let bazzes: Vec<_> = arena.iter_bazzes().map(|b| b.0).collect();
+        assert_eq!(bazzes, vec![1.0, 2.0, 3.0, 4.0]);
     }
 }

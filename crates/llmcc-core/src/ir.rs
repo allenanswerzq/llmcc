@@ -37,7 +37,6 @@
 //! The arena itself is not thread-safe; use thread-local arenas for parallel processing.
 
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
-use tree_sitter::Node;
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
@@ -46,13 +45,14 @@ use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
 declare_arena!([
-    hir_root: HirRoot<'tcx>,
-    hir_text: HirText<'tcx>,
-    hir_internal: HirInternal<'tcx>,
+    hir_root: HirRoot,
+    hir_text: HirText,
+    hir_internal: HirInternal,
     hir_scope: HirScope<'tcx>,
-    hir_file: HirFile<'tcx>,
-    hir_ident: HirIdent<'tcx>,
+    hir_file: HirFile,
+    hir_ident: HirIdent,
     symbol: Symbol,
+] @vec [
     scope: Scope<'tcx>,
 ]);
 
@@ -106,12 +106,12 @@ pub enum HirKind {
 pub enum HirNode<'hir> {
     #[default]
     Undefined,
-    Root(&'hir HirRoot<'hir>),
-    Text(&'hir HirText<'hir>),
-    Internal(&'hir HirInternal<'hir>),
+    Root(&'hir HirRoot),
+    Text(&'hir HirText),
+    Internal(&'hir HirInternal),
     Scope(&'hir HirScope<'hir>),
-    File(&'hir HirFile<'hir>),
-    Ident(&'hir HirIdent<'hir>),
+    File(&'hir HirFile),
+    Ident(&'hir HirIdent),
 }
 
 impl<'hir> HirNode<'hir> {
@@ -144,7 +144,7 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Get the base information for any HIR node
-    pub fn base(&self) -> Option<&HirBase<'hir>> {
+    pub fn base(&self) -> Option<&HirBase> {
         match self {
             HirNode::Undefined => None,
             HirNode::Root(node) => Some(&node.base),
@@ -210,7 +210,7 @@ impl<'hir> HirNode<'hir> {
     /// - `kind()`: Returns the HIR-specific HirKind categorization
     /// - `opt_child_by_kind()`: Find children by their kind_id
     pub fn kind_id(&self) -> u16 {
-        self.base().unwrap().node.kind_id()
+        self.base().unwrap().kind_id
     }
 
     /// Get the unique identifier for this node.
@@ -251,7 +251,7 @@ impl<'hir> HirNode<'hir> {
     /// let source_slice = &source[start..end];
     /// ```
     pub fn start_byte(&self) -> usize {
-        self.base().unwrap().node.start_byte()
+        self.base().unwrap().start_byte
     }
 
     /// Get the byte offset where this node ends in the source file.
@@ -268,7 +268,7 @@ impl<'hir> HirNode<'hir> {
     /// # See Also
     /// - `start_byte()`: Get the inclusive starting byte offset
     pub fn end_byte(&self) -> usize {
-        self.base().unwrap().node.end_byte()
+        self.base().unwrap().end_byte
     }
 
     /// Get the number of direct children this node has.
@@ -291,23 +291,17 @@ impl<'hir> HirNode<'hir> {
 
     /// Get the underlying tree-sitter Node.
     ///
-    /// This provides direct access to the tree-sitter parse tree node, which can be
-    /// used for advanced queries or accessing tree-sitter-specific features not exposed
-    /// through the HIR abstraction.
-    ///
-    /// # Returns
-    /// The tree-sitter Node<'hir> object
+    /// DEPRECATED: HIR nodes no longer store direct references to parse tree nodes.
+    /// This method is kept for backward compatibility but will panic.
+    /// Use byte range information (start_byte, end_byte) instead.
     ///
     /// # Panics
-    /// Panics if called on an Undefined node
-    ///
-    /// # Example
-    /// ```ignore
-    /// let ts_node = node.inner_ts_node();
-    /// let text = ts_node.utf8_byte_range();
-    /// ```
-    pub fn inner_ts_node(&self) -> Node<'hir> {
-        self.base().unwrap().node
+    /// Always panics, as the underlying tree-sitter node is no longer stored
+    #[deprecated(
+        note = "HIR nodes no longer store parse tree references. Use byte ranges instead."
+    )]
+    pub fn inner(&self) {
+        panic!("inner() is no longer supported - HIR nodes don't store parse tree references")
     }
 
     /// Get the parent node ID if this node has a parent.
@@ -397,7 +391,7 @@ impl<'hir> HirNode<'hir> {
         &self,
         unit: CompileUnit<'hir>,
         field_id: u16,
-    ) -> &'hir HirIdent<'hir> {
+    ) -> &'hir HirIdent {
         self.opt_child_by_field(unit, field_id)
             .map(|child| child.expect_ident())
             .unwrap_or_else(|| panic!("no child with field_id {}", field_id))
@@ -461,7 +455,7 @@ impl<'hir> HirNode<'hir> {
     /// Useful for finding the actual identifier in complex AST nodes like generic_type
     /// that wrap the identifier. For example, in `impl<'tcx> Holder<'tcx>`, the type
     /// field points to a generic_type node, which contains the type_identifier "Holder".
-    pub fn find_ident(&self, unit: CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
+    pub fn find_ident(&self, unit: CompileUnit<'hir>) -> Option<&'hir HirIdent> {
         // Check if this node is already an identifier
         if let Some(ident) = self.as_ident() {
             return Some(ident);
@@ -470,12 +464,10 @@ impl<'hir> HirNode<'hir> {
         // Otherwise, search through children of any node that has them
         let children = match self {
             HirNode::Root(r) => &r.base.children,
-            HirNode::Text(_) => return None,
             HirNode::Internal(i) => &i.base.children,
             HirNode::Scope(s) => &s.base.children,
             HirNode::File(f) => &f.base.children,
-            HirNode::Ident(_) => return None,
-            HirNode::Undefined => return None,
+            _ => return None,
         };
 
         // Recursively search all children
@@ -494,7 +486,7 @@ impl<'hir> HirNode<'hir> {
     /// Returns `Some` if this node is a Root, `None` otherwise.
     /// This is the safe alternative to `expect_root()`.
     #[inline]
-    pub fn as_root(&self) -> Option<&'hir HirRoot<'hir>> {
+    pub fn as_root(&self) -> Option<&'hir HirRoot> {
         match self {
             HirNode::Root(r) => Some(r),
             _ => None,
@@ -514,7 +506,7 @@ impl<'hir> HirNode<'hir> {
     /// Use only when the node type is guaranteed by invariants or prior checks.
     /// Prefer `as_root()` for safer code.
     #[inline]
-    pub fn expect_root(&self) -> &'hir HirRoot<'hir> {
+    pub fn expect_root(&self) -> &'hir HirRoot {
         match self {
             HirNode::Root(r) => r,
             _ => panic!("Expected Root variant"),
@@ -525,7 +517,7 @@ impl<'hir> HirNode<'hir> {
     ///
     /// Returns `Some` if this node is Text, `None` otherwise.
     #[inline]
-    pub fn as_text(&self) -> Option<&'hir HirText<'hir>> {
+    pub fn as_text(&self) -> Option<&'hir HirText> {
         match self {
             HirNode::Text(r) => Some(r),
             _ => None,
@@ -540,7 +532,7 @@ impl<'hir> HirNode<'hir> {
 
     /// Guarantee that this node is Text, panicking if not.
     #[inline]
-    pub fn expect_text(&self) -> &'hir HirText<'hir> {
+    pub fn expect_text(&self) -> &'hir HirText {
         match self {
             HirNode::Text(r) => r,
             _ => panic!("Expected Text variant"),
@@ -551,7 +543,7 @@ impl<'hir> HirNode<'hir> {
     ///
     /// Returns `Some` if this node is Internal, `None` otherwise.
     #[inline]
-    pub fn as_internal(&self) -> Option<&'hir HirInternal<'hir>> {
+    pub fn as_internal(&self) -> Option<&'hir HirInternal> {
         match self {
             HirNode::Internal(r) => Some(r),
             _ => None,
@@ -566,7 +558,7 @@ impl<'hir> HirNode<'hir> {
 
     /// Guarantee that this node is Internal, panicking if not.
     #[inline]
-    pub fn expect_internal(&self) -> &'hir HirInternal<'hir> {
+    pub fn expect_internal(&self) -> &'hir HirInternal {
         match self {
             HirNode::Internal(r) => r,
             _ => panic!("Expected Internal variant"),
@@ -603,7 +595,7 @@ impl<'hir> HirNode<'hir> {
     ///
     /// Returns `Some` if this node is a File, `None` otherwise.
     #[inline]
-    pub fn as_file(&self) -> Option<&'hir HirFile<'hir>> {
+    pub fn as_file(&self) -> Option<&'hir HirFile> {
         match self {
             HirNode::File(r) => Some(r),
             _ => None,
@@ -618,7 +610,7 @@ impl<'hir> HirNode<'hir> {
 
     /// Guarantee that this node is a File, panicking if not.
     #[inline]
-    pub fn expect_file(&self) -> &'hir HirFile<'hir> {
+    pub fn expect_file(&self) -> &'hir HirFile {
         match self {
             HirNode::File(r) => r,
             _ => panic!("Expected File variant"),
@@ -629,7 +621,7 @@ impl<'hir> HirNode<'hir> {
     ///
     /// Returns `Some` if this node is an Identifier, `None` otherwise.
     #[inline]
-    pub fn as_ident(&self) -> Option<&'hir HirIdent<'hir>> {
+    pub fn as_ident(&self) -> Option<&'hir HirIdent> {
         match self {
             HirNode::Ident(r) => Some(r),
             _ => None,
@@ -644,7 +636,7 @@ impl<'hir> HirNode<'hir> {
 
     /// Guarantee that this node is an Ident, panicking if not.
     #[inline]
-    pub fn expect_ident(&self) -> &'hir HirIdent<'hir> {
+    pub fn expect_ident(&self) -> &'hir HirIdent {
         match self {
             HirNode::Ident(r) => r,
             _ => panic!("Expected Ident variant"),
@@ -696,16 +688,18 @@ impl std::fmt::Display for HirId {
 /// # Child Lookup
 /// HirBase provides methods to find children by field ID or kind, supporting efficient
 /// navigation of the AST structure without requiring parent references.
-pub struct HirBase<'hir> {
+pub struct HirBase {
     pub hir_id: HirId,
     pub parent: Option<HirId>,
-    pub node: Node<'hir>,
+    pub kind_id: u16,
+    pub start_byte: usize,
+    pub end_byte: usize,
     pub kind: HirKind,
     pub field_id: u16,
     pub children: Vec<HirId>,
 }
 
-impl<'hir> HirBase<'hir> {
+impl HirBase {
     /// Find a child node with any of the given field IDs.
     ///
     /// Searches through all children and returns the first one whose field_id matches
@@ -720,7 +714,7 @@ impl<'hir> HirBase<'hir> {
     ///
     /// # Complexity
     /// O(children × field_ids) - linear search through children and field_ids for each
-    pub fn opt_child_by_fields(
+    pub fn opt_child_by_fields<'hir>(
         &self,
         unit: CompileUnit<'hir>,
         fields_id: &[u16],
@@ -753,7 +747,7 @@ impl<'hir> HirBase<'hir> {
     ///     println!("Function name: {:?}", name_node.as_ident());
     /// }
     /// ```
-    pub fn opt_child_by_field(
+    pub fn opt_child_by_field<'hir>(
         &self,
         unit: CompileUnit<'hir>,
         field_id: u16,
@@ -779,18 +773,18 @@ impl<'hir> HirBase<'hir> {
 /// - Usually has HirId(0) or is the first node created for a unit
 /// - Parent of all top-level definitions
 /// - Used as the entry point for tree traversal
-pub struct HirRoot<'hir> {
-    pub base: HirBase<'hir>,
+pub struct HirRoot {
+    pub base: HirBase,
     pub file_name: Option<String>,
 }
 
-impl<'hir> HirRoot<'hir> {
+impl HirRoot {
     /// Create a new root node.
     ///
     /// # Arguments
     /// * `base` - Common metadata for this node
     /// * `file_name` - Optional source file name
-    pub fn new(base: HirBase<'hir>, file_name: Option<String>) -> Self {
+    pub fn new(base: HirBase, file_name: Option<String>) -> Self {
         Self { base, file_name }
     }
 }
@@ -809,18 +803,18 @@ impl<'hir> HirRoot<'hir> {
 /// - String literals: `"hello"`, `"world"`
 /// - Documentation comments: `/// This is a doc comment`
 /// - Inline comments: `// This is a comment`
-pub struct HirText<'hir> {
-    pub base: HirBase<'hir>,
+pub struct HirText {
+    pub base: HirBase,
     pub text: String,
 }
 
-impl<'hir> HirText<'hir> {
+impl HirText {
     /// Create a new text node.
     ///
     /// # Arguments
     /// * `base` - Common metadata for this node
     /// * `text` - The text content to store
-    pub fn new(base: HirBase<'hir>, text: String) -> Self {
+    pub fn new(base: HirBase, text: String) -> Self {
         Self { base, text }
     }
 }
@@ -839,16 +833,16 @@ impl<'hir> HirText<'hir> {
 /// - Synthetic nodes inserted by transformations
 /// - Wrapper nodes around actual constructs
 /// - Parser-generated intermediate structures
-pub struct HirInternal<'hir> {
-    pub base: HirBase<'hir>,
+pub struct HirInternal {
+    pub base: HirBase,
 }
 
-impl<'hir> HirInternal<'hir> {
+impl HirInternal {
     /// Create a new internal node.
     ///
     /// # Arguments
     /// * `base` - Common metadata for this node
-    pub fn new(base: HirBase<'hir>) -> Self {
+    pub fn new(base: HirBase) -> Self {
         Self { base }
     }
 }
@@ -874,8 +868,8 @@ impl<'hir> HirInternal<'hir> {
 /// Scopes are critical for symbol resolution - symbols collected within a scope
 /// are associated with that scope's lifetime and namespace.
 pub struct HirScope<'hir> {
-    pub base: HirBase<'hir>,
-    pub ident: Option<&'hir HirIdent<'hir>>,
+    pub base: HirBase,
+    pub ident: Option<&'hir HirIdent>,
 }
 
 impl<'hir> HirScope<'hir> {
@@ -884,7 +878,7 @@ impl<'hir> HirScope<'hir> {
     /// # Arguments
     /// * `base` - Common metadata for this node
     /// * `ident` - Optional identifier for the scope
-    pub fn new(base: HirBase<'hir>, ident: Option<&'hir HirIdent<'hir>>) -> Self {
+    pub fn new(base: HirBase, ident: Option<&'hir HirIdent>) -> Self {
         Self { base, ident }
     }
 
@@ -920,18 +914,18 @@ impl<'hir> HirScope<'hir> {
 /// # Role in Symbol Collection
 /// Identifiers are typically where symbols are collected. When the collector encounters
 /// an identifier in a declaration context, it creates a symbol entry in the current scope.
-pub struct HirIdent<'hir> {
-    pub base: HirBase<'hir>,
+pub struct HirIdent {
+    pub base: HirBase,
     pub name: String,
 }
 
-impl<'hir> HirIdent<'hir> {
+impl<'hir> HirIdent {
     /// Create a new identifier node.
     ///
     /// # Arguments
     /// * `base` - Common metadata for this node
     /// * `name` - The identifier string
-    pub fn new(base: HirBase<'hir>, name: String) -> Self {
+    pub fn new(base: HirBase, name: String) -> Self {
         Self { base, name }
     }
 }
@@ -954,18 +948,18 @@ impl<'hir> HirIdent<'hir> {
 /// # Example
 /// A file node for "src/main.rs" would contain all module-level declarations
 /// and track the file path for accurate error messages.
-pub struct HirFile<'hir> {
-    pub base: HirBase<'hir>,
+pub struct HirFile {
+    pub base: HirBase,
     pub file_path: String,
 }
 
-impl<'hir> HirFile<'hir> {
+impl<'hir> HirFile {
     /// Create a new file node.
     ///
     /// # Arguments
     /// * `base` - Common metadata for this node
     /// * `file_path` - The path to the source file
-    pub fn new(base: HirBase<'hir>, file_path: String) -> Self {
+    pub fn new(base: HirBase, file_path: String) -> Self {
         Self { base, file_path }
     }
 }
