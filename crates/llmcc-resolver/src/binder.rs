@@ -285,6 +285,61 @@ impl<'tcx> BinderCore<'tcx> {
     }
 }
 
+/// Public API for binding symbols with a custom visitor function.
+///
+/// This is a higher-order function that creates a BinderCore and executes a closure
+/// to perform binding operations. It provides a convenient way to perform symbol binding
+/// while automatically managing the BinderCore lifecycle.
+///
+/// # Two-Phase Symbol Resolution
+///
+/// This function is part of the second phase (binding) of symbol resolution:
+/// - **Phase 1 (Collection)**: DeclVisitor + CollectorCore create all symbols and scopes
+/// - **Phase 2 (Binding)**: BinderVisitor + BinderCore resolve and establish relationships
+///
+/// # Arguments
+///
+/// - `cc`: The compilation unit containing pre-created symbols from the collection phase
+/// - `globals`: The global scope (root of the scope hierarchy)
+/// - `visitor`: A closure that receives a mutable BinderCore to perform binding operations
+///
+/// # Returns
+///
+/// Returns the global scope after binding is complete. This allows for chaining
+/// and further processing if needed.
+///
+/// # Example
+///
+/// ```ignore
+/// let globals = cc.create_globals();
+/// let result = bind_symbols_with(unit, globals, |binder| {
+///     // Perform custom binding operations
+///     let sym = binder.lookup_or_insert("my_var", node, SymbolKind::Variable);
+///     // ... more binding logic
+/// });
+/// ```
+///
+/// # Strategy
+///
+/// The BinderCore uses a **hashmap-first lookup strategy**:
+/// 1. First attempts to find scopes/symbols in the CompileCtxt's hashmap storage
+/// 2. If not found, allocates new ones in the CompileUnit's arena
+/// 3. Maintains a scope stack for hierarchical scope traversal
+///
+/// This differs from CollectorCore which always allocates directly in the per-unit arena.
+pub fn bind_symbols_with<'a, F>(
+    cc: CompileUnit<'a>,
+    globals: &'a Scope<'a>,
+    visitor: F,
+) -> &'a Scope<'a>
+where
+    F: FnOnce(&mut BinderCore<'a>),
+{
+    let mut collector = BinderCore::new(cc, globals);
+    visitor(&mut collector);
+    collector.globals()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

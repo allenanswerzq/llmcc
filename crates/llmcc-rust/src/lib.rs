@@ -1,12 +1,12 @@
 #[macro_use]
 extern crate llmcc_core;
 
-// mod bind;
+mod bind;
 mod collect;
 mod token;
 mod util;
 
-// pub use crate::bind::BinderVisitor;
+pub use crate::bind::BinderVisitor;
 pub use crate::collect::DeclVisitor;
 
 pub use llmcc_core::{

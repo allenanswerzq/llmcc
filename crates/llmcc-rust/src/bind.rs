@@ -18,6 +18,15 @@ use crate::token::LangRust;
 /// # Two-Phase Approach
 /// - Phase 1 (DeclVisitor/CollectorCore): Create all symbols and scopes
 /// - Phase 2 (BinderVisitor/BinderCore): Resolve and bind symbols
+///
+/// # Phase 1 Implementation (Starting)
+/// This phase focuses on core container types:
+/// - Source files (crate root)
+/// - Modules (namespace organization)
+/// - Functions (behavior)
+/// - Structs (data layout)
+///
+/// Phase 2 expansion will add enum, trait, impl, type alias, const, static, and field handling.
 #[derive(Debug)]
 pub struct BinderVisitor<'tcx> {
     unit: CompileUnit<'tcx>,
@@ -27,16 +36,6 @@ impl<'tcx> BinderVisitor<'tcx> {
     /// Creates a new binder visitor for the compilation unit.
     fn new(unit: CompileUnit<'tcx>) -> Self {
         Self { unit }
-    }
-
-    fn visit_named_scope<F>(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        mut visit_fn: F,
-    ) where
-        F: FnMut(&mut Self, &mut BinderCore<'tcx>),
-    {
     }
 
     /// Visit a scoped identifier to resolve symbol references.
@@ -66,41 +65,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
-    /// Resolve function call expressions.
-    /// Maps call nodes to the called function symbol and binds arguments.
-    fn resolve_call_expression(
-        &self,
-        _node: HirNode<'tcx>,
-        _core: &BinderCore<'tcx>,
-    ) {
-        // TODO: Resolve the function being called
-        // TODO: Bind argument expressions
-        // TODO: Infer return type from function definition
-    }
-
-    /// Resolve struct/enum initialization expressions.
-    /// Maps field initializers to struct field symbols.
-    fn resolve_struct_init(
-        &self,
-        _node: HirNode<'tcx>,
-        _core: &BinderCore<'tcx>,
-    ) {
-        // TODO: Resolve struct name to symbol
-        // TODO: Map each field initializer to struct fields
-        // TODO: Type-check field initialization expressions
-    }
-
-    /// Resolve field access expressions (e.g., `obj.field`).
-    /// Maps field names to struct field symbols.
-    fn resolve_field_access(
-        &self,
-        _node: HirNode<'tcx>,
-        _core: &BinderCore<'tcx>,
-    ) {
-        // TODO: Resolve the object's type
-        // TODO: Look up field in struct definition
-        // TODO: Bind field access to field symbol
-    }
 
     /// Type inference for expressions.
     /// Returns the inferred type symbol for an expression node.
@@ -131,11 +95,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        // During binding, we navigate the scope hierarchy established during collection
-        // No new scopes are created here
-        self.visit_named_scope(node, core, |visitor, core| {
-            visitor.visit_children(&node, core, core.scope_top(), None);
-        });
+        // Navigate the crate/module scope established during collection phase
+        // Entry point for the binding phase
+        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
+            core.push_scope(scope);
+            self.visit_children(&node, core, scope, None);
+            core.pop_scope();
+        }
     }
 
     fn visit_mod_item(
@@ -146,9 +112,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         // Navigate module scope created during collection phase
-        self.visit_named_scope(node, core, |visitor, core| {
-            visitor.visit_children(&node, core, core.scope_top(), None);
-        });
+        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
+            core.push_scope(scope);
+            self.visit_children(&node, core, scope, None);
+            core.pop_scope();
+        }
     }
 
     fn visit_function_item(
@@ -159,18 +127,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         // Navigate function scope created during collection phase
-        self.visit_named_scope(node, core, |visitor, core| {
-            // Resolve return type if present
-            if let Some(_return_type) = node.opt_child_by_field(visitor.unit(), LangRust::field_return_type) {
-                // TODO: Resolve return type symbol
-            }
-
-            // Resolve parameter types
-            // TODO: Iterate over parameters and bind them
-
-            // Visit function body
-            visitor.visit_children(&node, core, core.scope_top(), None);
-        });
+        // TODO: Resolve return type if present
+        // TODO: Resolve parameter types
+        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
+            core.push_scope(scope);
+            self.visit_children(&node, core, scope, None);
+            core.pop_scope();
+        }
     }
 
     fn visit_struct_item(
@@ -181,106 +144,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         // Navigate struct scope and resolve field types
-        self.visit_named_scope(node, core, |visitor, core| {
-            // TODO: Resolve types for struct fields
-            visitor.visit_children(&node, core, core.scope_top(), None);
-        });
-    }
-
-    fn visit_enum_item(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-        // Navigate enum scope
-        self.visit_named_scope(node, core, |visitor, core| {
-            visitor.visit_children(&node, core, core.scope_top(), None);
-        });
-    }
-
-    fn visit_trait_item(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-        // Navigate trait scope
-        self.visit_named_scope(node, core, |visitor, core| {
-            visitor.visit_children(&node, core, core.scope_top(), None);
-        });
-    }
-
-    fn visit_impl_item(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-        // Navigate impl scope
-        self.visit_named_scope(node, core, |visitor, core| {
-            visitor.visit_children(&node, core, core.scope_top(), None);
-        });
-    }
-
-    fn visit_type_item(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-        // Resolve type alias target
-        if let Some(_type_expr) = node.opt_child_by_field(self.unit(), LangRust::field_type) {
-            // TODO: Resolve the type being aliased
-        }
-    }
-
-    fn visit_const_item(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-        // Resolve const type and value
-        if let Some(_const_type) = node.opt_child_by_field(self.unit(), LangRust::field_type) {
-            // TODO: Resolve const type
-        }
-        if let Some(_value_expr) = node.opt_child_by_field(self.unit(), LangRust::field_value) {
-            // TODO: Infer and bind value expression
-        }
-    }
-
-    fn visit_static_item(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-        // Resolve static type and value
-        if let Some(_static_type) = node.opt_child_by_field(self.unit(), LangRust::field_type) {
-            // TODO: Resolve static type
-        }
-        if let Some(_value_expr) = node.opt_child_by_field(self.unit(), LangRust::field_value) {
-            // TODO: Infer and bind value expression
-        }
-    }
-
-    fn visit_field_declaration(
-        &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-        // Resolve field type
-        if let Some(_field_type) = node.opt_child_by_field(self.unit(), LangRust::field_type) {
-            // TODO: Resolve field type symbol
+        // TODO: Resolve types for struct fields
+        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
+            core.push_scope(scope);
+            self.visit_children(&node, core, scope, None);
+            core.pop_scope();
         }
     }
 }
