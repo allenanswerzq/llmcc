@@ -1,9 +1,9 @@
+use llmcc_core::HirId;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{Symbol, SymbolKind};
-use llmcc_core::HirId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationDirection {
@@ -112,19 +112,13 @@ impl<'tcx> BinderCore<'tcx> {
     /// # Arguments
     /// * `id` - The HIR node ID for the scope
     /// * `symbol` - The symbol this scope belongs to (e.g., function, struct, trait)
-    pub fn push_scope_with(&mut self, owner: HirId, symbol: Option<&'tcx Symbol>) {
+    pub fn push_scope_with(&mut self, owner: HirId) {
         // NOTE: this is the biggest difference from CollectorCore, we would expect
         // the scope must already exist in the CompileUnit
         let scope = self
             .unit
             .opt_get_scope(owner)
             .expect("scope must exist in CompileUnit");
-        if let Some(symbol) = symbol {
-            symbol.set_scope(Some(scope.id()));
-            if let Some(parent_scope) = self.scopes.top() {
-                symbol.set_parent_scope(Some(parent_scope.id()));
-            }
-        }
         self.push_scope(scope);
     }
 

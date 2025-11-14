@@ -126,6 +126,14 @@ impl<'a> CollectorCore<'a> {
     ///
     /// Increases nesting depth and makes the scope active for symbol insertions.
     #[inline]
+    pub fn push_scope_recursively(&mut self, scope: &'a Scope<'a>) {
+        self.scopes.push_recursively(scope);
+    }
+
+    /// Pushes a scope onto the stack.
+    ///
+    /// Increases nesting depth and makes the scope active for symbol insertions.
+    #[inline]
     pub fn push_scope_with(&mut self, id: HirId, symbol: Option<&'a Symbol>) {
         let scope = self.arena.alloc(Scope::new_with(id, symbol));
         if let Some(symbol) = symbol {

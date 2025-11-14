@@ -84,8 +84,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorCore<'tcx>> for DeclVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         // For module items (mod my_module { ... } or mod my_module;)
-        self.visit_named_scope(node, core, SymbolKind::Module, |visitor, core, symbol| {
-            visitor.visit_children(&node, core, core.top_scope(), Some(symbol));
+        self.visit_named_scope(node, core, SymbolKind::Module, |v, core, symbol| {
+            v.visit_children(&node, core, core.top_scope(), Some(symbol));
         });
     }
 
@@ -97,8 +97,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorCore<'tcx>> for DeclVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         // For function definitions (fn my_func(x: i32) -> i32 { ... })
-        self.visit_named_scope(node, core, SymbolKind::Function, |visitor, core, symbol| {
-            visitor.visit_children(&node, core, core.top_scope(), Some(symbol));
+        self.visit_named_scope(node, core, SymbolKind::Function, |v, core, symbol| {
+            v.visit_children(&node, core, core.top_scope(), Some(symbol));
         });
     }
 
@@ -110,8 +110,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorCore<'tcx>> for DeclVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         // For struct definitions (struct MyStruct { field: Type } or struct MyStruct;)
-        self.visit_named_scope(node, core, SymbolKind::Struct, |visitor, core, symbol| {
-            visitor.visit_children(&node, core, core.top_scope(), Some(symbol));
+        self.visit_named_scope(node, core, SymbolKind::Struct, |v, core, symbol| {
+            v.visit_children(&node, core, core.top_scope(), Some(symbol));
         });
     }
 
@@ -123,8 +123,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorCore<'tcx>> for DeclVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         // For enum definitions (enum MyEnum { Variant1, Variant2 })
-        self.visit_named_scope(node, core, SymbolKind::Enum, |visitor, core, symbol| {
-            visitor.visit_children(&node, core, core.top_scope(), Some(symbol));
+        self.visit_named_scope(node, core, SymbolKind::Enum, |v, core, symbol| {
+            v.visit_children(&node, core, core.top_scope(), Some(symbol));
         });
     }
 
@@ -136,8 +136,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorCore<'tcx>> for DeclVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         // For trait definitions (trait MyTrait { fn method(&self) {} })
-        self.visit_named_scope(node, core, SymbolKind::Trait, |visitor, core, symbol| {
-            visitor.visit_children(&node, core, core.top_scope(), Some(symbol));
+        self.visit_named_scope(node, core, SymbolKind::Trait, |v, core, symbol| {
+            v.visit_children(&node, core, core.top_scope(), Some(symbol));
         });
     }
 
@@ -264,8 +264,8 @@ mod tests {
 
         let globlas = cc.create_globals();
         let mut core = CollectorCore::new(0, &cc.arena, &cc.interner, globlas);
-        let mut visitor = DeclVisitor::new(unit);
-        visitor.visit_node(node, &mut core, globlas, None);
+        let mut v = DeclVisitor::new(unit);
+        v.visit_node(node, &mut core, globlas, None);
 
         // Verify node is the source file by checking the HIR kind
         assert_eq!(node.kind(), llmcc_core::ir::HirKind::File);

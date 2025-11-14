@@ -483,9 +483,7 @@ pub fn build_llmcc_ir<'a, L: LanguageTrait>(
         {
             let mut hir_map = cc.hir_map.write();
             for (id, spec) in node_specs {
-            for (id, spec) in node_specs {
                 let parented_node = spec.into_parented_node(&cc.arena);
-                hir_map.insert(id, parented_node);
                 hir_map.insert(id, parented_node);
             }
         }

@@ -65,21 +65,6 @@ impl std::fmt::Display for ScopeId {
 }
 
 /// Classification of what kind of named entity a symbol represents.
-///
-/// Used for semantic analysis and filtering operations.
-/// - `Unknown`: Symbol kind not yet determined
-/// - `Module`: A module/namespace/package
-/// - `Struct`: A struct/class definition
-/// - `Enum`: An enum type definition
-/// - `Function`: A function/method definition
-/// - `Macro`: A macro definition
-/// - `Variable`: A variable binding
-/// - `Field`: A struct/class field
-/// - `Const`: A constant binding
-/// - `Static`: A static variable
-/// - `Trait`: A trait/interface definition
-/// - `Impl`: An implementation block
-/// - `EnumVariant`: A variant of an enum
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum SymbolKind {
     Unknown,

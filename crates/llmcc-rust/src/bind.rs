@@ -1,32 +1,14 @@
 use llmcc_core::context::CompileUnit;
+use llmcc_core::ir::HirNode;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{Symbol, SymbolKind};
-use llmcc_core::ir::HirNode;
 use llmcc_resolver::BinderCore;
 
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
+use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 /// Visitor for resolving symbol bindings and establishing relationships.
-///
-/// The BinderVisitor is the second pass after DeclVisitor. It:
-/// 1. Navigates the pre-created symbol table from collection phase
-/// 2. Resolves symbol references to their definitions
-/// 3. Establishes symbol relationships (parent-child, type-of, etc.)
-/// 4. Performs type inference where applicable
-///
-/// # Two-Phase Approach
-/// - Phase 1 (DeclVisitor/CollectorCore): Create all symbols and scopes
-/// - Phase 2 (BinderVisitor/BinderCore): Resolve and bind symbols
-///
-/// # Phase 1 Implementation (Starting)
-/// This phase focuses on core container types:
-/// - Source files (crate root)
-/// - Modules (namespace organization)
-/// - Functions (behavior)
-/// - Structs (data layout)
-///
-/// Phase 2 expansion will add enum, trait, impl, type alias, const, static, and field handling.
 #[derive(Debug)]
 pub struct BinderVisitor<'tcx> {
     unit: CompileUnit<'tcx>,
@@ -65,14 +47,9 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
-
     /// Type inference for expressions.
     /// Returns the inferred type symbol for an expression node.
-    fn infer_type(
-        &self,
-        _node: HirNode<'tcx>,
-        _core: &BinderCore<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_type(&self, _node: HirNode<'tcx>, _core: &BinderCore<'tcx>) -> Option<&'tcx Symbol> {
         // TODO: Implement type inference
         // - Literals (i32, bool, etc.)
         // - Variable references
@@ -95,12 +72,27 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        // Navigate the crate/module scope established during collection phase
-        // Entry point for the binding phase
-        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
-            core.push_scope(scope);
-            self.visit_children(&node, core, scope, None);
-            core.pop_scope();
+        if let Some(file_path) = self.unit().file_path() {
+            if let Some(crate_name) = parse_crate_name(&file_path)
+                && let Some(symbol) =
+                    core.lookup_or_insert_global(&crate_name, node.id(), SymbolKind::Module)
+            {
+                core.push_scope_with(node.id(), Some(symbol));
+            }
+
+            if let Some(module_name) = parse_module_name(&file_path)
+                && let Some(symbol) =
+                    core.lookup_or_insert_global(&module_name, node.id(), SymbolKind::Module)
+            {
+                core.push_scope_with(node.id(), Some(symbol));
+            }
+
+            if let Some(file_name) = parse_file_name(&file_path)
+                && let Some(symbol) =
+                    core.lookup_or_insert(&file_name, node.id(), SymbolKind::Module)
+            {
+                core.push_scope_with(node.id(), Some(symbol));
+            }
         }
     }
 
@@ -111,12 +103,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        // Navigate module scope created during collection phase
-        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
-            core.push_scope(scope);
-            self.visit_children(&node, core, scope, None);
-            core.pop_scope();
+        let sn = node.expect_scope();
+        if sn.ident.is_none() {
+            core.push_scope_with(node.id());
+        } else {
+            core.push_scope_with(node.id());
         }
+
     }
 
     fn visit_function_item(

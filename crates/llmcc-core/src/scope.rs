@@ -1,52 +1,13 @@
 //! Scope management and symbol lookup for the code graph.
-//!
-//! This module provides hierarchical scope management with O(1) symbol lookup.
-//!
-//! # Overview
-//! - `Scope`: Represents a single scope level (function body, module, etc.)
-//! - `ScopeStack`: Manages a stack of nested scopes for symbol resolution
-//! - `LookupOptions`: Configuration for symbol lookup and insertion strategies
-//!
-//! # Scope Hierarchy
-//! Scopes are organized in a stack, where scope resolution follows this priority:
-//! 1. Global scope (depth 0) - module-level definitions
-//! 2. Parent scope (depth-1) - enclosing scope
-//! 3. Current scope (top) - innermost scope
-//!
-//! # Example
-//! ```ignore
-//! let mut scope_stack = ScopeStack::new(arena, interner);
-//! let global_scope = Scope::new(id);
-//! scope_stack.push(&global_scope);
-//! let symbol = scope_stack.lookup_or_insert(node_id, "my_func");
-//! ```
-
 use parking_lot::RwLock;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::collections::{HashMap, HashSet};
+use std::sync::atomic::Ordering;
 
-use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
-use crate::ir::{Arena, HirId, HirIdent};
+use crate::ir::{Arena, HirId};
 use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, Symbol, SymbolKind};
 
 /// Represents a single level in the scope hierarchy.
-///
-/// A scope manages a set of symbols (names) and provides O(1) lookup via a hash map.
-/// Scopes are nested to represent code blocks, functions, modules, etc.
-///
-/// # Ownership
-/// - `owner`: The HIR node that introduces this scope (e.g., function, module)
-/// - `symbol`: The symbol that introduced this scope (if any)
-///
-/// # Symbol Storage
-/// Names are mapped to vectors of symbols (supporting overloading and shadowing):
-/// - Multiple symbols can have the same name (via `previous` chain)
-/// - Names are interned for O(1) comparison
-///
-/// # Thread Safety
-/// Thread-safe via `RwLock` for interior mutability of the symbol map.
-/// The scope ID is immutable once created.
 #[derive(Debug)]
 pub struct Scope<'tcx> {
     /// Unique monotonic scope ID assigned at creation time.
@@ -61,6 +22,12 @@ pub struct Scope<'tcx> {
     /// The symbol that introduced this scope, if any.
     /// Examples: the function symbol for a function body scope.
     symbol: RwLock<Option<&'tcx Symbol>>,
+    /// Parent scopes for inheritance and member lookup.
+    parents: RwLock<Vec<&'tcx Scope<'tcx>>>,
+    /// Child scopes nested within this scope.
+    /// Used for hierarchical scope traversal (planned feature).
+    #[allow(dead_code)]
+    children: RwLock<Vec<&'tcx Scope<'tcx>>>,
 }
 
 impl<'tcx> Scope<'tcx> {
@@ -88,6 +55,8 @@ impl<'tcx> Scope<'tcx> {
             symbols: RwLock::new(HashMap::new()),
             owner,
             symbol: RwLock::new(symbol),
+            parents: RwLock::new(Vec::new()),
+            children: RwLock::new(Vec::new()),
         }
     }
 
@@ -126,6 +95,8 @@ impl<'tcx> Scope<'tcx> {
             symbols: RwLock::new(HashMap::new()),
             owner: other.owner,
             symbol: RwLock::new(symbol_ref),
+            parents: RwLock::new(Vec::new()),
+            children: RwLock::new(Vec::new()),
         };
 
         // Copy all symbols from the source scope
@@ -271,36 +242,9 @@ impl<'tcx> Scope<'tcx> {
             .collect()
     }
 
-    /// Looks up a single unique symbol matching the given filters.
-    ///
-    /// Requires that exactly one symbol matches both the kind and unit filters.
-    ///
-    /// # Arguments
-    /// * `name` - The interned symbol name
-    /// * `kind_filter` - The required symbol kind
-    /// * `unit_filter` - The required compile unit index
-    ///
-    /// # Returns
-    /// Some(symbol) if exactly one match, None if no matches, panics if multiple matches
-    fn lookup_symbol_unqiue(
-        &self,
-        name: InternedStr,
-        kind_filter: SymbolKind,
-        unit_filter: usize,
-    ) -> Option<&'tcx Symbol> {
-        let symbols = self.lookup_symbols_with(name, Some(kind_filter), Some(unit_filter));
-        if symbols.is_empty() {
-            None
-        } else if symbols.len() == 1 {
-            Some(symbols[0])
-        } else {
-            unreachable!("multiple symbols found for unique lookup");
-        }
-    }
-
     /// Returns a compact string representation for debugging.
     /// Format: `{owner}/{symbol_count}`
-    pub fn format_compact(&self) -> String {
+    pub fn format(&self) -> String {
         let total: usize = self.symbols.read().values().map(|v| v.len()).sum();
         format!("{}/{}", self.owner, total)
     }
@@ -371,6 +315,38 @@ impl<'tcx> ScopeStack<'tcx> {
     #[inline]
     pub fn push(&mut self, scope: &'tcx Scope<'tcx>) {
         self.stack.push(scope);
+    }
+
+    /// Recursively pushes a scope and all its base (parent) scopes onto the stack.
+    pub fn push_recursively(&mut self, scope: &'tcx Scope<'tcx>) {
+        let mut cand = Vec::new();
+        cand.push(scope);
+
+        let mut scopes = Vec::new();
+
+        let mut visited = HashSet::new();
+        while let Some(current) = cand.pop() {
+            if visited.contains(&current.id()) {
+                continue;
+            }
+
+            visited.insert(current.id());
+            scopes.push(current);
+
+            let parents = current.parents.read();
+            if !parents.is_empty() {
+                // Process in reverse order to maintain LIFO semantics
+                for base in parents.iter().rev() {
+                    if !visited.contains(&base.id()) {
+                        cand.push(base);
+                    }
+                }
+            }
+        }
+
+        for scope in scopes.iter().rev() {
+            self.push(scope);
+        }
     }
 
     /// Pops a scope from the stack.
