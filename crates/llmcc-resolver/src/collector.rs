@@ -286,77 +286,28 @@ where
 
 /// Apply symbols collected from a single compilation unit to the global context.
 ///
-/// This function performs **Approach 2: Scope Hierarchy Registration**.
+/// NOTE: even arena is the per-file, but the sym_id and scope_id is actually
+/// global applied, beause we use atomic to assign value each time when we create
 ///
-/// Takes locally-collected symbols from a compilation unit's scope hierarchy
-/// and registers them in the global CompileCtxt registries:
-/// - `symbol_map`: SymId → &Symbol (fast lookup by ID)
-/// - `scope_map`: HirId → &Scope (scope owner to scope)
-///
-/// # Arguments
-/// * `cc` - The global compilation context (contains registries to populate)
-/// * `unit_index` - The index of the unit being registered
-/// * `arena` - The arena containing the collected symbols/scopes (per-unit)
-///
-/// # Design
-/// - Traverses the entire scope hierarchy via DFS
-/// - Registers each scope by its owner HirId
-/// - Registers all symbols in each scope by their SymId
-/// - Supports nested scopes (functions, blocks, etc.)
-/// - Does NOT handle deduplication (for now)
-///
-/// # Thread Safety
-/// Uses `RwLock` to safely write to shared registries. Multiple units can be
-/// applied sequentially or in parallel (write locks are held briefly per scope).
-///
-/// # Example
-/// ```ignore
-/// let arena = Arena::default(); // Per-file arena
-/// let mut collector = CollectorCore::new(unit_index, &arena, &interner);
-/// // ... collect symbols ...
-/// apply_collected_symbols(&cc, unit_index, arena, collector.globals());
-/// ```
-/// After this the local arena is no use.
+/// TODO: this function is slow, need to do batch allocation or other optimization later.
 pub fn apply_collected_symbols<'tcx, 'unit>(
     cc: &'tcx CompileCtxt<'tcx>,
     unit_index: usize,
     arena: &'unit mut Arena<'unit>,
     globals: &'unit Scope<'unit>,
 ) -> &'tcx Scope<'tcx> {
-    use std::collections::HashMap;
-
     let final_globals = cc.create_globals();
-    let mut scope_map: HashMap<ScopeId, &'tcx Scope<'tcx>> = HashMap::new();
-    let mut scope_cache: HashMap<HirId, &'tcx Scope<'tcx>> = HashMap::new();
-    let mut symbol_map: HashMap<SymId, &'tcx Symbol> = HashMap::new();
-
-    // NOTE: even arena is the per-file, but the sym_id and scope_id is actually
-    // global applied, beause we use atomic to assign value each time when we create
     for scope in arena.iter_mut_scope() {
         // Lets think about it: scope and symbol right now are in the per-unit arena,
         // we need to clone them into the global arena. those symbols and scopes
         // are already properly linked in the collector phase. we dont want to br
         // eak those links.
-
-        // let scope_id = scope.id();
-        // let scope = if scope_id == globals.id() {
-        //     final_globals.merge(scope)
-        // } else {
-        //     cc.alloc_scope(scope.owner())
-        // };
-        // scope_map.insert(scope_id, scope);
-        // scope_cache.insert(scope.owner(), scope);
-        // scope.visits_symbols(|symbol| {
-        //     let cloned = symbol.clone();
-        //     let mut cloned = cloned;
-        //     cloned.set_unit_index(unit_index);
-        //     let final_symbol = cc.alloc_symbol(cloned);
-        //     symbol_map.insert(final_symbol.id, final_symbol);
-        // });
+        if scope.id() == globals.id() {
+            cc.merge_two_scopes(final_globals, scope);
+        } else {
+            cc.alloc_scope_with(scope);
+        };
     }
-
-    scope_map.insert(final_globals.id(), final_globals);
-    scope_cache.insert(final_globals.owner(), final_globals);
 
     final_globals
 }

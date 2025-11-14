@@ -132,6 +132,15 @@ impl<'tcx> Scope<'tcx> {
         new_scope
     }
 
+    /// Merge existing scope into this scope, new stuff should allocate in the given arena.
+    pub fn merge_with(&self, other: &Scope<'tcx>, arena: &'tcx Arena<'tcx>) {
+        // Merge all symbols from the other scope into this scope
+        other.for_each_symbol(|source_symbol| {
+            let allocated = arena.alloc(source_symbol.clone());
+            self.insert(allocated);
+        });
+    }
+
     /// Gets the HIR node that owns this scope.
     #[inline]
     pub fn owner(&self) -> HirId {
@@ -1117,5 +1126,196 @@ mod tests {
         assert_eq!(new_scope.id(), source_scope.id());
         assert_eq!(new_scope.owner(), source_scope.owner());
         assert!(new_scope.symbol().is_none());
+    }
+
+    #[test]
+    fn test_scope_merge_with_basic() {
+        crate::symbol::reset_symbol_id_counter();
+        crate::symbol::reset_scope_id_counter();
+
+        let pool = create_test_intern_pool();
+        let arena = crate::ir::Arena::default();
+
+        // Create target scope with some symbols
+        let target_scope = Scope::new(create_test_hir_id(1));
+        let name1 = pool.intern("target_var");
+        let symbol1 = Symbol::new(create_test_hir_id(10), name1);
+        target_scope.insert(&symbol1);
+
+        // Create source scope to merge
+        let source_scope = Scope::new(create_test_hir_id(2));
+        let name2 = pool.intern("source_var");
+        let symbol2 = Symbol::new(create_test_hir_id(20), name2);
+        source_scope.insert(&symbol2);
+
+        // Merge source into target
+        target_scope.merge_with(&source_scope, &arena);
+
+        // Verify both symbols are in target scope
+        let found1 = target_scope.lookup_symbols(name1);
+        let found2 = target_scope.lookup_symbols(name2);
+
+        assert_eq!(found1.len(), 1);
+        assert_eq!(found2.len(), 1);
+        assert_eq!(found1[0].id, symbol1.id);
+        assert_eq!(found2[0].id, symbol2.id);
+    }
+
+    #[test]
+    fn test_scope_merge_with_multiple_symbols() {
+        crate::symbol::reset_symbol_id_counter();
+        crate::symbol::reset_scope_id_counter();
+
+        let pool = create_test_intern_pool();
+        let arena = crate::ir::Arena::default();
+
+        // Create target scope
+        let target_scope = Scope::new(create_test_hir_id(1));
+
+        // Create source scope with multiple symbols
+        let source_scope = Scope::new(create_test_hir_id(2));
+        let name1 = pool.intern("var1");
+        let name2 = pool.intern("var2");
+        let name3 = pool.intern("var3");
+
+        let symbol1 = Symbol::new(create_test_hir_id(10), name1);
+        let symbol2 = Symbol::new(create_test_hir_id(11), name2);
+        let symbol3 = Symbol::new(create_test_hir_id(12), name3);
+
+        source_scope.insert(&symbol1);
+        source_scope.insert(&symbol2);
+        source_scope.insert(&symbol3);
+
+        // Merge source into target
+        target_scope.merge_with(&source_scope, &arena);
+
+        // Verify all symbols are in target scope
+        assert_eq!(target_scope.lookup_symbols(name1).len(), 1);
+        assert_eq!(target_scope.lookup_symbols(name2).len(), 1);
+        assert_eq!(target_scope.lookup_symbols(name3).len(), 1);
+    }
+
+    #[test]
+    fn test_scope_merge_with_same_name_symbols() {
+        crate::symbol::reset_symbol_id_counter();
+        crate::symbol::reset_scope_id_counter();
+
+        let pool = create_test_intern_pool();
+        let arena = crate::ir::Arena::default();
+
+        // Create target scope with a symbol
+        let target_scope = Scope::new(create_test_hir_id(1));
+        let name = pool.intern("shared_var");
+        let symbol1 = Symbol::new(create_test_hir_id(10), name);
+        target_scope.insert(&symbol1);
+
+        // Create source scope with symbol of same name
+        let source_scope = Scope::new(create_test_hir_id(2));
+        let symbol2 = Symbol::new(create_test_hir_id(20), name);
+        source_scope.insert(&symbol2);
+
+        // Merge source into target
+        target_scope.merge_with(&source_scope, &arena);
+
+        // Verify both symbols are present (supporting shadowing)
+        let found = target_scope.lookup_symbols(name);
+        assert_eq!(found.len(), 2);
+        assert_eq!(found[0].id, symbol1.id);
+        assert_eq!(found[1].id, symbol2.id);
+    }
+
+    #[test]
+    fn test_scope_merge_with_preserves_metadata() {
+        crate::symbol::reset_symbol_id_counter();
+        crate::symbol::reset_scope_id_counter();
+
+        let pool = create_test_intern_pool();
+        let arena = crate::ir::Arena::default();
+
+        // Create target scope
+        let target_scope = Scope::new(create_test_hir_id(1));
+
+        // Create source scope with symbol having metadata
+        let source_scope = Scope::new(create_test_hir_id(2));
+        let name = pool.intern("metadata_var");
+        let symbol = Symbol::new(create_test_hir_id(20), name);
+        symbol.set_kind(SymbolKind::Function);
+        symbol.set_unit_index(5);
+        symbol.set_is_global(true);
+        source_scope.insert(&symbol);
+
+        // Merge source into target
+        target_scope.merge_with(&source_scope, &arena);
+
+        // Verify metadata is preserved
+        let found = target_scope.lookup_symbols(name);
+        assert_eq!(found.len(), 1);
+
+        let merged = found[0];
+        assert_eq!(merged.id, symbol.id);
+        assert_eq!(merged.kind(), SymbolKind::Function);
+        assert_eq!(merged.unit_index(), Some(5));
+        assert!(merged.is_global());
+    }
+
+    #[test]
+    fn test_scope_merge_with_empty_source() {
+        crate::symbol::reset_symbol_id_counter();
+        crate::symbol::reset_scope_id_counter();
+
+        let pool = create_test_intern_pool();
+        let arena = crate::ir::Arena::default();
+
+        // Create target scope with a symbol
+        let target_scope = Scope::new(create_test_hir_id(1));
+        let name = pool.intern("target_var");
+        let symbol = Symbol::new(create_test_hir_id(10), name);
+        target_scope.insert(&symbol);
+
+        // Create empty source scope
+        let source_scope = Scope::new(create_test_hir_id(2));
+
+        // Merge empty source into target
+        target_scope.merge_with(&source_scope, &arena);
+
+        // Verify target scope is unchanged
+        let found = target_scope.lookup_symbols(name);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].id, symbol.id);
+    }
+
+    #[test]
+    fn test_scope_merge_with_into_empty_target() {
+        crate::symbol::reset_symbol_id_counter();
+        crate::symbol::reset_scope_id_counter();
+
+        let pool = create_test_intern_pool();
+        let arena = crate::ir::Arena::default();
+
+        // Create empty target scope
+        let target_scope = Scope::new(create_test_hir_id(1));
+
+        // Create source scope with symbols
+        let source_scope = Scope::new(create_test_hir_id(2));
+        let name1 = pool.intern("var1");
+        let name2 = pool.intern("var2");
+
+        let symbol1 = Symbol::new(create_test_hir_id(10), name1);
+        let symbol2 = Symbol::new(create_test_hir_id(11), name2);
+
+        source_scope.insert(&symbol1);
+        source_scope.insert(&symbol2);
+
+        // Merge source into empty target
+        target_scope.merge_with(&source_scope, &arena);
+
+        // Verify all symbols from source are now in target
+        let found1 = target_scope.lookup_symbols(name1);
+        let found2 = target_scope.lookup_symbols(name2);
+
+        assert_eq!(found1.len(), 1);
+        assert_eq!(found2.len(), 1);
+        assert_eq!(found1[0].id, symbol1.id);
+        assert_eq!(found2[0].id, symbol2.id);
     }
 }

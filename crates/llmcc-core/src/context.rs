@@ -625,7 +625,17 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        self.alloc_scope(Self::GLOBAL_SCOPE_OWNER)
+        let scope = self.alloc_scope(Self::GLOBAL_SCOPE_OWNER);
+        // self.symbol_map
+        //     .write()
+        //     .insert(SymId::GLOBAL_SCOPE, scope.as_symbol());
+        self.scope_cache
+            .write()
+            .insert(Self::GLOBAL_SCOPE_OWNER, scope);
+        self.scope_map
+            .write()
+            .insert(scope.id(), scope);
+        scope
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
@@ -669,6 +679,40 @@ impl<'tcx> CompileCtxt<'tcx> {
         scope
     }
 
+    /// Merge the second scope into the first.
+    ///
+    /// This combines all symbols from the second scope into the first scope,
+    /// and updates both the scope and symbol maps to reference the merged result.
+    ///
+    /// # Arguments
+    /// * `first` - The target scope to merge into
+    /// * `second` - The source scope to merge from
+    ///
+    /// # Side Effects
+    /// - All symbols from `second` are merged into `first`
+    /// - The symbol_map is updated to point all merged symbols to the symbol_map
+    /// - The scope_map is updated to redirect second's scope ID to first
+    /// - The scope_cache is updated to redirect second's owner to first
+    pub fn merge_two_scopes(
+        &'tcx self,
+        first: &'tcx Scope<'tcx>,
+        second: &'tcx Scope<'tcx>,
+    ) {
+        // Merge symbols from second into first
+        first.merge_with(second, self.arena());
+
+        // Update all symbol map entries for symbols now in first scope
+        // We need to register the merged symbols in the global symbol_map
+        first.for_each_symbol(|sym| {
+            self.symbol_map.write().insert(sym.id(), sym);
+        });
+
+        // Remap scope references from second to first
+        // If any HIR node was mapped to second's scope, it should now map to first
+        self.scope_map.write().insert(second.id(), first);
+        self.scope_cache.write().insert(second.owner(), first);
+    }
+
     /// Allocate a new scope based on an existing one, cloning its contents.
     ///
     /// The existing ones are from the other arena, and we want to allocate in
@@ -680,7 +724,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             return existing;
         }
 
-        // Allocate new scope
+        // Allocate new scope from existing
         let scope_id = existing.id();
         let scope = Scope::new_from(existing, self.arena());
         let scope = self.arena.alloc(scope);
@@ -688,6 +732,9 @@ impl<'tcx> CompileCtxt<'tcx> {
         // Update both maps
         self.scope_map.write().insert(scope_id, scope);
         self.scope_cache.write().insert(owner, scope);
+        scope.for_each_symbol(|sym| {
+            self.symbol_map.write().insert(sym.id(), sym);
+        });
 
         scope
     }
