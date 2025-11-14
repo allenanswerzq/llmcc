@@ -693,10 +693,10 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// - The symbol_map is updated to point all merged symbols to the symbol_map
     /// - The scope_map is updated to redirect second's scope ID to first
     /// - The scope_cache is updated to redirect second's owner to first
-    pub fn merge_two_scopes(
+    pub fn merge_two_scopes<'src>(
         &'tcx self,
         first: &'tcx Scope<'tcx>,
-        second: &'tcx Scope<'tcx>,
+        second: &'src Scope<'src>,
     ) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
@@ -717,7 +717,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     ///
     /// The existing ones are from the other arena, and we want to allocate in
     /// this arena.
-    pub fn alloc_scope_with(&'tcx self, existing: &Scope<'tcx>) -> &'tcx Scope<'tcx> {
+    pub fn alloc_scope_with<'src>(&'tcx self, existing: &Scope<'src>) -> &'tcx Scope<'tcx> {
         let owner = existing.owner();
         // Check cache first
         if let Some(existing) = self.scope_cache.read().get(&owner) {

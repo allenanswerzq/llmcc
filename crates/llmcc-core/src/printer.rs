@@ -47,8 +47,8 @@
 use crate::context::CompileUnit;
 use crate::graph_builder::{BasicBlock, BlockId};
 use crate::ir::{HirId, HirNode};
-use tree_sitter::Node;
 use std::fmt;
+use tree_sitter::Node;
 
 // ============================================================================
 // Configuration Types
@@ -107,7 +107,10 @@ impl std::str::FromStr for PrintFormat {
             "tree" => Ok(PrintFormat::Tree),
             "compact" => Ok(PrintFormat::Compact),
             "flat" => Ok(PrintFormat::Flat),
-            other => Err(format!("Unknown format: {}. Use 'tree', 'compact', or 'flat'", other)),
+            other => Err(format!(
+                "Unknown format: {}. Use 'tree', 'compact', or 'flat'",
+                other
+            )),
         }
     }
 }
@@ -433,10 +436,7 @@ pub fn print_llmcc_ir(unit: CompileUnit<'_>) -> RenderResult<()> {
 }
 
 /// Print HIR to stdout with custom configuration
-pub fn print_llmcc_ir_with_config(
-    unit: CompileUnit<'_>,
-    config: &PrintConfig,
-) -> RenderResult<()> {
+pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -> RenderResult<()> {
     let root = unit
         .file_start_hir_id()
         .ok_or_else(|| RenderError::new("No HIR root node found"))?;
@@ -523,7 +523,13 @@ fn build_ast_render_from_node(
         }
     }
 
-    Ok(RenderNode::new(label, Some(byte_range), None, children, None))
+    Ok(RenderNode::new(
+        label,
+        Some(byte_range),
+        None,
+        children,
+        None,
+    ))
 }
 
 /// Build render tree for HIR node
@@ -800,7 +806,10 @@ mod tests {
     #[test]
     fn test_print_format_from_str() {
         assert_eq!("tree".parse::<PrintFormat>().unwrap(), PrintFormat::Tree);
-        assert_eq!("compact".parse::<PrintFormat>().unwrap(), PrintFormat::Compact);
+        assert_eq!(
+            "compact".parse::<PrintFormat>().unwrap(),
+            PrintFormat::Compact
+        );
         assert_eq!("flat".parse::<PrintFormat>().unwrap(), PrintFormat::Flat);
         assert!("invalid".parse::<PrintFormat>().is_err());
     }
@@ -894,13 +903,7 @@ mod tests {
 
     #[test]
     fn test_render_node_creation() {
-        let node = RenderNode::new(
-            "test".to_string(),
-            None,
-            None,
-            vec![],
-            None,
-        );
+        let node = RenderNode::new("test".to_string(), None, None, vec![], None);
         assert_eq!(node.label, "test");
         assert_eq!(node.children.len(), 0);
     }

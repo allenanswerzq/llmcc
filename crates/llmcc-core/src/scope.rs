@@ -107,7 +107,7 @@ impl<'tcx> Scope<'tcx> {
     /// let global_scope = Scope::new_from(&local_scope, &global_arena);
     /// // Scope is now fully populated with symbols
     /// ```
-    pub fn new_from(other: &Scope<'tcx>, arena: &'tcx Arena<'tcx>) -> Self {
+    pub fn new_from<'src>(other: &Scope<'src>, arena: &'tcx Arena<'tcx>) -> Self {
         // Clone the associated symbol if present
         let symbol_ref = if let Some(symbol) = *other.symbol.read() {
             Some(arena.alloc(symbol.clone()))
@@ -133,7 +133,7 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Merge existing scope into this scope, new stuff should allocate in the given arena.
-    pub fn merge_with(&self, other: &Scope<'tcx>, arena: &'tcx Arena<'tcx>) {
+    pub fn merge_with<'src>(&self, other: &Scope<'src>, arena: &'tcx Arena<'tcx>) {
         // Merge all symbols from the other scope into this scope
         other.for_each_symbol(|source_symbol| {
             let allocated = arena.alloc(source_symbol.clone());

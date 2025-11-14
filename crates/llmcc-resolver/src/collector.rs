@@ -16,11 +16,11 @@
 //! 4. Access collected data through arena and scope helpers
 //! 5. After collection, apply collected symbols to global registry
 //!
+use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirId};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{Symbol, ScopeId, SymId};
-use llmcc_core::context::CompileCtxt;
+use llmcc_core::symbol::{ScopeId, SymId, Symbol};
 
 /// Core symbol collector for a single compilation unit.
 #[derive(Debug)]
@@ -283,45 +283,83 @@ where
     collector.globals()
 }
 
-
 /// Apply symbols collected from a single compilation unit to the global context.
 ///
 /// NOTE: even arena is the per-file, but the sym_id and scope_id is actually
-/// global applied, beause we use atomic to assign value each time when we create
+/// Apply collected symbols from a per-unit arena to the global compilation context.
 ///
-/// TODO: this function is slow, need to do batch allocation or other optimization later.
+/// This function transfers all scopes and symbols from a per-unit arena (where they were
+/// allocated during collection) to the global compilation context. This is typically called
+/// after symbol collection is complete for a single compilation unit.
+///
+/// # How It Works
+/// 1. Creates/gets the global scope in the compilation context
+/// 2. Iterates through all scopes in the per-unit arena
+/// 3. For the global scope: merges it into the global context's global scope
+/// 4. For all other scopes: allocates new scopes in the global arena while preserving IDs
+/// 5. All symbols are cloned and registered in the global symbol map
+///
+/// # Key Insight
+/// - Symbols and ScopeIds are assigned globally via atomics during collection (not per-unit)
+/// - This ensures uniqueness across all compilation units
+/// - When transferring to global arena, we preserve the IDs (don't create new ones)
+/// - The per-unit scope links and relationships are preserved in the transfer
+///
+/// # Arguments
+/// * `cc` - The global compilation context (for registering symbols)
+/// * `arena` - The per-unit arena containing collected symbols and scopes
+/// * `globals` - The global scope from the per-unit arena
+///
+/// # Returns
+/// Reference to the final global scope (in the global compilation context)
+///
+/// # Example
+/// ```ignore
+/// let mut per_unit_arena = Arena::new();
+/// let mut collector = CollectorCore::new(unit_index, &per_unit_arena, &interner);
+/// // ... collect symbols ...
+/// let globals = collector.globals();
+/// let final_globals = apply_collected_symbols(&cc, &mut per_unit_arena, globals);
+/// ```
 pub fn apply_collected_symbols<'tcx, 'unit>(
     cc: &'tcx CompileCtxt<'tcx>,
-    unit_index: usize,
     arena: &'unit mut Arena<'unit>,
     globals: &'unit Scope<'unit>,
 ) -> &'tcx Scope<'tcx> {
+    // Create or get the global scope in the compilation context
     let final_globals = cc.create_globals();
+
+    // Transfer all scopes from per-unit arena to global context
     for scope in arena.iter_mut_scope() {
-        // Lets think about it: scope and symbol right now are in the per-unit arena,
-        // we need to clone them into the global arena. those symbols and scopes
-        // are already properly linked in the collector phase. we dont want to br
-        // eak those links.
         if scope.id() == globals.id() {
+            // For the global scope: merge into the final global scope
+            // This combines all global-level symbols into one scope
             cc.merge_two_scopes(final_globals, scope);
         } else {
+            // For all other scopes: allocate new instances in the global arena
+            // while preserving their IDs and symbol relationships
             cc.alloc_scope_with(scope);
-        };
+        }
     }
 
     final_globals
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir::Arena;
 
+    fn reset_scope_and_symbol_ids() {
+        llmcc_core::symbol::reset_scope_id_counter();
+        llmcc_core::symbol::reset_symbol_id_counter();
+    }
 
     #[test]
     fn test_apply_collected_symbols() {
     }
+
 
     #[test]
     fn test_collector_creation() {
@@ -1222,9 +1260,4 @@ mod tests {
 
         let _ = global_scope;
     }
-
 }
-
-
-
-

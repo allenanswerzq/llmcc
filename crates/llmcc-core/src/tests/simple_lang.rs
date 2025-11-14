@@ -3,10 +3,10 @@
 //! Provides a minimal language implementation with custom parser for use in tests.
 //! Can be used in any test file by importing from the common test module.
 
-use std::any::Any;
-use crate::lang_def::{LanguageTrait, LanguageTraitExt, ParseNode, ParseTree};
-use crate::ir::HirKind;
 use crate::graph_builder::BlockKind;
+use crate::ir::HirKind;
+use crate::lang_def::{LanguageTrait, LanguageTraitExt, ParseNode, ParseTree};
+use std::any::Any;
 
 // ============================================================================
 // PART 1: Define the Simple Language Using the Macro
@@ -182,10 +182,7 @@ mod tests {
 
         // Verify HIR kind mapping
         assert_eq!(LangSimple::hir_kind(LangSimple::module), HirKind::File);
-        assert_eq!(
-            LangSimple::hir_kind(LangSimple::function),
-            HirKind::Scope
-        );
+        assert_eq!(LangSimple::hir_kind(LangSimple::function), HirKind::Scope);
         assert_eq!(
             LangSimple::hir_kind(LangSimple::identifier),
             HirKind::Identifier
@@ -199,7 +196,10 @@ mod tests {
 
         // Verify token string mapping
         assert_eq!(LangSimple::token_str(LangSimple::module), Some("module"));
-        assert_eq!(LangSimple::token_str(LangSimple::function), Some("function"));
+        assert_eq!(
+            LangSimple::token_str(LangSimple::function),
+            Some("function")
+        );
         assert_eq!(
             LangSimple::token_str(LangSimple::identifier),
             Some("identifier")
