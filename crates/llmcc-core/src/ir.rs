@@ -44,8 +44,6 @@ use crate::scope::Scope;
 use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
-// The [vec] marker indicates that Scope allocations should be tracked in a vector
-// for immutable iteration without requiring a mutable borrow
 declare_arena!([
     hir_root: HirRoot,
     hir_text: HirText,
@@ -54,6 +52,7 @@ declare_arena!([
     hir_file: HirFile,
     hir_ident: HirIdent,
     symbol: Symbol,
+] @vec [
     scope: Scope<'tcx>,
 ]);
 

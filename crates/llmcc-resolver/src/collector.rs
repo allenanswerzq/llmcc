@@ -323,14 +323,14 @@ where
 /// ```
 pub fn apply_collected_symbols<'tcx, 'unit>(
     cc: &'tcx CompileCtxt<'tcx>,
-    arena: &'unit mut Arena<'unit>,
+    arena: &'unit Arena<'unit>,
     globals: &'unit Scope<'unit>,
 ) -> &'tcx Scope<'tcx> {
     // Create or get the global scope in the compilation context
     let final_globals = cc.create_globals();
 
     // Transfer all scopes from per-unit arena to global context
-    for scope in arena.iter_mut_scope() {
+    for scope in arena.iter_scope() {
         if scope.id() == globals.id() {
             // For the global scope: merge into the final global scope
             // This combines all global-level symbols into one scope
@@ -358,8 +358,46 @@ mod tests {
 
     #[test]
     fn test_apply_collected_symbols() {
-    }
+        use llmcc_simple::LangSimple;
 
+        reset_scope_and_symbol_ids();
+
+        let per_unit_arena = Arena::default();
+        let interner = InternPool::default();
+
+        // Collect symbols in the per-unit arena
+        let per_unit_globals = collect_symbols_with(0, &per_unit_arena, &interner, |collector| {
+            // Collect some symbols in global scope
+            let _ = collector.lookup_or_insert_global("func_a", HirId(1));
+            let _ = collector.lookup_or_insert_global("func_b", HirId(2));
+
+            // Create a nested scope
+            let inner_scope = per_unit_arena.alloc(Scope::new(HirId(10)));
+            collector.push_scope(inner_scope);
+            let _ = collector.lookup_or_insert("local_var", HirId(3));
+            collector.pop_scope();
+        });
+
+        // Create a global compilation context using the simple test language
+        let cc = CompileCtxt::from_sources::<LangSimple>(&[]);
+
+        // Apply the collected symbols to the global context
+        let final_globals = apply_collected_symbols(&cc, &per_unit_arena, per_unit_globals);
+
+        // Verify we got back a valid scope from the global context
+        assert!(final_globals as *const _ != std::ptr::null());
+
+        // Verify that the scope is different from the per-unit one
+        // (because it's allocated in the global arena and assigned new IDs)
+        // This is expected behavior - symbols and scope IDs are assigned globally
+        assert_ne!(final_globals as *const _, per_unit_globals as *const _);
+
+        // Verify that the global scope contains the collected symbols by looking them up
+        let func_a_symbols = final_globals.lookup_symbols(interner.intern("func_a"));
+        let func_b_symbols = final_globals.lookup_symbols(interner.intern("func_b"));
+        assert!(!func_a_symbols.is_empty(), "func_a should be in the global scope");
+        assert!(!func_b_symbols.is_empty(), "func_b should be in the global scope");
+    }
 
     #[test]
     fn test_collector_creation() {
