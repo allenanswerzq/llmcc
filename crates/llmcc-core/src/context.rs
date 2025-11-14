@@ -627,16 +627,21 @@ impl<'tcx> CompileCtxt<'tcx> {
         CompileUnit { cc: self, index }
     }
 
-    pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        let scope = self.alloc_scope(Self::GLOBAL_SCOPE_OWNER);
+    pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
+        let scope = self.alloc_scope(owner);
         // self.symbol_map
         //     .write()
         //     .insert(SymId::GLOBAL_SCOPE, scope.as_symbol());
         self.scope_cache
             .write()
-            .insert(Self::GLOBAL_SCOPE_OWNER, scope);
+            .insert(owner, scope);
         self.scope_map.write().insert(scope.id(), scope);
         scope
+    }
+
+
+    pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
+        self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {

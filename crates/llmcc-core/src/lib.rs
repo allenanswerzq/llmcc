@@ -16,7 +16,6 @@ pub mod printer;
 // pub mod query;
 pub mod scope;
 pub mod symbol;
-// pub mod trie;  // TODO: Missing trie.rs
 pub mod visit;
 
 #[cfg(test)]
@@ -30,7 +29,7 @@ pub use graph_builder::{
 };
 pub use ir::HirId;
 pub use ir_builder::{IrBuildConfig, build_llmcc_ir};
-pub use lang_def::LanguageTrait;
+pub use lang_def::{LanguageTrait, LanguageTraitExt};
 pub use pagerank::{PageRankConfig, PageRanker, RankedBlock};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_ir, render_llmcc_ir};

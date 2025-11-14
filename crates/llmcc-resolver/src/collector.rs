@@ -395,8 +395,14 @@ mod tests {
         // Verify that the global scope contains the collected symbols by looking them up
         let func_a_symbols = final_globals.lookup_symbols(interner.intern("func_a"));
         let func_b_symbols = final_globals.lookup_symbols(interner.intern("func_b"));
-        assert!(!func_a_symbols.is_empty(), "func_a should be in the global scope");
-        assert!(!func_b_symbols.is_empty(), "func_b should be in the global scope");
+        assert!(
+            !func_a_symbols.is_empty(),
+            "func_a should be in the global scope"
+        );
+        assert!(
+            !func_b_symbols.is_empty(),
+            "func_b should be in the global scope"
+        );
     }
 
     #[test]
