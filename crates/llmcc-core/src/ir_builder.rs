@@ -175,8 +175,11 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     /// The HirId assigned to this node
     fn build_node(&mut self, node: &dyn ParseNode, parent: Option<HirId>) -> HirId {
         let id = self.reserve_hir_id();
+        let id = self.reserve_hir_id();
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
+        let child_ids = self.collect_children(node, id);
+        let base = self.make_base(id, parent, node, kind, child_ids);
         let child_ids = self.collect_children(node, id);
         let base = self.make_base(id, parent, node, kind, child_ids);
 
@@ -234,6 +237,7 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     fn make_base(
         &self,
         id: HirId,
+        id: HirId,
         parent: Option<HirId>,
         node: &dyn ParseNode,
         kind: HirKind,
@@ -244,6 +248,7 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         let end_byte = node.end_byte();
         let field_id = Self::field_id_of().unwrap_or(u16::MAX);
         HirBase {
+            id,
             id,
             parent,
             kind_id,
@@ -282,10 +287,13 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         let name_node = node.child_by_field_name("name")?;
 
         let id = self.reserve_hir_id();
+        let id = self.reserve_hir_id();
         let kind_id = name_node.kind_id();
         let start_byte = name_node.start_byte();
         let end_byte = name_node.end_byte();
         let ident_base = HirBase {
+            id,
+            parent: Some(base.id),
             id,
             parent: Some(base.id),
             kind_id,
@@ -475,7 +483,9 @@ pub fn build_llmcc_ir<'a, L: LanguageTrait>(
         {
             let mut hir_map = cc.hir_map.write();
             for (id, spec) in node_specs {
+            for (id, spec) in node_specs {
                 let parented_node = spec.into_parented_node(&cc.arena);
+                hir_map.insert(id, parented_node);
                 hir_map.insert(id, parented_node);
             }
         }
