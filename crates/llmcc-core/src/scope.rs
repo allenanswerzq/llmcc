@@ -16,7 +16,7 @@
 //! # Example
 //! ```ignore
 //! let mut scope_stack = ScopeStack::new(arena, interner);
-//! let global_scope = Scope::new(hir_id);
+//! let global_scope = Scope::new(id);
 //! scope_stack.push(&global_scope);
 //! let symbol = scope_stack.lookup_or_insert(node_id, "my_func");
 //! ```
@@ -799,10 +799,10 @@ mod tests {
 
     #[test]
     fn test_scope_creation() {
-        let hir_id = create_test_hir_id(1);
-        let scope = Scope::new(hir_id);
+        let id = create_test_hir_id(1);
+        let scope = Scope::new(id);
 
-        assert_eq!(scope.owner(), hir_id);
+        assert_eq!(scope.owner(), id);
         assert!(scope.symbol().is_none());
     }
 

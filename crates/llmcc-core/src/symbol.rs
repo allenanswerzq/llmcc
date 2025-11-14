@@ -115,7 +115,7 @@ pub enum SymbolKind {
 ///
 /// # Example
 /// ```ignore
-/// let symbol = Symbol::new(hir_id, interned_name);
+/// let symbol = Symbol::new(id, interned_name);
 /// symbol.set_kind(SymbolKind::Function);
 /// symbol.set_is_global(true);
 /// ```
@@ -210,7 +210,7 @@ impl Symbol {
     ///
     /// # Example
     /// ```ignore
-    /// let symbol = Symbol::new(hir_id, interned_name);
+    /// let symbol = Symbol::new(id, interned_name);
     /// assert_eq!(symbol.kind(), SymbolKind::Unknown);
     /// assert!(!symbol.is_global());
     /// ```
@@ -375,10 +375,10 @@ impl Symbol {
 
     /// Adds a HIR node as an additional definition location.
     /// Prevents duplicate entries.
-    pub fn add_defining(&self, hir_id: HirId) {
+    pub fn add_defining(&self, id: HirId) {
         let mut defs = self.defining.write();
-        if !defs.contains(&hir_id) {
-            defs.push(hir_id);
+        if !defs.contains(&id) {
+            defs.push(id);
         }
     }
 
@@ -489,13 +489,13 @@ mod tests {
         reset_symbol_id_counter();
         reset_scope_id_counter();
         let pool = create_test_intern_pool();
-        let hir_id = create_test_hir_id(1);
+        let id = create_test_hir_id(1);
         let name = pool.intern("test_symbol");
 
-        let symbol = Symbol::new(hir_id, name);
+        let symbol = Symbol::new(id, name);
 
         // Verify basic properties regardless of counter state
-        assert_eq!(symbol.owner(), hir_id);
+        assert_eq!(symbol.owner(), id);
         assert_eq!(symbol.kind(), SymbolKind::Unknown);
         assert!(!symbol.is_global());
         assert_eq!(symbol.unit_index(), None);
@@ -511,11 +511,11 @@ mod tests {
         // the ID will be higher than 1.
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
-        let hir_id = create_test_hir_id(1);
+        let id = create_test_hir_id(1);
         let name = pool.intern("symbol");
 
-        let sym1 = Symbol::new(hir_id, name);
-        let sym2 = Symbol::new(hir_id, name);
+        let sym1 = Symbol::new(id, name);
+        let sym2 = Symbol::new(id, name);
 
         // Verify they have different IDs
         assert_ne!(sym1.id, sym2.id);
@@ -673,12 +673,12 @@ mod tests {
     fn test_symbol_format_compact() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
-        let hir_id = create_test_hir_id(5);
-        let symbol = Symbol::new(hir_id, pool.intern("test"));
+        let id = create_test_hir_id(5);
+        let symbol = Symbol::new(id, pool.intern("test"));
 
         let formatted = symbol.format_compact();
         assert!(formatted.contains("->"));
-        assert!(formatted.contains("5")); // hir_id
+        assert!(formatted.contains("5")); // id
     }
 
     #[test]

@@ -1042,8 +1042,8 @@ mod tests {
             self.visited_nodes.push(module_id);
 
             // Collect module-level symbols
-            for (name, hir_id) in symbols {
-                let _ = collector.lookup_or_insert_global(name, hir_id);
+            for (name, id) in symbols {
+                let _ = collector.lookup_or_insert_global(name, id);
             }
         }
 

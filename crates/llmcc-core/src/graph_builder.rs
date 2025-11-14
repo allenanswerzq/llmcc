@@ -859,7 +859,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         unresolved: &mut HashSet<SymId>,
     ) {
         // Try to process symbol dependencies for this node
-        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+        if let Some(scope) = self.unit.opt_get_scope(node.id()) {
             if let Some(symbol) = scope.symbol() {
                 self.process_symbol(symbol, edges, visited, unresolved);
             }
@@ -965,7 +965,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         };
 
         let block = self.create_block(id, node, block_kind, Some(parent), children);
-        if let Some(scope) = self.unit.opt_get_scope(node.hir_id()) {
+        if let Some(scope) = self.unit.opt_get_scope(node.id()) {
             if let Some(symbol) = scope.symbol() {
                 // Only set the block ID if it hasn't been set before
                 // This prevents impl blocks from overwriting struct block IDs

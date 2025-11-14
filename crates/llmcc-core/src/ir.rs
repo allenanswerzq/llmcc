@@ -132,7 +132,7 @@ impl<'hir> HirNode<'hir> {
     /// # Returns
     /// A formatted string useful for debugging and diagnostics
     pub fn format_node(&self, unit: CompileUnit<'hir>) -> String {
-        let id = self.hir_id();
+        let id = self.id();
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, id);
 
@@ -226,11 +226,11 @@ impl<'hir> HirNode<'hir> {
     ///
     /// # Example
     /// ```ignore
-    /// let node_id = node.hir_id();
+    /// let node_id = node.id();
     /// let parent_node = unit.hir_node(node_id);
     /// ```
-    pub fn hir_id(&self) -> HirId {
-        self.base().unwrap().hir_id
+    pub fn id(&self) -> HirId {
+        self.base().unwrap().id
     }
 
     /// Get the byte offset where this node starts in the source file.
@@ -678,7 +678,7 @@ impl std::fmt::Display for HirId {
 /// parent relationship, connection to the tree-sitter parse tree, and child references.
 ///
 /// # Fields
-/// - `hir_id`: Unique identifier for this node
+/// - `id`: Unique identifier for this node
 /// - `parent`: Optional reference to the parent node
 /// - `node`: Reference to the underlying tree-sitter Node for source locations
 /// - `kind`: The type category of this node
@@ -689,7 +689,7 @@ impl std::fmt::Display for HirId {
 /// HirBase provides methods to find children by field ID or kind, supporting efficient
 /// navigation of the AST structure without requiring parent references.
 pub struct HirBase {
-    pub hir_id: HirId,
+    pub id: HirId,
     pub parent: Option<HirId>,
     pub kind_id: u16,
     pub start_byte: usize,
