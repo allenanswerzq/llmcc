@@ -20,7 +20,7 @@ use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirId};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{ScopeId, SymId, Symbol};
+use llmcc_core::symbol::{ScopeId, SymId, Symbol, SymbolKind};
 
 /// Core symbol collector for a single compilation unit.
 #[derive(Debug)]
@@ -93,7 +93,7 @@ impl<'a> CollectorCore<'a> {
         self.arena
     }
 
-    /// Gets the current scope stack depth (number of nested scopes).
+    /// Gets the current depth of the scope stack (number of nested scopes).
     ///
     /// - 0 means no scope has been pushed yet
     /// - 1 means global scope is active
@@ -101,6 +101,17 @@ impl<'a> CollectorCore<'a> {
     #[inline]
     pub fn scope_depth(&self) -> usize {
         self.scopes.depth()
+    }
+
+    /// Gets the top (current) scope on the stack.
+    ///
+    /// Returns the most recently pushed scope.
+    /// Panics if stack is empty (should never happen in normal use since we always have global scope).
+    #[inline]
+    pub fn top_scope(&self) -> &'a Scope<'a> {
+        self.scopes
+            .top()
+            .expect("scope stack should never be empty")
     }
 
     /// Pushes a scope onto the stack.
@@ -115,8 +126,14 @@ impl<'a> CollectorCore<'a> {
     ///
     /// Increases nesting depth and makes the scope active for symbol insertions.
     #[inline]
-    pub fn push_scope_with(&mut self, id: HirId, symbol: &'a Symbol) {
+    pub fn push_scope_with(&mut self, id: HirId, symbol: Option<&'a Symbol>) {
         let scope = self.arena.alloc(Scope::new_with(id, symbol));
+        if let Some(symbol) = symbol {
+            symbol.set_scope(Some(scope.id()));
+            if let Some(parent_scope) = self.scopes.top() {
+                symbol.set_parent_scope(Some(parent_scope.id()));
+            }
+        }
         self.push_scope(scope);
     }
 
@@ -151,7 +168,6 @@ impl<'a> CollectorCore<'a> {
     pub fn globals(&self) -> &'a Scope<'a> {
         self.globals
     }
-
     /// Find or insert symbol in the current scope.
     ///
     /// If a symbol with this name exists in the current scope, returns it.
@@ -160,12 +176,21 @@ impl<'a> CollectorCore<'a> {
     /// # Arguments
     /// * `name` - The symbol name
     /// * `node` - The HIR node for the symbol
+    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert(name, node)
+    pub fn lookup_or_insert(
+        &self,
+        name: &str,
+        node: HirId,
+        kind: SymbolKind,
+    ) -> Option<&'a Symbol> {
+        let symbol = self.scopes.lookup_or_insert(name, node)?;
+        symbol.set_kind(kind);
+        symbol.set_unit_index(self.unit_index());
+        Some(symbol)
     }
 
     /// Find or insert symbol with chaining enabled for shadowing support.
@@ -177,12 +202,21 @@ impl<'a> CollectorCore<'a> {
     /// # Arguments
     /// * `name` - The symbol name
     /// * `node` - The HIR node for the symbol
+    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert_chained(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_chained(name, node)
+    pub fn lookup_or_insert_chained(
+        &self,
+        name: &str,
+        node: HirId,
+        kind: SymbolKind,
+    ) -> Option<&'a Symbol> {
+        let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
+        symbol.set_kind(kind);
+        symbol.set_unit_index(self.unit_index());
+        Some(symbol)
     }
 
     /// Find or insert symbol in the parent scope.
@@ -193,13 +227,22 @@ impl<'a> CollectorCore<'a> {
     /// # Arguments
     /// * `name` - The symbol name
     /// * `node` - The HIR node for the symbol
+    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty and parent scope exists,
     /// None if name is empty or no parent scope available
     #[inline]
-    pub fn lookup_or_insert_parent(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_parent(name, node)
+    pub fn lookup_or_insert_parent(
+        &self,
+        name: &str,
+        node: HirId,
+        kind: SymbolKind,
+    ) -> Option<&'a Symbol> {
+        let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
+        symbol.set_kind(kind);
+        symbol.set_unit_index(self.unit_index());
+        Some(symbol)
     }
 
     /// Find or insert symbol in the global scope.
@@ -210,12 +253,21 @@ impl<'a> CollectorCore<'a> {
     /// # Arguments
     /// * `name` - The symbol name
     /// * `node` - The HIR node for the symbol
+    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert_global(&self, name: &str, node: HirId) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_global(name, node)
+    pub fn lookup_or_insert_global(
+        &self,
+        name: &str,
+        node: HirId,
+        kind: SymbolKind,
+    ) -> Option<&'a Symbol> {
+        let symbol = self.scopes.lookup_or_insert_global(name, node)?;
+        symbol.set_kind(kind);
+        symbol.set_unit_index(self.unit_index());
+        Some(symbol)
     }
 
     /// Full control API for symbol lookup and insertion with custom options.
@@ -226,6 +278,7 @@ impl<'a> CollectorCore<'a> {
     /// # Arguments
     /// * `name` - The symbol name (None for anonymous if force=true)
     /// * `node` - The HIR node for the symbol
+    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
     /// * `options` - Lookup options controlling scope selection and behavior
     ///
     /// # Returns
@@ -235,16 +288,20 @@ impl<'a> CollectorCore<'a> {
     /// ```ignore
     /// use llmcc_core::scope::LookupOptions;
     /// let opts = LookupOptions::global().with_force(true);
-    /// let symbol = collector.lookup_or_insert_with(None, node_id, opts)?;
+    /// let symbol = collector.lookup_or_insert_with(None, node_id, SymbolKind::Function, opts)?;
     /// ```
     #[inline]
     pub fn lookup_or_insert_with(
         &self,
         name: Option<&str>,
         node: HirId,
+        kind: SymbolKind,
         options: llmcc_core::scope::LookupOptions,
     ) -> Option<&'a Symbol> {
-        self.scopes.lookup_or_insert_with(name, node, options)
+        let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
+        symbol.set_kind(kind);
+        symbol.set_unit_index(self.unit_index());
+        Some(symbol)
     }
 }
 
