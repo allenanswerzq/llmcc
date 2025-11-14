@@ -112,7 +112,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx, '_>> for SymbolBinder<'tcx, '_>
             .lookup_symbol_with(&node, LangRust::field_name, SymbolKind::Enum);
         self.visit_children_scope(&node, symbol);
 
-        let descriptor = self.collection().enums.find(node.hir_id());
+        let descriptor = self.collection().enums.find(node.id());
         if let (Some(enum_symbol), Some(desc)) = (symbol, descriptor) {
             for variant in &desc.variants {
                 for field in &variant.fields {
@@ -124,7 +124,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx, '_>> for SymbolBinder<'tcx, '_>
                 }
             }
         } else {
-            tracing::warn!("failed to build descriptor for enum: {}", node.hir_id());
+            tracing::warn!("failed to build descriptor for enum: {}", node.id());
         }
     }
 
@@ -195,7 +195,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx, '_>> for SymbolBinder<'tcx, '_>
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(impl_descriptor) = self.collection().impls.find(node.hir_id()) {
+        if let Some(impl_descriptor) = self.collection().impls.find(node.id()) {
             let symbols = self.core.lookup_expr_symbols(&impl_descriptor.target_ty);
 
             // Impl blocks can appear in files that do not define the target type
@@ -243,7 +243,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx, '_>> for SymbolBinder<'tcx, '_>
                 }
             }
         } else {
-            tracing::warn!("failed to build descriptor for impl: {}", node.hir_id());
+            tracing::warn!("failed to build descriptor for impl: {}", node.id());
         }
     }
 
@@ -306,7 +306,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx, '_>> for SymbolBinder<'tcx, '_>
     ) {
         self.visit_children(&node);
 
-        if let Some(descriptor) = self.collection().variables.find(node.hir_id()) {
+        if let Some(descriptor) = self.collection().variables.find(node.id()) {
             if let Some(type_expr) = descriptor.type_annotation.as_ref() {
                 if let Some(type_symbol) = self.core.lookup_expr_symbols(type_expr).first() {
                     let mut names = vec![descriptor.name.clone()];
@@ -397,7 +397,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx, '_>> for SymbolBinder<'tcx, '_>
         self.visit_children(&node);
 
         let parent = self.current_symbol();
-        if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
+        if let Some(descriptor) = self.collection().calls.find(node.id()) {
             let mut assigned_var: Option<String> = None;
 
             if let Some(parent_id) = node.parent() {
@@ -444,7 +444,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx, '_>> for SymbolBinder<'tcx, '_>
         self.visit_children(&node);
 
         let parent = self.current_symbol();
-        if let Some(descriptor) = self.collection().calls.find(node.hir_id()) {
+        if let Some(descriptor) = self.collection().calls.find(node.id()) {
             let mut symbols = Vec::new();
             self.core
                 .lookup_call_symbols(&descriptor.target, &mut symbols);

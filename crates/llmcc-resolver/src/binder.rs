@@ -81,7 +81,7 @@ impl<'tcx> BinderCore<'tcx> {
 
         // NOTE: scope should already be created during symbol collection, here we just
         // follow the tree structure again
-        let scope = self.unit().opt_get_scope(node.hir_id());
+        let scope = self.unit().opt_get_scope(node.id());
 
         if let Some(scope) = scope {
             self.scopes_mut().push(scope);

@@ -110,6 +110,15 @@ impl<'a> CollectorCore<'a> {
         self.scopes.push(scope);
     }
 
+    /// Pushes a scope onto the stack.
+    ///
+    /// Increases nesting depth and makes the scope active for symbol insertions.
+    #[inline]
+    pub fn push_scope_with(&mut self, id: HirId, symbol: &'a Symbol) {
+        let scope = self.arena.alloc(Scope::new_with(id, symbol));
+        self.push_scope(scope);
+    }
+
     /// Pops the current scope from the stack.
     ///
     /// Returns to the previous scope level. No-op at depth 0.
@@ -1042,8 +1051,8 @@ mod tests {
             self.visited_nodes.push(module_id);
 
             // Collect module-level symbols
-            for (name, hir_id) in symbols {
-                let _ = collector.lookup_or_insert_global(name, hir_id);
+            for (name, id) in symbols {
+                let _ = collector.lookup_or_insert_global(name, id);
             }
         }
 

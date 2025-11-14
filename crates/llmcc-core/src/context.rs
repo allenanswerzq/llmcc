@@ -632,13 +632,10 @@ impl<'tcx> CompileCtxt<'tcx> {
         // self.symbol_map
         //     .write()
         //     .insert(SymId::GLOBAL_SCOPE, scope.as_symbol());
-        self.scope_cache
-            .write()
-            .insert(owner, scope);
+        self.scope_cache.write().insert(owner, scope);
         self.scope_map.write().insert(scope.id(), scope);
         scope
     }
-
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
         self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)

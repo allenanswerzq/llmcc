@@ -58,9 +58,7 @@ pub fn parse_crate_name(file_path: &str) -> Option<String> {
 /// `Some(module_name)` for regular module files,
 /// `None` for lib.rs or invalid paths
 pub fn parse_module_name(file_path: &str) -> Option<String> {
-    let file_stem = Path::new(file_path)
-        .file_stem()
-        .and_then(|n| n.to_str());
+    let file_stem = Path::new(file_path).file_stem().and_then(|n| n.to_str());
 
     let file_name = match file_stem {
         Some(name) => name,
