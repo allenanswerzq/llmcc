@@ -83,6 +83,20 @@ pub fn parse_module_name(file_path: &str) -> Option<String> {
     Some(file_name.to_string())
 }
 
+/// Return the file name (without the `.rs` extension) for a Rust source path.
+///
+/// # Arguments
+/// * `file_path` - The path to the Rust source file
+///
+/// # Returns
+/// `Some("foo")` if the file path has a file stem, `None` otherwise.
+pub fn parse_file_name(file_path: &str) -> Option<String> {
+    Path::new(file_path)
+        .file_stem()
+        .and_then(|name| name.to_str())
+        .map(|name| name.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -109,6 +123,14 @@ mod tests {
     fn test_parse_module_name_regular() {
         assert_eq!(
             parse_module_name("src/utils/parser.rs"),
+            Some("parser".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_file_name() {
+        assert_eq!(
+            parse_file_name("src/utils/parser.rs"),
             Some("parser".to_string())
         );
     }

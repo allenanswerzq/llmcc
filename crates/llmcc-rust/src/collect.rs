@@ -1,5 +1,5 @@
 use crate::token::AstVisitorRust;
-use crate::util::{parse_crate_name, parse_module_name};
+use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::Scope;
@@ -35,34 +35,17 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorCore<'tcx>> for DeclVisitor<'tcx> {
             {
                 core.push_scope_with(node.id(), symbol);
             }
-            if let Some(module_name) = parse_module_name(&file_path) {
-                if let Some(symbol) = core.lookup_or_insert_global(&module_name, node.id()) {
-                    core.push_scope_with(node.id(), symbol);
-                }
+            if let Some(module_name) = parse_module_name(&file_path)
+                && let Some(symbol) = core.lookup_or_insert_global(&module_name, node.id())
+            {
+                core.push_scope_with(node.id(), symbol);
             }
-
-            // var sn = (AstNodeFile)node;
-            // sn.Name = node.FindIdentifier();
-            // var moduleName = Path.GetFileNameWithoutExtension(node.Context.File.Path);
-            // if (moduleName == "mod") {
-            //     moduleName = Path.GetFileName(Path.GetDirectoryName(node.Context.File.Path));
-            // }
-            // else if (moduleName == "lib") {
-            //     break;
-            // }
-            // sn.Name = new AstNodeId(node.Context, AstFieldRust.None, AstTokenRust.source_file, sn.Begrc, sn.Endrc, moduleName, AstCategory.IdentifierDef);
-            // sn.Name.Symbol = scopes.FindOrAdd(sn.Name);
-            // sn.Name.Symbol.AddDefined(node);
-
-            // if (sn.Name.Symbol.Scope != null && sn.Name.Symbol.Scope.Root == null) {
-            //     sn.Name.Symbol.Scope.SetRoot(sn);
-            // }
-            // else if (sn.Name.Symbol.Scope == null) {
-            //     sn.Name.Symbol.Scope = new AstScope(sn, sn.Name.Symbol);
-            // }
-
-            // sn.Scope = sn.Name.Symbol.Scope;
-            // scopes.Push(sn.Scope);
+            if let Some(file_name) = parse_file_name(&file_path)
+                && let Some(symbol) = core.lookup_or_insert(&file_name, node.id())
+            {
+                symbol.add_defining(node.id());
+                core.push_scope_with(node.id(), symbol);
+            }
         }
     }
 
@@ -106,8 +89,8 @@ mod tests {
         let file_start = unit.file_start_hir_id().unwrap();
         let node = unit.hir_node(file_start);
 
-        let mut core = CollectorCore::new(0, &cc.arena, &cc.interner);
         let globlas = cc.create_globals();
+        let mut core = CollectorCore::new(0, &cc.arena, &cc.interner, globlas);
         let mut visitor = DeclVisitor::new(unit);
         visitor.visit_node(node, &mut core, globlas, None);
 
