@@ -15,9 +15,9 @@
 //! - **File extensions**: Declare supported file types
 //!
 //! ## Macro-Based Definition
-//! The [`define_tokens!`] macro enables declarative language definition:
+//! The [`define_lang!`] macro enables declarative language definition:
 //! ```ignore
-//! define_tokens!(
+//! define_lang!(
 //!     Rust,
 //!     (function_item, 0, "function_item", HirKind::Scope),
 //!     (identifier, 1, "identifier", HirKind::Identifier),
@@ -39,7 +39,7 @@
 //! # Example Language Definition
 //!
 //! ```ignore
-//! define_tokens!(
+//! define_lang!(
 //!     Python,
 //!     (module, 0, "module", HirKind::File),
 //!     (function_def, 1, "function_definition", HirKind::Scope),
@@ -276,13 +276,13 @@ pub trait LanguageTrait {
 
 /// Extension trait for providing custom parse implementations.
 ///
-/// This trait allows languages defined via `define_tokens!` macro to extend
+/// This trait allows languages defined via `define_lang!` macro to extend
 /// with custom `parse` implementations without conflicting with the macro-generated code.
 ///
 /// # Usage
 ///
 /// ```ignore
-/// define_tokens!(MyLang, ...);
+/// define_lang!(MyLang, ...);
 ///
 /// impl LanguageTraitExt for LangMyLang {
 ///     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
@@ -300,7 +300,7 @@ pub trait LanguageTraitExt: LanguageTrait {
 
 #[allow(clippy::crate_in_macro_def)]
 #[macro_export]
-macro_rules! define_tokens {
+macro_rules! define_lang {
     (
         $suffix:ident,
         $( ($const:ident, $id:expr, $str:expr, $kind:expr $(, $block:expr)? ) ),* $(,)?
@@ -339,23 +339,24 @@ macro_rules! define_tokens {
                 /// Return the list of supported file extensions for this language
                 fn supported_extensions() -> &'static [&'static str] {
                     paste::paste! { [<Lang $suffix>]::SUPPORTED_EXTENSIONS }
-                }                /// Get the HIR kind for a given token ID
-                fn hir_kind(kind_id: u16) -> $crate::lang_def::HirKind {
+                }
+                /// Get the HIR kind for a given token ID
+                fn hir_kind(kind_id: u16) -> $crate::ir::HirKind {
                     match kind_id {
                         $(
                             Self::$const => $kind,
                         )*
-                        _ => $crate::lang_def::HirKind::Internal,
+                        _ => $crate::ir::HirKind::Internal,
                     }
                 }
 
                 /// Get the Block kind for a given token ID
-                fn block_kind(kind_id: u16) -> $crate::lang_def::BlockKind {
+                fn block_kind(kind_id: u16) -> $crate::graph_builder::BlockKind {
                     match kind_id {
                         $(
-                            Self::$const => define_tokens!(@unwrap_block $($block)?),
+                            Self::$const => define_lang!(@unwrap_block $($block)?),
                         )*
-                        _ => $crate::lang_def::BlockKind::Undefined,
+                        _ => $crate::graph_builder::BlockKind::Undefined,
                     }
                 }
 
@@ -431,153 +432,14 @@ macro_rules! define_tokens {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::any::Any;
-
-    // ========================================================================
-    // PART 1: Define a Simple Language Using the Macro
-    // ========================================================================
-
-    define_tokens!(
-        Simple,
-        (module, 0, "module", HirKind::File),
-        (function, 1, "function", HirKind::Scope, BlockKind::Func),
-        (identifier, 2, "identifier", HirKind::Identifier),
-        (statement, 3, "statement", HirKind::Scope),
-        (field_name, 10, "field_name", HirKind::Identifier),
-        (field_type, 11, "field_type", HirKind::Identifier),
-    );
-
-    // ========================================================================
-    // PART 2: Create a Very Simple Custom Parser
-    // ========================================================================
-
-    /// Simple custom AST node representation
-    #[derive(Debug, Clone)]
-    pub struct SimpleParseNode {
-        pub kind_id: u16,
-        pub text: String,
-        pub children: Vec<SimpleParseNode>,
-    }
-
-    impl ParseNode for SimpleParseNode {
-        fn kind_id(&self) -> u16 {
-            self.kind_id
-        }
-
-        fn start_byte(&self) -> usize {
-            0 // Simplified for example
-        }
-
-        fn end_byte(&self) -> usize {
-            self.text.len()
-        }
-
-        fn child_count(&self) -> usize {
-            self.children.len()
-        }
-
-        fn child(&self, index: usize) -> Option<Box<dyn ParseNode + '_>> {
-            self.children
-                .get(index)
-                .map(|child| Box::new(child.clone()) as Box<dyn ParseNode + '_>)
-        }
-
-        fn child_by_field_name(&self, _field_name: &str) -> Option<Box<dyn ParseNode + '_>> {
-            None // Simplified for example
-        }
-
-        fn debug_info(&self) -> String {
-            format!(
-                "SimpleParseNode(kind_id: {}, text: {})",
-                self.kind_id, self.text
-            )
-        }
-    }
-
-    /// Custom parse tree for simple language
-    /// Wraps the simple AST structure for IR building
-    pub struct SimpleParseTree {
-        pub root: SimpleParseNode,
-    }
-
-    impl ParseTree for SimpleParseTree {
-        fn as_any(&self) -> &(dyn Any + Send + Sync) {
-            self
-        }
-
-        fn debug_info(&self) -> String {
-            format!(
-                "SimpleParse(kind: {}, text_len: {})",
-                self.root.kind_id,
-                self.root.text.len()
-            )
-        }
-
-        fn root_node(&self) -> Option<Box<dyn ParseNode + '_>> {
-            Some(Box::new(self.root.clone()))
-        }
-    }
-
-    /// Very simple parser: just tokenize by lines and basic keywords
-    mod simple_parser {
-        use super::*;
-
-        pub fn parse(source: &[u8]) -> Option<SimpleParseNode> {
-            let text = std::str::from_utf8(source).ok()?;
-            let mut children = Vec::new();
-
-            // Parse "fn" keyword lines as functions
-            for line in text.lines() {
-                let trimmed = line.trim();
-                if trimmed.starts_with("fn ") {
-                    let func_name = trimmed.split('(').next().unwrap_or("").replace("fn ", "");
-
-                    children.push(SimpleParseNode {
-                        kind_id: LangSimple::function,
-                        text: trimmed.to_string(),
-                        children: vec![SimpleParseNode {
-                            kind_id: LangSimple::identifier,
-                            text: func_name,
-                            children: Vec::new(),
-                        }],
-                    });
-                } else if !trimmed.is_empty() && !trimmed.starts_with("//") {
-                    // Other non-empty, non-comment lines as statements
-                    children.push(SimpleParseNode {
-                        kind_id: LangSimple::statement,
-                        text: trimmed.to_string(),
-                        children: Vec::new(),
-                    });
-                }
-            }
-
-            Some(SimpleParseNode {
-                kind_id: LangSimple::module,
-                text: text.to_string(),
-                children,
-            })
-        }
-    }
-
-    // ========================================================================
-    // PART 3: Extend LanguageTrait with Custom Parser via LanguageTraitExt
-    // ========================================================================
-
-    impl LanguageTraitExt for LangSimple {
-        /// Custom parse implementation for this test
-        fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
-            let source = text.as_ref();
-            let root = simple_parser::parse(source)?;
-
-            Some(Box::new(SimpleParseTree { root }))
-        }
-    }
+    // Import the visitor trait generated by the macro in simple_lang
+    use crate::tests::simple_lang::AstVisitorSimple;
+    use crate::tests::simple_lang::LangSimple;
+    use crate::context::CompileCtxt;
+    use crate::ir_builder::{IrBuildConfig, build_llmcc_ir};
 
     #[test]
     fn test_language_define_and_visitor() {
-        use crate::context::CompileCtxt;
-        use crate::ir_builder::{IrBuildConfig, build_llmcc_ir};
-
         // Create a CompileCtxt with our simple language
         let source_code = b"fn main() {}\nfn helper() {}\nlet x = 42;";
         let sources = vec![source_code.to_vec()];

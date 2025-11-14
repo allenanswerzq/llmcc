@@ -8,6 +8,7 @@ pub(crate) mod graph_render;
 pub mod interner;
 pub mod ir;
 pub mod ir_builder;
+#[macro_use]
 pub mod lang_def;
 pub mod module_path;
 pub mod pagerank;
@@ -17,6 +18,9 @@ pub mod scope;
 pub mod symbol;
 // pub mod trie;  // TODO: Missing trie.rs
 pub mod visit;
+
+#[cfg(test)]
+pub mod tests;
 
 pub type DynError = Box<dyn std::error::Error + Send + Sync>;
 

@@ -133,16 +133,33 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        self.cc.scope_map.read().get(&owner).copied()
+        // First find the ScopeId for this HirId owner
+        let scope_id = self.cc.hir_scope_map.read().get(&owner).copied()?;
+        // Then look up the actual Scope using the ScopeId
+        self.cc.scope_map.read().get(&scope_id).copied()
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
         self.cc.symbol_map.read().get(&owner).copied()
     }
 
-    /// Get an existing scope or None if it doesn't exist
+    /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.cc.scope_map.read().get(&owner).copied().unwrap()
+        // First find the ScopeId for this HirId owner
+        let scope_id = self
+            .cc
+            .hir_scope_map
+            .read()
+            .get(&owner)
+            .copied()
+            .expect("HirId not mapped to ScopeId in CompileCtxt");
+        // Then look up the actual Scope using the ScopeId
+        self.cc
+            .scope_map
+            .read()
+            .get(&scope_id)
+            .copied()
+            .expect("ScopeId not found in scope_map")
     }
 
     /// Find an existing scope or create a new one
@@ -493,6 +510,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
+            hir_scope_map: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -535,6 +553,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
+            hir_scope_map: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -624,7 +643,17 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.scope_map.read().get(&owner).copied().unwrap()
+        let scope_id = self
+            .hir_scope_map
+            .read()
+            .get(&owner)
+            .copied()
+            .expect("HirId not mapped to ScopeId in CompileCtxt");
+        self.scope_map
+            .read()
+            .get(&scope_id)
+            .copied()
+            .expect("ScopeId not found in scope_map")
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
@@ -641,12 +670,16 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        if let Some(existing) = self.scope_map.read().get(&owner) {
-            return existing;
+        if let Some(existing_id) = self.hir_scope_map.read().get(&owner).copied() {
+            if let Some(existing) = self.scope_map.read().get(&existing_id) {
+                return existing;
+            }
         }
 
         let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.write().insert(owner, scope);
+        let scope_id = scope.id();
+        self.scope_map.write().insert(scope_id, scope);
+        self.hir_scope_map.write().insert(owner, scope_id);
         scope
     }
 
@@ -697,5 +730,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn clear(&self) {
         self.hir_map.write().clear();
         self.scope_map.write().clear();
+        self.hir_scope_map.write().clear();
     }
 }

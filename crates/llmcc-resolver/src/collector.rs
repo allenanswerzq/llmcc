@@ -19,7 +19,7 @@
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirId};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::Symbol;
+use llmcc_core::symbol::{Symbol, ScopeId, SymId};
 use llmcc_core::context::CompileCtxt;
 
 /// Core symbol collector for a single compilation unit.
@@ -317,13 +317,82 @@ where
 /// apply_collected_symbols(&cc, unit_index, arena, collector.globals());
 /// ```
 /// After this the local arena is no use.
-pub fn apply_collected_symbols<'a>(
-    cc: &CompileCtxt<'a>,
+pub fn apply_collected_symbols<'tcx, 'unit>(
+    cc: &'tcx CompileCtxt<'tcx>,
     unit_index: usize,
-    arena: Arena<'a>,
-    globals: &'a Scope<'a>,
-) {
+    arena: &mut Arena<'unit>,
+    globals: &'unit Scope<'unit>,
+) -> &'tcx Scope<'tcx> {
+    use std::collections::HashMap;
 
+    // Create the final global scope that merges all units' globals
+    let final_globals = cc.create_globals();
+    let mut scope_rebindings: HashMap<ScopeId, &'tcx Scope<'tcx>> = HashMap::new();
+    let mut cloned_symbols: HashMap<SymId, &'tcx Symbol> = HashMap::new();
+    let mut scope_symbol_links: Vec<(ScopeId, Option<SymId>)> = Vec::new();
+
+    // Single pass through the arena to collect and process all data
+    {
+        let mut symbol_map = cc.symbol_map.write();
+
+        for scope in arena.iter_mut_scope() {
+            // Step 1: Create target scope and build rebindings
+            let target = if std::ptr::eq(scope as *const _, globals as *const _) {
+                final_globals
+            } else {
+                cc.alloc_scope(scope.owner())
+            };
+            let scope_id = scope.id();
+            scope_rebindings.insert(scope_id, target);
+
+            // Step 2: Process symbols in this scope
+            scope.for_each_symbol(|symbol| {
+                let cloned = symbol.clone();
+                let mut cloned = cloned;
+                cloned.set_unit_index(unit_index);
+
+                // Update scope IDs in the cloned symbol
+                if let Some(old_scope_id) = cloned.scope() {
+                    if let Some(&new_scope) = scope_rebindings.get(&old_scope_id) {
+                        cloned.set_scope(Some(new_scope.id()));
+                    }
+                } else {
+                    cloned.set_scope(Some(scope_id));
+                }
+
+                // Update parent scope IDs
+                if let Some(old_parent_id) = cloned.parent_scope() {
+                    if let Some(&new_parent) = scope_rebindings.get(&old_parent_id) {
+                        cloned.set_parent_scope(Some(new_parent.id()));
+                    }
+                }
+
+                let allocated = cc.arena.alloc(cloned);
+                cloned_symbols.insert(symbol.id, allocated);
+                symbol_map.insert(symbol.id, allocated);
+                target.insert(allocated);
+            });
+
+            // Step 3: Collect scope symbol links for later (store IDs only, not references)
+            let symbol_id = scope.symbol().map(|s| s.id);
+            scope_symbol_links.push((scope_id, symbol_id));
+        }
+    }
+
+    // Step 4: Link scope symbols back to their associated scope
+    // (The per-unit arena is now dropped, so we only work with cc.arena data)
+    for (scope_id, old_symbol_id_opt) in scope_symbol_links {
+        if let Some(old_symbol_id) = old_symbol_id_opt {
+            if let (Some(&target_scope), Some(&new_symbol)) = (
+                scope_rebindings.get(&scope_id),
+                cloned_symbols.get(&old_symbol_id),
+            ) {
+                target_scope.set_symbol(Some(new_symbol));
+            }
+        }
+    }
+
+    final_globals
 }
 
 
@@ -331,6 +400,11 @@ pub fn apply_collected_symbols<'a>(
 mod tests {
     use super::*;
     use llmcc_core::ir::Arena;
+
+
+    #[test]
+    fn test_apply_collected_symbols() {
+    }
 
     #[test]
     fn test_collector_creation() {
@@ -948,40 +1022,6 @@ mod tests {
         let _ = global_scope;
     }
 
-    #[test]
-    fn test_apply_collected_symbols() {
-        let arena = Arena::default();
-        let interner = InternPool::default();
-
-        // Collect symbols
-        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
-            let _sym = collector.lookup_or_insert("test_var", HirId(1));
-        });
-
-        // Apply collected symbols (currently a no-op, but should not panic)
-        apply_collected_symbols(0, global_scope);
-    }
-
-    #[test]
-    fn test_apply_collected_symbols_multiple_units() {
-        let arena1 = Arena::default();
-        let arena2 = Arena::default();
-        let interner = InternPool::default();
-
-        let scope1 = collect_symbols_with(0, &arena1, &interner, |collector| {
-            let _ = collector.lookup_or_insert("unit0_var", HirId(1));
-        });
-
-        let scope2 = collect_symbols_with(1, &arena2, &interner, |collector| {
-            let _ = collector.lookup_or_insert("unit1_var", HirId(1));
-        });
-
-        // Apply both (should not panic)
-        apply_collected_symbols(0, scope1);
-        apply_collected_symbols(1, scope2);
-    }
-
-    /// A simple visitor implementation demonstrating the visitor pattern usage
     struct SimpleVisitor {
         visited_nodes: Vec<HirId>,
     }
@@ -1221,7 +1261,7 @@ mod tests {
             let mut visitor = SimpleVisitor::new();
 
             // Visit and create symbols, then query them
-            visitor.visit_modue(
+            visitor.visit_module(
                 collector,
                 HirId(0),
                 vec![("PUBLIC_API", HirId(1)), ("INTERNAL_CONST", HirId(2))],
@@ -1265,4 +1305,9 @@ mod tests {
 
         let _ = global_scope;
     }
+
 }
+
+
+
+

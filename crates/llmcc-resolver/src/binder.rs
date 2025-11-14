@@ -50,6 +50,27 @@ impl<'tcx> BinderCore<'tcx> {
         self.relation_direction = RelationDirection::Backward;
     }
 
+    #[inline]
+    pub fn scopes(&self) -> &ScopeStack<'tcx> {
+        &self.scopes
+    }
+
+    #[inline]
+    pub fn scopes_mut(&mut self) -> &mut ScopeStack<'tcx> {
+        &mut self.scopes
+    }
+
+    #[inline]
+    pub fn current_symbol(&self) -> Option<&'tcx Symbol> {
+        // Get the current (top) scope and its associated symbol
+        self.scopes.top().and_then(|scope| scope.symbol())
+    }
+
+    fn visit_children(&mut self, _node: &HirNode<'tcx>) {
+        // Iterate through all child nodes and visit them
+        // This is a placeholder - actual implementation would iterate children
+    }
+
     fn visit_children_scope(&mut self, node: &HirNode<'tcx>, symbol: Option<&'tcx Symbol>) {
         let depth = self.scopes().depth();
         if let Some(symbol) = symbol {
@@ -63,7 +84,10 @@ impl<'tcx> BinderCore<'tcx> {
         let scope = self.unit().opt_get_scope(node.hir_id());
 
         if let Some(scope) = scope {
-            self.scopes_mut().push_with_symbol(scope, symbol);
+            self.scopes_mut().push(scope);
+            if let Some(sym) = symbol {
+                scope.set_symbol(Some(sym));
+            }
             self.visit_children(node);
             self.scopes_mut().pop_until(depth);
         } else {

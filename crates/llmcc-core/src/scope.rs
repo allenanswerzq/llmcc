@@ -105,6 +105,38 @@ impl<'tcx> Scope<'tcx> {
         *self.symbol.write() = symbol;
     }
 
+    /// Gets the unique scope ID assigned at creation time.
+    #[inline]
+    pub fn id(&self) -> ScopeId {
+        self.id
+    }
+
+    /// Invokes a closure for each symbol in this scope.
+    ///
+    /// Calls the visitor function for every symbol stored in this scope.
+    /// Useful for iteration without collecting all symbols into a vector.
+    ///
+    /// # Arguments
+    /// * `visit` - A closure that accepts a reference to each symbol
+    ///
+    /// # Example
+    /// ```ignore
+    /// scope.for_each_symbol(|symbol| {
+    ///     println!("Symbol: {:?}", symbol.name);
+    /// });
+    /// ```
+    pub fn for_each_symbol<F>(&self, mut visit: F)
+    where
+        F: FnMut(&'tcx Symbol),
+    {
+        let symbols = self.symbols.read();
+        for symbol_vec in symbols.values() {
+            for symbol in symbol_vec {
+                visit(symbol);
+            }
+        }
+    }
+
     /// Inserts a symbol into this scope.
     ///
     /// If multiple symbols have the same name, they are stored in a vector
