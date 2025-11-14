@@ -1,6 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{Symbol, SymbolKind};
+use llmcc_core::ir::HirNode;
 use llmcc_resolver::BinderCore;
 
 use crate::token::AstVisitorRust;
@@ -28,30 +29,21 @@ impl<'tcx> BinderVisitor<'tcx> {
         Self { unit }
     }
 
-    /// Helper to visit a named scope (module, function, struct, etc.)
-    /// that was already created during collection phase.
-    fn visit_named_scope_binding<F>(
+    fn visit_named_scope<F>(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         mut visit_fn: F,
     ) where
         F: FnMut(&mut Self, &mut BinderCore<'tcx>),
     {
-        // During binding phase, scopes already exist from collection phase
-        // We retrieve them by HirId instead of creating new ones
-        if let Some(scope) = self.unit.opt_get_scope(node.id()) {
-            core.push_scope(scope);
-            visit_fn(self, core);
-            core.pop_scope();
-        }
     }
 
     /// Visit a scoped identifier to resolve symbol references.
     /// Maps identifiers to symbols across scope boundaries.
     fn visit_scoped_identifier(
         &self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &BinderCore<'tcx>,
     ) -> Option<&'tcx Symbol> {
         // Try to resolve the path first
@@ -78,7 +70,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     /// Maps call nodes to the called function symbol and binds arguments.
     fn resolve_call_expression(
         &self,
-        _node: crate::token::HirNode<'tcx>,
+        _node: HirNode<'tcx>,
         _core: &BinderCore<'tcx>,
     ) {
         // TODO: Resolve the function being called
@@ -90,7 +82,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     /// Maps field initializers to struct field symbols.
     fn resolve_struct_init(
         &self,
-        _node: crate::token::HirNode<'tcx>,
+        _node: HirNode<'tcx>,
         _core: &BinderCore<'tcx>,
     ) {
         // TODO: Resolve struct name to symbol
@@ -102,7 +94,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     /// Maps field names to struct field symbols.
     fn resolve_field_access(
         &self,
-        _node: crate::token::HirNode<'tcx>,
+        _node: HirNode<'tcx>,
         _core: &BinderCore<'tcx>,
     ) {
         // TODO: Resolve the object's type
@@ -114,7 +106,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     /// Returns the inferred type symbol for an expression node.
     fn infer_type(
         &self,
-        _node: crate::token::HirNode<'tcx>,
+        _node: HirNode<'tcx>,
         _core: &BinderCore<'tcx>,
     ) -> Option<&'tcx Symbol> {
         // TODO: Implement type inference
@@ -134,40 +126,40 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
 
     fn visit_source_file(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // During binding, we navigate the scope hierarchy established during collection
         // No new scopes are created here
-        self.visit_named_scope_binding(node, core, |visitor, core| {
+        self.visit_named_scope(node, core, |visitor, core| {
             visitor.visit_children(&node, core, core.scope_top(), None);
         });
     }
 
     fn visit_mod_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // Navigate module scope created during collection phase
-        self.visit_named_scope_binding(node, core, |visitor, core| {
+        self.visit_named_scope(node, core, |visitor, core| {
             visitor.visit_children(&node, core, core.scope_top(), None);
         });
     }
 
     fn visit_function_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // Navigate function scope created during collection phase
-        self.visit_named_scope_binding(node, core, |visitor, core| {
+        self.visit_named_scope(node, core, |visitor, core| {
             // Resolve return type if present
             if let Some(_return_type) = node.opt_child_by_field(visitor.unit(), LangRust::field_return_type) {
                 // TODO: Resolve return type symbol
@@ -183,13 +175,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
 
     fn visit_struct_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // Navigate struct scope and resolve field types
-        self.visit_named_scope_binding(node, core, |visitor, core| {
+        self.visit_named_scope(node, core, |visitor, core| {
             // TODO: Resolve types for struct fields
             visitor.visit_children(&node, core, core.scope_top(), None);
         });
@@ -197,46 +189,46 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
 
     fn visit_enum_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // Navigate enum scope
-        self.visit_named_scope_binding(node, core, |visitor, core| {
+        self.visit_named_scope(node, core, |visitor, core| {
             visitor.visit_children(&node, core, core.scope_top(), None);
         });
     }
 
     fn visit_trait_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // Navigate trait scope
-        self.visit_named_scope_binding(node, core, |visitor, core| {
+        self.visit_named_scope(node, core, |visitor, core| {
             visitor.visit_children(&node, core, core.scope_top(), None);
         });
     }
 
     fn visit_impl_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // Navigate impl scope
-        self.visit_named_scope_binding(node, core, |visitor, core| {
+        self.visit_named_scope(node, core, |visitor, core| {
             visitor.visit_children(&node, core, core.scope_top(), None);
         });
     }
 
     fn visit_type_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
@@ -249,7 +241,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
 
     fn visit_const_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
@@ -265,7 +257,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
 
     fn visit_static_item(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
@@ -281,7 +273,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
 
     fn visit_field_declaration(
         &mut self,
-        node: crate::token::HirNode<'tcx>,
+        node: HirNode<'tcx>,
         core: &mut BinderCore<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
@@ -291,20 +283,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
             // TODO: Resolve field type symbol
         }
     }
-}
-
-/// Entry point for the binding phase.
-/// Performs symbol resolution and relationship binding on the AST.
-pub fn bind_rust_ast<'tcx>(
-    unit: CompileUnit<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-    root: crate::token::HirNode<'tcx>,
-) {
-    let mut visitor = BinderVisitor::new(unit);
-    let mut binder = BinderCore::new(unit, globals);
-
-    // Start binding from the root (usually source_file)
-    visitor.visit_source_file(root, &mut binder, globals, None);
 }
 
 #[cfg(test)]

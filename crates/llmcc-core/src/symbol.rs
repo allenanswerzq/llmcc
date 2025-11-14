@@ -317,8 +317,8 @@ impl Symbol {
 
     /// Sets the type of this symbol.
     #[inline]
-    pub fn set_type_of(&self, ty: Option<SymId>) {
-        *self.type_of.write() = ty;
+    pub fn set_type_of(&self, ty: SymId) {
+        *self.type_of.write() = Some(ty);
     }
 
     /// Gets the compile unit index this symbol is defined in.
