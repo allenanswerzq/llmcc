@@ -29,8 +29,14 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorCore<'tcx>> for DeclVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        // Set up crate and module scopes for the source file
-        // This establishes the Rust module hierarchy
+        if let Some(file_path) = self.unit().file_path() {
+            if let Some(crate_name) = parse_crate_name(&file_path) {
+                core.lookup_or_insert_global(&crate_name, node.id());
+            }
+            if let Some(module_name) = parse_module_name(&file_path) {
+                core.lookup_or_insert_global(&module_name, node.id());
+            }
+        }
     }
 
     fn visit_mod_item(
