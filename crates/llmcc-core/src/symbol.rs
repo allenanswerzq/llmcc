@@ -83,7 +83,9 @@ impl std::fmt::Display for ScopeId {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum SymbolKind {
     Unknown,
+    Crate,
     Module,
+    File,
     Struct,
     Enum,
     Function,
@@ -137,7 +139,7 @@ pub struct Symbol {
     pub owner: RwLock<HirId>,
     /// Additional defining locations for this symbol.
     /// For example, a struct can have multiple impl blocks in different files.
-    /// Used for symbols with multiple definitions.
+    /// owner + defining together represent all locations where this symbol is defined.
     pub defining: RwLock<Vec<HirId>>,
     /// The scope that this symbol belongs to.
     /// Used to quickly find the scope during binding and type resolution.
@@ -315,8 +317,8 @@ impl Symbol {
 
     /// Sets the type of this symbol.
     #[inline]
-    pub fn set_type_of(&self, ty: Option<SymId>) {
-        *self.type_of.write() = ty;
+    pub fn set_type_of(&self, ty: SymId) {
+        *self.type_of.write() = Some(ty);
     }
 
     /// Gets the compile unit index this symbol is defined in.

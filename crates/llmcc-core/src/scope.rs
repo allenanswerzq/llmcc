@@ -78,11 +78,16 @@ impl<'tcx> Scope<'tcx> {
     /// assert!(scope.lookup_symbols(name).is_empty());
     /// ```
     pub fn new(owner: HirId) -> Self {
+        Self::new_with(owner, None)
+    }
+
+    /// Creates a new scope owned by the given HIR node and associated with a symbol.
+    pub fn new_with(owner: HirId, symbol: Option<&'tcx Symbol>) -> Self {
         Self {
             id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::SeqCst)),
             symbols: RwLock::new(HashMap::new()),
             owner,
-            symbol: RwLock::new(None),
+            symbol: RwLock::new(symbol),
         }
     }
 

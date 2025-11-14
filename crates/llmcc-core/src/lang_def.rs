@@ -555,6 +555,7 @@ mod tests {
                 &mut self,
                 _node: crate::ir::HirNode<'tcx>,
                 t: &mut Collector,
+                _namespace: &'tcx crate::scope::Scope<'tcx>,
                 _parent: Option<&crate::symbol::Symbol>,
             ) {
                 t.add_func("function_visited".to_string());
@@ -565,10 +566,11 @@ mod tests {
         // Create visitor and count nodes by walking the parse tree
         let mut visitor = CountingVisitor::new(unit);
 
+        let globals = cc.create_unit_globals(crate::HirId(0));
         let root = file_start.unwrap();
         let node: crate::ir::HirNode<'_> = unit.hir_node(root);
         let mut collector = Collector::new();
-        visitor.visit_node(node, &mut collector, None);
+        visitor.visit_node(node, &mut collector, globals, None);
 
         assert_eq!(visitor.function_count, 2);
         assert_eq!(collector.func.len(), 2);
