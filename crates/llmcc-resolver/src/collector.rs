@@ -16,33 +16,13 @@
 //! 4. Access collected data through arena and scope helpers
 //! 5. After collection, apply collected symbols to global registry
 //!
+use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirId};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::Symbol;
+use llmcc_core::symbol::{ScopeId, SymId, Symbol};
 
 /// Core symbol collector for a single compilation unit.
-///
-/// The collector borrows an arena from the outside
-/// and uses it for allocating symbols and scopes during collection.
-/// The collector maintains a scope stack for proper nesting and symbol resolution.
-///
-/// # Architecture for Parallel Collection
-/// - Each compilation unit has its own per-unit lifetime 'a
-/// - An Arena<'a> is borrowed from CompileUnit or similar holder
-/// - Scopes and Symbols are allocated into the borrowed arena for that unit
-/// - After collection completes, symbols are extracted and applied globally
-/// - Multiple units can be collected in parallel with separate CollectorCore instances
-///
-/// # Thread Safety
-/// - Designed to be used in a single thread per unit
-/// - Multiple CollectorCore instances can run in parallel with separate arenas
-/// - The shared interner should be thread-safe (InternPool handles this)
-///
-/// # Lifetime 'a
-/// The lifetime 'a is the lifetime of the borrowed arena from the compilation unit.
-/// All allocated symbols and scopes are valid for this lifetime.
-///
 #[derive(Debug)]
 pub struct CollectorCore<'a> {
     /// The per-unit arena borrowed from CompileUnit or similar.
@@ -303,33 +283,121 @@ where
     collector.globals()
 }
 
-/// Applies collected symbols to a compilation context or global registry.
+/// Apply symbols collected from a single compilation unit to the global context.
 ///
-/// This function takes the scope hierarchy collected from a compilation unit
-/// and integrates it into the broader symbol context. This is typically called
-/// after all per-unit collections are complete, during the merge/registration phase.
+/// NOTE: even arena is the per-file, but the sym_id and scope_id is actually
+/// Apply collected symbols from a per-unit arena to the global compilation context.
+///
+/// This function transfers all scopes and symbols from a per-unit arena (where they were
+/// allocated during collection) to the global compilation context. This is typically called
+/// after symbol collection is complete for a single compilation unit.
+///
+/// # How It Works
+/// 1. Creates/gets the global scope in the compilation context
+/// 2. Iterates through all scopes in the per-unit arena
+/// 3. For the global scope: merges it into the global context's global scope
+/// 4. For all other scopes: allocates new scopes in the global arena while preserving IDs
+/// 5. All symbols are cloned and registered in the global symbol map
+///
+/// # Key Insight
+/// - Symbols and ScopeIds are assigned globally via atomics during collection (not per-unit)
+/// - This ensures uniqueness across all compilation units
+/// - When transferring to global arena, we preserve the IDs (don't create new ones)
+/// - The per-unit scope links and relationships are preserved in the transfer
 ///
 /// # Arguments
-/// * `unit_index` - The index of the compilation unit
-/// * `globals` - The global scope containing collected symbols
+/// * `cc` - The global compilation context (for registering symbols)
+/// * `arena` - The per-unit arena containing collected symbols and scopes
+/// * `globals` - The global scope from the per-unit arena
 ///
-/// # Future Work
-/// This function will:
-/// - Register symbols in the global symbol table
-/// - Handle symbol deduplication across units
-/// - Track symbol provenance (which unit defined it)
-/// - Validate symbol visibility and access rules
-/// - Build cross-unit dependency graphs
-pub fn apply_collected_symbols(unit_index: usize, globals: &Scope) {
-    // TODO: Implement symbol registration and global merging
-    // For now, this is a placeholder for the integration phase
-    let _ = (unit_index, globals);
+/// # Returns
+/// Reference to the final global scope (in the global compilation context)
+///
+/// # Example
+/// ```ignore
+/// let mut per_unit_arena = Arena::new();
+/// let mut collector = CollectorCore::new(unit_index, &per_unit_arena, &interner);
+/// // ... collect symbols ...
+/// let globals = collector.globals();
+/// let final_globals = apply_collected_symbols(&cc, &mut per_unit_arena, globals);
+/// ```
+pub fn apply_collected_symbols<'tcx, 'unit>(
+    cc: &'tcx CompileCtxt<'tcx>,
+    arena: &'unit Arena<'unit>,
+    globals: &'unit Scope<'unit>,
+) -> &'tcx Scope<'tcx> {
+    // Create or get the global scope in the compilation context
+    let final_globals = cc.create_globals();
+
+    // Transfer all scopes from per-unit arena to global context
+    for scope in arena.iter_scope() {
+        if scope.id() == globals.id() {
+            // For the global scope: merge into the final global scope
+            // This combines all global-level symbols into one scope
+            cc.merge_two_scopes(final_globals, scope);
+        } else {
+            // For all other scopes: allocate new instances in the global arena
+            // while preserving their IDs and symbol relationships
+            cc.alloc_scope_with(scope);
+        }
+    }
+
+    final_globals
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir::Arena;
+
+    fn reset_scope_and_symbol_ids() {
+        llmcc_core::symbol::reset_scope_id_counter();
+        llmcc_core::symbol::reset_symbol_id_counter();
+    }
+
+    #[test]
+    fn test_apply_collected_symbols() {
+        use llmcc_simple::LangSimple;
+
+        reset_scope_and_symbol_ids();
+
+        let per_unit_arena = Arena::default();
+        let interner = InternPool::default();
+
+        // Collect symbols in the per-unit arena
+        let per_unit_globals = collect_symbols_with(0, &per_unit_arena, &interner, |collector| {
+            // Collect some symbols in global scope
+            let _ = collector.lookup_or_insert_global("func_a", HirId(1));
+            let _ = collector.lookup_or_insert_global("func_b", HirId(2));
+
+            // Create a nested scope
+            let inner_scope = per_unit_arena.alloc(Scope::new(HirId(10)));
+            collector.push_scope(inner_scope);
+            let _ = collector.lookup_or_insert("local_var", HirId(3));
+            collector.pop_scope();
+        });
+
+        // Create a global compilation context using the simple test language
+        let cc = CompileCtxt::from_sources::<LangSimple>(&[]);
+
+        // Apply the collected symbols to the global context
+        let final_globals = apply_collected_symbols(&cc, &per_unit_arena, per_unit_globals);
+
+        // Verify we got back a valid scope from the global context
+        assert!(final_globals as *const _ != std::ptr::null());
+
+        // Verify that the scope is different from the per-unit one
+        // (because it's allocated in the global arena and assigned new IDs)
+        // This is expected behavior - symbols and scope IDs are assigned globally
+        assert_ne!(final_globals as *const _, per_unit_globals as *const _);
+
+        // Verify that the global scope contains the collected symbols by looking them up
+        let func_a_symbols = final_globals.lookup_symbols(interner.intern("func_a"));
+        let func_b_symbols = final_globals.lookup_symbols(interner.intern("func_b"));
+        assert!(!func_a_symbols.is_empty(), "func_a should be in the global scope");
+        assert!(!func_b_symbols.is_empty(), "func_b should be in the global scope");
+    }
 
     #[test]
     fn test_collector_creation() {
@@ -947,40 +1015,6 @@ mod tests {
         let _ = global_scope;
     }
 
-    #[test]
-    fn test_apply_collected_symbols() {
-        let arena = Arena::default();
-        let interner = InternPool::default();
-
-        // Collect symbols
-        let global_scope = collect_symbols_with(0, &arena, &interner, |collector| {
-            let _sym = collector.lookup_or_insert("test_var", HirId(1));
-        });
-
-        // Apply collected symbols (currently a no-op, but should not panic)
-        apply_collected_symbols(0, global_scope);
-    }
-
-    #[test]
-    fn test_apply_collected_symbols_multiple_units() {
-        let arena1 = Arena::default();
-        let arena2 = Arena::default();
-        let interner = InternPool::default();
-
-        let scope1 = collect_symbols_with(0, &arena1, &interner, |collector| {
-            let _ = collector.lookup_or_insert("unit0_var", HirId(1));
-        });
-
-        let scope2 = collect_symbols_with(1, &arena2, &interner, |collector| {
-            let _ = collector.lookup_or_insert("unit1_var", HirId(1));
-        });
-
-        // Apply both (should not panic)
-        apply_collected_symbols(0, scope1);
-        apply_collected_symbols(1, scope2);
-    }
-
-    /// A simple visitor implementation demonstrating the visitor pattern usage
     struct SimpleVisitor {
         visited_nodes: Vec<HirId>,
     }

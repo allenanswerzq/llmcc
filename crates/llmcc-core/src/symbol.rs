@@ -243,6 +243,11 @@ impl Symbol {
         *self.owner.read()
     }
 
+    #[inline]
+    pub fn id(&self) -> SymId {
+        self.id
+    }
+
     /// Sets the owner HIR node of this symbol.
     /// Typically only updated once during symbol creation.
     #[inline]

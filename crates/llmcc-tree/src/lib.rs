@@ -33,7 +33,7 @@ impl TokenSet {
 
     pub fn render(&self, language_ident: &str) -> String {
         let mut out = String::new();
-        out.push_str("define_tokens! {\n");
+        out.push_str("define_lang! {\n");
         out.push_str(&format!("    {},\n", language_ident));
 
         if !self.text_tokens.is_empty() {

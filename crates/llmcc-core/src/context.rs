@@ -5,16 +5,16 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
-use tree_sitter::{Node, Tree};
+use tree_sitter::Node;
 
 use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
-use crate::lang_def::LanguageTrait;
+use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
-use crate::symbol::{SymId, Symbol};
+use crate::symbol::{ScopeId, SymId, Symbol};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -27,8 +27,9 @@ impl<'tcx> CompileUnit<'tcx> {
         &self.cc.files[self.index]
     }
 
-    pub fn tree(&self) -> &'tcx Tree {
-        self.cc.trees[self.index].as_ref().unwrap()
+    /// Get the generic parse tree for this compilation unit
+    pub fn parse_tree(&self) -> Option<&Box<dyn ParseTree>> {
+        self.cc.parse_trees.get(self.index).and_then(|t| t.as_ref())
     }
 
     /// Access the shared string interner.
@@ -132,16 +133,22 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        self.cc.scope_map.read().get(&owner).copied()
+        // Direct lookup from cache
+        self.cc.scope_cache.read().get(&owner).copied()
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
         self.cc.symbol_map.read().get(&owner).copied()
     }
 
-    /// Get an existing scope or None if it doesn't exist
+    /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.cc.scope_map.read().get(&owner).copied().unwrap()
+        self.cc
+            .scope_cache
+            .read()
+            .get(&owner)
+            .copied()
+            .expect("HirId not mapped to Scope in CompileCtxt")
     }
 
     /// Find an existing scope or create a new one
@@ -425,19 +432,22 @@ pub struct BuildMetrics {
     pub parse_slowest: Vec<FileParseMetric>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct CompileCtxt<'tcx> {
     pub arena: Arena<'tcx>,
     pub interner: InternPool,
     pub files: Vec<File>,
-    pub trees: Vec<Option<Tree>>,
+    /// Generic parse trees from language-specific parsers
+    pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
     pub hir_next_id: AtomicU32,
     pub hir_start_ids: RwLock<Vec<Option<HirId>>>,
 
     // HirId -> ParentedNode
     pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // HirId -> &Scope (scopes owned by this HIR node)
-    pub scope_map: RwLock<HashMap<HirId, &'tcx Scope<'tcx>>>,
+    // ScopeId -> Scope (used internally for allocation)
+    pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
+    // HirId -> Scope (direct single-step lookup)
+    pub scope_cache: RwLock<HashMap<HirId, &'tcx Scope<'tcx>>>,
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
@@ -455,6 +465,17 @@ pub struct CompileCtxt<'tcx> {
     pub build_metrics: BuildMetrics,
 }
 
+impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CompileCtxt")
+            .field("files", &self.files.len())
+            .field("parse_trees", &self.parse_trees.len())
+            .field("hir_next_id", &self.hir_next_id)
+            .field("build_metrics", &self.build_metrics)
+            .finish()
+    }
+}
+
 impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from source code
     pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
@@ -466,18 +487,19 @@ impl<'tcx> CompileCtxt<'tcx> {
                 File::new_virtual(path, src.clone())
             })
             .collect();
-        let (trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
         metrics.file_read_seconds = 0.0;
         let count = files.len();
         Self {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
-            trees,
+            parse_trees,
             hir_next_id: AtomicU32::new(0),
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
+            scope_cache: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -507,7 +529,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
 
-        let (trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
         metrics.file_read_seconds = file_read_seconds;
 
         let count = files.len();
@@ -515,11 +537,12 @@ impl<'tcx> CompileCtxt<'tcx> {
             arena: Arena::default(),
             interner: InternPool::default(),
             files,
-            trees,
+            parse_trees,
             hir_next_id: AtomicU32::new(0),
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
+            scope_cache: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -533,9 +556,9 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     fn parse_files_with_metrics<L: LanguageTrait>(
         files: &[File],
-    ) -> (Vec<Option<Tree>>, BuildMetrics) {
+    ) -> (Vec<Option<Box<dyn ParseTree>>>, BuildMetrics) {
         struct ParseRecord {
-            tree: Option<Tree>,
+            tree: Option<Box<dyn ParseTree>>,
             elapsed: f64,
             path: Option<String>,
         }
@@ -605,11 +628,23 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        self.alloc_scope(Self::GLOBAL_SCOPE_OWNER)
+        let scope = self.alloc_scope(Self::GLOBAL_SCOPE_OWNER);
+        // self.symbol_map
+        //     .write()
+        //     .insert(SymId::GLOBAL_SCOPE, scope.as_symbol());
+        self.scope_cache
+            .write()
+            .insert(Self::GLOBAL_SCOPE_OWNER, scope);
+        self.scope_map.write().insert(scope.id(), scope);
+        scope
     }
 
     pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.scope_map.read().get(&owner).copied().unwrap()
+        self.scope_cache
+            .read()
+            .get(&owner)
+            .copied()
+            .expect("HirId not mapped to Scope in CompileCtxt")
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
@@ -625,13 +660,81 @@ impl<'tcx> CompileCtxt<'tcx> {
             .copied()
     }
 
+    /// Access the arena for allocations
+    pub fn arena(&'tcx self) -> &'tcx Arena<'tcx> {
+        &self.arena
+    }
+
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        if let Some(existing) = self.scope_map.read().get(&owner) {
+        // Check cache first
+        if let Some(existing) = self.scope_cache.read().get(&owner) {
             return existing;
         }
 
+        // Allocate new scope
+        let scope_id = ScopeId(self.scope_map.read().len() as u32);
         let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.write().insert(owner, scope);
+
+        // Update both maps
+        self.scope_map.write().insert(scope_id, scope);
+        self.scope_cache.write().insert(owner, scope);
+
+        scope
+    }
+
+    /// Merge the second scope into the first.
+    ///
+    /// This combines all symbols from the second scope into the first scope,
+    /// and updates both the scope and symbol maps to reference the merged result.
+    ///
+    /// # Arguments
+    /// * `first` - The target scope to merge into
+    /// * `second` - The source scope to merge from
+    ///
+    /// # Side Effects
+    /// - All symbols from `second` are merged into `first`
+    /// - The symbol_map is updated to point all merged symbols to the symbol_map
+    /// - The scope_map is updated to redirect second's scope ID to first
+    /// - The scope_cache is updated to redirect second's owner to first
+    pub fn merge_two_scopes<'src>(&'tcx self, first: &'tcx Scope<'tcx>, second: &'src Scope<'src>) {
+        // Merge symbols from second into first
+        first.merge_with(second, self.arena());
+
+        // Update all symbol map entries for symbols now in first scope
+        // We need to register the merged symbols in the global symbol_map
+        first.for_each_symbol(|sym| {
+            self.symbol_map.write().insert(sym.id(), sym);
+        });
+
+        // Remap scope references from second to first
+        // If any HIR node was mapped to second's scope, it should now map to first
+        self.scope_map.write().insert(second.id(), first);
+        self.scope_cache.write().insert(second.owner(), first);
+    }
+
+    /// Allocate a new scope based on an existing one, cloning its contents.
+    ///
+    /// The existing ones are from the other arena, and we want to allocate in
+    /// this arena.
+    pub fn alloc_scope_with<'src>(&'tcx self, existing: &Scope<'src>) -> &'tcx Scope<'tcx> {
+        let owner = existing.owner();
+        // Check cache first
+        if let Some(existing) = self.scope_cache.read().get(&owner) {
+            return existing;
+        }
+
+        // Allocate new scope from existing
+        let scope_id = existing.id();
+        let scope = Scope::new_from(existing, self.arena());
+        let scope = self.arena.alloc(scope);
+
+        // Update both maps
+        self.scope_map.write().insert(scope_id, scope);
+        self.scope_cache.write().insert(owner, scope);
+        scope.for_each_symbol(|sym| {
+            self.symbol_map.write().insert(sym.id(), sym);
+        });
+
         scope
     }
 
@@ -664,6 +767,11 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.files.get(index).and_then(|file| file.path())
     }
 
+    /// Get the generic parse tree for a specific file
+    pub fn get_parse_tree(&self, index: usize) -> Option<&Box<dyn ParseTree>> {
+        self.parse_trees.get(index).and_then(|t| t.as_ref())
+    }
+
     /// Get all file paths from the compilation context
     pub fn get_files(&self) -> Vec<String> {
         self.files
@@ -677,5 +785,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn clear(&self) {
         self.hir_map.write().clear();
         self.scope_map.write().clear();
+        self.scope_cache.write().clear();
     }
 }
