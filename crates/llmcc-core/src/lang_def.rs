@@ -1,6 +1,6 @@
 //! Language definition framework for multi-language AST support.
 //!
-//! This module provides the core infrastructure for defining language-specific AST handling
+//! This module provides the scopes infrastructure for defining language-specific AST handling
 //! in llmcc. It abstracts language-specific details behind the `LanguageTrait` interface
 //! and provides macros for rapid language definition.
 //!
@@ -34,7 +34,7 @@
 //! - **Multi-language support**: Define once, use everywhere
 //! - **Type safety**: Compile-time token ID validation
 //! - **Performance**: Zero-cost abstractions via static methods
-//! - **Extensibility**: Add new tokens without changing core code
+//! - **Extensibility**: Add new tokens without changing scopes code
 //!
 //! # Example Language Definition
 //!
@@ -238,7 +238,7 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
     }
 }
 
-/// Core trait defining language-specific AST handling.
+/// Scopes trait defining language-specific AST handling.
 pub trait LanguageTrait {
     /// Parse source code and return a generic parse tree.
     ///
@@ -406,17 +406,17 @@ macro_rules! define_lang {
                 fn visit_node(
                     &mut self,
                     node: $crate::ir::HirNode<'a>,
-                    core: &mut T,
+                    scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
                     match node.kind_id() {
                         $(
                             [<Lang $suffix>]::$const => $crate::paste::paste! {
-                                self.[<visit_ $const>](node, core, namespace, parent)
+                                self.[<visit_ $const>](node, scopes, namespace, parent)
                             },
                         )*
-                        _ => self.visit_unknown(node, core, namespace, parent),
+                        _ => self.visit_unknown(node, scopes, namespace, parent),
                     }
                 }
 
@@ -424,25 +424,33 @@ macro_rules! define_lang {
                 fn visit_children(
                     &mut self,
                     node: &$crate::ir::HirNode<'a>,
-                    core: &mut T,
+                    scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
                     for id in node.children() {
                         let child = self.unit().hir_node(*id);
-                        self.visit_node(child, core, namespace, parent);
+                        self.visit_node(child, scopes, namespace, parent);
                     }
                 }
+
+                fn visit_scope_children(
+                    &mut self,
+                    node: &$crate::ir::HirNode<'a>,
+                    scopes: &mut T,
+                    namespace: &'tcx Scope<'tcx>,
+                    parent: Option<&$crate::symbol::Symbol>,
+                ) {}
 
                 /// Handle unknown/unrecognized token types
                 fn visit_unknown(
                     &mut self,
-                    node: $crate::ir::HirNode<'a>,
-                    core: &mut T,
+                    node: &$crate::ir::HirNode<'a>,
+                    scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
-                    self.visit_children(&node, core, namespace, parent);
+                    self.visit_children(&node, scopes, namespace, parent);
                 }
 
                 // Generate visit methods for each token type with visit_ prefix
@@ -450,12 +458,12 @@ macro_rules! define_lang {
                     $crate::paste::paste! {
                         fn [<visit_ $const>](
                             &mut self,
-                            node: $crate::ir::HirNode<'a>,
-                            core: &mut T,
+                            node: &$crate::ir::HirNode<'a>,
+                            scopes: &mut T,
                             namespace: &'a $crate::scope::Scope<'a>,
                             parent: Option<&$crate::symbol::Symbol>,
                         ) {
-                            self.visit_children(&node, core, namespace, parent);
+                            self.visit_children(&node, scopes, namespace, parent);
                         }
                     }
                 )*

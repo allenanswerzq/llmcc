@@ -653,6 +653,11 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.symbol_map.read().get(&owner).cloned()
     }
 
+    pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
+        self.opt_get_symbol(owner)
+            .expect("SymId not mapped to Symbol in CompileCtxt")
+    }
+
     /// Find the primary symbol associated with a block ID
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
         self.symbol_map

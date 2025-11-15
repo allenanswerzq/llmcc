@@ -5,7 +5,7 @@ use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId};
-use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, Symbol, SymbolKind};
+use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
 
 /// Represents a single level in the scope hierarchy.
 #[derive(Debug)]
@@ -229,7 +229,7 @@ impl<'tcx> Scope<'tcx> {
     pub fn lookup_symbols_with(
         &self,
         name: InternedStr,
-        kind_filter: Option<SymbolKind>,
+        kind_filter: Option<SymKind>,
         unit_filter: Option<usize>,
     ) -> Vec<&'tcx Symbol> {
         self.lookup_symbols(name)
@@ -244,7 +244,7 @@ impl<'tcx> Scope<'tcx> {
 
     /// Returns a compact string representation for debugging.
     /// Format: `{owner}/{symbol_count}`
-    pub fn format(&self) -> String {
+    pub fn format_compact(&self) -> String {
         let total: usize = self.symbols.read().values().map(|v| v.len()).sum();
         format!("{}/{}", self.owner, total)
     }
@@ -318,7 +318,7 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     /// Recursively pushes a scope and all its base (parent) scopes onto the stack.
-    pub fn push_recursively(&mut self, scope: &'tcx Scope<'tcx>) {
+    pub fn push_recursive(&mut self, scope: &'tcx Scope<'tcx>) {
         let mut cand = Vec::new();
         cand.push(scope);
 
@@ -889,20 +889,20 @@ mod tests {
         let name = pool.intern("item");
 
         let sym = Symbol::new(create_test_hir_id(10), name);
-        sym.set_kind(SymbolKind::Function);
+        sym.set_kind(SymKind::Function);
         sym.set_unit_index(0);
         scope.insert(&sym);
 
         // Lookup with matching filter
-        let found = scope.lookup_symbols_with(name, Some(SymbolKind::Function), Some(0));
+        let found = scope.lookup_symbols_with(name, Some(SymKind::Function), Some(0));
         assert_eq!(found.len(), 1);
 
         // Lookup with non-matching kind filter
-        let found = scope.lookup_symbols_with(name, Some(SymbolKind::Struct), Some(0));
+        let found = scope.lookup_symbols_with(name, Some(SymKind::Struct), Some(0));
         assert!(found.is_empty());
 
         // Lookup with non-matching unit filter
-        let found = scope.lookup_symbols_with(name, Some(SymbolKind::Function), Some(1));
+        let found = scope.lookup_symbols_with(name, Some(SymKind::Function), Some(1));
         assert!(found.is_empty());
     }
 
@@ -916,11 +916,11 @@ mod tests {
         let name = pool.intern("unique_item");
 
         let sym = Symbol::new(create_test_hir_id(10), name);
-        sym.set_kind(SymbolKind::Struct);
+        sym.set_kind(SymKind::Struct);
         sym.set_unit_index(0);
         scope.insert(&sym);
 
-        let found = scope.lookup_symbol_unqiue(name, SymbolKind::Struct, 0);
+        let found = scope.lookup_symbol_unqiue(name, SymKind::Struct, 0);
         assert!(found.is_some());
         assert_eq!(found.unwrap().id, sym.id);
     }
@@ -1070,7 +1070,7 @@ mod tests {
         let name = pool.intern("typed_var");
 
         let symbol = Symbol::new(create_test_hir_id(10), name);
-        symbol.set_kind(SymbolKind::Function);
+        symbol.set_kind(SymKind::Function);
         symbol.set_unit_index(5);
         symbol.set_is_global(true);
 
@@ -1085,7 +1085,7 @@ mod tests {
 
         let cloned = found[0];
         assert_eq!(cloned.id, symbol.id);
-        assert_eq!(cloned.kind(), SymbolKind::Function);
+        assert_eq!(cloned.kind(), SymKind::Function);
         assert_eq!(cloned.unit_index(), Some(5));
         assert!(cloned.is_global());
     }
@@ -1220,7 +1220,7 @@ mod tests {
         let source_scope = Scope::new(create_test_hir_id(2));
         let name = pool.intern("metadata_var");
         let symbol = Symbol::new(create_test_hir_id(20), name);
-        symbol.set_kind(SymbolKind::Function);
+        symbol.set_kind(SymKind::Function);
         symbol.set_unit_index(5);
         symbol.set_is_global(true);
         source_scope.insert(&symbol);
@@ -1234,7 +1234,7 @@ mod tests {
 
         let merged = found[0];
         assert_eq!(merged.id, symbol.id);
-        assert_eq!(merged.kind(), SymbolKind::Function);
+        assert_eq!(merged.kind(), SymKind::Function);
         assert_eq!(merged.unit_index(), Some(5));
         assert!(merged.is_global());
     }

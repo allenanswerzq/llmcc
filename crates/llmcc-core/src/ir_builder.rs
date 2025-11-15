@@ -237,7 +237,6 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     fn make_base(
         &self,
         id: HirId,
-        id: HirId,
         parent: Option<HirId>,
         node: &dyn ParseNode,
         kind: HirKind,
@@ -248,7 +247,6 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         let end_byte = node.end_byte();
         let field_id = Self::field_id_of().unwrap_or(u16::MAX);
         HirBase {
-            id,
             id,
             parent,
             kind_id,
@@ -287,13 +285,10 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         let name_node = node.child_by_field_name("name")?;
 
         let id = self.reserve_hir_id();
-        let id = self.reserve_hir_id();
         let kind_id = name_node.kind_id();
         let start_byte = name_node.start_byte();
         let end_byte = name_node.end_byte();
         let ident_base = HirBase {
-            id,
-            parent: Some(base.id),
             id,
             parent: Some(base.id),
             kind_id,

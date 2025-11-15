@@ -66,7 +66,7 @@ impl std::fmt::Display for ScopeId {
 
 /// Classification of what kind of named entity a symbol represents.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum SymbolKind {
+pub enum SymKind {
     Unknown,
     Crate,
     Module,
@@ -103,7 +103,7 @@ pub enum SymbolKind {
 /// # Example
 /// ```ignore
 /// let symbol = Symbol::new(id, interned_name);
-/// symbol.set_kind(SymbolKind::Function);
+/// symbol.set_kind(SymKind::Function);
 /// symbol.set_is_global(true);
 /// ```
 #[derive(Debug)]
@@ -134,7 +134,7 @@ pub struct Symbol {
     pub parent_scope: RwLock<Option<ScopeId>>,
     /// The kind of symbol this represents (function, struct, variable, etc.).
     /// Initially Unknown, updated as the symbol is processed.
-    pub kind: RwLock<SymbolKind>,
+    pub kind: RwLock<SymKind>,
     /// Optional backing type for this symbol (e.g. variable type, alias target).
     /// Set during type analysis if applicable.
     pub type_of: RwLock<Option<SymId>>,
@@ -198,7 +198,7 @@ impl Symbol {
     /// # Example
     /// ```ignore
     /// let symbol = Symbol::new(id, interned_name);
-    /// assert_eq!(symbol.kind(), SymbolKind::Unknown);
+    /// assert_eq!(symbol.kind(), SymKind::Unknown);
     /// assert!(!symbol.is_global());
     /// ```
     pub fn new(owner: HirId, name_key: InternedStr) -> Self {
@@ -214,7 +214,7 @@ impl Symbol {
             defining: RwLock::new(Vec::new()),
             scope: RwLock::new(None),
             parent_scope: RwLock::new(None),
-            kind: RwLock::new(SymbolKind::Unknown),
+            kind: RwLock::new(SymKind::Unknown),
             type_of: RwLock::new(None),
             block_id: RwLock::new(None),
             is_global: RwLock::new(false),
@@ -282,13 +282,13 @@ impl Symbol {
 
     /// Gets the symbol kind (function, struct, variable, etc.).
     #[inline]
-    pub fn kind(&self) -> SymbolKind {
+    pub fn kind(&self) -> SymKind {
         *self.kind.read()
     }
 
     /// Sets the symbol kind after analysis.
     #[inline]
-    pub fn set_kind(&self, kind: SymbolKind) {
+    pub fn set_kind(&self, kind: SymKind) {
         *self.kind.write() = kind;
     }
 
@@ -467,8 +467,8 @@ mod tests {
 
     #[test]
     fn test_symbol_kind_equality() {
-        assert_eq!(SymbolKind::Function, SymbolKind::Function);
-        assert_ne!(SymbolKind::Function, SymbolKind::Struct);
+        assert_eq!(SymKind::Function, SymKind::Function);
+        assert_ne!(SymKind::Function, SymKind::Struct);
     }
 
     #[test]
@@ -483,7 +483,7 @@ mod tests {
 
         // Verify basic properties regardless of counter state
         assert_eq!(symbol.owner(), id);
-        assert_eq!(symbol.kind(), SymbolKind::Unknown);
+        assert_eq!(symbol.kind(), SymKind::Unknown);
         assert!(!symbol.is_global());
         assert_eq!(symbol.unit_index(), None);
         assert_eq!(symbol.type_of(), None);
@@ -516,11 +516,11 @@ mod tests {
         let pool = create_test_intern_pool();
         let symbol = Symbol::new(create_test_hir_id(1), pool.intern("func"));
 
-        symbol.set_kind(SymbolKind::Function);
-        assert_eq!(symbol.kind(), SymbolKind::Function);
+        symbol.set_kind(SymKind::Function);
+        assert_eq!(symbol.kind(), SymKind::Function);
 
-        symbol.set_kind(SymbolKind::Struct);
-        assert_eq!(symbol.kind(), SymbolKind::Struct);
+        symbol.set_kind(SymKind::Struct);
+        assert_eq!(symbol.kind(), SymKind::Struct);
     }
 
     #[test]
@@ -674,7 +674,7 @@ mod tests {
         let pool = create_test_intern_pool();
         let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
 
-        symbol.set_kind(SymbolKind::Function);
+        symbol.set_kind(SymKind::Function);
         symbol.set_is_global(true);
         symbol.set_unit_index(0);
 

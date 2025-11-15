@@ -11,7 +11,7 @@
 //!
 //! # Usage Pattern
 //! 1. Get or create an Arena<'a> for the compilation unit
-//! 2. Create a CollectorCore with the unit's arena, unit index, and interner
+//! 2. Create a CollectorScopes with the unit's arena, unit index, and interner
 //! 3. Collect symbols using the provided helper methods
 //! 4. Access collected data through arena and scope helpers
 //! 5. After collection, apply collected symbols to global registry
@@ -20,11 +20,11 @@ use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirId};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{ScopeId, SymId, Symbol, SymbolKind};
+use llmcc_core::symbol::{ScopeId, SymId, SymKind, Symbol};
 
 /// Core symbol collector for a single compilation unit.
 #[derive(Debug)]
-pub struct CollectorCore<'a> {
+pub struct CollectorScopes<'a> {
     /// The per-unit arena borrowed from CompileUnit or similar.
     /// Used for allocating symbols and scopes during collection.
     arena: &'a Arena<'a>,
@@ -47,7 +47,7 @@ pub struct CollectorCore<'a> {
     globals: &'a Scope<'a>,
 }
 
-impl<'a> CollectorCore<'a> {
+impl<'a> CollectorScopes<'a> {
     /// Creates a new collector for a compilation unit.
     ///
     /// Takes the per-unit arena from outside (typically from CompileUnit),
@@ -61,7 +61,7 @@ impl<'a> CollectorCore<'a> {
     /// * `interner` - Shared string interner (must be the same across all units)
     ///
     /// # Returns
-    /// A new CollectorCore with an empty scope stack and initialized global scope
+    /// A new CollectorScopes with an empty scope stack and initialized global scope
     pub fn new(
         unit_index: usize,
         arena: &'a Arena<'a>,
@@ -126,8 +126,8 @@ impl<'a> CollectorCore<'a> {
     ///
     /// Increases nesting depth and makes the scope active for symbol insertions.
     #[inline]
-    pub fn push_scope_recursively(&mut self, scope: &'a Scope<'a>) {
-        self.scopes.push_recursively(scope);
+    pub fn push_scope_recursive(&mut self, scope: &'a Scope<'a>) {
+        self.scopes.push_recursive(scope);
     }
 
     /// Pushes a scope onto the stack.
@@ -189,12 +189,7 @@ impl<'a> CollectorCore<'a> {
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert(
-        &self,
-        name: &str,
-        node: HirId,
-        kind: SymbolKind,
-    ) -> Option<&'a Symbol> {
+    pub fn lookup_or_insert(&self, name: &str, node: HirId, kind: SymKind) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert(name, node)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
@@ -219,7 +214,7 @@ impl<'a> CollectorCore<'a> {
         &self,
         name: &str,
         node: HirId,
-        kind: SymbolKind,
+        kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
         symbol.set_kind(kind);
@@ -245,7 +240,7 @@ impl<'a> CollectorCore<'a> {
         &self,
         name: &str,
         node: HirId,
-        kind: SymbolKind,
+        kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
         symbol.set_kind(kind);
@@ -270,7 +265,7 @@ impl<'a> CollectorCore<'a> {
         &self,
         name: &str,
         node: HirId,
-        kind: SymbolKind,
+        kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
         symbol.set_kind(kind);
@@ -296,14 +291,14 @@ impl<'a> CollectorCore<'a> {
     /// ```ignore
     /// use llmcc_core::scope::LookupOptions;
     /// let opts = LookupOptions::global().with_force(true);
-    /// let symbol = collector.lookup_or_insert_with(None, node_id, SymbolKind::Function, opts)?;
+    /// let symbol = collector.lookup_or_insert_with(None, node_id, SymKind::Function, opts)?;
     /// ```
     #[inline]
     pub fn lookup_or_insert_with(
         &self,
         name: Option<&str>,
         node: HirId,
-        kind: SymbolKind,
+        kind: SymKind,
         options: llmcc_core::scope::LookupOptions,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
@@ -316,7 +311,7 @@ impl<'a> CollectorCore<'a> {
 /// Collects symbols from a compilation unit into a scope hierarchy.
 ///
 /// This function orchestrates the symbol collection process for a single compilation unit.
-/// It creates a CollectorCore, invokes the visitor function to traverse and collect symbols,
+/// It creates a CollectorScopes, invokes the visitor function to traverse and collect symbols,
 /// and returns the global scope containing the collected symbols.
 ///
 /// # Type Parameters
@@ -352,9 +347,9 @@ pub fn collect_symbols_with<'a, F>(
     visitor: F,
 ) -> &'a Scope<'a>
 where
-    F: FnOnce(&mut CollectorCore<'a>),
+    F: FnOnce(&mut CollectorScopes<'a>),
 {
-    let mut collector = CollectorCore::new(unit_index, arena, interner, globals);
+    let mut collector = CollectorScopes::new(unit_index, arena, interner, globals);
     visitor(&mut collector);
     collector.globals()
 }
@@ -392,7 +387,7 @@ where
 /// # Example
 /// ```ignore
 /// let mut per_unit_arena = Arena::new();
-/// let mut collector = CollectorCore::new(unit_index, &per_unit_arena, &interner);
+/// let mut collector = CollectorScopes::new(unit_index, &per_unit_arena, &interner);
 /// // ... collect symbols ...
 /// let globals = collector.globals();
 /// let final_globals = apply_collected_symbols(&cc, &mut per_unit_arena, globals);

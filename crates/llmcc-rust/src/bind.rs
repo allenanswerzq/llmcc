@@ -1,8 +1,8 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::Scope;
-use llmcc_core::symbol::{Symbol, SymbolKind};
-use llmcc_resolver::BinderCore;
+use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_resolver::BinderScopes;
 
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
@@ -19,129 +19,121 @@ impl<'tcx> BinderVisitor<'tcx> {
     fn new(unit: CompileUnit<'tcx>) -> Self {
         Self { unit }
     }
-
-    /// Visit a scoped identifier to resolve symbol references.
-    /// Maps identifiers to symbols across scope boundaries.
-    fn visit_scoped_identifier(
-        &self,
-        node: HirNode<'tcx>,
-        core: &BinderCore<'tcx>,
-    ) -> Option<&'tcx Symbol> {
-        // Try to resolve the path first
-        if let Some(path_node) = node.opt_child_by_field(self.unit(), LangRust::field_path) {
-            // Recursively resolve the path
-            // This handles cases like `module::Type::METHOD`
-        }
-
-        // Then resolve the final name
-        if let Some(name_node) = node.opt_child_by_field(self.unit(), LangRust::field_name) {
-            if let Some(name_ident) = name_node.as_ident() {
-                // Look up the name in the current scope hierarchy
-                let scope = core.scope_top();
-                let name_key = core.interner().intern(&name_ident.name);
-                let symbols = scope.lookup_symbols(name_key);
-                return symbols.last().copied();
-            }
-        }
-
-        None
-    }
-
-    /// Type inference for expressions.
-    /// Returns the inferred type symbol for an expression node.
-    fn infer_type(&self, _node: HirNode<'tcx>, _core: &BinderCore<'tcx>) -> Option<&'tcx Symbol> {
-        // TODO: Implement type inference
-        // - Literals (i32, bool, etc.)
-        // - Variable references
-        // - Function returns
-        // - Binary operations
-        // - Pattern matching
-        None
-    }
 }
 
-impl<'tcx> AstVisitorRust<'tcx, BinderCore<'tcx>> for BinderVisitor<'tcx> {
+impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     fn unit(&self) -> CompileUnit<'tcx> {
         self.unit
     }
 
+    fn visit_scope_children(
+        &mut self,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        scopes.push_scope(node.id());
+        self.visit_children(node, scopes, namespace, parent);
+        scopes.pop_scope();
+    }
+
     fn visit_source_file(
         &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         if let Some(file_path) = self.unit().file_path() {
             if let Some(crate_name) = parse_crate_name(&file_path)
-                && let Some(symbol) =
-                    core.lookup_or_insert_global(&crate_name, node.id(), SymbolKind::Module)
+                && let Some(_symbol) =
+                    scopes.lookup_or_insert_global(&crate_name, node, SymKind::Module)
             {
-                core.push_scope_with(node.id(), Some(symbol));
+                scopes.push_scope(node.id());
             }
 
             if let Some(module_name) = parse_module_name(&file_path)
-                && let Some(symbol) =
-                    core.lookup_or_insert_global(&module_name, node.id(), SymbolKind::Module)
+                && let Some(_symbol) =
+                    scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
             {
-                core.push_scope_with(node.id(), Some(symbol));
+                scopes.push_scope(node.id());
             }
 
             if let Some(file_name) = parse_file_name(&file_path)
-                && let Some(symbol) =
-                    core.lookup_or_insert(&file_name, node.id(), SymbolKind::Module)
+                && let Some(symbol) = scopes.lookup_or_insert(&file_name, node, SymKind::Module)
             {
-                core.push_scope_with(node.id(), Some(symbol));
+                let ns = scopes.get_scope(node.id());
+                self.visit_scope_children(node, scopes, ns, Some(symbol));
             }
         }
     }
 
     fn visit_mod_item(
         &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
     ) {
         let sn = node.expect_scope();
-        if sn.ident.is_none() {
-            core.push_scope_with(node.id());
+        if let Some(ident) = sn.ident {
+            if let Some(symbol) = scopes.lookup_or_insert(&ident.name, node, SymKind::Module) {
+                let ns = scopes.get_scope(node.id());
+                self.visit_scope_children(node, scopes, ns, Some(symbol));
+            }
         } else {
-            core.push_scope_with(node.id());
+            // Anonymous module, push all parent scopes
+            let depth = scopes.scope_depth();
+            scopes.push_scope_recursive(node.id());
+            self.visit_children(node, scopes, namespace, parent);
+            scopes.pop_until(depth);
         }
-
     }
 
     fn visit_function_item(
         &mut self,
-        node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
     ) {
-        // Navigate function scope created during collection phase
-        // TODO: Resolve return type if present
-        // TODO: Resolve parameter types
-        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
-            core.push_scope(scope);
-            self.visit_children(&node, core, scope, None);
-            core.pop_scope();
+        let sn = node.expect_scope();
+        let mut ret_sym = None;
+
+        if let Some(ret_ty) = node.opt_child_by_field(self.unit, LangRust::field_return_type) {
+            self.visit_children(&ret_ty, scopes, namespace, parent);
+            ret_sym = ret_ty
+                .find_ident(self.unit)
+                .map(|ident| ident.symbol(self.unit));
+        }
+
+        if let Some(ident) = sn.ident {
+            let symbol = ident.symbol(self.unit);
+
+            if let Some(ret_sym) = ret_sym {
+                symbol.set_type_of(ret_sym.id());
+            }
+
+            let ns = scopes.get_scope(node.id());
+            self.visit_scope_children(node, scopes, ns, Some(symbol));
+        } else {
         }
     }
 
     fn visit_struct_item(
         &mut self,
         node: HirNode<'tcx>,
-        core: &mut BinderCore<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         // Navigate struct scope and resolve field types
         // TODO: Resolve types for struct fields
-        if let Some(scope) = core.unit().opt_get_scope(node.id()) {
-            core.push_scope(scope);
-            self.visit_children(&node, core, scope, None);
-            core.pop_scope();
+        if let Some(scope) = scopes.unit().opt_get_scope(node.id()) {
+            scopes.push_scope(scope);
+            self.visit_children(&node, scopes, scope, None);
+            scopes.pop_scope();
         }
     }
 }

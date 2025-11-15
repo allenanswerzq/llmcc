@@ -3,7 +3,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{Symbol, SymbolKind};
+use llmcc_core::symbol::{SymKind, Symbol};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationDirection {
@@ -13,20 +13,20 @@ pub enum RelationDirection {
 
 /// Binder for resolving symbols and managing symbol relationships.
 ///
-/// The BinderCore uses a hashmap-based lookup strategy:
+/// The BinderScopes uses a hashmap-based lookup strategy:
 /// 1. First attempts to find scopes/symbols in CompileCtxt's hashmap storage
 /// 2. If not found, allocates new ones in the CompileUnit's arena
 /// 3. Maintains a scope stack for hierarchical traversal
 ///
-/// This is different from CollectorCore which always uses the per-unit arena.
+/// This is different from CollectorScopes which always uses the per-unit arena.
 #[derive(Debug)]
-pub struct BinderCore<'tcx> {
+pub struct BinderScopes<'tcx> {
     unit: CompileUnit<'tcx>,
     scopes: ScopeStack<'tcx>,
     relation_direction: RelationDirection,
 }
 
-impl<'tcx> BinderCore<'tcx> {
+impl<'tcx> BinderScopes<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
         let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
         scopes.push(globals);
@@ -89,18 +89,17 @@ impl<'tcx> BinderCore<'tcx> {
     /// Returns the most recently pushed scope.
     /// Panics if stack is empty (should never happen since we always have global scope).
     #[inline]
-    pub fn scope_top(&self) -> &'tcx Scope<'tcx> {
+    pub fn top_scope(&self) -> &'tcx Scope<'tcx> {
         self.scopes
             .top()
             .expect("scope stack should never be empty")
     }
 
-    /// Pushes a scope onto the stack.
-    ///
-    /// Increases nesting depth and makes the scope active for symbol lookups.
     #[inline]
-    pub fn push_scope(&mut self, scope: &'tcx Scope<'tcx>) {
-        self.scopes.push(scope);
+    pub fn get_scope(&self, owner: HirId) -> &'tcx Scope<'tcx> {
+        self.unit
+            .opt_get_scope(owner)
+            .expect("scope must exist in CompileUnit")
     }
 
     /// Pushes a new scope created from a symbol onto the stack.
@@ -112,14 +111,21 @@ impl<'tcx> BinderCore<'tcx> {
     /// # Arguments
     /// * `id` - The HIR node ID for the scope
     /// * `symbol` - The symbol this scope belongs to (e.g., function, struct, trait)
-    pub fn push_scope_with(&mut self, owner: HirId) {
-        // NOTE: this is the biggest difference from CollectorCore, we would expect
+    pub fn push_scope(&mut self, owner: HirId) {
+        // NOTE: this is the biggest difference from CollectorScopes, we would expect
+        // the scope must already exist in the CompileUnit
+        let scope = self.get_scope(owner);
+        self.scopes.push(scope);
+    }
+
+    pub fn push_scope_recursive(&mut self, owner: HirId) {
+        // NOTE: this is the biggest difference from CollectorScopes, we would expect
         // the scope must already exist in the CompileUnit
         let scope = self
             .unit
             .opt_get_scope(owner)
             .expect("scope must exist in CompileUnit");
-        self.push_scope(scope);
+        self.scopes.push_recursive(scope);
     }
 
     /// Pops the current scope from the stack.
@@ -164,8 +170,8 @@ impl<'tcx> BinderCore<'tcx> {
     pub fn lookup_or_insert(
         &self,
         name: &str,
-        node: HirNode<'tcx>,
-        kind: SymbolKind,
+        node: &HirNode<'tcx>,
+        kind: SymKind,
     ) -> Option<&'tcx Symbol> {
         let symbol = self.scopes.lookup_or_insert(name, node.id())?;
         symbol.set_kind(kind);
@@ -189,8 +195,8 @@ impl<'tcx> BinderCore<'tcx> {
     pub fn lookup_or_insert_chained(
         &self,
         name: &str,
-        node: HirNode<'tcx>,
-        kind: SymbolKind,
+        node: &HirNode<'tcx>,
+        kind: SymKind,
     ) -> Option<&'tcx Symbol> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node.id())?;
         symbol.set_kind(kind);
@@ -213,8 +219,8 @@ impl<'tcx> BinderCore<'tcx> {
     pub fn lookup_or_insert_parent(
         &self,
         name: &str,
-        node: HirNode<'tcx>,
-        kind: SymbolKind,
+        node: &HirNode<'tcx>,
+        kind: SymKind,
     ) -> Option<&'tcx Symbol> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node.id())?;
         symbol.set_kind(kind);
@@ -236,8 +242,8 @@ impl<'tcx> BinderCore<'tcx> {
     pub fn lookup_or_insert_global(
         &self,
         name: &str,
-        node: HirNode<'tcx>,
-        kind: SymbolKind,
+        node: &HirNode<'tcx>,
+        kind: SymKind,
     ) -> Option<&'tcx Symbol> {
         let symbol = self.scopes.lookup_or_insert_global(name, node.id())?;
         symbol.set_kind(kind);
@@ -262,13 +268,13 @@ impl<'tcx> BinderCore<'tcx> {
     /// ```ignore
     /// use llmcc_core::scope::LookupOptions;
     /// let opts = LookupOptions::global().with_force(true);
-    /// let symbol = binder.lookup_or_insert_with(None, node_id, SymbolKind::Function, opts)?;
+    /// let symbol = binder.lookup_or_insert_with(None, node_id, SymKind::Function, opts)?;
     /// ```
     pub fn lookup_or_insert_with(
         &self,
         name: Option<&str>,
-        node: HirNode<'tcx>,
-        kind: SymbolKind,
+        node: &HirNode<'tcx>,
+        kind: SymKind,
         options: LookupOptions,
     ) -> Option<&'tcx Symbol> {
         let symbol = self
@@ -281,21 +287,21 @@ impl<'tcx> BinderCore<'tcx> {
 
 /// Public API for binding symbols with a custom visitor function.
 ///
-/// This is a higher-order function that creates a BinderCore and executes a closure
+/// This is a higher-order function that creates a BinderScopes and executes a closure
 /// to perform binding operations. It provides a convenient way to perform symbol binding
-/// while automatically managing the BinderCore lifecycle.
+/// while automatically managing the BinderScopes lifecycle.
 ///
 /// # Two-Phase Symbol Resolution
 ///
 /// This function is part of the second phase (binding) of symbol resolution:
-/// - **Phase 1 (Collection)**: DeclVisitor + CollectorCore create all symbols and scopes
-/// - **Phase 2 (Binding)**: BinderVisitor + BinderCore resolve and establish relationships
+/// - **Phase 1 (Collection)**: DeclVisitor + CollectorScopes create all symbols and scopes
+/// - **Phase 2 (Binding)**: BinderVisitor + BinderScopes resolve and establish relationships
 ///
 /// # Arguments
 ///
 /// - `cc`: The compilation unit containing pre-created symbols from the collection phase
 /// - `globals`: The global scope (root of the scope hierarchy)
-/// - `visitor`: A closure that receives a mutable BinderCore to perform binding operations
+/// - `visitor`: A closure that receives a mutable BinderScopes to perform binding operations
 ///
 /// # Returns
 ///
@@ -308,28 +314,28 @@ impl<'tcx> BinderCore<'tcx> {
 /// let globals = cc.create_globals();
 /// let result = bind_symbols_with(unit, globals, |binder| {
 ///     // Perform custom binding operations
-///     let sym = binder.lookup_or_insert("my_var", node, SymbolKind::Variable);
+///     let sym = binder.lookup_or_insert("my_var", node, SymKind::Variable);
 ///     // ... more binding logic
 /// });
 /// ```
 ///
 /// # Strategy
 ///
-/// The BinderCore uses a **hashmap-first lookup strategy**:
+/// The BinderScopes uses a **hashmap-first lookup strategy**:
 /// 1. First attempts to find scopes/symbols in the CompileCtxt's hashmap storage
 /// 2. If not found, allocates new ones in the CompileUnit's arena
 /// 3. Maintains a scope stack for hierarchical scope traversal
 ///
-/// This differs from CollectorCore which always allocates directly in the per-unit arena.
+/// This differs from CollectorScopes which always allocates directly in the per-unit arena.
 pub fn bind_symbols_with<'a, F>(
     cc: CompileUnit<'a>,
     globals: &'a Scope<'a>,
     visitor: F,
 ) -> &'a Scope<'a>
 where
-    F: FnOnce(&mut BinderCore<'a>),
+    F: FnOnce(&mut BinderScopes<'a>),
 {
-    let mut collector = BinderCore::new(cc, globals);
+    let mut collector = BinderScopes::new(cc, globals);
     visitor(&mut collector);
     collector.globals()
 }
@@ -347,7 +353,7 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let mut binder = BinderCore::new(unit, global_scope);
+        let mut binder = BinderScopes::new(unit, global_scope);
 
         assert_eq!(binder.scope_depth(), 1);
         assert!(binder.top_symbol().is_none());
@@ -361,7 +367,7 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let binder = BinderCore::new(unit, global_scope);
+        let binder = BinderScopes::new(unit, global_scope);
 
         // Create a dummy HirNode
         let hir_id = 1;
@@ -369,14 +375,14 @@ mod tests {
 
         // Lookup or insert a symbol
         let sym1 = binder
-            .lookup_or_insert("my_function", node, SymbolKind::Function)
+            .lookup_or_insert("my_function", node, SymKind::Function)
             .expect("symbol should be created");
 
-        assert_eq!(sym1.kind(), SymbolKind::Function);
+        assert_eq!(sym1.kind(), SymKind::Function);
 
         // Lookup the same symbol should return the existing one
         let sym2 = binder
-            .lookup_or_insert("my_function", node, SymbolKind::Function)
+            .lookup_or_insert("my_function", node, SymKind::Function)
             .expect("symbol should exist");
 
         assert_eq!(sym1.id(), sym2.id(), "should return the same symbol");
@@ -390,19 +396,19 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let binder = BinderCore::new(unit, global_scope);
+        let binder = BinderScopes::new(unit, global_scope);
 
         let hir_id = 1;
         let node = HirNode::from_raw_parts(hir_id, hir_id);
 
         // First symbol
         let sym1 = binder
-            .lookup_or_insert_chained("var", node, SymbolKind::Variable)
+            .lookup_or_insert_chained("var", node, SymKind::Variable)
             .expect("first symbol created");
 
         // Chained symbol should create a new one that links to the previous
         let sym2 = binder
-            .lookup_or_insert_chained("var", node, SymbolKind::Variable)
+            .lookup_or_insert_chained("var", node, SymKind::Variable)
             .expect("second symbol created");
 
         assert_ne!(
@@ -425,7 +431,7 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let mut binder = BinderCore::new(unit, global_scope);
+        let mut binder = BinderScopes::new(unit, global_scope);
 
         let hir_id = 1;
         let node = HirNode::from_raw_parts(hir_id, hir_id);
@@ -438,10 +444,10 @@ mod tests {
 
         // Insert into global scope from nested scope
         let sym = binder
-            .lookup_or_insert_global("global_const", node, SymbolKind::Const)
+            .lookup_or_insert_global("global_const", node, SymKind::Const)
             .expect("symbol should be inserted in global scope");
 
-        assert_eq!(sym.kind(), SymbolKind::Const);
+        assert_eq!(sym.kind(), SymKind::Const);
 
         // Verify it's in the global scope
         let found = binder
@@ -458,7 +464,7 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let mut binder = BinderCore::new(unit, global_scope);
+        let mut binder = BinderScopes::new(unit, global_scope);
 
         assert_eq!(binder.scope_depth(), 1);
 
@@ -485,7 +491,7 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let mut binder = BinderCore::new(unit, global_scope);
+        let mut binder = BinderScopes::new(unit, global_scope);
 
         binder.set_forward_relation();
         binder.set_backward_relation();
@@ -500,7 +506,7 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let mut binder = BinderCore::new(unit, global_scope);
+        let mut binder = BinderScopes::new(unit, global_scope);
 
         let hir_id = 1;
         let node = HirNode::from_raw_parts(hir_id, hir_id);
@@ -511,7 +517,7 @@ mod tests {
 
         // Insert into parent scope
         let sym = binder
-            .lookup_or_insert_parent("parent_var", node, SymbolKind::Variable)
+            .lookup_or_insert_parent("parent_var", node, SymKind::Variable)
             .expect("symbol should be inserted in parent");
 
         // Verify it's in the global (parent) scope, not the nested scope
@@ -535,7 +541,7 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let binder = BinderCore::new(unit, global_scope);
+        let binder = BinderScopes::new(unit, global_scope);
 
         let hir_id = 1;
         let node = HirNode::from_raw_parts(hir_id, hir_id);
@@ -543,10 +549,10 @@ mod tests {
         // Use custom options to insert globally
         let opts = LookupOptions::global();
         let sym = binder
-            .lookup_or_insert_with(Some("custom_sym"), node, SymbolKind::Function, opts)
+            .lookup_or_insert_with(Some("custom_sym"), node, SymKind::Function, opts)
             .expect("symbol should be created");
 
-        assert_eq!(sym.kind(), SymbolKind::Function);
+        assert_eq!(sym.kind(), SymKind::Function);
     }
 
     #[test]
@@ -558,14 +564,14 @@ mod tests {
         let unit = CompileUnit::new(cc, None);
 
         let global_scope = arena.alloc(Scope::new(0));
-        let binder = BinderCore::new(unit, global_scope);
+        let binder = BinderScopes::new(unit, global_scope);
 
         let hir_id_1 = 1;
         let node_1 = HirNode::from_raw_parts(hir_id_1, hir_id_1);
 
         // First lookup/insert
         let sym1 = binder
-            .lookup_or_insert("hashmap_test", node_1, SymbolKind::Struct)
+            .lookup_or_insert("hashmap_test", node_1, SymKind::Struct)
             .expect("first symbol");
 
         let hir_id_2 = 2;
@@ -574,7 +580,7 @@ mod tests {
         // Second lookup with different node ID should return the same symbol
         // because hashmap-based lookup finds it first
         let sym2 = binder
-            .lookup_or_insert("hashmap_test", node_2, SymbolKind::Struct)
+            .lookup_or_insert("hashmap_test", node_2, SymKind::Struct)
             .expect("second lookup");
 
         // Same symbol ID means we hit the hashmap and didn't allocate a new one

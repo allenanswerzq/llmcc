@@ -190,7 +190,7 @@ impl<'blk> BlockBase<'blk> {
     pub fn opt_get_name(&self) -> Option<&str> {
         self.node
             .as_scope()
-            .and_then(|scope| scope.ident.as_ref())
+            .and_then(|scope| *scope.ident.read())
             .map(|ident| ident.name.as_str())
     }
 
