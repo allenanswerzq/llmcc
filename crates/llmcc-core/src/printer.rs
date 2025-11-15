@@ -1,57 +1,8 @@
-//! IR and Graph Printing Module
-//!
-//! This module provides production-ready, configurable rendering and printing capabilities for:
-//! - HIR (High-level Intermediate Representation) trees
-//! - Control flow graphs (BasicBlocks)
-//! - AST (Abstract Syntax Tree) nodes
-//!
-//! # Features
-//!
-//! - **Configurable Output Formats**: Tree, Compact, Flat
-//! - **Snippet Management**: Optional source code display with truncation
-//! - **Line Tracking**: Automatic line number extraction from byte positions
-//! - **Depth Control**: Configurable maximum nesting depth (prevents stack overflow)
-//! - **Performance Optimized**: Lazy evaluation, minimal allocations
-//! - **Error Handling**: Result types for safe error propagation
-//!
-//! # Configuration
-//!
-//! Use [`PrintConfig`] to customize rendering behavior:
-//!
-//! ```ignore
-//! // Minimal rendering (fast)
-//! let config = PrintConfig::minimal();
-//!
-//! // Default configuration
-//! let config = PrintConfig::default()
-//!     .with_snippets(true)
-//!     .with_max_depth(5);
-//!
-//! // Verbose rendering (maximum detail)
-//! let config = PrintConfig::verbose();
-//! ```
-//!
-//! # Usage Examples
-//!
-//! ```ignore
-//! // Render HIR with custom config
-//! let config = PrintConfig::default()
-//!     .with_format(PrintFormat::Tree)
-//!     .with_snippets(true);
-//! let (ast, hir) = render_llmcc_ir_with_config(root, unit, &config)?;
-//!
-//! // Render control flow graph
-//! let graph = render_llmcc_graph_with_config(block_id, unit, &config)?;
-//! ```
-
+//! TOOD: use impl fmt::Debug
 use crate::context::CompileUnit;
 use crate::graph_builder::{BasicBlock, BlockId};
 use crate::ir::{HirId, HirNode};
 use std::fmt;
-
-// ============================================================================
-// Configuration Types
-// ============================================================================
 
 /// Output format for rendering
 ///

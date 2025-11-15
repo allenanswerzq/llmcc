@@ -10,6 +10,7 @@
 
 use parking_lot::RwLock;
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
@@ -106,7 +107,6 @@ pub enum SymKind {
 /// symbol.set_kind(SymKind::Function);
 /// symbol.set_is_global(true);
 /// ```
-#[derive(Debug)]
 pub struct Symbol {
     /// Monotonic id assigned when the symbol is created.
     pub id: SymId,
@@ -176,6 +176,21 @@ impl Clone for Symbol {
             depended: RwLock::new(self.depended.read().clone()),
             previous: RwLock::new(*self.previous.read()),
         }
+    }
+}
+
+impl fmt::Debug for Symbol {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Symbol")
+            .field("id", &self.id())
+            .field("name", &self.name)
+            .field("kind", &self.kind())
+            .field("owner", &self.owner())
+            .field("unit_index", &self.unit_index())
+            .field("scope", &self.scope())
+            .field("parent_scope", &self.parent_scope())
+            .field("defining", &self.defining.read())
+            .finish()
     }
 }
 

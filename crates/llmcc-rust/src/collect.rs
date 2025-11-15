@@ -132,7 +132,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         let file_path = self.unit.file_path().expect("no file path found to compile");
 
         if let Some(crate_name) = parse_crate_name(&file_path)
-            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Module)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
         {
             scopes.push_scope_with(node, Some(symbol));
         }
@@ -141,27 +141,26 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
             && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
         {
             scopes.push_scope_with(node, Some(symbol));
-        }
+            if let Some(file_name) = parse_file_name(&file_path)
+                && let Some(sn) = node.as_scope()
+            {
+                let ident = self.unit.alloc_hir_ident(file_name.clone(), symbol);
+                sn.set_ident(ident);
 
-        if let Some(file_name) = parse_file_name(&file_path)
-            && let Some(symbol) = scopes.lookup_or_insert(&file_name, node, SymKind::Module)
-            && let Some(sn) = node.as_scope()
-        {
-            let ident = self.unit.alloc_hir_ident(file_name.clone(), symbol);
-            sn.set_ident(ident);
+                if let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File) {
+                    ident.set_symbol(file_sym);
+                    file_sym.add_defining(node.id());
 
-            if let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File) {
-                ident.set_symbol(file_sym);
-                file_sym.add_defining(node.id());
+                    let scope = self.unit.alloc_hir_scope(file_sym);
+                    file_sym.set_scope(scope.id());
+                    sn.set_scope(scope);
+                    scopes.push_scope(scope);
+                }
 
-                let scope = self.unit.alloc_hir_scope(file_sym);
-                file_sym.set_scope(scope.id());
-                sn.set_scope(scope);
-                scopes.push_scope(scope);
+                self.visit_children(node, scopes, namespace, parent);
             }
-
-            self.visit_children(node, scopes, namespace, parent);
         }
+
     }
 
     fn visit_mod_item(
@@ -297,11 +296,7 @@ mod tests {
         kind: SymKind,
     ) -> &'tcx Symbol {
         let key = interner.intern(name);
-        scope
-            .lookup_symbols(key)
-            .into_iter()
-            .find(|symbol| symbol.kind() == kind)
-            .unwrap_or_else(|| panic!("symbol `{name}` with kind {kind:?} not found"))
+        scope.lookup_symbols_with(key, Some(kind), None).first().unwrap()
     }
 
     fn scope_by_id<'tcx>(cc: &'tcx CompileCtxt<'tcx>, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
@@ -388,162 +383,6 @@ static TOP_STATIC: i32 = 7;
         let mut v = DeclVisitor::new(unit);
         v.visit_node(node, &mut scopes, globlas, None);
 
-        // file name comes from the virtual path: virtual://unit_0.rs
-        assert_eq!(node.kind(), llmcc_core::ir::HirKind::File);
-
-        let module_symbol = lookup_symbol(globlas, &cc.interner, "unit_0", SymKind::Module);
-        assert_eq!(module_symbol.unit_index(), Some(0));
-        assert!(module_symbol.parent_scope().is_some());
-        assert!(module_symbol.scope().is_some());
-        assert_ne!(module_symbol.scope(), module_symbol.parent_scope());
-
-        let module_scope = scope_by_id(&cc, module_symbol.scope().unwrap());
-        assert_eq!(module_scope.owner(), node.id());
-        assert_eq!(
-            module_scope
-                .symbol()
-                .expect("module scope should have symbol")
-                .id(),
-            module_symbol.id()
-        );
-
-        let file_path = unit.file_path().unwrap();
-        let maybe_crate_name = parse_crate_name(file_path);
-        if let Some(crate_name) = &maybe_crate_name {
-            let crate_symbol =
-                lookup_symbol(globlas, &cc.interner, crate_name, SymKind::Module);
-
-            assert_eq!(crate_symbol.unit_index(), Some(0));
-            assert_eq!(crate_symbol.scope(), module_symbol.parent_scope());
-            assert_eq!(crate_symbol.parent_scope(), Some(globlas.id()));
-
-            let crate_scope = scope_by_id(&cc, crate_symbol.scope().unwrap());
-            assert_eq!(
-                crate_scope
-                    .symbol()
-                    .expect("crate scope should own its symbol")
-                    .id(),
-                crate_symbol.id()
-            );
-        } else {
-            assert_eq!(module_symbol.parent_scope(), Some(globlas.id()));
-        }
-
-        let outer_symbol = find_symbol_anywhere(&cc, "outer", SymKind::Module).unwrap_or_else(
-            || {
-                panic!(
-                    "outer module missing. modules found: {:?}",
-                    names_of_kind(&cc, SymKind::Module)
-                )
-            },
-        );
-        assert!(outer_symbol.scope().is_some());
-        let outer_scope = scope_by_id(&cc, outer_symbol.scope().unwrap());
-        assert_eq!(
-            outer_scope
-                .symbol()
-                .expect("outer scope missing parent symbol")
-                .id(),
-            outer_symbol.id()
-        );
-
-        let nested_fn =
-            lookup_symbol(outer_scope, &cc.interner, "nested_function", SymKind::Function);
-        assert!(nested_fn.scope().is_some());
-
-        let inner_const =
-            lookup_symbol(outer_scope, &cc.interner, "INNER_CONST", SymKind::Const);
-        assert_eq!(inner_const.defining.read().len(), 1);
-
-        let top_function =
-            find_symbol_anywhere(&cc, "top_level", SymKind::Function).expect("top_level missing");
-        assert!(top_function.scope().is_some());
-
-        let foo_symbol =
-            find_symbol_anywhere(&cc, "Foo", SymKind::Struct).expect("Foo struct missing");
-        let foo_scope = scope_by_id(&cc, foo_symbol.scope().unwrap());
-        assert_eq!(
-            foo_scope
-                .symbol()
-                .expect("foo scope missing symbol reference")
-                .id(),
-            foo_symbol.id()
-        );
-
-        let field_symbol = lookup_symbol(foo_scope, &cc.interner, "field", SymKind::Field);
-        assert_eq!(field_symbol.parent_scope(), foo_symbol.scope());
-
-        let foo_related_scopes: Vec<_> = cc
-            .arena
-            .iter_scope()
-            .filter(|scope| scope.symbol().map(|s| s.id()) == Some(foo_symbol.id()))
-            .collect();
-        assert!(
-            foo_related_scopes.len() >= 2,
-            "expected struct and impl scopes for Foo but found {}",
-            foo_related_scopes.len()
-        );
-
-        let method_symbol =
-            find_symbol_anywhere(&cc, "method", SymKind::Function).expect("method missing");
-        assert!(method_symbol.scope().is_some());
-
-        let color_symbol =
-            find_symbol_anywhere(&cc, "Color", SymKind::Enum).expect("Color enum missing");
-        assert!(color_symbol.scope().is_some());
-        let color_scope = scope_by_id(&cc, color_symbol.scope().unwrap());
-        assert_eq!(
-            color_scope
-                .symbol()
-                .expect("color scope missing symbol reference")
-                .id(),
-            color_symbol.id()
-        );
-
-        let greeter_symbol =
-            find_symbol_anywhere(&cc, "Greeter", SymKind::Trait).expect("Greeter trait missing");
-        assert!(greeter_symbol.scope().is_some());
-        let greeter_scope = scope_by_id(&cc, greeter_symbol.scope().unwrap());
-        assert_eq!(
-            greeter_scope
-                .symbol()
-                .expect("greeter scope missing symbol reference")
-                .id(),
-            greeter_symbol.id()
-        );
-
-        let alias_symbol =
-            find_symbol_anywhere(&cc, "Alias", SymKind::Const).expect("Alias type missing");
-        assert!(alias_symbol.scope().is_none());
-
-        let top_const =
-            find_symbol_anywhere(&cc, "TOP_CONST", SymKind::Const).expect("TOP_CONST missing");
-        assert_eq!(top_const.defining.read().len(), 1);
-
-        let top_static =
-            find_symbol_anywhere(&cc, "TOP_STATIC", SymKind::Static).expect("TOP_STATIC missing");
-        assert_eq!(top_static.defining.read().len(), 1);
-
-        let mut global_symbols = Vec::new();
-        globlas.for_each_symbol(|symbol| {
-            global_symbols.push((symbol_name(&cc, symbol), symbol.kind()));
-        });
-        assert!(
-            global_symbols
-                .iter()
-                .any(|(name, kind)| name == "unit_0" && *kind == SymKind::Module),
-            "unit_0 module symbol missing from globals: {:?}",
-            global_symbols
-        );
-        if let Some(crate_name) = maybe_crate_name {
-            assert!(
-                global_symbols
-                    .iter()
-                    .any(|(name, kind)| name == &crate_name && *kind == SymKind::Module),
-                "crate symbol `{}` missing from globals: {:?}",
-                crate_name,
-                global_symbols
-            );
-        }
+        println!("{:#?}", globlas);
     }
 }

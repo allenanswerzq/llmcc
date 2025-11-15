@@ -1,6 +1,7 @@
 //! Scope management and symbol lookup for the code graph.
 use parking_lot::RwLock;
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
@@ -8,7 +9,6 @@ use crate::ir::{Arena, HirId, HirNode};
 use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
 
 /// Represents a single level in the scope hierarchy.
-#[derive(Debug)]
 pub struct Scope<'tcx> {
     /// Unique monotonic scope ID assigned at creation time.
     /// Immutable for the lifetime of the scope.
@@ -247,6 +247,27 @@ impl<'tcx> Scope<'tcx> {
     pub fn format_compact(&self) -> String {
         let total: usize = self.symbols.read().values().map(|v| v.len()).sum();
         format!("{}/{}", self.owner, total)
+    }
+}
+
+impl<'tcx> fmt::Debug for Scope<'tcx> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let symbol_desc = self.symbol().map(|sym| format!("{:?}", sym));
+        let parent_ids: Vec<_> = self.parents.read().iter().map(|scope| scope.id()).collect();
+        let child_count = self.children.read().len();
+
+        let mut symbol_entries = Vec::new();
+        self.for_each_symbol(|symbol| symbol_entries.push(format!("{:?}", symbol)));
+        symbol_entries.sort();
+
+        f.debug_struct("Scope")
+            .field("id", &self.id())
+            .field("owner", &self.owner())
+            .field("symbol", &symbol_desc)
+            .field("parent_ids", &parent_ids)
+            .field("child_count", &child_count)
+            .field("symbols", &symbol_entries)
+            .finish()
     }
 }
 
