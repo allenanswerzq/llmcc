@@ -413,10 +413,10 @@ macro_rules! define_lang {
                     match node.kind_id() {
                         $(
                             [<Lang $suffix>]::$const => $crate::paste::paste! {
-                                self.[<visit_ $const>](node, scopes, namespace, parent)
+                                self.[<visit_ $const>](&node, scopes, namespace, parent)
                             },
                         )*
-                        _ => self.visit_unknown(node, scopes, namespace, parent),
+                        _ => self.visit_unknown(&node, scopes, namespace, parent),
                     }
                 }
 
@@ -438,7 +438,7 @@ macro_rules! define_lang {
                     &mut self,
                     node: &$crate::ir::HirNode<'a>,
                     scopes: &mut T,
-                    namespace: &'tcx Scope<'tcx>,
+                    namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {}
 
@@ -561,7 +561,7 @@ mod tests {
 
             fn visit_function(
                 &mut self,
-                _node: crate::ir::HirNode<'tcx>,
+                _node: &crate::ir::HirNode<'tcx>,
                 t: &mut Collector,
                 _namespace: &'tcx crate::scope::Scope<'tcx>,
                 _parent: Option<&crate::symbol::Symbol>,

@@ -26,6 +26,11 @@ llmcc_core::define_lang!(
     (field_type, 11, "field_type", HirKind::Identifier),
 );
 
+// Define supported extensions for the Simple language
+impl LangSimple {
+    pub const SUPPORTED_EXTENSIONS: &'static [&'static str] = &["simple"];
+}
+
 // ============================================================================
 // PART 2: Simple Custom Parse Node Implementation
 // ============================================================================

@@ -32,33 +32,39 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(file_path) = self.unit().file_path() {
-            if let Some(crate_name) = parse_crate_name(&file_path)
-                && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node.id(), SymKind::Module)
-            {
-                scopes.push_scope_with(node.id(), Some(symbol));
+        let file_path = self.unit.file_path().expect("no file path found to compile");
+
+        if let Some(crate_name) = parse_crate_name(&file_path)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, *node, SymKind::Module)
+        {
+            scopes.push_scope_with(*node, Some(symbol));
+        }
+
+        if let Some(module_name) = parse_module_name(&file_path)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, *node, SymKind::Module)
+        {
+            scopes.push_scope_with(*node, Some(symbol));
+        }
+
+        if let Some(file_name) = parse_file_name(&file_path)
+            && let Some(symbol) = scopes.lookup_or_insert(&file_name, *node, SymKind::Module)
+            && let Some(sn) = node.as_scope()
+        {
+            // TODO: Implement alloc_hir_ident and related APIs
+            // let ident = self.unit.alloc_hir_ident(file_name, symbol);
+            // sn.set_ident(ident);
+
+            if let Some(sym) = scopes.lookup_or_insert(&file_name, *node, SymKind::File) {
+                // sn.ident().set_symbol(sym);
+                // sn.ident().symbol().add_defining(node.id());
             }
 
-            if let Some(module_name) = parse_module_name(&file_path)
-                && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node.id(), SymKind::Module)
-            {
-                scopes.push_scope_with(node.id(), Some(symbol));
-            }
+            // let scope = self.unit.alloc_hir_scope(sn, sn.ident().symbol());
+            // sn.ident().symbol().set_scope(scope.id());
+            // sn.set_scope(scope);
+            // scopes.push_scope(scope);
 
-            if let Some(file_name) = parse_file_name(&file_path)
-                && let Some(symbol) = scopes.lookup_or_insert(&file_name, node.id(), SymKind::Module)
-                && let Some(sn) = node.as_scope()
-            {
-                let ident = self.unit.arena().alloc(HirIdent::new(HirBase::default(), symbol));
-                sn.set_ident(ident);
-
-                if let Some(sym) = scopes.lookup_or_insert(file_name, node.id(), SymKind::File) {
-                    sn.ident().set_symbol(sym);
-                    sn.ident().symbol().add_defining(node.id());
-                }
-
-                // sn.ident().symbol().scope =
-            }
+            self.visit_children(node, scopes, namespace, parent);
         }
     }
 
@@ -78,8 +84,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let sn = node.expect_scope();
-        sn.ident = None;
+        // TODO: Implement function item collection logic
+        let _sn = node.as_scope();
     }
 
     fn visit_struct_item(

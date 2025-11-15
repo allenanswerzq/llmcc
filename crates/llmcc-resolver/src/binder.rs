@@ -173,7 +173,7 @@ impl<'tcx> BinderScopes<'tcx> {
         node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        let symbol = self.scopes.lookup_or_insert(name, node.id())?;
+        let symbol = self.scopes.lookup_or_insert(name, *node)?;
         symbol.set_kind(kind);
         Some(symbol)
     }
@@ -198,7 +198,7 @@ impl<'tcx> BinderScopes<'tcx> {
         node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        let symbol = self.scopes.lookup_or_insert_chained(name, node.id())?;
+        let symbol = self.scopes.lookup_or_insert_chained(name, *node)?;
         symbol.set_kind(kind);
         Some(symbol)
     }
@@ -222,7 +222,7 @@ impl<'tcx> BinderScopes<'tcx> {
         node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        let symbol = self.scopes.lookup_or_insert_parent(name, node.id())?;
+        let symbol = self.scopes.lookup_or_insert_parent(name, *node)?;
         symbol.set_kind(kind);
         Some(symbol)
     }
@@ -245,7 +245,7 @@ impl<'tcx> BinderScopes<'tcx> {
         node: &HirNode<'tcx>,
         kind: SymKind,
     ) -> Option<&'tcx Symbol> {
-        let symbol = self.scopes.lookup_or_insert_global(name, node.id())?;
+        let symbol = self.scopes.lookup_or_insert_global(name, *node)?;
         symbol.set_kind(kind);
         Some(symbol)
     }
@@ -277,9 +277,7 @@ impl<'tcx> BinderScopes<'tcx> {
         kind: SymKind,
         options: LookupOptions,
     ) -> Option<&'tcx Symbol> {
-        let symbol = self
-            .scopes
-            .lookup_or_insert_with(name, node.id(), options)?;
+        let symbol = self.scopes.lookup_or_insert_with(name, *node, options)?;
         symbol.set_kind(kind);
         Some(symbol)
     }

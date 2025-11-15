@@ -566,7 +566,7 @@ mod tests {
         let symbol = Symbol::new(create_test_hir_id(1), pool.intern("var"));
         let type_id = SymId(42);
 
-        symbol.set_type_of(Some(type_id));
+        symbol.set_type_of(type_id);
         assert_eq!(symbol.type_of(), Some(type_id));
     }
 

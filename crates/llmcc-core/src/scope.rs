@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
-use crate::ir::{Arena, HirId};
+use crate::ir::{Arena, HirId, HirNode};
 use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
 
 /// Represents a single level in the scope hierarchy.
@@ -502,8 +502,8 @@ impl<'tcx> ScopeStack<'tcx> {
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
-        self.lookup_or_insert_impl(node, Some(name), LookupOptions::current())
+    pub fn lookup_or_insert(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+        self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::current())
     }
 
     /// Find or insert symbol with chaining enabled for shadowing support.
@@ -518,8 +518,8 @@ impl<'tcx> ScopeStack<'tcx> {
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert_chained(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
-        self.lookup_or_insert_impl(node, Some(name), LookupOptions::chained())
+    pub fn lookup_or_insert_chained(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+        self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::chained())
     }
 
     /// Insert a symbol in the parent scope.
@@ -534,8 +534,8 @@ impl<'tcx> ScopeStack<'tcx> {
     /// # Returns
     /// Some(symbol) if name is non-empty and parent scope exists,
     /// None if name is empty or no parent scope available
-    pub fn lookup_or_insert_parent(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
-        self.lookup_or_insert_impl(node, Some(name), LookupOptions::parent())
+    pub fn lookup_or_insert_parent(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+        self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::parent())
     }
 
     /// Find or insert symbol in the global scope.
@@ -549,8 +549,8 @@ impl<'tcx> ScopeStack<'tcx> {
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert_global(&self, name: &str, node: HirId) -> Option<&'tcx Symbol> {
-        self.lookup_or_insert_impl(node, Some(name), LookupOptions::global())
+    pub fn lookup_or_insert_global(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+        self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::global())
     }
 
     /// Full control API for symbol lookup and insertion with custom options.
@@ -574,10 +574,10 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn lookup_or_insert_with(
         &self,
         name: Option<&str>,
-        node: HirId,
+        node: HirNode,
         options: LookupOptions,
     ) -> Option<&'tcx Symbol> {
-        self.lookup_or_insert_impl(node, name, options)
+        self.lookup_or_insert_impl(node.id(), name, options)
     }
 }
 
@@ -920,9 +920,9 @@ mod tests {
         sym.set_unit_index(0);
         scope.insert(&sym);
 
-        let found = scope.lookup_symbol_unqiue(name, SymKind::Struct, 0);
-        assert!(found.is_some());
-        assert_eq!(found.unwrap().id, sym.id);
+        let found = scope.lookup_symbols(name);
+        assert!(!found.is_empty());
+        assert_eq!(found[0].id, sym.id);
     }
 
     #[test]

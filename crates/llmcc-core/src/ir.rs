@@ -36,9 +36,6 @@
 //! HIR nodes are immutable once allocated and can be safely shared across threads.
 //! The arena itself is not thread-safe; use thread-local arenas for parallel processing.
 
-use std::cell::Cell;
-use std::fmt;
-
 use parking_lot::RwLock;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
@@ -295,6 +292,7 @@ impl<'hir> HirNode<'hir> {
     pub fn child_by_field(&self, unit: CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
         self.base().unwrap().child_by_field(unit, field_id)
     }
+
     /// Find an optional child with a specific tree-sitter kind ID.
     pub fn child_by_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
         self.children()
@@ -657,7 +655,7 @@ impl<'hir> HirIdent<'hir> {
     }
 
     pub fn symbol(&self) -> &'hir Symbol {
-        *self.symbol.read().expect("symbol must be set")
+        self.symbol.read().expect("symbol must be set")
     }
 }
 

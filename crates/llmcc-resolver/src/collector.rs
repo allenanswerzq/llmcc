@@ -18,7 +18,7 @@
 //!
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
-use llmcc_core::ir::{Arena, HirId};
+use llmcc_core::ir::{Arena, HirId, HirNode};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymId, SymKind, Symbol};
 
@@ -134,8 +134,8 @@ impl<'a> CollectorScopes<'a> {
     ///
     /// Increases nesting depth and makes the scope active for symbol insertions.
     #[inline]
-    pub fn push_scope_with(&mut self, id: HirId, symbol: Option<&'a Symbol>) {
-        let scope = self.arena.alloc(Scope::new_with(id, symbol));
+    pub fn push_scope_with(&mut self, node: HirNode<'a>, symbol: Option<&'a Symbol>) {
+        let scope = self.arena.alloc(Scope::new_with(node.id(), symbol));
         if let Some(symbol) = symbol {
             symbol.set_scope(Some(scope.id()));
             if let Some(parent_scope) = self.scopes.top() {
@@ -189,7 +189,12 @@ impl<'a> CollectorScopes<'a> {
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
     #[inline]
-    pub fn lookup_or_insert(&self, name: &str, node: HirId, kind: SymKind) -> Option<&'a Symbol> {
+    pub fn lookup_or_insert(
+        &self,
+        name: &str,
+        node: HirNode<'a>,
+        kind: SymKind,
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert(name, node)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
@@ -213,7 +218,7 @@ impl<'a> CollectorScopes<'a> {
     pub fn lookup_or_insert_chained(
         &self,
         name: &str,
-        node: HirId,
+        node: HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
@@ -239,7 +244,7 @@ impl<'a> CollectorScopes<'a> {
     pub fn lookup_or_insert_parent(
         &self,
         name: &str,
-        node: HirId,
+        node: HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
@@ -264,7 +269,7 @@ impl<'a> CollectorScopes<'a> {
     pub fn lookup_or_insert_global(
         &self,
         name: &str,
-        node: HirId,
+        node: HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
@@ -297,7 +302,7 @@ impl<'a> CollectorScopes<'a> {
     pub fn lookup_or_insert_with(
         &self,
         name: Option<&str>,
-        node: HirId,
+        node: HirNode<'a>,
         kind: SymKind,
         options: llmcc_core::scope::LookupOptions,
     ) -> Option<&'a Symbol> {
