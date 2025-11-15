@@ -264,8 +264,8 @@ impl Symbol {
 
     /// Sets the scope ID this symbol belongs to.
     #[inline]
-    pub fn set_scope(&self, scope_id: Option<ScopeId>) {
-        *self.scope.write() = scope_id;
+    pub fn set_scope(&self, scope_id: ScopeId) {
+        *self.scope.write() = Some(scope_id);
     }
 
     /// Gets the parent scope ID in the scope hierarchy.
@@ -276,8 +276,8 @@ impl Symbol {
 
     /// Sets the parent scope ID in the scope hierarchy.
     #[inline]
-    pub fn set_parent_scope(&self, scope_id: Option<ScopeId>) {
-        *self.parent_scope.write() = scope_id;
+    pub fn set_parent_scope(&self, scope_id: ScopeId) {
+        *self.parent_scope.write() = Some(scope_id);
     }
 
     /// Gets the symbol kind (function, struct, variable, etc.).
@@ -398,8 +398,8 @@ impl Symbol {
 
     /// Sets the block ID associated with this symbol.
     #[inline]
-    pub fn set_block_id(&self, block_id: Option<BlockId>) {
-        *self.block_id.write() = block_id;
+    pub fn set_block_id(&self, block_id: BlockId) {
+        *self.block_id.write() = Some(block_id);
     }
 
     /// Gets the previous definition of this symbol (for shadowing).
@@ -412,8 +412,8 @@ impl Symbol {
     /// Sets the previous definition of this symbol.
     /// Used to build shadowing chains when a symbol name is reused in a nested scope.
     #[inline]
-    pub fn set_previous(&self, sym_id: Option<SymId>) {
-        *self.previous.write() = sym_id;
+    pub fn set_previous(&self, sym_id: SymId) {
+        *self.previous.write() = Some(sym_id);
     }
 }
 
@@ -578,8 +578,8 @@ mod tests {
         let scope_id = ScopeId(10);
         let parent_scope_id = ScopeId(5);
 
-        symbol.set_scope(Some(scope_id));
-        symbol.set_parent_scope(Some(parent_scope_id));
+        symbol.set_scope(scope_id);
+        symbol.set_parent_scope(parent_scope_id);
 
         assert_eq!(symbol.scope(), Some(scope_id));
         assert_eq!(symbol.parent_scope(), Some(parent_scope_id));
@@ -648,8 +648,8 @@ mod tests {
         let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("var"));
         let sym3 = Symbol::new(create_test_hir_id(3), pool.intern("var"));
 
-        sym2.set_previous(Some(sym1.id));
-        sym3.set_previous(Some(sym2.id));
+        sym2.set_previous(sym1.id);
+        sym3.set_previous(sym2.id);
 
         assert_eq!(sym2.previous(), Some(sym1.id));
         assert_eq!(sym3.previous(), Some(sym2.id));

@@ -970,7 +970,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // Only set the block ID if it hasn't been set before
                 // This prevents impl blocks from overwriting struct block IDs
                 if symbol.block_id().is_none() {
-                    symbol.set_block_id(Some(id));
+                    symbol.set_block_id(id);
                 }
             }
         }

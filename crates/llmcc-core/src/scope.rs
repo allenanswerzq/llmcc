@@ -479,7 +479,7 @@ impl<'tcx> ScopeStack<'tcx> {
         // If top flag is set, chain to the most recent existing symbol
         if options.top && !existing_symbols.is_empty() {
             if let Some(prev_sym) = existing_symbols.last() {
-                allocated.set_previous(Some(prev_sym.id));
+                allocated.set_previous(prev_sym.id);
             }
         }
 

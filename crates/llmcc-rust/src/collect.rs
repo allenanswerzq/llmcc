@@ -59,7 +59,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
                 file_sym.add_defining(node.id());
 
                 let scope = self.unit.alloc_hir_scope(file_sym);
-                file_sym.set_scope(Some(scope.id()));
+                file_sym.set_scope(scope.id());
                 sn.set_scope(scope);
                 scopes.push_scope(scope);
             }
