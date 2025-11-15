@@ -138,6 +138,53 @@ impl<'hir> HirNode<'hir> {
             .find(|child| child.kind_id() == kind_id)
     }
 
+    /// Find the identifier for the first child node that is an identifier or interior node.
+    /// Recursively searches for identifiers within interior nodes.
+    pub fn find_identifier(&self, unit: CompileUnit<'hir>) -> Option<HirId> {
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.is_kind(HirKind::Identifier) {
+                return Some(child.id());
+            }
+            if child.is_kind(HirKind::Internal) {
+                if let Some(id) = child.find_identifier(unit) {
+                    return Some(id);
+                }
+            }
+        }
+        None
+    }
+
+    /// Find identifier for the first child with a matching field ID.
+    pub fn find_identifier_for_field(
+        &self,
+        unit: CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<HirId> {
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.field_id() == field_id {
+                return child.find_identifier(unit);
+            }
+        }
+        None
+    }
+
+    /// Find identifier for the first child with a matching kind ID.
+    pub fn find_identifier_for_kind(
+        &self,
+        unit: CompileUnit<'hir>,
+        kind_id: u16,
+    ) -> Option<HirId> {
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.kind_id() == kind_id {
+                return child.find_identifier(unit);
+            }
+        }
+        None
+    }
+
     #[inline]
     pub fn as_root(&self) -> Option<&'hir HirRoot> {
         match self {
