@@ -383,6 +383,6 @@ static TOP_STATIC: i32 = 7;
         let mut v = DeclVisitor::new(unit);
         v.visit_node(node, &mut scopes, globlas, None);
 
-        println!("{:#?}", globlas);
+        // print!("{:#?}", globlas);
     }
 }

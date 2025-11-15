@@ -181,15 +181,18 @@ impl Clone for Symbol {
 
 impl fmt::Debug for Symbol {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let clone = self.clone();
         f.debug_struct("Symbol")
-            .field("id", &self.id())
-            .field("name", &self.name)
-            .field("kind", &self.kind())
-            .field("owner", &self.owner())
-            .field("unit_index", &self.unit_index())
-            .field("scope", &self.scope())
-            .field("parent_scope", &self.parent_scope())
-            .field("defining", &self.defining.read())
+            .field("id", &clone.id())
+            .field("name", &clone.name)
+            .field("kind", &clone.kind())
+            .field("owner", &clone.owner())
+            .field("unit_index", &clone.unit_index())
+            .field("scope", &clone.scope())
+            .field("parent_scope", &clone.parent_scope())
+            .field("defining", &clone.defining_hir_nodes())
+            .field("depends", &clone.depends.read())
+            .field("depended", &clone.depended.read())
             .finish()
     }
 }

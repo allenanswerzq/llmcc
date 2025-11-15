@@ -252,20 +252,13 @@ impl<'tcx> Scope<'tcx> {
 
 impl<'tcx> fmt::Debug for Scope<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let symbol_desc = self.symbol().map(|sym| format!("{:?}", sym));
-        let parent_ids: Vec<_> = self.parents.read().iter().map(|scope| scope.id()).collect();
-        let child_count = self.children.read().len();
-
+        let symbol_desc = self.symbol().cloned();
         let mut symbol_entries = Vec::new();
-        self.for_each_symbol(|symbol| symbol_entries.push(format!("{:?}", symbol)));
-        symbol_entries.sort();
-
+        self.for_each_symbol(|symbol| symbol_entries.push(symbol.clone()));
         f.debug_struct("Scope")
             .field("id", &self.id())
             .field("owner", &self.owner())
             .field("symbol", &symbol_desc)
-            .field("parent_ids", &parent_ids)
-            .field("child_count", &child_count)
             .field("symbols", &symbol_entries)
             .finish()
     }
