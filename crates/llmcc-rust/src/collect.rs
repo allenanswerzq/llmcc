@@ -36,25 +36,25 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         let file_path = self.unit.file_path().expect("no file path found to compile");
 
         if let Some(crate_name) = parse_crate_name(&file_path)
-            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, *node, SymKind::Module)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Module)
         {
-            scopes.push_scope_with(*node, Some(symbol));
+            scopes.push_scope_with(node, Some(symbol));
         }
 
         if let Some(module_name) = parse_module_name(&file_path)
-            && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, *node, SymKind::Module)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
         {
-            scopes.push_scope_with(*node, Some(symbol));
+            scopes.push_scope_with(node, Some(symbol));
         }
 
         if let Some(file_name) = parse_file_name(&file_path)
-            && let Some(symbol) = scopes.lookup_or_insert(&file_name, *node, SymKind::Module)
+            && let Some(symbol) = scopes.lookup_or_insert(&file_name, node, SymKind::Module)
             && let Some(sn) = node.as_scope()
         {
             let ident = self.unit.alloc_hir_ident(file_name.clone(), symbol);
             sn.set_ident(ident);
 
-            if let Some(file_sym) = scopes.lookup_or_insert(&file_name, *node, SymKind::File) {
+            if let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File) {
                 ident.set_symbol(file_sym);
                 file_sym.add_defining(node.id());
 

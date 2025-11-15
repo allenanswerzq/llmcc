@@ -1,67 +1,23 @@
-//! Symbol collection core for building symbol tables.
-//!
-//! This module provides the common infrastructure for collecting symbols across all supported
-//! languages. The architecture is designed for parallel per-unit symbol collection:
-//!
-//! # Design
-//! - Each compilation unit gets its own per-unit arena (lifetime 'a)
-//! - Collectors borrow the arena from the outside (e.g., from CompileUnit)
-//! - After collection completes, collected symbols are applied/registered globally
-//! - This allows each unit to be processed independently and in parallel
-//!
-//! # Usage Pattern
-//! 1. Get or create an Arena<'a> for the compilation unit
-//! 2. Create a CollectorScopes with the unit's arena, unit index, and interner
-//! 3. Collect symbols using the provided helper methods
-//! 4. Access collected data through arena and scope helpers
-//! 5. After collection, apply collected symbols to global registry
-//!
+//! Symbol collection for parallel per-unit symbol table building.
+//! Each unit gets its own arena, collectors borrow it, then symbols are applied globally.
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
-use llmcc_core::ir::{Arena, HirId, HirNode};
+use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{ScopeId, SymId, SymKind, Symbol};
+use llmcc_core::symbol::{SymKind, Symbol};
 
-/// Core symbol collector for a single compilation unit.
+/// Core symbol collector for a single compilation unit
 #[derive(Debug)]
 pub struct CollectorScopes<'a> {
-    /// The per-unit arena borrowed from CompileUnit or similar.
-    /// Used for allocating symbols and scopes during collection.
     arena: &'a Arena<'a>,
-
-    /// The compile unit index this collector is processing.
-    /// Used to tag symbols with their origin unit.
     unit_index: usize,
-
-    /// Shared string interner for symbol names.
-    /// One global interner is used across all units for consistent interning.
-    /// InternPool uses internal synchronization for thread-safe interning.
     interner: &'a InternPool,
-
-    /// Stack of active scopes during collection.
-    /// Maintains the scope hierarchy as we traverse the code structure.
     scopes: ScopeStack<'a>,
-
-    /// Global scope allocated during initialization.
-    /// This is the root scope for module-level definitions.
     globals: &'a Scope<'a>,
 }
 
 impl<'a> CollectorScopes<'a> {
-    /// Creates a new collector for a compilation unit.
-    ///
-    /// Takes the per-unit arena from outside (typically from CompileUnit),
-    /// initializes a global scope, and sets up an empty scope stack.
-    /// The collector is ready to begin collecting symbols immediately after
-    /// calling `init_scope_stack()`.
-    ///
-    /// # Arguments
-    /// * `unit_index` - The index of the compilation unit being processed
-    /// * `arena` - The per-unit arena borrowed from CompileUnit or similar
-    /// * `interner` - Shared string interner (must be the same across all units)
-    ///
-    /// # Returns
-    /// A new CollectorScopes with an empty scope stack and initialized global scope
+    /// Create new collector with arena, interner, and global scope
     pub fn new(
         unit_index: usize,
         arena: &'a Arena<'a>,
@@ -81,32 +37,25 @@ impl<'a> CollectorScopes<'a> {
         }
     }
 
-    /// Gets the compile unit index this collector is processing.
+    /// Get compilation unit index
     #[inline]
     pub fn unit_index(&self) -> usize {
         self.unit_index
     }
 
-    /// Gets the arena
+    /// Get the arena
     #[inline]
     pub fn arena(&self) -> &Arena<'a> {
         self.arena
     }
 
-    /// Gets the current depth of the scope stack (number of nested scopes).
-    ///
-    /// - 0 means no scope has been pushed yet
-    /// - 1 means global scope is active
-    /// - 2+ means nested scopes are active
+    /// Get current scope stack depth
     #[inline]
     pub fn scope_depth(&self) -> usize {
         self.scopes.depth()
     }
 
-    /// Gets the top (current) scope on the stack.
-    ///
-    /// Returns the most recently pushed scope.
-    /// Panics if stack is empty (should never happen in normal use since we always have global scope).
+    /// Get current (top) scope from stack
     #[inline]
     pub fn top_scope(&self) -> &'a Scope<'a> {
         self.scopes
@@ -114,27 +63,21 @@ impl<'a> CollectorScopes<'a> {
             .expect("scope stack should never be empty")
     }
 
-    /// Pushes a scope onto the stack.
-    ///
-    /// Increases nesting depth and makes the scope active for symbol insertions.
+    /// Push scope onto stack
     #[inline]
     pub fn push_scope(&mut self, scope: &'a Scope<'a>) {
         self.scopes.push(scope);
     }
 
-    /// Pushes a scope onto the stack.
-    ///
-    /// Increases nesting depth and makes the scope active for symbol insertions.
+    /// Push scope recursively
     #[inline]
     pub fn push_scope_recursive(&mut self, scope: &'a Scope<'a>) {
         self.scopes.push_recursive(scope);
     }
 
-    /// Pushes a scope onto the stack.
-    ///
-    /// Increases nesting depth and makes the scope active for symbol insertions.
+    /// Push new scope with optional symbol, allocate and register it
     #[inline]
-    pub fn push_scope_with(&mut self, node: HirNode<'a>, symbol: Option<&'a Symbol>) {
+    pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
         let scope = self.arena.alloc(Scope::new_with(node.id(), symbol));
         if let Some(symbol) = symbol {
             symbol.set_scope(Some(scope.id()));
@@ -145,54 +88,35 @@ impl<'a> CollectorScopes<'a> {
         self.push_scope(scope);
     }
 
-    /// Pops the current scope from the stack.
-    ///
-    /// Returns to the previous scope level. No-op at depth 0.
+    /// Pop current scope from stack
     #[inline]
     pub fn pop_scope(&mut self) {
         self.scopes.pop();
     }
 
-    /// Pops scopes until reaching the specified depth.
-    ///
-    /// # Arguments
-    /// * `depth` - Target depth to pop to (no-op if already at or below depth)
+    /// Pop scopes until reaching target depth
     pub fn pop_until(&mut self, depth: usize) {
         self.scopes.pop_until(depth);
     }
 
-    /// Gets the shared string interner.
-    ///
-    /// Used to intern symbol names for fast comparison and lookups.
+    /// Get shared string interner
     #[inline]
     pub fn interner(&self) -> &'a InternPool {
         self.interner
     }
 
-    /// Gets the global scope (module-level definitions).
-    ///
-    /// All module-level symbols should be inserted here or in subscopes.
+    /// Get global (module-level) scope
     #[inline]
     pub fn globals(&self) -> &'a Scope<'a> {
         self.globals
     }
-    /// Find or insert symbol in the current scope.
-    ///
-    /// If a symbol with this name exists in the current scope, returns it.
-    /// Otherwise, creates a new symbol and inserts it into the current scope.
-    ///
-    /// # Arguments
-    /// * `name` - The symbol name
-    /// * `node` - The HIR node for the symbol
-    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
-    ///
-    /// # Returns
-    /// Some(symbol) if name is non-empty, None if name is empty
+
+    /// Find or insert symbol in current scope, set kind and unit index
     #[inline]
     pub fn lookup_or_insert(
         &self,
         name: &str,
-        node: HirNode<'a>,
+        node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert(name, node)?;
@@ -201,24 +125,12 @@ impl<'a> CollectorScopes<'a> {
         Some(symbol)
     }
 
-    /// Find or insert symbol with chaining enabled for shadowing support.
-    ///
-    /// If a symbol with this name exists in the current scope, creates a new
-    /// symbol that chains to it via the `previous` field. This supports tracking
-    /// shadowing relationships in nested scopes.
-    ///
-    /// # Arguments
-    /// * `name` - The symbol name
-    /// * `node` - The HIR node for the symbol
-    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
-    ///
-    /// # Returns
-    /// Some(symbol) if name is non-empty, None if name is empty
+    /// Find or insert symbol with chaining for shadowing support
     #[inline]
     pub fn lookup_or_insert_chained(
         &self,
         name: &str,
-        node: HirNode<'a>,
+        node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
@@ -227,24 +139,12 @@ impl<'a> CollectorScopes<'a> {
         Some(symbol)
     }
 
-    /// Find or insert symbol in the parent scope.
-    ///
-    /// Inserts into the parent scope (depth-1) if it exists, otherwise fails.
-    /// Useful for lifting definitions out of the current scope.
-    ///
-    /// # Arguments
-    /// * `name` - The symbol name
-    /// * `node` - The HIR node for the symbol
-    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
-    ///
-    /// # Returns
-    /// Some(symbol) if name is non-empty and parent scope exists,
-    /// None if name is empty or no parent scope available
+    /// Find or insert symbol in parent scope
     #[inline]
     pub fn lookup_or_insert_parent(
         &self,
         name: &str,
-        node: HirNode<'a>,
+        node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
@@ -253,23 +153,12 @@ impl<'a> CollectorScopes<'a> {
         Some(symbol)
     }
 
-    /// Find or insert symbol in the global scope.
-    ///
-    /// Inserts into the global scope (depth 0) regardless of current nesting.
-    /// Used for module-level definitions.
-    ///
-    /// # Arguments
-    /// * `name` - The symbol name
-    /// * `node` - The HIR node for the symbol
-    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
-    ///
-    /// # Returns
-    /// Some(symbol) if name is non-empty, None if name is empty
+    /// Find or insert symbol in global scope
     #[inline]
     pub fn lookup_or_insert_global(
         &self,
         name: &str,
-        node: HirNode<'a>,
+        node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
@@ -278,31 +167,12 @@ impl<'a> CollectorScopes<'a> {
         Some(symbol)
     }
 
-    /// Full control API for symbol lookup and insertion with custom options.
-    ///
-    /// Provides maximum flexibility for symbol resolution. All behavior is
-    /// controlled via the `LookupOptions` parameter.
-    ///
-    /// # Arguments
-    /// * `name` - The symbol name (None for anonymous if force=true)
-    /// * `node` - The HIR node for the symbol
-    /// * `kind` - The kind of symbol (function, struct, variable, etc.)
-    /// * `options` - Lookup options controlling scope selection and behavior
-    ///
-    /// # Returns
-    /// Some(symbol) if found/created, None if name is empty/null and force=false
-    ///
-    /// # Example
-    /// ```ignore
-    /// use llmcc_core::scope::LookupOptions;
-    /// let opts = LookupOptions::global().with_force(true);
-    /// let symbol = collector.lookup_or_insert_with(None, node_id, SymKind::Function, opts)?;
-    /// ```
+    /// Find or insert symbol with custom lookup options
     #[inline]
     pub fn lookup_or_insert_with(
         &self,
         name: Option<&str>,
-        node: HirNode<'a>,
+        node: &HirNode<'a>,
         kind: SymKind,
         options: llmcc_core::scope::LookupOptions,
     ) -> Option<&'a Symbol> {
@@ -313,37 +183,7 @@ impl<'a> CollectorScopes<'a> {
     }
 }
 
-/// Collects symbols from a compilation unit into a scope hierarchy.
-///
-/// This function orchestrates the symbol collection process for a single compilation unit.
-/// It creates a CollectorScopes, invokes the visitor function to traverse and collect symbols,
-/// and returns the global scope containing the collected symbols.
-///
-/// # Type Parameters
-/// * `C` - The concrete collector type (e.g., RustCollector, GoCollector, etc.)
-/// * `Visit` - A callable that performs the symbol collection by traversing the AST
-///
-/// # Arguments
-/// * `unit_index` - The index of this compilation unit
-/// * `arena` - The per-unit arena for symbol allocation
-/// * `interner` - Shared string interner
-/// * `visitor` - A function that traverses the AST and calls collector methods
-///
-/// # Returns
-/// The global scope containing all collected symbols
-///
-/// # Example
-/// ```ignore
-/// let collected_scope = collect_symbols_with(
-///     0,
-///     &arena,
-///     &interner,
-///     |collector| {
-///         // Visit AST nodes and call collector methods
-///         visitor.visit_module(&collector, module_node);
-///     }
-/// );
-/// ```
+/// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
 pub fn collect_symbols_with<'a, F>(
     unit_index: usize,
     arena: &'a Arena<'a>,
@@ -380,23 +220,7 @@ where
 /// - This ensures uniqueness across all compilation units
 /// - When transferring to global arena, we preserve the IDs (don't create new ones)
 /// - The per-unit scope links and relationships are preserved in the transfer
-///
-/// # Arguments
-/// * `cc` - The global compilation context (for registering symbols)
-/// * `arena` - The per-unit arena containing collected symbols and scopes
-/// * `globals` - The global scope from the per-unit arena
-///
-/// # Returns
-/// Reference to the final global scope (in the global compilation context)
-///
-/// # Example
-/// ```ignore
-/// let mut per_unit_arena = Arena::new();
-/// let mut collector = CollectorScopes::new(unit_index, &per_unit_arena, &interner);
-/// // ... collect symbols ...
-/// let globals = collector.globals();
-/// let final_globals = apply_collected_symbols(&cc, &mut per_unit_arena, globals);
-/// ```
+
 pub fn apply_collected_symbols<'tcx, 'unit>(
     cc: &'tcx CompileCtxt<'tcx>,
     arena: &'unit Arena<'unit>,

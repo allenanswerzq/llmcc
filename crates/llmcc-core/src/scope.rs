@@ -502,7 +502,7 @@ impl<'tcx> ScopeStack<'tcx> {
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::current())
     }
 
@@ -518,7 +518,7 @@ impl<'tcx> ScopeStack<'tcx> {
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert_chained(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert_chained(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::chained())
     }
 
@@ -534,7 +534,7 @@ impl<'tcx> ScopeStack<'tcx> {
     /// # Returns
     /// Some(symbol) if name is non-empty and parent scope exists,
     /// None if name is empty or no parent scope available
-    pub fn lookup_or_insert_parent(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert_parent(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::parent())
     }
 
@@ -549,7 +549,7 @@ impl<'tcx> ScopeStack<'tcx> {
     ///
     /// # Returns
     /// Some(symbol) if name is non-empty, None if name is empty
-    pub fn lookup_or_insert_global(&self, name: &str, node: HirNode) -> Option<&'tcx Symbol> {
+    pub fn lookup_or_insert_global(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node.id(), Some(name), LookupOptions::global())
     }
 
@@ -574,7 +574,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn lookup_or_insert_with(
         &self,
         name: Option<&str>,
-        node: HirNode,
+        node: &HirNode,
         options: LookupOptions,
     ) -> Option<&'tcx Symbol> {
         self.lookup_or_insert_impl(node.id(), name, options)

@@ -1,23 +1,8 @@
-//! Rust parsing utilities for extracting crate and module information.
-//
-//! This module provides functions to parse Cargo.toml and Rust source files
-//! to extract crate names and module names according to Rust's module system.
-
 use std::fs;
 use std::path::Path;
 use toml::Table;
 
 /// Parse the crate name from Cargo.toml by walking up the directory tree.
-///
-/// This function searches for the nearest Cargo.toml file in the current directory
-/// or any parent directories, then extracts the package name from the [package] section.
-///
-/// # Arguments
-/// * `file_path` - The path to a source file to start the search from
-///
-/// # Returns
-/// `Some(crate_name)` if a Cargo.toml with a package name is found,
-/// `None` if no valid Cargo.toml is found or parsing fails
 pub fn parse_crate_name(file_path: &str) -> Option<String> {
     let mut dir = Path::new(file_path).parent();
     while let Some(current_dir) = dir {
@@ -45,18 +30,6 @@ pub fn parse_crate_name(file_path: &str) -> Option<String> {
 }
 
 /// Parse the module name from a Rust source file path.
-///
-/// This function extracts the module name based on Rust's module system conventions:
-/// - `lib.rs` -> None (crate root, no module name)
-/// - `mod.rs` -> parent directory name (inline module)
-/// - Other files -> the file stem (filename without extension)
-///
-/// # Arguments
-/// * `file_path` - The path to the Rust source file
-///
-/// # Returns
-/// `Some(module_name)` for regular module files,
-/// `None` for lib.rs or invalid paths
 pub fn parse_module_name(file_path: &str) -> Option<String> {
     let file_stem = Path::new(file_path).file_stem().and_then(|n| n.to_str());
 
@@ -84,12 +57,6 @@ pub fn parse_module_name(file_path: &str) -> Option<String> {
 }
 
 /// Return the file name (without the `.rs` extension) for a Rust source path.
-///
-/// # Arguments
-/// * `file_path` - The path to the Rust source file
-///
-/// # Returns
-/// `Some("foo")` if the file path has a file stem, `None` otherwise.
 pub fn parse_file_name(file_path: &str) -> Option<String> {
     Path::new(file_path)
         .file_stem()
