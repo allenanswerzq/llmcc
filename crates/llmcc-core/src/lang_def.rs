@@ -1,63 +1,4 @@
 //! Language definition framework for multi-language AST support.
-//!
-//! This module provides the core infrastructure for defining language-specific AST handling
-//! in llmcc. It abstracts language-specific details behind the `LanguageTrait` interface
-//! and provides macros for rapid language definition.
-//!
-//! # Architecture
-//!
-//! ## Language Trait
-//! The [`LanguageTrait`] defines the interface that every supported language must implement:
-//! - **Parsing**: Convert source code to tree-sitter parse trees
-//! - **Type mapping**: Map tree-sitter kind IDs to HIR kinds
-//! - **Token lookup**: Query token names and validity
-//! - **Field resolution**: Get standard field IDs (name, type fields)
-//! - **File extensions**: Declare supported file types
-//!
-//! ## Macro-Based Definition
-//! The [`define_lang!`] macro enables declarative language definition:
-//! ```ignore
-//! define_lang!(
-//!     Rust,
-//!     (function_item, 0, "function_item", HirKind::Scope),
-//!     (identifier, 1, "identifier", HirKind::Identifier),
-//!     // ... more tokens
-//! );
-//! ```
-//!
-//! ## Visitor Pattern
-//! The macro generates a language-specific visitor trait (e.g., `AstVisitorRust`)
-//! that enables type-safe AST traversal with token-specific dispatch.
-//!
-//! # Use Cases
-//!
-//! - **Multi-language support**: Define once, use everywhere
-//! - **Type safety**: Compile-time token ID validation
-//! - **Performance**: Zero-cost abstractions via static methods
-//! - **Extensibility**: Add new tokens without changing core code
-//!
-//! # Example Language Definition
-//!
-//! ```ignore
-//! define_lang!(
-//!     Python,
-//!     (module, 0, "module", HirKind::File),
-//!     (function_def, 1, "function_definition", HirKind::Scope),
-//!     (class_def, 2, "class_definition", HirKind::Scope),
-//!     (identifier, 3, "identifier", HirKind::Identifier, BlockKind::Definition),
-//! );
-//!
-//! // Now you can use LangPython::parse(), LangPython::hir_kind(), etc.
-//! let tree = LangPython::parse(source)?;
-//! ```
-//!
-//! # Performance
-//!
-//! - Token lookup: O(1) via match expressions (branch table by compiler)
-//! - Field resolution: O(1) static constants
-//! - Parsing: Delegated to language-specific parser (highly optimized)
-//! - Memory: Zero additional overhead per language definition
-
 use std::any::Any;
 
 use crate::graph_builder::BlockKind;
@@ -238,7 +179,7 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
     }
 }
 
-/// Core trait defining language-specific AST handling.
+/// Scopes trait defining language-specific AST handling.
 pub trait LanguageTrait {
     /// Parse source code and return a generic parse tree.
     ///
@@ -406,17 +347,17 @@ macro_rules! define_lang {
                 fn visit_node(
                     &mut self,
                     node: $crate::ir::HirNode<'a>,
-                    core: &mut T,
+                    scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
                     match node.kind_id() {
                         $(
                             [<Lang $suffix>]::$const => $crate::paste::paste! {
-                                self.[<visit_ $const>](node, core, namespace, parent)
+                                self.[<visit_ $const>](&node, scopes, namespace, parent)
                             },
                         )*
-                        _ => self.visit_unknown(node, core, namespace, parent),
+                        _ => self.visit_unknown(&node, scopes, namespace, parent),
                     }
                 }
 
@@ -424,25 +365,33 @@ macro_rules! define_lang {
                 fn visit_children(
                     &mut self,
                     node: &$crate::ir::HirNode<'a>,
-                    core: &mut T,
+                    scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
                     for id in node.children() {
                         let child = self.unit().hir_node(*id);
-                        self.visit_node(child, core, namespace, parent);
+                        self.visit_node(child, scopes, namespace, parent);
                     }
                 }
+
+                fn visit_scope_children(
+                    &mut self,
+                    node: &$crate::ir::HirNode<'a>,
+                    scopes: &mut T,
+                    namespace: &'a $crate::scope::Scope<'a>,
+                    parent: Option<&$crate::symbol::Symbol>,
+                ) {}
 
                 /// Handle unknown/unrecognized token types
                 fn visit_unknown(
                     &mut self,
-                    node: $crate::ir::HirNode<'a>,
-                    core: &mut T,
+                    node: &$crate::ir::HirNode<'a>,
+                    scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
-                    self.visit_children(&node, core, namespace, parent);
+                    self.visit_children(&node, scopes, namespace, parent);
                 }
 
                 // Generate visit methods for each token type with visit_ prefix
@@ -450,12 +399,12 @@ macro_rules! define_lang {
                     $crate::paste::paste! {
                         fn [<visit_ $const>](
                             &mut self,
-                            node: $crate::ir::HirNode<'a>,
-                            core: &mut T,
+                            node: &$crate::ir::HirNode<'a>,
+                            scopes: &mut T,
                             namespace: &'a $crate::scope::Scope<'a>,
                             parent: Option<&$crate::symbol::Symbol>,
                         ) {
-                            self.visit_children(&node, core, namespace, parent);
+                            self.visit_children(&node, scopes, namespace, parent);
                         }
                     }
                 )*
@@ -553,7 +502,7 @@ mod tests {
 
             fn visit_function(
                 &mut self,
-                _node: crate::ir::HirNode<'tcx>,
+                _node: &crate::ir::HirNode<'tcx>,
                 t: &mut Collector,
                 _namespace: &'tcx crate::scope::Scope<'tcx>,
                 _parent: Option<&crate::symbol::Symbol>,

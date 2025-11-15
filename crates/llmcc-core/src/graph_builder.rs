@@ -16,7 +16,7 @@ use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph_render::{CompactNode, GraphRenderer};
 use crate::ir::HirNode;
 use crate::lang_def::LanguageTrait;
-use crate::module_path::{module_group_from_location, module_group_from_path};
+// use crate::module_path::{module_group_from_location, module_group_from_path};
 use crate::pagerank::PageRanker;
 use crate::symbol::{SymId, Symbol};
 use crate::visit::HirVisitor;
@@ -374,17 +374,17 @@ impl<'tcx> ProjectGraph<'tcx> {
                     })
                     .or(Some(path.clone()));
 
-                let group = location
-                    .as_ref()
-                    .map(|loc| module_group_from_location(loc))
-                    .unwrap_or_else(|| module_group_from_path(Path::new(&path)));
+                // let group = location
+                //     .as_ref()
+                //     .map(|loc| module_group_from_location(loc))
+                //     .unwrap_or_else(|| module_group_from_path(Path::new(&path)));
 
                 Some(CompactNode {
                     block_id,
                     unit_index: *unit_index,
                     name: display_name,
                     location,
-                    group,
+                    group: "todo".into(), // group,
                 })
             })
             .collect()
