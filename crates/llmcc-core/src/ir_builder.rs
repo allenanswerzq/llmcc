@@ -1,38 +1,4 @@
 //! IR Builder: Transform parse trees into High-level Intermediate Representation (HIR).
-//!
-//! This module handles the conversion from parser-agnostic ParseTree representations
-//! into a unified HIR (High-level Intermediate Representation) that can be used for
-//! program analysis, transformation, and code generation.
-//!
-//! # Architecture
-//!
-//! The IR building process is organized into three layers:
-//!
-//! 1. **Parse Tree Traversal** ([`HirBuilder`]): Recursively walks the parse tree,
-//!    assigning HIR IDs and collecting node metadata.
-//! 2. **Node Specification** ([`HirNodeSpec`]): Language-agnostic intermediate form
-//!    that captures node structure without arena allocation.
-//! 3. **Arena Allocation** ([`HirNodeSpec::into_parented_node`]): Final allocation
-//!    in the compile context's arena for memory efficiency.
-//!
-//! # Parallelization
-//!
-//! File-level IR building is parallelized via Rayon to efficiently handle
-//! multi-file compilation units. Per-file building is inherently sequential
-//! (tree traversal + arena allocation).
-//!
-//! # Design Decisions
-//!
-//! - **Parser Abstraction**: Uses [`ParseNode`] and [`ParseTree`] traits to support
-//!   multiple parser backends (tree-sitter, custom parsers, etc.)
-//! - **Global ID Counter**: [`HIR_ID_COUNTER`] ensures unique IDs across all files
-//!   and threads (atomic with SeqCst ordering for thread safety).
-//! - **Deferred Allocation**: Nodes are collected as specs first, then allocated
-//!   into the arena only after all files complete processing (ensures consistent
-//!   allocation order despite parallelization).
-//! - **Text Extraction**: Lazy extraction of node text from source bytes to minimize
-//!   memory overhead for internal nodes.
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -47,10 +13,6 @@ use crate::ir::{
 use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
 
 /// Global atomic counter for HIR ID allocation.
-///
-/// This counter is shared across all files and threads, ensuring unique
-/// HirId values throughout the entire compilation unit set.
-/// Uses [`Ordering::SeqCst`] for strict thread-safety guarantees.
 static HIR_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 /// Configuration for IR building behavior.
@@ -73,14 +35,14 @@ struct HirNodeSpec {
     /// Base metadata common to all HIR nodes
     base: HirBase,
     /// Variant-specific data for different node types
-    variant: HirNodeVariantSpec,
+    variant: HirNodeVariant,
 }
 
 /// Variant-specific data for different HIR node types.
 ///
 /// Represents the different HIR node kinds and their associated data.
 #[derive(Clone)]
-enum HirNodeVariantSpec {
+enum HirNodeVariant {
     /// File node: root of each compilation unit
     File { file_path: String },
     /// Text/leaf node: represents identifiers, keywords, literals
@@ -105,15 +67,6 @@ struct HirScopeIdentSpec {
 }
 
 /// IR builder that transforms parse trees into HIR node specifications.
-///
-/// Performs a recursive depth-first traversal of the parse tree, assigning HIR IDs,
-/// extracting text and metadata, and building the initial node specifications.
-/// The result is then allocated into the arena.
-///
-/// # Generics
-///
-/// - `Language`: Implements [`LanguageTrait`] to provide language-specific mappings
-///   (token IDs to HIR kinds, field ID resolution, etc.)
 struct HirBuilder<'a, Language> {
     /// Accumulated node specifications, keyed by HirId
     node_specs: HashMap<HirId, HirNodeSpec>,
@@ -175,31 +128,28 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
     /// The HirId assigned to this node
     fn build_node(&mut self, node: &dyn ParseNode, parent: Option<HirId>) -> HirId {
         let id = self.reserve_hir_id();
-        let id = self.reserve_hir_id();
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
-        let child_ids = self.collect_children(node, id);
-        let base = self.make_base(id, parent, node, kind, child_ids);
         let child_ids = self.collect_children(node, id);
         let base = self.make_base(id, parent, node, kind, child_ids);
 
         let variant = match kind {
             HirKind::File => {
                 let path = self.file_path.clone().unwrap_or_default();
-                HirNodeVariantSpec::File { file_path: path }
+                HirNodeVariant::File { file_path: path }
             }
             HirKind::Text => {
                 let text = self.extract_text(&base);
-                HirNodeVariantSpec::Text { text }
+                HirNodeVariant::Text { text }
             }
-            HirKind::Internal => HirNodeVariantSpec::Internal,
+            HirKind::Internal => HirNodeVariant::Internal,
             HirKind::Scope => {
                 let ident = self.extract_scope_ident(&base, node);
-                HirNodeVariantSpec::Scope { ident }
+                HirNodeVariant::Scope { ident }
             }
             HirKind::Identifier => {
                 let text = self.extract_text(&base);
-                HirNodeVariantSpec::Ident { name: text }
+                HirNodeVariant::Ident { name: text }
             }
             _other => panic!("unsupported HIR kind for node {}", node.debug_info()),
         };
@@ -330,19 +280,19 @@ impl HirNodeSpec {
         let HirNodeSpec { base, variant } = self;
 
         let hir_node = match variant {
-            HirNodeVariantSpec::File { file_path } => {
+            HirNodeVariant::File { file_path } => {
                 let node = HirFile::new(base, file_path);
                 HirNode::File(arena.alloc(node))
             }
-            HirNodeVariantSpec::Text { text } => {
+            HirNodeVariant::Text { text } => {
                 let node = HirText::new(base, text);
                 HirNode::Text(arena.alloc(node))
             }
-            HirNodeVariantSpec::Internal => {
+            HirNodeVariant::Internal => {
                 let node = HirInternal::new(base);
                 HirNode::Internal(arena.alloc(node))
             }
-            HirNodeVariantSpec::Scope { ident } => {
+            HirNodeVariant::Scope { ident } => {
                 let ident_ref = ident.map(|spec| {
                     let HirScopeIdentSpec { base, name } = spec;
                     let ident_node = HirIdent::new(base, name);
@@ -351,7 +301,7 @@ impl HirNodeSpec {
                 let node = HirScope::new(base, ident_ref);
                 HirNode::Scope(arena.alloc(node))
             }
-            HirNodeVariantSpec::Ident { name } => {
+            HirNodeVariant::Ident { name } => {
                 let node = HirIdent::new(base, name);
                 HirNode::Ident(arena.alloc(node))
             }

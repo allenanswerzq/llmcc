@@ -11,7 +11,7 @@ use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
 use crate::block_rel::BlockRelationMap;
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
-use crate::ir::{Arena, HirId, HirNode};
+use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
 use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
 use crate::symbol::{ScopeId, SymId, Symbol};
@@ -211,6 +211,31 @@ impl<'tcx> CompileUnit<'tcx> {
             .block_indexes
             .write()
             .insert_block(id, block_name, block_kind, self.index);
+    }
+
+    /// Allocate a new HIR identifier node with the given name and symbol
+    pub fn alloc_hir_ident(self, name: String, symbol: &'tcx Symbol) -> &'tcx HirIdent<'tcx> {
+        let base = HirBase {
+            id: self.reserve_hir_id(),
+            parent: None,
+            kind_id: 0,
+            start_byte: 0,
+            end_byte: 0,
+            kind: HirKind::Identifier,
+            field_id: u16::MAX,
+            children: Vec::new(),
+        };
+        let ident = self.cc.arena.alloc(HirIdent::new(base, name));
+        ident.set_symbol(symbol);
+        ident
+    }
+
+    /// Allocate a new Scope from a symbol
+    pub fn alloc_hir_scope(self, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
+        let hir_id = self.reserve_hir_id();
+        let scope = self.cc.alloc_scope(hir_id);
+        scope.set_symbol(Some(symbol));
+        scope
     }
 }
 

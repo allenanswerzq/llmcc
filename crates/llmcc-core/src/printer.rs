@@ -48,7 +48,6 @@ use crate::context::CompileUnit;
 use crate::graph_builder::{BasicBlock, BlockId};
 use crate::ir::{HirId, HirNode};
 use std::fmt;
-use tree_sitter::Node;
 
 // ============================================================================
 // Configuration Types

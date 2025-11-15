@@ -1,18 +1,19 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirBase, HirIdent, HirNode};
+use llmcc_core::ir::HirNode;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::CollectorScopes;
 
 use crate::token::AstVisitorRust;
-use crate::token::LangRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct DeclVisitor<'tcx> {
     unit: CompileUnit<'tcx>,
 }
 
+#[allow(dead_code)]
 impl<'tcx> DeclVisitor<'tcx> {
     fn new(unit: CompileUnit<'tcx>) -> Self {
         Self { unit }
@@ -50,24 +51,24 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
             && let Some(symbol) = scopes.lookup_or_insert(&file_name, *node, SymKind::Module)
             && let Some(sn) = node.as_scope()
         {
-            // TODO: Implement alloc_hir_ident and related APIs
-            // let ident = self.unit.alloc_hir_ident(file_name, symbol);
-            // sn.set_ident(ident);
+            let ident = self.unit.alloc_hir_ident(file_name.clone(), symbol);
+            sn.set_ident(ident);
 
-            if let Some(sym) = scopes.lookup_or_insert(&file_name, *node, SymKind::File) {
-                // sn.ident().set_symbol(sym);
-                // sn.ident().symbol().add_defining(node.id());
+            if let Some(file_sym) = scopes.lookup_or_insert(&file_name, *node, SymKind::File) {
+                ident.set_symbol(file_sym);
+                file_sym.add_defining(node.id());
+
+                let scope = self.unit.alloc_hir_scope(file_sym);
+                file_sym.set_scope(Some(scope.id()));
+                sn.set_scope(scope);
+                scopes.push_scope(scope);
             }
-
-            // let scope = self.unit.alloc_hir_scope(sn, sn.ident().symbol());
-            // sn.ident().symbol().set_scope(scope.id());
-            // sn.set_scope(scope);
-            // scopes.push_scope(scope);
 
             self.visit_children(node, scopes, namespace, parent);
         }
     }
 
+    #[allow(unused_variables)]
     fn visit_mod_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -77,6 +78,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_function_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -88,6 +90,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         let _sn = node.as_scope();
     }
 
+    #[allow(unused_variables)]
     fn visit_struct_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -97,6 +100,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_enum_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -106,6 +110,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_trait_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -115,6 +120,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_impl_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -124,6 +130,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_type_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -133,6 +140,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_const_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -142,6 +150,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_static_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -151,6 +160,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
     ) {
     }
 
+    #[allow(unused_variables)]
     fn visit_field_declaration(
         &mut self,
         node: &HirNode<'tcx>,
