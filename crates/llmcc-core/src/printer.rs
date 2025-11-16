@@ -397,11 +397,6 @@ pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -
     Ok(())
 }
 
-/// Render control flow graph with default configuration
-pub fn render_llmcc_graph(root: BlockId, unit: CompileUnit<'_>) -> RenderResult<String> {
-    render_llmcc_graph_with_config(root, unit, &PrintConfig::default())
-}
-
 /// Render control flow graph with custom configuration
 pub fn render_llmcc_graph_with_config(
     root: BlockId,

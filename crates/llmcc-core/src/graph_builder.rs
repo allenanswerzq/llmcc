@@ -64,6 +64,17 @@ impl UnitGraph {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GraphBuildConfig;
 
+#[derive(Default, Debug, Clone, Copy)]
+pub struct GraphBuildOption {
+    // Placeholder for future configuration options
+}
+
+impl GraphBuildOption {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GraphNode {
     pub unit_index: usize,
@@ -113,8 +124,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         self.units.push(graph);
     }
 
+    /// Add multiple unit graphs to the project graph.
+    pub fn add_children(&mut self, graphs: Vec<UnitGraph>) {
+        self.units.extend(graphs);
+    }
+
     /// Configure the number of PageRank-filtered nodes retained when rendering compact graphs.
-    pub fn set_compact_rank_limit(&mut self, limit: Option<usize>) {
+    pub fn set_top_k(&mut self, limit: Option<usize>) {
         self.top_k = match limit {
             Some(0) => None,
             other => other,
@@ -933,13 +949,13 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         unresolved.insert(dep_id);
     }
 
-    fn build_block(&mut self, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
+    fn build_block(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
         let id = self.next_id();
         let mut block_kind = Language::block_kind(node.kind_id());
         if block_kind == BlockKind::Func {
             let mut current_parent = node.parent();
             while let Some(parent_id) = current_parent {
-                let parent_node = self.unit.hir_node(parent_id);
+                let parent_node = unit.hir_node(parent_id);
                 let parent_kind = Language::block_kind(parent_node.kind_id());
                 if matches!(parent_kind, BlockKind::Class | BlockKind::Impl) {
                     block_kind = BlockKind::Method;
@@ -960,7 +976,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
         let children = if recursive {
             self.children_stack.push(Vec::new());
-            self.visit_children(node, id);
+            self.visit_children(self.unit, node, id);
 
             self.children_stack.pop().unwrap()
         } else {
@@ -988,16 +1004,12 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 }
 
 impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Language> {
-    fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit
-    }
-
-    fn visit_file(&mut self, node: HirNode<'tcx>, parent: BlockId) {
+    fn visit_file(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
         self.children_stack.push(Vec::new());
-        self.build_block(node, parent, true);
+        self.build_block(unit, node, parent, true);
     }
 
-    fn visit_internal(&mut self, node: HirNode<'tcx>, parent: BlockId) {
+    fn visit_internal(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
         match kind {
             BlockKind::Func
@@ -1007,12 +1019,12 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             | BlockKind::Const
             | BlockKind::Impl
             | BlockKind::Field
-            | BlockKind::Call => self.build_block(node, parent, false),
-            _ => self.visit_children(node, parent),
+            | BlockKind::Call => self.build_block(unit, node, parent, false),
+            _ => self.visit_children(unit, node, parent),
         }
     }
 
-    fn visit_scope(&mut self, node: HirNode<'tcx>, parent: BlockId) {
+    fn visit_scope(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
         let kind = Language::block_kind(node.kind_id());
         match kind {
             BlockKind::Func
@@ -1021,13 +1033,13 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             | BlockKind::Enum
             | BlockKind::Const
             | BlockKind::Impl
-            | BlockKind::Field => self.build_block(node, parent, true),
-            _ => self.visit_children(node, parent),
+            | BlockKind::Field => self.build_block(unit, node, parent, true),
+            _ => self.visit_children(unit, node, parent),
         }
     }
 }
 
-pub fn build_llmcc_graph<L: LanguageTrait>(
+pub fn build_unit_graphs<L: LanguageTrait>(
     unit: CompileUnit<'_>,
     unit_index: usize,
     config: GraphBuildConfig,
@@ -1037,12 +1049,39 @@ pub fn build_llmcc_graph<L: LanguageTrait>(
         .ok_or("missing file start HIR id")?;
     let mut builder = GraphBuilder::<L>::new(unit, config);
     let root_node = unit.hir_node(root_hir);
-    builder.visit_node(root_node, BlockId::ROOT_PARENT);
+    builder.visit_node(unit, root_node, BlockId::ROOT_PARENT);
 
     let root_block = builder.root;
     let root_block = root_block.ok_or("graph builder produced no root")?;
     let edges = builder.build_edges(root_node);
     Ok(UnitGraph::new(unit_index, root_block, edges))
+}
+
+/// Build unit graphs for all compilation units in parallel.
+///
+/// This function processes all compilation units in the context in parallel,
+/// building a UnitGraph for each one. It follows the same pattern as
+/// collect_symbols_with for unified API design.
+///
+/// # Arguments
+/// * `cc` - The compilation context containing all compilation units
+/// * `_config` - Build configuration (for future extensibility)
+///
+/// # Returns
+/// A vector of UnitGraph objects, one per compilation unit, indexed by unit index
+pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
+    cc: &'tcx CompileCtxt<'tcx>,
+    _config: GraphBuildOption,
+) -> Result<Vec<UnitGraph>, DynError> {
+    let unit_graphs = (0..cc.get_files().len())
+        .into_par_iter()
+        .map(|index| {
+            let unit = cc.compile_unit(index);
+            build_unit_graphs::<L>(unit, index, GraphBuildConfig::default())
+        })
+        .collect::<Result<Vec<UnitGraph>, DynError>>()?;
+
+    Ok(unit_graphs)
 }
 
 fn compact_byte_to_line(content: &[u8], byte_pos: usize) -> usize {

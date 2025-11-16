@@ -374,18 +374,20 @@ impl<'tcx> ProjectQuery<'tcx> {
                 let fallback = name
                     .clone()
                     .unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0));
-                let base_name = if symbol.name.is_empty() {
-                    fallback
-                } else {
-                    symbol.name.clone()
-                };
+                let base_name = self.graph.cc.interner
+                    .resolve_owned(symbol.name)
+                    .unwrap_or(fallback);
 
-                let fqn = symbol.fqn_name.read().clone();
-                let qualified = if !fqn.is_empty() && fqn != base_name {
-                    Some(fqn)
-                } else {
-                    None
-                };
+                let fqn = symbol.fqn.read().clone();
+                let qualified = self.graph.cc.interner
+                    .resolve_owned(fqn)
+                    .and_then(|resolved_fqn| {
+                        if !resolved_fqn.is_empty() && resolved_fqn != base_name {
+                            Some(resolved_fqn)
+                        } else {
+                            None
+                        }
+                    });
 
                 (base_name, qualified)
             } else {
