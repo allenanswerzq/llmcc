@@ -9,17 +9,21 @@ use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 #[derive(Debug)]
-pub struct DeclVisitor<'tcx> {
-    unit: CompileUnit<'tcx>,
+pub struct CollectorVisitor<'tcx> {
+    // unit: CompileUnit<'tcx>,
+    phantom: std::marker::PhantomData<&'tcx ()>,
 }
 
-impl<'tcx> DeclVisitor<'tcx> {
-    fn new(unit: CompileUnit<'tcx>) -> Self {
-        Self { unit }
+impl<'tcx> CollectorVisitor<'tcx> {
+    fn new() -> Self {
+        Self { 
+            phantom: std::marker::PhantomData,
+        }
     }
 
     fn visit_scoped_named(
         &mut self,
+        unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
@@ -28,40 +32,37 @@ impl<'tcx> DeclVisitor<'tcx> {
         field_id: u16,
     ) {
         if let Some(sn) = node.as_scope()
-            && let Some(id) = node.find_identifier_for_field(self.unit, field_id)
+            && let Some(id) = node.find_identifier_for_field(*unit, field_id)
         {
-            let ident = self.unit.hir_node(id).as_ident().unwrap();
+            let ident = unit.hir_node(id).as_ident().unwrap();
             if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
                 ident.set_symbol(sym);
                 sn.set_ident(ident);
 
-                let scope = self.unit.alloc_hir_scope(sym);
+                let scope = unit.alloc_hir_scope(sym);
                 sym.set_scope(scope.id());
                 sym.add_defining(node.id());
                 sn.set_scope(scope);
 
                 scopes.push_scope(scope);
-                self.visit_children(node, scopes, scope, Some(sym));
+                self.visit_children(unit, node, scopes, scope, Some(sym));
                 scopes.pop_scope();
             }
         }
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
-    fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit
-    }
-
+impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
     #[rustfmt::skip]
     fn visit_source_file(
         &mut self,
+        unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let file_path = self.unit.file_path().expect("no file path found to compile");
+        let file_path = unit.file_path().expect("no file path found to compile");
 
         if let Some(crate_name) = parse_crate_name(&file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
@@ -77,20 +78,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
             if let Some(file_name) = parse_file_name(&file_path)
                 && let Some(sn) = node.as_scope()
             {
-                let ident = self.unit.alloc_hir_ident(file_name.clone(), symbol);
+                let ident = unit.alloc_hir_ident(file_name.clone(), symbol);
                 sn.set_ident(ident);
 
                 if let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File) {
                     ident.set_symbol(file_sym);
                     file_sym.add_defining(node.id());
 
-                    let scope = self.unit.alloc_hir_scope(file_sym);
+                    let scope = unit.alloc_hir_scope(file_sym);
                     file_sym.set_scope(scope.id());
 
                     sn.set_scope(scope);
                     scopes.push_scope(scope);
 
-                    self.visit_children(node, scopes, namespace, parent);
+                    self.visit_children(unit, node, scopes, namespace, parent);
                 }
             }
         }
@@ -99,18 +100,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
 
     fn visit_mod_item(
         &mut self,
+        unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if node
-            .child_by_field(self.unit, LangRust::field_body)
+            .child_by_field(*unit, LangRust::field_body)
             .is_none()
         {
             return;
         }
         self.visit_scoped_named(
+            unit,
             node,
             scopes,
             namespace,
@@ -122,12 +125,14 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
 
     fn visit_function_item(
         &mut self,
+        unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         self.visit_scoped_named(
+            unit,
             node,
             scopes,
             namespace,
@@ -142,33 +147,28 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
 mod tests {
     use super::*;
     use crate::token::LangRust;
-    use crate::bind::BinderVisitor;
+    // use crate::bind::BinderVisitor;
+
     use llmcc_core::context::CompileCtxt;
+    use llmcc_core::interner::InternPool;
     use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
     use llmcc_core::printer::print_llmcc_ir;
-    use llmcc_resolver::{BinderScopes, CollectorScopes};
+    use llmcc_core::symbol::ScopeId;
+    use llmcc_resolver::{collect_symbols_with};
 
-    fn compile_from_sources(sources: Vec<Vec<u8>>) {
+    fn compile_from_soruces(sources: Vec<Vec<u8>>) {
         let cc = CompileCtxt::from_sources::<LangRust>(&sources);
         let config = IrBuildConfig::default();
         build_llmcc_ir::<LangRust>(&cc, config).unwrap();
 
-        let globals = cc.create_globals();
-        let unit_count = cc.get_files().len();
+        let globals = collect_symbols_with(&cc, |unit, node, scopes , unit_globals| {
+            print_llmcc_ir(unit);
+            CollectorVisitor::new().visit_node(&unit, &node, scopes, unit_globals, None);
+        });
 
-        for index in 0..unit_count {
-            let unit = cc.compile_unit(index);
-            // print_llmcc_ir(unit);
-            let root_id = unit.file_start_hir_id().unwrap();
-            let root = unit.hir_node(root_id);
-
-            let mut collector =
-                CollectorScopes::new(index, &cc.arena, &cc.interner, globals);
-            DeclVisitor::new(unit).visit_node(root, &mut collector, globals, None);
-
-            let mut binder = BinderScopes::new(unit, globals);
-            BinderVisitor::new(unit).visit_node(root, &mut binder, globals, None);
-        }
+        // bind_symbols_with(unit, globals, |node, scopes| {
+        //     BinderVisitor::new(unit).visit_node(node, scopes, globals, None);
+        // });
     }
 
     #[test]
@@ -201,7 +201,7 @@ type Alias = Foo;
 const TOP_CONST: i32 = 42;
 static TOP_STATIC: i32 = 7;
 "#;
-        compile_from_sources(vec![source_code.to_vec()]);
+        compile_from_soruces(vec![source_code.to_vec()]);
 
     }
 

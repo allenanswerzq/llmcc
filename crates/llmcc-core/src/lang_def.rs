@@ -411,9 +411,6 @@ macro_rules! define_lang {
             // ============================================================
             /// Trait for visiting HIR nodes with type-specific dispatch
             pub trait [<AstVisitor $suffix>]<'a, T> {
-                /// Get the compilation unit for this visitor
-                fn unit(&self) -> $crate::context::CompileUnit<'a>;
-
                 /// Visit a node, dispatching to the appropriate method based on token ID
                 /// NOTE: scope stack is for lookup convenience, the actual namespace in
                 /// which names should be mangled and declared.
@@ -421,7 +418,8 @@ macro_rules! define_lang {
                 /// independent of the push stack.
                 fn visit_node(
                     &mut self,
-                    node: $crate::ir::HirNode<'a>,
+                    unit: &$crate::context::CompileUnit<'a>,
+                    node: &$crate::ir::HirNode<'a>,
                     scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
@@ -430,44 +428,38 @@ macro_rules! define_lang {
                         $(
                             [<Lang $suffix>]::$const => $crate::paste::paste! {{
                                 tracing::trace!("run: visit_{}", stringify!($const));
-                                self.[<visit_ $const>](&node, scopes, namespace, parent)
+                                self.[<visit_ $const>](unit, node, scopes, namespace, parent)
                             }},
                         )*
-                        _ => self.visit_unknown(&node, scopes, namespace, parent),
+                        _ => self.visit_unknown(unit, node, scopes, namespace, parent),
                     }
                 }
 
                 /// Visit all children of a node
                 fn visit_children(
                     &mut self,
+                    unit: &$crate::context::CompileUnit<'a>,
                     node: &$crate::ir::HirNode<'a>,
                     scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
                     for id in node.children() {
-                        let child = self.unit().hir_node(*id);
-                        self.visit_node(child, scopes, namespace, parent);
+                        let child = unit.hir_node(*id);
+                        self.visit_node(unit, &child, scopes, namespace, parent);
                     }
                 }
-
-                fn visit_scope_children(
-                    &mut self,
-                    node: &$crate::ir::HirNode<'a>,
-                    scopes: &mut T,
-                    namespace: &'a $crate::scope::Scope<'a>,
-                    parent: Option<&$crate::symbol::Symbol>,
-                ) {}
 
                 /// Handle unknown/unrecognized token types
                 fn visit_unknown(
                     &mut self,
+                    unit: &$crate::context::CompileUnit<'a>,
                     node: &$crate::ir::HirNode<'a>,
                     scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
-                    self.visit_children(&node, scopes, namespace, parent);
+                    self.visit_children(unit, node, scopes, namespace, parent);
                 }
 
                 // Generate visit methods for each token type with visit_ prefix
@@ -475,12 +467,13 @@ macro_rules! define_lang {
                     $crate::paste::paste! {
                         fn [<visit_ $const>](
                             &mut self,
+                            unit: &$crate::context::CompileUnit<'a>,
                             node: &$crate::ir::HirNode<'a>,
                             scopes: &mut T,
                             namespace: &'a $crate::scope::Scope<'a>,
                             parent: Option<&$crate::symbol::Symbol>,
                         ) {
-                            self.visit_children(&node, scopes, namespace, parent);
+                            self.visit_children(unit, node, scopes, namespace, parent);
                         }
                     }
                 )*

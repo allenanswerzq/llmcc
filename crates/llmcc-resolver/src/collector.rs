@@ -1,11 +1,13 @@
 //! Symbol collection for parallel per-unit symbol table building.
 //! Each unit gets its own arena, collectors borrow it, then symbols are applied globally.
+use llmcc_core::{CompileUnit, HirId};
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 
+use rayon::prelude::*;
 /// Core symbol collector for a single compilation unit
 pub struct CollectorScopes<'a> {
     arena: &'a Arena<'a>,
@@ -237,4 +239,32 @@ fn apply_collected_symbols<'tcx, 'unit>(
     }
 
     final_globals
+}
+
+/// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
+pub fn collect_symbols_with<'a, F>(
+    cc: &'a CompileCtxt<'a>,
+    visitor: F,
+) -> &'a Scope<'a>
+where
+    F: FnOnce(CompileUnit<'a>, HirNode<'a>, &mut CollectorScopes<'a>, &'a Scope<'a>) + Sync + Send + Copy,
+{
+    let arena = &cc.arena;
+    let interner = &cc.interner;
+    let unit_globals_vec = (0..cc.files.len()).into_par_iter().map(|unit_index| {
+        let unit = cc.compile_unit(unit_index); 
+        let unit_globals = cc.create_unit_globals(HirId(unit_index));
+        let id = unit.file_start_hir_id().unwrap();
+        let node = unit.hir_node(id);
+        let mut collector = CollectorScopes::new(unit_index, arena, interner, unit_globals);
+        visitor(unit, node, &mut collector, unit_globals);
+        unit_globals
+    }).collect::<Vec<&'a Scope<'a>>>();
+
+    let globals = cc.create_globals();
+    for i in 0..unit_globals_vec.len() {
+        let unit_globals = unit_globals_vec[i];
+        apply_collected_symbols(cc, arena, globals, unit_globals);
+    }
+    globals
 }
