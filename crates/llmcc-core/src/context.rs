@@ -508,7 +508,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             .iter()
             .enumerate()
             .map(|(index, src)| {
-                let path = format!("virtual://unit_{index}.rs");
+                let path = format!("from_source/unit_{index}.rs");
                 File::new_virtual(path, src.clone())
             })
             .collect();

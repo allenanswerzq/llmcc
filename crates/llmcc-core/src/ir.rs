@@ -8,14 +8,14 @@ use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
 declare_arena!([
+    symbol: Symbol,
+] @vec [
     hir_root: HirRoot,
     hir_text: HirText,
     hir_internal: HirInternal,
     hir_scope: HirScope<'tcx>,
     hir_file: HirFile,
     hir_ident: HirIdent<'tcx>,
-    symbol: Symbol,
-] @vec [
     scope: Scope<'tcx>,
 ]);
 
@@ -136,6 +136,54 @@ impl<'hir> HirNode<'hir> {
             .iter()
             .map(|id| unit.hir_node(*id))
             .find(|child| child.kind_id() == kind_id)
+    }
+
+    /// Find the identifier for the first child node that is an identifier or interior node.
+    /// Recursively searches for identifiers within interior nodes.
+    pub fn find_identifier(&self, unit: CompileUnit<'hir>) -> Option<HirId> {
+        if self.is_kind(HirKind::Identifier) {
+            return Some(self.id());
+        }
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.is_kind(HirKind::Identifier) {
+                return Some(child.id());
+            }
+            if child.is_kind(HirKind::Internal) {
+                if let Some(id) = child.find_identifier(unit) {
+                    return Some(id);
+                }
+            }
+        }
+        None
+    }
+
+    /// Find identifier for the first child with a matching field ID.
+    pub fn find_identifier_for_field(
+        &self,
+        unit: CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<HirId> {
+        debug_assert!(!self.is_kind(HirKind::Identifier));
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.field_id() == field_id {
+                return child.find_identifier(unit);
+            }
+        }
+        None
+    }
+
+    /// Find identifier for the first child with a matching kind ID.
+    pub fn find_identifier_for_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirId> {
+        debug_assert!(!self.is_kind(HirKind::Identifier));
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.kind_id() == kind_id {
+                return child.find_identifier(unit);
+            }
+        }
+        None
     }
 
     #[inline]

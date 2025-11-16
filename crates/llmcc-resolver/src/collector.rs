@@ -80,9 +80,9 @@ impl<'a> CollectorScopes<'a> {
     pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
         let scope = self.arena.alloc(Scope::new_with(node.id(), symbol));
         if let Some(symbol) = symbol {
-            symbol.set_scope(Some(scope.id()));
+            symbol.set_scope(scope.id());
             if let Some(parent_scope) = self.scopes.top() {
-                symbol.set_parent_scope(Some(parent_scope.id()));
+                symbol.set_parent_scope(parent_scope.id());
             }
         }
         self.push_scope(scope);

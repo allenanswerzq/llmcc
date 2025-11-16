@@ -1,57 +1,8 @@
-//! IR and Graph Printing Module
-//!
-//! This module provides production-ready, configurable rendering and printing capabilities for:
-//! - HIR (High-level Intermediate Representation) trees
-//! - Control flow graphs (BasicBlocks)
-//! - AST (Abstract Syntax Tree) nodes
-//!
-//! # Features
-//!
-//! - **Configurable Output Formats**: Tree, Compact, Flat
-//! - **Snippet Management**: Optional source code display with truncation
-//! - **Line Tracking**: Automatic line number extraction from byte positions
-//! - **Depth Control**: Configurable maximum nesting depth (prevents stack overflow)
-//! - **Performance Optimized**: Lazy evaluation, minimal allocations
-//! - **Error Handling**: Result types for safe error propagation
-//!
-//! # Configuration
-//!
-//! Use [`PrintConfig`] to customize rendering behavior:
-//!
-//! ```ignore
-//! // Minimal rendering (fast)
-//! let config = PrintConfig::minimal();
-//!
-//! // Default configuration
-//! let config = PrintConfig::default()
-//!     .with_snippets(true)
-//!     .with_max_depth(5);
-//!
-//! // Verbose rendering (maximum detail)
-//! let config = PrintConfig::verbose();
-//! ```
-//!
-//! # Usage Examples
-//!
-//! ```ignore
-//! // Render HIR with custom config
-//! let config = PrintConfig::default()
-//!     .with_format(PrintFormat::Tree)
-//!     .with_snippets(true);
-//! let (ast, hir) = render_llmcc_ir_with_config(root, unit, &config)?;
-//!
-//! // Render control flow graph
-//! let graph = render_llmcc_graph_with_config(block_id, unit, &config)?;
-//! ```
-
+//! TOOD: use impl fmt::Debug
 use crate::context::CompileUnit;
 use crate::graph_builder::{BasicBlock, BlockId};
 use crate::ir::{HirId, HirNode};
 use std::fmt;
-
-// ============================================================================
-// Configuration Types
-// ============================================================================
 
 /// Output format for rendering
 ///
@@ -402,7 +353,7 @@ pub fn render_llmcc_ir_with_config(
     // Build AST render tree from parse tree if available
     let ast_render = if let Some(parse_tree) = unit.parse_tree() {
         if let Some(root_node) = parse_tree.root_node() {
-            build_ast_render_from_node(&*root_node, config, 0)?
+            build_ast_render_from_node(&*root_node, unit, config, 0)?
         } else {
             RenderNode::new(
                 "No AST root node found".to_string(),
@@ -487,6 +438,19 @@ pub fn print_llmcc_graph_with_config(
 /// Build render tree for AST node (from parse tree)
 fn build_ast_render_from_node(
     node: &(dyn crate::lang_def::ParseNode + '_),
+    unit: CompileUnit<'_>,
+    config: &PrintConfig,
+    depth: usize,
+) -> RenderResult<RenderNode> {
+    build_ast_render_from_node_with_parent(node, None, 0, unit, config, depth)
+}
+
+/// Build render tree for AST node with parent context for field names
+fn build_ast_render_from_node_with_parent(
+    node: &(dyn crate::lang_def::ParseNode + '_),
+    parent: Option<&(dyn crate::lang_def::ParseNode + '_)>,
+    child_index: usize,
+    unit: CompileUnit<'_>,
     config: &PrintConfig,
     depth: usize,
 ) -> RenderResult<RenderNode> {
@@ -495,40 +459,40 @@ fn build_ast_render_from_node(
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    // Format node label
-    let mut label = format!("kind_id: {}", node.kind_id());
+    // Get field name if available from parent
+    let field_name: Option<&str> = parent.and_then(|p| p.child_field_name(child_index));
 
-    // Add node status indicators
-    if node.is_error() {
-        label.push_str(" [ERROR]");
-    }
-    if node.is_extra() {
-        label.push_str(" [EXTRA]");
-    }
-    if node.is_missing() {
-        label.push_str(" [MISSING]");
-    }
+    // Use the trait method to format the label
+    let label = node.format_node_label(field_name);
 
-    // Add byte range
-    let byte_range = format!("[{}-{}]", node.start_byte(), node.end_byte());
+    // Line range info
+    let line_info = Some(format!("[{}-{}]", node.start_byte(), node.end_byte()));
+
+    // Extract snippet from source
+    let snippet = if config.include_snippets {
+        snippet_from_ctx(&unit, node.start_byte(), node.end_byte(), config)
+    } else {
+        None
+    };
 
     // Collect children
     let mut children = Vec::new();
     for i in 0..node.child_count() {
         if let Some(child) = node.child(i) {
-            if let Ok(render) = build_ast_render_from_node(&*child, config, depth + 1) {
+            if let Ok(render) = build_ast_render_from_node_with_parent(
+                &*child,
+                Some(node),
+                i,
+                unit,
+                config,
+                depth + 1,
+            ) {
                 children.push(render);
             }
         }
     }
 
-    Ok(RenderNode::new(
-        label,
-        Some(byte_range),
-        None,
-        children,
-        None,
-    ))
+    Ok(RenderNode::new(label, line_info, snippet, children, None))
 }
 
 /// Build render tree for HIR node
@@ -543,7 +507,12 @@ fn build_hir_render<'tcx>(
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    let label = node.format_node(unit);
+    let mut label = node.format_node(unit);
+
+    // Add identifier name info for Ident nodes
+    if let crate::ir::HirNode::Ident(ident) = node {
+        label.push_str(&format!(" = \"{}\"", ident.name));
+    }
 
     let line_info = if config.include_line_info {
         Some(format!(
@@ -665,10 +634,16 @@ fn render_node_tree(
         line.push_str(&format!(" {}", line_info));
     }
 
-    // Add snippet
+    // Align snippet to column and add inline with pipes
     if let Some(snippet) = &node.snippet {
-        let padded = pad_snippet(&line, snippet, config);
-        line.push_str(&padded);
+        // Pad to column width for alignment
+        let padding = config.snippet_col_width.saturating_sub(line.len());
+        if padding > 0 {
+            line.push_str(&" ".repeat(padding));
+        } else {
+            line.push(' ');
+        }
+        line.push_str(&format!("|{}|", snippet));
     }
 
     // Handle children

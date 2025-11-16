@@ -1,6 +1,7 @@
 //! Scope management and symbol lookup for the code graph.
 use parking_lot::RwLock;
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
@@ -8,7 +9,6 @@ use crate::ir::{Arena, HirId, HirNode};
 use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
 
 /// Represents a single level in the scope hierarchy.
-#[derive(Debug)]
 pub struct Scope<'tcx> {
     /// Unique monotonic scope ID assigned at creation time.
     /// Immutable for the lifetime of the scope.
@@ -250,6 +250,20 @@ impl<'tcx> Scope<'tcx> {
     }
 }
 
+impl<'tcx> fmt::Debug for Scope<'tcx> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let symbol_desc = self.symbol().cloned();
+        let mut symbol_entries = Vec::new();
+        self.for_each_symbol(|symbol| symbol_entries.push(symbol.clone()));
+        f.debug_struct("Scope")
+            .field("id", &self.id())
+            .field("owner", &self.owner())
+            .field("symbol", &symbol_desc)
+            .field("symbols", &symbol_entries)
+            .finish()
+    }
+}
+
 /// Manages a stack of nested scopes for symbol resolution and insertion.
 ///
 /// The scope stack handles hierarchical scope traversal and symbol lookup across
@@ -479,7 +493,7 @@ impl<'tcx> ScopeStack<'tcx> {
         // If top flag is set, chain to the most recent existing symbol
         if options.top && !existing_symbols.is_empty() {
             if let Some(prev_sym) = existing_symbols.last() {
-                allocated.set_previous(Some(prev_sym.id));
+                allocated.set_previous(prev_sym.id);
             }
         }
 
