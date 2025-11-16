@@ -1,9 +1,11 @@
-use llmcc_core::HirId;
+use llmcc_core::{CompileCtxt, HirId};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
+
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationDirection {
@@ -172,14 +174,18 @@ impl<'tcx> BinderScopes<'tcx> {
 
 /// Public API for binding symbols with a custom visitor function.
 pub fn bind_symbols_with<'a, F>(
-    unit: CompileUnit<'a>,
+    cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
     visitor: F,
-) -> &'a Scope<'a>
+)
 where
-    F: FnOnce(&mut BinderScopes<'a>),
+    F: FnOnce(CompileUnit<'a>, HirNode<'a>, &mut BinderScopes<'a>, &'a Scope<'a>) + Sync + Send + Copy,
 {
-    let mut collector = BinderScopes::new(unit, globals);
-    visitor(&mut collector);
-    collector.globals()
+    (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
+        let unit = cc.compile_unit(unit_index); 
+        let id = unit.file_start_hir_id().unwrap();
+        let node = unit.hir_node(id);
+        let mut scopes = BinderScopes::new(unit, globals);
+        visitor(unit, node, &mut scopes, globals);
+    })
 }

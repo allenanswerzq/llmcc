@@ -10,7 +10,6 @@ use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
-    // unit: CompileUnit<'tcx>,
     phantom: std::marker::PhantomData<&'tcx ()>,
 }
 
@@ -147,14 +146,14 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 mod tests {
     use super::*;
     use crate::token::LangRust;
-    // use crate::bind::BinderVisitor;
+    use crate::bind::BinderVisitor;
 
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::interner::InternPool;
     use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
     use llmcc_core::printer::print_llmcc_ir;
     use llmcc_core::symbol::ScopeId;
-    use llmcc_resolver::{collect_symbols_with};
+    use llmcc_resolver::{collect_symbols_with, bind_symbols_with};
 
     fn compile_from_soruces(sources: Vec<Vec<u8>>) {
         let cc = CompileCtxt::from_sources::<LangRust>(&sources);
@@ -166,9 +165,9 @@ mod tests {
             CollectorVisitor::new().visit_node(&unit, &node, scopes, unit_globals, None);
         });
 
-        // bind_symbols_with(unit, globals, |node, scopes| {
-        //     BinderVisitor::new(unit).visit_node(node, scopes, globals, None);
-        // });
+        bind_symbols_with(&cc, globals, |unit, node, scopes, globals| {
+            BinderVisitor::new().visit_node(&unit, &node, scopes, globals, None);
+        });
     }
 
     #[test]

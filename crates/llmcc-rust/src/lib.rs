@@ -6,7 +6,7 @@ mod collect;
 mod token;
 mod util;
 
-// pub use crate::bind::BinderVisitor;
+pub use crate::bind::BinderVisitor;
 pub use crate::collect::CollectorVisitor;
 
 pub use llmcc_core::{
