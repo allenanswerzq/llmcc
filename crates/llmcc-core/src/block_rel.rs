@@ -1,7 +1,7 @@
 use parking_lot::RwLock;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
-use crate::block::{BlockId, BlockRelation};
+use crate::block::{BlockId, BlockKind, BlockRelation};
 
 /// Manages relationships between blocks in a clean, type-safe way
 #[derive(Debug, Default)]
@@ -379,5 +379,155 @@ impl BlockRelationMap {
         }
 
         descendants
+    }
+}
+
+/// BlockIndexMaps provides efficient lookup of blocks by various indices.
+///
+/// Best practices for usage:
+/// - block_name_index: Use when you want to find blocks by name (multiple blocks can share the same name)
+/// - unit_index_map: Use when you want all blocks in a specific unit
+/// - block_kind_index: Use when you want all blocks of a specific kind (e.g., all functions)
+/// - block_id_index: Use for O(1) lookup of block metadata by BlockId
+///
+/// Important: The "name" field is optional since Root blocks and some other blocks may not have names.
+///
+/// Rationale for data structure choices:
+/// - BTreeMap is used for name and unit indexes for better iteration and range queries
+/// - HashMap is used for kind index since BlockKind doesn't implement Ord
+/// - HashMap is used for block_id_index (direct lookup by BlockId) for O(1) access
+/// - Vec is used for values to handle multiple blocks with the same index (same name/kind/unit)
+#[derive(Debug, Default, Clone)]
+pub struct BlockIndexMaps {
+    /// block_name -> Vec<(unit_index, block_kind, block_id)>
+    /// Multiple blocks can share the same name across units or within the same unit
+    pub block_name_index: BTreeMap<String, Vec<(usize, BlockKind, BlockId)>>,
+
+    /// unit_index -> Vec<(block_name, block_kind, block_id)>
+    /// Allows retrieval of all blocks in a specific compilation unit
+    pub unit_index_map: BTreeMap<usize, Vec<(Option<String>, BlockKind, BlockId)>>,
+
+    /// block_kind -> Vec<(unit_index, block_name, block_id)>
+    /// Allows retrieval of all blocks of a specific kind across all units
+    pub block_kind_index: HashMap<BlockKind, Vec<(usize, Option<String>, BlockId)>>,
+
+    /// block_id -> (unit_index, block_name, block_kind)
+    /// Direct O(1) lookup of block metadata by ID
+    pub block_id_index: HashMap<BlockId, (usize, Option<String>, BlockKind)>,
+}
+
+impl BlockIndexMaps {
+    /// Create a new empty BlockIndexMaps
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Register a new block in all indexes
+    ///
+    /// # Arguments
+    /// - `block_id`: The unique block identifier
+    /// - `block_name`: Optional name of the block (None for unnamed blocks)
+    /// - `block_kind`: The kind of block (Func, Class, Stmt, etc.)
+    /// - `unit_index`: The compilation unit index this block belongs to
+    pub fn insert_block(
+        &mut self,
+        block_id: BlockId,
+        block_name: Option<String>,
+        block_kind: BlockKind,
+        unit_index: usize,
+    ) {
+        // Insert into block_id_index for O(1) lookups
+        self.block_id_index
+            .insert(block_id, (unit_index, block_name.clone(), block_kind));
+
+        // Insert into block_name_index (if name exists)
+        if let Some(ref name) = block_name {
+            self.block_name_index
+                .entry(name.clone())
+                .or_default()
+                .push((unit_index, block_kind, block_id));
+        }
+
+        // Insert into unit_index_map
+        self.unit_index_map.entry(unit_index).or_default().push((
+            block_name.clone(),
+            block_kind,
+            block_id,
+        ));
+
+        // Insert into block_kind_index
+        self.block_kind_index
+            .entry(block_kind)
+            .or_default()
+            .push((unit_index, block_name, block_id));
+    }
+
+    /// Find all blocks with a given name (may return multiple blocks)
+    ///
+    /// Returns a vector of (unit_index, block_kind, block_id) tuples
+    pub fn find_by_name(&self, name: &str) -> Vec<(usize, BlockKind, BlockId)> {
+        self.block_name_index.get(name).cloned().unwrap_or_default()
+    }
+
+    /// Find all blocks in a specific unit
+    ///
+    /// Returns a vector of (block_name, block_kind, block_id) tuples
+    pub fn find_by_unit(&self, unit_index: usize) -> Vec<(Option<String>, BlockKind, BlockId)> {
+        self.unit_index_map
+            .get(&unit_index)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Find all blocks of a specific kind across all units
+    ///
+    /// Returns a vector of (unit_index, block_name, block_id) tuples
+    pub fn find_by_kind(&self, block_kind: BlockKind) -> Vec<(usize, Option<String>, BlockId)> {
+        self.block_kind_index
+            .get(&block_kind)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    /// Find all blocks of a specific kind in a specific unit
+    ///
+    /// Returns a vector of block_ids
+    pub fn find_by_kind_and_unit(&self, block_kind: BlockKind, unit_index: usize) -> Vec<BlockId> {
+        let by_kind = self.find_by_kind(block_kind);
+        by_kind
+            .into_iter()
+            .filter(|(unit, _, _)| *unit == unit_index)
+            .map(|(_, _, block_id)| block_id)
+            .collect()
+    }
+
+    /// Look up block metadata by BlockId for O(1) access
+    ///
+    /// Returns (unit_index, block_name, block_kind) if found
+    pub fn get_block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
+        self.block_id_index.get(&block_id).cloned()
+    }
+
+    /// Get total number of blocks indexed
+    pub fn block_count(&self) -> usize {
+        self.block_id_index.len()
+    }
+
+    /// Get the number of unique block names
+    pub fn unique_names_count(&self) -> usize {
+        self.block_name_index.len()
+    }
+
+    /// Check if a block with the given ID exists
+    pub fn contains_block(&self, block_id: BlockId) -> bool {
+        self.block_id_index.contains_key(&block_id)
+    }
+
+    /// Clear all indexes
+    pub fn clear(&mut self) {
+        self.block_name_index.clear();
+        self.unit_index_map.clear();
+        self.block_kind_index.clear();
+        self.block_id_index.clear();
     }
 }

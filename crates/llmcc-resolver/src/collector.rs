@@ -3,17 +3,29 @@
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
-use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
+use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 
 /// Core symbol collector for a single compilation unit
-#[derive(Debug)]
 pub struct CollectorScopes<'a> {
     arena: &'a Arena<'a>,
     unit_index: usize,
     interner: &'a InternPool,
     scopes: ScopeStack<'a>,
     globals: &'a Scope<'a>,
+}
+
+impl<'a> std::fmt::Debug for CollectorScopes<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let scopes: Vec<&Scope> = self.arena.iter_scope().collect();
+
+        f.debug_struct("CollectorScopes")
+            .field("unit_index", &self.unit_index)
+            .field("scope_depth", &self.scopes.depth())
+            .field("num_scopes", &scopes.len())
+            .field("scopes", &scopes)
+            .finish()
+    }
 }
 
 impl<'a> CollectorScopes<'a> {

@@ -49,12 +49,15 @@ pub enum HirNode<'hir> {
 
 impl<'hir> HirNode<'hir> {
     /// Format node as "kind:id [s:scope_id]" for debugging
-    pub fn format_node(&self, unit: CompileUnit<'hir>) -> String {
+    pub fn format_node(&self, _unit: CompileUnit<'hir>) -> String {
         let id = self.id();
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, id);
-        if let Some(scope) = unit.opt_get_scope(id) {
-            f.push_str(&format!("   s:{}", scope.format_compact()));
+        // Only Scope nodes have an associated Scope; get it if available
+        if let HirNode::Scope(scope_node) = self {
+            if let Some(scope) = *scope_node.scope.read() {
+                f.push_str(&format!("   s:{}", scope.format_compact()));
+            }
         }
         f
     }
@@ -355,6 +358,10 @@ impl<'hir> HirScope<'hir> {
 
     pub fn set_ident(&self, ident: &'hir HirIdent<'hir>) {
         *self.ident.write() = Some(ident);
+    }
+
+    pub fn opt_ident(&self) -> Option<&'hir HirIdent<'hir>> {
+        *self.ident.read()
     }
 
     pub fn ident(&self) -> &'hir HirIdent<'hir> {

@@ -281,7 +281,7 @@ fn build_llmcc_ir_inner<'arena, L: LanguageTrait>(
 ///
 /// Holds only the file index and root HirId; all HIR nodes were allocated
 /// into the shared global arena during parallel builds.
-struct FileIrBuildResult {
+struct BuildResult {
     /// Index of this file in the compile context
     index: usize,
     /// HirId of the file's root node
@@ -298,7 +298,7 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     config: IrBuildConfig,
 ) -> Result<(), DynError> {
     // Collect all build results in parallel
-    let results: Vec<Result<FileIrBuildResult, DynError>> = (0..cc.files.len())
+    let results: Vec<Result<BuildResult, DynError>> = (0..cc.files.len())
         .into_par_iter()
         .map(|index| {
             let file_path = cc.file_path(index).map(|p| p.to_string());
@@ -316,7 +316,7 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
                 config,
             )?;
 
-            Ok(FileIrBuildResult {
+            Ok(BuildResult {
                 index,
                 file_start_id,
             })
@@ -324,12 +324,11 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
         .collect();
 
     // Collect and sort results
-    let mut file_results: Vec<FileIrBuildResult> =
-        results.into_iter().collect::<Result<Vec<_>, _>>()?;
+    let mut file_results: Vec<BuildResult> = results.into_iter().collect::<Result<Vec<_>, _>>()?;
     file_results.sort_by_key(|result| result.index);
 
     // Register all file start IDs
-    for FileIrBuildResult {
+    for BuildResult {
         index,
         file_start_id,
     } in file_results

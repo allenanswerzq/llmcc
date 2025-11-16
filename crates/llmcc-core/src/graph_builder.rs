@@ -859,9 +859,12 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         unresolved: &mut HashSet<SymId>,
     ) {
         // Try to process symbol dependencies for this node
-        if let Some(scope) = self.unit.opt_get_scope(node.id()) {
-            if let Some(symbol) = scope.symbol() {
-                self.process_symbol(symbol, edges, visited, unresolved);
+        // If this node is a Scope node, it has a direct reference to its Scope
+        if let Some(scope_node) = node.as_scope() {
+            if let Some(scope) = *scope_node.scope.read() {
+                if let Some(symbol) = scope.symbol() {
+                    self.process_symbol(symbol, edges, visited, unresolved);
+                }
             }
         }
 
@@ -965,12 +968,14 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         };
 
         let block = self.create_block(id, node, block_kind, Some(parent), children);
-        if let Some(scope) = self.unit.opt_get_scope(node.id()) {
-            if let Some(symbol) = scope.symbol() {
-                // Only set the block ID if it hasn't been set before
-                // This prevents impl blocks from overwriting struct block IDs
-                if symbol.block_id().is_none() {
-                    symbol.set_block_id(id);
+        if let Some(scope_node) = node.as_scope() {
+            if let Some(scope) = *scope_node.scope.read() {
+                if let Some(symbol) = scope.symbol() {
+                    // Only set the block ID if it hasn't been set before
+                    // This prevents impl blocks from overwriting struct block IDs
+                    if symbol.block_id().is_none() {
+                        symbol.set_block_id(id);
+                    }
                 }
             }
         }

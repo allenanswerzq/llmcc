@@ -69,9 +69,14 @@ impl std::fmt::Display for ScopeId {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum SymKind {
     Unknown,
+    // logical grouping for mutliple modules
     Crate,
+    // logical grouping for mutiple files
     Module,
+    // logaical grouping for mutliple source code blocks
     File,
+    // logical grouping for multiple entities
+    Namespace,
     Struct,
     Enum,
     Function,
@@ -83,6 +88,7 @@ pub enum SymKind {
     Trait,
     Impl,
     EnumVariant,
+    Type,
 }
 
 /// Represents a named entity in source code.
