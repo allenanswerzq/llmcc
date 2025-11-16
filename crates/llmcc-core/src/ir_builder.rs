@@ -195,7 +195,7 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
         let kind_id = node.kind_id();
         let start_byte = node.start_byte();
         let end_byte = node.end_byte();
-        let field_id = Self::field_id_of().unwrap_or(u16::MAX);
+        let field_id = node.field_id().unwrap_or(u16::MAX);
         HirBase {
             id,
             parent,
@@ -254,16 +254,6 @@ impl<'a, Language: LanguageTrait> HirBuilder<'a, Language> {
             base: ident_base,
             name: text,
         })
-    }
-
-    /// Get the field ID for a node.
-    ///
-    /// Currently returns `None` because the ParseNode trait doesn't provide
-    /// direct field ID access. This could be extended in the future if needed
-    /// by adding a method to the ParseNode trait.
-    #[allow(clippy::unused_self)]
-    fn field_id_of() -> Option<u16> {
-        None
     }
 }
 

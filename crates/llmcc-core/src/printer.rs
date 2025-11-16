@@ -441,33 +441,36 @@ fn build_ast_render_from_node(
     config: &PrintConfig,
     depth: usize,
 ) -> RenderResult<RenderNode> {
+    build_ast_render_from_node_with_parent(node, None, 0, config, depth)
+}
+
+/// Build render tree for AST node with parent context for field names
+fn build_ast_render_from_node_with_parent(
+    node: &(dyn crate::lang_def::ParseNode + '_),
+    parent: Option<&(dyn crate::lang_def::ParseNode + '_)>,
+    child_index: usize,
+    config: &PrintConfig,
+    depth: usize,
+) -> RenderResult<RenderNode> {
     // Check depth limit
     if depth > config.max_depth {
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    // Format node label
-    let mut label = format!("kind_id: {}", node.kind_id());
+    // Get field name if available from parent
+    let field_name: Option<&str> = parent.and_then(|p| p.child_field_name(child_index));
 
-    // Add node status indicators
-    if node.is_error() {
-        label.push_str(" [ERROR]");
-    }
-    if node.is_extra() {
-        label.push_str(" [EXTRA]");
-    }
-    if node.is_missing() {
-        label.push_str(" [MISSING]");
-    }
+    // Use the trait method to format the label
+    let label = node.format_node_label(field_name);
 
-    // Add byte range
-    let byte_range = format!("[{}-{}]", node.start_byte(), node.end_byte());
+    // Line range info
+    let line_info = Some(format!("[{}-{}]", node.start_byte(), node.end_byte()));
 
     // Collect children
     let mut children = Vec::new();
     for i in 0..node.child_count() {
         if let Some(child) = node.child(i) {
-            if let Ok(render) = build_ast_render_from_node(&*child, config, depth + 1) {
+            if let Ok(render) = build_ast_render_from_node_with_parent(&*child, Some(node), i, config, depth + 1) {
                 children.push(render);
             }
         }
@@ -475,7 +478,7 @@ fn build_ast_render_from_node(
 
     Ok(RenderNode::new(
         label,
-        Some(byte_range),
+        line_info,
         None,
         children,
         None,
@@ -494,7 +497,12 @@ fn build_hir_render<'tcx>(
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    let label = node.format_node(unit);
+    let mut label = node.format_node(unit);
+
+    // Add identifier name info for Ident nodes
+    if let crate::ir::HirNode::Ident(ident) = node {
+        label.push_str(&format!(" = \"{}\"", ident.name));
+    }
 
     let line_info = if config.include_line_info {
         Some(format!(

@@ -64,6 +64,17 @@ pub trait ParseNode: Send + Sync {
     /// Get the child at the specified index
     fn child(&self, index: usize) -> Option<Box<dyn ParseNode + '_>>;
 
+    /// Get the field name of the child at the specified index (if available)
+    fn child_field_name(&self, _index: usize) -> Option<&str> {
+        None
+    }
+
+    /// Get the field ID of this node within its parent (if available).
+    /// Returns None if the node has no parent or the field ID cannot be determined.
+    fn field_id(&self) -> Option<u16> {
+        None
+    }
+
     /// Get a child by field name (if supported by the parser)
     fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>>;
 
@@ -99,6 +110,45 @@ pub trait ParseNode: Send + Sync {
 
     /// Debug representation of this node
     fn debug_info(&self) -> String;
+
+    /// Format a label for this node suitable for debugging and rendering.
+    fn format_node_label(&self, field_name: Option<&str>) -> String {
+        // Extract kind string from debug_info
+        let debug_str = self.debug_info();
+        let kind_str = if let Some(start) = debug_str.find("kind: ") {
+            if let Some(end) = debug_str[start+6..].find(',') {
+                &debug_str[start+6..start+6+end]
+            } else if let Some(end) = debug_str[start+6..].find(')') {
+                &debug_str[start+6..start+6+end]
+            } else {
+                "unknown"
+            }
+        } else {
+            "unknown"
+        };
+
+        let kind_id = self.kind_id();
+        let mut label = String::new();
+
+        // Add field name if provided
+        if let Some(fname) = field_name {
+            label.push_str(&format!("|{}|_ ", fname));
+        }
+
+        // Add kind and kind_id
+        label.push_str(&format!("{} [{}]", kind_str, kind_id));
+
+        // Add status flags
+        if self.is_error() {
+            label.push_str(" [ERROR]");
+        } else if self.is_extra() {
+            label.push_str(" [EXTRA]");
+        } else if self.is_missing() {
+            label.push_str(" [MISSING]");
+        }
+
+        label
+    }
 }
 
 /// Wrapper implementation of ParseNode for tree-sitter nodes
@@ -134,6 +184,31 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
         self.node
             .child(index)
             .map(|child| Box::new(TreeSitterParseNode::new(child)) as Box<dyn ParseNode + '_>)
+    }
+
+    fn child_field_name(&self, index: usize) -> Option<&str> {
+        self.node.field_name_for_child(index as u32)
+    }
+
+    fn field_id(&self) -> Option<u16> {
+        // Walk up to parent and find this node's field ID
+        let parent = self.node.parent()?;
+        let mut cursor = parent.walk();
+
+        if !cursor.goto_first_child() {
+            return None;
+        }
+
+        loop {
+            if cursor.node().id() == self.node.id() {
+                return cursor.field_id().map(|id| id.get());
+            }
+            if !cursor.goto_next_sibling() {
+                break;
+            }
+        }
+
+        None
     }
 
     fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>> {

@@ -91,7 +91,7 @@ impl<'tcx> DeclVisitor<'tcx> {
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
-        field_id: u16,
+        field_id: u16
     ) {
         if let Some(sn) = node.as_scope() {
             if let Some(id) = node.find_identifier_for_field(self.unit, field_id) {
@@ -141,6 +141,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
             && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
         {
             scopes.push_scope_with(node, Some(symbol));
+
             if let Some(file_name) = parse_file_name(&file_path)
                 && let Some(sn) = node.as_scope()
             {
@@ -153,11 +154,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
 
                     let scope = self.unit.alloc_hir_scope(file_sym);
                     file_sym.set_scope(scope.id());
+
                     sn.set_scope(scope);
                     scopes.push_scope(scope);
-                }
 
-                self.visit_children(node, scopes, namespace, parent);
+                    self.visit_children(node, scopes, namespace, parent);
+                }
             }
         }
 
@@ -170,11 +172,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        // Mod items without a body (e.g., `mod foo;`) don't create scopes
         if node.child_by_field(self.unit, LangRust::field_body).is_none() {
             return;
         }
-
         self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Module, LangRust::field_name);
     }
 
@@ -225,7 +225,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.visit_scoped_item_using_existing_symbol(node, scopes, namespace, parent, LangRust::field_type);
+        // self.visit_scoped_item_using_existing_symbol(node, scopes, namespace, parent, LangRust::field_type);
     }
 
     fn visit_type_item(
@@ -287,56 +287,8 @@ mod tests {
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::interner::InternPool;
     use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
+    use llmcc_core::printer::{print_llmcc_ir};
     use llmcc_core::symbol::ScopeId;
-
-    fn lookup_symbol<'tcx>(
-        scope: &'tcx Scope<'tcx>,
-        interner: &InternPool,
-        name: &str,
-        kind: SymKind,
-    ) -> &'tcx Symbol {
-        let key = interner.intern(name);
-        scope.lookup_symbols_with(key, Some(kind), None).first().unwrap()
-    }
-
-    fn scope_by_id<'tcx>(cc: &'tcx CompileCtxt<'tcx>, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        cc.arena
-            .iter_scope()
-            .find(|scope| scope.id() == scope_id)
-            .expect("scope id missing from compile context")
-    }
-
-    fn symbol_name<'tcx>(cc: &'tcx CompileCtxt<'tcx>, symbol: &Symbol) -> String {
-        cc.interner
-            .resolve_owned(symbol.name)
-            .unwrap_or_else(|| "<unresolved>".to_string())
-    }
-
-    fn find_symbol_anywhere<'tcx>(
-        cc: &'tcx CompileCtxt<'tcx>,
-        name: &str,
-        kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
-        let key = cc.interner.intern(name);
-        cc.arena
-            .iter_scope()
-            .flat_map(|scope| scope.lookup_symbols(key))
-            .find(|symbol| symbol.kind() == kind)
-    }
-
-    fn names_of_kind<'tcx>(cc: &'tcx CompileCtxt<'tcx>, kind: SymKind) -> Vec<String> {
-        let mut names = Vec::new();
-        cc.arena.iter_scope().for_each(|scope| {
-            scope.for_each_symbol(|symbol| {
-                if symbol.kind() == kind {
-                    names.push(symbol_name(cc, symbol));
-                }
-            });
-        });
-        names.sort();
-        names.dedup();
-        names
-    }
 
     #[test]
     fn test_decl_visitor() {
@@ -375,6 +327,8 @@ static TOP_STATIC: i32 = 7;
         build_llmcc_ir::<LangRust>(&cc, config).unwrap();
 
         let unit = cc.compile_unit(0);
+        print_llmcc_ir(unit);
+
         let file_start = unit.file_start_hir_id().unwrap();
         let node = unit.hir_node(file_start);
 
@@ -383,6 +337,6 @@ static TOP_STATIC: i32 = 7;
         let mut v = DeclVisitor::new(unit);
         v.visit_node(node, &mut scopes, globlas, None);
 
-        // print!("{:#?}", globlas);
+        print!("{:#?}", globlas);
     }
 }

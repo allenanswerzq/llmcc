@@ -141,6 +141,9 @@ impl<'hir> HirNode<'hir> {
     /// Find the identifier for the first child node that is an identifier or interior node.
     /// Recursively searches for identifiers within interior nodes.
     pub fn find_identifier(&self, unit: CompileUnit<'hir>) -> Option<HirId> {
+        if self.is_kind(HirKind::Identifier) {
+            return Some(self.id());
+        }
         for child_id in self.children() {
             let child = unit.hir_node(*child_id);
             if child.is_kind(HirKind::Identifier) {
@@ -161,6 +164,7 @@ impl<'hir> HirNode<'hir> {
         unit: CompileUnit<'hir>,
         field_id: u16,
     ) -> Option<HirId> {
+        debug_assert!(!self.is_kind(HirKind::Identifier));
         for child_id in self.children() {
             let child = unit.hir_node(*child_id);
             if child.field_id() == field_id {
@@ -176,6 +180,7 @@ impl<'hir> HirNode<'hir> {
         unit: CompileUnit<'hir>,
         kind_id: u16,
     ) -> Option<HirId> {
+        debug_assert!(!self.is_kind(HirKind::Identifier));
         for child_id in self.children() {
             let child = unit.hir_node(*child_id);
             if child.kind_id() == kind_id {
