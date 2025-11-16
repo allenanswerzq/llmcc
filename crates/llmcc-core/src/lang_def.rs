@@ -1,12 +1,11 @@
 //! Language definition framework for multi-language AST support.
 use std::any::Any;
 
+use crate::context::CompileUnit;
 use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
-use crate::context::CompileUnit;
 use crate::ir::HirNode;
 use crate::scope::Scope;
-use crate::symbol::Symbol;
 
 /// Generic trait for parse tree representation.
 ///
@@ -261,16 +260,8 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
 /// Scopes trait defining language-specific AST handling.
 pub trait LanguageTrait {
     /// Parse source code and return a generic parse tree.
-    ///
-    /// # Returns
-    /// A boxed `ParseTree` trait object, allowing multiple parser implementations.
-    ///
-    /// # Default
-    /// Returns `None` by default. Languages should implement custom parsing
-    /// either by overriding this method or by using `LanguageTraitExt`.
-    fn parse(_text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
-        None
-    }
+
+    fn parse(_text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>>;
 
     /// Map a token kind ID to its corresponding HIR kind.
     fn hir_kind(kind_id: u16) -> HirKind;
@@ -293,46 +284,42 @@ pub trait LanguageTrait {
     /// Get the list of file extensions this language supports.
     fn supported_extensions() -> &'static [&'static str];
 
-
     fn collect_symbols<'tcx, T>(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut T,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {}
+    );
 
     fn bind_symbols<'tcx, T>(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut T,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {}
+    );
 }
 
 /// Extension trait for providing custom parse implementations.
-///
-/// This trait allows languages defined via `define_lang!` macro to extend
-/// with custom `parse` implementations without conflicting with the macro-generated code.
-///
-/// # Usage
-///
-/// ```ignore
-/// define_lang!(MyLang, ...);
-///
-/// impl LanguageTraitExt for LangMyLang {
-///     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
-///         // Custom parser logic
-///     }
-/// }
-/// ```
-pub trait LanguageTraitExt: LanguageTrait {
+pub trait LanguageTraitImpl: LanguageTrait {
     /// Custom parse implementation for this language.
-    ///
-    /// Languages should implement this method instead of overriding `LanguageTrait::parse`.
-    /// Return `None` to fall back to tree-sitter parsing (if available).
     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>>;
+
+    /// Supported file extensions for this language.
+    fn supported_extensions_impl() -> &'static [&'static str];
+
+    fn collect_symbols_impl<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+    );
+
+    fn bind_symbols_impl<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+    );
 }
 
 #[allow(clippy::crate_in_macro_def)]
@@ -343,16 +330,12 @@ macro_rules! define_lang {
         $( ($const:ident, $id:expr, $str:expr, $kind:expr $(, $block:expr)? ) ),* $(,)?
     ) => {
         $crate::paste::paste! {
-            // ============================================================
-            // Language Struct Definition
-            // ============================================================
-            /// Language context for HIR processing
+            /// Language Struct Definition
             #[derive(Debug)]
             pub struct [<Lang $suffix>] {}
 
-            // ============================================================
-            // Language Constants
-            // ============================================================
+
+            /// Language Constants
             #[allow(non_upper_case_globals)]
             impl [<Lang $suffix>] {
                 /// Create a new Language instance
@@ -366,21 +349,38 @@ macro_rules! define_lang {
                 )*
             }
 
-            // ============================================================
-            // Language Trait Implementation
-            // ============================================================
+
+            /// Language Trait Implementation
             impl $crate::lang_def::LanguageTrait for [<Lang $suffix>] {
                 /// Parse source code and return a generic parse tree.
                 ///
-                /// First tries the custom parse_impl from LanguageTraitExt.
+                /// First tries the custom parse_impl from LanguageTraitImpl.
                 /// If that returns None, falls back to tree-sitter parsing if available.
                 fn parse(text: impl AsRef<[u8]>) -> Option<Box<dyn $crate::lang_def::ParseTree>> {
-                    <Self as $crate::lang_def::LanguageTraitExt>::parse_impl(text.as_ref())
+                    <Self as $crate::lang_def::LanguageTraitImpl>::parse_impl(text.as_ref())
+                }
+
+                fn collect_symbols<'tcx, T>(
+                    unit: &$crate::context::CompileUnit<'tcx>,
+                    node: &$crate::ir::HirNode<'tcx>,
+                    scopes: &mut T,
+                    namespace: &'tcx $crate::scope::Scope<'tcx>,
+                ) {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_symbols_impl(unit, node, scopes, namespace);
+                }
+
+                fn bind_symbols<'tcx, T>(
+                    unit: &$crate::context::CompileUnit<'tcx>,
+                    node: &$crate::ir::HirNode<'tcx>,
+                    scopes: &mut T,
+                    namespace: &'tcx $crate::scope::Scope<'tcx>,
+                ) {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::bind_symbols_impl(unit, node, scopes, namespace);
                 }
 
                 /// Return the list of supported file extensions for this language
                 fn supported_extensions() -> &'static [&'static str] {
-                    [<Lang $suffix>]::SUPPORTED_EXTENSIONS
+                    <Self as $crate::lang_def::LanguageTraitImpl>::supported_extensions_impl()
                 }
 
                 /// Get the HIR kind for a given token ID
@@ -427,10 +427,8 @@ macro_rules! define_lang {
                 }
             }
 
-            // ============================================================
-            // Visitor Trait Definition
-            // ============================================================
-            /// Trait for visiting HIR nodes with type-specific dispatch
+
+            /// Visitor Trait Definition
             pub trait [<AstVisitor $suffix>]<'a, T> {
                 /// Visit a node, dispatching to the appropriate method based on token ID
                 /// NOTE: scope stack is for lookup convenience, the actual namespace in
@@ -448,7 +446,6 @@ macro_rules! define_lang {
                     match node.kind_id() {
                         $(
                             [<Lang $suffix>]::$const => $crate::paste::paste! {{
-                                tracing::trace!("run: visit_{}", stringify!($const));
                                 self.[<visit_ $const>](unit, node, scopes, namespace, parent)
                             }},
                         )*
@@ -502,9 +499,6 @@ macro_rules! define_lang {
         }
     };
 
-    // ================================================================
-    // Helper Rules
-    // ================================================================
     (@unwrap_block $block:expr) => { $block };
     (@unwrap_block) => { $crate::graph_builder::BlockKind::Undefined };
 }

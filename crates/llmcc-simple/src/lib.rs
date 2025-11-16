@@ -9,7 +9,7 @@ extern crate llmcc_core;
 
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::HirKind;
-use llmcc_core::lang_def::{LanguageTraitExt, ParseNode, ParseTree};
+use llmcc_core::lang_def::{LanguageTraitImpl, ParseNode, ParseTree};
 use std::any::Any;
 
 // ============================================================================
@@ -25,11 +25,6 @@ llmcc_core::define_lang!(
     (field_name, 10, "field_name", HirKind::Identifier),
     (field_type, 11, "field_type", HirKind::Identifier),
 );
-
-// Define supported extensions for the Simple language
-impl LangSimple {
-    pub const SUPPORTED_EXTENSIONS: &'static [&'static str] = &["simple"];
-}
 
 // ============================================================================
 // PART 2: Simple Custom Parse Node Implementation
@@ -161,11 +156,11 @@ mod simple_parser {
 }
 
 // ============================================================================
-// PART 5: Implement Custom Parser via LanguageTraitExt
+// PART 5: Implement Custom Parser via LanguageTraitImpl
 // ============================================================================
 
 /// Extend LangSimple with custom parser implementation.
-impl LanguageTraitExt for LangSimple {
+impl LanguageTraitImpl for LangSimple {
     /// Custom parse implementation for this test language.
     ///
     /// Recognizes simple "fn" declarations and statement lines.
@@ -174,5 +169,25 @@ impl LanguageTraitExt for LangSimple {
         let root = simple_parser::parse(source)?;
 
         Some(Box::new(SimpleParseTree { root }))
+    }
+
+    fn collect_symbols_impl<'tcx, T>(
+        unit: &llmcc_core::CompileUnit<'tcx>,
+        node: &llmcc_core::ir::HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+    ) {
+    }
+
+    fn bind_symbols_impl<'tcx, T>(
+        unit: &llmcc_core::CompileUnit<'tcx>,
+        node: &llmcc_core::ir::HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+    ) {
+    }
+
+    fn supported_extensions_impl() -> &'static [&'static str] {
+        &["simple"]
     }
 }

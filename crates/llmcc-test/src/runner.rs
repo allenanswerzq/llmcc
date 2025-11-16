@@ -7,7 +7,7 @@ use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{
     BlockId, BlockRelation, GraphBuildConfig, ProjectGraph, build_llmcc_graph,
 };
-use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
+use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::reset_symbol_id_counter;
 use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
@@ -768,7 +768,7 @@ where
 {
     let cc = CompileCtxt::from_files::<L>(files)
         .with_context(|| format!("failed to build compile context for {:?}", files))?;
-    build_llmcc_ir::<L>(&cc, IrBuildConfig).map_err(|err| anyhow!(err))?;
+    build_llmcc_ir::<L>(&cc, IrBuildOption).map_err(|err| anyhow!(err))?;
     let globals = cc.create_globals();
     let unit_count = cc.get_files().len();
     let mut collections = Vec::with_capacity(unit_count);

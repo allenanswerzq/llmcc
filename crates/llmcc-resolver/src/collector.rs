@@ -1,11 +1,11 @@
 //! Symbol collection for parallel per-unit symbol table building.
 //! Each unit gets its own arena, collectors borrow it, then symbols are applied globally.
-use llmcc_core::{CompileUnit, HirId, LanguageTrait};
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::{CompileUnit, HirId, LanguageTrait};
 
 use rayon::prelude::*;
 /// Core symbol collector for a single compilation unit
@@ -241,22 +241,44 @@ fn apply_collected_symbols<'tcx, 'unit>(
     final_globals
 }
 
+#[derive(Default)]
+pub struct CollectorOption {
+    pub print_ir: bool,
+}
+
+impl CollectorOption {
+    pub fn with_print_ir(mut self, print_ir: bool) -> Self {
+        self.print_ir = print_ir;
+        self
+    }
+}
+
 /// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
 pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
-) -> &'a Scope<'a>
-{
+    config: CollectorOption,
+) -> &'a Scope<'a> {
     let arena = &cc.arena;
     let interner = &cc.interner;
-    let unit_globals_vec = (0..cc.files.len()).into_par_iter().map(|unit_index| {
-        let unit = cc.compile_unit(unit_index); 
-        let unit_globals = cc.create_unit_globals(HirId(unit_index));
-        let id = unit.file_start_hir_id().unwrap();
-        let node = unit.hir_node(id);
-        let mut collector = CollectorScopes::new(unit_index, arena, interner, unit_globals);
-        L::collect_symbols(unit, node, &mut collector, unit_globals);
-        unit_globals
-    }).collect::<Vec<&'a Scope<'a>>>();
+    let unit_globals_vec = (0..cc.files.len())
+        .into_par_iter()
+        .map(|unit_index| {
+            let unit = cc.compile_unit(unit_index);
+            let unit_globals = cc.create_unit_globals(HirId(unit_index));
+            let id = unit.file_start_hir_id().unwrap();
+            let node = unit.hir_node(id);
+            let mut collector = CollectorScopes::new(unit_index, arena, interner, unit_globals);
+            L::collect_symbols(&unit, &node, &mut collector, unit_globals);
+
+            if config.print_ir {
+                use llmcc_core::printer::print_llmcc_ir;
+                println!("=== IR for unit {} ===", unit_index);
+                let _ = print_llmcc_ir(unit);
+            }
+
+            unit_globals
+        })
+        .collect::<Vec<&'a Scope<'a>>>();
 
     let globals = cc.create_globals();
     for i in 0..unit_globals_vec.len() {

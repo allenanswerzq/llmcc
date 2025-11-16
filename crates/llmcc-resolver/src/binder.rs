@@ -1,9 +1,9 @@
-use llmcc_core::{CompileCtxt, HirId};
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
+use llmcc_core::{CompileCtxt, HirId, LanguageTraitImpl};
 
 use rayon::prelude::*;
 
@@ -172,20 +172,20 @@ impl<'tcx> BinderScopes<'tcx> {
     }
 }
 
+#[derive(Default)]
+pub struct BinderOption;
+
 /// Public API for binding symbols with a custom visitor function.
-pub fn bind_symbols_with<'a, F>(
+pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
-    visitor: F,
-)
-where
-    F: FnOnce(CompileUnit<'a>, HirNode<'a>, &mut BinderScopes<'a>, &'a Scope<'a>) + Sync + Send + Copy,
-{
+    _config: BinderOption,
+) {
     (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
-        let unit = cc.compile_unit(unit_index); 
+        let unit = cc.compile_unit(unit_index);
         let id = unit.file_start_hir_id().unwrap();
         let node = unit.hir_node(id);
         let mut scopes = BinderScopes::new(unit, globals);
-        visitor(unit, node, &mut scopes, globals);
+        L::bind_symbols_impl(&unit, &node, &mut scopes, globals);
     })
 }

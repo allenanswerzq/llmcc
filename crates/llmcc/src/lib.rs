@@ -88,7 +88,7 @@ where
     let files = cc.get_files();
 
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc, IrBuildConfig)?;
+    build_llmcc_ir::<L>(&cc, IrBuildOption)?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let globals = cc.create_globals();

@@ -26,7 +26,7 @@ static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 /// - Scope depth limits
 /// - Performance tuning parameters
 #[derive(Debug, Clone, Copy, Default)]
-pub struct IrBuildConfig;
+pub struct IrBuildOption;
 
 /// IR builder that transforms parse trees into HIR nodes using a per-unit arena.
 struct HirBuilder<'unit, Language> {
@@ -53,7 +53,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         arena: &'unit Arena<'unit>,
         file_path: Option<String>,
         file_bytes: &'unit [u8],
-        _config: IrBuildConfig,
+        _config: IrBuildOption,
     ) -> Self {
         Self {
             arena,
@@ -266,7 +266,7 @@ fn build_llmcc_ir_inner<'arena, L: LanguageTrait>(
     file_bytes: &'arena [u8],
     parse_tree: &'arena dyn ParseTree,
     unit_arena: &'arena Arena<'arena>,
-    config: IrBuildConfig,
+    config: IrBuildOption,
 ) -> Result<HirId, DynError> {
     let root = parse_tree
         .root_node()
@@ -295,7 +295,7 @@ struct BuildResult {
 /// HirIds are allocated via atomic counter to ensure uniqueness.
 pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     cc: &'tcx CompileCtxt<'tcx>,
-    config: IrBuildConfig,
+    config: IrBuildOption,
 ) -> Result<(), DynError> {
     // Collect all build results in parallel
     let results: Vec<Result<BuildResult, DynError>> = (0..cc.files.len())

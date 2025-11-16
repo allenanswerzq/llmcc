@@ -15,7 +15,7 @@ pub struct CollectorVisitor<'tcx> {
 
 impl<'tcx> CollectorVisitor<'tcx> {
     fn new() -> Self {
-        Self { 
+        Self {
             phantom: std::marker::PhantomData,
         }
     }
@@ -105,10 +105,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if node
-            .child_by_field(*unit, LangRust::field_body)
-            .is_none()
-        {
+        if node.child_by_field(*unit, LangRust::field_body).is_none() {
             return;
         }
         self.visit_scoped_named(
@@ -142,36 +139,30 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     }
 }
 
-
-fn collect_symbols<'tcx>(
+pub fn collect_symbols<'tcx>(
     unit: &CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
     scopes: &mut CollectorScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
-    parent: Option<&Symbol>,
 ) {
-    CollectorVisitor::new().visit_node(&unit, &node, scopes, unit_globals, None);
+    CollectorVisitor::new().visit_node(&unit, &node, scopes, namespace, None);
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::token::LangRust;
-    use crate::bind::BinderVisitor;
 
     use llmcc_core::context::CompileCtxt;
-    use llmcc_core::interner::InternPool;
-    use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
-    use llmcc_core::printer::print_llmcc_ir;
-    use llmcc_core::symbol::ScopeId;
-    use llmcc_resolver::{collect_symbols_with, bind_symbols_with};
+    use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
+    use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
 
     fn compile_from_soruces(sources: Vec<Vec<u8>>) {
         let cc = CompileCtxt::from_sources::<LangRust>(&sources);
-        build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
-        
-        let globals = collect_symbols_with::<LangRust>(&cc, CollectorConfig::default());
-        bind_symbols_with::<LangRust>(&cc, globals, BinderConfig::default());
+        build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
+
+        let globals =
+            collect_symbols_with::<LangRust>(&cc, CollectorOption::default().with_print_ir(true));
+        bind_symbols_with::<LangRust>(&cc, globals, BinderOption::default());
     }
 
     #[test]
@@ -205,7 +196,5 @@ const TOP_CONST: i32 = 42;
 static TOP_STATIC: i32 = 7;
 "#;
         compile_from_soruces(vec![source_code.to_vec()]);
-
     }
-
 }
