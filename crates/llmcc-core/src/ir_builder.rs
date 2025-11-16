@@ -69,7 +69,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
     /// consistent ID assignment across all threads.
     fn reserve_hir_id(&self) -> HirId {
         let id = HIR_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
-        HirId(id as usize)
+        HirId(id)
     }
 
     /// Build HIR nodes from a parse tree root.
@@ -308,13 +308,8 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
                 .get_parse_tree(index)
                 .ok_or_else(|| format!("No parse tree for unit {}", index))?;
 
-            let file_start_id = build_llmcc_ir_inner::<L>(
-                file_path,
-                file_bytes,
-                parse_tree.as_ref(),
-                &cc.arena,
-                config,
-            )?;
+            let file_start_id =
+                build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;
 
             Ok(BuildResult {
                 index,

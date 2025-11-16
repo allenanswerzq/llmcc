@@ -1,11 +1,10 @@
 //! Symbol collection for parallel per-unit symbol table building.
-//! Each unit gets its own arena, collectors borrow it, then symbols are applied globally.
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{CompileUnit, HirId, LanguageTrait};
+use llmcc_core::{HirId, LanguageTrait};
 
 use rayon::prelude::*;
 /// Core symbol collector for a single compilation unit
@@ -218,7 +217,6 @@ impl<'a> CollectorScopes<'a> {
 /// - This ensures uniqueness across all compilation units
 /// - When transferring to global arena, we preserve the IDs (don't create new ones)
 /// - The per-unit scope links and relationships are preserved in the transfer
-
 fn apply_collected_symbols<'tcx, 'unit>(
     cc: &'tcx CompileCtxt<'tcx>,
     arena: &'unit Arena<'unit>,
@@ -281,8 +279,7 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         .collect::<Vec<&'a Scope<'a>>>();
 
     let globals = cc.create_globals();
-    for i in 0..unit_globals_vec.len() {
-        let unit_globals = unit_globals_vec[i];
+    for unit_globals in unit_globals_vec {
         apply_collected_symbols(cc, arena, globals, unit_globals);
     }
     globals

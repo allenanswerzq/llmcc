@@ -89,7 +89,8 @@ where
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let symbols_start = Instant::now();
-    let globals = collect_symbols_with::<L>(&cc, CollectorOption::default().with_print_ir(opts.print_ir));
+    let globals =
+        collect_symbols_with::<L>(&cc, CollectorOption::default().with_print_ir(opts.print_ir));
     info!(
         "Symbol collection: {:.2}s",
         symbols_start.elapsed().as_secs_f64()
@@ -98,7 +99,7 @@ where
     let mut pg = ProjectGraph::new(&cc);
 
     let graph_build_start = Instant::now();
-    bind_symbols_with::<L>(&cc, globals, BinderOption::default());
+    bind_symbols_with::<L>(&cc, globals, BinderOption);
 
     let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;
     for unit_graph in &unit_graphs {
@@ -250,8 +251,6 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
         }
     }
 }
-
-
 
 fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
     if opts.design_graph {

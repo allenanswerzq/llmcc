@@ -20,13 +20,14 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn visit_scoped_named(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
         kind: SymKind,
         field_id: u16,
     ) {
@@ -63,18 +64,18 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         let file_path = unit.file_path().expect("no file path found to compile");
 
-        if let Some(crate_name) = parse_crate_name(&file_path)
+        if let Some(crate_name) = parse_crate_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
         {
             scopes.push_scope_with(node, Some(symbol));
         }
 
-        if let Some(module_name) = parse_module_name(&file_path)
+        if let Some(module_name) = parse_module_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
         {
             scopes.push_scope_with(node, Some(symbol));
 
-            if let Some(file_name) = parse_file_name(&file_path)
+            if let Some(file_name) = parse_file_name(file_path)
                 && let Some(sn) = node.as_scope()
             {
                 let ident = unit.alloc_hir_ident(file_name.clone(), symbol);
@@ -145,7 +146,7 @@ pub fn collect_symbols<'tcx>(
     scopes: &mut CollectorScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
 ) {
-    CollectorVisitor::new().visit_node(&unit, &node, scopes, namespace, None);
+    CollectorVisitor::new().visit_node(unit, node, scopes, namespace, None);
 }
 
 #[cfg(test)]
@@ -158,11 +159,11 @@ mod tests {
 
     fn compile_from_soruces(sources: Vec<Vec<u8>>) {
         let cc = CompileCtxt::from_sources::<LangRust>(&sources);
-        build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
+        build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
 
         let globals =
             collect_symbols_with::<LangRust>(&cc, CollectorOption::default().with_print_ir(true));
-        bind_symbols_with::<LangRust>(&cc, globals, BinderOption::default());
+        bind_symbols_with::<LangRust>(&cc, globals, BinderOption);
     }
 
     #[test]

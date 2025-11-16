@@ -2,7 +2,6 @@ use parking_lot::Mutex;
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::marker::PhantomData;
 use std::mem;
-use std::path::Path;
 
 use crate::DynError;
 use crate::block::Arena as BlockArena;
@@ -355,10 +354,10 @@ impl<'tcx> ProjectGraph<'tcx> {
                     return None;
                 }
 
-                if let Some(ids) = ranked_filter {
-                    if !ids.contains(&block_id) {
-                        return None;
-                    }
+                if let Some(ids) = ranked_filter
+                    && !ids.contains(&block_id)
+                {
+                    return None;
                 }
 
                 let unit = self.cc.compile_unit(*unit_index);
@@ -876,12 +875,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     ) {
         // Try to process symbol dependencies for this node
         // If this node is a Scope node, it has a direct reference to its Scope
-        if let Some(scope_node) = node.as_scope() {
-            if let Some(scope) = *scope_node.scope.read() {
-                if let Some(symbol) = scope.symbol() {
-                    self.process_symbol(symbol, edges, visited, unresolved);
-                }
-            }
+        if let Some(scope_node) = node.as_scope()
+            && let Some(scope) = *scope_node.scope.read()
+            && let Some(symbol) = scope.symbol()
+        {
+            self.process_symbol(symbol, edges, visited, unresolved);
         }
 
         // Recurse into children
@@ -949,7 +947,13 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         unresolved.insert(dep_id);
     }
 
-    fn build_block(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId, recursive: bool) {
+    fn build_block(
+        &mut self,
+        unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        parent: BlockId,
+        recursive: bool,
+    ) {
         let id = self.next_id();
         let mut block_kind = Language::block_kind(node.kind_id());
         if block_kind == BlockKind::Func {
@@ -984,15 +988,14 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         };
 
         let block = self.create_block(id, node, block_kind, Some(parent), children);
-        if let Some(scope_node) = node.as_scope() {
-            if let Some(scope) = *scope_node.scope.read() {
-                if let Some(symbol) = scope.symbol() {
-                    // Only set the block ID if it hasn't been set before
-                    // This prevents impl blocks from overwriting struct block IDs
-                    if symbol.block_id().is_none() {
-                        symbol.set_block_id(id);
-                    }
-                }
+        if let Some(scope_node) = node.as_scope()
+            && let Some(scope) = *scope_node.scope.read()
+            && let Some(symbol) = scope.symbol()
+        {
+            // Only set the block ID if it hasn't been set before
+            // This prevents impl blocks from overwriting struct block IDs
+            if symbol.block_id().is_none() {
+                symbol.set_block_id(id);
             }
         }
         self.unit.insert_block(id, block, parent);
@@ -1039,7 +1042,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     }
 }
 
-pub fn build_unit_graphs<L: LanguageTrait>(
+pub fn build_unit_graph<L: LanguageTrait>(
     unit: CompileUnit<'_>,
     unit_index: usize,
     config: GraphBuildConfig,
@@ -1077,7 +1080,7 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
         .into_par_iter()
         .map(|index| {
             let unit = cc.compile_unit(index);
-            build_unit_graphs::<L>(unit, index, GraphBuildConfig::default())
+            build_unit_graph::<L>(unit, index, GraphBuildConfig)
         })
         .collect::<Result<Vec<UnitGraph>, DynError>>()?;
 

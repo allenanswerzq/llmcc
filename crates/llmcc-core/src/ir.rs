@@ -55,10 +55,10 @@ impl<'hir> HirNode<'hir> {
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, id);
         // Only Scope nodes have an associated Scope; get it if available
-        if let HirNode::Scope(scope_node) = self {
-            if let Some(scope) = *scope_node.scope.read() {
-                f.push_str(&format!("   s:{}", scope.format_compact()));
-            }
+        if let HirNode::Scope(scope_node) = self
+            && let Some(scope) = *scope_node.scope.read()
+        {
+            f.push_str(&format!("   s:{}", scope.format_compact()));
         }
         f
     }
@@ -153,10 +153,10 @@ impl<'hir> HirNode<'hir> {
             if child.is_kind(HirKind::Identifier) {
                 return Some(child.id());
             }
-            if child.is_kind(HirKind::Internal) {
-                if let Some(id) = child.find_identifier(unit) {
-                    return Some(id);
-                }
+            if child.is_kind(HirKind::Internal)
+                && let Some(id) = child.find_identifier(unit)
+            {
+                return Some(id);
             }
         }
         None
@@ -415,7 +415,7 @@ pub struct HirFile {
     pub file_path: String,
 }
 
-impl<'hir> HirFile {
+impl HirFile {
     /// Create new file node with path
     pub fn new(base: HirBase, file_path: String) -> Self {
         Self { base, file_path }

@@ -172,18 +172,18 @@ impl LanguageTraitImpl for LangSimple {
     }
 
     fn collect_symbols_impl<'tcx, T>(
-        unit: &llmcc_core::CompileUnit<'tcx>,
-        node: &llmcc_core::ir::HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+        _unit: &llmcc_core::CompileUnit<'tcx>,
+        _node: &llmcc_core::ir::HirNode<'tcx>,
+        _scopes: &mut T,
+        _namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
     ) {
     }
 
     fn bind_symbols_impl<'tcx, T>(
-        unit: &llmcc_core::CompileUnit<'tcx>,
-        node: &llmcc_core::ir::HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+        _unit: &llmcc_core::CompileUnit<'tcx>,
+        _node: &llmcc_core::ir::HirNode<'tcx>,
+        _scopes: &mut T,
+        _namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
     ) {
     }
 

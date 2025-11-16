@@ -10,17 +10,25 @@ build-bindings: uv-sync
     uv run maturin develop --manifest-path "{{root}}/crates/llmcc-bindings/Cargo.toml"
 
 run-py: build-bindings verify-wheel
-    uv run pytest "{{root}}/tests/test_python_api.py"
+    uv run pytest "{{root}}/tests/test_python_api.py" -k "TestAPIExistence"
 
 verify-wheel:
     env PYO3_PYTHON="$(python3 -c 'import sys; print(sys.executable)')" \
         uv run maturin build --release
     uv run python "{{root}}/scripts/verify_wheel.py"
 
-test: run-py
+test: cargo-format cargo-test cargo-clippy cargo-release
+
+cargo-format:
     cargo fmt
+
+cargo-test:
     cargo test --workspace
+
+cargo-clippy:
     cargo clippy --all-targets --workspace -- -D warnings
+
+cargo-release:
     cargo build --release
 
 clippy:

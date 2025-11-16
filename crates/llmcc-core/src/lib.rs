@@ -28,6 +28,6 @@ pub use ir_builder::{IrBuildOption, build_llmcc_ir};
 pub use lang_def::{LanguageTrait, LanguageTraitImpl};
 pub use pagerank::{PageRankConfig, PageRanker, RankedBlock};
 pub use paste;
-pub use printer::{PrintConfig, PrintFormat, print_llmcc_ir, print_llmcc_graph, render_llmcc_ir};
+pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
 pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

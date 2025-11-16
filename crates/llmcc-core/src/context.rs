@@ -28,8 +28,11 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Get the generic parse tree for this compilation unit
-    pub fn parse_tree(&self) -> Option<&Box<dyn ParseTree>> {
-        self.cc.parse_trees.get(self.index).and_then(|t| t.as_ref())
+    pub fn parse_tree(&self) -> Option<&dyn ParseTree> {
+        self.cc
+            .parse_trees
+            .get(self.index)
+            .and_then(|t| t.as_deref())
     }
 
     /// Access the shared string interner.
@@ -632,8 +635,8 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     /// Get the generic parse tree for a specific file
-    pub fn get_parse_tree(&self, index: usize) -> Option<&Box<dyn ParseTree>> {
-        self.parse_trees.get(index).and_then(|t| t.as_ref())
+    pub fn get_parse_tree(&self, index: usize) -> Option<&dyn ParseTree> {
+        self.parse_trees.get(index).and_then(|t| t.as_deref())
     }
 
     /// Get all file paths from the compilation context

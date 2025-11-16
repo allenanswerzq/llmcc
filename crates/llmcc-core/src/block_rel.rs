@@ -47,21 +47,20 @@ impl BlockRelationMap {
         to: BlockId,
     ) -> bool {
         let mut relations = self.relations.write();
-        if let Some(block_relations) = relations.get_mut(&from) {
-            if let Some(targets) = block_relations.get_mut(&relation) {
-                if let Some(pos) = targets.iter().position(|&x| x == to) {
-                    targets.remove(pos);
-                    // Clean up empty vectors
-                    if targets.is_empty() {
-                        block_relations.remove(&relation);
-                        // Clean up empty maps
-                        if block_relations.is_empty() {
-                            relations.remove(&from);
-                        }
-                    }
-                    return true;
+        if let Some(block_relations) = relations.get_mut(&from)
+            && let Some(targets) = block_relations.get_mut(&relation)
+            && let Some(pos) = targets.iter().position(|&x| x == to)
+        {
+            targets.remove(pos);
+            // Clean up empty vectors
+            if targets.is_empty() {
+                block_relations.remove(&relation);
+                // Clean up empty maps
+                if block_relations.is_empty() {
+                    relations.remove(&from);
                 }
             }
+            return true;
         }
         false
     }
@@ -69,14 +68,14 @@ impl BlockRelationMap {
     /// Remove all relationships of a specific type from a block
     pub fn remove_all_relations(&self, from: BlockId, relation: BlockRelation) -> Vec<BlockId> {
         let mut relations = self.relations.write();
-        if let Some(block_relations) = relations.get_mut(&from) {
-            if let Some(targets) = block_relations.remove(&relation) {
-                // Clean up empty maps
-                if block_relations.is_empty() {
-                    relations.remove(&from);
-                }
-                return targets;
+        if let Some(block_relations) = relations.get_mut(&from)
+            && let Some(targets) = block_relations.remove(&relation)
+        {
+            // Clean up empty maps
+            if block_relations.is_empty() {
+                relations.remove(&from);
             }
+            return targets;
         }
         Vec::new()
     }
@@ -181,10 +180,10 @@ impl BlockRelationMap {
         let relations = self.relations.read();
 
         for (&from_block, block_relations) in relations.iter() {
-            if let Some(targets) = block_relations.get(&relation) {
-                if targets.contains(&to) {
-                    result.push(from_block);
-                }
+            if let Some(targets) = block_relations.get(&relation)
+                && targets.contains(&to)
+            {
+                result.push(from_block);
             }
         }
         result

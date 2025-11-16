@@ -260,7 +260,6 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
 /// Scopes trait defining language-specific AST handling.
 pub trait LanguageTrait {
     /// Parse source code and return a generic parse tree.
-
     fn parse(_text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>>;
 
     /// Map a token kind ID to its corresponding HIR kind.

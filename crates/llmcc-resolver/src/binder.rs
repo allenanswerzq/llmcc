@@ -3,7 +3,7 @@ use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
-use llmcc_core::{CompileCtxt, HirId, LanguageTraitImpl};
+use llmcc_core::{CompileCtxt, LanguageTraitImpl};
 
 use rayon::prelude::*;
 

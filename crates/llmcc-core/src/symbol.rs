@@ -9,13 +9,15 @@
 //! Names are interned for fast equality comparisons.
 
 use parking_lot::RwLock;
-use std::collections::HashMap;
 use std::fmt;
 
 use crate::graph_builder::BlockId;
-use crate::interner::{InternPool, InternedStr};
-use crate::ir::{Arena, HirId, HirIdent};
+use crate::interner::InternedStr;
+use crate::ir::HirId;
 use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[cfg(test)]
+use crate::interner::InternPool;
 
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
@@ -227,7 +229,7 @@ impl Symbol {
     /// ```
     pub fn new(owner: HirId, name_key: InternedStr) -> Self {
         let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
-        let sym_id = SymId(id as usize);
+        let sym_id = SymId(id);
 
         Self {
             id: sym_id,
@@ -446,7 +448,7 @@ mod tests {
     use super::*;
 
     fn create_test_hir_id(index: u32) -> HirId {
-        HirId(index)
+        HirId(index as usize)
     }
 
     fn create_test_intern_pool() -> InternPool {

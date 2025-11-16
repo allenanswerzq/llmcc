@@ -1,6 +1,7 @@
 #![allow(clippy::useless_conversion)]
+#![allow(unsafe_op_in_unsafe_fn)]
 use llmcc::{LlmccOptions, run_main};
-use llmcc_python::LangPython;
+// use llmcc_python::LangPython;  // TODO: will be added back in the future
 use llmcc_rust::LangRust;
 use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
 
@@ -70,10 +71,10 @@ fn run_llmcc(
 
     let result = match lang {
         "rust" => run_main::<LangRust>(&opts),
-        "python" => run_main::<LangPython>(&opts),
+        // "python" => run_main::<LangPython>(&opts),  // TODO: will be added back in the future
         other => {
             return Err(PyValueError::new_err(format!(
-                "Unknown language: {}. Use 'rust' or 'python'",
+                "Unknown language: {}. Use 'rust'",
                 other
             )));
         }

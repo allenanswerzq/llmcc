@@ -126,7 +126,6 @@ macro_rules! declare_arena {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[derive(Debug, PartialEq)]
     pub struct Foo(i32);
@@ -145,10 +144,10 @@ mod tests {
         let arena = Arena::default();
 
         let f = arena.alloc(Foo(42));
-        let b = arena.alloc(Baz(3.14));
+        let b = arena.alloc(Baz(std::f64::consts::PI));
 
         assert_eq!(f, &Foo(42));
-        assert_eq!(b, &Baz(3.14));
+        assert_eq!(b, &Baz(std::f64::consts::PI));
     }
 
     #[test]

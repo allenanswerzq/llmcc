@@ -5,8 +5,7 @@ use std::path::Path;
 use anyhow::{Context, Result, anyhow};
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{
-    BlockId, BlockRelation, GraphBuildConfig, GraphBuildOption, ProjectGraph, build_unit_graphs,
-    build_llmcc_graph,
+    BlockId, BlockRelation, GraphBuildOption, ProjectGraph, build_llmcc_graph,
 };
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
@@ -363,7 +362,7 @@ fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
     }
 
     let mut rows = entries.to_vec();
-    rows.sort_by(|a, b| compare_block_snapshots(a, b));
+    rows.sort_by(compare_block_snapshots);
 
     let label_width = rows.iter().map(|row| row.label.len()).max().unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
@@ -541,15 +540,15 @@ fn normalize_block_graph(text: &str) -> String {
 }
 
 fn is_empty_relation(line: &str) -> bool {
-    if let Some((_, rhs)) = line.split_once("->") {
-        if rhs.trim() == "[]" {
-            return true;
-        }
+    if let Some((_, rhs)) = line.split_once("->")
+        && rhs.trim() == "[]"
+    {
+        return true;
     }
-    if let Some((_, rhs)) = line.split_once("<-") {
-        if rhs.trim() == "[]" {
-            return true;
-        }
+    if let Some((_, rhs)) = line.split_once("<-")
+        && rhs.trim() == "[]"
+    {
+        return true;
     }
     false
 }
@@ -601,11 +600,11 @@ fn normalize_dot_paths(dot: &str) -> String {
             if let Some(start) = line.find("full_path=") {
                 let prefix = &line[..start];
                 let rest = &line[start..];
-                if let Some((before_path, after_path)) = rest.split_once('"') {
-                    if let Some((path, suffix)) = after_path.split_once('"') {
-                        let normalized = normalize_graph_path(path);
-                        return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
-                    }
+                if let Some((before_path, after_path)) = rest.split_once('"')
+                    && let Some((path, suffix)) = after_path.split_once('"')
+                {
+                    let normalized = normalize_graph_path(path);
+                    return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
                 }
             }
             line.to_string()
@@ -615,12 +614,11 @@ fn normalize_dot_paths(dot: &str) -> String {
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
-    if let Some(stripped) = token.strip_prefix('u') {
-        if let Some((unit_str, id_str)) = stripped.split_once(':') {
-            if let (Ok(unit), Ok(id)) = (unit_str.parse::<usize>(), id_str.parse::<u32>()) {
-                return (unit, id);
-            }
-        }
+    if let Some(stripped) = token.strip_prefix('u')
+        && let Some((unit_str, id_str)) = stripped.split_once(':')
+        && let (Ok(unit), Ok(id)) = (unit_str.parse::<usize>(), id_str.parse::<u32>())
+    {
+        return (unit, id);
     }
 
     (usize::MAX, u32::MAX)
@@ -772,7 +770,7 @@ where
     let globals = collect_symbols_with::<L>(&cc, CollectorOption::default().with_print_ir(true));
 
     // Bind symbols using new unified API
-    bind_symbols_with::<L>(&cc, globals, BinderOption::default());
+    bind_symbols_with::<L>(&cc, globals, BinderOption);
 
     let mut project_graph = if build_graph || build_block_reports || build_block_graph {
         Some(ProjectGraph::new(&cc))
@@ -893,7 +891,7 @@ fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
     let mut rows = Vec::with_capacity(symbol_map.len());
     for (_sym_id, symbol) in symbol_map.iter() {
         let fqn_str = interner
-            .resolve_owned(symbol.fqn.read().clone())
+            .resolve_owned(*symbol.fqn.read())
             .unwrap_or_else(|| "?".to_string());
         let name_str = interner
             .resolve_owned(symbol.name)

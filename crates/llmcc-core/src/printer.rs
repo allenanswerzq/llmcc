@@ -7,7 +7,7 @@ use std::fmt;
 /// Output format for rendering
 ///
 /// Controls how the tree structure is rendered to string output.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum PrintFormat {
     /// Standard tree format with indentation and nested structure
     /// ```text
@@ -16,6 +16,7 @@ pub enum PrintFormat {
     ///   (child2)
     /// )
     /// ```
+    #[default]
     Tree,
 
     /// Compact format with minimal whitespace
@@ -31,12 +32,6 @@ pub enum PrintFormat {
     /// child2
     /// ```
     Flat,
-}
-
-impl Default for PrintFormat {
-    fn default() -> Self {
-        PrintFormat::Tree
-    }
 }
 
 impl fmt::Display for PrintFormat {
@@ -353,7 +348,7 @@ pub fn render_llmcc_ir_with_config(
     // Build AST render tree from parse tree if available
     let ast_render = if let Some(parse_tree) = unit.parse_tree() {
         if let Some(root_node) = parse_tree.root_node() {
-            build_ast_render_from_node(&*root_node, unit, config, 0)?
+            build_ast_render(&*root_node, unit, config, 0)?
         } else {
             RenderNode::new(
                 "No AST root node found".to_string(),
@@ -431,17 +426,17 @@ pub fn print_llmcc_graph_with_config(
 // ============================================================================
 
 /// Build render tree for AST node (from parse tree)
-fn build_ast_render_from_node(
+fn build_ast_render(
     node: &(dyn crate::lang_def::ParseNode + '_),
     unit: CompileUnit<'_>,
     config: &PrintConfig,
     depth: usize,
 ) -> RenderResult<RenderNode> {
-    build_ast_render_from_node_with_parent(node, None, 0, unit, config, depth)
+    build_ast_render_with(node, None, 0, unit, config, depth)
 }
 
 /// Build render tree for AST node with parent context for field names
-fn build_ast_render_from_node_with_parent(
+fn build_ast_render_with(
     node: &(dyn crate::lang_def::ParseNode + '_),
     parent: Option<&(dyn crate::lang_def::ParseNode + '_)>,
     child_index: usize,
@@ -473,17 +468,11 @@ fn build_ast_render_from_node_with_parent(
     // Collect children
     let mut children = Vec::new();
     for i in 0..node.child_count() {
-        if let Some(child) = node.child(i) {
-            if let Ok(render) = build_ast_render_from_node_with_parent(
-                &*child,
-                Some(node),
-                i,
-                unit,
-                config,
-                depth + 1,
-            ) {
-                children.push(render);
-            }
+        if let Some(child) = node.child(i)
+            && let Ok(render) =
+                build_ast_render_with(&*child, Some(node), i, unit, config, depth + 1)
+        {
+            children.push(render);
         }
     }
 
@@ -618,10 +607,10 @@ fn render_node_tree(
     line.push_str(&node.label);
 
     // Add node ID if configured
-    if config.include_node_ids {
-        if let Some(id) = &node.node_id {
-            line.push_str(&format!(" #{}", id));
-        }
+    if config.include_node_ids
+        && let Some(id) = &node.node_id
+    {
+        line.push_str(&format!(" #{}", id));
     }
 
     // Add line information
@@ -664,10 +653,10 @@ fn render_node_compact(
 ) -> RenderResult<()> {
     let mut line = format!("({})", node.label);
 
-    if config.include_line_info {
-        if let Some(info) = &node.line_info {
-            line.push_str(&format!(" {}", info));
-        }
+    if config.include_line_info
+        && let Some(info) = &node.line_info
+    {
+        line.push_str(&format!(" {}", info));
     }
 
     for child in &node.children {
@@ -690,10 +679,10 @@ fn render_node_flat(
 ) -> RenderResult<()> {
     let mut line = node.label.clone();
 
-    if config.include_line_info {
-        if let Some(info) = &node.line_info {
-            line.push_str(&format!(" {}", info));
-        }
+    if config.include_line_info
+        && let Some(info) = &node.line_info
+    {
+        line.push_str(&format!(" {}", info));
     }
 
     out.push(line);
@@ -708,38 +697,6 @@ fn render_node_flat(
 // ============================================================================
 // Utility Functions
 // ============================================================================
-
-/// Safe string truncation respecting UTF-8 boundaries
-fn safe_truncate(s: &mut String, max_len: usize) {
-    if s.len() > max_len {
-        let mut new_len = max_len;
-        while !s.is_char_boundary(new_len) {
-            new_len = new_len.saturating_sub(1);
-            if new_len == 0 {
-                break;
-            }
-        }
-        s.truncate(new_len);
-    }
-}
-
-/// Format snippet with padding and alignment
-fn pad_snippet(line: &str, snippet: &str, config: &PrintConfig) -> String {
-    let mut snippet = snippet.trim().replace('\n', " ");
-
-    // Truncate if too long
-    if snippet.len() > config.snippet_max_length {
-        safe_truncate(&mut snippet, config.snippet_max_length);
-        snippet.push_str("...");
-    }
-
-    if snippet.is_empty() {
-        return String::new();
-    }
-
-    let padding = config.snippet_col_width.saturating_sub(line.len());
-    format!("{}|{}|", " ".repeat(padding), snippet)
-}
 
 /// Extract and format source code snippet
 fn snippet_from_ctx(
@@ -840,24 +797,6 @@ mod tests {
 
         let good_config = PrintConfig::default();
         assert!(good_config.validate().is_ok());
-    }
-
-    #[test]
-    fn test_safe_truncate() {
-        let mut s = "hello world".to_string();
-        safe_truncate(&mut s, 5);
-        assert_eq!(s, "hello");
-
-        // Test with emoji - truncating at position 3 should preserve some valid chars
-        let mut s = "🎉 emoji test".to_string();
-        safe_truncate(&mut s, 3);
-        // Result should be valid UTF-8 and either truncated or empty (emoji takes 4 bytes)
-        assert!(s.is_empty() || s.len() > 0); // Always valid
-
-        // Test truncating multi-byte chars safely
-        let mut s = "café".to_string();
-        safe_truncate(&mut s, 3);
-        assert!(s.len() > 0 || s.is_empty()); // Either some chars or empty, but valid UTF-8
     }
 
     #[test]

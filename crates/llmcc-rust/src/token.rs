@@ -4,6 +4,7 @@ use llmcc_core::ir::HirKind;
 use llmcc_core::lang_def::{ParseTree, TreeSitterParseTree};
 use llmcc_resolver::{BinderScopes, CollectorScopes};
 
+#[allow(clippy::single_component_path_imports)]
 use tree_sitter_rust;
 
 // Include the auto-generated language definition from build script
