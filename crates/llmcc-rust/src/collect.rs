@@ -33,18 +33,19 @@ impl<'tcx> DeclVisitor<'tcx> {
         if let Some(sn) = node.as_scope() {
             if let Some(id) = node.find_identifier_for_field(self.unit, field_id) {
                 let ident = self.unit.hir_node(id).as_ident().unwrap();
-                let symbol = scopes.lookup_or_insert(&ident.name, node, kind);
-                ident.set_symbol(symbol.unwrap());
-                sn.set_ident(ident);
+                if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
+                    ident.set_symbol(sym);
+                    sn.set_ident(ident);
 
-                let scope = self.unit.alloc_hir_scope(symbol.unwrap());
-                sn.ident().symbol().set_scope(scope.id());
-                sn.ident().symbol().add_defining(node.id());
-                sn.set_scope(scope);
+                    let scope = self.unit.alloc_hir_scope(sym);
+                    sym.set_scope(scope.id());
+                    sym.add_defining(node.id());
+                    sn.set_scope(scope);
 
-                scopes.push_scope(sn.scope());
-                self.visit_children(node, scopes, scope, symbol);
-                scopes.pop_scope();
+                    scopes.push_scope(scope);
+                    self.visit_children(node, scopes, scope, Some(sym));
+                    scopes.pop_scope();
+                }
             }
         }
     }
@@ -60,9 +61,10 @@ impl<'tcx> DeclVisitor<'tcx> {
     ) {
         if let Some(id) = node.find_identifier_for_field(self.unit, field_id) {
             let ident = self.unit.hir_node(id).as_ident().unwrap();
-            let symbol = scopes.lookup_or_insert(&ident.name, node, kind);
-            ident.set_symbol(symbol.unwrap());
-            symbol.unwrap().add_defining(node.id());
+            if let Some(symbol) = scopes.lookup_or_insert(&ident.name, node, kind) {
+                ident.set_symbol(symbol);
+                symbol.add_defining(node.id());
+            }
         }
     }
 
@@ -76,9 +78,10 @@ impl<'tcx> DeclVisitor<'tcx> {
     ) {
         if let Some(id) = node.find_identifier(self.unit) {
             let ident = self.unit.hir_node(id).as_ident().unwrap();
-            let symbol = scopes.lookup_or_insert(&ident.name, node, kind);
-            ident.set_symbol(symbol.unwrap());
-            symbol.unwrap().add_defining(node.id());
+            if let Some(symbol) = scopes.lookup_or_insert(&ident.name, node, kind) {
+                ident.set_symbol(symbol);
+                symbol.add_defining(node.id());
+            }
         }
     }
 
@@ -178,6 +181,16 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Module, LangRust::field_name);
     }
 
+    // fn visit_function_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Function, LangRust::field_name);
+    // }
+
     fn visit_function_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -188,15 +201,35 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Function, LangRust::field_name);
     }
 
-    fn visit_struct_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Struct, LangRust::field_name);
-    }
+    // fn visit_struct_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Struct, LangRust::field_name);
+    // }
+
+    // fn visit_struct_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Struct, LangRust::field_name);
+    // }
+
+    // fn visit_enum_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Enum, LangRust::field_name);
+    // }
 
     fn visit_enum_item(
         &mut self,
@@ -208,6 +241,16 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Enum, LangRust::field_name);
     }
 
+    // fn visit_trait_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Trait, LangRust::field_name);
+    // }
+
     fn visit_trait_item(
         &mut self,
         node: &HirNode<'tcx>,
@@ -218,66 +261,86 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Trait, LangRust::field_name);
     }
 
-    fn visit_impl_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        // self.visit_scoped_item_using_existing_symbol(node, scopes, namespace, parent, LangRust::field_type);
-    }
+    // fn visit_impl_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     // self.visit_scoped_item_using_existing_symbol(node, scopes, namespace, parent, LangRust::field_type);
+    // }
 
-    fn visit_type_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        self.visit_unscoped_item(node, scopes, SymKind::Const);
-    }
+    // fn visit_type_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_unscoped_item(node, scopes, SymKind::Const);
+    // }
 
-    fn visit_const_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        self.visit_unscoped_named_item(node, scopes, SymKind::Const, LangRust::field_name);
-    }
+    // fn visit_type_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_unscoped_item(node, scopes, SymKind::Const);
+    // }
 
-    fn visit_static_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        self.visit_unscoped_named_item(node, scopes, SymKind::Static, LangRust::field_name);
-    }
+    // fn visit_const_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_unscoped_named_item(node, scopes, SymKind::Const, LangRust::field_name);
+    // }
 
-    fn visit_field_declaration(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        if let Some(id) = node.find_identifier_for_field(self.unit, LangRust::field_name) {
-            let ident = self.unit.hir_node(id).as_ident().unwrap();
-            let symbol = scopes.lookup_or_insert(&ident.name, node, SymKind::Field);
-            ident.set_symbol(symbol.unwrap());
-            symbol.unwrap().add_defining(node.id());
+    // fn visit_const_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_unscoped_named_item(node, scopes, SymKind::Const, LangRust::field_name);
+    // }
 
-            if let Some(parent_sym) = parent {
-                if let Some(scope_id) = parent_sym.scope() {
-                    symbol.unwrap().set_parent_scope(scope_id);
-                }
-            }
-        }
-    }
+    // fn visit_static_item(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     self.visit_unscoped_named_item(node, scopes, SymKind::Static, LangRust::field_name);
+    // }
+
+    // fn visit_field_declaration(
+    //     &mut self,
+    //     node: &HirNode<'tcx>,
+    //     scopes: &mut CollectorScopes<'tcx>,
+    //     namespace: &'tcx Scope<'tcx>,
+    //     parent: Option<&Symbol>,
+    // ) {
+    //     if let Some(id) = node.find_identifier_for_field(self.unit, LangRust::field_name) {
+    //         let ident = self.unit.hir_node(id).as_ident().unwrap();
+    //         let symbol = scopes.lookup_or_insert(&ident.name, node, SymKind::Field);
+    //         ident.set_symbol(symbol.unwrap());
+    //         symbol.unwrap().add_defining(node.id());
+
+    //         if let Some(parent_sym) = parent {
+    //             if let Some(scope_id) = parent_sym.scope() {
+    //                 symbol.unwrap().set_parent_scope(scope_id);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 #[cfg(test)]
