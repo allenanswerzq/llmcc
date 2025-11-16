@@ -142,11 +142,34 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
 mod tests {
     use super::*;
     use crate::token::LangRust;
+    use crate::bind::BinderVisitor;
     use llmcc_core::context::CompileCtxt;
-    use llmcc_core::interner::InternPool;
     use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
     use llmcc_core::printer::print_llmcc_ir;
-    use llmcc_core::symbol::ScopeId;
+    use llmcc_resolver::{BinderScopes, CollectorScopes};
+
+    fn compile_from_sources(sources: Vec<Vec<u8>>) {
+        let cc = CompileCtxt::from_sources::<LangRust>(&sources);
+        let config = IrBuildConfig::default();
+        build_llmcc_ir::<LangRust>(&cc, config).unwrap();
+
+        let globals = cc.create_globals();
+        let unit_count = cc.get_files().len();
+
+        for index in 0..unit_count {
+            let unit = cc.compile_unit(index);
+            // print_llmcc_ir(unit);
+            let root_id = unit.file_start_hir_id().unwrap();
+            let root = unit.hir_node(root_id);
+
+            let mut collector =
+                CollectorScopes::new(index, &cc.arena, &cc.interner, globals);
+            DeclVisitor::new(unit).visit_node(root, &mut collector, globals, None);
+
+            let mut binder = BinderScopes::new(unit, globals);
+            BinderVisitor::new(unit).visit_node(root, &mut binder, globals, None);
+        }
+    }
 
     #[test]
     fn test_decl_visitor() {
@@ -178,23 +201,8 @@ type Alias = Foo;
 const TOP_CONST: i32 = 42;
 static TOP_STATIC: i32 = 7;
 "#;
-        let sources = vec![source_code.to_vec()];
+        compile_from_sources(vec![source_code.to_vec()]);
 
-        let cc = CompileCtxt::from_sources::<LangRust>(&sources);
-        let config = IrBuildConfig::default();
-        build_llmcc_ir::<LangRust>(&cc, config).unwrap();
-
-        let unit = cc.compile_unit(0);
-        print_llmcc_ir(unit);
-
-        let file_start = unit.file_start_hir_id().unwrap();
-        let node = unit.hir_node(file_start);
-
-        let globlas = cc.create_globals();
-        let mut scopes = CollectorScopes::new(0, &cc.arena, &cc.interner, globlas);
-        let mut v = DeclVisitor::new(unit);
-        v.visit_node(node, &mut scopes, globlas, None);
-
-        print!("{:#?}", scopes);
     }
+
 }

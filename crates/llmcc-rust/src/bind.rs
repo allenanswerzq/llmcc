@@ -15,7 +15,7 @@ pub struct BinderVisitor<'tcx> {
 }
 
 impl<'tcx> BinderVisitor<'tcx> {
-    fn new(unit: CompileUnit<'tcx>) -> Self {
+    pub fn new(unit: CompileUnit<'tcx>) -> Self {
         Self { unit }
     }
 }
@@ -86,11 +86,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
 
         let sn = node.as_scope().unwrap();
-        if Some(indnt) = sn.opt_ident() {
-            scopes.push_scope_recursive(sn.scope().id());
-        } else {
-            scopes.push_scope(sn.scope().id());
-        }
+        scopes.push_scope_recursive(sn.scope().id());
     }
 
     fn visit_function_item(
@@ -107,7 +103,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         // Get the scope node
         let sn = node.as_scope().unwrap();
-
+        println!("Visiting function: {:?}", sn.opt_ident());
         // Find or create symbol for the return type
         let ty = node
             .find_identifier_for_field(self.unit, LangRust::field_return_type)
@@ -124,7 +120,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 scopes
                     .lookup_or_insert_global("void_fn", node, SymKind::Type)
                     .expect("void_fn type should exist")
-            });
+            })
+            .id();
 
         // Set the return type for the function symbol
         if let Some(ident) = sn.opt_ident() {
@@ -148,44 +145,39 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let sn = node.as_scope().unwrap();
+        // let sn = node.as_scope().unwrap();
 
-        let depth = scopes.scope_depth();
-        scopes.push_scope_recursive(sn.scope().id());
-        self.visit_children(node, scopes, namespace, parent);
-        scopes.pop_until(depth);
+        // let depth = scopes.scope_depth();
+        // scopes.push_scope_recursive(sn.scope().id());
+        // self.visit_children(node, scopes, namespace, parent);
+        // scopes.pop_until(depth);
 
-        // Find the struct's identifier
-        if let Some(ident) = sn.opt_ident() {
-            // Look for ordered_field_declaration_list and bind field types
-            for child in node.children() {
-                let child_node = self.unit.hir_node(*child);
+        // // Find the struct's identifier
+        // if let Some(ident) = sn.opt_ident() {
+        //     // Look for ordered_field_declaration_list and bind field types
+        //     for child in node.children() {
+        //         let child_node = self.unit.hir_node(*child);
 
-                // Process each field's type
-                if let Some(field_type) = child_node.child_by_field(self.unit, LangRust::field_type)
-                {
-                    self.visit_node(&field_type, scopes, namespace, parent);
+        //         // Process each field's type
+        //         if let Some(field_type) = child_node.child_by_field(self.unit, LangRust::field_type)
+        //         {
+        //             self.visit_node(field_type, scopes, namespace, parent);
 
-                    // Add the field type as a nested type of the struct
-                    if let Some(field_type_id) = field_type.find_identifier(self.unit) {
-                        let field_type_node = self.unit.hir_node(field_type_id);
-                        if let Some(field_sym) = scopes.lookup_or_insert(
-                            &field_type_node.as_ident().unwrap().name,
-                            &field_type_node,
-                            SymKind::Type,
-                        ) {
-                            if let Some(struct_sym) = scopes.lookup_or_insert(
-                                &id_node.as_ident().unwrap().name,
-                                node,
-                                SymKind::Type,
-                            ) {
-                                struct_sym.add_nested_type(field_sym);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        //             // Add the field type as a nested type of the struct
+        //             if let Some(field_type_id) = field_type.find_identifier(self.unit) {
+        //                 let field_type_node = self.unit.hir_node(field_type_id);
+        //                 if let Some(field_sym) = scopes.lookup_or_insert(
+        //                     &field_type_node.as_ident().unwrap().name,
+        //                     &field_type_node,
+        //                     SymKind::Type,
+        //                 ) {
+        //                     // TODO: add relationship between struct and field types when supported
+        //                     drop(field_sym);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
     }
 }
 

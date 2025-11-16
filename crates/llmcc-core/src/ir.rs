@@ -7,6 +7,7 @@ use crate::scope::Scope;
 use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
+// TODO: efficient arena with iter support to repplace Vec allocations
 declare_arena!([
     symbol: Symbol,
 ] @vec [
@@ -241,7 +242,7 @@ impl<'hir> HirNode<'hir> {
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
 /// Unique identifier for a HIR node within a compilation unit. IDs are stable,
 /// sequential, and used for parent-child relationships and symbol references.
-pub struct HirId(pub u32);
+pub struct HirId(pub usize);
 
 impl std::fmt::Display for HirId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

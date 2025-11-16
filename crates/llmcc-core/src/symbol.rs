@@ -15,13 +15,13 @@ use std::fmt;
 use crate::graph_builder::BlockId;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirIdent};
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
-static NEXT_SYMBOL_ID: AtomicU32 = AtomicU32::new(1);
+static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(1);
 
 /// Resets the global symbol ID counter to 1.
 /// Use this only during testing or when resetting the entire symbol table.
@@ -34,7 +34,7 @@ pub fn reset_symbol_id_counter() {
 /// Incremented on each new scope creation to ensure uniqueness.
 /// Global atomic counter for assigning unique scope IDs.
 /// Incremented on each new scope creation to ensure uniqueness.
-pub(crate) static NEXT_SCOPE_ID: AtomicU32 = AtomicU32::new(1);
+pub(crate) static NEXT_SCOPE_ID: AtomicUsize = AtomicUsize::new(1);
 
 /// Resets the global scope ID counter to 1.
 /// Use this only during testing or when resetting the entire scope table.
@@ -46,7 +46,7 @@ pub fn reset_scope_id_counter() {
 /// Unique identifier for symbols within a compilation unit.
 /// Symbols are allocated sequentially, starting from ID 1.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
-pub struct SymId(pub u32);
+pub struct SymId(pub usize);
 
 impl std::fmt::Display for SymId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -57,7 +57,7 @@ impl std::fmt::Display for SymId {
 /// Unique identifier for scopes within a compilation unit.
 /// Scopes are allocated sequentially, starting from ID 1.
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
-pub struct ScopeId(pub u32);
+pub struct ScopeId(pub usize);
 
 impl std::fmt::Display for ScopeId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -227,7 +227,7 @@ impl Symbol {
     /// ```
     pub fn new(owner: HirId, name_key: InternedStr) -> Self {
         let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
-        let sym_id = SymId(id);
+        let sym_id = SymId(id as usize);
 
         Self {
             id: sym_id,

@@ -3,7 +3,7 @@
 //! Uses per-unit arenas for parallel building, then merges results into global context.
 //! This avoids locks during parallel builds and ensures deterministic ID allocation.
 use std::marker::PhantomData;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use rayon::prelude::*;
 
@@ -15,7 +15,7 @@ use crate::ir::{
 use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
 
 /// Global atomic counter for HIR ID allocation (used during parallel builds).
-static HIR_ID_COUNTER: AtomicU32 = AtomicU32::new(0);
+static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 /// Configuration for IR building behavior.
 ///
@@ -69,7 +69,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
     /// consistent ID assignment across all threads.
     fn reserve_hir_id(&self) -> HirId {
         let id = HIR_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
-        HirId(id)
+        HirId(id as usize)
     }
 
     /// Build HIR nodes from a parse tree root.

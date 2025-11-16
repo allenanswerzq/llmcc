@@ -81,7 +81,7 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn push_scope_recursive(&mut self, id: ScopeId) {
         // NOTE: this is the biggest difference from CollectorScopes, we would expect
         // the scope must already exist in the CompileUnit
-        let scope = self.unit.get_scope(idl);
+        let scope = self.unit.get_scope(id);
         self.scopes.push_recursive(scope);
     }
 
@@ -172,14 +172,14 @@ impl<'tcx> BinderScopes<'tcx> {
 
 /// Public API for binding symbols with a custom visitor function.
 pub fn bind_symbols_with<'a, F>(
-    cc: CompileUnit<'a>,
+    unit: CompileUnit<'a>,
     globals: &'a Scope<'a>,
     visitor: F,
 ) -> &'a Scope<'a>
 where
     F: FnOnce(&mut BinderScopes<'a>),
 {
-    let mut collector = BinderScopes::new(cc, globals);
+    let mut collector = BinderScopes::new(unit, globals);
     visitor(&mut collector);
     collector.globals()
 }

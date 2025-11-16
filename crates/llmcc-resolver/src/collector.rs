@@ -195,22 +195,6 @@ impl<'a> CollectorScopes<'a> {
     }
 }
 
-/// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
-pub fn collect_symbols_with<'a, F>(
-    unit_index: usize,
-    arena: &'a Arena<'a>,
-    interner: &'a InternPool,
-    globals: &'a Scope<'a>,
-    visitor: F,
-) -> &'a Scope<'a>
-where
-    F: FnOnce(&mut CollectorScopes<'a>),
-{
-    let mut collector = CollectorScopes::new(unit_index, arena, interner, globals);
-    visitor(&mut collector);
-    collector.globals()
-}
-
 /// Apply symbols collected from a single compilation unit to the global context.
 ///
 /// NOTE: even arena is the per-file, but the sym_id and scope_id is actually
@@ -233,17 +217,15 @@ where
 /// - When transferring to global arena, we preserve the IDs (don't create new ones)
 /// - The per-unit scope links and relationships are preserved in the transfer
 
-pub fn apply_collected_symbols<'tcx, 'unit>(
+fn apply_collected_symbols<'tcx, 'unit>(
     cc: &'tcx CompileCtxt<'tcx>,
     arena: &'unit Arena<'unit>,
-    globals: &'unit Scope<'unit>,
+    final_globals: &'tcx Scope<'tcx>,
+    unit_globals: &'unit Scope<'unit>,
 ) -> &'tcx Scope<'tcx> {
-    // Create or get the global scope in the compilation context
-    let final_globals = cc.create_globals();
-
     // Transfer all scopes from per-unit arena to global context
     for scope in arena.iter_scope() {
-        if scope.id() == globals.id() {
+        if scope.id() == unit_globals.id() {
             // For the global scope: merge into the final global scope
             // This combines all global-level symbols into one scope
             cc.merge_two_scopes(final_globals, scope);

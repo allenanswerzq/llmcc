@@ -495,7 +495,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Sentinel owner id reserved for the global scope so that file-level scopes
     /// (whose HIR id often defaults to 0) do not reuse the same `Scope` instance.
-    pub const GLOBAL_SCOPE_OWNER: HirId = HirId(u32::MAX);
+pub const GLOBAL_SCOPE_OWNER: HirId = HirId(usize::MAX);
 
     /// Create a context that references this CompileCtxt for a specific file index
     pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
@@ -545,7 +545,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         // Allocate new scope
-        let scope_id = ScopeId(self.scope_map.read().len() as u32);
+        let scope_id = ScopeId(self.scope_map.read().len());
         let scope = self.arena.alloc(Scope::new(owner));
 
         // Update both scope_map and owner_to_scope_id mapping
@@ -589,7 +589,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// this arena.
     pub fn alloc_scope_with<'src>(&'tcx self, existing: &Scope<'src>) -> &'tcx Scope<'tcx> {
         // Allocate new scope from existing
-        let scope_id = ScopeId(self.scope_map.read().len() as u32);
+        let scope_id = ScopeId(self.scope_map.read().len());
         let scope = Scope::new_from(existing, self.arena());
         let scope = self.arena.alloc(scope);
 
@@ -604,7 +604,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn reserve_hir_id(&self) -> HirId {
         let id = self.hir_next_id.fetch_add(1, Ordering::Relaxed);
-        HirId(id)
+        HirId(id as usize)
     }
 
     pub fn reserve_block_id(&self) -> BlockId {
@@ -613,7 +613,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn current_hir_id(&self) -> HirId {
-        HirId(self.hir_next_id.load(Ordering::Relaxed))
+        HirId(self.hir_next_id.load(Ordering::Relaxed) as usize)
     }
 
     pub fn set_file_start(&self, index: usize, start: HirId) {

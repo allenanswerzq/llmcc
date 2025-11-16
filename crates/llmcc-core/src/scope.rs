@@ -51,7 +51,7 @@ impl<'tcx> Scope<'tcx> {
     /// Creates a new scope owned by the given HIR node and associated with a symbol.
     pub fn new_with(owner: HirId, symbol: Option<&'tcx Symbol>) -> Self {
         Self {
-            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::SeqCst)),
+            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::SeqCst) as usize),
             symbols: RwLock::new(HashMap::new()),
             owner,
             symbol: RwLock::new(symbol),

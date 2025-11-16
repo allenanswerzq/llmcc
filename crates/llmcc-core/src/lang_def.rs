@@ -429,7 +429,7 @@ macro_rules! define_lang {
                     match node.kind_id() {
                         $(
                             [<Lang $suffix>]::$const => $crate::paste::paste! {{
-                                println!("run: visit_{}", stringify!($const));
+                                tracing::trace!("run: visit_{}", stringify!($const));
                                 self.[<visit_ $const>](&node, scopes, namespace, parent)
                             }},
                         )*
