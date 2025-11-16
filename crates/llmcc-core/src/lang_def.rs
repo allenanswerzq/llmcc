@@ -3,6 +3,10 @@ use std::any::Any;
 
 use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
+use crate::context::CompileUnit;
+use crate::ir::HirNode;
+use crate::scope::Scope;
+use crate::symbol::Symbol;
 
 /// Generic trait for parse tree representation.
 ///
@@ -288,6 +292,23 @@ pub trait LanguageTrait {
 
     /// Get the list of file extensions this language supports.
     fn supported_extensions() -> &'static [&'static str];
+
+
+    fn collect_symbols<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {}
+
+    fn bind_symbols<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {}
 }
 
 /// Extension trait for providing custom parse implementations.

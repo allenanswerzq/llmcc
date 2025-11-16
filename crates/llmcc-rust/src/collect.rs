@@ -142,6 +142,17 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     }
 }
 
+
+fn collect_symbols<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    scopes: &mut CollectorScopes<'tcx>,
+    namespace: &'tcx Scope<'tcx>,
+    parent: Option<&Symbol>,
+) {
+    CollectorVisitor::new().visit_node(&unit, &node, scopes, unit_globals, None);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,17 +168,10 @@ mod tests {
 
     fn compile_from_soruces(sources: Vec<Vec<u8>>) {
         let cc = CompileCtxt::from_sources::<LangRust>(&sources);
-        let config = IrBuildConfig::default();
-        build_llmcc_ir::<LangRust>(&cc, config).unwrap();
-
-        let globals = collect_symbols_with(&cc, |unit, node, scopes , unit_globals| {
-            print_llmcc_ir(unit);
-            CollectorVisitor::new().visit_node(&unit, &node, scopes, unit_globals, None);
-        });
-
-        bind_symbols_with(&cc, globals, |unit, node, scopes, globals| {
-            BinderVisitor::new().visit_node(&unit, &node, scopes, globals, None);
-        });
+        build_llmcc_ir::<LangRust>(&cc, IrBuildConfig::default()).unwrap();
+        
+        let globals = collect_symbols_with::<LangRust>(&cc, CollectorConfig::default());
+        bind_symbols_with::<LangRust>(&cc, globals, BinderConfig::default());
     }
 
     #[test]
