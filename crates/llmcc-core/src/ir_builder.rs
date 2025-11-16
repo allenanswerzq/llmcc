@@ -201,7 +201,11 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
     /// Extract the identifier from a scope node if present.
     ///
     /// Attempts to find the "name" child field and allocate an identifier in the arena.
-    fn extract_scope_ident(&self, base: &HirBase, node: &dyn ParseNode) -> Option<&'unit HirIdent<'unit>> {
+    fn extract_scope_ident(
+        &self,
+        base: &HirBase,
+        node: &dyn ParseNode,
+    ) -> Option<&'unit HirIdent<'unit>> {
         let name_node = node.child_by_field_name("name")?;
 
         let id = self.reserve_hir_id();

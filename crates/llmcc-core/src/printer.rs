@@ -353,7 +353,7 @@ pub fn render_llmcc_ir_with_config(
     // Build AST render tree from parse tree if available
     let ast_render = if let Some(parse_tree) = unit.parse_tree() {
         if let Some(root_node) = parse_tree.root_node() {
-            build_ast_render_from_node(&*root_node, config, 0)?
+            build_ast_render_from_node(&*root_node, unit, config, 0)?
         } else {
             RenderNode::new(
                 "No AST root node found".to_string(),
@@ -438,10 +438,11 @@ pub fn print_llmcc_graph_with_config(
 /// Build render tree for AST node (from parse tree)
 fn build_ast_render_from_node(
     node: &(dyn crate::lang_def::ParseNode + '_),
+    unit: CompileUnit<'_>,
     config: &PrintConfig,
     depth: usize,
 ) -> RenderResult<RenderNode> {
-    build_ast_render_from_node_with_parent(node, None, 0, config, depth)
+    build_ast_render_from_node_with_parent(node, None, 0, unit, config, depth)
 }
 
 /// Build render tree for AST node with parent context for field names
@@ -449,6 +450,7 @@ fn build_ast_render_from_node_with_parent(
     node: &(dyn crate::lang_def::ParseNode + '_),
     parent: Option<&(dyn crate::lang_def::ParseNode + '_)>,
     child_index: usize,
+    unit: CompileUnit<'_>,
     config: &PrintConfig,
     depth: usize,
 ) -> RenderResult<RenderNode> {
@@ -466,23 +468,31 @@ fn build_ast_render_from_node_with_parent(
     // Line range info
     let line_info = Some(format!("[{}-{}]", node.start_byte(), node.end_byte()));
 
+    // Extract snippet from source
+    let snippet = if config.include_snippets {
+        snippet_from_ctx(&unit, node.start_byte(), node.end_byte(), config)
+    } else {
+        None
+    };
+
     // Collect children
     let mut children = Vec::new();
     for i in 0..node.child_count() {
         if let Some(child) = node.child(i) {
-            if let Ok(render) = build_ast_render_from_node_with_parent(&*child, Some(node), i, config, depth + 1) {
+            if let Ok(render) = build_ast_render_from_node_with_parent(
+                &*child,
+                Some(node),
+                i,
+                unit,
+                config,
+                depth + 1,
+            ) {
                 children.push(render);
             }
         }
     }
 
-    Ok(RenderNode::new(
-        label,
-        line_info,
-        None,
-        children,
-        None,
-    ))
+    Ok(RenderNode::new(label, line_info, snippet, children, None))
 }
 
 /// Build render tree for HIR node
@@ -624,10 +634,16 @@ fn render_node_tree(
         line.push_str(&format!(" {}", line_info));
     }
 
-    // Add snippet
+    // Align snippet to column and add inline with pipes
     if let Some(snippet) = &node.snippet {
-        let padded = pad_snippet(&line, snippet, config);
-        line.push_str(&padded);
+        // Pad to column width for alignment
+        let padding = config.snippet_col_width.saturating_sub(line.len());
+        if padding > 0 {
+            line.push_str(&" ".repeat(padding));
+        } else {
+            line.push(' ');
+        }
+        line.push_str(&format!("|{}|", snippet));
     }
 
     // Handle children

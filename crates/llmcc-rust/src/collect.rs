@@ -21,7 +21,7 @@ impl<'tcx> DeclVisitor<'tcx> {
     /// Helper to create a scoped named item (function, struct, enum, trait, module, etc.)
     /// This consolidates the common pattern for items that need to register an identifier
     /// and create a scope for their children.
-    fn visit_scoped_named_item(
+    fn visit_scoped_named(
         &mut self,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
@@ -86,7 +86,7 @@ impl<'tcx> DeclVisitor<'tcx> {
     }
 
     /// Helper for scoped items using existing symbols from identifiers (e.g., impl_item).
-    /// Like `visit_scoped_named_item`, but uses the symbol from the identifier
+    /// Like `visit_scoped_named`, but uses the symbol from the identifier
     /// directly instead of creating a new one. Falls back to unnamed scope if no identifier.
     fn visit_scoped_item_using_existing_symbol(
         &mut self,
@@ -94,7 +94,7 @@ impl<'tcx> DeclVisitor<'tcx> {
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
-        field_id: u16
+        field_id: u16,
     ) {
         if let Some(sn) = node.as_scope() {
             if let Some(id) = node.find_identifier_for_field(self.unit, field_id) {
@@ -175,21 +175,21 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if node.child_by_field(self.unit, LangRust::field_body).is_none() {
+        if node
+            .child_by_field(self.unit, LangRust::field_body)
+            .is_none()
+        {
             return;
         }
-        self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Module, LangRust::field_name);
+        self.visit_scoped_named(
+            node,
+            scopes,
+            namespace,
+            parent,
+            SymKind::Module,
+            LangRust::field_name,
+        );
     }
-
-    // fn visit_function_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Function, LangRust::field_name);
-    // }
 
     fn visit_function_item(
         &mut self,
@@ -198,149 +198,28 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Function, LangRust::field_name);
+        self.visit_scoped_named(
+            node,
+            scopes,
+            namespace,
+            parent,
+            SymKind::Function,
+            LangRust::field_name,
+        );
     }
 
-    // fn visit_struct_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Struct, LangRust::field_name);
-    // }
-
-    // fn visit_struct_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Struct, LangRust::field_name);
-    // }
-
-    // fn visit_enum_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Enum, LangRust::field_name);
-    // }
-
-    fn visit_enum_item(
+    /// Override to prevent visiting unhandled node types.
+    /// We only care about declaration items (mod, function, struct, etc.) and don't need to
+    /// recursively visit tokens, parameters, blocks, etc.
+    fn visit_unknown(
         &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _node: &HirNode<'tcx>,
+        _scopes: &mut CollectorScopes<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
     ) {
-        self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Enum, LangRust::field_name);
+        // Do nothing - don't traverse children of unknown/unhandled node types
     }
-
-    // fn visit_trait_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Trait, LangRust::field_name);
-    // }
-
-    fn visit_trait_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        self.visit_scoped_named_item(node, scopes, namespace, parent, SymKind::Trait, LangRust::field_name);
-    }
-
-    // fn visit_impl_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     // self.visit_scoped_item_using_existing_symbol(node, scopes, namespace, parent, LangRust::field_type);
-    // }
-
-    // fn visit_type_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_unscoped_item(node, scopes, SymKind::Const);
-    // }
-
-    // fn visit_type_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_unscoped_item(node, scopes, SymKind::Const);
-    // }
-
-    // fn visit_const_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_unscoped_named_item(node, scopes, SymKind::Const, LangRust::field_name);
-    // }
-
-    // fn visit_const_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_unscoped_named_item(node, scopes, SymKind::Const, LangRust::field_name);
-    // }
-
-    // fn visit_static_item(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_unscoped_named_item(node, scopes, SymKind::Static, LangRust::field_name);
-    // }
-
-    // fn visit_field_declaration(
-    //     &mut self,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut CollectorScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     if let Some(id) = node.find_identifier_for_field(self.unit, LangRust::field_name) {
-    //         let ident = self.unit.hir_node(id).as_ident().unwrap();
-    //         let symbol = scopes.lookup_or_insert(&ident.name, node, SymKind::Field);
-    //         ident.set_symbol(symbol.unwrap());
-    //         symbol.unwrap().add_defining(node.id());
-
-    //         if let Some(parent_sym) = parent {
-    //             if let Some(scope_id) = parent_sym.scope() {
-    //                 symbol.unwrap().set_parent_scope(scope_id);
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 #[cfg(test)]
@@ -350,7 +229,7 @@ mod tests {
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::interner::InternPool;
     use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
-    use llmcc_core::printer::{print_llmcc_ir};
+    use llmcc_core::printer::print_llmcc_ir;
     use llmcc_core::symbol::ScopeId;
 
     #[test]

@@ -116,10 +116,10 @@ pub trait ParseNode: Send + Sync {
         // Extract kind string from debug_info
         let debug_str = self.debug_info();
         let kind_str = if let Some(start) = debug_str.find("kind: ") {
-            if let Some(end) = debug_str[start+6..].find(',') {
-                &debug_str[start+6..start+6+end]
-            } else if let Some(end) = debug_str[start+6..].find(')') {
-                &debug_str[start+6..start+6+end]
+            if let Some(end) = debug_str[start + 6..].find(',') {
+                &debug_str[start + 6..start + 6 + end]
+            } else if let Some(end) = debug_str[start + 6..].find(')') {
+                &debug_str[start + 6..start + 6 + end]
             } else {
                 "unknown"
             }
