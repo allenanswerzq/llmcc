@@ -8,14 +8,14 @@ use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
 declare_arena!([
+    symbol: Symbol,
+] @vec [
     hir_root: HirRoot,
     hir_text: HirText,
     hir_internal: HirInternal,
     hir_scope: HirScope<'tcx>,
     hir_file: HirFile,
     hir_ident: HirIdent<'tcx>,
-    symbol: Symbol,
-] @vec [
     scope: Scope<'tcx>,
 ]);
 

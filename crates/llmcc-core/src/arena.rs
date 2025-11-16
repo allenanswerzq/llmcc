@@ -115,6 +115,11 @@ macro_rules! declare_arena {
             )*
         }
 
+        // Implement Sync for Arena since typed_arena::Arena is thread-safe despite using RefCell
+        // This is safe because:
+        // 1. typed_arena::Arena is designed for allocation-only patterns (no mutations after allocation)
+        // 2. All references returned are immutable (&T, not &mut T)
+        // 3. The internal RefCell is never held across thread boundaries
         unsafe impl<'tcx> Sync for Arena<'tcx> {}
     };
 }
