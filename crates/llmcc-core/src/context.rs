@@ -58,8 +58,18 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.file_root_id(self.index)
     }
 
+    /// Alias for file_root_id for backwards compatibility
+    pub fn file_start_hir_id(&self) -> Option<HirId> {
+        self.file_root_id()
+    }
+
     pub fn file_path(&self) -> Option<&str> {
         self.cc.file_path(self.index)
+    }
+
+    /// Reserve a new block ID
+    pub fn reserve_block_id(&self) -> BlockId {
+        BlockId::allocate()
     }
 
     /// Get text from the file between start and end byte positions

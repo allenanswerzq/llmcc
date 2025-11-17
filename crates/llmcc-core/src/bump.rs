@@ -121,7 +121,6 @@ macro_rules! declare_arena {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::interner::InternPool;
     use crate::ir::{HirBase, HirIdent, HirKind, HirScope};
     use crate::scope::Scope;
