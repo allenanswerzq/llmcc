@@ -1,9 +1,11 @@
-use llmcc_core::HirId;
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirNode;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
+use llmcc_core::{CompileCtxt, LanguageTraitImpl};
+
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationDirection {
@@ -60,12 +62,6 @@ impl<'tcx> BinderScopes<'tcx> {
         &mut self.scopes
     }
 
-    #[inline]
-    pub fn top_symbol(&self) -> Option<&'tcx Symbol> {
-        // Get the current (top) scope and its associated symbol
-        self.scopes.top().and_then(|scope| scope.symbol())
-    }
-
     /// Gets the current depth of the scope stack.
     ///
     /// - 0 means no scope has been pushed yet
@@ -76,39 +72,18 @@ impl<'tcx> BinderScopes<'tcx> {
         self.scopes.depth()
     }
 
-    /// Gets the top (current) scope on the stack.
-    ///
-    /// Returns the most recently pushed scope.
-    /// Panics if stack is empty (should never happen since we always have global scope).
-    #[inline]
-    pub fn top_scope(&self) -> &'tcx Scope<'tcx> {
-        self.scopes
-            .top()
-            .expect("scope stack should never be empty")
-    }
-
-    #[inline]
-    pub fn get_scope(&self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.unit
-            .opt_get_scope(owner)
-            .expect("scope must exist in CompileUnit")
-    }
-
     /// Pushes a new scope created from a symbol onto the stack.
-    pub fn push_scope(&mut self, owner: HirId) {
+    pub fn push_scope(&mut self, id: ScopeId) {
         // NOTE: this is the biggest difference from CollectorScopes, we would expect
         // the scope must already exist in the CompileUnit
-        let scope = self.get_scope(owner);
+        let scope = self.unit.get_scope(id);
         self.scopes.push(scope);
     }
 
-    pub fn push_scope_recursive(&mut self, owner: HirId) {
+    pub fn push_scope_recursive(&mut self, id: ScopeId) {
         // NOTE: this is the biggest difference from CollectorScopes, we would expect
         // the scope must already exist in the CompileUnit
-        let scope = self
-            .unit
-            .opt_get_scope(owner)
-            .expect("scope must exist in CompileUnit");
+        let scope = self.unit.get_scope(id);
         self.scopes.push_recursive(scope);
     }
 
@@ -197,16 +172,20 @@ impl<'tcx> BinderScopes<'tcx> {
     }
 }
 
+#[derive(Default)]
+pub struct BinderOption;
+
 /// Public API for binding symbols with a custom visitor function.
-pub fn bind_symbols_with<'a, F>(
-    cc: CompileUnit<'a>,
+pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
+    cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
-    visitor: F,
-) -> &'a Scope<'a>
-where
-    F: FnOnce(&mut BinderScopes<'a>),
-{
-    let mut collector = BinderScopes::new(cc, globals);
-    visitor(&mut collector);
-    collector.globals()
+    _config: BinderOption,
+) {
+    (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
+        let unit = cc.compile_unit(unit_index);
+        let id = unit.file_start_hir_id().unwrap();
+        let node = unit.hir_node(id);
+        let mut scopes = BinderScopes::new(unit, globals);
+        L::bind_symbols_impl(&unit, &node, &mut scopes, globals);
+    })
 }

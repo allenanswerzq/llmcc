@@ -4,200 +4,198 @@ use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::CollectorScopes;
 
+use crate::LangRust;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 #[derive(Debug)]
-#[allow(dead_code)]
-pub struct DeclVisitor<'tcx> {
-    unit: CompileUnit<'tcx>,
+pub struct CollectorVisitor<'tcx> {
+    phantom: std::marker::PhantomData<&'tcx ()>,
 }
 
-#[allow(dead_code)]
-impl<'tcx> DeclVisitor<'tcx> {
-    fn new(unit: CompileUnit<'tcx>) -> Self {
-        Self { unit }
+impl<'tcx> CollectorVisitor<'tcx> {
+    fn new() -> Self {
+        Self {
+            phantom: std::marker::PhantomData,
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn visit_scoped_named(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
+        kind: SymKind,
+        field_id: u16,
+    ) {
+        if let Some(sn) = node.as_scope()
+            && let Some(id) = node.find_identifier_for_field(*unit, field_id)
+        {
+            let ident = unit.hir_node(id).as_ident().unwrap();
+            if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
+                ident.set_symbol(sym);
+                sn.set_ident(ident);
+
+                let scope = unit.alloc_hir_scope(sym);
+                sym.set_scope(scope.id());
+                sym.add_defining(node.id());
+                sn.set_scope(scope);
+
+                scopes.push_scope(scope);
+                self.visit_children(unit, node, scopes, scope, Some(sym));
+                scopes.pop_scope();
+            }
+        }
     }
 }
 
-impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for DeclVisitor<'tcx> {
-    fn unit(&self) -> CompileUnit<'tcx> {
-        self.unit
-    }
-
+impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
     #[rustfmt::skip]
     fn visit_source_file(
         &mut self,
+        unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let file_path = self.unit.file_path().expect("no file path found to compile");
+        let file_path = unit.file_path().expect("no file path found to compile");
 
-        if let Some(crate_name) = parse_crate_name(&file_path)
-            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Module)
+        if let Some(crate_name) = parse_crate_name(file_path)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
         {
             scopes.push_scope_with(node, Some(symbol));
         }
 
-        if let Some(module_name) = parse_module_name(&file_path)
+        if let Some(module_name) = parse_module_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
         {
             scopes.push_scope_with(node, Some(symbol));
-        }
 
-        if let Some(file_name) = parse_file_name(&file_path)
-            && let Some(symbol) = scopes.lookup_or_insert(&file_name, node, SymKind::Module)
-            && let Some(sn) = node.as_scope()
-        {
-            let ident = self.unit.alloc_hir_ident(file_name.clone(), symbol);
-            sn.set_ident(ident);
+            if let Some(file_name) = parse_file_name(file_path)
+                && let Some(sn) = node.as_scope()
+            {
+                let ident = unit.alloc_hir_ident(file_name.clone(), symbol);
+                sn.set_ident(ident);
 
-            if let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File) {
-                ident.set_symbol(file_sym);
-                file_sym.add_defining(node.id());
+                if let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File) {
+                    ident.set_symbol(file_sym);
+                    file_sym.add_defining(node.id());
 
-                let scope = self.unit.alloc_hir_scope(file_sym);
-                file_sym.set_scope(Some(scope.id()));
-                sn.set_scope(scope);
-                scopes.push_scope(scope);
+                    let scope = unit.alloc_hir_scope(file_sym);
+                    file_sym.set_scope(scope.id());
+
+                    sn.set_scope(scope);
+                    scopes.push_scope(scope);
+
+                    self.visit_children(unit, node, scopes, namespace, parent);
+                }
             }
-
-            self.visit_children(node, scopes, namespace, parent);
         }
+
     }
 
-    #[allow(unused_variables)]
     fn visit_mod_item(
         &mut self,
+        unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        if node.child_by_field(*unit, LangRust::field_body).is_none() {
+            return;
+        }
+        self.visit_scoped_named(
+            unit,
+            node,
+            scopes,
+            namespace,
+            parent,
+            SymKind::Namespace,
+            LangRust::field_name,
+        );
     }
 
-    #[allow(unused_variables)]
     fn visit_function_item(
         &mut self,
+        unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        // TODO: Implement function item collection logic
-        let _sn = node.as_scope();
+        self.visit_scoped_named(
+            unit,
+            node,
+            scopes,
+            namespace,
+            parent,
+            SymKind::Function,
+            LangRust::field_name,
+        );
     }
+}
 
-    #[allow(unused_variables)]
-    fn visit_struct_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
-
-    #[allow(unused_variables)]
-    fn visit_enum_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
-
-    #[allow(unused_variables)]
-    fn visit_trait_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
-
-    #[allow(unused_variables)]
-    fn visit_impl_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
-
-    #[allow(unused_variables)]
-    fn visit_type_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
-
-    #[allow(unused_variables)]
-    fn visit_const_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
-
-    #[allow(unused_variables)]
-    fn visit_static_item(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
-
-    #[allow(unused_variables)]
-    fn visit_field_declaration(
-        &mut self,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-    }
+pub fn collect_symbols<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    node: &HirNode<'tcx>,
+    scopes: &mut CollectorScopes<'tcx>,
+    namespace: &'tcx Scope<'tcx>,
+) {
+    CollectorVisitor::new().visit_node(unit, node, scopes, namespace, None);
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::token::LangRust;
+
     use llmcc_core::context::CompileCtxt;
-    use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
+    use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
+    use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
+
+    fn compile_from_soruces(sources: Vec<Vec<u8>>) {
+        let cc = CompileCtxt::from_sources::<LangRust>(&sources);
+        build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
+
+        let globals =
+            collect_symbols_with::<LangRust>(&cc, CollectorOption::default().with_print_ir(true));
+        bind_symbols_with::<LangRust>(&cc, globals, BinderOption);
+    }
 
     #[test]
     fn test_decl_visitor() {
-        // Test that we can traverse the source file
-        let source_code = b"fn main() {}\n";
-        let sources = vec![source_code.to_vec()];
+        let source_code = br#"
+mod outer {
+    fn nested_function() {}
 
-        let cc = CompileCtxt::from_sources::<LangRust>(&sources);
-        let config = IrBuildConfig::default();
-        build_llmcc_ir::<LangRust>(&cc, config).unwrap();
+    const INNER_CONST: i32 = 1;
+}
 
-        let unit = cc.compile_unit(0);
-        let file_start = unit.file_start_hir_id().unwrap();
-        let node = unit.hir_node(file_start);
+fn top_level() {}
+struct Foo {
+    field: i32,
+}
 
-        let globlas = cc.create_globals();
-        let mut scopes = CollectorScopes::new(0, &cc.arena, &cc.interner, globlas);
-        let mut v = DeclVisitor::new(unit);
-        v.visit_node(node, &mut scopes, globlas, None);
+enum Color {
+    Red,
+}
 
-        // Verify node is the source file by checking the HIR kind
-        assert_eq!(node.kind(), llmcc_core::ir::HirKind::File);
+trait Greeter {
+    fn greet(&self);
+}
+
+impl Foo {
+    fn method(&self) {}
+}
+
+type Alias = Foo;
+const TOP_CONST: i32 = 42;
+static TOP_STATIC: i32 = 7;
+"#;
+        compile_from_soruces(vec![source_code.to_vec()]);
     }
 }

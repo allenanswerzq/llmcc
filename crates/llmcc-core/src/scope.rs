@@ -1,6 +1,7 @@
 //! Scope management and symbol lookup for the code graph.
 use parking_lot::RwLock;
 use std::collections::{HashMap, HashSet};
+use std::fmt;
 use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
@@ -8,13 +9,11 @@ use crate::ir::{Arena, HirId, HirNode};
 use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
 
 /// Represents a single level in the scope hierarchy.
-#[derive(Debug)]
 pub struct Scope<'tcx> {
     /// Unique monotonic scope ID assigned at creation time.
     /// Immutable for the lifetime of the scope.
     id: ScopeId,
     /// Map of interned symbol names to vectors of symbols.
-    /// Multiple symbols with the same name are supported via shadowing chains.
     symbols: RwLock<HashMap<InternedStr, Vec<&'tcx Symbol>>>,
     /// The HIR node that owns/introduces this scope.
     /// Examples: function body, module definition, struct body.
@@ -32,18 +31,6 @@ pub struct Scope<'tcx> {
 
 impl<'tcx> Scope<'tcx> {
     /// Creates a new scope owned by the given HIR node.
-    ///
-    /// Assigns a unique monotonic scope ID and initializes an empty symbol map.
-    /// The scope starts with no associated symbol (`symbol` is None).
-    ///
-    /// # Arguments
-    /// * `owner` - The HIR node that owns this scope
-    ///
-    /// # Example
-    /// ```ignore
-    /// let scope = Scope::new(function_hir_id);
-    /// assert!(scope.lookup_symbols(name).is_empty());
-    /// ```
     pub fn new(owner: HirId) -> Self {
         Self::new_with(owner, None)
     }
@@ -61,33 +48,9 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Creates a new scope from an existing scope, copying its basic structure.
-    ///
-    /// This is useful for transferring a scope from one arena to another while
-    /// preserving its owner and symbol association. If the source scope has an
-    /// associated symbol, it will be cloned and allocated in the provided arena.
-    /// All symbols in the source scope are also copied to the new scope.
-    ///
-    /// # Arguments
-    /// * `other` - The scope to copy from
-    /// * `arena` - The arena to allocate symbols in
-    ///
-    /// # Returns
-    /// A new scope with the same owner, symbol association, and all symbols
-    /// from the source scope copied over.
-    ///
-    /// # Example
-    /// ```ignore
-    /// // Copy a scope from per-unit arena to global arena
-    /// let global_scope = Scope::new_from(&local_scope, &global_arena);
-    /// // Scope is now fully populated with symbols
-    /// ```
     pub fn new_from<'src>(other: &Scope<'src>, arena: &'tcx Arena<'tcx>) -> Self {
         // Clone the associated symbol if present
-        let symbol_ref = if let Some(symbol) = *other.symbol.read() {
-            Some(arena.alloc(symbol.clone()))
-        } else {
-            None
-        };
+        let symbol_ref = (*other.symbol.read()).map(|symbol| arena.alloc(symbol.clone()));
 
         // Create the new scope with empty symbols
         let new_scope = Self {
@@ -143,19 +106,6 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Invokes a closure for each symbol in this scope.
-    ///
-    /// Calls the visitor function for every symbol stored in this scope.
-    /// Useful for iteration without collecting all symbols into a vector.
-    ///
-    /// # Arguments
-    /// * `visit` - A closure that accepts a reference to each symbol
-    ///
-    /// # Example
-    /// ```ignore
-    /// scope.for_each_symbol(|symbol| {
-    ///     println!("Symbol: {:?}", symbol.name);
-    /// });
-    /// ```
     pub fn for_each_symbol<F>(&self, mut visit: F)
     where
         F: FnMut(&'tcx Symbol),
@@ -169,16 +119,6 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Inserts a symbol into this scope.
-    ///
-    /// If multiple symbols have the same name, they are stored in a vector
-    /// to support overloading and shadowing. Later symbols can reference
-    /// earlier ones via their `previous` field.
-    ///
-    /// # Arguments
-    /// * `symbol` - The symbol to insert
-    ///
-    /// # Returns
-    /// The symbol's ID
     pub fn insert(&self, symbol: &'tcx Symbol) -> SymId {
         let sym_id = symbol.id;
         self.symbols
@@ -190,22 +130,6 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Looks up all symbols with the given name in this scope.
-    ///
-    /// Returns a vector of all matching symbols. Use the `previous` field
-    /// to traverse the shadowing chain if needed.
-    ///
-    /// # Arguments
-    /// * `name` - The interned symbol name to look up
-    ///
-    /// # Returns
-    /// Vector of symbols (may be empty if name not found)
-    ///
-    /// # Example
-    /// ```ignore
-    /// let symbols = scope.lookup_symbols(name_key);
-    /// // symbols[0] is the first definition
-    /// // symbols[last] is the most recent definition (shadows earlier ones)
-    /// ```
     pub fn lookup_symbols(&self, name: InternedStr) -> Vec<&'tcx Symbol> {
         self.symbols
             .read()
@@ -215,17 +139,6 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Looks up symbols with optional kind and unit filters.
-    ///
-    /// Filters symbols by their kind (e.g., Function, Struct) and compile unit.
-    /// None for a filter means "no filter" (matches anything).
-    ///
-    /// # Arguments
-    /// * `name` - The interned symbol name
-    /// * `kind_filter` - Optional kind to filter by (None matches all)
-    /// * `unit_filter` - Optional unit index to filter by (None matches all)
-    ///
-    /// # Returns
-    /// Filtered vector of matching symbols
     pub fn lookup_symbols_with(
         &self,
         name: InternedStr,
@@ -250,31 +163,21 @@ impl<'tcx> Scope<'tcx> {
     }
 }
 
+impl<'tcx> fmt::Debug for Scope<'tcx> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let symbol_desc = self.symbol().cloned();
+        let mut symbol_entries = Vec::new();
+        self.for_each_symbol(|symbol| symbol_entries.push(symbol.clone()));
+        f.debug_struct("Scope")
+            .field("id", &self.id())
+            .field("owner", &self.owner())
+            .field("symbol", &symbol_desc)
+            .field("symbols", &symbol_entries)
+            .finish()
+    }
+}
+
 /// Manages a stack of nested scopes for symbol resolution and insertion.
-///
-/// The scope stack handles hierarchical scope traversal and symbol lookup across
-/// the scope hierarchy. It supports multiple lookup strategies via `LookupOptions`:
-/// - Global scope (depth 0) - module level
-/// - Parent scope (depth-1) - enclosing scope
-/// - Current scope (top) - innermost scope
-///
-/// Symbols are created and stored in scopes, with support for shadowing via chains.
-///
-/// # Arena Allocation
-/// Symbols are allocated in an arena for efficient memory management and stable pointers.
-///
-/// # Example
-/// ```ignore
-/// let mut scope_stack = ScopeStack::new(arena, interner);
-/// let global_scope = Scope::new(global_hir_id);
-/// scope_stack.push(&global_scope);
-///
-/// // Insert in current scope
-/// let symbol = scope_stack.lookup_or_insert(node_id, "my_var");
-///
-/// // Insert in global scope
-/// let global_sym = scope_stack.lookup_or_insert_global(node_id, "MODULE");
-/// ```
 #[derive(Debug)]
 pub struct ScopeStack<'tcx> {
     /// Arena allocator for symbols
@@ -287,16 +190,6 @@ pub struct ScopeStack<'tcx> {
 
 impl<'tcx> ScopeStack<'tcx> {
     /// Creates a new empty scope stack.
-    ///
-    /// # Arguments
-    /// * `arena` - The arena allocator for symbols
-    /// * `interner` - The string interner for symbol names
-    ///
-    /// # Example
-    /// ```ignore
-    /// let scope_stack = ScopeStack::new(arena, interner);
-    /// assert_eq!(scope_stack.depth(), 0);
-    /// ```
     pub fn new(arena: &'tcx Arena<'tcx>, interner: &'tcx InternPool) -> Self {
         Self {
             arena,
@@ -466,10 +359,11 @@ impl<'tcx> ScopeStack<'tcx> {
         let existing_symbols = self.lookup_symbols_in_scope(scope, name_key);
 
         // If top flag is NOT set and we found existing symbols, return the most recent one
-        if !options.top && !existing_symbols.is_empty() {
-            if let Some(existing) = existing_symbols.last() {
-                return Some(existing);
-            }
+        if !options.top
+            && !existing_symbols.is_empty()
+            && let Some(existing) = existing_symbols.last()
+        {
+            return Some(existing);
         }
 
         // Create new symbol (either no existing found, or top flag set for chaining)
@@ -477,10 +371,11 @@ impl<'tcx> ScopeStack<'tcx> {
         let allocated = self.arena.alloc(symbol);
 
         // If top flag is set, chain to the most recent existing symbol
-        if options.top && !existing_symbols.is_empty() {
-            if let Some(prev_sym) = existing_symbols.last() {
-                allocated.set_previous(Some(prev_sym.id));
-            }
+        if options.top
+            && !existing_symbols.is_empty()
+            && let Some(prev_sym) = existing_symbols.last()
+        {
+            allocated.set_previous(prev_sym.id);
         }
 
         // Insert into scope
@@ -713,7 +608,7 @@ mod tests {
     use super::*;
 
     fn create_test_hir_id(index: u32) -> HirId {
-        HirId(index)
+        HirId(index as usize)
     }
 
     fn create_test_intern_pool() -> InternPool {

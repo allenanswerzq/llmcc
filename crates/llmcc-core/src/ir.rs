@@ -7,15 +7,16 @@ use crate::scope::Scope;
 use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
+// TODO: efficient arena with iter support to repplace Vec allocations
 declare_arena!([
+    symbol: Symbol,
+] @vec [
     hir_root: HirRoot,
     hir_text: HirText,
     hir_internal: HirInternal,
     hir_scope: HirScope<'tcx>,
     hir_file: HirFile,
     hir_ident: HirIdent<'tcx>,
-    symbol: Symbol,
-] @vec [
     scope: Scope<'tcx>,
 ]);
 
@@ -49,11 +50,14 @@ pub enum HirNode<'hir> {
 
 impl<'hir> HirNode<'hir> {
     /// Format node as "kind:id [s:scope_id]" for debugging
-    pub fn format_node(&self, unit: CompileUnit<'hir>) -> String {
+    pub fn format_node(&self, _unit: CompileUnit<'hir>) -> String {
         let id = self.id();
         let kind = self.kind();
         let mut f = format!("{}:{}", kind, id);
-        if let Some(scope) = unit.opt_get_scope(id) {
+        // Only Scope nodes have an associated Scope; get it if available
+        if let HirNode::Scope(scope_node) = self
+            && let Some(scope) = *scope_node.scope.read()
+        {
             f.push_str(&format!("   s:{}", scope.format_compact()));
         }
         f
@@ -138,6 +142,54 @@ impl<'hir> HirNode<'hir> {
             .find(|child| child.kind_id() == kind_id)
     }
 
+    /// Find the identifier for the first child node that is an identifier or interior node.
+    /// Recursively searches for identifiers within interior nodes.
+    pub fn find_identifier(&self, unit: CompileUnit<'hir>) -> Option<HirId> {
+        if self.is_kind(HirKind::Identifier) {
+            return Some(self.id());
+        }
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.is_kind(HirKind::Identifier) {
+                return Some(child.id());
+            }
+            if child.is_kind(HirKind::Internal)
+                && let Some(id) = child.find_identifier(unit)
+            {
+                return Some(id);
+            }
+        }
+        None
+    }
+
+    /// Find identifier for the first child with a matching field ID.
+    pub fn find_identifier_for_field(
+        &self,
+        unit: CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<HirId> {
+        debug_assert!(!self.is_kind(HirKind::Identifier));
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.field_id() == field_id {
+                return child.find_identifier(unit);
+            }
+        }
+        None
+    }
+
+    /// Find identifier for the first child with a matching kind ID.
+    pub fn find_identifier_for_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirId> {
+        debug_assert!(!self.is_kind(HirKind::Identifier));
+        for child_id in self.children() {
+            let child = unit.hir_node(*child_id);
+            if child.kind_id() == kind_id {
+                return child.find_identifier(unit);
+            }
+        }
+        None
+    }
+
     #[inline]
     pub fn as_root(&self) -> Option<&'hir HirRoot> {
         match self {
@@ -190,7 +242,7 @@ impl<'hir> HirNode<'hir> {
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
 /// Unique identifier for a HIR node within a compilation unit. IDs are stable,
 /// sequential, and used for parent-child relationships and symbol references.
-pub struct HirId(pub u32);
+pub struct HirId(pub usize);
 
 impl std::fmt::Display for HirId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -309,6 +361,10 @@ impl<'hir> HirScope<'hir> {
         *self.ident.write() = Some(ident);
     }
 
+    pub fn opt_ident(&self) -> Option<&'hir HirIdent<'hir>> {
+        *self.ident.read()
+    }
+
     pub fn ident(&self) -> &'hir HirIdent<'hir> {
         self.ident.read().expect("ident must be set")
     }
@@ -359,7 +415,7 @@ pub struct HirFile {
     pub file_path: String,
 }
 
-impl<'hir> HirFile {
+impl HirFile {
     /// Create new file node with path
     pub fn new(base: HirBase, file_path: String) -> Self {
         Self { base, file_path }

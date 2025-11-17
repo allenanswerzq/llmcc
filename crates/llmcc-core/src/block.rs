@@ -63,10 +63,10 @@ impl<'blk> BasicBlock<'blk> {
             .unwrap_or("");
 
         // Include file_name for Root blocks
-        if let BasicBlock::Root(root) = self {
-            if let Some(file_name) = &root.file_name {
-                return format!("{}:{} {} ({})", kind, block_id, name, file_name);
-            }
+        if let BasicBlock::Root(root) = self
+            && let Some(file_name) = &root.file_name
+        {
+            return format!("{}:{} {} ({})", kind, block_id, name, file_name);
         }
 
         format!("{}:{} {}", kind, block_id, name)

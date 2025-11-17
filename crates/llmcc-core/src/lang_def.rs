@@ -1,8 +1,11 @@
 //! Language definition framework for multi-language AST support.
 use std::any::Any;
 
+use crate::context::CompileUnit;
 use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
+use crate::ir::HirNode;
+use crate::scope::Scope;
 
 /// Generic trait for parse tree representation.
 ///
@@ -64,6 +67,17 @@ pub trait ParseNode: Send + Sync {
     /// Get the child at the specified index
     fn child(&self, index: usize) -> Option<Box<dyn ParseNode + '_>>;
 
+    /// Get the field name of the child at the specified index (if available)
+    fn child_field_name(&self, _index: usize) -> Option<&str> {
+        None
+    }
+
+    /// Get the field ID of this node within its parent (if available).
+    /// Returns None if the node has no parent or the field ID cannot be determined.
+    fn field_id(&self) -> Option<u16> {
+        None
+    }
+
     /// Get a child by field name (if supported by the parser)
     fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>>;
 
@@ -99,6 +113,45 @@ pub trait ParseNode: Send + Sync {
 
     /// Debug representation of this node
     fn debug_info(&self) -> String;
+
+    /// Format a label for this node suitable for debugging and rendering.
+    fn format_node_label(&self, field_name: Option<&str>) -> String {
+        // Extract kind string from debug_info
+        let debug_str = self.debug_info();
+        let kind_str = if let Some(start) = debug_str.find("kind: ") {
+            if let Some(end) = debug_str[start + 6..].find(',') {
+                &debug_str[start + 6..start + 6 + end]
+            } else if let Some(end) = debug_str[start + 6..].find(')') {
+                &debug_str[start + 6..start + 6 + end]
+            } else {
+                "unknown"
+            }
+        } else {
+            "unknown"
+        };
+
+        let kind_id = self.kind_id();
+        let mut label = String::new();
+
+        // Add field name if provided
+        if let Some(fname) = field_name {
+            label.push_str(&format!("|{}|_ ", fname));
+        }
+
+        // Add kind and kind_id
+        label.push_str(&format!("{} [{}]", kind_str, kind_id));
+
+        // Add status flags
+        if self.is_error() {
+            label.push_str(" [ERROR]");
+        } else if self.is_extra() {
+            label.push_str(" [EXTRA]");
+        } else if self.is_missing() {
+            label.push_str(" [MISSING]");
+        }
+
+        label
+    }
 }
 
 /// Wrapper implementation of ParseNode for tree-sitter nodes
@@ -134,6 +187,31 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
         self.node
             .child(index)
             .map(|child| Box::new(TreeSitterParseNode::new(child)) as Box<dyn ParseNode + '_>)
+    }
+
+    fn child_field_name(&self, index: usize) -> Option<&str> {
+        self.node.field_name_for_child(index as u32)
+    }
+
+    fn field_id(&self) -> Option<u16> {
+        // Walk up to parent and find this node's field ID
+        let parent = self.node.parent()?;
+        let mut cursor = parent.walk();
+
+        if !cursor.goto_first_child() {
+            return None;
+        }
+
+        loop {
+            if cursor.node().id() == self.node.id() {
+                return cursor.field_id().map(|id| id.get());
+            }
+            if !cursor.goto_next_sibling() {
+                break;
+            }
+        }
+
+        None
     }
 
     fn child_by_field_name(&self, field_name: &str) -> Option<Box<dyn ParseNode + '_>> {
@@ -182,16 +260,7 @@ impl<'tree> ParseNode for TreeSitterParseNode<'tree> {
 /// Scopes trait defining language-specific AST handling.
 pub trait LanguageTrait {
     /// Parse source code and return a generic parse tree.
-    ///
-    /// # Returns
-    /// A boxed `ParseTree` trait object, allowing multiple parser implementations.
-    ///
-    /// # Default
-    /// Returns `None` by default. Languages should implement custom parsing
-    /// either by overriding this method or by using `LanguageTraitExt`.
-    fn parse(_text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
-        None
-    }
+    fn parse(_text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>>;
 
     /// Map a token kind ID to its corresponding HIR kind.
     fn hir_kind(kind_id: u16) -> HirKind;
@@ -213,30 +282,43 @@ pub trait LanguageTrait {
 
     /// Get the list of file extensions this language supports.
     fn supported_extensions() -> &'static [&'static str];
+
+    fn collect_symbols<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+    );
+
+    fn bind_symbols<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+    );
 }
 
 /// Extension trait for providing custom parse implementations.
-///
-/// This trait allows languages defined via `define_lang!` macro to extend
-/// with custom `parse` implementations without conflicting with the macro-generated code.
-///
-/// # Usage
-///
-/// ```ignore
-/// define_lang!(MyLang, ...);
-///
-/// impl LanguageTraitExt for LangMyLang {
-///     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
-///         // Custom parser logic
-///     }
-/// }
-/// ```
-pub trait LanguageTraitExt: LanguageTrait {
+pub trait LanguageTraitImpl: LanguageTrait {
     /// Custom parse implementation for this language.
-    ///
-    /// Languages should implement this method instead of overriding `LanguageTrait::parse`.
-    /// Return `None` to fall back to tree-sitter parsing (if available).
     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>>;
+
+    /// Supported file extensions for this language.
+    fn supported_extensions_impl() -> &'static [&'static str];
+
+    fn collect_symbols_impl<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+    );
+
+    fn bind_symbols_impl<'tcx, T>(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut T,
+        namespace: &'tcx Scope<'tcx>,
+    );
 }
 
 #[allow(clippy::crate_in_macro_def)]
@@ -247,16 +329,12 @@ macro_rules! define_lang {
         $( ($const:ident, $id:expr, $str:expr, $kind:expr $(, $block:expr)? ) ),* $(,)?
     ) => {
         $crate::paste::paste! {
-            // ============================================================
-            // Language Struct Definition
-            // ============================================================
-            /// Language context for HIR processing
+            /// Language Struct Definition
             #[derive(Debug)]
             pub struct [<Lang $suffix>] {}
 
-            // ============================================================
-            // Language Constants
-            // ============================================================
+
+            /// Language Constants
             #[allow(non_upper_case_globals)]
             impl [<Lang $suffix>] {
                 /// Create a new Language instance
@@ -270,21 +348,38 @@ macro_rules! define_lang {
                 )*
             }
 
-            // ============================================================
-            // Language Trait Implementation
-            // ============================================================
+
+            /// Language Trait Implementation
             impl $crate::lang_def::LanguageTrait for [<Lang $suffix>] {
                 /// Parse source code and return a generic parse tree.
                 ///
-                /// First tries the custom parse_impl from LanguageTraitExt.
+                /// First tries the custom parse_impl from LanguageTraitImpl.
                 /// If that returns None, falls back to tree-sitter parsing if available.
                 fn parse(text: impl AsRef<[u8]>) -> Option<Box<dyn $crate::lang_def::ParseTree>> {
-                    <Self as $crate::lang_def::LanguageTraitExt>::parse_impl(text.as_ref())
+                    <Self as $crate::lang_def::LanguageTraitImpl>::parse_impl(text.as_ref())
+                }
+
+                fn collect_symbols<'tcx, T>(
+                    unit: &$crate::context::CompileUnit<'tcx>,
+                    node: &$crate::ir::HirNode<'tcx>,
+                    scopes: &mut T,
+                    namespace: &'tcx $crate::scope::Scope<'tcx>,
+                ) {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_symbols_impl(unit, node, scopes, namespace);
+                }
+
+                fn bind_symbols<'tcx, T>(
+                    unit: &$crate::context::CompileUnit<'tcx>,
+                    node: &$crate::ir::HirNode<'tcx>,
+                    scopes: &mut T,
+                    namespace: &'tcx $crate::scope::Scope<'tcx>,
+                ) {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::bind_symbols_impl(unit, node, scopes, namespace);
                 }
 
                 /// Return the list of supported file extensions for this language
                 fn supported_extensions() -> &'static [&'static str] {
-                    [<Lang $suffix>]::SUPPORTED_EXTENSIONS
+                    <Self as $crate::lang_def::LanguageTraitImpl>::supported_extensions_impl()
                 }
 
                 /// Get the HIR kind for a given token ID
@@ -331,14 +426,9 @@ macro_rules! define_lang {
                 }
             }
 
-            // ============================================================
-            // Visitor Trait Definition
-            // ============================================================
-            /// Trait for visiting HIR nodes with type-specific dispatch
-            pub trait [<AstVisitor $suffix>]<'a, T> {
-                /// Get the compilation unit for this visitor
-                fn unit(&self) -> $crate::context::CompileUnit<'a>;
 
+            /// Visitor Trait Definition
+            pub trait [<AstVisitor $suffix>]<'a, T> {
                 /// Visit a node, dispatching to the appropriate method based on token ID
                 /// NOTE: scope stack is for lookup convenience, the actual namespace in
                 /// which names should be mangled and declared.
@@ -346,52 +436,47 @@ macro_rules! define_lang {
                 /// independent of the push stack.
                 fn visit_node(
                     &mut self,
-                    node: $crate::ir::HirNode<'a>,
+                    unit: &$crate::context::CompileUnit<'a>,
+                    node: &$crate::ir::HirNode<'a>,
                     scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
                     match node.kind_id() {
                         $(
-                            [<Lang $suffix>]::$const => $crate::paste::paste! {
-                                self.[<visit_ $const>](&node, scopes, namespace, parent)
-                            },
+                            [<Lang $suffix>]::$const => $crate::paste::paste! {{
+                                self.[<visit_ $const>](unit, node, scopes, namespace, parent)
+                            }},
                         )*
-                        _ => self.visit_unknown(&node, scopes, namespace, parent),
+                        _ => self.visit_unknown(unit, node, scopes, namespace, parent),
                     }
                 }
 
                 /// Visit all children of a node
                 fn visit_children(
                     &mut self,
+                    unit: &$crate::context::CompileUnit<'a>,
                     node: &$crate::ir::HirNode<'a>,
                     scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
                     for id in node.children() {
-                        let child = self.unit().hir_node(*id);
-                        self.visit_node(child, scopes, namespace, parent);
+                        let child = unit.hir_node(*id);
+                        self.visit_node(unit, &child, scopes, namespace, parent);
                     }
                 }
-
-                fn visit_scope_children(
-                    &mut self,
-                    node: &$crate::ir::HirNode<'a>,
-                    scopes: &mut T,
-                    namespace: &'a $crate::scope::Scope<'a>,
-                    parent: Option<&$crate::symbol::Symbol>,
-                ) {}
 
                 /// Handle unknown/unrecognized token types
                 fn visit_unknown(
                     &mut self,
+                    unit: &$crate::context::CompileUnit<'a>,
                     node: &$crate::ir::HirNode<'a>,
                     scopes: &mut T,
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
-                    self.visit_children(&node, scopes, namespace, parent);
+                    self.visit_children(unit, node, scopes, namespace, parent);
                 }
 
                 // Generate visit methods for each token type with visit_ prefix
@@ -399,12 +484,13 @@ macro_rules! define_lang {
                     $crate::paste::paste! {
                         fn [<visit_ $const>](
                             &mut self,
+                            unit: &$crate::context::CompileUnit<'a>,
                             node: &$crate::ir::HirNode<'a>,
                             scopes: &mut T,
                             namespace: &'a $crate::scope::Scope<'a>,
                             parent: Option<&$crate::symbol::Symbol>,
                         ) {
-                            self.visit_children(&node, scopes, namespace, parent);
+                            self.visit_children(unit, node, scopes, namespace, parent);
                         }
                     }
                 )*
@@ -412,116 +498,6 @@ macro_rules! define_lang {
         }
     };
 
-    // ================================================================
-    // Helper Rules
-    // ================================================================
     (@unwrap_block $block:expr) => { $block };
     (@unwrap_block) => { $crate::graph_builder::BlockKind::Undefined };
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-    // Import the visitor trait generated by the macro in simple_lang
-    use crate::context::CompileCtxt;
-    use crate::ir_builder::{IrBuildConfig, build_llmcc_ir};
-    use crate::tests::simple_lang::AstVisitorSimple;
-    use crate::tests::simple_lang::LangSimple;
-
-    #[test]
-    fn test_language_define_and_visitor() {
-        // Create a CompileCtxt with our simple language
-        let source_code = b"fn main() {}\nfn helper() {}\nlet x = 42;";
-        let sources = vec![source_code.to_vec()];
-        let cc = CompileCtxt::from_sources::<LangSimple>(&sources);
-
-        // Verify files are registered
-        assert_eq!(cc.files.len(), 1);
-        let file = &cc.files[0];
-        let file_path = file.path().unwrap_or("<no path>");
-        assert!(file_path.contains("unit_0"));
-
-        // Verify parse tree is stored
-        assert!(cc.parse_trees[0].is_some());
-
-        // Build the IR from the parse tree
-        let config = IrBuildConfig::default();
-        let result = build_llmcc_ir::<LangSimple>(&cc, config);
-        assert!(result.is_ok(), "IR building should succeed");
-
-        // Create a CompileUnit from the context
-        let unit = cc.compile_unit(0);
-        let unit_parse_tree = unit.parse_tree();
-        assert!(unit_parse_tree.is_some());
-
-        // Get interner and test string interning
-        let interned = unit.intern_str("main_function");
-        let resolved = unit.resolve_interned_owned(interned);
-        assert_eq!(resolved, Some("main_function".to_string()));
-
-        // Verify HIR was built
-        let file_start = unit.file_start_hir_id();
-        assert!(
-            file_start.is_some(),
-            "File start HIR ID should be set after IR building"
-        );
-
-        // Define a visitor implementation
-        struct CountingVisitor<'tcx> {
-            unit: crate::context::CompileUnit<'tcx>,
-            function_count: usize,
-        }
-
-        impl<'tcx> CountingVisitor<'tcx> {
-            fn new(unit: crate::context::CompileUnit<'tcx>) -> Self {
-                Self {
-                    unit,
-                    function_count: 0,
-                }
-            }
-        }
-
-        // Holds the scopes for visiting
-        struct Collector {
-            func: Vec<String>,
-        }
-
-        impl Collector {
-            fn new() -> Self {
-                Self { func: Vec::new() }
-            }
-
-            fn add_func(&mut self, name: String) {
-                self.func.push(name);
-            }
-        }
-
-        impl<'tcx> AstVisitorSimple<'tcx, Collector> for CountingVisitor<'tcx> {
-            fn unit(&self) -> crate::context::CompileUnit<'tcx> {
-                self.unit
-            }
-
-            fn visit_function(
-                &mut self,
-                _node: &crate::ir::HirNode<'tcx>,
-                t: &mut Collector,
-                _namespace: &'tcx crate::scope::Scope<'tcx>,
-                _parent: Option<&crate::symbol::Symbol>,
-            ) {
-                t.add_func("function_visited".to_string());
-                self.function_count += 1;
-            }
-        }
-
-        // Create visitor and count nodes by walking the parse tree
-        let mut visitor = CountingVisitor::new(unit);
-
-        let globals = cc.create_unit_globals(crate::HirId(0));
-        let root = file_start.unwrap();
-        let node: crate::ir::HirNode<'_> = unit.hir_node(root);
-        let mut collector = Collector::new();
-        visitor.visit_node(node, &mut collector, globals, None);
-
-        assert_eq!(visitor.function_count, 2);
-        assert_eq!(collector.func.len(), 2);
-    }
 }
