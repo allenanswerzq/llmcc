@@ -1,6 +1,3 @@
-use parking_lot::RwLock;
-use bumpalo_herd::Herd;
-
 // Thread 1's Bump     Thread 2's Bump     Thread 3's Bump
 // ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 // │ Memory Pool │    │ Memory Pool │    │ Memory Pool │
@@ -11,7 +8,7 @@ use bumpalo_herd::Herd;
 //                            │
 //                   Shared Vec<&T>
 //                   (protected by RwLock)
-// #[macro_export]
+#[macro_export]
 macro_rules! declare_arena {
     ($arena_name:ident { $($field:ident : $ty:ty),* $(,)? }) => {
         use std::ops::{Deref, DerefMut};
@@ -122,15 +119,14 @@ macro_rules! declare_arena {
     };
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rayon::prelude::*;
-    use crate::ir::{HirIdent, HirScope, HirBase, HirKind};
+    use crate::interner::InternPool;
+    use crate::ir::{HirBase, HirIdent, HirKind, HirScope};
     use crate::scope::Scope;
     use crate::symbol::Symbol;
-    use crate::interner::InternPool;
+    use rayon::prelude::*;
 
     // Define a test arena supporting HirIdent, HirScope, Symbol, and Scope
     declare_arena!(TestArena {
@@ -242,7 +238,6 @@ mod tests {
 
     #[test]
     fn test_arena_mixed_allocation_pattern() {
-
         let arena = TestArena::new();
         let pool = InternPool::new();
 
@@ -331,7 +326,6 @@ mod tests {
 
     #[test]
     fn test_arena_allocate_and_retrieve_all_types() {
-
         let arena = TestArena::new();
         let pool = InternPool::new();
 
@@ -371,7 +365,6 @@ mod tests {
 
     #[test]
     fn test_arena_scope_with_multiple_symbols() {
-
         let arena = TestArena::new();
         let pool = InternPool::new();
 
@@ -402,7 +395,6 @@ mod tests {
 
     #[test]
     fn test_arena_hir_ident_with_symbol_association() {
-
         let arena = TestArena::new();
         let pool = InternPool::new();
 
@@ -643,6 +635,10 @@ mod tests {
 
         // Verify all allocations succeeded
         let symbols = arena_original.symbols();
-        assert_eq!(symbols.len(), 75, "All symbols from all threads should be present");
+        assert_eq!(
+            symbols.len(),
+            75,
+            "All symbols from all threads should be present"
+        );
     }
 }

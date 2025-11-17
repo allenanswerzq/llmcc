@@ -4,18 +4,18 @@ use crate::context::CompileUnit;
 use crate::declare_arena;
 use crate::ir::HirNode;
 
-declare_arena!([
-    blk_root: BlockRoot<'tcx>,
-    blk_func: BlockFunc<'tcx>,
-    blk_method: BlockMethod<'tcx>,
-    blk_class: BlockClass<'tcx>,
-    blk_impl: BlockImpl<'tcx>,
-    blk_stmt: BlockStmt<'tcx>,
-    blk_call: BlockCall<'tcx>,
-    blk_enum: BlockEnum<'tcx>,
-    blk_field: BlockField<'tcx>,
-    blk_const: BlockConst<'tcx>,
-]);
+declare_arena!(BlockArena {
+    blk_root: BlockRoot<'a>,
+    blk_func: BlockFunc<'a>,
+    blk_method: BlockMethod<'a>,
+    blk_class: BlockClass<'a>,
+    blk_impl: BlockImpl<'a>,
+    blk_stmt: BlockStmt<'a>,
+    blk_call: BlockCall<'a>,
+    blk_enum: BlockEnum<'a>,
+    blk_field: BlockField<'a>,
+    blk_const: BlockConst<'a>,
+});
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,

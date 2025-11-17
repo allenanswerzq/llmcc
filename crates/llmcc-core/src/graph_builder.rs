@@ -1,10 +1,8 @@
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
 use std::marker::PhantomData;
-use std::mem;
 
 use crate::DynError;
-use crate::block::Arena as BlockArena;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockMethod,
@@ -52,16 +50,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
-    fn alloc_from_block_arena<T, F>(&self, alloc: F) -> &'tcx T
-    where
-        F: for<'a> FnOnce(&'a BlockArena<'tcx>) -> &'a mut T,
-    {
-        let arena = self.unit.cc.block_arena.lock();
-        let ptr = alloc(&arena);
-        let reference: &T = &*ptr;
-        unsafe { mem::transmute::<&T, &'tcx T>(reference) }
-    }
-
     fn next_id(&self) -> BlockId {
         self.unit.reserve_block_id()
     }
@@ -78,52 +66,52 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BlockKind::Root => {
                 let file_name = node.as_file().map(|file| file.file_path.clone());
                 let block = BlockRoot::from_hir(id, node, parent, children, file_name);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_root.alloc(block));
+                let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Root(block_ref)
             }
             BlockKind::Func => {
                 let block = BlockFunc::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_func.alloc(block));
+                let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Func(block_ref)
             }
             BlockKind::Method => {
                 let block = BlockMethod::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_method.alloc(block));
+                let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Method(block_ref)
             }
             BlockKind::Class => {
                 let block = BlockClass::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_class.alloc(block));
+                let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Class(block_ref)
             }
             BlockKind::Stmt => {
                 let stmt = BlockStmt::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_stmt.alloc(stmt));
+                let block_ref = self.unit.cc.block_arena.alloc(stmt);
                 BasicBlock::Stmt(block_ref)
             }
             BlockKind::Call => {
                 let stmt = BlockCall::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_call.alloc(stmt));
+                let block_ref = self.unit.cc.block_arena.alloc(stmt);
                 BasicBlock::Call(block_ref)
             }
             BlockKind::Enum => {
                 let enum_ty = BlockEnum::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_enum.alloc(enum_ty));
+                let block_ref = self.unit.cc.block_arena.alloc(enum_ty);
                 BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {
                 let stmt = BlockConst::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_const.alloc(stmt));
+                let block_ref = self.unit.cc.block_arena.alloc(stmt);
                 BasicBlock::Const(block_ref)
             }
             BlockKind::Impl => {
                 let block = BlockImpl::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_impl.alloc(block));
+                let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
                 let block = BlockField::from_hir(id, node, parent, children);
-                let block_ref = self.alloc_from_block_arena(|arena| arena.blk_field.alloc(block));
+                let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Field(block_ref)
             }
             _ => {

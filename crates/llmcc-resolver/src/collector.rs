@@ -18,7 +18,7 @@ pub struct CollectorScopes<'a> {
 
 impl<'a> std::fmt::Debug for CollectorScopes<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let scopes: Vec<&Scope> = self.arena.iter_scope().collect();
+        let scopes: Vec<&Scope> = self.arena.scope();
 
         f.debug_struct("CollectorScopes")
             .field("unit_index", &self.unit_index)
@@ -224,7 +224,7 @@ fn apply_collected_symbols<'tcx, 'unit>(
     unit_globals: &'unit Scope<'unit>,
 ) -> &'tcx Scope<'tcx> {
     // Transfer all scopes from per-unit arena to global context
-    for scope in arena.iter_scope() {
+    for scope in arena.scope() {
         if scope.id() == unit_globals.id() {
             // For the global scope: merge into the final global scope
             // This combines all global-level symbols into one scope

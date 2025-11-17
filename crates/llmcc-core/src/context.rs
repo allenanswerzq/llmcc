@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
 use tree_sitter::Node;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
+use crate::block::{BasicBlock, BlockArena, BlockId};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
@@ -329,7 +329,7 @@ pub struct CompileCtxt<'tcx> {
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
-    pub block_arena: Mutex<BlockArena<'tcx>>,
+    pub block_arena: BlockArena<'tcx>,
     pub block_next_id: AtomicU32,
     // BlockId -> ParentedBlock
     pub block_map: RwLock<HashMap<BlockId, ParentedBlock<'tcx>>>,
@@ -382,7 +382,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             scope_map: RwLock::new(HashMap::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
-            block_arena: Mutex::new(BlockArena::default()),
+            block_arena: BlockArena::default(),
             block_next_id: AtomicU32::new(1),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
@@ -426,7 +426,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             scope_map: RwLock::new(HashMap::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
-            block_arena: Mutex::new(BlockArena::default()),
+            block_arena: BlockArena::default(),
             block_next_id: AtomicU32::new(1),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),

@@ -1,4 +1,3 @@
-use parking_lot::RwLock;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
@@ -7,18 +6,16 @@ use crate::scope::Scope;
 use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
-// TODO: efficient arena with iter support to repplace Vec allocations
-declare_arena!([
-    symbol: Symbol,
-] @vec [
+declare_arena!(Arena {
     hir_root: HirRoot,
     hir_text: HirText,
     hir_internal: HirInternal,
-    hir_scope: HirScope<'tcx>,
+    hir_scope: HirScope<'a>,
     hir_file: HirFile,
-    hir_ident: HirIdent<'tcx>,
-    scope: Scope<'tcx>,
-]);
+    hir_ident: HirIdent<'a>,
+    scope: Scope<'a>,
+    symbol: Symbol,
+});
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,

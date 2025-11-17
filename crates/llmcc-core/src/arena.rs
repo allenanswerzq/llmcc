@@ -1,5 +1,5 @@
 #[macro_export]
-macro_rules! declare_arena {
+macro_rules! declare_old_arena {
     // Main entry point with optional vec fields: declare_arena!([foo: Foo, bar: Bar] @vec [baz: Baz])
     ([$($arena_name:ident : $arena_ty:ty),* $(,)?] @vec [$($vec_name:ident : $vec_ty:ty),* $(,)?]) => {
         $crate::declare_arena! { @impl

@@ -182,9 +182,18 @@ mod tests {
         let symbols = pool.intern_batch(strings);
 
         // Duplicates should map to the same symbol
-        assert_eq!(symbols[0], symbols[2], "First and third 'x' should be the same symbol");
-        assert_eq!(symbols[1], symbols[4], "Second and fifth 'y' should be the same symbol");
-        assert_ne!(symbols[0], symbols[1], "Different strings should have different symbols");
+        assert_eq!(
+            symbols[0], symbols[2],
+            "First and third 'x' should be the same symbol"
+        );
+        assert_eq!(
+            symbols[1], symbols[4],
+            "Second and fifth 'y' should be the same symbol"
+        );
+        assert_ne!(
+            symbols[0], symbols[1],
+            "Different strings should have different symbols"
+        );
     }
 
     #[test]
@@ -278,13 +287,7 @@ mod tests {
         let batches: Vec<Vec<&str>> = (0..10)
             .map(|_batch_idx| {
                 (0..100)
-                    .map(|i| {
-                        if i % 2 == 0 {
-                            "even"
-                        } else {
-                            "odd"
-                        }
-                    })
+                    .map(|i| if i % 2 == 0 { "even" } else { "odd" })
                     .collect()
             })
             .collect();

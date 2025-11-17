@@ -350,37 +350,37 @@ fn build_hir_map<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> Result<(), DynError> {
     // Iterate over all vec-backed HIR types and insert them into hir_map.
     // Since all HIR node types are now vec-backed, we can iterate them directly.
 
-    for hir_root in cc.arena.iter_hir_root() {
+    for hir_root in cc.arena.hir_root() {
         let node = HirNode::Root(hir_root);
         let parented = crate::context::ParentedNode::new(node);
         hir_map.insert(hir_root.base.id, parented);
     }
 
-    for hir_text in cc.arena.iter_hir_text() {
+    for hir_text in cc.arena.hir_text() {
         let node = HirNode::Text(hir_text);
         let parented = crate::context::ParentedNode::new(node);
         hir_map.insert(hir_text.base.id, parented);
     }
 
-    for hir_internal in cc.arena.iter_hir_internal() {
+    for hir_internal in cc.arena.hir_internal() {
         let node = HirNode::Internal(hir_internal);
         let parented = crate::context::ParentedNode::new(node);
         hir_map.insert(hir_internal.base.id, parented);
     }
 
-    for hir_scope in cc.arena.iter_hir_scope() {
+    for hir_scope in cc.arena.hir_scope() {
         let node = HirNode::Scope(hir_scope);
         let parented = crate::context::ParentedNode::new(node);
         hir_map.insert(hir_scope.base.id, parented);
     }
 
-    for hir_file in cc.arena.iter_hir_file() {
+    for hir_file in cc.arena.hir_file() {
         let node = HirNode::File(hir_file);
         let parented = crate::context::ParentedNode::new(node);
         hir_map.insert(hir_file.base.id, parented);
     }
 
-    for hir_ident in cc.arena.iter_hir_ident() {
+    for hir_ident in cc.arena.hir_ident() {
         let node = HirNode::Ident(hir_ident);
         let parented = crate::context::ParentedNode::new(node);
         hir_map.insert(hir_ident.base.id, parented);
