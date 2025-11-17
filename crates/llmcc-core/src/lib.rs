@@ -1,4 +1,3 @@
-pub mod arena;
 pub mod block;
 pub mod block_rel;
 pub mod bump;
