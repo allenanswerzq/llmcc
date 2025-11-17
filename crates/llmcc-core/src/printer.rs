@@ -1,62 +1,13 @@
-//! IR and Graph Printing Module
-//!
-//! This module provides production-ready, configurable rendering and printing capabilities for:
-//! - HIR (High-level Intermediate Representation) trees
-//! - Control flow graphs (BasicBlocks)
-//! - AST (Abstract Syntax Tree) nodes
-//!
-//! # Features
-//!
-//! - **Configurable Output Formats**: Tree, Compact, Flat
-//! - **Snippet Management**: Optional source code display with truncation
-//! - **Line Tracking**: Automatic line number extraction from byte positions
-//! - **Depth Control**: Configurable maximum nesting depth (prevents stack overflow)
-//! - **Performance Optimized**: Lazy evaluation, minimal allocations
-//! - **Error Handling**: Result types for safe error propagation
-//!
-//! # Configuration
-//!
-//! Use [`PrintConfig`] to customize rendering behavior:
-//!
-//! ```ignore
-//! // Minimal rendering (fast)
-//! let config = PrintConfig::minimal();
-//!
-//! // Default configuration
-//! let config = PrintConfig::default()
-//!     .with_snippets(true)
-//!     .with_max_depth(5);
-//!
-//! // Verbose rendering (maximum detail)
-//! let config = PrintConfig::verbose();
-//! ```
-//!
-//! # Usage Examples
-//!
-//! ```ignore
-//! // Render HIR with custom config
-//! let config = PrintConfig::default()
-//!     .with_format(PrintFormat::Tree)
-//!     .with_snippets(true);
-//! let (ast, hir) = render_llmcc_ir_with_config(root, unit, &config)?;
-//!
-//! // Render control flow graph
-//! let graph = render_llmcc_graph_with_config(block_id, unit, &config)?;
-//! ```
-
+//! TOOD: use impl fmt::Debug
 use crate::context::CompileUnit;
 use crate::graph_builder::{BasicBlock, BlockId};
 use crate::ir::{HirId, HirNode};
 use std::fmt;
 
-// ============================================================================
-// Configuration Types
-// ============================================================================
-
 /// Output format for rendering
 ///
 /// Controls how the tree structure is rendered to string output.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum PrintFormat {
     /// Standard tree format with indentation and nested structure
     /// ```text
@@ -65,6 +16,7 @@ pub enum PrintFormat {
     ///   (child2)
     /// )
     /// ```
+    #[default]
     Tree,
 
     /// Compact format with minimal whitespace
@@ -80,12 +32,6 @@ pub enum PrintFormat {
     /// child2
     /// ```
     Flat,
-}
-
-impl Default for PrintFormat {
-    fn default() -> Self {
-        PrintFormat::Tree
-    }
 }
 
 impl fmt::Display for PrintFormat {
@@ -402,7 +348,7 @@ pub fn render_llmcc_ir_with_config(
     // Build AST render tree from parse tree if available
     let ast_render = if let Some(parse_tree) = unit.parse_tree() {
         if let Some(root_node) = parse_tree.root_node() {
-            build_ast_render_from_node(&*root_node, config, 0)?
+            build_ast_render(&*root_node, unit, config, 0)?
         } else {
             RenderNode::new(
                 "No AST root node found".to_string(),
@@ -446,11 +392,6 @@ pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -
     Ok(())
 }
 
-/// Render control flow graph with default configuration
-pub fn render_llmcc_graph(root: BlockId, unit: CompileUnit<'_>) -> RenderResult<String> {
-    render_llmcc_graph_with_config(root, unit, &PrintConfig::default())
-}
-
 /// Render control flow graph with custom configuration
 pub fn render_llmcc_graph_with_config(
     root: BlockId,
@@ -485,8 +426,21 @@ pub fn print_llmcc_graph_with_config(
 // ============================================================================
 
 /// Build render tree for AST node (from parse tree)
-fn build_ast_render_from_node(
+fn build_ast_render(
     node: &(dyn crate::lang_def::ParseNode + '_),
+    unit: CompileUnit<'_>,
+    config: &PrintConfig,
+    depth: usize,
+) -> RenderResult<RenderNode> {
+    build_ast_render_with(node, None, 0, unit, config, depth)
+}
+
+/// Build render tree for AST node with parent context for field names
+fn build_ast_render_with(
+    node: &(dyn crate::lang_def::ParseNode + '_),
+    parent: Option<&(dyn crate::lang_def::ParseNode + '_)>,
+    child_index: usize,
+    unit: CompileUnit<'_>,
     config: &PrintConfig,
     depth: usize,
 ) -> RenderResult<RenderNode> {
@@ -495,40 +449,34 @@ fn build_ast_render_from_node(
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    // Format node label
-    let mut label = format!("kind_id: {}", node.kind_id());
+    // Get field name if available from parent
+    let field_name: Option<&str> = parent.and_then(|p| p.child_field_name(child_index));
 
-    // Add node status indicators
-    if node.is_error() {
-        label.push_str(" [ERROR]");
-    }
-    if node.is_extra() {
-        label.push_str(" [EXTRA]");
-    }
-    if node.is_missing() {
-        label.push_str(" [MISSING]");
-    }
+    // Use the trait method to format the label
+    let label = node.format_node_label(field_name);
 
-    // Add byte range
-    let byte_range = format!("[{}-{}]", node.start_byte(), node.end_byte());
+    // Line range info
+    let line_info = Some(format!("[{}-{}]", node.start_byte(), node.end_byte()));
+
+    // Extract snippet from source
+    let snippet = if config.include_snippets {
+        snippet_from_ctx(&unit, node.start_byte(), node.end_byte(), config)
+    } else {
+        None
+    };
 
     // Collect children
     let mut children = Vec::new();
     for i in 0..node.child_count() {
-        if let Some(child) = node.child(i) {
-            if let Ok(render) = build_ast_render_from_node(&*child, config, depth + 1) {
-                children.push(render);
-            }
+        if let Some(child) = node.child(i)
+            && let Ok(render) =
+                build_ast_render_with(&*child, Some(node), i, unit, config, depth + 1)
+        {
+            children.push(render);
         }
     }
 
-    Ok(RenderNode::new(
-        label,
-        Some(byte_range),
-        None,
-        children,
-        None,
-    ))
+    Ok(RenderNode::new(label, line_info, snippet, children, None))
 }
 
 /// Build render tree for HIR node
@@ -543,7 +491,12 @@ fn build_hir_render<'tcx>(
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    let label = node.format_node(unit);
+    let mut label = node.format_node(unit);
+
+    // Add identifier name info for Ident nodes
+    if let crate::ir::HirNode::Ident(ident) = node {
+        label.push_str(&format!(" = \"{}\"", ident.name));
+    }
 
     let line_info = if config.include_line_info {
         Some(format!(
@@ -654,10 +607,10 @@ fn render_node_tree(
     line.push_str(&node.label);
 
     // Add node ID if configured
-    if config.include_node_ids {
-        if let Some(id) = &node.node_id {
-            line.push_str(&format!(" #{}", id));
-        }
+    if config.include_node_ids
+        && let Some(id) = &node.node_id
+    {
+        line.push_str(&format!(" #{}", id));
     }
 
     // Add line information
@@ -665,10 +618,16 @@ fn render_node_tree(
         line.push_str(&format!(" {}", line_info));
     }
 
-    // Add snippet
+    // Align snippet to column and add inline with pipes
     if let Some(snippet) = &node.snippet {
-        let padded = pad_snippet(&line, snippet, config);
-        line.push_str(&padded);
+        // Pad to column width for alignment
+        let padding = config.snippet_col_width.saturating_sub(line.len());
+        if padding > 0 {
+            line.push_str(&" ".repeat(padding));
+        } else {
+            line.push(' ');
+        }
+        line.push_str(&format!("|{}|", snippet));
     }
 
     // Handle children
@@ -694,10 +653,10 @@ fn render_node_compact(
 ) -> RenderResult<()> {
     let mut line = format!("({})", node.label);
 
-    if config.include_line_info {
-        if let Some(info) = &node.line_info {
-            line.push_str(&format!(" {}", info));
-        }
+    if config.include_line_info
+        && let Some(info) = &node.line_info
+    {
+        line.push_str(&format!(" {}", info));
     }
 
     for child in &node.children {
@@ -720,10 +679,10 @@ fn render_node_flat(
 ) -> RenderResult<()> {
     let mut line = node.label.clone();
 
-    if config.include_line_info {
-        if let Some(info) = &node.line_info {
-            line.push_str(&format!(" {}", info));
-        }
+    if config.include_line_info
+        && let Some(info) = &node.line_info
+    {
+        line.push_str(&format!(" {}", info));
     }
 
     out.push(line);
@@ -738,38 +697,6 @@ fn render_node_flat(
 // ============================================================================
 // Utility Functions
 // ============================================================================
-
-/// Safe string truncation respecting UTF-8 boundaries
-fn safe_truncate(s: &mut String, max_len: usize) {
-    if s.len() > max_len {
-        let mut new_len = max_len;
-        while !s.is_char_boundary(new_len) {
-            new_len = new_len.saturating_sub(1);
-            if new_len == 0 {
-                break;
-            }
-        }
-        s.truncate(new_len);
-    }
-}
-
-/// Format snippet with padding and alignment
-fn pad_snippet(line: &str, snippet: &str, config: &PrintConfig) -> String {
-    let mut snippet = snippet.trim().replace('\n', " ");
-
-    // Truncate if too long
-    if snippet.len() > config.snippet_max_length {
-        safe_truncate(&mut snippet, config.snippet_max_length);
-        snippet.push_str("...");
-    }
-
-    if snippet.is_empty() {
-        return String::new();
-    }
-
-    let padding = config.snippet_col_width.saturating_sub(line.len());
-    format!("{}|{}|", " ".repeat(padding), snippet)
-}
 
 /// Extract and format source code snippet
 fn snippet_from_ctx(
@@ -870,24 +797,6 @@ mod tests {
 
         let good_config = PrintConfig::default();
         assert!(good_config.validate().is_ok());
-    }
-
-    #[test]
-    fn test_safe_truncate() {
-        let mut s = "hello world".to_string();
-        safe_truncate(&mut s, 5);
-        assert_eq!(s, "hello");
-
-        // Test with emoji - truncating at position 3 should preserve some valid chars
-        let mut s = "🎉 emoji test".to_string();
-        safe_truncate(&mut s, 3);
-        // Result should be valid UTF-8 and either truncated or empty (emoji takes 4 bytes)
-        assert!(s.is_empty() || s.len() > 0); // Always valid
-
-        // Test truncating multi-byte chars safely
-        let mut s = "café".to_string();
-        safe_truncate(&mut s, 3);
-        assert!(s.len() > 0 || s.is_empty()); // Either some chars or empty, but valid UTF-8
     }
 
     #[test]

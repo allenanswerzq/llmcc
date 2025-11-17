@@ -1,5 +1,5 @@
 use crate::block::{BlockKind, BlockRelation};
-use crate::graph_builder::{GraphNode, ProjectGraph};
+use crate::graph::{GraphNode, ProjectGraph};
 
 /// Query API for semantic code questions built on top of ProjectGraph:
 /// - given a function name, find all related code
@@ -52,10 +52,10 @@ impl GraphBlockInfo {
             self.name, self.kind, location
         ));
 
-        if let Some(fqn) = &self.qualified_name {
-            if fqn != &self.name {
-                output.push_str(&format!("│    aka {}\n", fqn));
-            }
+        if let Some(fqn) = &self.qualified_name
+            && fqn != &self.name
+        {
+            output.push_str(&format!("│    aka {}\n", fqn));
         }
 
         // Source code with line numbers
@@ -235,18 +235,18 @@ impl<'tcx> ProjectQuery<'tcx> {
         let mut result = QueryResult::default();
 
         // Find the primary block
-        if let Some(primary_node) = self.graph.block_by_name(name) {
-            if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info);
+        if let Some(primary_node) = self.graph.block_by_name(name)
+            && let Some(block_info) = self.node_to_block_info(primary_node)
+        {
+            result.primary.push(block_info);
 
-                // Find all blocks this one depends on
-                let depends_blocks = self
-                    .graph
-                    .find_related_blocks(primary_node, vec![BlockRelation::DependsOn]);
-                for depends_node in depends_blocks {
-                    if let Some(depends_info) = self.node_to_block_info(depends_node) {
-                        result.depends.push(depends_info);
-                    }
+            // Find all blocks this one depends on
+            let depends_blocks = self
+                .graph
+                .find_related_blocks(primary_node, vec![BlockRelation::DependsOn]);
+            for depends_node in depends_blocks {
+                if let Some(depends_info) = self.node_to_block_info(depends_node) {
+                    result.depends.push(depends_info);
                 }
             }
         }
@@ -259,18 +259,18 @@ impl<'tcx> ProjectQuery<'tcx> {
         let mut result = QueryResult::default();
 
         // Find the primary block
-        if let Some(primary_node) = self.graph.block_by_name(name) {
-            if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info);
+        if let Some(primary_node) = self.graph.block_by_name(name)
+            && let Some(block_info) = self.node_to_block_info(primary_node)
+        {
+            result.primary.push(block_info);
 
-                // Find all blocks that depend on this one
-                let depended_blocks = self
-                    .graph
-                    .find_related_blocks(primary_node, vec![BlockRelation::DependedBy]);
-                for depended_node in depended_blocks {
-                    if let Some(depended_info) = self.node_to_block_info(depended_node) {
-                        result.depended.push(depended_info);
-                    }
+            // Find all blocks that depend on this one
+            let depended_blocks = self
+                .graph
+                .find_related_blocks(primary_node, vec![BlockRelation::DependedBy]);
+            for depended_node in depended_blocks {
+                if let Some(depended_info) = self.node_to_block_info(depended_node) {
+                    result.depended.push(depended_info);
                 }
             }
         }
@@ -283,16 +283,16 @@ impl<'tcx> ProjectQuery<'tcx> {
         let mut result = QueryResult::default();
 
         // Find the primary block
-        if let Some(primary_node) = self.graph.block_by_name(name) {
-            if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info);
+        if let Some(primary_node) = self.graph.block_by_name(name)
+            && let Some(block_info) = self.node_to_block_info(primary_node)
+        {
+            result.primary.push(block_info);
 
-                // Find all related blocks recursively
-                let all_related = self.graph.find_dpends_blocks_recursive(primary_node);
-                for related_node in all_related {
-                    if let Some(related_info) = self.node_to_block_info(related_node) {
-                        result.depends.push(related_info);
-                    }
+            // Find all related blocks recursively
+            let all_related = self.graph.find_dpends_blocks_recursive(primary_node);
+            for related_node in all_related {
+                if let Some(related_info) = self.node_to_block_info(related_node) {
+                    result.depends.push(related_info);
                 }
             }
         }
@@ -304,15 +304,15 @@ impl<'tcx> ProjectQuery<'tcx> {
     pub fn find_depended_recursive(&self, name: &str) -> QueryResult {
         let mut result = QueryResult::default();
 
-        if let Some(primary_node) = self.graph.block_by_name(name) {
-            if let Some(block_info) = self.node_to_block_info(primary_node) {
-                result.primary.push(block_info);
+        if let Some(primary_node) = self.graph.block_by_name(name)
+            && let Some(block_info) = self.node_to_block_info(primary_node)
+        {
+            result.primary.push(block_info);
 
-                let all_related = self.graph.find_depended_blocks_recursive(primary_node);
-                for related_node in all_related {
-                    if let Some(related_info) = self.node_to_block_info(related_node) {
-                        result.depended.push(related_info);
-                    }
+            let all_related = self.graph.find_depended_blocks_recursive(primary_node);
+            for related_node in all_related {
+                if let Some(related_info) = self.node_to_block_info(related_node) {
+                    result.depended.push(related_info);
                 }
             }
         }
@@ -374,18 +374,26 @@ impl<'tcx> ProjectQuery<'tcx> {
                 let fallback = name
                     .clone()
                     .unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0));
-                let base_name = if symbol.name.is_empty() {
-                    fallback
-                } else {
-                    symbol.name.clone()
-                };
+                let base_name = self
+                    .graph
+                    .cc
+                    .interner
+                    .resolve_owned(symbol.name)
+                    .unwrap_or(fallback);
 
-                let fqn = symbol.fqn_name.read().clone();
-                let qualified = if !fqn.is_empty() && fqn != base_name {
-                    Some(fqn)
-                } else {
-                    None
-                };
+                let fqn = *symbol.fqn.read();
+                let qualified =
+                    self.graph
+                        .cc
+                        .interner
+                        .resolve_owned(fqn)
+                        .and_then(|resolved_fqn| {
+                            if !resolved_fqn.is_empty() && resolved_fqn != base_name {
+                                Some(resolved_fqn)
+                            } else {
+                                None
+                            }
+                        });
 
                 (base_name, qualified)
             } else {
@@ -506,13 +514,13 @@ impl<'tcx> ProjectQuery<'tcx> {
             let child_bb = unit.opt_bb(*child_id)?;
             let child_kind = child_bb.kind();
 
-            if matches!(child_kind, BlockKind::Method | BlockKind::Func) {
-                if let Some(child_base) = child_bb.base() {
-                    let child_node = child_base.node;
-                    let child_start = child_node.start_byte();
-                    if child_start > class_start_byte {
-                        method_start_bytes.push(child_start);
-                    }
+            if matches!(child_kind, BlockKind::Method | BlockKind::Func)
+                && let Some(child_base) = child_bb.base()
+            {
+                let child_node = child_base.node;
+                let child_start = child_node.start_byte();
+                if child_start > class_start_byte {
+                    method_start_bytes.push(child_start);
                 }
             }
         }

@@ -19,10 +19,8 @@ fn slugify_case_name(raw: &str) -> String {
             }
             slug.push(ch.to_ascii_lowercase());
             pending_dash = false;
-        } else {
-            if !slug.is_empty() {
-                pending_dash = true;
-            }
+        } else if !slug.is_empty() {
+            pending_dash = true;
         }
     }
 

@@ -3,17 +3,14 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result, anyhow};
+use llmcc_core::ProjectGraph;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
-use llmcc_core::graph_builder::{
-    BlockId, BlockRelation, GraphBuildConfig, ProjectGraph, build_llmcc_graph,
-};
-use llmcc_core::ir_builder::{IrBuildConfig, build_llmcc_ir};
-use llmcc_core::lang_def::LanguageTrait;
+use llmcc_core::graph_builder::{BlockId, BlockRelation, GraphBuildOption, build_llmcc_graph};
+use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
+use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
-use llmcc_core::{print_llmcc_graph, print_llmcc_ir};
 
-use llmcc_resolver::apply_collected_symbols;
-use llmcc_resolver::collector::CollectedSymbols;
+use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use similar::TextDiff;
 use tempfile::TempDir;
@@ -364,7 +361,7 @@ fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
     }
 
     let mut rows = entries.to_vec();
-    rows.sort_by(|a, b| compare_block_snapshots(a, b));
+    rows.sort_by(compare_block_snapshots);
 
     let label_width = rows.iter().map(|row| row.label.len()).max().unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
@@ -542,15 +539,15 @@ fn normalize_block_graph(text: &str) -> String {
 }
 
 fn is_empty_relation(line: &str) -> bool {
-    if let Some((_, rhs)) = line.split_once("->") {
-        if rhs.trim() == "[]" {
-            return true;
-        }
+    if let Some((_, rhs)) = line.split_once("->")
+        && rhs.trim() == "[]"
+    {
+        return true;
     }
-    if let Some((_, rhs)) = line.split_once("<-") {
-        if rhs.trim() == "[]" {
-            return true;
-        }
+    if let Some((_, rhs)) = line.split_once("<-")
+        && rhs.trim() == "[]"
+    {
+        return true;
     }
     false
 }
@@ -602,11 +599,11 @@ fn normalize_dot_paths(dot: &str) -> String {
             if let Some(start) = line.find("full_path=") {
                 let prefix = &line[..start];
                 let rest = &line[start..];
-                if let Some((before_path, after_path)) = rest.split_once('"') {
-                    if let Some((path, suffix)) = after_path.split_once('"') {
-                        let normalized = normalize_graph_path(path);
-                        return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
-                    }
+                if let Some((before_path, after_path)) = rest.split_once('"')
+                    && let Some((path, suffix)) = after_path.split_once('"')
+                {
+                    let normalized = normalize_graph_path(path);
+                    return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
                 }
             }
             line.to_string()
@@ -616,12 +613,11 @@ fn normalize_dot_paths(dot: &str) -> String {
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
-    if let Some(stripped) = token.strip_prefix('u') {
-        if let Some((unit_str, id_str)) = stripped.split_once(':') {
-            if let (Ok(unit), Ok(id)) = (unit_str.parse::<usize>(), id_str.parse::<u32>()) {
-                return (unit, id);
-            }
-        }
+    if let Some(stripped) = token.strip_prefix('u')
+        && let Some((unit_str, id_str)) = stripped.split_once(':')
+        && let (Ok(unit), Ok(id)) = (unit_str.parse::<usize>(), id_str.parse::<u32>())
+    {
+        return (unit, id);
     }
 
     (usize::MAX, u32::MAX)
@@ -764,35 +760,25 @@ fn collect_pipeline<L>(
     keep_symbol_deps: bool,
 ) -> Result<PipelineSummary>
 where
-    L: LanguageTrait<SymbolCollection = CollectedSymbols>,
+    L: LanguageTraitImpl,
 {
-    let cc = CompileCtxt::from_files::<L>(files)
-        .with_context(|| format!("failed to build compile context for {:?}", files))?;
-    build_llmcc_ir::<L>(&cc, IrBuildConfig).map_err(|err| anyhow!(err))?;
-    let globals = cc.create_globals();
-    let unit_count = cc.get_files().len();
-    let mut collections = Vec::with_capacity(unit_count);
-    for index in 0..unit_count {
-        let unit = cc.compile_unit(index);
-        print_llmcc_ir(unit);
-        let collected = L::collect_symbols(unit);
-        apply_collected_symbols(unit, globals, &collected);
-        collections.push(collected);
-    }
+    let cc = CompileCtxt::from_files::<L>(files).unwrap();
+    build_llmcc_ir::<L>(&cc, IrBuildOption).unwrap();
+
+    // Use new unified API for symbol collection with optional IR printing
+    let globals = collect_symbols_with::<L>(&cc, CollectorOption::default().with_print_ir(true));
+
+    // Bind symbols using new unified API
+    bind_symbols_with::<L>(&cc, globals, BinderOption);
+
     let mut project_graph = if build_graph || build_block_reports || build_block_graph {
         Some(ProjectGraph::new(&cc))
     } else {
         None
     };
-    for (index, collection) in collections.iter().enumerate() {
-        let unit = cc.compile_unit(index);
-        L::bind_symbols(unit, globals, collection);
-        if let Some(project) = project_graph.as_mut() {
-            let unit_graph = build_llmcc_graph::<L>(unit, index, GraphBuildConfig)
-                .map_err(|err| anyhow!(err))?;
-            print_llmcc_graph(unit_graph.root(), unit);
-            project.add_child(unit_graph);
-        }
+    if let Some(project) = project_graph.as_mut() {
+        let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new()).unwrap();
+        project.add_children(unit_graphs);
     }
     let (graph_dot, block_list, block_deps, block_graph) = if let Some(mut project) = project_graph
     {
@@ -900,36 +886,44 @@ fn render_block_graph_node(
 
 fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
     let symbol_map = cc.symbol_map.read();
+    let interner = &cc.interner;
     let mut rows = Vec::with_capacity(symbol_map.len());
-    for (sym_id, symbol) in symbol_map.iter() {
-        let mut fqn = symbol.fqn_name.read().clone();
-        if fqn.is_empty() {
-            fqn = symbol.name.clone();
-        }
+    for (_sym_id, symbol) in symbol_map.iter() {
+        let fqn_str = interner
+            .resolve_owned(*symbol.fqn.read())
+            .unwrap_or_else(|| "?".to_string());
+        let name_str = interner
+            .resolve_owned(symbol.name)
+            .unwrap_or_else(|| "?".to_string());
 
         rows.push(SymbolSnapshot {
             unit: symbol.unit_index().unwrap_or_default(),
-            id: sym_id.0,
+            id: symbol.id().0 as u32,
             kind: format!("{:?}", symbol.kind()),
-            name: symbol.name.clone(),
-            fqn,
+            name: name_str,
+            fqn: fqn_str,
             is_global: symbol.is_global(),
         });
     }
 
     rows
 }
-
 fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySnapshot> {
     use std::collections::HashMap;
 
     let symbol_map = cc.symbol_map.read();
     let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
 
-    for (sym_id, symbol) in symbol_map.iter() {
-        let label = format!("u{}:{}", symbol.unit_index().unwrap_or_default(), sym_id.0);
+    // Build initial cache of all symbols
+    for (_sym_id, symbol) in symbol_map.iter() {
+        let sym_id_num = symbol.id().0 as u32;
+        let label = format!(
+            "u{}:{}",
+            symbol.unit_index().unwrap_or_default(),
+            sym_id_num
+        );
         cache.insert(
-            sym_id.0,
+            sym_id_num,
             SymbolDependencySnapshot {
                 label,
                 depends_on: Vec::new(),
@@ -938,19 +932,26 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
         );
     }
 
-    for (sym_id, symbol) in symbol_map.iter() {
+    // Fill in dependencies
+    for (_sym_id, symbol) in symbol_map.iter() {
+        let sym_id_num = symbol.id().0 as u32;
         let deps = symbol.depends.read().clone();
         for dep in deps {
-            if let Some(target) = symbol_map.get(&dep) {
-                let dep_label = format!("u{}:{}", target.unit_index().unwrap_or_default(), dep.0);
-                if let Some(entry) = cache.get_mut(&sym_id.0) {
+            if let Some(_target) = symbol_map.get(&dep) {
+                let dep_id_num = dep.0 as u32;
+                let dep_label = format!(
+                    "u{}:{}",
+                    _target.unit_index().unwrap_or_default(),
+                    dep_id_num
+                );
+                if let Some(entry) = cache.get_mut(&sym_id_num) {
                     entry.depends_on.push(dep_label.clone());
                 }
-                if let Some(target_entry) = cache.get_mut(&dep.0) {
+                if let Some(target_entry) = cache.get_mut(&dep_id_num) {
                     target_entry.depended_by.push(format!(
                         "u{}:{}",
                         symbol.unit_index().unwrap_or_default(),
-                        sym_id.0
+                        sym_id_num
                     ));
                 }
             }
@@ -1066,7 +1067,7 @@ struct BlockDescriptor {
 
 fn describe_block(
     block_id: llmcc_core::graph_builder::BlockId,
-    indexes: &llmcc_core::context::BlockIndexMaps,
+    indexes: &llmcc_core::block_rel::BlockIndexMaps,
 ) -> Option<BlockDescriptor> {
     let (unit, name, kind) = indexes.get_block_info(block_id)?;
     let name = name.unwrap_or_else(|| format!("block#{block_id}"));

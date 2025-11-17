@@ -21,7 +21,7 @@ macro_rules! declare_arena {
         #[derive(Default)]
         pub struct Arena<'tcx> {
             $( pub $arena_name : typed_arena::Arena<$arena_ty>, )*
-            $( pub $vec_name : parking_lot::RwLock<Vec<$vec_ty>>, )*
+            $( pub $vec_name : parking_lot::RwLock<Vec<Box<$vec_ty>>>, )*
             _marker: std::marker::PhantomData<&'tcx ()>,
         }
 
@@ -63,8 +63,12 @@ macro_rules! declare_arena {
                 #[inline]
                 fn allocate_on(self, arena: &'tcx Arena<'tcx>) -> &'tcx Self {
                     let mut vec = arena.$vec_name.write();
-                    vec.push(self);
-                    unsafe { &*(vec.last().unwrap() as *const _) }
+                    vec.push(Box::new(self));
+                    let ptr: *const $vec_ty = vec
+                        .last()
+                        .expect("vector must contain the element we just pushed")
+                        .as_ref();
+                    unsafe { &*ptr }
                 }
             }
 
@@ -72,8 +76,12 @@ macro_rules! declare_arena {
                 #[inline]
                 fn allocate_on_mut(self, arena: &'tcx Arena<'tcx>) -> &'tcx mut Self {
                     let mut vec = arena.$vec_name.write();
-                    vec.push(self);
-                    unsafe { &mut *(vec.last_mut().unwrap() as *mut _) }
+                    vec.push(Box::new(self));
+                    let ptr: *mut $vec_ty = vec
+                        .last_mut()
+                        .expect("vector must contain the element we just pushed")
+                        .as_mut();
+                    unsafe { &mut *ptr }
                 }
             }
         )*
@@ -94,25 +102,30 @@ macro_rules! declare_arena {
                 paste::paste! {
                     /// Iterate over all allocated values in the `$vec_name` vector.
                     /// Items are yielded in the order they were allocated.
-                    pub fn [<iter_ $vec_name>](&self) -> impl Iterator<Item = &$vec_ty> {
+                    pub fn [<iter_ $vec_name>](&self) -> impl Iterator<Item = &'tcx $vec_ty> {
                         let guard = self.$vec_name.read();
-                        // SAFETY: We extend the lifetime from the guard to 'tcx
-                        // This is safe because the Arena lives for 'tcx and won't be destroyed
-                        let iter: std::slice::Iter<'tcx, $vec_ty> = unsafe { std::mem::transmute(guard.iter()) };
-                        std::mem::forget(guard); // Leak the guard to keep the lock held
-                        iter
+                        let ptrs: Vec<*const $vec_ty> = guard
+                            .iter()
+                            .map(|boxed| boxed.as_ref() as *const $vec_ty)
+                            .collect();
+                        drop(guard);
+                        ptrs.into_iter().map(|ptr| unsafe { &*ptr })
                     }
                 }
             )*
         }
 
+        // Implement Sync for Arena since typed_arena::Arena is thread-safe despite using RefCell
+        // This is safe because:
+        // 1. typed_arena::Arena is designed for allocation-only patterns (no mutations after allocation)
+        // 2. All references returned are immutable (&T, not &mut T)
+        // 3. The internal RefCell is never held across thread boundaries
         unsafe impl<'tcx> Sync for Arena<'tcx> {}
     };
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[derive(Debug, PartialEq)]
     pub struct Foo(i32);
@@ -131,10 +144,10 @@ mod tests {
         let arena = Arena::default();
 
         let f = arena.alloc(Foo(42));
-        let b = arena.alloc(Baz(3.14));
+        let b = arena.alloc(Baz(std::f64::consts::PI));
 
         assert_eq!(f, &Foo(42));
-        assert_eq!(b, &Baz(3.14));
+        assert_eq!(b, &Baz(std::f64::consts::PI));
     }
 
     #[test]

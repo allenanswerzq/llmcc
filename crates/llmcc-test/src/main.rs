@@ -136,10 +136,10 @@ fn list_command(root: PathBuf, filter: Option<String>) -> Result<()> {
     for file in corpus.files() {
         for case in &file.cases {
             let id = case.id();
-            if let Some(term) = &filter {
-                if !id.contains(term) {
-                    continue;
-                }
+            if let Some(term) = &filter
+                && !id.contains(term)
+            {
+                continue;
             }
             count += 1;
             println!("{id}");

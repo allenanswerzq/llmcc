@@ -9,16 +9,15 @@ pub fn parse_crate_name(file_path: &str) -> Option<String> {
         let cargo_path = current_dir.join("Cargo.toml");
         if cargo_path.exists() {
             // Try to read and parse the Cargo.toml file using toml library
-            if let Ok(content) = fs::read_to_string(&cargo_path) {
-                if let Ok(table) = content.parse::<Table>() {
-                    // Get the package name from [package] section
-                    if let Some(package) = table.get("package") {
-                        if let Some(name) = package.get("name") {
-                            if let Some(name_str) = name.as_str() {
-                                return Some(name_str.to_string());
-                            }
-                        }
-                    }
+            if let Ok(content) = fs::read_to_string(&cargo_path)
+                && let Ok(table) = content.parse::<Table>()
+            {
+                // Get the package name from [package] section
+                if let Some(package) = table.get("package")
+                    && let Some(name) = package.get("name")
+                    && let Some(name_str) = name.as_str()
+                {
+                    return Some(name_str.to_string());
                 }
             }
             // If we found Cargo.toml but couldn't parse the name, return None
@@ -33,10 +32,7 @@ pub fn parse_crate_name(file_path: &str) -> Option<String> {
 pub fn parse_module_name(file_path: &str) -> Option<String> {
     let file_stem = Path::new(file_path).file_stem().and_then(|n| n.to_str());
 
-    let file_name = match file_stem {
-        Some(name) => name,
-        None => return None,
-    };
+    let file_name = file_stem?;
 
     // Special case: if this is lib.rs, it's the crate root
     if file_name == "lib" {

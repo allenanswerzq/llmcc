@@ -1,14 +1,14 @@
 use parking_lot::{Mutex, RwLock};
 use rayon::prelude::*;
 use std::cmp::Ordering as CmpOrdering;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
 use tree_sitter::Node;
 
-use crate::block::{Arena as BlockArena, BasicBlock, BlockId, BlockKind};
-use crate::block_rel::BlockRelationMap;
+use crate::block::{Arena as BlockArena, BasicBlock, BlockId};
+use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
@@ -28,8 +28,11 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Get the generic parse tree for this compilation unit
-    pub fn parse_tree(&self) -> Option<&Box<dyn ParseTree>> {
-        self.cc.parse_trees.get(self.index).and_then(|t| t.as_ref())
+    pub fn parse_tree(&self) -> Option<&dyn ParseTree> {
+        self.cc
+            .parse_trees
+            .get(self.index)
+            .and_then(|t| t.as_deref())
     }
 
     /// Access the shared string interner.
@@ -132,9 +135,9 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Get an existing scope or None if it doesn't exist
-    pub fn opt_get_scope(self, owner: HirId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from cache
-        self.cc.scope_cache.read().get(&owner).copied()
+    pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
+        // Direct lookup from scope_map
+        self.cc.scope_map.read().get(&scope_id).copied()
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
@@ -142,13 +145,13 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Get an existing scope or panics if it doesn't exist
-    pub fn get_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
+    pub fn get_scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
         self.cc
-            .scope_cache
+            .scope_map
             .read()
-            .get(&owner)
+            .get(&scope_id)
             .copied()
-            .expect("HirId not mapped to Scope in CompileCtxt")
+            .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
     /// Find an existing scope or create a new one
@@ -291,156 +294,6 @@ impl<'tcx> ParentedBlock<'tcx> {
     }
 }
 
-/// BlockIndexMaps provides efficient lookup of blocks by various indices.
-///
-/// Best practices for usage:
-/// - block_name_index: Use when you want to find blocks by name (multiple blocks can share the same name)
-/// - unit_index_index: Use when you want all blocks in a specific unit
-/// - block_kind_index: Use when you want all blocks of a specific kind (e.g., all functions)
-/// - block_id_index: Use for O(1) lookup of block metadata by BlockId
-///
-/// Important: The "name" field is optional since Root blocks and some other blocks may not have names.
-///
-/// Rationale for data structure choices:
-/// - BTreeMap is used for name and unit indexes for better iteration and range queries
-/// - HashMap is used for kind index since BlockKind doesn't implement Ord
-/// - HashMap is used for block_id_index (direct lookup by BlockId) for O(1) access
-/// - Vec is used for values to handle multiple blocks with the same index (same name/kind/unit)
-#[derive(Debug, Default, Clone)]
-pub struct BlockIndexMaps {
-    /// block_name -> Vec<(unit_index, block_kind, block_id)>
-    /// Multiple blocks can share the same name across units or within the same unit
-    pub block_name_index: BTreeMap<String, Vec<(usize, BlockKind, BlockId)>>,
-
-    /// unit_index -> Vec<(block_name, block_kind, block_id)>
-    /// Allows retrieval of all blocks in a specific compilation unit
-    pub unit_index_map: BTreeMap<usize, Vec<(Option<String>, BlockKind, BlockId)>>,
-
-    /// block_kind -> Vec<(unit_index, block_name, block_id)>
-    /// Allows retrieval of all blocks of a specific kind across all units
-    pub block_kind_index: HashMap<BlockKind, Vec<(usize, Option<String>, BlockId)>>,
-
-    /// block_id -> (unit_index, block_name, block_kind)
-    /// Direct O(1) lookup of block metadata by ID
-    pub block_id_index: HashMap<BlockId, (usize, Option<String>, BlockKind)>,
-}
-
-impl BlockIndexMaps {
-    /// Create a new empty BlockIndexMaps
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Register a new block in all indexes
-    ///
-    /// # Arguments
-    /// - `block_id`: The unique block identifier
-    /// - `block_name`: Optional name of the block (None for unnamed blocks)
-    /// - `block_kind`: The kind of block (Func, Class, Stmt, etc.)
-    /// - `unit_index`: The compilation unit index this block belongs to
-    pub fn insert_block(
-        &mut self,
-        block_id: BlockId,
-        block_name: Option<String>,
-        block_kind: BlockKind,
-        unit_index: usize,
-    ) {
-        // Insert into block_id_index for O(1) lookups
-        self.block_id_index
-            .insert(block_id, (unit_index, block_name.clone(), block_kind));
-
-        // Insert into block_name_index (if name exists)
-        if let Some(ref name) = block_name {
-            self.block_name_index
-                .entry(name.clone())
-                .or_default()
-                .push((unit_index, block_kind, block_id));
-        }
-
-        // Insert into unit_index_map
-        self.unit_index_map.entry(unit_index).or_default().push((
-            block_name.clone(),
-            block_kind,
-            block_id,
-        ));
-
-        // Insert into block_kind_index
-        self.block_kind_index
-            .entry(block_kind)
-            .or_default()
-            .push((unit_index, block_name, block_id));
-    }
-
-    /// Find all blocks with a given name (may return multiple blocks)
-    ///
-    /// Returns a vector of (unit_index, block_kind, block_id) tuples
-    pub fn find_by_name(&self, name: &str) -> Vec<(usize, BlockKind, BlockId)> {
-        self.block_name_index.get(name).cloned().unwrap_or_default()
-    }
-
-    /// Find all blocks in a specific unit
-    ///
-    /// Returns a vector of (block_name, block_kind, block_id) tuples
-    pub fn find_by_unit(&self, unit_index: usize) -> Vec<(Option<String>, BlockKind, BlockId)> {
-        self.unit_index_map
-            .get(&unit_index)
-            .cloned()
-            .unwrap_or_default()
-    }
-
-    /// Find all blocks of a specific kind across all units
-    ///
-    /// Returns a vector of (unit_index, block_name, block_id) tuples
-    pub fn find_by_kind(&self, block_kind: BlockKind) -> Vec<(usize, Option<String>, BlockId)> {
-        self.block_kind_index
-            .get(&block_kind)
-            .cloned()
-            .unwrap_or_default()
-    }
-
-    /// Find all blocks of a specific kind in a specific unit
-    ///
-    /// Returns a vector of block_ids
-    pub fn find_by_kind_and_unit(&self, block_kind: BlockKind, unit_index: usize) -> Vec<BlockId> {
-        let by_kind = self.find_by_kind(block_kind);
-        by_kind
-            .into_iter()
-            .filter(|(unit, _, _)| *unit == unit_index)
-            .map(|(_, _, block_id)| block_id)
-            .collect()
-    }
-
-    /// Look up block metadata by BlockId for O(1) access
-    ///
-    /// Returns (unit_index, block_name, block_kind) if found
-    pub fn get_block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
-        self.block_id_index.get(&block_id).cloned()
-    }
-
-    /// Get total number of blocks indexed
-    pub fn block_count(&self) -> usize {
-        self.block_id_index.len()
-    }
-
-    /// Get the number of unique block names
-    pub fn unique_names_count(&self) -> usize {
-        self.block_name_index.len()
-    }
-
-    /// Check if a block with the given ID exists
-    pub fn contains_block(&self, block_id: BlockId) -> bool {
-        self.block_id_index.contains_key(&block_id)
-    }
-
-    /// Clear all indexes
-    pub fn clear(&mut self) {
-        self.block_name_index.clear();
-        self.unit_index_map.clear();
-        self.block_kind_index.clear();
-        self.block_id_index.clear();
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct FileParseMetric {
     pub path: String,
@@ -469,10 +322,10 @@ pub struct CompileCtxt<'tcx> {
 
     // HirId -> ParentedNode
     pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // ScopeId -> Scope (used internally for allocation)
+    // ScopeId -> Scope (primary scope storage)
     pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
-    // HirId -> Scope (direct single-step lookup)
-    pub scope_cache: RwLock<HashMap<HirId, &'tcx Scope<'tcx>>>,
+    // HirId -> ScopeId (for looking up scope by owner HirId)
+    pub owner_to_scope_id: RwLock<HashMap<HirId, ScopeId>>,
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
@@ -508,7 +361,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             .iter()
             .enumerate()
             .map(|(index, src)| {
-                let path = format!("virtual://unit_{index}.rs");
+                let path = format!("from_source/unit_{index}.rs");
                 File::new_virtual(path, src.clone())
             })
             .collect();
@@ -524,7 +377,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
-            scope_cache: RwLock::new(HashMap::new()),
+            owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -567,7 +420,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_start_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
-            scope_cache: RwLock::new(HashMap::new()),
+            owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: Mutex::new(BlockArena::default()),
             block_next_id: AtomicU32::new(1),
@@ -645,7 +498,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Sentinel owner id reserved for the global scope so that file-level scopes
     /// (whose HIR id often defaults to 0) do not reuse the same `Scope` instance.
-    pub const GLOBAL_SCOPE_OWNER: HirId = HirId(u32::MAX);
+    pub const GLOBAL_SCOPE_OWNER: HirId = HirId(usize::MAX);
 
     /// Create a context that references this CompileCtxt for a specific file index
     pub fn compile_unit(&'tcx self, index: usize) -> CompileUnit<'tcx> {
@@ -654,10 +507,6 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         let scope = self.alloc_scope(owner);
-        // self.symbol_map
-        //     .write()
-        //     .insert(SymId::GLOBAL_SCOPE, scope.as_symbol());
-        self.scope_cache.write().insert(owner, scope);
         self.scope_map.write().insert(scope.id(), scope);
         scope
     }
@@ -666,12 +515,12 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
     }
 
-    pub fn get_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.scope_cache
+    pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
+        self.scope_map
             .read()
-            .get(&owner)
+            .get(&scope_id)
             .copied()
-            .expect("HirId not mapped to Scope in CompileCtxt")
+            .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
@@ -698,18 +547,13 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        // Check cache first
-        if let Some(existing) = self.scope_cache.read().get(&owner) {
-            return existing;
-        }
-
         // Allocate new scope
-        let scope_id = ScopeId(self.scope_map.read().len() as u32);
+        let scope_id = ScopeId(self.scope_map.read().len());
         let scope = self.arena.alloc(Scope::new(owner));
 
-        // Update both maps
+        // Update both scope_map and owner_to_scope_id mapping
         self.scope_map.write().insert(scope_id, scope);
-        self.scope_cache.write().insert(owner, scope);
+        self.owner_to_scope_id.write().insert(owner, scope_id);
 
         scope
     }
@@ -717,7 +561,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Merge the second scope into the first.
     ///
     /// This combines all symbols from the second scope into the first scope,
-    /// and updates both the scope and symbol maps to reference the merged result.
+    /// and updates the scope_map to reference the merged result.
     ///
     /// # Arguments
     /// * `first` - The target scope to merge into
@@ -727,7 +571,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// - All symbols from `second` are merged into `first`
     /// - The symbol_map is updated to point all merged symbols to the symbol_map
     /// - The scope_map is updated to redirect second's scope ID to first
-    /// - The scope_cache is updated to redirect second's owner to first
     pub fn merge_two_scopes<'src>(&'tcx self, first: &'tcx Scope<'tcx>, second: &'src Scope<'src>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
@@ -739,9 +582,8 @@ impl<'tcx> CompileCtxt<'tcx> {
         });
 
         // Remap scope references from second to first
-        // If any HIR node was mapped to second's scope, it should now map to first
+        // If any code had a reference to second's scope ID, it should now map to first
         self.scope_map.write().insert(second.id(), first);
-        self.scope_cache.write().insert(second.owner(), first);
     }
 
     /// Allocate a new scope based on an existing one, cloning its contents.
@@ -749,20 +591,13 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// The existing ones are from the other arena, and we want to allocate in
     /// this arena.
     pub fn alloc_scope_with<'src>(&'tcx self, existing: &Scope<'src>) -> &'tcx Scope<'tcx> {
-        let owner = existing.owner();
-        // Check cache first
-        if let Some(existing) = self.scope_cache.read().get(&owner) {
-            return existing;
-        }
-
         // Allocate new scope from existing
-        let scope_id = existing.id();
+        let scope_id = ScopeId(self.scope_map.read().len());
         let scope = Scope::new_from(existing, self.arena());
         let scope = self.arena.alloc(scope);
 
-        // Update both maps
+        // Update scope_map
         self.scope_map.write().insert(scope_id, scope);
-        self.scope_cache.write().insert(owner, scope);
         scope.for_each_symbol(|sym| {
             self.symbol_map.write().insert(sym.id(), sym);
         });
@@ -772,7 +607,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn reserve_hir_id(&self) -> HirId {
         let id = self.hir_next_id.fetch_add(1, Ordering::Relaxed);
-        HirId(id)
+        HirId(id as usize)
     }
 
     pub fn reserve_block_id(&self) -> BlockId {
@@ -781,7 +616,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn current_hir_id(&self) -> HirId {
-        HirId(self.hir_next_id.load(Ordering::Relaxed))
+        HirId(self.hir_next_id.load(Ordering::Relaxed) as usize)
     }
 
     pub fn set_file_start(&self, index: usize, start: HirId) {
@@ -800,8 +635,8 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     /// Get the generic parse tree for a specific file
-    pub fn get_parse_tree(&self, index: usize) -> Option<&Box<dyn ParseTree>> {
-        self.parse_trees.get(index).and_then(|t| t.as_ref())
+    pub fn get_parse_tree(&self, index: usize) -> Option<&dyn ParseTree> {
+        self.parse_trees.get(index).and_then(|t| t.as_deref())
     }
 
     /// Get all file paths from the compilation context
@@ -817,6 +652,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn clear(&self) {
         self.hir_map.write().clear();
         self.scope_map.write().clear();
-        self.scope_cache.write().clear();
+        self.owner_to_scope_id.write().clear();
     }
 }

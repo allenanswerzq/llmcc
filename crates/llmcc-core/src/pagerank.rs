@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::block::{BlockId, BlockKind, BlockRelation};
-use crate::graph_builder::{GraphNode, ProjectGraph};
+use crate::graph::{GraphNode, ProjectGraph};
 
 /// Configuration options for PageRank algorithm.
 #[derive(Debug, Clone)]

@@ -5,13 +5,12 @@ use std::time::Instant;
 
 use ignore::WalkBuilder;
 use rayon::ThreadPoolBuilder;
-use rayon::prelude::*;
 use tracing::info;
 
-use llmcc_core::lang_def::LanguageTrait;
-use llmcc_core::symbol::Scope;
+use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
+use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
-use llmcc_resolver::{CollectedSymbols, apply_collected_symbols};
+use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
 
 fn should_skip_dir(name: &str) -> bool {
     matches!(
@@ -67,7 +66,7 @@ pub struct LlmccOptions {
 
 pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
 where
-    L: LanguageTrait<SymbolCollection = CollectedSymbols>,
+    L: LanguageTraitImpl,
 {
     let total_start = Instant::now();
 
@@ -85,42 +84,31 @@ where
     );
     log_parse_metrics(&cc.build_metrics);
 
-    let files = cc.get_files();
-
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc, IrBuildConfig)?;
+    build_llmcc_ir::<L>(&cc, IrBuildOption)?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
-    let globals = cc.create_globals();
-
-    if opts.print_ir {
-        for (index, _) in files.iter().enumerate() {
-            let unit = cc.compile_unit(index);
-            print_llmcc_ir(unit);
-        }
-    }
-
     let symbols_start = Instant::now();
-    let collections = collect_and_apply_symbols::<L>(&cc, globals, files.len());
+    let globals =
+        collect_symbols_with::<L>(&cc, CollectorOption::default().with_print_ir(opts.print_ir));
     info!(
         "Symbol collection: {:.2}s",
         symbols_start.elapsed().as_secs_f64()
     );
 
     let mut pg = ProjectGraph::new(&cc);
-    let graph_config = GraphBuildConfig;
 
     let graph_build_start = Instant::now();
-    bind_symbols_for_units::<L>(&cc, globals, &collections);
+    bind_symbols_with::<L>(&cc, globals, BinderOption);
 
-    let unit_graphs = build_unit_graphs::<L>(&cc, graph_config, files.len())?;
-    for (index, unit_graph) in unit_graphs {
-        let unit = cc.compile_unit(index);
+    let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;
+    for unit_graph in &unit_graphs {
+        let unit = cc.compile_unit(unit_graph.unit_index());
         if opts.print_block {
-            print_llmcc_graph(unit_graph.root(), unit);
+            let _ = print_llmcc_graph(unit_graph.root(), unit);
         }
-        pg.add_child(unit_graph);
     }
+    pg.add_children(unit_graphs);
     info!(
         "Graph building: {:.2}s",
         graph_build_start.elapsed().as_secs_f64()
@@ -264,78 +252,11 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
     }
 }
 
-fn collect_and_apply_symbols<'tcx, L>(
-    cc: &'tcx CompileCtxt<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-    unit_count: usize,
-) -> Vec<CollectedSymbols>
-where
-    L: LanguageTrait<SymbolCollection = CollectedSymbols>,
-{
-    let mut indexed_collections: Vec<_> = (0..unit_count)
-        .into_par_iter()
-        .map(|index| {
-            let unit = cc.compile_unit(index);
-            (index, L::collect_symbols(unit))
-        })
-        .collect();
-
-    indexed_collections.sort_by_key(|(index, _)| *index);
-
-    let mut collections = Vec::with_capacity(indexed_collections.len());
-    for (index, collected) in indexed_collections {
-        let unit = cc.compile_unit(index);
-        apply_collected_symbols(unit, globals, &collected);
-        collections.push(collected);
-    }
-
-    collections
-}
-
-fn bind_symbols_for_units<'tcx, L>(
-    cc: &'tcx CompileCtxt<'tcx>,
-    globals: &'tcx Scope<'tcx>,
-    collections: &[CollectedSymbols],
-) where
-    L: LanguageTrait<SymbolCollection = CollectedSymbols>,
-{
-    for (index, collection) in collections.iter().enumerate() {
-        let unit = cc.compile_unit(index);
-        L::bind_symbols(unit, globals, collection);
-    }
-}
-
-fn build_unit_graphs<'tcx, L>(
-    cc: &'tcx CompileCtxt<'tcx>,
-    graph_config: GraphBuildConfig,
-    unit_count: usize,
-) -> Result<Vec<(usize, llmcc_core::graph_builder::UnitGraph)>, DynError>
-where
-    L: LanguageTrait<SymbolCollection = CollectedSymbols>,
-{
-    let mut unit_graph_results: Vec<_> = (0..unit_count)
-        .into_par_iter()
-        .map(|index| {
-            let unit = cc.compile_unit(index);
-            (index, build_llmcc_graph::<L>(unit, index, graph_config))
-        })
-        .collect();
-
-    unit_graph_results.sort_by_key(|(index, _)| *index);
-
-    let mut graphs = Vec::with_capacity(unit_graph_results.len());
-    for (index, graph_result) in unit_graph_results {
-        graphs.push((index, graph_result?));
-    }
-
-    Ok(graphs)
-}
-
 fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
     if opts.design_graph {
         if opts.pagerank {
             let limit = Some(opts.top_k.unwrap_or(80));
-            pg.set_compact_rank_limit(limit);
+            pg.set_top_k(limit);
 
             let pagerank_start = Instant::now();
             let result = pg.render_design_graph();
