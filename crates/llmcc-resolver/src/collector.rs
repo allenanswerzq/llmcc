@@ -228,7 +228,7 @@ fn apply_collected_symbols<'tcx, 'unit>(
         if scope.id() == unit_globals.id() {
             // For the global scope: merge into the final global scope
             // This combines all global-level symbols into one scope
-            cc.merge_two_scopes(final_globals, scope);
+            cc.merge_two_scopes(final_globals, unit_globals);
         } else {
             // For all other scopes: allocate new instances in the global arena
             // while preserving their IDs and symbol relationships
@@ -256,16 +256,19 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: CollectorOption,
 ) -> &'a Scope<'a> {
-    let arena = &cc.arena;
     let interner = &cc.interner;
     let unit_globals_vec = (0..cc.files.len())
         .into_par_iter()
         .map(|unit_index| {
+            // Create a per-unit arena with 'tcx lifetime
+            let unit_arena = cc.create_unit_arena();
+            let unit_globals = unit_arena.alloc(Scope::new(HirId(unit_index)));
+
             let unit = cc.compile_unit(unit_index);
-            let unit_globals = cc.create_unit_globals(HirId(unit_index));
             let id = unit.file_start_hir_id().unwrap();
             let node = unit.hir_node(id);
-            let mut collector = CollectorScopes::new(unit_index, arena, interner, unit_globals);
+            let mut collector =
+                CollectorScopes::new(unit_index, unit_arena, interner, unit_globals);
             L::collect_symbols(&unit, &node, &mut collector, unit_globals);
 
             if config.print_ir {
@@ -279,8 +282,9 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         .collect::<Vec<&'a Scope<'a>>>();
 
     let globals = cc.create_globals();
-    for unit_globals in unit_globals_vec {
-        apply_collected_symbols(cc, arena, globals, unit_globals);
+    for (unit_index, unit_globals) in unit_globals_vec.iter().enumerate() {
+        let unit_arena = cc.get_unit_arena(unit_index);
+        apply_collected_symbols(cc, unit_arena, globals, unit_globals);
     }
     globals
 }

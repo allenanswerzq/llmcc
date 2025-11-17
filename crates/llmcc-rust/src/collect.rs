@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn test_decl_visitor() {
-        let source_code = br#"
+        let foo = br#"
 mod outer {
     fn nested_function() {}
 
@@ -196,6 +196,12 @@ type Alias = Foo;
 const TOP_CONST: i32 = 42;
 static TOP_STATIC: i32 = 7;
 "#;
-        compile_from_soruces(vec![source_code.to_vec()]);
+        let bar = br#"
+mod outer {
+    fn nested_function() {}
+}
+    "#;
+
+        compile_from_soruces(vec![foo.to_vec(), bar.to_vec()]);
     }
 }

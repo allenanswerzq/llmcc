@@ -339,6 +339,9 @@ pub struct CompileCtxt<'tcx> {
     /// Index maps for efficient block lookups by name, kind, unit, and id
     pub block_indexes: RwLock<BlockIndexMaps>,
 
+    /// Per-unit arenas for parallel symbol collection
+    pub unit_arenas: Mutex<Vec<&'tcx Arena<'tcx>>>,
+
     /// Metrics collected while building the compilation context
     pub build_metrics: BuildMetrics,
 }
@@ -385,6 +388,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
+            unit_arenas: Mutex::new(Vec::new()),
             build_metrics: metrics,
         }
     }
@@ -428,6 +432,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
+            unit_arenas: Mutex::new(Vec::new()),
             build_metrics: metrics,
         })
     }
@@ -513,6 +518,32 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
         self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
+    }
+
+    /// Create a per-unit arena with 'tcx lifetime and store it in the context
+    /// This allows per-unit arenas to coexist with the compilation context
+    pub fn create_unit_arena(&'tcx self) -> &'tcx Arena<'tcx> {
+        // Safety: We're creating a new Arena and storing it with 'tcx lifetime
+        // The Arena is allocated with Box and stored in unit_arenas Mutex,
+        // which is part of CompileCtxt<'tcx>, so the arena will live as long as 'tcx
+        let arena = unsafe {
+            let arena_box = Box::new(Arena::default());
+            let arena_ptr = Box::into_raw(arena_box);
+            &*arena_ptr
+        };
+
+        // Store in the context for lifetime management
+        self.unit_arenas.lock().push(arena);
+        arena
+    }
+
+    /// Get a per-unit arena by index
+    pub fn get_unit_arena(&'tcx self, index: usize) -> &'tcx Arena<'tcx> {
+        self.unit_arenas
+            .lock()
+            .get(index)
+            .copied()
+            .expect("unit arena index out of bounds")
     }
 
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
