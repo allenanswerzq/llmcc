@@ -77,6 +77,12 @@ macro_rules! declare_arena {
             }
         }
 
+        impl<'a> Default for $arena_name<'a> {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
         // ---- Deref to ArenaInner ----
         impl<'a> Deref for $arena_name<'a> {
             type Target = ArenaInner<'a>;
@@ -116,856 +122,527 @@ macro_rules! declare_arena {
     };
 }
 
-// ============================================================================
-// Complex Struct Definitions for Testing
-// ============================================================================
-
-/// A simple entity allocated in the arena
-#[derive(Debug, Clone)]
-pub struct Entity {
-    pub id: u32,
-    pub name: String,
-    pub data: Vec<i32>,
-}
-
-/// A container holding references to entities - OWNED version for easier testing
-#[derive(Debug, Clone)]
-pub struct EntitySet {
-    pub entity_ids: Vec<u32>,
-    pub metadata: String,
-}
-
-/// A simple record for testing
-#[derive(Debug, Clone)]
-pub struct Record {
-    pub id: u64,
-    pub owner_id: u32,
-    pub related_ids: Vec<u32>,
-    pub value: f64,
-}
-
-/// A struct with internal RwLock for testing mutable interior access
-#[derive(Debug)]
-pub struct MutableEntity {
-    pub id: u32,
-    pub name: String,
-    pub state: RwLock<Vec<i32>>,  // Interior mutability through RwLock
-}
-
-impl Clone for MutableEntity {
-    fn clone(&self) -> Self {
-        Self {
-            id: self.id,
-            name: self.name.clone(),
-            state: RwLock::new(self.state.read().clone()),
-        }
-    }
-}
-
-impl MutableEntity {
-    pub fn new(id: u32, name: String) -> Self {
-        Self {
-            id,
-            name,
-            state: RwLock::new(Vec::new()),
-        }
-    }
-
-    /// Append to state without mutable reference
-    pub fn append_state(&self, value: i32) {
-        self.state.write().push(value);
-    }
-
-    /// Read state without mutable reference
-    pub fn read_state(&self) -> Vec<i32> {
-        self.state.read().clone()
-    }
-
-    /// Get state length without mutable reference
-    pub fn state_len(&self) -> usize {
-        self.state.read().len()
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use rayon::prelude::*;
+    use crate::ir::{HirIdent, HirScope, HirBase, HirKind};
+    use crate::scope::Scope;
+    use crate::symbol::Symbol;
+    use crate::interner::InternPool;
 
-    // Define a test arena supporting Entity, EntitySet, and MutableEntity
-    declare_arena!(TestArena { entities: Entity, entitysets: EntitySet, mutable_entities: MutableEntity });
+    // Define a test arena supporting HirIdent, HirScope, Symbol, and Scope
+    declare_arena!(TestArena {
+        hir_idents: HirIdent<'a>,
+        hir_scopes: HirScope<'a>,
+        symbols: Symbol,
+        scopes: Scope<'a>,
+    });
 
-    #[test]
-    fn test_complex_entity_allocation() {
-        let arena = TestArena::new();
-
-        let entity = Entity {
-            id: 1,
-            name: "Hero".to_string(),
-            data: vec![10, 20, 30],
-        };
-
-        let allocated = arena.alloc(entity);
-        assert_eq!(allocated.id, 1);
-        assert_eq!(allocated.name, "Hero");
-        assert_eq!(allocated.data.len(), 3);
+    fn create_test_hir_id(idx: u32) -> crate::ir::HirId {
+        crate::ir::HirId(idx as usize)
     }
 
-    #[test]
-    fn test_entity_set_with_allocation() {
-        let arena = TestArena::new();
-
-        let entity_set = EntitySet {
-            entity_ids: vec![1, 2, 3],
-            metadata: "test_set".to_string(),
-        };
-
-        let allocated_set = arena.alloc(entity_set);
-        assert_eq!(allocated_set.entity_ids.len(), 3);
-        assert_eq!(allocated_set.metadata, "test_set");
-    }
-
-    #[test]
-    fn test_entities_tracked_in_arena() {
-        let arena = TestArena::new();
-
-        arena.alloc(Entity {
-            id: 1,
-            name: "Entity1".to_string(),
-            data: vec![],
-        });
-
-        arena.alloc(Entity {
-            id: 2,
-            name: "Entity2".to_string(),
-            data: vec![],
-        });
-
-        let entities = arena.entities();
-        assert_eq!(entities.len(), 2);
-    }
-
-    #[test]
-    fn test_entity_sets_tracked_in_arena() {
-        let arena = TestArena::new();
-
-        arena.alloc(EntitySet {
-            entity_ids: vec![1, 2],
-            metadata: "set1".to_string(),
-        });
-
-        arena.alloc(EntitySet {
-            entity_ids: vec![3, 4],
-            metadata: "set2".to_string(),
-        });
-
-        let sets = arena.entitysets();
-        assert_eq!(sets.len(), 2);
-    }
-
-    // ========== Multithreading Tests with Rayon ==========
-
-    #[test]
-    fn test_rayon_parallel_allocation() {
-        let arena = TestArena::new();
-
-        let _results: Vec<_> = (0..100)
-            .into_par_iter()
-            .map(|i| {
-                let entity = Entity {
-                    id: i as u32,
-                    name: format!("Entity_{}", i),
-                    data: vec![i as i32; 10],
-                };
-                arena.alloc(entity)
-            })
-            .collect();
-
-        let entities = arena.entities();
-        assert_eq!(entities.len(), 100);
-    }
-
-    #[test]
-    fn test_rayon_parallel_entity_sets() {
-        let arena = TestArena::new();
-
-        // Parallel: create entity sets
-        let _sets: Vec<_> = (0..50)
-            .into_par_iter()
-            .map(|i| {
-                let set = EntitySet {
-                    entity_ids: vec![i as u32, (i + 1) as u32],
-                    metadata: format!("set_{}", i),
-                };
-                arena.alloc(set)
-            })
-            .collect();
-
-        let entity_sets = arena.entitysets();
-        assert_eq!(entity_sets.len(), 50);
-    }
-
-    #[test]
-    fn test_rayon_high_contention() {
-        let arena = TestArena::new();
-
-        // High contention: many threads allocating to the same arena
-        (0..20)
-            .into_par_iter()
-            .for_each(|thread_id| {
-                for item in 0..50 {
-                    let _entity = arena.alloc(Entity {
-                        id: (thread_id * 50 + item) as u32,
-                        name: format!("T{}_I{}", thread_id, item),
-                        data: vec![thread_id as i32, item as i32],
-                    });
-                }
-            });
-
-        let entities = arena.entities();
-        assert_eq!(entities.len(), 1000); // 20 threads * 50 items
-    }
-
-    #[test]
-    fn test_rayon_nested_parallelism() {
-        let arena = TestArena::new();
-
-        // Outer parallel loop
-        let _batches: Vec<_> = (0..10)
-            .into_par_iter()
-            .map(|batch_id| {
-                // Inner parallel loop
-                let ids: Vec<_> = (0..10)
-                    .into_par_iter()
-                    .map(|item_id| {
-                        let entity = Entity {
-                            id: (batch_id * 10 + item_id) as u32,
-                            name: format!("B{}_I{}", batch_id, item_id),
-                            data: (0..5).map(|_| item_id as i32).collect(),
-                        };
-                        arena.alloc(entity).id
-                    })
-                    .collect();
-
-                // Create a set from this batch
-                let set = EntitySet {
-                    entity_ids: ids,
-                    metadata: format!("batch_{}", batch_id),
-                };
-                arena.alloc(set)
-            })
-            .collect();
-
-        let all_entities = arena.entities();
-        assert_eq!(all_entities.len(), 100);
-
-        let all_sets = arena.entitysets();
-        assert_eq!(all_sets.len(), 10);
-    }
-
-    #[test]
-    fn test_rayon_data_aggregation() {
-        let arena = TestArena::new();
-
-        // Allocate entities in parallel
-        let _entities: Vec<_> = (0..100)
-            .into_par_iter()
-            .map(|i| {
-                arena.alloc(Entity {
-                    id: i as u32,
-                    name: format!("Entity_{}", i),
-                    data: (0..10).map(|j| (i * 10 + j) as i32).collect(),
-                })
-            })
-            .collect();
-
-        // Read and aggregate in parallel
-        let total: u64 = arena
-            .entities()
-            .par_iter()
-            .map(|e| e.data.len() as u64)
-            .sum();
-
-        assert_eq!(total, 1000); // 100 entities * 10 data items
-    }
-
-    #[test]
-    fn test_mixed_rayon_and_sequential() {
-        let arena = TestArena::new();
-
-        // Sequential phase: create base entities
-        let base_ids: Vec<_> = (0..10)
-            .map(|i| {
-                arena.alloc(Entity {
-                    id: i as u32,
-                    name: format!("Base_{}", i),
-                    data: vec![i as i32],
-                })
-                .id
-            })
-            .collect();
-
-        // Parallel phase: create sets referencing base entities
-        let _sets: Vec<_> = base_ids
-            .into_par_iter()
-            .map(|base_id| {
-                let set = EntitySet {
-                    entity_ids: vec![base_id],
-                    metadata: format!("referencing_{}", base_id),
-                };
-                arena.alloc(set)
-            })
-            .collect();
-
-        let all_entities = arena.entities();
-        assert_eq!(all_entities.len(), 10);
-
-        let all_sets = arena.entitysets();
-        assert_eq!(all_sets.len(), 10);
-    }
-
-    // ========== RwLock Interior Mutability Tests ==========
-
-    #[test]
-    fn test_mutable_entity_rwlock_mutation() {
-        let arena = TestArena::new();
-
-        let entity = MutableEntity::new(1, "TestEntity".to_string());
-        let allocated = arena.alloc(entity);
-
-        // Mutate through immutable reference via RwLock
-        allocated.append_state(10);
-        allocated.append_state(20);
-        allocated.append_state(30);
-
-        // Read back without mutable reference
-        let state = allocated.read_state();
-        assert_eq!(state, vec![10, 20, 30]);
-        assert_eq!(allocated.state_len(), 3);
-    }
-
-    #[test]
-    fn test_multiple_mutable_entities_parallel_mutation() {
-        let arena = TestArena::new();
-
-        // Allocate multiple entities
-        let entities: Vec<_> = (0..10)
-            .map(|i| {
-                arena.alloc(MutableEntity::new(
-                    i as u32,
-                    format!("Entity_{}", i),
-                ))
-            })
-            .collect();
-
-        // Mutate each entity in parallel through immutable references
-        entities.par_iter().for_each(|entity| {
-            for j in 0..5 {
-                entity.append_state((entity.id as i32 * 100) + j);
-            }
-        });
-
-        // Verify all entities were mutated
-        for entity in &entities {
-            assert_eq!(entity.state_len(), 5);
-            let state = entity.read_state();
-            assert_eq!(state.len(), 5);
-            // Verify values match expected pattern
-            for (j, &val) in state.iter().enumerate() {
-                assert_eq!(val, (entity.id as i32 * 100) + j as i32);
-            }
+    fn create_test_base(id: u32) -> HirBase {
+        HirBase {
+            id: create_test_hir_id(id),
+            parent: None,
+            kind_id: 0,
+            start_byte: 0,
+            end_byte: 0,
+            kind: HirKind::Internal,
+            field_id: 0,
+            children: Vec::new(),
         }
     }
 
     #[test]
-    fn test_rwlock_concurrent_readers_and_writers() {
+    fn test_arena_allocate_symbol() {
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        let name = pool.intern("test_symbol");
+        let symbol = Symbol::new(create_test_hir_id(1), name);
+        let allocated = arena.alloc(symbol);
+
+        // Verify allocation
+        assert_eq!(allocated.name, name);
+        assert!(allocated.id.0 > 0, "Symbol ID should be positive");
+
+        // Verify tracked in arena
+        let symbols = arena.symbols();
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].id, allocated.id);
+    }
+
+    #[test]
+    fn test_arena_allocate_multiple_symbols() {
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate multiple symbols
+        let mut allocated_syms = Vec::new();
+        for i in 0..5 {
+            let name = pool.intern(&format!("symbol_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            let sym_ref = arena.alloc(symbol);
+            allocated_syms.push(sym_ref);
+        }
+
+        // Verify all tracked
+        let symbols = arena.symbols();
+        assert_eq!(symbols.len(), 5);
+
+        for (i, &sym) in allocated_syms.iter().enumerate() {
+            assert!(sym.id.0 > 0, "Symbol {} should have positive ID", i);
+        }
+    }
+
+    #[test]
+    fn test_arena_allocate_scope() {
         let arena = TestArena::new();
 
-        let entity = MutableEntity::new(1, "ConcurrentTest".to_string());
-        let allocated = arena.alloc(entity);
+        let scope = Scope::new(create_test_hir_id(100));
+        let _scope_ref = arena.alloc(scope);
 
-        // Parallel phase: writers and readers on same entity
-        (0..20).into_par_iter().for_each(|i| {
+        // Verify allocation
+        let scopes = arena.scopes();
+        assert_eq!(scopes.len(), 1);
+        assert_eq!(scopes[0].owner(), create_test_hir_id(100));
+    }
+
+    #[test]
+    fn test_arena_allocate_hir_ident() {
+        let arena = TestArena::new();
+
+        let base = create_test_base(200);
+        let hir_ident = HirIdent::new(base, "test_ident".to_string());
+        let _ident_ref = arena.alloc(hir_ident);
+
+        // Verify allocation
+        let idents = arena.hir_idents();
+        assert_eq!(idents.len(), 1);
+        assert_eq!(idents[0].name, "test_ident");
+    }
+
+    #[test]
+    fn test_arena_allocate_hir_scope() {
+        let arena = TestArena::new();
+
+        let base = create_test_base(300);
+        let hir_scope = HirScope::new(base, None);
+        let _scope_ref = arena.alloc(hir_scope);
+
+        // Verify allocation
+        let hir_scopes = arena.hir_scopes();
+        assert_eq!(hir_scopes.len(), 1);
+        assert_eq!(hir_scopes[0].base.id, create_test_hir_id(300));
+    }
+
+    #[test]
+    fn test_arena_mixed_allocation_pattern() {
+
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate symbols
+        let sym1_name = pool.intern("symbol_1");
+        let symbol1 = Symbol::new(create_test_hir_id(1), sym1_name);
+        let sym1_ref = arena.alloc(symbol1);
+
+        let sym2_name = pool.intern("symbol_2");
+        let symbol2 = Symbol::new(create_test_hir_id(2), sym2_name);
+        let sym2_ref = arena.alloc(symbol2);
+
+        // Allocate scope
+        let scope = Scope::new(create_test_hir_id(100));
+        let scope_ref = arena.alloc(scope);
+
+        // Add symbols to scope
+        scope_ref.insert(sym1_ref);
+        scope_ref.insert(sym2_ref);
+
+        // Allocate HIR types
+        let base1 = create_test_base(200);
+        let hir_ident = HirIdent::new(base1, "test_ident".to_string());
+        let _ident_ref = arena.alloc(hir_ident);
+
+        let base2 = create_test_base(300);
+        let hir_scope = HirScope::new(base2, None);
+        let _hir_scope_ref = arena.alloc(hir_scope);
+
+        // Verify all allocations
+        assert_eq!(arena.symbols().len(), 2);
+        assert_eq!(arena.scopes().len(), 1);
+        assert_eq!(arena.hir_idents().len(), 1);
+        assert_eq!(arena.hir_scopes().len(), 1);
+
+        // Verify scope contains symbols
+        let found_symbols = scope_ref.lookup_symbols(sym1_name);
+        assert_eq!(found_symbols.len(), 1);
+        assert_eq!(found_symbols[0].id, sym1_ref.id);
+    }
+
+    #[test]
+    fn test_arena_lifetime_bound_references() {
+        // Demonstrate that arena-allocated references are tied to arena lifetime
+
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate symbols
+        let sym_name = pool.intern("lifetime_test");
+        let symbol = Symbol::new(create_test_hir_id(1), sym_name);
+        let sym_ref = arena.alloc(symbol);
+
+        // Allocate scope and add symbol
+        let scope = Scope::new(create_test_hir_id(100));
+        let scope_ref = arena.alloc(scope);
+        scope_ref.insert(sym_ref);
+
+        // References from scope are still valid (lifetime 'a tied to arena)
+        let found = scope_ref.lookup_symbols(sym_name);
+        assert_eq!(found[0].id, sym_ref.id);
+
+        // All symbols from arena are valid
+        let all_symbols = arena.symbols();
+        assert_eq!(all_symbols.len(), 1);
+        assert_eq!(all_symbols[0].id, sym_ref.id);
+    }
+
+    #[test]
+    fn test_arena_default_construction() {
+        // Test both new() and default() work
+        let arena1 = TestArena::new();
+        let arena2 = TestArena::default();
+
+        let pool = InternPool::new();
+
+        let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("sym1"));
+        let _ref1 = arena1.alloc(sym1);
+
+        let sym2 = Symbol::new(create_test_hir_id(1), pool.intern("sym2"));
+        let _ref2 = arena2.alloc(sym2);
+
+        assert_eq!(arena1.symbols().len(), 1);
+        assert_eq!(arena2.symbols().len(), 1);
+    }
+
+    #[test]
+    fn test_arena_allocate_and_retrieve_all_types() {
+
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate 3 symbols
+        for i in 0..3 {
+            let name = pool.intern(&format!("sym_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            let _ = arena.alloc(symbol);
+        }
+
+        // Allocate 2 scopes
+        for i in 0..2 {
+            let scope = Scope::new(create_test_hir_id(100 + i as u32));
+            let _ = arena.alloc(scope);
+        }
+
+        // Allocate 2 HirIdents
+        for i in 0..2 {
+            let base = create_test_base(200 + i as u32);
+            let ident = HirIdent::new(base, format!("ident_{}", i));
+            let _ = arena.alloc(ident);
+        }
+
+        // Allocate 2 HirScopes
+        for i in 0..2 {
+            let base = create_test_base(300 + i as u32);
+            let hir_scope = HirScope::new(base, None);
+            let _ = arena.alloc(hir_scope);
+        }
+
+        // Verify all are tracked
+        assert_eq!(arena.symbols().len(), 3);
+        assert_eq!(arena.scopes().len(), 2);
+        assert_eq!(arena.hir_idents().len(), 2);
+        assert_eq!(arena.hir_scopes().len(), 2);
+    }
+
+    #[test]
+    fn test_arena_scope_with_multiple_symbols() {
+
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Create scope
+        let scope = Scope::new(create_test_hir_id(100));
+        let scope_ref = arena.alloc(scope);
+
+        // Create and add multiple symbols to scope
+        let mut symbol_refs = Vec::new();
+        for i in 0..5 {
+            let name = pool.intern(&format!("var_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(1000 + i as u32), name);
+            let sym_ref = arena.alloc(symbol);
+            scope_ref.insert(sym_ref);
+            symbol_refs.push((name, sym_ref));
+        }
+
+        // Verify all symbols in scope
+        for (name, sym_ref) in symbol_refs {
+            let found = scope_ref.lookup_symbols(name);
+            assert_eq!(found.len(), 1);
+            assert_eq!(found[0].id, sym_ref.id);
+        }
+
+        // Verify total count
+        assert_eq!(arena.symbols().len(), 5);
+    }
+
+    #[test]
+    fn test_arena_hir_ident_with_symbol_association() {
+
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate symbol
+        let sym_name = pool.intern("test_symbol");
+        let symbol = Symbol::new(create_test_hir_id(1), sym_name);
+        let sym_ref = arena.alloc(symbol);
+
+        // Allocate HirIdent
+        let base = create_test_base(200);
+        let hir_ident = HirIdent::new(base, "test_ident".to_string());
+        let ident_ref = arena.alloc(hir_ident);
+
+        // Associate symbol with ident
+        ident_ref.set_symbol(sym_ref);
+
+        // Verify association
+        let idents = arena.hir_idents();
+        assert_eq!(idents.len(), 1);
+        assert_eq!(idents[0].symbol().id, sym_ref.id);
+    }
+
+    #[test]
+    fn test_arena_parallel_symbol_allocation() {
+        // Test parallel allocation of symbols across multiple threads
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate 100 symbols in parallel
+        (0..100).into_par_iter().for_each(|i| {
+            let name = pool.intern(&format!("parallel_sym_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            let _ = arena.alloc(symbol);
+        });
+
+        // Verify all symbols were allocated
+        let symbols = arena.symbols();
+        assert_eq!(symbols.len(), 100);
+    }
+
+    #[test]
+    fn test_arena_parallel_scope_allocation() {
+        // Test parallel allocation of scopes across multiple threads
+        let arena = TestArena::new();
+
+        // Allocate 50 scopes in parallel
+        (0..50).into_par_iter().for_each(|i| {
+            let scope = Scope::new(create_test_hir_id(i as u32));
+            let _ = arena.alloc(scope);
+        });
+
+        // Verify all scopes were allocated
+        let scopes = arena.scopes();
+        assert_eq!(scopes.len(), 50);
+    }
+
+    #[test]
+    fn test_arena_parallel_mixed_allocation() {
+        // Test parallel allocation of mixed types across multiple threads
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate symbols and scopes in parallel
+        (0..30).into_par_iter().for_each(|i| {
             if i % 2 == 0 {
-                // Even threads: write
-                allocated.append_state(i as i32);
+                // Allocate symbol
+                let name = pool.intern(&format!("sym_{}", i));
+                let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+                let _ = arena.alloc(symbol);
             } else {
-                // Odd threads: read
-                let state = allocated.read_state();
-                let _ = state.len(); // Just verify we can read
+                // Allocate scope
+                let scope = Scope::new(create_test_hir_id(i as u32));
+                let _ = arena.alloc(scope);
             }
         });
 
-        // Verify final state has all the writes
-        let final_state = allocated.read_state();
-        assert_eq!(final_state.len(), 10); // 20 / 2 = 10 writes
+        // Verify both types were allocated
+        let symbols = arena.symbols();
+        let scopes = arena.scopes();
+
+        assert_eq!(symbols.len(), 15, "Should have 15 symbols");
+        assert_eq!(scopes.len(), 15, "Should have 15 scopes");
     }
 
     #[test]
-    fn test_mutable_entities_tracked_in_arena() {
+    fn test_arena_parallel_hir_allocation() {
+        // Test parallel allocation of HIR types across multiple threads
         let arena = TestArena::new();
 
-        let _entity1 = arena.alloc(MutableEntity::new(1, "E1".to_string()));
-        let _entity2 = arena.alloc(MutableEntity::new(2, "E2".to_string()));
-        let _entity3 = arena.alloc(MutableEntity::new(3, "E3".to_string()));
+        // Allocate HirIdents and HirScopes in parallel
+        (0..40).into_par_iter().for_each(|i| {
+            let base = create_test_base(i as u32);
+            if i % 2 == 0 {
+                let hir_ident = HirIdent::new(base, format!("ident_{}", i));
+                let _ = arena.alloc(hir_ident);
+            } else {
+                let hir_scope = HirScope::new(base, None);
+                let _ = arena.alloc(hir_scope);
+            }
+        });
 
-        let mutable_entities = arena.mutable_entities();
-        assert_eq!(mutable_entities.len(), 3);
+        // Verify both types were allocated
+        let idents = arena.hir_idents();
+        let hir_scopes = arena.hir_scopes();
+
+        assert_eq!(idents.len(), 20, "Should have 20 HirIdents");
+        assert_eq!(hir_scopes.len(), 20, "Should have 20 HirScopes");
     }
 
     #[test]
-    fn test_nested_parallel_with_mutable_entities() {
+    fn test_arena_parallel_all_types_allocation() {
+        // Test parallel allocation of all types simultaneously
         let arena = TestArena::new();
+        let pool = InternPool::new();
 
-        // Allocate a batch of mutable entities
-        let _batch_ids: Vec<_> = (0..5)
-            .map(|i| {
-                let entity = MutableEntity::new(i as u32, format!("Batch_{}", i));
-                arena.alloc(entity).id
-            })
-            .collect();
+        // Allocate 80 items of various types in parallel
+        (0..80).into_par_iter().for_each(|i| {
+            let alloc_type = i % 4;
+            match alloc_type {
+                0 => {
+                    let name = pool.intern(&format!("sym_{}", i));
+                    let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+                    let _ = arena.alloc(symbol);
+                }
+                1 => {
+                    let scope = Scope::new(create_test_hir_id(i as u32));
+                    let _ = arena.alloc(scope);
+                }
+                2 => {
+                    let base = create_test_base(i as u32);
+                    let hir_ident = HirIdent::new(base, format!("ident_{}", i));
+                    let _ = arena.alloc(hir_ident);
+                }
+                3 => {
+                    let base = create_test_base(i as u32);
+                    let hir_scope = HirScope::new(base, None);
+                    let _ = arena.alloc(hir_scope);
+                }
+                _ => unreachable!(),
+            }
+        });
 
-        // Nested parallel: outer batches, inner operations on shared entities
-        (0..10)
-            .into_par_iter()
-            .for_each(|batch_idx| {
-                (0..5).into_par_iter().for_each(|entity_idx| {
-                    let entities = arena.mutable_entities();
-                    if let Some(entity) = entities.get(entity_idx) {
-                        // Mutate through immutable reference
-                        entity.append_state((batch_idx * 5 + entity_idx) as i32);
-                    }
+        // Verify all types were allocated correctly
+        let symbols = arena.symbols();
+        let scopes = arena.scopes();
+        let idents = arena.hir_idents();
+        let hir_scopes = arena.hir_scopes();
+
+        assert_eq!(symbols.len(), 20, "Should have 20 symbols");
+        assert_eq!(scopes.len(), 20, "Should have 20 scopes");
+        assert_eq!(idents.len(), 20, "Should have 20 HirIdents");
+        assert_eq!(hir_scopes.len(), 20, "Should have 20 HirScopes");
+    }
+
+    #[test]
+    fn test_arena_parallel_high_contention() {
+        // Test with very high contention: many threads allocating simultaneously
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate 200 symbols in parallel with high contention
+        (0..200).into_par_iter().for_each(|i| {
+            let name = pool.intern(&format!("high_contention_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            let _ = arena.alloc(symbol);
+        });
+
+        let symbols = arena.symbols();
+        assert_eq!(symbols.len(), 200, "All 200 symbols should be allocated");
+    }
+
+    #[test]
+    fn test_arena_parallel_lifetime_safety() {
+        // Verify that arena references remain valid across parallel operations
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Phase 1: Allocate symbols and scopes in parallel
+        (0..50).into_par_iter().for_each(|i| {
+            let name = pool.intern(&format!("verify_sym_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            let _ = arena.alloc(symbol);
+
+            let scope = Scope::new(create_test_hir_id(100 + i as u32));
+            let _ = arena.alloc(scope);
+        });
+
+        // Phase 2: Verify all references are still valid
+        let symbols = arena.symbols();
+        let scopes = arena.scopes();
+
+        assert_eq!(symbols.len(), 50);
+        assert_eq!(scopes.len(), 50);
+
+        // Verify we can still access symbol properties
+        for symbol in symbols.iter() {
+            assert!(symbol.id.0 > 0);
+            // Can call methods on arena-allocated references
+            let _ = symbol.kind();
+        }
+    }
+
+    #[test]
+    fn test_arena_parallel_cloned_arc_allocation() {
+        // Test that cloned Arena references can allocate independently
+        let arena_original = TestArena::new();
+        let pool = InternPool::new();
+
+        // Create multiple clones of the arena (Arc is already inside)
+        let arena_clone1 = arena_original.clone();
+        let arena_clone2 = arena_original.clone();
+        let arena_clone3 = arena_original.clone();
+
+        // Allocate in parallel using different clones
+        rayon::scope(|s| {
+            s.spawn(|_| {
+                (0..25).into_par_iter().for_each(|i| {
+                    let name = pool.intern(&format!("thread1_sym_{}", i));
+                    let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+                    let _ = arena_clone1.alloc(symbol);
                 });
             });
-
-        // Verify final state
-        let final_entities = arena.mutable_entities();
-        assert_eq!(final_entities.len(), 5);
-
-        for entity in final_entities {
-            // Each entity should have multiple mutations from parallel tasks
-            let state_len = entity.state_len();
-            assert!(state_len > 0);
-        }
-    }
-
-    #[test]
-    fn test_mutable_entity_state_aggregation() {
-        let arena = TestArena::new();
-
-        // Create entities with specific state patterns
-        let entities: Vec<_> = (0..5)
-            .map(|i| {
-                let entity = MutableEntity::new(i as u32, format!("Entity_{}", i));
-                let allocated = arena.alloc(entity);
-
-                // Fill state sequentially
-                for j in 0..10 {
-                    allocated.append_state((i * 10 + j) as i32);
-                }
-                allocated
-            })
-            .collect();
-
-        // Aggregate all states in parallel
-        let total_values: i32 = entities
-            .par_iter()
-            .map(|entity| entity.read_state().iter().sum::<i32>())
-            .sum();
-
-        // Expected: sum of (0..10) + (10..20) + ... + (40..50)
-        // = sum of (0..50) = 1225
-        assert_eq!(total_values, 1225);
-    }
-
-    #[test]
-    fn test_mutable_entity_with_other_types() {
-        let arena = TestArena::new();
-
-        // Mix all types in the arena
-        let _entity = arena.alloc(Entity {
-            id: 1,
-            name: "Regular".to_string(),
-            data: vec![1, 2, 3],
-        });
-
-        let _mutable = arena.alloc(MutableEntity::new(1, "Mutable".to_string()));
-
-        let _set = arena.alloc(EntitySet {
-            entity_ids: vec![1, 2],
-            metadata: "set".to_string(),
-        });
-
-        // Verify all are tracked separately
-        assert_eq!(arena.entities().len(), 1);
-        assert_eq!(arena.mutable_entities().len(), 1);
-        assert_eq!(arena.entitysets().len(), 1);
-    }
-
-    // ========== Demonstrating Thread-Local Allocation + Shared Tracking ==========
-
-    #[test]
-    fn test_thread_local_allocation_shared_tracking() {
-        let arena = TestArena::new();
-
-        // High-contention scenario: 100 threads each allocating 100 items
-        // This demonstrates:
-        // 1. Each thread has its own allocator (from Herd) - NO CONTENTION
-        // 2. All threads push to the same Vec - MINIMAL CONTENTION (only when pushing)
-        (0..100)
-            .into_par_iter()
-            .for_each(|thread_id| {
-                for item_idx in 0..100 {
-                    let _entity = arena.alloc(Entity {
-                        id: (thread_id * 100 + item_idx) as u32,
-                        name: format!("T{}_I{}", thread_id, item_idx),
-                        data: vec![thread_id as i32; 10],
-                    });
-                }
+            s.spawn(|_| {
+                (25..50).into_par_iter().for_each(|i| {
+                    let name = pool.intern(&format!("thread2_sym_{}", i));
+                    let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+                    let _ = arena_clone2.alloc(symbol);
+                });
             });
-
-        // Verify all 10,000 allocations are tracked
-        let entities = arena.entities();
-        assert_eq!(entities.len(), 10000);
-
-        // Verify we can read from all of them without locks on allocation
-        let total_data_items: u64 = entities
-            .par_iter()
-            .map(|e| e.data.len() as u64)
-            .sum();
-        assert_eq!(total_data_items, 100000); // 10000 entities * 10 items each
-    }
-
-    #[test]
-    fn test_allocator_isolation() {
-        let arena = TestArena::new();
-
-        // Each thread allocates, they all have separate thread-local Bumps
-        // But we can still enumerate all allocations
-        let results: Vec<_> = (0..10)
-            .into_par_iter()
-            .map(|thread_id| {
-                // Each thread allocates 50 items in its own Bump
-                let mut local_count = 0;
-                for i in 0..50 {
-                    let _entity = arena.alloc(Entity {
-                        id: (thread_id * 50 + i) as u32,
-                        name: format!("Thread_{}_Item_{}", thread_id, i),
-                        data: vec![(thread_id * 50 + i) as i32],
-                    });
-                    local_count += 1;
-                }
-                local_count
-            })
-            .collect();
-
-        // Verify each thread allocated 50 items
-        assert_eq!(results.iter().sum::<usize>(), 500);
-
-        // Verify the shared Vec has all 500 items
-        let total_in_arena = arena.entities();
-        assert_eq!(total_in_arena.len(), 500);
-
-        // And we can access them all without locks
-        for entity in total_in_arena {
-            assert!(entity.id < 500);
-        }
-    }
-
-    #[test]
-    fn test_drop_member_does_not_free_allocation() {
-        // This test demonstrates that drop(member) only drops the GUARD,
-        // not the allocated memory. The allocated memory stays valid because
-        // it's managed by the thread-local Bump in the Herd.
-        let arena = TestArena::new();
-
-        // Allocate an entity
-        let entity = Entity {
-            id: 42,
-            name: "TestEntity".to_string(),
-            data: vec![1, 2, 3, 4, 5],
-        };
-        let allocated = arena.alloc(entity);
-
-        // At this point, inside alloc():
-        // 1. member = arena.herd.get() - gets the guard to thread-local Bump
-        // 2. r = member.alloc(self) - allocates, r points to the allocated memory
-        // 3. drop(member) - drops the GUARD (not the memory!)
-        // 4. arena.entities.write().push(r) - pushes the reference
-        // The allocated memory is STILL VALID because:
-        // - It's stored in the thread-local Bump
-        // - The Bump is part of the Herd, which lives as long as the arena
-        // - Dropping the guard doesn't deallocate; it just releases the lock
-
-        // Verify we can still access the allocated data after the guard is dropped
-        assert_eq!(allocated.id, 42);
-        assert_eq!(allocated.name, "TestEntity");
-        assert_eq!(allocated.data, vec![1, 2, 3, 4, 5]);
-
-        // Verify it's in the arena's tracking
-        let entities = arena.entities();
-        assert_eq!(entities.len(), 1);
-        assert_eq!(entities[0].id, 42);
-    }
-
-    #[test]
-    fn test_herd_keeps_memory_alive() {
-        // The Herd manages multiple thread-local Bumps.
-        // Each Bump is kept alive as long as the Herd exists.
-        // When we drop(member), we're just dropping the GUARD to access it,
-        // not the Bump itself.
-        let arena = TestArena::new();
-
-        let entity_refs: Vec<_> = (0..1000)
-            .map(|i| {
-                arena.alloc(Entity {
-                    id: i as u32,
-                    name: format!("Entity_{}", i),
-                    data: (0..100).map(|j| (i * 100 + j) as i32).collect(),
-                })
-            })
-            .collect();
-
-        // All 1000 entities are still accessible
-        // Even though drop(member) was called 1000 times
-        let tracked = arena.entities();
-        assert_eq!(tracked.len(), 1000);
-
-        // All references are still valid
-        for (i, entity_ref) in entity_refs.iter().enumerate() {
-            assert_eq!(entity_ref.id, i as u32);
-            assert_eq!(entity_ref.data.len(), 100);
-        }
-    }
-
-    #[test]
-    fn test_drop_before_vs_after_push_correctness() {
-        // This test demonstrates that it doesn't matter for CORRECTNESS
-        // whether we drop(member) before or after push.
-        // The reference r is just a pointer, and the memory stays valid
-        // either way because it's managed by the Herd.
-        let arena = TestArena::new();
-
-        // Allocate with drop(member) happening BEFORE push (current implementation)
-        let entity1 = arena.alloc(Entity {
-            id: 1,
-            name: "Entity1".to_string(),
-            data: vec![1, 2, 3],
+            s.spawn(|_| {
+                (50..75).into_par_iter().for_each(|i| {
+                    let name = pool.intern(&format!("thread3_sym_{}", i));
+                    let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+                    let _ = arena_clone3.alloc(symbol);
+                });
+            });
         });
 
-        // Both approaches work fine
-        assert_eq!(entity1.id, 1);
-        assert_eq!(entity1.name, "Entity1");
-        assert_eq!(entity1.data.len(), 3);
-
-        // The tracked list has it
-        let tracked = arena.entities();
-        assert_eq!(tracked.len(), 1);
-
-        // Both drop orders are valid - the only difference is lock contention:
-        // drop(member) BEFORE push: Release guard quickly, then contend for RwLock
-        // drop(member) AFTER push: Hold guard while acquiring RwLock
-        // The current order (drop before) is slightly better for multi-threaded performance
-    }
-
-    // ========== Memory Management Model Tests ==========
-
-    #[test]
-    fn test_each_thread_has_own_bump() {
-        // Each thread gets its own Bump allocator from the Herd.
-        // This means:
-        // - Thread 1 allocates from Bump 1's memory pool
-        // - Thread 2 allocates from Bump 2's memory pool
-        // - No cross-thread memory interference
-        let arena = TestArena::new();
-
-        let results: Vec<_> = (0..4)
-            .into_par_iter()
-            .map(|thread_id| {
-                // Each thread allocates 100 items from its own Bump
-                let mut local_ids = Vec::new();
-                for i in 0..100 {
-                    let entity = arena.alloc(Entity {
-                        id: (thread_id * 1000 + i) as u32,
-                        name: format!("T{}_{}", thread_id, i),
-                        data: vec![thread_id as i32],
-                    });
-                    local_ids.push(entity.id);
-                }
-                local_ids
-            })
-            .collect();
-
-        // Verify each thread's allocations are distinct
-        assert_eq!(results.len(), 4); // 4 threads
-        for (thread_id, ids) in results.iter().enumerate() {
-            assert_eq!(ids.len(), 100); // Each thread allocated 100
-            // IDs in thread 0 are 0-99, thread 1 is 1000-1099, etc.
-            for (i, &id) in ids.iter().enumerate() {
-                assert_eq!(id as usize, thread_id * 1000 + i);
-            }
-        }
-
-        // But they're all in the same shared tracking Vec
-        let all_entities = arena.entities();
-        assert_eq!(all_entities.len(), 400); // 4 threads * 100 items
-    }
-
-    #[test]
-    fn test_thread_local_memory_pools_independent() {
-        // Demonstrate that each thread's Bump is independent.
-        // Thread A's allocations don't affect Thread B's memory pool.
-        let arena = TestArena::new();
-
-        // Simulate heavy allocation in thread 1, light in thread 2
-        let heavy_entities = (0..2)
-            .into_par_iter()
-            .map(|thread_id| {
-                if thread_id == 0 {
-                    // Thread 0: allocate a lot of large entities
-                    (0..50)
-                        .map(|i| {
-                            arena.alloc(Entity {
-                                id: i as u32,
-                                name: format!("Heavy_{}", i),
-                                data: (0..1000).collect(), // Large data
-                            })
-                        })
-                        .collect::<Vec<_>>()
-                } else {
-                    // Thread 1: allocate a few small entities
-                    (0..5)
-                        .map(|i| {
-                            arena.alloc(Entity {
-                                id: i as u32,
-                                name: format!("Light_{}", i),
-                                data: vec![0], // Small data
-                            })
-                        })
-                        .collect::<Vec<_>>()
-                }
-            })
-            .collect::<Vec<_>>();
-
-        // Verify both completed successfully despite different load
-        assert_eq!(heavy_entities.len(), 2);
-        assert_eq!(heavy_entities[0].len(), 50);
-        assert_eq!(heavy_entities[1].len(), 5);
-
-        // All are tracked in the same place
-        let all = arena.entities();
-        assert_eq!(all.len(), 55); // 50 + 5
-
-        // Heavy allocations still have their large data
-        for entity in &heavy_entities[0] {
-            assert_eq!(entity.data.len(), 1000);
-        }
-    }
-
-    #[test]
-    fn test_memory_stays_alive_after_thread_exits() {
-        // Even though a thread exits, its allocated memory stays alive
-        // because it's managed by the Herd, which is part of the Arena
-        // (which lives in the test function).
-        let arena = TestArena::new();
-
-        // Use rayon thread pool to allocate
-        let entity_refs: Vec<_> = (0..100)
-            .into_par_iter()
-            .map(|i| {
-                arena.alloc(Entity {
-                    id: i as u32,
-                    name: format!("Entity_{}", i),
-                    data: vec![i as i32; 10],
-                })
-            })
-            .collect();
-
-        // rayon thread pool tasks have ended by now, but:
-        // - Entity data is still valid (thread-local Bumps still exist in Herd)
-        // - We still hold valid references
-        for (i, entity) in entity_refs.iter().enumerate() {
-            assert_eq!(entity.id, i as u32);
-            assert_eq!(entity.data.len(), 10);
-            assert_eq!(entity.data[0], i as i32);
-        }
-
-        // Tracked entities are still accessible
-        let tracked = arena.entities();
-        assert_eq!(tracked.len(), 100);
-    }
-
-    #[test]
-    fn test_herd_manages_multiple_bumps() {
-        // The Herd maintains a thread-local Bump for each thread.
-        // Even with many threads, each gets its own independent pool.
-        let arena = TestArena::new();
-
-        // Use 20 threads, each allocating heavily
-        (0..20)
-            .into_par_iter()
-            .for_each(|thread_id| {
-                for item in 0..50 {
-                    let _entity = arena.alloc(Entity {
-                        id: (thread_id * 50 + item) as u32,
-                        name: format!("T{}_I{}", thread_id, item),
-                        data: (0..100).collect(),
-                    });
-                }
-            });
-
-        // All 1000 allocations succeeded (20 threads * 50 items)
-        let all_entities = arena.entities();
-        assert_eq!(all_entities.len(), 1000);
-
-        // Each has its full data
-        for entity in all_entities {
-            assert_eq!(entity.data.len(), 100);
-        }
-    }
-
-    #[test]
-    fn test_memory_layout_per_thread() {
-        // This demonstrates the memory management:
-        // - Thread-local Bumps manage their own memory pools
-        // - References are just pointers into those pools
-        // - The shared Vec collects all pointers
-        let arena = TestArena::new();
-
-        // Sequential allocation (single thread)
-        let seq_entities: Vec<_> = (0..10)
-            .map(|i| {
-                arena.alloc(Entity {
-                    id: i as u32,
-                    name: format!("Seq_{}", i),
-                    data: vec![i as i32; 20],
-                })
-            })
-            .collect();
-
-        // Parallel allocation (multiple threads)
-        let par_entities: Vec<_> = (0..10)
-            .into_par_iter()
-            .map(|i| {
-                arena.alloc(Entity {
-                    id: (100 + i) as u32,
-                    name: format!("Par_{}", i),
-                    data: vec![(100 + i) as i32; 20],
-                })
-            })
-            .collect();
-
-        // All are valid - mixed allocation still works
-        assert_eq!(seq_entities.len(), 10);
-        assert_eq!(par_entities.len(), 10);
-
-        // All tracked
-        let tracked = arena.entities();
-        assert_eq!(tracked.len(), 20);
-
-        // Verify we can access all of them
-        for entity in tracked {
-            assert_eq!(entity.data.len(), 20);
-        }
+        // Verify all allocations succeeded
+        let symbols = arena_original.symbols();
+        assert_eq!(symbols.len(), 75, "All symbols from all threads should be present");
     }
 }
