@@ -328,7 +328,7 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
         file_start_id,
     } in file_results
     {
-        cc.set_file_start(index, file_start_id);
+        cc.set_file_root_id(index, file_start_id);
     }
 
     // Sequential phase: Build hir_map from all allocated nodes

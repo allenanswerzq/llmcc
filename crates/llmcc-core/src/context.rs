@@ -1,9 +1,10 @@
-use parking_lot::{Mutex, RwLock};
+use parking_lot::RwLock;
 use rayon::prelude::*;
 use std::cmp::Ordering as CmpOrdering;
 use std::collections::HashMap;
+use std::fs;
+use std::io::Write;
 use std::ops::Deref;
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Instant;
 use tree_sitter::Node;
 
@@ -53,22 +54,8 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.interner.resolve_owned(symbol)
     }
 
-    pub fn reserve_hir_id(&self) -> HirId {
-        self.cc.reserve_hir_id()
-    }
-
-    pub fn reserve_block_id(&self) -> BlockId {
-        self.cc.reserve_block_id()
-    }
-
-    pub fn register_file_start(&self) -> HirId {
-        let start = self.cc.current_hir_id();
-        self.cc.set_file_start(self.index, start);
-        start
-    }
-
-    pub fn file_start_hir_id(&self) -> Option<HirId> {
-        self.cc.file_start(self.index)
+    pub fn file_root_id(&self) -> Option<HirId> {
+        self.cc.file_root_id(self.index)
     }
 
     pub fn file_path(&self) -> Option<&str> {
@@ -88,11 +75,6 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Convenience: extract text for a HIR node.
     pub fn hir_text(&self, node: &HirNode<'tcx>) -> String {
         self.get_text(node.start_byte(), node.end_byte())
-    }
-
-    /// Get the next HIR id that will be assigned (useful for diagnostics).
-    pub fn hir_next(&self) -> HirId {
-        self.cc.current_hir_id()
     }
 
     /// Get a HIR node by ID, returning None if not found
@@ -154,47 +136,6 @@ impl<'tcx> CompileUnit<'tcx> {
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
-    /// Find an existing scope or create a new one
-    pub fn alloc_scope(self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.cc.alloc_scope(owner)
-    }
-
-    /// Add a HIR node to the map
-    pub fn insert_hir_node(self, id: HirId, node: HirNode<'tcx>) {
-        let parented = ParentedNode::new(node);
-        self.cc.hir_map.write().insert(id, parented);
-    }
-
-    /// Get all child nodes of a given parent
-    pub fn children_of(self, parent: HirId) -> Vec<(HirId, HirNode<'tcx>)> {
-        let Some(parent_node) = self.opt_hir_node(parent) else {
-            return Vec::new();
-        };
-        parent_node
-            .children()
-            .iter()
-            .map(|&child_id| (child_id, self.hir_node(child_id)))
-            .collect()
-    }
-
-    /// Walk up the parent chain to find an ancestor of a specific type
-    pub fn find_ancestor<F>(self, mut current: HirId, predicate: F) -> Option<HirId>
-    where
-        F: Fn(&HirNode<'tcx>) -> bool,
-    {
-        while let Some(parent_id) = self.parent_node(current) {
-            if let Some(parent_node) = self.opt_hir_node(parent_id) {
-                if predicate(&parent_node) {
-                    return Some(parent_id);
-                }
-                current = parent_id;
-            } else {
-                break;
-            }
-        }
-        None
-    }
-
     pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
         self.cc.unresolve_symbols.write().push(symbol);
     }
@@ -214,31 +155,6 @@ impl<'tcx> CompileUnit<'tcx> {
             .block_indexes
             .write()
             .insert_block(id, block_name, block_kind, self.index);
-    }
-
-    /// Allocate a new HIR identifier node with the given name and symbol
-    pub fn alloc_hir_ident(self, name: String, symbol: &'tcx Symbol) -> &'tcx HirIdent<'tcx> {
-        let base = HirBase {
-            id: self.reserve_hir_id(),
-            parent: None,
-            kind_id: 0,
-            start_byte: 0,
-            end_byte: 0,
-            kind: HirKind::Identifier,
-            field_id: u16::MAX,
-            children: Vec::new(),
-        };
-        let ident = self.cc.arena.alloc(HirIdent::new(base, name));
-        ident.set_symbol(symbol);
-        ident
-    }
-
-    /// Allocate a new Scope from a symbol
-    pub fn alloc_hir_scope(self, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
-        let hir_id = self.reserve_hir_id();
-        let scope = self.cc.alloc_scope(hir_id);
-        scope.set_symbol(Some(symbol));
-        scope
     }
 }
 
@@ -317,20 +233,18 @@ pub struct CompileCtxt<'tcx> {
     pub files: Vec<File>,
     /// Generic parse trees from language-specific parsers
     pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
-    pub hir_next_id: AtomicU32,
-    pub hir_start_ids: RwLock<Vec<Option<HirId>>>,
+    pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
     // HirId -> ParentedNode
     pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // ScopeId -> Scope (primary scope storage)
+    // ScopeId -> Scope
     pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
-    // HirId -> ScopeId (for looking up scope by owner HirId)
+    // HirId -> ScopeId
     pub owner_to_scope_id: RwLock<HashMap<HirId, ScopeId>>,
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
-    pub block_next_id: AtomicU32,
     // BlockId -> ParentedBlock
     pub block_map: RwLock<HashMap<BlockId, ParentedBlock<'tcx>>>,
     pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
@@ -338,9 +252,6 @@ pub struct CompileCtxt<'tcx> {
 
     /// Index maps for efficient block lookups by name, kind, unit, and id
     pub block_indexes: RwLock<BlockIndexMaps>,
-
-    /// Per-unit arenas for parallel symbol collection
-    pub unit_arenas: Mutex<Vec<&'tcx Arena<'tcx>>>,
 
     /// Metrics collected while building the compilation context
     pub build_metrics: BuildMetrics,
@@ -351,7 +262,6 @@ impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
         f.debug_struct("CompileCtxt")
             .field("files", &self.files.len())
             .field("parse_trees", &self.parse_trees.len())
-            .field("hir_next_id", &self.hir_next_id)
             .field("build_metrics", &self.build_metrics)
             .finish()
     }
@@ -360,37 +270,27 @@ impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
 impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from source code
     pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
-        let files: Vec<File> = sources
+        // Write sources to temporary files and use from_files
+        let temp_dir = std::env::temp_dir().join("llmcc");
+        let _ = fs::create_dir_all(&temp_dir);
+
+        let paths: Vec<String> = sources
             .iter()
             .enumerate()
             .map(|(index, src)| {
-                let path = format!("from_source/unit_{index}.rs");
-                File::new_virtual(path, src.clone())
+                let path = temp_dir.join(format!("source_{}.rs", index));
+                if let Ok(mut file) = fs::File::create(&path) {
+                    let _ = file.write_all(src);
+                }
+                path.to_string_lossy().to_string()
             })
             .collect();
-        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
-        metrics.file_read_seconds = 0.0;
-        let count = files.len();
-        Self {
-            arena: Arena::default(),
-            interner: InternPool::default(),
-            files,
-            parse_trees,
-            hir_next_id: AtomicU32::new(0),
-            hir_start_ids: RwLock::new(vec![None; count]),
-            hir_map: RwLock::new(HashMap::new()),
-            scope_map: RwLock::new(HashMap::new()),
-            owner_to_scope_id: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
-            block_arena: BlockArena::default(),
-            block_next_id: AtomicU32::new(1),
-            block_map: RwLock::new(HashMap::new()),
-            unresolve_symbols: RwLock::new(Vec::new()),
-            related_map: BlockRelationMap::default(),
-            block_indexes: RwLock::new(BlockIndexMaps::new()),
-            unit_arenas: Mutex::new(Vec::new()),
-            build_metrics: metrics,
-        }
+
+        // Use from_files to parse and build context
+        Self::from_files::<L>(&paths).unwrap_or_else(|_| {
+            // Fallback: create empty context if temp file creation fails
+            Self::default()
+        })
     }
 
     /// Create a new CompileCtxt from files
@@ -420,19 +320,16 @@ impl<'tcx> CompileCtxt<'tcx> {
             interner: InternPool::default(),
             files,
             parse_trees,
-            hir_next_id: AtomicU32::new(0),
-            hir_start_ids: RwLock::new(vec![None; count]),
+            hir_root_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_next_id: AtomicU32::new(1),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
-            unit_arenas: Mutex::new(Vec::new()),
             build_metrics: metrics,
         })
     }
@@ -520,32 +417,6 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
     }
 
-    /// Create a per-unit arena with 'tcx lifetime and store it in the context
-    /// This allows per-unit arenas to coexist with the compilation context
-    pub fn create_unit_arena(&'tcx self) -> &'tcx Arena<'tcx> {
-        // Safety: We're creating a new Arena and storing it with 'tcx lifetime
-        // The Arena is allocated with Box and stored in unit_arenas Mutex,
-        // which is part of CompileCtxt<'tcx>, so the arena will live as long as 'tcx
-        let arena = unsafe {
-            let arena_box = Box::new(Arena::default());
-            let arena_ptr = Box::into_raw(arena_box);
-            &*arena_ptr
-        };
-
-        // Store in the context for lifetime management
-        self.unit_arenas.lock().push(arena);
-        arena
-    }
-
-    /// Get a per-unit arena by index
-    pub fn get_unit_arena(&'tcx self, index: usize) -> &'tcx Arena<'tcx> {
-        self.unit_arenas
-            .lock()
-            .get(index)
-            .copied()
-            .expect("unit arena index out of bounds")
-    }
-
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
         self.scope_map
             .read()
@@ -577,6 +448,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self.arena
     }
 
+    /// Allocate a new scope
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         // Allocate new scope
         let scope_id = ScopeId(self.scope_map.read().len());
@@ -586,6 +458,49 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.scope_map.write().insert(scope_id, scope);
         self.owner_to_scope_id.write().insert(owner, scope_id);
 
+        scope
+    }
+
+    /// Allocate a new scope based on an existing one, cloning its contents.
+    ///
+    /// The existing ones are from the other arena, and we want to allocate in
+    /// this arena.
+    pub fn alloc_scope_with<'src>(&'tcx self, existing: &Scope<'src>) -> &'tcx Scope<'tcx> {
+        // Allocate new scope from existing
+        let scope_id = ScopeId(self.scope_map.read().len());
+        let scope = Scope::new_from(existing, self.arena());
+        let scope = self.arena.alloc(scope);
+
+        // Update scope_map
+        self.scope_map.write().insert(scope_id, scope);
+        scope.for_each_symbol(|sym| {
+            self.symbol_map.write().insert(sym.id(), sym);
+        });
+
+        scope
+    }
+
+    /// Allocate a new HIR identifier node with the given ID, name and symbol
+    pub fn alloc_hir_ident(&'tcx self, id: HirId, name: String, symbol: &'tcx Symbol) -> &'tcx HirIdent<'tcx> {
+        let base = HirBase {
+            id,
+            parent: None,
+            kind_id: 0,
+            start_byte: 0,
+            end_byte: 0,
+            kind: HirKind::Identifier,
+            field_id: u16::MAX,
+            children: Vec::new(),
+        };
+        let ident = self.arena.alloc(HirIdent::new(base, name));
+        ident.set_symbol(symbol);
+        ident
+    }
+
+    /// Allocate a new Scope from a symbol with the given HirId
+    pub fn alloc_hir_scope(&'tcx self, hir_id: HirId, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
+        let scope = self.alloc_scope(hir_id);
+        scope.set_symbol(Some(symbol));
         scope
     }
 
@@ -617,48 +532,15 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.scope_map.write().insert(second.id(), first);
     }
 
-    /// Allocate a new scope based on an existing one, cloning its contents.
-    ///
-    /// The existing ones are from the other arena, and we want to allocate in
-    /// this arena.
-    pub fn alloc_scope_with<'src>(&'tcx self, existing: &Scope<'src>) -> &'tcx Scope<'tcx> {
-        // Allocate new scope from existing
-        let scope_id = ScopeId(self.scope_map.read().len());
-        let scope = Scope::new_from(existing, self.arena());
-        let scope = self.arena.alloc(scope);
-
-        // Update scope_map
-        self.scope_map.write().insert(scope_id, scope);
-        scope.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        scope
-    }
-
-    pub fn reserve_hir_id(&self) -> HirId {
-        let id = self.hir_next_id.fetch_add(1, Ordering::Relaxed);
-        HirId(id as usize)
-    }
-
-    pub fn reserve_block_id(&self) -> BlockId {
-        let id = self.block_next_id.fetch_add(1, Ordering::Relaxed);
-        BlockId::new(id)
-    }
-
-    pub fn current_hir_id(&self) -> HirId {
-        HirId(self.hir_next_id.load(Ordering::Relaxed) as usize)
-    }
-
-    pub fn set_file_start(&self, index: usize, start: HirId) {
-        let mut starts = self.hir_start_ids.write();
+    pub fn set_file_root_id(&self, index: usize, start: HirId) {
+        let mut starts = self.hir_root_ids.write();
         if index < starts.len() && starts[index].is_none() {
             starts[index] = Some(start);
         }
     }
 
-    pub fn file_start(&self, index: usize) -> Option<HirId> {
-        self.hir_start_ids.read().get(index).and_then(|opt| *opt)
+    pub fn file_root_id(&self, index: usize) -> Option<HirId> {
+        self.hir_root_ids.read().get(index).and_then(|opt| *opt)
     }
 
     pub fn file_path(&self, index: usize) -> Option<&str> {
