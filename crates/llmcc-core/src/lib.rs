@@ -3,6 +3,7 @@ pub mod block;
 pub mod block_rel;
 pub mod context;
 pub mod file;
+pub mod graph;
 pub mod graph_builder;
 pub(crate) mod graph_render;
 pub mod interner;
@@ -20,9 +21,8 @@ pub mod visit;
 pub type DynError = Box<dyn std::error::Error + Send + Sync>;
 
 pub use context::{CompileCtxt, CompileUnit};
-pub use graph_builder::{
-    BlockId, BlockRelation, GraphBuildConfig, GraphNode, ProjectGraph, UnitGraph, build_llmcc_graph,
-};
+pub use graph::{GraphNode, ProjectGraph, UnitGraph};
+pub use graph_builder::{BlockId, BlockRelation, GraphBuildConfig, build_llmcc_graph};
 pub use ir::HirId;
 pub use ir_builder::{IrBuildOption, build_llmcc_ir};
 pub use lang_def::{LanguageTrait, LanguageTraitImpl};

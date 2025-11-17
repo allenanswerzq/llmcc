@@ -1,5 +1,5 @@
 use crate::block::{BlockKind, BlockRelation};
-use crate::graph_builder::{GraphNode, ProjectGraph};
+use crate::graph::{GraphNode, ProjectGraph};
 
 /// Query API for semantic code questions built on top of ProjectGraph:
 /// - given a function name, find all related code

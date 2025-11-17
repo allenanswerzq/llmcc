@@ -3,10 +3,9 @@ use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result, anyhow};
+use llmcc_core::ProjectGraph;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
-use llmcc_core::graph_builder::{
-    BlockId, BlockRelation, GraphBuildOption, ProjectGraph, build_llmcc_graph,
-};
+use llmcc_core::graph_builder::{BlockId, BlockRelation, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
