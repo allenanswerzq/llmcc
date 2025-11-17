@@ -1,6 +1,7 @@
 pub mod arena;
 pub mod block;
 pub mod block_rel;
+pub mod bump;
 pub mod context;
 pub mod file;
 pub mod graph;
