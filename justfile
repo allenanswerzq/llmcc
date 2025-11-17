@@ -17,7 +17,7 @@ verify-wheel:
         uv run maturin build --release
     uv run python "{{root}}/scripts/verify_wheel.py"
 
-test: cargo-format cargo-test cargo-clippy cargo-release
+test: run-py cargo-format cargo-test cargo-clippy cargo-release
 
 cargo-format:
     cargo fmt
