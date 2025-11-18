@@ -260,7 +260,7 @@ mod tests {
         let pool = InternPool::default();
 
         // Intern strings with many duplicates in parallel
-        let base_strings = vec!["alpha", "beta", "gamma", "delta", "epsilon"];
+        let base_strings = ["alpha", "beta", "gamma", "delta", "epsilon"];
         let symbols: Vec<_> = (0..500)
             .into_par_iter()
             .map(|i| {

@@ -383,7 +383,7 @@ pub fn print_llmcc_ir(unit: CompileUnit<'_>) -> RenderResult<()> {
 /// Print HIR to stdout with custom configuration
 pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -> RenderResult<()> {
     let root = unit
-        .file_start_hir_id()
+        .file_root_id()
         .ok_or_else(|| RenderError::new("No HIR root node found"))?;
 
     let (ast, hir) = render_llmcc_ir_with_config(root, unit, config)?;

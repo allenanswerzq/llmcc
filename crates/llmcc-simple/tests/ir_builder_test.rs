@@ -8,7 +8,7 @@
 //! - Scaling analysis and performance characteristics
 
 use llmcc_core::context::CompileCtxt;
-use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
+use llmcc_core::ir_builder::build_llmcc_ir;
 use llmcc_simple::LangSimple;
 use std::collections::HashSet;
 use std::time::Instant;
@@ -37,7 +37,7 @@ fn generate_sources(num_files: usize, lines_per_file: usize) -> Vec<Vec<u8>> {
 
 /// Build IR and return node count
 fn build_and_count<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> usize {
-    let result = build_llmcc_ir::<LangSimple>(cc, IrBuildOption::default());
+    let result = build_llmcc_ir::<LangSimple>(cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
     cc.hir_map.read().len()
 }
@@ -62,11 +62,11 @@ fn helper() {
     .to_vec();
 
     let cc = CompileCtxt::from_sources::<LangSimple>(&[source]);
-    let result = build_llmcc_ir::<LangSimple>(&cc, IrBuildOption::default());
+    let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
     let hir_map = cc.hir_map.read();
-    assert!(hir_map.len() > 0, "HIR map should contain nodes");
+    assert!(!hir_map.is_empty(), "HIR map should contain nodes");
     println!("✅ Single file build: {} nodes", hir_map.len());
 }
 
@@ -80,12 +80,12 @@ fn test_ir_build_multiple_files_sequential() {
     ];
 
     let cc = CompileCtxt::from_sources::<LangSimple>(&sources);
-    let result = build_llmcc_ir::<LangSimple>(&cc, IrBuildOption::default());
+    let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "Multi-file IR build should succeed");
 
     let hir_map = cc.hir_map.read();
     assert!(
-        hir_map.len() > 0,
+        !hir_map.is_empty(),
         "HIR map should contain nodes from all files"
     );
     println!(
@@ -122,7 +122,7 @@ fn main() {
     .to_vec();
 
     let cc = CompileCtxt::from_sources::<LangSimple>(&[source]);
-    let result = build_llmcc_ir::<LangSimple>(&cc, IrBuildOption::default());
+    let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
     let hir_map = cc.hir_map.read();
@@ -416,7 +416,6 @@ fn bench_ir_build_1000_files_10k_lines() {
     let hir_nodes = build_and_count(&cc);
     let build_time = start.elapsed();
 
-    let total_lines = NUM_FILES * LINES_PER_FILE;
     println!(
         "Bench 3 (production): {} files × {} lines",
         NUM_FILES, LINES_PER_FILE
@@ -475,7 +474,7 @@ fn bench_ir_build_scaling_analysis() {
         let (files2, _, time2) = results[results.len() - 1];
 
         let file_ratio = files2 as f64 / files1 as f64;
-        let time_ratio = time2 as f64 / time1 as f64;
+        let time_ratio = time2 / time1;
 
         assert!(
             time_ratio < file_ratio * 2.0,

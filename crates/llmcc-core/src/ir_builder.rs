@@ -18,6 +18,12 @@ use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
 /// Global atomic counter for HIR ID allocation (used during parallel builds).
 static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
+/// Reserve a new globally-unique HIR ID.
+pub fn next_hir_id() -> HirId {
+    let id = HIR_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
+    HirId(id)
+}
+
 /// Configuration for IR building behavior.
 ///
 /// This is currently a zero-sized marker type but is provided for future extensibility.
@@ -57,12 +63,6 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         }
     }
 
-    /// Reserve a new globally-unique HIR ID.
-    fn next_hir_id(&self) -> HirId {
-        let id = HIR_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
-        HirId(id)
-    }
-
     /// Build HIR nodes from a parse tree root.
     fn build(self, root: &dyn ParseNode) -> HirNode<'unit> {
         self.build_node(root, None)
@@ -70,7 +70,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 
     /// Recursively build a single HIR node and all descendants, allocating directly into arena.
     fn build_node(&self, node: &dyn ParseNode, parent: Option<HirId>) -> HirNode<'unit> {
-        let id = self.next_hir_id();
+        let id = next_hir_id();
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
         let children = self.collect_children(node, id);

@@ -59,11 +59,6 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.file_root_id(self.index)
     }
 
-    /// Alias for file_root_id for backwards compatibility
-    pub fn file_start_hir_id(&self) -> Option<HirId> {
-        self.file_root_id()
-    }
-
     pub fn file_path(&self) -> Option<&str> {
         self.cc.file_path(self.index)
     }
@@ -478,11 +473,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     ///
     /// The existing ones are from the other arena, and we want to allocate in
     /// this arena.
-    pub fn alloc_scope_with<'src>(&'tcx self, existing: &Scope<'src>) -> &'tcx Scope<'tcx> {
-        // Allocate new scope from existing
-        let scope_id = ScopeId(self.scope_map.read().len());
-        let scope = Scope::new_from(existing, self.arena());
-        let scope = self.arena.alloc(scope);
+    pub fn alloc_scope_with(&'tcx self, existing: &'tcx Scope<'tcx>) -> &'tcx Scope<'tcx> {
+        let scope_id = existing.id();
+        let scope = existing;
 
         // Update scope_map
         self.scope_map.write().insert(scope_id, scope);
@@ -535,7 +528,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// - All symbols from `second` are merged into `first`
     /// - The symbol_map is updated to point all merged symbols to the symbol_map
     /// - The scope_map is updated to redirect second's scope ID to first
-    pub fn merge_two_scopes<'src>(&'tcx self, first: &'tcx Scope<'tcx>, second: &'src Scope<'src>) {
+    pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
 

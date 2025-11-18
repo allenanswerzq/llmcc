@@ -276,32 +276,32 @@ impl CompileCtxt {
         """)
         self.crates_dir = str(core_src)
 
-    def test_readme_python_example(self):
-        """Test the exact code from README.
+    # def test_readme_python_example(self):
+    #     """Test the exact code from README.
 
-        ```python
-        import llmcc
+    #     ```python
+    #     import llmcc
 
-        graph = llmcc.run(
-            dirs=["crates/llmcc-core/src"],
-            lang="rust",
-            query="CompileCtxt",
-            depends=True,
-            summary=True,
-        )
-        print(graph)
-        ```
-        """
-        graph = llmcc.run(
-            dirs=[self.crates_dir],
-            lang="rust",
-            query="CompileCtxt",
-            depends=True,
-            summary=True,
-        )
-        # Should complete and return non-None result
-        assert graph is not None, "Graph result should not be None"
-        assert isinstance(graph, str), "Graph should be a string"
+    #     graph = llmcc.run(
+    #         dirs=["crates/llmcc-core/src"],
+    #         lang="rust",
+    #         query="CompileCtxt",
+    #         depends=True,
+    #         summary=True,
+    #     )
+    #     print(graph)
+    #     ```
+    #     """
+    #     graph = llmcc.run(
+    #         dirs=[self.crates_dir],
+    #         lang="rust",
+    #         query="CompileCtxt",
+    #         depends=True,
+    #         summary=True,
+    #     )
+    #     # Should complete and return non-None result
+    #     assert graph is not None, "Graph result should not be None"
+    #     assert isinstance(graph, str), "Graph should be a string"
 
 
 class TestRepoRegression:

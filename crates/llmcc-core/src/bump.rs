@@ -33,6 +33,7 @@ macro_rules! declare_arena {
             }
 
             /// Clear all allocations and reset memory.
+            #[allow(dead_code)]
             pub fn reset(&mut self) {
                 $( self.$field.get_mut().clear(); )*
                 self.herd.reset();
@@ -44,7 +45,7 @@ macro_rules! declare_arena {
                 value.insert_into(self)
             }
 
-            // ====== Auto-generated getters ======
+            // ----- Auto-generated getters -----
             $(
                 paste::paste! {
                     #[inline]
@@ -53,6 +54,12 @@ macro_rules! declare_arena {
                     }
                 }
             )*
+        }
+
+        impl<'a> Default for ArenaInner<'a> {
+            fn default() -> Self {
+                Self::new()
+            }
         }
 
         /// Shared wrapper around `ArenaInner`, safely cloneable across threads.
@@ -69,6 +76,7 @@ macro_rules! declare_arena {
 
             /// Get the internal Arc.
             #[inline]
+            #[allow(dead_code)]
             pub fn inner_arc(&self) -> &Arc<ArenaInner<'a>> {
                 &self.inner
             }
@@ -178,16 +186,16 @@ mod tests {
 
         // Allocate multiple symbols
         let mut allocated_syms = Vec::new();
-        for i in 0..5 {
-            let name = pool.intern(&format!("symbol_{}", i));
-            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
-            let sym_ref = arena.alloc(symbol);
+        for i in 0..10 {
+            let name = pool.intern(format!("symbol_{}", i));
+            let sym = Symbol::new(create_test_hir_id(i as u32), name);
+            let sym_ref = arena.alloc(sym);
             allocated_syms.push(sym_ref);
         }
 
         // Verify all tracked
         let symbols = arena.symbols();
-        assert_eq!(symbols.len(), 5);
+        assert_eq!(symbols.len(), 10);
 
         for (i, &sym) in allocated_syms.iter().enumerate() {
             assert!(sym.id.0 > 0, "Symbol {} should have positive ID", i);
@@ -330,7 +338,7 @@ mod tests {
 
         // Allocate 3 symbols
         for i in 0..3 {
-            let name = pool.intern(&format!("sym_{}", i));
+            let name = pool.intern(format!("sym_{}", i));
             let symbol = Symbol::new(create_test_hir_id(i as u32), name);
             let _ = arena.alloc(symbol);
         }
@@ -373,8 +381,8 @@ mod tests {
 
         // Create and add multiple symbols to scope
         let mut symbol_refs = Vec::new();
-        for i in 0..5 {
-            let name = pool.intern(&format!("var_{}", i));
+        for i in 0..50 {
+            let name = pool.intern(format!("var_{}", i));
             let symbol = Symbol::new(create_test_hir_id(1000 + i as u32), name);
             let sym_ref = arena.alloc(symbol);
             scope_ref.insert(sym_ref);
@@ -389,7 +397,7 @@ mod tests {
         }
 
         // Verify total count
-        assert_eq!(arena.symbols().len(), 5);
+        assert_eq!(arena.symbols().len(), 50);
     }
 
     #[test]
@@ -424,7 +432,7 @@ mod tests {
 
         // Allocate 100 symbols in parallel
         (0..100).into_par_iter().for_each(|i| {
-            let name = pool.intern(&format!("parallel_sym_{}", i));
+            let name = pool.intern(format!("parallel_sym_{}", i));
             let symbol = Symbol::new(create_test_hir_id(i as u32), name);
             let _ = arena.alloc(symbol);
         });
@@ -460,7 +468,7 @@ mod tests {
         (0..30).into_par_iter().for_each(|i| {
             if i % 2 == 0 {
                 // Allocate symbol
-                let name = pool.intern(&format!("sym_{}", i));
+                let name = pool.intern(format!("sym_{}", i));
                 let symbol = Symbol::new(create_test_hir_id(i as u32), name);
                 let _ = arena.alloc(symbol);
             } else {
@@ -514,7 +522,7 @@ mod tests {
             let alloc_type = i % 4;
             match alloc_type {
                 0 => {
-                    let name = pool.intern(&format!("sym_{}", i));
+                    let name = pool.intern(format!("sym_{}", i));
                     let symbol = Symbol::new(create_test_hir_id(i as u32), name);
                     let _ = arena.alloc(symbol);
                 }
@@ -556,7 +564,7 @@ mod tests {
 
         // Allocate 200 symbols in parallel with high contention
         (0..200).into_par_iter().for_each(|i| {
-            let name = pool.intern(&format!("high_contention_{}", i));
+            let name = pool.intern(format!("high_contention_{}", i));
             let symbol = Symbol::new(create_test_hir_id(i as u32), name);
             let _ = arena.alloc(symbol);
         });
@@ -573,7 +581,7 @@ mod tests {
 
         // Phase 1: Allocate symbols and scopes in parallel
         (0..50).into_par_iter().for_each(|i| {
-            let name = pool.intern(&format!("verify_sym_{}", i));
+            let name = pool.intern(format!("verify_sym_{}", i));
             let symbol = Symbol::new(create_test_hir_id(i as u32), name);
             let _ = arena.alloc(symbol);
 
@@ -611,21 +619,21 @@ mod tests {
         rayon::scope(|s| {
             s.spawn(|_| {
                 (0..25).into_par_iter().for_each(|i| {
-                    let name = pool.intern(&format!("thread1_sym_{}", i));
+                    let name = pool.intern(format!("thread1_sym_{}", i));
                     let symbol = Symbol::new(create_test_hir_id(i as u32), name);
                     let _ = arena_clone1.alloc(symbol);
                 });
             });
             s.spawn(|_| {
                 (25..50).into_par_iter().for_each(|i| {
-                    let name = pool.intern(&format!("thread2_sym_{}", i));
+                    let name = pool.intern(format!("thread2_sym_{}", i));
                     let symbol = Symbol::new(create_test_hir_id(i as u32), name);
                     let _ = arena_clone2.alloc(symbol);
                 });
             });
             s.spawn(|_| {
                 (50..75).into_par_iter().for_each(|i| {
-                    let name = pool.intern(&format!("thread3_sym_{}", i));
+                    let name = pool.intern(format!("thread3_sym_{}", i));
                     let symbol = Symbol::new(create_test_hir_id(i as u32), name);
                     let _ = arena_clone3.alloc(symbol);
                 });

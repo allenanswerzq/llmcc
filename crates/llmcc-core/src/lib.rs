@@ -24,7 +24,7 @@ pub use context::{CompileCtxt, CompileUnit};
 pub use graph::{GraphNode, ProjectGraph, UnitGraph};
 pub use graph_builder::{BlockId, BlockRelation, GraphBuildConfig, build_llmcc_graph};
 pub use ir::HirId;
-pub use ir_builder::{IrBuildOption, build_llmcc_ir};
+pub use ir_builder::{IrBuildOption, build_llmcc_ir, next_hir_id};
 pub use lang_def::{LanguageTrait, LanguageTraitImpl};
 pub use pagerank::{PageRankConfig, PageRanker, RankedBlock};
 pub use paste;

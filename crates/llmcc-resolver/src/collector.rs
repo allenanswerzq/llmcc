@@ -38,7 +38,7 @@ impl<'a> CollectorScopes<'a> {
         globals: &'a Scope<'a>,
     ) -> Self {
         // Create the scope stack with the borrowed arena
-        let mut scopes = ScopeStack::new(arena, interner);
+        let scopes = ScopeStack::new(arena, interner);
         scopes.push(globals);
 
         Self {
@@ -66,14 +66,6 @@ impl<'a> CollectorScopes<'a> {
     #[inline]
     pub fn scope_depth(&self) -> usize {
         self.scopes.depth()
-    }
-
-    /// Get current (top) scope from stack
-    #[inline]
-    pub fn top_scope(&self) -> &'a Scope<'a> {
-        self.scopes
-            .top()
-            .expect("scope stack should never be empty")
     }
 
     /// Push scope onto stack
@@ -197,33 +189,13 @@ impl<'a> CollectorScopes<'a> {
 }
 
 /// Apply symbols collected from a single compilation unit to the global context.
-///
-/// NOTE: even arena is the per-file, but the sym_id and scope_id is actually
-/// Apply collected symbols from a per-unit arena to the global compilation context.
-///
-/// This function transfers all scopes and symbols from a per-unit arena (where they were
-/// allocated during collection) to the global compilation context. This is typically called
-/// after symbol collection is complete for a single compilation unit.
-///
-/// # How It Works
-/// 1. Creates/gets the global scope in the compilation context
-/// 2. Iterates through all scopes in the per-unit arena
-/// 3. For the global scope: merges it into the global context's global scope
-/// 4. For all other scopes: allocates new scopes in the global arena while preserving IDs
-/// 5. All symbols are cloned and registered in the global symbol map
-///
-/// # Key Insight
-/// - Symbols and ScopeIds are assigned globally via atomics during collection (not per-unit)
-/// - This ensures uniqueness across all compilation units
-/// - When transferring to global arena, we preserve the IDs (don't create new ones)
-/// - The per-unit scope links and relationships are preserved in the transfer
-fn apply_collected_symbols<'tcx, 'unit>(
+fn apply_collected_symbols<'tcx>(
     cc: &'tcx CompileCtxt<'tcx>,
-    arena: &'unit Arena<'unit>,
+    arena: &'tcx Arena<'tcx>,
     final_globals: &'tcx Scope<'tcx>,
-    unit_globals: &'unit Scope<'unit>,
+    unit_globals: &'tcx Scope<'tcx>,
 ) -> &'tcx Scope<'tcx> {
-    // Transfer all scopes from per-unit arena to global context
+    // Transfer all scopes from per-unit arena to global
     for scope in arena.scope() {
         if scope.id() == unit_globals.id() {
             // For the global scope: merge into the final global scope
@@ -252,28 +224,27 @@ impl CollectorOption {
 }
 
 /// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
+#[rustfmt::skip]
 pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: CollectorOption,
 ) -> &'a Scope<'a> {
+    let arena = &cc.arena;
     let interner = &cc.interner;
+
     let unit_globals_vec = (0..cc.files.len())
         .into_par_iter()
-        .map(|unit_index| {
-            // Create a per-unit arena with 'tcx lifetime
-            let unit_arena = cc.create_unit_arena();
-            let unit_globals = unit_arena.alloc(Scope::new(HirId(unit_index)));
+        .map(|i| {
+            let unit = cc.compile_unit(i);
+            let unit_globals = arena.alloc(Scope::new(HirId(i)));
+            let node = unit.hir_node(unit.file_root_id().unwrap());
 
-            let unit = cc.compile_unit(unit_index);
-            let id = unit.file_start_hir_id().unwrap();
-            let node = unit.hir_node(id);
-            let mut collector =
-                CollectorScopes::new(unit_index, unit_arena, interner, unit_globals);
+            let mut collector = CollectorScopes::new(i, arena, interner, unit_globals);
             L::collect_symbols(&unit, &node, &mut collector, unit_globals);
 
             if config.print_ir {
                 use llmcc_core::printer::print_llmcc_ir;
-                println!("=== IR for unit {} ===", unit_index);
+                println!("=== IR for unit {} ===", i);
                 let _ = print_llmcc_ir(unit);
             }
 
@@ -282,9 +253,8 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         .collect::<Vec<&'a Scope<'a>>>();
 
     let globals = cc.create_globals();
-    for (unit_index, unit_globals) in unit_globals_vec.iter().enumerate() {
-        let unit_arena = cc.get_unit_arena(unit_index);
-        apply_collected_symbols(cc, unit_arena, globals, unit_globals);
+    for unit_globals in unit_globals_vec.iter() {
+        apply_collected_symbols(cc, arena, globals, unit_globals);
     }
     globals
 }

@@ -309,9 +309,7 @@ pub fn build_unit_graph<L: LanguageTrait>(
     unit_index: usize,
     config: GraphBuildConfig,
 ) -> Result<UnitGraph, DynError> {
-    let root_hir = unit
-        .file_start_hir_id()
-        .ok_or("missing file start HIR id")?;
+    let root_hir = unit.file_root_id().ok_or("missing file start HIR id")?;
     let mut builder = GraphBuilder::<L>::new(unit, config);
     let root_node = unit.hir_node(root_hir);
     builder.visit_node(unit, root_node, BlockId::ROOT_PARENT);

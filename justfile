@@ -9,6 +9,7 @@ uv-sync:
 build-bindings: uv-sync
     uv run maturin develop --manifest-path "{{root}}/crates/llmcc-bindings/Cargo.toml"
 
+# TODO: enable full python api test
 run-py: build-bindings verify-wheel
     uv run pytest "{{root}}/tests/test_python_api.py" -k "TestAPIExistence"
 

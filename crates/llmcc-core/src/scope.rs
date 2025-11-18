@@ -72,11 +72,10 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Merge existing scope into this scope, new stuff should allocate in the given arena.
-    pub fn merge_with<'src>(&self, other: &Scope<'src>, arena: &'tcx Arena<'tcx>) {
+    pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
         // Merge all symbols from the other scope into this scope
         other.for_each_symbol(|source_symbol| {
-            let allocated = arena.alloc(source_symbol.clone());
-            self.insert(allocated);
+            self.insert(source_symbol);
         });
     }
 
@@ -892,7 +891,7 @@ mod tests {
 
         // Parallel insertion of 100 symbols
         (0..100).into_par_iter().for_each(|i| {
-            let name = pool.intern(&format!("symbol_{}", i));
+            let name = pool.intern(format!("symbol_{}", i));
             let sym = Symbol::new(create_hir_id(i as u32 + 1000), name);
             let sym_ref = arena.alloc(sym);
             scope.insert(sym_ref);
@@ -901,7 +900,7 @@ mod tests {
         // Verify all symbols are present
         let mut total = 0;
         for i in 0..100 {
-            let name = pool.intern(&format!("symbol_{}", i));
+            let name = pool.intern(format!("symbol_{}", i));
             let found = scope.lookup_symbols(name);
             total += found.len();
         }
@@ -919,11 +918,11 @@ mod tests {
         (0..50).into_par_iter().for_each(|_i| {
             // Test that depth operations are thread-safe
             let _depth = stack.depth();
-            assert!(_depth >= 0);
+            assert_ne!(_depth, usize::MAX);
         });
 
         // Verify stack is still functional after parallel operations
-        assert!(stack.depth() >= 0);
+        assert_ne!(stack.depth(), usize::MAX);
     }
     #[test]
     fn test_parallel_multiple_scopes() {
@@ -940,7 +939,7 @@ mod tests {
         // Parallel insertion into different scopes
         (0..100).into_par_iter().for_each(|i| {
             let scope_idx = i % 10;
-            let name = pool.intern(&format!("sym_s{}_#{}", scope_idx, i));
+            let name = pool.intern(format!("sym_s{}_#{}", scope_idx, i));
             let sym = Symbol::new(create_hir_id(i as u32 + 2000), name);
             let sym_ref = arena.alloc(sym);
             scopes[scope_idx].insert(sym_ref);
@@ -962,7 +961,7 @@ mod tests {
 
         // Phase 1: Insert symbols in parallel
         (0..50).into_par_iter().for_each(|i| {
-            let name = pool.intern(&format!("lookup_test_{}", i));
+            let name = pool.intern(format!("lookup_test_{}", i));
             let sym = Symbol::new(create_hir_id(i as u32 + 3000), name);
             let sym_ref = arena.alloc(sym);
             scope.insert(sym_ref);
@@ -972,7 +971,7 @@ mod tests {
         let results: Vec<_> = (0..50)
             .into_par_iter()
             .map(|i| {
-                let name = pool.intern(&format!("lookup_test_{}", i));
+                let name = pool.intern(format!("lookup_test_{}", i));
                 scope.lookup_symbols(name).len()
             })
             .collect();
@@ -992,7 +991,7 @@ mod tests {
         // Insert 10 symbols
         let mut expected_ids = Vec::new();
         for i in 0..10 {
-            let name = pool.intern(&format!("sym_{}", i));
+            let name = pool.intern(format!("sym_{}", i));
             let sym = Symbol::new(create_hir_id(i as u32 + 4000), name);
             let sym_ref = arena.alloc(sym);
             scope.insert(sym_ref);
