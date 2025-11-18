@@ -11,7 +11,7 @@ use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
 
-use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
+use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use similar::TextDiff;
 use tempfile::TempDir;
@@ -773,16 +773,13 @@ where
     build_llmcc_ir::<L>(&cc, IrBuildOption).unwrap();
 
     // Use new unified API for symbol collection with optional IR printing
-    let globals = collect_symbols_with::<L>(
-        &cc,
-        CollectorOption::default()
-            .with_print_ir(true)
-            .with_sequential(true),
-    );
+    let resolver_option = ResolverOption::default()
+        .with_print_ir(true)
+        .with_sequential(true);
+    let globals = collect_symbols_with::<L>(&cc, &resolver_option);
 
     // Bind symbols using new unified API
-    bind_symbols_with::<L>(&cc, globals, BinderOption);
-
+    bind_symbols_with::<L>(&cc, globals, &resolver_option);
     let mut project_graph = if build_graph || build_block_reports || build_block_graph {
         Some(ProjectGraph::new(&cc))
     } else {

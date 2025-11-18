@@ -2,7 +2,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_resolver::BinderScopes;
+use llmcc_resolver::{BinderScopes, ResolverOption};
 
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
@@ -731,6 +731,7 @@ pub fn bind_symbols<'tcx>(
     node: &HirNode<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
+    _config: &ResolverOption,
 ) {
     BinderVisitor::new().visit_node(&unit, node, scopes, namespace, None);
 }

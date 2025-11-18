@@ -3,7 +3,7 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_resolver::CollectorScopes;
+use llmcc_resolver::{CollectorScopes, ResolverOption};
 
 use crate::LangRust;
 use crate::token::AstVisitorRust;
@@ -458,6 +458,7 @@ pub fn collect_symbols<'tcx>(
     node: &HirNode<'tcx>,
     scopes: &mut CollectorScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
+    _config: &ResolverOption,
 ) {
     CollectorVisitor::new().visit_node(unit, node, scopes, namespace, None);
 }
@@ -469,7 +470,7 @@ mod tests {
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
     use llmcc_core::symbol::{SymId, SymKind};
-    use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
+    use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
     fn with_compiled_unit<F>(sources: &[&str], check: F)
     where
@@ -481,9 +482,9 @@ mod tests {
             .collect::<Vec<_>>();
         let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
         build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
-        let globals =
-            collect_symbols_with::<LangRust>(&cc, CollectorOption::default().with_sequential(true));
-        bind_symbols_with::<LangRust>(&cc, globals, BinderOption);
+        let resolver_option = ResolverOption::default().with_sequential(true);
+        let globals = collect_symbols_with::<LangRust>(&cc, resolver_option);
+        bind_symbols_with::<LangRust>(&cc, globals, resolver_option);
         check(&cc);
     }
 

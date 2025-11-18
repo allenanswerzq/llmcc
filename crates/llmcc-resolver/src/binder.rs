@@ -7,6 +7,8 @@ use llmcc_core::{CompileCtxt, LanguageTraitImpl};
 
 use rayon::prelude::*;
 
+use crate::ResolverOption;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationDirection {
     Forward,
@@ -172,20 +174,17 @@ impl<'tcx> BinderScopes<'tcx> {
     }
 }
 
-#[derive(Default)]
-pub struct BinderOption;
-
 /// parallel binding symbols
 pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
-    _config: BinderOption,
+    config: &ResolverOption,
 ) {
     (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
         let mut scopes = BinderScopes::new(unit, globals);
-        L::bind_symbols_impl(&unit, &node, &mut scopes, globals);
+        L::bind_symbols(&unit, &node, &mut scopes, globals, config);
     })
 }

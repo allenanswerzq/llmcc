@@ -7,6 +7,9 @@ use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::{HirId, LanguageTrait};
 
 use rayon::prelude::*;
+
+use crate::ResolverOption;
+
 /// Core symbol collector for a single compilation unit
 pub struct CollectorScopes<'a> {
     arena: &'a Arena<'a>,
@@ -212,29 +215,11 @@ fn apply_collected_symbols<'tcx>(
     final_globals
 }
 
-#[derive(Default)]
-pub struct CollectorOption {
-    pub print_ir: bool,
-    pub sequential: bool,
-}
-
-impl CollectorOption {
-    pub fn with_print_ir(mut self, print_ir: bool) -> Self {
-        self.print_ir = print_ir;
-        self
-    }
-
-    pub fn with_sequential(mut self, sequential: bool) -> Self {
-        self.sequential = sequential;
-        self
-    }
-}
-
 /// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
 #[rustfmt::skip]
 pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
-    config: CollectorOption,
+    config: &ResolverOption,
 ) -> &'a Scope<'a> {
     let arena = &cc.arena;
     let interner = &cc.interner;
@@ -245,7 +230,7 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         let node = unit.hir_node(unit.file_root_id().unwrap());
 
         let mut collector = CollectorScopes::new(i, arena, interner, unit_globals);
-        L::collect_symbols(&unit, &node, &mut collector, unit_globals);
+        L::collect_symbols(&unit, &node, &mut collector, unit_globals, config);
 
         if config.print_ir {
             use llmcc_core::printer::print_llmcc_ir;

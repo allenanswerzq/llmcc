@@ -283,18 +283,22 @@ pub trait LanguageTrait {
     /// Get the list of file extensions this language supports.
     fn supported_extensions() -> &'static [&'static str];
 
-    fn collect_symbols<'tcx, T>(
+    /// TOOD: can we remove the generics here, we could make a new crate or
+    /// bring llmcc-resolver into core to solve the cross dependency
+    fn collect_symbols<'tcx, T, C>(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut T,
         namespace: &'tcx Scope<'tcx>,
+        config: &C,
     );
 
-    fn bind_symbols<'tcx, T>(
+    fn bind_symbols<'tcx, T, C>(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut T,
         namespace: &'tcx Scope<'tcx>,
+        config: &C,
     );
 }
 
@@ -306,18 +310,20 @@ pub trait LanguageTraitImpl: LanguageTrait {
     /// Supported file extensions for this language.
     fn supported_extensions_impl() -> &'static [&'static str];
 
-    fn collect_symbols_impl<'tcx, T>(
+    fn collect_symbols_impl<'tcx, T, C>(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut T,
         namespace: &'tcx Scope<'tcx>,
+        config: &C,
     );
 
-    fn bind_symbols_impl<'tcx, T>(
+    fn bind_symbols_impl<'tcx, T, C>(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut T,
         namespace: &'tcx Scope<'tcx>,
+        config: &C,
     );
 }
 
@@ -359,22 +365,24 @@ macro_rules! define_lang {
                     <Self as $crate::lang_def::LanguageTraitImpl>::parse_impl(text.as_ref())
                 }
 
-                fn collect_symbols<'tcx, T>(
+                fn collect_symbols<'tcx, T, C>(
                     unit: &$crate::context::CompileUnit<'tcx>,
                     node: &$crate::ir::HirNode<'tcx>,
                     scopes: &mut T,
                     namespace: &'tcx $crate::scope::Scope<'tcx>,
+                    config: &C,
                 ) {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_symbols_impl(unit, node, scopes, namespace);
+                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_symbols_impl(unit, node, scopes, namespace, config);
                 }
 
-                fn bind_symbols<'tcx, T>(
+                fn bind_symbols<'tcx, T, C>(
                     unit: &$crate::context::CompileUnit<'tcx>,
                     node: &$crate::ir::HirNode<'tcx>,
                     scopes: &mut T,
                     namespace: &'tcx $crate::scope::Scope<'tcx>,
+                    config: &C,
                 ) {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::bind_symbols_impl(unit, node, scopes, namespace);
+                    <Self as $crate::lang_def::LanguageTraitImpl>::bind_symbols_impl(unit, node, scopes, namespace, config);
                 }
 
                 /// Return the list of supported file extensions for this language
