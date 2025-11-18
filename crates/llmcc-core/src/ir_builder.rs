@@ -9,11 +9,11 @@ use rayon::prelude::*;
 
 use crate::DynError;
 use crate::context::CompileCtxt;
+use crate::context::ParentedNode;
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
 use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
-use crate::context::ParentedNode;
 
 /// Global atomic counter for HIR ID allocation (used during parallel builds).
 static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
@@ -198,7 +198,6 @@ fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(
     Ok(root.id())
 }
 
-
 struct BuildResult {
     /// Index of this file in the compile context
     index: usize,
@@ -236,7 +235,11 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     results.sort_by_key(|result| result.index);
 
     // Register all file start IDs
-    for BuildResult { index, file_root_id, } in results {
+    for BuildResult {
+        index,
+        file_root_id,
+    } in results
+    {
         cc.set_file_root_id(index, file_root_id);
     }
 

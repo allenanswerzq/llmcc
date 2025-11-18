@@ -7,6 +7,7 @@ use std::io::Write;
 use std::ops::Deref;
 use std::time::Instant;
 use tree_sitter::Node;
+use uuid::Uuid;
 
 use crate::block::{BasicBlock, BlockArena, BlockId};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
@@ -280,8 +281,10 @@ impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
 impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from source code
     pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
-        // Write sources to temporary files and use from_files
-        let temp_dir = std::env::temp_dir().join("llmcc");
+        // Write sources to a unique temporary directory using UUID
+        let temp_dir = std::env::temp_dir()
+            .join("llmcc")
+            .join(Uuid::new_v4().to_string());
         let _ = fs::create_dir_all(&temp_dir);
 
         let paths: Vec<String> = sources
@@ -491,7 +494,12 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     /// Allocate a new HIR identifier node with the given ID, name and symbol
-    pub fn alloc_hir_ident(&'tcx self, id: HirId, name: String, symbol: &'tcx Symbol) -> &'tcx HirIdent<'tcx> {
+    pub fn alloc_hir_ident(
+        &'tcx self,
+        id: HirId,
+        name: String,
+        symbol: &'tcx Symbol,
+    ) -> &'tcx HirIdent<'tcx> {
         let base = HirBase {
             id,
             parent: None,

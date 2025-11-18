@@ -279,7 +279,12 @@ impl<'tcx> ScopeStack<'tcx> {
     /// This is a double-ended iterator, allowing iteration in either direction.
     /// Creates a copy of the stack for safe iteration.
     pub fn iter(&self) -> impl DoubleEndedIterator<Item = &'tcx Scope<'tcx>> + '_ {
-        self.stack.read().iter().copied().collect::<Vec<_>>().into_iter()
+        self.stack
+            .read()
+            .iter()
+            .copied()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     /// Normalize and intern the symbol name.
@@ -1016,5 +1021,4 @@ mod tests {
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<ScopeStack>();
     }
-
 }

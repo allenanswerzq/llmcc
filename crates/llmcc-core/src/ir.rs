@@ -1,5 +1,5 @@
-use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 use std::sync::atomic::{AtomicUsize, Ordering};
+use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
