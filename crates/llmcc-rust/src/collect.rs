@@ -468,7 +468,7 @@ mod tests {
 
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-    use llmcc_core::symbol::SymKind;
+    use llmcc_core::symbol::{SymId, SymKind};
     use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
 
     fn with_compiled_unit<F>(sources: &[&str], check: F)
@@ -501,7 +501,7 @@ mod tests {
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 
-    fn dependency_names(cc: &CompileCtxt<'_>, sym_id: llmcc_core::symbol::SymId) -> Vec<String> {
+    fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
         let map = cc.symbol_map.read();
         let symbol = map
             .get(&sym_id)
@@ -520,6 +520,43 @@ mod tests {
         names
     }
 
+    fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
+        let map = cc.symbol_map.read();
+        let symbol = map.get(&sym_id).copied()?;
+        let ty_id = symbol.type_of();
+        drop(map);
+        let ty_id = ty_id?;
+        let map = cc.symbol_map.read();
+        let ty_symbol = map.get(&ty_id).copied()?;
+        cc.interner.resolve_owned(ty_symbol.name)
+    }
+
+    fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
+        with_compiled_unit(source, |cc| {
+            for (name, kind, deps) in expectations {
+                let sym_id = find_symbol_id(cc, name, *kind);
+                let expected: Vec<String> = deps.iter().map(|s| s.to_string()).collect();
+                assert_eq!(
+                    dependency_names(cc, sym_id),
+                    expected,
+                    "dependency mismatch for symbol {name}"
+                );
+            }
+        });
+    }
+
+    fn assert_symbol_type(source: &[&str], name: &str, kind: SymKind, expected: Option<&str>) {
+        with_compiled_unit(source, |cc| {
+            let sym_id = find_symbol_id(cc, name, kind);
+            let actual = type_name_of(cc, sym_id);
+            assert_eq!(
+                actual.as_deref(),
+                expected,
+                "type mismatch for symbol {name}"
+            );
+        });
+    }
+
     #[test]
     fn call_expression_basic_dependency() {
         let source = r#"
@@ -528,10 +565,7 @@ fn caller() {
     callee();
 }
 "#;
-        with_compiled_unit(&[source], |cc| {
-            let caller = find_symbol_id(cc, "caller", SymKind::Function);
-            assert_eq!(dependency_names(cc, caller), vec!["callee"]);
-        });
+        assert_dependencies(&[source], &[("caller", SymKind::Function, &["callee"])]);
     }
 
     #[test]
@@ -547,10 +581,7 @@ fn run() {
     s.foo();
 }
 "#;
-        with_compiled_unit(&[source], |cc| {
-            let run = find_symbol_id(cc, "run", SymKind::Function);
-            assert_eq!(dependency_names(cc, run), vec!["foo"]);
-        });
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["foo"])]);
     }
 
     #[test]
@@ -567,10 +598,14 @@ fn chain_invocation() {
     Builder::new().step().finish();
 }
 "#;
-        with_compiled_unit(&[source], |cc| {
-            let chain = find_symbol_id(cc, "chain_invocation", SymKind::Function);
-            assert_eq!(dependency_names(cc, chain), vec!["finish", "new", "step"]);
-        });
+        assert_dependencies(
+            &[source],
+            &[(
+                "chain_invocation",
+                SymKind::Function,
+                &["finish", "new", "step"],
+            )],
+        );
     }
 
     #[test]
@@ -585,10 +620,10 @@ async fn entry() -> Result<(), ()> {
     Ok(())
 }
 "#;
-        with_compiled_unit(&[source], |cc| {
-            let entry = find_symbol_id(cc, "entry", SymKind::Function);
-            assert_eq!(dependency_names(cc, entry), vec!["async_task", "maybe"]);
-        });
+        assert_dependencies(
+            &[source],
+            &[("entry", SymKind::Function, &["async_task", "maybe"])],
+        );
     }
 
     #[test]
@@ -600,9 +635,202 @@ fn call_macro() {
     ping!();
 }
 "#;
-        with_compiled_unit(&[source], |cc| {
-            let caller = find_symbol_id(cc, "call_macro", SymKind::Function);
-            assert_eq!(dependency_names(cc, caller), vec!["ping"]);
-        });
+        assert_dependencies(&[source], &[("call_macro", SymKind::Function, &["ping"])]);
+    }
+
+    #[test]
+    fn scoped_function_dependency() {
+        let source = r#"
+mod helpers {
+    pub fn compute() {}
+}
+
+fn run() {
+    helpers::compute();
+    crate::helpers::compute();
+}
+"#;
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["compute"])]);
+    }
+
+    #[test]
+    fn associated_function_dependency() {
+        let source = r#"
+struct Foo;
+impl Foo {
+    fn build() -> Self {
+        Foo
+    }
+}
+
+fn run() {
+    Foo::build();
+}
+"#;
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["build"])]);
+    }
+
+    #[test]
+    fn trait_fully_qualified_call_dependency() {
+        let source = r#"
+trait Greeter {
+    fn greet();
+}
+
+struct Foo;
+
+impl Greeter for Foo {
+    fn greet() {}
+}
+
+fn run() {
+    <Foo as Greeter>::greet();
+}
+"#;
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["greet"])]);
+    }
+
+    #[test]
+    fn namespaced_macro_dependency() {
+        let source = r#"
+mod outer {
+    pub mod inner {
+        macro_rules! shout {
+            () => {};
+        }
+        pub(crate) use shout;
+    }
+}
+
+fn run() {
+    outer::inner::shout!();
+}
+"#;
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["shout"])]);
+    }
+
+    #[test]
+    fn super_module_function_dependency() {
+        let source = r#"
+mod outer {
+    pub fn top() {}
+    pub mod inner {
+        pub fn run() {
+            super::top();
+        }
+    }
+}
+"#;
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["top"])]);
+    }
+
+    #[test]
+    fn variable_type_annotation() {
+        let source = r#"
+struct Foo;
+
+fn run() {
+    let value: Foo = Foo;
+    let other = Foo;
+}
+"#;
+        assert_symbol_type(&[source], "value", SymKind::Variable, Some("Foo"));
+        assert_symbol_type(&[source], "other", SymKind::Variable, None);
+    }
+
+    #[test]
+    fn static_type_annotation() {
+        let source = r#"
+struct Foo;
+static GLOBAL: Foo = Foo;
+"#;
+        assert_symbol_type(&[source], "GLOBAL", SymKind::Static, Some("Foo"));
+    }
+
+    #[test]
+    fn parameter_type_annotation() {
+        let source = r#"
+struct Foo;
+
+fn consume(param: Foo) {
+    let _ = param;
+}
+"#;
+        assert_symbol_type(&[source], "param", SymKind::Variable, Some("Foo"));
+    }
+
+    #[test]
+    fn field_type_annotation() {
+        let source = r#"
+struct Bar;
+struct Bucket {
+    item: Bar,
+}
+"#;
+        assert_symbol_type(&[source], "item", SymKind::Field, Some("Bar"));
+    }
+
+    #[test]
+    fn const_and_type_alias_types() {
+        let source = r#"
+struct Foo;
+type Alias = Foo;
+const ANSWER: i32 = 42;
+"#;
+        assert_symbol_type(&[source], "Alias", SymKind::Type, Some("Foo"));
+        assert_symbol_type(&[source], "ANSWER", SymKind::Const, None);
+    }
+
+    #[test]
+    fn struct_field_generic_dependency() {
+        let source = r#"
+struct Foo;
+struct List<T>(T);
+
+struct Container {
+    data: List<Foo>,
+}
+"#;
+        assert_dependencies(
+            &[source],
+            &[
+                ("Container", SymKind::Struct, &["Foo", "List"]),
+                ("data", SymKind::Field, &["Foo", "List"]),
+            ],
+        );
+    }
+
+    #[test]
+    fn enum_variant_dependency() {
+        let source = r#"
+struct Foo;
+enum Wrapper {
+    Item(Foo),
+}
+"#;
+        assert_dependencies(&[source], &[("Wrapper", SymKind::Enum, &["Foo"])]);
+    }
+
+    #[test]
+    fn let_statement_generic_dependency() {
+        let source = r#"
+struct Foo;
+struct Bar;
+enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+fn run() {
+    let value: Result<Foo, Bar> = Result::Ok(Foo);
+}
+"#;
+        assert_dependencies(
+            &[source],
+            &[
+                ("value", SymKind::Variable, &["Bar", "Foo", "Result"]),
+                ("run", SymKind::Function, &["Bar", "Foo", "Result"]),
+            ],
+        );
     }
 }

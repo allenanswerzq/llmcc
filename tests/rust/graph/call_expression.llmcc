@@ -74,12 +74,14 @@ u0:11 | Variable | x                   | x                   |
 
 --- expect:symbol-deps ---
 u0:10 -> [u0:4]
-u0:4 <- [u0:10]
+u0:3 <- [u0:8]
+u0:4 <- [u0:10, u0:9]
 u0:5 <- [u0:6]
 u0:6 -> [u0:5]
 u0:7 <- [u0:9]
+u0:8 -> [u0:3]
 u0:8 <- [u0:9]
-u0:9 -> [u0:7, u0:8]
+u0:9 -> [u0:4, u0:7, u0:8]
 
 --- expect:blocks ---
 u0:1  | root   | main               
@@ -94,14 +96,25 @@ u0:9  | call   | block#9
 u0:10 | call   | block#10           
 
 --- expect:block-deps ---
+u0:2 <- [u0:7]
+u0:3 <- [u0:8]
 u0:4 <- [u0:5]
 u0:5 -> [u0:4]
 u0:6 <- [u0:8]
+u0:7 -> [u0:2]
 u0:7 <- [u0:8]
-u0:8 -> [u0:6, u0:7]
+u0:8 -> [u0:3, u0:6, u0:7]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n8 [label="qualified_call", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpCyp9T7/app/src/main.rs:13"];
+    n3 [label="Baz", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpCyp9T7/app/src/main.rs:2"];
+  }
+  n8 -> n3;
 }
 
 
@@ -225,10 +238,12 @@ u0:11 | Variable | data       | data       |
 --- expect:symbol-deps ---
 u0:10 -> [u0:6, u0:8, u0:9]
 u0:3 <- [u0:5]
-u0:4 <- [u0:7]
+u0:4 <- [u0:6, u0:7, u0:8]
 u0:5 -> [u0:3]
+u0:6 -> [u0:4]
 u0:6 <- [u0:10]
 u0:7 -> [u0:4]
+u0:8 -> [u0:4]
 u0:8 <- [u0:10]
 u0:9 <- [u0:10]
 
@@ -283,11 +298,11 @@ u0:8 | Variable | stream              | stream              |
 u0:9 | Variable | cursor              | cursor              |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:4, u0:8]
+u0:3 <- [u0:4, u0:7, u0:8]
 u0:4 -> [u0:3]
 u0:5 <- [u0:7]
 u0:6 <- [u0:7]
-u0:7 -> [u0:5, u0:6]
+u0:7 -> [u0:3, u0:5, u0:6]
 u0:8 -> [u0:3]
 
 --- expect:blocks ---
@@ -301,12 +316,20 @@ u0:7 | call   | block#7
 u0:8 | call   | block#8            
 
 --- expect:block-deps ---
-u0:2 <- [u0:3]
+u0:2 <- [u0:3, u0:6]
 u0:3 -> [u0:2]
 u0:4 <- [u0:6]
 u0:5 <- [u0:6]
-u0:6 -> [u0:4, u0:5]
+u0:6 -> [u0:2, u0:4, u0:5]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n2 [label="Stream", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpJiw0jU/app/src/main.rs:1"];
+    n6 [label="chain_variable_demo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpJiw0jU/app/src/main.rs:11"];
+  }
+  n6 -> n2;
 }

@@ -154,7 +154,8 @@ u0:6 | Variable | f    | f    |
 u0:7 | Variable | b    | b    |         
 
 --- expect:symbol-deps ---
-u0:4 <- [u0:7]
+u0:4 <- [u0:5, u0:7]
+u0:5 -> [u0:4]
 u0:7 -> [u0:4]
 
 
@@ -184,7 +185,8 @@ u0:6 | Variable | f    | f    |
 u0:7 | Variable | b    | b    |         
 
 --- expect:symbol-deps ---
-u0:4 <- [u0:7]
+u0:4 <- [u0:5, u0:7]
+u0:5 -> [u0:4]
 u0:7 -> [u0:4]
 
 --- expect:blocks ---
@@ -198,10 +200,19 @@ u0:7 | call  | block#7
 u0:8 | call  | block#8
 
 --- expect:block-deps ---
-
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n3 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpEVYQnf/app/src/main.rs:2"];
+    n4 [label="func", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpEVYQnf/app/src/main.rs:4"];
+  }
+  n4 -> n3;
 }
 
 
@@ -231,7 +242,8 @@ u0:6 | Variable | f    | f    |
 u0:7 | Variable | b    | b    |         
 
 --- expect:symbol-deps ---
-u0:4 <- [u0:7]
+u0:4 <- [u0:5, u0:7]
+u0:5 -> [u0:4]
 u0:7 -> [u0:4]
 
 --- expect:blocks ---
@@ -245,10 +257,19 @@ u0:7 | call  | block#7
 u0:8 | call  | block#8
 
 --- expect:block-deps ---
-
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n3 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpUEJaaD/app/src/main.rs:2"];
+    n4 [label="func", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpUEJaaD/app/src/main.rs:4"];
+  }
+  n4 -> n3;
 }
 
 
@@ -422,7 +443,8 @@ u0:7 | Variable | score      | score      |
 u0:8 | Variable | base       | base       |         
 
 --- expect:symbol-deps ---
-
+u0:3 <- [u0:6]
+u0:6 -> [u0:3]
 
 --- expect:blocks ---
 u0:1 | root  | main      
@@ -433,6 +455,14 @@ u0:5 | func  | build_user
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n2 [label="User", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpyjY5oa/app/src/main.rs:1"];
+    n5 [label="build_user", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpyjY5oa/app/src/main.rs:6"];
+  }
+  n5 -> n2;
 }
 
 
@@ -805,10 +835,14 @@ u0:13 | Variable | y        | y        |
 
 --- expect:symbol-deps ---
 u0:10 -> [u0:9]
-u0:3 <- [u0:8]
-u0:4 <- [u0:6]
+u0:3 <- [u0:7, u0:8]
+u0:4 <- [u0:5, u0:6]
+u0:5 -> [u0:4]
+u0:5 <- [u0:9]
 u0:6 -> [u0:4]
+u0:7 -> [u0:3]
 u0:8 -> [u0:3]
+u0:9 -> [u0:5]
 u0:9 <- [u0:10]
 
 --- expect:blocks ---
@@ -826,6 +860,12 @@ u0:11 | call  | block#11
 u0:12 | call  | block#12
 
 --- expect:block-deps ---
+u0:2 <- [u0:6]
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
+u0:4 <- [u0:8]
+u0:6 -> [u0:2]
+u0:8 -> [u0:4]
 u0:8 <- [u0:9]
 u0:9 -> [u0:8]
 
@@ -835,10 +875,17 @@ digraph project {
     label="todo";
     style=filled;
     color=lightgrey;
-    n8 [label="foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmprPFb5V/app/src/main.rs:11"];
-    n9 [label="bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmprPFb5V/app/src/main.rs:15"];
+    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpeD63w7/app/src/main.rs:1"];
+    n8 [label="foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpeD63w7/app/src/main.rs:11"];
+    n9 [label="bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpeD63w7/app/src/main.rs:15"];
+    n3 [label="Far", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpeD63w7/app/src/main.rs:2"];
+    n4 [label="Baz", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpeD63w7/app/src/main.rs:3"];
+    n6 [label="MyStruct", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpeD63w7/app/src/main.rs:7"];
   }
+  n8 -> n4;
   n9 -> n8;
+  n4 -> n3;
+  n6 -> n2;
 }
 
 
@@ -873,8 +920,10 @@ u0:8 | Variable | mystruct      | mystruct      |
 u0:9 | Variable | x             | x             |         
 
 --- expect:symbol-deps ---
+u0:3 <- [u0:6]
 u0:4 <- [u0:5]
 u0:5 -> [u0:4]
+u0:6 -> [u0:3]
 u0:6 <- [u0:7]
 u0:7 -> [u0:6]
 

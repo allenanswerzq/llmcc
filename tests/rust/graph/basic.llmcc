@@ -20,7 +20,9 @@ u0:5 | Field  | a    | a    |
 u0:6 | Field  | b    | b    |         
 
 --- expect:symbol-deps ---
-
+u0:3 <- [u0:4, u0:6]
+u0:4 -> [u0:3]
+u0:6 -> [u0:3]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -30,10 +32,19 @@ u0:4 | field | block#4
 u0:5 | field | block#5
 
 --- expect:block-deps ---
-
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpIn3nuJ/app/src/main.rs:1"];
+    n3 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpIn3nuJ/app/src/main.rs:3"];
+  }
+  n3 -> n2;
 }
 
 
@@ -132,8 +143,10 @@ u0:12 | Variable | f             | f             |
 
 --- expect:symbol-deps ---
 u0:10 -> [u0:7]
+u0:4 <- [u0:7]
 u0:5 <- [u0:6]
 u0:6 -> [u0:5]
+u0:7 -> [u0:4]
 u0:7 <- [u0:10]
 
 
@@ -170,10 +183,10 @@ u0:8 | Function | method_demo | method_demo |
 u0:9 | Variable | buffer      | buffer      |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:4, u0:9]
+u0:3 <- [u0:4, u0:8, u0:9]
 u0:4 -> [u0:3]
 u0:5 <- [u0:8]
-u0:8 -> [u0:5]
+u0:8 -> [u0:3, u0:5]
 u0:9 -> [u0:3]
 
 
@@ -253,11 +266,11 @@ u0:8 | Variable | stream              | stream              |
 u0:9 | Variable | cursor              | cursor              |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:4, u0:8]
+u0:3 <- [u0:4, u0:7, u0:8]
 u0:4 -> [u0:3]
 u0:5 <- [u0:7]
 u0:6 <- [u0:7]
-u0:7 -> [u0:5, u0:6]
+u0:7 -> [u0:3, u0:5, u0:6]
 u0:8 -> [u0:3]
 
 
@@ -297,9 +310,11 @@ u0:8 | Function | qualified_call      | qualified_call      |
 u0:9 | Variable | x                   | x                   |         
 
 --- expect:symbol-deps ---
+u0:3 <- [u0:7]
 u0:4 <- [u0:5]
 u0:5 -> [u0:4]
 u0:6 <- [u0:8]
+u0:7 -> [u0:3]
 u0:7 <- [u0:8]
 u0:8 -> [u0:6, u0:7]
 
@@ -315,9 +330,11 @@ u0:8 | call   | block#8
 u0:9 | call   | block#9            
 
 --- expect:block-deps ---
+u0:2 <- [u0:6]
 u0:3 <- [u0:4]
 u0:4 -> [u0:3]
 u0:5 <- [u0:7]
+u0:6 -> [u0:2]
 u0:6 <- [u0:7]
 u0:7 -> [u0:5, u0:6]
 
