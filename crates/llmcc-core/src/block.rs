@@ -132,6 +132,11 @@ pub struct BlockId(pub u32);
 /// Global counter for allocating unique Block IDs
 static BLOCK_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
+/// Reset global BlockId counter (primarily for deterministic tests)
+pub fn reset_block_id_counter() {
+    BLOCK_ID_COUNTER.store(1, Ordering::SeqCst);
+}
+
 impl std::fmt::Display for BlockId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)

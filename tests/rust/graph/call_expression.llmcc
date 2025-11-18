@@ -20,10 +20,19 @@ u0:4 | Function  | compute       | compute       |
 u0:5 | Function  | function_demo | function_demo |         
 
 --- expect:symbol-deps ---
-
+u0:4 <- [u0:5]
+u0:5 -> [u0:4]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n2 [label="compute", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpdXyRAN/app/src/main.rs:2"];
+    n3 [label="function_demo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpdXyRAN/app/src/main.rs:5"];
+  }
+  n3 -> n2;
 }
 
 
@@ -68,22 +77,28 @@ u0:10 -> [u0:4]
 u0:4 <- [u0:10]
 u0:5 <- [u0:6]
 u0:6 -> [u0:5]
+u0:7 <- [u0:9]
+u0:8 <- [u0:9]
+u0:9 -> [u0:7, u0:8]
 
 --- expect:blocks ---
-u0:159 | root   | main               
-u0:160 | class  | Foo                
-u0:161 | class  | Baz                
-u0:162 | class  | SessionBuilder     
-u0:163 | impl   | impl SessionBuilder
-u0:164 | method | new                
-u0:165 | method | static_func        
-u0:166 | func   | qualified_call     
-u0:167 | call   | block#167          
-u0:168 | call   | block#168          
+u0:1  | root   | main               
+u0:2  | class  | Foo                
+u0:3  | class  | Baz                
+u0:4  | class  | SessionBuilder     
+u0:5  | impl   | impl SessionBuilder
+u0:6  | method | new                
+u0:7  | method | static_func        
+u0:8  | func   | qualified_call     
+u0:9  | call   | block#9            
+u0:10 | call   | block#10           
 
 --- expect:block-deps ---
-u0:162 <- [u0:163]
-u0:163 -> [u0:162]
+u0:4 <- [u0:5]
+u0:5 -> [u0:4]
+u0:6 <- [u0:8]
+u0:7 <- [u0:8]
+u0:8 -> [u0:6, u0:7]
 
 --- expect:graph ---
 digraph project {
@@ -113,7 +128,8 @@ u0:3 | Macro    | log_value  | log_value  |
 u0:4 | Function | macro_demo | macro_demo |         
 
 --- expect:symbol-deps ---
-
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
 
 
 ===============================================================================
@@ -153,6 +169,10 @@ u0:8 | Function | chain_invocation_demo | chain_invocation_demo |
 --- expect:symbol-deps ---
 u0:3 <- [u0:4]
 u0:4 -> [u0:3]
+u0:5 <- [u0:8]
+u0:6 <- [u0:8]
+u0:7 <- [u0:8]
+u0:8 -> [u0:5, u0:6, u0:7]
 
 --- expect:graph ---
 digraph project {
@@ -203,23 +223,27 @@ u0:10 | Function | expr_chain | expr_chain |
 u0:11 | Variable | data       | data       |         
 
 --- expect:symbol-deps ---
+u0:10 -> [u0:6, u0:8, u0:9]
 u0:3 <- [u0:5]
 u0:4 <- [u0:7]
 u0:5 -> [u0:3]
+u0:6 <- [u0:10]
 u0:7 -> [u0:4]
+u0:8 <- [u0:10]
+u0:9 <- [u0:10]
 
 --- expect:blocks ---
-u0:177 | root   | main      
-u0:178 | class  | Data      
-u0:179 | class  | Iter      
-u0:180 | impl   | impl Data 
-u0:181 | method | iter      
-u0:182 | impl   | impl Iter 
-u0:183 | method | map       
-u0:184 | method | count     
-u0:185 | func   | expr_chain
-u0:186 | call   | block#186 
-u0:187 | call   | block#187 
+u0:1  | root   | main      
+u0:2  | class  | Data      
+u0:3  | class  | Iter      
+u0:4  | impl   | impl Data 
+u0:5  | method | iter      
+u0:6  | impl   | impl Iter 
+u0:7  | method | map       
+u0:8  | method | count     
+u0:9  | func   | expr_chain
+u0:10 | call   | block#10  
+u0:11 | call   | block#11  
 
 --- expect:graph ---
 digraph project {
@@ -261,23 +285,28 @@ u0:9 | Variable | cursor              | cursor              |
 --- expect:symbol-deps ---
 u0:3 <- [u0:4, u0:8]
 u0:4 -> [u0:3]
+u0:5 <- [u0:7]
+u0:6 <- [u0:7]
+u0:7 -> [u0:5, u0:6]
 u0:8 -> [u0:3]
 
 --- expect:blocks ---
-u0:188 | root   | main               
-u0:189 | class  | Stream             
-u0:190 | impl   | impl Stream        
-u0:191 | method | advance            
-u0:192 | method | flush              
-u0:193 | func   | chain_variable_demo
-u0:194 | call   | block#194          
-u0:195 | call   | block#195          
+u0:1 | root   | main               
+u0:2 | class  | Stream             
+u0:3 | impl   | impl Stream        
+u0:4 | method | advance            
+u0:5 | method | flush              
+u0:6 | func   | chain_variable_demo
+u0:7 | call   | block#7            
+u0:8 | call   | block#8            
 
 --- expect:block-deps ---
-u0:189 <- [u0:190]
-u0:190 -> [u0:189]
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
+u0:4 <- [u0:6]
+u0:5 <- [u0:6]
+u0:6 -> [u0:4, u0:5]
 
 --- expect:graph ---
 digraph project {
 }
-

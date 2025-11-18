@@ -21,6 +21,16 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
+    fn is_identifier_kind(kind_id: u16) -> bool {
+        matches!(
+            kind_id,
+            LangRust::identifier
+                | LangRust::scoped_identifier
+                | LangRust::field_identifier
+                | LangRust::type_identifier
+        )
+    }
+
     fn lookup_symbol_in_stack<'a>(
         scopes: &'a BinderScopes<'tcx>,
         name: &str,
@@ -43,9 +53,110 @@ impl<'tcx> BinderVisitor<'tcx> {
         node: &HirNode<'tcx>,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        let ident_id = node.find_identifier_for_field(*unit, field_id)?;
+        let ident_id = node.child_identifier_by_field(*unit, field_id)?;
         let ident = unit.hir_node(ident_id).as_ident()?;
         Some(ident.symbol())
+    }
+
+    fn identifier_name(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<String> {
+        if let Some(ident) = node.as_ident() {
+            return Some(Self::normalize_identifier(&ident.name));
+        }
+        if let Some(id) = node.find_identifier(*unit) {
+            let ident_node = unit.hir_node(id);
+            if let Some(ident) = ident_node.as_ident() {
+                return Some(Self::normalize_identifier(&ident.name));
+            }
+        }
+        None
+    }
+
+    fn normalize_identifier(name: &str) -> String {
+        name.rsplit("::").next().unwrap_or(name).to_string()
+    }
+
+    fn first_child_node(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
+        let child_id = node.children().first()?;
+        Some(unit.hir_node(*child_id))
+    }
+
+    fn lookup_callable_symbol(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+        name: &str,
+    ) -> Option<&'tcx Symbol> {
+        if let Some(symbol) = Self::lookup_symbol_in_stack(scopes, name)
+            && matches!(symbol.kind(), SymKind::Function | SymKind::Macro)
+        {
+            return Some(symbol);
+        }
+
+        // Fallback to global scan for callable symbols
+        let name_key = unit.interner().intern(name);
+        let map = unit.cc.symbol_map.read();
+        map.values().copied().find(|symbol| {
+            symbol.name == name_key && matches!(symbol.kind(), SymKind::Function | SymKind::Macro)
+        })
+    }
+
+    fn resolve_expression_symbol(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+    ) -> Option<&'tcx Symbol> {
+        match node.kind_id() {
+            kind if Self::is_identifier_kind(kind) => {
+                let name = Self::identifier_name(unit, node)?;
+                self.lookup_callable_symbol(unit, scopes, &name)
+            }
+            kind if kind == LangRust::field_expression => {
+                let field = node.child_by_field(*unit, LangRust::field_field)?;
+                let name = Self::identifier_name(unit, &field)?;
+                self.lookup_callable_symbol(unit, scopes, &name)
+            }
+            kind if kind == LangRust::reference_expression => {
+                let value = node.child_by_field(*unit, LangRust::field_value)?;
+                self.resolve_expression_symbol(unit, &value, scopes)
+            }
+            kind if kind == LangRust::call_expression => {
+                let inner = node.child_by_field(*unit, LangRust::field_function)?;
+                self.resolve_expression_symbol(unit, &inner, scopes)
+            }
+            kind if kind == LangRust::await_expression
+                || kind == LangRust::try_expression
+                || kind == LangRust::parenthesized_expression =>
+            {
+                let child = Self::first_child_node(unit, node)?;
+                self.resolve_expression_symbol(unit, &child, scopes)
+            }
+            _ => {
+                let name = Self::identifier_name(unit, node)?;
+                self.lookup_callable_symbol(unit, scopes, &name)
+            }
+        }
+    }
+
+    fn resolve_macro_symbol(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+    ) -> Option<&'tcx Symbol> {
+        let macro_node = node.child_by_field(*unit, LangRust::field_macro)?;
+        let name = Self::identifier_name(unit, &macro_node)?;
+        self.lookup_callable_symbol(unit, scopes, &name)
+    }
+
+    fn resolve_call_target(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+    ) -> Option<&'tcx Symbol> {
+        let function = node.child_by_field(*unit, LangRust::field_function)?;
+        self.resolve_expression_symbol(unit, &function, scopes)
     }
 
     fn resolve_type_from_field(
@@ -54,7 +165,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         scopes: &mut BinderScopes<'tcx>,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        let type_id = node.find_identifier_for_field(*unit, field_id)?;
+        let type_id = node.child_identifier_by_field(*unit, field_id)?;
         let ty_node = unit.hir_node(type_id);
         let ident = ty_node.as_ident()?;
 
@@ -176,7 +287,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         // Find or create symbol for the return type
         let ty = node
-            .find_identifier_for_field(*unit, LangRust::field_return_type)
+            .child_identifier_by_field(*unit, LangRust::field_return_type)
             .and_then(|ty_id| {
                 let ty_node = unit.hir_node(ty_id);
                 scopes.lookup_or_insert_global(
@@ -201,8 +312,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
 
         let depth = scopes.scope_depth();
+        let child_parent = func_symbol.or(parent);
         Self::push_scope_node(scopes, sn);
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_children(unit, node, scopes, namespace, child_parent);
         scopes.pop_until(depth);
     }
 
@@ -322,6 +434,22 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
+    fn visit_macro_invocation(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(caller) = parent
+            && let Some(target) = self.resolve_macro_symbol(unit, node, scopes)
+        {
+            caller.add_dependency(target);
+        }
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
     fn visit_const_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -346,6 +474,22 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
             self.set_symbol_type_from_field(unit, node, scopes, symbol, LangRust::field_type);
+        }
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_call_expression(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(caller) = parent
+            && let Some(callee) = self.resolve_call_target(unit, node, scopes)
+        {
+            caller.add_dependency(callee);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }

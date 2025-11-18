@@ -42,7 +42,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        let ident_id = node.find_identifier_for_field(*unit, field_id)?;
+        let ident_id = node.child_identifier_by_field(*unit, field_id)?;
         let ident = unit.hir_node(ident_id).as_ident()?;
         self.declare_symbol_from_ident(node, scopes, ident, kind)
     }
@@ -62,7 +62,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         let _ = parent;
 
         if let Some(sn) = node.as_scope()
-            && let Some(id) = node.find_identifier_for_field(*unit, field_id)
+            && let Some(id) = node.child_identifier_by_field(*unit, field_id)
         {
             let ident = unit.hir_node(id).as_ident().unwrap();
             if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
@@ -264,7 +264,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         };
 
         let impl_name = node
-            .find_identifier_for_field(*unit, LangRust::field_type)
+            .child_identifier_by_field(*unit, LangRust::field_type)
             .and_then(|id| unit.hir_node(id).as_ident().map(|ident| ident.name.clone()))
             .map(|name| format!("impl {}", name))
             .unwrap_or_else(|| format!("impl#{}", node.id().0));
@@ -439,7 +439,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(pattern_id) = node.find_identifier_for_field(*unit, LangRust::field_pattern) {
+        if let Some(pattern_id) = node.child_identifier_by_field(*unit, LangRust::field_pattern) {
             if let Some(ident) = unit.hir_node(pattern_id).as_ident() {
                 if let Some(symbol) =
                     scopes.lookup_or_insert_chained(&ident.name, node, SymKind::Variable)
@@ -468,53 +468,141 @@ mod tests {
 
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
+    use llmcc_core::symbol::SymKind;
     use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
 
-    fn compile_from_soruces(sources: Vec<Vec<u8>>) {
-        let cc = CompileCtxt::from_sources::<LangRust>(&sources);
+    fn with_compiled_unit<F>(sources: &[&str], check: F)
+    where
+        F: FnOnce(&CompileCtxt<'_>),
+    {
+        let bytes = sources
+            .iter()
+            .map(|src| src.as_bytes().to_vec())
+            .collect::<Vec<_>>();
+        let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
         build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
-
         let globals =
-            collect_symbols_with::<LangRust>(&cc, CollectorOption::default().with_print_ir(true));
+            collect_symbols_with::<LangRust>(&cc, CollectorOption::default().with_sequential(true));
         bind_symbols_with::<LangRust>(&cc, globals, BinderOption);
+        check(&cc);
+    }
+
+    fn find_symbol_id(
+        cc: &CompileCtxt<'_>,
+        name: &str,
+        kind: SymKind,
+    ) -> llmcc_core::symbol::SymId {
+        let name_key = cc.interner.intern(name);
+        cc.symbol_map
+            .read()
+            .iter()
+            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
+            .map(|(id, _)| *id)
+            .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
+    }
+
+    fn dependency_names(cc: &CompileCtxt<'_>, sym_id: llmcc_core::symbol::SymId) -> Vec<String> {
+        let map = cc.symbol_map.read();
+        let symbol = map
+            .get(&sym_id)
+            .copied()
+            .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
+        let deps = symbol.depends.read().clone();
+        let mut names = Vec::new();
+        for dep in deps {
+            if let Some(target) = map.get(&dep) {
+                if let Some(name) = cc.interner.resolve_owned(target.name) {
+                    names.push(name);
+                }
+            }
+        }
+        names.sort();
+        names
     }
 
     #[test]
-    fn test_decl_visitor() {
-        let foo = br#"
-mod outer {
-    fn nested_function() {}
-
-    const INNER_CONST: i32 = 1;
+    fn call_expression_basic_dependency() {
+        let source = r#"
+fn callee() {}
+fn caller() {
+    callee();
 }
-
-fn top_level() {}
-struct Foo {
-    field: i32,
-}
-
-enum Color {
-    Red,
-}
-
-trait Greeter {
-    fn greet(&self);
-}
-
-impl Foo {
-    fn method(&self) {}
-}
-
-type Alias = Foo;
-const TOP_CONST: i32 = 42;
-static TOP_STATIC: i32 = 7;
 "#;
-        let bar = br#"
-mod outer {
-    fn nested_function() {}
-}
-    "#;
+        with_compiled_unit(&[source], |cc| {
+            let caller = find_symbol_id(cc, "caller", SymKind::Function);
+            assert_eq!(dependency_names(cc, caller), vec!["callee"]);
+        });
+    }
 
-        compile_from_soruces(vec![foo.to_vec(), bar.to_vec()]);
+    #[test]
+    fn method_call_dependency() {
+        let source = r#"
+struct MyStruct;
+impl MyStruct {
+    fn foo(&self) {}
+}
+
+fn run() {
+    let s = MyStruct;
+    s.foo();
+}
+"#;
+        with_compiled_unit(&[source], |cc| {
+            let run = find_symbol_id(cc, "run", SymKind::Function);
+            assert_eq!(dependency_names(cc, run), vec!["foo"]);
+        });
+    }
+
+    #[test]
+    fn call_chain_dependency() {
+        let source = r#"
+struct Builder;
+impl Builder {
+    fn new() -> Self { Builder }
+    fn step(self) -> Self { self }
+    fn finish(self) {}
+}
+
+fn chain_invocation() {
+    Builder::new().step().finish();
+}
+"#;
+        with_compiled_unit(&[source], |cc| {
+            let chain = find_symbol_id(cc, "chain_invocation", SymKind::Function);
+            assert_eq!(dependency_names(cc, chain), vec!["finish", "new", "step"]);
+        });
+    }
+
+    #[test]
+    fn wrapped_call_dependency() {
+        let source = r#"
+async fn async_task() {}
+fn maybe() -> Result<(), ()> { Ok(()) }
+
+async fn entry() -> Result<(), ()> {
+    (async_task)().await;
+    (maybe)()?;
+    Ok(())
+}
+"#;
+        with_compiled_unit(&[source], |cc| {
+            let entry = find_symbol_id(cc, "entry", SymKind::Function);
+            assert_eq!(dependency_names(cc, entry), vec!["async_task", "maybe"]);
+        });
+    }
+
+    #[test]
+    fn macro_invocation_dependency() {
+        let source = r#"
+macro_rules! ping { () => {} }
+
+fn call_macro() {
+    ping!();
+}
+"#;
+        with_compiled_unit(&[source], |cc| {
+            let caller = find_symbol_id(cc, "call_macro", SymKind::Function);
+            assert_eq!(dependency_names(cc, caller), vec!["ping"]);
+        });
     }
 }

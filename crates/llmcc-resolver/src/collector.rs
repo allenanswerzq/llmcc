@@ -215,11 +215,17 @@ fn apply_collected_symbols<'tcx>(
 #[derive(Default)]
 pub struct CollectorOption {
     pub print_ir: bool,
+    pub sequential: bool,
 }
 
 impl CollectorOption {
     pub fn with_print_ir(mut self, print_ir: bool) -> Self {
         self.print_ir = print_ir;
+        self
+    }
+
+    pub fn with_sequential(mut self, sequential: bool) -> Self {
+        self.sequential = sequential;
         self
     }
 }
@@ -233,25 +239,31 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     let arena = &cc.arena;
     let interner = &cc.interner;
 
-    let unit_globals_vec = (0..cc.files.len())
-        .into_par_iter()
-        .map(|i| {
-            let unit = cc.compile_unit(i);
-            let unit_globals = arena.alloc(Scope::new(HirId(i)));
-            let node = unit.hir_node(unit.file_root_id().unwrap());
+    let collect_unit = |i: usize| {
+        let unit = cc.compile_unit(i);
+        let unit_globals = arena.alloc(Scope::new(HirId(i)));
+        let node = unit.hir_node(unit.file_root_id().unwrap());
 
-            let mut collector = CollectorScopes::new(i, arena, interner, unit_globals);
-            L::collect_symbols(&unit, &node, &mut collector, unit_globals);
+        let mut collector = CollectorScopes::new(i, arena, interner, unit_globals);
+        L::collect_symbols(&unit, &node, &mut collector, unit_globals);
 
-            if config.print_ir {
-                use llmcc_core::printer::print_llmcc_ir;
-                println!("=== IR for unit {} ===", i);
-                let _ = print_llmcc_ir(unit);
-            }
+        if config.print_ir {
+            use llmcc_core::printer::print_llmcc_ir;
+            println!("=== IR for unit {} ===", i);
+            let _ = print_llmcc_ir(unit);
+        }
 
-            unit_globals
-        })
-        .collect::<Vec<&'a Scope<'a>>>();
+        unit_globals
+    };
+
+    let unit_globals_vec = if config.sequential {
+        (0..cc.files.len()).map(collect_unit).collect::<Vec<_>>()
+    } else {
+        (0..cc.files.len())
+            .into_par_iter()
+            .map(collect_unit)
+            .collect::<Vec<_>>()
+    };
 
     let globals = cc.create_globals();
     for unit_globals in unit_globals_vec.iter() {

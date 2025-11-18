@@ -4,6 +4,7 @@ use std::path::Path;
 
 use anyhow::{Context, Result, anyhow};
 use llmcc_core::ProjectGraph;
+use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, BlockRelation, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
@@ -97,6 +98,7 @@ fn run_cases_in_file(
     matched: &mut usize,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
+    let mut mutated_file = false;
     for idx in 0..file.cases.len() {
         let run_case = {
             let case = &file.cases[idx];
@@ -118,8 +120,12 @@ fn run_cases_in_file(
         };
         if mutated {
             file.mark_dirty();
+            mutated_file = true;
         }
         file_outcomes.push(outcome);
+    }
+    if update && !mutated_file {
+        file.mark_dirty();
     }
     Ok(file_outcomes)
 }
@@ -139,6 +145,7 @@ fn evaluate_case(case: &mut CorpusCase, update: bool) -> Result<(CaseOutcome, bo
     }
 
     reset_symbol_id_counter();
+    reset_block_id_counter();
     let summary = build_pipeline_summary(case)?;
     let mut mutated = false;
     let mut status = CaseStatus::Passed;
@@ -766,7 +773,12 @@ where
     build_llmcc_ir::<L>(&cc, IrBuildOption).unwrap();
 
     // Use new unified API for symbol collection with optional IR printing
-    let globals = collect_symbols_with::<L>(&cc, CollectorOption::default().with_print_ir(true));
+    let globals = collect_symbols_with::<L>(
+        &cc,
+        CollectorOption::default()
+            .with_print_ir(true)
+            .with_sequential(true),
+    );
 
     // Bind symbols using new unified API
     bind_symbols_with::<L>(&cc, globals, BinderOption);
@@ -777,7 +789,8 @@ where
         None
     };
     if let Some(project) = project_graph.as_mut() {
-        let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new()).unwrap();
+        let unit_graphs =
+            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(true)).unwrap();
         project.add_children(unit_graphs);
     }
     let (graph_dot, block_list, block_deps, block_graph) = if let Some(mut project) = project_graph

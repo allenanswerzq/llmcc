@@ -161,7 +161,7 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Find identifier for the first child with a matching field ID.
-    pub fn find_identifier_for_field(
+    pub fn child_identifier_by_field(
         &self,
         unit: CompileUnit<'hir>,
         field_id: u16,
@@ -177,7 +177,7 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Find identifier for the first child with a matching kind ID.
-    pub fn find_identifier_for_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirId> {
+    pub fn child_identifier_by_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirId> {
         debug_assert!(!self.is_kind(HirKind::Identifier));
         for child_id in self.children() {
             let child = unit.hir_node(*child_id);

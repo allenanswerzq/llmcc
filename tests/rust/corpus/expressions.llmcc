@@ -7,10 +7,6 @@ basic-identifiers
 abc;
 
 
-
-
-
-
 ===============================================================================
 raw-identifiers
 ===============================================================================
@@ -18,10 +14,6 @@ raw-identifiers
 
 --- file: src/main.rs ---
 (r#abc as r#Def).r#ghi;
-
-
-
-
 
 
 ===============================================================================
@@ -33,10 +25,6 @@ unary-operator-expressions
 -num;
 !bits;
 *boxed_thing;
-
-
-
-
 
 
 ===============================================================================
@@ -51,9 +39,6 @@ reference-expressions
 &raw mut self.age;
 
 
-
-
-
 ===============================================================================
 try-expressions
 ===============================================================================
@@ -62,9 +47,6 @@ try-expressions
 --- file: src/main.rs ---
 a.unwrap()?;
 &a?;
-
-
-
 
 
 ===============================================================================
@@ -85,10 +67,6 @@ a && b;
 a || b;
 
 
-
-
-
-
 ===============================================================================
 grouped-expressions
 ===============================================================================
@@ -97,9 +75,6 @@ grouped-expressions
 --- file: src/main.rs ---
 (0);
 (2 * (3 + 4));
-
-
-
 
 
 ===============================================================================
@@ -122,9 +97,6 @@ for i in 1.. {
 }
 
 
-
-
-
 ===============================================================================
 assignment-expressions
 ===============================================================================
@@ -132,9 +104,6 @@ assignment-expressions
 
 --- file: src/main.rs ---
 x = y;
-
-
-
 
 
 ===============================================================================
@@ -147,9 +116,6 @@ x += 1;
 x += y;
 
 
-
-
-
 ===============================================================================
 type-cast-expressions
 ===============================================================================
@@ -160,9 +126,6 @@ struct Foo;
 1000 as u8;
 let character = integer as Foo;
 let size: f64 = 1.0 + -len(values) as f64 + 1.0;
-
-
-
 
 
 ===============================================================================
@@ -195,8 +158,6 @@ u0:4 <- [u0:7]
 u0:7 -> [u0:4]
 
 
-
-
 ===============================================================================
 call-expressions-chained
 ===============================================================================
@@ -227,14 +188,14 @@ u0:4 <- [u0:7]
 u0:7 -> [u0:4]
 
 --- expect:blocks ---
-u0:20 | root  | main    
-u0:21 | class | Foo     
-u0:22 | class | Bar     
-u0:23 | func  | func    
-u0:24 | call  | block#24
-u0:25 | call  | block#25
-u0:26 | call  | block#26
-u0:27 | call  | block#27
+u0:1 | root  | main   
+u0:2 | class | Foo    
+u0:3 | class | Bar    
+u0:4 | func  | func   
+u0:5 | call  | block#5
+u0:6 | call  | block#6
+u0:7 | call  | block#7
+u0:8 | call  | block#8
 
 --- expect:block-deps ---
 
@@ -242,8 +203,6 @@ u0:27 | call  | block#27
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -276,14 +235,14 @@ u0:4 <- [u0:7]
 u0:7 -> [u0:4]
 
 --- expect:blocks ---
-u0:28 | root  | main    
-u0:29 | class | Foo     
-u0:30 | class | Bar     
-u0:31 | func  | func    
-u0:32 | call  | block#32
-u0:33 | call  | block#33
-u0:34 | call  | block#34
-u0:35 | call  | block#35
+u0:1 | root  | main   
+u0:2 | class | Foo    
+u0:3 | class | Bar    
+u0:4 | func  | func   
+u0:5 | call  | block#5
+u0:6 | call  | block#6
+u0:7 | call  | block#7
+u0:8 | call  | block#8
 
 --- expect:block-deps ---
 
@@ -291,8 +250,6 @@ u0:35 | call  | block#35
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -329,10 +286,10 @@ u0:6 | Variable | b    | b    |
 
 
 --- expect:blocks ---
-u0:36 | root  | main    
-u0:37 | class | Foo     
-u0:38 | func  | foo     
-u0:39 | call  | block#39
+u0:1 | root  | main   
+u0:2 | class | Foo    
+u0:3 | func  | foo    
+u0:4 | call  | block#4
 
 --- expect:block-deps ---
 
@@ -340,8 +297,6 @@ u0:39 | call  | block#39
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -379,15 +334,13 @@ u0:10 | Variable | _all         | _all         |
 
 
 --- expect:blocks ---
-u0:40 | root  | main       
-u0:41 | class | TupleThing 
-u0:42 | func  | make_tuples
+u0:1 | root  | main       
+u0:2 | class | TupleThing 
+u0:3 | func  | make_tuples
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -426,19 +379,17 @@ u0:10 | Variable | i          | i          |
 
 
 --- expect:blocks ---
-u0:43 | root  | main      
-u0:44 | class | SomeStruct
-u0:45 | field | block#45  
-u0:46 | field | block#46  
-u0:47 | field | block#47  
-u0:48 | func  | func      
-u0:49 | call  | block#49  
+u0:1 | root  | main      
+u0:2 | class | SomeStruct
+u0:3 | field | block#3   
+u0:4 | field | block#4   
+u0:5 | field | block#5   
+u0:6 | func  | func      
+u0:7 | call  | block#7   
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -474,17 +425,15 @@ u0:8 | Variable | base       | base       |
 
 
 --- expect:blocks ---
-u0:50 | root  | main      
-u0:51 | class | User      
-u0:52 | field | block#52  
-u0:53 | field | block#53  
-u0:54 | func  | build_user
+u0:1 | root  | main      
+u0:2 | class | User      
+u0:3 | field | block#3   
+u0:4 | field | block#4   
+u0:5 | func  | build_user
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -526,17 +475,15 @@ u0:8 | Variable | y      | y      |
 
 
 --- expect:blocks ---
-u0:55 | root  | main    
-u0:56 | class | Config  
-u0:57 | field | block#57
-u0:58 | field | block#58
-u0:59 | func  | main    
+u0:1 | root  | main   
+u0:2 | class | Config 
+u0:3 | field | block#3
+u0:4 | field | block#4
+u0:5 | func  | main   
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -569,17 +516,15 @@ u0:6 | Variable | guard | guard |
 
 
 --- expect:blocks ---
-u0:60 | root  | main    
-u0:61 | class | Guard   
-u0:62 | field | block#62
-u0:63 | func  | check   
-u0:64 | call  | block#64
+u0:1 | root  | main   
+u0:2 | class | Guard  
+u0:3 | field | block#3
+u0:4 | func  | check  
+u0:5 | call  | block#5
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -612,10 +557,10 @@ u0:5 | Variable | dish_opt | dish_opt |
 
 
 --- expect:blocks ---
-u0:65 | root  | main    
-u0:66 | class | Dish    
-u0:67 | func  | parse   
-u0:68 | call  | block#68
+u0:1 | root  | main   
+u0:2 | class | Dish   
+u0:3 | func  | parse  
+u0:4 | call  | block#4
 
 --- expect:block-deps ---
 
@@ -623,8 +568,6 @@ u0:68 | call  | block#68
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -656,17 +599,15 @@ u0:6 | Variable | queue   | queue   |
 
 
 --- expect:blocks ---
-u0:69 | root  | main    
-u0:70 | class | Queue   
-u0:71 | field | block#71
-u0:72 | func  | process 
-u0:73 | call  | block#73
+u0:1 | root  | main   
+u0:2 | class | Queue  
+u0:3 | field | block#3
+u0:4 | func  | process
+u0:5 | call  | block#5
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -695,15 +636,13 @@ u0:5 | Variable | val           | val           |
 
 
 --- expect:blocks ---
-u0:74 | root  | main         
-u0:75 | class | Value        
-u0:76 | func  | process_value
+u0:1 | root  | main         
+u0:2 | class | Value        
+u0:3 | func  | process_value
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -735,16 +674,14 @@ u0:6 | Variable | state      | state      |
 
 
 --- expect:blocks ---
-u0:77 | root  | main      
-u0:78 | class | State     
-u0:79 | field | block#79  
-u0:80 | func  | loop_until
+u0:1 | root  | main      
+u0:2 | class | State     
+u0:3 | field | block#3   
+u0:4 | func  | loop_until
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -778,16 +715,14 @@ u0:6 | Variable | counter | counter |
 
 
 --- expect:blocks ---
-u0:81 | root  | main    
-u0:82 | class | Counter 
-u0:83 | field | block#83
-u0:84 | func  | count   
+u0:1 | root  | main   
+u0:2 | class | Counter
+u0:3 | field | block#3
+u0:4 | func  | count  
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -816,15 +751,13 @@ u0:5 | Variable | container | container |
 
 
 --- expect:blocks ---
-u0:85 | root  | main     
-u0:86 | class | Container
-u0:87 | func  | iterate  
+u0:1 | root  | main     
+u0:2 | class | Container
+u0:3 | func  | iterate  
 
 --- expect:graph ---
 digraph project {
 }
-
-
 
 
 ===============================================================================
@@ -871,33 +804,42 @@ u0:12 | Variable | x        | x        |
 u0:13 | Variable | y        | y        |         
 
 --- expect:symbol-deps ---
+u0:10 -> [u0:9]
 u0:3 <- [u0:8]
 u0:4 <- [u0:6]
 u0:6 -> [u0:4]
 u0:8 -> [u0:3]
+u0:9 <- [u0:10]
 
 --- expect:blocks ---
-u0:88 | root  | main    
-u0:89 | class | Foo     
-u0:90 | class | Far     
-u0:91 | class | Baz     
-u0:92 | field | block#92
-u0:93 | class | MyStruct
-u0:94 | field | block#94
-u0:95 | func  | foo     
-u0:96 | func  | bar     
-u0:97 | call  | block#97
-u0:98 | call  | block#98
-u0:99 | call  | block#99
+u0:1  | root  | main    
+u0:2  | class | Foo     
+u0:3  | class | Far     
+u0:4  | class | Baz     
+u0:5  | field | block#5 
+u0:6  | class | MyStruct
+u0:7  | field | block#7 
+u0:8  | func  | foo     
+u0:9  | func  | bar     
+u0:10 | call  | block#10
+u0:11 | call  | block#11
+u0:12 | call  | block#12
 
 --- expect:block-deps ---
-
+u0:8 <- [u0:9]
+u0:9 -> [u0:8]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n8 [label="foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmprPFb5V/app/src/main.rs:11"];
+    n9 [label="bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmprPFb5V/app/src/main.rs:15"];
+  }
+  n9 -> n8;
 }
-
-
 
 
 ===============================================================================
@@ -933,8 +875,8 @@ u0:9 | Variable | x             | x             |
 --- expect:symbol-deps ---
 u0:4 <- [u0:5]
 u0:5 -> [u0:4]
-
-
+u0:6 <- [u0:7]
+u0:7 -> [u0:6]
 
 
 ===============================================================================
@@ -950,8 +892,6 @@ arr[n];
 --- expect:symbols ---
 u0:1 | Module | main | main | [global]
 u0:2 | File   | main | main |         
-
-
 
 
 ===============================================================================
@@ -986,14 +926,14 @@ fn foo() {
 
 --- expect:symbols ---
 u0:1  | Module    | foo    | foo    | [global]
-u0:3  | File      | foo    | foo    |         
-u0:5  | Function  | f      | f      |         
-u0:7  | Namespace | g      | g      |         
-u0:9  | Function  | h      | h      |         
-u1:2  | Module    | main   | main   | [global]
-u1:4  | File      | main   | main   |         
-u1:6  | Struct    | a      | a      |         
-u1:8  | Impl      | impl a | impl a |         
+u0:2  | File      | foo    | foo    |         
+u0:3  | Function  | f      | f      |         
+u0:4  | Namespace | g      | g      |         
+u0:5  | Function  | h      | h      |         
+u1:6  | Module    | main   | main   | [global]
+u1:7  | File      | main   | main   |         
+u1:8  | Struct    | a      | a      |         
+u1:9  | Impl      | impl a | impl a |         
 u1:10 | Function  | b      | b      |         
 u1:11 | Struct    | C      | C      |         
 u1:12 | Impl      | impl C | impl C |         
@@ -1001,39 +941,49 @@ u1:13 | Function  | e      | e      |
 u1:14 | Function  | foo    | foo    |         
 
 --- expect:symbol-deps ---
+u0:3 <- [u1:14]
+u0:5 <- [u1:14]
+u1:10 <- [u1:14]
 u1:11 <- [u1:12]
 u1:12 -> [u1:11]
-u1:6 <- [u1:8]
-u1:8 -> [u1:6]
+u1:13 <- [u1:14]
+u1:14 -> [u0:3, u0:5, u1:10, u1:13]
+u1:8 <- [u1:9]
+u1:9 -> [u1:8]
 
 --- expect:block-graph ---
-(root:100 foo
-    (func:101 f)
-    (func:104 h)
+(root:1 foo
+    (func:2 f)
+    (func:3 h)
 )
 
-(root:102 main
-    (class:103 a)
-    (impl:105 impl a
-        (method:106 b)
+(root:4 main
+    (class:5 a)
+    (impl:6 impl a
+        (method:7 b)
     )
-    (class:107 C)
-    (impl:108 impl C
-        (method:109 e)
+    (class:8 C)
+    (impl:9 impl C
+        (method:10 e)
     )
-    (func:110 foo
-        (call:111)
-        (call:112)
-        (call:113)
-        (call:114)
+    (func:11 foo
+        (call:12)
+        (call:13)
+        (call:14)
+        (call:15)
     )
 )
 
 --- expect:block-deps ---
-u1:103 <- [u1:105]
-u1:105 -> [u1:103]
-u1:107 <- [u1:108]
-u1:108 -> [u1:107]
+u0:2 <- [u1:11]
+u0:3 <- [u1:11]
+u1:10 <- [u1:11]
+u1:11 -> [u0:2, u0:3, u1:10, u1:7]
+u1:5 <- [u1:6]
+u1:6 -> [u1:5]
+u1:7 <- [u1:11]
+u1:8 <- [u1:9]
+u1:9 -> [u1:8]
 
 
 ===============================================================================
@@ -1049,8 +999,6 @@ u0:1 | Module | main | main | [global]
 u0:2 | File   | main | main |         
 
 
-
-
 ===============================================================================
 scoped-functions-with-macros-as-types
 ===============================================================================
@@ -1062,8 +1010,6 @@ scoped-functions-with-macros-as-types
 --- expect:symbols ---
 u0:1 | Module | main | main | [global]
 u0:2 | File   | main | main |         
-
-
 
 
 ===============================================================================
@@ -1090,13 +1036,14 @@ u0:5 | Namespace | m2   | m2   |
 u0:6 | Function  | bar  | bar  |         
 
 --- expect:symbol-deps ---
-
+u0:3 <- [u0:6]
+u0:6 -> [u0:3]
 
 --- expect:blocks ---
-u0:115 | root | main     
-u0:116 | func | foo      
-u0:117 | func | bar      
-u0:118 | call | block#118
+u0:1 | root | main   
+u0:2 | func | foo    
+u0:3 | func | bar    
+u0:4 | call | block#4
 
 
 ===============================================================================
@@ -1111,8 +1058,6 @@ foo::<8>();
 --- expect:symbols ---
 u0:1 | Module | main | main | [global]
 u0:2 | File   | main | main |         
-
-
 
 
 ===============================================================================
@@ -1133,8 +1078,6 @@ u0:1 | Module | main | main | [global]
 u0:2 | File   | main | main |         
 
 
-
-
 ===============================================================================
 closures-with-typed-parameteres
 ===============================================================================
@@ -1147,8 +1090,6 @@ a.map(|b: usize| b.push(c));
 u0:1 | Module   | main | main | [global]
 u0:2 | File     | main | main |         
 u0:3 | Variable | b    | b    |         
-
-
 
 
 ===============================================================================
@@ -1170,8 +1111,6 @@ u0:1 | Module | main | main | [global]
 u0:2 | File   | main | main |         
 
 
-
-
 ===============================================================================
 unsafe-blocks
 ===============================================================================
@@ -1190,9 +1129,6 @@ u0:4 | Const    | a    | a    |
 --- expect:symbol-deps ---
 
 
-
-
-
 ===============================================================================
 inline-const-or-const-blocks-as-expression
 ===============================================================================
@@ -1209,8 +1145,6 @@ u0:2 | File     | main         | main         |
 u0:3 | Variable | three_ranges | three_ranges |         
 
 
-
-
 ===============================================================================
 raw-reference-expression-conflicts
 ===============================================================================
@@ -1224,4 +1158,3 @@ let a = &raw const b;
 u0:1 | Module   | main | main | [global]
 u0:2 | File     | main | main |         
 u0:3 | Variable | a    | a    |         
-
