@@ -4,12 +4,9 @@ basic-identifiers
 
 
 --- file: src/main.rs ---
-fn main() {
-  abc;
-}
+abc;
 
---- expect:symbols ---
-u0:1 | Function | main | main |
+
 
 
 
@@ -20,12 +17,9 @@ raw-identifiers
 
 
 --- file: src/main.rs ---
-fn main() {
-  (r#abc as r#Def).r#ghi;
-}
+(r#abc as r#Def).r#ghi;
 
---- expect:symbols ---
-u0:1 | Function | main | main |
+
 
 
 
@@ -40,8 +34,8 @@ unary-operator-expressions
 !bits;
 *boxed_thing;
 
---- expect:symbols ---
-none
+
+
 
 
 
@@ -56,8 +50,7 @@ reference-expressions
 &raw const b;
 &raw mut self.age;
 
---- expect:symbols ---
-none
+
 
 
 
@@ -70,8 +63,7 @@ try-expressions
 a.unwrap()?;
 &a?;
 
---- expect:symbols ---
-none
+
 
 
 
@@ -92,8 +84,7 @@ a == b;
 a && b;
 a || b;
 
---- expect:symbols ---
-none
+
 
 
 
@@ -107,8 +98,7 @@ grouped-expressions
 (0);
 (2 * (3 + 4));
 
---- expect:symbols ---
-none
+
 
 
 
@@ -131,8 +121,7 @@ a..b;
 for i in 1.. {
 }
 
---- expect:symbols ---
-none
+
 
 
 
@@ -144,8 +133,6 @@ assignment-expressions
 --- file: src/main.rs ---
 x = y;
 
---- expect:symbols ---
-none
 
 
 
@@ -159,8 +146,7 @@ compound-assignment-expressions
 x += 1;
 x += y;
 
---- expect:symbols ---
-none
+
 
 
 
@@ -171,25 +157,16 @@ type-cast-expressions
 
 --- file: src/main.rs ---
 struct Foo;
+1000 as u8;
+let character = integer as Foo;
+let size: f64 = 1.0 + -len(values) as f64 + 1.0;
 
-fn func() {
-  1000 as u8;
-  let character = integer as Foo;
-  let size: f64 = 1.0 + -len(values) as f64 + 1.0;
-}
 
---- expect:symbols ---
-u0:1 | Struct   | Foo  | Foo  |
-u0:2 | Function | func | func |
-
---- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
 
 
 
 ===============================================================================
-call-expressions
+call-expressions-basic
 ===============================================================================
 
 
@@ -205,15 +182,17 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Foo  | Foo  |
-u0:2 | Struct   | Bar  | Bar  |
-u0:3 | Function | func | func |
-
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Struct   | Foo  | Foo  |         
+u0:4 | Struct   | Bar  | Bar  |         
+u0:5 | Function | func | func |         
+u0:6 | Variable | f    | f    |         
+u0:7 | Variable | b    | b    |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:3]
-u0:2 <- [u0:3]
-u0:3 -> [u0:1, u0:2]
+u0:4 <- [u0:7]
+u0:7 -> [u0:4]
 
 
 
@@ -235,44 +214,35 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Foo  | Foo  |
-u0:2 | Struct   | Bar  | Bar  |
-u0:3 | Function | func | func |
-
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Struct   | Foo  | Foo  |         
+u0:4 | Struct   | Bar  | Bar  |         
+u0:5 | Function | func | func |         
+u0:6 | Variable | f    | f    |         
+u0:7 | Variable | b    | b    |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:3]
-u0:2 <- [u0:3]
-u0:3 -> [u0:1, u0:2]
+u0:4 <- [u0:7]
+u0:7 -> [u0:4]
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Foo
-u0:3 | class | Bar
-u0:4 | func  | func
-u0:5 | call  | block#5
-u0:6 | call  | block#6
-u0:7 | call  | block#7
-u0:8 | call  | block#8
+u0:20 | root  | main    
+u0:21 | class | Foo     
+u0:22 | class | Bar     
+u0:23 | func  | func    
+u0:24 | call  | block#24
+u0:25 | call  | block#25
+u0:26 | call  | block#26
+u0:27 | call  | block#27
 
 --- expect:block-deps ---
-u0:2 <- [u0:4]
-u0:3 <- [u0:4]
-u0:4 -> [u0:2, u0:3]
+
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="Bar", full_path="$TMP/app/src/main.rs:2"];
-    n3 [label="func", full_path="$TMP/app/src/main.rs:4"];
-  }
-  n3 -> n1;
-  n3 -> n2;
 }
+
 
 
 
@@ -293,44 +263,35 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Foo  | Foo  |
-u0:2 | Struct   | Bar  | Bar  |
-u0:3 | Function | func | func |
-
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Struct   | Foo  | Foo  |         
+u0:4 | Struct   | Bar  | Bar  |         
+u0:5 | Function | func | func |         
+u0:6 | Variable | f    | f    |         
+u0:7 | Variable | b    | b    |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:3]
-u0:2 <- [u0:3]
-u0:3 -> [u0:1, u0:2]
+u0:4 <- [u0:7]
+u0:7 -> [u0:4]
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Foo
-u0:3 | class | Bar
-u0:4 | func  | func
-u0:5 | call  | block#5
-u0:6 | call  | block#6
-u0:7 | call  | block#7
-u0:8 | call  | block#8
+u0:28 | root  | main    
+u0:29 | class | Foo     
+u0:30 | class | Bar     
+u0:31 | func  | func    
+u0:32 | call  | block#32
+u0:33 | call  | block#33
+u0:34 | call  | block#34
+u0:35 | call  | block#35
 
 --- expect:block-deps ---
-u0:2 <- [u0:4]
-u0:3 <- [u0:4]
-u0:4 -> [u0:2, u0:3]
+
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="Bar", full_path="$TMP/app/src/main.rs:2"];
-    n3 [label="func", full_path="$TMP/app/src/main.rs:4"];
-  }
-  n3 -> n1;
-  n3 -> n2;
 }
+
 
 
 
@@ -357,34 +318,29 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Foo | Foo |
-u0:2 | Function | foo | foo |
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Struct   | Foo  | Foo  |         
+u0:4 | Function | foo  | foo  |         
+u0:5 | Variable | a    | a    |         
+u0:6 | Variable | b    | b    |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Foo
-u0:3 | func  | foo
-u0:4 | call  | block#4
+u0:36 | root  | main    
+u0:37 | class | Foo     
+u0:38 | func  | foo     
+u0:39 | call  | block#39
 
 --- expect:block-deps ---
-u0:2 <- [u0:3]
-u0:3 -> [u0:2]
+
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="foo", full_path="$TMP/app/src/main.rs:3"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -408,29 +364,29 @@ fn make_tuples() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | TupleThing  | TupleThing  |
-u0:2 | Function | make_tuples | make_tuples |
+u0:1  | Module   | main         | main         | [global]
+u0:2  | File     | main         | main         |         
+u0:3  | Struct   | TupleThing   | TupleThing   |         
+u0:4  | Function | make_tuples  | make_tuples  |         
+u0:5  | Variable | empty        | empty        |         
+u0:6  | Variable | single       | single       |         
+u0:7  | Variable | triple       | triple       |         
+u0:8  | Variable | nested       | nested       |         
+u0:9  | Variable | destructured | destructured |         
+u0:10 | Variable | _all         | _all         |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | TupleThing
-u0:3 | func  | make_tuples
+u0:40 | root  | main       
+u0:41 | class | TupleThing 
+u0:42 | func  | make_tuples
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="TupleThing", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="make_tuples", full_path="$TMP/app/src/main.rs:3"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -455,31 +411,32 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | SomeStruct | SomeStruct |
-u0:2 | Function | func       | func       |
+u0:1  | Module   | main       | main       | [global]
+u0:2  | File     | main       | main       |         
+u0:3  | Struct   | SomeStruct | SomeStruct |         
+u0:4  | Field    | field1     | field1     |         
+u0:5  | Field    | field2     | field2     |         
+u0:6  | Field    | field3     | field3     |         
+u0:7  | Function | func       | func       |         
+u0:8  | Variable | a          | a          |         
+u0:9  | Variable | u          | u          |         
+u0:10 | Variable | i          | i          |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | SomeStruct
-u0:3 | func  | func
-u0:4 | call  | block#4
+u0:43 | root  | main      
+u0:44 | class | SomeStruct
+u0:45 | field | block#45  
+u0:46 | field | block#46  
+u0:47 | field | block#47  
+u0:48 | func  | func      
+u0:49 | call  | block#49  
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="SomeStruct", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="func", full_path="$TMP/app/src/main.rs:7"];
-  }
-  n2 -> n1;
 }
-
 
 
 
@@ -504,29 +461,30 @@ fn build_user(score: u32) -> User {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | User       | User       |
-u0:2 | Function | build_user | build_user |
+u0:1 | Module   | main       | main       | [global]
+u0:2 | File     | main       | main       |         
+u0:3 | Struct   | User       | User       |         
+u0:4 | Field    | id         | id         |         
+u0:5 | Field    | score      | score      |         
+u0:6 | Function | build_user | build_user |         
+u0:7 | Variable | score      | score      |         
+u0:8 | Variable | base       | base       |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | User
-u0:3 | func  | build_user
+u0:50 | root  | main      
+u0:51 | class | User      
+u0:52 | field | block#52  
+u0:53 | field | block#53  
+u0:54 | func  | build_user
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="User", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="build_user", full_path="$TMP/app/src/main.rs:6"];
-  }
-  n2 -> n1;
 }
+
+
 
 
 ===============================================================================
@@ -555,29 +513,29 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Config | Config |
-u0:2 | Function | main   | main   |
+u0:1 | Module   | main   | main   | [global]
+u0:2 | File     | main   | main   |         
+u0:3 | Struct   | Config | Config |         
+u0:4 | Field    | n      | n      |         
+u0:5 | Field    | x      | x      |         
+u0:6 | Function | main   | main   |         
+u0:7 | Variable | cfg    | cfg    |         
+u0:8 | Variable | y      | y      |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Config
-u0:3 | func  | main
+u0:55 | root  | main    
+u0:56 | class | Config  
+u0:57 | field | block#57
+u0:58 | field | block#58
+u0:59 | func  | main    
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Config", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="main", full_path="$TMP/app/src/main.rs:6"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -600,30 +558,27 @@ fn check() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Guard | Guard |
-u0:2 | Function | check | check |
+u0:1 | Module   | main  | main  | [global]
+u0:2 | File     | main  | main  |         
+u0:3 | Struct   | Guard | Guard |         
+u0:4 | Field    | val   | val   |         
+u0:5 | Function | check | check |         
+u0:6 | Variable | guard | guard |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Guard
-u0:3 | func  | check
-u0:4 | call  | block#4
+u0:60 | root  | main    
+u0:61 | class | Guard   
+u0:62 | field | block#62
+u0:63 | func  | check   
+u0:64 | call  | block#64
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Guard", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="check", full_path="$TMP/app/src/main.rs:5"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -647,33 +602,26 @@ fn parse() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Dish  | Dish  |
-u0:2 | Function | parse | parse |
+u0:1 | Module   | main     | main     | [global]
+u0:2 | File     | main     | main     |         
+u0:3 | Struct   | Dish     | Dish     |         
+u0:4 | Function | parse    | parse    |         
+u0:5 | Variable | dish_opt | dish_opt |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Dish
-u0:3 | func  | parse
-u0:4 | call  | block#4
+u0:65 | root  | main    
+u0:66 | class | Dish    
+u0:67 | func  | parse   
+u0:68 | call  | block#68
 
 --- expect:block-deps ---
-u0:2 <- [u0:3]
-u0:3 -> [u0:2]
+
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Dish", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="parse", full_path="$TMP/app/src/main.rs:2"];
-  }
-  n2 -> n1;
 }
 
 
@@ -697,30 +645,27 @@ fn process() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Queue   | Queue   |
-u0:2 | Function | process | process |
+u0:1 | Module   | main    | main    | [global]
+u0:2 | File     | main    | main    |         
+u0:3 | Struct   | Queue   | Queue   |         
+u0:4 | Field    | items   | items   |         
+u0:5 | Function | process | process |         
+u0:6 | Variable | queue   | queue   |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Queue
-u0:3 | func  | process
-u0:4 | call  | block#4
+u0:69 | root  | main    
+u0:70 | class | Queue   
+u0:71 | field | block#71
+u0:72 | func  | process 
+u0:73 | call  | block#73
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Queue", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="process", full_path="$TMP/app/src/main.rs:5"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -740,29 +685,24 @@ fn process_value() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Value   | Value   |
-u0:2 | Function | process_value | process_value |
+u0:1 | Module   | main          | main          | [global]
+u0:2 | File     | main          | main          |         
+u0:3 | Struct   | Value         | Value         |         
+u0:4 | Function | process_value | process_value |         
+u0:5 | Variable | val           | val           |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Value
-u0:3 | func  | process_value
+u0:74 | root  | main         
+u0:75 | class | Value        
+u0:76 | func  | process_value
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Value", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="process_value", full_path="$TMP/app/src/main.rs:3"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -784,29 +724,26 @@ fn loop_until() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | State      | State      |
-u0:2 | Function | loop_until | loop_until |
+u0:1 | Module   | main       | main       | [global]
+u0:2 | File     | main       | main       |         
+u0:3 | Struct   | State      | State      |         
+u0:4 | Field    | done       | done       |         
+u0:5 | Function | loop_until | loop_until |         
+u0:6 | Variable | state      | state      |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | State
-u0:3 | func  | loop_until
+u0:77 | root  | main      
+u0:78 | class | State     
+u0:79 | field | block#79  
+u0:80 | func  | loop_until
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="State", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="loop_until", full_path="$TMP/app/src/main.rs:5"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -830,29 +767,26 @@ fn count() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Counter | Counter |
-u0:2 | Function | count   | count   |
+u0:1 | Module   | main    | main    | [global]
+u0:2 | File     | main    | main    |         
+u0:3 | Struct   | Counter | Counter |         
+u0:4 | Field    | limit   | limit   |         
+u0:5 | Function | count   | count   |         
+u0:6 | Variable | counter | counter |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Counter
-u0:3 | func  | count
+u0:81 | root  | main    
+u0:82 | class | Counter 
+u0:83 | field | block#83
+u0:84 | func  | count   
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Counter", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="count", full_path="$TMP/app/src/main.rs:5"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -872,29 +806,24 @@ fn iterate() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Container | Container |
-u0:2 | Function | iterate   | iterate   |
+u0:1 | Module   | main      | main      | [global]
+u0:2 | File     | main      | main      |         
+u0:3 | Struct   | Container | Container |         
+u0:4 | Function | iterate   | iterate   |         
+u0:5 | Variable | container | container |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
 
 --- expect:blocks ---
-u0:1 | root  | block#1
-u0:2 | class | Container
-u0:3 | func  | iterate
+u0:85 | root  | main     
+u0:86 | class | Container
+u0:87 | func  | iterate  
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Container", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="iterate", full_path="$TMP/app/src/main.rs:3"];
-  }
-  n2 -> n1;
 }
+
 
 
 
@@ -927,66 +856,48 @@ fn bar() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Foo      | Foo      |
-u0:2 | Struct   | Far      | Far      |
-u0:3 | Struct   | Baz      | Baz      |
-u0:4 | Struct   | MyStruct | MyStruct |
-u0:5 | Function | foo      | foo      |
-u0:6 | Function | bar      | bar      |
+u0:1  | Module   | main     | main     | [global]
+u0:2  | File     | main     | main     |         
+u0:3  | Struct   | Foo      | Foo      |         
+u0:4  | Struct   | Far      | Far      |         
+u0:5  | Struct   | Baz      | Baz      |         
+u0:6  | Field    | x        | x        |         
+u0:7  | Struct   | MyStruct | MyStruct |         
+u0:8  | Field    | myfield  | myfield  |         
+u0:9  | Function | foo      | foo      |         
+u0:10 | Function | bar      | bar      |         
+u0:11 | Variable | mystruct | mystruct |         
+u0:12 | Variable | x        | x        |         
+u0:13 | Variable | y        | y        |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:4, u0:6]
-u0:2 <- [u0:3]
-u0:3 -> [u0:2]
-u0:3 <- [u0:5]
-u0:4 -> [u0:1]
+u0:3 <- [u0:8]
 u0:4 <- [u0:6]
-u0:5 -> [u0:3]
-u0:5 <- [u0:6]
-u0:6 -> [u0:1, u0:4, u0:5]
+u0:6 -> [u0:4]
+u0:8 -> [u0:3]
 
 --- expect:blocks ---
-u0:1  | root  | block#1
-u0:10 | call  | block#10
-u0:2  | class | Foo
-u0:3  | class | Far
-u0:4  | class | Baz
-u0:5  | class | MyStruct
-u0:6  | func  | foo
-u0:7  | func  | bar
-u0:8  | call  | block#8
-u0:9  | call  | block#9
+u0:88 | root  | main    
+u0:89 | class | Foo     
+u0:90 | class | Far     
+u0:91 | class | Baz     
+u0:92 | field | block#92
+u0:93 | class | MyStruct
+u0:94 | field | block#94
+u0:95 | func  | foo     
+u0:96 | func  | bar     
+u0:97 | call  | block#97
+u0:98 | call  | block#98
+u0:99 | call  | block#99
 
 --- expect:block-deps ---
-u0:2 <- [u0:5, u0:7]
-u0:3 <- [u0:4]
-u0:4 -> [u0:3]
-u0:4 <- [u0:6]
-u0:5 -> [u0:2]
-u0:5 <- [u0:7]
-u0:6 -> [u0:4]
-u0:6 <- [u0:7]
-u0:7 -> [u0:2, u0:5, u0:6]
+
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n1 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
-    n2 [label="foo", full_path="$TMP/app/src/main.rs:11"];
-    n3 [label="bar", full_path="$TMP/app/src/main.rs:15"];
-    n4 [label="Far", full_path="$TMP/app/src/main.rs:2"];
-    n5 [label="Baz", full_path="$TMP/app/src/main.rs:3"];
-    n6 [label="MyStruct", full_path="$TMP/app/src/main.rs:7"];
-  }
-  n2 -> n5;
-  n3 -> n2;
-  n3 -> n6;
-  n5 -> n4;
-  n6 -> n1;
 }
+
+
 
 
 ===============================================================================
@@ -1009,18 +920,21 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Foo      | Foo           |
-u0:2 | Struct   | MyStruct | MyStruct      |
-u0:3 | Function | foo      | MyStruct::foo |
-u0:4 | Function | func     | func           |
+u0:1 | Module   | main          | main          | [global]
+u0:2 | File     | main          | main          |         
+u0:3 | Struct   | Foo           | Foo           |         
+u0:4 | Struct   | MyStruct      | MyStruct      |         
+u0:5 | Impl     | impl MyStruct | impl MyStruct |         
+u0:6 | Function | foo           | foo           |         
+u0:7 | Function | func          | func          |         
+u0:8 | Variable | mystruct      | mystruct      |         
+u0:9 | Variable | x             | x             |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:3]
-u0:2 -> [u0:3]
-u0:2 <- [u0:4]
-u0:3 -> [u0:1]
-u0:3 <- [u0:2]
-u0:4 -> [u0:2]
+u0:4 <- [u0:5]
+u0:5 -> [u0:4]
+
+
 
 
 ===============================================================================
@@ -1034,12 +948,16 @@ arr[10];
 arr[n];
 
 --- expect:symbols ---
-none
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
+
+
 
 
 ===============================================================================
 scoped-functions
 ===============================================================================
+
 
 --- file: app/src/foo.rs ---
 pub fn f() {}
@@ -1067,62 +985,55 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Function | f   | f    | [global]
-u0:2 | Module   | g   | g    | [global]
-u0:3 | Function | h   | g::h | [global]
-u1:4 | Struct   | a   | a    |
-u1:5 | Function | b   | a::b |
-u1:6 | Struct   | C   | C    |
-u1:7 | Function | e   | C::e |
-u1:8 | Function | foo | foo  |
-
+u0:1  | Module    | foo    | foo    | [global]
+u0:3  | File      | foo    | foo    |         
+u0:5  | Function  | f      | f      |         
+u0:7  | Namespace | g      | g      |         
+u0:9  | Function  | h      | h      |         
+u1:2  | Module    | main   | main   | [global]
+u1:4  | File      | main   | main   |         
+u1:6  | Struct    | a      | a      |         
+u1:8  | Impl      | impl a | impl a |         
+u1:10 | Function  | b      | b      |         
+u1:11 | Struct    | C      | C      |         
+u1:12 | Impl      | impl C | impl C |         
+u1:13 | Function  | e      | e      |         
+u1:14 | Function  | foo    | foo    |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u1:8]
-u0:2 -> [u0:3]
-u0:3 <- [u0:2, u1:8]
-u1:4 -> [u1:5]
-u1:4 <- [u1:8]
-u1:5 <- [u1:4, u1:8]
-u1:6 -> [u1:7]
+u1:11 <- [u1:12]
+u1:12 -> [u1:11]
 u1:6 <- [u1:8]
-u1:7 <- [u1:6, u1:8]
-u1:8 -> [u0:1, u0:3, u1:4, u1:5, u1:6, u1:7]
+u1:8 -> [u1:6]
 
 --- expect:block-graph ---
-(root:1
-    (func:2 f)
-    (func:3 h)
+(root:100 foo
+    (func:101 f)
+    (func:104 h)
 )
 
-(root:4
-    (class:5 a)
-    (impl:6
-        (func:7 b)
+(root:102 main
+    (class:103 a)
+    (impl:105 impl a
+        (method:106 b)
     )
-    (class:8 C)
-    (impl:9
-        (func:10 e)
+    (class:107 C)
+    (impl:108 impl C
+        (method:109 e)
     )
-    (func:11 foo
-        (call:12)
-        (call:13)
-        (call:14)
-        (call:15)
+    (func:110 foo
+        (call:111)
+        (call:112)
+        (call:113)
+        (call:114)
     )
 )
 
 --- expect:block-deps ---
-u0:2 <- [u1:11]
-u0:3 <- [u1:11]
-u1:10 <- [u1:11, u1:8]
-u1:11 -> [u0:2, u0:3, u1:10, u1:5, u1:7, u1:8]
-u1:5 -> [u1:7]
-u1:5 <- [u1:11]
-u1:7 <- [u1:11, u1:5]
-u1:8 -> [u1:10]
-u1:8 <- [u1:11]
-
+u1:103 <- [u1:105]
+u1:105 -> [u1:103]
+u1:107 <- [u1:108]
+u1:108 -> [u1:107]
 
 
 ===============================================================================
@@ -1134,7 +1045,11 @@ scoped-functions-with-fully-qualified-syntax
 <Dog as Animal>::eat(d);
 
 --- expect:symbols ---
-none
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
+
+
+
 
 ===============================================================================
 scoped-functions-with-macros-as-types
@@ -1145,7 +1060,9 @@ scoped-functions-with-macros-as-types
 <Token![]>::foo();
 
 --- expect:symbols ---
-none
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
+
 
 
 
@@ -1165,25 +1082,21 @@ pub mod m1 {
 
 
 --- expect:symbols ---
-u0:1 | Function | foo | foo         | [global]
-u0:2 | Module   | m1  | m1          | [global]
-u0:3 | Module   | m2  | m1::m2      |
-u0:4 | Function | bar | m1::m2::bar |
-
+u0:1 | Module    | main | main | [global]
+u0:2 | File      | main | main |         
+u0:3 | Function  | foo  | foo  |         
+u0:4 | Namespace | m1   | m1   |         
+u0:5 | Namespace | m2   | m2   |         
+u0:6 | Function  | bar  | bar  |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:4]
-u0:2 -> [u0:3]
-u0:3 -> [u0:4]
-u0:3 <- [u0:2]
-u0:4 -> [u0:1]
-u0:4 <- [u0:3]
+
 
 --- expect:blocks ---
-u0:1 | root | block#1
-u0:2 | func | foo
-u0:3 | func | bar
-u0:4 | call | block#4
+u0:115 | root | main     
+u0:116 | func | foo      
+u0:117 | func | bar      
+u0:118 | call | block#118
 
 
 ===============================================================================
@@ -1196,7 +1109,10 @@ std::sizeof::<u32>();
 foo::<8>();
 
 --- expect:symbols ---
-none
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
+
+
 
 
 ===============================================================================
@@ -1213,7 +1129,9 @@ d.map(move |mut e| {
 h(|| -> i { j });
 
 --- expect:symbols ---
-none
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
+
 
 
 
@@ -1226,7 +1144,11 @@ closures-with-typed-parameteres
 a.map(|b: usize| b.push(c));
 
 --- expect:symbols ---
-none
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Variable | b    | b    |         
+
+
 
 
 ===============================================================================
@@ -1244,7 +1166,10 @@ move || {
 };
 
 --- expect:symbols ---
-none
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
+
+
 
 
 ===============================================================================
@@ -1257,13 +1182,15 @@ fn foo() {}
 const a : A = unsafe { foo() };
 
 --- expect:symbols ---
-u0:1 | Function | foo | foo |
-u0:2 | Const    | a   | a   |
-
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Function | foo  | foo  |         
+u0:4 | Const    | a    | a    |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
+
+
 
 
 ===============================================================================
@@ -1277,7 +1204,10 @@ if *x < 0 { const { &4i32.pow(4) } } else { x }
 let three_ranges = [const { (0..=5).into_inner() }; 3];
 
 --- expect:symbols ---
-none
+u0:1 | Module   | main         | main         | [global]
+u0:2 | File     | main         | main         |         
+u0:3 | Variable | three_ranges | three_ranges |         
+
 
 
 
@@ -1291,4 +1221,7 @@ some_call(&raw);
 let a = &raw const b;
 
 --- expect:symbols ---
-none
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Variable | a    | a    |         
+

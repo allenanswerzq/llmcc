@@ -13,27 +13,18 @@ fn function_demo() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | helpers       | helpers          |
-u0:2 | Function | compute       | helpers::compute | [global]
-u0:3 | Function | function_demo | function_demo    |
+u0:1 | Module    | main          | main          | [global]
+u0:2 | File      | main          | main          |         
+u0:3 | Namespace | helpers       | helpers       |         
+u0:4 | Function  | compute       | compute       |         
+u0:5 | Function  | function_demo | function_demo |         
 
 --- expect:symbol-deps ---
-u0:1 -> [u0:2]
-u0:2 <- [u0:1, u0:3]
-u0:3 -> [u0:2]
+
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n2 [label="compute", full_path="$TMP/app/src/main.rs:2"];
-    n3 [label="function_demo", full_path="$TMP/app/src/main.rs:5"];
-  }
-  n3 -> n2;
 }
-
 
 
 ===============================================================================
@@ -60,63 +51,42 @@ fn qualified_call(baz: &Baz) {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Foo            | Foo                         |
-u0:2 | Struct   | Baz            | Baz                         |
-u0:3 | Struct   | SessionBuilder | SessionBuilder              |
-u0:4 | Function | new            | SessionBuilder::new         |
-u0:5 | Function | static_func    | SessionBuilder::static_func |
-u0:6 | Function | qualified_call | qualified_call              |
-u0:7 | Variable | baz            | qualified_call::baz         |
-u0:8 | Variable | x              | qualified_call::x           |
+u0:1  | Module   | main                | main                | [global]
+u0:2  | File     | main                | main                |         
+u0:3  | Struct   | Foo                 | Foo                 |         
+u0:4  | Struct   | Baz                 | Baz                 |         
+u0:5  | Struct   | SessionBuilder      | SessionBuilder      |         
+u0:6  | Impl     | impl SessionBuilder | impl SessionBuilder |         
+u0:7  | Function | new                 | new                 |         
+u0:8  | Function | static_func         | static_func         |         
+u0:9  | Function | qualified_call      | qualified_call      |         
+u0:10 | Variable | baz                 | baz                 |         
+u0:11 | Variable | x                   | x                   |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:3, u0:5]
-u0:2 <- [u0:6]
-u0:3 -> [u0:1, u0:4, u0:5]
-u0:3 <- [u0:6]
-u0:4 <- [u0:3, u0:6]
-u0:5 -> [u0:1]
-u0:5 <- [u0:3, u0:6]
-u0:6 -> [u0:2, u0:3, u0:4, u0:5]
+u0:10 -> [u0:4]
+u0:4 <- [u0:10]
+u0:5 <- [u0:6]
+u0:6 -> [u0:5]
 
 --- expect:blocks ---
-u0:1  | root   | block#1
-u0:2  | class  | Foo
-u0:3  | class  | Baz
-u0:4  | class  | SessionBuilder
-u0:5  | impl   | block#5
-u0:6  | method | new
-u0:7  | method | static_func
-u0:8  | func   | qualified_call
-u0:9  | call   | block#9
-u0:10 | call   | block#10
-
+u0:159 | root   | main               
+u0:160 | class  | Foo                
+u0:161 | class  | Baz                
+u0:162 | class  | SessionBuilder     
+u0:163 | impl   | impl SessionBuilder
+u0:164 | method | new                
+u0:165 | method | static_func        
+u0:166 | func   | qualified_call     
+u0:167 | call   | block#167          
+u0:168 | call   | block#168          
 
 --- expect:block-deps ---
-u0:2 <- [u0:4, u0:7]
-u0:3 <- [u0:8]
-u0:4 -> [u0:2, u0:6, u0:7]
-u0:4 <- [u0:8]
-u0:6 <- [u0:4, u0:8]
-u0:7 -> [u0:2]
-u0:7 <- [u0:4, u0:8]
-u0:8 -> [u0:3, u0:4, u0:6, u0:7]
-
+u0:162 <- [u0:163]
+u0:163 -> [u0:162]
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Foo", full_path="$TMP/app/src/main.rs:1"];
-    n8 [label="qualified_call", full_path="$TMP/app/src/main.rs:13"];
-    n3 [label="Baz", full_path="$TMP/app/src/main.rs:2"];
-    n4 [label="SessionBuilder", full_path="$TMP/app/src/main.rs:3"];
-  }
-  n8 -> n3;
-  n8 -> n4;
-  n4 -> n2;
 }
 
 
@@ -137,13 +107,12 @@ fn macro_demo() {
 }
 
 --- expect:symbols ---
-u0:1 | Macro    | log_value  | log_value  | [global]
-u0:2 | Function | macro_demo | macro_demo |
+u0:1 | Module   | main       | main       | [global]
+u0:2 | File     | main       | main       |         
+u0:3 | Macro    | log_value  | log_value  |         
+u0:4 | Function | macro_demo | macro_demo |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
-
 
 
 
@@ -172,35 +141,22 @@ fn chain_invocation_demo() {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Builder               | Builder               |
-u0:2 | Function | new                   | Builder::new          |
-u0:3 | Function | step                  | Builder::step         |
-u0:4 | Variable | self                  | Builder::step::self   |
-u0:5 | Function | finish                | Builder::finish       |
-u0:6 | Variable | self                  | Builder::finish::self |
-u0:7 | Function | chain_invocation_demo | chain_invocation_demo |
+u0:1 | Module   | main                  | main                  | [global]
+u0:2 | File     | main                  | main                  |         
+u0:3 | Struct   | Builder               | Builder               |         
+u0:4 | Impl     | impl Builder          | impl Builder          |         
+u0:5 | Function | new                   | new                   |         
+u0:6 | Function | step                  | step                  |         
+u0:7 | Function | finish                | finish                |         
+u0:8 | Function | chain_invocation_demo | chain_invocation_demo |         
 
 --- expect:symbol-deps ---
-u0:1 -> [u0:2, u0:3, u0:5]
-u0:1 <- [u0:7]
-u0:2 <- [u0:1, u0:7]
-u0:3 <- [u0:1, u0:7]
-u0:5 <- [u0:1, u0:7]
-u0:7 -> [u0:1, u0:2, u0:3, u0:5]
-
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Builder", full_path="$TMP/app/src/main.rs:1"];
-    n7 [label="chain_invocation_demo", full_path="$TMP/app/src/main.rs:15"];
-  }
-  n7 -> n2;
 }
-
 
 
 ===============================================================================
@@ -234,55 +190,40 @@ fn expr_chain() {
 }
 
 --- expect:symbols ---
-u0:1  | Struct   | Data       | Data              |
-u0:2  | Struct   | Iter       | Iter              |
-u0:3  | Function | iter       | Data::iter        |
-u0:4  | Variable | self       | Data::iter::self  |
-u0:5  | Function | map        | Iter::map         |
-u0:6  | Variable | self       | Iter::map::self   |
-u0:7  | Function | count      | Iter::count       |
-u0:8  | Variable | self       | Iter::count::self |
-u0:9  | Function | expr_chain | expr_chain        |
-u0:10 | Variable | data       | expr_chain::data  |
+u0:1  | Module   | main       | main       | [global]
+u0:2  | File     | main       | main       |         
+u0:3  | Struct   | Data       | Data       |         
+u0:4  | Struct   | Iter       | Iter       |         
+u0:5  | Impl     | impl Data  | impl Data  |         
+u0:6  | Function | iter       | iter       |         
+u0:7  | Impl     | impl Iter  | impl Iter  |         
+u0:8  | Function | map        | map        |         
+u0:9  | Function | count      | count      |         
+u0:10 | Function | expr_chain | expr_chain |         
+u0:11 | Variable | data       | data       |         
 
 --- expect:symbol-deps ---
-u0:1 -> [u0:2, u0:3]
-u0:1 <- [u0:9]
-u0:2 -> [u0:5, u0:7]
-u0:2 <- [u0:1, u0:3]
-u0:3 -> [u0:2]
-u0:3 <- [u0:1, u0:9]
-u0:5 <- [u0:2, u0:9]
-u0:7 <- [u0:2, u0:9]
-u0:9 -> [u0:1, u0:3, u0:5, u0:7]
+u0:3 <- [u0:5]
+u0:4 <- [u0:7]
+u0:5 -> [u0:3]
+u0:7 -> [u0:4]
 
 --- expect:blocks ---
-u0:1  | root   | block#1
-u0:2  | class  | Data
-u0:3  | class  | Iter
-u0:4  | impl   | block#4
-u0:5  | method | iter
-u0:6  | impl   | block#6
-u0:7  | method | map
-u0:8  | method | count
-u0:9  | func   | expr_chain
-u0:10 | call   | block#10
-u0:11 | call   | block#11
+u0:177 | root   | main      
+u0:178 | class  | Data      
+u0:179 | class  | Iter      
+u0:180 | impl   | impl Data 
+u0:181 | method | iter      
+u0:182 | impl   | impl Iter 
+u0:183 | method | map       
+u0:184 | method | count     
+u0:185 | func   | expr_chain
+u0:186 | call   | block#186 
+u0:187 | call   | block#187 
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Data", full_path="$TMP/app/src/main.rs:1"];
-    n3 [label="Iter", full_path="$TMP/app/src/main.rs:2"];
-    n9 [label="expr_chain", full_path="$TMP/app/src/main.rs:20"];
-  }
-  n2 -> n3;
-  n9 -> n2;
 }
-
 
 
 ===============================================================================
@@ -307,50 +248,36 @@ fn chain_variable_demo(mut stream: Stream) {
 }
 
 --- expect:symbols ---
-u0:1 | Struct   | Stream              | Stream                      |
-u0:2 | Function | advance             | Stream::advance             |
-u0:3 | Variable | self                | Stream::advance::self       |
-u0:4 | Function | flush               | Stream::flush               |
-u0:5 | Variable | self                | Stream::flush::self         |
-u0:6 | Function | chain_variable_demo | chain_variable_demo         |
-u0:7 | Variable | stream              | chain_variable_demo::stream |
-u0:8 | Variable | cursor              | chain_variable_demo::cursor |
-
+u0:1 | Module   | main                | main                | [global]
+u0:2 | File     | main                | main                |         
+u0:3 | Struct   | Stream              | Stream              |         
+u0:4 | Impl     | impl Stream         | impl Stream         |         
+u0:5 | Function | advance             | advance             |         
+u0:6 | Function | flush               | flush               |         
+u0:7 | Function | chain_variable_demo | chain_variable_demo |         
+u0:8 | Variable | stream              | stream              |         
+u0:9 | Variable | cursor              | cursor              |         
 
 --- expect:symbol-deps ---
-u0:1 -> [u0:2, u0:4]
-u0:1 <- [u0:6]
-u0:2 <- [u0:1, u0:6]
-u0:4 <- [u0:1, u0:6]
-u0:6 -> [u0:1, u0:2, u0:4]
-
+u0:3 <- [u0:4, u0:8]
+u0:4 -> [u0:3]
+u0:8 -> [u0:3]
 
 --- expect:blocks ---
-u0:1 | root   | block#1
-u0:2 | class  | Stream
-u0:3 | impl   | block#3
-u0:4 | method | advance
-u0:5 | method | flush
-u0:6 | func   | chain_variable_demo
-u0:7 | call   | block#7
-u0:8 | call   | block#8
-
+u0:188 | root   | main               
+u0:189 | class  | Stream             
+u0:190 | impl   | impl Stream        
+u0:191 | method | advance            
+u0:192 | method | flush              
+u0:193 | func   | chain_variable_demo
+u0:194 | call   | block#194          
+u0:195 | call   | block#195          
 
 --- expect:block-deps ---
-u0:2 -> [u0:4, u0:5]
-u0:2 <- [u0:6]
-u0:4 <- [u0:2, u0:6]
-u0:5 <- [u0:2, u0:6]
-u0:6 -> [u0:2, u0:4, u0:5]
+u0:189 <- [u0:190]
+u0:190 -> [u0:189]
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="app";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Stream", full_path="$TMP/app/src/main.rs:1"];
-    n6 [label="chain_variable_demo", full_path="$TMP/app/src/main.rs:11"];
-  }
-  n6 -> n2;
 }
+

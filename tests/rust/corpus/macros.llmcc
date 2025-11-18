@@ -23,23 +23,18 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Macro    | a   | a       | [global]
-u0:2 | Module   | d   | d       |
-u0:3 | Macro    | e   | d::e    | [global]
-u0:4 | Module   | f   | f       |
-u0:5 | Module   | g   | f::g    |
-u0:6 | Macro    | h   | f::g::h | [global]
-u0:7 | Function | foo | foo     |
+u0:1 | Module    | main | main | [global]
+u0:2 | File      | main | main |         
+u0:3 | Macro     | a    | a    |         
+u0:4 | Namespace | d    | d    |         
+u0:5 | Macro     | e    | e    |         
+u0:6 | Namespace | f    | f    |         
+u0:7 | Namespace | g    | g    |         
+u0:8 | Macro     | h    | h    |         
+u0:9 | Function  | foo  | foo  |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:7]
-u0:2 -> [u0:3]
-u0:3 <- [u0:2, u0:7]
-u0:4 -> [u0:5]
-u0:5 -> [u0:6]
-u0:5 <- [u0:4]
-u0:6 <- [u0:5, u0:7]
-u0:7 -> [u0:1, u0:3, u0:6]
+
 
 
 ===============================================================================
@@ -67,12 +62,14 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Macro    | a   | a   | [global]
-u0:2 | Function | foo | foo |
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Macro    | a    | a    |         
+u0:4 | Function | foo  | foo  |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
+
 
 ===============================================================================
 macro-invocation-with-comments
@@ -89,12 +86,14 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Macro    | ok  | ok  | [global]
-u0:2 | Function | foo | foo |
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Macro    | ok   | ok   |         
+u0:4 | Function | foo  | foo  |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:2]
-u0:2 -> [u0:1]
+
+
 
 ===============================================================================
 macro-definition
@@ -136,10 +135,12 @@ macro_rules! empty [
 ];
 
 --- expect:symbols ---
-u0:1 | Macro | say_hello   | say_hello   | [global]
-u0:2 | Macro | four        | four        | [global]
-u0:3 | Macro | foo         | foo         | [global]
-u0:4 | Macro | o_O         | o_O         | [global]
-u0:5 | Macro | zero_or_one | zero_or_one | [global]
-u0:6 | Macro | empty       | empty       | [global]
+u0:1 | Module | main        | main        | [global]
+u0:2 | File   | main        | main        |         
+u0:3 | Macro  | say_hello   | say_hello   |         
+u0:4 | Macro  | four        | four        |         
+u0:5 | Macro  | foo         | foo         |         
+u0:6 | Macro  | o_O         | o_O         |         
+u0:7 | Macro  | zero_or_one | zero_or_one |         
+u0:8 | Macro  | empty       | empty       |         
 

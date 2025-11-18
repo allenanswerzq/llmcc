@@ -169,6 +169,7 @@ impl<'a> CollectorScopes<'a> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
+        symbol.set_is_global(true);
         Some(symbol)
     }
 

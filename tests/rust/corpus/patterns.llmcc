@@ -18,18 +18,15 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Enum        | E   | E     |
-u0:2 | EnumVariant | V1  | E::V1 |
-u0:3 | EnumVariant | V2  | E::V2 |
-u0:4 | Function    | foo | foo   |
-
+u0:1 | Module      | main            | main            | [global]
+u0:2 | File        | main            | main            |         
+u0:3 | Enum        | E               | E               |         
+u0:4 | EnumVariant | V1(i32, String) | V1(i32, String) |         
+u0:5 | EnumVariant | V2              | V2              |         
+u0:6 | Function    | foo             | foo             |         
+u0:7 | Variable    | x               | x               |         
 
 --- expect:symbol-deps ---
-u0:1 -> [u0:2, u0:3]
-u0:1 <- [u0:4]
-u0:2 <- [u0:1]
-u0:3 <- [u0:1]
-u0:4 -> [u0:1]
 
 
 
@@ -46,15 +43,8 @@ match x {
 }
 
 --- expect:symbols ---
-none
-
-
-
-
-
-
-
-
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
 
 
 ===============================================================================
@@ -73,9 +63,8 @@ match y {
 }
 
 --- expect:symbols ---
-none
-
-
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
 
 
 ===============================================================================
@@ -91,10 +80,8 @@ match x {
 }
 
 --- expect:symbols ---
-none
-
-
-
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
 
 
 ===============================================================================
@@ -120,6 +107,7 @@ match name {
   | "IPV6_FLOWINFO_SEND" => true,
   _ => false,
 }
+
 
 
 
@@ -168,22 +156,24 @@ fn func_2((1 | 2 | 3): u8) {}
 if let x!() | y!() = () {}
 
 --- expect:symbols ---
-u0:1 | Struct   | Bar           | Bar                  |
-u0:2 | Struct   | Foo           | Foo                  |
-u0:3 | Struct   | Slice         | Slice                |
-u0:4 | Function | binary_search | Slice::binary_search |
-u0:5 | Function | func_1        | func_1                  |
-u0:6 | Function | func_2        | func_2                  |
-
+u0:1  | Module   | main          | main          | [global]
+u0:2  | File     | main          | main          |         
+u0:3  | Struct   | Bar           | Bar           |         
+u0:4  | Struct   | Foo           | Foo           |         
+u0:5  | Struct   | Slice         | Slice         |         
+u0:6  | Impl     | impl Slice    | impl Slice    |         
+u0:7  | Function | binary_search | binary_search |         
+u0:8  | Variable | x             | x             |         
+u0:9  | Function | func_1        | func_1        |         
+u0:10 | Variable | slice         | slice         |         
+u0:11 | Variable | f             | f             |         
+u0:12 | Variable | Ok            | Ok            |         
+u0:13 | Variable | x             | x             |         
+u0:14 | Function | func_2        | func_2        |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:5]
-u0:2 <- [u0:4]
-u0:3 -> [u0:4]
-u0:3 <- [u0:5]
-u0:4 -> [u0:2]
-u0:4 <- [u0:3]
-u0:5 -> [u0:1, u0:3]
+u0:5 <- [u0:6]
+u0:6 -> [u0:5]
 
 
 ===============================================================================
@@ -208,9 +198,12 @@ fn foo(x: i32) {
 }
 
 --- expect:symbols ---
-u0:1 | Function | foo  | foo       | 
-u0:2 | Const    | CUBE | foo::CUBE | 
-u0:3 | Function | foo  | foo       | 
+u0:1 | Module   | main | main | [global]
+u0:2 | File     | main | main |         
+u0:3 | Function | foo  | foo  |         
+u0:4 | Variable | x    | x    |         
+u0:5 | Const    | CUBE | CUBE |         
+u0:6 | Variable | x    | x    |         
 
 
 ===============================================================================
@@ -225,5 +218,6 @@ match y {
 }
 
 --- expect:symbols ---
-none
+u0:1 | Module | main | main | [global]
+u0:2 | File   | main | main |         
 

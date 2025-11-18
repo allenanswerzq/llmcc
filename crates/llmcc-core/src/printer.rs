@@ -388,7 +388,7 @@ pub fn print_llmcc_ir_with_config(unit: CompileUnit<'_>, config: &PrintConfig) -
 
     let (ast, hir) = render_llmcc_ir_with_config(root, unit, config)?;
     println!("{}\n", ast);
-    println!("{}\n", hir);
+    // println!("{}\n", hir);
     Ok(())
 }
 
