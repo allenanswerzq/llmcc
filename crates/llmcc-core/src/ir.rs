@@ -1,4 +1,4 @@
-use parking_lot::RwLock;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
@@ -7,18 +7,16 @@ use crate::scope::Scope;
 use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
-// TODO: efficient arena with iter support to repplace Vec allocations
-declare_arena!([
-    symbol: Symbol,
-] @vec [
+declare_arena!(Arena {
     hir_root: HirRoot,
     hir_text: HirText,
     hir_internal: HirInternal,
-    hir_scope: HirScope<'tcx>,
+    hir_scope: HirScope<'a>,
     hir_file: HirFile,
-    hir_ident: HirIdent<'tcx>,
-    scope: Scope<'tcx>,
-]);
+    hir_ident: HirIdent<'a>,
+    scope: Scope<'a>,
+    symbol: Symbol,
+});
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,
@@ -243,6 +241,22 @@ impl<'hir> HirNode<'hir> {
 /// Unique identifier for a HIR node within a compilation unit. IDs are stable,
 /// sequential, and used for parent-child relationships and symbol references.
 pub struct HirId(pub usize);
+
+/// Global counter for allocating unique HIR IDs
+static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+impl HirId {
+    /// Allocate a new unique HIR ID
+    pub fn new() -> Self {
+        let id = HIR_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+        HirId(id)
+    }
+
+    /// Get the next HIR ID that will be allocated (useful for diagnostics)
+    pub fn next() -> Self {
+        HirId(HIR_ID_COUNTER.load(Ordering::Relaxed))
+    }
+}
 
 impl std::fmt::Display for HirId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

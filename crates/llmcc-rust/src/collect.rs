@@ -1,5 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
+use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::CollectorScopes;
@@ -39,7 +40,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 ident.set_symbol(sym);
                 sn.set_ident(ident);
 
-                let scope = unit.alloc_hir_scope(sym);
+                let scope = unit.cc.alloc_hir_scope(next_hir_id(), sym);
                 sym.set_scope(scope.id());
                 sym.add_defining(node.id());
                 sn.set_scope(scope);
@@ -78,14 +79,14 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             if let Some(file_name) = parse_file_name(file_path)
                 && let Some(sn) = node.as_scope()
             {
-                let ident = unit.alloc_hir_ident(file_name.clone(), symbol);
+                let ident = unit.cc.alloc_hir_ident(next_hir_id(), file_name.clone(), symbol);
                 sn.set_ident(ident);
 
                 if let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File) {
                     ident.set_symbol(file_sym);
                     file_sym.add_defining(node.id());
 
-                    let scope = unit.alloc_hir_scope(file_sym);
+                    let scope = unit.cc.alloc_hir_scope(next_hir_id(), file_sym);
                     file_sym.set_scope(scope.id());
 
                     sn.set_scope(scope);
@@ -168,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_decl_visitor() {
-        let source_code = br#"
+        let foo = br#"
 mod outer {
     fn nested_function() {}
 
@@ -196,6 +197,12 @@ type Alias = Foo;
 const TOP_CONST: i32 = 42;
 static TOP_STATIC: i32 = 7;
 "#;
-        compile_from_soruces(vec![source_code.to_vec()]);
+        let bar = br#"
+mod outer {
+    fn nested_function() {}
+}
+    "#;
+
+        compile_from_soruces(vec![foo.to_vec(), bar.to_vec()]);
     }
 }

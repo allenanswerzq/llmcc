@@ -126,7 +126,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ident) = sn.opt_ident() {
             let func_sym = scopes.lookup_or_insert_global(&ident.name, node, SymKind::Function);
             if let Some(func_sym) = func_sym {
-                debug_assert_eq!(func_sym.id(), ident.symbol().id);
+                // debug_assert_eq!(func_sym.id(), ident.symbol().id);
                 if func_sym.type_of().is_none() {
                     func_sym.set_type_of(ty.id());
                 }

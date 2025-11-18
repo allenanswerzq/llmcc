@@ -22,7 +22,7 @@ pub struct BinderScopes<'tcx> {
 
 impl<'tcx> BinderScopes<'tcx> {
     pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
-        let mut scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
+        let scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
         scopes.push(globals);
 
         Self {
@@ -175,7 +175,7 @@ impl<'tcx> BinderScopes<'tcx> {
 #[derive(Default)]
 pub struct BinderOption;
 
-/// Public API for binding symbols with a custom visitor function.
+/// parallel binding symbols
 pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
@@ -183,7 +183,7 @@ pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
 ) {
     (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
         let unit = cc.compile_unit(unit_index);
-        let id = unit.file_start_hir_id().unwrap();
+        let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
         let mut scopes = BinderScopes::new(unit, globals);
         L::bind_symbols_impl(&unit, &node, &mut scopes, globals);

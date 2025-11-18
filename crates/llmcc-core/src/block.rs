@@ -1,21 +1,22 @@
+use std::sync::atomic::{AtomicU32, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
 use crate::declare_arena;
 use crate::ir::HirNode;
 
-declare_arena!([
-    blk_root: BlockRoot<'tcx>,
-    blk_func: BlockFunc<'tcx>,
-    blk_method: BlockMethod<'tcx>,
-    blk_class: BlockClass<'tcx>,
-    blk_impl: BlockImpl<'tcx>,
-    blk_stmt: BlockStmt<'tcx>,
-    blk_call: BlockCall<'tcx>,
-    blk_enum: BlockEnum<'tcx>,
-    blk_field: BlockField<'tcx>,
-    blk_const: BlockConst<'tcx>,
-]);
+declare_arena!(BlockArena {
+    blk_root: BlockRoot<'a>,
+    blk_func: BlockFunc<'a>,
+    blk_method: BlockMethod<'a>,
+    blk_class: BlockClass<'a>,
+    blk_impl: BlockImpl<'a>,
+    blk_stmt: BlockStmt<'a>,
+    blk_call: BlockCall<'a>,
+    blk_enum: BlockEnum<'a>,
+    blk_field: BlockField<'a>,
+    blk_const: BlockConst<'a>,
+});
 
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter, EnumString, FromRepr, Display, Default,
@@ -128,6 +129,9 @@ impl<'blk> BasicBlock<'blk> {
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
 pub struct BlockId(pub u32);
 
+/// Global counter for allocating unique Block IDs
+static BLOCK_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
+
 impl std::fmt::Display for BlockId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -137,6 +141,17 @@ impl std::fmt::Display for BlockId {
 impl BlockId {
     pub fn new(id: u32) -> Self {
         Self(id)
+    }
+
+    /// Allocate a new unique BlockId
+    pub fn allocate() -> Self {
+        let id = BLOCK_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+        BlockId(id)
+    }
+
+    /// Get the next BlockId that will be allocated (useful for diagnostics)
+    pub fn next() -> Self {
+        BlockId(BLOCK_ID_COUNTER.load(Ordering::Relaxed))
     }
 
     pub fn as_u32(self) -> u32 {
