@@ -145,13 +145,13 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Struct   | Foo  | Foo  |         
-u0:4 | Struct   | Bar  | Bar  |         
-u0:5 | Function | func | func |         
-u0:6 | Variable | f    | f    |         
-u0:7 | Variable | b    | b    |         
+u0:1 | Module   | main | main                | [global]
+u0:2 | File     | main | main::main          |         
+u0:3 | Struct   | Foo  | main::main::Foo     |         
+u0:4 | Struct   | Bar  | main::main::Bar     |         
+u0:5 | Function | func | main::main::func    |         
+u0:6 | Variable | f    | main::main::func::f |         
+u0:7 | Variable | b    | main::main::func::b |         
 
 --- expect:symbol-deps ---
 u0:4 <- [u0:5, u0:7]
@@ -176,13 +176,13 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Struct   | Foo  | Foo  |         
-u0:4 | Struct   | Bar  | Bar  |         
-u0:5 | Function | func | func |         
-u0:6 | Variable | f    | f    |         
-u0:7 | Variable | b    | b    |         
+u0:1 | Module   | main | main                | [global]
+u0:2 | File     | main | main::main          |         
+u0:3 | Struct   | Foo  | main::main::Foo     |         
+u0:4 | Struct   | Bar  | main::main::Bar     |         
+u0:5 | Function | func | main::main::func    |         
+u0:6 | Variable | f    | main::main::func::f |         
+u0:7 | Variable | b    | main::main::func::b |         
 
 --- expect:symbol-deps ---
 u0:4 <- [u0:5, u0:7]
@@ -233,13 +233,13 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Struct   | Foo  | Foo  |         
-u0:4 | Struct   | Bar  | Bar  |         
-u0:5 | Function | func | func |         
-u0:6 | Variable | f    | f    |         
-u0:7 | Variable | b    | b    |         
+u0:1 | Module   | main | main                | [global]
+u0:2 | File     | main | main::main          |         
+u0:3 | Struct   | Foo  | main::main::Foo     |         
+u0:4 | Struct   | Bar  | main::main::Bar     |         
+u0:5 | Function | func | main::main::func    |         
+u0:6 | Variable | f    | main::main::func::f |         
+u0:7 | Variable | b    | main::main::func::b |         
 
 --- expect:symbol-deps ---
 u0:4 <- [u0:5, u0:7]
@@ -296,12 +296,12 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Struct   | Foo  | Foo  |         
-u0:4 | Function | foo  | foo  |         
-u0:5 | Variable | a    | a    |         
-u0:6 | Variable | b    | b    |         
+u0:1 | Module   | main | main               | [global]
+u0:2 | File     | main | main::main         |         
+u0:3 | Struct   | Foo  | main::main::Foo    |         
+u0:4 | Function | foo  | main::main::foo    |         
+u0:5 | Variable | a    | main::main::foo::a |         
+u0:6 | Variable | b    | main::main::foo::b |         
 
 --- expect:symbol-deps ---
 
@@ -340,16 +340,16 @@ fn make_tuples() {
 }
 
 --- expect:symbols ---
-u0:1  | Module   | main         | main         | [global]
-u0:2  | File     | main         | main         |         
-u0:3  | Struct   | TupleThing   | TupleThing   |         
-u0:4  | Function | make_tuples  | make_tuples  |         
-u0:5  | Variable | empty        | empty        |         
-u0:6  | Variable | single       | single       |         
-u0:7  | Variable | triple       | triple       |         
-u0:8  | Variable | nested       | nested       |         
-u0:9  | Variable | destructured | destructured |         
-u0:10 | Variable | _all         | _all         |         
+u0:1  | Module   | main         | main                                  | [global]
+u0:2  | File     | main         | main::main                            |         
+u0:3  | Struct   | TupleThing   | main::main::TupleThing                |         
+u0:4  | Function | make_tuples  | main::main::make_tuples               |         
+u0:5  | Variable | empty        | main::main::make_tuples::empty        |         
+u0:6  | Variable | single       | main::main::make_tuples::single       |         
+u0:7  | Variable | triple       | main::main::make_tuples::triple       |         
+u0:8  | Variable | nested       | main::main::make_tuples::nested       |         
+u0:9  | Variable | destructured | main::main::make_tuples::destructured |         
+u0:10 | Variable | _all         | main::main::make_tuples::_all         |         
 
 --- expect:symbol-deps ---
 
@@ -385,16 +385,16 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Module   | main       | main       | [global]
-u0:2  | File     | main       | main       |         
-u0:3  | Struct   | SomeStruct | SomeStruct |         
-u0:4  | Field    | field1     | field1     |         
-u0:5  | Field    | field2     | field2     |         
-u0:6  | Field    | field3     | field3     |         
-u0:7  | Function | func       | func       |         
-u0:8  | Variable | a          | a          |         
-u0:9  | Variable | u          | u          |         
-u0:10 | Variable | i          | i          |         
+u0:1  | Module   | main       | main                           | [global]
+u0:2  | File     | main       | main::main                     |         
+u0:3  | Struct   | SomeStruct | main::main::SomeStruct         |         
+u0:4  | Field    | field1     | main::main::SomeStruct::field1 |         
+u0:5  | Field    | field2     | main::main::SomeStruct::field2 |         
+u0:6  | Field    | field3     | main::main::SomeStruct::field3 |         
+u0:7  | Function | func       | main::main::func               |         
+u0:8  | Variable | a          | main::main::func::a            |         
+u0:9  | Variable | u          | main::main::func::u            |         
+u0:10 | Variable | i          | main::main::func::i            |         
 
 --- expect:symbol-deps ---
 
@@ -433,14 +433,14 @@ fn build_user(score: u32) -> User {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main       | main       | [global]
-u0:2 | File     | main       | main       |         
-u0:3 | Struct   | User       | User       |         
-u0:4 | Field    | id         | id         |         
-u0:5 | Field    | score      | score      |         
-u0:6 | Function | build_user | build_user |         
-u0:7 | Variable | score      | score      |         
-u0:8 | Variable | base       | base       |         
+u0:1 | Module   | main       | main                          | [global]
+u0:2 | File     | main       | main::main                    |         
+u0:3 | Struct   | User       | main::main::User              |         
+u0:4 | Field    | id         | main::main::User::id          |         
+u0:5 | Field    | score      | main::main::User::score       |         
+u0:6 | Function | build_user | main::main::build_user        |         
+u0:7 | Variable | score      | main::main::build_user::score |         
+u0:8 | Variable | base       | main::main::build_user::base  |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:6]
@@ -492,14 +492,14 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main   | main   | [global]
-u0:2 | File     | main   | main   |         
-u0:3 | Struct   | Config | Config |         
-u0:4 | Field    | n      | n      |         
-u0:5 | Field    | x      | x      |         
-u0:6 | Function | main   | main   |         
-u0:7 | Variable | cfg    | cfg    |         
-u0:8 | Variable | y      | y      |         
+u0:1 | Module   | main   | main                  | [global]
+u0:2 | File     | main   | main::main            |         
+u0:3 | Struct   | Config | main::main::Config    |         
+u0:4 | Field    | n      | main::main::Config::n |         
+u0:5 | Field    | x      | main::main::Config::x |         
+u0:6 | Function | main   | main::main::main      |         
+u0:7 | Variable | cfg    | main::main::main::cfg |         
+u0:8 | Variable | y      | main::main::main::y   |         
 
 --- expect:symbol-deps ---
 
@@ -535,12 +535,12 @@ fn check() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main  | main  | [global]
-u0:2 | File     | main  | main  |         
-u0:3 | Struct   | Guard | Guard |         
-u0:4 | Field    | val   | val   |         
-u0:5 | Function | check | check |         
-u0:6 | Variable | guard | guard |         
+u0:1 | Module   | main  | main                     | [global]
+u0:2 | File     | main  | main::main               |         
+u0:3 | Struct   | Guard | main::main::Guard        |         
+u0:4 | Field    | val   | main::main::Guard::val   |         
+u0:5 | Function | check | main::main::check        |         
+u0:6 | Variable | guard | main::main::check::guard |         
 
 --- expect:symbol-deps ---
 
@@ -577,11 +577,11 @@ fn parse() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main     | main     | [global]
-u0:2 | File     | main     | main     |         
-u0:3 | Struct   | Dish     | Dish     |         
-u0:4 | Function | parse    | parse    |         
-u0:5 | Variable | dish_opt | dish_opt |         
+u0:1 | Module   | main     | main                        | [global]
+u0:2 | File     | main     | main::main                  |         
+u0:3 | Struct   | Dish     | main::main::Dish            |         
+u0:4 | Function | parse    | main::main::parse           |         
+u0:5 | Variable | dish_opt | main::main::parse::dish_opt |         
 
 --- expect:symbol-deps ---
 
@@ -618,12 +618,12 @@ fn process() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main    | main    | [global]
-u0:2 | File     | main    | main    |         
-u0:3 | Struct   | Queue   | Queue   |         
-u0:4 | Field    | items   | items   |         
-u0:5 | Function | process | process |         
-u0:6 | Variable | queue   | queue   |         
+u0:1 | Module   | main    | main                       | [global]
+u0:2 | File     | main    | main::main                 |         
+u0:3 | Struct   | Queue   | main::main::Queue          |         
+u0:4 | Field    | items   | main::main::Queue::items   |         
+u0:5 | Function | process | main::main::process        |         
+u0:6 | Variable | queue   | main::main::process::queue |         
 
 --- expect:symbol-deps ---
 
@@ -656,11 +656,11 @@ fn process_value() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main          | main          | [global]
-u0:2 | File     | main          | main          |         
-u0:3 | Struct   | Value         | Value         |         
-u0:4 | Function | process_value | process_value |         
-u0:5 | Variable | val           | val           |         
+u0:1 | Module   | main          | main                           | [global]
+u0:2 | File     | main          | main::main                     |         
+u0:3 | Struct   | Value         | main::main::Value              |         
+u0:4 | Function | process_value | main::main::process_value      |         
+u0:5 | Variable | val           | main::main::process_value::val |         
 
 --- expect:symbol-deps ---
 
@@ -693,12 +693,12 @@ fn loop_until() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main       | main       | [global]
-u0:2 | File     | main       | main       |         
-u0:3 | Struct   | State      | State      |         
-u0:4 | Field    | done       | done       |         
-u0:5 | Function | loop_until | loop_until |         
-u0:6 | Variable | state      | state      |         
+u0:1 | Module   | main       | main                          | [global]
+u0:2 | File     | main       | main::main                    |         
+u0:3 | Struct   | State      | main::main::State             |         
+u0:4 | Field    | done       | main::main::State::done       |         
+u0:5 | Function | loop_until | main::main::loop_until        |         
+u0:6 | Variable | state      | main::main::loop_until::state |         
 
 --- expect:symbol-deps ---
 
@@ -734,12 +734,12 @@ fn count() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main    | main    | [global]
-u0:2 | File     | main    | main    |         
-u0:3 | Struct   | Counter | Counter |         
-u0:4 | Field    | limit   | limit   |         
-u0:5 | Function | count   | count   |         
-u0:6 | Variable | counter | counter |         
+u0:1 | Module   | main    | main                       | [global]
+u0:2 | File     | main    | main::main                 |         
+u0:3 | Struct   | Counter | main::main::Counter        |         
+u0:4 | Field    | limit   | main::main::Counter::limit |         
+u0:5 | Function | count   | main::main::count          |         
+u0:6 | Variable | counter | main::main::count::counter |         
 
 --- expect:symbol-deps ---
 
@@ -771,11 +771,11 @@ fn iterate() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main      | main      | [global]
-u0:2 | File     | main      | main      |         
-u0:3 | Struct   | Container | Container |         
-u0:4 | Function | iterate   | iterate   |         
-u0:5 | Variable | container | container |         
+u0:1 | Module   | main      | main                           | [global]
+u0:2 | File     | main      | main::main                     |         
+u0:3 | Struct   | Container | main::main::Container          |         
+u0:4 | Function | iterate   | main::main::iterate            |         
+u0:5 | Variable | container | main::main::iterate::container |         
 
 --- expect:symbol-deps ---
 
@@ -819,19 +819,19 @@ fn bar() {
 }
 
 --- expect:symbols ---
-u0:1  | Module   | main     | main     | [global]
-u0:2  | File     | main     | main     |         
-u0:3  | Struct   | Foo      | Foo      |         
-u0:4  | Struct   | Far      | Far      |         
-u0:5  | Struct   | Baz      | Baz      |         
-u0:6  | Field    | x        | x        |         
-u0:7  | Struct   | MyStruct | MyStruct |         
-u0:8  | Field    | myfield  | myfield  |         
-u0:9  | Function | foo      | foo      |         
-u0:10 | Function | bar      | bar      |         
-u0:11 | Variable | mystruct | mystruct |         
-u0:12 | Variable | x        | x        |         
-u0:13 | Variable | y        | y        |         
+u0:1  | Module   | main     | main                          | [global]
+u0:2  | File     | main     | main::main                    |         
+u0:3  | Struct   | Foo      | main::main::Foo               |         
+u0:4  | Struct   | Far      | main::main::Far               |         
+u0:5  | Struct   | Baz      | main::main::Baz               |         
+u0:6  | Field    | x        | main::main::Baz::x            |         
+u0:7  | Struct   | MyStruct | main::main::MyStruct          |         
+u0:8  | Field    | myfield  | main::main::MyStruct::myfield |         
+u0:9  | Function | foo      | main::main::foo               |         
+u0:10 | Function | bar      | main::main::bar               |         
+u0:11 | Variable | mystruct | main::main::bar::mystruct     |         
+u0:12 | Variable | x        | main::main::bar::x            |         
+u0:13 | Variable | y        | main::main::bar::y            |         
 
 --- expect:symbol-deps ---
 u0:10 -> [u0:9]
@@ -909,23 +909,20 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main          | main          | [global]
-u0:2 | File     | main          | main          |         
-u0:3 | Struct   | Foo           | Foo           |         
-u0:4 | Struct   | MyStruct      | MyStruct      |         
-u0:5 | Impl     | impl MyStruct | impl MyStruct |         
-u0:6 | Function | foo           | foo           |         
-u0:7 | Function | func          | func          |         
-u0:8 | Variable | mystruct      | mystruct      |         
-u0:9 | Variable | x             | x             |         
+u0:1 | Module   | main     | main                       | [global]
+u0:2 | File     | main     | main::main                 |         
+u0:3 | Struct   | Foo      | main::main::Foo            |         
+u0:4 | Impl     | MyStruct | main::main::MyStruct       |         
+u0:5 | Function | foo      | main::main::MyStruct::foo  |         
+u0:6 | Function | func     | main::main::func           |         
+u0:7 | Variable | mystruct | main::main::func::mystruct |         
+u0:8 | Variable | x        | main::main::func::x        |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:6]
-u0:4 <- [u0:5]
-u0:5 -> [u0:4]
-u0:6 -> [u0:3]
-u0:6 <- [u0:7]
-u0:7 -> [u0:6]
+u0:3 <- [u0:5]
+u0:5 -> [u0:3]
+u0:5 <- [u0:6]
+u0:6 -> [u0:5]
 
 
 ===============================================================================
@@ -939,8 +936,8 @@ arr[10];
 arr[n];
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -974,31 +971,25 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1  | Module    | foo    | foo    | [global]
-u0:2  | File      | foo    | foo    |         
-u0:3  | Function  | f      | f      |         
-u0:4  | Namespace | g      | g      |         
-u0:5  | Function  | h      | h      |         
-u1:6  | Module    | main   | main   | [global]
-u1:7  | File      | main   | main   |         
-u1:8  | Struct    | a      | a      |         
-u1:9  | Impl      | impl a | impl a |         
-u1:10 | Function  | b      | b      |         
-u1:11 | Struct    | C      | C      |         
-u1:12 | Impl      | impl C | impl C |         
-u1:13 | Function  | e      | e      |         
-u1:14 | Function  | foo    | foo    |         
+u0:1  | Module    | foo  | foo              | [global]
+u0:2  | File      | foo  | foo::foo         |         
+u0:3  | Function  | f    | foo::foo::f      |         
+u0:4  | Namespace | g    | foo::foo::g      |         
+u0:5  | Function  | h    | foo::foo::g::h   |         
+u1:6  | Module    | main | main             | [global]
+u1:7  | File      | main | main::main       |         
+u1:8  | Impl      | a    | main::main::a    |         
+u1:9  | Function  | b    | main::main::a::b |         
+u1:10 | Impl      | C    | main::main::C    |         
+u1:11 | Function  | e    | main::main::C::e |         
+u1:12 | Function  | foo  | main::main::foo  |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u1:14]
-u0:5 <- [u1:14]
-u1:10 <- [u1:14]
+u0:3 <- [u1:12]
+u0:5 <- [u1:12]
 u1:11 <- [u1:12]
-u1:12 -> [u1:11]
-u1:13 <- [u1:14]
-u1:14 -> [u0:3, u0:5, u1:10, u1:13]
-u1:8 <- [u1:9]
-u1:9 -> [u1:8]
+u1:12 -> [u0:3, u0:5, u1:11, u1:9]
+u1:9 <- [u1:12]
 
 --- expect:block-graph ---
 (root:1 foo
@@ -1008,11 +999,11 @@ u1:9 -> [u1:8]
 
 (root:4 main
     (class:5 a)
-    (impl:6 impl a
+    (impl:6 a
         (method:7 b)
     )
     (class:8 C)
-    (impl:9 impl C
+    (impl:9 C
         (method:10 e)
     )
     (func:11 foo
@@ -1028,11 +1019,7 @@ u0:2 <- [u1:11]
 u0:3 <- [u1:11]
 u1:10 <- [u1:11]
 u1:11 -> [u0:2, u0:3, u1:10, u1:7]
-u1:5 <- [u1:6]
-u1:6 -> [u1:5]
 u1:7 <- [u1:11]
-u1:8 <- [u1:9]
-u1:9 -> [u1:8]
 
 
 ===============================================================================
@@ -1044,8 +1031,8 @@ scoped-functions-with-fully-qualified-syntax
 <Dog as Animal>::eat(d);
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -1057,8 +1044,8 @@ scoped-functions-with-macros-as-types
 <Token![]>::foo();
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -1077,12 +1064,12 @@ pub mod m1 {
 
 
 --- expect:symbols ---
-u0:1 | Module    | main | main | [global]
-u0:2 | File      | main | main |         
-u0:3 | Function  | foo  | foo  |         
-u0:4 | Namespace | m1   | m1   |         
-u0:5 | Namespace | m2   | m2   |         
-u0:6 | Function  | bar  | bar  |         
+u0:1 | Module    | main | main                    | [global]
+u0:2 | File      | main | main::main              |         
+u0:3 | Function  | foo  | main::main::foo         |         
+u0:4 | Namespace | m1   | main::main::m1          |         
+u0:5 | Namespace | m2   | main::main::m1::m2      |         
+u0:6 | Function  | bar  | main::main::m1::m2::bar |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:6]
@@ -1105,8 +1092,8 @@ std::sizeof::<u32>();
 foo::<8>();
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -1123,8 +1110,8 @@ d.map(move |mut e| {
 h(|| -> i { j });
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -1136,9 +1123,9 @@ closures-with-typed-parameteres
 a.map(|b: usize| b.push(c));
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Variable | b    | b    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Variable | b    | main::main::b |         
 
 
 ===============================================================================
@@ -1156,8 +1143,8 @@ move || {
 };
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -1170,10 +1157,10 @@ fn foo() {}
 const a : A = unsafe { foo() };
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | foo  | foo  |         
-u0:4 | Const    | a    | a    |         
+u0:1 | Module   | main | main            | [global]
+u0:2 | File     | main | main::main      |         
+u0:3 | Function | foo  | main::main::foo |         
+u0:4 | Const    | a    | main::main::a   |         
 
 --- expect:symbol-deps ---
 
@@ -1189,9 +1176,9 @@ if *x < 0 { const { &4i32.pow(4) } } else { x }
 let three_ranges = [const { (0..=5).into_inner() }; 3];
 
 --- expect:symbols ---
-u0:1 | Module   | main         | main         | [global]
-u0:2 | File     | main         | main         |         
-u0:3 | Variable | three_ranges | three_ranges |         
+u0:1 | Module   | main         | main                     | [global]
+u0:2 | File     | main         | main::main               |         
+u0:3 | Variable | three_ranges | main::main::three_ranges |         
 
 
 ===============================================================================
@@ -1204,6 +1191,6 @@ some_call(&raw);
 let a = &raw const b;
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Variable | a    | a    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Variable | a    | main::main::a |         

@@ -12,12 +12,12 @@ struct Bar {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Struct | Foo  | Foo  |         
-u0:4 | Struct | Bar  | Bar  |         
-u0:5 | Field  | a    | a    |         
-u0:6 | Field  | b    | b    |         
+u0:1 | Module | main | main               | [global]
+u0:2 | File   | main | main::main         |         
+u0:3 | Struct | Foo  | main::main::Foo    |         
+u0:4 | Struct | Bar  | main::main::Bar    |         
+u0:5 | Field  | a    | main::main::Bar::a |         
+u0:6 | Field  | b    | main::main::Bar::b |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:4, u0:6]
@@ -63,14 +63,14 @@ struct Bar {
 }
 
 --- expect:symbols ---
-u0:1 | Module | foo  | foo  | [global]
-u0:2 | File   | foo  | foo  |         
-u0:3 | Struct | Foo  | Foo  |         
-u1:4 | Module | main | main | [global]
-u1:5 | File   | main | main |         
-u1:6 | Struct | Bar  | Bar  |         
-u1:7 | Field  | a    | a    |         
-u1:8 | Field  | b    | b    |         
+u0:1 | Module | foo  | foo                | [global]
+u0:2 | File   | foo  | foo::foo           |         
+u0:3 | Struct | Foo  | foo::foo::Foo      |         
+u1:4 | Module | main | main               | [global]
+u1:5 | File   | main | main::main         |         
+u1:6 | Struct | Bar  | main::main::Bar    |         
+u1:7 | Field  | a    | main::main::Bar::a |         
+u1:8 | Field  | b    | main::main::Bar::b |         
 
 --- expect:symbol-deps ---
 
@@ -128,26 +128,23 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Module   | main          | main          | [global]
-u0:2  | File     | main          | main          |         
-u0:3  | Struct   | Bar           | Bar           |         
-u0:4  | Struct   | Foo           | Foo           |         
-u0:5  | Struct   | Slice         | Slice         |         
-u0:6  | Impl     | impl Slice    | impl Slice    |         
-u0:7  | Function | binary_search | binary_search |         
-u0:8  | Variable | x             | x             |         
-u0:9  | Function | fake_method   | fake_method   |         
-u0:10 | Function | func          | func          |         
-u0:11 | Variable | slice         | slice         |         
-u0:12 | Variable | f             | f             |         
+u0:1  | Module   | main          | main                                | [global]
+u0:2  | File     | main          | main::main                          |         
+u0:3  | Struct   | Bar           | main::main::Bar                     |         
+u0:4  | Struct   | Foo           | main::main::Foo                     |         
+u0:5  | Impl     | Slice         | main::main::Slice                   |         
+u0:6  | Function | binary_search | main::main::Slice::binary_search    |         
+u0:7  | Variable | x             | main::main::Slice::binary_search::x |         
+u0:8  | Function | fake_method   | main::main::Slice::fake_method      |         
+u0:9  | Function | func          | main::main::func                    |         
+u0:10 | Variable | slice         | main::main::func::slice             |         
+u0:11 | Variable | f             | main::main::func::f                 |         
 
 --- expect:symbol-deps ---
-u0:10 -> [u0:7]
-u0:4 <- [u0:7]
-u0:5 <- [u0:6]
-u0:6 -> [u0:5]
-u0:7 -> [u0:4]
-u0:7 <- [u0:10]
+u0:4 <- [u0:6]
+u0:6 -> [u0:4]
+u0:6 <- [u0:9]
+u0:9 -> [u0:6]
 
 
 ===============================================================================
@@ -172,22 +169,20 @@ fn method_demo(mut buffer: Buffer) {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main        | main        | [global]
-u0:2 | File     | main        | main        |         
-u0:3 | Struct   | Buffer      | Buffer      |         
-u0:4 | Impl     | impl Buffer | impl Buffer |         
-u0:5 | Function | push        | push        |         
-u0:6 | Variable | value       | value       |         
-u0:7 | Function | finish      | finish      |         
-u0:8 | Function | method_demo | method_demo |         
-u0:9 | Variable | buffer      | buffer      |         
+u0:1 | Module   | main        | main                            | [global]
+u0:2 | File     | main        | main::main                      |         
+u0:3 | Impl     | Buffer      | main::main::Buffer              |         
+u0:4 | Function | push        | main::main::Buffer::push        |         
+u0:5 | Variable | value       | main::main::Buffer::push::value |         
+u0:6 | Function | finish      | main::main::Buffer::finish      |         
+u0:7 | Function | method_demo | main::main::method_demo         |         
+u0:8 | Variable | buffer      | main::main::method_demo::buffer |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:4, u0:8, u0:9]
-u0:4 -> [u0:3]
-u0:5 <- [u0:8]
-u0:8 -> [u0:3, u0:5]
-u0:9 -> [u0:3]
+u0:3 <- [u0:7, u0:8]
+u0:4 <- [u0:7]
+u0:7 -> [u0:3, u0:4]
+u0:8 -> [u0:3]
 
 
 ===============================================================================
@@ -215,22 +210,19 @@ fn chain_invocation_demo() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main                  | main                  | [global]
-u0:2 | File     | main                  | main                  |         
-u0:3 | Struct   | Builder               | Builder               |         
-u0:4 | Impl     | impl Builder          | impl Builder          |         
-u0:5 | Function | new                   | new                   |         
-u0:6 | Function | step                  | step                  |         
-u0:7 | Function | finish                | finish                |         
-u0:8 | Function | chain_invocation_demo | chain_invocation_demo |         
+u0:1 | Module   | main                  | main                              | [global]
+u0:2 | File     | main                  | main::main                        |         
+u0:3 | Impl     | Builder               | main::main::Builder               |         
+u0:4 | Function | new                   | main::main::Builder::new          |         
+u0:5 | Function | step                  | main::main::Builder::step         |         
+u0:6 | Function | finish                | main::main::Builder::finish       |         
+u0:7 | Function | chain_invocation_demo | main::main::chain_invocation_demo |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:4]
-u0:4 -> [u0:3]
-u0:5 <- [u0:8]
-u0:6 <- [u0:8]
-u0:7 <- [u0:8]
-u0:8 -> [u0:5, u0:6, u0:7]
+u0:4 <- [u0:7]
+u0:5 <- [u0:7]
+u0:6 <- [u0:7]
+u0:7 -> [u0:4, u0:5, u0:6]
 
 
 ===============================================================================
@@ -255,23 +247,21 @@ fn chain_variable_demo(mut stream: Stream) {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main                | main                | [global]
-u0:2 | File     | main                | main                |         
-u0:3 | Struct   | Stream              | Stream              |         
-u0:4 | Impl     | impl Stream         | impl Stream         |         
-u0:5 | Function | advance             | advance             |         
-u0:6 | Function | flush               | flush               |         
-u0:7 | Function | chain_variable_demo | chain_variable_demo |         
-u0:8 | Variable | stream              | stream              |         
-u0:9 | Variable | cursor              | cursor              |         
+u0:1 | Module   | main                | main                                    | [global]
+u0:2 | File     | main                | main::main                              |         
+u0:3 | Impl     | Stream              | main::main::Stream                      |         
+u0:4 | Function | advance             | main::main::Stream::advance             |         
+u0:5 | Function | flush               | main::main::Stream::flush               |         
+u0:6 | Function | chain_variable_demo | main::main::chain_variable_demo         |         
+u0:7 | Variable | stream              | main::main::chain_variable_demo::stream |         
+u0:8 | Variable | cursor              | main::main::chain_variable_demo::cursor |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:4, u0:7, u0:8]
-u0:4 -> [u0:3]
-u0:5 <- [u0:7]
-u0:6 <- [u0:7]
-u0:7 -> [u0:3, u0:5, u0:6]
-u0:8 -> [u0:3]
+u0:3 <- [u0:6, u0:7]
+u0:4 <- [u0:6]
+u0:5 <- [u0:6]
+u0:6 -> [u0:3, u0:4, u0:5]
+u0:7 -> [u0:3]
 
 
 ===============================================================================
@@ -299,40 +289,35 @@ fn qualified_call() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main                | main                | [global]
-u0:2 | File     | main                | main                |         
-u0:3 | Struct   | Foo                 | Foo                 |         
-u0:4 | Struct   | SessionBuilder      | SessionBuilder      |         
-u0:5 | Impl     | impl SessionBuilder | impl SessionBuilder |         
-u0:6 | Function | new                 | new                 |         
-u0:7 | Function | static_func         | static_func         |         
-u0:8 | Function | qualified_call      | qualified_call      |         
-u0:9 | Variable | x                   | x                   |         
+u0:1 | Module   | main           | main                                    | [global]
+u0:2 | File     | main           | main::main                              |         
+u0:3 | Struct   | Foo            | main::main::Foo                         |         
+u0:4 | Impl     | SessionBuilder | main::main::SessionBuilder              |         
+u0:5 | Function | new            | main::main::SessionBuilder::new         |         
+u0:6 | Function | static_func    | main::main::SessionBuilder::static_func |         
+u0:7 | Function | qualified_call | main::main::qualified_call              |         
+u0:8 | Variable | x              | main::main::qualified_call::x           |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:7]
-u0:4 <- [u0:5]
-u0:5 -> [u0:4]
-u0:6 <- [u0:8]
-u0:7 -> [u0:3]
-u0:7 <- [u0:8]
-u0:8 -> [u0:6, u0:7]
+u0:3 <- [u0:6]
+u0:5 <- [u0:7]
+u0:6 -> [u0:3]
+u0:6 <- [u0:7]
+u0:7 -> [u0:5, u0:6]
 
 --- expect:blocks ---
-u0:1 | root   | main               
-u0:2 | class  | Foo                
-u0:3 | class  | SessionBuilder     
-u0:4 | impl   | impl SessionBuilder
-u0:5 | method | new                
-u0:6 | method | static_func        
-u0:7 | func   | qualified_call     
-u0:8 | call   | block#8            
-u0:9 | call   | block#9            
+u0:1 | root   | main          
+u0:2 | class  | Foo           
+u0:3 | class  | SessionBuilder
+u0:4 | impl   | SessionBuilder
+u0:5 | method | new           
+u0:6 | method | static_func   
+u0:7 | func   | qualified_call
+u0:8 | call   | block#8       
+u0:9 | call   | block#9       
 
 --- expect:block-deps ---
 u0:2 <- [u0:6]
-u0:3 <- [u0:4]
-u0:4 -> [u0:3]
 u0:5 <- [u0:7]
 u0:6 -> [u0:2]
 u0:6 <- [u0:7]

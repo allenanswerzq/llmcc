@@ -1,5 +1,4 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
@@ -32,63 +31,22 @@ impl<'tcx> BinderVisitor<'tcx> {
         )
     }
 
-    fn lookup_symbol_in_stack<'a>(
-        scopes: &'a BinderScopes<'tcx>,
-        name: &str,
-    ) -> Option<&'tcx Symbol> {
-        if name.is_empty() {
-            return None;
-        }
-        let name_key = scopes.interner().intern(name);
-        for scope in scopes.scopes().iter().rev() {
-            let matches = scope.lookup_symbols(name_key);
-            if let Some(symbol) = matches.last() {
-                // Set FQN on the symbol (should have been set in collect phase, this is a safety check)
-                // Only set if not already fully qualified (still just the symbol name)
-                let current_fqn = scopes.interner().resolve_owned(symbol.fqn.read().clone())
-                    .unwrap_or_else(|| name.to_string());
-                if current_fqn == name {
-                    // FQN hasn't been properly set yet, set it now
-                    let fqn = Self::build_fqn(scopes, name);
-                    symbol.set_fqn(fqn);
-                }
-                return Some(symbol);
-            }
-        }
-        None
-    }
-
-    /// Build fully qualified name from current scope
-    fn build_fqn(scopes: &BinderScopes<'tcx>, name: &str) -> InternedStr {
-        let fqn_str = if let Some(current_scope) = scopes.scopes().top() {
-            if let Some(scope_symbol) = current_scope.symbol() {
-                // Get the FQN of the scope's symbol and append our name
-                let scope_fqn_interned = scope_symbol.fqn.read();
-                let scope_fqn = scopes.interner().resolve_owned(*scope_fqn_interned)
-                    .unwrap_or_else(|| name.to_string());
-                format!("{}::{}", scope_fqn, name)
-            } else {
-                // No symbol for scope, just use the name
-                name.to_string()
-            }
-        } else {
-            // No current scope, just use the name
-            name.to_string()
-        };
-
-        scopes.interner().intern(&fqn_str)
-    }
-
     fn symbol_from_field(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
+        scopes: &BinderScopes<'tcx>,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        if node.is_kind(HirKind::Identifier) {
-            return node.as_ident().map(|ident| ident.symbol());
+        if let Some(ident) = node.as_ident() {
+            if let Some(existing) = scopes.lookup_symbol_with(&ident.name) {
+                return Some(existing);
+            }
+            return Some(ident.symbol());
         }
-        let ident_id = node.child_identifier_by_field(*unit, field_id)?;
-        let ident = unit.hir_node(ident_id).as_ident()?;
+        let ident = node.child_identifier_by_field(*unit, field_id)?;
+        if let Some(existing) = scopes.lookup_symbol_with(&ident.name) {
+            return Some(existing);
+        }
         Some(ident.symbol())
     }
 
@@ -96,11 +54,8 @@ impl<'tcx> BinderVisitor<'tcx> {
         if let Some(ident) = node.as_ident() {
             return Some(Self::normalize_identifier(&ident.name));
         }
-        if let Some(id) = node.find_identifier(*unit) {
-            let ident_node = unit.hir_node(id);
-            if let Some(ident) = ident_node.as_ident() {
-                return Some(Self::normalize_identifier(&ident.name));
-            }
+        if let Some(ident) = node.find_identifier(*unit) {
+            return Some(Self::normalize_identifier(&ident.name));
         }
         None
     }
@@ -114,13 +69,30 @@ impl<'tcx> BinderVisitor<'tcx> {
         Some(unit.hir_node(*child_id))
     }
 
+    fn lookup_symbol_in_stack<'a>(
+        scopes: &'a BinderScopes<'tcx>,
+        name: &str,
+    ) -> Option<&'tcx Symbol> {
+        if name.is_empty() {
+            return None;
+        }
+        let name_key = scopes.interner().intern(name);
+        for scope in scopes.scopes().iter().rev() {
+            let matches = scope.lookup_symbols(name_key);
+            if let Some(symbol) = matches.last() {
+                return Some(symbol);
+            }
+        }
+        None
+    }
+
     fn lookup_callable_symbol(
         &self,
         unit: &CompileUnit<'tcx>,
         scopes: &BinderScopes<'tcx>,
         name: &str,
     ) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = Self::lookup_symbol_in_stack(scopes, name)
+        if let Some(symbol) = scopes.lookup_symbol_with(name)
             && matches!(symbol.kind(), SymKind::Function | SymKind::Macro)
         {
             return Some(symbol);
@@ -198,15 +170,13 @@ impl<'tcx> BinderVisitor<'tcx> {
         type_node: &HirNode<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
     ) -> Option<&'tcx Symbol> {
-        let ident_id = type_node.find_identifier(*unit)?;
-        let ident_node = unit.hir_node(ident_id);
-        let ident = ident_node.as_ident()?;
+        let ident = type_node.find_identifier(*unit)?;
 
         if let Some(existing) = Self::lookup_symbol_in_stack(scopes, &ident.name) {
             return Some(existing);
         }
 
-        scopes.lookup_or_insert_global(&ident.name, &ident_node, SymKind::Type)
+        scopes.lookup_or_insert_global(&ident.name, type_node, SymKind::Type)
     }
 
     fn link_symbol_with_type(symbol: &Symbol, ty: &Symbol) {
@@ -286,15 +256,14 @@ impl<'tcx> BinderVisitor<'tcx> {
             // === Identifiers - look up type in scope stack ===
             HirKind::Identifier => {
                 node.as_ident().and_then(|ident| {
-                    Self::lookup_symbol_in_stack(scopes, &ident.name)
-                        .and_then(|symbol| {
-                            // If this identifier refers to a function/value, get its type
-                            if let Some(type_id) = symbol.type_of() {
-                                unit.opt_get_symbol(type_id)
-                            } else {
-                                Some(symbol)
-                            }
-                        })
+                    Self::lookup_symbol_in_stack(scopes, &ident.name).and_then(|symbol| {
+                        // If this identifier refers to a function/value, get its type
+                        if let Some(type_id) = symbol.type_of() {
+                            unit.opt_get_symbol(type_id)
+                        } else {
+                            Some(symbol)
+                        }
+                    })
                 })
             }
 
@@ -314,7 +283,11 @@ impl<'tcx> BinderVisitor<'tcx> {
                             "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
                         ) {
                             // Return bool type symbol if it exists
-                            return scopes.lookup_or_insert_global("bool", &unit.hir_node(children[0]), SymKind::Type);
+                            return scopes.lookup_or_insert_global(
+                                "bool",
+                                &unit.hir_node(children[0]),
+                                SymKind::Type,
+                            );
                         }
 
                         // Arithmetic operators return left operand type
@@ -338,13 +311,12 @@ impl<'tcx> BinderVisitor<'tcx> {
             }
 
             // === Other kinds - recursive traversal to first child ===
-            _ => {
-                node.children().first().and_then(|child_id| {
-                    Self::infer_type_from_expr(unit, &unit.hir_node(*child_id), scopes)
-                })
-            }
+            _ => node.children().first().and_then(|child_id| {
+                Self::infer_type_from_expr(unit, &unit.hir_node(*child_id), scopes)
+            }),
         }
-    }    /// Infer return type from block (last expression or void)
+    }
+    /// Infer return type from block (last expression or void)
     fn infer_block_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -591,7 +563,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -646,7 +618,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -667,7 +639,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -704,7 +676,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -725,7 +697,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -746,7 +718,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -767,7 +739,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -788,7 +760,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_name) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_name) {
             let has_direct_value = node.child_by_field(*unit, LangRust::field_value).is_some();
             self.set_symbol_type_from_field(
                 unit,
@@ -823,7 +795,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_pattern) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_pattern) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -855,7 +827,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = Self::symbol_from_field(unit, node, LangRust::field_pattern) {
+        if let Some(symbol) = Self::symbol_from_field(unit, node, scopes, LangRust::field_pattern) {
             self.set_symbol_type_from_field(
                 unit,
                 node,
@@ -874,10 +846,7 @@ pub fn bind_symbols<'tcx>(
     node: &HirNode<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
-    config: &ResolverOption,
+    _config: &ResolverOption,
 ) {
-    if config.print_ir {
-        eprintln!("[BindSymbols] Processing symbol bindings");
-    }
     BinderVisitor::new().visit_node(&unit, node, scopes, namespace, None);
 }

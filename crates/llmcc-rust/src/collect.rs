@@ -1,5 +1,4 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
@@ -22,46 +21,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
-    /// Declare a symbol from an identifier node with proper tracking
-    fn declare_symbol_from_ident(
-        &self,
-        node: &HirNode<'tcx>,
-        scopes: &CollectorScopes<'tcx>,
-        ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
-        kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
-        let symbol = scopes.lookup_or_insert(&ident.name, node, kind)?;
-        ident.set_symbol(symbol);
-        symbol.add_defining(node.id());
-
-        // Set FQN based on current scope hierarchy
-        let fqn = Self::build_fqn(scopes, &ident.name);
-        symbol.set_fqn(fqn);
-
-        Some(symbol)
-    }
-
-    /// Build fully qualified name from current scope
-    fn build_fqn(scopes: &CollectorScopes<'tcx>, name: &str) -> InternedStr {
-        let fqn_str = if let Some(current_scope) = scopes.top() {
-            if let Some(scope_symbol) = current_scope.symbol() {
-                // Get the FQN of the scope's symbol and append our name
-                let scope_fqn_interned = scope_symbol.fqn.read();
-                let scope_fqn = scopes.interner().resolve_owned(*scope_fqn_interned)
-                    .unwrap_or_else(|| name.to_string());
-                format!("{}::{}", scope_fqn, name)
-            } else {
-                // No symbol for scope, just use the name
-                name.to_string()
-            }
-        } else {
-            // No current scope, just use the name
-            name.to_string()
-        };
-
-        scopes.interner().intern(&fqn_str)
-    }
-
     /// Declare a symbol from a named field in the AST node
     fn declare_symbol_from_field(
         &self,
@@ -71,9 +30,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        let ident_id = node.child_identifier_by_field(*unit, field_id)?;
-        let ident = unit.hir_node(ident_id).as_ident()?;
-        self.declare_symbol_from_ident(node, scopes, ident, kind)
+        let ident = node.child_identifier_by_field(*unit, field_id)?;
+        scopes.lookup_or_insert(&ident.name, node, kind)
     }
 
     /// Find all identifiers in a pattern node (recursive)
@@ -119,26 +77,29 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         field_id: u16,
     ) {
-        let _ = namespace;
-        let _ = parent;
+        let _ = (namespace, parent);
 
         if let Some(sn) = node.as_scope()
-            && let Some(id) = node.child_identifier_by_field(*unit, field_id)
+            && let Some(ident) = node.child_identifier_by_field(*unit, field_id)
+            && let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind)
         {
-            let ident = unit.hir_node(id).as_ident().unwrap();
-            if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
-                ident.set_symbol(sym);
-                sn.set_ident(ident);
+            // Link the identifier to the symbol and the scoped node to the identifier.
+            ident.set_symbol(sym);
+            sn.set_ident(ident);
 
-                let scope = unit.cc.alloc_hir_scope(next_hir_id(), sym);
-                sym.set_scope(scope.id());
-                sym.add_defining(node.id());
-                sn.set_scope(scope);
+            // Allocate the new scope associated with the symbol.
+            let scope = unit.cc.alloc_hir_scope(next_hir_id(), sym);
 
-                scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, scope, Some(sym));
-                scopes.pop_scope();
-            }
+            // Update the symbol with the new scope and defining node ID.
+            sym.set_scope(scope.id());
+            // sym.set_fqn(scopes.build_fqn_with(&ident.name)); // Commented out in original
+
+            // Link the ScopedNamed node to the newly created scope.
+            sn.set_scope(scope);
+
+            scopes.push_scope(scope);
+            self.visit_children(unit, node, scopes, scope, Some(sym));
+            scopes.pop_scope();
         }
     }
 }
@@ -163,8 +124,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         }
 
         if let Some(module_name) = parse_module_name(file_path) {
-            if let Some(symbol) =
-                scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
+            if let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
             {
                 scopes.push_scope_with(node, Some(symbol));
             }
@@ -173,16 +133,18 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(file_name) = parse_file_name(file_path)
             && let Some(sn) = node.as_scope()
         {
-            if let Some(module_symbol) = scopes
-                .lookup_or_insert(&file_name, node, SymKind::File)
+            if let Some(file_sym) = scopes .lookup_or_insert(&file_name, node, SymKind::File)
             {
-                let ident = unit.cc.alloc_hir_ident(next_hir_id(), file_name.clone(), module_symbol);
+                let ident = unit
+                    .cc
+                    .alloc_hir_ident(next_hir_id(), &file_name, file_sym);
                 sn.set_ident(ident);
-                ident.set_symbol(module_symbol);
-                module_symbol.add_defining(node.id());
+                ident.set_symbol(file_sym);
+                file_sym.add_defining(node.id());
+                // file_sym.set_fqn(scopes.build_fqn_with(&file_name));
 
-                let scope = unit.cc.alloc_hir_scope(next_hir_id(), module_symbol);
-                module_symbol.set_scope(scope.id());
+                let scope = unit.cc.alloc_hir_scope(next_hir_id(), file_sym);
+                file_sym.set_scope(scope.id());
                 sn.set_scope(scope);
                 scopes.push_scope(scope);
             }
@@ -325,21 +287,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         };
 
         // Create a descriptive name for the impl block
-        let impl_name = node
-            .child_identifier_by_field(*unit, LangRust::field_type)
-            .and_then(|id| {
-                unit.hir_node(id).as_ident().map(|ident| {
-                    format!("impl {}", ident.name)
-                })
-            })
-            .unwrap_or_else(|| format!("impl#{}", node.id().0));
-
-        if let Some(symbol) = scopes.lookup_or_insert(&impl_name, node, SymKind::Impl) {
-            symbol.add_defining(node.id());
-
+        if let Some(impl_name) = node.child_identifier_by_field(*unit, LangRust::field_type)
+            && let Some(symbol) = scopes.lookup_or_insert(&impl_name.name, node, SymKind::Impl)
+        {
             let ident = unit
                 .cc
-                .alloc_hir_ident(next_hir_id(), impl_name.clone(), symbol);
+                .alloc_hir_ident(next_hir_id(), &impl_name.name, symbol);
             sn.set_ident(ident);
 
             let scope = unit.cc.alloc_hir_scope(next_hir_id(), symbol);
@@ -468,7 +421,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(ident) = node.as_ident() {
             if let Some(symbol) = scopes.lookup_or_insert(&ident.name, node, SymKind::EnumVariant) {
                 ident.set_symbol(symbol);
-                symbol.add_defining(node.id());
                 self.visit_children(unit, node, scopes, namespace, Some(symbol));
                 return;
             }
@@ -505,16 +457,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(pattern_id) = node.child_identifier_by_field(*unit, LangRust::field_pattern) {
-            if let Some(ident) = unit.hir_node(pattern_id).as_ident() {
-                if let Some(symbol) =
-                    scopes.lookup_or_insert_chained(&ident.name, node, SymKind::Variable)
-                {
-                    ident.set_symbol(symbol);
-                    symbol.add_defining(node.id());
-                }
-            }
+        if let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_pattern)
+            && let Some(symbol) =
+                scopes.lookup_or_insert_chained(&ident.name, node, SymKind::Variable)
+        {
+            ident.set_symbol(symbol);
         }
+
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 }
@@ -524,11 +473,8 @@ pub fn collect_symbols<'tcx>(
     node: &HirNode<'tcx>,
     scopes: &mut CollectorScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
-    config: &ResolverOption,
+    _config: &ResolverOption,
 ) {
-    if config.print_ir {
-        eprintln!("[CollectSymbols] Processing symbols in unit: {:?}", unit.file_path());
-    }
     CollectorVisitor::new().visit_node(unit, node, scopes, namespace, None);
 }
 

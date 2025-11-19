@@ -490,7 +490,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn alloc_hir_ident(
         &'tcx self,
         id: HirId,
-        name: String,
+        name: &str,
         symbol: &'tcx Symbol,
     ) -> &'tcx HirIdent<'tcx> {
         let base = HirBase {
@@ -503,7 +503,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             field_id: u16::MAX,
             children: Vec::new(),
         };
-        let ident = self.arena.alloc(HirIdent::new(base, name));
+        let ident = self.arena.alloc(HirIdent::new(base, name.to_string()));
         ident.set_symbol(symbol);
         ident
     }

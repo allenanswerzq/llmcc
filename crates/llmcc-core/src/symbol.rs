@@ -282,6 +282,11 @@ impl Symbol {
         *self.fqn.write() = fqn;
     }
 
+    #[inline]
+    pub fn fqn(&self) -> InternedStr {
+        *self.fqn.read()
+    }
+
     /// Gets the scope ID this symbol belongs to.
     #[inline]
     pub fn scope(&self) -> Option<ScopeId> {

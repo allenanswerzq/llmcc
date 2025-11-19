@@ -23,15 +23,15 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Module    | main | main | [global]
-u0:2 | File      | main | main |         
-u0:3 | Macro     | a    | a    |         
-u0:4 | Namespace | d    | d    |         
-u0:5 | Macro     | e    | e    |         
-u0:6 | Namespace | f    | f    |         
-u0:7 | Namespace | g    | g    |         
-u0:8 | Macro     | h    | h    |         
-u0:9 | Function  | foo  | foo  |         
+u0:1 | Module    | main | main                | [global]
+u0:2 | File      | main | main::main          |         
+u0:3 | Macro     | a    | main::main::a       |         
+u0:4 | Namespace | d    | main::main::d       |         
+u0:5 | Macro     | e    | main::main::d::e    |         
+u0:6 | Namespace | f    | main::main::f       |         
+u0:7 | Namespace | g    | main::main::f::g    |         
+u0:8 | Macro     | h    | main::main::f::g::h |         
+u0:9 | Function  | foo  | main::main::foo     |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:9]
@@ -65,10 +65,10 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Macro    | a    | a    |         
-u0:4 | Function | foo  | foo  |         
+u0:1 | Module   | main | main            | [global]
+u0:2 | File     | main | main::main      |         
+u0:3 | Macro    | a    | main::main::a   |         
+u0:4 | Function | foo  | main::main::foo |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:4]
@@ -90,10 +90,10 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Macro    | ok   | ok   |         
-u0:4 | Function | foo  | foo  |         
+u0:1 | Module   | main | main            | [global]
+u0:2 | File     | main | main::main      |         
+u0:3 | Macro    | ok   | main::main::ok  |         
+u0:4 | Function | foo  | main::main::foo |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:4]
@@ -140,11 +140,11 @@ macro_rules! empty [
 ];
 
 --- expect:symbols ---
-u0:1 | Module | main        | main        | [global]
-u0:2 | File   | main        | main        |         
-u0:3 | Macro  | say_hello   | say_hello   |         
-u0:4 | Macro  | four        | four        |         
-u0:5 | Macro  | foo         | foo         |         
-u0:6 | Macro  | o_O         | o_O         |         
-u0:7 | Macro  | zero_or_one | zero_or_one |         
-u0:8 | Macro  | empty       | empty       |         
+u0:1 | Module | main        | main                    | [global]
+u0:2 | File   | main        | main::main              |         
+u0:3 | Macro  | say_hello   | main::main::say_hello   |         
+u0:4 | Macro  | four        | main::main::four        |         
+u0:5 | Macro  | foo         | main::main::foo         |         
+u0:6 | Macro  | o_O         | main::main::o_O         |         
+u0:7 | Macro  | zero_or_one | main::main::zero_or_one |         
+u0:8 | Macro  | empty       | main::main::empty       |         

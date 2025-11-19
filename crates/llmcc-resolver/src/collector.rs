@@ -1,6 +1,7 @@
 //! Symbol collection for parallel per-unit symbol table building.
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
+use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
@@ -131,7 +132,32 @@ impl<'a> CollectorScopes<'a> {
         self.scopes.top()
     }
 
-    /// Find or insert symbol in current scope, set kind and unit index
+    /// Build fully qualified name from current scope
+    fn build_fqn(&self, name: &str) -> InternedStr {
+        let fqn_str = self
+            .top()
+            .and_then(|parent| parent.symbol())
+            .and_then(|parent_sym| {
+                // Read the InternedStr FQN of the scope's symbol
+                let fqn = parent_sym.fqn.read();
+                // Resolve the InternedStr to an owned String
+                self.interner.resolve_owned(*fqn)
+            })
+            .map(|scope_fqn| {
+                // If we have a scope FQN, format it as "scope::name"
+                format!("{}::{}", scope_fqn, name)
+            })
+            .unwrap_or_else(|| {
+                // If any step failed (no scope, no symbol, or no resolved scope FQN),
+                // the FQN is just the name itself.
+                name.to_string()
+            });
+
+        // Intern the final FQN string
+        self.interner().intern(&fqn_str)
+    }
+
+    /// Find or insert symbol for node in current scope, set kind and unit index
     #[inline]
     pub fn lookup_or_insert(
         &self,
@@ -142,6 +168,8 @@ impl<'a> CollectorScopes<'a> {
         let symbol = self.scopes.lookup_or_insert(name, node)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
+        symbol.set_fqn(self.build_fqn(name));
+        symbol.add_defining(node.id());
         Some(symbol)
     }
 
@@ -156,6 +184,8 @@ impl<'a> CollectorScopes<'a> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
+        symbol.set_fqn(self.build_fqn(name));
+        symbol.add_defining(node.id());
         Some(symbol)
     }
 
@@ -170,6 +200,8 @@ impl<'a> CollectorScopes<'a> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
+        symbol.set_fqn(self.build_fqn(name));
+        symbol.add_defining(node.id());
         Some(symbol)
     }
 
@@ -184,6 +216,8 @@ impl<'a> CollectorScopes<'a> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
+        symbol.set_fqn(self.build_fqn(name));
+        symbol.add_defining(node.id());
         symbol.set_is_global(true);
         Some(symbol)
     }
@@ -192,7 +226,7 @@ impl<'a> CollectorScopes<'a> {
     #[inline]
     pub fn lookup_or_insert_with(
         &self,
-        name: Option<&str>,
+        name: &str,
         node: &HirNode<'a>,
         kind: SymKind,
         options: llmcc_core::scope::LookupOptions,
@@ -200,6 +234,8 @@ impl<'a> CollectorScopes<'a> {
         let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
         symbol.set_kind(kind);
         symbol.set_unit_index(self.unit_index());
+        symbol.add_defining(node.id());
+        symbol.set_fqn(self.build_fqn(name));
         Some(symbol)
     }
 }

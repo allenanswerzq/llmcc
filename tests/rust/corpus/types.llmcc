@@ -7,9 +7,9 @@ the-unit-type
 type A = ();
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | A    | A    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | A    | main::main::A |         
 
 
 ===============================================================================
@@ -21,9 +21,9 @@ tuple-types
 type A = (i32, String);
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | A    | A    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | A    | main::main::A |         
 
 
 ===============================================================================
@@ -37,11 +37,11 @@ type C = &'a str;
 type D = &'a mut str;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | A    | A    |         
-u0:4 | Type   | C    | C    |         
-u0:5 | Type   | D    | D    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | A    | main::main::A |         
+u0:4 | Type   | C    | main::main::C |         
+u0:5 | Type   | D    | main::main::D |         
 
 
 ===============================================================================
@@ -54,10 +54,10 @@ type A = *mut B;
 type C = *const str;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | A    | A    |         
-u0:4 | Type   | C    | C    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | A    | main::main::A |         
+u0:4 | Type   | C    | main::main::C |         
 
 
 ===============================================================================
@@ -72,12 +72,12 @@ type G = H<'a, I>;
 type J = H<K=L>;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | A    | A    |         
-u0:4 | Type   | D    | D    |         
-u0:5 | Type   | G    | G    |         
-u0:6 | Type   | J    | J    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | A    | main::main::A |         
+u0:4 | Type   | D    | main::main::D |         
+u0:5 | Type   | G    | main::main::G |         
+u0:6 | Type   | J    | main::main::J |         
 
 
 ===============================================================================
@@ -92,12 +92,12 @@ type H = I::J<K>;
 type L = M<N>::O;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | A    | A    |         
-u0:4 | Type   | D    | D    |         
-u0:5 | Type   | H    | H    |         
-u0:6 | Type   | L    | L    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | A    | main::main::A |         
+u0:4 | Type   | D    | main::main::D |         
+u0:5 | Type   | H    | main::main::H |         
+u0:6 | Type   | L    | main::main::L |         
 
 
 ===============================================================================
@@ -110,10 +110,10 @@ type A = [B; 4];
 type C = &[D];
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | A    | A    |         
-u0:4 | Type   | C    | C    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | A    | main::main::A |         
+u0:4 | Type   | C    | main::main::C |         
 
 
 ===============================================================================
@@ -135,20 +135,20 @@ fn high_order3(value: i32, f: &FnOnce(i32) -> i32) -> i32 {
 type F = for<'a, 'b> fn(x: &'a A, y: &'a mut B<'i, 't>,) -> C;
 
 --- expect:symbols ---
-u0:1  | Module   | main        | main        | [global]
-u0:2  | File     | main        | main        |         
-u0:3  | Function | high_order1 | high_order1 |         
-u0:4  | Variable | value       | value       |         
-u0:5  | Variable | f           | f           |         
-u0:6  | Function | high_order2 | high_order2 |         
-u0:7  | Variable | value       | value       |         
-u0:8  | Variable | f           | f           |         
-u0:9  | Function | high_order3 | high_order3 |         
-u0:10 | Variable | value       | value       |         
-u0:11 | Variable | f           | f           |         
-u0:12 | Type     | F           | F           |         
-u0:13 | Variable | x           | x           |         
-u0:14 | Variable | y           | y           |         
+u0:1  | Module   | main        | main                           | [global]
+u0:2  | File     | main        | main::main                     |         
+u0:3  | Function | high_order1 | main::main::high_order1        |         
+u0:4  | Variable | value       | main::main::high_order1::value |         
+u0:5  | Variable | f           | main::main::high_order1::f     |         
+u0:6  | Function | high_order2 | main::main::high_order2        |         
+u0:7  | Variable | value       | main::main::high_order2::value |         
+u0:8  | Variable | f           | main::main::high_order2::f     |         
+u0:9  | Function | high_order3 | main::main::high_order3        |         
+u0:10 | Variable | value       | main::main::high_order3::value |         
+u0:11 | Variable | f           | main::main::high_order3::f     |         
+u0:12 | Type     | F           | main::main::F                  |         
+u0:13 | Variable | x           | main::main::x                  |         
+u0:14 | Variable | y           | main::main::y                  |         
 
 
 ===============================================================================
@@ -161,10 +161,10 @@ type a = extern "C" fn(*mut c_void);
 type b = unsafe extern "C" fn() -> *mut c_void;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | a    | a    |         
-u0:4 | Type   | b    | b    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | a    | main::main::a |         
+u0:4 | Type   | b    | main::main::b |         
 
 
 ===============================================================================
@@ -178,11 +178,11 @@ type b = Rc<dyn Something>;
 type c = A<&dyn Fn(&B) -> C>;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Type   | a    | a    |         
-u0:4 | Type   | b    | b    |         
-u0:5 | Type   | c    | c    |         
+u0:1 | Module | main | main          | [global]
+u0:2 | File   | main | main::main    |         
+u0:3 | Type   | a    | main::main::a |         
+u0:4 | Type   | b    | main::main::b |         
+u0:5 | Type   | c    | main::main::c |         
 
 
 ===============================================================================
@@ -195,5 +195,5 @@ a as B<C>;
 d as *mut E<<F as E>::G>;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         

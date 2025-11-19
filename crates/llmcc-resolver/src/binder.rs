@@ -106,7 +106,7 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn globals(&self) -> &'tcx Scope<'tcx> {
         self.scopes
             .iter()
-            .next()
+            .first()
             .expect("global scope should always be present")
     }
 
@@ -163,7 +163,7 @@ impl<'tcx> BinderScopes<'tcx> {
     /// Full control API for symbol lookup and insertion with custom options.
     pub fn lookup_or_insert_with(
         &self,
-        name: Option<&str>,
+        name: &str,
         node: &HirNode<'tcx>,
         kind: SymKind,
         options: LookupOptions,
@@ -171,6 +171,20 @@ impl<'tcx> BinderScopes<'tcx> {
         let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
         symbol.set_kind(kind);
         Some(symbol)
+    }
+    pub fn lookup(&self, name: &str) -> Option<&'tcx Symbol> {
+        self.scopes.lookup(name)
+    }
+
+    pub fn lookup_with(
+        &self,
+        name: &str,
+        kind_filter: Option<SymKind>,
+        unit_filter: Option<usize>,
+        fqn_filter: Option<&str>,
+    ) -> Option<&'tcx Symbol> {
+        self.scopes
+            .lookup_with(name, kind_filter, unit_filter, fqn_filter)
     }
 }
 

@@ -11,11 +11,11 @@ async fn main() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | abc  | abc  |         
-u0:4 | Function | main | main |         
-u0:5 | Variable | x    | x    |         
+u0:1 | Module   | main | main                | [global]
+u0:2 | File     | main | main::main          |         
+u0:3 | Function | abc  | main::main::abc     |         
+u0:4 | Function | main | main::main::main    |         
+u0:5 | Variable | x    | main::main::main::x |         
 
 --- expect:symbol-deps ---
 
@@ -32,8 +32,8 @@ futures.await?.await?;
 futures.await?.function().await?;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:symbol-deps ---
 
@@ -49,9 +49,9 @@ async { let x = 10; }
 async move {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Variable | x    | x    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Variable | x    | main::main::x |         
 
 --- expect:symbol-deps ---
 
@@ -65,8 +65,8 @@ async-closure
 let _ = async || ();
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:symbol-deps ---
 
@@ -80,9 +80,9 @@ async-move-async-move-closure
 let a = async move || async move {};
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Variable | a    | a    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Variable | a    | main::main::a |         
 
 --- expect:symbol-deps ---
 
@@ -96,8 +96,8 @@ try-block
 try {}
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:symbol-deps ---
 
@@ -114,8 +114,8 @@ gen { yield (); }
 gen move {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Variable | x    | x    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Variable | x    | main::main::x |         
 
 --- expect:symbol-deps ---

@@ -16,11 +16,11 @@ mod english {
 pub mod english;
 
 --- expect:symbols ---
-u0:1 | Module    | main      | main      | [global]
-u0:2 | File      | main      | main      |         
-u0:3 | Namespace | english   | english   |         
-u0:4 | Namespace | greetings | greetings |         
-u0:5 | Namespace | farewells | farewells |         
+u0:1 | Module    | main      | main                           | [global]
+u0:2 | File      | main      | main::main                     |         
+u0:3 | Namespace | english   | main::main::english            |         
+u0:4 | Namespace | greetings | main::main::english::greetings |         
+u0:5 | Namespace | farewells | main::main::english::farewells |         
 
 
 ===============================================================================
@@ -34,8 +34,8 @@ extern crate std as ruststd;
 pub extern crate futures;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -75,19 +75,19 @@ fn accumulate(self) -> Machine<{State::Accumulate}> {}
 fn foo(bar: impl for<'a> Baz<Quux<'a>>) {}
 
 --- expect:symbols ---
-u0:1  | Module   | main        | main        | [global]
-u0:2  | File     | main        | main        |         
-u0:3  | Function | main        | main        |         
-u0:4  | Function | add         | add         |         
-u0:5  | Variable | x           | x           |         
-u0:6  | Variable | y           | y           |         
-u0:7  | Function | takes_slice | takes_slice |         
-u0:8  | Variable | slice       | slice       |         
-u0:9  | Function | foo         | foo         |         
-u0:10 | Variable | x           | x           |         
-u0:11 | Variable | x           | x           |         
-u0:12 | Function | accumulate  | accumulate  |         
-u0:13 | Variable | bar         | bar         |         
+u0:1  | Module   | main        | main                           | [global]
+u0:2  | File     | main        | main::main                     |         
+u0:3  | Function | main        | main::main::main               |         
+u0:4  | Function | add         | main::main::add                |         
+u0:5  | Variable | x           | main::main::add::x             |         
+u0:6  | Variable | y           | main::main::add::y             |         
+u0:7  | Function | takes_slice | main::main::takes_slice        |         
+u0:8  | Variable | slice       | main::main::takes_slice::slice |         
+u0:9  | Function | foo         | main::main::foo                |         
+u0:10 | Variable | x           | main::main::foo::x             |         
+u0:11 | Variable | x           | main::main::foo::x             |         
+u0:12 | Function | accumulate  | main::main::accumulate         |         
+u0:13 | Variable | bar         | main::main::foo::bar           |         
 
 
 ===============================================================================
@@ -99,9 +99,9 @@ const-function-declarations
 const fn main() {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | main | main |         
+u0:1 | Module   | main | main             | [global]
+u0:2 | File     | main | main::main       |         
+u0:3 | Function | main | main::main::main |         
 
 
 ===============================================================================
@@ -118,12 +118,12 @@ fn triples(a: impl B) -> impl Iterator<Item=(Foo)> {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main    | main    | [global]
-u0:2 | File     | main    | main    |         
-u0:3 | Trait    | B       | B       |         
-u0:4 | Struct   | Foo     | Foo     |         
-u0:5 | Function | triples | triples |         
-u0:6 | Variable | a       | a       |         
+u0:1 | Module   | main    | main                   | [global]
+u0:2 | File     | main    | main::main             |         
+u0:3 | Trait    | B       | main::main::B          |         
+u0:4 | Struct   | Foo     | main::main::Foo        |         
+u0:5 | Function | triples | main::main::triples    |         
+u0:6 | Variable | a       | main::main::triples::a |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:5, u0:6]
@@ -141,10 +141,10 @@ impl-with-lifetimes-first
 fn foo<'a>(x: impl 'a + Clone) {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | foo  | foo  |         
-u0:4 | Variable | x    | x    |         
+u0:1 | Module   | main | main               | [global]
+u0:2 | File     | main | main::main         |         
+u0:3 | Function | foo  | main::main::foo    |         
+u0:4 | Variable | x    | main::main::foo::x |         
 
 
 ===============================================================================
@@ -157,10 +157,10 @@ fn capture<T>(&self) -> impl Iterator<Item = usize> + use<'_, T> {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main    | main    | [global]
-u0:2 | File     | main    | main    |         
-u0:3 | Function | capture | capture |         
-u0:4 | Type     | T       | T       |         
+u0:1 | Module   | main    | main                   | [global]
+u0:2 | File     | main    | main::main             |         
+u0:3 | Function | capture | main::main::capture    |         
+u0:4 | Type     | T       | main::main::capture::T |         
 
 
 ===============================================================================
@@ -173,9 +173,9 @@ fn capture(&self) -> impl Iterator<Item = usize> + use<> {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main    | main    | [global]
-u0:2 | File     | main    | main    |         
-u0:3 | Function | capture | capture |         
+u0:1 | Module   | main    | main                | [global]
+u0:2 | File     | main    | main::main          |         
+u0:3 | Function | capture | main::main::capture |         
 
 
 ===============================================================================
@@ -187,9 +187,9 @@ diverging-functions
 fn aborts() -> ! {}
 
 --- expect:symbols ---
-u0:1 | Module   | main   | main   | [global]
-u0:2 | File     | main   | main   |         
-u0:3 | Function | aborts | aborts |         
+u0:1 | Module   | main   | main               | [global]
+u0:2 | File     | main   | main::main         |         
+u0:3 | Function | aborts | main::main::aborts |         
 
 
 ===============================================================================
@@ -208,12 +208,12 @@ pub unsafe extern "C" fn c_variadic_no_use(fmt: *const i8, mut ap: ...) -> i32 {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main              | main              | [global]
-u0:2 | File     | main              | main              |         
-u0:3 | Function | foo               | foo               |         
-u0:4 | Function | printf            | printf            |         
-u0:5 | Function | c_variadic_no_use | c_variadic_no_use |         
-u0:6 | Variable | fmt               | fmt               |         
+u0:1 | Module   | main              | main                               | [global]
+u0:2 | File     | main              | main::main                         |         
+u0:3 | Function | foo               | main::main::foo                    |         
+u0:4 | Function | printf            | main::main::printf                 |         
+u0:5 | Function | c_variadic_no_use | main::main::c_variadic_no_use      |         
+u0:6 | Variable | fmt               | main::main::c_variadic_no_use::fmt |         
 
 
 ===============================================================================
@@ -236,8 +236,8 @@ use my::{*};
 use ::*;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -256,16 +256,16 @@ let bool: bool = false;
 let u32: str = "";
 
 --- expect:symbols ---
-u0:1  | Module   | main | main | [global]
-u0:2  | File     | main | main |         
-u0:3  | Variable | x    | x    |         
-u0:4  | Variable | x    | x    |         
-u0:5  | Variable | x    | x    |         
-u0:6  | Variable | x    | x    |         
-u0:7  | Variable | x    | x    |         
-u0:8  | Variable | y    | y    |         
-u0:9  | Variable | bool | bool |         
-u0:10 | Variable | u32  | u32  |         
+u0:1  | Module   | main | main             | [global]
+u0:2  | File     | main | main::main       |         
+u0:3  | Variable | x    | main::main::x    |         
+u0:4  | Variable | x    | main::main::x    |         
+u0:5  | Variable | x    | main::main::x    |         
+u0:6  | Variable | x    | main::main::x    |         
+u0:7  | Variable | x    | main::main::x    |         
+u0:8  | Variable | y    | main::main::y    |         
+u0:9  | Variable | bool | main::main::bool |         
+u0:10 | Variable | u32  | main::main::u32  |         
 
 
 ===============================================================================
@@ -283,13 +283,13 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Struct   | Baz  | Baz  |         
-u0:4 | Struct   | Foo  | Foo  |         
-u0:5 | Function | func | func |         
-u0:6 | Variable | x    | x    |         
-u0:7 | Variable | y    | y    |         
+u0:1 | Module   | main | main                | [global]
+u0:2 | File     | main | main::main          |         
+u0:3 | Struct   | Baz  | main::main::Baz     |         
+u0:4 | Struct   | Foo  | main::main::Foo     |         
+u0:5 | Function | func | main::main::func    |         
+u0:6 | Variable | x    | main::main::func::x |         
+u0:7 | Variable | y    | main::main::func::y |         
 
 --- expect:symbol-deps ---
 u0:4 <- [u0:5, u0:6]
@@ -327,16 +327,16 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Module    | main | main | [global]
-u0:2  | File      | main | main |         
-u0:3  | Namespace | Foo  | Foo  |         
-u0:4  | Struct    | Bar  | Bar  |         
-u0:5  | Struct    | Baz  | Baz  |         
-u0:6  | Function  | func | func |         
-u0:7  | Variable  | y    | y    |         
-u0:8  | Variable  | Foo  | Foo  |         
-u0:9  | Variable  | Some | Some |         
-u0:10 | Variable  | None | None |         
+u0:1  | Module    | main | main                   | [global]
+u0:2  | File      | main | main::main             |         
+u0:3  | Namespace | Foo  | main::main::Foo        |         
+u0:4  | Struct    | Bar  | main::main::Foo::Bar   |         
+u0:5  | Struct    | Baz  | main::main::Baz        |         
+u0:6  | Function  | func | main::main::func       |         
+u0:7  | Variable  | y    | main::main::func::y    |         
+u0:8  | Variable  | Foo  | main::main::func::Foo  |         
+u0:9  | Variable  | Some | main::main::func::Some |         
+u0:10 | Variable  | None | main::main::func::None |         
 
 --- expect:symbol-deps ---
 
@@ -354,9 +354,9 @@ let a = if b {
 };
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Variable | a    | a    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Variable | a    | main::main::a |         
 
 
 ===============================================================================
@@ -369,10 +369,10 @@ let default = 1;
 let union = 2;
 
 --- expect:symbols ---
-u0:1 | Module   | main    | main    | [global]
-u0:2 | File     | main    | main    |         
-u0:3 | Variable | default | default |         
-u0:4 | Variable | union   | union   |         
+u0:1 | Module   | main    | main                | [global]
+u0:2 | File     | main    | main::main          |         
+u0:3 | Variable | default | main::main::default |         
+u0:4 | Variable | union   | main::main::union   |         
 
 
 ===============================================================================
@@ -395,19 +395,19 @@ struct Inches(i32);
 struct Empty(pub ());
 
 --- expect:symbols ---
-u0:1  | Module | main     | main     | [global]
-u0:2  | File   | main     | main     |         
-u0:3  | Struct | Proton   | Proton   |         
-u0:4  | Struct | Electron | Electron |         
-u0:5  | Struct | Person   | Person   |         
-u0:6  | Field  | name     | name     |         
-u0:7  | Field  | age      | age      |         
-u0:8  | Struct | Point    | Point    |         
-u0:9  | Field  | x        | x        |         
-u0:10 | Field  | y        | y        |         
-u0:11 | Struct | Color    | Color    |         
-u0:12 | Struct | Inches   | Inches   |         
-u0:13 | Struct | Empty    | Empty    |         
+u0:1  | Module | main     | main                     | [global]
+u0:2  | File   | main     | main::main               |         
+u0:3  | Struct | Proton   | main::main::Proton       |         
+u0:4  | Struct | Electron | main::main::Electron     |         
+u0:5  | Struct | Person   | main::main::Person       |         
+u0:6  | Field  | name     | main::main::Person::name |         
+u0:7  | Field  | age      | main::main::Person::age  |         
+u0:8  | Struct | Point    | main::main::Point        |         
+u0:9  | Field  | x        | main::main::Point::x     |         
+u0:10 | Field  | y        | main::main::Point::y     |         
+u0:11 | Struct | Color    | main::main::Color        |         
+u0:12 | Struct | Inches   | main::main::Inches       |         
+u0:13 | Struct | Empty    | main::main::Empty        |         
 
 
 ===============================================================================
@@ -424,12 +424,12 @@ pub union in6_addr__bindgen_ty_1 {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main                 | main                 | [global]
-u0:2 | File   | main                 | main                 |         
-u0:3 | Field  | __u6_addr8           | __u6_addr8           |         
-u0:4 | Field  | __u6_addr16          | __u6_addr16          |         
-u0:5 | Field  | __u6_addr32          | __u6_addr32          |         
-u0:6 | Field  | _bindgen_union_align | _bindgen_union_align |         
+u0:1 | Module | main                 | main                             | [global]
+u0:2 | File   | main                 | main::main                       |         
+u0:3 | Field  | __u6_addr8           | main::main::__u6_addr8           |         
+u0:4 | Field  | __u6_addr16          | main::main::__u6_addr16          |         
+u0:5 | Field  | __u6_addr32          | main::main::__u6_addr32          |         
+u0:6 | Field  | _bindgen_union_align | main::main::_bindgen_union_align |         
 
 
 ===============================================================================
@@ -445,14 +445,14 @@ struct D<const SIZE: usize> {}
 struct E<#[attr] T> {}
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Struct | A    | A    |         
-u0:4 | Type   | B    | B    |         
-u0:5 | Struct | C    | C    |         
-u0:6 | Struct | D    | D    |         
-u0:7 | Struct | E    | E    |         
-u0:8 | Type   | T    | T    |         
+u0:1 | Module | main | main             | [global]
+u0:2 | File   | main | main::main       |         
+u0:3 | Struct | A    | main::main::A    |         
+u0:4 | Type   | B    | main::main::A::B |         
+u0:5 | Struct | C    | main::main::C    |         
+u0:6 | Struct | D    | main::main::D    |         
+u0:7 | Struct | E    | main::main::E    |         
+u0:8 | Type   | T    | main::main::E::T |         
 
 
 ===============================================================================
@@ -481,30 +481,30 @@ pub enum Node<T: Item> {
 }
 
 --- expect:symbols ---
-u0:1  | Module      | main                                                                 | main                                                                 | [global]
-u0:2  | File        | main                                                                 | main                                                                 |         
-u0:3  | Struct      | Tree                                                                 | Tree                                                                 |         
-u0:4  | Enum        | Option                                                               | Option                                                               |         
-u0:5  | Type        | T                                                                    | T                                                                    |         
-u0:6  | EnumVariant | None                                                                 | None                                                                 |         
-u0:7  | EnumVariant | Some(T)                                                              | Some(T)                                                              |         
-u0:8  | Enum        | Node                                                                 | Node                                                                 |         
-u0:9  | Type        | T                                                                    | T                                                                    |         
+u0:1  | Module      | main                                                                 | main                                                                                   | [global]
+u0:2  | File        | main                                                                 | main::main                                                                             |         
+u0:3  | Struct      | Tree                                                                 | main::main::Tree                                                                       |         
+u0:4  | Enum        | Option                                                               | main::main::Option                                                                     |         
+u0:5  | Type        | T                                                                    | main::main::Option::T                                                                  |         
+u0:6  | EnumVariant | None                                                                 | main::main::Option::None                                                               |         
+u0:7  | EnumVariant | Some(T)                                                              | main::main::Option::Some(T)                                                            |         
+u0:8  | Enum        | Node                                                                 | main::main::Node                                                                       |         
+u0:9  | Type        | T                                                                    | main::main::Node::T                                                                    |         
 u0:10 | EnumVariant | Internal {
         children: Vec<Tree<T>>,
         height: u16
-    } | Internal {
+    } | main::main::Node::Internal {
         children: Vec<Tree<T>>,
         height: u16
     } |         
-u0:11 | Field       | children                                                             | children                                                             |         
-u0:12 | Field       | height                                                               | height                                                               |         
+u0:11 | Field       | children                                                             | main::main::Node::children                                                             |         
+u0:12 | Field       | height                                                               | main::main::Node::height                                                               |         
 u0:13 | EnumVariant | Leaf {
         value: T
-    }                                        | Leaf {
+    }                                        | main::main::Node::Leaf {
         value: T
     }                                        |         
-u0:14 | Field       | value                                                                | value                                                                |         
+u0:14 | Field       | value                                                                | main::main::Node::value                                                                |         
 
 --- expect:symbol-deps ---
 u0:10 -> [u0:11, u0:12, u0:3, u0:9]
@@ -547,11 +547,11 @@ pub enum c_style_enum {
 }
 
 --- expect:symbols ---
-u0:1 | Module      | main         | main         | [global]
-u0:2 | File        | main         | main         |         
-u0:3 | Enum        | c_style_enum | c_style_enum |         
-u0:4 | EnumVariant | val1 = 1     | val1 = 1     |         
-u0:5 | EnumVariant | val2 = 2     | val2 = 2     |         
+u0:1 | Module      | main         | main                               | [global]
+u0:2 | File        | main         | main::main                         |         
+u0:3 | Enum        | c_style_enum | main::main::c_style_enum           |         
+u0:4 | EnumVariant | val1 = 1     | main::main::c_style_enum::val1 = 1 |         
+u0:5 | EnumVariant | val2 = 2     | main::main::c_style_enum::val2 = 2 |         
 
 
 ===============================================================================
@@ -567,14 +567,14 @@ pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
 pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
 
 --- expect:symbols ---
-u0:1 | Module   | main         | main         | [global]
-u0:2 | File     | main         | main         |         
-u0:3 | Struct   | Text         | Text         |         
-u0:4 | Function | splice       | splice       |         
-u0:5 | Type     | T            | T            |         
-u0:6 | Variable | old_range    | old_range    |         
-u0:7 | Variable | new_text     | new_text     |         
-u0:8 | Function | uninit_array | uninit_array |         
+u0:1 | Module   | main         | main                          | [global]
+u0:2 | File     | main         | main::main                    |         
+u0:3 | Struct   | Text         | main::main::Text              |         
+u0:4 | Function | splice       | main::main::splice            |         
+u0:5 | Type     | T            | main::main::splice::T         |         
+u0:6 | Variable | old_range    | main::main::splice::old_range |         
+u0:7 | Variable | new_text     | main::main::splice::new_text  |         
+u0:8 | Function | uninit_array | main::main::uninit_array      |         
 
 --- expect:symbol-deps ---
 u0:4 -> [u0:5]
@@ -600,10 +600,10 @@ fn foo(mut x : u32) {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | foo  | foo  |         
-u0:4 | Variable | x    | x    |         
+u0:1 | Module   | main | main               | [global]
+u0:2 | File     | main | main::main         |         
+u0:3 | Function | foo  | main::main::foo    |         
+u0:4 | Variable | x    | main::main::foo::x |         
 
 
 ===============================================================================
@@ -624,18 +624,18 @@ fn f2(&x: &Y) {}
 fn f3((x, y): (T, U)) {}
 
 --- expect:symbols ---
-u0:1  | Module   | main | main | [global]
-u0:2  | File     | main | main |         
-u0:3  | Struct   | Foo  | Foo  |         
-u0:4  | Struct   | Y    | Y    |         
-u0:5  | Struct   | T    | T    |         
-u0:6  | Struct   | U    | U    |         
-u0:7  | Function | f1   | f1   |         
-u0:8  | Variable | x    | x    |         
-u0:9  | Function | f2   | f2   |         
-u0:10 | Variable | x    | x    |         
-u0:11 | Function | f3   | f3   |         
-u0:12 | Variable | x    | x    |         
+u0:1  | Module   | main | main              | [global]
+u0:2  | File     | main | main::main        |         
+u0:3  | Struct   | Foo  | main::main::Foo   |         
+u0:4  | Struct   | Y    | main::main::Y     |         
+u0:5  | Struct   | T    | main::main::T     |         
+u0:6  | Struct   | U    | main::main::U     |         
+u0:7  | Function | f1   | main::main::f1    |         
+u0:8  | Variable | x    | main::main::f1::x |         
+u0:9  | Function | f2   | main::main::f2    |         
+u0:10 | Variable | x    | main::main::f2::x |         
+u0:11 | Function | f3   | main::main::f3    |         
+u0:12 | Variable | x    | main::main::f3::x |         
 
 --- expect:symbol-deps ---
 u0:10 -> [u0:4]
@@ -680,10 +680,10 @@ trait Callback {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main     | main     | [global]
-u0:2 | File     | main     | main     |         
-u0:3 | Trait    | Callback | Callback |         
-u0:4 | Function | call     | call     |         
+u0:1 | Module   | main     | main                       | [global]
+u0:2 | File     | main     | main::main                 |         
+u0:3 | Trait    | Callback | main::main::Callback       |         
+u0:4 | Function | call     | main::main::Callback::call |         
 
 
 ===============================================================================
@@ -703,12 +703,12 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Const    | N    | N    |         
-u0:4 | Trait    | Foo  | Foo  |         
-u0:5 | Const    | X    | X    |         
-u0:6 | Function | func | func |         
+u0:1 | Module   | main | main               | [global]
+u0:2 | File     | main | main::main         |         
+u0:3 | Const    | N    | main::main::N      |         
+u0:4 | Trait    | Foo  | main::main::Foo    |         
+u0:5 | Const    | X    | main::main::Foo::X |         
+u0:6 | Function | func | main::main::func   |         
 
 --- expect:symbol-deps ---
 
@@ -727,11 +727,11 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main       | main       | [global]
-u0:2 | File     | main       | main       |         
-u0:3 | Static   | N          | N          |         
-u0:4 | Static   | __progname | __progname |         
-u0:5 | Function | func       | func       |         
+u0:1 | Module   | main       | main                   | [global]
+u0:2 | File     | main       | main::main             |         
+u0:3 | Static   | N          | main::main::N          |         
+u0:4 | Static   | __progname | main::main::__progname |         
+u0:5 | Function | func       | main::main::func       |         
 
 --- expect:symbol-deps ---
 
@@ -749,10 +749,10 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Static   | ONE  | ONE  |         
-u0:4 | Function | func | func |         
+u0:1 | Module   | main | main             | [global]
+u0:2 | File     | main | main::main       |         
+u0:3 | Static   | ONE  | main::main::ONE  |         
+u0:4 | Function | func | main::main::func |         
 
 --- expect:symbol-deps ---
 
@@ -770,14 +770,14 @@ type Name<T> = Tree<T>;
 type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
 
 --- expect:symbols ---
-u0:1 | Module | main        | main        | [global]
-u0:2 | File   | main        | main        |         
-u0:3 | Struct | Tree        | Tree        |         
-u0:4 | Type   | T           | T           |         
-u0:5 | Type   | Inch        | Inch        |         
-u0:6 | Type   | Name        | Name        |         
-u0:7 | Type   | T           | T           |         
-u0:8 | Type   | LazyResolve | LazyResolve |         
+u0:1 | Module | main        | main                    | [global]
+u0:2 | File   | main        | main::main              |         
+u0:3 | Struct | Tree        | main::main::Tree        |         
+u0:4 | Type   | T           | main::main::Tree::T     |         
+u0:5 | Type   | Inch        | main::main::Inch        |         
+u0:6 | Type   | Name        | main::main::Name        |         
+u0:7 | Type   | T           | main::main::T           |         
+u0:8 | Type   | LazyResolve | main::main::LazyResolve |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:6]
@@ -795,11 +795,11 @@ type Foo<T> where T: Copy = Box<T>;
 type Assoc3 where = () where;
 
 --- expect:symbols ---
-u0:1 | Module | main   | main   | [global]
-u0:2 | File   | main   | main   |         
-u0:3 | Type   | Foo    | Foo    |         
-u0:4 | Type   | T      | T      |         
-u0:5 | Type   | Assoc3 | Assoc3 |         
+u0:1 | Module | main   | main               | [global]
+u0:2 | File   | main   | main::main         |         
+u0:3 | Type   | Foo    | main::main::Foo    |         
+u0:4 | Type   | T      | main::main::T      |         
+u0:5 | Type   | Assoc3 | main::main::Assoc3 |         
 
 
 ===============================================================================
@@ -813,9 +813,9 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | main | main |         
+u0:1 | Module   | main | main             | [global]
+u0:2 | File     | main | main::main       |         
+u0:3 | Function | main | main::main::main |         
 
 
 ===============================================================================
@@ -841,12 +841,12 @@ mod macos_only {}
 #[clippy::cyclomatic_complexity = "100"]
 
 --- expect:symbols ---
-u0:1 | Module    | main       | main       | [global]
-u0:2 | File      | main       | main       |         
-u0:3 | Function  | test_foo   | test_foo   |         
-u0:4 | Struct    | Baz        | Baz        |         
-u0:5 | Struct    | Foo        | Foo        |         
-u0:6 | Namespace | macos_only | macos_only |         
+u0:1 | Module    | main       | main                   | [global]
+u0:2 | File      | main       | main::main             |         
+u0:3 | Function  | test_foo   | main::main::test_foo   |         
+u0:4 | Struct    | Baz        | main::main::Baz        |         
+u0:5 | Struct    | Foo        | main::main::Foo        |         
+u0:6 | Namespace | macos_only | main::main::macos_only |         
 
 
 ===============================================================================
@@ -865,9 +865,9 @@ match ty {
 }
 
 --- expect:symbols ---
-u0:1 | Module    | main       | main       | [global]
-u0:2 | File      | main       | main       |         
-u0:3 | Namespace | macos_only | macos_only |         
+u0:1 | Module    | main       | main                   | [global]
+u0:2 | File      | main       | main::main             |         
+u0:3 | Namespace | macos_only | main::main::macos_only |         
 
 
 ===============================================================================
@@ -883,10 +883,10 @@ fn foo() {}
 fn baz() {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | foo  | foo  |         
-u0:4 | Function | baz  | baz  |         
+u0:1 | Module   | main | main            | [global]
+u0:2 | File     | main | main::main      |         
+u0:3 | Function | foo  | main::main::foo |         
+u0:4 | Function | baz  | main::main::baz |         
 
 
 ===============================================================================
@@ -900,8 +900,8 @@ foo(#[attr(=> arbitrary tokens <=)] x, y);
 foo(#[bar(some tokens are special in other contexts: $/';()*()+.)] x);
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 
 ===============================================================================
@@ -925,14 +925,14 @@ pub enum Error {
 }
 
 --- expect:symbols ---
-u0:1 | Module      | main                                       | main                                       | [global]
-u0:2 | File        | main                                       | main                                       |         
-u0:3 | Struct      | Limits                                     | Limits                                     |         
-u0:4 | Enum        | Error                                      | Error                                      |         
-u0:5 | EnumVariant | WrongCase(String)                          | WrongCase(String)                          |         
-u0:6 | EnumVariant | OutOfBounds { idx: usize, limits: Limits } | OutOfBounds { idx: usize, limits: Limits } |         
-u0:7 | Field       | idx                                        | idx                                        |         
-u0:8 | Field       | limits                                     | limits                                     |         
+u0:1 | Module      | main                                       | main                                                          | [global]
+u0:2 | File        | main                                       | main::main                                                    |         
+u0:3 | Struct      | Limits                                     | main::main::Limits                                            |         
+u0:4 | Enum        | Error                                      | main::main::Error                                             |         
+u0:5 | EnumVariant | WrongCase(String)                          | main::main::Error::WrongCase(String)                          |         
+u0:6 | EnumVariant | OutOfBounds { idx: usize, limits: Limits } | main::main::Error::OutOfBounds { idx: usize, limits: Limits } |         
+u0:7 | Field       | idx                                        | main::main::Error::idx                                        |         
+u0:8 | Field       | limits                                     | main::main::Error::limits                                     |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:4, u0:6, u0:8]
@@ -960,14 +960,14 @@ fn foo() {
 fn bar(x: i32, y: i32) {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | foo  | foo  |         
-u0:4 | Variable | z    | z    |         
-u0:5 | Variable | t    | t    |         
-u0:6 | Function | bar  | bar  |         
-u0:7 | Variable | x    | x    |         
-u0:8 | Variable | y    | y    |         
+u0:1 | Module   | main | main               | [global]
+u0:2 | File     | main | main::main         |         
+u0:3 | Function | foo  | main::main::foo    |         
+u0:4 | Variable | z    | main::main::foo::z |         
+u0:5 | Variable | t    | main::main::foo::t |         
+u0:6 | Function | bar  | main::main::bar    |         
+u0:7 | Variable | x    | main::main::bar::x |         
+u0:8 | Variable | y    | main::main::bar::y |         
 
 --- expect:symbol-deps ---
 u0:3 -> [u0:6]
@@ -995,23 +995,17 @@ impl Person {
 impl Machine<{State::Init}> {}
 
 --- expect:symbols ---
-u0:1  | Module   | main         | main         | [global]
-u0:2  | File     | main         | main         |         
-u0:3  | Struct   | Person       | Person       |         
-u0:4  | Struct   | Machine      | Machine      |         
-u0:5  | Impl     | impl Person  | impl Person  |         
-u0:6  | Const    | leg_count    | leg_count    |         
-u0:7  | Function | walk         | walk         |         
-u0:8  | Function | walk_mut     | walk_mut     |         
-u0:9  | Function | talk         | talk         |         
-u0:10 | Function | talk_mut     | talk_mut     |         
-u0:11 | Impl     | impl Machine | impl Machine |         
+u0:1 | Module   | main      | main                          | [global]
+u0:2 | File     | main      | main::main                    |         
+u0:3 | Impl     | Person    | main::main::Person            |         
+u0:4 | Impl     | Machine   | main::main::Machine           |         
+u0:5 | Const    | leg_count | main::main::Person::leg_count |         
+u0:6 | Function | walk      | main::main::Person::walk      |         
+u0:7 | Function | walk_mut  | main::main::Person::walk_mut  |         
+u0:8 | Function | talk      | main::main::Person::talk      |         
+u0:9 | Function | talk_mut  | main::main::Person::talk_mut  |         
 
 --- expect:symbol-deps ---
-u0:11 -> [u0:4]
-u0:3 <- [u0:5]
-u0:4 <- [u0:11]
-u0:5 -> [u0:3]
 
 
 ===============================================================================
@@ -1032,19 +1026,16 @@ impl Person {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main        | main        | [global]
-u0:2 | File     | main        | main        |         
-u0:3 | Struct   | Person      | Person      |         
-u0:4 | Impl     | impl Person | impl Person |         
-u0:5 | Function | walk        | walk        |         
-u1:6 | Module   | foo         | foo         | [global]
-u1:7 | File     | foo         | foo         |         
-u1:8 | Impl     | impl Person | impl Person |         
-u1:9 | Function | talk        | talk        |         
+u0:1 | Module   | main   | main                     | [global]
+u0:2 | File     | main   | main::main               |         
+u0:3 | Impl     | Person | main::main::Person       |         
+u0:4 | Function | walk   | main::main::Person::walk |         
+u1:5 | Module   | foo    | foo                      | [global]
+u1:6 | File     | foo    | foo::foo                 |         
+u1:7 | Impl     | Person | foo::foo::Person         |         
+u1:8 | Function | talk   | foo::foo::Person::talk   |         
 
 --- expect:symbol-deps ---
-u0:3 <- [u0:4]
-u0:4 -> [u0:3]
 
 
 ===============================================================================
@@ -1058,10 +1049,10 @@ impl Person {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main        | main        | [global]
-u0:2 | File     | main        | main        |         
-u0:3 | Impl     | impl Person | impl Person |         
-u0:4 | Function | walk        | walk        |         
+u0:1 | Module   | main   | main                     | [global]
+u0:2 | File     | main   | main::main               |         
+u0:3 | Impl     | Person | main::main::Person       |         
+u0:4 | Function | walk   | main::main::Person::walk |         
 
 
 ===============================================================================
@@ -1078,11 +1069,11 @@ impl ConvertTo<i64> for i32 {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main      | main      | [global]
-u0:2 | File     | main      | main      |         
-u0:3 | Impl     | impl Self | impl Self |         
-u0:4 | Impl     | impl i32  | impl i32  |         
-u0:5 | Function | convert   | convert   |         
+u0:1 | Module   | main    | main                     | [global]
+u0:2 | File     | main    | main::main               |         
+u0:3 | Impl     | Self    | main::main::Self         |         
+u0:4 | Impl     | i32     | main::main::i32          |         
+u0:5 | Function | convert | main::main::i32::convert |         
 
 
 ===============================================================================
@@ -1095,9 +1086,9 @@ unsafe impl Foo {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main     | main     | [global]
-u0:2 | File   | main     | main     |         
-u0:3 | Impl   | impl Foo | impl Foo |         
+u0:1 | Module | main | main            | [global]
+u0:2 | File   | main | main::main      |         
+u0:3 | Impl   | Foo  | main::main::Foo |         
 
 
 ===============================================================================
@@ -1109,9 +1100,9 @@ disable-automatically-derived-trait-impls
 impl !Send for Foo {}
 
 --- expect:symbols ---
-u0:1 | Module | main     | main     | [global]
-u0:2 | File   | main     | main     |         
-u0:3 | Impl   | impl Foo | impl Foo |         
+u0:1 | Module | main | main            | [global]
+u0:2 | File   | main | main::main      |         
+u0:3 | Impl   | Foo  | main::main::Foo |         
 
 
 ===============================================================================
@@ -1125,10 +1116,10 @@ pub unsafe trait Trait {}
 unsafe impl Trait for dyn (::std::any::Any) + Send { }
 
 --- expect:symbols ---
-u0:1 | Module | main            | main            | [global]
-u0:2 | File   | main            | main            |         
-u0:3 | Trait  | Trait           | Trait           |         
-u0:4 | Impl   | impl ::std::any | impl ::std::any |         
+u0:1 | Module | main       | main                   | [global]
+u0:2 | File   | main       | main::main             |         
+u0:3 | Trait  | Trait      | main::main::Trait      |         
+u0:4 | Impl   | ::std::any | main::main::::std::any |         
 
 
 ===============================================================================
@@ -1141,11 +1132,11 @@ impl<K: Debug + Ord> Debug for OccupiedError<K>;
 impl<K: Debug + Ord> Display for OccupiedError<K>;
 
 --- expect:symbols ---
-u0:1 | Module | main               | main               | [global]
-u0:2 | File   | main               | main               |         
-u0:3 | Impl   | impl OccupiedError | impl OccupiedError |         
-u0:4 | Type   | K                  | K                  |         
-u0:5 | Type   | K                  | K                  |         
+u0:1 | Module | main          | main                         | [global]
+u0:2 | File   | main          | main::main                   |         
+u0:3 | Impl   | OccupiedError | main::main::OccupiedError    |         
+u0:4 | Type   | K             | main::main::OccupiedError::K |         
+u0:5 | Type   | K             | main::main::OccupiedError::K |         
 
 
 ===============================================================================
@@ -1162,10 +1153,10 @@ impl Foo {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main     | main     | [global]
-u0:2 | File     | main     | main     |         
-u0:3 | Impl     | impl Foo | impl Foo |         
-u0:4 | Function | bar      | bar      |         
+u0:1 | Module   | main | main                 | [global]
+u0:2 | File     | main | main::main           |         
+u0:3 | Impl     | Foo  | main::main::Foo      |         
+u0:4 | Function | bar  | main::main::Foo::bar |         
 
 
 ===============================================================================
@@ -1181,11 +1172,11 @@ pub trait Item: Clone + Eq + fmt::Debug {
 unsafe trait Foo { }
 
 --- expect:symbols ---
-u0:1 | Module   | main      | main      | [global]
-u0:2 | File     | main      | main      |         
-u0:3 | Trait    | Item      | Item      |         
-u0:4 | Function | summarize | summarize |         
-u0:5 | Trait    | Foo       | Foo       |         
+u0:1 | Module   | main      | main                        | [global]
+u0:2 | File     | main      | main::main                  |         
+u0:3 | Trait    | Item      | main::main::Item            |         
+u0:4 | Function | summarize | main::main::Item::summarize |         
+u0:5 | Trait    | Foo       | main::main::Foo             |         
 
 
 ===============================================================================
@@ -1202,14 +1193,14 @@ trait Add<RHS=Foo> {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main   | main   | [global]
-u0:2 | File     | main   | main   |         
-u0:3 | Struct   | Foo    | Foo    |         
-u0:4 | Trait    | Add    | Add    |         
-u0:5 | Type     | RHS    | RHS    |         
-u0:6 | Type     | Output | Output |         
-u0:7 | Function | add    | add    |         
-u0:8 | Variable | rhs    | rhs    |         
+u0:1 | Module   | main   | main                    | [global]
+u0:2 | File     | main   | main::main              |         
+u0:3 | Struct   | Foo    | main::main::Foo         |         
+u0:4 | Trait    | Add    | main::main::Add         |         
+u0:5 | Type     | RHS    | main::main::Add::RHS    |         
+u0:6 | Type     | Output | main::main::Add::Output |         
+u0:7 | Function | add    | main::main::Add::add    |         
+u0:8 | Variable | rhs    | main::main::Add::rhs    |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:4, u0:5]
@@ -1233,13 +1224,13 @@ trait Foo<T: ?Sized> {
 fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
 
 --- expect:symbols ---
-u0:1 | Module   | main       | main       | [global]
-u0:2 | File     | main       | main       |         
-u0:3 | Trait    | Foo        | Foo        |         
-u0:4 | Type     | T          | T          |         
-u0:5 | Function | univariant | univariant |         
-u0:6 | Variable | this       | this       |         
-u0:7 | Variable | that       | that       |         
+u0:1 | Module   | main       | main                         | [global]
+u0:2 | File     | main       | main::main                   |         
+u0:3 | Trait    | Foo        | main::main::Foo              |         
+u0:4 | Type     | T          | main::main::Foo::T           |         
+u0:5 | Function | univariant | main::main::univariant       |         
+u0:6 | Variable | this       | main::main::univariant::this |         
+u0:7 | Variable | that       | main::main::univariant::that |         
 
 
 ===============================================================================
@@ -1251,10 +1242,10 @@ trait-bounds-in-type-arguments-in-trait
 impl<T: AstDeref<Target: HasNodeId>> HasNodeId for T {}
 
 --- expect:symbols ---
-u0:1 | Module | main   | main   | [global]
-u0:2 | File   | main   | main   |         
-u0:3 | Impl   | impl T | impl T |         
-u0:4 | Type   | T      | T      |         
+u0:1 | Module | main | main             | [global]
+u0:2 | File   | main | main::main       |         
+u0:3 | Impl   | T    | main::main::T    |         
+u0:4 | Type   | T    | main::main::T::T |         
 
 
 ===============================================================================
@@ -1269,10 +1260,10 @@ pub trait A: B + C + D {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Trait    | A    | A    |         
-u0:4 | Function | f    | f    |         
+u0:1 | Module   | main | main             | [global]
+u0:2 | File     | main | main::main       |         
+u0:3 | Trait    | A    | main::main::A    |         
+u0:4 | Function | f    | main::main::A::f |         
 
 
 ===============================================================================
@@ -1287,11 +1278,11 @@ pub trait Graph {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main  | main  | [global]
-u0:2 | File   | main  | main  |         
-u0:3 | Trait  | Graph | Graph |         
-u0:4 | Type   | N     | N     |         
-u0:5 | Type   | E     | E     |         
+u0:1 | Module | main  | main                 | [global]
+u0:2 | File   | main  | main::main           |         
+u0:3 | Trait  | Graph | main::main::Graph    |         
+u0:4 | Type   | N     | main::main::Graph::N |         
+u0:5 | Type   | E     | main::main::Graph::E |         
 
 
 ===============================================================================
@@ -1305,12 +1296,14 @@ impl Trait for T {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main       | main       | [global]
-u0:2 | File   | main       | main       |         
-u0:3 | Impl   | impl T     | impl T     |         
-u0:4 | Type   | Associated | Associated |         
+u0:1 | Module | main       | main                      | [global]
+u0:2 | File   | main       | main::main                |         
+u0:3 | Impl   | T          | main::main::T             |         
+u0:4 | Type   | Associated | main::main::T::Associated |         
 
 --- expect:symbol-deps ---
+u0:3 <- [u0:4]
+u0:4 -> [u0:3]
 
 
 ===============================================================================
@@ -1335,18 +1328,18 @@ where
 {}
 
 --- expect:symbols ---
-u0:1  | Module   | main          | main          | [global]
-u0:2  | File     | main          | main          |         
-u0:3  | Trait    | Database      | Database      |         
-u0:4  | Type     | F             | F             |         
-u0:5  | Type     | D             | D             |         
-u0:6  | Impl     | impl Foo      | impl Foo      |         
-u0:7  | Type     | F             | F             |         
-u0:8  | Type     | D             | D             |         
-u0:9  | Function | use_database1 | use_database1 |         
-u0:10 | Type     | D             | D             |         
-u0:11 | Function | use_database2 | use_database2 |         
-u0:12 | Type     | D             | D             |         
+u0:1  | Module   | main          | main                         | [global]
+u0:2  | File     | main          | main::main                   |         
+u0:3  | Trait    | Database      | main::main::Database         |         
+u0:4  | Type     | F             | main::main::Database::F      |         
+u0:5  | Type     | D             | main::main::Database::D      |         
+u0:6  | Impl     | Foo           | main::main::Foo              |         
+u0:7  | Type     | F             | main::main::Foo::F           |         
+u0:8  | Type     | D             | main::main::Foo::D           |         
+u0:9  | Function | use_database1 | main::main::use_database1    |         
+u0:10 | Type     | D             | main::main::use_database1::D |         
+u0:11 | Function | use_database2 | main::main::use_database2    |         
+u0:12 | Type     | D             | main::main::use_database2::D |         
 
 
 ===============================================================================
@@ -1363,12 +1356,12 @@ trait T: for<'a> AddAssign<&'a usize> {
 type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
 
 --- expect:symbols ---
-u0:1 | Module | main      | main      | [global]
-u0:2 | File   | main      | main      |         
-u0:3 | Struct | AddAssign | AddAssign |         
-u0:4 | Type   | T         | T         |         
-u0:5 | Trait  | T         | T         |         
-u0:6 | Type   | FnObject  | FnObject  |         
+u0:1 | Module | main      | main                     | [global]
+u0:2 | File   | main      | main::main               |         
+u0:3 | Struct | AddAssign | main::main::AddAssign    |         
+u0:4 | Type   | T         | main::main::AddAssign::T |         
+u0:5 | Trait  | T         | main::main::T            |         
+u0:6 | Type   | FnObject  | main::main::FnObject     |         
 
 --- expect:symbol-deps ---
 
@@ -1391,17 +1384,17 @@ trait T: for<'a> AddAssign<&'a usize> {
 type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
 
 --- expect:symbols ---
-u0:1  | Module | main      | main      | [global]
-u0:2  | File   | main      | main      |         
-u0:3  | Trait  | Foo       | Foo       |         
-u0:4  | Trait  | Bar       | Bar       |         
-u0:5  | Trait  | Baz       | Baz       |         
-u0:6  | Type   | T         | T         |         
-u0:7  | Struct | AddAssign | AddAssign |         
-u0:8  | Type   | T         | T         |         
-u0:9  | Type   | U         | U         |         
-u0:10 | Trait  | T         | T         |         
-u0:11 | Type   | FnObject  | FnObject  |         
+u0:1  | Module | main      | main                     | [global]
+u0:2  | File   | main      | main::main               |         
+u0:3  | Trait  | Foo       | main::main::Foo          |         
+u0:4  | Trait  | Bar       | main::main::Bar          |         
+u0:5  | Trait  | Baz       | main::main::Baz          |         
+u0:6  | Type   | T         | main::main::Baz::T       |         
+u0:7  | Struct | AddAssign | main::main::AddAssign    |         
+u0:8  | Type   | T         | main::main::AddAssign::T |         
+u0:9  | Type   | U         | main::main::AddAssign::U |         
+u0:10 | Trait  | T         | main::main::T            |         
+u0:11 | Type   | FnObject  | main::main::FnObject     |         
 
 --- expect:symbol-deps ---
 
@@ -1419,12 +1412,12 @@ pub(crate) fn c() {}
 pub(in crate::d) fn e() {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | a    | a    |         
-u0:4 | Function | b    | b    |         
-u0:5 | Function | c    | c    |         
-u0:6 | Function | e    | e    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Function | a    | main::main::a |         
+u0:4 | Function | b    | main::main::b |         
+u0:5 | Function | c    | main::main::c |         
+u0:6 | Function | e    | main::main::e |         
 
 
 ===============================================================================
@@ -1437,12 +1430,12 @@ fn foo(str: *const c_char) {}
 fn bar(bool: bool) {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | foo  | foo  |         
-u0:4 | Variable | str  | str  |         
-u0:5 | Function | bar  | bar  |         
-u0:6 | Variable | bool | bool |         
+u0:1 | Module   | main | main                  | [global]
+u0:2 | File     | main | main::main            |         
+u0:3 | Function | foo  | main::main::foo       |         
+u0:4 | Variable | str  | main::main::foo::str  |         
+u0:5 | Function | bar  | main::main::bar       |         
+u0:6 | Variable | bool | main::main::bar::bool |         
 
 
 ===============================================================================
@@ -1490,25 +1483,25 @@ fn foo<A>() where A: Foo + As<f64>, f64: As<A> {}
 impl<A> Default for B<A> where *mut A: C + D {}
 
 --- expect:symbols ---
-u0:1  | Module   | main      | main      | [global]
-u0:2  | File     | main      | main      |         
-u0:3  | Function | walk      | walk      |         
-u0:4  | Type     | F         | F         |         
-u0:5  | Variable | it        | it        |         
-u0:6  | Impl     | impl Iter | impl Iter |         
-u0:7  | Type     | T         | T         |         
-u0:8  | Impl     | impl B    | impl B    |         
-u0:9  | Type     | T         | T         |         
-u0:10 | Impl     | impl Read | impl Read |         
-u0:11 | Type     | E         | E         |         
-u0:12 | Type     | T         | T         |         
-u0:13 | Type     | T         | T         |         
-u0:14 | Trait    | A         | A         |         
-u0:15 | Type     | B         | B         |         
-u0:16 | Struct   | Foo       | Foo       |         
-u0:17 | Function | foo       | foo       |         
-u0:18 | Type     | A         | A         |         
-u0:19 | Type     | A         | A         |         
+u0:1  | Module   | main | main                 | [global]
+u0:2  | File     | main | main::main           |         
+u0:3  | Function | walk | main::main::walk     |         
+u0:4  | Type     | F    | main::main::walk::F  |         
+u0:5  | Variable | it   | main::main::walk::it |         
+u0:6  | Impl     | Iter | main::main::Iter     |         
+u0:7  | Type     | T    | main::main::Iter::T  |         
+u0:8  | Impl     | B    | main::main::B        |         
+u0:9  | Type     | T    | main::main::B::T     |         
+u0:10 | Impl     | Read | main::main::Read     |         
+u0:11 | Type     | E    | main::main::Read::E  |         
+u0:12 | Type     | T    | main::main::B::T     |         
+u0:13 | Type     | T    | main::main::B::T     |         
+u0:14 | Trait    | A    | main::main::A        |         
+u0:15 | Type     | B    | main::main::A::B     |         
+u0:16 | Struct   | Foo  | main::main::Foo      |         
+u0:17 | Function | foo  | main::main::foo      |         
+u0:18 | Type     | A    | main::main::foo::A   |         
+u0:19 | Type     | A    | main::main::B::A     |         
 
 --- expect:symbol-deps ---
 u0:14 <- [u0:8]
@@ -1533,10 +1526,10 @@ extern "C" {}
 unsafe extern "C" {}
 
 --- expect:symbols ---
-u0:1 | Module   | main                 | main                 | [global]
-u0:2 | File     | main                 | main                 |         
-u0:3 | Function | napi_module_register | napi_module_register |         
-u0:4 | Variable | mod_                 | mod_                 |         
+u0:1 | Module   | main                 | main                             | [global]
+u0:2 | File     | main                 | main::main                       |         
+u0:3 | Function | napi_module_register | main::main::napi_module_register |         
+u0:4 | Variable | mod_                 | main::main::mod_                 |         
 
 
 ===============================================================================
@@ -1551,11 +1544,11 @@ crate fn foo() { }
 crate const X: u32 = 0;
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Struct   | Foo  | Foo  |         
-u0:4 | Function | foo  | foo  |         
-u0:5 | Const    | X    | X    |         
+u0:1 | Module   | main | main            | [global]
+u0:2 | File     | main | main::main      |         
+u0:3 | Struct   | Foo  | main::main::Foo |         
+u0:4 | Function | foo  | main::main::foo |         
+u0:5 | Const    | X    | main::main::X   |         
 
 
 ===============================================================================
@@ -1573,13 +1566,13 @@ struct A {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Struct | B    | B    |         
-u0:4 | Struct | C    | C    |         
-u0:5 | Struct | A    | A    |         
-u0:6 | Field  | a    | a    |         
-u0:7 | Field  | b    | b    |         
+u0:1 | Module | main | main             | [global]
+u0:2 | File   | main | main::main       |         
+u0:3 | Struct | B    | main::main::B    |         
+u0:4 | Struct | C    | main::main::C    |         
+u0:5 | Struct | A    | main::main::A    |         
+u0:6 | Field  | a    | main::main::A::a |         
+u0:7 | Field  | b    | main::main::A::b |         
 
 --- expect:symbol-deps ---
 u0:3 <- [u0:5, u0:6]
@@ -1604,12 +1597,12 @@ where
 {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Struct   | D    | D    |         
-u0:4 | Function | foo  | foo  |         
-u0:5 | Type     | D    | D    |         
-u0:6 | Variable | val  | val  |         
+u0:1 | Module   | main | main                 | [global]
+u0:2 | File     | main | main::main           |         
+u0:3 | Struct   | D    | main::main::D        |         
+u0:4 | Function | foo  | main::main::foo      |         
+u0:5 | Type     | D    | main::main::foo::D   |         
+u0:6 | Variable | val  | main::main::foo::val |         
 
 --- expect:symbol-deps ---
 u0:4 -> [u0:5]
@@ -1626,7 +1619,7 @@ const-generics-with-default
 pub struct Loaf<T: Sized, const N: usize = 1>([T; N]);
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Struct | Loaf | Loaf |         
-u0:4 | Type   | T    | T    |         
+u0:1 | Module | main | main                | [global]
+u0:2 | File   | main | main::main          |         
+u0:3 | Struct | Loaf | main::main::Loaf    |         
+u0:4 | Type   | T    | main::main::Loaf::T |         

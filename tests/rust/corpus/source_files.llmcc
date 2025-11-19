@@ -17,8 +17,8 @@ block-comments
 /**/
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -49,8 +49,8 @@ nested-block-comments
 // ---
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -70,8 +70,8 @@ line-comments
 //! Inner line doc comment
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -93,8 +93,8 @@ line-doc-comments
 //// - Only a comment
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -115,8 +115,8 @@ block-doc-comments
 /*** - Only a comment */
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -134,8 +134,8 @@ nested-doc-block-comments
 /**  /* */  /** */  /*! */  */
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -162,9 +162,9 @@ let x; // <- immediate item after an empty line doc comment
 /***/
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Variable | x    | x    |         
+u0:1 | Module   | main | main          | [global]
+u0:2 | File     | main | main::main    |         
+u0:3 | Variable | x    | main::main::x |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -180,8 +180,8 @@ line-doc-comment-with-no-eol
 //! Doc comment
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -198,10 +198,10 @@ const σ1 : Σ = 0;
 const ψ_2 : Ψ = 1;
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
-u0:3 | Const  | σ1   | σ1   |         
-u0:4 | Const  | ψ_2  | ψ_2  |         
+u0:1 | Module | main | main             | [global]
+u0:2 | File   | main | main::main       |         
+u0:3 | Const  | σ1   | main::main::σ1   |         
+u0:4 | Const  | ψ_2  | main::main::ψ_2  |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -217,8 +217,8 @@ shebang-line-containing-spaces
 #!/usr/bin/env -S cargo +nightly -Zscript
 
 --- expect:symbols ---
-u0:1 | Module | main | main | [global]
-u0:2 | File   | main | main |         
+u0:1 | Module | main | main       | [global]
+u0:2 | File   | main | main::main |         
 
 --- expect:graph ---
 digraph DesignGraph {
@@ -235,9 +235,9 @@ empty-shebang-with-code-after
 fn main() {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | main | main |         
+u0:1 | Module   | main | main             | [global]
+u0:2 | File     | main | main::main       |         
+u0:3 | Function | main | main::main::main |         
 
 --- expect:graph ---
 digraph project {
@@ -254,9 +254,9 @@ immediate-inner-attribute
 fn main() {}
 
 --- expect:symbols ---
-u0:1 | Module   | main | main | [global]
-u0:2 | File     | main | main |         
-u0:3 | Function | main | main |         
+u0:1 | Module   | main | main             | [global]
+u0:2 | File     | main | main::main       |         
+u0:3 | Function | main | main::main::main |         
 
 --- expect:graph ---
 digraph project {
