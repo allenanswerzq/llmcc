@@ -1,4 +1,5 @@
 use llmcc_core::context::CompileUnit;
+use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
@@ -42,10 +43,40 @@ impl<'tcx> BinderVisitor<'tcx> {
         for scope in scopes.scopes().iter().rev() {
             let matches = scope.lookup_symbols(name_key);
             if let Some(symbol) = matches.last() {
+                // Set FQN on the symbol (should have been set in collect phase, this is a safety check)
+                // Only set if not already fully qualified (still just the symbol name)
+                let current_fqn = scopes.interner().resolve_owned(symbol.fqn.read().clone())
+                    .unwrap_or_else(|| name.to_string());
+                if current_fqn == name {
+                    // FQN hasn't been properly set yet, set it now
+                    let fqn = Self::build_fqn(scopes, name);
+                    symbol.set_fqn(fqn);
+                }
                 return Some(symbol);
             }
         }
         None
+    }
+
+    /// Build fully qualified name from current scope
+    fn build_fqn(scopes: &BinderScopes<'tcx>, name: &str) -> InternedStr {
+        let fqn_str = if let Some(current_scope) = scopes.scopes().top() {
+            if let Some(scope_symbol) = current_scope.symbol() {
+                // Get the FQN of the scope's symbol and append our name
+                let scope_fqn_interned = scope_symbol.fqn.read();
+                let scope_fqn = scopes.interner().resolve_owned(*scope_fqn_interned)
+                    .unwrap_or_else(|| name.to_string());
+                format!("{}::{}", scope_fqn, name)
+            } else {
+                // No symbol for scope, just use the name
+                name.to_string()
+            }
+        } else {
+            // No current scope, just use the name
+            name.to_string()
+        };
+
+        scopes.interner().intern(&fqn_str)
     }
 
     fn symbol_from_field(
@@ -241,6 +272,118 @@ impl<'tcx> BinderVisitor<'tcx> {
             scopes.push_scope_recursive(sn.scope().id());
         } else {
             scopes.push_scope(sn.scope().id());
+        }
+    }
+
+    /// Infer type from expressions (like C#'s GetTypeFromNode)
+    /// Returns the type symbol for an expression node
+    fn infer_type_from_expr(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+    ) -> Option<&'tcx Symbol> {
+        match node.kind() {
+            // === Identifiers - look up type in scope stack ===
+            HirKind::Identifier => {
+                node.as_ident().and_then(|ident| {
+                    Self::lookup_symbol_in_stack(scopes, &ident.name)
+                        .and_then(|symbol| {
+                            // If this identifier refers to a function/value, get its type
+                            if let Some(type_id) = symbol.type_of() {
+                                unit.opt_get_symbol(type_id)
+                            } else {
+                                Some(symbol)
+                            }
+                        })
+                })
+            }
+
+            // === Binary Operations - type depends on operator ===
+            HirKind::Internal => {
+                let children: Vec<_> = node.children().iter().cloned().collect();
+
+                // Binary operations (3+ children: left, operator, right)
+                if children.len() >= 3 {
+                    let op_node = unit.hir_node(children[1]);
+                    if let Some(op_text) = op_node.as_text() {
+                        let operator = &op_text.text;
+
+                        // Comparison operators always return bool
+                        if matches!(
+                            operator.as_str(),
+                            "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
+                        ) {
+                            // Return bool type symbol if it exists
+                            return scopes.lookup_or_insert_global("bool", &unit.hir_node(children[0]), SymKind::Type);
+                        }
+
+                        // Arithmetic operators return left operand type
+                        if matches!(operator.as_str(), "+" | "-" | "*" | "/" | "%") {
+                            let left_node = unit.hir_node(children[0]);
+                            return Self::infer_type_from_expr(unit, &left_node, scopes);
+                        }
+                    }
+                }
+
+                // Fall back to first meaningful child's type
+                for child_id in &children {
+                    let child = unit.hir_node(*child_id);
+                    if !matches!(child.kind(), HirKind::Text | HirKind::Comment) {
+                        if let Some(ty) = Self::infer_type_from_expr(unit, &child, scopes) {
+                            return Some(ty);
+                        }
+                    }
+                }
+                None
+            }
+
+            // === Other kinds - recursive traversal to first child ===
+            _ => {
+                node.children().first().and_then(|child_id| {
+                    Self::infer_type_from_expr(unit, &unit.hir_node(*child_id), scopes)
+                })
+            }
+        }
+    }    /// Infer return type from block (last expression or void)
+    fn infer_block_type(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+    ) -> Option<&'tcx Symbol> {
+        // Get the last child that isn't whitespace/comments
+        let last_expr = node.children().iter().rev().find(|child_id| {
+            let child = unit.hir_node(**child_id);
+            !matches!(child.kind(), HirKind::Text | HirKind::Comment)
+        });
+
+        if let Some(last_id) = last_expr {
+            let last_node = unit.hir_node(*last_id);
+            Self::infer_type_from_expr(unit, &last_node, scopes)
+        } else {
+            None
+        }
+    }
+
+    /// Assign inferred type to pattern (for let bindings, parameters, etc.)
+    fn assign_type_to_pattern(
+        unit: &CompileUnit<'tcx>,
+        pattern: &HirNode<'tcx>,
+        ty: &'tcx Symbol,
+        scopes: &mut BinderScopes<'tcx>,
+    ) {
+        match pattern.kind() {
+            HirKind::Identifier => {
+                if let Some(ident) = pattern.as_ident() {
+                    ident.symbol().set_type_of(ty.id());
+                }
+            }
+            _ => {
+                // For complex patterns (tuple patterns, struct patterns), visit all identifiers
+                for child_id in pattern.children() {
+                    let child = unit.hir_node(*child_id);
+                    Self::assign_type_to_pattern(unit, &child, ty, scopes);
+                }
+            }
         }
     }
 }
@@ -731,7 +874,10 @@ pub fn bind_symbols<'tcx>(
     node: &HirNode<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
-    _config: &ResolverOption,
+    config: &ResolverOption,
 ) {
+    if config.print_ir {
+        eprintln!("[BindSymbols] Processing symbol bindings");
+    }
     BinderVisitor::new().visit_node(&unit, node, scopes, namespace, None);
 }

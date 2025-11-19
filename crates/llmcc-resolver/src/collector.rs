@@ -119,6 +119,18 @@ impl<'a> CollectorScopes<'a> {
         self.globals
     }
 
+    /// Get the scope stack for iteration
+    #[inline]
+    pub fn scopes(&self) -> &ScopeStack<'a> {
+        &self.scopes
+    }
+
+    /// Get the current (top) scope on the stack
+    #[inline]
+    pub fn top(&self) -> Option<&'a Scope<'a>> {
+        self.scopes.top()
+    }
+
     /// Find or insert symbol in current scope, set kind and unit index
     #[inline]
     pub fn lookup_or_insert(

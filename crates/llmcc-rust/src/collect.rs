@@ -1,4 +1,5 @@
 use llmcc_core::context::CompileUnit;
+use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::HirNode;
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
@@ -21,6 +22,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
+    /// Declare a symbol from an identifier node with proper tracking
     fn declare_symbol_from_ident(
         &self,
         node: &HirNode<'tcx>,
@@ -31,9 +33,36 @@ impl<'tcx> CollectorVisitor<'tcx> {
         let symbol = scopes.lookup_or_insert(&ident.name, node, kind)?;
         ident.set_symbol(symbol);
         symbol.add_defining(node.id());
+
+        // Set FQN based on current scope hierarchy
+        let fqn = Self::build_fqn(scopes, &ident.name);
+        symbol.set_fqn(fqn);
+
         Some(symbol)
     }
 
+    /// Build fully qualified name from current scope
+    fn build_fqn(scopes: &CollectorScopes<'tcx>, name: &str) -> InternedStr {
+        let fqn_str = if let Some(current_scope) = scopes.top() {
+            if let Some(scope_symbol) = current_scope.symbol() {
+                // Get the FQN of the scope's symbol and append our name
+                let scope_fqn_interned = scope_symbol.fqn.read();
+                let scope_fqn = scopes.interner().resolve_owned(*scope_fqn_interned)
+                    .unwrap_or_else(|| name.to_string());
+                format!("{}::{}", scope_fqn, name)
+            } else {
+                // No symbol for scope, just use the name
+                name.to_string()
+            }
+        } else {
+            // No current scope, just use the name
+            name.to_string()
+        };
+
+        scopes.interner().intern(&fqn_str)
+    }
+
+    /// Declare a symbol from a named field in the AST node
     fn declare_symbol_from_field(
         &self,
         unit: &CompileUnit<'tcx>,
@@ -45,6 +74,38 @@ impl<'tcx> CollectorVisitor<'tcx> {
         let ident_id = node.child_identifier_by_field(*unit, field_id)?;
         let ident = unit.hir_node(ident_id).as_ident()?;
         self.declare_symbol_from_ident(node, scopes, ident, kind)
+    }
+
+    /// Find all identifiers in a pattern node (recursive)
+    fn collect_pattern_identifiers(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+        kind: SymKind,
+    ) -> Vec<&'tcx Symbol> {
+        let mut symbols = Vec::new();
+        Self::collect_pattern_identifiers_impl(unit, node, scopes, kind, &mut symbols);
+        symbols
+    }
+
+    fn collect_pattern_identifiers_impl(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+        kind: SymKind,
+        symbols: &mut Vec<&'tcx Symbol>,
+    ) {
+        if let Some(ident) = node.as_ident() {
+            let name = ident.name.to_string();
+            if let Some(sym) = scopes.lookup_or_insert(&name, node, kind) {
+                ident.set_symbol(sym);
+                symbols.push(sym);
+            }
+        }
+        for child_id in node.children() {
+            let child = unit.hir_node(*child_id);
+            Self::collect_pattern_identifiers_impl(unit, &child, scopes, kind, symbols);
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -263,14 +324,19 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             return;
         };
 
+        // Create a descriptive name for the impl block
         let impl_name = node
             .child_identifier_by_field(*unit, LangRust::field_type)
-            .and_then(|id| unit.hir_node(id).as_ident().map(|ident| ident.name.clone()))
-            .map(|name| format!("impl {}", name))
+            .and_then(|id| {
+                unit.hir_node(id).as_ident().map(|ident| {
+                    format!("impl {}", ident.name)
+                })
+            })
             .unwrap_or_else(|| format!("impl#{}", node.id().0));
 
         if let Some(symbol) = scopes.lookup_or_insert(&impl_name, node, SymKind::Impl) {
             symbol.add_defining(node.id());
+
             let ident = unit
                 .cc
                 .alloc_hir_ident(next_hir_id(), impl_name.clone(), symbol);
@@ -458,8 +524,11 @@ pub fn collect_symbols<'tcx>(
     node: &HirNode<'tcx>,
     scopes: &mut CollectorScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
-    _config: &ResolverOption,
+    config: &ResolverOption,
 ) {
+    if config.print_ir {
+        eprintln!("[CollectSymbols] Processing symbols in unit: {:?}", unit.file_path());
+    }
     CollectorVisitor::new().visit_node(unit, node, scopes, namespace, None);
 }
 

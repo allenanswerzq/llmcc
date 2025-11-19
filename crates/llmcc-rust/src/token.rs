@@ -40,8 +40,9 @@ impl LanguageTraitImpl for LangRust {
         // but the actual concrete type is always CollectorScopes for symbol collection.
         unsafe {
             let scopes = scopes as *mut T as *mut CollectorScopes<'tcx>;
-            let config_ptr = config as *const C as *const ResolverOption;
-            crate::collect::collect_symbols(unit, node, &mut *scopes, namespace, &*config_ptr);
+            // Cast config to ResolverOption reference - at call site it's always ResolverOption
+            let config_ref = config as *const C as *const ResolverOption;
+            crate::collect::collect_symbols(unit, node, &mut *scopes, namespace, &*config_ref);
         }
     }
 
@@ -55,8 +56,9 @@ impl LanguageTraitImpl for LangRust {
         // Similar to collect_symbols_impl, T is known to be BinderScopes<'tcx> at the call site
         unsafe {
             let scopes = scopes as *mut T as *mut BinderScopes<'tcx>;
-            let config_ptr = config as *const C as *const ResolverOption;
-            crate::bind::bind_symbols(*unit, node, &mut *scopes, namespace, &*config_ptr);
+            // Cast config to ResolverOption reference - at call site it's always ResolverOption
+            let config_ref = config as *const C as *const ResolverOption;
+            crate::bind::bind_symbols(*unit, node, &mut *scopes, namespace, &*config_ref);
         }
     }
 }
