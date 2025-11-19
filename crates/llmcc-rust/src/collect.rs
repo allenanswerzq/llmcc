@@ -483,8 +483,8 @@ mod tests {
         let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
         build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
         let resolver_option = ResolverOption::default().with_sequential(true);
-        let globals = collect_symbols_with::<LangRust>(&cc, resolver_option);
-        bind_symbols_with::<LangRust>(&cc, globals, resolver_option);
+        let globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
+        bind_symbols_with::<LangRust>(&cc, globals, &resolver_option);
         check(&cc);
     }
 
