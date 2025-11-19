@@ -47,12 +47,10 @@ pub enum HirNode<'hir> {
 }
 
 impl<'hir> HirNode<'hir> {
-    /// Format node as "kind:id [s:scope_id]" for debugging
     pub fn format_node(&self, _unit: CompileUnit<'hir>) -> String {
         let id = self.id();
         let kind = self.kind();
-        let mut f = format!("{}:{}", kind, id);
-        f
+        format!("{}:{}", kind, id)
     }
 
     /// Get the base information for any HIR node

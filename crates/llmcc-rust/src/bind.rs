@@ -38,13 +38,13 @@ impl<'tcx> BinderVisitor<'tcx> {
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
         if let Some(ident) = node.as_ident() {
-            if let Some(existing) = scopes.lookup_symbol_with(&ident.name) {
+            if let Some(existing) = scopes.lookup_symbol(&ident.name) {
                 return Some(existing);
             }
             return Some(ident.symbol());
         }
         let ident = node.child_identifier_by_field(*unit, field_id)?;
-        if let Some(existing) = scopes.lookup_symbol_with(&ident.name) {
+        if let Some(existing) = scopes.lookup_symbol(&ident.name) {
             return Some(existing);
         }
         Some(ident.symbol())
@@ -69,30 +69,13 @@ impl<'tcx> BinderVisitor<'tcx> {
         Some(unit.hir_node(*child_id))
     }
 
-    fn lookup_symbol_in_stack<'a>(
-        scopes: &'a BinderScopes<'tcx>,
-        name: &str,
-    ) -> Option<&'tcx Symbol> {
-        if name.is_empty() {
-            return None;
-        }
-        let name_key = scopes.interner().intern(name);
-        for scope in scopes.scopes().iter().rev() {
-            let matches = scope.lookup_symbols(name_key);
-            if let Some(symbol) = matches.last() {
-                return Some(symbol);
-            }
-        }
-        None
-    }
-
     fn lookup_callable_symbol(
         &self,
         unit: &CompileUnit<'tcx>,
         scopes: &BinderScopes<'tcx>,
         name: &str,
     ) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = scopes.lookup_symbol_with(name)
+        if let Some(symbol) = scopes.lookup_symbol(name)
             && matches!(symbol.kind(), SymKind::Function | SymKind::Macro)
         {
             return Some(symbol);
@@ -172,7 +155,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) -> Option<&'tcx Symbol> {
         let ident = type_node.find_identifier(*unit)?;
 
-        if let Some(existing) = Self::lookup_symbol_in_stack(scopes, &ident.name) {
+        if let Some(existing) = scopes.lookup_symbol(&ident.name) {
             return Some(existing);
         }
 
@@ -207,7 +190,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         owner: Option<&Symbol>,
     ) {
         let mut visit = |name: String| {
-            if let Some(target) = Self::lookup_symbol_in_stack(scopes, &name) {
+            if let Some(target) = scopes.lookup_symbol(&name) {
                 symbol.add_dependency(target);
                 if let Some(owner) = owner {
                     owner.add_dependency(target);
@@ -256,7 +239,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             // === Identifiers - look up type in scope stack ===
             HirKind::Identifier => {
                 node.as_ident().and_then(|ident| {
-                    Self::lookup_symbol_in_stack(scopes, &ident.name).and_then(|symbol| {
+                    scopes.lookup_symbol(&ident.name).and_then(|symbol| {
                         // If this identifier refers to a function/value, get its type
                         if let Some(type_id) = symbol.type_of() {
                             unit.opt_get_symbol(type_id)

@@ -172,11 +172,12 @@ impl<'tcx> BinderScopes<'tcx> {
         symbol.set_kind(kind);
         Some(symbol)
     }
-    pub fn lookup(&self, name: &str) -> Option<&'tcx Symbol> {
-        self.scopes.lookup(name)
+
+    pub fn lookup_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+        self.scopes.lookup_symbol(name)
     }
 
-    pub fn lookup_with(
+    pub fn lookup_symbol_with(
         &self,
         name: &str,
         kind_filter: Option<SymKind>,
@@ -184,7 +185,7 @@ impl<'tcx> BinderScopes<'tcx> {
         fqn_filter: Option<&str>,
     ) -> Option<&'tcx Symbol> {
         self.scopes
-            .lookup_with(name, kind_filter, unit_filter, fqn_filter)
+            .lookup_symbol_with(name, kind_filter, unit_filter, fqn_filter)
     }
 }
 

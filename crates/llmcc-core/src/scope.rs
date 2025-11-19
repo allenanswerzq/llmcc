@@ -249,7 +249,7 @@ impl<'tcx> ScopeStack<'tcx> {
         Some(self.interner.intern(name_to_intern))
     }
 
-    pub fn lookup(&self, name: &str) -> Option<&'tcx Symbol> {
+    pub fn lookup_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
         if name.is_empty() {
             return None;
         }
@@ -263,7 +263,7 @@ impl<'tcx> ScopeStack<'tcx> {
         })
     }
 
-    pub fn lookup_with(
+    pub fn lookup_symbol_with(
         &self,
         name: &str,
         kind_filter: Option<SymKind>,
