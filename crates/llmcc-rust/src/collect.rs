@@ -21,6 +21,17 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
+
+    fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut CollectorScopes<'tcx>) {
+        let primitives = [
+            "i32", "i64", "i16", "i8", "i128", "isize", "u32", "u64", "u16", "u8", "u128", "usize",
+            "f32", "f64", "bool", "char", "str",
+        ];
+        for prim in primitives {
+            scopes.lookup_or_insert_global(prim, node, SymKind::Type);
+        }
+    }
+
     /// Declare a symbol from a named field in the AST node
     fn declare_symbol_from_field(
         &self,
@@ -158,16 +169,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let primitives = [
-            "i32", "i64", "i16", "i8", "i128", "isize",
-            "u32", "u64", "u16", "u8", "u128", "usize",
-            "f32", "f64",
-            "bool", "char", "str",
-        ];
-        for prim in primitives {
-            scopes.lookup_or_insert_global(prim, node, SymKind::Type);
-        }
-
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
 
@@ -536,7 +537,9 @@ pub fn collect_symbols<'tcx>(
     namespace: &'tcx Scope<'tcx>,
     _config: &ResolverOption,
 ) {
-    CollectorVisitor::new().visit_node(unit, node, scopes, namespace, None);
+    let mut visit = CollectorVisitor::new();
+    visit.initialize(node, scopes);
+    visit.visit_node(unit, node, scopes, namespace, None);
 }
 
 #[cfg(test)]

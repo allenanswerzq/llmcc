@@ -1,7 +1,7 @@
 use std::vec;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirKind, HirNode};
+use llmcc_core::ir::{HirId, HirKind, HirNode, HirScope};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
@@ -18,30 +18,43 @@ enum BinaryOperatorOutcome {
 }
 
 const BINARY_OPERATOR_TOKENS: &[(u16, BinaryOperatorOutcome)] = &[
+    // "=="
     (LangRust::Text_EQEQ, BinaryOperatorOutcome::ReturnsBool),
+    // "!="
     (LangRust::Text_NE, BinaryOperatorOutcome::ReturnsBool),
+    // "<"
     (LangRust::Text_LT, BinaryOperatorOutcome::ReturnsBool),
+    // ">"
     (LangRust::Text_GT, BinaryOperatorOutcome::ReturnsBool),
+    // "<="
     (LangRust::Text_LE, BinaryOperatorOutcome::ReturnsBool),
+    // ">="
     (LangRust::Text_GE, BinaryOperatorOutcome::ReturnsBool),
+    // "&&"
     (LangRust::Text_AMPAMP, BinaryOperatorOutcome::ReturnsBool),
+    // "||"
     (LangRust::Text_PIPEPIPE, BinaryOperatorOutcome::ReturnsBool),
+    // "+"
     (
         LangRust::Text_PLUS,
         BinaryOperatorOutcome::ReturnsLeftOperand,
     ),
+    // "-"
     (
         LangRust::Text_MINUS,
         BinaryOperatorOutcome::ReturnsLeftOperand,
     ),
+    // "*"
     (
         LangRust::Text_STAR,
         BinaryOperatorOutcome::ReturnsLeftOperand,
     ),
+    // "/"
     (
         LangRust::Text_SLASH,
         BinaryOperatorOutcome::ReturnsLeftOperand,
     ),
+    // "%"
     (
         LangRust::Text_PERCENT,
         BinaryOperatorOutcome::ReturnsLeftOperand,
@@ -59,6 +72,16 @@ impl<'tcx> BinderVisitor<'tcx> {
     fn new() -> Self {
         Self {
             phantom: std::marker::PhantomData,
+        }
+    }
+
+    fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut BinderScopes<'tcx>) {
+        let primitives = [
+            "i32", "i64", "i16", "i8", "i128", "isize", "u32", "u64", "u16", "u8", "u128", "usize",
+            "f32", "f64", "bool", "char", "str",
+        ];
+        for prim in primitives {
+            scopes.lookup_or_insert_global(prim, node, SymKind::Type);
         }
     }
 
@@ -90,13 +113,14 @@ impl<'tcx> BinderVisitor<'tcx> {
             if let Some(existing) = scopes.lookup_symbol(&ident.name) {
                 return Some(existing);
             }
-            return Some(ident.symbol());
+            Some(ident.symbol())
+        } else {
+            let ident = node.child_identifier_by_field(*unit, field_id)?;
+            if let Some(existing) = scopes.lookup_symbol(&ident.name) {
+                return Some(existing);
+            }
+            Some(ident.symbol())
         }
-        let ident = node.child_identifier_by_field(*unit, field_id)?;
-        if let Some(existing) = scopes.lookup_symbol(&ident.name) {
-            return Some(existing);
-        }
-        Some(ident.symbol())
     }
 
     /// Extracts a human-readable identifier from the given node.
@@ -296,7 +320,7 @@ impl<'tcx> BinderVisitor<'tcx> {
 
     /// Pushes the scope represented by `sn`, recursing when the HIR already points
     /// at an existing nested scope (e.g., structs/impls store their own scope nodes).
-    fn push_scope_node(scopes: &mut BinderScopes<'tcx>, sn: &'tcx llmcc_core::ir::HirScope<'tcx>) {
+    fn push_scope_node(scopes: &mut BinderScopes<'tcx>, sn: &'tcx HirScope<'tcx>) {
         if sn.opt_ident().is_some() {
             scopes.push_scope_recursive(sn.scope().id());
         } else {
@@ -651,14 +675,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let primitives = [
-            "i32", "i64", "i16", "i8", "i128", "isize", "u32", "u64", "u16", "u8", "u128", "usize",
-            "f32", "f64", "bool", "char", "str",
-        ];
-        for prim in primitives {
-            scopes.lookup_or_insert_global(prim, node, SymKind::Type);
-        }
-
         let file_path = unit.file_path().expect("no file path found to compile");
         let depth = scopes.scope_depth();
 
@@ -1188,6 +1204,7 @@ pub fn bind_symbols<'tcx>(
     _config: &ResolverOption,
 ) {
     let mut visit = BinderVisitor::new();
+    visit.initialize(node, scopes);
     visit.visit_node(&unit, node, scopes, namespace, None);
 }
 
@@ -1195,7 +1212,6 @@ pub fn bind_symbols<'tcx>(
 mod tests {
     use crate::token::LangRust;
     use llmcc_core::context::{CompileCtxt, CompileUnit};
-    use llmcc_core::ir::HirNode;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
     use llmcc_core::symbol::{SymId, SymKind};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
