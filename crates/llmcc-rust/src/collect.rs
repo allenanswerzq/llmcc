@@ -12,14 +12,12 @@ use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
     phantom: std::marker::PhantomData<&'tcx ()>,
-    block_counter: usize,
 }
 
 impl<'tcx> CollectorVisitor<'tcx> {
     fn new() -> Self {
         Self {
             phantom: std::marker::PhantomData,
-            block_counter: 0,
         }
     }
 
@@ -48,6 +46,11 @@ impl<'tcx> CollectorVisitor<'tcx> {
         symbols
     }
 
+    /// Recursive worker for [`collect_pattern_identifiers`].
+    ///
+    /// Examples of the shapes we cover:
+    /// - `let (a, b): (i32, i32)` will visit both tuple elements.
+    /// - `let Foo { x, y: (left, right) } = value;` walks nested struct/tuple patterns.
     fn collect_pattern_identifiers_impl(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -58,9 +61,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         // Skip non-binding identifiers
         if matches!(
             node.kind_id(),
-            LangRust::type_identifier
-                | LangRust::primitive_type
-                | LangRust::field_identifier
+            LangRust::type_identifier | LangRust::primitive_type | LangRust::field_identifier
         ) {
             return;
         }
@@ -96,29 +97,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
-    fn impl_symbol_name(type_name: Option<String>) -> String {
-        match type_name {
-            Some(name) => Self::normalize_impl_type_name(name),
-            None => "impl".to_string(),
-        }
-    }
-
-    fn normalize_impl_type_name(name: String) -> String {
-        if name.starts_with("::") {
-            if let Some((head, _)) = name.rsplit_once("::") {
-                return if head.is_empty() { name } else { head.to_string() };
-            }
-            return name;
-        }
-        if name.starts_with("Self::") {
-            return "Self".to_string();
-        }
-        if let Some((_, tail)) = name.rsplit_once("::") {
-            return tail.to_string();
-        }
-        name
-    }
-
     #[allow(clippy::too_many_arguments)]
     fn visit_scoped_named(
         &mut self,
@@ -152,6 +130,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
             scopes.push_scope(scope);
             self.visit_children(unit, node, scopes, scope, Some(sym));
             scopes.pop_scope();
+        } else {
+            // Fallback: visit children without creating a new scope.
+            self.visit_children(unit, node, scopes, namespace, parent);
         }
     }
 }
@@ -165,27 +146,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            // Create a unique name for the block to avoid collisions
-            let name = format!("block_{}", self.block_counter);
-            self.block_counter += 1;
-
-            if let Some(symbol) = scopes.lookup_or_insert(&name, node, SymKind::Namespace) {
-                let ident = unit
-                    .cc
-                    .alloc_hir_ident(next_hir_id(), &name, symbol);
-                sn.set_ident(ident);
-
-                let scope = unit.cc.alloc_hir_scope(next_hir_id(), symbol);
-                symbol.set_scope(scope.id());
-                sn.set_scope(scope);
-
-                scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, namespace, Some(symbol));
-                scopes.pop_scope();
-                return;
-            }
-        }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -198,10 +158,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let file_path = unit.file_path().expect("no file path found to compile");
-        let start_depth = scopes.scope_depth();
-
-        // Initialize primitives in the global scope if they don't exist
         let primitives = [
             "i32", "i64", "i16", "i8", "i128", "isize",
             "u32", "u64", "u16", "u8", "u128", "usize",
@@ -211,6 +167,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         for prim in primitives {
             scopes.lookup_or_insert_global(prim, node, SymKind::Type);
         }
+
+        let file_path = unit.file_path().expect("no file path found to compile");
+        let start_depth = scopes.scope_depth();
 
         if let Some(crate_name) = parse_crate_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
@@ -374,30 +333,38 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
-        let _ = parent;
         let Some(sn) = node.as_scope() else {
             return;
         };
-        let type_name = node
+
+        // Extract the type name (e.g., "foo::Bar")
+        let type_name_opt = node
             .child_identifier_by_field(*unit, LangRust::field_type)
             .map(|ident| ident.name.to_string());
-        let impl_name = Self::impl_symbol_name(type_name);
 
-        if let Some(symbol) = scopes.lookup_or_insert(&impl_name, node, SymKind::Impl) {
-            let ident = unit
-                .cc
-                .alloc_hir_ident(next_hir_id(), &impl_name, symbol);
-            sn.set_ident(ident);
+        if let Some(full_type_name) = type_name_opt {
+            // Extract the short name (e.g., "Bar")
+            // Note: split('::').last() gets the item name.
+            let short_name = full_type_name.split("::").last().unwrap_or(&full_type_name);
 
-            let scope = unit.cc.alloc_hir_scope(next_hir_id(), symbol);
-            symbol.set_scope(scope.id());
-            sn.set_scope(scope);
+            // Lookup for the struct this impl block is target for
+            if let Some(symbol) =
+                scopes.lookup_symbol_with(short_name, Some(vec![SymKind::Struct]), None, None)
+            {
+                let ident = unit.cc.alloc_hir_ident(next_hir_id(), short_name, symbol);
+                ident.set_symbol(symbol);
+                sn.set_ident(ident);
 
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, namespace, Some(symbol));
-            scopes.pop_scope();
+                let scope = unit.cc.alloc_hir_scope(next_hir_id(), symbol);
+                symbol.add_defining(node.id());
+                sn.set_scope(scope);
+
+                scopes.push_scope(scope);
+                self.visit_children(unit, node, scopes, namespace, Some(symbol));
+                scopes.pop_scope();
+            }
         }
     }
 
@@ -514,14 +481,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(ident) = node.as_ident() {
-            if let Some(symbol) = scopes.lookup_or_insert(&ident.name, node, SymKind::EnumVariant) {
-                ident.set_symbol(symbol);
-                self.visit_children(unit, node, scopes, namespace, Some(symbol));
-                return;
-            }
-        }
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_scoped_named(
+            unit,
+            node,
+            scopes,
+            namespace,
+            parent,
+            SymKind::EnumVariant,
+            LangRust::field_name,
+        );
     }
 
     fn visit_parameter(
@@ -691,7 +659,10 @@ fn run() {
 }
 "#;
         // run depends on MyStruct (via s) and foo (via call)
-        assert_dependencies(&[source], &[("run", SymKind::Function, &["MyStruct", "foo"])]);
+        assert_dependencies(
+            &[source],
+            &[("run", SymKind::Function, &["MyStruct", "foo"])],
+        );
     }
 
     #[test]
@@ -845,7 +816,7 @@ fn run() {
 }
 "#;
         assert_symbol_type(&[source], "value", SymKind::Variable, Some("Foo"));
-        assert_symbol_type(&[source], "other", SymKind::Variable, None);
+        assert_symbol_type(&[source], "other", SymKind::Variable, Some("Foo"));
     }
 
     #[test]
@@ -888,7 +859,7 @@ type Alias = Foo;
 const ANSWER: i32 = 42;
 "#;
         assert_symbol_type(&[source], "Alias", SymKind::Type, Some("Foo"));
-        assert_symbol_type(&[source], "ANSWER", SymKind::Const, None);
+        assert_symbol_type(&[source], "ANSWER", SymKind::Const, Some("i32"));
     }
 
     #[test]

@@ -1,3 +1,5 @@
+use std::vec;
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirKind, HirNode};
 use llmcc_core::scope::Scope;
@@ -6,8 +8,8 @@ use llmcc_resolver::{BinderScopes, ResolverOption};
 
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
-use llmcc_core::lang_def::LanguageTrait;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
+use llmcc_core::lang_def::LanguageTrait;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 enum BinaryOperatorOutcome {
@@ -24,11 +26,26 @@ const BINARY_OPERATOR_TOKENS: &[(u16, BinaryOperatorOutcome)] = &[
     (LangRust::Text_GE, BinaryOperatorOutcome::ReturnsBool),
     (LangRust::Text_AMPAMP, BinaryOperatorOutcome::ReturnsBool),
     (LangRust::Text_PIPEPIPE, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_PLUS, BinaryOperatorOutcome::ReturnsLeftOperand),
-    (LangRust::Text_MINUS, BinaryOperatorOutcome::ReturnsLeftOperand),
-    (LangRust::Text_STAR, BinaryOperatorOutcome::ReturnsLeftOperand),
-    (LangRust::Text_SLASH, BinaryOperatorOutcome::ReturnsLeftOperand),
-    (LangRust::Text_PERCENT, BinaryOperatorOutcome::ReturnsLeftOperand),
+    (
+        LangRust::Text_PLUS,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    (
+        LangRust::Text_MINUS,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    (
+        LangRust::Text_STAR,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    (
+        LangRust::Text_SLASH,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    (
+        LangRust::Text_PERCENT,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
 ];
 
 /// Visitor for resolving symbol bindings and establishing relationships.
@@ -38,12 +55,16 @@ pub struct BinderVisitor<'tcx> {
 }
 
 impl<'tcx> BinderVisitor<'tcx> {
+    /// Creates a new visitor; typically called once per file.
     fn new() -> Self {
         Self {
             phantom: std::marker::PhantomData,
         }
     }
 
+    /// Returns true for identifier-like HIR kinds (plain, scoped, type IDs, etc.).
+    ///
+    /// Example: both `foo` and `module::foo` nodes are treated as identifiers.
     fn is_identifier_kind(kind_id: u16) -> bool {
         matches!(
             kind_id,
@@ -54,6 +75,11 @@ impl<'tcx> BinderVisitor<'tcx> {
         )
     }
 
+    /// Finds (or reuses) the symbol declared in a specific field.
+    ///
+    /// Example: when visiting `struct Foo { value: i32 }` we call
+    /// `symbol_from_field(.., LangRust::field_name)` to get the `value` symbol so
+    /// the binder can attach types/dependencies to it.
     fn symbol_from_field(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -73,6 +99,9 @@ impl<'tcx> BinderVisitor<'tcx> {
         Some(ident.symbol())
     }
 
+    /// Extracts a human-readable identifier from the given node.
+    ///
+    /// Example: for `Foo::bar` this returns `"bar"`, ignoring the path prefix.
     fn identifier_name(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<String> {
         if let Some(ident) = node.as_ident() {
             return Some(Self::normalize_identifier(&ident.name));
@@ -83,35 +112,45 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
+    /// Normalizes a fully qualified name by returning only the last component.
     fn normalize_identifier(name: &str) -> String {
         name.rsplit("::").next().unwrap_or(name).to_string()
     }
 
+    /// Returns the first child node; handy for wrappers like `(expr)` or `await`.
     fn first_child_node(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
         let child_id = node.children().first()?;
         Some(unit.hir_node(*child_id))
     }
 
+    /// Looks up a callable symbol (function or macro) by name.
+    ///
+    /// Example: when resolving `foo()` we call this with `"foo"` to see if the
+    /// current scope stack already has a matching function/macro symbol.
     fn lookup_callable_symbol(
         &self,
-        unit: &CompileUnit<'tcx>,
+        _unit: &CompileUnit<'tcx>,
         scopes: &BinderScopes<'tcx>,
         name: &str,
     ) -> Option<&'tcx Symbol> {
-        if let Some(symbol) = scopes.lookup_symbol(name)
-            && matches!(symbol.kind(), SymKind::Function | SymKind::Macro)
-        {
+        if let Some(symbol) = scopes.lookup_symbol_with(
+            name,
+            Some(vec![SymKind::Function, SymKind::Macro]),
+            None,
+            None,
+        ) {
             return Some(symbol);
         }
-
-        // Fallback to global scan for callable symbols
-        let name_key = unit.interner().intern(name);
-        let map = unit.cc.symbol_map.read();
-        map.values().copied().find(|symbol| {
-            symbol.name == name_key && matches!(symbol.kind(), SymKind::Function | SymKind::Macro)
-        })
+        None
     }
 
+    /// Resolves an expression down to the callable symbol it ultimately refers to.
+    ///
+    /// Examples covered:
+    /// * `foo` / `module::foo` identifiers
+    /// * `object.foo` field/method lookups
+    /// * `&foo`, `(foo)`, `foo().await`, `foo()?`
+    /// * Nested call chains such as `foo()()` or `foo().bar()`
     fn resolve_expression_symbol(
         &self,
         unit: &CompileUnit<'tcx>,
@@ -150,6 +189,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
+    /// Resolves `macro_invocation` nodes to their macro symbol (e.g., `log!`).
     fn resolve_macro_symbol(
         &self,
         unit: &CompileUnit<'tcx>,
@@ -161,6 +201,9 @@ impl<'tcx> BinderVisitor<'tcx> {
         self.lookup_callable_symbol(unit, scopes, &name)
     }
 
+    /// Returns the callable symbol referenced by a `call_expression`.
+    ///
+    /// Example: for `Foo::new()` it resolves the `Foo::new` function symbol.
     fn resolve_call_target(
         &self,
         unit: &CompileUnit<'tcx>,
@@ -171,6 +214,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         self.resolve_expression_symbol(unit, &function, scopes)
     }
 
+    /// Resolves a type node (like `Vec<Foo>`) into the `Foo`/`Vec` symbols.
     fn resolve_type_from_node(
         unit: &CompileUnit<'tcx>,
         type_node: &HirNode<'tcx>,
@@ -178,13 +222,16 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) -> Option<&'tcx Symbol> {
         let ident = type_node.find_identifier(*unit)?;
 
-        if let Some(existing) = scopes.lookup_symbol(&ident.name) {
+        if let Some(existing) =
+            scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::Type]), None, None)
+        {
             return Some(existing);
         }
 
         scopes.lookup_or_insert_global(&ident.name, type_node, SymKind::Type)
     }
 
+    /// Records a symbol's declared type and dependency on that type.
     fn link_symbol_with_type(symbol: &Symbol, ty: &Symbol) {
         if symbol.type_of().is_none() {
             symbol.set_type_of(ty.id());
@@ -192,6 +239,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         symbol.add_dependency(ty);
     }
 
+    /// Helper that walks all identifier leaves inside a type expression.
     fn visit_type_identifiers<F>(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>, f: &mut F)
     where
         F: FnMut(String),
@@ -223,6 +271,9 @@ impl<'tcx> BinderVisitor<'tcx> {
         Self::visit_type_identifiers(unit, type_node, &mut visit);
     }
 
+    /// Reads the `type` child (if present) and associates it with the symbol.
+    ///
+    /// Used by parameters, fields, consts, statics, etc.
     fn set_symbol_type_from_field(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -243,6 +294,8 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
+    /// Pushes the scope represented by `sn`, recursing when the HIR already points
+    /// at an existing nested scope (e.g., structs/impls store their own scope nodes).
     fn push_scope_node(scopes: &mut BinderScopes<'tcx>, sn: &'tcx llmcc_core::ir::HirScope<'tcx>) {
         if sn.opt_ident().is_some() {
             scopes.push_scope_recursive(sn.scope().id());
@@ -259,6 +312,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         scopes.lookup_or_insert_global(primitive, node, SymKind::Type)
     }
 
+    /// Infers primitive types for literal nodes (e.g., `42` ⇒ `i32`).
     fn infer_literal_kind(
         kind_id: u16,
         node: &HirNode<'tcx>,
@@ -295,15 +349,17 @@ impl<'tcx> BinderVisitor<'tcx> {
             return None;
         }
 
-        BINARY_OPERATOR_TOKENS.iter().find_map(|(token_id, outcome)| {
-            LangRust::token_str(*token_id).and_then(|token_text| {
-                if token_text == trimmed {
-                    Some(*outcome)
-                } else {
-                    None
-                }
+        BINARY_OPERATOR_TOKENS
+            .iter()
+            .find_map(|(token_id, outcome)| {
+                LangRust::token_str(*token_id).and_then(|token_text| {
+                    if token_text == trimmed {
+                        Some(*outcome)
+                    } else {
+                        None
+                    }
+                })
             })
-        })
     }
 
     fn binary_operator_type(
@@ -322,6 +378,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
+    /// Handles struct literal expressions (e.g., `Foo { .. }`).
     fn infer_struct_expression_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -332,6 +389,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             .and_then(|ty| Self::resolve_type_from_node(unit, &ty, scopes))
     }
 
+    /// Infers types for call expressions (e.g., `Foo::new()`).
     fn infer_call_expression_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -341,6 +399,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             .and_then(|func| Self::infer_type_from_expr(unit, &func, scopes))
     }
 
+    /// Infers the type of `if` expressions (based on branches).
     fn infer_if_expression_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -350,6 +409,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             .and_then(|consequence| Self::infer_block_type(unit, &consequence, scopes))
     }
 
+    /// Handles unary operators like `*ptr` or `&value`.
     fn infer_unary_expression_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -359,6 +419,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             .and_then(|operand| Self::infer_type_from_expr(unit, &operand, scopes))
     }
 
+    /// Handles arithmetic/logical operators (e.g., `a + b`).
     fn infer_binary_operator_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -385,9 +446,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             let end = right.start_byte();
             if start < end {
                 let operator = unit.get_text(start, end);
-                if let Some(outcome) =
-                    Self::binary_operator_outcome_by_text(operator.as_str())
-                {
+                if let Some(outcome) = Self::binary_operator_outcome_by_text(operator.as_str()) {
                     return Self::binary_operator_type(unit, node, scopes, left_child_id, outcome);
                 }
             }
@@ -396,6 +455,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
+    /// Infers types for field accesses (e.g., `foo.bar`).
     fn infer_field_expression_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -415,6 +475,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         unit.opt_get_symbol(field_type_id)
     }
 
+    /// Handles string/char literal nodes.
     fn infer_text_literal_type(
         node: &HirNode<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
@@ -436,6 +497,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
+    /// Resolves identifiers to their known types.
     fn infer_identifier_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -449,6 +511,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
+    /// Returns the first meaningful child expression (skipping trivia).
     fn infer_first_non_trivia_child(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -465,6 +528,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
+    /// Recurses for internal nodes that wrap actual expressions.
     fn infer_internal_node_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -477,6 +541,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     }
 
     /// Returns the type symbol for an expression node
+    /// Main entry for inferring the type of an expression node.
     fn infer_type_from_expr(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -533,7 +598,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
-    /// Infer return type from block (last expression or void)
     fn infer_block_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -587,6 +651,14 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        let primitives = [
+            "i32", "i64", "i16", "i8", "i128", "isize", "u32", "u64", "u16", "u8", "u128", "usize",
+            "f32", "f64", "bool", "char", "str",
+        ];
+        for prim in primitives {
+            scopes.lookup_or_insert_global(prim, node, SymKind::Type);
+        }
+
         let file_path = unit.file_path().expect("no file path found to compile");
         let depth = scopes.scope_depth();
 
@@ -595,12 +667,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             let symbol = if scopes.scope_depth() > 0 {
                 scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
             } else {
-                // Fallback: scan symbol map for the crate symbol
-                let name_key = unit.interner().intern(&crate_name);
-                let map = unit.cc.symbol_map.read();
-                map.values()
-                    .copied()
-                    .find(|s| s.name == name_key && s.kind() == SymKind::Crate)
+                return;
             };
 
             if let Some(symbol) = symbol {
@@ -622,12 +689,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             let file_sym_opt = if scopes.scope_depth() > 0 {
                 scopes.lookup_or_insert(&file_name, node, SymKind::File)
             } else {
-                // Fallback: scan symbol map for the file symbol
-                let name_key = unit.interner().intern(&file_name);
-                let map = unit.cc.symbol_map.read();
-                map.values()
-                    .copied()
-                    .find(|s| s.name == name_key && s.kind() == SymKind::File)
+                return;
             };
 
             if let Some(symbol) = file_sym_opt {

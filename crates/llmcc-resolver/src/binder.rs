@@ -16,14 +16,14 @@ pub enum RelationDirection {
 }
 
 #[derive(Debug)]
-pub struct BinderScopes<'tcx> {
-    unit: CompileUnit<'tcx>,
-    scopes: ScopeStack<'tcx>,
+pub struct BinderScopes<'a> {
+    unit: CompileUnit<'a>,
+    scopes: ScopeStack<'a>,
     relation_direction: RelationDirection,
 }
 
-impl<'tcx> BinderScopes<'tcx> {
-    pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
+impl<'a> BinderScopes<'a> {
+    pub fn new(unit: CompileUnit<'a>, globals: &'a Scope<'a>) -> Self {
         let scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
         scopes.push(globals);
 
@@ -35,7 +35,7 @@ impl<'tcx> BinderScopes<'tcx> {
     }
 
     #[inline]
-    pub fn unit(&self) -> CompileUnit<'tcx> {
+    pub fn unit(&self) -> CompileUnit<'a> {
         self.unit
     }
 
@@ -55,12 +55,12 @@ impl<'tcx> BinderScopes<'tcx> {
     }
 
     #[inline]
-    pub fn scopes(&self) -> &ScopeStack<'tcx> {
+    pub fn scopes(&self) -> &ScopeStack<'a> {
         &self.scopes
     }
 
     #[inline]
-    pub fn scopes_mut(&mut self) -> &mut ScopeStack<'tcx> {
+    pub fn scopes_mut(&mut self) -> &mut ScopeStack<'a> {
         &mut self.scopes
     }
 
@@ -103,7 +103,7 @@ impl<'tcx> BinderScopes<'tcx> {
     /// Gets the global scope.
     ///
     #[inline]
-    pub fn globals(&self) -> &'tcx Scope<'tcx> {
+    pub fn globals(&self) -> &'a Scope<'a> {
         self.scopes
             .iter()
             .first()
@@ -115,9 +115,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -128,9 +128,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert_chained(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -140,9 +140,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert_parent(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -152,9 +152,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert_global(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -164,28 +164,28 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert_with(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
         options: LookupOptions,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
         symbol.set_kind(kind);
         Some(symbol)
     }
 
-    pub fn lookup_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+    pub fn lookup_symbol(&self, name: &str) -> Option<&'a Symbol> {
         self.scopes.lookup_symbol(name)
     }
 
     pub fn lookup_symbol_with(
         &self,
         name: &str,
-        kind_filter: Option<SymKind>,
-        unit_filter: Option<usize>,
-        fqn_filter: Option<&str>,
-    ) -> Option<&'tcx Symbol> {
+        kind_filters: Option<Vec<SymKind>>,
+        unit_filters: Option<Vec<usize>>,
+        fqn_filters: Option<Vec<&str>>,
+    ) -> Option<&'a Symbol> {
         self.scopes
-            .lookup_symbol_with(name, kind_filter, unit_filter, fqn_filter)
+            .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
     }
 }
 

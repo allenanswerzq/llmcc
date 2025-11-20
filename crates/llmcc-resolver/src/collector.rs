@@ -231,6 +231,17 @@ impl<'a> CollectorScopes<'a> {
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
+
+    pub fn lookup_symbol_with(
+        &self,
+        name: &str,
+        kind_filters: Option<Vec<SymKind>>,
+        unit_filters: Option<Vec<usize>>,
+        fqn_filters: Option<Vec<&str>>,
+    ) -> Option<&'a Symbol> {
+        self.scopes
+            .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
+    }
 }
 
 /// Apply symbols collected from a single compilation unit to the global context.

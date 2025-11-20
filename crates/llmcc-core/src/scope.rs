@@ -266,21 +266,42 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn lookup_symbol_with(
         &self,
         name: &str,
-        kind_filter: Option<SymKind>,
-        unit_filter: Option<usize>,
-        fqn_filter: Option<&str>,
+        kind_filters: Option<Vec<SymKind>>,
+        unit_filters: Option<Vec<usize>>,
+        fqn_filters: Option<Vec<&str>>,
     ) -> Option<&'tcx Symbol> {
         if name.is_empty() {
             return None;
         }
         let name_key = self.interner.intern(name);
-        let fqn_key = fqn_filter.map(|fqn| self.interner.intern(fqn));
+        let fqn_keys = fqn_filters.map(|filters| {
+            filters
+                .into_iter()
+                .map(|fqn| self.interner.intern(fqn))
+                .collect::<Vec<_>>()
+        });
         let stack = self.stack.read();
 
         stack.iter().rev().find_map(|scope| {
-            scope
-                .lookup_symbols_with(name_key, kind_filter, unit_filter, fqn_key)
-                .and_then(|matches| matches.last().copied())
+            let matches = scope.lookup_symbols(name_key)?;
+            matches.iter().rev().find_map(|symbol| {
+                if let Some(kinds) = &kind_filters {
+                    if !kinds.iter().any(|kind| symbol.kind() == *kind) {
+                        return None;
+                    }
+                }
+                if let Some(units) = &unit_filters {
+                    if !units.iter().any(|unit| symbol.unit_index() == Some(*unit)) {
+                        return None;
+                    }
+                }
+                if let Some(fqn_keys) = &fqn_keys {
+                    if !fqn_keys.iter().any(|fqn_key| symbol.fqn() == *fqn_key) {
+                        return None;
+                    }
+                }
+                Some(*symbol)
+            })
         })
     }
 
