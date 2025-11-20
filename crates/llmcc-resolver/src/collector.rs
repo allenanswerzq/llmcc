@@ -157,6 +157,14 @@ impl<'a> CollectorScopes<'a> {
         self.interner().intern(&fqn_str)
     }
 
+    /// Initialize a symbol with common properties
+    fn init_symbol(&self, symbol: &'a Symbol, name: &str, node: &HirNode<'a>, kind: SymKind) {
+        symbol.set_kind(kind);
+        symbol.set_unit_index(self.unit_index());
+        symbol.set_fqn(self.build_fqn(name));
+        symbol.add_defining(node.id());
+    }
+
     /// Find or insert symbol for node in current scope, set kind and unit index
     #[inline]
     pub fn lookup_or_insert(
@@ -166,10 +174,7 @@ impl<'a> CollectorScopes<'a> {
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert(name, node)?;
-        symbol.set_kind(kind);
-        symbol.set_unit_index(self.unit_index());
-        symbol.set_fqn(self.build_fqn(name));
-        symbol.add_defining(node.id());
+        self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
 
@@ -182,10 +187,7 @@ impl<'a> CollectorScopes<'a> {
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
-        symbol.set_kind(kind);
-        symbol.set_unit_index(self.unit_index());
-        symbol.set_fqn(self.build_fqn(name));
-        symbol.add_defining(node.id());
+        self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
 
@@ -198,10 +200,7 @@ impl<'a> CollectorScopes<'a> {
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
-        symbol.set_kind(kind);
-        symbol.set_unit_index(self.unit_index());
-        symbol.set_fqn(self.build_fqn(name));
-        symbol.add_defining(node.id());
+        self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
 
@@ -214,10 +213,7 @@ impl<'a> CollectorScopes<'a> {
         kind: SymKind,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
-        symbol.set_kind(kind);
-        symbol.set_unit_index(self.unit_index());
-        symbol.set_fqn(self.build_fqn(name));
-        symbol.add_defining(node.id());
+        self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
         Some(symbol)
     }
@@ -232,10 +228,7 @@ impl<'a> CollectorScopes<'a> {
         options: llmcc_core::scope::LookupOptions,
     ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
-        symbol.set_kind(kind);
-        symbol.set_unit_index(self.unit_index());
-        symbol.add_defining(node.id());
-        symbol.set_fqn(self.build_fqn(name));
+        self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
 }

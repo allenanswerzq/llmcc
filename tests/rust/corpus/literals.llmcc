@@ -16,6 +16,8 @@ integer-literals
 0b1111_1111_1001_0000_i32;
 1u128;
 
+--- expect:symbol-deps ---
+
 
 ===============================================================================
 floating-point-literals
@@ -29,6 +31,8 @@ floating-point-literals
 0.1f64;
 0.1f32;
 12E+99_f64;
+
+--- expect:symbol-deps ---
 
 
 ===============================================================================
@@ -48,6 +52,8 @@ b"foo\nbar";
 "foo\x42\x43bar";
 "foo \x42  \x43 bar";
 
+--- expect:symbol-deps ---
+
 
 ===============================================================================
 raw-string-literals
@@ -60,6 +66,8 @@ r##"foo #"# bar"##;
 r###"foo ##"## bar"###;
 r######"foo ##### bar"######;
 
+--- expect:symbol-deps ---
+
 
 ===============================================================================
 raw-byte-string-literals
@@ -70,6 +78,8 @@ raw-byte-string-literals
 br#"abc"#;
 br##"abc"##;
 
+--- expect:symbol-deps ---
+
 
 ===============================================================================
 raw-c-string-literals
@@ -79,6 +89,8 @@ raw-c-string-literals
 --- file: src/main.rs ---
 cr#"abc"#;
 cr##"abc"##;
+
+--- expect:symbol-deps ---
 
 
 ===============================================================================
@@ -95,6 +107,8 @@ b'x';
 '\xff';
 '\\';
 
+--- expect:symbol-deps ---
+
 
 ===============================================================================
 boolean-literals
@@ -104,3 +118,5 @@ boolean-literals
 --- file: src/main.rs ---
 true;
 false;
+
+--- expect:symbol-deps ---

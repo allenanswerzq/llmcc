@@ -18,15 +18,38 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1 | Module      | main            | main                           | [global]
-u0:2 | File        | main            | main::main                     |         
-u0:3 | Enum        | E               | main::main::E                  |         
-u0:4 | EnumVariant | V1(i32, String) | main::main::E::V1(i32, String) |         
-u0:5 | EnumVariant | V2              | main::main::E::V2              |         
-u0:6 | Function    | foo             | main::main::foo                |         
-u0:7 | Variable    | x               | main::main::foo::x             |         
+u0:1  | Type        | i32             | i32                            | [global]
+u0:2  | Type        | i64             | i64                            | [global]
+u0:3  | Type        | i16             | i16                            | [global]
+u0:4  | Type        | i8              | i8                             | [global]
+u0:5  | Type        | i128            | i128                           | [global]
+u0:6  | Type        | isize           | isize                          | [global]
+u0:7  | Type        | u32             | u32                            | [global]
+u0:8  | Type        | u64             | u64                            | [global]
+u0:9  | Type        | u16             | u16                            | [global]
+u0:10 | Type        | u8              | u8                             | [global]
+u0:11 | Type        | u128            | u128                           | [global]
+u0:12 | Type        | usize           | usize                          | [global]
+u0:13 | Type        | f32             | f32                            | [global]
+u0:14 | Type        | f64             | f64                            | [global]
+u0:15 | Type        | bool            | bool                           | [global]
+u0:16 | Type        | char            | char                           | [global]
+u0:17 | Type        | str             | str                            | [global]
+u0:18 | Module      | main            | main                           | [global]
+u0:19 | File        | main            | main::main                     |         
+u0:20 | Enum        | E               | main::main::E                  |         
+u0:21 | EnumVariant | V1(i32, String) | main::main::E::V1(i32, String) |         
+u0:22 | EnumVariant | V2              | main::main::E::V2              |         
+u0:23 | Function    | foo             | main::main::foo                |         
+u0:24 | Namespace   | block_0         | main::main::foo::block_0       |         
+u0:25 | Variable    | x               | main::main::foo::block_0::x    |         
 
 --- expect:symbol-deps ---
+u0:1 <- [u0:20, u0:21, u0:23, u0:25]
+u0:20 -> [u0:1]
+u0:21 -> [u0:1]
+u0:23 -> [u0:1]
+u0:25 -> [u0:1]
 
 
 ===============================================================================
@@ -42,8 +65,27 @@ match x {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main | main       | [global]
-u0:2 | File   | main | main::main |         
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
+
+--- expect:symbol-deps ---
 
 
 ===============================================================================
@@ -62,8 +104,27 @@ match y {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main | main       | [global]
-u0:2 | File   | main | main::main |         
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
+
+--- expect:symbol-deps ---
 
 
 ===============================================================================
@@ -79,8 +140,27 @@ match x {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main | main       | [global]
-u0:2 | File   | main | main::main |         
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
+
+--- expect:symbol-deps ---
 
 
 ===============================================================================
@@ -106,6 +186,8 @@ match name {
   | "IPV6_FLOWINFO_SEND" => true,
   _ => false,
 }
+
+--- expect:symbol-deps ---
 
 
 ===============================================================================
@@ -151,25 +233,63 @@ fn func_2((1 | 2 | 3): u8) {}
 if let x!() | y!() = () {}
 
 --- expect:symbols ---
-u0:1  | Module   | main          | main                                | [global]
-u0:2  | File     | main          | main::main                          |         
-u0:3  | Struct   | Bar           | main::main::Bar                     |         
-u0:4  | Struct   | Foo           | main::main::Foo                     |         
-u0:5  | Impl     | Slice         | main::main::Slice                   |         
-u0:6  | Function | binary_search | main::main::Slice::binary_search    |         
-u0:7  | Variable | x             | main::main::Slice::binary_search::x |         
-u0:8  | Function | func_1        | main::main::func_1                  |         
-u0:9  | Variable | slice         | main::main::func_1::slice           |         
-u0:10 | Variable | f             | main::main::func_1::f               |         
-u0:11 | Variable | Ok            | main::main::func_1::Ok              |         
-u0:12 | Variable | x             | main::main::func_1::x               |         
-u0:13 | Function | func_2        | main::main::func_2                  |         
+u0:1  | Type      | i32           | i32                                       | [global]
+u0:2  | Type      | i64           | i64                                       | [global]
+u0:3  | Type      | i16           | i16                                       | [global]
+u0:4  | Type      | i8            | i8                                        | [global]
+u0:5  | Type      | i128          | i128                                      | [global]
+u0:6  | Type      | isize         | isize                                     | [global]
+u0:7  | Type      | u32           | u32                                       | [global]
+u0:8  | Type      | u64           | u64                                       | [global]
+u0:9  | Type      | u16           | u16                                       | [global]
+u0:10 | Type      | u8            | u8                                        | [global]
+u0:11 | Type      | u128          | u128                                      | [global]
+u0:12 | Type      | usize         | usize                                     | [global]
+u0:13 | Type      | f32           | f32                                       | [global]
+u0:14 | Type      | f64           | f64                                       | [global]
+u0:15 | Type      | bool          | bool                                      | [global]
+u0:16 | Type      | char          | char                                      | [global]
+u0:17 | Type      | str           | str                                       | [global]
+u0:18 | Module    | main          | main                                      | [global]
+u0:19 | File      | main          | main::main                                |         
+u0:20 | Struct    | Bar           | main::main::Bar                           |         
+u0:21 | Struct    | Foo           | main::main::Foo                           |         
+u0:22 | Impl      | Slice         | main::main::Slice                         |         
+u0:23 | Function  | binary_search | main::main::Slice::binary_search          |         
+u0:24 | Variable  | x             | main::main::Slice::binary_search::x       |         
+u0:25 | Namespace | block_0       | main::main::Slice::binary_search::block_0 |         
+u0:26 | Function  | func_1        | main::main::func_1                        |         
+u0:27 | Namespace | block_1       | main::main::func_1::block_1               |         
+u0:28 | Namespace | block_2       | main::main::func_1::block_1::block_2      |         
+u0:29 | Namespace | block_3       | main::main::func_1::block_1::block_3      |         
+u0:30 | Variable  | slice         | main::main::func_1::block_1::slice        |         
+u0:31 | Variable  | f             | main::main::func_1::block_1::f            |         
+u0:32 | Namespace | block_4       | main::main::func_1::block_1::block_4      |         
+u0:33 | Variable  | Ok            | main::main::func_1::block_1::Ok           |         
+u0:34 | Variable  | x             | main::main::func_1::block_1::x            |         
+u0:35 | Variable  | Err           | main::main::func_1::block_1::Err          |         
+u0:36 | Variable  | x             | main::main::func_1::block_1::x            |         
+u0:37 | Namespace | block_5       | main::main::func_1::block_1::block_5      |         
+u0:38 | Variable  | x             | main::main::func_1::block_1::x            |         
+u0:39 | Variable  | A             | main::main::func_1::block_1::A            |         
+u0:40 | Variable  | B             | main::main::func_1::block_1::B            |         
+u0:41 | Variable  | C             | main::main::func_1::block_1::C            |         
+u0:42 | Function  | func_2        | main::main::func_2                        |         
+u0:43 | Namespace | block_6       | main::main::func_2::block_6               |         
+u0:44 | Namespace | block_7       | main::main::block_7                       |         
 
 --- expect:symbol-deps ---
-u0:4 <- [u0:6]
-u0:6 -> [u0:4]
-u0:6 <- [u0:8]
-u0:8 -> [u0:6]
+u0:1 <- [u0:23, u0:24]
+u0:21 <- [u0:23]
+u0:23 -> [u0:1, u0:21]
+u0:23 <- [u0:26]
+u0:24 -> [u0:1]
+u0:26 -> [u0:23, u0:30, u0:38]
+u0:30 <- [u0:26, u0:31]
+u0:31 -> [u0:30]
+u0:33 -> [u0:38]
+u0:35 -> [u0:38]
+u0:38 <- [u0:26, u0:33, u0:35]
 
 
 ===============================================================================
@@ -194,12 +314,41 @@ fn foo(x: i32) {
 }
 
 --- expect:symbols ---
-u0:1 | Module   | main | main                  | [global]
-u0:2 | File     | main | main::main            |         
-u0:3 | Function | foo  | main::main::foo       |         
-u0:4 | Variable | x    | main::main::foo::x    |         
-u0:5 | Const    | CUBE | main::main::foo::CUBE |         
-u0:6 | Variable | x    | main::main::foo::x    |         
+u0:1  | Type      | i32     | i32                               | [global]
+u0:2  | Type      | i64     | i64                               | [global]
+u0:3  | Type      | i16     | i16                               | [global]
+u0:4  | Type      | i8      | i8                                | [global]
+u0:5  | Type      | i128    | i128                              | [global]
+u0:6  | Type      | isize   | isize                             | [global]
+u0:7  | Type      | u32     | u32                               | [global]
+u0:8  | Type      | u64     | u64                               | [global]
+u0:9  | Type      | u16     | u16                               | [global]
+u0:10 | Type      | u8      | u8                                | [global]
+u0:11 | Type      | u128    | u128                              | [global]
+u0:12 | Type      | usize   | usize                             | [global]
+u0:13 | Type      | f32     | f32                               | [global]
+u0:14 | Type      | f64     | f64                               | [global]
+u0:15 | Type      | bool    | bool                              | [global]
+u0:16 | Type      | char    | char                              | [global]
+u0:17 | Type      | str     | str                               | [global]
+u0:18 | Module    | main    | main                              | [global]
+u0:19 | File      | main    | main::main                        |         
+u0:20 | Function  | foo     | main::main::foo                   |         
+u0:21 | Variable  | x       | main::main::foo::x                |         
+u0:22 | Namespace | block_0 | main::main::foo::block_0          |         
+u0:23 | Const     | CUBE    | main::main::foo::block_0::CUBE    |         
+u0:24 | Namespace | block_1 | main::main::foo::block_0::block_1 |         
+u0:25 | Variable  | x       | main::main::foo::x                |         
+u0:26 | Namespace | block_2 | main::main::foo::block_2          |         
+u0:27 | Namespace | block_3 | main::main::foo::block_2::block_3 |         
+u0:28 | Namespace | block_4 | main::main::foo::block_2::block_4 |         
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:20, u0:21, u0:23, u0:25]
+u0:20 -> [u0:1]
+u0:21 -> [u0:1]
+u0:23 -> [u0:1]
+u0:25 -> [u0:1]
 
 
 ===============================================================================
@@ -214,5 +363,24 @@ match y {
 }
 
 --- expect:symbols ---
-u0:1 | Module | main | main       | [global]
-u0:2 | File   | main | main::main |         
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
+
+--- expect:symbol-deps ---
