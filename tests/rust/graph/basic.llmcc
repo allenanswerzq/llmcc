@@ -217,8 +217,8 @@ u0:25 | Method    | binary_search | _c::_m::main::Slice::binary_search    |
 u0:26 | Variable  | x             | _c::_m::main::Slice::binary_search::x |         
 u0:27 | Method    | fake_method   | _c::_m::main::Slice::fake_method      |         
 u0:28 | Function  | func          | _c::_m::main::func                    |         
-u0:29 | Variable  | slice         | slice                                 |         
-u0:30 | Variable  | f             | f                                     |         
+u0:29 | Variable  | slice         | _c::_m::main::func::slice             |         
+u0:30 | Variable  | f             | _c::_m::main::func::f                 |         
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:25, u0:26]
@@ -226,8 +226,8 @@ u0:23 <- [u0:25]
 u0:24 <- [u0:28]
 u0:25 -> [u0:1, u0:23]
 u0:26 -> [u0:1]
-u0:28 -> [u0:24, u0:29]
-u0:29 <- [u0:28, u0:30]
+u0:28 -> [u0:24]
+u0:29 <- [u0:30]
 u0:30 -> [u0:29]
 
 
@@ -401,7 +401,7 @@ u0:23 | Method    | advance             | _c::_m::main::Stream::advance         
 u0:24 | Method    | flush               | _c::_m::main::Stream::flush               |         
 u0:25 | Function  | chain_variable_demo | _c::_m::main::chain_variable_demo         |         
 u0:26 | Variable  | stream              | _c::_m::main::chain_variable_demo::stream |         
-u0:27 | Variable  | cursor              | cursor                                    |         
+u0:27 | Variable  | cursor              | _c::_m::main::chain_variable_demo::cursor |         
 
 --- expect:symbol-deps ---
 u0:22 <- [u0:23, u0:25, u0:26, u0:27]
@@ -464,7 +464,7 @@ u0:23 | Struct    | SessionBuilder | _c::_m::main::SessionBuilder              |
 u0:24 | Method    | new            | _c::_m::main::SessionBuilder::new         |         
 u0:25 | Method    | static_func    | _c::_m::main::SessionBuilder::static_func |         
 u0:26 | Function  | qualified_call | _c::_m::main::qualified_call              |         
-u0:27 | Variable  | x              | x                                         |         
+u0:27 | Variable  | x              | _c::_m::main::qualified_call::x           |         
 
 --- expect:symbol-deps ---
 u0:22 <- [u0:25, u0:26, u0:27]
@@ -502,9 +502,9 @@ digraph project {
     label="todo";
     style=filled;
     color=lightgrey;
-    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp97zksX/src/main.rs:1"];
-    n7 [label="qualified_call", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp97zksX/src/main.rs:14"];
-    n3 [label="SessionBuilder", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp97zksX/src/main.rs:2"];
+    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpKvrTfe/src/main.rs:1"];
+    n7 [label="qualified_call", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpKvrTfe/src/main.rs:14"];
+    n3 [label="SessionBuilder", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpKvrTfe/src/main.rs:2"];
   }
   n7 -> n2;
   n7 -> n3;

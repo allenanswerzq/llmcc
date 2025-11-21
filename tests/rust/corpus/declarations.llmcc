@@ -609,32 +609,32 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32   | i32                | [global]
-u0:2  | Primitive | i64   | i64                | [global]
-u0:3  | Primitive | i16   | i16                | [global]
-u0:4  | Primitive | i8    | i8                 | [global]
-u0:5  | Primitive | i128  | i128               | [global]
-u0:6  | Primitive | isize | isize              | [global]
-u0:7  | Primitive | u32   | u32                | [global]
-u0:8  | Primitive | u64   | u64                | [global]
-u0:9  | Primitive | u16   | u16                | [global]
-u0:10 | Primitive | u8    | u8                 | [global]
-u0:11 | Primitive | u128  | u128               | [global]
-u0:12 | Primitive | usize | usize              | [global]
-u0:13 | Primitive | f32   | f32                | [global]
-u0:14 | Primitive | f64   | f64                | [global]
-u0:15 | Primitive | bool  | bool               | [global]
-u0:16 | Primitive | char  | char               | [global]
-u0:17 | Primitive | str   | str                | [global]
-u0:18 | Crate     | _c    | _c                 | [global]
-u0:19 | Crate     | crate | _c::crate          |         
-u0:20 | Module    | _m    | _c::_m             |         
-u0:21 | File      | main  | _c::_m::main       |         
-u0:22 | Struct    | Baz   | _c::_m::main::Baz  |         
-u0:23 | Struct    | Foo   | _c::_m::main::Foo  |         
-u0:24 | Function  | func  | _c::_m::main::func |         
-u0:25 | Variable  | x     | x                  |         
-u0:26 | Variable  | y     | y                  |         
+u0:1  | Primitive | i32   | i32                   | [global]
+u0:2  | Primitive | i64   | i64                   | [global]
+u0:3  | Primitive | i16   | i16                   | [global]
+u0:4  | Primitive | i8    | i8                    | [global]
+u0:5  | Primitive | i128  | i128                  | [global]
+u0:6  | Primitive | isize | isize                 | [global]
+u0:7  | Primitive | u32   | u32                   | [global]
+u0:8  | Primitive | u64   | u64                   | [global]
+u0:9  | Primitive | u16   | u16                   | [global]
+u0:10 | Primitive | u8    | u8                    | [global]
+u0:11 | Primitive | u128  | u128                  | [global]
+u0:12 | Primitive | usize | usize                 | [global]
+u0:13 | Primitive | f32   | f32                   | [global]
+u0:14 | Primitive | f64   | f64                   | [global]
+u0:15 | Primitive | bool  | bool                  | [global]
+u0:16 | Primitive | char  | char                  | [global]
+u0:17 | Primitive | str   | str                   | [global]
+u0:18 | Crate     | _c    | _c                    | [global]
+u0:19 | Crate     | crate | _c::crate             |         
+u0:20 | Module    | _m    | _c::_m                |         
+u0:21 | File      | main  | _c::_m::main          |         
+u0:22 | Struct    | Baz   | _c::_m::main::Baz     |         
+u0:23 | Struct    | Foo   | _c::_m::main::Foo     |         
+u0:24 | Function  | func  | _c::_m::main::func    |         
+u0:25 | Variable  | x     | _c::_m::main::func::x |         
+u0:26 | Variable  | y     | _c::_m::main::func::y |         
 
 --- expect:symbol-deps ---
 u0:22 <- [u0:24]
@@ -656,47 +656,48 @@ struct Baz;
 
 fn func() {
     let y = Baz::new();
-    let x = Bar;
+    let x = Foo::Bar;
     let Foo::Bar{texts, values} = x;
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32    | i32                    | [global]
-u0:2  | Primitive | i64    | i64                    | [global]
-u0:3  | Primitive | i16    | i16                    | [global]
-u0:4  | Primitive | i8     | i8                     | [global]
-u0:5  | Primitive | i128   | i128                   | [global]
-u0:6  | Primitive | isize  | isize                  | [global]
-u0:7  | Primitive | u32    | u32                    | [global]
-u0:8  | Primitive | u64    | u64                    | [global]
-u0:9  | Primitive | u16    | u16                    | [global]
-u0:10 | Primitive | u8     | u8                     | [global]
-u0:11 | Primitive | u128   | u128                   | [global]
-u0:12 | Primitive | usize  | usize                  | [global]
-u0:13 | Primitive | f32    | f32                    | [global]
-u0:14 | Primitive | f64    | f64                    | [global]
-u0:15 | Primitive | bool   | bool                   | [global]
-u0:16 | Primitive | char   | char                   | [global]
-u0:17 | Primitive | str    | str                    | [global]
-u0:18 | Crate     | _c     | _c                     | [global]
-u0:19 | Crate     | crate  | _c::crate              |         
-u0:20 | Module    | _m     | _c::_m                 |         
-u0:21 | File      | main   | _c::_m::main           |         
-u0:22 | Namespace | Foo    | _c::_m::main::Foo      |         
-u0:23 | Struct    | Bar    | _c::_m::main::Foo::Bar |         
-u0:24 | Struct    | Baz    | _c::_m::main::Baz      |         
-u0:25 | Function  | func   | _c::_m::main::func     |         
-u0:26 | Variable  | y      | y                      |         
-u0:27 | Variable  | x      | x                      |         
-u0:28 | Variable  | texts  | texts                  |         
-u0:29 | Variable  | values | values                 |         
+u0:1  | Primitive | i32    | i32                        | [global]
+u0:2  | Primitive | i64    | i64                        | [global]
+u0:3  | Primitive | i16    | i16                        | [global]
+u0:4  | Primitive | i8     | i8                         | [global]
+u0:5  | Primitive | i128   | i128                       | [global]
+u0:6  | Primitive | isize  | isize                      | [global]
+u0:7  | Primitive | u32    | u32                        | [global]
+u0:8  | Primitive | u64    | u64                        | [global]
+u0:9  | Primitive | u16    | u16                        | [global]
+u0:10 | Primitive | u8     | u8                         | [global]
+u0:11 | Primitive | u128   | u128                       | [global]
+u0:12 | Primitive | usize  | usize                      | [global]
+u0:13 | Primitive | f32    | f32                        | [global]
+u0:14 | Primitive | f64    | f64                        | [global]
+u0:15 | Primitive | bool   | bool                       | [global]
+u0:16 | Primitive | char   | char                       | [global]
+u0:17 | Primitive | str    | str                        | [global]
+u0:18 | Crate     | _c     | _c                         | [global]
+u0:19 | Crate     | crate  | _c::crate                  |         
+u0:20 | Module    | _m     | _c::_m                     |         
+u0:21 | File      | main   | _c::_m::main               |         
+u0:22 | Namespace | Foo    | _c::_m::main::Foo          |         
+u0:23 | Struct    | Bar    | _c::_m::main::Foo::Bar     |         
+u0:24 | Struct    | Baz    | _c::_m::main::Baz          |         
+u0:25 | Function  | func   | _c::_m::main::func         |         
+u0:26 | Variable  | y      | _c::_m::main::func::y      |         
+u0:27 | Variable  | x      | _c::_m::main::func::x      |         
+u0:28 | Variable  | Foo    | _c::_m::main::func::Foo    |         
+u0:29 | Variable  | texts  | _c::_m::main::func::texts  |         
+u0:30 | Variable  | values | _c::_m::main::func::values |         
 
 --- expect:symbol-deps ---
 u0:24 <- [u0:25]
-u0:25 -> [u0:24, u0:27]
-u0:27 <- [u0:25, u0:28, u0:29]
-u0:28 -> [u0:27]
+u0:25 -> [u0:24]
+u0:27 <- [u0:29, u0:30]
 u0:29 -> [u0:27]
+u0:30 -> [u0:27]
 
 
 ===============================================================================
@@ -993,14 +994,12 @@ u0:33 | EnumVariant   | Leaf     | _c::_m::main::Node::Leaf               |
 u0:34 | Field         | value    | _c::_m::main::Node::Leaf::value        |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:28, u0:30, u0:31]
+u0:22 <- [u0:28, u0:30]
 u0:23 <- [u0:28, u0:29]
 u0:28 -> [u0:22, u0:23, u0:9]
 u0:29 -> [u0:23]
 u0:30 -> [u0:22, u0:9]
-u0:31 -> [u0:22]
-u0:32 -> [u0:9]
-u0:9 <- [u0:28, u0:30, u0:32]
+u0:9 <- [u0:28, u0:30]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -1757,12 +1756,10 @@ u0:26 | Field       | idx         | _c::_m::main::Error::OutOfBounds::idx    |
 u0:27 | Field       | limits      | _c::_m::main::Error::OutOfBounds::limits |         
 
 --- expect:symbol-deps ---
-u0:12 <- [u0:23, u0:25, u0:26]
-u0:22 <- [u0:23, u0:25, u0:27]
+u0:12 <- [u0:23, u0:25]
+u0:22 <- [u0:23, u0:25]
 u0:23 -> [u0:12, u0:22]
 u0:25 -> [u0:12, u0:22]
-u0:26 -> [u0:12]
-u0:27 -> [u0:22]
 
 
 ===============================================================================
@@ -1804,8 +1801,8 @@ u0:19 | Crate     | crate | _c::crate            |
 u0:20 | Module    | _m    | _c::_m               |         
 u0:21 | File      | main  | _c::_m::main         |         
 u0:22 | Function  | foo   | _c::_m::main::foo    |         
-u0:23 | Variable  | z     | z                    |         
-u0:24 | Variable  | t     | t                    |         
+u0:23 | Variable  | z     | _c::_m::main::foo::z |         
+u0:24 | Variable  | t     | _c::_m::main::foo::t |         
 u0:25 | Function  | bar   | _c::_m::main::bar    |         
 u0:26 | Variable  | x     | _c::_m::main::bar::x |         
 u0:27 | Variable  | y     | _c::_m::main::bar::y |         

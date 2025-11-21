@@ -1498,7 +1498,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
             // Also link dependency if we have a parent (e.g. function)
             if let Some(owner) = parent {
-                owner.add_dependency(ty);
+                if ty.kind() != SymKind::Variable {
+                    owner.add_dependency(ty);
+                }
             }
         }
 

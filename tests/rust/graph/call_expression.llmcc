@@ -108,7 +108,7 @@ u0:25 | Method    | new            | _c::_m::main::SessionBuilder::new         |
 u0:26 | Method    | static_func    | _c::_m::main::SessionBuilder::static_func |         
 u0:27 | Function  | qualified_call | _c::_m::main::qualified_call              |         
 u0:28 | Variable  | baz            | _c::_m::main::qualified_call::baz         |         
-u0:29 | Variable  | x              | x                                         |         
+u0:29 | Variable  | x              | _c::_m::main::qualified_call::x           |         
 
 --- expect:symbol-deps ---
 u0:22 <- [u0:26, u0:27, u0:29]
@@ -312,34 +312,34 @@ fn expr_chain() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32        | i32                       | [global]
-u0:2  | Primitive | i64        | i64                       | [global]
-u0:3  | Primitive | i16        | i16                       | [global]
-u0:4  | Primitive | i8         | i8                        | [global]
-u0:5  | Primitive | i128       | i128                      | [global]
-u0:6  | Primitive | isize      | isize                     | [global]
-u0:7  | Primitive | u32        | u32                       | [global]
-u0:8  | Primitive | u64        | u64                       | [global]
-u0:9  | Primitive | u16        | u16                       | [global]
-u0:10 | Primitive | u8         | u8                        | [global]
-u0:11 | Primitive | u128       | u128                      | [global]
-u0:12 | Primitive | usize      | usize                     | [global]
-u0:13 | Primitive | f32        | f32                       | [global]
-u0:14 | Primitive | f64        | f64                       | [global]
-u0:15 | Primitive | bool       | bool                      | [global]
-u0:16 | Primitive | char       | char                      | [global]
-u0:17 | Primitive | str        | str                       | [global]
-u0:18 | Crate     | _c         | _c                        | [global]
-u0:19 | Crate     | crate      | _c::crate                 |         
-u0:20 | Module    | _m         | _c::_m                    |         
-u0:21 | File      | main       | _c::_m::main              |         
-u0:22 | Struct    | Data       | _c::_m::main::Data        |         
-u0:23 | Struct    | Iter       | _c::_m::main::Iter        |         
-u0:24 | Method    | iter       | _c::_m::main::Data::iter  |         
-u0:25 | Method    | map        | _c::_m::main::Iter::map   |         
-u0:26 | Method    | count      | _c::_m::main::Iter::count |         
-u0:27 | Function  | expr_chain | _c::_m::main::expr_chain  |         
-u0:28 | Variable  | data       | data                      |         
+u0:1  | Primitive | i32        | i32                            | [global]
+u0:2  | Primitive | i64        | i64                            | [global]
+u0:3  | Primitive | i16        | i16                            | [global]
+u0:4  | Primitive | i8         | i8                             | [global]
+u0:5  | Primitive | i128       | i128                           | [global]
+u0:6  | Primitive | isize      | isize                          | [global]
+u0:7  | Primitive | u32        | u32                            | [global]
+u0:8  | Primitive | u64        | u64                            | [global]
+u0:9  | Primitive | u16        | u16                            | [global]
+u0:10 | Primitive | u8         | u8                             | [global]
+u0:11 | Primitive | u128       | u128                           | [global]
+u0:12 | Primitive | usize      | usize                          | [global]
+u0:13 | Primitive | f32        | f32                            | [global]
+u0:14 | Primitive | f64        | f64                            | [global]
+u0:15 | Primitive | bool       | bool                           | [global]
+u0:16 | Primitive | char       | char                           | [global]
+u0:17 | Primitive | str        | str                            | [global]
+u0:18 | Crate     | _c         | _c                             | [global]
+u0:19 | Crate     | crate      | _c::crate                      |         
+u0:20 | Module    | _m         | _c::_m                         |         
+u0:21 | File      | main       | _c::_m::main                   |         
+u0:22 | Struct    | Data       | _c::_m::main::Data             |         
+u0:23 | Struct    | Iter       | _c::_m::main::Iter             |         
+u0:24 | Method    | iter       | _c::_m::main::Data::iter       |         
+u0:25 | Method    | map        | _c::_m::main::Iter::map        |         
+u0:26 | Method    | count      | _c::_m::main::Iter::count      |         
+u0:27 | Function  | expr_chain | _c::_m::main::expr_chain       |         
+u0:28 | Variable  | data       | _c::_m::main::expr_chain::data |         
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:26]
@@ -424,7 +424,7 @@ u0:23 | Method    | advance             | _c::_m::main::Stream::advance         
 u0:24 | Method    | flush               | _c::_m::main::Stream::flush               |         
 u0:25 | Function  | chain_variable_demo | _c::_m::main::chain_variable_demo         |         
 u0:26 | Variable  | stream              | _c::_m::main::chain_variable_demo::stream |         
-u0:27 | Variable  | cursor              | cursor                                    |         
+u0:27 | Variable  | cursor              | _c::_m::main::chain_variable_demo::cursor |         
 
 --- expect:symbol-deps ---
 u0:22 <- [u0:23, u0:25, u0:26, u0:27]
