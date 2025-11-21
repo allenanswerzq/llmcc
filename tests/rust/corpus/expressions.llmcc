@@ -496,8 +496,8 @@ u0:29 | Variable  | _all         | _c::_m::main::make_tuples::_all         |
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:27]
 u0:22 <- [u0:23, u0:25, u0:26, u0:28]
-u0:23 -> [u0:1, u0:22]
-u0:24 <- [u0:29]
+u0:23 -> [u0:1, u0:22, u0:24]
+u0:24 <- [u0:23, u0:29]
 u0:25 -> [u0:22]
 u0:26 -> [u0:22]
 u0:27 -> [u0:1]
@@ -1424,7 +1424,7 @@ u0:20 | Module    | _m       | _c::_m                       |
 u0:21 | File      | main     | _c::_m::main                 |         
 u0:22 | Struct    | Foo      | _c::_m::main::Foo            |         
 u0:23 | Struct    | MyStruct | _c::_m::main::MyStruct       |         
-u0:24 | Method    | foo      | _c::_m::main::MyStruct::foo  |         
+u0:24 | Function  | foo      | _c::_m::main::MyStruct::foo  |         
 u0:25 | Function  | func     | _c::_m::main::func           |         
 u0:26 | Variable  | mystruct | _c::_m::main::func::mystruct |         
 u0:27 | Variable  | x        | _c::_m::main::func::x        |         
@@ -1433,8 +1433,8 @@ u0:27 | Variable  | x        | _c::_m::main::func::x        |
 u0:22 <- [u0:24]
 u0:23 <- [u0:25]
 u0:24 -> [u0:22]
-u0:25 -> [u0:23]
-u0:26 <- [u0:27]
+u0:25 -> [u0:23, u0:26]
+u0:26 <- [u0:25, u0:27]
 u0:27 -> [u0:26]
 
 
@@ -1551,9 +1551,9 @@ u1:43 | Crate     | crate | _c::crate          |
 u1:44 | Module    | _m    | _c::_m             |         
 u1:45 | File      | main  | _c::_m::main       |         
 u1:46 | Struct    | a     | _c::_m::main::a    |         
-u1:47 | Method    | b     | _c::_m::main::a::b |         
+u1:47 | Function  | b     | _c::_m::main::a::b |         
 u1:48 | Struct    | C     | _c::_m::main::C    |         
-u1:49 | Method    | e     | _c::_m::main::C::e |         
+u1:49 | Function  | e     | _c::_m::main::C::e |         
 u1:50 | Function  | foo   | _c::_m::main::foo  |         
 
 --- expect:symbol-deps ---

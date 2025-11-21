@@ -409,10 +409,6 @@ impl<'hir> HirIdent<'hir> {
         *self.symbol.write() = Some(symbol);
     }
 
-    pub fn symbol(&self) -> &'hir Symbol {
-        self.symbol.read().expect("symbol must be set")
-    }
-
     #[inline]
     pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
         *self.symbol.read()

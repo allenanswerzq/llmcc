@@ -76,15 +76,11 @@ impl<'tcx> CollectorVisitor<'tcx> {
             return;
         }
 
-        // Special handling for scoped identifiers: don't collect them as variables, but recurse
+        // Special handling for scoped identifiers: don't collect them as variables
         if matches!(
             node.kind_id(),
             LangRust::scoped_identifier | LangRust::scoped_type_identifier
         ) {
-            for child_id in node.children() {
-                let child = unit.hir_node(*child_id);
-                Self::collect_pattern_identifiers_impl(unit, &child, scopes, kind, symbols);
-            }
             return;
         }
 
@@ -501,6 +497,24 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             node,
             scopes,
             SymKind::TypeParameter,
+            LangRust::field_name,
+        );
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_const_parameter(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.declare_symbol_from_field(
+            unit,
+            node,
+            scopes,
+            SymKind::Const,
             LangRust::field_name,
         );
         self.visit_children(unit, node, scopes, namespace, parent);
