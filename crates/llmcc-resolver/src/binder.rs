@@ -7,6 +7,8 @@ use llmcc_core::{CompileCtxt, LanguageTraitImpl};
 
 use rayon::prelude::*;
 
+use crate::ResolverOption;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelationDirection {
     Forward,
@@ -14,14 +16,14 @@ pub enum RelationDirection {
 }
 
 #[derive(Debug)]
-pub struct BinderScopes<'tcx> {
-    unit: CompileUnit<'tcx>,
-    scopes: ScopeStack<'tcx>,
+pub struct BinderScopes<'a> {
+    unit: CompileUnit<'a>,
+    scopes: ScopeStack<'a>,
     relation_direction: RelationDirection,
 }
 
-impl<'tcx> BinderScopes<'tcx> {
-    pub fn new(unit: CompileUnit<'tcx>, globals: &'tcx Scope<'tcx>) -> Self {
+impl<'a> BinderScopes<'a> {
+    pub fn new(unit: CompileUnit<'a>, globals: &'a Scope<'a>) -> Self {
         let scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
         scopes.push(globals);
 
@@ -33,7 +35,7 @@ impl<'tcx> BinderScopes<'tcx> {
     }
 
     #[inline]
-    pub fn unit(&self) -> CompileUnit<'tcx> {
+    pub fn unit(&self) -> CompileUnit<'a> {
         self.unit
     }
 
@@ -53,12 +55,12 @@ impl<'tcx> BinderScopes<'tcx> {
     }
 
     #[inline]
-    pub fn scopes(&self) -> &ScopeStack<'tcx> {
+    pub fn scopes(&self) -> &ScopeStack<'a> {
         &self.scopes
     }
 
     #[inline]
-    pub fn scopes_mut(&mut self) -> &mut ScopeStack<'tcx> {
+    pub fn scopes_mut(&mut self) -> &mut ScopeStack<'a> {
         &mut self.scopes
     }
 
@@ -101,10 +103,10 @@ impl<'tcx> BinderScopes<'tcx> {
     /// Gets the global scope.
     ///
     #[inline]
-    pub fn globals(&self) -> &'tcx Scope<'tcx> {
+    pub fn globals(&self) -> &'a Scope<'a> {
         self.scopes
             .iter()
-            .next()
+            .first()
             .expect("global scope should always be present")
     }
 
@@ -113,9 +115,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -126,9 +128,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert_chained(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -138,9 +140,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert_parent(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -150,9 +152,9 @@ impl<'tcx> BinderScopes<'tcx> {
     pub fn lookup_or_insert_global(
         &self,
         name: &str,
-        node: &HirNode<'tcx>,
+        node: &HirNode<'a>,
         kind: SymKind,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_global(name, node)?;
         symbol.set_kind(kind);
         Some(symbol)
@@ -161,31 +163,59 @@ impl<'tcx> BinderScopes<'tcx> {
     /// Full control API for symbol lookup and insertion with custom options.
     pub fn lookup_or_insert_with(
         &self,
-        name: Option<&str>,
-        node: &HirNode<'tcx>,
+        name: &str,
+        node: &HirNode<'a>,
         kind: SymKind,
         options: LookupOptions,
-    ) -> Option<&'tcx Symbol> {
+    ) -> Option<&'a Symbol> {
         let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
         symbol.set_kind(kind);
         Some(symbol)
     }
-}
 
-#[derive(Default)]
-pub struct BinderOption;
+    pub fn lookup_symbol(&self, name: &str) -> Option<&'a Symbol> {
+        self.scopes.lookup_symbol(name)
+    }
+
+    pub fn lookup_symbol_with(
+        &self,
+        name: &str,
+        kind_filters: Option<Vec<SymKind>>,
+        unit_filters: Option<Vec<usize>>,
+        fqn_filters: Option<Vec<&str>>,
+    ) -> Option<&'a Symbol> {
+        self.scopes
+            .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
+    }
+
+    pub fn lookup_member_symbol(
+        &self,
+        obj_type_symbol: &'a Symbol,
+        member_name: &str,
+        kind_filter: Option<SymKind>,
+    ) -> Option<&'a Symbol> {
+        let scope_id = obj_type_symbol.scope()?;
+        let scope = self.unit.get_scope(scope_id);
+        let name_key = self.unit.interner().intern(member_name);
+        let symbols = scope.lookup_symbols(name_key)?;
+        symbols
+            .into_iter()
+            .rev()
+            .find(|symbol| kind_filter.is_none_or(|kind| symbol.kind() == kind))
+    }
+}
 
 /// parallel binding symbols
 pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
-    _config: BinderOption,
+    config: &ResolverOption,
 ) {
     (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
         let mut scopes = BinderScopes::new(unit, globals);
-        L::bind_symbols_impl(&unit, &node, &mut scopes, globals);
+        L::bind_symbols(&unit, &node, &mut scopes, globals, config);
     })
 }

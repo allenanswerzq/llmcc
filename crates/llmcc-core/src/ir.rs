@@ -47,18 +47,10 @@ pub enum HirNode<'hir> {
 }
 
 impl<'hir> HirNode<'hir> {
-    /// Format node as "kind:id [s:scope_id]" for debugging
     pub fn format_node(&self, _unit: CompileUnit<'hir>) -> String {
         let id = self.id();
         let kind = self.kind();
-        let mut f = format!("{}:{}", kind, id);
-        // Only Scope nodes have an associated Scope; get it if available
-        if let HirNode::Scope(scope_node) = self
-            && let Some(scope) = *scope_node.scope.read()
-        {
-            f.push_str(&format!("   s:{}", scope.format_compact()));
-        }
-        f
+        format!("{}:{}", kind, id)
     }
 
     /// Get the base information for any HIR node
@@ -95,6 +87,14 @@ impl<'hir> HirNode<'hir> {
     /// Get children of this node
     pub fn children(&self) -> &[HirId] {
         self.base().map_or(&[], |base| &base.children)
+    }
+
+    /// Get children nodes of this node
+    pub fn children_nodes(&self, unit: &CompileUnit<'hir>) -> Vec<HirNode<'hir>> {
+        self.children()
+            .iter()
+            .map(|id| unit.hir_node(*id))
+            .collect()
     }
 
     /// Get tree-sitter kind ID for this node (distinct from HirKind)
@@ -142,14 +142,14 @@ impl<'hir> HirNode<'hir> {
 
     /// Find the identifier for the first child node that is an identifier or interior node.
     /// Recursively searches for identifiers within interior nodes.
-    pub fn find_identifier(&self, unit: CompileUnit<'hir>) -> Option<HirId> {
+    pub fn find_identifier(&self, unit: CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
         if self.is_kind(HirKind::Identifier) {
-            return Some(self.id());
+            return self.as_ident();
         }
         for child_id in self.children() {
             let child = unit.hir_node(*child_id);
             if child.is_kind(HirKind::Identifier) {
-                return Some(child.id());
+                return child.as_ident();
             }
             if child.is_kind(HirKind::Internal)
                 && let Some(id) = child.find_identifier(unit)
@@ -161,27 +161,15 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Find identifier for the first child with a matching field ID.
-    pub fn find_identifier_for_field(
+    pub fn child_identifier_by_field(
         &self,
         unit: CompileUnit<'hir>,
         field_id: u16,
-    ) -> Option<HirId> {
+    ) -> Option<&'hir HirIdent<'hir>> {
         debug_assert!(!self.is_kind(HirKind::Identifier));
         for child_id in self.children() {
             let child = unit.hir_node(*child_id);
             if child.field_id() == field_id {
-                return child.find_identifier(unit);
-            }
-        }
-        None
-    }
-
-    /// Find identifier for the first child with a matching kind ID.
-    pub fn find_identifier_for_kind(&self, unit: CompileUnit<'hir>, kind_id: u16) -> Option<HirId> {
-        debug_assert!(!self.is_kind(HirKind::Identifier));
-        for child_id in self.children() {
-            let child = unit.hir_node(*child_id);
-            if child.kind_id() == kind_id {
                 return child.find_identifier(unit);
             }
         }
@@ -411,6 +399,10 @@ impl<'hir> HirIdent<'hir> {
             name,
             symbol: RwLock::new(None),
         }
+    }
+
+    pub fn id(&self) -> HirId {
+        self.base.id
     }
 
     pub fn set_symbol(&self, symbol: &'hir Symbol) {

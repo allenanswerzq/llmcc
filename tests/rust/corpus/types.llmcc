@@ -1,40 +1,75 @@
-================================================================================
-The unit type
-================================================================================
+===============================================================================
+the-unit-type
+===============================================================================
+
 
 --- file: src/main.rs ---
 type A = ();
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | A     | main::main::A |         
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+tuple-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Tuple types
-================================================================================
 
 --- file: src/main.rs ---
 type A = (i32, String);
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | A     | main::main::A |         
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:20]
+u0:20 -> [u0:1]
 
 
+===============================================================================
+reference-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Reference types
-================================================================================
 
 --- file: src/main.rs ---
 type A = &B;
@@ -42,36 +77,76 @@ type C = &'a str;
 type D = &'a mut str;
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | A     | main::main::A |         
+u0:21 | Type   | C     | main::main::C |         
+u0:22 | Type   | D     | main::main::D |         
+
+--- expect:symbol-deps ---
+u0:17 <- [u0:21, u0:22]
+u0:21 -> [u0:17]
+u0:22 -> [u0:17]
 
 
+===============================================================================
+raw-pointer-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Raw pointer types
-================================================================================
 
 --- file: src/main.rs ---
 type A = *mut B;
 type C = *const str;
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | A     | main::main::A |         
+u0:21 | Type   | C     | main::main::C |         
+
+--- expect:symbol-deps ---
+u0:17 <- [u0:21]
+u0:21 -> [u0:17]
 
 
+===============================================================================
+generic-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Generic types
-================================================================================
 
 --- file: src/main.rs ---
 type A = B<C>;
@@ -80,18 +155,39 @@ type G = H<'a, I>;
 type J = H<K=L>;
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | A     | main::main::A |         
+u0:21 | Type   | D     | main::main::D |         
+u0:22 | Type   | G     | main::main::G |         
+u0:23 | Type   | J     | main::main::J |         
+
+--- expect:symbol-deps ---
+u0:17 <- [u0:21]
+u0:21 -> [u0:17]
 
 
+===============================================================================
+scoped-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Scoped types
-================================================================================
 
 --- file: src/main.rs ---
 type A = B::C;
@@ -100,36 +196,72 @@ type H = I::J<K>;
 type L = M<N>::O;
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | A     | main::main::A |         
+u0:21 | Type   | D     | main::main::D |         
+u0:22 | Type   | H     | main::main::H |         
+u0:23 | Type   | L     | main::main::L |         
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+array-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Array types
-================================================================================
 
 --- file: src/main.rs ---
 type A = [B; 4];
 type C = &[D];
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | A     | main::main::A |         
+u0:21 | Type   | C     | main::main::C |         
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+function-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Function types
-================================================================================
 
 --- file: src/main.rs ---
 fn high_order1(value: i32, f: fn(i32)) -> i32 {}
@@ -145,36 +277,96 @@ fn high_order3(value: i32, f: &FnOnce(i32) -> i32) -> i32 {
 type F = for<'a, 'b> fn(x: &'a A, y: &'a mut B<'i, 't>,) -> C;
 
 --- expect:symbols ---
+u0:1  | Type      | i32         | i32                              | [global]
+u0:2  | Type      | i64         | i64                              | [global]
+u0:3  | Type      | i16         | i16                              | [global]
+u0:4  | Type      | i8          | i8                               | [global]
+u0:5  | Type      | i128        | i128                             | [global]
+u0:6  | Type      | isize       | isize                            | [global]
+u0:7  | Type      | u32         | u32                              | [global]
+u0:8  | Type      | u64         | u64                              | [global]
+u0:9  | Type      | u16         | u16                              | [global]
+u0:10 | Type      | u8          | u8                               | [global]
+u0:11 | Type      | u128        | u128                             | [global]
+u0:12 | Type      | usize       | usize                            | [global]
+u0:13 | Type      | f32         | f32                              | [global]
+u0:14 | Type      | f64         | f64                              | [global]
+u0:15 | Type      | bool        | bool                             | [global]
+u0:16 | Type      | char        | char                             | [global]
+u0:17 | Type      | str         | str                              | [global]
+u0:18 | Module    | main        | main                             | [global]
+u0:19 | File      | main        | main::main                       |         
+u0:20 | Function  | high_order1 | main::main::high_order1          |         
+u0:21 | Variable  | value       | main::main::high_order1::value   |         
+u0:22 | Variable  | f           | main::main::high_order1::f       |         
+u0:23 | Namespace | block_0     | main::main::high_order1::block_0 |         
+u0:24 | Function  | high_order2 | main::main::high_order2          |         
+u0:25 | Variable  | value       | main::main::high_order2::value   |         
+u0:26 | Variable  | f           | main::main::high_order2::f       |         
+u0:27 | Namespace | block_1     | main::main::high_order2::block_1 |         
+u0:28 | Function  | high_order3 | main::main::high_order3          |         
+u0:29 | Variable  | value       | main::main::high_order3::value   |         
+u0:30 | Variable  | f           | main::main::high_order3::f       |         
+u0:31 | Namespace | block_2     | main::main::high_order3::block_2 |         
+u0:32 | Type      | F           | main::main::F                    |         
+u0:33 | Variable  | x           | main::main::x                    |         
+u0:34 | Variable  | y           | main::main::y                    |         
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:20, u0:21, u0:22, u0:24, u0:25, u0:26, u0:28, u0:29, u0:30]
+u0:20 -> [u0:1]
+u0:21 -> [u0:1]
+u0:22 -> [u0:1]
+u0:24 -> [u0:1]
+u0:25 -> [u0:1]
+u0:26 -> [u0:1]
+u0:28 -> [u0:1]
+u0:29 -> [u0:1]
+u0:30 -> [u0:1]
+u0:32 -> [u0:33, u0:34]
+u0:33 <- [u0:32]
+u0:34 <- [u0:32]
 
 
+===============================================================================
+unsafe-and-extern-function-types
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Unsafe and extern function types
-================================================================================
 
 --- file: src/main.rs ---
 type a = extern "C" fn(*mut c_void);
 type b = unsafe extern "C" fn() -> *mut c_void;
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | a     | main::main::a |         
+u0:21 | Type   | b     | main::main::b |         
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+trait-objects
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Trait objects
-================================================================================
 
 --- file: src/main.rs ---
 type a = Box<Something + 'a>;
@@ -182,29 +374,60 @@ type b = Rc<dyn Something>;
 type c = A<&dyn Fn(&B) -> C>;
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32           | [global]
+u0:2  | Type   | i64   | i64           | [global]
+u0:3  | Type   | i16   | i16           | [global]
+u0:4  | Type   | i8    | i8            | [global]
+u0:5  | Type   | i128  | i128          | [global]
+u0:6  | Type   | isize | isize         | [global]
+u0:7  | Type   | u32   | u32           | [global]
+u0:8  | Type   | u64   | u64           | [global]
+u0:9  | Type   | u16   | u16           | [global]
+u0:10 | Type   | u8    | u8            | [global]
+u0:11 | Type   | u128  | u128          | [global]
+u0:12 | Type   | usize | usize         | [global]
+u0:13 | Type   | f32   | f32           | [global]
+u0:14 | Type   | f64   | f64           | [global]
+u0:15 | Type   | bool  | bool          | [global]
+u0:16 | Type   | char  | char          | [global]
+u0:17 | Type   | str   | str           | [global]
+u0:18 | Module | main  | main          | [global]
+u0:19 | File   | main  | main::main    |         
+u0:20 | Type   | a     | main::main::a |         
+u0:21 | Type   | b     | main::main::b |         
+u0:22 | Type   | c     | main::main::c |         
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+type-cast-expressions-with-generics
+===============================================================================
 
-
-
-
-
-
-
-================================================================================
-Type cast expressions with generics
-================================================================================
 
 --- file: src/main.rs ---
 a as B<C>;
 d as *mut E<<F as E>::G>;
 
 --- expect:symbols ---
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
-
-
-
-
-
-
-
+--- expect:symbol-deps ---

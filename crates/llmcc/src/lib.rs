@@ -10,7 +10,7 @@ use tracing::info;
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
-use llmcc_resolver::{BinderOption, CollectorOption, bind_symbols_with, collect_symbols_with};
+use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
 fn should_skip_dir(name: &str) -> bool {
     matches!(
@@ -89,8 +89,8 @@ where
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let symbols_start = Instant::now();
-    let globals =
-        collect_symbols_with::<L>(&cc, CollectorOption::default().with_print_ir(opts.print_ir));
+    let resolver_option = ResolverOption::default().with_print_ir(opts.print_ir);
+    let globals = collect_symbols_with::<L>(&cc, &resolver_option);
     info!(
         "Symbol collection: {:.2}s",
         symbols_start.elapsed().as_secs_f64()
@@ -99,7 +99,7 @@ where
     let mut pg = ProjectGraph::new(&cc);
 
     let graph_build_start = Instant::now();
-    bind_symbols_with::<L>(&cc, globals, BinderOption);
+    bind_symbols_with::<L>(&cc, globals, &resolver_option);
 
     let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;
     for unit_graph in &unit_graphs {
