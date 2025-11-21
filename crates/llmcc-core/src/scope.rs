@@ -66,10 +66,16 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Merge existing scope into this scope.
+    #[inline]
     pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
         other.for_each_symbol(|source_symbol| {
             self.insert(source_symbol);
         });
+    }
+
+    #[inline]
+    pub fn add_parent(&self, parent: &'tcx Scope<'tcx>) {
+        self.parents.write().push(parent);
     }
 
     #[inline]
@@ -90,6 +96,11 @@ impl<'tcx> Scope<'tcx> {
     #[inline]
     pub fn id(&self) -> ScopeId {
         self.id
+    }
+
+    #[inline]
+    pub fn parents(&self) -> Vec<&'tcx Scope<'tcx>> {
+        self.parents.read().clone()
     }
 
     /// Invokes a closure for each symbol in this scope.
@@ -251,9 +262,6 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn lookup_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
-        if name.is_empty() {
-            return None;
-        }
         let name_key = self.interner.intern(name);
         let stack = self.stack.read();
 

@@ -394,7 +394,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
             // Lookup for the struct this impl block is target for
             if let Some(symbol) =
-                scopes.lookup_symbol_with(short_name, Some(vec![SymKind::Struct]), None, None)
+                scopes.lookup_symbol_with(short_name, Some(vec![SymKind::Struct, SymKind::Enum]), None, None)
                 && let Some(scope_id) = symbol.scope()
             {
                 // NOTE: the impl and the define reuse the same scope(namespace)
