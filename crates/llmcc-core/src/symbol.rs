@@ -90,7 +90,10 @@ pub enum SymKind {
     Trait,
     Impl,
     EnumVariant,
-    Type,
+    Primitive,
+    TypeAlias,
+    TypeParameter,
+    UnresolvedType,
 }
 
 /// Represents a named entity in source code.

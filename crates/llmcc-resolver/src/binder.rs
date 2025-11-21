@@ -187,6 +187,22 @@ impl<'a> BinderScopes<'a> {
         self.scopes
             .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
     }
+
+    pub fn lookup_member_symbol(
+        &self,
+        obj_type_symbol: &'a Symbol,
+        member_name: &str,
+        kind_filter: Option<SymKind>,
+    ) -> Option<&'a Symbol> {
+        let scope_id = obj_type_symbol.scope()?;
+        let scope = self.unit.get_scope(scope_id);
+        let name_key = self.unit.interner().intern(member_name);
+        let symbols = scope.lookup_symbols(name_key)?;
+        symbols
+            .into_iter()
+            .rev()
+            .find(|symbol| kind_filter.is_none_or(|kind| symbol.kind() == kind))
+    }
 }
 
 /// parallel binding symbols

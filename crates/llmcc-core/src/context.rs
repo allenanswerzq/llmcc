@@ -459,8 +459,8 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Allocate a new scope
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         // Allocate new scope
-        let scope_id = ScopeId(self.scope_map.read().len());
         let scope = self.arena.alloc(Scope::new(owner));
+        let scope_id = scope.id();
 
         // Update both scope_map and owner_to_scope_id mapping
         self.scope_map.write().insert(scope_id, scope);

@@ -89,6 +89,14 @@ impl<'hir> HirNode<'hir> {
         self.base().map_or(&[], |base| &base.children)
     }
 
+    /// Get children nodes of this node
+    pub fn children_nodes(&self, unit: &CompileUnit<'hir>) -> Vec<HirNode<'hir>> {
+        self.children()
+            .iter()
+            .map(|id| unit.hir_node(*id))
+            .collect()
+    }
+
     /// Get tree-sitter kind ID for this node (distinct from HirKind)
     pub fn kind_id(&self) -> u16 {
         self.base().unwrap().kind_id

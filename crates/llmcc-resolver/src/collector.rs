@@ -159,10 +159,15 @@ impl<'a> CollectorScopes<'a> {
 
     /// Initialize a symbol with common properties
     fn init_symbol(&self, symbol: &'a Symbol, name: &str, node: &HirNode<'a>, kind: SymKind) {
-        symbol.set_kind(kind);
-        symbol.set_unit_index(self.unit_index());
-        symbol.set_fqn(self.build_fqn(name));
-        symbol.add_defining(node.id());
+        if symbol.kind() == SymKind::Unknown {
+            symbol.set_kind(kind);
+            symbol.set_unit_index(self.unit_index());
+            symbol.set_fqn(self.build_fqn(name));
+            symbol.add_defining(node.id());
+            if let Some(parent) = self.top() {
+                symbol.set_parent_scope(parent.id());
+            }
+        }
     }
 
     /// Find or insert symbol for node in current scope, set kind and unit index

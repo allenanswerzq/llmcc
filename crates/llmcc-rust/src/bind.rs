@@ -1,7 +1,7 @@
 use std::vec;
 
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirKind, HirNode, HirScope};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
@@ -81,7 +81,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             "f32", "f64", "bool", "char", "str",
         ];
         for prim in primitives {
-            scopes.lookup_or_insert_global(prim, node, SymKind::Type);
+            scopes.lookup_or_insert_global(prim, node, SymKind::Primitive);
         }
     }
 
@@ -133,6 +133,12 @@ impl<'tcx> BinderVisitor<'tcx> {
         if let Some(ident) = node.find_identifier(*unit) {
             return Some(Self::normalize_identifier(&ident.name));
         }
+        if node.kind_id() == LangRust::super_token {
+            return Some("super".to_string());
+        }
+        if node.kind_id() == LangRust::crate_token {
+            return Some("crate".to_string());
+        }
         None
     }
 
@@ -168,45 +174,77 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
-    /// Resolves an expression down to the callable symbol it ultimately refers to.
+    /// Resolves an arbitrary expression down to the callable symbol it ultimately refers to.
     ///
-    /// Examples covered:
-    /// * `foo` / `module::foo` identifiers
-    /// * `object.foo` field/method lookups
-    /// * `&foo`, `(foo)`, `foo().await`, `foo()?`
-    /// * Nested call chains such as `foo()()` or `foo().bar()`
+    /// Strategy overview:
+    /// 1. Treat direct identifiers (plain or qualified) as callable lookups in the active scope stack.
+    /// 2. For field expressions, first check whether the field name resolves to a callable in the current scope
+    ///    (useful for associated functions). If not, infer the receiver type and ask `BinderScopes` for the
+    ///    matching member symbol so that method calls like `value.foo()` bind correctly.
+    /// 3. Transparently unwrap syntactic sugar such as references, calls, awaits, tries, or parentheses so that
+    ///    chains like `foo()?`, `foo().await`, or `(foo)()` still resolve to the base callable.
+    ///
+    ///    The function only returns symbols that can be invoked (functions or macros); non-callable expressions
+    ///    bubble up as `None`.
     fn resolve_expression_symbol(
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &BinderScopes<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
+        // Inspect the syntax kind so resolution can specialize per expression form.
         match node.kind_id() {
             kind if Self::is_identifier_kind(kind) => {
+                if kind == LangRust::scoped_identifier {
+                    return Self::resolve_scoped_identifier_symbol(unit, node, scopes, caller);
+                }
+                // Extract the identifier text (dropping any path prefixes).
                 let name = Self::identifier_name(unit, node)?;
+                // Look up the callable directly in the current scope chain.
                 self.lookup_callable_symbol(unit, scopes, &name)
             }
             kind if kind == LangRust::field_expression => {
+                // Grab the AST node that names the field portion of the access.
                 let field = node.child_by_field(*unit, LangRust::field_field)?;
                 let name = Self::identifier_name(unit, &field)?;
-                self.lookup_callable_symbol(unit, scopes, &name)
+                // Attempt to resolve `Type::field` style associated function before assuming a method.
+                if let Some(symbol) = self.lookup_callable_symbol(unit, scopes, &name) {
+                    return Some(symbol);
+                }
+
+                // Resolve the receiver expression so we know which type owns the field.
+                let value = node.child_by_field(*unit, LangRust::field_value)?;
+                if let Some(obj_type) = Self::infer_type_from_expr(unit, &value, scopes) {
+                    // If the type exposes a callable member with this name, treat it as a method.
+                    if let Some(method) =
+                        scopes.lookup_member_symbol(obj_type, &name, Some(SymKind::Function))
+                    {
+                        return Some(method);
+                    }
+                }
+                None
             }
             kind if kind == LangRust::reference_expression => {
+                // Strip the reference operator and resolve the underlying expression.
                 let value = node.child_by_field(*unit, LangRust::field_value)?;
-                self.resolve_expression_symbol(unit, &value, scopes)
+                self.resolve_expression_symbol(unit, &value, scopes, caller)
             }
             kind if kind == LangRust::call_expression => {
+                // Look at the callable expression being invoked.
                 let inner = node.child_by_field(*unit, LangRust::field_function)?;
-                self.resolve_expression_symbol(unit, &inner, scopes)
+                self.resolve_expression_symbol(unit, &inner, scopes, caller)
             }
             kind if kind == LangRust::await_expression
                 || kind == LangRust::try_expression
                 || kind == LangRust::parenthesized_expression =>
             {
+                // Dig into the wrapped expression (await, try, or parentheses).
                 let child = Self::first_child_node(unit, node)?;
-                self.resolve_expression_symbol(unit, &child, scopes)
+                self.resolve_expression_symbol(unit, &child, scopes, caller)
             }
             _ => {
+                // Fall back to treating the node as an identifier-like value.
                 let name = Self::identifier_name(unit, node)?;
                 self.lookup_callable_symbol(unit, scopes, &name)
             }
@@ -218,9 +256,12 @@ impl<'tcx> BinderVisitor<'tcx> {
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &BinderScopes<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
     ) -> Option<&'tcx Symbol> {
         let macro_node = node.child_by_field(*unit, LangRust::field_macro)?;
+        if macro_node.kind_id() == LangRust::scoped_identifier {
+            return Self::resolve_scoped_identifier_symbol(unit, &macro_node, scopes, None);
+        }
         let name = Self::identifier_name(unit, &macro_node)?;
         self.lookup_callable_symbol(unit, scopes, &name)
     }
@@ -232,10 +273,11 @@ impl<'tcx> BinderVisitor<'tcx> {
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
-        scopes: &BinderScopes<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
         let function = node.child_by_field(*unit, LangRust::field_function)?;
-        self.resolve_expression_symbol(unit, &function, scopes)
+        self.resolve_expression_symbol(unit, &function, scopes, caller)
     }
 
     /// Resolves a type node (like `Vec<Foo>`) into the `Foo`/`Vec` symbols.
@@ -246,13 +288,24 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) -> Option<&'tcx Symbol> {
         let ident = type_node.find_identifier(*unit)?;
 
-        if let Some(existing) =
-            scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::Type]), None, None)
-        {
+        if let Some(existing) = scopes.lookup_symbol_with(
+            &ident.name,
+            Some(vec![
+                SymKind::Struct,
+                SymKind::Enum,
+                SymKind::Trait,
+                SymKind::TypeAlias,
+                SymKind::TypeParameter,
+                SymKind::Primitive,
+                SymKind::UnresolvedType,
+            ]),
+            None,
+            None,
+        ) {
             return Some(existing);
         }
 
-        scopes.lookup_or_insert_global(&ident.name, type_node, SymKind::Type)
+        scopes.lookup_or_insert_global(&ident.name, type_node, SymKind::UnresolvedType)
     }
 
     /// Records a symbol's declared type and dependency on that type.
@@ -333,7 +386,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         node: &HirNode<'tcx>,
         primitive: &str,
     ) -> Option<&'tcx Symbol> {
-        scopes.lookup_or_insert_global(primitive, node, SymKind::Type)
+        scopes.lookup_or_insert_global(primitive, node, SymKind::Primitive)
     }
 
     /// Infers primitive types for literal nodes (e.g., `42` ⇒ `i32`).
@@ -390,14 +443,13 @@ impl<'tcx> BinderVisitor<'tcx> {
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
-        left_child_id: HirId,
+        left_child: &HirNode<'tcx>,
         outcome: BinaryOperatorOutcome,
     ) -> Option<&'tcx Symbol> {
         match outcome {
             BinaryOperatorOutcome::ReturnsBool => Self::primitive_type(scopes, node, "bool"),
             BinaryOperatorOutcome::ReturnsLeftOperand => {
-                let left = unit.hir_node(left_child_id);
-                Self::infer_type_from_expr(unit, &left, scopes)
+                Self::infer_type_from_expr(unit, left_child, scopes)
             }
         }
     }
@@ -444,34 +496,40 @@ impl<'tcx> BinderVisitor<'tcx> {
     }
 
     /// Handles arithmetic/logical operators (e.g., `a + b`).
+    ///
+    /// This function attempts to determine the result type of a binary expression.
     fn infer_binary_operator_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
     ) -> Option<&'tcx Symbol> {
-        let child_ids: Vec<_> = node.children().iter().cloned().collect();
-        if child_ids.is_empty() {
+        let children = node.children_nodes(unit);
+        if children.is_empty() {
             return None;
         }
 
-        let left_child_id = *child_ids.first()?;
-
-        if let Some(outcome) = child_ids.iter().find_map(|child_id| {
-            let child = unit.hir_node(*child_id);
-            Self::binary_operator_outcome_by_kind(child.kind_id())
-        }) {
-            return Self::binary_operator_type(unit, node, scopes, left_child_id, outcome);
+        // Strategy 1: Look for a child node that matches a known binary operator kind
+        if let Some(outcome) = children
+            .iter()
+            .find_map(|child| Self::binary_operator_outcome_by_kind(child.kind_id()))
+        {
+            // The first child is assumed to be the left operand
+            let left_child = children.first()?;
+            return Self::binary_operator_type(unit, node, scopes, left_child, outcome);
         }
 
-        if child_ids.len() >= 2 {
-            let left = unit.hir_node(left_child_id);
-            let right = unit.hir_node(child_ids[1]);
+        // Strategy 2: Check the text between the first and second child (e.g. " + ")
+        if children.len() >= 2 {
+            let left = &children[0];
+            let right = &children[1];
             let start = left.end_byte();
             let end = right.start_byte();
+
+            // Ensure there is space between nodes to contain an operator
             if start < end {
                 let operator = unit.get_text(start, end);
                 if let Some(outcome) = Self::binary_operator_outcome_by_text(operator.as_str()) {
-                    return Self::binary_operator_type(unit, node, scopes, left_child_id, outcome);
+                    return Self::binary_operator_type(unit, node, scopes, left, outcome);
                 }
             }
         }
@@ -479,24 +537,44 @@ impl<'tcx> BinderVisitor<'tcx> {
         None
     }
 
-    /// Infers types for field accesses (e.g., `foo.bar`).
+    /// Infers the type for a field access expression like `foo.bar`.
+    ///
+    /// We first infer the type of the receiver (`foo` in `foo.bar`). Once we know the owner symbol, we query its member scope
+    /// for the requested field symbol. If present, the field's declared type is returned so that downstream logic
+    /// can understand `foo.bar` as the value of that type. Missing metadata (no receiver type, field, or type
+    /// reference) results in `None`, signalling an unresolved expression.
     fn infer_field_expression_type(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
     ) -> Option<&'tcx Symbol> {
+        // Locate the receiver portion of the field expression (`foo` in `foo.bar`).
         let value_node = node.child_by_field(*unit, LangRust::field_value)?;
+        // Fetch the AST node that represents the field name.
         let field_node = node.child_by_field(*unit, LangRust::field_field)?;
         let field_ident = field_node.as_ident()?;
 
+        // Infer the type symbol associated with the receiver expression.
         let obj_type_symbol = Self::infer_type_from_expr(unit, &value_node, scopes)?;
-        let scope_id = obj_type_symbol.scope()?;
-        let scope = unit.cc.get_scope(scope_id);
-        let name_key = unit.interner().intern(&field_ident.name);
-        let symbols = scope.lookup_symbols(name_key)?;
-        let field_symbol = symbols.last()?;
+        // Query the receiver's scope for the field symbol so we can read its metadata.
+        let field_symbol = scopes
+            .lookup_member_symbol(obj_type_symbol, &field_ident.name, Some(SymKind::Field))
+            .or_else(|| {
+                scopes.lookup_member_symbol(
+                    obj_type_symbol,
+                    &field_ident.name,
+                    Some(SymKind::Function),
+                )
+            })?;
+        // Extract the type ID stored on the field symbol.
         let field_type_id = field_symbol.type_of()?;
-        unit.opt_get_symbol(field_type_id)
+        // Resolve the type identifier into the corresponding symbol in the compile unit.
+        let ty = unit.opt_get_symbol(field_type_id)?;
+
+        if Self::is_self_type(unit, ty) {
+            return Some(obj_type_symbol);
+        }
+        Some(ty)
     }
 
     /// Handles string/char literal nodes.
@@ -543,10 +621,10 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) -> Option<&'tcx Symbol> {
         for child_id in node.children() {
             let child = unit.hir_node(*child_id);
-            if !matches!(child.kind(), HirKind::Text | HirKind::Comment) {
-                if let Some(ty) = Self::infer_type_from_expr(unit, &child, scopes) {
-                    return Some(ty);
-                }
+            if !matches!(child.kind(), HirKind::Text | HirKind::Comment)
+                && let Some(ty) = Self::infer_type_from_expr(unit, &child, scopes)
+            {
+                return Some(ty);
             }
         }
         None
@@ -578,6 +656,25 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
 
         match kind_id {
+            kind if kind == LangRust::scoped_identifier => {
+                if let Some(sym) = Self::resolve_scoped_identifier_symbol(unit, node, scopes, None)
+                {
+                    if let Some(type_id) = sym.type_of()
+                        && let Some(ty) = unit.opt_get_symbol(type_id)
+                    {
+                        if Self::is_self_type(unit, ty)
+                            && let Some(parent_scope_id) = sym.parent_scope()
+                        {
+                            let parent_scope = unit.get_scope(parent_scope_id);
+                            if let Some(parent_sym) = parent_scope.symbol() {
+                                return Some(parent_sym);
+                            }
+                        }
+                        return Some(ty);
+                    }
+                    return Some(sym);
+                }
+            }
             kind if kind == LangRust::struct_expression => {
                 if let Some(ty) = Self::infer_struct_expression_type(unit, node, scopes) {
                     return Some(ty);
@@ -607,6 +704,7 @@ impl<'tcx> BinderVisitor<'tcx> {
                 }
             }
             kind if kind == LangRust::field_expression => {
+                // p.x
                 if let Some(ty) = Self::infer_field_expression_type(unit, node, scopes) {
                     return Some(ty);
                 }
@@ -642,6 +740,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     }
 
     /// Assign inferred type to pattern (for let bindings, parameters, etc.)
+    #[allow(clippy::only_used_in_recursion)]
     fn assign_type_to_pattern(
         unit: &CompileUnit<'tcx>,
         pattern: &HirNode<'tcx>,
@@ -663,6 +762,146 @@ impl<'tcx> BinderVisitor<'tcx> {
                 }
             }
         }
+    }
+
+    fn link_pattern_type_references(
+        unit: &CompileUnit<'tcx>,
+        pattern: &HirNode<'tcx>,
+        type_node: &HirNode<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+        owner: Option<&Symbol>,
+    ) {
+        match pattern.kind() {
+            HirKind::Identifier => {
+                if let Some(ident) = pattern.as_ident() {
+                    Self::link_type_references(unit, type_node, scopes, ident.symbol(), owner);
+                }
+            }
+            _ => {
+                for child_id in pattern.children() {
+                    let child = unit.hir_node(*child_id);
+                    Self::link_pattern_type_references(unit, &child, type_node, scopes, owner);
+                }
+            }
+        }
+    }
+
+    /// Resolves the `crate` keyword to the crate root symbol.
+    fn resolve_crate_root(scopes: &BinderScopes<'tcx>) -> Option<&'tcx Symbol> {
+        scopes.scopes().iter().into_iter().find_map(|s| {
+            if let Some(sym) = s.symbol()
+                && sym.kind() == SymKind::Crate
+            {
+                return Some(sym);
+            }
+            None
+        })
+    }
+
+    /// Resolves the `super` keyword relative to a given anchor symbol or the current scope.
+    ///
+    /// This function traverses the scope stack to find the parent module of the context
+    /// defined by `anchor`.
+    ///
+    /// - If `anchor` is `Some(sym)`, it starts searching from the scope associated with `sym`.
+    ///   This is used for paths like `foo::super`, where we want the parent of `foo`.
+    /// - If `anchor` is `None`, it starts searching from the current scope.
+    ///   This is used for paths like `super::foo`, where we want the parent of the current module.
+    ///
+    /// The function looks for "module-like" symbols (Module, File, Crate, Namespace) in the stack.
+    /// It finds the index of the base scope (either the anchor's scope or the current module scope),
+    /// and then searches upwards (reverse) to find the *next* module-like symbol, which represents
+    /// the parent module.
+    fn resolve_super_relative_to(
+        scopes: &BinderScopes<'tcx>,
+        anchor: Option<&Symbol>,
+    ) -> Option<&'tcx Symbol> {
+        let stack = scopes.scopes().iter();
+
+        // Determine the starting point in the scope stack.
+        let base_index = if let Some(anchor_sym) = anchor {
+            // Case 1: Anchor provided (e.g., `foo::super`).
+            // Find the index of the scope that corresponds to `foo`.
+            let anchor_scope_id = anchor_sym.scope()?;
+            stack.iter().rposition(|s| s.id() == anchor_scope_id)?
+        } else {
+            // Case 2: No anchor (e.g., `super::foo`).
+            // Find the index of the nearest module-like scope in the current stack.
+            // This represents the "current module".
+            stack.iter().enumerate().rev().find_map(|(i, s)| {
+                if let Some(sym) = s.symbol()
+                    && matches!(
+                        sym.kind(),
+                        SymKind::Module | SymKind::File | SymKind::Crate | SymKind::Namespace
+                    )
+                {
+                    return Some(i);
+                }
+                None
+            })?
+        };
+
+        // Search upwards from the base index to find the parent module.
+        // `take(base_index)` restricts the search to scopes *above* the base.
+        // `rev()` iterates from the nearest parent upwards.
+        stack.iter().take(base_index).rev().find_map(|s| {
+            if let Some(sym) = s.symbol()
+                && matches!(
+                    sym.kind(),
+                    SymKind::Module | SymKind::File | SymKind::Crate | SymKind::Namespace
+                )
+            {
+                return Some(sym);
+            }
+            None
+        })
+    }
+
+    /// Resolves a scoped identifier (e.g. `Foo::bar`) to a symbol.
+    fn resolve_scoped_identifier_symbol(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        caller: Option<&Symbol>,
+    ) -> Option<&'tcx Symbol> {
+        let children = node.children_nodes(unit);
+        let non_trivia: Vec<_> = children
+            .iter()
+            .filter(|n| !matches!(n.kind(), HirKind::Text | HirKind::Comment))
+            .collect();
+
+        if non_trivia.len() < 2 {
+            return None;
+        }
+
+        let path_node = non_trivia.first()?;
+        let name_node = non_trivia.last()?;
+        let name = Self::identifier_name(unit, name_node)?;
+
+        let path_symbol = if path_node.kind_id() == LangRust::scoped_identifier {
+            Self::resolve_scoped_identifier_symbol(unit, path_node, scopes, caller)?
+        } else if path_node.kind_id() == LangRust::super_token {
+            Self::resolve_super_relative_to(scopes, None)?
+        } else if path_node.kind_id() == LangRust::crate_token {
+            Self::resolve_crate_root(scopes)?
+        } else {
+            let path_name = Self::identifier_name(unit, path_node)?;
+            let sym = scopes.lookup_symbol(&path_name)?;
+            if let Some(c) = caller {
+                c.add_dependency(sym);
+            }
+            sym
+        };
+
+        if name_node.kind_id() == LangRust::super_token {
+            return Self::resolve_super_relative_to(scopes, Some(path_symbol));
+        }
+
+        scopes.lookup_member_symbol(path_symbol, &name, None)
+    }
+
+    fn is_self_type(unit: &CompileUnit<'tcx>, symbol: &Symbol) -> bool {
+        unit.interner().resolve_owned(symbol.name).as_deref() == Some("Self")
     }
 }
 
@@ -686,16 +925,16 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 return;
             };
 
-            if let Some(symbol) = symbol {
-                if let Some(scope_id) = symbol.scope() {
-                    scopes.push_scope(scope_id);
-                }
+            if let Some(symbol) = symbol
+                && let Some(scope_id) = symbol.scope()
+            {
+                scopes.push_scope(scope_id);
             }
         }
 
         if let Some(scope_id) = parse_module_name(file_path).and_then(|module_name| {
             scopes
-                .lookup_or_insert_global(&module_name, node, SymKind::Module)
+                .lookup_or_insert(&module_name, node, SymKind::Module)
                 .and_then(|symbol| symbol.scope())
         }) {
             scopes.push_scope(scope_id);
@@ -708,10 +947,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 return;
             };
 
-            if let Some(symbol) = file_sym_opt {
-                if let Some(scope_id) = symbol.scope() {
-                    scopes.push_scope(scope_id);
-                }
+            if let Some(symbol) = file_sym_opt
+                && let Some(scope_id) = symbol.scope()
+            {
+                scopes.push_scope(scope_id);
             }
         }
 
@@ -761,11 +1000,19 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let ret_node = node.child_by_field(*unit, LangRust::field_return_type);
         let ty = ret_node
             .as_ref()
-            .and_then(|ret_ty| Self::resolve_type_from_node(unit, ret_ty, scopes))
+            .and_then(|ret_ty| {
+                if let Some(ident) = ret_ty.find_identifier(*unit)
+                    && ident.name == "Self"
+                    && let Some(p) = parent
+                {
+                    return Some(p);
+                }
+                Self::resolve_type_from_node(unit, ret_ty, scopes)
+            })
             .unwrap_or_else(|| {
                 // Default to void/unit type if no return type found
                 scopes
-                    .lookup_or_insert_global("void_fn", node, SymKind::Type)
+                    .lookup_or_insert_global("void_fn", node, SymKind::Primitive)
                     .expect("void_fn type should exist")
             });
 
@@ -850,25 +1097,19 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         node: &HirNode<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
-        if let Some(sn) = node.as_scope() {
-            if let Some(ident) = sn.opt_ident() {
-                if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-                    if let Some(target) = Self::resolve_type_from_node(unit, &type_node, scopes) {
-                        Self::link_symbol_with_type(ident.symbol(), target);
-                    }
-                    Self::link_type_references(unit, &type_node, scopes, ident.symbol(), None);
-                }
-            }
+        let depth = scopes.scope_depth();
+        let type_node = node.child_by_field(*unit, LangRust::field_type);
 
-            let depth = scopes.scope_depth();
-            let child_parent = sn.opt_ident().map(|ident| ident.symbol()).or(parent);
-            Self::push_scope_node(scopes, sn);
-            self.visit_children(unit, node, scopes, namespace, child_parent);
+        if let Some(type_node_ref) = &type_node
+            && let Some(target) = Self::resolve_type_from_node(unit, type_node_ref, scopes)
+            && let Some(scope_id) = target.scope()
+        {
+            Self::link_type_references(unit, type_node_ref, scopes, target, None);
+            scopes.push_scope_recursive(scope_id);
+            self.visit_children(unit, node, scopes, namespace, Some(target));
             scopes.pop_until(depth);
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
         }
     }
 
@@ -978,7 +1219,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         if let Some(caller) = parent
-            && let Some(callee) = self.resolve_call_target(unit, node, scopes)
+            && let Some(callee) = self.resolve_call_target(unit, node, scopes, Some(caller))
         {
             caller.add_dependency(callee);
         }
@@ -1144,23 +1385,27 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        // 1. Try to get explicit type
+        // Try to get explicit type
         let mut type_symbol = None;
         if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
             type_symbol = Self::resolve_type_from_node(unit, &type_node, scopes);
         }
 
-        // 2. If no explicit type, try to infer from value
-        if type_symbol.is_none() {
-            if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
-                type_symbol = Self::infer_type_from_expr(unit, &value_node, scopes);
-            }
+        // If no explicit type, try to infer from value
+        if type_symbol.is_none()
+            && let Some(value_node) = node.child_by_field(*unit, LangRust::field_value)
+        {
+            type_symbol = Self::infer_type_from_expr(unit, &value_node, scopes);
         }
 
-        // 3. Assign type to pattern
+        // Assign type to pattern
         if let Some(ty) = type_symbol {
             if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
                 Self::assign_type_to_pattern(unit, &pattern, ty, scopes);
+
+                if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                    Self::link_pattern_type_references(unit, &pattern, &type_node, scopes, parent);
+                }
             }
 
             // Also link dependency if we have a parent (e.g. function)
@@ -1211,10 +1456,11 @@ pub fn bind_symbols<'tcx>(
 #[cfg(test)]
 mod tests {
     use crate::token::LangRust;
-    use llmcc_core::context::{CompileCtxt, CompileUnit};
+    use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
     use llmcc_core::symbol::{SymId, SymKind};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
+    use pretty_assertions::assert_eq;
 
     fn with_compiled_unit<F>(sources: &[&str], check: F)
     where
@@ -1226,7 +1472,9 @@ mod tests {
             .collect::<Vec<_>>();
         let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
         build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
-        let resolver_option = ResolverOption::default().with_sequential(true);
+        let resolver_option = ResolverOption::default()
+            .with_sequential(true)
+            .with_print_ir(true);
         let globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
         bind_symbols_with::<LangRust>(&cc, globals, &resolver_option);
         check(&cc);

@@ -21,6 +21,7 @@ pub struct Scope<'tcx> {
     /// Parent scopes for inheritance (lexical chaining).
     parents: RwLock<Vec<&'tcx Scope<'tcx>>>,
     /// Child scopes nested within this scope.
+    #[allow(dead_code)]
     children: RwLock<Vec<&'tcx Scope<'tcx>>>,
 }
 
@@ -132,9 +133,9 @@ impl<'tcx> Scope<'tcx> {
         let filtered: Vec<&'tcx Symbol> = symbols
             .into_iter()
             .filter(|symbol| {
-                let kind_match = kind_filter.map_or(true, |k| k == symbol.kind());
-                let unit_match = unit_filter.map_or(true, |u| Some(u) == symbol.unit_index());
-                let fqn_match = fqn_filter.map_or(true, |fq| fq == symbol.fqn());
+                let kind_match = kind_filter.is_none_or(|k| k == symbol.kind());
+                let unit_match = unit_filter.is_none_or(|u| Some(u) == symbol.unit_index());
+                let fqn_match = fqn_filter.is_none_or(|fq| fq == symbol.fqn());
                 kind_match && unit_match && fqn_match
             })
             .collect();
@@ -285,20 +286,20 @@ impl<'tcx> ScopeStack<'tcx> {
         stack.iter().rev().find_map(|scope| {
             let matches = scope.lookup_symbols(name_key)?;
             matches.iter().rev().find_map(|symbol| {
-                if let Some(kinds) = &kind_filters {
-                    if !kinds.iter().any(|kind| symbol.kind() == *kind) {
-                        return None;
-                    }
+                if let Some(kinds) = &kind_filters
+                    && !kinds.iter().any(|kind| symbol.kind() == *kind)
+                {
+                    return None;
                 }
-                if let Some(units) = &unit_filters {
-                    if !units.iter().any(|unit| symbol.unit_index() == Some(*unit)) {
-                        return None;
-                    }
+                if let Some(units) = &unit_filters
+                    && !units.iter().any(|unit| symbol.unit_index() == Some(*unit))
+                {
+                    return None;
                 }
-                if let Some(fqn_keys) = &fqn_keys {
-                    if !fqn_keys.iter().any(|fqn_key| symbol.fqn() == *fqn_key) {
-                        return None;
-                    }
+                if let Some(fqn_keys) = &fqn_keys
+                    && !fqn_keys.iter().any(|fqn_key| symbol.fqn() == *fqn_key)
+                {
+                    return None;
                 }
                 Some(*symbol)
             })

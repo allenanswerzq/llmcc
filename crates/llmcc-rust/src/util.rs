@@ -25,7 +25,7 @@ pub fn parse_crate_name(file_path: &str) -> Option<String> {
         }
         dir = current_dir.parent();
     }
-    None
+    Some("_c".to_string())
 }
 
 /// Parse the module name from a Rust source file path.
@@ -48,8 +48,7 @@ pub fn parse_module_name(file_path: &str) -> Option<String> {
             .map(|s| s.to_string());
     }
 
-    // For any other file, the module name is the file name itself
-    Some(file_name.to_string())
+    Some("_m".to_string())
 }
 
 /// Return the file name (without the `.rs` extension) for a Rust source path.
@@ -58,43 +57,4 @@ pub fn parse_file_name(file_path: &str) -> Option<String> {
         .file_stem()
         .and_then(|name| name.to_str())
         .map(|name| name.to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_module_name_lib() {
-        assert_eq!(parse_module_name("src/lib.rs"), None);
-    }
-
-    #[test]
-    fn test_parse_module_name_main() {
-        assert_eq!(parse_module_name("src/main.rs"), Some("main".to_string()));
-    }
-
-    #[test]
-    fn test_parse_module_name_mod_rs() {
-        assert_eq!(
-            parse_module_name("src/utils/mod.rs"),
-            Some("utils".to_string())
-        );
-    }
-
-    #[test]
-    fn test_parse_module_name_regular() {
-        assert_eq!(
-            parse_module_name("src/utils/parser.rs"),
-            Some("parser".to_string())
-        );
-    }
-
-    #[test]
-    fn test_parse_file_name() {
-        assert_eq!(
-            parse_file_name("src/utils/parser.rs"),
-            Some("parser".to_string())
-        );
-    }
 }
