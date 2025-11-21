@@ -1,6 +1,7 @@
-================================================================================
+===============================================================================
 async-function
-================================================================================
+===============================================================================
+
 
 --- file: src/main.rs ---
 async fn abc() {}
@@ -10,15 +11,38 @@ async fn main() {
 }
 
 --- expect:symbols ---
-u0:1 | Function | abc  | abc  |
-u0:2 | Function | main | main |
+u0:1  | Type      | i32     | i32                          | [global]
+u0:2  | Type      | i64     | i64                          | [global]
+u0:3  | Type      | i16     | i16                          | [global]
+u0:4  | Type      | i8      | i8                           | [global]
+u0:5  | Type      | i128    | i128                         | [global]
+u0:6  | Type      | isize   | isize                        | [global]
+u0:7  | Type      | u32     | u32                          | [global]
+u0:8  | Type      | u64     | u64                          | [global]
+u0:9  | Type      | u16     | u16                          | [global]
+u0:10 | Type      | u8      | u8                           | [global]
+u0:11 | Type      | u128    | u128                         | [global]
+u0:12 | Type      | usize   | usize                        | [global]
+u0:13 | Type      | f32     | f32                          | [global]
+u0:14 | Type      | f64     | f64                          | [global]
+u0:15 | Type      | bool    | bool                         | [global]
+u0:16 | Type      | char    | char                         | [global]
+u0:17 | Type      | str     | str                          | [global]
+u0:18 | Module    | main    | main                         | [global]
+u0:19 | File      | main    | main::main                   |         
+u0:20 | Function  | abc     | main::main::abc              |         
+u0:21 | Namespace | block_0 | main::main::abc::block_0     |         
+u0:22 | Function  | main    | main::main::main             |         
+u0:23 | Namespace | block_1 | main::main::main::block_1    |         
+u0:24 | Variable  | x       | main::main::main::block_1::x |         
 
 --- expect:symbol-deps ---
 
 
-================================================================================
+===============================================================================
 await-expression
-================================================================================
+===============================================================================
+
 
 --- file: src/main.rs ---
 futures.await;
@@ -27,16 +51,33 @@ futures.await?.await?;
 futures.await?.function().await?;
 
 --- expect:symbols ---
-none
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:symbol-deps ---
-none
 
 
-================================================================================
+===============================================================================
 async-block
-================================================================================
+===============================================================================
+
 
 --- file: src/main.rs ---
 async {}
@@ -44,66 +85,138 @@ async { let x = 10; }
 async move {}
 
 --- expect:symbols ---
-none
-
+u0:1  | Type      | i32     | i32                    | [global]
+u0:2  | Type      | i64     | i64                    | [global]
+u0:3  | Type      | i16     | i16                    | [global]
+u0:4  | Type      | i8      | i8                     | [global]
+u0:5  | Type      | i128    | i128                   | [global]
+u0:6  | Type      | isize   | isize                  | [global]
+u0:7  | Type      | u32     | u32                    | [global]
+u0:8  | Type      | u64     | u64                    | [global]
+u0:9  | Type      | u16     | u16                    | [global]
+u0:10 | Type      | u8      | u8                     | [global]
+u0:11 | Type      | u128    | u128                   | [global]
+u0:12 | Type      | usize   | usize                  | [global]
+u0:13 | Type      | f32     | f32                    | [global]
+u0:14 | Type      | f64     | f64                    | [global]
+u0:15 | Type      | bool    | bool                   | [global]
+u0:16 | Type      | char    | char                   | [global]
+u0:17 | Type      | str     | str                    | [global]
+u0:18 | Module    | main    | main                   | [global]
+u0:19 | File      | main    | main::main             |         
+u0:20 | Namespace | block_0 | main::main::block_0    |         
+u0:21 | Namespace | block_1 | main::main::block_1    |         
+u0:22 | Variable  | x       | main::main::block_1::x |         
+u0:23 | Namespace | block_2 | main::main::block_2    |         
 
 --- expect:symbol-deps ---
-none
+u0:1 <- [u0:22]
+u0:22 -> [u0:1]
 
 
-================================================================================
+===============================================================================
 async-closure
-================================================================================
+===============================================================================
+
 
 --- file: src/main.rs ---
 let _ = async || ();
 
 --- expect:symbols ---
-none
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:symbol-deps ---
-none
 
 
-
-
-
-================================================================================
+===============================================================================
 async-move-async-move-closure
-================================================================================
+===============================================================================
+
 
 --- file: src/main.rs ---
 let a = async move || async move {};
 
 --- expect:symbols ---
-none
-
+u0:1  | Type      | i32     | i32                 | [global]
+u0:2  | Type      | i64     | i64                 | [global]
+u0:3  | Type      | i16     | i16                 | [global]
+u0:4  | Type      | i8      | i8                  | [global]
+u0:5  | Type      | i128    | i128                | [global]
+u0:6  | Type      | isize   | isize               | [global]
+u0:7  | Type      | u32     | u32                 | [global]
+u0:8  | Type      | u64     | u64                 | [global]
+u0:9  | Type      | u16     | u16                 | [global]
+u0:10 | Type      | u8      | u8                  | [global]
+u0:11 | Type      | u128    | u128                | [global]
+u0:12 | Type      | usize   | usize               | [global]
+u0:13 | Type      | f32     | f32                 | [global]
+u0:14 | Type      | f64     | f64                 | [global]
+u0:15 | Type      | bool    | bool                | [global]
+u0:16 | Type      | char    | char                | [global]
+u0:17 | Type      | str     | str                 | [global]
+u0:18 | Module    | main    | main                | [global]
+u0:19 | File      | main    | main::main          |         
+u0:20 | Variable  | a       | main::main::a       |         
+u0:21 | Namespace | block_0 | main::main::block_0 |         
 
 --- expect:symbol-deps ---
-none
 
 
-
-
-================================================================================
+===============================================================================
 try-block
-================================================================================
+===============================================================================
+
 
 --- file: src/main.rs ---
 try {}
 
 --- expect:symbols ---
-none
-
+u0:1  | Type      | i32     | i32                 | [global]
+u0:2  | Type      | i64     | i64                 | [global]
+u0:3  | Type      | i16     | i16                 | [global]
+u0:4  | Type      | i8      | i8                  | [global]
+u0:5  | Type      | i128    | i128                | [global]
+u0:6  | Type      | isize   | isize               | [global]
+u0:7  | Type      | u32     | u32                 | [global]
+u0:8  | Type      | u64     | u64                 | [global]
+u0:9  | Type      | u16     | u16                 | [global]
+u0:10 | Type      | u8      | u8                  | [global]
+u0:11 | Type      | u128    | u128                | [global]
+u0:12 | Type      | usize   | usize               | [global]
+u0:13 | Type      | f32     | f32                 | [global]
+u0:14 | Type      | f64     | f64                 | [global]
+u0:15 | Type      | bool    | bool                | [global]
+u0:16 | Type      | char    | char                | [global]
+u0:17 | Type      | str     | str                 | [global]
+u0:18 | Module    | main    | main                | [global]
+u0:19 | File      | main    | main::main          |         
+u0:20 | Namespace | block_0 | main::main::block_0 |         
 
 --- expect:symbol-deps ---
-none
 
 
-================================================================================
+===============================================================================
 gen-block
-================================================================================
+===============================================================================
+
 
 --- file: src/main.rs ---
 gen {}
@@ -112,12 +225,31 @@ gen { yield (); }
 gen move {}
 
 --- expect:symbols ---
-none
-
+u0:1  | Type      | i32     | i32                    | [global]
+u0:2  | Type      | i64     | i64                    | [global]
+u0:3  | Type      | i16     | i16                    | [global]
+u0:4  | Type      | i8      | i8                     | [global]
+u0:5  | Type      | i128    | i128                   | [global]
+u0:6  | Type      | isize   | isize                  | [global]
+u0:7  | Type      | u32     | u32                    | [global]
+u0:8  | Type      | u64     | u64                    | [global]
+u0:9  | Type      | u16     | u16                    | [global]
+u0:10 | Type      | u8      | u8                     | [global]
+u0:11 | Type      | u128    | u128                   | [global]
+u0:12 | Type      | usize   | usize                  | [global]
+u0:13 | Type      | f32     | f32                    | [global]
+u0:14 | Type      | f64     | f64                    | [global]
+u0:15 | Type      | bool    | bool                   | [global]
+u0:16 | Type      | char    | char                   | [global]
+u0:17 | Type      | str     | str                    | [global]
+u0:18 | Module    | main    | main                   | [global]
+u0:19 | File      | main    | main::main             |         
+u0:20 | Namespace | block_0 | main::main::block_0    |         
+u0:21 | Namespace | block_1 | main::main::block_1    |         
+u0:22 | Variable  | x       | main::main::block_1::x |         
+u0:23 | Namespace | block_2 | main::main::block_2    |         
+u0:24 | Namespace | block_3 | main::main::block_3    |         
 
 --- expect:symbol-deps ---
-none
-
-
-
-
+u0:1 <- [u0:22]
+u0:22 -> [u0:1]

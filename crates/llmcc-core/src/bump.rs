@@ -281,7 +281,7 @@ mod tests {
         assert_eq!(arena.hir_scopes().len(), 1);
 
         // Verify scope contains symbols
-        let found_symbols = scope_ref.lookup_symbols(sym1_name);
+        let found_symbols = scope_ref.lookup_symbols(sym1_name).unwrap();
         assert_eq!(found_symbols.len(), 1);
         assert_eq!(found_symbols[0].id, sym1_ref.id);
     }
@@ -304,7 +304,7 @@ mod tests {
         scope_ref.insert(sym_ref);
 
         // References from scope are still valid (lifetime 'a tied to arena)
-        let found = scope_ref.lookup_symbols(sym_name);
+        let found = scope_ref.lookup_symbols(sym_name).unwrap();
         assert_eq!(found[0].id, sym_ref.id);
 
         // All symbols from arena are valid
@@ -391,7 +391,7 @@ mod tests {
 
         // Verify all symbols in scope
         for (name, sym_ref) in symbol_refs {
-            let found = scope_ref.lookup_symbols(name);
+            let found = scope_ref.lookup_symbols(name).unwrap();
             assert_eq!(found.len(), 1);
             assert_eq!(found[0].id, sym_ref.id);
         }

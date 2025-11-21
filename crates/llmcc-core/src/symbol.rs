@@ -90,7 +90,10 @@ pub enum SymKind {
     Trait,
     Impl,
     EnumVariant,
-    Type,
+    Primitive,
+    TypeAlias,
+    TypeParameter,
+    UnresolvedType,
 }
 
 /// Represents a named entity in source code.
@@ -280,6 +283,11 @@ impl Symbol {
     #[inline]
     pub fn set_fqn(&self, fqn: InternedStr) {
         *self.fqn.write() = fqn;
+    }
+
+    #[inline]
+    pub fn fqn(&self) -> InternedStr {
+        *self.fqn.read()
     }
 
     /// Gets the scope ID this symbol belongs to.

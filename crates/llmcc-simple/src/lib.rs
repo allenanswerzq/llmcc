@@ -171,19 +171,21 @@ impl LanguageTraitImpl for LangSimple {
         Some(Box::new(SimpleParseTree { root }))
     }
 
-    fn collect_symbols_impl<'tcx, T>(
+    fn collect_symbols_impl<'tcx, T, C>(
         _unit: &llmcc_core::CompileUnit<'tcx>,
         _node: &llmcc_core::ir::HirNode<'tcx>,
         _scopes: &mut T,
         _namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+        _config: &C,
     ) {
     }
 
-    fn bind_symbols_impl<'tcx, T>(
+    fn bind_symbols_impl<'tcx, T, C>(
         _unit: &llmcc_core::CompileUnit<'tcx>,
         _node: &llmcc_core::ir::HirNode<'tcx>,
         _scopes: &mut T,
         _namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+        _config: &C,
     ) {
     }
 

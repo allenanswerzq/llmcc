@@ -132,13 +132,12 @@ impl CorpusFile {
         let mut buf = String::new();
         for (idx, case) in self.cases.iter().enumerate() {
             if idx > 0 {
-                buf.push('\n');
+                buf.push_str("\n\n\n");
             }
-            buf.push_str(&case.render());
-            if !buf.ends_with('\n') {
-                buf.push('\n');
-            }
+            let rendered = case.render();
+            buf.push_str(rendered.trim_end_matches('\n'));
         }
+        buf.push('\n');
         buf
     }
 }

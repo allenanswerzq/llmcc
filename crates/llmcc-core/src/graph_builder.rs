@@ -21,12 +21,17 @@ pub struct GraphBuildConfig;
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct GraphBuildOption {
-    // Placeholder for future configuration options
+    pub sequential: bool,
 }
 
 impl GraphBuildOption {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn with_sequential(mut self, sequential: bool) -> Self {
+        self.sequential = sequential;
+        self
     }
 }
 
@@ -298,7 +303,8 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             | BlockKind::Enum
             | BlockKind::Const
             | BlockKind::Impl
-            | BlockKind::Field => self.build_block(unit, node, parent, true),
+            | BlockKind::Field
+            | BlockKind::Root => self.build_block(unit, node, parent, true),
             _ => self.visit_children(unit, node, parent),
         }
     }
@@ -334,15 +340,24 @@ pub fn build_unit_graph<L: LanguageTrait>(
 /// A vector of UnitGraph objects, one per compilation unit, indexed by unit index
 pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
     cc: &'tcx CompileCtxt<'tcx>,
-    _config: GraphBuildOption,
+    config: GraphBuildOption,
 ) -> Result<Vec<UnitGraph>, DynError> {
-    let unit_graphs = (0..cc.get_files().len())
-        .into_par_iter()
-        .map(|index| {
-            let unit = cc.compile_unit(index);
-            build_unit_graph::<L>(unit, index, GraphBuildConfig)
-        })
-        .collect::<Result<Vec<UnitGraph>, DynError>>()?;
+    let unit_graphs = if config.sequential {
+        (0..cc.get_files().len())
+            .map(|index| {
+                let unit = cc.compile_unit(index);
+                build_unit_graph::<L>(unit, index, GraphBuildConfig)
+            })
+            .collect::<Result<Vec<UnitGraph>, DynError>>()?
+    } else {
+        (0..cc.get_files().len())
+            .into_par_iter()
+            .map(|index| {
+                let unit = cc.compile_unit(index);
+                build_unit_graph::<L>(unit, index, GraphBuildConfig)
+            })
+            .collect::<Result<Vec<UnitGraph>, DynError>>()?
+    };
 
     Ok(unit_graphs)
 }

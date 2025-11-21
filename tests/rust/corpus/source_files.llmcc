@@ -1,6 +1,7 @@
-================================================================================
-Block comments
-================================================================================
+===============================================================================
+block-comments
+===============================================================================
+
 
 --- file: src/main.rs ---
 /*
@@ -16,18 +17,37 @@ Block comments
 /**/
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+nested-block-comments
+===============================================================================
 
-
-
-
-================================================================================
-Nested block comments
-================================================================================
 
 --- file: src/main.rs ---
 /* /* double nested */ */
@@ -48,18 +68,37 @@ Nested block comments
 // ---
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+line-comments
+===============================================================================
 
-
-
-
-================================================================================
-Line comments
-================================================================================
 
 --- file: src/main.rs ---
 // Comment
@@ -69,18 +108,37 @@ Line comments
 //! Inner line doc comment
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+line-doc-comments
+===============================================================================
 
-
-
-
-================================================================================
-Line doc comments
-================================================================================
 
 --- file: src/main.rs ---
 //!  - Inner line doc
@@ -92,18 +150,37 @@ Line doc comments
 //// - Only a comment
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+block-doc-comments
+===============================================================================
 
-
-
-
-================================================================================
-Block doc comments
-================================================================================
 
 --- file: src/main.rs ---
 /*!  - Inner block doc */
@@ -114,18 +191,37 @@ Block doc comments
 /*** - Only a comment */
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+nested-doc-block-comments
+===============================================================================
 
-
-
-
-================================================================================
-Nested doc block comments
-================================================================================
 
 --- file: src/main.rs ---
 /*   /* */  /** */  /*! */  */
@@ -133,18 +229,37 @@ Nested doc block comments
 /**  /* */  /** */  /*! */  */
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+comments-degenerate-cases
+===============================================================================
 
-
-
-
-================================================================================
-Comments degenerate cases
-================================================================================
 
 --- file: src/main.rs ---
 //!
@@ -161,99 +276,218 @@ let x; // <- immediate item after an empty line doc comment
 /***/
 
 --- expect:symbols ---
-
+u0:1  | Type     | i32   | i32           | [global]
+u0:2  | Type     | i64   | i64           | [global]
+u0:3  | Type     | i16   | i16           | [global]
+u0:4  | Type     | i8    | i8            | [global]
+u0:5  | Type     | i128  | i128          | [global]
+u0:6  | Type     | isize | isize         | [global]
+u0:7  | Type     | u32   | u32           | [global]
+u0:8  | Type     | u64   | u64           | [global]
+u0:9  | Type     | u16   | u16           | [global]
+u0:10 | Type     | u8    | u8            | [global]
+u0:11 | Type     | u128  | u128          | [global]
+u0:12 | Type     | usize | usize         | [global]
+u0:13 | Type     | f32   | f32           | [global]
+u0:14 | Type     | f64   | f64           | [global]
+u0:15 | Type     | bool  | bool          | [global]
+u0:16 | Type     | char  | char          | [global]
+u0:17 | Type     | str   | str           | [global]
+u0:18 | Module   | main  | main          | [global]
+u0:19 | File     | main  | main::main    |         
+u0:20 | Variable | x     | main::main::x |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+line-doc-comment-with-no-eol
+===============================================================================
 
-
-
-
-================================================================================
-Line doc comment with no EOL
-================================================================================
 
 --- file: src/main.rs ---
 //! Doc comment
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+greek-letters-in-identifiers
+===============================================================================
 
-
-
-
-================================================================================
-Greek letters in identifiers
-================================================================================
 
 --- file: src/main.rs ---
 const σ1 : Σ = 0;
 const ψ_2 : Ψ = 1;
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32              | [global]
+u0:2  | Type   | i64   | i64              | [global]
+u0:3  | Type   | i16   | i16              | [global]
+u0:4  | Type   | i8    | i8               | [global]
+u0:5  | Type   | i128  | i128             | [global]
+u0:6  | Type   | isize | isize            | [global]
+u0:7  | Type   | u32   | u32              | [global]
+u0:8  | Type   | u64   | u64              | [global]
+u0:9  | Type   | u16   | u16              | [global]
+u0:10 | Type   | u8    | u8               | [global]
+u0:11 | Type   | u128  | u128             | [global]
+u0:12 | Type   | usize | usize            | [global]
+u0:13 | Type   | f32   | f32              | [global]
+u0:14 | Type   | f64   | f64              | [global]
+u0:15 | Type   | bool  | bool             | [global]
+u0:16 | Type   | char  | char             | [global]
+u0:17 | Type   | str   | str              | [global]
+u0:18 | Module | main  | main             | [global]
+u0:19 | File   | main  | main::main       |         
+u0:20 | Const  | σ1    | main::main::σ1   |         
+u0:21 | Const  | ψ_2   | main::main::ψ_2  |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+shebang-line-containing-spaces
+===============================================================================
 
-
-
-
-================================================================================
-Shebang line containing spaces
-================================================================================
 
 --- file: src/main.rs ---
 #!/usr/bin/env -S cargo +nightly -Zscript
 
 --- expect:symbols ---
-
+u0:1  | Type   | i32   | i32        | [global]
+u0:2  | Type   | i64   | i64        | [global]
+u0:3  | Type   | i16   | i16        | [global]
+u0:4  | Type   | i8    | i8         | [global]
+u0:5  | Type   | i128  | i128       | [global]
+u0:6  | Type   | isize | isize      | [global]
+u0:7  | Type   | u32   | u32        | [global]
+u0:8  | Type   | u64   | u64        | [global]
+u0:9  | Type   | u16   | u16        | [global]
+u0:10 | Type   | u8    | u8         | [global]
+u0:11 | Type   | u128  | u128       | [global]
+u0:12 | Type   | usize | usize      | [global]
+u0:13 | Type   | f32   | f32        | [global]
+u0:14 | Type   | f64   | f64        | [global]
+u0:15 | Type   | bool  | bool       | [global]
+u0:16 | Type   | char  | char       | [global]
+u0:17 | Type   | str   | str        | [global]
+u0:18 | Module | main  | main       | [global]
+u0:19 | File   | main  | main::main |         
 
 --- expect:graph ---
+digraph DesignGraph {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+empty-shebang-with-code-after
+===============================================================================
 
-
-
-
-================================================================================
-Empty shebang with code after
-================================================================================
 
 --- file: src/main.rs ---
 #!
 fn main() {}
 
 --- expect:symbols ---
-
+u0:1  | Type      | i32     | i32                       | [global]
+u0:2  | Type      | i64     | i64                       | [global]
+u0:3  | Type      | i16     | i16                       | [global]
+u0:4  | Type      | i8      | i8                        | [global]
+u0:5  | Type      | i128    | i128                      | [global]
+u0:6  | Type      | isize   | isize                     | [global]
+u0:7  | Type      | u32     | u32                       | [global]
+u0:8  | Type      | u64     | u64                       | [global]
+u0:9  | Type      | u16     | u16                       | [global]
+u0:10 | Type      | u8      | u8                        | [global]
+u0:11 | Type      | u128    | u128                      | [global]
+u0:12 | Type      | usize   | usize                     | [global]
+u0:13 | Type      | f32     | f32                       | [global]
+u0:14 | Type      | f64     | f64                       | [global]
+u0:15 | Type      | bool    | bool                      | [global]
+u0:16 | Type      | char    | char                      | [global]
+u0:17 | Type      | str     | str                       | [global]
+u0:18 | Module    | main    | main                      | [global]
+u0:19 | File      | main    | main::main                |         
+u0:20 | Function  | main    | main::main::main          |         
+u0:21 | Namespace | block_0 | main::main::main::block_0 |         
 
 --- expect:graph ---
+digraph project {
+}
+
+--- expect:symbol-deps ---
 
 
+===============================================================================
+immediate-inner-attribute
+===============================================================================
 
-
-
-
-================================================================================
-Immediate inner attribute
-================================================================================
 
 --- file: src/main.rs ---
 #![feature(thing)]
 fn main() {}
 
 --- expect:symbols ---
-
+u0:1  | Type      | i32     | i32                       | [global]
+u0:2  | Type      | i64     | i64                       | [global]
+u0:3  | Type      | i16     | i16                       | [global]
+u0:4  | Type      | i8      | i8                        | [global]
+u0:5  | Type      | i128    | i128                      | [global]
+u0:6  | Type      | isize   | isize                     | [global]
+u0:7  | Type      | u32     | u32                       | [global]
+u0:8  | Type      | u64     | u64                       | [global]
+u0:9  | Type      | u16     | u16                       | [global]
+u0:10 | Type      | u8      | u8                        | [global]
+u0:11 | Type      | u128    | u128                      | [global]
+u0:12 | Type      | usize   | usize                     | [global]
+u0:13 | Type      | f32     | f32                       | [global]
+u0:14 | Type      | f64     | f64                       | [global]
+u0:15 | Type      | bool    | bool                      | [global]
+u0:16 | Type      | char    | char                      | [global]
+u0:17 | Type      | str     | str                       | [global]
+u0:18 | Module    | main    | main                      | [global]
+u0:19 | File      | main    | main::main                |         
+u0:20 | Function  | main    | main::main::main          |         
+u0:21 | Namespace | block_0 | main::main::main::block_0 |         
 
 --- expect:graph ---
+digraph project {
+}
 
-
-
-
-
+--- expect:symbol-deps ---

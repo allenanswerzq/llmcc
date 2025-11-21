@@ -40,18 +40,6 @@ impl FileId {
         }
     }
 
-    pub fn new_virtual(path: String, content: Vec<u8>) -> Self {
-        let mut hasher = DefaultHasher::new();
-        hasher.write(&content);
-        let content_hash = hasher.finish();
-
-        FileId {
-            path: Some(path),
-            content: Arc::from(content),
-            content_hash,
-        }
-    }
-
     pub fn content(&self) -> &[u8] {
         self.content.as_ref()
     }
@@ -86,12 +74,6 @@ impl File {
     pub fn new_source(source: Vec<u8>) -> Self {
         File {
             file: FileId::new_content(source),
-        }
-    }
-
-    pub fn new_virtual(path: String, source: Vec<u8>) -> Self {
-        File {
-            file: FileId::new_virtual(path, source),
         }
     }
 
