@@ -3,8 +3,8 @@ use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::Symbol;
 use llmcc_resolver::BinderScopes;
 
-use crate::token::LangRust;
 use super::resolution::SymbolResolver;
+use crate::token::LangRust;
 
 pub struct SymbolLinker<'a, 'tcx> {
     pub unit: &'a CompileUnit<'tcx>,
@@ -73,15 +73,12 @@ impl<'a, 'tcx> SymbolLinker<'a, 'tcx> {
         }
     }
 
-    pub fn link_where_clause_dependencies(
-        &mut self,
-        node: &HirNode<'tcx>,
-        owner: &Symbol,
-    ) {
+    pub fn link_where_clause_dependencies(&mut self, node: &HirNode<'tcx>, owner: &Symbol) {
         for child_id in node.children() {
             let child = self.unit.hir_node(*child_id);
             if child.kind_id() == LangRust::where_predicate {
-                if let Some(bounds_node) = child.child_by_field(*self.unit, LangRust::field_bounds) {
+                if let Some(bounds_node) = child.child_by_field(*self.unit, LangRust::field_bounds)
+                {
                     self.link_type_references(&bounds_node, owner, None);
                 }
             } else if !child.children().is_empty() {
@@ -112,11 +109,7 @@ impl<'a, 'tcx> SymbolLinker<'a, 'tcx> {
 
     /// Assign inferred type to pattern (for let bindings, parameters, etc.)
     #[allow(clippy::only_used_in_recursion)]
-    pub fn assign_type_to_pattern(
-        &mut self,
-        pattern: &HirNode<'tcx>,
-        ty: &'tcx Symbol,
-    ) {
+    pub fn assign_type_to_pattern(&mut self, pattern: &HirNode<'tcx>, ty: &'tcx Symbol) {
         if matches!(
             pattern.kind_id(),
             LangRust::scoped_identifier | LangRust::scoped_type_identifier

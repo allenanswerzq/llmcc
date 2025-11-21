@@ -18,11 +18,7 @@ impl<'a, 'tcx> SymbolResolver<'a, 'tcx> {
     }
 
     /// Finds (or reuses) the symbol declared in a specific field.
-    pub fn symbol_from_field(
-        &self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-    ) -> Option<&'tcx Symbol> {
+    pub fn symbol_from_field(&self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
         if let Some(ident) = node.as_ident() {
             if let Some(existing) = self.scopes.lookup_symbol(&ident.name) {
                 return Some(existing);
@@ -117,7 +113,8 @@ impl<'a, 'tcx> SymbolResolver<'a, 'tcx> {
             return Some(existing);
         }
 
-        self.scopes.lookup_or_insert_global(&ident.name, type_node, SymKind::UnresolvedType)
+        self.scopes
+            .lookup_or_insert_global(&ident.name, type_node, SymKind::UnresolvedType)
     }
 
     /// Resolves the `crate` keyword to the crate root symbol.

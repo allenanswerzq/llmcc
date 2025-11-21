@@ -1,14 +1,12 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::lang_def::LanguageTrait;
+use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
 
-use crate::token::LangRust;
-use super::constants::{
-    BinaryOperatorOutcome, BINARY_OPERATOR_TOKENS, is_identifier_kind
-};
+use super::constants::{BINARY_OPERATOR_TOKENS, BinaryOperatorOutcome, is_identifier_kind};
 use super::resolution::SymbolResolver;
+use crate::token::LangRust;
 
 pub struct TypeInferrer<'a, 'tcx> {
     pub unit: &'a CompileUnit<'tcx>,
@@ -20,20 +18,13 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
         Self { unit, scopes }
     }
 
-    fn primitive_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-        primitive: &str,
-    ) -> Option<&'tcx Symbol> {
-        self.scopes.lookup_or_insert_global(primitive, node, SymKind::Primitive)
+    fn primitive_type(&mut self, node: &HirNode<'tcx>, primitive: &str) -> Option<&'tcx Symbol> {
+        self.scopes
+            .lookup_or_insert_global(primitive, node, SymKind::Primitive)
     }
 
     /// Infers primitive types for literal nodes (e.g., `42` ⇒ `i32`).
-    fn infer_literal_kind(
-        &mut self,
-        kind_id: u16,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_literal_kind(&mut self, kind_id: u16, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         if kind_id == LangRust::integer_literal {
             return self.primitive_type(node, "i32");
         }
@@ -86,17 +77,12 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
     ) -> Option<&'tcx Symbol> {
         match outcome {
             BinaryOperatorOutcome::ReturnsBool => self.primitive_type(node, "bool"),
-            BinaryOperatorOutcome::ReturnsLeftOperand => {
-                self.infer_type_from_expr(left_child)
-            }
+            BinaryOperatorOutcome::ReturnsLeftOperand => self.infer_type_from_expr(left_child),
         }
     }
 
     /// Handles struct literal expressions (e.g., `Foo { .. }`).
-    fn infer_struct_expression_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_struct_expression_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let mut resolver = SymbolResolver::new(self.unit, self.scopes);
         node.child_by_field(*self.unit, LangRust::field_name)
             .or_else(|| node.child_by_field(*self.unit, LangRust::field_type))
@@ -104,37 +90,25 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
     }
 
     /// Infers types for call expressions (e.g., `Foo::new()`).
-    fn infer_call_expression_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_call_expression_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         node.child_by_field(*self.unit, LangRust::field_function)
             .and_then(|func| self.infer_type_from_expr(&func))
     }
 
     /// Infers the type of `if` expressions (based on branches).
-    fn infer_if_expression_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_if_expression_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         node.child_by_field(*self.unit, LangRust::field_consequence)
             .and_then(|consequence| self.infer_block_type(&consequence))
     }
 
     /// Handles unary operators like `*ptr` or `&value`.
-    fn infer_unary_expression_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_unary_expression_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         node.child_by_field(*self.unit, LangRust::field_argument)
             .and_then(|operand| self.infer_type_from_expr(&operand))
     }
 
     /// Handles arithmetic/logical operators (e.g., `a + b`).
-    fn infer_binary_operator_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_binary_operator_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let children = node.children_nodes(self.unit);
         if children.is_empty() {
             return None;
@@ -170,10 +144,7 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
     }
 
     /// Infers the type for a field access expression like `foo.bar`.
-    fn infer_field_expression_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_field_expression_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         // Locate the receiver portion of the field expression (`foo` in `foo.bar`).
         let value_node = node.child_by_field(*self.unit, LangRust::field_value)?;
         // Fetch the AST node that represents the field name.
@@ -183,7 +154,8 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
         // Infer the type symbol associated with the receiver expression.
         let obj_type_symbol = self.infer_type_from_expr(&value_node)?;
         // Query the receiver's scope for the field symbol so we can read its metadata.
-        let field_symbol = self.scopes
+        let field_symbol = self
+            .scopes
             .lookup_member_symbol(obj_type_symbol, &field_ident.name, Some(SymKind::Field))
             .or_else(|| {
                 self.scopes.lookup_member_symbol(
@@ -205,10 +177,7 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
     }
 
     /// Handles string/char literal nodes.
-    fn infer_text_literal_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_text_literal_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let text = node.as_text()?;
         let value = text.text.as_str();
         if value.chars().all(|c| c.is_ascii_digit()) {
@@ -227,10 +196,7 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
     }
 
     /// Resolves identifiers to their known types.
-    fn infer_identifier_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_identifier_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let ident = node.as_ident()?;
         let symbol = self.scopes.lookup_symbol(&ident.name)?;
         match symbol.type_of() {
@@ -240,10 +206,7 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
     }
 
     /// Returns the first meaningful child expression (skipping trivia).
-    fn infer_first_non_trivia_child(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_first_non_trivia_child(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         for child_id in node.children() {
             let child = self.unit.hir_node(*child_id);
             if !matches!(child.kind(), HirKind::Text | HirKind::Comment)
@@ -256,20 +219,14 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
     }
 
     /// Recurses for internal nodes that wrap actual expressions.
-    fn infer_internal_node_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    fn infer_internal_node_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         if let Some(ty) = self.infer_binary_operator_type(node) {
             return Some(ty);
         }
         self.infer_first_non_trivia_child(node)
     }
 
-    pub fn infer_block_type(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    pub fn infer_block_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         // Get the last child that isn't whitespace/comments
         let last_expr = node.children().iter().rev().find(|child_id| {
             let child = self.unit.hir_node(**child_id);
@@ -286,10 +243,7 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
 
     /// Returns the type symbol for an expression node
     /// Main entry for inferring the type of an expression node.
-    pub fn infer_type_from_expr(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    pub fn infer_type_from_expr(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let kind_id = node.kind_id();
 
         if let Some(literal_ty) = self.infer_literal_kind(kind_id, node) {
@@ -299,8 +253,7 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
         match kind_id {
             kind if kind == LangRust::scoped_identifier => {
                 let mut resolver = SymbolResolver::new(self.unit, self.scopes);
-                if let Some(sym) = resolver.resolve_scoped_identifier_symbol(node, None)
-                {
+                if let Some(sym) = resolver.resolve_scoped_identifier_symbol(node, None) {
                     if let Some(type_id) = sym.type_of()
                         && let Some(ty) = self.unit.opt_get_symbol(type_id)
                     {
@@ -395,7 +348,8 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
                 if let Some(obj_type) = self.infer_type_from_expr(&value) {
                     // If the type exposes a callable member with this name, treat it as a method.
                     if let Some(method) =
-                        self.scopes.lookup_member_symbol(obj_type, &name, Some(SymKind::Function))
+                        self.scopes
+                            .lookup_member_symbol(obj_type, &name, Some(SymKind::Function))
                     {
                         return Some(method);
                     }

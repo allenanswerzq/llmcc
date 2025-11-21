@@ -393,9 +393,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             let short_name = full_type_name.split("::").last().unwrap_or(&full_type_name);
 
             // Lookup for the struct this impl block is target for
-            if let Some(symbol) =
-                scopes.lookup_symbol_with(short_name, Some(vec![SymKind::Struct, SymKind::Enum]), None, None)
-                && let Some(scope_id) = symbol.scope()
+            if let Some(symbol) = scopes.lookup_symbol_with(
+                short_name,
+                Some(vec![SymKind::Struct, SymKind::Enum]),
+                None,
+                None,
+            ) && let Some(scope_id) = symbol.scope()
             {
                 // NOTE: the impl and the define reuse the same scope(namespace)
                 symbol.add_defining(node.id());
@@ -510,13 +513,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.declare_symbol_from_field(
-            unit,
-            node,
-            scopes,
-            SymKind::Const,
-            LangRust::field_name,
-        );
+        self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 

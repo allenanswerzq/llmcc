@@ -8,9 +8,9 @@ use crate::token::AstVisitorRust;
 use crate::token::LangRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
-use super::resolution::SymbolResolver;
 use super::inference::TypeInferrer;
 use super::linker::SymbolLinker;
+use super::resolution::SymbolResolver;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
@@ -142,7 +142,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             })
             .unwrap_or_else(|| {
                 scopes
-                    .lookup_or_insert_global("void", node, SymKind::Primitive).unwrap()
+                    .lookup_or_insert_global("void", node, SymKind::Primitive)
+                    .unwrap()
             });
 
         let func_symbol = sn.opt_ident().and_then(|ident| ident.opt_symbol());
@@ -267,12 +268,15 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             };
 
             // Resolve trait symbol (if any)
-            let trait_info = if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
-                let mut resolver = SymbolResolver::new(unit, scopes);
-                resolver.resolve_type_from_node(&trait_node).map(|sym| (trait_node, sym))
-            } else {
-                None
-            };
+            let trait_info =
+                if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
+                    let mut resolver = SymbolResolver::new(unit, scopes);
+                    resolver
+                        .resolve_type_from_node(&trait_node)
+                        .map(|sym| (trait_node, sym))
+                } else {
+                    None
+                };
 
             let mut linker = SymbolLinker::new(unit, scopes);
             linker.link_type_references(type_node_ref, target, None);
@@ -304,12 +308,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_return_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_return_type);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -360,12 +359,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_type);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -381,12 +375,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_type);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -419,12 +408,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_type);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -440,12 +424,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_default_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_default_type);
             linker.link_trait_bounds(node, symbol, parent);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
@@ -462,12 +441,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_type);
             if let Some(owner) = parent {
                 owner.add_dependency(symbol);
             }
@@ -486,12 +460,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_default_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_default_type);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -507,12 +476,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_type);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -529,12 +493,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_name) {
             let has_direct_value = node.child_by_field(*unit, LangRust::field_value).is_some();
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_value,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_value);
             if !has_direct_value {
                 for child_id in node.children() {
                     let child = unit.hir_node(*child_id);
@@ -564,12 +523,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let resolver = SymbolResolver::new(unit, scopes);
         if let Some(symbol) = resolver.symbol_from_field(node, LangRust::field_pattern) {
             let mut linker = SymbolLinker::new(unit, scopes);
-            linker.set_symbol_type_from_field(
-                node,
-                symbol,
-                parent,
-                LangRust::field_type,
-            );
+            linker.set_symbol_type_from_field(node, symbol, parent, LangRust::field_type);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -667,9 +621,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             if name_node.kind_id() == LangRust::scoped_type_identifier
                 || name_node.kind_id() == LangRust::scoped_identifier
             {
-                if let Some(sym) =
-                    resolver.resolve_scoped_identifier_symbol(&name_node, parent)
-                {
+                if let Some(sym) = resolver.resolve_scoped_identifier_symbol(&name_node, parent) {
                     if let Some(caller) = parent {
                         caller.add_dependency(sym);
                     }
