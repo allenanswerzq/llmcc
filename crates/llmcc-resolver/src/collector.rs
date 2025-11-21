@@ -135,13 +135,17 @@ impl<'a> CollectorScopes<'a> {
     /// Build fully qualified name from current scope
     fn build_fqn(&self, name: &str) -> InternedStr {
         let fqn_str = self
-            .top()
-            .and_then(|parent| parent.symbol())
-            .and_then(|parent_sym| {
-                // Read the InternedStr FQN of the scope's symbol
-                let fqn = parent_sym.fqn.read();
-                // Resolve the InternedStr to an owned String
-                self.interner.resolve_owned(*fqn)
+            .scopes
+            .iter()
+            .into_iter()
+            .rev()
+            .find_map(|scope| {
+                scope.symbol().and_then(|parent_sym| {
+                    // Read the InternedStr FQN of the scope's symbol
+                    let fqn = parent_sym.fqn.read();
+                    // Resolve the InternedStr to an owned String
+                    self.interner.resolve_owned(*fqn)
+                })
             })
             .map(|scope_fqn| {
                 // If we have a scope FQN, format it as "scope::name"
