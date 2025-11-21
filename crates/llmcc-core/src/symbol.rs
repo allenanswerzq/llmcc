@@ -82,6 +82,7 @@ pub enum SymKind {
     Struct,
     Enum,
     Function,
+    Method,
     Macro,
     Variable,
     Field,

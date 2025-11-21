@@ -99,6 +99,7 @@ fn run_cases_in_file(
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
+    let mut printed_case_header = false;
     for idx in 0..file.cases.len() {
         let run_case = {
             let case = &file.cases[idx];
@@ -114,6 +115,14 @@ fn run_cases_in_file(
         }
 
         *matched += 1;
+        let case_name = file.cases[idx].id();
+        if printed_case_header {
+            for _ in 0..3 {
+                println!();
+            }
+        }
+        println!(">>> running {case_name}");
+        printed_case_header = true;
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
             evaluate_case(case, update)?

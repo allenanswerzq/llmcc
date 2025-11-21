@@ -148,10 +148,10 @@ let character = integer as Foo;
 let size: f64 = 1.0 + -len(values) as f64 + 1.0;
 
 --- expect:symbol-deps ---
-u0:14 <- [u0:22]
-u0:20 <- [u0:21]
-u0:21 -> [u0:20]
-u0:22 -> [u0:14]
+u0:14 <- [u0:24]
+u0:22 <- [u0:23]
+u0:23 -> [u0:22]
+u0:24 -> [u0:14]
 
 
 ===============================================================================
@@ -171,36 +171,38 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                          | [global]
-u0:2  | Type      | i64     | i64                          | [global]
-u0:3  | Type      | i16     | i16                          | [global]
-u0:4  | Type      | i8      | i8                           | [global]
-u0:5  | Type      | i128    | i128                         | [global]
-u0:6  | Type      | isize   | isize                        | [global]
-u0:7  | Type      | u32     | u32                          | [global]
-u0:8  | Type      | u64     | u64                          | [global]
-u0:9  | Type      | u16     | u16                          | [global]
-u0:10 | Type      | u8      | u8                           | [global]
-u0:11 | Type      | u128    | u128                         | [global]
-u0:12 | Type      | usize   | usize                        | [global]
-u0:13 | Type      | f32     | f32                          | [global]
-u0:14 | Type      | f64     | f64                          | [global]
-u0:15 | Type      | bool    | bool                         | [global]
-u0:16 | Type      | char    | char                         | [global]
-u0:17 | Type      | str     | str                          | [global]
-u0:18 | Module    | main    | main                         | [global]
-u0:19 | File      | main    | main::main                   |         
-u0:20 | Struct    | Foo     | main::main::Foo              |         
-u0:21 | Struct    | Bar     | main::main::Bar              |         
-u0:22 | Function  | func    | main::main::func             |         
-u0:23 | Namespace | block_0 | main::main::func::block_0    |         
-u0:24 | Variable  | f       | main::main::func::block_0::f |         
-u0:25 | Variable  | b       | main::main::func::block_0::b |         
+u0:1  | Primitive | i32   | i32                | [global]
+u0:2  | Primitive | i64   | i64                | [global]
+u0:3  | Primitive | i16   | i16                | [global]
+u0:4  | Primitive | i8    | i8                 | [global]
+u0:5  | Primitive | i128  | i128               | [global]
+u0:6  | Primitive | isize | isize              | [global]
+u0:7  | Primitive | u32   | u32                | [global]
+u0:8  | Primitive | u64   | u64                | [global]
+u0:9  | Primitive | u16   | u16                | [global]
+u0:10 | Primitive | u8    | u8                 | [global]
+u0:11 | Primitive | u128  | u128               | [global]
+u0:12 | Primitive | usize | usize              | [global]
+u0:13 | Primitive | f32   | f32                | [global]
+u0:14 | Primitive | f64   | f64                | [global]
+u0:15 | Primitive | bool  | bool               | [global]
+u0:16 | Primitive | char  | char               | [global]
+u0:17 | Primitive | str   | str                | [global]
+u0:18 | Crate     | _c    | _c                 | [global]
+u0:19 | Crate     | crate | _c::crate          |         
+u0:20 | Module    | _m    | _c::_m             |         
+u0:21 | File      | main  | _c::_m::main       |         
+u0:22 | Struct    | Foo   | _c::_m::main::Foo  |         
+u0:23 | Struct    | Bar   | _c::_m::main::Bar  |         
+u0:24 | Function  | func  | _c::_m::main::func |         
+u0:25 | Variable  | f     | f                  |         
+u0:26 | Variable  | b     | b                  |         
 
 --- expect:symbol-deps ---
-u0:21 <- [u0:22, u0:25]
-u0:22 -> [u0:21]
-u0:25 -> [u0:21]
+u0:22 <- [u0:24]
+u0:23 <- [u0:24, u0:26]
+u0:24 -> [u0:22, u0:23]
+u0:26 -> [u0:23]
 
 
 ===============================================================================
@@ -220,36 +222,38 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                          | [global]
-u0:2  | Type      | i64     | i64                          | [global]
-u0:3  | Type      | i16     | i16                          | [global]
-u0:4  | Type      | i8      | i8                           | [global]
-u0:5  | Type      | i128    | i128                         | [global]
-u0:6  | Type      | isize   | isize                        | [global]
-u0:7  | Type      | u32     | u32                          | [global]
-u0:8  | Type      | u64     | u64                          | [global]
-u0:9  | Type      | u16     | u16                          | [global]
-u0:10 | Type      | u8      | u8                           | [global]
-u0:11 | Type      | u128    | u128                         | [global]
-u0:12 | Type      | usize   | usize                        | [global]
-u0:13 | Type      | f32     | f32                          | [global]
-u0:14 | Type      | f64     | f64                          | [global]
-u0:15 | Type      | bool    | bool                         | [global]
-u0:16 | Type      | char    | char                         | [global]
-u0:17 | Type      | str     | str                          | [global]
-u0:18 | Module    | main    | main                         | [global]
-u0:19 | File      | main    | main::main                   |         
-u0:20 | Struct    | Foo     | main::main::Foo              |         
-u0:21 | Struct    | Bar     | main::main::Bar              |         
-u0:22 | Function  | func    | main::main::func             |         
-u0:23 | Namespace | block_0 | main::main::func::block_0    |         
-u0:24 | Variable  | f       | main::main::func::block_0::f |         
-u0:25 | Variable  | b       | main::main::func::block_0::b |         
+u0:1  | Primitive | i32   | i32                | [global]
+u0:2  | Primitive | i64   | i64                | [global]
+u0:3  | Primitive | i16   | i16                | [global]
+u0:4  | Primitive | i8    | i8                 | [global]
+u0:5  | Primitive | i128  | i128               | [global]
+u0:6  | Primitive | isize | isize              | [global]
+u0:7  | Primitive | u32   | u32                | [global]
+u0:8  | Primitive | u64   | u64                | [global]
+u0:9  | Primitive | u16   | u16                | [global]
+u0:10 | Primitive | u8    | u8                 | [global]
+u0:11 | Primitive | u128  | u128               | [global]
+u0:12 | Primitive | usize | usize              | [global]
+u0:13 | Primitive | f32   | f32                | [global]
+u0:14 | Primitive | f64   | f64                | [global]
+u0:15 | Primitive | bool  | bool               | [global]
+u0:16 | Primitive | char  | char               | [global]
+u0:17 | Primitive | str   | str                | [global]
+u0:18 | Crate     | _c    | _c                 | [global]
+u0:19 | Crate     | crate | _c::crate          |         
+u0:20 | Module    | _m    | _c::_m             |         
+u0:21 | File      | main  | _c::_m::main       |         
+u0:22 | Struct    | Foo   | _c::_m::main::Foo  |         
+u0:23 | Struct    | Bar   | _c::_m::main::Bar  |         
+u0:24 | Function  | func  | _c::_m::main::func |         
+u0:25 | Variable  | f     | f                  |         
+u0:26 | Variable  | b     | b                  |         
 
 --- expect:symbol-deps ---
-u0:21 <- [u0:22, u0:25]
-u0:22 -> [u0:21]
-u0:25 -> [u0:21]
+u0:22 <- [u0:24]
+u0:23 <- [u0:24, u0:26]
+u0:24 -> [u0:22, u0:23]
+u0:26 -> [u0:23]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -262,8 +266,9 @@ u0:7 | call  | block#7
 u0:8 | call  | block#8
 
 --- expect:block-deps ---
+u0:2 <- [u0:4]
 u0:3 <- [u0:4]
-u0:4 -> [u0:3]
+u0:4 -> [u0:2, u0:3]
 
 --- expect:graph ---
 digraph project {
@@ -271,9 +276,11 @@ digraph project {
     label="todo";
     style=filled;
     color=lightgrey;
-    n3 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpEVYQnf/app/src/main.rs:2"];
-    n4 [label="func", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpEVYQnf/app/src/main.rs:4"];
+    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp2hXmsy/app/src/main.rs:1"];
+    n3 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp2hXmsy/app/src/main.rs:2"];
+    n4 [label="func", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp2hXmsy/app/src/main.rs:4"];
   }
+  n4 -> n2;
   n4 -> n3;
 }
 
@@ -295,36 +302,38 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                          | [global]
-u0:2  | Type      | i64     | i64                          | [global]
-u0:3  | Type      | i16     | i16                          | [global]
-u0:4  | Type      | i8      | i8                           | [global]
-u0:5  | Type      | i128    | i128                         | [global]
-u0:6  | Type      | isize   | isize                        | [global]
-u0:7  | Type      | u32     | u32                          | [global]
-u0:8  | Type      | u64     | u64                          | [global]
-u0:9  | Type      | u16     | u16                          | [global]
-u0:10 | Type      | u8      | u8                           | [global]
-u0:11 | Type      | u128    | u128                         | [global]
-u0:12 | Type      | usize   | usize                        | [global]
-u0:13 | Type      | f32     | f32                          | [global]
-u0:14 | Type      | f64     | f64                          | [global]
-u0:15 | Type      | bool    | bool                         | [global]
-u0:16 | Type      | char    | char                         | [global]
-u0:17 | Type      | str     | str                          | [global]
-u0:18 | Module    | main    | main                         | [global]
-u0:19 | File      | main    | main::main                   |         
-u0:20 | Struct    | Foo     | main::main::Foo              |         
-u0:21 | Struct    | Bar     | main::main::Bar              |         
-u0:22 | Function  | func    | main::main::func             |         
-u0:23 | Namespace | block_0 | main::main::func::block_0    |         
-u0:24 | Variable  | f       | main::main::func::block_0::f |         
-u0:25 | Variable  | b       | main::main::func::block_0::b |         
+u0:1  | Primitive | i32   | i32                | [global]
+u0:2  | Primitive | i64   | i64                | [global]
+u0:3  | Primitive | i16   | i16                | [global]
+u0:4  | Primitive | i8    | i8                 | [global]
+u0:5  | Primitive | i128  | i128               | [global]
+u0:6  | Primitive | isize | isize              | [global]
+u0:7  | Primitive | u32   | u32                | [global]
+u0:8  | Primitive | u64   | u64                | [global]
+u0:9  | Primitive | u16   | u16                | [global]
+u0:10 | Primitive | u8    | u8                 | [global]
+u0:11 | Primitive | u128  | u128               | [global]
+u0:12 | Primitive | usize | usize              | [global]
+u0:13 | Primitive | f32   | f32                | [global]
+u0:14 | Primitive | f64   | f64                | [global]
+u0:15 | Primitive | bool  | bool               | [global]
+u0:16 | Primitive | char  | char               | [global]
+u0:17 | Primitive | str   | str                | [global]
+u0:18 | Crate     | _c    | _c                 | [global]
+u0:19 | Crate     | crate | _c::crate          |         
+u0:20 | Module    | _m    | _c::_m             |         
+u0:21 | File      | main  | _c::_m::main       |         
+u0:22 | Struct    | Foo   | _c::_m::main::Foo  |         
+u0:23 | Struct    | Bar   | _c::_m::main::Bar  |         
+u0:24 | Function  | func  | _c::_m::main::func |         
+u0:25 | Variable  | f     | f                  |         
+u0:26 | Variable  | b     | b                  |         
 
 --- expect:symbol-deps ---
-u0:21 <- [u0:22, u0:25]
-u0:22 -> [u0:21]
-u0:25 -> [u0:21]
+u0:22 <- [u0:24]
+u0:23 <- [u0:24, u0:26]
+u0:24 -> [u0:22, u0:23]
+u0:26 -> [u0:23]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -337,8 +346,9 @@ u0:7 | call  | block#7
 u0:8 | call  | block#8
 
 --- expect:block-deps ---
+u0:2 <- [u0:4]
 u0:3 <- [u0:4]
-u0:4 -> [u0:3]
+u0:4 -> [u0:2, u0:3]
 
 --- expect:graph ---
 digraph project {
@@ -346,9 +356,11 @@ digraph project {
     label="todo";
     style=filled;
     color=lightgrey;
-    n3 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpUEJaaD/app/src/main.rs:2"];
-    n4 [label="func", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpUEJaaD/app/src/main.rs:4"];
+    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpGK2Qv9/app/src/main.rs:1"];
+    n3 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpGK2Qv9/app/src/main.rs:2"];
+    n4 [label="func", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpGK2Qv9/app/src/main.rs:4"];
   }
+  n4 -> n2;
   n4 -> n3;
 }
 
@@ -376,35 +388,37 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                         | [global]
-u0:2  | Type      | i64     | i64                         | [global]
-u0:3  | Type      | i16     | i16                         | [global]
-u0:4  | Type      | i8      | i8                          | [global]
-u0:5  | Type      | i128    | i128                        | [global]
-u0:6  | Type      | isize   | isize                       | [global]
-u0:7  | Type      | u32     | u32                         | [global]
-u0:8  | Type      | u64     | u64                         | [global]
-u0:9  | Type      | u16     | u16                         | [global]
-u0:10 | Type      | u8      | u8                          | [global]
-u0:11 | Type      | u128    | u128                        | [global]
-u0:12 | Type      | usize   | usize                       | [global]
-u0:13 | Type      | f32     | f32                         | [global]
-u0:14 | Type      | f64     | f64                         | [global]
-u0:15 | Type      | bool    | bool                        | [global]
-u0:16 | Type      | char    | char                        | [global]
-u0:17 | Type      | str     | str                         | [global]
-u0:18 | Module    | main    | main                        | [global]
-u0:19 | File      | main    | main::main                  |         
-u0:20 | Struct    | Foo     | main::main::Foo             |         
-u0:21 | Function  | foo     | main::main::foo             |         
-u0:22 | Namespace | block_0 | main::main::foo::block_0    |         
-u0:23 | Variable  | a       | main::main::foo::block_0::a |         
-u0:24 | Variable  | b       | main::main::foo::block_0::b |         
+u0:1  | Primitive | i32   | i32               | [global]
+u0:2  | Primitive | i64   | i64               | [global]
+u0:3  | Primitive | i16   | i16               | [global]
+u0:4  | Primitive | i8    | i8                | [global]
+u0:5  | Primitive | i128  | i128              | [global]
+u0:6  | Primitive | isize | isize             | [global]
+u0:7  | Primitive | u32   | u32               | [global]
+u0:8  | Primitive | u64   | u64               | [global]
+u0:9  | Primitive | u16   | u16               | [global]
+u0:10 | Primitive | u8    | u8                | [global]
+u0:11 | Primitive | u128  | u128              | [global]
+u0:12 | Primitive | usize | usize             | [global]
+u0:13 | Primitive | f32   | f32               | [global]
+u0:14 | Primitive | f64   | f64               | [global]
+u0:15 | Primitive | bool  | bool              | [global]
+u0:16 | Primitive | char  | char              | [global]
+u0:17 | Primitive | str   | str               | [global]
+u0:18 | Crate     | _c    | _c                | [global]
+u0:19 | Crate     | crate | _c::crate         |         
+u0:20 | Module    | _m    | _c::_m            |         
+u0:21 | File      | main  | _c::_m::main      |         
+u0:22 | Struct    | Foo   | _c::_m::main::Foo |         
+u0:23 | Function  | foo   | _c::_m::main::foo |         
+u0:24 | Variable  | a     | a                 |         
+u0:25 | Variable  | b     | b                 |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:21, u0:24]
-u0:21 -> [u0:1]
-u0:24 -> [u0:1]
+u0:1 <- [u0:23, u0:25]
+u0:22 <- [u0:23]
+u0:23 -> [u0:1, u0:22]
+u0:25 -> [u0:1]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -413,10 +427,19 @@ u0:3 | func  | foo
 u0:4 | call  | block#4
 
 --- expect:block-deps ---
-
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpSdLCrk/app/src/main.rs:1"];
+    n3 [label="foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpSdLCrk/app/src/main.rs:3"];
+  }
+  n3 -> n2;
 }
 
 
@@ -440,45 +463,46 @@ fn make_tuples() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32          | i32                                            | [global]
-u0:2  | Type      | i64          | i64                                            | [global]
-u0:3  | Type      | i16          | i16                                            | [global]
-u0:4  | Type      | i8           | i8                                             | [global]
-u0:5  | Type      | i128         | i128                                           | [global]
-u0:6  | Type      | isize        | isize                                          | [global]
-u0:7  | Type      | u32          | u32                                            | [global]
-u0:8  | Type      | u64          | u64                                            | [global]
-u0:9  | Type      | u16          | u16                                            | [global]
-u0:10 | Type      | u8           | u8                                             | [global]
-u0:11 | Type      | u128         | u128                                           | [global]
-u0:12 | Type      | usize        | usize                                          | [global]
-u0:13 | Type      | f32          | f32                                            | [global]
-u0:14 | Type      | f64          | f64                                            | [global]
-u0:15 | Type      | bool         | bool                                           | [global]
-u0:16 | Type      | char         | char                                           | [global]
-u0:17 | Type      | str          | str                                            | [global]
-u0:18 | Module    | main         | main                                           | [global]
-u0:19 | File      | main         | main::main                                     |         
-u0:20 | Struct    | TupleThing   | main::main::TupleThing                         |         
-u0:21 | Function  | make_tuples  | main::main::make_tuples                        |         
-u0:22 | Namespace | block_0      | main::main::make_tuples::block_0               |         
-u0:23 | Variable  | empty        | main::main::make_tuples::block_0::empty        |         
-u0:24 | Variable  | single       | main::main::make_tuples::block_0::single       |         
-u0:25 | Variable  | triple       | main::main::make_tuples::block_0::triple       |         
-u0:26 | Variable  | nested       | main::main::make_tuples::block_0::nested       |         
-u0:27 | Variable  | destructured | main::main::make_tuples::block_0::destructured |         
-u0:28 | Variable  | _all         | main::main::make_tuples::block_0::_all         |         
+u0:1  | Primitive | i32          | i32                       | [global]
+u0:2  | Primitive | i64          | i64                       | [global]
+u0:3  | Primitive | i16          | i16                       | [global]
+u0:4  | Primitive | i8           | i8                        | [global]
+u0:5  | Primitive | i128         | i128                      | [global]
+u0:6  | Primitive | isize        | isize                     | [global]
+u0:7  | Primitive | u32          | u32                       | [global]
+u0:8  | Primitive | u64          | u64                       | [global]
+u0:9  | Primitive | u16          | u16                       | [global]
+u0:10 | Primitive | u8           | u8                        | [global]
+u0:11 | Primitive | u128         | u128                      | [global]
+u0:12 | Primitive | usize        | usize                     | [global]
+u0:13 | Primitive | f32          | f32                       | [global]
+u0:14 | Primitive | f64          | f64                       | [global]
+u0:15 | Primitive | bool         | bool                      | [global]
+u0:16 | Primitive | char         | char                      | [global]
+u0:17 | Primitive | str          | str                       | [global]
+u0:18 | Crate     | _c           | _c                        | [global]
+u0:19 | Crate     | crate        | _c::crate                 |         
+u0:20 | Module    | _m           | _c::_m                    |         
+u0:21 | File      | main         | _c::_m::main              |         
+u0:22 | Struct    | TupleThing   | _c::_m::main::TupleThing  |         
+u0:23 | Function  | make_tuples  | _c::_m::main::make_tuples |         
+u0:24 | Variable  | empty        | empty                     |         
+u0:25 | Variable  | single       | single                    |         
+u0:26 | Variable  | triple       | triple                    |         
+u0:27 | Variable  | nested       | nested                    |         
+u0:28 | Variable  | destructured | destructured              |         
+u0:29 | Variable  | _all         | _all                      |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:21, u0:26]
-u0:20 <- [u0:21, u0:24, u0:25, u0:27]
-u0:21 -> [u0:1, u0:20, u0:23]
-u0:23 <- [u0:21, u0:28]
-u0:24 -> [u0:20]
-u0:25 -> [u0:20]
-u0:26 -> [u0:1]
-u0:27 -> [u0:20]
-u0:28 -> [u0:23]
+u0:1 <- [u0:23, u0:27]
+u0:22 <- [u0:23, u0:25, u0:26, u0:28]
+u0:23 -> [u0:1, u0:22, u0:24]
+u0:24 <- [u0:23, u0:29]
+u0:25 -> [u0:22]
+u0:26 -> [u0:22]
+u0:27 -> [u0:1]
+u0:28 -> [u0:22]
+u0:29 -> [u0:24]
 
 --- expect:blocks ---
 u0:1 | root  | main       
@@ -519,44 +543,45 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32        | i32                            | [global]
-u0:2  | Type      | i64        | i64                            | [global]
-u0:3  | Type      | i16        | i16                            | [global]
-u0:4  | Type      | i8         | i8                             | [global]
-u0:5  | Type      | i128       | i128                           | [global]
-u0:6  | Type      | isize      | isize                          | [global]
-u0:7  | Type      | u32        | u32                            | [global]
-u0:8  | Type      | u64        | u64                            | [global]
-u0:9  | Type      | u16        | u16                            | [global]
-u0:10 | Type      | u8         | u8                             | [global]
-u0:11 | Type      | u128       | u128                           | [global]
-u0:12 | Type      | usize      | usize                          | [global]
-u0:13 | Type      | f32        | f32                            | [global]
-u0:14 | Type      | f64        | f64                            | [global]
-u0:15 | Type      | bool       | bool                           | [global]
-u0:16 | Type      | char       | char                           | [global]
-u0:17 | Type      | str        | str                            | [global]
-u0:18 | Module    | main       | main                           | [global]
-u0:19 | File      | main       | main::main                     |         
-u0:20 | Struct    | SomeStruct | main::main::SomeStruct         |         
-u0:21 | Field     | field1     | main::main::SomeStruct::field1 |         
-u0:22 | Field     | field2     | main::main::SomeStruct::field2 |         
-u0:23 | Field     | field3     | main::main::SomeStruct::field3 |         
-u0:24 | Function  | func       | main::main::func               |         
-u0:25 | Namespace | block_0    | main::main::func::block_0      |         
-u0:26 | Variable  | a          | main::main::func::block_0::a   |         
-u0:27 | Variable  | u          | main::main::func::block_0::u   |         
-u0:28 | Variable  | i          | main::main::func::block_0::i   |         
+u0:1  | Primitive | i32        | i32                              | [global]
+u0:2  | Primitive | i64        | i64                              | [global]
+u0:3  | Primitive | i16        | i16                              | [global]
+u0:4  | Primitive | i8         | i8                               | [global]
+u0:5  | Primitive | i128       | i128                             | [global]
+u0:6  | Primitive | isize      | isize                            | [global]
+u0:7  | Primitive | u32        | u32                              | [global]
+u0:8  | Primitive | u64        | u64                              | [global]
+u0:9  | Primitive | u16        | u16                              | [global]
+u0:10 | Primitive | u8         | u8                               | [global]
+u0:11 | Primitive | u128       | u128                             | [global]
+u0:12 | Primitive | usize      | usize                            | [global]
+u0:13 | Primitive | f32        | f32                              | [global]
+u0:14 | Primitive | f64        | f64                              | [global]
+u0:15 | Primitive | bool       | bool                             | [global]
+u0:16 | Primitive | char       | char                             | [global]
+u0:17 | Primitive | str        | str                              | [global]
+u0:18 | Crate     | _c         | _c                               | [global]
+u0:19 | Crate     | crate      | _c::crate                        |         
+u0:20 | Module    | _m         | _c::_m                           |         
+u0:21 | File      | main       | _c::_m::main                     |         
+u0:22 | Struct    | SomeStruct | _c::_m::main::SomeStruct         |         
+u0:23 | Field     | field1     | _c::_m::main::SomeStruct::field1 |         
+u0:24 | Field     | field2     | _c::_m::main::SomeStruct::field2 |         
+u0:25 | Field     | field3     | _c::_m::main::SomeStruct::field3 |         
+u0:26 | Function  | func       | _c::_m::main::func               |         
+u0:27 | Variable  | a          | a                                |         
+u0:28 | Variable  | u          | u                                |         
+u0:29 | Variable  | i          | i                                |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:20, u0:21]
-u0:14 <- [u0:20, u0:23]
-u0:20 -> [u0:1, u0:14]
-u0:20 <- [u0:24, u0:26]
-u0:21 -> [u0:1]
-u0:23 -> [u0:14]
-u0:24 -> [u0:20]
-u0:26 -> [u0:20]
+u0:1 <- [u0:22, u0:23]
+u0:14 <- [u0:22, u0:25]
+u0:22 -> [u0:1, u0:14]
+u0:22 <- [u0:26, u0:27]
+u0:23 -> [u0:1]
+u0:25 -> [u0:14]
+u0:26 -> [u0:22]
+u0:27 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main      
@@ -600,42 +625,43 @@ fn build_user(score: u32) -> User {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32        | i32                                   | [global]
-u0:2  | Type      | i64        | i64                                   | [global]
-u0:3  | Type      | i16        | i16                                   | [global]
-u0:4  | Type      | i8         | i8                                    | [global]
-u0:5  | Type      | i128       | i128                                  | [global]
-u0:6  | Type      | isize      | isize                                 | [global]
-u0:7  | Type      | u32        | u32                                   | [global]
-u0:8  | Type      | u64        | u64                                   | [global]
-u0:9  | Type      | u16        | u16                                   | [global]
-u0:10 | Type      | u8         | u8                                    | [global]
-u0:11 | Type      | u128       | u128                                  | [global]
-u0:12 | Type      | usize      | usize                                 | [global]
-u0:13 | Type      | f32        | f32                                   | [global]
-u0:14 | Type      | f64        | f64                                   | [global]
-u0:15 | Type      | bool       | bool                                  | [global]
-u0:16 | Type      | char       | char                                  | [global]
-u0:17 | Type      | str        | str                                   | [global]
-u0:18 | Module    | main       | main                                  | [global]
-u0:19 | File      | main       | main::main                            |         
-u0:20 | Struct    | User       | main::main::User                      |         
-u0:21 | Field     | id         | main::main::User::id                  |         
-u0:22 | Field     | score      | main::main::User::score               |         
-u0:23 | Function  | build_user | main::main::build_user                |         
-u0:24 | Variable  | score      | main::main::build_user::score         |         
-u0:25 | Namespace | block_0    | main::main::build_user::block_0       |         
-u0:26 | Variable  | base       | main::main::build_user::block_0::base |         
+u0:1  | Primitive | i32        | i32                             | [global]
+u0:2  | Primitive | i64        | i64                             | [global]
+u0:3  | Primitive | i16        | i16                             | [global]
+u0:4  | Primitive | i8         | i8                              | [global]
+u0:5  | Primitive | i128       | i128                            | [global]
+u0:6  | Primitive | isize      | isize                           | [global]
+u0:7  | Primitive | u32        | u32                             | [global]
+u0:8  | Primitive | u64        | u64                             | [global]
+u0:9  | Primitive | u16        | u16                             | [global]
+u0:10 | Primitive | u8         | u8                              | [global]
+u0:11 | Primitive | u128       | u128                            | [global]
+u0:12 | Primitive | usize      | usize                           | [global]
+u0:13 | Primitive | f32        | f32                             | [global]
+u0:14 | Primitive | f64        | f64                             | [global]
+u0:15 | Primitive | bool       | bool                            | [global]
+u0:16 | Primitive | char       | char                            | [global]
+u0:17 | Primitive | str        | str                             | [global]
+u0:18 | Crate     | _c         | _c                              | [global]
+u0:19 | Crate     | crate      | _c::crate                       |         
+u0:20 | Module    | _m         | _c::_m                          |         
+u0:21 | File      | main       | _c::_m::main                    |         
+u0:22 | Struct    | User       | _c::_m::main::User              |         
+u0:23 | Field     | id         | _c::_m::main::User::id          |         
+u0:24 | Field     | score      | _c::_m::main::User::score       |         
+u0:25 | Function  | build_user | _c::_m::main::build_user        |         
+u0:26 | Variable  | score      | _c::_m::main::build_user::score |         
+u0:27 | Variable  | base       | base                            |         
 
 --- expect:symbol-deps ---
-u0:20 -> [u0:7]
-u0:20 <- [u0:23, u0:26]
-u0:21 -> [u0:7]
 u0:22 -> [u0:7]
-u0:23 -> [u0:20, u0:7]
+u0:22 <- [u0:25, u0:27]
+u0:23 -> [u0:7]
 u0:24 -> [u0:7]
-u0:26 -> [u0:20]
-u0:7 <- [u0:20, u0:21, u0:22, u0:23, u0:24]
+u0:25 -> [u0:22, u0:7]
+u0:26 -> [u0:7]
+u0:27 -> [u0:22]
+u0:7 <- [u0:22, u0:23, u0:24, u0:25, u0:26]
 
 --- expect:blocks ---
 u0:1 | root  | main      
@@ -683,49 +709,43 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                                | [global]
-u0:2  | Type      | i64     | i64                                | [global]
-u0:3  | Type      | i16     | i16                                | [global]
-u0:4  | Type      | i8      | i8                                 | [global]
-u0:5  | Type      | i128    | i128                               | [global]
-u0:6  | Type      | isize   | isize                              | [global]
-u0:7  | Type      | u32     | u32                                | [global]
-u0:8  | Type      | u64     | u64                                | [global]
-u0:9  | Type      | u16     | u16                                | [global]
-u0:10 | Type      | u8      | u8                                 | [global]
-u0:11 | Type      | u128    | u128                               | [global]
-u0:12 | Type      | usize   | usize                              | [global]
-u0:13 | Type      | f32     | f32                                | [global]
-u0:14 | Type      | f64     | f64                                | [global]
-u0:15 | Type      | bool    | bool                               | [global]
-u0:16 | Type      | char    | char                               | [global]
-u0:17 | Type      | str     | str                                | [global]
-u0:18 | Module    | main    | main                               | [global]
-u0:19 | File      | main    | main::main                         |         
-u0:20 | Struct    | Config  | main::main::Config                 |         
-u0:21 | Field     | n       | main::main::Config::n              |         
-u0:22 | Field     | x       | main::main::Config::x              |         
-u0:23 | Function  | main    | main::main::main                   |         
-u0:24 | Namespace | block_0 | main::main::main::block_0          |         
-u0:25 | Variable  | cfg     | main::main::main::block_0::cfg     |         
-u0:26 | Namespace | block_1 | main::main::main::block_0::block_1 |         
-u0:27 | Namespace | block_2 | main::main::main::block_0::block_2 |         
-u0:28 | Namespace | block_3 | main::main::main::block_0::block_3 |         
-u0:29 | Variable  | y       | main::main::main::block_0::y       |         
-u0:30 | Namespace | block_4 | main::main::main::block_0::block_4 |         
-u0:31 | Namespace | block_5 | main::main::main::block_0::block_5 |         
-u0:32 | Namespace | block_6 | main::main::main::block_0::block_6 |         
-u0:33 | Namespace | block_7 | main::main::main::block_0::block_7 |         
+u0:1  | Primitive | i32    | i32                     | [global]
+u0:2  | Primitive | i64    | i64                     | [global]
+u0:3  | Primitive | i16    | i16                     | [global]
+u0:4  | Primitive | i8     | i8                      | [global]
+u0:5  | Primitive | i128   | i128                    | [global]
+u0:6  | Primitive | isize  | isize                   | [global]
+u0:7  | Primitive | u32    | u32                     | [global]
+u0:8  | Primitive | u64    | u64                     | [global]
+u0:9  | Primitive | u16    | u16                     | [global]
+u0:10 | Primitive | u8     | u8                      | [global]
+u0:11 | Primitive | u128   | u128                    | [global]
+u0:12 | Primitive | usize  | usize                   | [global]
+u0:13 | Primitive | f32    | f32                     | [global]
+u0:14 | Primitive | f64    | f64                     | [global]
+u0:15 | Primitive | bool   | bool                    | [global]
+u0:16 | Primitive | char   | char                    | [global]
+u0:17 | Primitive | str    | str                     | [global]
+u0:18 | Crate     | _c     | _c                      | [global]
+u0:19 | Crate     | crate  | _c::crate               |         
+u0:20 | Module    | _m     | _c::_m                  |         
+u0:21 | File      | main   | _c::_m::main            |         
+u0:22 | Struct    | Config | _c::_m::main::Config    |         
+u0:23 | Field     | n      | _c::_m::main::Config::n |         
+u0:24 | Field     | x      | _c::_m::main::Config::x |         
+u0:25 | Function  | main   | _c::_m::main::main      |         
+u0:26 | Variable  | cfg    | cfg                     |         
+u0:27 | Variable  | y      | y                       |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:20, u0:21, u0:22, u0:23, u0:29]
-u0:20 -> [u0:1]
-u0:20 <- [u0:23, u0:25]
-u0:21 -> [u0:1]
+u0:1 <- [u0:22, u0:23, u0:24, u0:25, u0:27]
 u0:22 -> [u0:1]
-u0:23 -> [u0:1, u0:20]
-u0:25 -> [u0:20]
-u0:29 -> [u0:1]
+u0:22 <- [u0:25, u0:26]
+u0:23 -> [u0:1]
+u0:24 -> [u0:1]
+u0:25 -> [u0:1, u0:22]
+u0:26 -> [u0:22]
+u0:27 -> [u0:1]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -766,39 +786,39 @@ fn check() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                                 | [global]
-u0:2  | Type      | i64     | i64                                 | [global]
-u0:3  | Type      | i16     | i16                                 | [global]
-u0:4  | Type      | i8      | i8                                  | [global]
-u0:5  | Type      | i128    | i128                                | [global]
-u0:6  | Type      | isize   | isize                               | [global]
-u0:7  | Type      | u32     | u32                                 | [global]
-u0:8  | Type      | u64     | u64                                 | [global]
-u0:9  | Type      | u16     | u16                                 | [global]
-u0:10 | Type      | u8      | u8                                  | [global]
-u0:11 | Type      | u128    | u128                                | [global]
-u0:12 | Type      | usize   | usize                               | [global]
-u0:13 | Type      | f32     | f32                                 | [global]
-u0:14 | Type      | f64     | f64                                 | [global]
-u0:15 | Type      | bool    | bool                                | [global]
-u0:16 | Type      | char    | char                                | [global]
-u0:17 | Type      | str     | str                                 | [global]
-u0:18 | Module    | main    | main                                | [global]
-u0:19 | File      | main    | main::main                          |         
-u0:20 | Struct    | Guard   | main::main::Guard                   |         
-u0:21 | Field     | val     | main::main::Guard::val              |         
-u0:22 | Function  | check   | main::main::check                   |         
-u0:23 | Namespace | block_0 | main::main::check::block_0          |         
-u0:24 | Variable  | guard   | main::main::check::block_0::guard   |         
-u0:25 | Namespace | block_1 | main::main::check::block_0::block_1 |         
+u0:1  | Primitive | i32   | i32                      | [global]
+u0:2  | Primitive | i64   | i64                      | [global]
+u0:3  | Primitive | i16   | i16                      | [global]
+u0:4  | Primitive | i8    | i8                       | [global]
+u0:5  | Primitive | i128  | i128                     | [global]
+u0:6  | Primitive | isize | isize                    | [global]
+u0:7  | Primitive | u32   | u32                      | [global]
+u0:8  | Primitive | u64   | u64                      | [global]
+u0:9  | Primitive | u16   | u16                      | [global]
+u0:10 | Primitive | u8    | u8                       | [global]
+u0:11 | Primitive | u128  | u128                     | [global]
+u0:12 | Primitive | usize | usize                    | [global]
+u0:13 | Primitive | f32   | f32                      | [global]
+u0:14 | Primitive | f64   | f64                      | [global]
+u0:15 | Primitive | bool  | bool                     | [global]
+u0:16 | Primitive | char  | char                     | [global]
+u0:17 | Primitive | str   | str                      | [global]
+u0:18 | Crate     | _c    | _c                       | [global]
+u0:19 | Crate     | crate | _c::crate                |         
+u0:20 | Module    | _m    | _c::_m                   |         
+u0:21 | File      | main  | _c::_m::main             |         
+u0:22 | Struct    | Guard | _c::_m::main::Guard      |         
+u0:23 | Field     | val   | _c::_m::main::Guard::val |         
+u0:24 | Function  | check | _c::_m::main::check      |         
+u0:25 | Variable  | guard | guard                    |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:20, u0:21]
-u0:20 -> [u0:1]
-u0:20 <- [u0:22, u0:24]
-u0:21 -> [u0:1]
-u0:22 -> [u0:20]
-u0:24 -> [u0:20]
+u0:1 <- [u0:22, u0:23]
+u0:22 -> [u0:1]
+u0:22 <- [u0:24, u0:25]
+u0:23 -> [u0:1]
+u0:24 -> [u0:22]
+u0:25 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -840,38 +860,35 @@ fn parse() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32      | i32                                  | [global]
-u0:2  | Type      | i64      | i64                                  | [global]
-u0:3  | Type      | i16      | i16                                  | [global]
-u0:4  | Type      | i8       | i8                                   | [global]
-u0:5  | Type      | i128     | i128                                 | [global]
-u0:6  | Type      | isize    | isize                                | [global]
-u0:7  | Type      | u32      | u32                                  | [global]
-u0:8  | Type      | u64      | u64                                  | [global]
-u0:9  | Type      | u16      | u16                                  | [global]
-u0:10 | Type      | u8       | u8                                   | [global]
-u0:11 | Type      | u128     | u128                                 | [global]
-u0:12 | Type      | usize    | usize                                | [global]
-u0:13 | Type      | f32      | f32                                  | [global]
-u0:14 | Type      | f64      | f64                                  | [global]
-u0:15 | Type      | bool     | bool                                 | [global]
-u0:16 | Type      | char     | char                                 | [global]
-u0:17 | Type      | str      | str                                  | [global]
-u0:18 | Module    | main     | main                                 | [global]
-u0:19 | File      | main     | main::main                           |         
-u0:20 | Struct    | Dish     | main::main::Dish                     |         
-u0:21 | Function  | parse    | main::main::parse                    |         
-u0:22 | Namespace | block_0  | main::main::parse::block_0           |         
-u0:23 | Variable  | dish_opt | main::main::parse::block_0::dish_opt |         
-u0:24 | Namespace | block_1  | main::main::parse::block_0::block_1  |         
-u0:25 | Namespace | block_2  | main::main::parse::block_0::block_2  |         
-u0:26 | Namespace | block_3  | main::main::parse::block_0::block_3  |         
-u0:27 | Namespace | block_4  | main::main::parse::block_0::block_4  |         
+u0:1  | Primitive | i32      | i32                 | [global]
+u0:2  | Primitive | i64      | i64                 | [global]
+u0:3  | Primitive | i16      | i16                 | [global]
+u0:4  | Primitive | i8       | i8                  | [global]
+u0:5  | Primitive | i128     | i128                | [global]
+u0:6  | Primitive | isize    | isize               | [global]
+u0:7  | Primitive | u32      | u32                 | [global]
+u0:8  | Primitive | u64      | u64                 | [global]
+u0:9  | Primitive | u16      | u16                 | [global]
+u0:10 | Primitive | u8       | u8                  | [global]
+u0:11 | Primitive | u128     | u128                | [global]
+u0:12 | Primitive | usize    | usize               | [global]
+u0:13 | Primitive | f32      | f32                 | [global]
+u0:14 | Primitive | f64      | f64                 | [global]
+u0:15 | Primitive | bool     | bool                | [global]
+u0:16 | Primitive | char     | char                | [global]
+u0:17 | Primitive | str      | str                 | [global]
+u0:18 | Crate     | _c       | _c                  | [global]
+u0:19 | Crate     | crate    | _c::crate           |         
+u0:20 | Module    | _m       | _c::_m              |         
+u0:21 | File      | main     | _c::_m::main        |         
+u0:22 | Struct    | Dish     | _c::_m::main::Dish  |         
+u0:23 | Function  | parse    | _c::_m::main::parse |         
+u0:24 | Variable  | dish_opt | dish_opt            |         
 
 --- expect:symbol-deps ---
-u0:20 <- [u0:21, u0:23]
-u0:21 -> [u0:20]
-u0:23 -> [u0:20]
+u0:22 <- [u0:23, u0:24]
+u0:23 -> [u0:22]
+u0:24 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -914,39 +931,39 @@ fn process() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                                   | [global]
-u0:2  | Type      | i64     | i64                                   | [global]
-u0:3  | Type      | i16     | i16                                   | [global]
-u0:4  | Type      | i8      | i8                                    | [global]
-u0:5  | Type      | i128    | i128                                  | [global]
-u0:6  | Type      | isize   | isize                                 | [global]
-u0:7  | Type      | u32     | u32                                   | [global]
-u0:8  | Type      | u64     | u64                                   | [global]
-u0:9  | Type      | u16     | u16                                   | [global]
-u0:10 | Type      | u8      | u8                                    | [global]
-u0:11 | Type      | u128    | u128                                  | [global]
-u0:12 | Type      | usize   | usize                                 | [global]
-u0:13 | Type      | f32     | f32                                   | [global]
-u0:14 | Type      | f64     | f64                                   | [global]
-u0:15 | Type      | bool    | bool                                  | [global]
-u0:16 | Type      | char    | char                                  | [global]
-u0:17 | Type      | str     | str                                   | [global]
-u0:18 | Module    | main    | main                                  | [global]
-u0:19 | File      | main    | main::main                            |         
-u0:20 | Struct    | Queue   | main::main::Queue                     |         
-u0:21 | Field     | items   | main::main::Queue::items              |         
-u0:22 | Function  | process | main::main::process                   |         
-u0:23 | Namespace | block_0 | main::main::process::block_0          |         
-u0:24 | Variable  | queue   | main::main::process::block_0::queue   |         
-u0:25 | Namespace | block_1 | main::main::process::block_0::block_1 |         
+u0:1  | Primitive | i32     | i32                        | [global]
+u0:2  | Primitive | i64     | i64                        | [global]
+u0:3  | Primitive | i16     | i16                        | [global]
+u0:4  | Primitive | i8      | i8                         | [global]
+u0:5  | Primitive | i128    | i128                       | [global]
+u0:6  | Primitive | isize   | isize                      | [global]
+u0:7  | Primitive | u32     | u32                        | [global]
+u0:8  | Primitive | u64     | u64                        | [global]
+u0:9  | Primitive | u16     | u16                        | [global]
+u0:10 | Primitive | u8      | u8                         | [global]
+u0:11 | Primitive | u128    | u128                       | [global]
+u0:12 | Primitive | usize   | usize                      | [global]
+u0:13 | Primitive | f32     | f32                        | [global]
+u0:14 | Primitive | f64     | f64                        | [global]
+u0:15 | Primitive | bool    | bool                       | [global]
+u0:16 | Primitive | char    | char                       | [global]
+u0:17 | Primitive | str     | str                        | [global]
+u0:18 | Crate     | _c      | _c                         | [global]
+u0:19 | Crate     | crate   | _c::crate                  |         
+u0:20 | Module    | _m      | _c::_m                     |         
+u0:21 | File      | main    | _c::_m::main               |         
+u0:22 | Struct    | Queue   | _c::_m::main::Queue        |         
+u0:23 | Field     | items   | _c::_m::main::Queue::items |         
+u0:24 | Function  | process | _c::_m::main::process      |         
+u0:25 | Variable  | queue   | queue                      |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:20, u0:21]
-u0:20 -> [u0:1]
-u0:20 <- [u0:22, u0:24]
-u0:21 -> [u0:1]
-u0:22 -> [u0:20]
-u0:24 -> [u0:20]
+u0:1 <- [u0:22, u0:23]
+u0:22 -> [u0:1]
+u0:22 <- [u0:24, u0:25]
+u0:23 -> [u0:1]
+u0:24 -> [u0:22]
+u0:25 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -984,35 +1001,35 @@ fn process_value() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32           | i32                                         | [global]
-u0:2  | Type      | i64           | i64                                         | [global]
-u0:3  | Type      | i16           | i16                                         | [global]
-u0:4  | Type      | i8            | i8                                          | [global]
-u0:5  | Type      | i128          | i128                                        | [global]
-u0:6  | Type      | isize         | isize                                       | [global]
-u0:7  | Type      | u32           | u32                                         | [global]
-u0:8  | Type      | u64           | u64                                         | [global]
-u0:9  | Type      | u16           | u16                                         | [global]
-u0:10 | Type      | u8            | u8                                          | [global]
-u0:11 | Type      | u128          | u128                                        | [global]
-u0:12 | Type      | usize         | usize                                       | [global]
-u0:13 | Type      | f32           | f32                                         | [global]
-u0:14 | Type      | f64           | f64                                         | [global]
-u0:15 | Type      | bool          | bool                                        | [global]
-u0:16 | Type      | char          | char                                        | [global]
-u0:17 | Type      | str           | str                                         | [global]
-u0:18 | Module    | main          | main                                        | [global]
-u0:19 | File      | main          | main::main                                  |         
-u0:20 | Struct    | Value         | main::main::Value                           |         
-u0:21 | Function  | process_value | main::main::process_value                   |         
-u0:22 | Namespace | block_0       | main::main::process_value::block_0          |         
-u0:23 | Variable  | val           | main::main::process_value::block_0::val     |         
-u0:24 | Namespace | block_1       | main::main::process_value::block_0::block_1 |         
+u0:1  | Primitive | i32           | i32                         | [global]
+u0:2  | Primitive | i64           | i64                         | [global]
+u0:3  | Primitive | i16           | i16                         | [global]
+u0:4  | Primitive | i8            | i8                          | [global]
+u0:5  | Primitive | i128          | i128                        | [global]
+u0:6  | Primitive | isize         | isize                       | [global]
+u0:7  | Primitive | u32           | u32                         | [global]
+u0:8  | Primitive | u64           | u64                         | [global]
+u0:9  | Primitive | u16           | u16                         | [global]
+u0:10 | Primitive | u8            | u8                          | [global]
+u0:11 | Primitive | u128          | u128                        | [global]
+u0:12 | Primitive | usize         | usize                       | [global]
+u0:13 | Primitive | f32           | f32                         | [global]
+u0:14 | Primitive | f64           | f64                         | [global]
+u0:15 | Primitive | bool          | bool                        | [global]
+u0:16 | Primitive | char          | char                        | [global]
+u0:17 | Primitive | str           | str                         | [global]
+u0:18 | Crate     | _c            | _c                          | [global]
+u0:19 | Crate     | crate         | _c::crate                   |         
+u0:20 | Module    | _m            | _c::_m                      |         
+u0:21 | File      | main          | _c::_m::main                |         
+u0:22 | Struct    | Value         | _c::_m::main::Value         |         
+u0:23 | Function  | process_value | _c::_m::main::process_value |         
+u0:24 | Variable  | val           | val                         |         
 
 --- expect:symbol-deps ---
-u0:20 <- [u0:21, u0:23]
-u0:21 -> [u0:20]
-u0:23 -> [u0:20]
+u0:22 <- [u0:23, u0:24]
+u0:23 -> [u0:22]
+u0:24 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main         
@@ -1050,39 +1067,39 @@ fn loop_until() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32        | i32                                      | [global]
-u0:2  | Type      | i64        | i64                                      | [global]
-u0:3  | Type      | i16        | i16                                      | [global]
-u0:4  | Type      | i8         | i8                                       | [global]
-u0:5  | Type      | i128       | i128                                     | [global]
-u0:6  | Type      | isize      | isize                                    | [global]
-u0:7  | Type      | u32        | u32                                      | [global]
-u0:8  | Type      | u64        | u64                                      | [global]
-u0:9  | Type      | u16        | u16                                      | [global]
-u0:10 | Type      | u8         | u8                                       | [global]
-u0:11 | Type      | u128       | u128                                     | [global]
-u0:12 | Type      | usize      | usize                                    | [global]
-u0:13 | Type      | f32        | f32                                      | [global]
-u0:14 | Type      | f64        | f64                                      | [global]
-u0:15 | Type      | bool       | bool                                     | [global]
-u0:16 | Type      | char       | char                                     | [global]
-u0:17 | Type      | str        | str                                      | [global]
-u0:18 | Module    | main       | main                                     | [global]
-u0:19 | File      | main       | main::main                               |         
-u0:20 | Struct    | State      | main::main::State                        |         
-u0:21 | Field     | done       | main::main::State::done                  |         
-u0:22 | Function  | loop_until | main::main::loop_until                   |         
-u0:23 | Namespace | block_0    | main::main::loop_until::block_0          |         
-u0:24 | Variable  | state      | main::main::loop_until::block_0::state   |         
-u0:25 | Namespace | block_1    | main::main::loop_until::block_0::block_1 |         
+u0:1  | Primitive | i32        | i32                       | [global]
+u0:2  | Primitive | i64        | i64                       | [global]
+u0:3  | Primitive | i16        | i16                       | [global]
+u0:4  | Primitive | i8         | i8                        | [global]
+u0:5  | Primitive | i128       | i128                      | [global]
+u0:6  | Primitive | isize      | isize                     | [global]
+u0:7  | Primitive | u32        | u32                       | [global]
+u0:8  | Primitive | u64        | u64                       | [global]
+u0:9  | Primitive | u16        | u16                       | [global]
+u0:10 | Primitive | u8         | u8                        | [global]
+u0:11 | Primitive | u128       | u128                      | [global]
+u0:12 | Primitive | usize      | usize                     | [global]
+u0:13 | Primitive | f32        | f32                       | [global]
+u0:14 | Primitive | f64        | f64                       | [global]
+u0:15 | Primitive | bool       | bool                      | [global]
+u0:16 | Primitive | char       | char                      | [global]
+u0:17 | Primitive | str        | str                       | [global]
+u0:18 | Crate     | _c         | _c                        | [global]
+u0:19 | Crate     | crate      | _c::crate                 |         
+u0:20 | Module    | _m         | _c::_m                    |         
+u0:21 | File      | main       | _c::_m::main              |         
+u0:22 | Struct    | State      | _c::_m::main::State       |         
+u0:23 | Field     | done       | _c::_m::main::State::done |         
+u0:24 | Function  | loop_until | _c::_m::main::loop_until  |         
+u0:25 | Variable  | state      | state                     |         
 
 --- expect:symbol-deps ---
-u0:15 <- [u0:20, u0:21, u0:22]
-u0:20 -> [u0:15]
-u0:20 <- [u0:22, u0:24]
-u0:21 -> [u0:15]
-u0:22 -> [u0:15, u0:20]
-u0:24 -> [u0:20]
+u0:15 <- [u0:22, u0:23, u0:24]
+u0:22 -> [u0:15]
+u0:22 <- [u0:24, u0:25]
+u0:23 -> [u0:15]
+u0:24 -> [u0:15, u0:22]
+u0:25 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main      
@@ -1123,40 +1140,39 @@ fn count() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                                          | [global]
-u0:2  | Type      | i64     | i64                                          | [global]
-u0:3  | Type      | i16     | i16                                          | [global]
-u0:4  | Type      | i8      | i8                                           | [global]
-u0:5  | Type      | i128    | i128                                         | [global]
-u0:6  | Type      | isize   | isize                                        | [global]
-u0:7  | Type      | u32     | u32                                          | [global]
-u0:8  | Type      | u64     | u64                                          | [global]
-u0:9  | Type      | u16     | u16                                          | [global]
-u0:10 | Type      | u8      | u8                                           | [global]
-u0:11 | Type      | u128    | u128                                         | [global]
-u0:12 | Type      | usize   | usize                                        | [global]
-u0:13 | Type      | f32     | f32                                          | [global]
-u0:14 | Type      | f64     | f64                                          | [global]
-u0:15 | Type      | bool    | bool                                         | [global]
-u0:16 | Type      | char    | char                                         | [global]
-u0:17 | Type      | str     | str                                          | [global]
-u0:18 | Module    | main    | main                                         | [global]
-u0:19 | File      | main    | main::main                                   |         
-u0:20 | Struct    | Counter | main::main::Counter                          |         
-u0:21 | Field     | limit   | main::main::Counter::limit                   |         
-u0:22 | Function  | count   | main::main::count                            |         
-u0:23 | Namespace | block_0 | main::main::count::block_0                   |         
-u0:24 | Variable  | counter | main::main::count::block_0::counter          |         
-u0:25 | Namespace | block_1 | main::main::count::block_0::block_1          |         
-u0:26 | Namespace | block_2 | main::main::count::block_0::block_1::block_2 |         
+u0:1  | Primitive | i32     | i32                          | [global]
+u0:2  | Primitive | i64     | i64                          | [global]
+u0:3  | Primitive | i16     | i16                          | [global]
+u0:4  | Primitive | i8      | i8                           | [global]
+u0:5  | Primitive | i128    | i128                         | [global]
+u0:6  | Primitive | isize   | isize                        | [global]
+u0:7  | Primitive | u32     | u32                          | [global]
+u0:8  | Primitive | u64     | u64                          | [global]
+u0:9  | Primitive | u16     | u16                          | [global]
+u0:10 | Primitive | u8      | u8                           | [global]
+u0:11 | Primitive | u128    | u128                         | [global]
+u0:12 | Primitive | usize   | usize                        | [global]
+u0:13 | Primitive | f32     | f32                          | [global]
+u0:14 | Primitive | f64     | f64                          | [global]
+u0:15 | Primitive | bool    | bool                         | [global]
+u0:16 | Primitive | char    | char                         | [global]
+u0:17 | Primitive | str     | str                          | [global]
+u0:18 | Crate     | _c      | _c                           | [global]
+u0:19 | Crate     | crate   | _c::crate                    |         
+u0:20 | Module    | _m      | _c::_m                       |         
+u0:21 | File      | main    | _c::_m::main                 |         
+u0:22 | Struct    | Counter | _c::_m::main::Counter        |         
+u0:23 | Field     | limit   | _c::_m::main::Counter::limit |         
+u0:24 | Function  | count   | _c::_m::main::count          |         
+u0:25 | Variable  | counter | counter                      |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:20, u0:21]
-u0:20 -> [u0:1]
-u0:20 <- [u0:22, u0:24]
-u0:21 -> [u0:1]
-u0:22 -> [u0:20]
-u0:24 -> [u0:20]
+u0:1 <- [u0:22, u0:23]
+u0:22 -> [u0:1]
+u0:22 <- [u0:24, u0:25]
+u0:23 -> [u0:1]
+u0:24 -> [u0:22]
+u0:25 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -1193,35 +1209,35 @@ fn iterate() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32       | i32                                     | [global]
-u0:2  | Type      | i64       | i64                                     | [global]
-u0:3  | Type      | i16       | i16                                     | [global]
-u0:4  | Type      | i8        | i8                                      | [global]
-u0:5  | Type      | i128      | i128                                    | [global]
-u0:6  | Type      | isize     | isize                                   | [global]
-u0:7  | Type      | u32       | u32                                     | [global]
-u0:8  | Type      | u64       | u64                                     | [global]
-u0:9  | Type      | u16       | u16                                     | [global]
-u0:10 | Type      | u8        | u8                                      | [global]
-u0:11 | Type      | u128      | u128                                    | [global]
-u0:12 | Type      | usize     | usize                                   | [global]
-u0:13 | Type      | f32       | f32                                     | [global]
-u0:14 | Type      | f64       | f64                                     | [global]
-u0:15 | Type      | bool      | bool                                    | [global]
-u0:16 | Type      | char      | char                                    | [global]
-u0:17 | Type      | str       | str                                     | [global]
-u0:18 | Module    | main      | main                                    | [global]
-u0:19 | File      | main      | main::main                              |         
-u0:20 | Struct    | Container | main::main::Container                   |         
-u0:21 | Function  | iterate   | main::main::iterate                     |         
-u0:22 | Namespace | block_0   | main::main::iterate::block_0            |         
-u0:23 | Variable  | container | main::main::iterate::block_0::container |         
-u0:24 | Namespace | block_1   | main::main::iterate::block_0::block_1   |         
+u0:1  | Primitive | i32       | i32                     | [global]
+u0:2  | Primitive | i64       | i64                     | [global]
+u0:3  | Primitive | i16       | i16                     | [global]
+u0:4  | Primitive | i8        | i8                      | [global]
+u0:5  | Primitive | i128      | i128                    | [global]
+u0:6  | Primitive | isize     | isize                   | [global]
+u0:7  | Primitive | u32       | u32                     | [global]
+u0:8  | Primitive | u64       | u64                     | [global]
+u0:9  | Primitive | u16       | u16                     | [global]
+u0:10 | Primitive | u8        | u8                      | [global]
+u0:11 | Primitive | u128      | u128                    | [global]
+u0:12 | Primitive | usize     | usize                   | [global]
+u0:13 | Primitive | f32       | f32                     | [global]
+u0:14 | Primitive | f64       | f64                     | [global]
+u0:15 | Primitive | bool      | bool                    | [global]
+u0:16 | Primitive | char      | char                    | [global]
+u0:17 | Primitive | str       | str                     | [global]
+u0:18 | Crate     | _c        | _c                      | [global]
+u0:19 | Crate     | crate     | _c::crate               |         
+u0:20 | Module    | _m        | _c::_m                  |         
+u0:21 | File      | main      | _c::_m::main            |         
+u0:22 | Struct    | Container | _c::_m::main::Container |         
+u0:23 | Function  | iterate   | _c::_m::main::iterate   |         
+u0:24 | Variable  | container | container               |         
 
 --- expect:symbol-deps ---
-u0:20 <- [u0:21, u0:23]
-u0:21 -> [u0:20]
-u0:23 -> [u0:20]
+u0:22 <- [u0:23, u0:24]
+u0:23 -> [u0:22]
+u0:24 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main     
@@ -1270,54 +1286,54 @@ fn bar() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32      | i32                                | [global]
-u0:2  | Type      | i64      | i64                                | [global]
-u0:3  | Type      | i16      | i16                                | [global]
-u0:4  | Type      | i8       | i8                                 | [global]
-u0:5  | Type      | i128     | i128                               | [global]
-u0:6  | Type      | isize    | isize                              | [global]
-u0:7  | Type      | u32      | u32                                | [global]
-u0:8  | Type      | u64      | u64                                | [global]
-u0:9  | Type      | u16      | u16                                | [global]
-u0:10 | Type      | u8       | u8                                 | [global]
-u0:11 | Type      | u128     | u128                               | [global]
-u0:12 | Type      | usize    | usize                              | [global]
-u0:13 | Type      | f32      | f32                                | [global]
-u0:14 | Type      | f64      | f64                                | [global]
-u0:15 | Type      | bool     | bool                               | [global]
-u0:16 | Type      | char     | char                               | [global]
-u0:17 | Type      | str      | str                                | [global]
-u0:18 | Module    | main     | main                               | [global]
-u0:19 | File      | main     | main::main                         |         
-u0:20 | Struct    | Foo      | main::main::Foo                    |         
-u0:21 | Struct    | Far      | main::main::Far                    |         
-u0:22 | Struct    | Baz      | main::main::Baz                    |         
-u0:23 | Field     | x        | main::main::Baz::x                 |         
-u0:24 | Struct    | MyStruct | main::main::MyStruct               |         
-u0:25 | Field     | myfield  | main::main::MyStruct::myfield      |         
-u0:26 | Function  | foo      | main::main::foo                    |         
-u0:27 | Namespace | block_0  | main::main::foo::block_0           |         
-u0:28 | Function  | bar      | main::main::bar                    |         
-u0:29 | Namespace | block_1  | main::main::bar::block_1           |         
-u0:30 | Variable  | mystruct | main::main::bar::block_1::mystruct |         
-u0:31 | Variable  | x        | main::main::bar::block_1::x        |         
-u0:32 | Variable  | y        | main::main::bar::block_1::y        |         
+u0:1  | Primitive | i32      | i32                             | [global]
+u0:2  | Primitive | i64      | i64                             | [global]
+u0:3  | Primitive | i16      | i16                             | [global]
+u0:4  | Primitive | i8       | i8                              | [global]
+u0:5  | Primitive | i128     | i128                            | [global]
+u0:6  | Primitive | isize    | isize                           | [global]
+u0:7  | Primitive | u32      | u32                             | [global]
+u0:8  | Primitive | u64      | u64                             | [global]
+u0:9  | Primitive | u16      | u16                             | [global]
+u0:10 | Primitive | u8       | u8                              | [global]
+u0:11 | Primitive | u128     | u128                            | [global]
+u0:12 | Primitive | usize    | usize                           | [global]
+u0:13 | Primitive | f32      | f32                             | [global]
+u0:14 | Primitive | f64      | f64                             | [global]
+u0:15 | Primitive | bool     | bool                            | [global]
+u0:16 | Primitive | char     | char                            | [global]
+u0:17 | Primitive | str      | str                             | [global]
+u0:18 | Crate     | _c       | _c                              | [global]
+u0:19 | Crate     | crate    | _c::crate                       |         
+u0:20 | Module    | _m       | _c::_m                          |         
+u0:21 | File      | main     | _c::_m::main                    |         
+u0:22 | Struct    | Foo      | _c::_m::main::Foo               |         
+u0:23 | Struct    | Far      | _c::_m::main::Far               |         
+u0:24 | Struct    | Baz      | _c::_m::main::Baz               |         
+u0:25 | Field     | x        | _c::_m::main::Baz::x            |         
+u0:26 | Struct    | MyStruct | _c::_m::main::MyStruct          |         
+u0:27 | Field     | myfield  | _c::_m::main::MyStruct::myfield |         
+u0:28 | Function  | foo      | _c::_m::main::foo               |         
+u0:29 | Function  | bar      | _c::_m::main::bar               |         
+u0:30 | Variable  | mystruct | mystruct                        |         
+u0:31 | Variable  | x        | x                               |         
+u0:32 | Variable  | y        | y                               |         
 
 --- expect:symbol-deps ---
-u0:20 <- [u0:24, u0:25, u0:28, u0:31]
-u0:21 <- [u0:22, u0:23, u0:28, u0:32]
-u0:22 -> [u0:21]
-u0:22 <- [u0:26]
-u0:23 -> [u0:21]
-u0:24 -> [u0:20]
-u0:24 <- [u0:28, u0:30]
-u0:25 -> [u0:20]
+u0:22 <- [u0:26, u0:27, u0:29, u0:31]
+u0:23 <- [u0:24, u0:25, u0:29, u0:32]
+u0:24 -> [u0:23]
+u0:24 <- [u0:28]
+u0:25 -> [u0:23]
 u0:26 -> [u0:22]
-u0:26 <- [u0:28]
-u0:28 -> [u0:20, u0:21, u0:24, u0:26]
-u0:30 -> [u0:24]
-u0:31 -> [u0:20]
-u0:32 -> [u0:21]
+u0:26 <- [u0:29, u0:30]
+u0:27 -> [u0:22]
+u0:28 -> [u0:24]
+u0:28 <- [u0:29]
+u0:29 -> [u0:22, u0:23, u0:26, u0:28]
+u0:30 -> [u0:26]
+u0:31 -> [u0:22]
+u0:32 -> [u0:23]
 
 --- expect:blocks ---
 u0:1  | root  | main    
@@ -1385,40 +1401,40 @@ fn func() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32      | i32                                 | [global]
-u0:2  | Type      | i64      | i64                                 | [global]
-u0:3  | Type      | i16      | i16                                 | [global]
-u0:4  | Type      | i8       | i8                                  | [global]
-u0:5  | Type      | i128     | i128                                | [global]
-u0:6  | Type      | isize    | isize                               | [global]
-u0:7  | Type      | u32      | u32                                 | [global]
-u0:8  | Type      | u64      | u64                                 | [global]
-u0:9  | Type      | u16      | u16                                 | [global]
-u0:10 | Type      | u8       | u8                                  | [global]
-u0:11 | Type      | u128     | u128                                | [global]
-u0:12 | Type      | usize    | usize                               | [global]
-u0:13 | Type      | f32      | f32                                 | [global]
-u0:14 | Type      | f64      | f64                                 | [global]
-u0:15 | Type      | bool     | bool                                | [global]
-u0:16 | Type      | char     | char                                | [global]
-u0:17 | Type      | str      | str                                 | [global]
-u0:18 | Module    | main     | main                                | [global]
-u0:19 | File      | main     | main::main                          |         
-u0:20 | Struct    | Foo      | main::main::Foo                     |         
-u0:21 | Impl      | MyStruct | main::main::MyStruct                |         
-u0:22 | Function  | foo      | main::main::MyStruct::foo           |         
-u0:23 | Namespace | block_0  | main::main::MyStruct::foo::block_0  |         
-u0:24 | Function  | func     | main::main::func                    |         
-u0:25 | Namespace | block_1  | main::main::func::block_1           |         
-u0:26 | Variable  | mystruct | main::main::func::block_1::mystruct |         
-u0:27 | Variable  | x        | main::main::func::block_1::x        |         
+u0:1  | Primitive | i32      | i32                         | [global]
+u0:2  | Primitive | i64      | i64                         | [global]
+u0:3  | Primitive | i16      | i16                         | [global]
+u0:4  | Primitive | i8       | i8                          | [global]
+u0:5  | Primitive | i128     | i128                        | [global]
+u0:6  | Primitive | isize    | isize                       | [global]
+u0:7  | Primitive | u32      | u32                         | [global]
+u0:8  | Primitive | u64      | u64                         | [global]
+u0:9  | Primitive | u16      | u16                         | [global]
+u0:10 | Primitive | u8       | u8                          | [global]
+u0:11 | Primitive | u128     | u128                        | [global]
+u0:12 | Primitive | usize    | usize                       | [global]
+u0:13 | Primitive | f32      | f32                         | [global]
+u0:14 | Primitive | f64      | f64                         | [global]
+u0:15 | Primitive | bool     | bool                        | [global]
+u0:16 | Primitive | char     | char                        | [global]
+u0:17 | Primitive | str      | str                         | [global]
+u0:18 | Crate     | _c       | _c                          | [global]
+u0:19 | Crate     | crate    | _c::crate                   |         
+u0:20 | Module    | _m       | _c::_m                      |         
+u0:21 | File      | main     | _c::_m::main                |         
+u0:22 | Struct    | Foo      | _c::_m::main::Foo           |         
+u0:23 | Struct    | MyStruct | _c::_m::main::MyStruct      |         
+u0:24 | Method    | foo      | _c::_m::main::MyStruct::foo |         
+u0:25 | Function  | func     | _c::_m::main::func          |         
+u0:26 | Variable  | mystruct | mystruct                    |         
+u0:27 | Variable  | x        | x                           |         
 
 --- expect:symbol-deps ---
-u0:20 <- [u0:22]
-u0:22 -> [u0:20]
 u0:22 <- [u0:24]
-u0:24 -> [u0:22, u0:26]
-u0:26 <- [u0:24, u0:27]
+u0:23 <- [u0:25]
+u0:24 -> [u0:22]
+u0:25 -> [u0:23, u0:26]
+u0:26 <- [u0:25, u0:27]
 u0:27 -> [u0:26]
 
 
@@ -1433,25 +1449,27 @@ arr[10];
 arr[n];
 
 --- expect:symbols ---
-u0:1  | Type   | i32   | i32        | [global]
-u0:2  | Type   | i64   | i64        | [global]
-u0:3  | Type   | i16   | i16        | [global]
-u0:4  | Type   | i8    | i8         | [global]
-u0:5  | Type   | i128  | i128       | [global]
-u0:6  | Type   | isize | isize      | [global]
-u0:7  | Type   | u32   | u32        | [global]
-u0:8  | Type   | u64   | u64        | [global]
-u0:9  | Type   | u16   | u16        | [global]
-u0:10 | Type   | u8    | u8         | [global]
-u0:11 | Type   | u128  | u128       | [global]
-u0:12 | Type   | usize | usize      | [global]
-u0:13 | Type   | f32   | f32        | [global]
-u0:14 | Type   | f64   | f64        | [global]
-u0:15 | Type   | bool  | bool       | [global]
-u0:16 | Type   | char  | char       | [global]
-u0:17 | Type   | str   | str        | [global]
-u0:18 | Module | main  | main       | [global]
-u0:19 | File   | main  | main::main |         
+u0:1  | Primitive | i32   | i32          | [global]
+u0:2  | Primitive | i64   | i64          | [global]
+u0:3  | Primitive | i16   | i16          | [global]
+u0:4  | Primitive | i8    | i8           | [global]
+u0:5  | Primitive | i128  | i128         | [global]
+u0:6  | Primitive | isize | isize        | [global]
+u0:7  | Primitive | u32   | u32          | [global]
+u0:8  | Primitive | u64   | u64          | [global]
+u0:9  | Primitive | u16   | u16          | [global]
+u0:10 | Primitive | u8    | u8           | [global]
+u0:11 | Primitive | u128  | u128         | [global]
+u0:12 | Primitive | usize | usize        | [global]
+u0:13 | Primitive | f32   | f32          | [global]
+u0:14 | Primitive | f64   | f64          | [global]
+u0:15 | Primitive | bool  | bool         | [global]
+u0:16 | Primitive | char  | char         | [global]
+u0:17 | Primitive | str   | str          | [global]
+u0:18 | Crate     | _c    | _c           | [global]
+u0:19 | Crate     | crate | _c::crate    |         
+u0:20 | Module    | _m    | _c::_m       |         
+u0:21 | File      | main  | _c::_m::main |         
 
 --- expect:symbol-deps ---
 
@@ -1487,64 +1505,63 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                       | [global]
-u0:2  | Type      | i64     | i64                       | [global]
-u0:3  | Type      | i16     | i16                       | [global]
-u0:4  | Type      | i8      | i8                        | [global]
-u0:5  | Type      | i128    | i128                      | [global]
-u0:6  | Type      | isize   | isize                     | [global]
-u0:7  | Type      | u32     | u32                       | [global]
-u0:8  | Type      | u64     | u64                       | [global]
-u0:9  | Type      | u16     | u16                       | [global]
-u0:10 | Type      | u8      | u8                        | [global]
-u0:11 | Type      | u128    | u128                      | [global]
-u0:12 | Type      | usize   | usize                     | [global]
-u0:13 | Type      | f32     | f32                       | [global]
-u0:14 | Type      | f64     | f64                       | [global]
-u0:15 | Type      | bool    | bool                      | [global]
-u0:16 | Type      | char    | char                      | [global]
-u0:17 | Type      | str     | str                       | [global]
-u0:18 | Module    | foo     | foo                       | [global]
-u0:19 | File      | foo     | foo::foo                  |         
-u0:20 | Function  | f       | foo::foo::f               |         
-u0:21 | Namespace | block_0 | foo::foo::f::block_0      |         
-u0:22 | Namespace | g       | foo::foo::g               |         
-u0:23 | Function  | h       | foo::foo::g::h            |         
-u0:24 | Namespace | block_1 | foo::foo::g::h::block_1   |         
-u1:25 | Type      | i32     | i32                       | [global]
-u1:26 | Type      | i64     | i64                       | [global]
-u1:27 | Type      | i16     | i16                       | [global]
-u1:28 | Type      | i8      | i8                        | [global]
-u1:29 | Type      | i128    | i128                      | [global]
-u1:30 | Type      | isize   | isize                     | [global]
-u1:31 | Type      | u32     | u32                       | [global]
-u1:32 | Type      | u64     | u64                       | [global]
-u1:33 | Type      | u16     | u16                       | [global]
-u1:34 | Type      | u8      | u8                        | [global]
-u1:35 | Type      | u128    | u128                      | [global]
-u1:36 | Type      | usize   | usize                     | [global]
-u1:37 | Type      | f32     | f32                       | [global]
-u1:38 | Type      | f64     | f64                       | [global]
-u1:39 | Type      | bool    | bool                      | [global]
-u1:40 | Type      | char    | char                      | [global]
-u1:41 | Type      | str     | str                       | [global]
-u1:42 | Module    | main    | main                      | [global]
-u1:43 | File      | main    | main::main                |         
-u1:44 | Impl      | a       | main::main::a             |         
-u1:45 | Function  | b       | main::main::a::b          |         
-u1:46 | Namespace | block_0 | main::main::a::b::block_0 |         
-u1:47 | Impl      | C       | main::main::C             |         
-u1:48 | Function  | e       | main::main::C::e          |         
-u1:49 | Namespace | block_1 | main::main::C::e::block_1 |         
-u1:50 | Function  | foo     | main::main::foo           |         
-u1:51 | Namespace | block_2 | main::main::foo::block_2  |         
+u0:1  | Primitive | i32   | i32                | [global]
+u0:2  | Primitive | i64   | i64                | [global]
+u0:3  | Primitive | i16   | i16                | [global]
+u0:4  | Primitive | i8    | i8                 | [global]
+u0:5  | Primitive | i128  | i128               | [global]
+u0:6  | Primitive | isize | isize              | [global]
+u0:7  | Primitive | u32   | u32                | [global]
+u0:8  | Primitive | u64   | u64                | [global]
+u0:9  | Primitive | u16   | u16                | [global]
+u0:10 | Primitive | u8    | u8                 | [global]
+u0:11 | Primitive | u128  | u128               | [global]
+u0:12 | Primitive | usize | usize              | [global]
+u0:13 | Primitive | f32   | f32                | [global]
+u0:14 | Primitive | f64   | f64                | [global]
+u0:15 | Primitive | bool  | bool               | [global]
+u0:16 | Primitive | char  | char               | [global]
+u0:17 | Primitive | str   | str                | [global]
+u0:18 | Crate     | _c    | _c                 | [global]
+u0:19 | Crate     | crate | _c::crate          |         
+u0:20 | Module    | _m    | _c::_m             |         
+u0:21 | File      | foo   | _c::_m::foo        |         
+u0:22 | Function  | f     | _c::_m::foo::f     |         
+u0:23 | Namespace | g     | _c::_m::foo::g     |         
+u0:24 | Function  | h     | _c::_m::foo::g::h  |         
+u1:25 | Primitive | i32   | i32                | [global]
+u1:26 | Primitive | i64   | i64                | [global]
+u1:27 | Primitive | i16   | i16                | [global]
+u1:28 | Primitive | i8    | i8                 | [global]
+u1:29 | Primitive | i128  | i128               | [global]
+u1:30 | Primitive | isize | isize              | [global]
+u1:31 | Primitive | u32   | u32                | [global]
+u1:32 | Primitive | u64   | u64                | [global]
+u1:33 | Primitive | u16   | u16                | [global]
+u1:34 | Primitive | u8    | u8                 | [global]
+u1:35 | Primitive | u128  | u128               | [global]
+u1:36 | Primitive | usize | usize              | [global]
+u1:37 | Primitive | f32   | f32                | [global]
+u1:38 | Primitive | f64   | f64                | [global]
+u1:39 | Primitive | bool  | bool               | [global]
+u1:40 | Primitive | char  | char               | [global]
+u1:41 | Primitive | str   | str                | [global]
+u1:42 | Crate     | _c    | _c                 | [global]
+u1:43 | Crate     | crate | _c::crate          |         
+u1:44 | Module    | _m    | _c::_m             |         
+u1:45 | File      | main  | _c::_m::main       |         
+u1:46 | Struct    | a     | _c::_m::main::a    |         
+u1:47 | Method    | b     | _c::_m::main::a::b |         
+u1:48 | Struct    | C     | _c::_m::main::C    |         
+u1:49 | Method    | e     | _c::_m::main::C::e |         
+u1:50 | Function  | foo   | _c::_m::main::foo  |         
 
 --- expect:symbol-deps ---
-u0:20 <- [u1:50]
-u0:23 <- [u1:50]
-u1:45 <- [u1:50]
+u1:46 <- [u1:50]
+u1:47 <- [u1:50]
 u1:48 <- [u1:50]
-u1:50 -> [u0:20, u0:23, u1:45, u1:48]
+u1:49 <- [u1:50]
+u1:50 -> [u1:46, u1:47, u1:48, u1:49]
 
 --- expect:block-graph ---
 (root:1 foo
@@ -1570,11 +1587,11 @@ u1:50 -> [u0:20, u0:23, u1:45, u1:48]
 )
 
 --- expect:block-deps ---
-u0:2 <- [u1:11]
-u0:3 <- [u1:11]
 u1:10 <- [u1:11]
-u1:11 -> [u0:2, u0:3, u1:10, u1:7]
+u1:11 -> [u1:10, u1:5, u1:7, u1:8]
+u1:5 <- [u1:11]
 u1:7 <- [u1:11]
+u1:8 <- [u1:11]
 
 
 ===============================================================================
@@ -1586,25 +1603,27 @@ scoped-functions-with-fully-qualified-syntax
 <Dog as Animal>::eat(d);
 
 --- expect:symbols ---
-u0:1  | Type   | i32   | i32        | [global]
-u0:2  | Type   | i64   | i64        | [global]
-u0:3  | Type   | i16   | i16        | [global]
-u0:4  | Type   | i8    | i8         | [global]
-u0:5  | Type   | i128  | i128       | [global]
-u0:6  | Type   | isize | isize      | [global]
-u0:7  | Type   | u32   | u32        | [global]
-u0:8  | Type   | u64   | u64        | [global]
-u0:9  | Type   | u16   | u16        | [global]
-u0:10 | Type   | u8    | u8         | [global]
-u0:11 | Type   | u128  | u128       | [global]
-u0:12 | Type   | usize | usize      | [global]
-u0:13 | Type   | f32   | f32        | [global]
-u0:14 | Type   | f64   | f64        | [global]
-u0:15 | Type   | bool  | bool       | [global]
-u0:16 | Type   | char  | char       | [global]
-u0:17 | Type   | str   | str        | [global]
-u0:18 | Module | main  | main       | [global]
-u0:19 | File   | main  | main::main |         
+u0:1  | Primitive | i32   | i32          | [global]
+u0:2  | Primitive | i64   | i64          | [global]
+u0:3  | Primitive | i16   | i16          | [global]
+u0:4  | Primitive | i8    | i8           | [global]
+u0:5  | Primitive | i128  | i128         | [global]
+u0:6  | Primitive | isize | isize        | [global]
+u0:7  | Primitive | u32   | u32          | [global]
+u0:8  | Primitive | u64   | u64          | [global]
+u0:9  | Primitive | u16   | u16          | [global]
+u0:10 | Primitive | u8    | u8           | [global]
+u0:11 | Primitive | u128  | u128         | [global]
+u0:12 | Primitive | usize | usize        | [global]
+u0:13 | Primitive | f32   | f32          | [global]
+u0:14 | Primitive | f64   | f64          | [global]
+u0:15 | Primitive | bool  | bool         | [global]
+u0:16 | Primitive | char  | char         | [global]
+u0:17 | Primitive | str   | str          | [global]
+u0:18 | Crate     | _c    | _c           | [global]
+u0:19 | Crate     | crate | _c::crate    |         
+u0:20 | Module    | _m    | _c::_m       |         
+u0:21 | File      | main  | _c::_m::main |         
 
 --- expect:symbol-deps ---
 
@@ -1618,25 +1637,27 @@ scoped-functions-with-macros-as-types
 <Token![]>::foo();
 
 --- expect:symbols ---
-u0:1  | Type   | i32   | i32        | [global]
-u0:2  | Type   | i64   | i64        | [global]
-u0:3  | Type   | i16   | i16        | [global]
-u0:4  | Type   | i8    | i8         | [global]
-u0:5  | Type   | i128  | i128       | [global]
-u0:6  | Type   | isize | isize      | [global]
-u0:7  | Type   | u32   | u32        | [global]
-u0:8  | Type   | u64   | u64        | [global]
-u0:9  | Type   | u16   | u16        | [global]
-u0:10 | Type   | u8    | u8         | [global]
-u0:11 | Type   | u128  | u128       | [global]
-u0:12 | Type   | usize | usize      | [global]
-u0:13 | Type   | f32   | f32        | [global]
-u0:14 | Type   | f64   | f64        | [global]
-u0:15 | Type   | bool  | bool       | [global]
-u0:16 | Type   | char  | char       | [global]
-u0:17 | Type   | str   | str        | [global]
-u0:18 | Module | main  | main       | [global]
-u0:19 | File   | main  | main::main |         
+u0:1  | Primitive | i32   | i32          | [global]
+u0:2  | Primitive | i64   | i64          | [global]
+u0:3  | Primitive | i16   | i16          | [global]
+u0:4  | Primitive | i8    | i8           | [global]
+u0:5  | Primitive | i128  | i128         | [global]
+u0:6  | Primitive | isize | isize        | [global]
+u0:7  | Primitive | u32   | u32          | [global]
+u0:8  | Primitive | u64   | u64          | [global]
+u0:9  | Primitive | u16   | u16          | [global]
+u0:10 | Primitive | u8    | u8           | [global]
+u0:11 | Primitive | u128  | u128         | [global]
+u0:12 | Primitive | usize | usize        | [global]
+u0:13 | Primitive | f32   | f32          | [global]
+u0:14 | Primitive | f64   | f64          | [global]
+u0:15 | Primitive | bool  | bool         | [global]
+u0:16 | Primitive | char  | char         | [global]
+u0:17 | Primitive | str   | str          | [global]
+u0:18 | Crate     | _c    | _c           | [global]
+u0:19 | Crate     | crate | _c::crate    |         
+u0:20 | Module    | _m    | _c::_m       |         
+u0:21 | File      | main  | _c::_m::main |         
 
 --- expect:symbol-deps ---
 
@@ -1657,35 +1678,35 @@ pub mod m1 {
 
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                              | [global]
-u0:2  | Type      | i64     | i64                              | [global]
-u0:3  | Type      | i16     | i16                              | [global]
-u0:4  | Type      | i8      | i8                               | [global]
-u0:5  | Type      | i128    | i128                             | [global]
-u0:6  | Type      | isize   | isize                            | [global]
-u0:7  | Type      | u32     | u32                              | [global]
-u0:8  | Type      | u64     | u64                              | [global]
-u0:9  | Type      | u16     | u16                              | [global]
-u0:10 | Type      | u8      | u8                               | [global]
-u0:11 | Type      | u128    | u128                             | [global]
-u0:12 | Type      | usize   | usize                            | [global]
-u0:13 | Type      | f32     | f32                              | [global]
-u0:14 | Type      | f64     | f64                              | [global]
-u0:15 | Type      | bool    | bool                             | [global]
-u0:16 | Type      | char    | char                             | [global]
-u0:17 | Type      | str     | str                              | [global]
-u0:18 | Module    | main    | main                             | [global]
-u0:19 | File      | main    | main::main                       |         
-u0:20 | Function  | foo     | main::main::foo                  |         
-u0:21 | Namespace | block_0 | main::main::foo::block_0         |         
-u0:22 | Namespace | m1      | main::main::m1                   |         
-u0:23 | Namespace | m2      | main::main::m1::m2               |         
-u0:24 | Function  | bar     | main::main::m1::m2::bar          |         
-u0:25 | Namespace | block_1 | main::main::m1::m2::bar::block_1 |         
+u0:1  | Primitive | i32   | i32                       | [global]
+u0:2  | Primitive | i64   | i64                       | [global]
+u0:3  | Primitive | i16   | i16                       | [global]
+u0:4  | Primitive | i8    | i8                        | [global]
+u0:5  | Primitive | i128  | i128                      | [global]
+u0:6  | Primitive | isize | isize                     | [global]
+u0:7  | Primitive | u32   | u32                       | [global]
+u0:8  | Primitive | u64   | u64                       | [global]
+u0:9  | Primitive | u16   | u16                       | [global]
+u0:10 | Primitive | u8    | u8                        | [global]
+u0:11 | Primitive | u128  | u128                      | [global]
+u0:12 | Primitive | usize | usize                     | [global]
+u0:13 | Primitive | f32   | f32                       | [global]
+u0:14 | Primitive | f64   | f64                       | [global]
+u0:15 | Primitive | bool  | bool                      | [global]
+u0:16 | Primitive | char  | char                      | [global]
+u0:17 | Primitive | str   | str                       | [global]
+u0:18 | Crate     | _c    | _c                        | [global]
+u0:19 | Crate     | crate | _c::crate                 |         
+u0:20 | Module    | _m    | _c::_m                    |         
+u0:21 | File      | main  | _c::_m::main              |         
+u0:22 | Function  | foo   | _c::_m::main::foo         |         
+u0:23 | Namespace | m1    | _c::_m::main::m1          |         
+u0:24 | Namespace | m2    | _c::_m::main::m1::m2      |         
+u0:25 | Function  | bar   | _c::_m::main::m1::m2::bar |         
 
 --- expect:symbol-deps ---
-u0:20 <- [u0:24]
-u0:24 -> [u0:20]
+u0:22 <- [u0:25]
+u0:25 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root | main   
@@ -1704,25 +1725,27 @@ std::sizeof::<u32>();
 foo::<8>();
 
 --- expect:symbols ---
-u0:1  | Type   | i32   | i32        | [global]
-u0:2  | Type   | i64   | i64        | [global]
-u0:3  | Type   | i16   | i16        | [global]
-u0:4  | Type   | i8    | i8         | [global]
-u0:5  | Type   | i128  | i128       | [global]
-u0:6  | Type   | isize | isize      | [global]
-u0:7  | Type   | u32   | u32        | [global]
-u0:8  | Type   | u64   | u64        | [global]
-u0:9  | Type   | u16   | u16        | [global]
-u0:10 | Type   | u8    | u8         | [global]
-u0:11 | Type   | u128  | u128       | [global]
-u0:12 | Type   | usize | usize      | [global]
-u0:13 | Type   | f32   | f32        | [global]
-u0:14 | Type   | f64   | f64        | [global]
-u0:15 | Type   | bool  | bool       | [global]
-u0:16 | Type   | char  | char       | [global]
-u0:17 | Type   | str   | str        | [global]
-u0:18 | Module | main  | main       | [global]
-u0:19 | File   | main  | main::main |         
+u0:1  | Primitive | i32   | i32          | [global]
+u0:2  | Primitive | i64   | i64          | [global]
+u0:3  | Primitive | i16   | i16          | [global]
+u0:4  | Primitive | i8    | i8           | [global]
+u0:5  | Primitive | i128  | i128         | [global]
+u0:6  | Primitive | isize | isize        | [global]
+u0:7  | Primitive | u32   | u32          | [global]
+u0:8  | Primitive | u64   | u64          | [global]
+u0:9  | Primitive | u16   | u16          | [global]
+u0:10 | Primitive | u8    | u8           | [global]
+u0:11 | Primitive | u128  | u128         | [global]
+u0:12 | Primitive | usize | usize        | [global]
+u0:13 | Primitive | f32   | f32          | [global]
+u0:14 | Primitive | f64   | f64          | [global]
+u0:15 | Primitive | bool  | bool         | [global]
+u0:16 | Primitive | char  | char         | [global]
+u0:17 | Primitive | str   | str          | [global]
+u0:18 | Crate     | _c    | _c           | [global]
+u0:19 | Crate     | crate | _c::crate    |         
+u0:20 | Module    | _m    | _c::_m       |         
+u0:21 | File      | main  | _c::_m::main |         
 
 --- expect:symbol-deps ---
 
@@ -1741,27 +1764,27 @@ d.map(move |mut e| {
 h(|| -> i { j });
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                 | [global]
-u0:2  | Type      | i64     | i64                 | [global]
-u0:3  | Type      | i16     | i16                 | [global]
-u0:4  | Type      | i8      | i8                  | [global]
-u0:5  | Type      | i128    | i128                | [global]
-u0:6  | Type      | isize   | isize               | [global]
-u0:7  | Type      | u32     | u32                 | [global]
-u0:8  | Type      | u64     | u64                 | [global]
-u0:9  | Type      | u16     | u16                 | [global]
-u0:10 | Type      | u8      | u8                  | [global]
-u0:11 | Type      | u128    | u128                | [global]
-u0:12 | Type      | usize   | usize               | [global]
-u0:13 | Type      | f32     | f32                 | [global]
-u0:14 | Type      | f64     | f64                 | [global]
-u0:15 | Type      | bool    | bool                | [global]
-u0:16 | Type      | char    | char                | [global]
-u0:17 | Type      | str     | str                 | [global]
-u0:18 | Module    | main    | main                | [global]
-u0:19 | File      | main    | main::main          |         
-u0:20 | Namespace | block_0 | main::main::block_0 |         
-u0:21 | Namespace | block_1 | main::main::block_1 |         
+u0:1  | Primitive | i32   | i32          | [global]
+u0:2  | Primitive | i64   | i64          | [global]
+u0:3  | Primitive | i16   | i16          | [global]
+u0:4  | Primitive | i8    | i8           | [global]
+u0:5  | Primitive | i128  | i128         | [global]
+u0:6  | Primitive | isize | isize        | [global]
+u0:7  | Primitive | u32   | u32          | [global]
+u0:8  | Primitive | u64   | u64          | [global]
+u0:9  | Primitive | u16   | u16          | [global]
+u0:10 | Primitive | u8    | u8           | [global]
+u0:11 | Primitive | u128  | u128         | [global]
+u0:12 | Primitive | usize | usize        | [global]
+u0:13 | Primitive | f32   | f32          | [global]
+u0:14 | Primitive | f64   | f64          | [global]
+u0:15 | Primitive | bool  | bool         | [global]
+u0:16 | Primitive | char  | char         | [global]
+u0:17 | Primitive | str   | str          | [global]
+u0:18 | Crate     | _c    | _c           | [global]
+u0:19 | Crate     | crate | _c::crate    |         
+u0:20 | Module    | _m    | _c::_m       |         
+u0:21 | File      | main  | _c::_m::main |         
 
 --- expect:symbol-deps ---
 
@@ -1775,30 +1798,32 @@ closures-with-typed-parameteres
 a.map(|b: usize| b.push(c));
 
 --- expect:symbols ---
-u0:1  | Type     | i32   | i32           | [global]
-u0:2  | Type     | i64   | i64           | [global]
-u0:3  | Type     | i16   | i16           | [global]
-u0:4  | Type     | i8    | i8            | [global]
-u0:5  | Type     | i128  | i128          | [global]
-u0:6  | Type     | isize | isize         | [global]
-u0:7  | Type     | u32   | u32           | [global]
-u0:8  | Type     | u64   | u64           | [global]
-u0:9  | Type     | u16   | u16           | [global]
-u0:10 | Type     | u8    | u8            | [global]
-u0:11 | Type     | u128  | u128          | [global]
-u0:12 | Type     | usize | usize         | [global]
-u0:13 | Type     | f32   | f32           | [global]
-u0:14 | Type     | f64   | f64           | [global]
-u0:15 | Type     | bool  | bool          | [global]
-u0:16 | Type     | char  | char          | [global]
-u0:17 | Type     | str   | str           | [global]
-u0:18 | Module   | main  | main          | [global]
-u0:19 | File     | main  | main::main    |         
-u0:20 | Variable | b     | main::main::b |         
+u0:1  | Primitive | i32   | i32             | [global]
+u0:2  | Primitive | i64   | i64             | [global]
+u0:3  | Primitive | i16   | i16             | [global]
+u0:4  | Primitive | i8    | i8              | [global]
+u0:5  | Primitive | i128  | i128            | [global]
+u0:6  | Primitive | isize | isize           | [global]
+u0:7  | Primitive | u32   | u32             | [global]
+u0:8  | Primitive | u64   | u64             | [global]
+u0:9  | Primitive | u16   | u16             | [global]
+u0:10 | Primitive | u8    | u8              | [global]
+u0:11 | Primitive | u128  | u128            | [global]
+u0:12 | Primitive | usize | usize           | [global]
+u0:13 | Primitive | f32   | f32             | [global]
+u0:14 | Primitive | f64   | f64             | [global]
+u0:15 | Primitive | bool  | bool            | [global]
+u0:16 | Primitive | char  | char            | [global]
+u0:17 | Primitive | str   | str             | [global]
+u0:18 | Crate     | _c    | _c              | [global]
+u0:19 | Crate     | crate | _c::crate       |         
+u0:20 | Module    | _m    | _c::_m          |         
+u0:21 | File      | main  | _c::_m::main    |         
+u0:22 | Variable  | b     | _c::_m::main::b |         
 
 --- expect:symbol-deps ---
-u0:12 <- [u0:20]
-u0:20 -> [u0:12]
+u0:12 <- [u0:22]
+u0:22 -> [u0:12]
 
 
 ===============================================================================
@@ -1816,27 +1841,27 @@ move || {
 };
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                          | [global]
-u0:2  | Type      | i64     | i64                          | [global]
-u0:3  | Type      | i16     | i16                          | [global]
-u0:4  | Type      | i8      | i8                           | [global]
-u0:5  | Type      | i128    | i128                         | [global]
-u0:6  | Type      | isize   | isize                        | [global]
-u0:7  | Type      | u32     | u32                          | [global]
-u0:8  | Type      | u64     | u64                          | [global]
-u0:9  | Type      | u16     | u16                          | [global]
-u0:10 | Type      | u8      | u8                           | [global]
-u0:11 | Type      | u128    | u128                         | [global]
-u0:12 | Type      | usize   | usize                        | [global]
-u0:13 | Type      | f32     | f32                          | [global]
-u0:14 | Type      | f64     | f64                          | [global]
-u0:15 | Type      | bool    | bool                         | [global]
-u0:16 | Type      | char    | char                         | [global]
-u0:17 | Type      | str     | str                          | [global]
-u0:18 | Module    | main    | main                         | [global]
-u0:19 | File      | main    | main::main                   |         
-u0:20 | Namespace | block_0 | main::main::block_0          |         
-u0:21 | Namespace | block_1 | main::main::block_0::block_1 |         
+u0:1  | Primitive | i32   | i32          | [global]
+u0:2  | Primitive | i64   | i64          | [global]
+u0:3  | Primitive | i16   | i16          | [global]
+u0:4  | Primitive | i8    | i8           | [global]
+u0:5  | Primitive | i128  | i128         | [global]
+u0:6  | Primitive | isize | isize        | [global]
+u0:7  | Primitive | u32   | u32          | [global]
+u0:8  | Primitive | u64   | u64          | [global]
+u0:9  | Primitive | u16   | u16          | [global]
+u0:10 | Primitive | u8    | u8           | [global]
+u0:11 | Primitive | u128  | u128         | [global]
+u0:12 | Primitive | usize | usize        | [global]
+u0:13 | Primitive | f32   | f32          | [global]
+u0:14 | Primitive | f64   | f64          | [global]
+u0:15 | Primitive | bool  | bool         | [global]
+u0:16 | Primitive | char  | char         | [global]
+u0:17 | Primitive | str   | str          | [global]
+u0:18 | Crate     | _c    | _c           | [global]
+u0:19 | Crate     | crate | _c::crate    |         
+u0:20 | Module    | _m    | _c::_m       |         
+u0:21 | File      | main  | _c::_m::main |         
 
 --- expect:symbol-deps ---
 
@@ -1851,29 +1876,29 @@ fn foo() {}
 const a : A = unsafe { foo() };
 
 --- expect:symbols ---
-u0:1  | Type      | i32     | i32                      | [global]
-u0:2  | Type      | i64     | i64                      | [global]
-u0:3  | Type      | i16     | i16                      | [global]
-u0:4  | Type      | i8      | i8                       | [global]
-u0:5  | Type      | i128    | i128                     | [global]
-u0:6  | Type      | isize   | isize                    | [global]
-u0:7  | Type      | u32     | u32                      | [global]
-u0:8  | Type      | u64     | u64                      | [global]
-u0:9  | Type      | u16     | u16                      | [global]
-u0:10 | Type      | u8      | u8                       | [global]
-u0:11 | Type      | u128    | u128                     | [global]
-u0:12 | Type      | usize   | usize                    | [global]
-u0:13 | Type      | f32     | f32                      | [global]
-u0:14 | Type      | f64     | f64                      | [global]
-u0:15 | Type      | bool    | bool                     | [global]
-u0:16 | Type      | char    | char                     | [global]
-u0:17 | Type      | str     | str                      | [global]
-u0:18 | Module    | main    | main                     | [global]
-u0:19 | File      | main    | main::main               |         
-u0:20 | Function  | foo     | main::main::foo          |         
-u0:21 | Namespace | block_0 | main::main::foo::block_0 |         
-u0:22 | Const     | a       | main::main::a            |         
-u0:23 | Namespace | block_1 | main::main::block_1      |         
+u0:1  | Primitive | i32   | i32               | [global]
+u0:2  | Primitive | i64   | i64               | [global]
+u0:3  | Primitive | i16   | i16               | [global]
+u0:4  | Primitive | i8    | i8                | [global]
+u0:5  | Primitive | i128  | i128              | [global]
+u0:6  | Primitive | isize | isize             | [global]
+u0:7  | Primitive | u32   | u32               | [global]
+u0:8  | Primitive | u64   | u64               | [global]
+u0:9  | Primitive | u16   | u16               | [global]
+u0:10 | Primitive | u8    | u8                | [global]
+u0:11 | Primitive | u128  | u128              | [global]
+u0:12 | Primitive | usize | usize             | [global]
+u0:13 | Primitive | f32   | f32               | [global]
+u0:14 | Primitive | f64   | f64               | [global]
+u0:15 | Primitive | bool  | bool              | [global]
+u0:16 | Primitive | char  | char              | [global]
+u0:17 | Primitive | str   | str               | [global]
+u0:18 | Crate     | _c    | _c                | [global]
+u0:19 | Crate     | crate | _c::crate         |         
+u0:20 | Module    | _m    | _c::_m            |         
+u0:21 | File      | main  | _c::_m::main      |         
+u0:22 | Function  | foo   | _c::_m::main::foo |         
+u0:23 | Const     | a     | _c::_m::main::a   |         
 
 --- expect:symbol-deps ---
 
@@ -1889,35 +1914,32 @@ if *x < 0 { const { &4i32.pow(4) } } else { x }
 let three_ranges = [const { (0..=5).into_inner() }; 3];
 
 --- expect:symbols ---
-u0:1  | Type      | i32          | i32                          | [global]
-u0:2  | Type      | i64          | i64                          | [global]
-u0:3  | Type      | i16          | i16                          | [global]
-u0:4  | Type      | i8           | i8                           | [global]
-u0:5  | Type      | i128         | i128                         | [global]
-u0:6  | Type      | isize        | isize                        | [global]
-u0:7  | Type      | u32          | u32                          | [global]
-u0:8  | Type      | u64          | u64                          | [global]
-u0:9  | Type      | u16          | u16                          | [global]
-u0:10 | Type      | u8           | u8                           | [global]
-u0:11 | Type      | u128         | u128                         | [global]
-u0:12 | Type      | usize        | usize                        | [global]
-u0:13 | Type      | f32          | f32                          | [global]
-u0:14 | Type      | f64          | f64                          | [global]
-u0:15 | Type      | bool         | bool                         | [global]
-u0:16 | Type      | char         | char                         | [global]
-u0:17 | Type      | str          | str                          | [global]
-u0:18 | Module    | main         | main                         | [global]
-u0:19 | File      | main         | main::main                   |         
-u0:20 | Namespace | block_0      | main::main::block_0          |         
-u0:21 | Namespace | block_1      | main::main::block_1          |         
-u0:22 | Namespace | block_2      | main::main::block_1::block_2 |         
-u0:23 | Namespace | block_3      | main::main::block_3          |         
-u0:24 | Variable  | three_ranges | main::main::three_ranges     |         
-u0:25 | Namespace | block_4      | main::main::block_4          |         
+u0:1  | Primitive | i32          | i32                        | [global]
+u0:2  | Primitive | i64          | i64                        | [global]
+u0:3  | Primitive | i16          | i16                        | [global]
+u0:4  | Primitive | i8           | i8                         | [global]
+u0:5  | Primitive | i128         | i128                       | [global]
+u0:6  | Primitive | isize        | isize                      | [global]
+u0:7  | Primitive | u32          | u32                        | [global]
+u0:8  | Primitive | u64          | u64                        | [global]
+u0:9  | Primitive | u16          | u16                        | [global]
+u0:10 | Primitive | u8           | u8                         | [global]
+u0:11 | Primitive | u128         | u128                       | [global]
+u0:12 | Primitive | usize        | usize                      | [global]
+u0:13 | Primitive | f32          | f32                        | [global]
+u0:14 | Primitive | f64          | f64                        | [global]
+u0:15 | Primitive | bool         | bool                       | [global]
+u0:16 | Primitive | char         | char                       | [global]
+u0:17 | Primitive | str          | str                        | [global]
+u0:18 | Crate     | _c           | _c                         | [global]
+u0:19 | Crate     | crate        | _c::crate                  |         
+u0:20 | Module    | _m           | _c::_m                     |         
+u0:21 | File      | main         | _c::_m::main               |         
+u0:22 | Variable  | three_ranges | _c::_m::main::three_ranges |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:24]
-u0:24 -> [u0:1]
+u0:1 <- [u0:22]
+u0:22 -> [u0:1]
 
 
 ===============================================================================
@@ -1930,25 +1952,27 @@ some_call(&raw);
 let a = &raw const b;
 
 --- expect:symbols ---
-u0:1  | Type     | i32   | i32           | [global]
-u0:2  | Type     | i64   | i64           | [global]
-u0:3  | Type     | i16   | i16           | [global]
-u0:4  | Type     | i8    | i8            | [global]
-u0:5  | Type     | i128  | i128          | [global]
-u0:6  | Type     | isize | isize         | [global]
-u0:7  | Type     | u32   | u32           | [global]
-u0:8  | Type     | u64   | u64           | [global]
-u0:9  | Type     | u16   | u16           | [global]
-u0:10 | Type     | u8    | u8            | [global]
-u0:11 | Type     | u128  | u128          | [global]
-u0:12 | Type     | usize | usize         | [global]
-u0:13 | Type     | f32   | f32           | [global]
-u0:14 | Type     | f64   | f64           | [global]
-u0:15 | Type     | bool  | bool          | [global]
-u0:16 | Type     | char  | char          | [global]
-u0:17 | Type     | str   | str           | [global]
-u0:18 | Module   | main  | main          | [global]
-u0:19 | File     | main  | main::main    |         
-u0:20 | Variable | a     | main::main::a |         
+u0:1  | Primitive | i32   | i32             | [global]
+u0:2  | Primitive | i64   | i64             | [global]
+u0:3  | Primitive | i16   | i16             | [global]
+u0:4  | Primitive | i8    | i8              | [global]
+u0:5  | Primitive | i128  | i128            | [global]
+u0:6  | Primitive | isize | isize           | [global]
+u0:7  | Primitive | u32   | u32             | [global]
+u0:8  | Primitive | u64   | u64             | [global]
+u0:9  | Primitive | u16   | u16             | [global]
+u0:10 | Primitive | u8    | u8              | [global]
+u0:11 | Primitive | u128  | u128            | [global]
+u0:12 | Primitive | usize | usize           | [global]
+u0:13 | Primitive | f32   | f32             | [global]
+u0:14 | Primitive | f64   | f64             | [global]
+u0:15 | Primitive | bool  | bool            | [global]
+u0:16 | Primitive | char  | char            | [global]
+u0:17 | Primitive | str   | str             | [global]
+u0:18 | Crate     | _c    | _c              | [global]
+u0:19 | Crate     | crate | _c::crate       |         
+u0:20 | Module    | _m    | _c::_m          |         
+u0:21 | File      | main  | _c::_m::main    |         
+u0:22 | Variable  | a     | _c::_m::main::a |         
 
 --- expect:symbol-deps ---

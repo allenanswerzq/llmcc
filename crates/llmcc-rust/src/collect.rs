@@ -41,7 +41,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
         let ident = node.child_identifier_by_field(*unit, field_id)?;
-        scopes.lookup_or_insert(&ident.name, node, kind)
+        let symbol = scopes.lookup_or_insert(&ident.name, node, kind)?;
+        ident.set_symbol(symbol);
+        Some(symbol)
     }
 
     /// Find all identifiers in a pattern node (recursive)
@@ -88,6 +90,24 @@ impl<'tcx> CollectorVisitor<'tcx> {
             return;
         }
 
+        // Shorthand struct fields (e.g. `{ foo }`) wrap the real identifier, so
+        // resolve and bind them manually instead of recursing into a missing child.
+        if node.kind_id() == LangRust::field_pattern {
+            if let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name) {
+                let name = ident.name.to_string();
+                let ident_node = unit.hir_node(ident.id());
+                let sym = if kind == SymKind::Variable {
+                    scopes.lookup_or_insert_chained(&name, &ident_node, kind)
+                } else {
+                    scopes.lookup_or_insert(&name, &ident_node, kind)
+                };
+                if let Some(sym) = sym {
+                    ident.set_symbol(sym);
+                    symbols.push(sym);
+                }
+            }
+        }
+
         if let Some(ident) = node.as_ident() {
             let name = ident.name.to_string();
             let sym = if kind == SymKind::Variable {
@@ -103,6 +123,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
         for child_id in node.children() {
             let child = unit.hir_node(*child_id);
+            if child.field_id() == LangRust::field_type {
+                continue;
+            }
             Self::collect_pattern_identifiers_impl(unit, &child, scopes, kind, symbols);
         }
     }
@@ -1034,6 +1057,28 @@ enum Wrapper {
         assert_dependencies(
             &[source],
             &[("Wrapper", SymKind::Enum, &["_c::_m::source_0::Foo"])],
+        );
+    }
+
+    #[test]
+    fn enum_trait_bound_dependency() {
+        let source = r#"
+struct Tree;
+struct Item;
+
+pub enum Node<T: Item> {
+    Internal {
+        children: Vec<Tree<T>>,
+        height: u16,
+    },
+    Leaf {
+        value: T,
+    }
+}
+"#;
+        assert_dependencies(
+            &[source],
+            &[("Node", SymKind::Enum, &["_c::_m::source_0::Item"])],
         );
     }
 

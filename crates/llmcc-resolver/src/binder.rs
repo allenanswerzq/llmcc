@@ -198,10 +198,13 @@ impl<'a> BinderScopes<'a> {
         let scope = self.unit.get_scope(scope_id);
         let name_key = self.unit.interner().intern(member_name);
         let symbols = scope.lookup_symbols(name_key)?;
-        symbols
-            .into_iter()
-            .rev()
-            .find(|symbol| kind_filter.is_none_or(|kind| symbol.kind() == kind))
+        symbols.into_iter().rev().find(|symbol| match kind_filter {
+            None => true,
+            Some(SymKind::Function) => {
+                matches!(symbol.kind(), SymKind::Function | SymKind::Method)
+            }
+            Some(expected) => symbol.kind() == expected,
+        })
     }
 }
 
