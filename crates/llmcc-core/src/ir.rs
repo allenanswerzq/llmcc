@@ -356,7 +356,13 @@ impl<'hir> HirScope<'hir> {
 
     /// Get the scope reference if it has been set
     pub fn scope(&self) -> &'hir Scope<'hir> {
-        self.scope.read().expect("scope must be set")
+        self.scope
+            .read()
+            .unwrap_or_else(|| panic!("scope must be set for HirScope {}", self.base.id))
+    }
+
+    pub fn opt_scope(&self) -> Option<&'hir Scope<'hir>> {
+        *self.scope.read()
     }
 
     pub fn set_ident(&self, ident: &'hir HirIdent<'hir>) {

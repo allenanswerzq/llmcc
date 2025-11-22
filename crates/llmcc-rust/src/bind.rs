@@ -8,7 +8,7 @@ use crate::token::AstVisitorRust;
 use crate::token::LangRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
-use crate::expr::ExprResolver;
+use crate::resolve::ExprResolver;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
@@ -57,6 +57,108 @@ impl<'tcx> BinderVisitor<'tcx> {
         {
             // namespace owner to curent relationship
             owner.add_dependency(symbol);
+        }
+    }
+
+    /// Resolve through alias chains to get the canonical type symbol.
+    fn resolve_canonical_type<'a>(unit: &CompileUnit<'a>, mut symbol: &'a Symbol) -> &'a Symbol {
+        let mut depth = 0;
+        while depth < 8 {
+            let Some(target_id) = symbol.type_of() else {
+                break;
+            };
+            let Some(next) = unit.opt_get_symbol(target_id) else {
+                break;
+            };
+            if next.id() == symbol.id() {
+                break;
+            }
+            symbol = next;
+            depth += 1;
+        }
+        symbol
+    }
+
+    fn lookup_field_type<'a>(
+        unit: &CompileUnit<'a>,
+        owner: &'a Symbol,
+        field_name: &str,
+    ) -> Option<&'a Symbol> {
+        let owner = Self::resolve_canonical_type(unit, owner);
+        let scope_id = owner.opt_scope()?;
+        let scope = unit.cc.get_scope(scope_id);
+        let field_key = unit.cc.interner.intern(field_name);
+        let field_symbol = scope.lookup_symbols(field_key)?.last().copied()?;
+        field_symbol
+            .type_of()
+            .and_then(|ty_id| unit.opt_get_symbol(ty_id))
+    }
+
+    /// Bind a pattern (simple identifier or struct pattern) to a type
+    fn bind_pattern_to_type(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        pattern: &HirNode<'tcx>,
+        ty: &'tcx Symbol,
+        scopes: &BinderScopes<'tcx>,
+    ) {
+        if matches!(
+            pattern.kind_id(),
+            LangRust::type_identifier | LangRust::field_identifier
+        ) {
+            return;
+        }
+
+        // Try simple identifier
+        if let Some(ident) = pattern.as_ident() {
+            if let Some(sym) = ident.opt_symbol() {
+                sym.set_type_of(ty.id());
+                sym.add_dependency(ty);
+            }
+            return;
+        }
+
+        if let Some(field_ident) = pattern.child_identifier_by_field(*unit, LangRust::field_name) {
+            if let Some(field_ty) = Self::lookup_field_type(unit, ty, &field_ident.name) {
+                if let Some(subpattern) = pattern.child_by_field(*unit, LangRust::field_pattern) {
+                    self.bind_pattern_to_type(unit, &subpattern, field_ty, scopes);
+                } else if let Some(sym) = field_ident.opt_symbol() {
+                    sym.set_type_of(field_ty.id());
+                    sym.add_dependency(field_ty);
+                }
+                return;
+            }
+        }
+
+        if let Some(subpattern) = pattern.child_by_field(*unit, LangRust::field_pattern) {
+            self.bind_pattern_to_type(unit, &subpattern, ty, scopes);
+            return;
+        }
+
+        for child in pattern.children_nodes(unit) {
+            self.bind_pattern_to_type(unit, &child, ty, scopes);
+        }
+    }
+    /// Collect all identifiers from a pattern node for binding
+    fn collect_pattern_identifiers(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        identifiers: &mut Vec<&'tcx llmcc_core::ir::HirIdent<'tcx>>,
+    ) {
+        // Skip type identifiers and field identifiers
+        if matches!(
+            node.kind_id(),
+            LangRust::type_identifier | LangRust::field_identifier
+        ) {
+            return;
+        }
+
+        if let Some(ident) = node.as_ident() {
+            identifiers.push(ident);
+        }
+
+        for child in node.children_nodes(unit) {
+            Self::collect_pattern_identifiers(unit, &child, identifiers);
         }
     }
 }
@@ -206,8 +308,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(trait_sym) = trait_ident.opt_symbol()
             {
                 let target_scope = unit.cc.get_scope(target_sym.scope());
-                let impl_scope = sn.scope();
-                target_scope.add_parent(impl_scope);
+                let trait_scope = unit.cc.get_scope(trait_sym.scope());
+                target_scope.add_parent(trait_scope);
                 target_sym.add_dependency(trait_sym);
             }
         }
@@ -245,6 +347,16 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        // Get the macro name from the macro_invocation
+        if let Some(macro_node) = node.child_by_field(*unit, LangRust::field_macro)
+            && let Some(sym) =
+                ExprResolver::new(unit, scopes).resolve_expression_symbol(&macro_node, parent)
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            ns.add_dependency(sym);
+        }
     }
 
     fn visit_const_item(
@@ -453,25 +565,30 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        let ty = if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-            ExprResolver::new(unit, scopes).infer_type_from_expr(&type_node)
-        } else if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
-            ExprResolver::new(unit, scopes).infer_type_from_expr(&value_node)
-        } else {
-            None
-        };
+        let (ty, type_args) =
+            if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                let mut resolver = ExprResolver::new(unit, scopes);
+                let ty = resolver.infer_type_from_expr(&type_node);
+                let type_args = resolver.collect_type_argument_symbols(&type_node);
+                (ty, type_args)
+            } else if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
+                let ty = ExprResolver::new(unit, scopes).infer_type_from_expr(&value_node);
+                (ty, Vec::new())
+            } else {
+                (None, Vec::new())
+            };
 
         if let Some(ty) = ty {
-            if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern)
-                && let Some(ident) = pattern.find_identifier(*unit)
-                && let Some(sym) = ident.opt_symbol()
-            {
-                sym.set_type_of(ty.id());
-                sym.add_dependency(ty);
+            if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
+                self.bind_pattern_to_type(unit, &pattern, ty, scopes);
             }
 
-            if let Some(owner) = parent {
-                owner.add_dependency(ty);
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ty);
+                // Also add dependencies on type arguments to the parent
+                for arg_sym in &type_args {
+                    ns.add_dependency(arg_sym);
+                }
             }
         }
     }
@@ -871,14 +988,24 @@ fn run() {
     struct Point { x: i32, y: i32 }
     fn run() {
         let p = Point { x: 1, y: 2 };
-        let Point { a, b } = p;
+        let Point { x, y } = p;
     }
     "#;
-        // Note: Current implementation might not correctly infer types inside patterns yet,
-        // but we add this test to cover the pattern code path.
-        // For now, we might expect it to NOT infer 'i32' if the logic is naive,
-        // or infer 'Point' if it naively assigns the RHS type to the first identifier found.
-        // Let's check what happens.
-        assert_symbol_type(&[source], "a", SymKind::Variable, Some("i32"));
+        // Test that struct pattern destructuring correctly infers field types
+        assert_symbol_type(&[source], "p", SymKind::Variable, Some("Point"));
+        assert_symbol_type(&[source], "x", SymKind::Variable, Some("i32"));
+        assert_symbol_type(&[source], "y", SymKind::Variable, Some("i32"));
+    }
+
+    #[test]
+    fn test_let_declaration_struct_pattern_with_alias() {
+        let source = r#"
+    struct Point { x: i32, y: i32 }
+    fn run() {
+        let Point { x: px, y: py } = Point { x: 1, y: 2 };
+    }
+    "#;
+        assert_symbol_type(&[source], "px", SymKind::Variable, Some("i32"));
+        assert_symbol_type(&[source], "py", SymKind::Variable, Some("i32"));
     }
 }

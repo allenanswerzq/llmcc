@@ -3,9 +3,10 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_resolver::{CollectorScopes, ResolverOption};
+use llmcc_resolver::{BinderScopes, CollectorScopes, ResolverOption};
 
 use crate::LangRust;
+use crate::resolve::ExprResolver;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
@@ -15,6 +16,15 @@ pub struct CollectorVisitor<'tcx> {
 }
 
 impl<'tcx> CollectorVisitor<'tcx> {
+    const TYPE_DEPENDENCY_KINDS: &'static [SymKind] = &[
+        SymKind::Struct,
+        SymKind::Enum,
+        SymKind::Trait,
+        SymKind::TypeAlias,
+        SymKind::TypeParameter,
+        SymKind::Primitive,
+    ];
+
     fn new() -> Self {
         Self {
             phantom: std::marker::PhantomData,
@@ -103,6 +113,89 @@ impl<'tcx> CollectorVisitor<'tcx> {
             let child = unit.hir_node(*child_id);
             Self::collect_pattern_identifiers_impl(unit, &child, scopes, kind, symbols);
         }
+    }
+
+    /// Collect type dependencies from a type expression
+    /// This traverses the type and its type arguments, adding all type identifiers as dependencies
+    fn collect_type_dependencies(
+        unit: &CompileUnit<'tcx>,
+        type_node: &HirNode<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+        symbol: Option<&Symbol>,
+    ) {
+        Self::collect_type_dependencies_impl(unit, type_node, scopes, symbol);
+    }
+
+    /// Recursive worker for [`collect_type_dependencies`]
+    fn collect_type_dependencies_impl(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+        symbol: Option<&Symbol>,
+    ) {
+        // Handle type_identifier nodes
+        if node.kind_id() == LangRust::type_identifier {
+            if let Some(ident) = node.as_ident() {
+                if let Some(sym) = scopes
+                    .lookup_symbol_with(
+                        &ident.name,
+                        Some(Self::TYPE_DEPENDENCY_KINDS.to_vec()),
+                        None,
+                        None,
+                    )
+                    .or_else(|| ident.opt_symbol())
+                {
+                    ident.set_symbol(sym);
+                    if let Some(target_sym) = symbol {
+                        target_sym.add_dependency(sym);
+                    }
+                }
+            }
+            return;
+        }
+
+        // Recurse into generic type arguments and other type expressions
+        for child_id in node.children() {
+            let child = unit.hir_node(*child_id);
+            Self::collect_type_dependencies_impl(unit, &child, scopes, symbol);
+        }
+    }
+
+    fn mirror_binder_scopes(
+        unit: &CompileUnit<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+    ) -> BinderScopes<'tcx> {
+        let mut binder = BinderScopes::new(*unit, scopes.globals());
+        for scope in scopes.scopes().iter().into_iter().skip(1) {
+            binder.scopes().push(scope);
+        }
+        binder
+    }
+
+    fn resolve_path_symbol(
+        unit: &CompileUnit<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+        path_node: &HirNode<'tcx>,
+        kind_filter: &[SymKind],
+    ) -> Option<&'tcx Symbol> {
+        let mut binder = Self::mirror_binder_scopes(unit, scopes);
+        let mut resolver = ExprResolver::new(unit, &mut binder);
+
+        if path_node.kind_id() == LangRust::scoped_identifier
+            || path_node.kind_id() == LangRust::scoped_type_identifier
+        {
+            if let Some(symbol) = resolver.resolve_scoped_identifier_type(path_node, None)
+                && kind_filter.iter().any(|kind| symbol.kind() == *kind)
+            {
+                return Some(symbol);
+            }
+        }
+
+        if let Some(ident) = path_node.find_identifier(*unit) {
+            return binder.lookup_symbol_with(&ident.name, Some(kind_filter.to_vec()), None, None);
+        }
+
+        None
     }
 
     fn check_visibility(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> (bool, bool) {
@@ -303,17 +396,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = self.declare_symbol_from_field(
+        self.visit_scoped_named(
             unit,
             node,
             scopes,
+            namespace,
+            parent,
             SymKind::Function,
             LangRust::field_name,
-        ) {
-            self.visit_children(unit, node, scopes, namespace, Some(symbol));
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        );
     }
 
     fn visit_struct_item(
@@ -384,21 +475,28 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             return;
         };
 
-        // Extract the type name (e.g., "foo::Bar")
-        if let Some(target_ident) = node.child_identifier_by_field(*unit, LangRust::field_type) {
-            // Extract the short name (e.g., "Bar")
-            // Note: split('::').last() gets the item name.
-            let target_name = target_ident.name.split("::").last().unwrap();
+        if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
+            if let Some(symbol) =
+                Self::resolve_path_symbol(unit, scopes, &trait_node, &[SymKind::Trait])
+            {
+                if let Some(ident) = trait_node.find_identifier(*unit) {
+                    ident.set_symbol(symbol);
+                }
+            }
+        }
 
-            // Lookup for the struct this impl block is target for
-            if let Some(symbol) = scopes.lookup_symbol_with(
-                target_name,
-                Some(vec![SymKind::Struct, SymKind::Enum]),
-                None,
-                None,
+        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+            if let Some(symbol) = Self::resolve_path_symbol(
+                unit,
+                scopes,
+                &type_node,
+                &[SymKind::Struct, SymKind::Enum],
             ) {
+                if let Some(target_ident) = type_node.find_identifier(*unit) {
+                    target_ident.set_symbol(symbol);
+                }
+
                 let scope_id = symbol.scope();
-                // NOTE: the impl and the define(struct/enum) reuse the same scope(namespace)
                 symbol.add_defining(node.id());
                 let scope = unit.cc.get_scope(scope_id);
                 sn.set_scope(scope);
@@ -485,6 +583,46 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    fn visit_type_identifier(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        let ident = node.as_ident().unwrap();
+        if let Some(symbol) = scopes.lookup_symbol_with(
+            &ident.name,
+            Some(vec![
+                SymKind::Struct,
+                SymKind::Enum,
+                SymKind::Trait,
+                SymKind::Function,
+                SymKind::TypeAlias,
+            ]),
+            None,
+            None,
+        ) {
+            ident.set_symbol(symbol);
+            return;
+        }
+
+        if ident.name == "Self" {
+            if let Some(symbol) = scopes.scopes().iter().into_iter().rev().find_map(|scope| {
+                scope.opt_symbol().and_then(|sym| {
+                    if matches!(sym.kind(), SymKind::Struct | SymKind::Enum | SymKind::Trait) {
+                        Some(sym)
+                    } else {
+                        None
+                    }
+                })
+            }) {
+                ident.set_symbol(symbol);
+            }
+        }
+    }
+
     fn visit_type_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -529,7 +667,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.declare_symbol_from_field(unit, node, scopes, SymKind::Field, LangRust::field_name);
+        if let Some(field_sym) =
+            self.declare_symbol_from_field(unit, node, scopes, SymKind::Field, LangRust::field_name)
+        {
+            // Collect dependencies on the field's type
+            if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(field_sym));
+
+                // Also add type dependencies to the parent (the struct)
+                if let Some(ns) = namespace.opt_symbol() {
+                    Self::collect_type_dependencies(unit, &type_node, scopes, Some(ns));
+                }
+            }
+        }
+
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -550,6 +701,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::EnumVariant,
             LangRust::field_name,
         );
+
+        if let Some(enum_sym) = namespace.opt_symbol()
+            && let Some(body_node) = node.child_by_field(*unit, LangRust::field_body)
+        {
+            Self::collect_type_dependencies(unit, &body_node, scopes, Some(enum_sym));
+        }
     }
 
     fn visit_parameter(
@@ -581,8 +738,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        let mut declared_symbols = Vec::new();
         if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
-            Self::collect_pattern_identifiers(unit, &pattern, scopes, SymKind::Variable);
+            declared_symbols =
+                Self::collect_pattern_identifiers(unit, &pattern, scopes, SymKind::Variable);
+        }
+
+        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+            for symbol in &declared_symbols {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(symbol));
+            }
+
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(ns));
+            }
         }
 
         self.visit_children(unit, node, scopes, namespace, parent);

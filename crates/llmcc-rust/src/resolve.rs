@@ -68,20 +68,12 @@ pub fn is_identifier_kind(kind_id: u16) -> bool {
 
 pub struct ExprResolver<'a, 'tcx> {
     pub unit: &'a CompileUnit<'tcx>,
-    pub scopes: &'a mut BinderScopes<'tcx>,
+    pub scopes: &'a BinderScopes<'tcx>,
 }
 
 impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
-    pub fn new(unit: &'a CompileUnit<'tcx>, scopes: &'a mut BinderScopes<'tcx>) -> Self {
+    pub fn new(unit: &'a CompileUnit<'tcx>, scopes: &'a BinderScopes<'tcx>) -> Self {
         Self { unit, scopes }
-    }
-
-    pub fn with<R, F>(unit: &'a CompileUnit<'tcx>, scopes: &'a mut BinderScopes<'tcx>, f: F) -> R
-    where
-        F: FnOnce(&mut ExprResolver<'a, 'tcx>) -> R,
-    {
-        let mut inferrer = ExprResolver::new(unit, scopes);
-        f(&mut inferrer)
     }
 
     pub fn normalize_identifier(name: &str) -> String {
@@ -109,21 +101,6 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         Some(self.unit.hir_node(*child_id))
     }
 
-    pub fn symbol_from_field(&self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
-        if let Some(ident) = node.as_ident() {
-            if let Some(existing) = self.scopes.lookup_symbol(&ident.name) {
-                return Some(existing);
-            }
-            return ident.opt_symbol();
-        }
-
-        let ident = node.child_identifier_by_field(*self.unit, field_id)?;
-        if let Some(existing) = self.scopes.lookup_symbol(&ident.name) {
-            return Some(existing);
-        }
-        ident.opt_symbol()
-    }
-
     pub fn lookup_callable_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
         self.scopes.lookup_symbol_with(
             name,
@@ -131,15 +108,6 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             None,
             None,
         )
-    }
-
-    pub fn resolve_macro_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let macro_node = node.child_by_field(*self.unit, LangRust::field_macro)?;
-        if macro_node.kind_id() == LangRust::scoped_identifier {
-            return self.resolve_scoped_identifier_type(&macro_node, None);
-        }
-        let name = self.identifier_name(&macro_node)?;
-        self.lookup_callable_symbol(&name)
     }
 
     pub fn resolve_crate_root(&self) -> Option<&'tcx Symbol> {
@@ -635,5 +603,41 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     ) -> Option<&'tcx Symbol> {
         let function = node.child_by_field(*self.unit, LangRust::field_function)?;
         self.resolve_expression_symbol(&function, caller)
+    }
+
+    /// Collects all type symbols referenced in a generic type (e.g., Result<Foo, Bar>).
+    /// Returns all type argument symbols found within the type expression.
+    pub fn collect_type_argument_symbols(&mut self, node: &HirNode<'tcx>) -> Vec<&'tcx Symbol> {
+        let mut symbols = Vec::new();
+        self.collect_type_argument_symbols_impl(node, &mut symbols);
+        symbols
+    }
+
+    fn collect_type_argument_symbols_impl(
+        &mut self,
+        node: &HirNode<'tcx>,
+        symbols: &mut Vec<&'tcx Symbol>,
+    ) {
+        // For a node like generic_type, we need to recursively find all type identifiers in type_arguments
+        let kind_id = node.kind_id();
+
+        // If this is a type identifier or similar, try to resolve it
+        if kind_id == LangRust::type_identifier {
+            if let Some(ty) = self.infer_type_from_expr_from_node(node) {
+                if !symbols.iter().any(|s| s.id() == ty.id()) {
+                    symbols.push(ty);
+                }
+            }
+            return;
+        }
+
+        // Recurse into children to find all type references
+        for child_id in node.children() {
+            let child = self.unit.hir_node(*child_id);
+            // Skip text tokens
+            if !matches!(child.kind(), HirKind::Text | HirKind::Comment) {
+                self.collect_type_argument_symbols_impl(&child, symbols);
+            }
+        }
     }
 }
