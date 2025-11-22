@@ -111,6 +111,11 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     }
 
     pub fn resolve_crate_root(&self) -> Option<&'tcx Symbol> {
+        if let Some(sym) = self.scopes.lookup_symbol("crate") {
+            if sym.kind() == SymKind::Crate {
+                return Some(sym);
+            }
+        }
         self.scopes.scopes().iter().into_iter().find_map(|scope| {
             if let Some(sym) = scope.opt_symbol()
                 && sym.kind() == SymKind::Crate

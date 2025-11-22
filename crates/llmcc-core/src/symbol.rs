@@ -621,7 +621,7 @@ mod tests {
         symbol.set_scope(scope_id);
         symbol.set_parent_scope(parent_scope_id);
 
-        assert_eq!(symbol.scope(), Some(scope_id));
+        assert_eq!(symbol.opt_scope(), Some(scope_id));
         assert_eq!(symbol.parent_scope(), Some(parent_scope_id));
     }
 

@@ -486,6 +486,21 @@ impl<'tcx> CompileCtxt<'tcx> {
         scope
     }
 
+    /// Register a batch of scopes in the global scope map without cloning them.
+    pub fn update_scope_map<I>(&'tcx self, scopes: I)
+    where
+        I: IntoIterator<Item = &'tcx Scope<'tcx>>,
+    {
+        let mut scope_map = self.scope_map.write();
+        let mut symbol_map = self.symbol_map.write();
+        for scope in scopes {
+            scope_map.insert(scope.id(), scope);
+            scope.for_each_symbol(|sym| {
+                symbol_map.insert(sym.id(), sym);
+            });
+        }
+    }
+
     /// Allocate a new HIR identifier node with the given ID, name and symbol
     pub fn alloc_hir_ident(
         &'tcx self,

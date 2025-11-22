@@ -165,8 +165,10 @@ impl<'tcx> CollectorVisitor<'tcx> {
         unit: &CompileUnit<'tcx>,
         scopes: &CollectorScopes<'tcx>,
     ) -> BinderScopes<'tcx> {
+        let scope_stack = scopes.scopes().iter();
+        unit.cc.update_scope_map(scope_stack.clone());
         let mut binder = BinderScopes::new(*unit, scopes.globals());
-        for scope in scopes.scopes().iter().into_iter().skip(1) {
+        for scope in scope_stack.into_iter().skip(1) {
             binder.scopes().push(scope);
         }
         binder
@@ -309,6 +311,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
+        let mut crate_alias: Option<&Symbol> = None;
 
         if let Some(crate_name) = parse_crate_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
@@ -318,6 +321,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // Insert 'crate' alias pointing to this globals
             if let Some(crate_sym) = scopes.lookup_or_insert("crate", node, SymKind::Crate) {
                 crate_sym.set_scope(scopes.globals().id());
+                crate_alias = Some(crate_sym);
             }
         }
 
@@ -341,6 +345,10 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             file_sym.set_scope(scope.id());
             sn.set_scope(scope);
             scopes.push_scope(scope);
+
+            if let Some(alias) = crate_alias {
+                alias.set_scope(scope.id());
+            }
         }
 
         self.visit_children(unit, node, scopes, namespace, parent);
@@ -1059,6 +1067,70 @@ fn run() {
                 "run",
                 SymKind::Function,
                 &["_c::_m::source_0::Foo", "_c::_m::source_0::Foo::greet"],
+            )],
+        );
+    }
+
+    #[test]
+    fn impl_item_handles_crate_paths() {
+        let source = r#"
+pub mod traits { pub trait TraitFoo {} }
+pub mod types { pub struct Foo; }
+
+impl crate::traits::TraitFoo for crate::types::Foo {}
+"#;
+        assert_dependencies(
+            &[source],
+            &[(
+                "Foo",
+                SymKind::Struct,
+                &["_c::_m::source_0::traits::TraitFoo"],
+            )],
+        );
+    }
+
+    #[test]
+    fn impl_item_handles_super_paths() {
+        let source = r#"
+mod outer {
+    pub trait TraitFoo {}
+    pub struct Foo;
+
+    mod inner {
+        impl super::TraitFoo for super::Foo {}
+    }
+}
+"#;
+        assert_dependencies(
+            &[source],
+            &[(
+                "Foo",
+                SymKind::Struct,
+                &["_c::_m::source_0::outer::TraitFoo"],
+            )],
+        );
+    }
+
+    #[test]
+    fn impl_item_handles_mixed_scopes() {
+        let source = r#"
+mod root {
+    pub mod traits { pub trait TraitFoo {} }
+    pub mod data { pub struct Foo; }
+
+    pub mod mid {
+        pub mod inner {
+            impl crate::root::traits::TraitFoo for super::super::data::Foo {}
+        }
+    }
+}
+"#;
+        assert_dependencies(
+            &[source],
+            &[(
+                "Foo",
+                SymKind::Struct,
+                &["_c::_m::source_0::root::traits::TraitFoo"],
             )],
         );
     }
