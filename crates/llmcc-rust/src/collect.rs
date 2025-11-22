@@ -493,13 +493,24 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             }
         }
 
+        let mut impl_scope = None;
+        let mut impl_symbol = None;
+
         if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-            if let Some(symbol) = Self::resolve_path_symbol(
+            let mut resolved = Self::resolve_path_symbol(
                 unit,
                 scopes,
                 &type_node,
                 &[SymKind::Struct, SymKind::Enum],
-            ) {
+            );
+
+            if resolved.is_none() {
+                if let Some(target_ident) = type_node.find_identifier(*unit) {
+                    resolved = scopes.lookup_or_insert(&target_ident.name, node, SymKind::Struct);
+                }
+            }
+
+            if let Some(symbol) = resolved {
                 if let Some(target_ident) = type_node.find_identifier(*unit) {
                     target_ident.set_symbol(symbol);
                 }
@@ -507,13 +518,21 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 let scope_id = symbol.scope();
                 symbol.add_defining(node.id());
                 let scope = unit.cc.get_scope(scope_id);
+                impl_scope = Some(scope);
+                impl_symbol = Some(symbol);
                 sn.set_scope(scope);
-
-                scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, namespace, Some(symbol));
-                scopes.pop_scope();
             }
         }
+
+        let scope = impl_scope.unwrap_or_else(|| {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+            scope
+        });
+
+        scopes.push_scope(scope);
+        self.visit_children(unit, node, scopes, namespace, impl_symbol);
+        scopes.pop_scope();
     }
 
     fn visit_macro_definition(
