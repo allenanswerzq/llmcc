@@ -370,6 +370,10 @@ impl<'hir> HirScope<'hir> {
     pub fn ident(&self) -> &'hir HirIdent<'hir> {
         self.ident.read().expect("ident must be set")
     }
+
+    pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
+        self.scope().opt_symbol()
+    }
 }
 
 impl<'hir> Clone for HirScope<'hir> {

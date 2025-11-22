@@ -41,7 +41,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
         let ident = node.child_identifier_by_field(*unit, field_id)?;
-        scopes.lookup_or_insert(&ident.name, node, kind)
+        let sym = scopes.lookup_or_insert(&ident.name, node, kind)?;
+        ident.set_symbol(sym);
+        Some(sym)
     }
 
     /// Find all identifiers in a pattern node (recursive)
@@ -145,7 +147,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             let mut parent_is_global = is_top_level;
             if !is_top_level
                 && let Some(scope) = scopes.top()
-                && let Some(parent_sym) = scope.symbol()
+                && let Some(parent_sym) = scope.opt_symbol()
                 && parent_sym.is_global()
             {
                 parent_is_global = true;
@@ -383,24 +385,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         };
 
         // Extract the type name (e.g., "foo::Bar")
-        let type_name_opt = node
-            .child_identifier_by_field(*unit, LangRust::field_type)
-            .map(|ident| ident.name.to_string());
-
-        if let Some(full_type_name) = type_name_opt {
+        if let Some(target_ident) = node.child_identifier_by_field(*unit, LangRust::field_type) {
             // Extract the short name (e.g., "Bar")
             // Note: split('::').last() gets the item name.
-            let short_name = full_type_name.split("::").last().unwrap_or(&full_type_name);
+            let target_name = target_ident.name.split("::").last().unwrap();
 
             // Lookup for the struct this impl block is target for
             if let Some(symbol) = scopes.lookup_symbol_with(
-                short_name,
+                target_name,
                 Some(vec![SymKind::Struct, SymKind::Enum]),
                 None,
                 None,
-            ) && let Some(scope_id) = symbol.scope()
-            {
-                // NOTE: the impl and the define reuse the same scope(namespace)
+            ) {
+                let scope_id = symbol.scope();
+                // NOTE: the impl and the define(struct/enum) reuse the same scope(namespace)
                 symbol.add_defining(node.id());
                 let scope = unit.cc.get_scope(scope_id);
                 sn.set_scope(scope);
@@ -502,18 +500,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::TypeParameter,
             LangRust::field_name,
         );
-        self.visit_children(unit, node, scopes, namespace, parent);
-    }
-
-    fn visit_const_parameter(
-        &mut self,
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 

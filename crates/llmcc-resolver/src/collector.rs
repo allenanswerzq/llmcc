@@ -140,7 +140,7 @@ impl<'a> CollectorScopes<'a> {
             .into_iter()
             .rev()
             .find_map(|scope| {
-                scope.symbol().and_then(|parent_sym| {
+                scope.opt_symbol().and_then(|parent_sym| {
                     // Read the InternedStr FQN of the scope's symbol
                     let fqn = parent_sym.fqn.read();
                     // Resolve the InternedStr to an owned String

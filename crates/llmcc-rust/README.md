@@ -38,7 +38,7 @@ The **Binding Pass** resolves identifiers to their definitions and builds the ca
   - Lexical scoping (variables).
   - Path resolution (`std::collections::HashMap`).
   - Method resolution (looking up methods in `impl` blocks).
-- **Inference (`src/bind/inference.rs`)**: `TypeInferrer` determines the types of expressions to support accurate method resolution.
+- **Inference (`src/bind/inference.rs`)**: `ExprResolver` determines the types of expressions to support accurate method resolution.
 - **Linking (`src/bind/linker.rs`)**: `SymbolLinker` connects usage sites to definition sites, forming the dependency graph used by downstream LLM tasks.
 
 ### Utilities (`src/util.rs`)

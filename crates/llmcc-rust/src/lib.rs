@@ -3,6 +3,7 @@ extern crate llmcc_core;
 
 mod bind;
 mod collect;
+mod expr;
 mod token;
 mod util;
 

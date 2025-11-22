@@ -4,18 +4,268 @@ use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
 
-use super::constants::{BINARY_OPERATOR_TOKENS, BinaryOperatorOutcome, is_identifier_kind};
-use super::resolution::SymbolResolver;
 use crate::token::LangRust;
 
-pub struct TypeInferrer<'a, 'tcx> {
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum BinaryOperatorOutcome {
+    ReturnsBool,
+    ReturnsLeftOperand,
+}
+
+pub const BINARY_OPERATOR_TOKENS: &[(u16, BinaryOperatorOutcome)] = &[
+    // "=="
+    (LangRust::Text_EQEQ, BinaryOperatorOutcome::ReturnsBool),
+    // "!="
+    (LangRust::Text_NE, BinaryOperatorOutcome::ReturnsBool),
+    // "<"
+    (LangRust::Text_LT, BinaryOperatorOutcome::ReturnsBool),
+    // ">"
+    (LangRust::Text_GT, BinaryOperatorOutcome::ReturnsBool),
+    // "<="
+    (LangRust::Text_LE, BinaryOperatorOutcome::ReturnsBool),
+    // ">="
+    (LangRust::Text_GE, BinaryOperatorOutcome::ReturnsBool),
+    // "&&"
+    (LangRust::Text_AMPAMP, BinaryOperatorOutcome::ReturnsBool),
+    // "||"
+    (LangRust::Text_PIPEPIPE, BinaryOperatorOutcome::ReturnsBool),
+    // "+"
+    (
+        LangRust::Text_PLUS,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    // "-"
+    (
+        LangRust::Text_MINUS,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    // "*"
+    (
+        LangRust::Text_STAR,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    // "/"
+    (
+        LangRust::Text_SLASH,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+    // "%"
+    (
+        LangRust::Text_PERCENT,
+        BinaryOperatorOutcome::ReturnsLeftOperand,
+    ),
+];
+
+pub fn is_identifier_kind(kind_id: u16) -> bool {
+    matches!(
+        kind_id,
+        LangRust::identifier
+            | LangRust::scoped_identifier
+            | LangRust::field_identifier
+            | LangRust::type_identifier
+    )
+}
+
+pub struct ExprResolver<'a, 'tcx> {
     pub unit: &'a CompileUnit<'tcx>,
     pub scopes: &'a mut BinderScopes<'tcx>,
 }
 
-impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
+impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     pub fn new(unit: &'a CompileUnit<'tcx>, scopes: &'a mut BinderScopes<'tcx>) -> Self {
         Self { unit, scopes }
+    }
+
+    pub fn with<R, F>(unit: &'a CompileUnit<'tcx>, scopes: &'a mut BinderScopes<'tcx>, f: F) -> R
+    where
+        F: FnOnce(&mut ExprResolver<'a, 'tcx>) -> R,
+    {
+        let mut inferrer = ExprResolver::new(unit, scopes);
+        f(&mut inferrer)
+    }
+
+    pub fn normalize_identifier(name: &str) -> String {
+        name.rsplit("::").next().unwrap_or(name).to_string()
+    }
+
+    pub fn identifier_name(&self, node: &HirNode<'tcx>) -> Option<String> {
+        if let Some(ident) = node.as_ident() {
+            return Some(Self::normalize_identifier(&ident.name));
+        }
+        if let Some(ident) = node.find_identifier(*self.unit) {
+            return Some(Self::normalize_identifier(&ident.name));
+        }
+        if node.kind_id() == LangRust::super_token {
+            return Some("super".to_string());
+        }
+        if node.kind_id() == LangRust::crate_token {
+            return Some("crate".to_string());
+        }
+        None
+    }
+
+    pub fn first_child_node(&self, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
+        let child_id = node.children().first()?;
+        Some(self.unit.hir_node(*child_id))
+    }
+
+    pub fn symbol_from_field(&self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
+        if let Some(ident) = node.as_ident() {
+            if let Some(existing) = self.scopes.lookup_symbol(&ident.name) {
+                return Some(existing);
+            }
+            return ident.opt_symbol();
+        }
+
+        let ident = node.child_identifier_by_field(*self.unit, field_id)?;
+        if let Some(existing) = self.scopes.lookup_symbol(&ident.name) {
+            return Some(existing);
+        }
+        ident.opt_symbol()
+    }
+
+    pub fn lookup_callable_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+        self.scopes.lookup_symbol_with(
+            name,
+            Some(vec![SymKind::Function, SymKind::Macro]),
+            None,
+            None,
+        )
+    }
+
+    pub fn resolve_macro_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let macro_node = node.child_by_field(*self.unit, LangRust::field_macro)?;
+        if macro_node.kind_id() == LangRust::scoped_identifier {
+            return self.resolve_scoped_identifier_type(&macro_node, None);
+        }
+        let name = self.identifier_name(&macro_node)?;
+        self.lookup_callable_symbol(&name)
+    }
+
+    pub fn resolve_crate_root(&self) -> Option<&'tcx Symbol> {
+        self.scopes.scopes().iter().into_iter().find_map(|scope| {
+            if let Some(sym) = scope.opt_symbol()
+                && sym.kind() == SymKind::Crate
+            {
+                return Some(sym);
+            }
+            None
+        })
+    }
+
+    pub fn resolve_super_relative_to(&self, anchor: Option<&Symbol>) -> Option<&'tcx Symbol> {
+        let stack = self.scopes.scopes().iter();
+
+        let base_index = if let Some(anchor_sym) = anchor {
+            let anchor_scope_id = anchor_sym.scope();
+            stack
+                .iter()
+                .rposition(|scope| scope.id() == anchor_scope_id)?
+        } else {
+            stack.iter().enumerate().rev().find_map(|(idx, scope)| {
+                if let Some(sym) = scope.opt_symbol()
+                    && matches!(
+                        sym.kind(),
+                        SymKind::Module | SymKind::File | SymKind::Crate | SymKind::Namespace
+                    )
+                {
+                    return Some(idx);
+                }
+                None
+            })?
+        };
+
+        stack.iter().take(base_index).rev().find_map(|scope| {
+            if let Some(sym) = scope.opt_symbol()
+                && matches!(
+                    sym.kind(),
+                    SymKind::Module | SymKind::File | SymKind::Crate | SymKind::Namespace
+                )
+            {
+                return Some(sym);
+            }
+            None
+        })
+    }
+
+    pub fn resolve_scoped_identifier_type(
+        &mut self,
+        node: &HirNode<'tcx>,
+        caller: Option<&Symbol>,
+    ) -> Option<&'tcx Symbol> {
+        let children = node.children_nodes(self.unit);
+        let non_trivia: Vec<_> = children
+            .iter()
+            .filter(|child| !matches!(child.kind(), HirKind::Text | HirKind::Comment))
+            .collect();
+
+        if non_trivia.len() < 2 {
+            return None;
+        }
+
+        let path_node = non_trivia.first()?;
+        let name_node = non_trivia.last()?;
+        let name = self.identifier_name(name_node)?;
+
+        let path_symbol = if path_node.kind_id() == LangRust::scoped_identifier {
+            self.resolve_scoped_identifier_type(path_node, caller)?
+        } else if path_node.kind_id() == LangRust::super_token {
+            self.resolve_super_relative_to(None)?
+        } else if path_node.kind_id() == LangRust::crate_token {
+            self.resolve_crate_root()?
+        } else {
+            let path_name = self.identifier_name(path_node)?;
+            let sym = self.scopes.lookup_symbol(&path_name)?;
+            if let Some(c) = caller {
+                c.add_dependency(sym);
+            }
+            sym
+        };
+
+        if name_node.kind_id() == LangRust::super_token {
+            return self.resolve_super_relative_to(Some(path_symbol));
+        }
+
+        self.scopes.lookup_member_symbol(path_symbol, &name, None)
+    }
+
+    pub fn infer_type_from_expr_from_node(
+        &mut self,
+        type_node: &HirNode<'tcx>,
+    ) -> Option<&'tcx Symbol> {
+        if type_node.kind_id() == LangRust::scoped_identifier
+            || type_node.kind_id() == LangRust::scoped_type_identifier
+        {
+            if let Some(sym) = self.resolve_scoped_identifier_type(type_node, None) {
+                return Some(sym);
+            }
+        }
+
+        let ident = type_node.find_identifier(*self.unit)?;
+
+        if let Some(existing) = self.scopes.lookup_symbol_with(
+            &ident.name,
+            Some(vec![
+                SymKind::Struct,
+                SymKind::Enum,
+                SymKind::Trait,
+                SymKind::TypeAlias,
+                SymKind::TypeParameter,
+                SymKind::Primitive,
+                SymKind::UnresolvedType,
+            ]),
+            None,
+            None,
+        ) {
+            return Some(existing);
+        }
+
+        self.scopes
+            .lookup_or_insert_global(&ident.name, type_node, SymKind::UnresolvedType)
+    }
+
+    pub fn is_self_type(&self, symbol: &Symbol) -> bool {
+        self.unit.interner().resolve_owned(symbol.name).as_deref() == Some("Self")
     }
 
     fn primitive_type(&mut self, node: &HirNode<'tcx>, primitive: &str) -> Option<&'tcx Symbol> {
@@ -83,10 +333,9 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
 
     /// Handles struct literal expressions (e.g., `Foo { .. }`).
     fn infer_struct_expression_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let mut resolver = SymbolResolver::new(self.unit, self.scopes);
         node.child_by_field(*self.unit, LangRust::field_name)
             .or_else(|| node.child_by_field(*self.unit, LangRust::field_type))
-            .and_then(|ty| resolver.resolve_type_from_node(&ty))
+            .and_then(|ty| self.infer_type_from_expr_from_node(&ty))
     }
 
     /// Infers types for call expressions (e.g., `Foo::new()`).
@@ -169,8 +418,7 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
         // Resolve the type identifier into the corresponding symbol in the compile unit.
         let ty = self.unit.opt_get_symbol(field_type_id)?;
 
-        let resolver = SymbolResolver::new(self.unit, self.scopes);
-        if resolver.is_self_type(ty) {
+        if self.is_self_type(ty) {
             return Some(obj_type_symbol);
         }
         Some(ty)
@@ -252,16 +500,15 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
 
         match kind_id {
             kind if kind == LangRust::scoped_identifier => {
-                let mut resolver = SymbolResolver::new(self.unit, self.scopes);
-                if let Some(sym) = resolver.resolve_scoped_identifier_symbol(node, None) {
+                if let Some(sym) = self.resolve_scoped_identifier_type(node, None) {
                     if let Some(type_id) = sym.type_of()
                         && let Some(ty) = self.unit.opt_get_symbol(type_id)
                     {
-                        if resolver.is_self_type(ty)
+                        if self.is_self_type(ty)
                             && let Some(parent_scope_id) = sym.parent_scope()
                         {
                             let parent_scope = self.unit.get_scope(parent_scope_id);
-                            if let Some(parent_sym) = parent_scope.symbol() {
+                            if let Some(parent_sym) = parent_scope.opt_symbol() {
                                 return Some(parent_sym);
                             }
                         }
@@ -324,22 +571,20 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
         // Inspect the syntax kind so resolution can specialize per expression form.
         match node.kind_id() {
             kind if is_identifier_kind(kind) => {
-                let mut resolver = SymbolResolver::new(self.unit, self.scopes);
                 if kind == LangRust::scoped_identifier {
-                    return resolver.resolve_scoped_identifier_symbol(node, caller);
+                    return self.resolve_scoped_identifier_type(node, caller);
                 }
                 // Extract the identifier text (dropping any path prefixes).
-                let name = resolver.identifier_name(node)?;
+                let name = self.identifier_name(node)?;
                 // Look up the callable directly in the current scope chain.
-                resolver.lookup_callable_symbol(&name)
+                self.lookup_callable_symbol(&name)
             }
             kind if kind == LangRust::field_expression => {
-                let resolver = SymbolResolver::new(self.unit, self.scopes);
                 // Grab the AST node that names the field portion of the access.
                 let field = node.child_by_field(*self.unit, LangRust::field_field)?;
-                let name = resolver.identifier_name(&field)?;
+                let name = self.identifier_name(&field)?;
                 // Attempt to resolve `Type::field` style associated function before assuming a method.
-                if let Some(symbol) = resolver.lookup_callable_symbol(&name) {
+                if let Some(symbol) = self.lookup_callable_symbol(&name) {
                     return Some(symbol);
                 }
 
@@ -370,16 +615,14 @@ impl<'a, 'tcx> TypeInferrer<'a, 'tcx> {
                 || kind == LangRust::try_expression
                 || kind == LangRust::parenthesized_expression =>
             {
-                let resolver = SymbolResolver::new(self.unit, self.scopes);
                 // Dig into the wrapped expression (await, try, or parentheses).
-                let child = resolver.first_child_node(node)?;
+                let child = self.first_child_node(node)?;
                 self.resolve_expression_symbol(&child, caller)
             }
             _ => {
-                let resolver = SymbolResolver::new(self.unit, self.scopes);
                 // Fall back to treating the node as an identifier-like value.
-                let name = resolver.identifier_name(node)?;
-                resolver.lookup_callable_symbol(&name)
+                let name = self.identifier_name(node)?;
+                self.lookup_callable_symbol(&name)
             }
         }
     }

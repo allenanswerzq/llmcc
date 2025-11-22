@@ -293,8 +293,13 @@ impl Symbol {
 
     /// Gets the scope ID this symbol belongs to.
     #[inline]
-    pub fn scope(&self) -> Option<ScopeId> {
+    pub fn opt_scope(&self) -> Option<ScopeId> {
         *self.scope.read()
+    }
+
+    #[inline]
+    pub fn scope(&self) -> ScopeId {
+        self.scope.read().unwrap()
     }
 
     /// Sets the scope ID this symbol belongs to.

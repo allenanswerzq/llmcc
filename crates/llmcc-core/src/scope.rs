@@ -89,7 +89,7 @@ impl<'tcx> Scope<'tcx> {
     }
 
     #[inline]
-    pub fn symbol(&self) -> Option<&'tcx Symbol> {
+    pub fn opt_symbol(&self) -> Option<&'tcx Symbol> {
         *self.symbol.read()
     }
 
@@ -157,7 +157,7 @@ impl<'tcx> Scope<'tcx> {
 
 impl<'tcx> fmt::Debug for Scope<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let symbol_desc = self.symbol().cloned();
+        let symbol_desc = self.opt_symbol().cloned();
         // Collect symbols for debug printing without holding the lock too long
         let mut symbol_entries = Vec::new();
         self.for_each_symbol(|s| symbol_entries.push(s.clone()));

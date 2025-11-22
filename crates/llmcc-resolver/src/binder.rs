@@ -35,6 +35,11 @@ impl<'a> BinderScopes<'a> {
     }
 
     #[inline]
+    pub fn top(&self) -> &'a Scope<'a> {
+        self.scopes.iter().last().unwrap()
+    }
+
+    #[inline]
     pub fn unit(&self) -> CompileUnit<'a> {
         self.unit
     }
@@ -204,7 +209,7 @@ impl<'a> BinderScopes<'a> {
         member_name: &str,
         kind_filter: Option<SymKind>,
     ) -> Option<&'a Symbol> {
-        let scope_id = obj_type_symbol.scope()?;
+        let scope_id = obj_type_symbol.opt_scope()?;
         let scope = self.unit.get_scope(scope_id);
 
         // We create a new ScopeStack here instead of using `self.scopes` to ensure isolation.
