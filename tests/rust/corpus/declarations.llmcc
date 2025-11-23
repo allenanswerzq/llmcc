@@ -1855,10 +1855,10 @@ type-aliases
 
 --- file: src/main.rs ---
 struct Tree<T>;
-
+trait Foo {}
 type Inch = u64;
 type Name<T> = Tree<T>;
-type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
+type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe + Foo;
 
 --- expect:symbols ---
 u0:1  | Primitive     | i32         | i32                       | [global]
@@ -1885,16 +1885,19 @@ u0:21 | Module        | _m          | _c::_m                    |
 u0:22 | File          | main        | _c::_m::main              |         
 u0:23 | Struct        | Tree        | _c::_m::main::Tree        |         
 u0:24 | TypeParameter | T           | _c::_m::main::Tree::T     |         
-u0:25 | TypeAlias     | Inch        | _c::_m::main::Inch        |         
-u0:26 | TypeAlias     | Name        | _c::_m::main::Name        |         
-u0:27 | TypeParameter | T           | _c::_m::main::T           |         
-u0:28 | TypeAlias     | LazyResolve | _c::_m::main::LazyResolve |         
+u0:25 | Trait         | Foo         | _c::_m::main::Foo         |         
+u0:26 | TypeAlias     | Inch        | _c::_m::main::Inch        |         
+u0:27 | TypeAlias     | Name        | _c::_m::main::Name        |         
+u0:28 | TypeParameter | T           | _c::_m::main::T           |         
+u0:29 | TypeAlias     | LazyResolve | _c::_m::main::LazyResolve |         
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:26]
-u0:25 -> [u0:8]
-u0:26 -> [u0:23]
-u0:8 <- [u0:25]
+u0:23 <- [u0:27]
+u0:25 <- [u0:29]
+u0:26 -> [u0:8]
+u0:27 -> [u0:23]
+u0:29 -> [u0:25]
+u0:8 <- [u0:26]
 
 
 ===============================================================================

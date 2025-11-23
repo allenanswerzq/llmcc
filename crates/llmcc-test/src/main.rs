@@ -39,8 +39,13 @@ enum Command {
         #[arg(value_name = "FILTER", required = false)]
         case: Option<String>,
         /// Update expectation sections with current output (bless)
-        #[arg(long)]
-        update: bool,
+        #[arg(
+            long,
+            value_name = "UPDATE_FILTER",
+            num_args = 0..=1,
+            default_missing_value = ""
+        )]
+        update: Option<String>,
         /// Keep the temporary project directory for inspection
         #[arg(long = "keep-temps")]
         keep_temps: bool,
@@ -65,7 +70,15 @@ fn main() -> Result<()> {
             case,
             update,
             keep_temps,
-        } => run_all_command(cli.root, filter.or(case), update, keep_temps),
+        } => {
+            let (should_update, update_filter) = match update {
+                Some(value) if value.is_empty() => (true, None),
+                Some(value) => (true, Some(value)),
+                None => (false, None),
+            };
+            let effective_filter = filter.or(case).or(update_filter);
+            run_all_command(cli.root, effective_filter, should_update, keep_temps)
+        }
         Command::List { filter } => list_command(cli.root, filter),
     }
 }

@@ -4,11 +4,11 @@ use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
+use crate::RUST_PRIMITIVES;
 use crate::resolve::ExprResolver;
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-use crate::RUST_PRIMITIVES;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
@@ -522,8 +522,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         };
 
         if let Some(element_ty) = node.child_by_field(*unit, LangRust::field_element)
-            && let Some(resolved) =
-                ExprResolver::new(unit, scopes).resolve_type_node(&element_ty)
+            && let Some(resolved) = ExprResolver::new(unit, scopes).resolve_type_node(&element_ty)
         {
             Self::add_owner_dependency(owner, resolved);
         }
@@ -549,9 +548,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 continue;
             }
 
-            if let Some(resolved) =
-                ExprResolver::new(unit, scopes).resolve_type_node(&child)
-            {
+            if let Some(resolved) = ExprResolver::new(unit, scopes).resolve_type_node(&child) {
                 Self::add_owner_dependency(owner, resolved);
             }
         }
@@ -591,8 +588,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         };
 
         if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait)
-            && let Some(resolved) =
-                ExprResolver::new(unit, scopes).resolve_type_node(&trait_node)
+            && let Some(resolved) = ExprResolver::new(unit, scopes).resolve_type_node(&trait_node)
         {
             Self::add_owner_dependency(owner, resolved);
         }
@@ -714,17 +710,18 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        let (ty, type_args) = if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-            let mut resolver = ExprResolver::new(unit, scopes);
-            let ty = resolver.resolve_type_node(&type_node);
-            let type_args = resolver.collect_type_argument_symbols(&type_node);
-            (ty, type_args)
-        } else if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
-            let ty = ExprResolver::new(unit, scopes).infer_type_from_expr(&value_node);
-            (ty, Vec::new())
-        } else {
-            (None, Vec::new())
-        };
+        let (ty, type_args) =
+            if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                let mut resolver = ExprResolver::new(unit, scopes);
+                let ty = resolver.resolve_type_node(&type_node);
+                let type_args = resolver.collect_type_argument_symbols(&type_node);
+                (ty, type_args)
+            } else if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
+                let ty = ExprResolver::new(unit, scopes).infer_type_from_expr(&value_node);
+                (ty, Vec::new())
+            } else {
+                (None, Vec::new())
+            };
 
         if let Some(ty) = ty {
             if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {

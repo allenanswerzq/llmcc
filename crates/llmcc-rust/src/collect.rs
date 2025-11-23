@@ -7,9 +7,9 @@ use llmcc_resolver::{CollectorScopes, ResolverOption};
 
 use std::collections::HashMap;
 
-use crate::{LangRust, RUST_PRIMITIVES};
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
+use crate::{LangRust, RUST_PRIMITIVES};
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -32,10 +32,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
-    fn type_name_from_node<'a>(
-        unit: &CompileUnit<'a>,
-        node: &HirNode<'a>,
-    ) -> Option<&'a str> {
+    fn type_name_from_node<'a>(unit: &CompileUnit<'a>, node: &HirNode<'a>) -> Option<&'a str> {
         if let Some(field_node) = node.child_by_field(*unit, LangRust::field_name) {
             return Self::type_name_from_node(unit, &field_node);
         }
@@ -48,15 +45,11 @@ impl<'tcx> CollectorVisitor<'tcx> {
             return Some(ident.name.as_str());
         }
 
-        node.children()
-            .iter()
-            .rev()
-            .find_map(|child_id| {
-                let child = unit.hir_node(*child_id);
-                Self::type_name_from_node(unit, &child)
-            })
+        node.children().iter().rev().find_map(|child_id| {
+            let child = unit.hir_node(*child_id);
+            Self::type_name_from_node(unit, &child)
+        })
     }
-
 
     fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut CollectorScopes<'tcx>) {
         for prim in RUST_PRIMITIVES {
@@ -165,7 +158,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 .or_else(|| ident.opt_symbol())
         {
             ident.set_symbol(sym);
-            if let Some(target_sym) = symbol && sym.kind() != SymKind::TypeParameter {
+            if let Some(target_sym) = symbol
+                && sym.kind() != SymKind::TypeParameter
+            {
                 target_sym.add_dependency(sym);
             }
             return;
@@ -780,12 +775,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         if let Some(owner) = namespace.opt_symbol() {
             let name = unit.hir_text(node);
-            if let Some(sym) = scopes.lookup_symbol_with(
-                name.trim(),
-                Some(vec![SymKind::Primitive]),
-                None,
-                None,
-            ) {
+            if let Some(sym) =
+                scopes.lookup_symbol_with(name.trim(), Some(vec![SymKind::Primitive]), None, None)
+            {
                 owner.add_dependency(sym);
             }
         }
