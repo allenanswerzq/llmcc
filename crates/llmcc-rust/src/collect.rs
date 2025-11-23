@@ -665,6 +665,80 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    fn visit_array_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(owner) = namespace.opt_symbol()
+            && let Some(element_ty) = node.child_by_field(*unit, LangRust::field_element)
+        {
+            Self::collect_type_dependencies(unit, &element_ty, scopes, Some(owner));
+        }
+
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_tuple_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(owner) = namespace.opt_symbol() {
+            for child in node.children_nodes(unit) {
+                Self::collect_type_dependencies(unit, &child, scopes, Some(owner));
+            }
+        }
+
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_primitive_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(owner) = namespace.opt_symbol() {
+            let name = unit.hir_text(node);
+            if let Some(sym) = scopes.lookup_symbol_with(
+                name.trim(),
+                Some(vec![SymKind::Primitive]),
+                None,
+                None,
+            ) {
+                owner.add_dependency(sym);
+            }
+        }
+
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_abstract_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(owner) = namespace.opt_symbol()
+            && let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait)
+        {
+            Self::collect_type_dependencies(unit, &trait_node, scopes, Some(owner));
+        }
+
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
     fn visit_field_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,

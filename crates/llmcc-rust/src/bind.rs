@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirNode, HirScope};
+use llmcc_core::ir::{HirKind, HirNode, HirScope};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
@@ -222,6 +222,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             fn_sym.set_type_of(ret_sym.id());
             fn_sym.add_dependency(ret_sym);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ret_sym);
+            }
         }
     }
 
@@ -412,6 +416,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             type_sym.set_type_of(ty.id());
             type_sym.add_dependency(ty);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ty);
+            }
         }
     }
 
@@ -433,6 +441,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 ExprResolver::new(unit, scopes).infer_type_from_expr(&default_type_node)
         {
             type_sym.add_dependency(ty);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ty);
+            }
         }
     }
 
@@ -452,6 +464,103 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&type_node)
         {
             type_sym.add_dependency(ty);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ty);
+            }
+        }
+    }
+
+    fn visit_array_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        if let Some(element_ty) = node.child_by_field(*unit, LangRust::field_element) {
+            if let Some(resolved) =
+                ExprResolver::new(unit, scopes).infer_type_from_expr_from_node(&element_ty)
+            {
+                owner.add_dependency(resolved);
+            }
+        }
+    }
+
+    fn visit_tuple_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        for child_id in node.children() {
+            let child = unit.hir_node(*child_id);
+            if matches!(child.kind(), HirKind::Text | HirKind::Comment) {
+                continue;
+            }
+
+            if let Some(resolved) =
+                ExprResolver::new(unit, scopes).infer_type_from_expr_from_node(&child)
+            {
+                owner.add_dependency(resolved);
+            }
+        }
+    }
+
+    fn visit_primitive_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        if let Some(prim) = ExprResolver::new(unit, scopes).infer_type_from_expr_from_node(node) {
+            owner.add_dependency(prim);
+        }
+    }
+
+    fn visit_abstract_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
+            if let Some(resolved) =
+                ExprResolver::new(unit, scopes).infer_type_from_expr_from_node(&trait_node)
+            {
+                owner.add_dependency(resolved);
+            }
         }
     }
 
@@ -472,6 +581,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             symbol.set_type_of(ty.id());
             symbol.add_dependency(ty);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ty);
+            }
         }
     }
 
@@ -491,6 +604,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&value_node)
         {
             symbol.add_dependency(ty);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ty);
+            }
         }
     }
 
@@ -512,6 +629,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             symbol.set_type_of(ty.id());
             symbol.add_dependency(ty);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_dependency(ty);
+            }
         }
     }
 
