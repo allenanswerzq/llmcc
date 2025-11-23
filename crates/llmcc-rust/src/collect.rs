@@ -797,7 +797,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = self.declare_symbol_from_field(
+        let declared_symbol = if let Some(symbol) = self.declare_symbol_from_field(
             unit,
             node,
             scopes,
@@ -805,8 +805,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             LangRust::field_pattern,
         ) {
             self.visit_children(unit, node, scopes, namespace, Some(symbol));
+            Some(symbol)
         } else {
             self.visit_children(unit, node, scopes, namespace, parent);
+            None
+        };
+
+        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+            if let Some(sym) = declared_symbol {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(sym));
+            }
+
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(ns));
+            }
         }
     }
 

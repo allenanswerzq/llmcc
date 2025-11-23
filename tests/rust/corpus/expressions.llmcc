@@ -149,8 +149,6 @@ let size: f64 = 1.0 + -len(values) as f64 + 1.0;
 
 --- expect:symbol-deps ---
 u0:14 <- [u0:24]
-u0:22 <- [u0:23]
-u0:23 -> [u0:22]
 u0:24 -> [u0:14]
 
 
@@ -415,10 +413,8 @@ u0:24 | Variable  | a     | _c::_m::main::foo::a |
 u0:25 | Variable  | b     | _c::_m::main::foo::b |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:23, u0:25]
 u0:22 <- [u0:23]
-u0:23 -> [u0:1, u0:22]
-u0:25 -> [u0:1]
+u0:23 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -495,14 +491,11 @@ u0:29 | Variable  | _all         | _c::_m::main::make_tuples::_all         |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:27]
-u0:22 <- [u0:23, u0:25, u0:26, u0:28]
-u0:23 -> [u0:1, u0:22, u0:24]
-u0:24 <- [u0:23, u0:29]
+u0:22 <- [u0:23, u0:25, u0:26]
+u0:23 -> [u0:1, u0:22]
 u0:25 -> [u0:22]
 u0:26 -> [u0:22]
 u0:27 -> [u0:1]
-u0:28 -> [u0:22]
-u0:29 -> [u0:24]
 
 --- expect:blocks ---
 u0:1 | root  | main       
@@ -738,14 +731,13 @@ u0:26 | Variable  | cfg    | _c::_m::main::main::cfg |
 u0:27 | Variable  | y      | _c::_m::main::main::y   |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:23, u0:24, u0:25, u0:27]
+u0:1 <- [u0:22, u0:23, u0:24]
 u0:22 -> [u0:1]
 u0:22 <- [u0:25, u0:26]
 u0:23 -> [u0:1]
 u0:24 -> [u0:1]
-u0:25 -> [u0:1, u0:22]
+u0:25 -> [u0:22]
 u0:26 -> [u0:22]
-u0:27 -> [u0:1]
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -886,9 +878,7 @@ u0:23 | Function  | parse    | _c::_m::main::parse           |
 u0:24 | Variable  | dish_opt | _c::_m::main::parse::dish_opt |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:23, u0:24]
-u0:23 -> [u0:22]
-u0:24 -> [u0:22]
+
 
 --- expect:blocks ---
 u0:1 | root  | main   
@@ -897,19 +887,10 @@ u0:3 | func  | parse
 u0:4 | call  | block#4
 
 --- expect:block-deps ---
-u0:2 <- [u0:3]
-u0:3 -> [u0:2]
+
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="todo";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Dish", full_path="/tmp/.tmpXpJ50B/app/src/main.rs:1"];
-    n3 [label="parse", full_path="/tmp/.tmpXpJ50B/app/src/main.rs:2"];
-  }
-  n3 -> n2;
 }
 
 
@@ -1094,11 +1075,11 @@ u0:24 | Function  | loop_until | _c::_m::main::loop_until        |
 u0:25 | Variable  | state      | _c::_m::main::loop_until::state |         
 
 --- expect:symbol-deps ---
-u0:15 <- [u0:22, u0:23, u0:24]
+u0:15 <- [u0:22, u0:23]
 u0:22 -> [u0:15]
 u0:22 <- [u0:24, u0:25]
 u0:23 -> [u0:15]
-u0:24 -> [u0:15, u0:22]
+u0:24 -> [u0:22]
 u0:25 -> [u0:22]
 
 --- expect:blocks ---
@@ -1320,8 +1301,8 @@ u0:31 | Variable  | x        | _c::_m::main::bar::x            |
 u0:32 | Variable  | y        | _c::_m::main::bar::y            |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:26, u0:27, u0:29, u0:31]
-u0:23 <- [u0:24, u0:25, u0:29, u0:32]
+u0:22 <- [u0:26, u0:27]
+u0:23 <- [u0:24, u0:25]
 u0:24 -> [u0:23]
 u0:24 <- [u0:28]
 u0:25 -> [u0:23]
@@ -1330,10 +1311,8 @@ u0:26 <- [u0:29, u0:30]
 u0:27 -> [u0:22]
 u0:28 -> [u0:24]
 u0:28 <- [u0:29]
-u0:29 -> [u0:22, u0:23, u0:26, u0:28]
+u0:29 -> [u0:26, u0:28]
 u0:30 -> [u0:26]
-u0:31 -> [u0:22]
-u0:32 -> [u0:23]
 
 --- expect:blocks ---
 u0:1  | root  | main    
@@ -1350,15 +1329,15 @@ u0:11 | call  | block#11
 u0:12 | call  | block#12
 
 --- expect:block-deps ---
-u0:2 <- [u0:6, u0:9]
-u0:3 <- [u0:4, u0:9]
+u0:2 <- [u0:6]
+u0:3 <- [u0:4]
 u0:4 -> [u0:3]
 u0:4 <- [u0:8]
 u0:6 -> [u0:2]
 u0:6 <- [u0:9]
 u0:8 -> [u0:4]
 u0:8 <- [u0:9]
-u0:9 -> [u0:2, u0:3, u0:6, u0:8]
+u0:9 -> [u0:6, u0:8]
 
 --- expect:graph ---
 digraph project {
@@ -1435,9 +1414,7 @@ u0:23 -> [u0:22, u0:24]
 u0:23 <- [u0:25]
 u0:24 -> [u0:22]
 u0:24 <- [u0:23]
-u0:25 -> [u0:23, u0:26]
-u0:26 <- [u0:25, u0:27]
-u0:27 -> [u0:26]
+u0:25 -> [u0:23]
 
 
 ===============================================================================

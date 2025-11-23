@@ -338,36 +338,39 @@ function-declarations-seven
 
 
 --- file: src/main.rs ---
-trait FnOnce;
-
+trait FnOnce {}
 fn foo_4(x: impl FnOnce() -> result::Result<T, E>) {}
 
 --- expect:symbols ---
-u0:1  | Primitive | i32   | i32                    | [global]
-u0:2  | Primitive | i64   | i64                    | [global]
-u0:3  | Primitive | i16   | i16                    | [global]
-u0:4  | Primitive | i8    | i8                     | [global]
-u0:5  | Primitive | i128  | i128                   | [global]
-u0:6  | Primitive | isize | isize                  | [global]
-u0:7  | Primitive | u32   | u32                    | [global]
-u0:8  | Primitive | u64   | u64                    | [global]
-u0:9  | Primitive | u16   | u16                    | [global]
-u0:10 | Primitive | u8    | u8                     | [global]
-u0:11 | Primitive | u128  | u128                   | [global]
-u0:12 | Primitive | usize | usize                  | [global]
-u0:13 | Primitive | f32   | f32                    | [global]
-u0:14 | Primitive | f64   | f64                    | [global]
-u0:15 | Primitive | bool  | bool                   | [global]
-u0:16 | Primitive | char  | char                   | [global]
-u0:17 | Primitive | str   | str                    | [global]
-u0:18 | Crate     | _c    | _c                     | [global]
-u0:19 | Crate     | crate | _c::crate              |         
-u0:20 | Module    | _m    | _c::_m                 |         
-u0:21 | File      | main  | _c::_m::main           |         
-u0:22 | Function  | foo_4 | _c::_m::main::foo_4    |         
-u0:23 | Variable  | x     | _c::_m::main::foo_4::x |         
+u0:1  | Primitive | i32    | i32                    | [global]
+u0:2  | Primitive | i64    | i64                    | [global]
+u0:3  | Primitive | i16    | i16                    | [global]
+u0:4  | Primitive | i8     | i8                     | [global]
+u0:5  | Primitive | i128   | i128                   | [global]
+u0:6  | Primitive | isize  | isize                  | [global]
+u0:7  | Primitive | u32    | u32                    | [global]
+u0:8  | Primitive | u64    | u64                    | [global]
+u0:9  | Primitive | u16    | u16                    | [global]
+u0:10 | Primitive | u8     | u8                     | [global]
+u0:11 | Primitive | u128   | u128                   | [global]
+u0:12 | Primitive | usize  | usize                  | [global]
+u0:13 | Primitive | f32    | f32                    | [global]
+u0:14 | Primitive | f64    | f64                    | [global]
+u0:15 | Primitive | bool   | bool                   | [global]
+u0:16 | Primitive | char   | char                   | [global]
+u0:17 | Primitive | str    | str                    | [global]
+u0:18 | Crate     | _c     | _c                     | [global]
+u0:19 | Crate     | crate  | _c::crate              |         
+u0:20 | Module    | _m     | _c::_m                 |         
+u0:21 | File      | main   | _c::_m::main           |         
+u0:22 | Trait     | FnOnce | _c::_m::main::FnOnce   |         
+u0:23 | Function  | foo_4  | _c::_m::main::foo_4    |         
+u0:24 | Variable  | x      | _c::_m::main::foo_4::x |         
 
 --- expect:symbol-deps ---
+u0:22 <- [u0:23, u0:24]
+u0:23 -> [u0:22]
+u0:24 -> [u0:22]
 
 
 ===============================================================================
@@ -418,6 +421,7 @@ function-declarations-nine
 
 
 --- file: src/main.rs ---
+struct Machine;
 fn accumulate(self) -> Machine<{State::Accumulate}> {}
 
 --- expect:symbols ---
@@ -442,9 +446,12 @@ u0:18 | Crate     | _c         | _c                       | [global]
 u0:19 | Crate     | crate      | _c::crate                |         
 u0:20 | Module    | _m         | _c::_m                   |         
 u0:21 | File      | main       | _c::_m::main             |         
-u0:22 | Function  | accumulate | _c::_m::main::accumulate |         
+u0:22 | Struct    | Machine    | _c::_m::main::Machine    |         
+u0:23 | Function  | accumulate | _c::_m::main::accumulate |         
 
 --- expect:symbol-deps ---
+u0:22 <- [u0:23]
+u0:23 -> [u0:22]
 
 
 ===============================================================================
@@ -453,34 +460,49 @@ function-declarations-ten
 
 
 --- file: src/main.rs ---
+struct Quux<'a> {
+    data: &'a str,
+}
+trait Baz<T> {}
 fn foo_6(bar: impl for<'a> Baz<Quux<'a>>) {}
 
 --- expect:symbols ---
-u0:1  | Primitive | i32   | i32                      | [global]
-u0:2  | Primitive | i64   | i64                      | [global]
-u0:3  | Primitive | i16   | i16                      | [global]
-u0:4  | Primitive | i8    | i8                       | [global]
-u0:5  | Primitive | i128  | i128                     | [global]
-u0:6  | Primitive | isize | isize                    | [global]
-u0:7  | Primitive | u32   | u32                      | [global]
-u0:8  | Primitive | u64   | u64                      | [global]
-u0:9  | Primitive | u16   | u16                      | [global]
-u0:10 | Primitive | u8    | u8                       | [global]
-u0:11 | Primitive | u128  | u128                     | [global]
-u0:12 | Primitive | usize | usize                    | [global]
-u0:13 | Primitive | f32   | f32                      | [global]
-u0:14 | Primitive | f64   | f64                      | [global]
-u0:15 | Primitive | bool  | bool                     | [global]
-u0:16 | Primitive | char  | char                     | [global]
-u0:17 | Primitive | str   | str                      | [global]
-u0:18 | Crate     | _c    | _c                       | [global]
-u0:19 | Crate     | crate | _c::crate                |         
-u0:20 | Module    | _m    | _c::_m                   |         
-u0:21 | File      | main  | _c::_m::main             |         
-u0:22 | Function  | foo_6 | _c::_m::main::foo_6      |         
-u0:23 | Variable  | bar   | _c::_m::main::foo_6::bar |         
+u0:1  | Primitive     | i32   | i32                      | [global]
+u0:2  | Primitive     | i64   | i64                      | [global]
+u0:3  | Primitive     | i16   | i16                      | [global]
+u0:4  | Primitive     | i8    | i8                       | [global]
+u0:5  | Primitive     | i128  | i128                     | [global]
+u0:6  | Primitive     | isize | isize                    | [global]
+u0:7  | Primitive     | u32   | u32                      | [global]
+u0:8  | Primitive     | u64   | u64                      | [global]
+u0:9  | Primitive     | u16   | u16                      | [global]
+u0:10 | Primitive     | u8    | u8                       | [global]
+u0:11 | Primitive     | u128  | u128                     | [global]
+u0:12 | Primitive     | usize | usize                    | [global]
+u0:13 | Primitive     | f32   | f32                      | [global]
+u0:14 | Primitive     | f64   | f64                      | [global]
+u0:15 | Primitive     | bool  | bool                     | [global]
+u0:16 | Primitive     | char  | char                     | [global]
+u0:17 | Primitive     | str   | str                      | [global]
+u0:18 | Crate         | _c    | _c                       | [global]
+u0:19 | Crate         | crate | _c::crate                |         
+u0:20 | Module        | _m    | _c::_m                   |         
+u0:21 | File          | main  | _c::_m::main             |         
+u0:22 | Struct        | Quux  | _c::_m::main::Quux       |         
+u0:23 | Field         | data  | _c::_m::main::Quux::data |         
+u0:24 | Trait         | Baz   | _c::_m::main::Baz        |         
+u0:25 | TypeParameter | T     | _c::_m::main::Baz::T     |         
+u0:26 | Function      | foo_6 | _c::_m::main::foo_6      |         
+u0:27 | Variable      | bar   | _c::_m::main::foo_6::bar |         
 
 --- expect:symbol-deps ---
+u0:17 <- [u0:22, u0:23]
+u0:22 -> [u0:17]
+u0:22 <- [u0:26, u0:27]
+u0:23 -> [u0:17]
+u0:24 <- [u0:26, u0:27]
+u0:26 -> [u0:22, u0:24]
+u0:27 -> [u0:22, u0:24]
 
 
 ===============================================================================
@@ -604,6 +626,8 @@ u0:22 | UnresolvedType | foo::Bar            | _c::_m::main::foo::Bar           
 u0:23 | UnresolvedType | ::std::fmt::Display | _c::_m::main::::std::fmt::Display |         
 u0:24 | UnresolvedType | Foo                 | _c::_m::main::Foo                 |         
 u0:25 | UnresolvedType | Self::Nested        | _c::_m::main::Self::Nested        |         
+
+--- expect:symbol-deps ---
 
 
 ===============================================================================
@@ -896,13 +920,14 @@ u0:29 | Variable  | u32   | _c::_m::main::u32  |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:24, u0:26]
+u0:15 <- [u0:27, u0:28]
 u0:17 <- [u0:29]
 u0:23 -> [u0:1]
 u0:24 -> [u0:1]
 u0:25 -> [u0:4]
 u0:26 -> [u0:1]
-u0:27 -> [u0:28]
-u0:28 <- [u0:27]
+u0:27 -> [u0:15]
+u0:28 -> [u0:15]
 u0:29 -> [u0:17]
 u0:4 <- [u0:25]
 
@@ -1013,18 +1038,15 @@ u0:31 | Variable  | texts  | _c::_m::main::func::texts      |
 u0:32 | Variable  | values | _c::_m::main::func::values     |
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:24, u0:26, u0:28, u0:32]
+u0:22 <- [u0:24, u0:26, u0:28]
 u0:23 -> [u0:24]
 u0:24 -> [u0:22, u0:9]
-u0:24 <- [u0:23, u0:28, u0:30]
+u0:24 <- [u0:23]
 u0:25 -> [u0:9]
 u0:26 -> [u0:22]
 u0:27 <- [u0:28]
-u0:28 -> [u0:22, u0:24, u0:27]
-u0:30 -> [u0:24]
-u0:31 -> [u0:9]
-u0:32 -> [u0:22]
-u0:9 <- [u0:24, u0:25, u0:31]
+u0:28 -> [u0:22, u0:27]
+u0:9 <- [u0:24, u0:25]
 
 
 ===============================================================================
@@ -1452,10 +1474,9 @@ u0:26 | Variable      | new_text     | _c::_m::main::splice::new_text  |
 u0:27 | Function      | uninit_array | _c::_m::main::uninit_array      |         
 
 --- expect:symbol-deps ---
-u0:12 <- [u0:23, u0:25, u0:27]
+u0:12 <- [u0:23, u0:27]
 u0:23 -> [u0:12, u0:24]
 u0:24 <- [u0:23, u0:26]
-u0:25 -> [u0:12]
 u0:26 -> [u0:24]
 u0:27 -> [u0:12]
 
@@ -1562,13 +1583,13 @@ u0:31 | Variable  | x     | _c::_m::main::f3::x |
 u0:22 <- [u0:26, u0:27]
 u0:23 <- [u0:28, u0:29]
 u0:24 <- [u0:30, u0:31]
-u0:25 <- [u0:30]
+u0:25 <- [u0:30, u0:31]
 u0:26 -> [u0:22]
 u0:27 -> [u0:22]
 u0:28 -> [u0:23]
 u0:29 -> [u0:23]
 u0:30 -> [u0:24, u0:25]
-u0:31 -> [u0:24]
+u0:31 -> [u0:24, u0:25]
 
 --- expect:blocks ---
 u0:1 | root  | main
@@ -1626,8 +1647,8 @@ u0:22 | Trait     | Callback | _c::_m::main::Callback       |
 u0:23 | Function  | call     | _c::_m::main::Callback::call |
 
 --- expect:symbol-deps ---
-u0:22 -> [u0:23]
-u0:23 <- [u0:22]
+u0:22 <- [u0:23]
+u0:23 -> [u0:22]
 
 
 ===============================================================================
@@ -2167,10 +2188,8 @@ u0:26 | Variable  | x     | _c::_m::main::bar::x |
 u0:27 | Variable  | y     | _c::_m::main::bar::y |
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:23, u0:24, u0:25, u0:26, u0:27]
-u0:22 -> [u0:1, u0:25]
-u0:23 -> [u0:1]
-u0:24 -> [u0:1]
+u0:1 <- [u0:25, u0:26, u0:27]
+u0:22 -> [u0:25]
 u0:25 -> [u0:1]
 u0:25 <- [u0:22]
 u0:26 -> [u0:1]
@@ -3137,9 +3156,9 @@ u0:24 | Function  | bar   | _c::_m::main::bar       |
 u0:25 | Variable  | bool  | _c::_m::main::bar::bool |
 
 --- expect:symbol-deps ---
-u0:15 <- [u0:24]
-u0:24 -> [u0:15, u0:25]
-u0:25 <- [u0:24]
+u0:15 <- [u0:24, u0:25]
+u0:24 -> [u0:15]
+u0:25 -> [u0:15]
 
 
 ===============================================================================
