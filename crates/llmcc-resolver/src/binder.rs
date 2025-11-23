@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
-use llmcc_core::ir::HirNode;
+use llmcc_core::ir::{HirNode, HirScope};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
 use llmcc_core::{CompileCtxt, LanguageTraitImpl};
@@ -32,6 +32,11 @@ impl<'a> BinderScopes<'a> {
             scopes,
             relation_direction: RelationDirection::Forward,
         }
+    }
+
+    #[inline]
+    pub fn top(&self) -> &'a Scope<'a> {
+        self.scopes.iter().last().unwrap()
     }
 
     #[inline]
@@ -87,6 +92,16 @@ impl<'a> BinderScopes<'a> {
         // the scope must already exist in the CompileUnit
         let scope = self.unit.get_scope(id);
         self.scopes.push_recursive(scope);
+    }
+
+    /// Pushes the scope represented by `sn`, recursing when the HIR already points
+    /// at an existing nested scope (e.g., structs/impls store their own scope nodes).
+    pub fn push_scope_node(&mut self, sn: &'a HirScope<'a>) {
+        if sn.opt_ident().is_some() {
+            self.push_scope_recursive(sn.scope().id());
+        } else {
+            self.push_scope(sn.scope().id());
+        }
     }
 
     /// Pops the current scope from the stack.
@@ -194,14 +209,25 @@ impl<'a> BinderScopes<'a> {
         member_name: &str,
         kind_filter: Option<SymKind>,
     ) -> Option<&'a Symbol> {
-        let scope_id = obj_type_symbol.scope()?;
+        let scope_id = obj_type_symbol.opt_scope()?;
         let scope = self.unit.get_scope(scope_id);
-        let name_key = self.unit.interner().intern(member_name);
-        let symbols = scope.lookup_symbols(name_key)?;
-        symbols
-            .into_iter()
-            .rev()
-            .find(|symbol| kind_filter.is_none_or(|kind| symbol.kind() == kind))
+
+        // We create a new ScopeStack here instead of using `self.scopes` to ensure isolation.
+        // If we used `self.scopes`, a failed member lookup would fall back to searching
+        // the current lexical scope (e.g., local variables), which is incorrect for
+        // member access (dot operator).
+        let scopes = ScopeStack::new(&self.unit.cc.arena, &self.unit.cc.interner);
+        scopes.push_recursive(scope);
+
+        let kind_filters = kind_filter.map(|k| {
+            if k == SymKind::Function {
+                vec![SymKind::Function, SymKind::Method]
+            } else {
+                vec![k]
+            }
+        });
+
+        scopes.lookup_symbol_with(member_name, kind_filters, None, None)
     }
 }
 

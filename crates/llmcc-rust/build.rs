@@ -6,7 +6,7 @@ use anyhow::Result;
 
 fn main() -> Result<()> {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
-    let config_path = manifest_dir.join("token_map.toml");
+    let config_path = manifest_dir.join("./src/token_map.toml");
     let node_types = manifest_dir.join("../../third_party/tree-sitter-rust/src/node-types.json");
 
     println!("cargo:rerun-if-changed={}", config_path.display());

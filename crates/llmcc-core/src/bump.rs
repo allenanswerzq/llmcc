@@ -421,7 +421,7 @@ mod tests {
         // Verify association
         let idents = arena.hir_idents();
         assert_eq!(idents.len(), 1);
-        assert_eq!(idents[0].symbol().id, sym_ref.id);
+        assert_eq!(idents[0].opt_symbol().unwrap().id, sym_ref.id);
     }
 
     #[test]

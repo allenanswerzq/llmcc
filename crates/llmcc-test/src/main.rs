@@ -26,6 +26,9 @@ enum Command {
         /// Update expectation sections with current output (bless)
         #[arg(long)]
         update: bool,
+        /// Keep the temporary project directory for inspection
+        #[arg(long = "keep-temps")]
+        keep_temps: bool,
     },
     /// Run the entire corpus (optionally filtered by case id)
     RunAll {
@@ -35,6 +38,9 @@ enum Command {
         /// Update expectation sections with current output (bless)
         #[arg(long)]
         update: bool,
+        /// Keep the temporary project directory for inspection
+        #[arg(long = "keep-temps")]
+        keep_temps: bool,
     },
     /// List available cases (optionally filtering by substring)
     List {
@@ -46,19 +52,33 @@ enum Command {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Run { file, update } => run_single_command(cli.root, file, update),
-        Command::RunAll { filter, update } => run_all_command(cli.root, filter, update),
+        Command::Run {
+            file,
+            update,
+            keep_temps,
+        } => run_single_command(cli.root, file, update, keep_temps),
+        Command::RunAll {
+            filter,
+            update,
+            keep_temps,
+        } => run_all_command(cli.root, filter, update, keep_temps),
         Command::List { filter } => list_command(cli.root, filter),
     }
 }
 
-fn run_all_command(root: PathBuf, filter: Option<String>, update: bool) -> Result<()> {
+fn run_all_command(
+    root: PathBuf,
+    filter: Option<String>,
+    update: bool,
+    keep_temps: bool,
+) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let outcomes = run_cases(
         &mut corpus,
         RunnerConfig {
             filter: filter.clone(),
             update,
+            keep_temps,
         },
     )?;
 
@@ -77,7 +97,7 @@ fn run_all_command(root: PathBuf, filter: Option<String>, update: bool) -> Resul
     Ok(())
 }
 
-fn run_single_command(root: PathBuf, file: PathBuf, update: bool) -> Result<()> {
+fn run_single_command(root: PathBuf, file: PathBuf, update: bool, keep_temps: bool) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let root_canon = root
         .canonicalize()
@@ -114,7 +134,7 @@ fn run_single_command(root: PathBuf, file: PathBuf, update: bool) -> Result<()> 
         ));
     };
 
-    let outcomes = run_cases_for_file(entry, update)?;
+    let outcomes = run_cases_for_file(entry, update, keep_temps)?;
     let summary = print_outcomes(&outcomes);
 
     if update {

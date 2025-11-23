@@ -144,7 +144,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // If this node is a Scope node, it has a direct reference to its Scope
         if let Some(scope_node) = node.as_scope()
             && let Some(scope) = *scope_node.scope.read()
-            && let Some(symbol) = scope.symbol()
+            && let Some(symbol) = scope.opt_symbol()
         {
             self.process_symbol(symbol, edges, visited, unresolved);
         }
@@ -257,7 +257,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         let block = self.create_block(id, node, block_kind, Some(parent), children);
         if let Some(scope_node) = node.as_scope()
             && let Some(scope) = *scope_node.scope.read()
-            && let Some(symbol) = scope.symbol()
+            && let Some(symbol) = scope.opt_symbol()
         {
             // Only set the block ID if it hasn't been set before
             // This prevents impl blocks from overwriting struct block IDs

@@ -82,6 +82,7 @@ pub enum SymKind {
     Struct,
     Enum,
     Function,
+    Method,
     Macro,
     Variable,
     Field,
@@ -292,8 +293,13 @@ impl Symbol {
 
     /// Gets the scope ID this symbol belongs to.
     #[inline]
-    pub fn scope(&self) -> Option<ScopeId> {
+    pub fn opt_scope(&self) -> Option<ScopeId> {
         *self.scope.read()
+    }
+
+    #[inline]
+    pub fn scope(&self) -> ScopeId {
+        self.scope.read().unwrap()
     }
 
     /// Sets the scope ID this symbol belongs to.
@@ -615,7 +621,7 @@ mod tests {
         symbol.set_scope(scope_id);
         symbol.set_parent_scope(parent_scope_id);
 
-        assert_eq!(symbol.scope(), Some(scope_id));
+        assert_eq!(symbol.opt_scope(), Some(scope_id));
         assert_eq!(symbol.parent_scope(), Some(parent_scope_id));
     }
 
