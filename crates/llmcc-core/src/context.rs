@@ -416,8 +416,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        let scope = self.alloc_scope(owner);
+        let scope = self.arena.alloc(Scope::new(owner));
         self.scope_map.write().insert(scope.id(), scope);
+        self.owner_to_scope_id.write().insert(owner, scope.id());
         scope
     }
 
@@ -454,19 +455,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Access the arena for allocations
     pub fn arena(&'tcx self) -> &'tcx Arena<'tcx> {
         &self.arena
-    }
-
-    /// Allocate a new scope
-    pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        // Allocate new scope
-        let scope = self.arena.alloc(Scope::new(owner));
-        let scope_id = scope.id();
-
-        // Update both scope_map and owner_to_scope_id mapping
-        self.scope_map.write().insert(scope_id, scope);
-        self.owner_to_scope_id.write().insert(owner, scope_id);
-
-        scope
     }
 
     /// Allocate a new scope based on an existing one, cloning its contents.
@@ -523,10 +511,8 @@ impl<'tcx> CompileCtxt<'tcx> {
         ident
     }
 
-    /// Allocate a new Scope from a symbol with the given HirId
-    pub fn alloc_hir_scope(&'tcx self, hir_id: HirId, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
-        let scope = self.alloc_scope(hir_id);
-        scope.set_symbol(Some(symbol));
+    pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
+        let scope = self.arena.alloc(Scope::new(owner));
         scope
     }
 

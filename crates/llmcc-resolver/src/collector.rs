@@ -164,6 +164,7 @@ impl<'a> CollectorScopes<'a> {
     /// Initialize a symbol with common properties
     fn init_symbol(&self, symbol: &'a Symbol, name: &str, node: &HirNode<'a>, kind: SymKind) {
         if symbol.kind() == SymKind::Unknown {
+            symbol.set_owner(node.id());
             symbol.set_kind(kind);
             symbol.set_unit_index(self.unit_index());
             symbol.set_fqn(self.build_fqn(name));
@@ -277,6 +278,10 @@ fn apply_collected_symbols<'tcx>(
 }
 
 /// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
+///
+/// At the collect pass, we can only know all the sutff in a single compilation unit, because of the
+/// random order of collecting, for symbols we can not resolve at the unit, we just create a symbol
+/// placeholder, and resolve them in the later binding phase.
 #[rustfmt::skip]
 pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,

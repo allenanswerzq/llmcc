@@ -303,12 +303,14 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         if let Some(target_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
             && let Some(target_sym) = target_ident.opt_symbol()
+            && let Some(target_scope) = target_sym.opt_scope()
         {
             if let Some(trait_ident) = node.child_identifier_by_field(*unit, LangRust::field_trait)
                 && let Some(trait_sym) = trait_ident.opt_symbol()
+                && let Some(trait_scope) = trait_sym.opt_scope()
             {
-                let target_scope = unit.cc.get_scope(target_sym.scope());
-                let trait_scope = unit.cc.get_scope(trait_sym.scope());
+                let target_scope = unit.cc.get_scope(target_scope);
+                let trait_scope = unit.cc.get_scope(trait_scope);
                 target_scope.add_parent(trait_scope);
                 target_sym.add_dependency(trait_sym);
             }

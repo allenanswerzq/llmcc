@@ -84,8 +84,8 @@ impl<'tcx> Scope<'tcx> {
     }
 
     #[inline]
-    pub fn set_symbol(&self, symbol: Option<&'tcx Symbol>) {
-        *self.symbol.write() = symbol;
+    pub fn set_symbol(&self, symbol: &'tcx Symbol) {
+        *self.symbol.write() = Some(symbol);
     }
 
     #[inline]

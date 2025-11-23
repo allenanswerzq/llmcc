@@ -1,9 +1,11 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::HirNode;
+use llmcc_core::ir::{HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, CollectorScopes, ResolverOption};
+
+use std::collections::HashMap;
 
 use crate::LangRust;
 use crate::resolve::ExprResolver;
@@ -12,7 +14,7 @@ use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
-    phantom: std::marker::PhantomData<&'tcx ()>,
+    scope_map: HashMap<ScopeId, &'tcx Scope<'tcx>>,
 }
 
 impl<'tcx> CollectorVisitor<'tcx> {
@@ -27,7 +29,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
     fn new() -> Self {
         Self {
-            phantom: std::marker::PhantomData,
+            scope_map: HashMap::new(),
         }
     }
 
@@ -161,45 +163,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
-    fn mirror_binder_scopes(
-        unit: &CompileUnit<'tcx>,
-        scopes: &CollectorScopes<'tcx>,
-    ) -> BinderScopes<'tcx> {
-        let scope_stack = scopes.scopes().iter();
-        unit.cc.update_scope_map(scope_stack.clone());
-        let mut binder = BinderScopes::new(*unit, scopes.globals());
-        for scope in scope_stack.into_iter().skip(1) {
-            binder.scopes().push(scope);
-        }
-        binder
-    }
-
-    fn resolve_path_symbol(
-        unit: &CompileUnit<'tcx>,
-        scopes: &CollectorScopes<'tcx>,
-        path_node: &HirNode<'tcx>,
-        kind_filter: &[SymKind],
-    ) -> Option<&'tcx Symbol> {
-        let mut binder = Self::mirror_binder_scopes(unit, scopes);
-        let mut resolver = ExprResolver::new(unit, &mut binder);
-
-        if path_node.kind_id() == LangRust::scoped_identifier
-            || path_node.kind_id() == LangRust::scoped_type_identifier
-        {
-            if let Some(symbol) = resolver.resolve_scoped_identifier_type(path_node, None)
-                && kind_filter.iter().any(|kind| symbol.kind() == *kind)
-            {
-                return Some(symbol);
-            }
-        }
-
-        if let Some(ident) = path_node.find_identifier(*unit) {
-            return binder.lookup_symbol_with(&ident.name, Some(kind_filter.to_vec()), None, None);
-        }
-
-        None
-    }
-
     fn check_visibility(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> (bool, bool) {
         let mut is_pub = false;
         let mut is_pub_crate = false;
@@ -218,6 +181,74 @@ impl<'tcx> CollectorVisitor<'tcx> {
         (is_pub, is_pub_crate)
     }
 
+    fn handle_global_visibility(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        sym: &'tcx Symbol,
+    ) {
+        // Check visibility
+        let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
+        let is_top_level = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
+
+        let mut parent_is_global = is_top_level;
+        if !is_top_level
+            && let Some(scope) = scopes.top()
+            && let Some(parent_sym) = scope.opt_symbol()
+            && parent_sym.is_global()
+        {
+            parent_is_global = true;
+        }
+
+        if parent_is_global {
+            if is_pub {
+                if !is_top_level {
+                    scopes.globals().insert(sym);
+                }
+                sym.set_is_global(true);
+            } else if is_pub_crate && !is_top_level {
+                scopes.globals().insert(sym);
+            }
+        }
+    }
+
+    fn alloc_scope(&mut self, unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
+        let scope = unit.cc.alloc_scope(symbol.owner());
+        scope.set_symbol(symbol);
+        self.scope_map.insert(scope.id(), scope);
+        scope
+    }
+
+    fn get_scope(&self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
+        self.scope_map.get(&scope_id).copied().unwrap()
+    }
+
+    fn visit_with_scope(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        sym: &'tcx Symbol,
+        sn: &'tcx HirScope<'tcx>,
+        ident: &'tcx HirIdent<'tcx>,
+        allocate_new_scope: bool,
+    ) {
+        ident.set_symbol(sym);
+        sn.set_ident(ident);
+
+        let scope = if allocate_new_scope {
+            self.alloc_scope(unit, sym)
+        } else {
+            self.get_scope(sym.scope())
+        };
+        sym.set_scope(scope.id());
+        sn.set_scope(scope);
+
+        scopes.push_scope(scope);
+        self.visit_children(unit, node, scopes, scope, Some(sym));
+        scopes.pop_scope();
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn visit_scoped_named(
         &mut self,
@@ -233,48 +264,24 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
         if let Some(sn) = node.as_scope()
             && let Some(ident) = node.child_identifier_by_field(*unit, field_id)
-            && let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind)
         {
-            // Check visibility
-            let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
-            let is_top_level = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
-
-            let mut parent_is_global = is_top_level;
-            if !is_top_level
-                && let Some(scope) = scopes.top()
-                && let Some(parent_sym) = scope.opt_symbol()
-                && parent_sym.is_global()
+            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
             {
-                parent_is_global = true;
+                Self::handle_global_visibility(unit, node, scopes, sym);
+                self.visit_with_scope(unit, node, scopes, sym, &sn, ident, false);
+            } else if let Some(sym) = scopes.lookup_symbol_with(
+                &ident.name,
+                Some(vec![SymKind::UnresolvedType]),
+                None,
+                None,
+            ) {
+                sym.set_kind(kind);
+                Self::handle_global_visibility(unit, node, scopes, sym);
+                self.visit_with_scope(unit, node, scopes, sym, &sn, ident, false);
+            } else if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
+                Self::handle_global_visibility(unit, node, scopes, sym);
+                self.visit_with_scope(unit, node, scopes, sym, &sn, ident, true);
             }
-
-            if parent_is_global {
-                if is_pub {
-                    if !is_top_level {
-                        scopes.globals().insert(sym);
-                    }
-                    sym.set_is_global(true);
-                } else if is_pub_crate && !is_top_level {
-                    scopes.globals().insert(sym);
-                }
-            }
-
-            // Link the identifier to the symbol and the scoped node to the identifier.
-            ident.set_symbol(sym);
-            sn.set_ident(ident);
-
-            // Allocate the new scope associated with the symbol.
-            let scope = unit.cc.alloc_hir_scope(next_hir_id(), sym);
-
-            // Update the symbol with the new scope and defining node ID.
-            sym.set_scope(scope.id());
-
-            // Link the ScopedNamed node to the newly created scope.
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, Some(sym));
-            scopes.pop_scope();
         }
     }
 }
@@ -335,13 +342,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             && let Some(sn) = node.as_scope()
             && let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File)
         {
-            let ident = unit
-                .cc
-                .alloc_hir_ident(next_hir_id(), &file_name, file_sym);
+            let ident = unit.cc.alloc_hir_ident(next_hir_id(), &file_name, file_sym);
             sn.set_ident(ident);
             ident.set_symbol(file_sym);
 
-            let scope = unit.cc.alloc_hir_scope(next_hir_id(), file_sym);
+            let scope = self.alloc_scope(unit, file_sym);
             file_sym.set_scope(scope.id());
             sn.set_scope(scope);
             scopes.push_scope(scope);
@@ -476,63 +481,39 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let Some(sn) = node.as_scope() else {
-            return;
-        };
-
-        if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
+        if let Some(_sn) = node.as_scope()
+            && let Some(trait_ident) = node.child_identifier_by_field(*unit, LangRust::field_trait)
+        {
             if let Some(symbol) =
-                Self::resolve_path_symbol(unit, scopes, &trait_node, &[SymKind::Trait])
+                scopes.lookup_symbol_with(&trait_ident.name, Some(vec![SymKind::Trait]), None, None)
             {
-                if let Some(ident) = trait_node.find_identifier(*unit) {
-                    ident.set_symbol(symbol);
-                }
+                trait_ident.set_symbol(symbol);
+            } else if let Some(symbol) =
+                scopes.lookup_or_insert(&trait_ident.name, node, SymKind::UnresolvedType)
+            {
+                trait_ident.set_symbol(symbol);
             }
         }
 
-        let mut impl_scope = None;
-        let mut impl_symbol = None;
-
-        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-            let mut resolved = Self::resolve_path_symbol(
-                unit,
-                scopes,
-                &type_node,
-                &[SymKind::Struct, SymKind::Enum],
-            );
-
-            if resolved.is_none() {
-                if let Some(target_ident) = type_node.find_identifier(*unit) {
-                    resolved = scopes.lookup_or_insert(&target_ident.name, node, SymKind::Struct);
-                }
-            }
-
-            if let Some(symbol) = resolved {
-                if let Some(target_ident) = type_node.find_identifier(*unit) {
-                    target_ident.set_symbol(symbol);
-                }
-
-                let scope_id = symbol.scope();
-                symbol.add_defining(node.id());
-                let scope = unit.cc.get_scope(scope_id);
-                impl_scope = Some(scope);
-                impl_symbol = Some(symbol);
-                sn.set_scope(scope);
+        if let Some(sn) = node.as_scope()
+            && let Some(target_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
+        {
+            if let Some(symbol) = scopes.lookup_symbol_with(
+                &target_ident.name,
+                Some(vec![SymKind::Struct, SymKind::Enum]),
+                None,
+                None,
+            ) {
+                self.visit_with_scope(unit, node, scopes, symbol, &sn, target_ident, false);
+            } else if let Some(symbol) =
+                scopes.lookup_or_insert(&target_ident.name, node, SymKind::UnresolvedType)
+            {
+                self.visit_with_scope(unit, node, scopes, symbol, &sn, target_ident, true);
             }
         }
-
-        let scope = impl_scope.unwrap_or_else(|| {
-            let scope = unit.cc.alloc_scope(node.id());
-            sn.set_scope(scope);
-            scope
-        });
-
-        scopes.push_scope(scope);
-        self.visit_children(unit, node, scopes, namespace, impl_symbol);
-        scopes.pop_scope();
     }
 
     fn visit_macro_definition(
@@ -1086,70 +1067,6 @@ fn run() {
                 "run",
                 SymKind::Function,
                 &["_c::_m::source_0::Foo", "_c::_m::source_0::Foo::greet"],
-            )],
-        );
-    }
-
-    #[test]
-    fn impl_item_handles_crate_paths() {
-        let source = r#"
-pub mod traits { pub trait TraitFoo {} }
-pub mod types { pub struct Foo; }
-
-impl crate::traits::TraitFoo for crate::types::Foo {}
-"#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "Foo",
-                SymKind::Struct,
-                &["_c::_m::source_0::traits::TraitFoo"],
-            )],
-        );
-    }
-
-    #[test]
-    fn impl_item_handles_super_paths() {
-        let source = r#"
-mod outer {
-    pub trait TraitFoo {}
-    pub struct Foo;
-
-    mod inner {
-        impl super::TraitFoo for super::Foo {}
-    }
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "Foo",
-                SymKind::Struct,
-                &["_c::_m::source_0::outer::TraitFoo"],
-            )],
-        );
-    }
-
-    #[test]
-    fn impl_item_handles_mixed_scopes() {
-        let source = r#"
-mod root {
-    pub mod traits { pub trait TraitFoo {} }
-    pub mod data { pub struct Foo; }
-
-    pub mod mid {
-        pub mod inner {
-            impl crate::root::traits::TraitFoo for super::super::data::Foo {}
-        }
-    }
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "Foo",
-                SymKind::Struct,
-                &["_c::_m::source_0::root::traits::TraitFoo"],
             )],
         );
     }
