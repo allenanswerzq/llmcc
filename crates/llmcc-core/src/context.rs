@@ -512,8 +512,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        let scope = self.arena.alloc(Scope::new(owner));
-        scope
+        self.arena.alloc(Scope::new(owner))
     }
 
     /// Merge the second scope into the first.

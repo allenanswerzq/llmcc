@@ -111,10 +111,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     }
 
     pub fn resolve_crate_root(&self) -> Option<&'tcx Symbol> {
-        if let Some(sym) = self.scopes.lookup_symbol("crate") {
-            if sym.kind() == SymKind::Crate {
-                return Some(sym);
-            }
+        if let Some(sym) = self.scopes.lookup_symbol("crate")
+            && sym.kind() == SymKind::Crate
+        {
+            return Some(sym);
         }
         self.scopes.scopes().iter().into_iter().find_map(|scope| {
             if let Some(sym) = scope.opt_symbol()
@@ -206,12 +206,11 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         &mut self,
         type_node: &HirNode<'tcx>,
     ) -> Option<&'tcx Symbol> {
-        if type_node.kind_id() == LangRust::scoped_identifier
-            || type_node.kind_id() == LangRust::scoped_type_identifier
+        if (type_node.kind_id() == LangRust::scoped_identifier
+            || type_node.kind_id() == LangRust::scoped_type_identifier)
+            && let Some(sym) = self.resolve_scoped_identifier_type(type_node, None)
         {
-            if let Some(sym) = self.resolve_scoped_identifier_type(type_node, None) {
-                return Some(sym);
-            }
+            return Some(sym);
         }
 
         let ident = type_node.find_identifier(*self.unit)?;
@@ -628,11 +627,13 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
         // If this is a type identifier or similar, try to resolve it
         if kind_id == LangRust::type_identifier {
-            if let Some(ty) = self.infer_type_from_expr_from_node(node) {
-                if !symbols.iter().any(|s| s.id() == ty.id()) {
-                    symbols.push(ty);
-                }
+            let Some(ty) = self.infer_type_from_expr_from_node(node) else {
+                return;
+            };
+            if symbols.iter().any(|s| s.id() == ty.id()) {
+                return;
             }
+            symbols.push(ty);
             return;
         }
 

@@ -3,12 +3,11 @@ use llmcc_core::ir::{HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
-use llmcc_resolver::{BinderScopes, CollectorScopes, ResolverOption};
+use llmcc_resolver::{CollectorScopes, ResolverOption};
 
 use std::collections::HashMap;
 
 use crate::LangRust;
-use crate::resolve::ExprResolver;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
@@ -136,22 +135,20 @@ impl<'tcx> CollectorVisitor<'tcx> {
         symbol: Option<&Symbol>,
     ) {
         // Handle type_identifier nodes
-        if node.kind_id() == LangRust::type_identifier {
-            if let Some(ident) = node.as_ident() {
-                if let Some(sym) = scopes
-                    .lookup_symbol_with(
-                        &ident.name,
-                        Some(Self::TYPE_DEPENDENCY_KINDS.to_vec()),
-                        None,
-                        None,
-                    )
-                    .or_else(|| ident.opt_symbol())
-                {
-                    ident.set_symbol(sym);
-                    if let Some(target_sym) = symbol {
-                        target_sym.add_dependency(sym);
-                    }
-                }
+        if node.kind_id() == LangRust::type_identifier
+            && let Some(ident) = node.as_ident()
+            && let Some(sym) = scopes
+                .lookup_symbol_with(
+                    &ident.name,
+                    Some(Self::TYPE_DEPENDENCY_KINDS.to_vec()),
+                    None,
+                    None,
+                )
+                .or_else(|| ident.opt_symbol())
+        {
+            ident.set_symbol(sym);
+            if let Some(target_sym) = symbol {
+                target_sym.add_dependency(sym);
             }
             return;
         }
@@ -223,6 +220,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         self.scope_map.get(&scope_id).copied().unwrap()
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn visit_with_scope(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -268,7 +266,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
             {
                 Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, &sn, ident, false);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, false);
             } else if let Some(sym) = scopes.lookup_symbol_with(
                 &ident.name,
                 Some(vec![SymKind::UnresolvedType]),
@@ -277,10 +275,10 @@ impl<'tcx> CollectorVisitor<'tcx> {
             ) {
                 sym.set_kind(kind);
                 Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, &sn, ident, false);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, false);
             } else if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
                 Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, &sn, ident, true);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, true);
             }
         }
     }
@@ -507,11 +505,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 None,
                 None,
             ) {
-                self.visit_with_scope(unit, node, scopes, symbol, &sn, target_ident, false);
+                self.visit_with_scope(unit, node, scopes, symbol, sn, target_ident, false);
             } else if let Some(symbol) =
                 scopes.lookup_or_insert(&target_ident.name, node, SymKind::UnresolvedType)
             {
-                self.visit_with_scope(unit, node, scopes, symbol, &sn, target_ident, true);
+                self.visit_with_scope(unit, node, scopes, symbol, sn, target_ident, true);
             }
         }
     }
@@ -593,11 +591,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     fn visit_type_identifier(
         &mut self,
-        unit: &CompileUnit<'tcx>,
+        _unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
         if let Some(symbol) = scopes.lookup_symbol_with(
@@ -616,18 +614,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             return;
         }
 
-        if ident.name == "Self" {
-            if let Some(symbol) = scopes.scopes().iter().into_iter().rev().find_map(|scope| {
+        if ident.name == "Self"
+            && let Some(symbol) = scopes.scopes().iter().into_iter().rev().find_map(|scope| {
                 scope.opt_symbol().and_then(|sym| {
-                    if matches!(sym.kind(), SymKind::Struct | SymKind::Enum | SymKind::Trait) {
-                        Some(sym)
-                    } else {
-                        None
-                    }
+                    matches!(sym.kind(), SymKind::Struct | SymKind::Enum | SymKind::Trait)
+                        .then_some(sym)
                 })
-            }) {
-                ident.set_symbol(symbol);
-            }
+            })
+        {
+            ident.set_symbol(symbol);
         }
     }
 
