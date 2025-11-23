@@ -741,10 +741,18 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        debug_assert!(namespace.opt_symbol().is_some(), "field without owner");
+        let owner_sym = if let Some(sym) = namespace.opt_symbol() {
+            sym
+        } else if let Some(parent_sym) = parent
+            && let Some(resolved) = unit.opt_get_symbol(parent_sym.id())
+        {
+            resolved
+        } else {
+            return;
+        };
+
         if let Some(name_node) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
-            && let Some(owner_sym) = namespace.opt_symbol()
             && let Some(symbol) = Self::lookup_field_symbol(unit, owner_sym, &name_node.name)
         {
             let (ty, args) = Self::resolve_type_with_args(unit, &type_node, scopes);
@@ -758,9 +766,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 Self::add_value_dependency(symbol, arg);
             }
 
-            if let Some(ns) = namespace.opt_symbol() {
-                Self::add_type_dependencies(ns, ty, &args);
-            }
+            Self::add_type_dependencies(owner_sym, ty, &args);
         }
     }
 
