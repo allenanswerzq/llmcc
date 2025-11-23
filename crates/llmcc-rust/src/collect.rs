@@ -265,8 +265,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         {
             if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
             {
+                let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident, false);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
             } else if let Some(sym) = scopes.lookup_symbol_with(
                 &ident.name,
                 Some(vec![SymKind::UnresolvedType]),
@@ -274,8 +275,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 None,
             ) {
                 sym.set_kind(kind);
+                let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident, false);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
             } else if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
                 Self::handle_global_visibility(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, true);
@@ -336,8 +338,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             scopes.push_scope_with(node, Some(symbol));
         }
 
+        let sn = node.as_scope().unwrap();
         if let Some(file_name) = parse_file_name(file_path)
-            && let Some(sn) = node.as_scope()
             && let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File)
         {
             let ident = unit.cc.alloc_hir_ident(next_hir_id(), &file_name, file_sym);
@@ -345,8 +347,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             ident.set_symbol(file_sym);
 
             let scope = self.alloc_scope(unit, file_sym);
-            file_sym.set_scope(scope.id());
             sn.set_scope(scope);
+
+            file_sym.set_scope(scope.id());
             scopes.push_scope(scope);
 
             if let Some(alias) = crate_alias {

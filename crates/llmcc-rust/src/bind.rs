@@ -154,8 +154,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 return;
             };
 
-            if let Some(symbol) = symbol {
-                let scope_id = symbol.scope();
+            if let Some(symbol) = symbol
+                && let Some(scope_id) = symbol.opt_scope()
+            {
                 scopes.push_scope(scope_id);
             }
         }
@@ -163,7 +164,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(scope_id) = parse_module_name(file_path).and_then(|module_name| {
             scopes
                 .lookup_or_insert(&module_name, node, SymKind::Module)
-                .map(|symbol| symbol.scope())
+                .and_then(|symbol| symbol.opt_scope())
         }) {
             scopes.push_scope(scope_id);
         }
@@ -175,8 +176,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 return;
             };
 
-            if let Some(symbol) = file_sym_opt {
-                let scope_id = symbol.scope();
+            if let Some(symbol) = file_sym_opt
+                && let Some(scope_id) = symbol.opt_scope()
+            {
                 scopes.push_scope(scope_id);
             }
         }
