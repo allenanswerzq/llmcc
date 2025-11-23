@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirIdent, HirNode, HirScope};
+use llmcc_core::ir::{HirIdent, HirKind, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
@@ -31,6 +31,36 @@ impl<'tcx> CollectorVisitor<'tcx> {
             scope_map: HashMap::new(),
         }
     }
+
+    fn type_name_from_node<'a>(
+        unit: &CompileUnit<'a>,
+        node: &HirNode<'a>,
+    ) -> Option<&'a str> {
+        if !node.is_kind(HirKind::Identifier) {
+            if let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name) {
+                return Some(ident.name.as_str());
+            }
+        }
+        Self::last_identifier(unit, node).map(|ident| ident.name.as_str())
+    }
+
+    fn last_identifier<'a>(
+        unit: &CompileUnit<'a>,
+        node: &HirNode<'a>,
+    ) -> Option<&'a HirIdent<'a>> {
+        let ident = node.as_ident();
+        if node.children().is_empty() {
+            return ident;
+        }
+        for child_id in node.children().iter().rev() {
+            let child = unit.hir_node(*child_id);
+            if let Some(found) = Self::last_identifier(unit, &child) {
+                return Some(found);
+            }
+        }
+        ident
+    }
+
 
     fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut CollectorScopes<'tcx>) {
         let primitives = [
@@ -275,6 +305,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 None,
             ) {
                 sym.set_kind(kind);
+                sym.set_fqn(scopes.build_fqn(&ident.name));
                 let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
@@ -485,33 +516,45 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        if let Some(_sn) = node.as_scope()
-            && let Some(trait_ident) = node.child_identifier_by_field(*unit, LangRust::field_trait)
-        {
-            if let Some(symbol) =
-                scopes.lookup_symbol_with(&trait_ident.name, Some(vec![SymKind::Trait]), None, None)
-            {
-                trait_ident.set_symbol(symbol);
-            } else if let Some(symbol) =
-                scopes.lookup_or_insert(&trait_ident.name, node, SymKind::UnresolvedType)
-            {
-                trait_ident.set_symbol(symbol);
+        if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
+            if let Some(trait_name) = Self::type_name_from_node(unit, &trait_node) {
+                if let Some(symbol) =
+                    scopes.lookup_symbol_with(trait_name, Some(vec![SymKind::Trait]), None, None)
+                {
+                    if let Some(trait_ident) =
+                        node.child_identifier_by_field(*unit, LangRust::field_trait)
+                    {
+                        trait_ident.set_symbol(symbol);
+                    }
+                } else if let Some(symbol) =
+                    scopes.lookup_or_insert(trait_name, node, SymKind::UnresolvedType)
+                {
+                    if let Some(trait_ident) =
+                        node.child_identifier_by_field(*unit, LangRust::field_trait)
+                    {
+                        trait_ident.set_symbol(symbol);
+                    }
+                }
             }
         }
 
         if let Some(sn) = node.as_scope()
             && let Some(target_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
+            && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
+            && let Some(type_name) = Self::type_name_from_node(unit, &type_node)
         {
             if let Some(symbol) = scopes.lookup_symbol_with(
-                &target_ident.name,
+                type_name,
                 Some(vec![SymKind::Struct, SymKind::Enum]),
                 None,
                 None,
             ) {
+                target_ident.set_symbol(symbol);
                 self.visit_with_scope(unit, node, scopes, symbol, sn, target_ident, false);
             } else if let Some(symbol) =
-                scopes.lookup_or_insert(&target_ident.name, node, SymKind::UnresolvedType)
+                scopes.lookup_or_insert(type_name, node, SymKind::UnresolvedType)
             {
+                target_ident.set_symbol(symbol);
                 self.visit_with_scope(unit, node, scopes, symbol, sn, target_ident, true);
             }
         }

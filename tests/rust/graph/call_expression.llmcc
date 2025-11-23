@@ -112,15 +112,16 @@ u0:28 | Variable  | baz            | _c::_m::main::qualified_call::baz         |
 u0:29 | Variable  | x              | _c::_m::main::qualified_call::x           |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:24, u0:26]
+u0:22 <- [u0:24, u0:26, u0:27, u0:29]
 u0:23 <- [u0:27, u0:28]
 u0:24 -> [u0:22, u0:25, u0:26]
 u0:24 <- [u0:27]
 u0:25 <- [u0:24, u0:27]
 u0:26 -> [u0:22]
 u0:26 <- [u0:24, u0:27]
-u0:27 -> [u0:23, u0:24, u0:25, u0:26]
+u0:27 -> [u0:22, u0:23, u0:24, u0:25, u0:26]
 u0:28 -> [u0:23]
+u0:29 -> [u0:22]
 
 --- expect:blocks ---
 u0:1  | root   | main          
@@ -135,14 +136,14 @@ u0:9  | call   | block#9
 u0:10 | call   | block#10      
 
 --- expect:block-deps ---
-u0:2 <- [u0:4, u0:7]
+u0:2 <- [u0:4, u0:7, u0:8]
 u0:3 <- [u0:8]
 u0:4 -> [u0:2, u0:6, u0:7]
 u0:4 <- [u0:8]
 u0:6 <- [u0:4, u0:8]
 u0:7 -> [u0:2]
 u0:7 <- [u0:4, u0:8]
-u0:8 -> [u0:3, u0:4, u0:6, u0:7]
+u0:8 -> [u0:2, u0:3, u0:4, u0:6, u0:7]
 
 --- expect:graph ---
 digraph project {
@@ -433,11 +434,12 @@ u0:27 | Variable  | cursor              | _c::_m::main::chain_variable_demo::cur
 
 --- expect:symbol-deps ---
 u0:22 -> [u0:23, u0:24]
-u0:22 <- [u0:25, u0:26]
+u0:22 <- [u0:25, u0:26, u0:27]
 u0:23 <- [u0:22, u0:25]
-u0:24 <- [u0:22]
-u0:25 -> [u0:22, u0:23]
+u0:24 <- [u0:22, u0:25]
+u0:25 -> [u0:22, u0:23, u0:24]
 u0:26 -> [u0:22]
+u0:27 -> [u0:22]
 
 --- expect:blocks ---
 u0:1 | root   | main               
@@ -453,8 +455,8 @@ u0:8 | call   | block#8
 u0:2 -> [u0:4, u0:5]
 u0:2 <- [u0:6]
 u0:4 <- [u0:2, u0:6]
-u0:5 <- [u0:2]
-u0:6 -> [u0:2, u0:4]
+u0:5 <- [u0:2, u0:6]
+u0:6 -> [u0:2, u0:4, u0:5]
 
 --- expect:graph ---
 digraph project {

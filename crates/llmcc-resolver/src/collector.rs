@@ -133,7 +133,7 @@ impl<'a> CollectorScopes<'a> {
     }
 
     /// Build fully qualified name from current scope
-    fn build_fqn(&self, name: &str) -> InternedStr {
+    pub fn build_fqn(&self, name: &str) -> InternedStr {
         let fqn_str = self
             .scopes
             .iter()
