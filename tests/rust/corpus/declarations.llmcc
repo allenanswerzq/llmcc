@@ -642,6 +642,7 @@ u0:24 | UnresolvedType | Display | _c::_m::main::Display |
 u0:25 | UnresolvedType | Foo     | _c::_m::main::Foo     |         
 u0:26 | UnresolvedType | Nested  | _c::_m::main::Nested  |         
 
+
 --- expect:symbol-deps ---
 
 
@@ -1319,18 +1320,24 @@ u0:23 | Struct        | A      | _c::_m::main::A    |
 u0:24 | TypeParameter | B      | _c::_m::main::A::B |         
 u0:25 | Struct        | C      | _c::_m::main::C    |         
 u0:26 | Struct        | D      | _c::_m::main::D    |         
-u0:27 | Struct        | E      | _c::_m::main::E    |         
-u0:28 | TypeParameter | T      | _c::_m::main::E::T |         
-u0:29 | Trait         | F      | _c::_m::main::F    |         
-u0:30 | Trait         | G      | _c::_m::main::G    |         
-u0:31 | Struct        | H      | _c::_m::main::H    |         
-u0:32 | TypeParameter | T      | _c::_m::main::H::T |         
-u0:33 | Struct        | I      | _c::_m::main::I    |         
-u0:34 | TypeParameter | U      | _c::_m::main::I::U |         
+u0:27 | Const         | SIZE   | _c::_m::main::D::SIZE |         
+u0:28 | Struct        | E      | _c::_m::main::E    |         
+u0:29 | TypeParameter | T      | _c::_m::main::E::T |         
+u0:30 | Trait         | F      | _c::_m::main::F    |         
+u0:31 | Trait         | G      | _c::_m::main::G    |         
+u0:32 | Struct        | H      | _c::_m::main::H    |         
+u0:33 | TypeParameter | T      | _c::_m::main::H::T |         
+u0:34 | Struct        | I      | _c::_m::main::I    |         
+u0:35 | TypeParameter | U      | _c::_m::main::I::U |         
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:26]
-u0:26 -> [u0:12]
+u0:26 -> [u0:12, u0:27]
+u0:27 <- [u0:26]
+u0:30 <- [u0:32, u0:34]
+u0:31 <- [u0:34]
+u0:32 -> [u0:30]
+u0:34 -> [u0:30, u0:31]
 
 
 ===============================================================================

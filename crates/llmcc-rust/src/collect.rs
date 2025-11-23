@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirIdent, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
@@ -36,29 +36,25 @@ impl<'tcx> CollectorVisitor<'tcx> {
         unit: &CompileUnit<'a>,
         node: &HirNode<'a>,
     ) -> Option<&'a str> {
-        if !node.is_kind(HirKind::Identifier)
-            && let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
-        {
+        if let Some(field_node) = node.child_by_field(*unit, LangRust::field_name) {
+            return Self::type_name_from_node(unit, &field_node);
+        }
+
+        if let Some(ident) = node.as_ident() {
             return Some(ident.name.as_str());
         }
-        Self::last_identifier(unit, node).map(|ident| ident.name.as_str())
-    }
 
-    fn last_identifier<'a>(
-        unit: &CompileUnit<'a>,
-        node: &HirNode<'a>,
-    ) -> Option<&'a HirIdent<'a>> {
-        let ident = node.as_ident();
-        if node.children().is_empty() {
-            return ident;
+        if let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name) {
+            return Some(ident.name.as_str());
         }
-        for child_id in node.children().iter().rev() {
-            let child = unit.hir_node(*child_id);
-            if let Some(found) = Self::last_identifier(unit, &child) {
-                return Some(found);
-            }
-        }
-        ident
+
+        node.children()
+            .iter()
+            .rev()
+            .find_map(|child_id| {
+                let child = unit.hir_node(*child_id);
+                Self::type_name_from_node(unit, &child)
+            })
     }
 
 
@@ -675,6 +671,34 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::TypeParameter,
             LangRust::field_name,
         );
+        if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
+            && let Some(owner) = namespace.opt_symbol()
+        {
+            Self::collect_type_dependencies(unit, &bounds, scopes, Some(owner));
+        }
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_const_parameter(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(sym) =
+            self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name)
+        {
+            if let Some(owner) = namespace.opt_symbol() {
+                owner.add_dependency(sym);
+            }
+            if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
+                && let Some(owner) = namespace.opt_symbol()
+            {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(owner));
+            }
+        }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -693,6 +717,22 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::TypeAlias,
             LangRust::field_name,
         );
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_where_predicate(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
+            && let Some(owner) = namespace.opt_symbol()
+        {
+            Self::collect_type_dependencies(unit, &bounds, scopes, Some(owner));
+        }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 

@@ -35,6 +35,9 @@ enum Command {
         /// Only run cases whose id contains this substring
         #[arg(long)]
         filter: Option<String>,
+        /// Optional positional filter (convenience)
+        #[arg(value_name = "FILTER", required = false)]
+        case: Option<String>,
         /// Update expectation sections with current output (bless)
         #[arg(long)]
         update: bool,
@@ -59,9 +62,10 @@ fn main() -> Result<()> {
         } => run_single_command(cli.root, file, update, keep_temps),
         Command::RunAll {
             filter,
+            case,
             update,
             keep_temps,
-        } => run_all_command(cli.root, filter, update, keep_temps),
+        } => run_all_command(cli.root, filter.or(case), update, keep_temps),
         Command::List { filter } => list_command(cli.root, filter),
     }
 }
