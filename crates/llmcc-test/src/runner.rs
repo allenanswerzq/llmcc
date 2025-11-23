@@ -1,6 +1,6 @@
 use std::fmt::Write as _;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
 use llmcc_core::ProjectGraph;
@@ -15,6 +15,7 @@ use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
 use similar::TextDiff;
 use tempfile::TempDir;
+use walkdir::WalkDir;
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
 
@@ -46,6 +47,7 @@ struct BlockSnapshot {
 pub struct RunnerConfig {
     pub filter: Option<String>,
     pub update: bool,
+    pub keep_temps: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,6 +75,7 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.update,
             config.filter.as_deref(),
             &mut matched,
+            config.keep_temps,
         )?);
     }
 
@@ -86,9 +89,13 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
     Ok(outcomes)
 }
 
-pub fn run_cases_for_file(file: &mut CorpusFile, update: bool) -> Result<Vec<CaseOutcome>> {
+pub fn run_cases_for_file(
+    file: &mut CorpusFile,
+    update: bool,
+    keep_temps: bool,
+) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
-    run_cases_in_file(file, update, None, &mut matched)
+    run_cases_in_file(file, update, None, &mut matched, keep_temps)
 }
 
 fn run_cases_in_file(
@@ -96,9 +103,11 @@ fn run_cases_in_file(
     update: bool,
     filter: Option<&str>,
     matched: &mut usize,
+    keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
+    let mut printed_case_header = false;
     for idx in 0..file.cases.len() {
         let run_case = {
             let case = &file.cases[idx];
@@ -114,9 +123,17 @@ fn run_cases_in_file(
         }
 
         *matched += 1;
+        let case_name = file.cases[idx].id();
+        if printed_case_header {
+            for _ in 0..3 {
+                println!();
+            }
+        }
+        println!(">>> running {case_name}");
+        printed_case_header = true;
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
-            evaluate_case(case, update)?
+            evaluate_case(case, update, keep_temps)?
         };
         if mutated {
             file.mark_dirty();
@@ -130,7 +147,11 @@ fn run_cases_in_file(
     Ok(file_outcomes)
 }
 
-fn evaluate_case(case: &mut CorpusCase, update: bool) -> Result<(CaseOutcome, bool)> {
+fn evaluate_case(
+    case: &mut CorpusCase,
+    update: bool,
+    keep_temps: bool,
+) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
 
     if case.expectations.is_empty() {
@@ -146,7 +167,7 @@ fn evaluate_case(case: &mut CorpusCase, update: bool) -> Result<(CaseOutcome, bo
 
     reset_symbol_id_counter();
     reset_block_id_counter();
-    let summary = build_pipeline_summary(case)?;
+    let summary = build_pipeline_summary(case, keep_temps)?;
     let mut mutated = false;
     let mut status = CaseStatus::Passed;
     let mut failures = Vec::new();
@@ -191,7 +212,7 @@ fn evaluate_case(case: &mut CorpusCase, update: bool) -> Result<(CaseOutcome, bo
     ))
 }
 
-fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
+fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<PipelineSummary> {
     let needs_symbols = case
         .expectations
         .iter()
@@ -222,10 +243,17 @@ fn build_pipeline_summary(case: &CorpusCase) -> Result<PipelineSummary> {
         return Ok(PipelineSummary::default());
     }
 
-    let project = materialize_case(case)?;
+    let project = materialize_case(case, keep_temps)?;
+    if keep_temps && project.is_persistent() {
+        println!(
+            "preserved materialized project for {} at {}",
+            case.id(),
+            project.root().display()
+        );
+    }
     let summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(
-            &project.paths,
+            project.root(),
             needs_symbols,
             needs_graph,
             needs_block_reports,
@@ -731,16 +759,26 @@ fn format_sexpr(expr: &SExpr) -> String {
 
 struct MaterializedProject {
     #[allow(dead_code)]
-    temp_dir: TempDir,
-    paths: Vec<String>,
+    temp_dir: Option<TempDir>,
+    root_path: PathBuf,
 }
 
-fn materialize_case(case: &CorpusCase) -> Result<MaterializedProject> {
+impl MaterializedProject {
+    fn root(&self) -> &Path {
+        &self.root_path
+    }
+
+    fn is_persistent(&self) -> bool {
+        self.temp_dir.is_none()
+    }
+}
+
+fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedProject> {
     let temp_dir = tempfile::tempdir().context("failed to create temp dir for llmcc-test")?;
-    let mut paths = Vec::with_capacity(case.files.len());
+    let root_path = temp_dir.path().to_path_buf();
 
     for file in &case.files {
-        let abs_path = temp_dir.path().join(Path::new(&file.path));
+        let abs_path = root_path.join(Path::new(&file.path));
         if let Some(parent) = abs_path.parent() {
             fs::create_dir_all(parent)
                 .with_context(|| format!("failed to create {}", parent.display()))?;
@@ -752,14 +790,24 @@ fn materialize_case(case: &CorpusCase) -> Result<MaterializedProject> {
                 case.id()
             )
         })?;
-        paths.push(abs_path.to_string_lossy().to_string());
     }
 
-    Ok(MaterializedProject { temp_dir, paths })
+    if keep_temps {
+        let preserved = temp_dir.path().to_path_buf();
+        return Ok(MaterializedProject {
+            temp_dir: None,
+            root_path: preserved,
+        });
+    }
+
+    Ok(MaterializedProject {
+        temp_dir: Some(temp_dir),
+        root_path,
+    })
 }
 
 fn collect_pipeline<L>(
-    files: &[String],
+    project_root: &Path,
     keep_symbols: bool,
     build_graph: bool,
     build_block_reports: bool,
@@ -769,7 +817,8 @@ fn collect_pipeline<L>(
 where
     L: LanguageTraitImpl,
 {
-    let cc = CompileCtxt::from_files::<L>(files).unwrap();
+    let files = discover_language_files::<L>(project_root)?;
+    let cc = CompileCtxt::from_files::<L>(&files).unwrap();
     build_llmcc_ir::<L>(&cc, IrBuildOption).unwrap();
 
     // Use new unified API for symbol collection with optional IR printing
@@ -834,6 +883,34 @@ where
         symbol_deps,
         block_graph,
     })
+}
+
+fn discover_language_files<L: LanguageTraitImpl>(root: &Path) -> Result<Vec<String>> {
+    let supported = L::supported_extensions();
+    let mut files = Vec::new();
+
+    for entry in WalkDir::new(root) {
+        let entry = entry.with_context(|| format!("failed to walk {}", root.display()))?;
+        if !entry.file_type().is_file() {
+            continue;
+        }
+
+        let Some(ext) = entry.path().extension().and_then(|ext| ext.to_str()) else {
+            continue;
+        };
+
+        if !supported
+            .iter()
+            .any(|candidate| candidate.eq_ignore_ascii_case(ext))
+        {
+            continue;
+        }
+
+        files.push(entry.path().to_string_lossy().to_string());
+    }
+
+    files.sort();
+    Ok(files)
 }
 
 fn render_block_graph(project: &ProjectGraph) -> String {

@@ -1,9 +1,11 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::HirNode;
+use llmcc_core::ir::{HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::Scope;
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
 use llmcc_resolver::{CollectorScopes, ResolverOption};
+
+use std::collections::HashMap;
 
 use crate::LangRust;
 use crate::token::AstVisitorRust;
@@ -11,13 +13,22 @@ use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
-    phantom: std::marker::PhantomData<&'tcx ()>,
+    scope_map: HashMap<ScopeId, &'tcx Scope<'tcx>>,
 }
 
 impl<'tcx> CollectorVisitor<'tcx> {
+    const TYPE_DEPENDENCY_KINDS: &'static [SymKind] = &[
+        SymKind::Struct,
+        SymKind::Enum,
+        SymKind::Trait,
+        SymKind::TypeAlias,
+        SymKind::TypeParameter,
+        SymKind::Primitive,
+    ];
+
     fn new() -> Self {
         Self {
-            phantom: std::marker::PhantomData,
+            scope_map: HashMap::new(),
         }
     }
 
@@ -41,7 +52,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
         let ident = node.child_identifier_by_field(*unit, field_id)?;
-        scopes.lookup_or_insert(&ident.name, node, kind)
+        let sym = scopes.lookup_or_insert(&ident.name, node, kind)?;
+        ident.set_symbol(sym);
+        Some(sym)
     }
 
     /// Find all identifiers in a pattern node (recursive)
@@ -76,15 +89,11 @@ impl<'tcx> CollectorVisitor<'tcx> {
             return;
         }
 
-        // Special handling for scoped identifiers: don't collect them as variables, but recurse
+        // Special handling for scoped identifiers: don't collect them as variables
         if matches!(
             node.kind_id(),
             LangRust::scoped_identifier | LangRust::scoped_type_identifier
         ) {
-            for child_id in node.children() {
-                let child = unit.hir_node(*child_id);
-                Self::collect_pattern_identifiers_impl(unit, &child, scopes, kind, symbols);
-            }
             return;
         }
 
@@ -107,6 +116,50 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
+    /// Collect type dependencies from a type expression
+    /// This traverses the type and its type arguments, adding all type identifiers as dependencies
+    fn collect_type_dependencies(
+        unit: &CompileUnit<'tcx>,
+        type_node: &HirNode<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+        symbol: Option<&Symbol>,
+    ) {
+        Self::collect_type_dependencies_impl(unit, type_node, scopes, symbol);
+    }
+
+    /// Recursive worker for [`collect_type_dependencies`]
+    fn collect_type_dependencies_impl(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &CollectorScopes<'tcx>,
+        symbol: Option<&Symbol>,
+    ) {
+        // Handle type_identifier nodes
+        if node.kind_id() == LangRust::type_identifier
+            && let Some(ident) = node.as_ident()
+            && let Some(sym) = scopes
+                .lookup_symbol_with(
+                    &ident.name,
+                    Some(Self::TYPE_DEPENDENCY_KINDS.to_vec()),
+                    None,
+                    None,
+                )
+                .or_else(|| ident.opt_symbol())
+        {
+            ident.set_symbol(sym);
+            if let Some(target_sym) = symbol {
+                target_sym.add_dependency(sym);
+            }
+            return;
+        }
+
+        // Recurse into generic type arguments and other type expressions
+        for child_id in node.children() {
+            let child = unit.hir_node(*child_id);
+            Self::collect_type_dependencies_impl(unit, &child, scopes, symbol);
+        }
+    }
+
     fn check_visibility(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> (bool, bool) {
         let mut is_pub = false;
         let mut is_pub_crate = false;
@@ -125,6 +178,75 @@ impl<'tcx> CollectorVisitor<'tcx> {
         (is_pub, is_pub_crate)
     }
 
+    fn handle_global_visibility(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        sym: &'tcx Symbol,
+    ) {
+        // Check visibility
+        let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
+        let is_top_level = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
+
+        let mut parent_is_global = is_top_level;
+        if !is_top_level
+            && let Some(scope) = scopes.top()
+            && let Some(parent_sym) = scope.opt_symbol()
+            && parent_sym.is_global()
+        {
+            parent_is_global = true;
+        }
+
+        if parent_is_global {
+            if is_pub {
+                if !is_top_level {
+                    scopes.globals().insert(sym);
+                }
+                sym.set_is_global(true);
+            } else if is_pub_crate && !is_top_level {
+                scopes.globals().insert(sym);
+            }
+        }
+    }
+
+    fn alloc_scope(&mut self, unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Scope<'tcx> {
+        let scope = unit.cc.alloc_scope(symbol.owner());
+        scope.set_symbol(symbol);
+        self.scope_map.insert(scope.id(), scope);
+        scope
+    }
+
+    fn get_scope(&self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
+        self.scope_map.get(&scope_id).copied().unwrap()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn visit_with_scope(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        sym: &'tcx Symbol,
+        sn: &'tcx HirScope<'tcx>,
+        ident: &'tcx HirIdent<'tcx>,
+        allocate_new_scope: bool,
+    ) {
+        ident.set_symbol(sym);
+        sn.set_ident(ident);
+
+        let scope = if allocate_new_scope {
+            self.alloc_scope(unit, sym)
+        } else {
+            self.get_scope(sym.scope())
+        };
+        sym.set_scope(scope.id());
+        sn.set_scope(scope);
+
+        scopes.push_scope(scope);
+        self.visit_children(unit, node, scopes, scope, Some(sym));
+        scopes.pop_scope();
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn visit_scoped_named(
         &mut self,
@@ -140,48 +262,24 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
         if let Some(sn) = node.as_scope()
             && let Some(ident) = node.child_identifier_by_field(*unit, field_id)
-            && let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind)
         {
-            // Check visibility
-            let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
-            let is_top_level = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
-
-            let mut parent_is_global = is_top_level;
-            if !is_top_level
-                && let Some(scope) = scopes.top()
-                && let Some(parent_sym) = scope.symbol()
-                && parent_sym.is_global()
+            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
             {
-                parent_is_global = true;
+                Self::handle_global_visibility(unit, node, scopes, sym);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, false);
+            } else if let Some(sym) = scopes.lookup_symbol_with(
+                &ident.name,
+                Some(vec![SymKind::UnresolvedType]),
+                None,
+                None,
+            ) {
+                sym.set_kind(kind);
+                Self::handle_global_visibility(unit, node, scopes, sym);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, false);
+            } else if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
+                Self::handle_global_visibility(unit, node, scopes, sym);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, true);
             }
-
-            if parent_is_global {
-                if is_pub {
-                    if !is_top_level {
-                        scopes.globals().insert(sym);
-                    }
-                    sym.set_is_global(true);
-                } else if is_pub_crate && !is_top_level {
-                    scopes.globals().insert(sym);
-                }
-            }
-
-            // Link the identifier to the symbol and the scoped node to the identifier.
-            ident.set_symbol(sym);
-            sn.set_ident(ident);
-
-            // Allocate the new scope associated with the symbol.
-            let scope = unit.cc.alloc_hir_scope(next_hir_id(), sym);
-
-            // Update the symbol with the new scope and defining node ID.
-            sym.set_scope(scope.id());
-
-            // Link the ScopedNamed node to the newly created scope.
-            sn.set_scope(scope);
-
-            scopes.push_scope(scope);
-            self.visit_children(unit, node, scopes, scope, Some(sym));
-            scopes.pop_scope();
         }
     }
 }
@@ -218,6 +316,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
+        let mut crate_alias: Option<&Symbol> = None;
 
         if let Some(crate_name) = parse_crate_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
@@ -227,6 +326,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // Insert 'crate' alias pointing to this globals
             if let Some(crate_sym) = scopes.lookup_or_insert("crate", node, SymKind::Crate) {
                 crate_sym.set_scope(scopes.globals().id());
+                crate_alias = Some(crate_sym);
             }
         }
 
@@ -240,16 +340,18 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             && let Some(sn) = node.as_scope()
             && let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File)
         {
-            let ident = unit
-                .cc
-                .alloc_hir_ident(next_hir_id(), &file_name, file_sym);
+            let ident = unit.cc.alloc_hir_ident(next_hir_id(), &file_name, file_sym);
             sn.set_ident(ident);
             ident.set_symbol(file_sym);
 
-            let scope = unit.cc.alloc_hir_scope(next_hir_id(), file_sym);
+            let scope = self.alloc_scope(unit, file_sym);
             file_sym.set_scope(scope.id());
             sn.set_scope(scope);
             scopes.push_scope(scope);
+
+            if let Some(alias) = crate_alias {
+                alias.set_scope(scope.id());
+            }
         }
 
         self.visit_children(unit, node, scopes, namespace, parent);
@@ -305,17 +407,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = self.declare_symbol_from_field(
+        self.visit_scoped_named(
             unit,
             node,
             scopes,
+            namespace,
+            parent,
             SymKind::Function,
             LangRust::field_name,
-        ) {
-            self.visit_children(unit, node, scopes, namespace, Some(symbol));
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
-        }
+        );
     }
 
     fn visit_struct_item(
@@ -379,36 +479,37 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let Some(sn) = node.as_scope() else {
-            return;
-        };
-
-        // Extract the type name (e.g., "foo::Bar")
-        let type_name_opt = node
-            .child_identifier_by_field(*unit, LangRust::field_type)
-            .map(|ident| ident.name.to_string());
-
-        if let Some(full_type_name) = type_name_opt {
-            // Extract the short name (e.g., "Bar")
-            // Note: split('::').last() gets the item name.
-            let short_name = full_type_name.split("::").last().unwrap_or(&full_type_name);
-
-            // Lookup for the struct this impl block is target for
+        if let Some(_sn) = node.as_scope()
+            && let Some(trait_ident) = node.child_identifier_by_field(*unit, LangRust::field_trait)
+        {
             if let Some(symbol) =
-                scopes.lookup_symbol_with(short_name, Some(vec![SymKind::Struct]), None, None)
-                && let Some(scope_id) = symbol.scope()
+                scopes.lookup_symbol_with(&trait_ident.name, Some(vec![SymKind::Trait]), None, None)
             {
-                // NOTE: the impl and the define reuse the same scope(namespace)
-                symbol.add_defining(node.id());
-                let scope = unit.cc.get_scope(scope_id);
-                sn.set_scope(scope);
+                trait_ident.set_symbol(symbol);
+            } else if let Some(symbol) =
+                scopes.lookup_or_insert(&trait_ident.name, node, SymKind::UnresolvedType)
+            {
+                trait_ident.set_symbol(symbol);
+            }
+        }
 
-                scopes.push_scope(scope);
-                self.visit_children(unit, node, scopes, namespace, Some(symbol));
-                scopes.pop_scope();
+        if let Some(sn) = node.as_scope()
+            && let Some(target_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
+        {
+            if let Some(symbol) = scopes.lookup_symbol_with(
+                &target_ident.name,
+                Some(vec![SymKind::Struct, SymKind::Enum]),
+                None,
+                None,
+            ) {
+                self.visit_with_scope(unit, node, scopes, symbol, sn, target_ident, false);
+            } else if let Some(symbol) =
+                scopes.lookup_or_insert(&target_ident.name, node, SymKind::UnresolvedType)
+            {
+                self.visit_with_scope(unit, node, scopes, symbol, sn, target_ident, true);
             }
         }
     }
@@ -488,6 +589,43 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    fn visit_type_identifier(
+        &mut self,
+        _unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
+    ) {
+        let ident = node.as_ident().unwrap();
+        if let Some(symbol) = scopes.lookup_symbol_with(
+            &ident.name,
+            Some(vec![
+                SymKind::Struct,
+                SymKind::Enum,
+                SymKind::Trait,
+                SymKind::Function,
+                SymKind::TypeAlias,
+            ]),
+            None,
+            None,
+        ) {
+            ident.set_symbol(symbol);
+            return;
+        }
+
+        if ident.name == "Self"
+            && let Some(symbol) = scopes.scopes().iter().into_iter().rev().find_map(|scope| {
+                scope.opt_symbol().and_then(|sym| {
+                    matches!(sym.kind(), SymKind::Struct | SymKind::Enum | SymKind::Trait)
+                        .then_some(sym)
+                })
+            })
+        {
+            ident.set_symbol(symbol);
+        }
+    }
+
     fn visit_type_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -532,7 +670,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.declare_symbol_from_field(unit, node, scopes, SymKind::Field, LangRust::field_name);
+        if let Some(field_sym) =
+            self.declare_symbol_from_field(unit, node, scopes, SymKind::Field, LangRust::field_name)
+        {
+            // Collect dependencies on the field's type
+            if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(field_sym));
+
+                // Also add type dependencies to the parent (the struct)
+                if let Some(ns) = namespace.opt_symbol() {
+                    Self::collect_type_dependencies(unit, &type_node, scopes, Some(ns));
+                }
+            }
+        }
+
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -553,6 +704,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::EnumVariant,
             LangRust::field_name,
         );
+
+        if let Some(enum_sym) = namespace.opt_symbol()
+            && let Some(body_node) = node.child_by_field(*unit, LangRust::field_body)
+        {
+            Self::collect_type_dependencies(unit, &body_node, scopes, Some(enum_sym));
+        }
     }
 
     fn visit_parameter(
@@ -584,8 +741,20 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        let mut declared_symbols = Vec::new();
         if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
-            Self::collect_pattern_identifiers(unit, &pattern, scopes, SymKind::Variable);
+            declared_symbols =
+                Self::collect_pattern_identifiers(unit, &pattern, scopes, SymKind::Variable);
+        }
+
+        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+            for symbol in &declared_symbols {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(symbol));
+            }
+
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::collect_type_dependencies(unit, &type_node, scopes, Some(ns));
+            }
         }
 
         self.visit_children(unit, node, scopes, namespace, parent);

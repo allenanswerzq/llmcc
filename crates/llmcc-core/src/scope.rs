@@ -66,10 +66,16 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Merge existing scope into this scope.
+    #[inline]
     pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
         other.for_each_symbol(|source_symbol| {
             self.insert(source_symbol);
         });
+    }
+
+    #[inline]
+    pub fn add_parent(&self, parent: &'tcx Scope<'tcx>) {
+        self.parents.write().push(parent);
     }
 
     #[inline]
@@ -78,18 +84,23 @@ impl<'tcx> Scope<'tcx> {
     }
 
     #[inline]
-    pub fn set_symbol(&self, symbol: Option<&'tcx Symbol>) {
-        *self.symbol.write() = symbol;
+    pub fn set_symbol(&self, symbol: &'tcx Symbol) {
+        *self.symbol.write() = Some(symbol);
     }
 
     #[inline]
-    pub fn symbol(&self) -> Option<&'tcx Symbol> {
+    pub fn opt_symbol(&self) -> Option<&'tcx Symbol> {
         *self.symbol.read()
     }
 
     #[inline]
     pub fn id(&self) -> ScopeId {
         self.id
+    }
+
+    #[inline]
+    pub fn parents(&self) -> Vec<&'tcx Scope<'tcx>> {
+        self.parents.read().clone()
     }
 
     /// Invokes a closure for each symbol in this scope.
@@ -146,7 +157,7 @@ impl<'tcx> Scope<'tcx> {
 
 impl<'tcx> fmt::Debug for Scope<'tcx> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let symbol_desc = self.symbol().cloned();
+        let symbol_desc = self.opt_symbol().cloned();
         // Collect symbols for debug printing without holding the lock too long
         let mut symbol_entries = Vec::new();
         self.for_each_symbol(|s| symbol_entries.push(s.clone()));
@@ -251,9 +262,6 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     pub fn lookup_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
-        if name.is_empty() {
-            return None;
-        }
         let name_key = self.interner.intern(name);
         let stack = self.stack.read();
 
