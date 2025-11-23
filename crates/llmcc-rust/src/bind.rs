@@ -4,11 +4,11 @@ use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
+use crate::resolve::ExprResolver;
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-
-use crate::resolve::ExprResolver;
+use crate::RUST_PRIMITIVES;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
@@ -24,11 +24,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     }
 
     fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut BinderScopes<'tcx>) {
-        let primitives = [
-            "i32", "i64", "i16", "i8", "i128", "isize", "u32", "u64", "u16", "u8", "u128", "usize",
-            "f32", "f64", "bool", "char", "str",
-        ];
-        for prim in primitives {
+        for prim in RUST_PRIMITIVES {
             scopes.lookup_or_insert_global(prim, node, SymKind::Primitive);
         }
     }

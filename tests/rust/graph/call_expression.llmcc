@@ -30,19 +30,20 @@ u0:14 | Primitive | f64           | f64                            | [global]
 u0:15 | Primitive | bool          | bool                           | [global]
 u0:16 | Primitive | char          | char                           | [global]
 u0:17 | Primitive | str           | str                            | [global]
-u0:18 | Crate     | _c            | _c                             | [global]
-u0:19 | Crate     | crate         | _c::crate                      |         
-u0:20 | Module    | _m            | _c::_m                         |         
-u0:21 | File      | main          | _c::_m::main                   |         
-u0:22 | Namespace | helpers       | _c::_m::main::helpers          |         
-u0:23 | Function  | compute       | _c::_m::main::helpers::compute |         
-u0:24 | Function  | function_demo | _c::_m::main::function_demo    |         
+u0:18 | Primitive | String        | String                         | [global]
+u0:19 | Crate     | _c            | _c                             | [global]
+u0:20 | Crate     | crate         | _c::crate                      |         
+u0:21 | Module    | _m            | _c::_m                         |         
+u0:22 | File      | main          | _c::_m::main                   |         
+u0:23 | Namespace | helpers       | _c::_m::main::helpers          |         
+u0:24 | Function  | compute       | _c::_m::main::helpers::compute |         
+u0:25 | Function  | function_demo | _c::_m::main::function_demo    |         
 
 --- expect:symbol-deps ---
-u0:22 -> [u0:23]
-u0:22 <- [u0:24]
-u0:23 <- [u0:22, u0:24]
-u0:24 -> [u0:22, u0:23]
+u0:23 -> [u0:24]
+u0:23 <- [u0:25]
+u0:24 <- [u0:23, u0:25]
+u0:25 -> [u0:23, u0:24]
 
 --- expect:graph ---
 digraph project {
@@ -98,30 +99,31 @@ u0:14 | Primitive | f64            | f64                                       |
 u0:15 | Primitive | bool           | bool                                      | [global]
 u0:16 | Primitive | char           | char                                      | [global]
 u0:17 | Primitive | str            | str                                       | [global]
-u0:18 | Crate     | _c             | _c                                        | [global]
-u0:19 | Crate     | crate          | _c::crate                                 |         
-u0:20 | Module    | _m             | _c::_m                                    |         
-u0:21 | File      | main           | _c::_m::main                              |         
-u0:22 | Struct    | Foo            | _c::_m::main::Foo                         |         
-u0:23 | Struct    | Baz            | _c::_m::main::Baz                         |         
-u0:24 | Struct    | SessionBuilder | _c::_m::main::SessionBuilder              |         
-u0:25 | Function  | new            | _c::_m::main::SessionBuilder::new         |         
-u0:26 | Function  | static_func    | _c::_m::main::SessionBuilder::static_func |         
-u0:27 | Function  | qualified_call | _c::_m::main::qualified_call              |         
-u0:28 | Variable  | baz            | _c::_m::main::qualified_call::baz         |         
-u0:29 | Variable  | x              | _c::_m::main::qualified_call::x           |         
+u0:18 | Primitive | String         | String                                    | [global]
+u0:19 | Crate     | _c             | _c                                        | [global]
+u0:20 | Crate     | crate          | _c::crate                                 |         
+u0:21 | Module    | _m             | _c::_m                                    |         
+u0:22 | File      | main           | _c::_m::main                              |         
+u0:23 | Struct    | Foo            | _c::_m::main::Foo                         |         
+u0:24 | Struct    | Baz            | _c::_m::main::Baz                         |         
+u0:25 | Struct    | SessionBuilder | _c::_m::main::SessionBuilder              |         
+u0:26 | Function  | new            | _c::_m::main::SessionBuilder::new         |         
+u0:27 | Function  | static_func    | _c::_m::main::SessionBuilder::static_func |         
+u0:28 | Function  | qualified_call | _c::_m::main::qualified_call              |         
+u0:29 | Variable  | baz            | _c::_m::main::qualified_call::baz         |         
+u0:30 | Variable  | x              | _c::_m::main::qualified_call::x           |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:24, u0:26, u0:27, u0:29]
-u0:23 <- [u0:27, u0:28]
-u0:24 -> [u0:22, u0:25, u0:26]
-u0:24 <- [u0:27]
-u0:25 <- [u0:24, u0:27]
-u0:26 -> [u0:22]
-u0:26 <- [u0:24, u0:27]
-u0:27 -> [u0:22, u0:23, u0:24, u0:25, u0:26]
-u0:28 -> [u0:23]
-u0:29 -> [u0:22]
+u0:23 <- [u0:25, u0:27, u0:28, u0:30]
+u0:24 <- [u0:28, u0:29]
+u0:25 -> [u0:23, u0:26, u0:27]
+u0:25 <- [u0:28]
+u0:26 <- [u0:25, u0:28]
+u0:27 -> [u0:23]
+u0:27 <- [u0:25, u0:28]
+u0:28 -> [u0:23, u0:24, u0:25, u0:26, u0:27]
+u0:29 -> [u0:24]
+u0:30 -> [u0:23]
 
 --- expect:blocks ---
 u0:1  | root   | main          
@@ -196,16 +198,17 @@ u0:14 | Primitive | f64        | f64                      | [global]
 u0:15 | Primitive | bool       | bool                     | [global]
 u0:16 | Primitive | char       | char                     | [global]
 u0:17 | Primitive | str        | str                      | [global]
-u0:18 | Crate     | _c         | _c                       | [global]
-u0:19 | Crate     | crate      | _c::crate                |         
-u0:20 | Module    | _m         | _c::_m                   |         
-u0:21 | File      | main       | _c::_m::main             |         
-u0:22 | Macro     | log_value  | _c::_m::main::log_value  |         
-u0:23 | Function  | macro_demo | _c::_m::main::macro_demo |         
+u0:18 | Primitive | String     | String                   | [global]
+u0:19 | Crate     | _c         | _c                       | [global]
+u0:20 | Crate     | crate      | _c::crate                |         
+u0:21 | Module    | _m         | _c::_m                   |         
+u0:22 | File      | main       | _c::_m::main             |         
+u0:23 | Macro     | log_value  | _c::_m::main::log_value  |         
+u0:24 | Function  | macro_demo | _c::_m::main::macro_demo |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:23]
-u0:23 -> [u0:22]
+u0:23 <- [u0:24]
+u0:24 -> [u0:23]
 
 
 ===============================================================================
@@ -250,23 +253,24 @@ u0:14 | Primitive | f64                   | f64                                 
 u0:15 | Primitive | bool                  | bool                                | [global]
 u0:16 | Primitive | char                  | char                                | [global]
 u0:17 | Primitive | str                   | str                                 | [global]
-u0:18 | Crate     | _c                    | _c                                  | [global]
-u0:19 | Crate     | crate                 | _c::crate                           |         
-u0:20 | Module    | _m                    | _c::_m                              |         
-u0:21 | File      | main                  | _c::_m::main                        |         
-u0:22 | Struct    | Builder               | _c::_m::main::Builder               |         
-u0:23 | Function  | new                   | _c::_m::main::Builder::new          |         
-u0:24 | Function  | step                  | _c::_m::main::Builder::step         |         
-u0:25 | Function  | finish                | _c::_m::main::Builder::finish       |         
-u0:26 | Function  | chain_invocation_demo | _c::_m::main::chain_invocation_demo |         
+u0:18 | Primitive | String                | String                              | [global]
+u0:19 | Crate     | _c                    | _c                                  | [global]
+u0:20 | Crate     | crate                 | _c::crate                           |         
+u0:21 | Module    | _m                    | _c::_m                              |         
+u0:22 | File      | main                  | _c::_m::main                        |         
+u0:23 | Struct    | Builder               | _c::_m::main::Builder               |         
+u0:24 | Function  | new                   | _c::_m::main::Builder::new          |         
+u0:25 | Function  | step                  | _c::_m::main::Builder::step         |         
+u0:26 | Function  | finish                | _c::_m::main::Builder::finish       |         
+u0:27 | Function  | chain_invocation_demo | _c::_m::main::chain_invocation_demo |         
 
 --- expect:symbol-deps ---
-u0:22 -> [u0:23, u0:24, u0:25]
-u0:22 <- [u0:26]
-u0:23 <- [u0:22, u0:26]
-u0:24 <- [u0:22, u0:26]
-u0:25 <- [u0:22, u0:26]
-u0:26 -> [u0:22, u0:23, u0:24, u0:25]
+u0:23 -> [u0:24, u0:25, u0:26]
+u0:23 <- [u0:27]
+u0:24 <- [u0:23, u0:27]
+u0:25 <- [u0:23, u0:27]
+u0:26 <- [u0:23, u0:27]
+u0:27 -> [u0:23, u0:24, u0:25, u0:26]
 
 --- expect:graph ---
 digraph project {
@@ -329,30 +333,31 @@ u0:14 | Primitive | f64        | f64                            | [global]
 u0:15 | Primitive | bool       | bool                           | [global]
 u0:16 | Primitive | char       | char                           | [global]
 u0:17 | Primitive | str        | str                            | [global]
-u0:18 | Crate     | _c         | _c                             | [global]
-u0:19 | Crate     | crate      | _c::crate                      |         
-u0:20 | Module    | _m         | _c::_m                         |         
-u0:21 | File      | main       | _c::_m::main                   |         
-u0:22 | Struct    | Data       | _c::_m::main::Data             |         
-u0:23 | Struct    | Iter       | _c::_m::main::Iter             |         
-u0:24 | Function  | iter       | _c::_m::main::Data::iter       |         
-u0:25 | Function  | map        | _c::_m::main::Iter::map        |         
-u0:26 | Function  | count      | _c::_m::main::Iter::count      |         
-u0:27 | Function  | expr_chain | _c::_m::main::expr_chain       |         
-u0:28 | Variable  | data       | _c::_m::main::expr_chain::data |         
+u0:18 | Primitive | String     | String                         | [global]
+u0:19 | Crate     | _c         | _c                             | [global]
+u0:20 | Crate     | crate      | _c::crate                      |         
+u0:21 | Module    | _m         | _c::_m                         |         
+u0:22 | File      | main       | _c::_m::main                   |         
+u0:23 | Struct    | Data       | _c::_m::main::Data             |         
+u0:24 | Struct    | Iter       | _c::_m::main::Iter             |         
+u0:25 | Function  | iter       | _c::_m::main::Data::iter       |         
+u0:26 | Function  | map        | _c::_m::main::Iter::map        |         
+u0:27 | Function  | count      | _c::_m::main::Iter::count      |         
+u0:28 | Function  | expr_chain | _c::_m::main::expr_chain       |         
+u0:29 | Variable  | data       | _c::_m::main::expr_chain::data |         
 
 --- expect:symbol-deps ---
-u0:12 <- [u0:26]
-u0:22 -> [u0:23, u0:24]
-u0:22 <- [u0:27]
-u0:23 -> [u0:25, u0:26]
-u0:23 <- [u0:22, u0:24]
-u0:24 -> [u0:23]
-u0:24 <- [u0:22]
+u0:12 <- [u0:27]
+u0:23 -> [u0:24, u0:25]
+u0:23 <- [u0:28]
+u0:24 -> [u0:26, u0:27]
+u0:24 <- [u0:23, u0:25]
+u0:25 -> [u0:24]
 u0:25 <- [u0:23]
-u0:26 -> [u0:12]
-u0:26 <- [u0:23]
-u0:27 -> [u0:22]
+u0:26 <- [u0:24]
+u0:27 -> [u0:12]
+u0:27 <- [u0:24]
+u0:28 -> [u0:23]
 
 --- expect:blocks ---
 u0:1  | root   | main      
@@ -421,25 +426,26 @@ u0:14 | Primitive | f64                 | f64                                   
 u0:15 | Primitive | bool                | bool                                      | [global]
 u0:16 | Primitive | char                | char                                      | [global]
 u0:17 | Primitive | str                 | str                                       | [global]
-u0:18 | Crate     | _c                  | _c                                        | [global]
-u0:19 | Crate     | crate               | _c::crate                                 |         
-u0:20 | Module    | _m                  | _c::_m                                    |         
-u0:21 | File      | main                | _c::_m::main                              |         
-u0:22 | Struct    | Stream              | _c::_m::main::Stream                      |         
-u0:23 | Function  | advance             | _c::_m::main::Stream::advance             |         
-u0:24 | Function  | flush               | _c::_m::main::Stream::flush               |         
-u0:25 | Function  | chain_variable_demo | _c::_m::main::chain_variable_demo         |         
-u0:26 | Variable  | stream              | _c::_m::main::chain_variable_demo::stream |         
-u0:27 | Variable  | cursor              | _c::_m::main::chain_variable_demo::cursor |         
+u0:18 | Primitive | String              | String                                    | [global]
+u0:19 | Crate     | _c                  | _c                                        | [global]
+u0:20 | Crate     | crate               | _c::crate                                 |         
+u0:21 | Module    | _m                  | _c::_m                                    |         
+u0:22 | File      | main                | _c::_m::main                              |         
+u0:23 | Struct    | Stream              | _c::_m::main::Stream                      |         
+u0:24 | Function  | advance             | _c::_m::main::Stream::advance             |         
+u0:25 | Function  | flush               | _c::_m::main::Stream::flush               |         
+u0:26 | Function  | chain_variable_demo | _c::_m::main::chain_variable_demo         |         
+u0:27 | Variable  | stream              | _c::_m::main::chain_variable_demo::stream |         
+u0:28 | Variable  | cursor              | _c::_m::main::chain_variable_demo::cursor |         
 
 --- expect:symbol-deps ---
-u0:22 -> [u0:23, u0:24]
-u0:22 <- [u0:25, u0:26, u0:27]
-u0:23 <- [u0:22, u0:25]
-u0:24 <- [u0:22, u0:25]
-u0:25 -> [u0:22, u0:23, u0:24]
-u0:26 -> [u0:22]
-u0:27 -> [u0:22]
+u0:23 -> [u0:24, u0:25]
+u0:23 <- [u0:26, u0:27, u0:28]
+u0:24 <- [u0:23, u0:26]
+u0:25 <- [u0:23, u0:26]
+u0:26 -> [u0:23, u0:24, u0:25]
+u0:27 -> [u0:23]
+u0:28 -> [u0:23]
 
 --- expect:blocks ---
 u0:1 | root   | main               
