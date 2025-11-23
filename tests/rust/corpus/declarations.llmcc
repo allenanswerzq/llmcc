@@ -1405,14 +1405,12 @@ u0:35 | Field         | value    | _c::_m::main::Node::Leaf::value        |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:29, u0:31, u0:32]
-u0:25 -> [u0:26]
-u0:26 <- [u0:25]
-u0:29 -> [u0:23, u0:30, u0:9]
-u0:30 <- [u0:29, u0:31, u0:32, u0:34, u0:35]
-u0:31 -> [u0:23, u0:30, u0:9]
-u0:32 -> [u0:23, u0:30]
+u0:24 <- [u0:29]
+u0:29 -> [u0:23, u0:24, u0:9]
+u0:30 <- [u0:35]
+u0:31 -> [u0:23, u0:9]
+u0:32 -> [u0:23]
 u0:33 -> [u0:9]
-u0:34 -> [u0:30]
 u0:35 -> [u0:30]
 u0:9 <- [u0:29, u0:31, u0:33]
 
@@ -1428,7 +1426,8 @@ u0:8 | field | block#8
 
 --- expect:block-deps ---
 u0:2 <- [u0:5]
-u0:5 -> [u0:2]
+u0:3 <- [u0:5]
+u0:5 -> [u0:2, u0:3]
 
 
 ===============================================================================
@@ -1517,13 +1516,14 @@ u0:25 | TypeParameter | T            | _c::_m::main::splice::T         |
 u0:26 | Variable      | old_range    | _c::_m::main::splice::old_range |         
 u0:27 | Variable      | new_text     | _c::_m::main::splice::new_text  |         
 u0:28 | Function      | uninit_array | _c::_m::main::uninit_array      |         
+u0:29 | Const         | LEN          | _c::_m::main::uninit_array::LEN |         
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:24, u0:28]
-u0:24 -> [u0:12, u0:25]
-u0:25 <- [u0:24, u0:27]
-u0:27 -> [u0:25]
-u0:28 -> [u0:12]
+u0:23 <- [u0:24]
+u0:24 -> [u0:12, u0:23]
+u0:28 -> [u0:12, u0:29]
+u0:29 <- [u0:28]
 
 --- expect:blocks ---
 u0:1 | root  | main
@@ -1532,6 +1532,8 @@ u0:3 | func  | splice
 u0:4 | func  | uninit_array
 
 --- expect:block-deps ---
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
 
 
 ===============================================================================
@@ -1747,9 +1749,11 @@ u0:26 | Function  | func   | _c::_m::main::func   |
 u0:1 <- [u0:23]
 u0:10 <- [u0:24, u0:25]
 u0:23 -> [u0:1]
+u0:23 <- [u0:26]
 u0:24 -> [u0:10, u0:25]
 u0:25 -> [u0:10]
 u0:25 <- [u0:24]
+u0:26 -> [u0:23]
 
 
 ===============================================================================
@@ -1795,6 +1799,8 @@ u0:25 | Function  | func       | _c::_m::main::func       |
 --- expect:symbol-deps ---
 u0:1 <- [u0:23]
 u0:23 -> [u0:1]
+u0:23 <- [u0:25]
+u0:25 -> [u0:23]
 
 
 ===============================================================================
@@ -1838,6 +1844,8 @@ u0:24 | Function  | func   | _c::_m::main::func |
 --- expect:symbol-deps ---
 u0:12 <- [u0:23]
 u0:23 -> [u0:12]
+u0:23 <- [u0:24]
+u0:24 -> [u0:23]
 
 
 ===============================================================================
@@ -2304,22 +2312,25 @@ u0:21 | Module         | _m        | _c::_m                          |
 u0:22 | File           | main      | _c::_m::main                    |         
 u0:23 | Struct         | Person    | _c::_m::main::Person            |         
 u0:24 | Struct         | Machine   | _c::_m::main::Machine           |         
-u0:25 | Const          | leg_count | _c::_m::main::Person::leg_count |         
-u0:26 | Function       | walk      | _c::_m::main::Person::walk      |         
-u0:27 | Function       | walk_mut  | _c::_m::main::Person::walk_mut  |         
-u0:28 | Function       | talk      | _c::_m::main::Person::talk      |         
-u0:29 | Function       | talk_mut  | _c::_m::main::Person::talk_mut  |         
-u0:30 | UnresolvedType | Init      | _c::_m::main::Init              |         
+u0:25 | Const          | STATE     | _c::_m::main::Machine::STATE    |         
+u0:26 | Const          | leg_count | _c::_m::main::Person::leg_count |         
+u0:27 | Function       | walk      | _c::_m::main::Person::walk      |         
+u0:28 | Function       | walk_mut  | _c::_m::main::Person::walk_mut  |         
+u0:29 | Function       | talk      | _c::_m::main::Person::talk      |         
+u0:30 | Function       | talk_mut  | _c::_m::main::Person::talk_mut  |         
+u0:31 | UnresolvedType | Init      | _c::_m::main::Init              |         
 
 --- expect:symbol-deps ---
-u0:23 -> [u0:25, u0:26, u0:27, u0:28, u0:29, u0:7]
-u0:25 -> [u0:7]
-u0:25 <- [u0:23]
+u0:23 -> [u0:26, u0:27, u0:28, u0:29, u0:30, u0:7]
+u0:24 -> [u0:25]
+u0:25 <- [u0:24]
+u0:26 -> [u0:7]
 u0:26 <- [u0:23]
 u0:27 <- [u0:23]
 u0:28 <- [u0:23]
 u0:29 <- [u0:23]
-u0:7 <- [u0:23, u0:25]
+u0:30 <- [u0:23]
+u0:7 <- [u0:23, u0:26]
 
 
 ===============================================================================
@@ -2781,10 +2792,7 @@ u0:28 | Variable      | rhs    | _c::_m::main::Add::add::rhs |
 u0:23 <- [u0:24, u0:25]
 u0:24 -> [u0:23, u0:27]
 u0:25 -> [u0:23]
-u0:25 <- [u0:27, u0:28]
-u0:27 -> [u0:25]
 u0:27 <- [u0:24]
-u0:28 -> [u0:25]
 
 
 ===============================================================================
@@ -3049,10 +3057,12 @@ u0:31 | Function       | use_database2 | _c::_m::main::use_database2    |
 u0:32 | TypeParameter  | D             | _c::_m::main::use_database2::D |         
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:26]
-u0:26 -> [u0:23, u0:28]
+u0:23 <- [u0:26, u0:29, u0:31]
+u0:26 -> [u0:23]
 u0:27 -> [u0:28]
-u0:28 <- [u0:26, u0:27]
+u0:28 <- [u0:27]
+u0:29 -> [u0:23]
+u0:31 -> [u0:23]
 
 
 ===============================================================================
@@ -3155,7 +3165,9 @@ u0:31 | TypeAlias     | FnObject  | _c::_m::main::FnObject     |
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:30]
-u0:27 -> [u0:7]
+u0:23 <- [u0:27]
+u0:25 <- [u0:27]
+u0:27 -> [u0:23, u0:25, u0:7]
 u0:30 -> [u0:12]
 u0:31 -> [u0:6]
 u0:6 <- [u0:31]
@@ -3337,13 +3349,11 @@ u0:40 | TypeParameter  | A        | _c::_m::main::A::A     |
 --- expect:symbol-deps ---
 u0:14 <- [u0:37]
 u0:15 <- [u0:23]
-u0:23 -> [u0:15, u0:24]
-u0:24 <- [u0:23, u0:25]
-u0:25 -> [u0:24]
-u0:27 -> [u0:29, u0:33]
+u0:23 -> [u0:15]
+u0:27 -> [u0:29]
 u0:29 <- [u0:27]
-u0:33 <- [u0:27]
-u0:37 -> [u0:14]
+u0:36 <- [u0:37]
+u0:37 -> [u0:14, u0:36]
 
 
 ===============================================================================
@@ -3527,9 +3537,7 @@ u0:26 | Variable      | val    | _c::_m::main::foo::val |
 
 --- expect:symbol-deps ---
 u0:10 <- [u0:24]
-u0:24 -> [u0:10, u0:25]
-u0:25 <- [u0:24, u0:26]
-u0:26 -> [u0:25]
+u0:24 -> [u0:10]
 
 
 ===============================================================================
@@ -3565,8 +3573,9 @@ u0:21 | Module        | _m     | _c::_m                |
 u0:22 | File          | main   | _c::_m::main          |         
 u0:23 | Struct        | Loaf   | _c::_m::main::Loaf    |         
 u0:24 | TypeParameter | T      | _c::_m::main::Loaf::T |         
+u0:25 | Const         | N      | _c::_m::main::Loaf::N |         
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:23]
-u0:23 -> [u0:12, u0:24]
-u0:24 <- [u0:23]
+u0:23 -> [u0:12, u0:25]
+u0:25 <- [u0:23]

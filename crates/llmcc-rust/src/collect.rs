@@ -165,7 +165,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 .or_else(|| ident.opt_symbol())
         {
             ident.set_symbol(sym);
-            if let Some(target_sym) = symbol {
+            if let Some(target_sym) = symbol && sym.kind() != SymKind::TypeParameter {
                 target_sym.add_dependency(sym);
             }
             return;

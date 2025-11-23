@@ -29,6 +29,40 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
+    fn add_owner_dependency(owner: &Symbol, target: &Symbol) {
+        if target.kind() == SymKind::TypeParameter {
+            return;
+        }
+        owner.add_dependency(target);
+    }
+
+    fn add_value_dependency(symbol: &Symbol, ty: &Symbol) {
+        if symbol.kind() == SymKind::Variable && ty.kind() == SymKind::TypeParameter {
+            return;
+        }
+        symbol.add_dependency(ty);
+    }
+
+    fn add_const_dependency_from_node(
+        unit: &CompileUnit<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+        node: &HirNode<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+    ) {
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        if let Some(ident) = node.find_identifier(*unit)
+            && let Some(sym) = ident
+                .opt_symbol()
+                .or_else(|| scopes.lookup_symbol(&ident.name))
+            && matches!(sym.kind(), SymKind::Const | SymKind::Static)
+        {
+            Self::add_owner_dependency(owner, sym);
+        }
+    }
+
     fn visit_scoped_named(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -102,7 +136,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         if let Some(ident) = pattern.as_ident() {
             if let Some(sym) = ident.opt_symbol() {
                 sym.set_type_of(ty.id());
-                sym.add_dependency(ty);
+                Self::add_value_dependency(sym, ty);
             }
             return;
         }
@@ -114,7 +148,7 @@ impl<'tcx> BinderVisitor<'tcx> {
                 Self::bind_pattern_to_type(unit, &subpattern, field_ty);
             } else if let Some(sym) = field_ident.opt_symbol() {
                 sym.set_type_of(field_ty.id());
-                sym.add_dependency(field_ty);
+                Self::add_value_dependency(sym, field_ty);
             }
             return;
         }
@@ -220,7 +254,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             fn_sym.add_dependency(ret_sym);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ret_sym);
+                Self::add_owner_dependency(ns, ret_sym);
             }
         }
     }
@@ -328,7 +362,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 ExprResolver::new(unit, scopes).resolve_expression_symbol(&macro_node, parent)
             && let Some(ns) = namespace.opt_symbol()
         {
-            ns.add_dependency(sym);
+            Self::add_owner_dependency(ns, sym);
         }
     }
 
@@ -351,7 +385,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             const_sym.set_type_of(ty.id());
             const_sym.add_dependency(ty);
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(const_sym);
+                Self::add_owner_dependency(ns, const_sym);
             }
         }
     }
@@ -380,7 +414,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(sym) = ExprResolver::new(unit, scopes).resolve_call_target(node, parent)
             && let Some(ns) = namespace.opt_symbol()
         {
-            ns.add_dependency(sym);
+            Self::add_owner_dependency(ns, sym);
         }
     }
 
@@ -417,7 +451,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             type_sym.add_dependency(ty);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
             }
         }
     }
@@ -442,7 +476,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             type_sym.add_dependency(ty);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
             }
         }
     }
@@ -468,7 +502,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             type_sym.add_dependency(ty);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
             }
         }
     }
@@ -491,7 +525,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(resolved) =
                 ExprResolver::new(unit, scopes).resolve_type_node(&element_ty)
         {
-            owner.add_dependency(resolved);
+            Self::add_owner_dependency(owner, resolved);
         }
     }
 
@@ -518,7 +552,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             if let Some(resolved) =
                 ExprResolver::new(unit, scopes).resolve_type_node(&child)
             {
-                owner.add_dependency(resolved);
+                Self::add_owner_dependency(owner, resolved);
             }
         }
     }
@@ -560,7 +594,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(resolved) =
                 ExprResolver::new(unit, scopes).resolve_type_node(&trait_node)
         {
-            owner.add_dependency(resolved);
+            Self::add_owner_dependency(owner, resolved);
         }
     }
 
@@ -583,7 +617,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             symbol.add_dependency(ty);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
             }
         }
     }
@@ -606,7 +640,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             symbol.add_dependency(ty);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
             }
         }
     }
@@ -628,10 +662,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ty) = ExprResolver::new(unit, scopes).resolve_type_node(&type_node)
         {
             symbol.set_type_of(ty.id());
-            symbol.add_dependency(ty);
+            Self::add_value_dependency(symbol, ty);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
             }
         }
     }
@@ -644,6 +678,29 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_identifier(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
+    ) {
+        Self::add_const_dependency_from_node(unit, scopes, node, namespace);
+    }
+
+    fn visit_scoped_identifier(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        Self::add_const_dependency_from_node(unit, scopes, node, namespace);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -675,10 +732,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             }
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
                 // Also add dependencies on type arguments to the parent
                 for arg_sym in &type_args {
-                    ns.add_dependency(arg_sym);
+                    Self::add_owner_dependency(ns, arg_sym);
                 }
             }
         }
