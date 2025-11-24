@@ -144,26 +144,28 @@ impl<'tcx> CollectorVisitor<'tcx> {
     ) {
         // Check visibility
         let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
-        let is_top_level = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
+        let at_global = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
 
-        let mut parent_is_global = is_top_level;
-        if !is_top_level
-            && let Some(scope) = scopes.top()
+        if is_pub {
+            if !at_global {
+                scopes.globals().insert(sym);
+            }
+            sym.set_is_global(true);
+            return;
+        }
+
+        if is_pub_crate {
+            if !at_global {
+                scopes.globals().insert(sym);
+            }
+            return;
+        }
+
+        if let Some(scope) = scopes.top()
             && let Some(parent_sym) = scope.opt_symbol()
             && parent_sym.is_global()
         {
-            parent_is_global = true;
-        }
-
-        if parent_is_global {
-            if is_pub {
-                if !is_top_level {
-                    scopes.globals().insert(sym);
-                }
-                sym.set_is_global(true);
-            } else if is_pub_crate && !is_top_level {
-                scopes.globals().insert(sym);
-            }
+            scopes.globals().insert(sym);
         }
     }
 

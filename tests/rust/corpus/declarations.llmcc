@@ -844,7 +844,7 @@ u0:21 | Module    | _m                | _c::_m                               |
 u0:22 | File      | main              | _c::_m::main                         |         
 u0:23 | Function  | foo               | _c::_m::main::foo                    |         
 u0:24 | Function  | vprintf           | _c::_m::main::vprintf                |         
-u0:25 | Function  | c_variadic_no_use | _c::_m::main::c_variadic_no_use      |         
+u0:25 | Function  | c_variadic_no_use | _c::_m::main::c_variadic_no_use      | [global]
 u0:26 | Variable  | fmt               | _c::_m::main::c_variadic_no_use::fmt |         
 
 --- expect:symbol-deps ---
@@ -1384,11 +1384,11 @@ u0:21 | Module        | _m       | _c::_m                                 |
 u0:22 | File          | main     | _c::_m::main                           |         
 u0:23 | Struct        | Tree     | _c::_m::main::Tree                     |         
 u0:24 | Struct        | Item     | _c::_m::main::Item                     |         
-u0:25 | Enum          | Option   | _c::_m::main::Option                   |         
+u0:25 | Enum          | Option   | _c::_m::main::Option                   | [global]
 u0:26 | TypeParameter | T        | _c::_m::main::Option::T                |         
 u0:27 | EnumVariant   | None     | _c::_m::main::Option::None             |         
 u0:28 | EnumVariant   | Some     | _c::_m::main::Option::Some             |         
-u0:29 | Enum          | Node     | _c::_m::main::Node                     |         
+u0:29 | Enum          | Node     | _c::_m::main::Node                     | [global]
 u0:30 | TypeParameter | T        | _c::_m::main::Node::T                  |         
 u0:31 | EnumVariant   | Internal | _c::_m::main::Node::Internal           |         
 u0:32 | Field         | children | _c::_m::main::Node::Internal::children |         
@@ -1457,7 +1457,7 @@ u0:19 | Crate       | _c           | _c                               | [global]
 u0:20 | Crate       | crate        | _c::crate                        |         
 u0:21 | Module      | _m           | _c::_m                           |         
 u0:22 | File        | main         | _c::_m::main                     |         
-u0:23 | Enum        | c_style_enum | _c::_m::main::c_style_enum       |         
+u0:23 | Enum        | c_style_enum | _c::_m::main::c_style_enum       | [global]
 u0:24 | EnumVariant | val1         | _c::_m::main::c_style_enum::val1 |         
 u0:25 | EnumVariant | val2         | _c::_m::main::c_style_enum::val2 |         
 
@@ -1506,11 +1506,11 @@ u0:20 | Crate         | crate        | _c::crate                       |
 u0:21 | Module        | _m           | _c::_m                          |         
 u0:22 | File          | main         | _c::_m::main                    |         
 u0:23 | Struct        | Text         | _c::_m::main::Text              |         
-u0:24 | Function      | splice       | _c::_m::main::splice            |         
+u0:24 | Function      | splice       | _c::_m::main::splice            | [global]
 u0:25 | TypeParameter | T            | _c::_m::main::splice::T         |         
 u0:26 | Variable      | old_range    | _c::_m::main::splice::old_range |         
 u0:27 | Variable      | new_text     | _c::_m::main::splice::new_text  |         
-u0:28 | Function      | uninit_array | _c::_m::main::uninit_array      |         
+u0:28 | Function      | uninit_array | _c::_m::main::uninit_array      | [global]
 u0:29 | Const         | LEN          | _c::_m::main::uninit_array::LEN |         
 
 --- expect:symbol-deps ---
@@ -2187,8 +2187,8 @@ u0:19 | Crate       | _c          | _c                                       | [
 u0:20 | Crate       | crate       | _c::crate                                |         
 u0:21 | Module      | _m          | _c::_m                                   |         
 u0:22 | File        | main        | _c::_m::main                             |         
-u0:23 | Struct      | Limits      | _c::_m::main::Limits                     |         
-u0:24 | Enum        | Error       | _c::_m::main::Error                      |         
+u0:23 | Struct      | Limits      | _c::_m::main::Limits                     | [global]
+u0:24 | Enum        | Error       | _c::_m::main::Error                      | [global]
 u0:25 | EnumVariant | WrongCase   | _c::_m::main::Error::WrongCase           |         
 u0:26 | EnumVariant | OutOfBounds | _c::_m::main::Error::OutOfBounds         |         
 u0:27 | Field       | idx         | _c::_m::main::Error::OutOfBounds::idx    |         
@@ -2384,13 +2384,14 @@ u0:24 | Function       | talk   | _c::_m::foo::Person::talk  |
 u1:25 | Crate          | crate  | _c::crate                  |         
 u1:26 | Module         | _m     | _c::_m                     |         
 u1:27 | File           | main   | _c::_m::main               |         
-u1:28 | Struct         | Person | _c::_m::main::Person       |         
+u1:28 | Struct         | Person | _c::_m::main::Person       | [global]
 u1:29 | Function       | walk   | _c::_m::main::Person::walk |         
 
 --- expect:symbol-deps ---
-u0:23 -> [u0:24]
+u0:23 -> [u0:24, u1:28]
 u0:24 <- [u0:23]
 u1:28 -> [u1:29]
+u1:28 <- [u0:23]
 u1:29 <- [u1:28]
 
 
@@ -2591,7 +2592,7 @@ u0:19 | Crate          | _c     | _c                  | [global]
 u0:20 | Crate          | crate  | _c::crate           |         
 u0:21 | Module         | _m     | _c::_m              |         
 u0:22 | File           | main   | _c::_m::main        |         
-u0:23 | Trait          | Trait  | _c::_m::main::Trait |         
+u0:23 | Trait          | Trait  | _c::_m::main::Trait | [global]
 u0:24 | UnresolvedType | Send   | _c::_m::main::Send  |         
 
 --- expect:symbol-deps ---
@@ -2723,7 +2724,7 @@ u0:19 | Crate     | _c        | _c                            | [global]
 u0:20 | Crate     | crate     | _c::crate                     |         
 u0:21 | Module    | _m        | _c::_m                        |         
 u0:22 | File      | main      | _c::_m::main                  |         
-u0:23 | Trait     | Item      | _c::_m::main::Item            |         
+u0:23 | Trait     | Item      | _c::_m::main::Item            | [global]
 u0:24 | Function  | summarize | _c::_m::main::Item::summarize |         
 u0:25 | Trait     | Foo       | _c::_m::main::Foo             |         
 
@@ -2899,7 +2900,7 @@ u0:19 | Crate     | _c     | _c                 | [global]
 u0:20 | Crate     | crate  | _c::crate          |         
 u0:21 | Module    | _m     | _c::_m             |         
 u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Trait     | A      | _c::_m::main::A    |         
+u0:23 | Trait     | A      | _c::_m::main::A    | [global]
 u0:24 | Function  | f      | _c::_m::main::A::f |         
 
 --- expect:symbol-deps ---
@@ -2941,7 +2942,7 @@ u0:19 | Crate     | _c     | _c                     | [global]
 u0:20 | Crate     | crate  | _c::crate              |         
 u0:21 | Module    | _m     | _c::_m                 |         
 u0:22 | File      | main   | _c::_m::main           |         
-u0:23 | Trait     | Graph  | _c::_m::main::Graph    |         
+u0:23 | Trait     | Graph  | _c::_m::main::Graph    | [global]
 u0:24 | TypeAlias | N      | _c::_m::main::Graph::N |         
 u0:25 | TypeAlias | E      | _c::_m::main::Graph::E |         
 
@@ -3034,7 +3035,7 @@ u0:19 | Crate          | _c            | _c                             | [globa
 u0:20 | Crate          | crate         | _c::crate                      |         
 u0:21 | Module         | _m            | _c::_m                         |         
 u0:22 | File           | main          | _c::_m::main                   |         
-u0:23 | Trait          | Database      | _c::_m::main::Database         |         
+u0:23 | Trait          | Database      | _c::_m::main::Database         | [global]
 u0:24 | TypeAlias      | F             | _c::_m::main::Database::F      |         
 u0:25 | TypeParameter  | D             | _c::_m::main::Database::D      |         
 u0:26 | UnresolvedType | Foo           | _c::_m::main::Foo              |         
@@ -3192,7 +3193,7 @@ u0:19 | Crate     | _c     | _c              | [global]
 u0:20 | Crate     | crate  | _c::crate       |         
 u0:21 | Module    | _m     | _c::_m          |         
 u0:22 | File      | main   | _c::_m::main    |         
-u0:23 | Function  | a      | _c::_m::main::a |         
+u0:23 | Function  | a      | _c::_m::main::a | [global]
 u0:24 | Function  | b      | _c::_m::main::b |         
 u0:25 | Function  | c      | _c::_m::main::c |         
 u0:26 | Function  | e      | _c::_m::main::e |         
@@ -3316,7 +3317,7 @@ u0:25 | Variable       | it       | _c::_m::main::walk::it |
 u0:26 | UnresolvedType | Iterator | _c::_m::main::Iterator |         
 u0:27 | UnresolvedType | Iter     | _c::_m::main::Iter     |         
 u0:28 | TypeParameter  | T        | _c::_m::main::Iter::T  |         
-u0:29 | Trait          | A        | _c::_m::main::A        |         
+u0:29 | Trait          | A        | _c::_m::main::A        | [global]
 u0:30 | UnresolvedType | B        | _c::_m::main::B        |         
 u0:31 | TypeParameter  | T        | _c::_m::main::B::T     |         
 u0:32 | UnresolvedType | Read     | _c::_m::main::Read     |         
@@ -3377,7 +3378,7 @@ u0:19 | Crate     | _c                   | _c                                   
 u0:20 | Crate     | crate                | _c::crate                                |         
 u0:21 | Module    | _m                   | _c::_m                                   |         
 u0:22 | File      | main                 | _c::_m::main                             |         
-u0:23 | Function  | napi_module_register | _c::_m::main::napi_module_register       |         
+u0:23 | Function  | napi_module_register | _c::_m::main::napi_module_register       | [global]
 u0:24 | Variable  | mod_                 | _c::_m::main::napi_module_register::mod_ |         
 
 --- expect:symbol-deps ---
@@ -3555,7 +3556,7 @@ u0:19 | Crate         | _c     | _c                    | [global]
 u0:20 | Crate         | crate  | _c::crate             |         
 u0:21 | Module        | _m     | _c::_m                |         
 u0:22 | File          | main   | _c::_m::main          |         
-u0:23 | Struct        | Loaf   | _c::_m::main::Loaf    |         
+u0:23 | Struct        | Loaf   | _c::_m::main::Loaf    | [global]
 u0:24 | TypeParameter | T      | _c::_m::main::Loaf::T |         
 u0:25 | Const         | N      | _c::_m::main::Loaf::N |         
 

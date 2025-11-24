@@ -418,10 +418,10 @@ impl Symbol {
     /// Ignores self-dependencies, duplicates, and circular references.
     /// When `ignore_kinds` is provided, the dependency is skipped if the target matches.
     pub fn add_dependency(&self, other: &Symbol, ignore_kinds: Option<&[SymKind]>) {
-        if let Some(kinds) = ignore_kinds {
-            if kinds.iter().any(|kind| other.kind() == *kind) {
-                return;
-            }
+        if let Some(kinds) = ignore_kinds
+            && kinds.iter().any(|kind| other.kind() == *kind)
+        {
+            return;
         }
         if self.id == other.id {
             return;
