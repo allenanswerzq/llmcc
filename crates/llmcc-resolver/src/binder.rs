@@ -241,7 +241,6 @@ pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
-        let mut scopes = BinderScopes::new(unit, globals);
-        L::bind_symbols(&unit, &node, &mut scopes, globals, config);
+        L::bind_symbols(unit, node, globals, config);
     })
 }

@@ -1,8 +1,11 @@
 use llmcc_core::LanguageTraitImpl;
 use llmcc_core::graph_builder::BlockKind;
-use llmcc_core::ir::HirKind;
+use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::{ParseTree, TreeSitterParseTree};
-use llmcc_resolver::{BinderScopes, CollectorScopes, ResolverOption};
+use llmcc_core::scope::{Scope, ScopeStack};
+use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::{CompileCtxt, CompileUnit};
+use llmcc_resolver::ResolverOption;
 
 #[allow(clippy::single_component_path_imports)]
 use tree_sitter_rust;
@@ -12,6 +15,25 @@ use tree_sitter_rust;
 include!(concat!(env!("OUT_DIR"), "/rust_tokens.rs"));
 
 impl LanguageTraitImpl for LangRust {
+    #[rustfmt::skip]
+    fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
+        let stack = ScopeStack::new(cc.arena(), &cc.interner);
+        let globals = cc.create_globals();
+        stack.push(globals);
+
+        for prim in crate::RUST_PRIMITIVES {
+            let name = cc.interner.intern(prim);
+            let symbol = cc.arena().alloc(Symbol::new(CompileCtxt::GLOBAL_SCOPE_OWNER, name));
+            symbol.set_kind(SymKind::Primitive);
+            symbol.set_fqn(name);
+            symbol.set_is_global(true);
+            globals.insert(symbol);
+            cc.symbol_map.write().insert(symbol.id(), symbol);
+        }
+
+        stack
+    }
+
     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
         let mut parser = tree_sitter::Parser::new();
         parser
@@ -28,37 +50,31 @@ impl LanguageTraitImpl for LangRust {
         &["rs"]
     }
 
-    fn collect_symbols_impl<'tcx, T, C>(
-        unit: &llmcc_core::CompileUnit<'tcx>,
-        node: &llmcc_core::ir::HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+    fn primitive_symbols_impl() -> &'static [&'static str] {
+        crate::RUST_PRIMITIVES
+    }
+
+    fn collect_symbols_impl<'tcx, C>(
+        unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        scope_stack: ScopeStack<'tcx>,
         config: &C,
-    ) {
-        // We use unsafe transmute here because at the call site from the collector,
-        // T is known to be CollectorScopes<'tcx>. The trait design uses generic T
-        // but the actual concrete type is always CollectorScopes for symbol collection.
+    ) -> &'tcx Scope<'tcx> {
         unsafe {
-            let scopes = scopes as *mut T as *mut CollectorScopes<'tcx>;
-            // Cast config to ResolverOption reference - at call site it's always ResolverOption
             let config_ref = config as *const C as *const ResolverOption;
-            crate::collect::collect_symbols(unit, node, &mut *scopes, namespace, &*config_ref);
+            crate::collect::collect_symbols(unit, &node, scope_stack, &*config_ref)
         }
     }
 
-    fn bind_symbols_impl<'tcx, T, C>(
-        unit: &llmcc_core::CompileUnit<'tcx>,
-        node: &llmcc_core::ir::HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+    fn bind_symbols_impl<'tcx, C>(
+        unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        globals: &'tcx Scope<'tcx>,
         config: &C,
     ) {
-        // Similar to collect_symbols_impl, T is known to be BinderScopes<'tcx> at the call site
         unsafe {
-            let scopes = scopes as *mut T as *mut BinderScopes<'tcx>;
-            // Cast config to ResolverOption reference - at call site it's always ResolverOption
-            let config_ref = config as *const C as *const ResolverOption;
-            crate::bind::bind_symbols(*unit, node, &mut *scopes, namespace, &*config_ref);
+            let config = config as *const C as *const ResolverOption;
+            crate::bind::bind_symbols(unit, &node, globals, &*config);
         }
     }
 }

@@ -1,11 +1,11 @@
 //! Symbol collection for parallel per-unit symbol table building.
+use llmcc_core::LanguageTrait;
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::{HirId, LanguageTrait};
 
 use rayon::prelude::*;
 
@@ -36,19 +36,16 @@ impl<'a> std::fmt::Debug for CollectorScopes<'a> {
 impl<'a> CollectorScopes<'a> {
     /// Create new collector with arena, interner, and global scope
     pub fn new(
+        cc: &'a CompileCtxt<'a>,
         unit_index: usize,
-        arena: &'a Arena<'a>,
-        interner: &'a InternPool,
+        scopes: ScopeStack<'a>,
         globals: &'a Scope<'a>,
     ) -> Self {
-        // Create the scope stack with the borrowed arena
-        let scopes = ScopeStack::new(arena, interner);
         scopes.push(globals);
-
         Self {
-            arena,
+            arena: &cc.arena,
             unit_index,
-            interner,
+            interner: &cc.interner,
             scopes,
             globals,
         }
@@ -133,7 +130,7 @@ impl<'a> CollectorScopes<'a> {
     }
 
     /// Build fully qualified name from current scope
-    fn build_fqn(&self, name: &str) -> InternedStr {
+    pub fn build_fqn(&self, name: &str) -> InternedStr {
         let fqn_str = self
             .scopes
             .iter()
@@ -287,16 +284,13 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolverOption,
 ) -> &'a Scope<'a> {
-    let arena = &cc.arena;
-    let interner = &cc.interner;
-
-    let collect_unit = |i: usize| {
+    let scope_stack = L::collect_init(cc);
+    let scope_stack_clone = scope_stack.clone();
+    let collect_unit = move |i: usize| {
+        let unit_scope_stack = scope_stack_clone.clone();
         let unit = cc.compile_unit(i);
-        let unit_globals = arena.alloc(Scope::new(HirId(i)));
         let node = unit.hir_node(unit.file_root_id().unwrap());
-
-        let mut collector = CollectorScopes::new(i, arena, interner, unit_globals);
-        L::collect_symbols(&unit, &node, &mut collector, unit_globals, config);
+        let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
 
         if config.print_ir {
             use llmcc_core::printer::print_llmcc_ir;
@@ -316,7 +310,8 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
             .collect::<Vec<_>>()
     };
 
-    let globals = cc.create_globals();
+    let arena = &cc.arena;
+    let globals = scope_stack.first();
     for unit_globals in unit_globals_vec.iter() {
         apply_collected_symbols(cc, arena, globals, unit_globals);
     }

@@ -1,11 +1,11 @@
 //! Language definition framework for multi-language AST support.
 use std::any::Any;
 
-use crate::context::CompileUnit;
+use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph_builder::BlockKind;
 use crate::ir::HirKind;
 use crate::ir::HirNode;
-use crate::scope::Scope;
+use crate::scope::{Scope, ScopeStack};
 
 /// Generic trait for parse tree representation.
 ///
@@ -283,21 +283,26 @@ pub trait LanguageTrait {
     /// Get the list of file extensions this language supports.
     fn supported_extensions() -> &'static [&'static str];
 
+    /// List of primitive symbols provided by this language.
+    fn primitive_symbols() -> &'static [&'static str] {
+        &[]
+    }
+
+    fn collect_init<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx>;
+
     /// TOOD: can we remove the generics here, we could make a new crate or
     /// bring llmcc-resolver into core to solve the cross dependency
-    fn collect_symbols<'tcx, T, C>(
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx Scope<'tcx>,
+    fn collect_symbols<'tcx, C>(
+        unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        scope_stack: ScopeStack<'tcx>,
         config: &C,
-    );
+    ) -> &'tcx Scope<'tcx>;
 
-    fn bind_symbols<'tcx, T, C>(
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx Scope<'tcx>,
+    fn bind_symbols<'tcx, C>(
+        unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        globals: &'tcx Scope<'tcx>,
         config: &C,
     );
 }
@@ -310,19 +315,26 @@ pub trait LanguageTraitImpl: LanguageTrait {
     /// Supported file extensions for this language.
     fn supported_extensions_impl() -> &'static [&'static str];
 
-    fn collect_symbols_impl<'tcx, T, C>(
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx Scope<'tcx>,
-        config: &C,
-    );
+    /// Primitive symbol names for this language. Defaults to none.
+    fn primitive_symbols_impl() -> &'static [&'static str] {
+        &[]
+    }
 
-    fn bind_symbols_impl<'tcx, T, C>(
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut T,
-        namespace: &'tcx Scope<'tcx>,
+    fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
+        ScopeStack::new(cc.arena(), &cc.interner)
+    }
+
+    fn collect_symbols_impl<'tcx, C>(
+        unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        scope_stack: ScopeStack<'tcx>,
+        config: &C,
+    ) -> &'tcx Scope<'tcx>;
+
+    fn bind_symbols_impl<'tcx, C>(
+        unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        globals: &'tcx Scope<'tcx>,
         config: &C,
     );
 }
@@ -365,29 +377,36 @@ macro_rules! define_lang {
                     <Self as $crate::lang_def::LanguageTraitImpl>::parse_impl(text.as_ref())
                 }
 
-                fn collect_symbols<'tcx, T, C>(
-                    unit: &$crate::context::CompileUnit<'tcx>,
-                    node: &$crate::ir::HirNode<'tcx>,
-                    scopes: &mut T,
-                    namespace: &'tcx $crate::scope::Scope<'tcx>,
-                    config: &C,
-                ) {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_symbols_impl(unit, node, scopes, namespace, config);
+                fn collect_init<'tcx>(cc: &'tcx $crate::context::CompileCtxt<'tcx>) -> $crate::scope::ScopeStack<'tcx> {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_init_impl(cc)
                 }
 
-                fn bind_symbols<'tcx, T, C>(
-                    unit: &$crate::context::CompileUnit<'tcx>,
-                    node: &$crate::ir::HirNode<'tcx>,
-                    scopes: &mut T,
-                    namespace: &'tcx $crate::scope::Scope<'tcx>,
+                fn collect_symbols<'tcx, C>(
+                    unit: $crate::context::CompileUnit<'tcx>,
+                    node: $crate::ir::HirNode<'tcx>,
+                    scope_stack: $crate::scope::ScopeStack<'tcx>,
+                    config: &C,
+                ) -> &'tcx $crate::scope::Scope<'tcx> {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::collect_symbols_impl(unit, node, scope_stack, config)
+                }
+
+                fn bind_symbols<'tcx, C>(
+                    unit: $crate::context::CompileUnit<'tcx>,
+                    node: $crate::ir::HirNode<'tcx>,
+                    globals: &'tcx $crate::scope::Scope<'tcx>,
                     config: &C,
                 ) {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::bind_symbols_impl(unit, node, scopes, namespace, config);
+                    <Self as $crate::lang_def::LanguageTraitImpl>::bind_symbols_impl(unit, node, globals, config);
                 }
 
                 /// Return the list of supported file extensions for this language
                 fn supported_extensions() -> &'static [&'static str] {
                     <Self as $crate::lang_def::LanguageTraitImpl>::supported_extensions_impl()
+                }
+
+                /// List of primitive symbol names for this language.
+                fn primitive_symbols() -> &'static [&'static str] {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::primitive_symbols_impl()
                 }
 
                 /// Get the HIR kind for a given token ID
