@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-use crate::{LangRust, RUST_PRIMITIVES};
+use crate::LangRust;
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -48,11 +48,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         })
     }
 
-    fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut CollectorScopes<'tcx>) {
-        for prim in RUST_PRIMITIVES {
-            scopes.lookup_or_insert_global(prim, node, SymKind::Primitive);
-        }
-    }
+    fn initialize(&self, _node: &HirNode<'tcx>, _scopes: &mut CollectorScopes<'tcx>) {}
 
     /// Declare a symbol from a named field in the AST node
     fn declare_symbol_from_field(

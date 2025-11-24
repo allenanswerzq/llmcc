@@ -1550,44 +1550,26 @@ u0:22 | File      | foo    | _c::_m::foo        |
 u0:23 | Function  | f      | _c::_m::foo::f     |         
 u0:24 | Namespace | g      | _c::_m::foo::g     |         
 u0:25 | Function  | h      | _c::_m::foo::g::h  |         
-u1:26 | Primitive | i32    | i32                | [global]
-u1:27 | Primitive | i64    | i64                | [global]
-u1:28 | Primitive | i16    | i16                | [global]
-u1:29 | Primitive | i8     | i8                 | [global]
-u1:30 | Primitive | i128   | i128               | [global]
-u1:31 | Primitive | isize  | isize              | [global]
-u1:32 | Primitive | u32    | u32                | [global]
-u1:33 | Primitive | u64    | u64                | [global]
-u1:34 | Primitive | u16    | u16                | [global]
-u1:35 | Primitive | u8     | u8                 | [global]
-u1:36 | Primitive | u128   | u128               | [global]
-u1:37 | Primitive | usize  | usize              | [global]
-u1:38 | Primitive | f32    | f32                | [global]
-u1:39 | Primitive | f64    | f64                | [global]
-u1:40 | Primitive | bool   | bool               | [global]
-u1:41 | Primitive | char   | char               | [global]
-u1:42 | Primitive | str    | str                | [global]
-u1:43 | Primitive | String | String             | [global]
-u1:44 | Crate     | _c     | _c                 | [global]
-u1:45 | Crate     | crate  | _c::crate          |         
-u1:46 | Module    | _m     | _c::_m             |         
-u1:47 | File      | main   | _c::_m::main       |         
-u1:48 | Struct    | a      | _c::_m::main::a    |         
-u1:49 | Function  | b      | _c::_m::main::a::b |         
-u1:50 | Struct    | C      | _c::_m::main::C    |         
-u1:51 | Function  | e      | _c::_m::main::C::e |         
-u1:52 | Function  | foo    | _c::_m::main::foo  |         
+u1:26 | Crate     | _c     | _c                 | [global]
+u1:27 | Crate     | crate  | _c::crate          |         
+u1:28 | Module    | _m     | _c::_m             |         
+u1:29 | File      | main   | _c::_m::main       |         
+u1:30 | Struct    | a      | _c::_m::main::a    |         
+u1:31 | Function  | b      | _c::_m::main::a::b |         
+u1:32 | Struct    | C      | _c::_m::main::C    |         
+u1:33 | Function  | e      | _c::_m::main::C::e |         
+u1:34 | Function  | foo    | _c::_m::main::foo  |         
 
 --- expect:symbol-deps ---
 u0:24 -> [u0:25]
 u0:25 <- [u0:24]
-u1:48 -> [u1:49]
-u1:48 <- [u1:52]
-u1:49 <- [u1:48, u1:52]
-u1:50 -> [u1:51]
-u1:50 <- [u1:52]
-u1:51 <- [u1:50, u1:52]
-u1:52 -> [u1:48, u1:49, u1:50, u1:51]
+u1:30 -> [u1:31]
+u1:30 <- [u1:34]
+u1:31 <- [u1:30, u1:34]
+u1:32 -> [u1:33]
+u1:32 <- [u1:34]
+u1:33 <- [u1:32, u1:34]
+u1:34 -> [u1:30, u1:31, u1:32, u1:33]
 
 --- expect:block-graph ---
 (root:1 foo

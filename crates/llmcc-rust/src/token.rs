@@ -28,6 +28,10 @@ impl LanguageTraitImpl for LangRust {
         &["rs"]
     }
 
+    fn primitive_symbols_impl() -> &'static [&'static str] {
+        crate::RUST_PRIMITIVES
+    }
+
     fn collect_symbols_impl<'tcx, T, C>(
         unit: &llmcc_core::CompileUnit<'tcx>,
         node: &llmcc_core::ir::HirNode<'tcx>,
