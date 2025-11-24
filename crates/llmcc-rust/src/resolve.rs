@@ -96,6 +96,45 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         None
     }
 
+    /// Follow `type_of` chains to find the canonical definition for a symbol.
+    pub fn resolve_canonical_type(
+        unit: &CompileUnit<'tcx>,
+        mut symbol: &'tcx Symbol,
+    ) -> &'tcx Symbol {
+        let mut depth = 0;
+        while depth < 8 {
+            let Some(target_id) = symbol.type_of() else {
+                break;
+            };
+            let Some(next) = unit.opt_get_symbol(target_id) else {
+                break;
+            };
+            if next.id() == symbol.id() {
+                break;
+            }
+            symbol = next;
+            depth += 1;
+        }
+        symbol
+    }
+
+    /// Resolve a field on a type, returning the field symbol and its optional type.
+    pub fn resolve_field_type(
+        &mut self,
+        owner: &'tcx Symbol,
+        field_name: &str,
+    ) -> Option<(&'tcx Symbol, Option<&'tcx Symbol>)> {
+        let owner = Self::resolve_canonical_type(self.unit, owner);
+        let scope_id = owner.opt_scope()?;
+        let scope = self.unit.cc.get_scope(scope_id);
+        let field_key = self.unit.cc.interner.intern(field_name);
+        let field_symbol = scope.lookup_symbols(field_key)?.last().copied()?;
+        let field_type = field_symbol
+            .type_of()
+            .and_then(|ty_id| self.unit.opt_get_symbol(ty_id));
+        Some((field_symbol, field_type))
+    }
+
     pub fn first_child_node(&self, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
         let child_id = node.children().first()?;
         Some(self.unit.hir_node(*child_id))
@@ -190,7 +229,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             let path_name = self.identifier_name(path_node)?;
             let sym = self.scopes.lookup_symbol(&path_name)?;
             if let Some(c) = caller {
-                c.add_dependency(sym);
+                c.add_dependency(sym, None);
             }
             sym
         };
@@ -242,6 +281,19 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     pub fn resolve_type_node(&mut self, type_node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         self.infer_type_from_expr_from_node(type_node)
             .or_else(|| self.infer_type_from_expr(type_node))
+    }
+
+    /// Resolve a type and gather its explicit type arguments in one pass.
+    pub fn resolve_type_with_args(
+        &mut self,
+        node: &HirNode<'tcx>,
+    ) -> (Option<&'tcx Symbol>, Vec<&'tcx Symbol>) {
+        let ty = match self.resolve_type_node(node) {
+            some @ Some(_) => some,
+            None => self.infer_type_from_expr(node),
+        };
+        let args = self.collect_type_argument_symbols(node);
+        (ty, args)
     }
 
     pub fn is_self_type(&self, symbol: &Symbol) -> bool {
