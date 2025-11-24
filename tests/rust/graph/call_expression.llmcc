@@ -36,7 +36,7 @@ u0:20 | Crate     | crate         | _c::crate                      |
 u0:21 | Module    | _m            | _c::_m                         |         
 u0:22 | File      | main          | _c::_m::main                   |         
 u0:23 | Namespace | helpers       | _c::_m::main::helpers          |         
-u0:24 | Function  | compute       | _c::_m::main::helpers::compute |         
+u0:24 | Function  | compute       | _c::_m::main::helpers::compute | [global]
 u0:25 | Function  | function_demo | _c::_m::main::function_demo    |         
 
 --- expect:symbol-deps ---
@@ -126,16 +126,14 @@ u0:29 -> [u0:24]
 u0:30 -> [u0:23]
 
 --- expect:blocks ---
-u0:1  | root   | main          
-u0:2  | class  | Foo           
-u0:3  | class  | Baz           
-u0:4  | class  | SessionBuilder
-u0:5  | impl   | SessionBuilder
-u0:6  | method | new           
-u0:7  | method | static_func   
-u0:8  | func   | qualified_call
-u0:9  | call   | block#9       
-u0:10 | call   | block#10      
+u0:1 | root   | main          
+u0:2 | class  | Foo           
+u0:3 | class  | Baz           
+u0:4 | class  | SessionBuilder
+u0:5 | impl   | SessionBuilder
+u0:6 | method | new           
+u0:7 | method | static_func   
+u0:8 | func   | qualified_call
 
 --- expect:block-deps ---
 u0:2 <- [u0:4, u0:7, u0:8]
@@ -360,17 +358,15 @@ u0:27 <- [u0:24]
 u0:28 -> [u0:23]
 
 --- expect:blocks ---
-u0:1  | root   | main      
-u0:2  | class  | Data      
-u0:3  | class  | Iter      
-u0:4  | impl   | Data      
-u0:5  | method | iter      
-u0:6  | impl   | Iter      
-u0:7  | method | map       
-u0:8  | method | count     
-u0:9  | func   | expr_chain
-u0:10 | call   | block#10  
-u0:11 | call   | block#11  
+u0:1 | root   | main      
+u0:2 | class  | Data      
+u0:3 | class  | Iter      
+u0:4 | impl   | Data      
+u0:5 | method | iter      
+u0:6 | impl   | Iter      
+u0:7 | method | map       
+u0:8 | method | count     
+u0:9 | func   | expr_chain
 
 --- expect:graph ---
 digraph project {
@@ -454,8 +450,6 @@ u0:3 | impl   | Stream
 u0:4 | method | advance            
 u0:5 | method | flush              
 u0:6 | func   | chain_variable_demo
-u0:7 | call   | block#7            
-u0:8 | call   | block#8            
 
 --- expect:block-deps ---
 u0:2 -> [u0:4, u0:5]

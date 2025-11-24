@@ -50,10 +50,6 @@ impl LanguageTraitImpl for LangRust {
         &["rs"]
     }
 
-    fn primitive_symbols_impl() -> &'static [&'static str] {
-        crate::RUST_PRIMITIVES
-    }
-
     fn collect_symbols_impl<'tcx, C>(
         unit: CompileUnit<'tcx>,
         node: HirNode<'tcx>,

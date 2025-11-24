@@ -47,11 +47,9 @@ u0:25 -> [u0:1]
 u0:26 -> [u0:23]
 
 --- expect:blocks ---
-u0:1 | root  | main   
-u0:2 | class | Foo    
-u0:3 | class | Bar    
-u0:4 | field | block#4
-u0:5 | field | block#5
+u0:1 | root  | main
+u0:2 | class | Foo 
+u0:3 | class | Bar 
 
 --- expect:block-deps ---
 u0:2 <- [u0:3]
@@ -107,48 +105,30 @@ u0:19 | Crate     | _c     | _c                   | [global]
 u0:20 | Crate     | crate  | _c::crate            |         
 u0:21 | Module    | _m     | _c::_m               |         
 u0:22 | File      | foo    | _c::_m::foo          |         
-u0:23 | Struct    | Foo    | _c::_m::foo::Foo     |         
-u1:24 | Primitive | i32    | i32                  | [global]
-u1:25 | Primitive | i64    | i64                  | [global]
-u1:26 | Primitive | i16    | i16                  | [global]
-u1:27 | Primitive | i8     | i8                   | [global]
-u1:28 | Primitive | i128   | i128                 | [global]
-u1:29 | Primitive | isize  | isize                | [global]
-u1:30 | Primitive | u32    | u32                  | [global]
-u1:31 | Primitive | u64    | u64                  | [global]
-u1:32 | Primitive | u16    | u16                  | [global]
-u1:33 | Primitive | u8     | u8                   | [global]
-u1:34 | Primitive | u128   | u128                 | [global]
-u1:35 | Primitive | usize  | usize                | [global]
-u1:36 | Primitive | f32    | f32                  | [global]
-u1:37 | Primitive | f64    | f64                  | [global]
-u1:38 | Primitive | bool   | bool                 | [global]
-u1:39 | Primitive | char   | char                 | [global]
-u1:40 | Primitive | str    | str                  | [global]
-u1:41 | Primitive | String | String               | [global]
-u1:42 | Crate     | _c     | _c                   | [global]
-u1:43 | Crate     | crate  | _c::crate            |         
-u1:44 | Module    | _m     | _c::_m               |         
-u1:45 | File      | main   | _c::_m::main         |         
-u1:46 | Struct    | Bar    | _c::_m::main::Bar    |         
-u1:47 | Field     | a      | _c::_m::main::Bar::a |         
-u1:48 | Field     | b      | _c::_m::main::Bar::b |         
+u0:23 | Struct    | Foo    | _c::_m::foo::Foo     | [global]
+u1:24 | Crate     | crate  | _c::crate            |         
+u1:25 | Module    | _m     | _c::_m               |         
+u1:26 | File      | main   | _c::_m::main         |         
+u1:27 | Struct    | Bar    | _c::_m::main::Bar    |         
+u1:28 | Field     | a      | _c::_m::main::Bar::a |         
+u1:29 | Field     | b      | _c::_m::main::Bar::b |         
 
 --- expect:symbol-deps ---
-u1:24 <- [u1:46, u1:47]
-u1:46 -> [u1:24]
-u1:47 -> [u1:24]
+u0:1 <- [u1:27, u1:28]
+u0:23 <- [u1:27, u1:29]
+u1:27 -> [u0:1, u0:23]
+u1:28 -> [u0:1]
+u1:29 -> [u0:23]
 
 --- expect:blocks ---
-u0:1 | root  | foo    
-u0:2 | class | Foo    
-u1:3 | root  | main   
-u1:4 | class | Bar    
-u1:5 | field | block#5
-u1:6 | field | block#6
+u0:1 | root  | foo 
+u0:2 | class | Foo 
+u1:3 | root  | main
+u1:4 | class | Bar 
 
 --- expect:block-deps ---
-
+u0:2 <- [u1:4]
+u1:4 -> [u0:2]
 
 --- expect:block-graph ---
 (root:1 foo
@@ -156,14 +136,19 @@ u1:6 | field | block#6
 )
 
 (root:3 main
-    (class:4 Bar
-        (field:5)
-        (field:6)
-    )
+    (class:4 Bar)
 )
 
 --- expect:graph ---
 digraph project {
+  subgraph cluster_0 {
+    label="todo";
+    style=filled;
+    color=lightgrey;
+    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpjdvgfi/app/src/foo.rs:1"];
+    n4 [label="Bar", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpjdvgfi/app/src/main.rs:1"];
+  }
+  n4 -> n2;
 }
 
 
@@ -495,8 +480,6 @@ u0:4 | impl   | SessionBuilder
 u0:5 | method | new           
 u0:6 | method | static_func   
 u0:7 | func   | qualified_call
-u0:8 | call   | block#8       
-u0:9 | call   | block#9       
 
 --- expect:block-deps ---
 u0:2 <- [u0:3, u0:6, u0:7]

@@ -35,12 +35,12 @@ u0:16 | Primitive | char      | char                             | [global]
 u0:17 | Primitive | str       | str                              | [global]
 u0:18 | Primitive | String    | String                           | [global]
 u0:19 | Crate     | _c        | _c                               | [global]
-u0:20 | Crate     | crate     | _c::crate                        |         
-u0:21 | Module    | _m        | _c::_m                           |         
-u0:22 | File      | main      | _c::_m::main                     |         
-u0:23 | Namespace | english   | _c::_m::main::english            |         
-u0:24 | Namespace | greetings | _c::_m::main::english::greetings |         
-u0:25 | Namespace | farewells | _c::_m::main::english::farewells |         
+u0:20 | Crate     | crate     | _c::crate                        |
+u0:21 | Module    | _m        | _c::_m                           |
+u0:22 | File      | main      | _c::_m::main                     |
+u0:23 | Namespace | english   | _c::_m::main::english            |
+u0:24 | Namespace | greetings | _c::_m::main::english::greetings |
+u0:25 | Namespace | farewells | _c::_m::main::english::farewells |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:24, u0:25]
@@ -78,9 +78,9 @@ u0:16 | Primitive | char   | char         | [global]
 u0:17 | Primitive | str    | str          | [global]
 u0:18 | Primitive | String | String       | [global]
 u0:19 | Crate     | _c     | _c           | [global]
-u0:20 | Crate     | crate  | _c::crate    |         
-u0:21 | Module    | _m     | _c::_m       |         
-u0:22 | File      | main   | _c::_m::main |         
+u0:20 | Crate     | crate  | _c::crate    |
+u0:21 | Module    | _m     | _c::_m       |
+u0:22 | File      | main   | _c::_m::main |
 
 --- expect:symbol-deps ---
 
@@ -113,10 +113,10 @@ u0:16 | Primitive | char   | char               | [global]
 u0:17 | Primitive | str    | str                | [global]
 u0:18 | Primitive | String | String             | [global]
 u0:19 | Crate     | _c     | _c                 | [global]
-u0:20 | Crate     | crate  | _c::crate          |         
-u0:21 | Module    | _m     | _c::_m             |         
-u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Function  | main   | _c::_m::main::main |         
+u0:20 | Crate     | crate  | _c::crate          |
+u0:21 | Module    | _m     | _c::_m             |
+u0:22 | File      | main   | _c::_m::main       |
+u0:23 | Function  | main   | _c::_m::main::main |
 
 --- expect:symbol-deps ---
 
@@ -152,12 +152,12 @@ u0:16 | Primitive | char   | char                 | [global]
 u0:17 | Primitive | str    | str                  | [global]
 u0:18 | Primitive | String | String               | [global]
 u0:19 | Crate     | _c     | _c                   | [global]
-u0:20 | Crate     | crate  | _c::crate            |         
-u0:21 | Module    | _m     | _c::_m               |         
-u0:22 | File      | main   | _c::_m::main         |         
-u0:23 | Function  | add    | _c::_m::main::add    |         
-u0:24 | Variable  | x      | _c::_m::main::add::x |         
-u0:25 | Variable  | y      | _c::_m::main::add::y |         
+u0:20 | Crate     | crate  | _c::crate            |
+u0:21 | Module    | _m     | _c::_m               |
+u0:22 | File      | main   | _c::_m::main         |
+u0:23 | Function  | add    | _c::_m::main::add    |
+u0:24 | Variable  | x      | _c::_m::main::add::x |
+u0:25 | Variable  | y      | _c::_m::main::add::y |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:24, u0:25]
@@ -199,13 +199,13 @@ u0:16 | Primitive | char        | char                             | [global]
 u0:17 | Primitive | str         | str                              | [global]
 u0:18 | Primitive | String      | String                           | [global]
 u0:19 | Crate     | _c          | _c                               | [global]
-u0:20 | Crate     | crate       | _c::crate                        |         
-u0:21 | Module    | _m          | _c::_m                           |         
-u0:22 | File      | main        | _c::_m::main                     |         
-u0:23 | Function  | println     | _c::_m::main::println            |         
-u0:24 | Variable  | message     | _c::_m::main::println::message   |         
-u0:25 | Function  | takes_slice | _c::_m::main::takes_slice        |         
-u0:26 | Variable  | slice       | _c::_m::main::takes_slice::slice |         
+u0:20 | Crate     | crate       | _c::crate                        |
+u0:21 | Module    | _m          | _c::_m                           |
+u0:22 | File      | main        | _c::_m::main                     |
+u0:23 | Function  | println     | _c::_m::main::println            |
+u0:24 | Variable  | message     | _c::_m::main::println::message   |
+u0:25 | Function  | takes_slice | _c::_m::main::takes_slice        |
+u0:26 | Variable  | slice       | _c::_m::main::takes_slice::slice |
 
 --- expect:symbol-deps ---
 u0:17 <- [u0:23, u0:24, u0:25, u0:26]
@@ -246,10 +246,10 @@ u0:16 | Primitive | char   | char                | [global]
 u0:17 | Primitive | str    | str                 | [global]
 u0:18 | Primitive | String | String              | [global]
 u0:19 | Crate     | _c     | _c                  | [global]
-u0:20 | Crate     | crate  | _c::crate           |         
-u0:21 | Module    | _m     | _c::_m              |         
-u0:22 | File      | main   | _c::_m::main        |         
-u0:23 | Function  | foo_1  | _c::_m::main::foo_1 |         
+u0:20 | Crate     | crate  | _c::crate           |
+u0:21 | Module    | _m     | _c::_m              |
+u0:22 | File      | main   | _c::_m::main        |
+u0:23 | Function  | foo_1  | _c::_m::main::foo_1 |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:7]
@@ -288,11 +288,11 @@ u0:16 | Primitive | char   | char                | [global]
 u0:17 | Primitive | str    | str                 | [global]
 u0:18 | Primitive | String | String              | [global]
 u0:19 | Crate     | _c     | _c                  | [global]
-u0:20 | Crate     | crate  | _c::crate           |         
-u0:21 | Module    | _m     | _c::_m              |         
-u0:22 | File      | main   | _c::_m::main        |         
-u0:23 | Struct    | Foo    | _c::_m::main::Foo   |         
-u0:24 | Function  | foo_2  | _c::_m::main::foo_2 |         
+u0:20 | Crate     | crate  | _c::crate           |
+u0:21 | Module    | _m     | _c::_m              |
+u0:22 | File      | main   | _c::_m::main        |
+u0:23 | Struct    | Foo    | _c::_m::main::Foo   |
+u0:24 | Function  | foo_2  | _c::_m::main::foo_2 |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:24]
@@ -330,10 +330,10 @@ u0:16 | Primitive | char   | char                | [global]
 u0:17 | Primitive | str    | str                 | [global]
 u0:18 | Primitive | String | String              | [global]
 u0:19 | Crate     | _c     | _c                  | [global]
-u0:20 | Crate     | crate  | _c::crate           |         
-u0:21 | Module    | _m     | _c::_m              |         
-u0:22 | File      | main   | _c::_m::main        |         
-u0:23 | Function  | foo_3  | _c::_m::main::foo_3 |         
+u0:20 | Crate     | crate  | _c::crate           |
+u0:21 | Module    | _m     | _c::_m              |
+u0:22 | File      | main   | _c::_m::main        |
+u0:23 | Function  | foo_3  | _c::_m::main::foo_3 |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:7]
@@ -369,12 +369,12 @@ u0:16 | Primitive | char   | char                   | [global]
 u0:17 | Primitive | str    | str                    | [global]
 u0:18 | Primitive | String | String                 | [global]
 u0:19 | Crate     | _c     | _c                     | [global]
-u0:20 | Crate     | crate  | _c::crate              |         
-u0:21 | Module    | _m     | _c::_m                 |         
-u0:22 | File      | main   | _c::_m::main           |         
-u0:23 | Trait     | FnOnce | _c::_m::main::FnOnce   |         
-u0:24 | Function  | foo_4  | _c::_m::main::foo_4    |         
-u0:25 | Variable  | x      | _c::_m::main::foo_4::x |         
+u0:20 | Crate     | crate  | _c::crate              |
+u0:21 | Module    | _m     | _c::_m                 |
+u0:22 | File      | main   | _c::_m::main           |
+u0:23 | Trait     | FnOnce | _c::_m::main::FnOnce   |
+u0:24 | Function  | foo_4  | _c::_m::main::foo_4    |
+u0:25 | Variable  | x      | _c::_m::main::foo_4::x |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:24, u0:25]
@@ -410,12 +410,12 @@ u0:16 | Primitive | char   | char                   | [global]
 u0:17 | Primitive | str    | str                    | [global]
 u0:18 | Primitive | String | String                 | [global]
 u0:19 | Crate     | _c     | _c                     | [global]
-u0:20 | Crate     | crate  | _c::crate              |         
-u0:21 | Module    | _m     | _c::_m                 |         
-u0:22 | File      | main   | _c::_m::main           |         
-u0:23 | Function  | foo_5  | _c::_m::main::foo_5    |         
-u0:24 | Variable  | x      | _c::_m::main::foo_5::x |         
-u0:25 | Variable  | y      | _c::_m::main::foo_5::y |         
+u0:20 | Crate     | crate  | _c::crate              |
+u0:21 | Module    | _m     | _c::_m                 |
+u0:22 | File      | main   | _c::_m::main           |
+u0:23 | Function  | foo_5  | _c::_m::main::foo_5    |
+u0:24 | Variable  | x      | _c::_m::main::foo_5::x |
+u0:25 | Variable  | y      | _c::_m::main::foo_5::y |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:24]
@@ -454,11 +454,11 @@ u0:16 | Primitive | char       | char                     | [global]
 u0:17 | Primitive | str        | str                      | [global]
 u0:18 | Primitive | String     | String                   | [global]
 u0:19 | Crate     | _c         | _c                       | [global]
-u0:20 | Crate     | crate      | _c::crate                |         
-u0:21 | Module    | _m         | _c::_m                   |         
-u0:22 | File      | main       | _c::_m::main             |         
-u0:23 | Struct    | Machine    | _c::_m::main::Machine    |         
-u0:24 | Function  | accumulate | _c::_m::main::accumulate |         
+u0:20 | Crate     | crate      | _c::crate                |
+u0:21 | Module    | _m         | _c::_m                   |
+u0:22 | File      | main       | _c::_m::main             |
+u0:23 | Struct    | Machine    | _c::_m::main::Machine    |
+u0:24 | Function  | accumulate | _c::_m::main::accumulate |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:24]
@@ -497,15 +497,15 @@ u0:16 | Primitive     | char   | char                     | [global]
 u0:17 | Primitive     | str    | str                      | [global]
 u0:18 | Primitive     | String | String                   | [global]
 u0:19 | Crate         | _c     | _c                       | [global]
-u0:20 | Crate         | crate  | _c::crate                |         
-u0:21 | Module        | _m     | _c::_m                   |         
-u0:22 | File          | main   | _c::_m::main             |         
-u0:23 | Struct        | Quux   | _c::_m::main::Quux       |         
-u0:24 | Field         | data   | _c::_m::main::Quux::data |         
-u0:25 | Trait         | Baz    | _c::_m::main::Baz        |         
-u0:26 | TypeParameter | T      | _c::_m::main::Baz::T     |         
-u0:27 | Function      | foo_6  | _c::_m::main::foo_6      |         
-u0:28 | Variable      | bar    | _c::_m::main::foo_6::bar |         
+u0:20 | Crate         | crate  | _c::crate                |
+u0:21 | Module        | _m     | _c::_m                   |
+u0:22 | File          | main   | _c::_m::main             |
+u0:23 | Struct        | Quux   | _c::_m::main::Quux       |
+u0:24 | Field         | data   | _c::_m::main::Quux::data |
+u0:25 | Trait         | Baz    | _c::_m::main::Baz        |
+u0:26 | TypeParameter | T      | _c::_m::main::Baz::T     |
+u0:27 | Function      | foo_6  | _c::_m::main::foo_6      |
+u0:28 | Variable      | bar    | _c::_m::main::foo_6::bar |
 
 --- expect:symbol-deps ---
 u0:17 <- [u0:23]
@@ -544,10 +544,10 @@ u0:16 | Primitive | char   | char               | [global]
 u0:17 | Primitive | str    | str                | [global]
 u0:18 | Primitive | String | String             | [global]
 u0:19 | Crate     | _c     | _c                 | [global]
-u0:20 | Crate     | crate  | _c::crate          |         
-u0:21 | Module    | _m     | _c::_m             |         
-u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Function  | main   | _c::_m::main::main |         
+u0:20 | Crate     | crate  | _c::crate          |
+u0:21 | Module    | _m     | _c::_m             |
+u0:22 | File      | main   | _c::_m::main       |
+u0:23 | Function  | main   | _c::_m::main::main |
 
 --- expect:symbol-deps ---
 
@@ -586,14 +586,14 @@ u0:16 | Primitive | char     | char                     | [global]
 u0:17 | Primitive | str      | str                      | [global]
 u0:18 | Primitive | String   | String                   | [global]
 u0:19 | Crate     | _c       | _c                       | [global]
-u0:20 | Crate     | crate    | _c::crate                |         
-u0:21 | Module    | _m       | _c::_m                   |         
-u0:22 | File      | main     | _c::_m::main             |         
-u0:23 | Trait     | B        | _c::_m::main::B          |         
-u0:24 | Struct    | Foo      | _c::_m::main::Foo        |         
-u0:25 | Struct    | Iterator | _c::_m::main::Iterator   |         
-u0:26 | Function  | triples  | _c::_m::main::triples    |         
-u0:27 | Variable  | a        | _c::_m::main::triples::a |         
+u0:20 | Crate     | crate    | _c::crate                |
+u0:21 | Module    | _m       | _c::_m                   |
+u0:22 | File      | main     | _c::_m::main             |
+u0:23 | Trait     | B        | _c::_m::main::B          |
+u0:24 | Struct    | Foo      | _c::_m::main::Foo        |
+u0:25 | Struct    | Iterator | _c::_m::main::Iterator   |
+u0:26 | Function  | triples  | _c::_m::main::triples    |
+u0:27 | Variable  | a        | _c::_m::main::triples::a |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:26, u0:27]
@@ -633,13 +633,13 @@ u0:16 | Primitive      | char    | char                  | [global]
 u0:17 | Primitive      | str     | str                   | [global]
 u0:18 | Primitive      | String  | String                | [global]
 u0:19 | Crate          | _c      | _c                    | [global]
-u0:20 | Crate          | crate   | _c::crate             |         
-u0:21 | Module         | _m      | _c::_m                |         
-u0:22 | File           | main    | _c::_m::main          |         
-u0:23 | UnresolvedType | Bar     | _c::_m::main::Bar     |         
-u0:24 | UnresolvedType | Display | _c::_m::main::Display |         
-u0:25 | UnresolvedType | Foo     | _c::_m::main::Foo     |         
-u0:26 | UnresolvedType | Nested  | _c::_m::main::Nested  |         
+u0:20 | Crate          | crate   | _c::crate             |
+u0:21 | Module         | _m      | _c::_m                |
+u0:22 | File           | main    | _c::_m::main          |
+u0:23 | UnresolvedType | Bar     | _c::_m::main::Bar     |
+u0:24 | UnresolvedType | Display | _c::_m::main::Display |
+u0:25 | UnresolvedType | Foo     | _c::_m::main::Foo     |
+u0:26 | UnresolvedType | Nested  | _c::_m::main::Nested  |
 
 
 --- expect:symbol-deps ---
@@ -673,11 +673,11 @@ u0:16 | Primitive | char   | char                 | [global]
 u0:17 | Primitive | str    | str                  | [global]
 u0:18 | Primitive | String | String               | [global]
 u0:19 | Crate     | _c     | _c                   | [global]
-u0:20 | Crate     | crate  | _c::crate            |         
-u0:21 | Module    | _m     | _c::_m               |         
-u0:22 | File      | main   | _c::_m::main         |         
-u0:23 | Function  | foo    | _c::_m::main::foo    |         
-u0:24 | Variable  | x      | _c::_m::main::foo::x |         
+u0:20 | Crate     | crate  | _c::crate            |
+u0:21 | Module    | _m     | _c::_m               |
+u0:22 | File      | main   | _c::_m::main         |
+u0:23 | Function  | foo    | _c::_m::main::foo    |
+u0:24 | Variable  | x      | _c::_m::main::foo::x |
 
 --- expect:symbol-deps ---
 
@@ -711,11 +711,11 @@ u0:16 | Primitive     | char    | char                     | [global]
 u0:17 | Primitive     | str     | str                      | [global]
 u0:18 | Primitive     | String  | String                   | [global]
 u0:19 | Crate         | _c      | _c                       | [global]
-u0:20 | Crate         | crate   | _c::crate                |         
-u0:21 | Module        | _m      | _c::_m                   |         
-u0:22 | File          | main    | _c::_m::main             |         
-u0:23 | Function      | capture | _c::_m::main::capture    |         
-u0:24 | TypeParameter | T       | _c::_m::main::capture::T |         
+u0:20 | Crate         | crate   | _c::crate                |
+u0:21 | Module        | _m      | _c::_m                   |
+u0:22 | File          | main    | _c::_m::main             |
+u0:23 | Function      | capture | _c::_m::main::capture    |
+u0:24 | TypeParameter | T       | _c::_m::main::capture::T |
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:23]
@@ -755,16 +755,18 @@ u0:16 | Primitive | char     | char                         | [global]
 u0:17 | Primitive | str      | str                          | [global]
 u0:18 | Primitive | String   | String                       | [global]
 u0:19 | Crate     | _c       | _c                           | [global]
-u0:20 | Crate     | crate    | _c::crate                    |         
-u0:21 | Module    | _m       | _c::_m                       |         
-u0:22 | File      | main     | _c::_m::main                 |         
-u0:23 | Trait     | Iterator | _c::_m::main::Iterator       |         
-u0:24 | TypeAlias | Item     | _c::_m::main::Iterator::Item |         
-u0:25 | Function  | capture  | _c::_m::main::capture        |         
+u0:20 | Crate     | crate    | _c::crate                    |
+u0:21 | Module    | _m       | _c::_m                       |
+u0:22 | File      | main     | _c::_m::main                 |
+u0:23 | Trait     | Iterator | _c::_m::main::Iterator       |
+u0:24 | TypeAlias | Item     | _c::_m::main::Iterator::Item |
+u0:25 | Function  | capture  | _c::_m::main::capture        |
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:25]
+u0:23 -> [u0:24]
 u0:23 <- [u0:25]
+u0:24 <- [u0:23]
 u0:25 -> [u0:12, u0:23]
 
 
@@ -796,10 +798,10 @@ u0:16 | Primitive | char   | char                 | [global]
 u0:17 | Primitive | str    | str                  | [global]
 u0:18 | Primitive | String | String               | [global]
 u0:19 | Crate     | _c     | _c                   | [global]
-u0:20 | Crate     | crate  | _c::crate            |         
-u0:21 | Module    | _m     | _c::_m               |         
-u0:22 | File      | main   | _c::_m::main         |         
-u0:23 | Function  | aborts | _c::_m::main::aborts |         
+u0:20 | Crate     | crate  | _c::crate            |
+u0:21 | Module    | _m     | _c::_m               |
+u0:22 | File      | main   | _c::_m::main         |
+u0:23 | Function  | aborts | _c::_m::main::aborts |
 
 --- expect:symbol-deps ---
 
@@ -839,13 +841,13 @@ u0:16 | Primitive | char              | char                                 | [
 u0:17 | Primitive | str               | str                                  | [global]
 u0:18 | Primitive | String            | String                               | [global]
 u0:19 | Crate     | _c                | _c                                   | [global]
-u0:20 | Crate     | crate             | _c::crate                            |         
-u0:21 | Module    | _m                | _c::_m                               |         
-u0:22 | File      | main              | _c::_m::main                         |         
-u0:23 | Function  | foo               | _c::_m::main::foo                    |         
-u0:24 | Function  | vprintf           | _c::_m::main::vprintf                |         
-u0:25 | Function  | c_variadic_no_use | _c::_m::main::c_variadic_no_use      |         
-u0:26 | Variable  | fmt               | _c::_m::main::c_variadic_no_use::fmt |         
+u0:20 | Crate     | crate             | _c::crate                            |
+u0:21 | Module    | _m                | _c::_m                               |
+u0:22 | File      | main              | _c::_m::main                         |
+u0:23 | Function  | foo               | _c::_m::main::foo                    |
+u0:24 | Function  | vprintf           | _c::_m::main::vprintf                |
+u0:25 | Function  | c_variadic_no_use | _c::_m::main::c_variadic_no_use      | [global]
+u0:26 | Variable  | fmt               | _c::_m::main::c_variadic_no_use::fmt |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:25]
@@ -894,9 +896,9 @@ u0:16 | Primitive | char   | char         | [global]
 u0:17 | Primitive | str    | str          | [global]
 u0:18 | Primitive | String | String       | [global]
 u0:19 | Crate     | _c     | _c           | [global]
-u0:20 | Crate     | crate  | _c::crate    |         
-u0:21 | Module    | _m     | _c::_m       |         
-u0:22 | File      | main   | _c::_m::main |         
+u0:20 | Crate     | crate  | _c::crate    |
+u0:21 | Module    | _m     | _c::_m       |
+u0:22 | File      | main   | _c::_m::main |
 
 --- expect:symbol-deps ---
 
@@ -936,13 +938,13 @@ u0:16 | Primitive | char   | char               | [global]
 u0:17 | Primitive | str    | str                | [global]
 u0:18 | Primitive | String | String             | [global]
 u0:19 | Crate     | _c     | _c                 | [global]
-u0:20 | Crate     | crate  | _c::crate          |         
-u0:21 | Module    | _m     | _c::_m             |         
-u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Variable  | x      | _c::_m::main::x    |         
-u0:24 | Variable  | y      | _c::_m::main::y    |         
-u0:25 | Variable  | bool   | _c::_m::main::bool |         
-u0:26 | Variable  | u32    | _c::_m::main::u32  |         
+u0:20 | Crate     | crate  | _c::crate          |
+u0:21 | Module    | _m     | _c::_m             |
+u0:22 | File      | main   | _c::_m::main       |
+u0:23 | Variable  | x      | _c::_m::main::x    |
+u0:24 | Variable  | y      | _c::_m::main::y    |
+u0:25 | Variable  | bool   | _c::_m::main::bool |
+u0:26 | Variable  | u32    | _c::_m::main::u32  |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23]
@@ -989,14 +991,14 @@ u0:16 | Primitive | char   | char                  | [global]
 u0:17 | Primitive | str    | str                   | [global]
 u0:18 | Primitive | String | String                | [global]
 u0:19 | Crate     | _c     | _c                    | [global]
-u0:20 | Crate     | crate  | _c::crate             |         
-u0:21 | Module    | _m     | _c::_m                |         
-u0:22 | File      | main   | _c::_m::main          |         
-u0:23 | Struct    | Baz    | _c::_m::main::Baz     |         
-u0:24 | Struct    | Foo    | _c::_m::main::Foo     |         
-u0:25 | Function  | func   | _c::_m::main::func    |         
-u0:26 | Variable  | x      | _c::_m::main::func::x |         
-u0:27 | Variable  | y      | _c::_m::main::func::y |         
+u0:20 | Crate     | crate  | _c::crate             |
+u0:21 | Module    | _m     | _c::_m                |
+u0:22 | File      | main   | _c::_m::main          |
+u0:23 | Struct    | Baz    | _c::_m::main::Baz     |
+u0:24 | Struct    | Foo    | _c::_m::main::Foo     |
+u0:25 | Function  | func   | _c::_m::main::func    |
+u0:26 | Variable  | x      | _c::_m::main::func::x |
+u0:27 | Variable  | y      | _c::_m::main::func::y |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:25]
@@ -1012,6 +1014,12 @@ let-else-statements
 
 --- file: src/main.rs ---
 struct Boo;
+
+impl Boo {
+    fn new() -> Self {
+        Boo
+    }
+}
 
 mod Foo {
     struct Bar {
@@ -1047,34 +1055,37 @@ u0:16 | Primitive | char   | char                           | [global]
 u0:17 | Primitive | str    | str                            | [global]
 u0:18 | Primitive | String | String                         | [global]
 u0:19 | Crate     | _c     | _c                             | [global]
-u0:20 | Crate     | crate  | _c::crate                      |         
-u0:21 | Module    | _m     | _c::_m                         |         
-u0:22 | File      | main   | _c::_m::main                   |         
-u0:23 | Struct    | Boo    | _c::_m::main::Boo              |         
-u0:24 | Namespace | Foo    | _c::_m::main::Foo              |         
-u0:25 | Struct    | Bar    | _c::_m::main::Foo::Bar         |         
-u0:26 | Field     | texts  | _c::_m::main::Foo::Bar::texts  |         
-u0:27 | Field     | values | _c::_m::main::Foo::Bar::values |         
-u0:28 | Struct    | Baz    | _c::_m::main::Baz              |         
-u0:29 | Function  | func   | _c::_m::main::func             |         
-u0:30 | Variable  | y      | _c::_m::main::func::y          |         
-u0:31 | Variable  | x      | _c::_m::main::func::x          |         
-u0:32 | Variable  | texts  | _c::_m::main::func::texts      |         
-u0:33 | Variable  | values | _c::_m::main::func::values     |         
+u0:20 | Crate     | crate  | _c::crate                      |
+u0:21 | Module    | _m     | _c::_m                         |
+u0:22 | File      | main   | _c::_m::main                   |
+u0:23 | Struct    | Boo    | _c::_m::main::Boo              |
+u0:24 | Function  | new    | _c::_m::main::Boo::new         |
+u0:25 | Namespace | Foo    | _c::_m::main::Foo              |
+u0:26 | Struct    | Bar    | _c::_m::main::Foo::Bar         |
+u0:27 | Field     | texts  | _c::_m::main::Foo::Bar::texts  |
+u0:28 | Field     | values | _c::_m::main::Foo::Bar::values |
+u0:29 | Struct    | Baz    | _c::_m::main::Baz              |
+u0:30 | Function  | func   | _c::_m::main::func             |
+u0:31 | Variable  | y      | _c::_m::main::func::y          |
+u0:32 | Variable  | x      | _c::_m::main::func::x          |
+u0:33 | Variable  | texts  | _c::_m::main::func::texts      |
+u0:34 | Variable  | values | _c::_m::main::func::values     |
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:25, u0:27, u0:29, u0:33]
-u0:24 -> [u0:25]
-u0:25 -> [u0:23, u0:9]
-u0:25 <- [u0:24, u0:29, u0:31]
-u0:26 -> [u0:9]
-u0:27 -> [u0:23]
-u0:28 <- [u0:29]
-u0:29 -> [u0:23, u0:25, u0:28]
-u0:31 -> [u0:25]
-u0:32 -> [u0:9]
-u0:33 -> [u0:23]
-u0:9 <- [u0:25, u0:26, u0:32]
+u0:23 -> [u0:24]
+u0:23 <- [u0:26, u0:28, u0:30, u0:34]
+u0:24 <- [u0:23, u0:30]
+u0:25 -> [u0:26]
+u0:26 -> [u0:23, u0:9]
+u0:26 <- [u0:25, u0:30, u0:32]
+u0:27 -> [u0:9]
+u0:28 -> [u0:23]
+u0:29 <- [u0:30]
+u0:30 -> [u0:23, u0:24, u0:26, u0:29]
+u0:32 -> [u0:26]
+u0:33 -> [u0:9]
+u0:34 -> [u0:23]
+u0:9 <- [u0:26, u0:27, u0:33]
 
 
 ===============================================================================
@@ -1109,10 +1120,10 @@ u0:16 | Primitive | char   | char            | [global]
 u0:17 | Primitive | str    | str             | [global]
 u0:18 | Primitive | String | String          | [global]
 u0:19 | Crate     | _c     | _c              | [global]
-u0:20 | Crate     | crate  | _c::crate       |         
-u0:21 | Module    | _m     | _c::_m          |         
-u0:22 | File      | main   | _c::_m::main    |         
-u0:23 | Variable  | a      | _c::_m::main::a |         
+u0:20 | Crate     | crate  | _c::crate       |
+u0:21 | Module    | _m     | _c::_m          |
+u0:22 | File      | main   | _c::_m::main    |
+u0:23 | Variable  | a      | _c::_m::main::a |
 
 --- expect:symbol-deps ---
 
@@ -1146,11 +1157,11 @@ u0:16 | Primitive | char    | char                  | [global]
 u0:17 | Primitive | str     | str                   | [global]
 u0:18 | Primitive | String  | String                | [global]
 u0:19 | Crate     | _c      | _c                    | [global]
-u0:20 | Crate     | crate   | _c::crate             |         
-u0:21 | Module    | _m      | _c::_m                |         
-u0:22 | File      | main    | _c::_m::main          |         
-u0:23 | Variable  | default | _c::_m::main::default |         
-u0:24 | Variable  | union   | _c::_m::main::union   |         
+u0:20 | Crate     | crate   | _c::crate             |
+u0:21 | Module    | _m      | _c::_m                |
+u0:22 | File      | main    | _c::_m::main          |
+u0:23 | Variable  | default | _c::_m::main::default |
+u0:24 | Variable  | union   | _c::_m::main::union   |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:24]
@@ -1197,20 +1208,20 @@ u0:16 | Primitive | char     | char                       | [global]
 u0:17 | Primitive | str      | str                        | [global]
 u0:18 | Primitive | String   | String                     | [global]
 u0:19 | Crate     | _c       | _c                         | [global]
-u0:20 | Crate     | crate    | _c::crate                  |         
-u0:21 | Module    | _m       | _c::_m                     |         
-u0:22 | File      | main     | _c::_m::main               |         
-u0:23 | Struct    | Proton   | _c::_m::main::Proton       |         
-u0:24 | Struct    | Electron | _c::_m::main::Electron     |         
-u0:25 | Struct    | Person   | _c::_m::main::Person       |         
-u0:26 | Field     | name     | _c::_m::main::Person::name |         
-u0:27 | Field     | age      | _c::_m::main::Person::age  |         
-u0:28 | Struct    | Point    | _c::_m::main::Point        |         
-u0:29 | Field     | x        | _c::_m::main::Point::x     |         
-u0:30 | Field     | y        | _c::_m::main::Point::y     |         
-u0:31 | Struct    | Color    | _c::_m::main::Color        |         
-u0:32 | Struct    | Inches   | _c::_m::main::Inches       |         
-u0:33 | Struct    | Empty    | _c::_m::main::Empty        |         
+u0:20 | Crate     | crate    | _c::crate                  |
+u0:21 | Module    | _m       | _c::_m                     |
+u0:22 | File      | main     | _c::_m::main               |
+u0:23 | Struct    | Proton   | _c::_m::main::Proton       |
+u0:24 | Struct    | Electron | _c::_m::main::Electron     |
+u0:25 | Struct    | Person   | _c::_m::main::Person       |
+u0:26 | Field     | name     | _c::_m::main::Person::name |
+u0:27 | Field     | age      | _c::_m::main::Person::age  |
+u0:28 | Struct    | Point    | _c::_m::main::Point        |
+u0:29 | Field     | x        | _c::_m::main::Point::x     |
+u0:30 | Field     | y        | _c::_m::main::Point::y     |
+u0:31 | Struct    | Color    | _c::_m::main::Color        |
+u0:32 | Struct    | Inches   | _c::_m::main::Inches       |
+u0:33 | Struct    | Empty    | _c::_m::main::Empty        |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:28, u0:29, u0:30, u0:31, u0:32]
@@ -1259,13 +1270,13 @@ u0:16 | Primitive | char                 | char                               | 
 u0:17 | Primitive | str                  | str                                | [global]
 u0:18 | Primitive | String               | String                             | [global]
 u0:19 | Crate     | _c                   | _c                                 | [global]
-u0:20 | Crate     | crate                | _c::crate                          |         
-u0:21 | Module    | _m                   | _c::_m                             |         
-u0:22 | File      | main                 | _c::_m::main                       |         
-u0:23 | Field     | __u6_addr8           | _c::_m::main::__u6_addr8           |         
-u0:24 | Field     | __u6_addr16          | _c::_m::main::__u6_addr16          |         
-u0:25 | Field     | __u6_addr32          | _c::_m::main::__u6_addr32          |         
-u0:26 | Field     | _bindgen_union_align | _c::_m::main::_bindgen_union_align |         
+u0:20 | Crate     | crate                | _c::crate                          |
+u0:21 | Module    | _m                   | _c::_m                             |
+u0:22 | File      | main                 | _c::_m::main                       |
+u0:23 | Field     | __u6_addr8           | _c::_m::main::__u6_addr8           |
+u0:24 | Field     | __u6_addr16          | _c::_m::main::__u6_addr16          |
+u0:25 | Field     | __u6_addr32          | _c::_m::main::__u6_addr32          |
+u0:26 | Field     | _bindgen_union_align | _c::_m::main::_bindgen_union_align |
 
 --- expect:symbol-deps ---
 
@@ -1306,26 +1317,27 @@ u0:16 | Primitive     | char   | char               | [global]
 u0:17 | Primitive     | str    | str                | [global]
 u0:18 | Primitive     | String | String             | [global]
 u0:19 | Crate         | _c     | _c                 | [global]
-u0:20 | Crate         | crate  | _c::crate          |         
-u0:21 | Module        | _m     | _c::_m             |         
-u0:22 | File          | main   | _c::_m::main       |         
-u0:23 | Struct        | A      | _c::_m::main::A    |         
-u0:24 | TypeParameter | B      | _c::_m::main::A::B |         
-u0:25 | Struct        | C      | _c::_m::main::C    |         
-u0:26 | Struct        | D      | _c::_m::main::D    |         
-u0:27 | Const         | SIZE   | _c::_m::main::D::SIZE |         
-u0:28 | Struct        | E      | _c::_m::main::E    |         
-u0:29 | TypeParameter | T      | _c::_m::main::E::T |         
-u0:30 | Trait         | F      | _c::_m::main::F    |         
-u0:31 | Trait         | G      | _c::_m::main::G    |         
-u0:32 | Struct        | H      | _c::_m::main::H    |         
-u0:33 | TypeParameter | T      | _c::_m::main::H::T |         
-u0:34 | Struct        | I      | _c::_m::main::I    |         
-u0:35 | TypeParameter | U      | _c::_m::main::I::U |         
+u0:20 | Crate         | crate  | _c::crate          |
+u0:21 | Module        | _m     | _c::_m             |
+u0:22 | File          | main   | _c::_m::main       |
+u0:23 | Struct        | A      | _c::_m::main::A    |
+u0:24 | TypeParameter | B      | _c::_m::main::A::B |
+u0:25 | Struct        | C      | _c::_m::main::C    |
+u0:26 | Struct        | D      | _c::_m::main::D    |
+u0:27 | Const         | SIZE   | _c::_m::main::D::SIZE |
+u0:28 | Struct        | E      | _c::_m::main::E    |
+u0:29 | TypeParameter | T      | _c::_m::main::E::T |
+u0:30 | Trait         | F      | _c::_m::main::F    |
+u0:31 | Trait         | G      | _c::_m::main::G    |
+u0:32 | Struct        | H      | _c::_m::main::H    |
+u0:33 | TypeParameter | T      | _c::_m::main::H::T |
+u0:34 | Struct        | I      | _c::_m::main::I    |
+u0:35 | TypeParameter | U      | _c::_m::main::I::U |
 
 --- expect:symbol-deps ---
-u0:12 <- [u0:26]
+u0:12 <- [u0:26, u0:27]
 u0:26 -> [u0:12, u0:27]
+u0:27 -> [u0:12]
 u0:27 <- [u0:26]
 u0:30 <- [u0:32, u0:34]
 u0:31 <- [u0:34]
@@ -1341,6 +1353,7 @@ enums-basic
 --- file: src/main.rs ---
 struct Tree;
 struct Item;
+struct Vec<T>;
 
 pub enum Option<T> {
     None,
@@ -1379,48 +1392,50 @@ u0:16 | Primitive     | char     | char                                   | [glo
 u0:17 | Primitive     | str      | str                                    | [global]
 u0:18 | Primitive     | String   | String                                 | [global]
 u0:19 | Crate         | _c       | _c                                     | [global]
-u0:20 | Crate         | crate    | _c::crate                              |         
-u0:21 | Module        | _m       | _c::_m                                 |         
-u0:22 | File          | main     | _c::_m::main                           |         
-u0:23 | Struct        | Tree     | _c::_m::main::Tree                     |         
-u0:24 | Struct        | Item     | _c::_m::main::Item                     |         
-u0:25 | Enum          | Option   | _c::_m::main::Option                   |         
-u0:26 | TypeParameter | T        | _c::_m::main::Option::T                |         
-u0:27 | EnumVariant   | None     | _c::_m::main::Option::None             |         
-u0:28 | EnumVariant   | Some     | _c::_m::main::Option::Some             |         
-u0:29 | Enum          | Node     | _c::_m::main::Node                     |         
-u0:30 | TypeParameter | T        | _c::_m::main::Node::T                  |         
-u0:31 | EnumVariant   | Internal | _c::_m::main::Node::Internal           |         
-u0:32 | Field         | children | _c::_m::main::Node::Internal::children |         
-u0:33 | Field         | height   | _c::_m::main::Node::Internal::height   |         
-u0:34 | EnumVariant   | Leaf     | _c::_m::main::Node::Leaf               |         
-u0:35 | Field         | value    | _c::_m::main::Node::Leaf::value        |         
+u0:20 | Crate         | crate    | _c::crate                              |
+u0:21 | Module        | _m       | _c::_m                                 |
+u0:22 | File          | main     | _c::_m::main                           |
+u0:23 | Struct        | Tree     | _c::_m::main::Tree                     |
+u0:24 | Struct        | Item     | _c::_m::main::Item                     |
+u0:25 | Struct        | Vec      | _c::_m::main::Vec                      |
+u0:26 | TypeParameter | T        | _c::_m::main::Vec::T                   |
+u0:27 | Enum          | Option   | _c::_m::main::Option                   | [global]
+u0:28 | TypeParameter | T        | _c::_m::main::Option::T                |
+u0:29 | EnumVariant   | None     | _c::_m::main::Option::None             |
+u0:30 | EnumVariant   | Some     | _c::_m::main::Option::Some             |
+u0:31 | Enum          | Node     | _c::_m::main::Node                     | [global]
+u0:32 | TypeParameter | T        | _c::_m::main::Node::T                  |
+u0:33 | EnumVariant   | Internal | _c::_m::main::Node::Internal           |
+u0:34 | Field         | children | _c::_m::main::Node::Internal::children |
+u0:35 | Field         | height   | _c::_m::main::Node::Internal::height   |
+u0:36 | EnumVariant   | Leaf     | _c::_m::main::Node::Leaf               |
+u0:37 | Field         | value    | _c::_m::main::Node::Leaf::value        |
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:29]
-u0:24 <- [u0:29]
-u0:25 -> [u0:27, u0:28]
-u0:27 <- [u0:25]
-u0:28 <- [u0:25]
-u0:29 -> [u0:23, u0:24, u0:31, u0:34, u0:9]
-u0:31 <- [u0:29]
-u0:34 <- [u0:29]
-u0:9 <- [u0:29]
+u0:23 <- [u0:31]
+u0:24 <- [u0:31]
+u0:25 <- [u0:31]
+u0:27 -> [u0:29, u0:30]
+u0:29 <- [u0:27]
+u0:30 <- [u0:27]
+u0:31 -> [u0:23, u0:24, u0:25, u0:33, u0:36, u0:9]
+u0:33 <- [u0:31]
+u0:36 <- [u0:31]
+u0:9 <- [u0:31]
 
 --- expect:blocks ---
 u0:1 | root  | main
 u0:2 | class | Tree
 u0:3 | class | Item
-u0:4 | enum  | Option
-u0:5 | enum  | Node
-u0:6 | field | block#6
-u0:7 | field | block#7
-u0:8 | field | block#8
+u0:4 | class | Vec
+u0:5 | enum  | Option
+u0:6 | enum  | Node
 
 --- expect:block-deps ---
-u0:2 <- [u0:5]
-u0:3 <- [u0:5]
-u0:5 -> [u0:2, u0:3]
+u0:2 <- [u0:6]
+u0:3 <- [u0:6]
+u0:4 <- [u0:6]
+u0:6 -> [u0:2, u0:3, u0:4]
 
 
 ===============================================================================
@@ -1454,12 +1469,12 @@ u0:16 | Primitive   | char         | char                             | [global]
 u0:17 | Primitive   | str          | str                              | [global]
 u0:18 | Primitive   | String       | String                           | [global]
 u0:19 | Crate       | _c           | _c                               | [global]
-u0:20 | Crate       | crate        | _c::crate                        |         
-u0:21 | Module      | _m           | _c::_m                           |         
-u0:22 | File        | main         | _c::_m::main                     |         
-u0:23 | Enum        | c_style_enum | _c::_m::main::c_style_enum       |         
-u0:24 | EnumVariant | val1         | _c::_m::main::c_style_enum::val1 |         
-u0:25 | EnumVariant | val2         | _c::_m::main::c_style_enum::val2 |         
+u0:20 | Crate       | crate        | _c::crate                        |
+u0:21 | Module      | _m           | _c::_m                           |
+u0:22 | File        | main         | _c::_m::main                     |
+u0:23 | Enum        | c_style_enum | _c::_m::main::c_style_enum       | [global]
+u0:24 | EnumVariant | val1         | _c::_m::main::c_style_enum::val1 |
+u0:25 | EnumVariant | val2         | _c::_m::main::c_style_enum::val2 |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:24, u0:25]
@@ -1477,6 +1492,8 @@ generic-functions-one
 
 --- file: src/main.rs ---
 struct Text;
+trait Into<T> {}
+struct Range<Idx> {}
 
 pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
 }
@@ -1502,33 +1519,43 @@ u0:16 | Primitive     | char         | char                            | [global
 u0:17 | Primitive     | str          | str                             | [global]
 u0:18 | Primitive     | String       | String                          | [global]
 u0:19 | Crate         | _c           | _c                              | [global]
-u0:20 | Crate         | crate        | _c::crate                       |         
-u0:21 | Module        | _m           | _c::_m                          |         
-u0:22 | File          | main         | _c::_m::main                    |         
-u0:23 | Struct        | Text         | _c::_m::main::Text              |         
-u0:24 | Function      | splice       | _c::_m::main::splice            |         
-u0:25 | TypeParameter | T            | _c::_m::main::splice::T         |         
-u0:26 | Variable      | old_range    | _c::_m::main::splice::old_range |         
-u0:27 | Variable      | new_text     | _c::_m::main::splice::new_text  |         
-u0:28 | Function      | uninit_array | _c::_m::main::uninit_array      |         
-u0:29 | Const         | LEN          | _c::_m::main::uninit_array::LEN |         
+u0:20 | Crate         | crate        | _c::crate                       |
+u0:21 | Module        | _m           | _c::_m                          |
+u0:22 | File          | main         | _c::_m::main                    |
+u0:23 | Struct        | Text         | _c::_m::main::Text              |
+u0:24 | Trait         | Into         | _c::_m::main::Into              |
+u0:25 | TypeParameter | T            | _c::_m::main::Into::T           |
+u0:26 | Struct        | Range        | _c::_m::main::Range             |
+u0:27 | TypeParameter | Idx          | _c::_m::main::Range::Idx        |
+u0:28 | Function      | splice       | _c::_m::main::splice            | [global]
+u0:29 | TypeParameter | T            | _c::_m::main::splice::T         |
+u0:30 | Variable      | old_range    | _c::_m::main::splice::old_range |
+u0:31 | Variable      | new_text     | _c::_m::main::splice::new_text  |
+u0:32 | Function      | uninit_array | _c::_m::main::uninit_array      | [global]
+u0:33 | Const         | LEN          | _c::_m::main::uninit_array::LEN |
 
 --- expect:symbol-deps ---
-u0:12 <- [u0:24, u0:28]
-u0:23 <- [u0:24]
-u0:24 -> [u0:12, u0:23]
-u0:28 -> [u0:12, u0:29]
-u0:29 <- [u0:28]
+u0:12 <- [u0:28, u0:32, u0:33]
+u0:23 <- [u0:28]
+u0:24 <- [u0:28]
+u0:26 <- [u0:28, u0:30]
+u0:28 -> [u0:12, u0:23, u0:24, u0:26]
+u0:30 -> [u0:26]
+u0:32 -> [u0:12, u0:33]
+u0:33 -> [u0:12]
+u0:33 <- [u0:32]
 
 --- expect:blocks ---
 u0:1 | root  | main
 u0:2 | class | Text
-u0:3 | func  | splice
-u0:4 | func  | uninit_array
+u0:3 | class | Range
+u0:4 | func  | splice
+u0:5 | func  | uninit_array
 
 --- expect:block-deps ---
-u0:2 <- [u0:3]
-u0:3 -> [u0:2]
+u0:2 <- [u0:4]
+u0:3 <- [u0:4]
+u0:4 -> [u0:2, u0:3]
 
 
 ===============================================================================
@@ -1560,11 +1587,11 @@ u0:16 | Primitive | char   | char                 | [global]
 u0:17 | Primitive | str    | str                  | [global]
 u0:18 | Primitive | String | String               | [global]
 u0:19 | Crate     | _c     | _c                   | [global]
-u0:20 | Crate     | crate  | _c::crate            |         
-u0:21 | Module    | _m     | _c::_m               |         
-u0:22 | File      | main   | _c::_m::main         |         
-u0:23 | Function  | foo    | _c::_m::main::foo    |         
-u0:24 | Variable  | x      | _c::_m::main::foo::x |         
+u0:20 | Crate     | crate  | _c::crate            |
+u0:21 | Module    | _m     | _c::_m               |
+u0:22 | File      | main   | _c::_m::main         |
+u0:23 | Function  | foo    | _c::_m::main::foo    |
+u0:24 | Variable  | x      | _c::_m::main::foo::x |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:7]
@@ -1609,19 +1636,19 @@ u0:16 | Primitive | char   | char                | [global]
 u0:17 | Primitive | str    | str                 | [global]
 u0:18 | Primitive | String | String              | [global]
 u0:19 | Crate     | _c     | _c                  | [global]
-u0:20 | Crate     | crate  | _c::crate           |         
-u0:21 | Module    | _m     | _c::_m              |         
-u0:22 | File      | main   | _c::_m::main        |         
-u0:23 | Struct    | Foo    | _c::_m::main::Foo   |         
-u0:24 | Struct    | Y      | _c::_m::main::Y     |         
-u0:25 | Struct    | T      | _c::_m::main::T     |         
-u0:26 | Struct    | U      | _c::_m::main::U     |         
-u0:27 | Function  | f1     | _c::_m::main::f1    |         
-u0:28 | Variable  | x      | _c::_m::main::f1::x |         
-u0:29 | Function  | f2     | _c::_m::main::f2    |         
-u0:30 | Variable  | x      | _c::_m::main::f2::x |         
-u0:31 | Function  | f3     | _c::_m::main::f3    |         
-u0:32 | Variable  | x      | _c::_m::main::f3::x |         
+u0:20 | Crate     | crate  | _c::crate           |
+u0:21 | Module    | _m     | _c::_m              |
+u0:22 | File      | main   | _c::_m::main        |
+u0:23 | Struct    | Foo    | _c::_m::main::Foo   |
+u0:24 | Struct    | Y      | _c::_m::main::Y     |
+u0:25 | Struct    | T      | _c::_m::main::T     |
+u0:26 | Struct    | U      | _c::_m::main::U     |
+u0:27 | Function  | f1     | _c::_m::main::f1    |
+u0:28 | Variable  | x      | _c::_m::main::f1::x |
+u0:29 | Function  | f2     | _c::_m::main::f2    |
+u0:30 | Variable  | x      | _c::_m::main::f2::x |
+u0:31 | Function  | f3     | _c::_m::main::f3    |
+u0:32 | Variable  | x      | _c::_m::main::f3::x |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:27, u0:28]
@@ -1661,39 +1688,44 @@ functions-with-custom-types-for-self
 
 
 --- file: src/main.rs ---
+struct Box<T> {};
 trait Callback {
     fn call(self: Box<Self>);
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32      | i32                          | [global]
-u0:2  | Primitive | i64      | i64                          | [global]
-u0:3  | Primitive | i16      | i16                          | [global]
-u0:4  | Primitive | i8       | i8                           | [global]
-u0:5  | Primitive | i128     | i128                         | [global]
-u0:6  | Primitive | isize    | isize                        | [global]
-u0:7  | Primitive | u32      | u32                          | [global]
-u0:8  | Primitive | u64      | u64                          | [global]
-u0:9  | Primitive | u16      | u16                          | [global]
-u0:10 | Primitive | u8       | u8                           | [global]
-u0:11 | Primitive | u128     | u128                         | [global]
-u0:12 | Primitive | usize    | usize                        | [global]
-u0:13 | Primitive | f32      | f32                          | [global]
-u0:14 | Primitive | f64      | f64                          | [global]
-u0:15 | Primitive | bool     | bool                         | [global]
-u0:16 | Primitive | char     | char                         | [global]
-u0:17 | Primitive | str      | str                          | [global]
-u0:18 | Primitive | String   | String                       | [global]
-u0:19 | Crate     | _c       | _c                           | [global]
-u0:20 | Crate     | crate    | _c::crate                    |         
-u0:21 | Module    | _m       | _c::_m                       |         
-u0:22 | File      | main     | _c::_m::main                 |         
-u0:23 | Trait     | Callback | _c::_m::main::Callback       |         
-u0:24 | Function  | call     | _c::_m::main::Callback::call |         
+u0:1  | Primitive     | i32      | i32                          | [global]
+u0:2  | Primitive     | i64      | i64                          | [global]
+u0:3  | Primitive     | i16      | i16                          | [global]
+u0:4  | Primitive     | i8       | i8                           | [global]
+u0:5  | Primitive     | i128     | i128                         | [global]
+u0:6  | Primitive     | isize    | isize                        | [global]
+u0:7  | Primitive     | u32      | u32                          | [global]
+u0:8  | Primitive     | u64      | u64                          | [global]
+u0:9  | Primitive     | u16      | u16                          | [global]
+u0:10 | Primitive     | u8       | u8                           | [global]
+u0:11 | Primitive     | u128     | u128                         | [global]
+u0:12 | Primitive     | usize    | usize                        | [global]
+u0:13 | Primitive     | f32      | f32                          | [global]
+u0:14 | Primitive     | f64      | f64                          | [global]
+u0:15 | Primitive     | bool     | bool                         | [global]
+u0:16 | Primitive     | char     | char                         | [global]
+u0:17 | Primitive     | str      | str                          | [global]
+u0:18 | Primitive     | String   | String                       | [global]
+u0:19 | Crate         | _c       | _c                           | [global]
+u0:20 | Crate         | crate    | _c::crate                    |
+u0:21 | Module        | _m       | _c::_m                       |
+u0:22 | File          | main     | _c::_m::main                 |
+u0:23 | Struct        | Box      | _c::_m::main::Box            |
+u0:24 | TypeParameter | T        | _c::_m::main::Box::T         |
+u0:25 | Trait         | Callback | _c::_m::main::Callback       |
+u0:26 | Function      | call     | _c::_m::main::Callback::call |
 
 --- expect:symbol-deps ---
-u0:23 -> [u0:24]
-u0:24 <- [u0:23]
+u0:23 <- [u0:26]
+u0:25 -> [u0:26]
+u0:26 -> [u0:23]
+u0:26 <- [u0:25]
 
 
 ===============================================================================
@@ -1732,13 +1764,13 @@ u0:16 | Primitive | char   | char                 | [global]
 u0:17 | Primitive | str    | str                  | [global]
 u0:18 | Primitive | String | String               | [global]
 u0:19 | Crate     | _c     | _c                   | [global]
-u0:20 | Crate     | crate  | _c::crate            |         
-u0:21 | Module    | _m     | _c::_m               |         
-u0:22 | File      | main   | _c::_m::main         |         
-u0:23 | Const     | N      | _c::_m::main::N      |         
-u0:24 | Trait     | Foo    | _c::_m::main::Foo    |         
-u0:25 | Const     | X      | _c::_m::main::Foo::X |         
-u0:26 | Function  | func   | _c::_m::main::func   |         
+u0:20 | Crate     | crate  | _c::crate            |
+u0:21 | Module    | _m     | _c::_m               |
+u0:22 | File      | main   | _c::_m::main         |
+u0:23 | Const     | N      | _c::_m::main::N      |
+u0:24 | Trait     | Foo    | _c::_m::main::Foo    |
+u0:25 | Const     | X      | _c::_m::main::Foo::X |
+u0:26 | Function  | func   | _c::_m::main::func   |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23]
@@ -1784,12 +1816,12 @@ u0:16 | Primitive | char       | char                     | [global]
 u0:17 | Primitive | str        | str                      | [global]
 u0:18 | Primitive | String     | String                   | [global]
 u0:19 | Crate     | _c         | _c                       | [global]
-u0:20 | Crate     | crate      | _c::crate                |         
-u0:21 | Module    | _m         | _c::_m                   |         
-u0:22 | File      | main       | _c::_m::main             |         
-u0:23 | Static    | N          | _c::_m::main::N          |         
-u0:24 | Static    | __progname | _c::_m::main::__progname |         
-u0:25 | Function  | func       | _c::_m::main::func       |         
+u0:20 | Crate     | crate      | _c::crate                |
+u0:21 | Module    | _m         | _c::_m                   |
+u0:22 | File      | main       | _c::_m::main             |
+u0:23 | Static    | N          | _c::_m::main::N          |
+u0:24 | Static    | __progname | _c::_m::main::__progname |
+u0:25 | Function  | func       | _c::_m::main::func       |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23]
@@ -1830,11 +1862,11 @@ u0:16 | Primitive | char   | char               | [global]
 u0:17 | Primitive | str    | str                | [global]
 u0:18 | Primitive | String | String             | [global]
 u0:19 | Crate     | _c     | _c                 | [global]
-u0:20 | Crate     | crate  | _c::crate          |         
-u0:21 | Module    | _m     | _c::_m             |         
-u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Static    | ONE    | _c::_m::main::ONE  |         
-u0:24 | Function  | func   | _c::_m::main::func |         
+u0:20 | Crate     | crate  | _c::crate          |
+u0:21 | Module    | _m     | _c::_m             |
+u0:22 | File      | main   | _c::_m::main       |
+u0:23 | Static    | ONE    | _c::_m::main::ONE  |
+u0:24 | Function  | func   | _c::_m::main::func |
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:23]
@@ -1850,8 +1882,8 @@ type-aliases
 
 --- file: src/main.rs ---
 struct Tree<T>;
-trait Send;
-trait Sync;
+trait Send {}
+trait Sync {}
 type Inch = u64;
 type Name<T> = Tree<T>;
 type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
@@ -1876,21 +1908,26 @@ u0:16 | Primitive     | char        | char                      | [global]
 u0:17 | Primitive     | str         | str                       | [global]
 u0:18 | Primitive     | String      | String                    | [global]
 u0:19 | Crate         | _c          | _c                        | [global]
-u0:20 | Crate         | crate       | _c::crate                 |         
-u0:21 | Module        | _m          | _c::_m                    |         
-u0:22 | File          | main        | _c::_m::main              |         
-u0:23 | Struct        | Tree        | _c::_m::main::Tree        |         
-u0:24 | TypeParameter | T           | _c::_m::main::Tree::T     |         
-u0:25 | TypeAlias     | Inch        | _c::_m::main::Inch        |         
-u0:26 | TypeAlias     | Name        | _c::_m::main::Name        |         
-u0:27 | TypeParameter | T           | _c::_m::main::T           |         
-u0:28 | TypeAlias     | LazyResolve | _c::_m::main::LazyResolve |         
+u0:20 | Crate         | crate       | _c::crate                 |
+u0:21 | Module        | _m          | _c::_m                    |
+u0:22 | File          | main        | _c::_m::main              |
+u0:23 | Struct        | Tree        | _c::_m::main::Tree        |
+u0:24 | TypeParameter | T           | _c::_m::main::Tree::T     |
+u0:25 | Trait         | Send        | _c::_m::main::Send        |
+u0:26 | Trait         | Sync        | _c::_m::main::Sync        |
+u0:27 | TypeAlias     | Inch        | _c::_m::main::Inch        |
+u0:28 | TypeAlias     | Name        | _c::_m::main::Name        |
+u0:29 | TypeParameter | T           | _c::_m::main::T           |
+u0:30 | TypeAlias     | LazyResolve | _c::_m::main::LazyResolve |
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:26]
-u0:25 -> [u0:8]
-u0:26 -> [u0:23]
-u0:8 <- [u0:25]
+u0:23 <- [u0:28]
+u0:25 <- [u0:30]
+u0:26 <- [u0:30]
+u0:27 -> [u0:8]
+u0:28 -> [u0:23]
+u0:30 -> [u0:25, u0:26]
+u0:8 <- [u0:27]
 
 
 ===============================================================================
@@ -1899,6 +1936,8 @@ type-alias-where-clauses
 
 
 --- file: src/main.rs ---
+trait Copy {}
+struct Box<T> {}
 type Foo<T> where T: Copy = Box<T>;
 type Assoc3 where = () where;
 
@@ -1922,14 +1961,20 @@ u0:16 | Primitive     | char   | char                 | [global]
 u0:17 | Primitive     | str    | str                  | [global]
 u0:18 | Primitive     | String | String               | [global]
 u0:19 | Crate         | _c     | _c                   | [global]
-u0:20 | Crate         | crate  | _c::crate            |         
-u0:21 | Module        | _m     | _c::_m               |         
-u0:22 | File          | main   | _c::_m::main         |         
-u0:23 | TypeAlias     | Foo    | _c::_m::main::Foo    |         
-u0:24 | TypeParameter | T      | _c::_m::main::T      |         
-u0:25 | TypeAlias     | Assoc3 | _c::_m::main::Assoc3 |         
+u0:20 | Crate         | crate  | _c::crate            |
+u0:21 | Module        | _m     | _c::_m               |
+u0:22 | File          | main   | _c::_m::main         |
+u0:23 | Trait         | Copy   | _c::_m::main::Copy   |
+u0:24 | Struct        | Box    | _c::_m::main::Box    |
+u0:25 | TypeParameter | T      | _c::_m::main::Box::T |
+u0:26 | TypeAlias     | Foo    | _c::_m::main::Foo    |
+u0:27 | TypeParameter | T      | _c::_m::main::T      |
+u0:28 | TypeAlias     | Assoc3 | _c::_m::main::Assoc3 |
 
 --- expect:symbol-deps ---
+u0:23 <- [u0:26]
+u0:24 <- [u0:26]
+u0:26 -> [u0:23, u0:24]
 
 
 ===============================================================================
@@ -1962,10 +2007,10 @@ u0:16 | Primitive | char   | char               | [global]
 u0:17 | Primitive | str    | str                | [global]
 u0:18 | Primitive | String | String             | [global]
 u0:19 | Crate     | _c     | _c                 | [global]
-u0:20 | Crate     | crate  | _c::crate          |         
-u0:21 | Module    | _m     | _c::_m             |         
-u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Function  | main   | _c::_m::main::main |         
+u0:20 | Crate     | crate  | _c::crate          |
+u0:21 | Module    | _m     | _c::_m             |
+u0:22 | File      | main   | _c::_m::main       |
+u0:23 | Function  | main   | _c::_m::main::main |
 
 --- expect:symbol-deps ---
 
@@ -2012,13 +2057,13 @@ u0:16 | Primitive | char       | char                     | [global]
 u0:17 | Primitive | str        | str                      | [global]
 u0:18 | Primitive | String     | String                   | [global]
 u0:19 | Crate     | _c         | _c                       | [global]
-u0:20 | Crate     | crate      | _c::crate                |         
-u0:21 | Module    | _m         | _c::_m                   |         
-u0:22 | File      | main       | _c::_m::main             |         
-u0:23 | Function  | test_foo   | _c::_m::main::test_foo   |         
-u0:24 | Struct    | Baz        | _c::_m::main::Baz        |         
-u0:25 | Struct    | Foo        | _c::_m::main::Foo        |         
-u0:26 | Namespace | macos_only | _c::_m::main::macos_only |         
+u0:20 | Crate     | crate      | _c::crate                |
+u0:21 | Module    | _m         | _c::_m                   |
+u0:22 | File      | main       | _c::_m::main             |
+u0:23 | Function  | test_foo   | _c::_m::main::test_foo   |
+u0:24 | Struct    | Baz        | _c::_m::main::Baz        |
+u0:25 | Struct    | Foo        | _c::_m::main::Foo        |
+u0:26 | Namespace | macos_only | _c::_m::main::macos_only |
 
 --- expect:symbol-deps ---
 
@@ -2058,10 +2103,10 @@ u0:16 | Primitive | char       | char                     | [global]
 u0:17 | Primitive | str        | str                      | [global]
 u0:18 | Primitive | String     | String                   | [global]
 u0:19 | Crate     | _c         | _c                       | [global]
-u0:20 | Crate     | crate      | _c::crate                |         
-u0:21 | Module    | _m         | _c::_m                   |         
-u0:22 | File      | main       | _c::_m::main             |         
-u0:23 | Namespace | macos_only | _c::_m::main::macos_only |         
+u0:20 | Crate     | crate      | _c::crate                |
+u0:21 | Module    | _m         | _c::_m                   |
+u0:22 | File      | main       | _c::_m::main             |
+u0:23 | Namespace | macos_only | _c::_m::main::macos_only |
 
 --- expect:symbol-deps ---
 
@@ -2098,11 +2143,11 @@ u0:16 | Primitive | char   | char              | [global]
 u0:17 | Primitive | str    | str               | [global]
 u0:18 | Primitive | String | String            | [global]
 u0:19 | Crate     | _c     | _c                | [global]
-u0:20 | Crate     | crate  | _c::crate         |         
-u0:21 | Module    | _m     | _c::_m            |         
-u0:22 | File      | main   | _c::_m::main      |         
-u0:23 | Function  | foo    | _c::_m::main::foo |         
-u0:24 | Function  | baz    | _c::_m::main::baz |         
+u0:20 | Crate     | crate  | _c::crate         |
+u0:21 | Module    | _m     | _c::_m            |
+u0:22 | File      | main   | _c::_m::main      |
+u0:23 | Function  | foo    | _c::_m::main::foo |
+u0:24 | Function  | baz    | _c::_m::main::baz |
 
 --- expect:symbol-deps ---
 
@@ -2137,9 +2182,9 @@ u0:16 | Primitive | char   | char         | [global]
 u0:17 | Primitive | str    | str          | [global]
 u0:18 | Primitive | String | String       | [global]
 u0:19 | Crate     | _c     | _c           | [global]
-u0:20 | Crate     | crate  | _c::crate    |         
-u0:21 | Module    | _m     | _c::_m       |         
-u0:22 | File      | main   | _c::_m::main |         
+u0:20 | Crate     | crate  | _c::crate    |
+u0:21 | Module    | _m     | _c::_m       |
+u0:22 | File      | main   | _c::_m::main |
 
 --- expect:symbol-deps ---
 
@@ -2184,15 +2229,15 @@ u0:16 | Primitive   | char        | char                                     | [
 u0:17 | Primitive   | str         | str                                      | [global]
 u0:18 | Primitive   | String      | String                                   | [global]
 u0:19 | Crate       | _c          | _c                                       | [global]
-u0:20 | Crate       | crate       | _c::crate                                |         
-u0:21 | Module      | _m          | _c::_m                                   |         
-u0:22 | File        | main        | _c::_m::main                             |         
-u0:23 | Struct      | Limits      | _c::_m::main::Limits                     |         
-u0:24 | Enum        | Error       | _c::_m::main::Error                      |         
-u0:25 | EnumVariant | WrongCase   | _c::_m::main::Error::WrongCase           |         
-u0:26 | EnumVariant | OutOfBounds | _c::_m::main::Error::OutOfBounds         |         
-u0:27 | Field       | idx         | _c::_m::main::Error::OutOfBounds::idx    |         
-u0:28 | Field       | limits      | _c::_m::main::Error::OutOfBounds::limits |         
+u0:20 | Crate       | crate       | _c::crate                                |
+u0:21 | Module      | _m          | _c::_m                                   |
+u0:22 | File        | main        | _c::_m::main                             |
+u0:23 | Struct      | Limits      | _c::_m::main::Limits                     | [global]
+u0:24 | Enum        | Error       | _c::_m::main::Error                      | [global]
+u0:25 | EnumVariant | WrongCase   | _c::_m::main::Error::WrongCase           |
+u0:26 | EnumVariant | OutOfBounds | _c::_m::main::Error::OutOfBounds         |
+u0:27 | Field       | idx         | _c::_m::main::Error::OutOfBounds::idx    |
+u0:28 | Field       | limits      | _c::_m::main::Error::OutOfBounds::limits |
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:24]
@@ -2239,15 +2284,15 @@ u0:16 | Primitive | char   | char                 | [global]
 u0:17 | Primitive | str    | str                  | [global]
 u0:18 | Primitive | String | String               | [global]
 u0:19 | Crate     | _c     | _c                   | [global]
-u0:20 | Crate     | crate  | _c::crate            |         
-u0:21 | Module    | _m     | _c::_m               |         
-u0:22 | File      | main   | _c::_m::main         |         
-u0:23 | Function  | foo    | _c::_m::main::foo    |         
-u0:24 | Variable  | z      | _c::_m::main::foo::z |         
-u0:25 | Variable  | t      | _c::_m::main::foo::t |         
-u0:26 | Function  | bar    | _c::_m::main::bar    |         
-u0:27 | Variable  | x      | _c::_m::main::bar::x |         
-u0:28 | Variable  | y      | _c::_m::main::bar::y |         
+u0:20 | Crate     | crate  | _c::crate            |
+u0:21 | Module    | _m     | _c::_m               |
+u0:22 | File      | main   | _c::_m::main         |
+u0:23 | Function  | foo    | _c::_m::main::foo    |
+u0:24 | Variable  | z      | _c::_m::main::foo::z |
+u0:25 | Variable  | t      | _c::_m::main::foo::t |
+u0:26 | Function  | bar    | _c::_m::main::bar    |
+u0:27 | Variable  | x      | _c::_m::main::bar::x |
+u0:28 | Variable  | y      | _c::_m::main::bar::y |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:24, u0:25, u0:26, u0:27, u0:28]
@@ -2261,7 +2306,7 @@ u0:28 -> [u0:1]
 
 
 ===============================================================================
-inherent-impls
+inherent-impls-one
 ===============================================================================
 
 
@@ -2306,29 +2351,31 @@ u0:16 | Primitive   | char      | char                            | [global]
 u0:17 | Primitive   | str       | str                             | [global]
 u0:18 | Primitive   | String    | String                          | [global]
 u0:19 | Crate       | _c        | _c                              | [global]
-u0:20 | Crate       | crate     | _c::crate                       |         
-u0:21 | Module      | _m        | _c::_m                          |         
-u0:22 | File        | main      | _c::_m::main                    |         
-u0:23 | Enum        | State     | _c::_m::main::State             |         
-u0:24 | EnumVariant | Init      | _c::_m::main::State::Init       |         
-u0:25 | EnumVariant | Running   | _c::_m::main::State::Running    |         
-u0:26 | EnumVariant | Stopped   | _c::_m::main::State::Stopped    |         
-u0:27 | Struct      | Person    | _c::_m::main::Person            |         
-u0:28 | Struct      | Machine   | _c::_m::main::Machine           |         
-u0:29 | Const       | STATE     | _c::_m::main::Machine::STATE    |         
-u0:30 | Const       | leg_count | _c::_m::main::Person::leg_count |         
-u0:31 | Function    | walk      | _c::_m::main::Person::walk      |         
-u0:32 | Function    | walk_mut  | _c::_m::main::Person::walk_mut  |         
-u0:33 | Function    | talk      | _c::_m::main::Person::talk      |         
-u0:34 | Function    | talk_mut  | _c::_m::main::Person::talk_mut  |         
+u0:20 | Crate       | crate     | _c::crate                       |
+u0:21 | Module      | _m        | _c::_m                          |
+u0:22 | File        | main      | _c::_m::main                    |
+u0:23 | Enum        | State     | _c::_m::main::State             |
+u0:24 | EnumVariant | Init      | _c::_m::main::State::Init       |
+u0:25 | EnumVariant | Running   | _c::_m::main::State::Running    |
+u0:26 | EnumVariant | Stopped   | _c::_m::main::State::Stopped    |
+u0:27 | Struct      | Person    | _c::_m::main::Person            |
+u0:28 | Struct      | Machine   | _c::_m::main::Machine           |
+u0:29 | Const       | STATE     | _c::_m::main::Machine::STATE    |
+u0:30 | Const       | leg_count | _c::_m::main::Person::leg_count |
+u0:31 | Function    | walk      | _c::_m::main::Person::walk      |
+u0:32 | Function    | walk_mut  | _c::_m::main::Person::walk_mut  |
+u0:33 | Function    | talk      | _c::_m::main::Person::talk      |
+u0:34 | Function    | talk_mut  | _c::_m::main::Person::talk_mut  |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:24, u0:25, u0:26]
+u0:23 <- [u0:28, u0:29]
 u0:24 <- [u0:23]
 u0:25 <- [u0:23]
 u0:26 <- [u0:23]
 u0:27 -> [u0:30, u0:31, u0:32, u0:33, u0:34]
-u0:28 -> [u0:29]
+u0:28 -> [u0:23, u0:29]
+u0:29 -> [u0:23]
 u0:29 <- [u0:28]
 u0:30 -> [u0:7]
 u0:30 <- [u0:27]
@@ -2339,61 +2386,68 @@ u0:34 <- [u0:27]
 u0:7 <- [u0:30]
 
 
-===============================================================================
-inherent-impls-across-multiple-files
-===============================================================================
-
-
---- file: src/main.rs ---
-pub struct Person;
-
-impl Person {
-  fn walk(self) {}
-}
-
---- file: src/foo.rs ---
-impl Person {
-  fn talk(& self) {}
-}
-
---- expect:symbols ---
-u0:1  | Primitive      | i32    | i32                        | [global]
-u0:2  | Primitive      | i64    | i64                        | [global]
-u0:3  | Primitive      | i16    | i16                        | [global]
-u0:4  | Primitive      | i8     | i8                         | [global]
-u0:5  | Primitive      | i128   | i128                       | [global]
-u0:6  | Primitive      | isize  | isize                      | [global]
-u0:7  | Primitive      | u32    | u32                        | [global]
-u0:8  | Primitive      | u64    | u64                        | [global]
-u0:9  | Primitive      | u16    | u16                        | [global]
-u0:10 | Primitive      | u8     | u8                         | [global]
-u0:11 | Primitive      | u128   | u128                       | [global]
-u0:12 | Primitive      | usize  | usize                      | [global]
-u0:13 | Primitive      | f32    | f32                        | [global]
-u0:14 | Primitive      | f64    | f64                        | [global]
-u0:15 | Primitive      | bool   | bool                       | [global]
-u0:16 | Primitive      | char   | char                       | [global]
-u0:17 | Primitive      | str    | str                        | [global]
-u0:18 | Primitive      | String | String                     | [global]
-u0:19 | Crate          | _c     | _c                         | [global]
-u0:20 | Crate          | crate  | _c::crate                  |         
-u0:21 | Module         | _m     | _c::_m                     |         
-u0:22 | File           | foo    | _c::_m::foo                |         
-u0:23 | UnresolvedType | Person | _c::_m::foo::Person        |         
-u0:24 | Function       | talk   | _c::_m::foo::Person::talk  |         
-u1:25 | Crate          | crate  | _c::crate                  |         
-u1:26 | Module         | _m     | _c::_m                     |         
-u1:27 | File           | main   | _c::_m::main               |         
-u1:28 | Struct         | Person | _c::_m::main::Person       |         
-u1:29 | Function       | walk   | _c::_m::main::Person::walk |         
-
---- expect:symbol-deps ---
-u0:23 -> [u0:24]
-u0:24 <- [u0:23]
-u1:28 -> [u1:29]
-u1:29 <- [u1:28]
-
-
+$// TOOD: The binding order is random so this test is flaky.
+$// ===============================================================================
+$// inherent-impls-across-multiple-files
+$// ===============================================================================
+$// --- file: src/main.rs ---
+$// pub struct Person;
+$// impl Person {
+$//   fn walk(self) {}
+$// }
+$// --- file: src/foo.rs ---
+$// impl Person {
+$//   fn talk(& self) {}
+$// }
+$// --- file: src/bar.rs ---
+$// fn main() {
+$//     let p = Person;
+$//     p.walk();
+$//     p.talk();
+$// }
+$// --- expect:symbols ---
+$// u0:1  | Primitive | i32    | i32                        | [global]
+$// u0:2  | Primitive | i64    | i64                        | [global]
+$// u0:3  | Primitive | i16    | i16                        | [global]
+$// u0:4  | Primitive | i8     | i8                         | [global]
+$// u0:5  | Primitive | i128   | i128                       | [global]
+$// u0:6  | Primitive | isize  | isize                      | [global]
+$// u0:7  | Primitive | u32    | u32                        | [global]
+$// u0:8  | Primitive | u64    | u64                        | [global]
+$// u0:9  | Primitive | u16    | u16                        | [global]
+$// u0:10 | Primitive | u8     | u8                         | [global]
+$// u0:11 | Primitive | u128   | u128                       | [global]
+$// u0:12 | Primitive | usize  | usize                      | [global]
+$// u0:13 | Primitive | f32    | f32                        | [global]
+$// u0:14 | Primitive | f64    | f64                        | [global]
+$// u0:15 | Primitive | bool   | bool                       | [global]
+$// u0:16 | Primitive | char   | char                       | [global]
+$// u0:17 | Primitive | str    | str                        | [global]
+$// u0:18 | Primitive | String | String                     | [global]
+$// u0:19 | Crate     | _c     | _c                         | [global]
+$// u0:20 | Crate     | crate  | _c::crate                  |
+$// u0:21 | Module    | _m     | _c::_m                     |
+$// u0:22 | File      | bar    | _c::_m::bar                |
+$// u0:23 | Function  | main   | _c::_m::bar::main          |
+$// u0:24 | Variable  | p      | _c::_m::bar::main::p       |
+$// u1:25 | Crate     | crate  | _c::crate                  |
+$// u1:26 | Module    | _m     | _c::_m                     |
+$// u1:27 | File      | foo    | _c::_m::foo                |
+$// u1:28 | Struct    | Person | _c::_m::foo::Person        | [global]
+$// u1:29 | Function  | talk   | _c::_m::foo::Person::talk  |
+$// u2:30 | Crate     | crate  | _c::crate                  |
+$// u2:31 | Module    | _m     | _c::_m                     |
+$// u2:32 | File      | main   | _c::_m::main               |
+$// u2:33 | Struct    | Person | _c::_m::main::Person       | [global]
+$// u2:34 | Function  | walk   | _c::_m::main::Person::walk |
+$// --- expect:symbol-deps ---
+$// u0:23 -> [u1:29, u2:33, u2:34]
+$// u0:24 -> [u2:33]
+$// u1:28 -> [u1:29, u2:33]
+$// u1:29 <- [u0:23, u1:28]
+$// u2:33 -> [u2:34]
+$// u2:33 <- [u0:23, u0:24, u1:28]
+$// u2:34 <- [u0:23, u2:33]
 ===============================================================================
 inherent-impls-no-defines
 ===============================================================================
@@ -2424,11 +2478,11 @@ u0:16 | Primitive      | char   | char                       | [global]
 u0:17 | Primitive      | str    | str                        | [global]
 u0:18 | Primitive      | String | String                     | [global]
 u0:19 | Crate          | _c     | _c                         | [global]
-u0:20 | Crate          | crate  | _c::crate                  |         
-u0:21 | Module         | _m     | _c::_m                     |         
-u0:22 | File           | main   | _c::_m::main               |         
-u0:23 | UnresolvedType | Person | _c::_m::main::Person       |         
-u0:24 | Function       | walk   | _c::_m::main::Person::walk |         
+u0:20 | Crate          | crate  | _c::crate                  |
+u0:21 | Module         | _m     | _c::_m                     |
+u0:22 | File           | main   | _c::_m::main               |
+u0:23 | UnresolvedType | Person | _c::_m::main::Person       |
+u0:24 | Function       | walk   | _c::_m::main::Person::walk |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:24]
@@ -2449,39 +2503,38 @@ impl ConvertTo<i64> for i32 {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive      | i32       | i32                        | [global]
-u0:2  | Primitive      | i64       | i64                        | [global]
-u0:3  | Primitive      | i16       | i16                        | [global]
-u0:4  | Primitive      | i8        | i8                         | [global]
-u0:5  | Primitive      | i128      | i128                       | [global]
-u0:6  | Primitive      | isize     | isize                      | [global]
-u0:7  | Primitive      | u32       | u32                        | [global]
-u0:8  | Primitive      | u64       | u64                        | [global]
-u0:9  | Primitive      | u16       | u16                        | [global]
-u0:10 | Primitive      | u8        | u8                         | [global]
-u0:11 | Primitive      | u128      | u128                       | [global]
-u0:12 | Primitive      | usize     | usize                      | [global]
-u0:13 | Primitive      | f32       | f32                        | [global]
-u0:14 | Primitive      | f64       | f64                        | [global]
-u0:15 | Primitive      | bool      | bool                       | [global]
-u0:16 | Primitive      | char      | char                       | [global]
-u0:17 | Primitive      | str       | str                        | [global]
-u0:18 | Primitive      | String    | String                     | [global]
-u0:19 | Crate          | _c        | _c                         | [global]
-u0:20 | Crate          | crate     | _c::crate                  |         
-u0:21 | Module         | _m        | _c::_m                     |         
-u0:22 | File           | main      | _c::_m::main               |         
-u0:23 | UnresolvedType | Iterator  | _c::_m::main::Iterator     |         
-u0:24 | UnresolvedType | Iter      | _c::_m::main::Iter         |         
-u0:25 | UnresolvedType | ConvertTo | _c::_m::main::ConvertTo    |         
-u0:26 | UnresolvedType | i32       | _c::_m::main::i32          |         
-u0:27 | Function       | convert   | _c::_m::main::i32::convert |         
+u0:1  | Primitive      | i32       | i32                     | [global]
+u0:2  | Primitive      | i64       | i64                     | [global]
+u0:3  | Primitive      | i16       | i16                     | [global]
+u0:4  | Primitive      | i8        | i8                      | [global]
+u0:5  | Primitive      | i128      | i128                    | [global]
+u0:6  | Primitive      | isize     | isize                   | [global]
+u0:7  | Primitive      | u32       | u32                     | [global]
+u0:8  | Primitive      | u64       | u64                     | [global]
+u0:9  | Primitive      | u16       | u16                     | [global]
+u0:10 | Primitive      | u8        | u8                      | [global]
+u0:11 | Primitive      | u128      | u128                    | [global]
+u0:12 | Primitive      | usize     | usize                   | [global]
+u0:13 | Primitive      | f32       | f32                     | [global]
+u0:14 | Primitive      | f64       | f64                     | [global]
+u0:15 | Primitive      | bool      | bool                    | [global]
+u0:16 | Primitive      | char      | char                    | [global]
+u0:17 | Primitive      | str       | str                     | [global]
+u0:18 | Primitive      | String    | String                  | [global]
+u0:19 | Crate          | _c        | _c                      | [global]
+u0:20 | Crate          | crate     | _c::crate               |
+u0:21 | Module         | _m        | _c::_m                  |
+u0:22 | File           | main      | _c::_m::main            |
+u0:23 | UnresolvedType | Iterator  | _c::_m::main::Iterator  |
+u0:24 | UnresolvedType | Iter      | _c::_m::main::Iter      |
+u0:25 | UnresolvedType | ConvertTo | _c::_m::main::ConvertTo |
+u0:26 | Function       | convert   | i32::convert            |
 
 --- expect:symbol-deps ---
-u0:2 <- [u0:26, u0:27]
-u0:26 -> [u0:2, u0:27]
-u0:27 -> [u0:2]
-u0:27 <- [u0:26]
+u0:1 -> [u0:2, u0:26]
+u0:2 <- [u0:1, u0:26]
+u0:26 -> [u0:2]
+u0:26 <- [u0:1]
 
 
 ===============================================================================
@@ -2513,10 +2566,10 @@ u0:16 | Primitive      | char   | char              | [global]
 u0:17 | Primitive      | str    | str               | [global]
 u0:18 | Primitive      | String | String            | [global]
 u0:19 | Crate          | _c     | _c                | [global]
-u0:20 | Crate          | crate  | _c::crate         |         
-u0:21 | Module         | _m     | _c::_m            |         
-u0:22 | File           | main   | _c::_m::main      |         
-u0:23 | UnresolvedType | Foo    | _c::_m::main::Foo |         
+u0:20 | Crate          | crate  | _c::crate         |
+u0:21 | Module         | _m     | _c::_m            |
+u0:22 | File           | main   | _c::_m::main      |
+u0:23 | UnresolvedType | Foo    | _c::_m::main::Foo |
 
 --- expect:symbol-deps ---
 
@@ -2549,11 +2602,11 @@ u0:16 | Primitive      | char   | char               | [global]
 u0:17 | Primitive      | str    | str                | [global]
 u0:18 | Primitive      | String | String             | [global]
 u0:19 | Crate          | _c     | _c                 | [global]
-u0:20 | Crate          | crate  | _c::crate          |         
-u0:21 | Module         | _m     | _c::_m             |         
-u0:22 | File           | main   | _c::_m::main       |         
-u0:23 | UnresolvedType | Send   | _c::_m::main::Send |         
-u0:24 | UnresolvedType | Foo    | _c::_m::main::Foo  |         
+u0:20 | Crate          | crate  | _c::crate          |
+u0:21 | Module         | _m     | _c::_m             |
+u0:22 | File           | main   | _c::_m::main       |
+u0:23 | UnresolvedType | Send   | _c::_m::main::Send |
+u0:24 | UnresolvedType | Foo    | _c::_m::main::Foo  |
 
 --- expect:symbol-deps ---
 
@@ -2588,11 +2641,11 @@ u0:16 | Primitive      | char   | char                | [global]
 u0:17 | Primitive      | str    | str                 | [global]
 u0:18 | Primitive      | String | String              | [global]
 u0:19 | Crate          | _c     | _c                  | [global]
-u0:20 | Crate          | crate  | _c::crate           |         
-u0:21 | Module         | _m     | _c::_m              |         
-u0:22 | File           | main   | _c::_m::main        |         
-u0:23 | Trait          | Trait  | _c::_m::main::Trait |         
-u0:24 | UnresolvedType | Send   | _c::_m::main::Send  |         
+u0:20 | Crate          | crate  | _c::crate           |
+u0:21 | Module         | _m     | _c::_m              |
+u0:22 | File           | main   | _c::_m::main        |
+u0:23 | Trait          | Trait  | _c::_m::main::Trait | [global]
+u0:24 | UnresolvedType | Send   | _c::_m::main::Send  |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:24]
@@ -2605,6 +2658,8 @@ trait-impl-signature
 
 
 --- file: src/main.rs ---
+trait Debug {}
+trait Display {}
 impl<K: Debug + Ord> Debug for OccupiedError<K>;
 impl<K: Debug + Ord> Display for OccupiedError<K>;
 
@@ -2628,18 +2683,19 @@ u0:16 | Primitive      | char          | char                           | [globa
 u0:17 | Primitive      | str           | str                            | [global]
 u0:18 | Primitive      | String        | String                         | [global]
 u0:19 | Crate          | _c            | _c                             | [global]
-u0:20 | Crate          | crate         | _c::crate                      |         
-u0:21 | Module         | _m            | _c::_m                         |         
-u0:22 | File           | main          | _c::_m::main                   |         
-u0:23 | UnresolvedType | Debug         | _c::_m::main::Debug            |         
-u0:24 | UnresolvedType | OccupiedError | _c::_m::main::OccupiedError    |         
-u0:25 | TypeParameter  | K             | _c::_m::main::OccupiedError::K |         
-u0:26 | UnresolvedType | Display       | _c::_m::main::Display          |         
-u0:27 | TypeParameter  | K             | _c::_m::main::OccupiedError::K |         
+u0:20 | Crate          | crate         | _c::crate                      |
+u0:21 | Module         | _m            | _c::_m                         |
+u0:22 | File           | main          | _c::_m::main                   |
+u0:23 | Trait          | Debug         | _c::_m::main::Debug            |
+u0:24 | Trait          | Display       | _c::_m::main::Display          |
+u0:25 | UnresolvedType | OccupiedError | _c::_m::main::OccupiedError    |
+u0:26 | TypeParameter  | K             | _c::_m::main::OccupiedError::K |
+u0:27 | TypeParameter  | K             | _c::_m::main::OccupiedError::K |
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:24]
-u0:24 -> [u0:23]
+u0:23 <- [u0:25]
+u0:24 <- [u0:25]
+u0:25 -> [u0:23, u0:24]
 
 
 ===============================================================================
@@ -2675,11 +2731,11 @@ u0:16 | Primitive      | char   | char                   | [global]
 u0:17 | Primitive      | str    | str                    | [global]
 u0:18 | Primitive      | String | String                 | [global]
 u0:19 | Crate          | _c     | _c                     | [global]
-u0:20 | Crate          | crate  | _c::crate              |         
-u0:21 | Module         | _m     | _c::_m                 |         
-u0:22 | File           | main   | _c::_m::main           |         
-u0:23 | UnresolvedType | Foo    | _c::_m::main::Foo      |         
-u0:24 | Function       | bar    | _c::_m::main::Foo::bar |         
+u0:20 | Crate          | crate  | _c::crate              |
+u0:21 | Module         | _m     | _c::_m                 |
+u0:22 | File           | main   | _c::_m::main           |
+u0:23 | UnresolvedType | Foo    | _c::_m::main::Foo      |
+u0:24 | Function       | bar    | _c::_m::main::Foo::bar |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:24]
@@ -2694,6 +2750,7 @@ trait-declarations
 
 
 --- file: src/main.rs ---
+trait Clone {}
 pub trait Item: Clone + Eq + fmt::Debug {
     fn summarize(&self) -> Self::Summary;
 }
@@ -2720,16 +2777,18 @@ u0:16 | Primitive | char      | char                          | [global]
 u0:17 | Primitive | str       | str                           | [global]
 u0:18 | Primitive | String    | String                        | [global]
 u0:19 | Crate     | _c        | _c                            | [global]
-u0:20 | Crate     | crate     | _c::crate                     |         
-u0:21 | Module    | _m        | _c::_m                        |         
-u0:22 | File      | main      | _c::_m::main                  |         
-u0:23 | Trait     | Item      | _c::_m::main::Item            |         
-u0:24 | Function  | summarize | _c::_m::main::Item::summarize |         
-u0:25 | Trait     | Foo       | _c::_m::main::Foo             |         
+u0:20 | Crate     | crate     | _c::crate                     |
+u0:21 | Module    | _m        | _c::_m                        |
+u0:22 | File      | main      | _c::_m::main                  |
+u0:23 | Trait     | Clone     | _c::_m::main::Clone           |
+u0:24 | Trait     | Item      | _c::_m::main::Item            | [global]
+u0:25 | Function  | summarize | _c::_m::main::Item::summarize |
+u0:26 | Trait     | Foo       | _c::_m::main::Foo             |
 
 --- expect:symbol-deps ---
-u0:23 -> [u0:24]
-u0:24 <- [u0:23]
+u0:23 <- [u0:24]
+u0:24 -> [u0:23, u0:25]
+u0:25 <- [u0:24]
 
 
 ===============================================================================
@@ -2765,20 +2824,21 @@ u0:16 | Primitive     | char   | char                        | [global]
 u0:17 | Primitive     | str    | str                         | [global]
 u0:18 | Primitive     | String | String                      | [global]
 u0:19 | Crate         | _c     | _c                          | [global]
-u0:20 | Crate         | crate  | _c::crate                   |         
-u0:21 | Module        | _m     | _c::_m                      |         
-u0:22 | File          | main   | _c::_m::main                |         
-u0:23 | Struct        | Foo    | _c::_m::main::Foo           |         
-u0:24 | Trait         | Add    | _c::_m::main::Add           |         
-u0:25 | TypeParameter | RHS    | _c::_m::main::Add::RHS      |         
-u0:26 | TypeAlias     | Output | _c::_m::main::Add::Output   |         
-u0:27 | Function      | add    | _c::_m::main::Add::add      |         
-u0:28 | Variable      | rhs    | _c::_m::main::Add::add::rhs |         
+u0:20 | Crate         | crate  | _c::crate                   |
+u0:21 | Module        | _m     | _c::_m                      |
+u0:22 | File          | main   | _c::_m::main                |
+u0:23 | Struct        | Foo    | _c::_m::main::Foo           |
+u0:24 | Trait         | Add    | _c::_m::main::Add           |
+u0:25 | TypeParameter | RHS    | _c::_m::main::Add::RHS      |
+u0:26 | TypeAlias     | Output | _c::_m::main::Add::Output   |
+u0:27 | Function      | add    | _c::_m::main::Add::add      |
+u0:28 | Variable      | rhs    | _c::_m::main::Add::add::rhs |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:24, u0:25]
-u0:24 -> [u0:23, u0:27]
+u0:24 -> [u0:23, u0:26, u0:27]
 u0:25 -> [u0:23]
+u0:26 <- [u0:24]
 u0:27 <- [u0:24]
 
 
@@ -2813,14 +2873,14 @@ u0:16 | Primitive     | char       | char                           | [global]
 u0:17 | Primitive     | str        | str                            | [global]
 u0:18 | Primitive     | String     | String                         | [global]
 u0:19 | Crate         | _c         | _c                             | [global]
-u0:20 | Crate         | crate      | _c::crate                      |         
-u0:21 | Module        | _m         | _c::_m                         |         
-u0:22 | File          | main       | _c::_m::main                   |         
-u0:23 | Trait         | Foo        | _c::_m::main::Foo              |         
-u0:24 | TypeParameter | T          | _c::_m::main::Foo::T           |         
-u0:25 | Function      | univariant | _c::_m::main::univariant       |         
-u0:26 | Variable      | this       | _c::_m::main::univariant::this |         
-u0:27 | Variable      | that       | _c::_m::main::univariant::that |         
+u0:20 | Crate         | crate      | _c::crate                      |
+u0:21 | Module        | _m         | _c::_m                         |
+u0:22 | File          | main       | _c::_m::main                   |
+u0:23 | Trait         | Foo        | _c::_m::main::Foo              |
+u0:24 | TypeParameter | T          | _c::_m::main::Foo::T           |
+u0:25 | Function      | univariant | _c::_m::main::univariant       |
+u0:26 | Variable      | this       | _c::_m::main::univariant::this |
+u0:27 | Variable      | that       | _c::_m::main::univariant::that |
 
 --- expect:symbol-deps ---
 
@@ -2853,12 +2913,12 @@ u0:16 | Primitive      | char      | char                    | [global]
 u0:17 | Primitive      | str       | str                     | [global]
 u0:18 | Primitive      | String    | String                  | [global]
 u0:19 | Crate          | _c        | _c                      | [global]
-u0:20 | Crate          | crate     | _c::crate               |         
-u0:21 | Module         | _m        | _c::_m                  |         
-u0:22 | File           | main      | _c::_m::main            |         
-u0:23 | UnresolvedType | HasNodeId | _c::_m::main::HasNodeId |         
-u0:24 | UnresolvedType | T         | _c::_m::main::T         |         
-u0:25 | TypeParameter  | T         | _c::_m::main::T::T      |         
+u0:20 | Crate          | crate     | _c::crate               |
+u0:21 | Module         | _m        | _c::_m                  |
+u0:22 | File           | main      | _c::_m::main            |
+u0:23 | UnresolvedType | HasNodeId | _c::_m::main::HasNodeId |
+u0:24 | UnresolvedType | T         | _c::_m::main::T         |
+u0:25 | TypeParameter  | T         | _c::_m::main::T::T      |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:24]
@@ -2896,11 +2956,11 @@ u0:16 | Primitive | char   | char               | [global]
 u0:17 | Primitive | str    | str                | [global]
 u0:18 | Primitive | String | String             | [global]
 u0:19 | Crate     | _c     | _c                 | [global]
-u0:20 | Crate     | crate  | _c::crate          |         
-u0:21 | Module    | _m     | _c::_m             |         
-u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Trait     | A      | _c::_m::main::A    |         
-u0:24 | Function  | f      | _c::_m::main::A::f |         
+u0:20 | Crate     | crate  | _c::crate          |
+u0:21 | Module    | _m     | _c::_m             |
+u0:22 | File      | main   | _c::_m::main       |
+u0:23 | Trait     | A      | _c::_m::main::A    | [global]
+u0:24 | Function  | f      | _c::_m::main::A::f |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:24]
@@ -2938,14 +2998,17 @@ u0:16 | Primitive | char   | char                   | [global]
 u0:17 | Primitive | str    | str                    | [global]
 u0:18 | Primitive | String | String                 | [global]
 u0:19 | Crate     | _c     | _c                     | [global]
-u0:20 | Crate     | crate  | _c::crate              |         
-u0:21 | Module    | _m     | _c::_m                 |         
-u0:22 | File      | main   | _c::_m::main           |         
-u0:23 | Trait     | Graph  | _c::_m::main::Graph    |         
-u0:24 | TypeAlias | N      | _c::_m::main::Graph::N |         
-u0:25 | TypeAlias | E      | _c::_m::main::Graph::E |         
+u0:20 | Crate     | crate  | _c::crate              |
+u0:21 | Module    | _m     | _c::_m                 |
+u0:22 | File      | main   | _c::_m::main           |
+u0:23 | Trait     | Graph  | _c::_m::main::Graph    | [global]
+u0:24 | TypeAlias | N      | _c::_m::main::Graph::N |
+u0:25 | TypeAlias | E      | _c::_m::main::Graph::E |
 
 --- expect:symbol-deps ---
+u0:23 -> [u0:24, u0:25]
+u0:24 <- [u0:23]
+u0:25 <- [u0:23]
 
 
 ===============================================================================
@@ -2954,40 +3017,40 @@ associated-type-definitions
 
 
 --- file: src/main.rs ---
-impl Trait for T {
-    type Associated = T where 'static: 'static;
+impl Trait for Foo {
+    type Associated = Foo where 'static: 'static;
 }
 
 --- expect:symbols ---
-u0:1  | Primitive      | i32        | i32                         | [global]
-u0:2  | Primitive      | i64        | i64                         | [global]
-u0:3  | Primitive      | i16        | i16                         | [global]
-u0:4  | Primitive      | i8         | i8                          | [global]
-u0:5  | Primitive      | i128       | i128                        | [global]
-u0:6  | Primitive      | isize      | isize                       | [global]
-u0:7  | Primitive      | u32        | u32                         | [global]
-u0:8  | Primitive      | u64        | u64                         | [global]
-u0:9  | Primitive      | u16        | u16                         | [global]
-u0:10 | Primitive      | u8         | u8                          | [global]
-u0:11 | Primitive      | u128       | u128                        | [global]
-u0:12 | Primitive      | usize      | usize                       | [global]
-u0:13 | Primitive      | f32        | f32                         | [global]
-u0:14 | Primitive      | f64        | f64                         | [global]
-u0:15 | Primitive      | bool       | bool                        | [global]
-u0:16 | Primitive      | char       | char                        | [global]
-u0:17 | Primitive      | str        | str                         | [global]
-u0:18 | Primitive      | String     | String                      | [global]
-u0:19 | Crate          | _c         | _c                          | [global]
-u0:20 | Crate          | crate      | _c::crate                   |         
-u0:21 | Module         | _m         | _c::_m                      |         
-u0:22 | File           | main       | _c::_m::main                |         
-u0:23 | UnresolvedType | Trait      | _c::_m::main::Trait         |         
-u0:24 | UnresolvedType | T          | _c::_m::main::T             |         
-u0:25 | TypeAlias      | Associated | _c::_m::main::T::Associated |         
+u0:1  | Primitive      | i32        | i32                           | [global]
+u0:2  | Primitive      | i64        | i64                           | [global]
+u0:3  | Primitive      | i16        | i16                           | [global]
+u0:4  | Primitive      | i8         | i8                            | [global]
+u0:5  | Primitive      | i128       | i128                          | [global]
+u0:6  | Primitive      | isize      | isize                         | [global]
+u0:7  | Primitive      | u32        | u32                           | [global]
+u0:8  | Primitive      | u64        | u64                           | [global]
+u0:9  | Primitive      | u16        | u16                           | [global]
+u0:10 | Primitive      | u8         | u8                            | [global]
+u0:11 | Primitive      | u128       | u128                          | [global]
+u0:12 | Primitive      | usize      | usize                         | [global]
+u0:13 | Primitive      | f32        | f32                           | [global]
+u0:14 | Primitive      | f64        | f64                           | [global]
+u0:15 | Primitive      | bool       | bool                          | [global]
+u0:16 | Primitive      | char       | char                          | [global]
+u0:17 | Primitive      | str        | str                           | [global]
+u0:18 | Primitive      | String     | String                        | [global]
+u0:19 | Crate          | _c         | _c                            | [global]
+u0:20 | Crate          | crate      | _c::crate                     |
+u0:21 | Module         | _m         | _c::_m                        |
+u0:22 | File           | main       | _c::_m::main                  |
+u0:23 | UnresolvedType | Trait      | _c::_m::main::Trait           |
+u0:24 | UnresolvedType | Foo        | _c::_m::main::Foo             |
+u0:25 | TypeAlias      | Associated | _c::_m::main::Foo::Associated |
 
 --- expect:symbol-deps ---
-u0:24 <- [u0:25]
-u0:25 -> [u0:24]
+u0:24 -> [u0:25]
+u0:25 <- [u0:24]
 
 
 ===============================================================================
@@ -3031,23 +3094,26 @@ u0:16 | Primitive      | char          | char                           | [globa
 u0:17 | Primitive      | str           | str                            | [global]
 u0:18 | Primitive      | String        | String                         | [global]
 u0:19 | Crate          | _c            | _c                             | [global]
-u0:20 | Crate          | crate         | _c::crate                      |         
-u0:21 | Module         | _m            | _c::_m                         |         
-u0:22 | File           | main          | _c::_m::main                   |         
-u0:23 | Trait          | Database      | _c::_m::main::Database         |         
-u0:24 | TypeAlias      | F             | _c::_m::main::Database::F      |         
-u0:25 | TypeParameter  | D             | _c::_m::main::Database::D      |         
-u0:26 | UnresolvedType | Foo           | _c::_m::main::Foo              |         
-u0:27 | TypeAlias      | F             | _c::_m::main::Foo::F           |         
-u0:28 | TypeParameter  | D             | _c::_m::main::Foo::D           |         
-u0:29 | Function       | use_database1 | _c::_m::main::use_database1    |         
-u0:30 | TypeParameter  | D             | _c::_m::main::use_database1::D |         
-u0:31 | Function       | use_database2 | _c::_m::main::use_database2    |         
-u0:32 | TypeParameter  | D             | _c::_m::main::use_database2::D |         
+u0:20 | Crate          | crate         | _c::crate                      |
+u0:21 | Module         | _m            | _c::_m                         |
+u0:22 | File           | main          | _c::_m::main                   |
+u0:23 | Trait          | Database      | _c::_m::main::Database         | [global]
+u0:24 | TypeAlias      | F             | _c::_m::main::Database::F      |
+u0:25 | TypeParameter  | D             | _c::_m::main::Database::D      |
+u0:26 | UnresolvedType | Foo           | _c::_m::main::Foo              |
+u0:27 | TypeAlias      | F             | _c::_m::main::Foo::F           |
+u0:28 | TypeParameter  | D             | _c::_m::main::Foo::D           |
+u0:29 | Function       | use_database1 | _c::_m::main::use_database1    |
+u0:30 | TypeParameter  | D             | _c::_m::main::use_database1::D |
+u0:31 | Function       | use_database2 | _c::_m::main::use_database2    |
+u0:32 | TypeParameter  | D             | _c::_m::main::use_database2::D |
 
 --- expect:symbol-deps ---
+u0:23 -> [u0:24]
 u0:23 <- [u0:26, u0:29, u0:31]
-u0:26 -> [u0:23]
+u0:24 <- [u0:23]
+u0:26 -> [u0:23, u0:27]
+u0:27 <- [u0:26]
 u0:29 -> [u0:23]
 u0:31 -> [u0:23]
 
@@ -3085,17 +3151,18 @@ u0:16 | Primitive     | char      | char                       | [global]
 u0:17 | Primitive     | str       | str                        | [global]
 u0:18 | Primitive     | String    | String                     | [global]
 u0:19 | Crate         | _c        | _c                         | [global]
-u0:20 | Crate         | crate     | _c::crate                  |         
-u0:21 | Module        | _m        | _c::_m                     |         
-u0:22 | File          | main      | _c::_m::main               |         
-u0:23 | Struct        | AddAssign | _c::_m::main::AddAssign    |         
-u0:24 | TypeParameter | T         | _c::_m::main::AddAssign::T |         
-u0:25 | Trait         | T         | _c::_m::main::T            |         
-u0:26 | TypeAlias     | FnObject  | _c::_m::main::FnObject     |         
+u0:20 | Crate         | crate     | _c::crate                  |
+u0:21 | Module        | _m        | _c::_m                     |
+u0:22 | File          | main      | _c::_m::main               |
+u0:23 | Struct        | AddAssign | _c::_m::main::AddAssign    |
+u0:24 | TypeParameter | T         | _c::_m::main::AddAssign::T |
+u0:25 | Trait         | T         | _c::_m::main::T            |
+u0:26 | TypeAlias     | FnObject  | _c::_m::main::FnObject     |
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:25]
-u0:25 -> [u0:12]
+u0:23 <- [u0:25]
+u0:25 -> [u0:12, u0:23]
 
 
 ===============================================================================
@@ -3135,25 +3202,26 @@ u0:16 | Primitive     | char      | char                       | [global]
 u0:17 | Primitive     | str       | str                        | [global]
 u0:18 | Primitive     | String    | String                     | [global]
 u0:19 | Crate         | _c        | _c                         | [global]
-u0:20 | Crate         | crate     | _c::crate                  |         
-u0:21 | Module        | _m        | _c::_m                     |         
-u0:22 | File          | main      | _c::_m::main               |         
-u0:23 | Trait         | Foo       | _c::_m::main::Foo          |         
-u0:24 | Trait         | Bar       | _c::_m::main::Bar          |         
-u0:25 | Trait         | Baz       | _c::_m::main::Baz          |         
-u0:26 | TypeParameter | T         | _c::_m::main::Baz::T       |         
-u0:27 | Struct        | AddAssign | _c::_m::main::AddAssign    |         
-u0:28 | TypeParameter | T         | _c::_m::main::AddAssign::T |         
-u0:29 | TypeParameter | U         | _c::_m::main::AddAssign::U |         
-u0:30 | Trait         | T         | _c::_m::main::T            |         
-u0:31 | TypeAlias     | FnObject  | _c::_m::main::FnObject     |         
+u0:20 | Crate         | crate     | _c::crate                  |
+u0:21 | Module        | _m        | _c::_m                     |
+u0:22 | File          | main      | _c::_m::main               |
+u0:23 | Trait         | Foo       | _c::_m::main::Foo          |
+u0:24 | Trait         | Bar       | _c::_m::main::Bar          |
+u0:25 | Trait         | Baz       | _c::_m::main::Baz          |
+u0:26 | TypeParameter | T         | _c::_m::main::Baz::T       |
+u0:27 | Struct        | AddAssign | _c::_m::main::AddAssign    |
+u0:28 | TypeParameter | T         | _c::_m::main::AddAssign::T |
+u0:29 | TypeParameter | U         | _c::_m::main::AddAssign::U |
+u0:30 | Trait         | T         | _c::_m::main::T            |
+u0:31 | TypeAlias     | FnObject  | _c::_m::main::FnObject     |
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:30]
 u0:23 <- [u0:27]
 u0:25 <- [u0:27]
 u0:27 -> [u0:23, u0:25, u0:7]
-u0:30 -> [u0:12]
+u0:27 <- [u0:30]
+u0:30 -> [u0:12, u0:27]
 u0:7 <- [u0:27]
 
 
@@ -3189,13 +3257,13 @@ u0:16 | Primitive | char   | char            | [global]
 u0:17 | Primitive | str    | str             | [global]
 u0:18 | Primitive | String | String          | [global]
 u0:19 | Crate     | _c     | _c              | [global]
-u0:20 | Crate     | crate  | _c::crate       |         
-u0:21 | Module    | _m     | _c::_m          |         
-u0:22 | File      | main   | _c::_m::main    |         
-u0:23 | Function  | a      | _c::_m::main::a |         
-u0:24 | Function  | b      | _c::_m::main::b |         
-u0:25 | Function  | c      | _c::_m::main::c |         
-u0:26 | Function  | e      | _c::_m::main::e |         
+u0:20 | Crate     | crate  | _c::crate       |
+u0:21 | Module    | _m     | _c::_m          |
+u0:22 | File      | main   | _c::_m::main    |
+u0:23 | Function  | a      | _c::_m::main::a | [global]
+u0:24 | Function  | b      | _c::_m::main::b | [global]
+u0:25 | Function  | c      | _c::_m::main::c | [global]
+u0:26 | Function  | e      | _c::_m::main::e | [global]
 
 --- expect:symbol-deps ---
 
@@ -3229,13 +3297,13 @@ u0:16 | Primitive | char   | char                    | [global]
 u0:17 | Primitive | str    | str                     | [global]
 u0:18 | Primitive | String | String                  | [global]
 u0:19 | Crate     | _c     | _c                      | [global]
-u0:20 | Crate     | crate  | _c::crate               |         
-u0:21 | Module    | _m     | _c::_m                  |         
-u0:22 | File      | main   | _c::_m::main            |         
-u0:23 | Function  | foo    | _c::_m::main::foo       |         
-u0:24 | Variable  | str    | _c::_m::main::foo::str  |         
-u0:25 | Function  | bar    | _c::_m::main::bar       |         
-u0:26 | Variable  | bool   | _c::_m::main::bar::bool |         
+u0:20 | Crate     | crate  | _c::crate               |
+u0:21 | Module    | _m     | _c::_m                  |
+u0:22 | File      | main   | _c::_m::main            |
+u0:23 | Function  | foo    | _c::_m::main::foo       |
+u0:24 | Variable  | str    | _c::_m::main::foo::str  |
+u0:25 | Function  | bar    | _c::_m::main::bar       |
+u0:26 | Variable  | bool   | _c::_m::main::bar::bool |
 
 --- expect:symbol-deps ---
 u0:15 <- [u0:25, u0:26]
@@ -3307,28 +3375,28 @@ u0:16 | Primitive      | char     | char                   | [global]
 u0:17 | Primitive      | str      | str                    | [global]
 u0:18 | Primitive      | String   | String                 | [global]
 u0:19 | Crate          | _c       | _c                     | [global]
-u0:20 | Crate          | crate    | _c::crate              |         
-u0:21 | Module         | _m       | _c::_m                 |         
-u0:22 | File           | main     | _c::_m::main           |         
-u0:23 | Function       | walk     | _c::_m::main::walk     |         
-u0:24 | TypeParameter  | F        | _c::_m::main::walk::F  |         
-u0:25 | Variable       | it       | _c::_m::main::walk::it |         
-u0:26 | UnresolvedType | Iterator | _c::_m::main::Iterator |         
-u0:27 | UnresolvedType | Iter     | _c::_m::main::Iter     |         
-u0:28 | TypeParameter  | T        | _c::_m::main::Iter::T  |         
-u0:29 | Trait          | A        | _c::_m::main::A        |         
-u0:30 | UnresolvedType | B        | _c::_m::main::B        |         
-u0:31 | TypeParameter  | T        | _c::_m::main::B::T     |         
-u0:32 | UnresolvedType | Read     | _c::_m::main::Read     |         
-u0:33 | TypeParameter  | E        | _c::_m::main::Read::E  |         
-u0:34 | TypeParameter  | T        | _c::_m::main::B::T     |         
-u0:35 | TypeParameter  | T        | _c::_m::main::B::T     |         
-u0:36 | TypeParameter  | B        | _c::_m::main::A::B     |         
-u0:37 | Struct         | Foo      | _c::_m::main::Foo      |         
-u0:38 | Function       | foo      | _c::_m::main::foo      |         
-u0:39 | TypeParameter  | A        | _c::_m::main::foo::A   |         
-u0:40 | UnresolvedType | Default  | _c::_m::main::Default  |         
-u0:41 | TypeParameter  | A        | _c::_m::main::B::A     |         
+u0:20 | Crate          | crate    | _c::crate              |
+u0:21 | Module         | _m       | _c::_m                 |
+u0:22 | File           | main     | _c::_m::main           |
+u0:23 | Function       | walk     | _c::_m::main::walk     |
+u0:24 | TypeParameter  | F        | _c::_m::main::walk::F  |
+u0:25 | Variable       | it       | _c::_m::main::walk::it |
+u0:26 | UnresolvedType | Iterator | _c::_m::main::Iterator |
+u0:27 | UnresolvedType | Iter     | _c::_m::main::Iter     |
+u0:28 | TypeParameter  | T        | _c::_m::main::Iter::T  |
+u0:29 | Trait          | A        | _c::_m::main::A        | [global]
+u0:30 | UnresolvedType | B        | _c::_m::main::B        |
+u0:31 | TypeParameter  | T        | _c::_m::main::B::T     |
+u0:32 | UnresolvedType | Read     | _c::_m::main::Read     |
+u0:33 | TypeParameter  | E        | _c::_m::main::Read::E  |
+u0:34 | TypeParameter  | T        | _c::_m::main::B::T     |
+u0:35 | TypeParameter  | T        | _c::_m::main::B::T     |
+u0:36 | TypeParameter  | B        | _c::_m::main::A::B     |
+u0:37 | Struct         | Foo      | _c::_m::main::Foo      |
+u0:38 | Function       | foo      | _c::_m::main::foo      |
+u0:39 | TypeParameter  | A        | _c::_m::main::foo::A   |
+u0:40 | UnresolvedType | Default  | _c::_m::main::Default  |
+u0:41 | TypeParameter  | A        | _c::_m::main::B::A     |
 
 --- expect:symbol-deps ---
 u0:14 <- [u0:38]
@@ -3374,11 +3442,11 @@ u0:16 | Primitive | char                 | char                                 
 u0:17 | Primitive | str                  | str                                      | [global]
 u0:18 | Primitive | String               | String                                   | [global]
 u0:19 | Crate     | _c                   | _c                                       | [global]
-u0:20 | Crate     | crate                | _c::crate                                |         
-u0:21 | Module    | _m                   | _c::_m                                   |         
-u0:22 | File      | main                 | _c::_m::main                             |         
-u0:23 | Function  | napi_module_register | _c::_m::main::napi_module_register       |         
-u0:24 | Variable  | mod_                 | _c::_m::main::napi_module_register::mod_ |         
+u0:20 | Crate     | crate                | _c::crate                                |
+u0:21 | Module    | _m                   | _c::_m                                   |
+u0:22 | File      | main                 | _c::_m::main                             |
+u0:23 | Function  | napi_module_register | _c::_m::main::napi_module_register       | [global]
+u0:24 | Variable  | mod_                 | _c::_m::main::napi_module_register::mod_ |
 
 --- expect:symbol-deps ---
 
@@ -3414,12 +3482,12 @@ u0:16 | Primitive | char   | char              | [global]
 u0:17 | Primitive | str    | str               | [global]
 u0:18 | Primitive | String | String            | [global]
 u0:19 | Crate     | _c     | _c                | [global]
-u0:20 | Crate     | crate  | _c::crate         |         
-u0:21 | Module    | _m     | _c::_m            |         
-u0:22 | File      | main   | _c::_m::main      |         
-u0:23 | Struct    | Foo    | _c::_m::main::Foo |         
-u0:24 | Function  | foo    | _c::_m::main::foo |         
-u0:25 | Const     | X      | _c::_m::main::X   |         
+u0:20 | Crate     | crate  | _c::crate         |
+u0:21 | Module    | _m     | _c::_m            |
+u0:22 | File      | main   | _c::_m::main      |
+u0:23 | Struct    | Foo    | _c::_m::main::Foo |
+u0:24 | Function  | foo    | _c::_m::main::foo |
+u0:25 | Const     | X      | _c::_m::main::X   |
 
 --- expect:symbol-deps ---
 u0:25 -> [u0:7]
@@ -3460,14 +3528,14 @@ u0:16 | Primitive | char   | char               | [global]
 u0:17 | Primitive | str    | str                | [global]
 u0:18 | Primitive | String | String             | [global]
 u0:19 | Crate     | _c     | _c                 | [global]
-u0:20 | Crate     | crate  | _c::crate          |         
-u0:21 | Module    | _m     | _c::_m             |         
-u0:22 | File      | main   | _c::_m::main       |         
-u0:23 | Struct    | B      | _c::_m::main::B    |         
-u0:24 | Struct    | C      | _c::_m::main::C    |         
-u0:25 | Struct    | A      | _c::_m::main::A    |         
-u0:26 | Field     | a      | _c::_m::main::A::a |         
-u0:27 | Field     | b      | _c::_m::main::A::b |         
+u0:20 | Crate     | crate  | _c::crate          |
+u0:21 | Module    | _m     | _c::_m             |
+u0:22 | File      | main   | _c::_m::main       |
+u0:23 | Struct    | B      | _c::_m::main::B    |
+u0:24 | Struct    | C      | _c::_m::main::C    |
+u0:25 | Struct    | A      | _c::_m::main::A    |
+u0:26 | Field     | a      | _c::_m::main::A::a |
+u0:27 | Field     | b      | _c::_m::main::A::b |
 
 --- expect:symbol-deps ---
 u0:23 <- [u0:25, u0:26]
@@ -3485,9 +3553,9 @@ array-constraint-in-where-clause
 --- file: src/main.rs ---
 struct D;
 
-fn foo<D>(val: D)
+fn foo<T>(val: D)
 where
-    [u8; 32]: From<D>,
+    [u8; 32]: From<T>,
 
 {}
 
@@ -3516,12 +3584,14 @@ u0:21 | Module        | _m     | _c::_m                 |
 u0:22 | File          | main   | _c::_m::main           |         
 u0:23 | Struct        | D      | _c::_m::main::D        |         
 u0:24 | Function      | foo    | _c::_m::main::foo      |         
-u0:25 | TypeParameter | D      | _c::_m::main::foo::D   |         
+u0:25 | TypeParameter | T      | _c::_m::main::foo::T   |         
 u0:26 | Variable      | val    | _c::_m::main::foo::val |         
 
 --- expect:symbol-deps ---
 u0:10 <- [u0:24]
-u0:24 -> [u0:10]
+u0:23 <- [u0:24, u0:26]
+u0:24 -> [u0:10, u0:23]
+u0:26 -> [u0:23]
 
 
 ===============================================================================
@@ -3552,14 +3622,15 @@ u0:16 | Primitive     | char   | char                  | [global]
 u0:17 | Primitive     | str    | str                   | [global]
 u0:18 | Primitive     | String | String                | [global]
 u0:19 | Crate         | _c     | _c                    | [global]
-u0:20 | Crate         | crate  | _c::crate             |         
-u0:21 | Module        | _m     | _c::_m                |         
-u0:22 | File          | main   | _c::_m::main          |         
-u0:23 | Struct        | Loaf   | _c::_m::main::Loaf    |         
-u0:24 | TypeParameter | T      | _c::_m::main::Loaf::T |         
-u0:25 | Const         | N      | _c::_m::main::Loaf::N |         
+u0:20 | Crate         | crate  | _c::crate             |
+u0:21 | Module        | _m     | _c::_m                |
+u0:22 | File          | main   | _c::_m::main          |
+u0:23 | Struct        | Loaf   | _c::_m::main::Loaf    | [global]
+u0:24 | TypeParameter | T      | _c::_m::main::Loaf::T |
+u0:25 | Const         | N      | _c::_m::main::Loaf::N |
 
 --- expect:symbol-deps ---
-u0:12 <- [u0:23]
+u0:12 <- [u0:23, u0:25]
 u0:23 -> [u0:12, u0:25]
+u0:25 -> [u0:12]
 u0:25 <- [u0:23]

@@ -150,6 +150,8 @@ pub struct CorpusCase {
     pub args: Vec<String>,
     pub files: Vec<TestFile>,
     pub expectations: Vec<CorpusCaseExpectation>,
+    /// Comments lines (starting with $//)
+    pub comments: Vec<String>,
 }
 
 impl CorpusCase {
@@ -180,6 +182,11 @@ impl CorpusCase {
 
     pub fn render(&self) -> String {
         let mut buf = String::new();
+        // Render comments first
+        for comment in &self.comments {
+            buf.push_str(comment);
+            buf.push('\n');
+        }
         buf.push_str(CASE_BANNER);
         buf.push('\n');
         buf.push_str(&self.name);
@@ -235,12 +242,14 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
     let mut section_lines: Vec<String> = Vec::new();
     let mut awaiting_banner_name = false;
     let mut awaiting_banner_close = false;
+    let mut pending_comments: Vec<String> = Vec::new();
 
     for raw_line in content.lines() {
         let line = raw_line.trim_end_matches('\r');
         let trimmed = line.trim();
 
         if trimmed.starts_with("$//") {
+            pending_comments.push(line.to_string());
             continue;
         }
 
@@ -280,6 +289,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
                 args: Vec::new(),
                 files: Vec::new(),
                 expectations: Vec::new(),
+                comments: std::mem::take(&mut pending_comments),
             });
             awaiting_banner_name = false;
             awaiting_banner_close = true;
@@ -308,6 +318,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
                 args: Vec::new(),
                 files: Vec::new(),
                 expectations: Vec::new(),
+                comments: std::mem::take(&mut pending_comments),
             });
             continue;
         }

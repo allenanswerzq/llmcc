@@ -7,9 +7,9 @@ use llmcc_resolver::{CollectorScopes, ResolverOption};
 
 use std::collections::HashMap;
 
+use crate::LangRust;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-use crate::{LangRust, RUST_PRIMITIVES};
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -46,12 +46,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
             let child = unit.hir_node(*child_id);
             Self::type_name_from_node(unit, &child)
         })
-    }
-
-    fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut CollectorScopes<'tcx>) {
-        for prim in RUST_PRIMITIVES {
-            scopes.lookup_or_insert_global(prim, node, SymKind::Primitive);
-        }
     }
 
     /// Declare a symbol from a named field in the AST node
@@ -133,7 +127,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
             if text.starts_with("pub") {
                 if text == "pub" {
                     is_pub = true;
-                } else if text.contains("crate") {
+                } else {
+                    // All pub(...) variants: pub(crate), pub(super), pub(self), pub(in path)
+                    // are considered globally visible for indexing purposes
                     is_pub_crate = true;
                 }
                 break;
@@ -150,26 +146,29 @@ impl<'tcx> CollectorVisitor<'tcx> {
     ) {
         // Check visibility
         let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
-        let is_top_level = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
+        let at_global = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
 
-        let mut parent_is_global = is_top_level;
-        if !is_top_level
-            && let Some(scope) = scopes.top()
+        if is_pub {
+            if !at_global {
+                scopes.globals().insert(sym);
+            }
+            sym.set_is_global(true);
+            return;
+        }
+
+        if is_pub_crate {
+            if !at_global {
+                scopes.globals().insert(sym);
+            }
+            sym.set_is_global(true);
+            return;
+        }
+
+        if let Some(scope) = scopes.top()
             && let Some(parent_sym) = scope.opt_symbol()
             && parent_sym.is_global()
         {
-            parent_is_global = true;
-        }
-
-        if parent_is_global {
-            if is_pub {
-                if !is_top_level {
-                    scopes.globals().insert(sym);
-                }
-                sym.set_is_global(true);
-            } else if is_pub_crate && !is_top_level {
-                scopes.globals().insert(sym);
-            }
+            scopes.globals().insert(sym);
         }
     }
 
@@ -480,12 +479,14 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         {
             if let Some(symbol) = scopes.lookup_symbol_with(
                 type_name,
-                Some(vec![SymKind::Struct, SymKind::Enum]),
+                Some(vec![SymKind::Struct, SymKind::Enum, SymKind::Primitive]),
                 None,
                 None,
             ) {
                 type_ident.set_symbol(symbol);
-                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, false);
+                // Primitives don't have scopes, so we need to allocate one for the impl
+                let needs_scope = symbol.opt_scope().is_none();
+                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, needs_scope);
             } else if let Some(symbol) =
                 scopes.lookup_or_insert(type_name, node, SymKind::UnresolvedType)
             {
@@ -637,7 +638,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name)
             && let Some(owner) = namespace.opt_symbol()
         {
-            owner.add_dependency(sym);
+            owner.add_dependency(sym, None);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -808,7 +809,6 @@ pub fn collect_symbols<'tcx>(
     let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();
-    visit.initialize(node, &mut scopes);
     visit.visit_node(&unit, node, &mut scopes, unit_globals, None);
 
     unit_globals

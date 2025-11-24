@@ -283,11 +283,6 @@ pub trait LanguageTrait {
     /// Get the list of file extensions this language supports.
     fn supported_extensions() -> &'static [&'static str];
 
-    /// List of primitive symbols provided by this language.
-    fn primitive_symbols() -> &'static [&'static str] {
-        &[]
-    }
-
     fn collect_init<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx>;
 
     /// TOOD: can we remove the generics here, we could make a new crate or
@@ -314,11 +309,6 @@ pub trait LanguageTraitImpl: LanguageTrait {
 
     /// Supported file extensions for this language.
     fn supported_extensions_impl() -> &'static [&'static str];
-
-    /// Primitive symbol names for this language. Defaults to none.
-    fn primitive_symbols_impl() -> &'static [&'static str] {
-        &[]
-    }
 
     fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         ScopeStack::new(cc.arena(), &cc.interner)
@@ -402,11 +392,6 @@ macro_rules! define_lang {
                 /// Return the list of supported file extensions for this language
                 fn supported_extensions() -> &'static [&'static str] {
                     <Self as $crate::lang_def::LanguageTraitImpl>::supported_extensions_impl()
-                }
-
-                /// List of primitive symbol names for this language.
-                fn primitive_symbols() -> &'static [&'static str] {
-                    <Self as $crate::lang_def::LanguageTraitImpl>::primitive_symbols_impl()
                 }
 
                 /// Get the HIR kind for a given token ID
