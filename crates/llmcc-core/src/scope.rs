@@ -180,6 +180,16 @@ pub struct ScopeStack<'tcx> {
     stack: RwLock<Vec<&'tcx Scope<'tcx>>>,
 }
 
+impl<'tcx> Clone for ScopeStack<'tcx> {
+    fn clone(&self) -> Self {
+        Self {
+            arena: self.arena,
+            interner: self.interner,
+            stack: RwLock::new(self.stack.read().clone()),
+        }
+    }
+}
+
 impl<'tcx> ScopeStack<'tcx> {
     pub fn new(arena: &'tcx Arena<'tcx>, interner: &'tcx InternPool) -> Self {
         Self {
@@ -201,6 +211,10 @@ impl<'tcx> ScopeStack<'tcx> {
 
     pub fn iter(&self) -> Vec<&'tcx Scope<'tcx>> {
         self.stack.read().clone()
+    }
+
+    pub fn first(&self) -> &'tcx Scope<'tcx> {
+        self.stack.read().first().copied().unwrap()
     }
 
     /// Recursively pushes a scope and all its base (parent) scopes onto the stack.

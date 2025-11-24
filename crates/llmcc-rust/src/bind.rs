@@ -1,36 +1,140 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirNode, HirScope};
+use llmcc_core::ir::{HirKind, HirNode, HirScope};
 use llmcc_core::scope::Scope;
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{SymId, SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
+use crate::RUST_PRIMITIVES;
+use crate::resolve::ExprResolver;
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-
-use crate::resolve::ExprResolver;
+use std::collections::HashMap;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
 pub struct BinderVisitor<'tcx> {
     phantom: std::marker::PhantomData<&'tcx ()>,
+    field_types: HashMap<(SymId, String), &'tcx Symbol>,
 }
 
 impl<'tcx> BinderVisitor<'tcx> {
     fn new() -> Self {
         Self {
             phantom: std::marker::PhantomData,
+            field_types: HashMap::new(),
+        }
+    }
+
+    #[allow(dead_code)]
+    fn visit_const_parameter(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        if let Some(owner) = namespace.opt_symbol()
+            && let Some(name_node) = node.child_identifier_by_field(*unit, LangRust::field_name)
+            && let Some(symbol) = name_node.opt_symbol()
+        {
+            Self::add_owner_dependency(owner, symbol);
+        }
+
+        if let Some(owner) = namespace.opt_symbol()
+            && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
+        {
+            self.add_type_dependencies_from_node(unit, &type_node, scopes, owner);
         }
     }
 
     fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut BinderScopes<'tcx>) {
-        let primitives = [
-            "i32", "i64", "i16", "i8", "i128", "isize", "u32", "u64", "u16", "u8", "u128", "usize",
-            "f32", "f64", "bool", "char", "str",
-        ];
-        for prim in primitives {
+        for prim in RUST_PRIMITIVES {
             scopes.lookup_or_insert_global(prim, node, SymKind::Primitive);
         }
+    }
+
+    fn add_owner_dependency(owner: &Symbol, target: &Symbol) {
+        if target.kind() == SymKind::TypeParameter {
+            return;
+        }
+        owner.add_dependency(target);
+    }
+
+    fn add_value_dependency(symbol: &Symbol, ty: &Symbol) {
+        if ty.kind() == SymKind::TypeParameter {
+            return;
+        }
+        symbol.add_dependency(ty);
+    }
+
+    fn add_const_dependency_from_node(
+        unit: &CompileUnit<'tcx>,
+        scopes: &BinderScopes<'tcx>,
+        node: &HirNode<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+    ) {
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        if let Some(ident) = node.find_identifier(*unit)
+            && let Some(sym) = ident
+                .opt_symbol()
+                .or_else(|| scopes.lookup_symbol(&ident.name))
+            && matches!(sym.kind(), SymKind::Const | SymKind::Static)
+        {
+            Self::add_owner_dependency(owner, sym);
+        }
+    }
+
+    fn resolve_type_with_args(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+    ) -> (Option<&'tcx Symbol>, Vec<&'tcx Symbol>) {
+        let mut resolver = ExprResolver::new(unit, scopes);
+        let mut ty = resolver.resolve_type_node(node);
+        if ty.is_none() {
+            ty = resolver.infer_type_from_expr(node);
+        }
+        let args = resolver.collect_type_argument_symbols(node);
+        (ty, args)
+    }
+
+    fn add_type_dependencies(owner: &Symbol, ty: Option<&Symbol>, args: &[&Symbol]) {
+        if let Some(symbol) = ty {
+            Self::add_owner_dependency(owner, symbol);
+        }
+        for arg in args {
+            Self::add_owner_dependency(owner, arg);
+        }
+    }
+
+    fn add_type_dependencies_from_node(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        owner: &Symbol,
+    ) {
+        let (ty, args) = Self::resolve_type_with_args(unit, node, scopes);
+        Self::add_type_dependencies(owner, ty, &args);
+    }
+
+    fn cache_field_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        owner: &'tcx Symbol,
+        field_name: &str,
+        ty: &'tcx Symbol,
+    ) {
+        let canonical = Self::resolve_canonical_type(unit, owner);
+        self.field_types
+            .insert((canonical.id(), field_name.to_string()), ty);
     }
 
     fn visit_scoped_named(
@@ -79,7 +183,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         symbol
     }
 
-    fn lookup_field_type<'a>(
+    fn lookup_field_symbol<'a>(
         unit: &CompileUnit<'a>,
         owner: &'a Symbol,
         field_name: &str,
@@ -88,14 +192,36 @@ impl<'tcx> BinderVisitor<'tcx> {
         let scope_id = owner.opt_scope()?;
         let scope = unit.cc.get_scope(scope_id);
         let field_key = unit.cc.interner.intern(field_name);
-        let field_symbol = scope.lookup_symbols(field_key)?.last().copied()?;
+        scope.lookup_symbols(field_key)?.last().copied()
+    }
+
+    fn lookup_field_type(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        owner: &'tcx Symbol,
+        field_name: &str,
+    ) -> Option<&'tcx Symbol> {
+        let canonical = Self::resolve_canonical_type(unit, owner);
+        if let Some(ty) = self
+            .field_types
+            .get(&(canonical.id(), field_name.to_string()))
+        {
+            return Some(*ty);
+        }
+        let field_symbol = Self::lookup_field_symbol(unit, canonical, field_name)?;
         field_symbol
             .type_of()
             .and_then(|ty_id| unit.opt_get_symbol(ty_id))
     }
 
     /// Bind a pattern (simple identifier or struct pattern) to a type
-    fn bind_pattern_to_type(unit: &CompileUnit<'tcx>, pattern: &HirNode<'tcx>, ty: &'tcx Symbol) {
+    fn bind_pattern_to_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        pattern: &HirNode<'tcx>,
+        ty: &'tcx Symbol,
+        type_args: &[&'tcx Symbol],
+    ) {
         if matches!(
             pattern.kind_id(),
             LangRust::type_identifier | LangRust::field_identifier
@@ -106,30 +232,39 @@ impl<'tcx> BinderVisitor<'tcx> {
         if let Some(ident) = pattern.as_ident() {
             if let Some(sym) = ident.opt_symbol() {
                 sym.set_type_of(ty.id());
-                sym.add_dependency(ty);
+                Self::add_value_dependency(sym, ty);
+                for arg in type_args {
+                    Self::add_value_dependency(sym, arg);
+                }
             }
             return;
         }
 
-        if let Some(field_ident) = pattern.child_identifier_by_field(*unit, LangRust::field_name)
-            && let Some(field_ty) = Self::lookup_field_type(unit, ty, &field_ident.name)
-        {
-            if let Some(subpattern) = pattern.child_by_field(*unit, LangRust::field_pattern) {
-                Self::bind_pattern_to_type(unit, &subpattern, field_ty);
-            } else if let Some(sym) = field_ident.opt_symbol() {
-                sym.set_type_of(field_ty.id());
-                sym.add_dependency(field_ty);
+        if let Some(field_ident) = pattern.child_identifier_by_field(*unit, LangRust::field_name) {
+            if let Some(field_ty) = self.lookup_field_type(unit, ty, &field_ident.name) {
+                if let Some(subpattern) = pattern.child_by_field(*unit, LangRust::field_pattern) {
+                    self.bind_pattern_to_type(unit, &subpattern, field_ty, &[]);
+                } else if let Some(sym) = field_ident.opt_symbol() {
+                    sym.set_type_of(field_ty.id());
+                    Self::add_value_dependency(sym, field_ty);
+                }
+                return;
+            } else {
+                debug_assert!(
+                    false,
+                    "failed to lookup field type for {}",
+                    field_ident.name
+                );
             }
-            return;
         }
 
         if let Some(subpattern) = pattern.child_by_field(*unit, LangRust::field_pattern) {
-            Self::bind_pattern_to_type(unit, &subpattern, ty);
+            self.bind_pattern_to_type(unit, &subpattern, ty, &[]);
             return;
         }
 
         for child in pattern.children_nodes(unit) {
-            Self::bind_pattern_to_type(unit, &child, ty);
+            self.bind_pattern_to_type(unit, &child, ty, &[]);
         }
     }
 }
@@ -154,8 +289,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 return;
             };
 
-            if let Some(symbol) = symbol {
-                let scope_id = symbol.scope();
+            if let Some(symbol) = symbol
+                && let Some(scope_id) = symbol.opt_scope()
+            {
                 scopes.push_scope(scope_id);
             }
         }
@@ -163,7 +299,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(scope_id) = parse_module_name(file_path).and_then(|module_name| {
             scopes
                 .lookup_or_insert(&module_name, node, SymKind::Module)
-                .map(|symbol| symbol.scope())
+                .and_then(|symbol| symbol.opt_scope())
         }) {
             scopes.push_scope(scope_id);
         }
@@ -175,8 +311,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 return;
             };
 
-            if let Some(symbol) = file_sym_opt {
-                let scope_id = symbol.scope();
+            if let Some(symbol) = file_sym_opt
+                && let Some(scope_id) = symbol.opt_scope()
+            {
                 scopes.push_scope(scope_id);
             }
         }
@@ -220,6 +357,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             fn_sym.set_type_of(ret_sym.id());
             fn_sym.add_dependency(ret_sym);
+
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::add_owner_dependency(ns, ret_sym);
+            }
         }
     }
 
@@ -272,17 +413,24 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let sn = node.as_scope().unwrap();
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
 
-        if let Some(target_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
-            && let Some(target_sym) = target_ident.opt_symbol()
-            && let Some(target_scope) = target_sym.opt_scope()
-            && let Some(trait_ident) = node.child_identifier_by_field(*unit, LangRust::field_trait)
-            && let Some(trait_sym) = trait_ident.opt_symbol()
-            && let Some(trait_scope) = trait_sym.opt_scope()
+        if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
+            && let Some(target_sym) = type_ident.opt_symbol()
         {
-            let target_scope = unit.cc.get_scope(target_scope);
-            let trait_scope = unit.cc.get_scope(trait_scope);
-            target_scope.add_parent(trait_scope);
-            target_sym.add_dependency(trait_sym);
+            if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                self.add_type_dependencies_from_node(unit, &type_node, scopes, target_sym);
+            }
+
+            if let Some(target_scope) = target_sym.opt_scope()
+                && let Some(trait_ident) =
+                    node.child_identifier_by_field(*unit, LangRust::field_trait)
+                && let Some(trait_sym) = trait_ident.opt_symbol()
+                && let Some(trait_scope) = trait_sym.opt_scope()
+            {
+                let target_scope = unit.cc.get_scope(target_scope);
+                let trait_scope = unit.cc.get_scope(trait_scope);
+                target_scope.add_parent(trait_scope);
+                target_sym.add_dependency(trait_sym);
+            }
         }
     }
 
@@ -326,7 +474,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 ExprResolver::new(unit, scopes).resolve_expression_symbol(&macro_node, parent)
             && let Some(ns) = namespace.opt_symbol()
         {
-            ns.add_dependency(sym);
+            Self::add_owner_dependency(ns, sym);
         }
     }
 
@@ -341,12 +489,15 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(const_ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(const_sym) = const_ident.opt_symbol()
             && let Some(const_ty) = node.child_by_field(*unit, LangRust::field_type)
-            && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&const_ty)
+            && let Some(ty) = {
+                let mut resolver = ExprResolver::new(unit, scopes);
+                resolver.resolve_type_node(&const_ty)
+            }
         {
             const_sym.set_type_of(ty.id());
             const_sym.add_dependency(ty);
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(const_sym);
+                Self::add_owner_dependency(ns, const_sym);
             }
         }
     }
@@ -375,7 +526,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(sym) = ExprResolver::new(unit, scopes).resolve_call_target(node, parent)
             && let Some(ns) = namespace.opt_symbol()
         {
-            ns.add_dependency(sym);
+            Self::add_owner_dependency(ns, sym);
         }
     }
 
@@ -406,10 +557,19 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(type_sym) = type_ident.opt_symbol()
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
-            && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&type_node)
         {
-            type_sym.set_type_of(ty.id());
-            type_sym.add_dependency(ty);
+            let (ty, args) = Self::resolve_type_with_args(unit, &type_node, scopes);
+            if let Some(primary) = ty {
+                type_sym.set_type_of(primary.id());
+                Self::add_value_dependency(type_sym, primary);
+            }
+            for arg in &args {
+                Self::add_value_dependency(type_sym, arg);
+            }
+
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::add_type_dependencies(ns, ty, &args);
+            }
         }
     }
 
@@ -421,16 +581,33 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
+            && let Some(owner) = namespace.opt_symbol()
+        {
+            self.add_type_dependencies_from_node(unit, &bounds, scopes, owner);
+        }
+
         self.visit_children(unit, node, scopes, namespace, parent);
 
         if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(type_sym) = type_ident.opt_symbol()
             && let Some(default_type_node) =
                 node.child_by_field(*unit, LangRust::field_default_type)
-            && let Some(ty) =
-                ExprResolver::new(unit, scopes).infer_type_from_expr(&default_type_node)
         {
-            type_sym.add_dependency(ty);
+            let (ty, args) = Self::resolve_type_with_args(unit, &default_type_node, scopes);
+            if let Some(symbol) = ty {
+                type_sym.add_dependency(symbol);
+
+                if let Some(ns) = namespace.opt_symbol() {
+                    Self::add_owner_dependency(ns, symbol);
+                }
+            }
+
+            if let Some(ns) = namespace.opt_symbol() {
+                for arg in args {
+                    Self::add_owner_dependency(ns, arg);
+                }
+            }
         }
     }
 
@@ -447,9 +624,113 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(type_sym) = type_ident.opt_symbol()
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_default_type)
-            && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&type_node)
         {
-            type_sym.add_dependency(ty);
+            let (ty, args) = Self::resolve_type_with_args(unit, &type_node, scopes);
+            if let Some(primary) = ty {
+                Self::add_value_dependency(type_sym, primary);
+            }
+            for arg in &args {
+                Self::add_value_dependency(type_sym, arg);
+            }
+
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::add_type_dependencies(ns, ty, &args);
+            }
+        }
+    }
+
+    fn visit_where_predicate(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
+            && let Some(owner) = namespace.opt_symbol()
+        {
+            self.add_type_dependencies_from_node(unit, &bounds, scopes, owner);
+        }
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_array_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        if let Some(element_ty) = node.child_by_field(*unit, LangRust::field_element) {
+            self.add_type_dependencies_from_node(unit, &element_ty, scopes, owner);
+        }
+    }
+
+    fn visit_tuple_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        for child_id in node.children() {
+            let child = unit.hir_node(*child_id);
+            if matches!(child.kind(), HirKind::Text | HirKind::Comment) {
+                continue;
+            }
+
+            self.add_type_dependencies_from_node(unit, &child, scopes, owner);
+        }
+    }
+
+    fn visit_primitive_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        self.add_type_dependencies_from_node(unit, node, scopes, owner);
+    }
+
+    fn visit_abstract_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        let Some(owner) = namespace.opt_symbol() else {
+            return;
+        };
+
+        if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
+            self.add_type_dependencies_from_node(unit, &trait_node, scopes, owner);
         }
     }
 
@@ -463,13 +744,36 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        if let Some(name_node) = node.child_identifier_by_field(*unit, LangRust::field_name)
-            && let Some(symbol) = name_node.opt_symbol()
-            && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
-            && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&type_node)
+        let owner_sym = if let Some(sym) = namespace.opt_symbol() {
+            sym
+        } else if let Some(parent_sym) = parent
+            && let Some(resolved) = unit.opt_get_symbol(parent_sym.id())
         {
-            symbol.set_type_of(ty.id());
-            symbol.add_dependency(ty);
+            resolved
+        } else {
+            return;
+        };
+
+        if let Some(name_node) = node.child_identifier_by_field(*unit, LangRust::field_name)
+            && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
+            && let Some(symbol) = Self::lookup_field_symbol(unit, owner_sym, &name_node.name)
+        {
+            let (ty, args) = Self::resolve_type_with_args(unit, &type_node, scopes);
+            debug_assert!(
+                ty.is_some(),
+                "no type resolved for field {}",
+                name_node.name
+            );
+            if let Some(primary) = ty {
+                symbol.set_type_of(primary.id());
+                Self::add_value_dependency(symbol, primary);
+                self.cache_field_type(unit, owner_sym, &name_node.name, primary);
+            }
+            for arg in &args {
+                Self::add_value_dependency(symbol, arg);
+            }
+
+            Self::add_type_dependencies(owner_sym, ty, &args);
         }
     }
 
@@ -485,10 +789,30 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         if let Some(name_node) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(symbol) = name_node.opt_symbol()
-            && let Some(value_node) = node.child_by_field(*unit, LangRust::field_value)
-            && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&value_node)
         {
-            symbol.add_dependency(ty);
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::add_owner_dependency(ns, symbol);
+            }
+
+            if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
+                let (ty, args) = Self::resolve_type_with_args(unit, &value_node, scopes);
+                if let Some(primary) = ty {
+                    symbol.add_dependency(primary);
+                }
+                for arg in &args {
+                    symbol.add_dependency(arg);
+                }
+
+                if let Some(ns) = namespace.opt_symbol() {
+                    Self::add_type_dependencies(ns, ty, &args);
+                }
+            }
+
+            if let Some(body_node) = node.child_by_field(*unit, LangRust::field_body)
+                && let Some(ns) = namespace.opt_symbol()
+            {
+                self.add_type_dependencies_from_node(unit, &body_node, scopes, ns);
+            }
         }
     }
 
@@ -506,10 +830,19 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ident) = pattern.find_identifier(*unit)
             && let Some(symbol) = ident.opt_symbol()
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
-            && let Some(ty) = ExprResolver::new(unit, scopes).infer_type_from_expr(&type_node)
         {
-            symbol.set_type_of(ty.id());
-            symbol.add_dependency(ty);
+            let (ty, args) = Self::resolve_type_with_args(unit, &type_node, scopes);
+            if let Some(primary) = ty {
+                symbol.set_type_of(primary.id());
+                Self::add_value_dependency(symbol, primary);
+            }
+            for arg in &args {
+                Self::add_value_dependency(symbol, arg);
+            }
+
+            if let Some(ns) = namespace.opt_symbol() {
+                Self::add_type_dependencies(ns, ty, &args);
+            }
         }
     }
 
@@ -521,6 +854,29 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+    }
+
+    fn visit_identifier(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
+    ) {
+        Self::add_const_dependency_from_node(unit, scopes, node, namespace);
+    }
+
+    fn visit_scoped_identifier(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        Self::add_const_dependency_from_node(unit, scopes, node, namespace);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -537,7 +893,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let (ty, type_args) =
             if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
                 let mut resolver = ExprResolver::new(unit, scopes);
-                let ty = resolver.infer_type_from_expr(&type_node);
+                let ty = resolver.resolve_type_node(&type_node);
                 let type_args = resolver.collect_type_argument_symbols(&type_node);
                 (ty, type_args)
             } else if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
@@ -549,14 +905,14 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         if let Some(ty) = ty {
             if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
-                Self::bind_pattern_to_type(unit, &pattern, ty);
+                self.bind_pattern_to_type(unit, &pattern, ty, &type_args);
             }
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty);
+                Self::add_owner_dependency(ns, ty);
                 // Also add dependencies on type arguments to the parent
                 for arg_sym in &type_args {
-                    ns.add_dependency(arg_sym);
+                    Self::add_owner_dependency(ns, arg_sym);
                 }
             }
         }
@@ -586,13 +942,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 pub fn bind_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
     _config: &ResolverOption,
 ) {
+    let mut scopes = BinderScopes::new(unit, namespace);
     let mut visit = BinderVisitor::new();
-    visit.initialize(node, scopes);
-    visit.visit_node(&unit, node, scopes, namespace, None);
+    visit.initialize(node, &mut scopes);
+    visit.visit_node(&unit, node, &mut scopes, namespace, None);
 }
 
 #[cfg(test)]

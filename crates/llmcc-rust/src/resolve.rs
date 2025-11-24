@@ -236,6 +236,14 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             .lookup_or_insert_global(&ident.name, type_node, SymKind::UnresolvedType)
     }
 
+    /// Resolve a type expression node by first trying the syntactic path
+    /// (`infer_type_from_expr_from_node`) and falling back to the general
+    /// expression inference when necessary.
+    pub fn resolve_type_node(&mut self, type_node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        self.infer_type_from_expr_from_node(type_node)
+            .or_else(|| self.infer_type_from_expr(type_node))
+    }
+
     pub fn is_self_type(&self, symbol: &Symbol) -> bool {
         self.unit.interner().resolve_owned(symbol.name).as_deref() == Some("Self")
     }

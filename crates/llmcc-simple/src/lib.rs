@@ -8,8 +8,9 @@
 extern crate llmcc_core;
 
 use llmcc_core::graph_builder::BlockKind;
-use llmcc_core::ir::HirKind;
+use llmcc_core::ir::{HirId, HirKind};
 use llmcc_core::lang_def::{LanguageTraitImpl, ParseNode, ParseTree};
+use llmcc_core::scope::{Scope, ScopeStack};
 use std::any::Any;
 
 // ============================================================================
@@ -171,20 +172,20 @@ impl LanguageTraitImpl for LangSimple {
         Some(Box::new(SimpleParseTree { root }))
     }
 
-    fn collect_symbols_impl<'tcx, T, C>(
-        _unit: &llmcc_core::CompileUnit<'tcx>,
-        _node: &llmcc_core::ir::HirNode<'tcx>,
-        _scopes: &mut T,
-        _namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+    fn collect_symbols_impl<'tcx, C>(
+        unit: llmcc_core::CompileUnit<'tcx>,
+        _node: llmcc_core::ir::HirNode<'tcx>,
+        _scope_stack: ScopeStack<'tcx>,
         _config: &C,
-    ) {
+    ) -> &'tcx Scope<'tcx> {
+        let arena = unit.cc.arena();
+        arena.alloc(Scope::new(HirId(unit.index)))
     }
 
-    fn bind_symbols_impl<'tcx, T, C>(
-        _unit: &llmcc_core::CompileUnit<'tcx>,
-        _node: &llmcc_core::ir::HirNode<'tcx>,
-        _scopes: &mut T,
-        _namespace: &'tcx llmcc_core::scope::Scope<'tcx>,
+    fn bind_symbols_impl<'tcx, C>(
+        _unit: llmcc_core::CompileUnit<'tcx>,
+        _node: llmcc_core::ir::HirNode<'tcx>,
+        _globals: &'tcx Scope<'tcx>,
         _config: &C,
     ) {
     }
