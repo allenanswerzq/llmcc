@@ -4,11 +4,11 @@ use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{SymId, SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
+use crate::RUST_PRIMITIVES;
 use crate::resolve::ExprResolver;
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-use crate::RUST_PRIMITIVES;
 use std::collections::HashMap;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
@@ -26,6 +26,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
+    #[allow(dead_code)]
     fn visit_const_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -208,7 +209,9 @@ impl<'tcx> BinderVisitor<'tcx> {
             return Some(*ty);
         }
         let field_symbol = Self::lookup_field_symbol(unit, canonical, field_name)?;
-        field_symbol.type_of().and_then(|ty_id| unit.opt_get_symbol(ty_id))
+        field_symbol
+            .type_of()
+            .and_then(|ty_id| unit.opt_get_symbol(ty_id))
     }
 
     /// Bind a pattern (simple identifier or struct pattern) to a type
@@ -756,7 +759,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(symbol) = Self::lookup_field_symbol(unit, owner_sym, &name_node.name)
         {
             let (ty, args) = Self::resolve_type_with_args(unit, &type_node, scopes);
-            debug_assert!(ty.is_some(), "no type resolved for field {}", name_node.name);
+            debug_assert!(
+                ty.is_some(),
+                "no type resolved for field {}",
+                name_node.name
+            );
             if let Some(primary) = ty {
                 symbol.set_type_of(primary.id());
                 Self::add_value_dependency(symbol, primary);
@@ -787,8 +794,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 Self::add_owner_dependency(ns, symbol);
             }
 
-            if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value)
-            {
+            if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
                 let (ty, args) = Self::resolve_type_with_args(unit, &value_node, scopes);
                 if let Some(primary) = ty {
                     symbol.add_dependency(primary);

@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirIdent, HirId, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
@@ -447,7 +447,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         );
     }
 
-
     fn visit_impl_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -493,7 +492,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 type_ident.set_symbol(symbol);
                 self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, true);
             }
-
         }
     }
 
@@ -637,10 +635,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         if let Some(sym) =
             self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name)
+            && let Some(owner) = namespace.opt_symbol()
         {
-            if let Some(owner) = namespace.opt_symbol() {
-                owner.add_dependency(sym);
-            }
+            owner.add_dependency(sym);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -808,7 +805,7 @@ pub fn collect_symbols<'tcx>(
     let cc = unit.cc;
     let arena = cc.arena();
     let unit_globals = arena.alloc(Scope::new(HirId(unit.index)));
-    let mut scopes = CollectorScopes::new(cc, unit.index,scope_stack, unit_globals);
+    let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();
     visit.initialize(node, &mut scopes);

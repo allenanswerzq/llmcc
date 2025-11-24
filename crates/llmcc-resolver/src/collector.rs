@@ -1,11 +1,11 @@
 //! Symbol collection for parallel per-unit symbol table building.
+use llmcc_core::LanguageTrait;
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
-use llmcc_core::LanguageTrait;
 
 use rayon::prelude::*;
 
