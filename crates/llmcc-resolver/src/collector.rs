@@ -246,8 +246,66 @@ impl<'a> CollectorScopes<'a> {
         unit_filters: Option<Vec<usize>>,
         fqn_filters: Option<Vec<&str>>,
     ) -> Option<&'a Symbol> {
-        self.scopes
-            .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
+        let name_key = self.interner.intern(name);
+        let fqn_keys = fqn_filters
+            .as_ref()
+            .map(|filters| filters.iter().map(|fqn| self.interner.intern(fqn)).collect::<Vec<_>>());
+        let kind_filters_ref = kind_filters.as_ref();
+        let unit_filters_ref = unit_filters.as_ref();
+        let fqn_keys_ref = fqn_keys.as_ref();
+
+        for scope in self.scopes.iter().into_iter().rev() {
+            let Some(symbols) = scope.lookup_symbols(name_key) else {
+                continue;
+            };
+
+            for symbol in symbols.into_iter().rev() {
+                if let Some(filters) = kind_filters_ref
+                    && !filters.iter().any(|kind| symbol.kind() == *kind)
+                {
+                    continue;
+                }
+
+                if let Some(filters) = unit_filters_ref
+                    && !filters.iter().any(|unit| symbol.unit_index() == Some(*unit))
+                {
+                    continue;
+                }
+
+                if let Some(filters) = fqn_keys_ref
+                    && !filters.iter().any(|fqn| symbol.fqn() == *fqn)
+                {
+                    continue;
+                }
+
+                return Some(symbol);
+            }
+        }
+
+        let symbols = self.globals.lookup_symbols(name_key)?;
+        for symbol in symbols.into_iter().rev() {
+            if let Some(filters) = kind_filters_ref
+                && !filters.iter().any(|kind| symbol.kind() == *kind)
+            {
+                continue;
+            }
+
+            if let Some(filters) = unit_filters_ref
+                && !filters.iter().any(|unit| symbol.unit_index() == Some(*unit))
+            {
+                continue;
+            }
+
+            if let Some(filters) = fqn_keys_ref
+                && !filters.iter().any(|fqn| symbol.fqn() == *fqn)
+            {
+                continue;
+            }
+
+            return Some(symbol);
+        }
+
+        None
     }
 }
 
