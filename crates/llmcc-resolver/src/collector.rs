@@ -4,11 +4,10 @@ use llmcc_core::interner::InternPool;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
-use llmcc_core::symbol::{SymId, SymKind, Symbol};
-use llmcc_core::{HirId, LanguageTrait};
+use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::LanguageTrait;
 
 use rayon::prelude::*;
-use std::sync::Arc;
 
 use crate::ResolverOption;
 
@@ -37,19 +36,16 @@ impl<'a> std::fmt::Debug for CollectorScopes<'a> {
 impl<'a> CollectorScopes<'a> {
     /// Create new collector with arena, interner, and global scope
     pub fn new(
+        cc: &'a CompileCtxt<'a>,
         unit_index: usize,
-        arena: &'a Arena<'a>,
-        interner: &'a InternPool,
+        scopes: ScopeStack<'a>,
         globals: &'a Scope<'a>,
     ) -> Self {
-        // Create the scope stack with the borrowed arena
-        let scopes = ScopeStack::new(arena, interner);
         scopes.push(globals);
-
         Self {
-            arena,
+            arena: &cc.arena,
             unit_index,
-            interner,
+            interner: &cc.interner,
             scopes,
             globals,
         }
@@ -267,7 +263,7 @@ fn apply_collected_symbols<'tcx>(
         if scope.id() == unit_globals.id() {
             // For the global scope: merge into the final global scope
             // This combines all global-level symbols into one scope
-            merge_globals_excluding_primitives(cc, final_globals, unit_globals);
+            cc.merge_two_scopes(final_globals, unit_globals);
         } else {
             // For all other scopes: allocate new instances in the global arena
             // while preserving their IDs and symbol relationships
@@ -288,30 +284,21 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolverOption,
 ) -> &'a Scope<'a> {
-    let arena = &cc.arena;
-    let interner = &cc.interner;
-    let globals = cc.create_globals();
-    let primitive_ids = Arc::new(ensure_shared_primitives::<L>(cc, globals));
+    let scope_stack = L::collect_init(cc);
+    let scope_stack_clone = scope_stack.clone();
+    let collect_unit = move |i: usize| {
+        let unit_scope_stack = scope_stack_clone.clone();
+        let unit = cc.compile_unit(i);
+        let node = unit.hir_node(unit.file_root_id().unwrap());
+        let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
 
-    let collect_unit = {
-        let primitive_ids = primitive_ids.clone();
-        move |i: usize| {
-            let unit = cc.compile_unit(i);
-            let unit_globals = arena.alloc(Scope::new(HirId(i)));
-            let node = unit.hir_node(unit.file_root_id().unwrap());
-            seed_unit_primitives(cc, unit_globals, &primitive_ids);
-
-            let mut collector = CollectorScopes::new(i, arena, interner, unit_globals);
-            L::collect_symbols(&unit, &node, &mut collector, unit_globals, config);
-
-            if config.print_ir {
-                use llmcc_core::printer::print_llmcc_ir;
-                println!("=== IR for unit {} ===", i);
-                let _ = print_llmcc_ir(unit);
-            }
-
-            unit_globals
+        if config.print_ir {
+            use llmcc_core::printer::print_llmcc_ir;
+            println!("=== IR for unit {} ===", i);
+            let _ = print_llmcc_ir(unit);
         }
+
+        unit_globals
     };
 
     let unit_globals_vec = if config.sequential {
@@ -323,71 +310,10 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
             .collect::<Vec<_>>()
     };
 
+    let arena = &cc.arena;
+    let globals = scope_stack.first();
     for unit_globals in unit_globals_vec.iter() {
         apply_collected_symbols(cc, arena, globals, unit_globals);
     }
     globals
-}
-
-fn merge_globals_excluding_primitives<'tcx>(
-    cc: &'tcx CompileCtxt<'tcx>,
-    final_globals: &'tcx Scope<'tcx>,
-    unit_globals: &'tcx Scope<'tcx>,
-) {
-    unit_globals.for_each_symbol(|symbol| {
-        if symbol.kind() == SymKind::Primitive {
-            return;
-        }
-        final_globals.insert(symbol);
-        cc.symbol_map.write().insert(symbol.id(), symbol);
-    });
-    cc.scope_map.write().insert(unit_globals.id(), final_globals);
-}
-
-fn ensure_shared_primitives<'a, L: LanguageTrait>(
-    cc: &'a CompileCtxt<'a>,
-    globals: &'a Scope<'a>,
-) -> Vec<SymId> {
-    let mut ids = Vec::new();
-    for name in L::primitive_symbols() {
-        if let Some(symbol) = ensure_shared_primitive(cc, globals, name) {
-            ids.push(symbol.id());
-        }
-    }
-    ids
-}
-
-fn ensure_shared_primitive<'a>(
-    cc: &'a CompileCtxt<'a>,
-    globals: &'a Scope<'a>,
-    name: &str,
-) -> Option<&'a Symbol> {
-    let name_key = cc.interner.intern(name);
-    if let Some(existing) = globals.lookup_symbols(name_key).and_then(|v| v.last().copied()) {
-        return Some(existing);
-    }
-
-    let symbol = cc
-        .arena
-        .alloc(Symbol::new(CompileCtxt::GLOBAL_SCOPE_OWNER, name_key));
-    symbol.set_kind(SymKind::Primitive);
-    symbol.set_scope(globals.id());
-    symbol.set_is_global(true);
-    symbol.set_fqn(name_key);
-
-    globals.insert(symbol);
-    cc.symbol_map.write().insert(symbol.id(), symbol);
-    Some(symbol)
-}
-
-fn seed_unit_primitives<'a>(
-    cc: &'a CompileCtxt<'a>,
-    unit_globals: &'a Scope<'a>,
-    primitive_ids: &Arc<Vec<SymId>>,
-) {
-    for sym_id in primitive_ids.iter() {
-        if let Some(symbol) = cc.opt_get_symbol(*sym_id) {
-            unit_globals.insert(symbol);
-        }
-    }
 }

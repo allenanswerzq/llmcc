@@ -108,18 +108,36 @@ u0:20 | Crate     | crate  | _c::crate            |
 u0:21 | Module    | _m     | _c::_m               |         
 u0:22 | File      | foo    | _c::_m::foo          |         
 u0:23 | Struct    | Foo    | _c::_m::foo::Foo     |         
-u1:24 | Crate     | _c     | _c                   | [global]
-u1:25 | Crate     | crate  | _c::crate            |         
-u1:26 | Module    | _m     | _c::_m               |         
-u1:27 | File      | main   | _c::_m::main         |         
-u1:28 | Struct    | Bar    | _c::_m::main::Bar    |         
-u1:29 | Field     | a      | _c::_m::main::Bar::a |         
-u1:30 | Field     | b      | _c::_m::main::Bar::b |         
+u1:24 | Primitive | i32    | i32                  | [global]
+u1:25 | Primitive | i64    | i64                  | [global]
+u1:26 | Primitive | i16    | i16                  | [global]
+u1:27 | Primitive | i8     | i8                   | [global]
+u1:28 | Primitive | i128   | i128                 | [global]
+u1:29 | Primitive | isize  | isize                | [global]
+u1:30 | Primitive | u32    | u32                  | [global]
+u1:31 | Primitive | u64    | u64                  | [global]
+u1:32 | Primitive | u16    | u16                  | [global]
+u1:33 | Primitive | u8     | u8                   | [global]
+u1:34 | Primitive | u128   | u128                 | [global]
+u1:35 | Primitive | usize  | usize                | [global]
+u1:36 | Primitive | f32    | f32                  | [global]
+u1:37 | Primitive | f64    | f64                  | [global]
+u1:38 | Primitive | bool   | bool                 | [global]
+u1:39 | Primitive | char   | char                 | [global]
+u1:40 | Primitive | str    | str                  | [global]
+u1:41 | Primitive | String | String               | [global]
+u1:42 | Crate     | _c     | _c                   | [global]
+u1:43 | Crate     | crate  | _c::crate            |         
+u1:44 | Module    | _m     | _c::_m               |         
+u1:45 | File      | main   | _c::_m::main         |         
+u1:46 | Struct    | Bar    | _c::_m::main::Bar    |         
+u1:47 | Field     | a      | _c::_m::main::Bar::a |         
+u1:48 | Field     | b      | _c::_m::main::Bar::b |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u1:28, u1:29]
-u1:28 -> [u0:1]
-u1:29 -> [u0:1]
+u1:24 <- [u1:46, u1:47]
+u1:46 -> [u1:24]
+u1:47 -> [u1:24]
 
 --- expect:blocks ---
 u0:1 | root  | foo    

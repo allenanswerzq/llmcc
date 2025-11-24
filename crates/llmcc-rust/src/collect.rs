@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirIdent, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirIdent, HirId, HirKind, HirNode, HirScope};
 use llmcc_core::next_hir_id;
-use llmcc_core::scope::Scope;
+use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
 use llmcc_resolver::{CollectorScopes, ResolverOption};
 
@@ -9,7 +9,7 @@ use std::collections::HashMap;
 
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-use crate::LangRust;
+use crate::{LangRust, RUST_PRIMITIVES};
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -48,7 +48,11 @@ impl<'tcx> CollectorVisitor<'tcx> {
         })
     }
 
-    fn initialize(&self, _node: &HirNode<'tcx>, _scopes: &mut CollectorScopes<'tcx>) {}
+    fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut CollectorScopes<'tcx>) {
+        for prim in RUST_PRIMITIVES {
+            scopes.lookup_or_insert_global(prim, node, SymKind::Primitive);
+        }
+    }
 
     /// Declare a symbol from a named field in the AST node
     fn declare_symbol_from_field(
@@ -796,15 +800,21 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 }
 
 pub fn collect_symbols<'tcx>(
-    unit: &CompileUnit<'tcx>,
+    unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
-    scopes: &mut CollectorScopes<'tcx>,
-    namespace: &'tcx Scope<'tcx>,
+    scope_stack: ScopeStack<'tcx>,
     _config: &ResolverOption,
-) {
+) -> &'tcx Scope<'tcx> {
+    let cc = unit.cc;
+    let arena = cc.arena();
+    let unit_globals = arena.alloc(Scope::new(HirId(unit.index)));
+    let mut scopes = CollectorScopes::new(cc, unit.index,scope_stack, unit_globals);
+
     let mut visit = CollectorVisitor::new();
-    visit.initialize(node, scopes);
-    visit.visit_node(unit, node, scopes, namespace, None);
+    visit.initialize(node, &mut scopes);
+    visit.visit_node(&unit, node, &mut scopes, unit_globals, None);
+
+    unit_globals
 }
 
 #[cfg(test)]

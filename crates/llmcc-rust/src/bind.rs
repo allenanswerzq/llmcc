@@ -936,13 +936,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 pub fn bind_symbols<'tcx>(
     unit: CompileUnit<'tcx>,
     node: &HirNode<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
     namespace: &'tcx Scope<'tcx>,
     _config: &ResolverOption,
 ) {
+    let mut scopes = BinderScopes::new(unit, namespace);
     let mut visit = BinderVisitor::new();
-    visit.initialize(node, scopes);
-    visit.visit_node(&unit, node, scopes, namespace, None);
+    visit.initialize(node, &mut scopes);
+    visit.visit_node(&unit, node, &mut scopes, namespace, None);
 }
 
 #[cfg(test)]
