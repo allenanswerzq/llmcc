@@ -7,9 +7,9 @@ use llmcc_resolver::{CollectorScopes, ResolverOption};
 
 use std::collections::HashMap;
 
+use crate::LangRust;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
-use crate::{LangRust, RUST_PRIMITIVES};
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -46,12 +46,6 @@ impl<'tcx> CollectorVisitor<'tcx> {
             let child = unit.hir_node(*child_id);
             Self::type_name_from_node(unit, &child)
         })
-    }
-
-    fn initialize(&self, node: &HirNode<'tcx>, scopes: &mut CollectorScopes<'tcx>) {
-        for prim in RUST_PRIMITIVES {
-            scopes.lookup_or_insert_global(prim, node, SymKind::Primitive);
-        }
     }
 
     /// Declare a symbol from a named field in the AST node
@@ -637,7 +631,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name)
             && let Some(owner) = namespace.opt_symbol()
         {
-            owner.add_dependency(sym);
+            owner.add_dependency(sym, None);
         }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -808,7 +802,6 @@ pub fn collect_symbols<'tcx>(
     let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();
-    visit.initialize(node, &mut scopes);
     visit.visit_node(&unit, node, &mut scopes, unit_globals, None);
 
     unit_globals
