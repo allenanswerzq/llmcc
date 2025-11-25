@@ -33,7 +33,10 @@ impl<'tcx> BinderVisitor<'tcx> {
             && let Some(sym) = ident
                 .opt_symbol()
                 .or_else(|| scopes.lookup_symbol(&ident.name))
-            && matches!(sym.kind(), SymKind::Const | SymKind::Static)
+            && matches!(
+                sym.kind(),
+                SymKind::Const | SymKind::Static | SymKind::EnumVariant
+            )
         {
             owner.add_dependency(sym, Some(&[SymKind::TypeParameter]));
         }
@@ -446,7 +449,15 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(sym) = outer_target
             && let Some(ns) = namespace.opt_symbol()
         {
-            ns.add_dependency(sym, Some(&[SymKind::TypeParameter]));
+            // If call target is an EnumVariant, depend on parent enum instead
+            if sym.kind() == SymKind::EnumVariant
+                && let Some(parent_enum_id) = sym.type_of()
+                && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
+            {
+                ns.add_dependency(parent_enum, Some(&[SymKind::TypeParameter]));
+            } else {
+                ns.add_dependency(sym, Some(&[SymKind::TypeParameter]));
+            }
         }
 
         // Add dependencies from outer call target to nested call targets in arguments
@@ -885,7 +896,19 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        // First try the standard const dependency check (for simple name lookups)
         Self::add_const_dependency(unit, scopes, node, namespace);
+
+        // For scoped identifiers like E::V1 or E::V2, resolve the full path
+        // If it's an enum variant, add dependency on the parent enum via type_of
+        if let Some(owner) = namespace.opt_symbol()
+            && let Some(sym) = ExprResolver::new(unit, scopes).resolve_scoped_identifier_type(node, None)
+            && sym.kind() == SymKind::EnumVariant
+            && let Some(parent_enum_id) = sym.type_of()
+            && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
+        {
+            owner.add_dependency(parent_enum, Some(&[SymKind::TypeParameter]));
+        }
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -1330,12 +1353,13 @@ fn run() {
     S::new();
 }
 "#;
+        // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
             &[(
                 "run",
                 SymKind::Function,
-                &["_c::_m::source_0::S", "_c::_m::source_0::S::new"],
+                &["_c::_m::source_0::S::new"],
             )],
         );
     }

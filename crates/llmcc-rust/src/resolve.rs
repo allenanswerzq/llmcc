@@ -143,7 +143,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     pub fn lookup_callable_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
         self.scopes.lookup_symbol_with(
             name,
-            Some(vec![SymKind::Function, SymKind::Macro]),
+            Some(vec![SymKind::Function, SymKind::Macro, SymKind::Closure]),
             None,
             None,
         )

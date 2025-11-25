@@ -28,6 +28,7 @@ pub enum BlockKind {
     Root,
     Func,
     Method,
+    Closure,
     Stmt,
     Call,
     Class,

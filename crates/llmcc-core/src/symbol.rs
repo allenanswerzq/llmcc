@@ -83,6 +83,7 @@ pub enum SymKind {
     Enum,
     Function,
     Method,
+    Closure,
     Macro,
     Variable,
     Field,
@@ -94,6 +95,7 @@ pub enum SymKind {
     Primitive,
     TypeAlias,
     TypeParameter,
+    ConstParameter,
     UnresolvedType,
 }
 

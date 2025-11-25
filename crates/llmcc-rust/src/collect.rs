@@ -749,6 +749,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        // Get the parent enum symbol before creating the variant
+        let parent_enum = parent.or_else(|| namespace.opt_symbol());
+
         self.visit_scoped_named(
             unit,
             node,
@@ -758,6 +761,19 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::EnumVariant,
             LangRust::field_name,
         );
+
+        // Set type_of on the variant to point to the parent enum
+        if let Some(enum_sym) = parent_enum
+            && let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
+            && let Some(variant_sym) = scopes.lookup_symbol_with(
+                &ident.name,
+                Some(vec![SymKind::EnumVariant]),
+                None,
+                None,
+            )
+        {
+            variant_sym.set_type_of(enum_sym.id);
+        }
     }
 
     fn visit_parameter(
@@ -781,6 +797,36 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         }
     }
 
+    fn visit_closure_expression(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        // Create a scope for the closure
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+
+            // Link scope to parent namespace
+            scope.add_parent(namespace);
+
+            scopes.push_scope(scope);
+
+            // Collect closure parameters
+            if let Some(params) = node.child_by_field(*unit, LangRust::field_parameters) {
+                let _ = Self::collect_pattern_identifiers(unit, &params, scopes, SymKind::Variable);
+            }
+
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
     fn visit_let_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -789,11 +835,32 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
-            let _ = Self::collect_pattern_identifiers(unit, &pattern, scopes, SymKind::Variable);
-        }
+        // Check if value is a closure expression to determine symbol kind
+        let is_closure = node
+            .child_by_field(*unit, LangRust::field_value)
+            .map(|v| v.kind_id() == LangRust::closure_expression)
+            .unwrap_or(false);
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        let kind = if is_closure {
+            SymKind::Closure
+        } else {
+            SymKind::Variable
+        };
+
+        // Collect the pattern identifier(s) with appropriate kind
+        let let_syms = if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
+            Self::collect_pattern_identifiers(unit, &pattern, scopes, kind)
+        } else {
+            vec![]
+        };
+
+        // For closures, pass the let symbol as parent so closure scope gets linked
+        // Use first symbol if it's a simple pattern, otherwise use parent
+        if is_closure && !let_syms.is_empty() {
+            self.visit_children(unit, node, scopes, namespace, Some(let_syms[0]));
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
     }
 }
 
@@ -982,13 +1049,14 @@ fn execute() -> Response {
     RequestBuilder::new().set_header("x-header").send()
 }
 "#;
+        // Scoped function calls should only depend on the method, not the struct
+        // Response is still a dependency because it's the return type
         assert_dependencies(
             &[source],
             &[(
                 "execute",
                 SymKind::Function,
                 &[
-                    "_c::_m::source_0::RequestBuilder",
                     "_c::_m::source_0::RequestBuilder::new",
                     "_c::_m::source_0::RequestBuilder::set_header",
                     "_c::_m::source_0::RequestBuilder::send",
@@ -1070,12 +1138,13 @@ fn run() {
     Foo::build();
 }
 "#;
+        // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
             &[(
                 "run",
                 SymKind::Function,
-                &["_c::_m::source_0::Foo", "_c::_m::source_0::Foo::build"],
+                &["_c::_m::source_0::Foo::build"],
             )],
         );
     }
@@ -1097,12 +1166,79 @@ fn run() {
     <Foo as Greeter>::greet();
 }
 "#;
+        // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
             &[(
                 "run",
                 SymKind::Function,
-                &["_c::_m::source_0::Foo", "_c::_m::source_0::Foo::greet"],
+                &["_c::_m::source_0::Foo::greet"],
+            )],
+        );
+    }
+
+    #[test]
+    fn closure_symbol_kind() {
+        let source = r#"
+fn caller() {
+    let add_one = |n: i32| n + 1;
+    let mul = |a, b| a * b;
+    let product = mul(3, 4);
+    let closure_with_block = |x| {
+        let y = x + 1;
+        y * 2
+    };
+}
+"#;
+        with_compiled_unit(&[source], |cc| {
+            // Check that closures are found as Closure kind
+            let add_one_sym = find_symbol_id(cc, "add_one", SymKind::Closure);
+            assert!(add_one_sym.0 > 0, "add_one should be found as Closure");
+
+            let mul_sym = find_symbol_id(cc, "mul", SymKind::Closure);
+            assert!(mul_sym.0 > 0, "mul should be found as Closure");
+
+            let closure_with_block_sym = find_symbol_id(cc, "closure_with_block", SymKind::Closure);
+            assert!(closure_with_block_sym.0 > 0, "closure_with_block should be found as Closure");
+        });
+    }
+
+    #[test]
+    fn closure_dependency() {
+        let source = r#"
+fn apply<F: Fn(i32) -> i32>(f: F, x: i32) -> i32 {
+    f(x)
+}
+
+fn caller() {
+    let add_one = |n: i32| n + 1;
+    let result = apply(add_one, 5);
+
+    let mul = |a, b| a * b;
+    let product = mul(3, 4);
+
+    let closure_with_block = |x| {
+        let y = x + 1;
+        y * 2
+    };
+}
+"#;
+        // caller should depend on:
+        // - apply (function call)
+        // - add_one (closure passed as argument)
+        // - mul (closure called directly)
+        // - closure_with_block (closure defined, referenced)
+        assert_dependencies(
+            &[source],
+            &[(
+                "caller",
+                SymKind::Function,
+                &[
+                    "_c::_m::source_0::apply",
+                    "_c::_m::source_0::caller::add_one",
+                    "_c::_m::source_0::caller::mul",
+                    "_c::_m::source_0::caller::closure_with_block",
+                ],
             )],
         );
     }
