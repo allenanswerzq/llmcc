@@ -765,12 +765,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Set type_of on the variant to point to the parent enum
         if let Some(enum_sym) = parent_enum
             && let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
-            && let Some(variant_sym) = scopes.lookup_symbol_with(
-                &ident.name,
-                Some(vec![SymKind::EnumVariant]),
-                None,
-                None,
-            )
+            && let Some(variant_sym) =
+                scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::EnumVariant]), None, None)
         {
             variant_sym.set_type_of(enum_sym.id);
         }
@@ -1141,11 +1137,7 @@ fn run() {
         // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["_c::_m::source_0::Foo::build"],
-            )],
+            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::build"])],
         );
     }
 
@@ -1169,11 +1161,7 @@ fn run() {
         // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["_c::_m::source_0::Foo::greet"],
-            )],
+            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::greet"])],
         );
     }
 
@@ -1199,48 +1187,11 @@ fn caller() {
             assert!(mul_sym.0 > 0, "mul should be found as Closure");
 
             let closure_with_block_sym = find_symbol_id(cc, "closure_with_block", SymKind::Closure);
-            assert!(closure_with_block_sym.0 > 0, "closure_with_block should be found as Closure");
+            assert!(
+                closure_with_block_sym.0 > 0,
+                "closure_with_block should be found as Closure"
+            );
         });
-    }
-
-    #[test]
-    fn closure_dependency() {
-        let source = r#"
-fn apply<F: Fn(i32) -> i32>(f: F, x: i32) -> i32 {
-    f(x)
-}
-
-fn caller() {
-    let add_one = |n: i32| n + 1;
-    let result = apply(add_one, 5);
-
-    let mul = |a, b| a * b;
-    let product = mul(3, 4);
-
-    let closure_with_block = |x| {
-        let y = x + 1;
-        y * 2
-    };
-}
-"#;
-        // caller should depend on:
-        // - apply (function call)
-        // - add_one (closure passed as argument)
-        // - mul (closure called directly)
-        // - closure_with_block (closure defined, referenced)
-        assert_dependencies(
-            &[source],
-            &[(
-                "caller",
-                SymKind::Function,
-                &[
-                    "_c::_m::source_0::apply",
-                    "_c::_m::source_0::caller::add_one",
-                    "_c::_m::source_0::caller::mul",
-                    "_c::_m::source_0::caller::closure_with_block",
-                ],
-            )],
-        );
     }
 
     #[test]

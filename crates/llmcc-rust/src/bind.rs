@@ -128,7 +128,10 @@ impl<'tcx> BinderVisitor<'tcx> {
                     Self::bind_pattern_to_type(unit, scopes, &subpattern, field_ty, &[]);
                 } else if let Some(sym) = field_ident.opt_symbol() {
                     sym.set_type_of(field_ty.id());
-                    sym.add_dependency(field_ty, Some(&[SymKind::TypeParameter, SymKind::Variable]));
+                    sym.add_dependency(
+                        field_ty,
+                        Some(&[SymKind::TypeParameter, SymKind::Variable]),
+                    );
                 }
                 return;
             }
@@ -152,7 +155,9 @@ impl<'tcx> BinderVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         if node.kind_id() == LangRust::call_expression {
-            if let Some(inner_sym) = ExprResolver::new(unit, scopes).resolve_call_target(node, parent) {
+            if let Some(inner_sym) =
+                ExprResolver::new(unit, scopes).resolve_call_target(node, parent)
+            {
                 outer_target.add_dependency(inner_sym, Some(&[SymKind::TypeParameter]));
             }
         }
@@ -327,12 +332,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                         target_sym.add_dependency(resolved, None);
                         target_sym.set_is_global(resolved.is_global());
                         if let Some(resolved_scope) = resolved.opt_scope()
-                            && let Some(target_scoped) = target_sym.opt_scope() {
-                                // Build parent scope relationship
-                                let target_scope = unit.cc.get_scope(target_scoped);
-                                let resolved_scope = unit.cc.get_scope(resolved_scope);
-                                target_scope.add_parent(resolved_scope);
-                                resolved_scope.add_parent(target_scope);
+                            && let Some(target_scoped) = target_sym.opt_scope()
+                        {
+                            // Build parent scope relationship
+                            let target_scope = unit.cc.get_scope(target_scoped);
+                            let resolved_scope = unit.cc.get_scope(resolved_scope);
+                            target_scope.add_parent(resolved_scope);
+                            resolved_scope.add_parent(target_scope);
                         }
                     }
                 }
@@ -902,7 +908,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // For scoped identifiers like E::V1 or E::V2, resolve the full path
         // If it's an enum variant, add dependency on the parent enum via type_of
         if let Some(owner) = namespace.opt_symbol()
-            && let Some(sym) = ExprResolver::new(unit, scopes).resolve_scoped_identifier_type(node, None)
+            && let Some(sym) =
+                ExprResolver::new(unit, scopes).resolve_scoped_identifier_type(node, None)
             && sym.kind() == SymKind::EnumVariant
             && let Some(parent_enum_id) = sym.type_of()
             && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
@@ -1356,11 +1363,7 @@ fn run() {
         // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["_c::_m::source_0::S::new"],
-            )],
+            &[("run", SymKind::Function, &["_c::_m::source_0::S::new"])],
         );
     }
 

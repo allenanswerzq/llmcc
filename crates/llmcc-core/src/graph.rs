@@ -270,7 +270,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let nodes = self.collect_sorted_compact_nodes(top_k);
 
         if nodes.is_empty() {
-            return "digraph DesignGraph {\n}\n".to_string();
+            return "digraph project {\n}\n".to_string();
         }
 
         let renderer = GraphRenderer::new(&nodes);
