@@ -61,7 +61,7 @@ enum Command {
         #[arg(long)]
         parallel: bool,
         /// Print IR during symbol resolution
-        #[arg(long = "print-ir", default_value = "true")]
+        #[arg(long = "print-ir", default_value = "false")]
         print_ir: bool,
     },
     /// List available cases (optionally filtering by substring)

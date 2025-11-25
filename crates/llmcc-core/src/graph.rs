@@ -357,12 +357,22 @@ impl<'tcx> ProjectGraph<'tcx> {
                     })
                     .or(Some(path.clone()));
 
+                // Get component from the symbol associated with this block's scope
+                let component = block
+                    .opt_node()
+                    .and_then(|node| node.as_scope())
+                    .and_then(|scope_node| scope_node.opt_scope())
+                    .and_then(|scope| scope.opt_symbol())
+                    .and_then(|symbol| symbol.component())
+                    .and_then(|interned| self.cc.interner.resolve_owned(interned))
+                    .unwrap_or_else(|| "unknown".to_string());
+
                 Some(CompactNode {
                     block_id,
                     unit_index: *unit_index,
                     name: display_name,
                     location,
-                    group: "todo".into(),
+                    component,
                 })
             })
             .collect()

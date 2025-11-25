@@ -11,7 +11,7 @@ pub(crate) struct CompactNode {
     pub(crate) unit_index: usize,
     pub(crate) name: String,
     pub(crate) location: Option<String>,
-    pub(crate) group: String,
+    pub(crate) component: String,
 }
 
 pub(crate) struct GraphRenderer<'a> {
@@ -51,17 +51,17 @@ impl<'a> GraphRenderer<'a> {
 }
 
 fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -> String {
-    let mut crate_groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+    let mut component_groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
     for (idx, node) in nodes.iter().enumerate() {
-        crate_groups
-            .entry(node.group.clone())
+        component_groups
+            .entry(node.component.clone())
             .or_default()
             .push(idx);
     }
 
     let mut output = String::from("digraph project {\n");
 
-    for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter_mut().enumerate() {
+    for (subgraph_counter, (crate_path, node_indices)) in component_groups.iter_mut().enumerate() {
         node_indices.sort_by(|&a, &b| {
             let node_a = &nodes[a];
             let node_b = &nodes[b];
