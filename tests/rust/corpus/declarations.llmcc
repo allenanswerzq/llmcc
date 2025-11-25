@@ -1001,9 +1001,8 @@ u0:26 | Variable  | x      | _c::_m::main::func::x |
 u0:27 | Variable  | y      | _c::_m::main::func::y |
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:25]
 u0:24 <- [u0:25, u0:26]
-u0:25 -> [u0:23, u0:24]
+u0:25 -> [u0:24]
 u0:26 -> [u0:24]
 
 
@@ -1073,15 +1072,14 @@ u0:34 | Variable  | values | _c::_m::main::func::values     |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:24]
-u0:23 <- [u0:26, u0:28, u0:30, u0:34]
+u0:23 <- [u0:26, u0:28, u0:34]
 u0:24 <- [u0:23, u0:30]
 u0:25 -> [u0:26]
 u0:26 -> [u0:23, u0:9]
 u0:26 <- [u0:25, u0:30, u0:32]
 u0:27 -> [u0:9]
 u0:28 -> [u0:23]
-u0:29 <- [u0:30]
-u0:30 -> [u0:23, u0:24, u0:26, u0:29]
+u0:30 -> [u0:24, u0:26]
 u0:32 -> [u0:26]
 u0:33 -> [u0:9]
 u0:34 -> [u0:23]
@@ -3579,13 +3577,13 @@ u0:16 | Primitive     | char   | char                   | [global]
 u0:17 | Primitive     | str    | str                    | [global]
 u0:18 | Primitive     | String | String                 | [global]
 u0:19 | Crate         | _c     | _c                     | [global]
-u0:20 | Crate         | crate  | _c::crate              |         
-u0:21 | Module        | _m     | _c::_m                 |         
-u0:22 | File          | main   | _c::_m::main           |         
-u0:23 | Struct        | D      | _c::_m::main::D        |         
-u0:24 | Function      | foo    | _c::_m::main::foo      |         
-u0:25 | TypeParameter | T      | _c::_m::main::foo::T   |         
-u0:26 | Variable      | val    | _c::_m::main::foo::val |         
+u0:20 | Crate         | crate  | _c::crate              |
+u0:21 | Module        | _m     | _c::_m                 |
+u0:22 | File          | main   | _c::_m::main           |
+u0:23 | Struct        | D      | _c::_m::main::D        |
+u0:24 | Function      | foo    | _c::_m::main::foo      |
+u0:25 | TypeParameter | T      | _c::_m::main::foo::T   |
+u0:26 | Variable      | val    | _c::_m::main::foo::val |
 
 --- expect:symbol-deps ---
 u0:10 <- [u0:24]

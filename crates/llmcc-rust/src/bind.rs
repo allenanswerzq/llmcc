@@ -105,9 +105,9 @@ impl<'tcx> BinderVisitor<'tcx> {
         if let Some(ident) = pattern.as_ident() {
             if let Some(sym) = ident.opt_symbol() {
                 sym.set_type_of(ty.id());
-                sym.add_dependency(ty, Some(&[SymKind::TypeParameter]));
+                sym.add_dependency(ty, Some(&[SymKind::TypeParameter, SymKind::Variable]));
                 for arg in type_args {
-                    sym.add_dependency(arg, Some(&[SymKind::TypeParameter]));
+                    sym.add_dependency(arg, Some(&[SymKind::TypeParameter, SymKind::Variable]));
                 }
             }
             return;
@@ -125,7 +125,7 @@ impl<'tcx> BinderVisitor<'tcx> {
                     Self::bind_pattern_to_type(unit, scopes, &subpattern, field_ty, &[]);
                 } else if let Some(sym) = field_ident.opt_symbol() {
                     sym.set_type_of(field_ty.id());
-                    sym.add_dependency(field_ty, Some(&[SymKind::TypeParameter]));
+                    sym.add_dependency(field_ty, Some(&[SymKind::TypeParameter, SymKind::Variable]));
                 }
                 return;
             }
@@ -138,6 +138,23 @@ impl<'tcx> BinderVisitor<'tcx> {
 
         for child in pattern.children_nodes(unit) {
             Self::bind_pattern_to_type(unit, scopes, &child, ty, &[]);
+        }
+    }
+
+    fn collect_nested_call_deps(
+        unit: &CompileUnit<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        node: &HirNode<'tcx>,
+        outer_target: &'tcx Symbol,
+        parent: Option<&Symbol>,
+    ) {
+        if node.kind_id() == LangRust::call_expression {
+            if let Some(inner_sym) = ExprResolver::new(unit, scopes).resolve_call_target(node, parent) {
+                outer_target.add_dependency(inner_sym, Some(&[SymKind::TypeParameter]));
+            }
+        }
+        for child in node.children_nodes(unit) {
+            Self::collect_nested_call_deps(unit, scopes, &child, outer_target, parent);
         }
     }
 }
@@ -424,10 +441,19 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        if let Some(sym) = ExprResolver::new(unit, scopes).resolve_call_target(node, parent)
+        let outer_target = ExprResolver::new(unit, scopes).resolve_call_target(node, parent);
+
+        if let Some(sym) = outer_target
             && let Some(ns) = namespace.opt_symbol()
         {
             ns.add_dependency(sym, Some(&[SymKind::TypeParameter]));
+        }
+
+        // Add dependencies from outer call target to nested call targets in arguments
+        if let Some(outer_sym) = outer_target
+            && let Some(args_node) = node.child_by_field(*unit, LangRust::field_arguments)
+        {
+            Self::collect_nested_call_deps(unit, scopes, &args_node, outer_sym, parent);
         }
     }
 
@@ -474,8 +500,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     type_sym.add_dependency(arg, Some(&[SymKind::TypeParameter]));
                 }
 
-                for child_id in node.children() {
-                    let child = unit.hir_node(*child_id);
+                for child in node.children_nodes(unit) {
                     if child.kind_id() == LangRust::where_clause
                         || child.kind_id() == LangRust::where_predicate
                     {
@@ -653,8 +678,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             return;
         };
 
-        for child_id in node.children() {
-            let child = unit.hir_node(*child_id);
+        for child in node.children_nodes(unit) {
             if matches!(child.kind(), HirKind::Text | HirKind::Comment) {
                 continue;
             }
@@ -894,10 +918,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             }
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ty, Some(&[SymKind::TypeParameter]));
+                ns.add_dependency(ty, Some(&[SymKind::TypeParameter, SymKind::Variable]));
                 // Also add dependencies on type arguments to the parent
                 for arg_sym in &type_args {
-                    ns.add_dependency(arg_sym, Some(&[SymKind::TypeParameter]));
+                    ns.add_dependency(arg_sym, Some(&[SymKind::TypeParameter, SymKind::Variable]));
                 }
             }
         }
@@ -1123,6 +1147,54 @@ fn run() {
     }
 
     #[test]
+    fn test_type_inference_method_return() {
+        let source = r#"
+struct Foo;
+struct MyStruct;
+impl MyStruct {
+    fn foo(&self) -> Foo { Foo }
+}
+
+fn run() {
+    let m = MyStruct;
+    let x = m.foo();
+}
+"#;
+        assert_symbol_type(&[source], "x", SymKind::Variable, Some("Foo"));
+    }
+
+    #[test]
+    fn test_method_call_return_type_dependency() {
+        let source = r#"
+struct Foo;
+
+struct MyStruct;
+
+impl MyStruct {
+    fn foo(&self) -> Foo {}
+}
+
+fn func() {
+    let mystruct = MyStruct;
+    let x = mystruct.foo();
+}
+"#;
+        // func should depend on MyStruct (used in let statement) and Foo (return type of method)
+        assert_dependencies(
+            &[source],
+            &[(
+                "func",
+                SymKind::Function,
+                &[
+                    "_c::_m::source_0::MyStruct",
+                    "_c::_m::source_0::Foo", // Return type of foo() method
+                    "_c::_m::source_0::MyStruct::foo",
+                ],
+            )],
+        );
+    }
+
+    #[test]
     fn test_type_inference_chain() {
         let source = r#"
 fn run() {
@@ -1158,6 +1230,42 @@ fn run() {
                     "_c::_m::source_0::Foo",
                     "_c::_m::source_0::Greeter::greet", // Should resolve to trait method
                 ],
+            )],
+        );
+    }
+
+    #[test]
+    fn test_call_in_let_simple() {
+        let source = r#"
+fn foo() {}
+fn bar() {
+    let x = foo();
+}
+"#;
+        assert_dependencies(
+            &[source],
+            &[("bar", SymKind::Function, &["_c::_m::source_0::foo"])],
+        );
+    }
+
+    #[test]
+    fn test_call_in_let_method() {
+        let source = r#"
+struct S;
+impl S {
+    fn method(&self) {}
+}
+fn run() {
+    let s = S;
+    let x = s.method();
+}
+"#;
+        assert_dependencies(
+            &[source],
+            &[(
+                "run",
+                SymKind::Function,
+                &["_c::_m::source_0::S", "_c::_m::source_0::S::method"],
             )],
         );
     }

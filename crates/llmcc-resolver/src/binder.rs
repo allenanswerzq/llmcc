@@ -192,6 +192,12 @@ impl<'a> BinderScopes<'a> {
         self.scopes.lookup_symbol(name)
     }
 
+    /// Look up a symbol only in the global scope.
+    /// Used for crate-root paths like ::f or ::g::h.
+    pub fn lookup_global_symbol(&self, name: &str) -> Option<&'a Symbol> {
+        self.scopes.lookup_global_symbol(name)
+    }
+
     pub fn lookup_symbol_with(
         &self,
         name: &str,

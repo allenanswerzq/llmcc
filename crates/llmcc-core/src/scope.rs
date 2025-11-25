@@ -286,6 +286,17 @@ impl<'tcx> ScopeStack<'tcx> {
         })
     }
 
+    /// Look up a symbol only in the global (first) scope.
+    /// Used for crate-root paths like ::f or ::g::h.
+    pub fn lookup_global_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+        let name_key = self.interner.intern(name);
+        let stack = self.stack.read();
+        let global_scope = stack.first()?;
+        global_scope
+            .lookup_symbols(name_key)
+            .and_then(|matches| matches.last().copied())
+    }
+
     pub fn lookup_symbol_with(
         &self,
         name: &str,

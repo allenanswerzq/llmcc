@@ -287,7 +287,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             | BlockKind::Class
             | BlockKind::Enum
             | BlockKind::Const
-            | BlockKind::Impl
+            // | BlockKind::Impl
             // | BlockKind::Field
             // | BlockKind::Call
              => self.build_block(unit, node, parent, false),

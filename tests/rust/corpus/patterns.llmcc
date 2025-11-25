@@ -37,23 +37,22 @@ u0:16 | Primitive   | char   | char                 | [global]
 u0:17 | Primitive   | str    | str                  | [global]
 u0:18 | Primitive   | String | String               | [global]
 u0:19 | Crate       | _c     | _c                   | [global]
-u0:20 | Crate       | crate  | _c::crate            |         
-u0:21 | Module      | _m     | _c::_m               |         
-u0:22 | File        | main   | _c::_m::main         |         
-u0:23 | Enum        | E      | _c::_m::main::E      |         
-u0:24 | EnumVariant | V1     | _c::_m::main::E::V1  |         
-u0:25 | EnumVariant | V2     | _c::_m::main::E::V2  |         
-u0:26 | Function    | foo    | _c::_m::main::foo    |         
-u0:27 | Variable    | x      | _c::_m::main::foo::x |         
+u0:20 | Crate       | crate  | _c::crate            |
+u0:21 | Module      | _m     | _c::_m               |
+u0:22 | File        | main   | _c::_m::main         |
+u0:23 | Enum        | E      | _c::_m::main::E      |
+u0:24 | EnumVariant | V1     | _c::_m::main::E::V1  |
+u0:25 | EnumVariant | V2     | _c::_m::main::E::V2  |
+u0:26 | Function    | foo    | _c::_m::main::foo    |
+u0:27 | Variable    | x      | _c::_m::main::foo::x |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23]
 u0:18 <- [u0:23]
 u0:23 -> [u0:1, u0:18, u0:24, u0:25]
-u0:23 <- [u0:26]
 u0:24 <- [u0:23, u0:26, u0:27]
 u0:25 <- [u0:23]
-u0:26 -> [u0:23, u0:24]
+u0:26 -> [u0:24]
 u0:27 -> [u0:24]
 
 
@@ -89,9 +88,9 @@ u0:16 | Primitive | char   | char         | [global]
 u0:17 | Primitive | str    | str          | [global]
 u0:18 | Primitive | String | String       | [global]
 u0:19 | Crate     | _c     | _c           | [global]
-u0:20 | Crate     | crate  | _c::crate    |         
-u0:21 | Module    | _m     | _c::_m       |         
-u0:22 | File      | main   | _c::_m::main |         
+u0:20 | Crate     | crate  | _c::crate    |
+u0:21 | Module    | _m     | _c::_m       |
+u0:22 | File      | main   | _c::_m::main |
 
 --- expect:symbol-deps ---
 
@@ -131,9 +130,9 @@ u0:16 | Primitive | char   | char         | [global]
 u0:17 | Primitive | str    | str          | [global]
 u0:18 | Primitive | String | String       | [global]
 u0:19 | Crate     | _c     | _c           | [global]
-u0:20 | Crate     | crate  | _c::crate    |         
-u0:21 | Module    | _m     | _c::_m       |         
-u0:22 | File      | main   | _c::_m::main |         
+u0:20 | Crate     | crate  | _c::crate    |
+u0:21 | Module    | _m     | _c::_m       |
+u0:22 | File      | main   | _c::_m::main |
 
 --- expect:symbol-deps ---
 
@@ -170,9 +169,9 @@ u0:16 | Primitive | char   | char         | [global]
 u0:17 | Primitive | str    | str          | [global]
 u0:18 | Primitive | String | String       | [global]
 u0:19 | Crate     | _c     | _c           | [global]
-u0:20 | Crate     | crate  | _c::crate    |         
-u0:21 | Module    | _m     | _c::_m       |         
-u0:22 | File      | main   | _c::_m::main |         
+u0:20 | Crate     | crate  | _c::crate    |
+u0:21 | Module    | _m     | _c::_m       |
+u0:22 | File      | main   | _c::_m::main |
 
 --- expect:symbol-deps ---
 
@@ -227,7 +226,7 @@ fn func_1() {
   while let A(x) | B(x) = expr {
       do_stuff_with(x);
   }
-  
+
   let slice = Slice::new();
   let f = slice.binary_search(&x);
 
@@ -266,40 +265,32 @@ u0:16 | Primitive | char          | char                                  | [glo
 u0:17 | Primitive | str           | str                                   | [global]
 u0:18 | Primitive | String        | String                                | [global]
 u0:19 | Crate     | _c            | _c                                    | [global]
-u0:20 | Crate     | crate         | _c::crate                             |         
-u0:21 | Module    | _m            | _c::_m                                |         
-u0:22 | File      | main          | _c::_m::main                          |         
-u0:23 | Struct    | Bar           | _c::_m::main::Bar                     |         
-u0:24 | Struct    | Foo           | _c::_m::main::Foo                     |         
-u0:25 | Struct    | Slice         | _c::_m::main::Slice                   |         
-u0:26 | Function  | binary_search | _c::_m::main::Slice::binary_search    |         
-u0:27 | Variable  | x             | _c::_m::main::Slice::binary_search::x |         
-u0:28 | Function  | func_1        | _c::_m::main::func_1                  |         
-u0:29 | Variable  | slice         | _c::_m::main::func_1::slice           |         
-u0:30 | Variable  | f             | _c::_m::main::func_1::f               |         
-u0:31 | Variable  | Ok            | _c::_m::main::func_1::Ok              |         
-u0:32 | Variable  | x             | _c::_m::main::func_1::x               |         
-u0:33 | Variable  | Err           | _c::_m::main::func_1::Err             |         
-u0:34 | Variable  | A             | _c::_m::main::func_1::A               |         
-u0:35 | Variable  | B             | _c::_m::main::func_1::B               |         
-u0:36 | Variable  | C             | _c::_m::main::func_1::C               |         
-u0:37 | Function  | func_2        | _c::_m::main::func_2                  |         
+u0:20 | Crate     | crate         | _c::crate                             |
+u0:21 | Module    | _m            | _c::_m                                |
+u0:22 | File      | main          | _c::_m::main                          |
+u0:23 | Struct    | Bar           | _c::_m::main::Bar                     |
+u0:24 | Struct    | Foo           | _c::_m::main::Foo                     |
+u0:25 | Struct    | Slice         | _c::_m::main::Slice                   |
+u0:26 | Function  | binary_search | _c::_m::main::Slice::binary_search    |
+u0:27 | Variable  | x             | _c::_m::main::Slice::binary_search::x |
+u0:28 | Function  | func_1        | _c::_m::main::func_1                  |
+u0:29 | Variable  | slice         | _c::_m::main::func_1::slice           |
+u0:30 | Variable  | f             | _c::_m::main::func_1::f               |
+u0:31 | Variable  | Ok            | _c::_m::main::func_1::Ok              |
+u0:32 | Variable  | x             | _c::_m::main::func_1::x               |
+u0:33 | Variable  | Err           | _c::_m::main::func_1::Err             |
+u0:34 | Variable  | A             | _c::_m::main::func_1::A               |
+u0:35 | Variable  | B             | _c::_m::main::func_1::B               |
+u0:36 | Variable  | C             | _c::_m::main::func_1::C               |
+u0:37 | Function  | func_2        | _c::_m::main::func_2                  |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:26, u0:27]
 u0:10 <- [u0:37]
-u0:23 <- [u0:28]
 u0:25 -> [u0:26]
-u0:25 <- [u0:28]
 u0:26 -> [u0:1]
 u0:26 <- [u0:25]
 u0:27 -> [u0:1]
-u0:28 -> [u0:23, u0:25, u0:29, u0:32]
-u0:29 <- [u0:28, u0:30]
-u0:30 -> [u0:29]
-u0:31 -> [u0:32]
-u0:32 <- [u0:28, u0:31, u0:33]
-u0:33 -> [u0:32]
 u0:37 -> [u0:10]
 
 
@@ -344,12 +335,12 @@ u0:16 | Primitive | char   | char                    | [global]
 u0:17 | Primitive | str    | str                     | [global]
 u0:18 | Primitive | String | String                  | [global]
 u0:19 | Crate     | _c     | _c                      | [global]
-u0:20 | Crate     | crate  | _c::crate               |         
-u0:21 | Module    | _m     | _c::_m                  |         
-u0:22 | File      | main   | _c::_m::main            |         
-u0:23 | Function  | foo    | _c::_m::main::foo       |         
-u0:24 | Variable  | x      | _c::_m::main::foo::x    |         
-u0:25 | Const     | CUBE   | _c::_m::main::foo::CUBE |         
+u0:20 | Crate     | crate  | _c::crate               |
+u0:21 | Module    | _m     | _c::_m                  |
+u0:22 | File      | main   | _c::_m::main            |
+u0:23 | Function  | foo    | _c::_m::main::foo       |
+u0:24 | Variable  | x      | _c::_m::main::foo::x    |
+u0:25 | Const     | CUBE   | _c::_m::main::foo::CUBE |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:24, u0:25]
@@ -390,8 +381,8 @@ u0:16 | Primitive | char   | char         | [global]
 u0:17 | Primitive | str    | str          | [global]
 u0:18 | Primitive | String | String       | [global]
 u0:19 | Crate     | _c     | _c           | [global]
-u0:20 | Crate     | crate  | _c::crate    |         
-u0:21 | Module    | _m     | _c::_m       |         
-u0:22 | File      | main   | _c::_m::main |         
+u0:20 | Crate     | crate  | _c::crate    |
+u0:21 | Module    | _m     | _c::_m       |
+u0:22 | File      | main   | _c::_m::main |
 
 --- expect:symbol-deps ---

@@ -203,13 +203,23 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     pub fn resolve_scoped_identifier_type(
         &mut self,
         node: &HirNode<'tcx>,
-        caller: Option<&Symbol>,
+        _caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
         let children = node.children_nodes(self.unit);
         let non_trivia: Vec<_> = children
             .iter()
             .filter(|child| !matches!(child.kind(), HirKind::Text | HirKind::Comment))
             .collect();
+
+        // Handle paths starting with :: (crate root reference)
+        // e.g., ::f or ::g::h - the leading :: gets filtered as Text
+        if non_trivia.len() == 1 {
+            let name_node = non_trivia.first()?;
+            let name = self.identifier_name(name_node)?;
+            // This is a crate-root reference like ::f
+            // Look up in global scope
+            return self.scopes.lookup_global_symbol(&name);
+        }
 
         if non_trivia.len() < 2 {
             return None;
@@ -220,18 +230,14 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         let name = self.identifier_name(name_node)?;
 
         let path_symbol = if path_node.kind_id() == LangRust::scoped_identifier {
-            self.resolve_scoped_identifier_type(path_node, caller)?
+            self.resolve_scoped_identifier_type(path_node, None)?
         } else if path_node.kind_id() == LangRust::super_token {
             self.resolve_super_relative_to(None)?
         } else if path_node.kind_id() == LangRust::crate_token {
             self.resolve_crate_root()?
         } else {
             let path_name = self.identifier_name(path_node)?;
-            let sym = self.scopes.lookup_symbol(&path_name)?;
-            if let Some(c) = caller {
-                c.add_dependency(sym, None);
-            }
-            sym
+            self.scopes.lookup_symbol(&path_name)?
         };
 
         if name_node.kind_id() == LangRust::super_token {

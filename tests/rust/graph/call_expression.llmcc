@@ -41,9 +41,8 @@ u0:25 | Function  | function_demo | _c::_m::main::function_demo    |
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:24]
-u0:23 <- [u0:25]
 u0:24 <- [u0:23, u0:25]
-u0:25 -> [u0:23, u0:24]
+u0:25 -> [u0:24]
 
 --- expect:graph ---
 digraph project {
@@ -117,11 +116,10 @@ u0:30 | Variable  | x              | _c::_m::main::qualified_call::x           |
 u0:23 <- [u0:25, u0:27, u0:28, u0:30]
 u0:24 <- [u0:28, u0:29]
 u0:25 -> [u0:23, u0:26, u0:27]
-u0:25 <- [u0:28]
 u0:26 <- [u0:25, u0:28]
 u0:27 -> [u0:23]
 u0:27 <- [u0:25, u0:28]
-u0:28 -> [u0:23, u0:24, u0:25, u0:26, u0:27]
+u0:28 -> [u0:23, u0:24, u0:26, u0:27]
 u0:29 -> [u0:24]
 u0:30 -> [u0:23]
 
@@ -139,11 +137,10 @@ u0:8 | func   | qualified_call
 u0:2 <- [u0:4, u0:7, u0:8]
 u0:3 <- [u0:8]
 u0:4 -> [u0:2, u0:6, u0:7]
-u0:4 <- [u0:8]
 u0:6 <- [u0:4, u0:8]
 u0:7 -> [u0:2]
 u0:7 <- [u0:4, u0:8]
-u0:8 -> [u0:2, u0:3, u0:4, u0:6, u0:7]
+u0:8 -> [u0:2, u0:3, u0:6, u0:7]
 
 --- expect:graph ---
 digraph project {
@@ -151,13 +148,13 @@ digraph project {
     label="todo";
     style=filled;
     color=lightgrey;
-    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:1"];
-    n8 [label="qualified_call", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:13"];
-    n3 [label="Baz", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:2"];
-    n4 [label="SessionBuilder", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:3"];
+    n2 [label="Foo", full_path="/tmp/.tmpWGFOuf/app/src/main.rs:1"];
+    n8 [label="qualified_call", full_path="/tmp/.tmpWGFOuf/app/src/main.rs:13"];
+    n3 [label="Baz", full_path="/tmp/.tmpWGFOuf/app/src/main.rs:2"];
+    n4 [label="SessionBuilder", full_path="/tmp/.tmpWGFOuf/app/src/main.rs:3"];
   }
+  n8 -> n2;
   n8 -> n3;
-  n8 -> n4;
   n4 -> n2;
 }
 
@@ -264,22 +261,13 @@ u0:27 | Function  | chain_invocation_demo | _c::_m::main::chain_invocation_demo 
 
 --- expect:symbol-deps ---
 u0:23 -> [u0:24, u0:25, u0:26]
-u0:23 <- [u0:27]
 u0:24 <- [u0:23, u0:27]
 u0:25 <- [u0:23, u0:27]
 u0:26 <- [u0:23, u0:27]
-u0:27 -> [u0:23, u0:24, u0:25, u0:26]
+u0:27 -> [u0:24, u0:25, u0:26]
 
 --- expect:graph ---
 digraph project {
-  subgraph cluster_0 {
-    label="todo";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Builder", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpbhenZw/app/src/main.rs:1"];
-    n7 [label="chain_invocation_demo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpbhenZw/app/src/main.rs:15"];
-  }
-  n7 -> n2;
 }
 
 
@@ -347,7 +335,6 @@ u0:29 | Variable  | data       | _c::_m::main::expr_chain::data |
 --- expect:symbol-deps ---
 u0:12 <- [u0:27]
 u0:23 -> [u0:24, u0:25]
-u0:23 <- [u0:28]
 u0:24 -> [u0:26, u0:27]
 u0:24 <- [u0:23, u0:25]
 u0:25 -> [u0:24]
@@ -355,7 +342,6 @@ u0:25 <- [u0:23]
 u0:26 <- [u0:24]
 u0:27 -> [u0:12]
 u0:27 <- [u0:24]
-u0:28 -> [u0:23]
 
 --- expect:blocks ---
 u0:1 | root   | main      
@@ -374,12 +360,10 @@ digraph project {
     label="todo";
     style=filled;
     color=lightgrey;
-    n2 [label="Data", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp8f2VDN/app/src/main.rs:1"];
-    n3 [label="Iter", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp8f2VDN/app/src/main.rs:2"];
-    n9 [label="expr_chain", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp8f2VDN/app/src/main.rs:20"];
+    n2 [label="Data", full_path="/tmp/.tmpzpOj1y/app/src/main.rs:1"];
+    n3 [label="Iter", full_path="/tmp/.tmpzpOj1y/app/src/main.rs:2"];
   }
   n2 -> n3;
-  n9 -> n2;
 }
 
 
