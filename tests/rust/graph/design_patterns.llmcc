@@ -1,7 +1,7 @@
 ===============================================================================
 dependency-injection-basic
 ===============================================================================
-
+Tests DI pattern: UserService depends on UserRepository trait, allowing PostgresUserRepo or MockUserRepo.
 
 --- file: src/lib.rs ---
 pub mod repository;
@@ -160,58 +160,58 @@ u0:16 | Primitive     | char              | char                                
 u0:17 | Primitive     | str               | str                                                               | [global]
 u0:18 | Primitive     | String            | String                                                            | [global]
 u0:19 | Crate         | _c                | _c                                                                | [global]
-u0:20 | Crate         | crate             | _c::crate                                                         |         
-u0:21 | Module        | _m                | _c::_m                                                            |         
-u0:22 | File          | di                | _c::_m::di                                                        |         
+u0:20 | Crate         | crate             | _c::crate                                                         |
+u0:21 | Module        | _m                | _c::_m                                                            |
+u0:22 | File          | di                | _c::_m::di                                                        |
 u0:23 | Struct        | Container         | _c::_m::di::Container                                             | [global]
-u0:24 | Field         | user_service      | _c::_m::di::Container::user_service                               |         
+u0:24 | Field         | user_service      | _c::_m::di::Container::user_service                               |
 u0:25 | Function      | new               | _c::_m::di::Container::new                                        | [global]
-u0:26 | Variable      | database_url      | _c::_m::di::Container::new::database_url                          |         
-u0:27 | Variable      | repo              | _c::_m::di::Container::new::repo                                  |         
-u1:28 | Crate         | crate             | _c::crate                                                         |         
-u1:29 | File          | lib               | _c::lib                                                           |         
-u2:30 | Crate         | crate             | _c::crate                                                         |         
-u2:31 | Module        | _m                | _c::_m                                                            |         
-u2:32 | File          | main              | _c::_m::main                                                      |         
-u2:33 | Function      | main              | _c::_m::main::main                                                |         
-u2:34 | Variable      | container         | _c::_m::main::main::container                                     |         
-u3:35 | Crate         | crate             | _c::crate                                                         |         
-u3:36 | Module        | _m                | _c::_m                                                            |         
-u3:37 | File          | repository        | _c::_m::repository                                                |         
+u0:26 | Variable      | database_url      | _c::_m::di::Container::new::database_url                          |
+u0:27 | Variable      | repo              | _c::_m::di::Container::new::repo                                  |
+u1:28 | Crate         | crate             | _c::crate                                                         |
+u1:29 | File          | lib               | _c::lib                                                           |
+u2:30 | Crate         | crate             | _c::crate                                                         |
+u2:31 | Module        | _m                | _c::_m                                                            |
+u2:32 | File          | main              | _c::_m::main                                                      |
+u2:33 | Function      | main              | _c::_m::main::main                                                |
+u2:34 | Variable      | container         | _c::_m::main::main::container                                     |
+u3:35 | Crate         | crate             | _c::crate                                                         |
+u3:36 | Module        | _m                | _c::_m                                                            |
+u3:37 | File          | repository        | _c::_m::repository                                                |
 u3:38 | Trait         | UserRepository    | _c::_m::repository::UserRepository                                | [global]
-u3:39 | Function      | find_by_id        | _c::_m::repository::UserRepository::find_by_id                    |         
-u3:40 | Variable      | id                | _c::_m::repository::UserRepository::find_by_id::id                |         
-u3:41 | Function      | save              | _c::_m::repository::UserRepository::save                          |         
-u3:42 | Variable      | user              | _c::_m::repository::UserRepository::save::user                    |         
+u3:39 | Function      | find_by_id        | _c::_m::repository::UserRepository::find_by_id                    |
+u3:40 | Variable      | id                | _c::_m::repository::UserRepository::find_by_id::id                |
+u3:41 | Function      | save              | _c::_m::repository::UserRepository::save                          |
+u3:42 | Variable      | user              | _c::_m::repository::UserRepository::save::user                    |
 u3:43 | Struct        | User              | _c::_m::repository::User                                          | [global]
-u3:44 | Field         | id                | _c::_m::repository::User::id                                      |         
-u3:45 | Field         | name              | _c::_m::repository::User::name                                    |         
+u3:44 | Field         | id                | _c::_m::repository::User::id                                      |
+u3:45 | Field         | name              | _c::_m::repository::User::name                                    |
 u3:46 | Namespace     | postgres          | _c::_m::repository::postgres                                      | [global]
 u3:47 | Struct        | PostgresUserRepo  | _c::_m::repository::postgres::PostgresUserRepo                    | [global]
-u3:48 | Field         | connection_string | _c::_m::repository::postgres::PostgresUserRepo::connection_string |         
+u3:48 | Field         | connection_string | _c::_m::repository::postgres::PostgresUserRepo::connection_string |
 u3:49 | Function      | new               | _c::_m::repository::postgres::PostgresUserRepo::new               | [global]
-u3:50 | Variable      | conn              | _c::_m::repository::postgres::PostgresUserRepo::new::conn         |         
+u3:50 | Variable      | conn              | _c::_m::repository::postgres::PostgresUserRepo::new::conn         |
 u3:51 | Namespace     | mock              | _c::_m::repository::mock                                          | [global]
 u3:52 | Struct        | MockUserRepo      | _c::_m::repository::mock::MockUserRepo                            | [global]
-u3:53 | Field         | users             | _c::_m::repository::mock::MockUserRepo::users                     |         
-u3:54 | Field         | next_id           | _c::_m::repository::mock::MockUserRepo::next_id                   |         
+u3:53 | Field         | users             | _c::_m::repository::mock::MockUserRepo::users                     |
+u3:54 | Field         | next_id           | _c::_m::repository::mock::MockUserRepo::next_id                   |
 u3:55 | Function      | with_user         | _c::_m::repository::mock::MockUserRepo::with_user                 | [global]
-u3:56 | Variable      | user              | _c::_m::repository::mock::MockUserRepo::with_user::user           |         
-u3:57 | Variable      | id                | _c::_m::repository::UserRepository::save::id                      |         
-u4:58 | Crate         | crate             | _c::crate                                                         |         
-u4:59 | Module        | _m                | _c::_m                                                            |         
-u4:60 | File          | service           | _c::_m::service                                                   |         
+u3:56 | Variable      | user              | _c::_m::repository::mock::MockUserRepo::with_user::user           |
+u3:57 | Variable      | id                | _c::_m::repository::UserRepository::save::id                      |
+u4:58 | Crate         | crate             | _c::crate                                                         |
+u4:59 | Module        | _m                | _c::_m                                                            |
+u4:60 | File          | service           | _c::_m::service                                                   |
 u4:61 | Struct        | UserService       | _c::_m::service::UserService                                      | [global]
-u4:62 | TypeParameter | R                 | _c::_m::service::UserService::R                                   |         
-u4:63 | Field         | repo              | _c::_m::service::UserService::repo                                |         
+u4:62 | TypeParameter | R                 | _c::_m::service::UserService::R                                   |
+u4:63 | Field         | repo              | _c::_m::service::UserService::repo                                |
 u4:64 | Function      | new               | _c::_m::service::UserService::new                                 | [global]
-u4:65 | Variable      | repo              | _c::_m::service::UserService::new::repo                           |         
+u4:65 | Variable      | repo              | _c::_m::service::UserService::new::repo                           |
 u4:66 | Function      | get_user          | _c::_m::service::UserService::get_user                            | [global]
-u4:67 | Variable      | id                | _c::_m::service::UserService::get_user::id                        |         
+u4:67 | Variable      | id                | _c::_m::service::UserService::get_user::id                        |
 u4:68 | Function      | create_user       | _c::_m::service::UserService::create_user                         | [global]
-u4:69 | Variable      | name              | _c::_m::service::UserService::create_user::name                   |         
-u4:70 | Variable      | user              | _c::_m::service::UserService::create_user::user                   |         
-u4:71 | Variable      | id                | _c::_m::service::UserService::create_user::id                     |         
+u4:69 | Variable      | name              | _c::_m::service::UserService::create_user::name                   |
+u4:70 | Variable      | user              | _c::_m::service::UserService::create_user::user                   |
+u4:71 | Variable      | id                | _c::_m::service::UserService::create_user::id                     |
 
 --- expect:symbol-deps ---
 u0:17 <- [u0:25, u0:26, u3:49, u3:50]
@@ -270,7 +270,7 @@ u4:70 -> [u3:43]
 ===============================================================================
 observer-pattern
 ===============================================================================
-
+Tests observer pattern: Subject notifies multiple observers (Logging, Metrics, Filtering) on state change.
 
 --- file: src/lib.rs ---
 pub mod subject;
@@ -406,50 +406,50 @@ u0:16 | Primitive      | char              | char                               
 u0:17 | Primitive      | str               | str                                                   | [global]
 u0:18 | Primitive      | String            | String                                                | [global]
 u0:19 | Crate          | _c                | _c                                                    | [global]
-u0:20 | Crate          | crate             | _c::crate                                             |         
-u0:21 | File           | lib               | _c::lib                                               |         
-u1:22 | Crate          | crate             | _c::crate                                             |         
-u1:23 | Module         | _m                | _c::_m                                                |         
-u1:24 | File           | main              | _c::_m::main                                          |         
-u1:25 | Function       | main              | _c::_m::main::main                                    |         
-u1:26 | Variable       | subject           | _c::_m::main::main::subject                           |         
-u2:27 | Crate          | crate             | _c::crate                                             |         
-u2:28 | Module         | _m                | _c::_m                                                |         
-u2:29 | File           | observers         | _c::_m::observers                                     |         
+u0:20 | Crate          | crate             | _c::crate                                             |
+u0:21 | File           | lib               | _c::lib                                               |
+u1:22 | Crate          | crate             | _c::crate                                             |
+u1:23 | Module         | _m                | _c::_m                                                |
+u1:24 | File           | main              | _c::_m::main                                          |
+u1:25 | Function       | main              | _c::_m::main::main                                    |
+u1:26 | Variable       | subject           | _c::_m::main::main::subject                           |
+u2:27 | Crate          | crate             | _c::crate                                             |
+u2:28 | Module         | _m                | _c::_m                                                |
+u2:29 | File           | observers         | _c::_m::observers                                     |
 u2:30 | Struct         | LoggingObserver   | _c::_m::observers::LoggingObserver                    | [global]
-u2:31 | Field          | prefix            | _c::_m::observers::LoggingObserver::prefix            |         
+u2:31 | Field          | prefix            | _c::_m::observers::LoggingObserver::prefix            |
 u2:32 | Function       | new               | _c::_m::observers::LoggingObserver::new               | [global]
-u2:33 | Variable       | prefix            | _c::_m::observers::LoggingObserver::new::prefix       |         
-u2:34 | UnresolvedType | Observer          | _c::_m::observers::Observer                           |         
-u2:35 | Function       | on_notify         | _c::_m::observers::LoggingObserver::on_notify         |         
-u2:36 | Variable       | event             | _c::_m::observers::LoggingObserver::on_notify::event  |         
-u2:37 | Variable       | data              | _c::_m::observers::LoggingObserver::on_notify::data   |         
+u2:33 | Variable       | prefix            | _c::_m::observers::LoggingObserver::new::prefix       |
+u2:34 | UnresolvedType | Observer          | _c::_m::observers::Observer                           |
+u2:35 | Function       | on_notify         | _c::_m::observers::LoggingObserver::on_notify         |
+u2:36 | Variable       | event             | _c::_m::observers::LoggingObserver::on_notify::event  |
+u2:37 | Variable       | data              | _c::_m::observers::LoggingObserver::on_notify::data   |
 u2:38 | Struct         | MetricsObserver   | _c::_m::observers::MetricsObserver                    | [global]
-u2:39 | Field          | event_count       | _c::_m::observers::MetricsObserver::event_count       |         
+u2:39 | Field          | event_count       | _c::_m::observers::MetricsObserver::event_count       |
 u2:40 | Function       | get_count         | _c::_m::observers::MetricsObserver::get_count         | [global]
-u2:41 | Variable       | _event            | _c::_m::observers::LoggingObserver::on_notify::_event |         
-u2:42 | Variable       | _data             | _c::_m::observers::LoggingObserver::on_notify::_data  |         
+u2:41 | Variable       | _event            | _c::_m::observers::LoggingObserver::on_notify::_event |
+u2:42 | Variable       | _data             | _c::_m::observers::LoggingObserver::on_notify::_data  |
 u2:43 | Struct         | FilteringObserver | _c::_m::observers::FilteringObserver                  | [global]
-u2:44 | Field          | filter            | _c::_m::observers::FilteringObserver::filter          |         
-u2:45 | Variable       | filter            | _c::_m::observers::LoggingObserver::new::filter       |         
-u3:46 | Crate          | crate             | _c::crate                                             |         
-u3:47 | Module         | _m                | _c::_m                                                |         
-u3:48 | File           | subject           | _c::_m::subject                                       |         
+u2:44 | Field          | filter            | _c::_m::observers::FilteringObserver::filter          |
+u2:45 | Variable       | filter            | _c::_m::observers::LoggingObserver::new::filter       |
+u3:46 | Crate          | crate             | _c::crate                                             |
+u3:47 | Module         | _m                | _c::_m                                                |
+u3:48 | File           | subject           | _c::_m::subject                                       |
 u3:49 | Trait          | Observer          | _c::_m::subject::Observer                             | [global]
-u3:50 | Function       | on_notify         | _c::_m::subject::Observer::on_notify                  |         
-u3:51 | Variable       | event             | _c::_m::subject::Observer::on_notify::event           |         
-u3:52 | Variable       | data              | _c::_m::subject::Observer::on_notify::data            |         
+u3:50 | Function       | on_notify         | _c::_m::subject::Observer::on_notify                  |
+u3:51 | Variable       | event             | _c::_m::subject::Observer::on_notify::event           |
+u3:52 | Variable       | data              | _c::_m::subject::Observer::on_notify::data            |
 u3:53 | Struct         | Subject           | _c::_m::subject::Subject                              | [global]
-u3:54 | Field          | observers         | _c::_m::subject::Subject::observers                   |         
-u3:55 | Field          | state             | _c::_m::subject::Subject::state                       |         
+u3:54 | Field          | observers         | _c::_m::subject::Subject::observers                   |
+u3:55 | Field          | state             | _c::_m::subject::Subject::state                       |
 u3:56 | Function       | new               | _c::_m::subject::Subject::new                         | [global]
 u3:57 | Function       | attach            | _c::_m::subject::Subject::attach                      | [global]
-u3:58 | Variable       | observer          | _c::_m::subject::Subject::attach::observer            |         
+u3:58 | Variable       | observer          | _c::_m::subject::Subject::attach::observer            |
 u3:59 | Function       | set_state         | _c::_m::subject::Subject::set_state                   | [global]
-u3:60 | Variable       | state             | _c::_m::subject::Subject::set_state::state            |         
-u3:61 | Function       | notify            | _c::_m::subject::Subject::notify                      |         
-u3:62 | Variable       | event             | _c::_m::subject::Subject::notify::event               |         
-u3:63 | Variable       | data              | _c::_m::subject::Subject::notify::data                |         
+u3:60 | Variable       | state             | _c::_m::subject::Subject::set_state::state            |
+u3:61 | Function       | notify            | _c::_m::subject::Subject::notify                      |
+u3:62 | Variable       | event             | _c::_m::subject::Subject::notify::event               |
+u3:63 | Variable       | data              | _c::_m::subject::Subject::notify::data                |
 
 --- expect:symbol-deps ---
 u0:17 <- [u2:32, u2:33, u2:35, u2:36, u2:37, u2:41, u2:42, u2:45, u3:50, u3:51, u3:52, u3:61, u3:62, u3:63]
@@ -504,7 +504,7 @@ u3:63 -> [u0:17]
 ===============================================================================
 strategy-pattern
 ===============================================================================
-
+Tests strategy pattern: ShoppingCart uses interchangeable PricingStrategy implementations.
 
 --- file: src/lib.rs ---
 pub mod strategy;
@@ -660,51 +660,51 @@ u0:16 | Primitive | char             | char                                     
 u0:17 | Primitive | str              | str                                                      | [global]
 u0:18 | Primitive | String           | String                                                   | [global]
 u0:19 | Crate     | _c               | _c                                                       | [global]
-u0:20 | Crate     | crate            | _c::crate                                                |         
-u0:21 | Module    | _m               | _c::_m                                                   |         
-u0:22 | File      | context          | _c::_m::context                                          |         
+u0:20 | Crate     | crate            | _c::crate                                                |
+u0:21 | Module    | _m               | _c::_m                                                   |
+u0:22 | File      | context          | _c::_m::context                                          |
 u0:23 | Struct    | ShoppingCart     | _c::_m::context::ShoppingCart                            | [global]
-u0:24 | Field     | items            | _c::_m::context::ShoppingCart::items                     |         
-u0:25 | Field     | strategy         | _c::_m::context::ShoppingCart::strategy                  |         
+u0:24 | Field     | items            | _c::_m::context::ShoppingCart::items                     |
+u0:25 | Field     | strategy         | _c::_m::context::ShoppingCart::strategy                  |
 u0:26 | Function  | new              | _c::_m::context::ShoppingCart::new                       | [global]
-u0:27 | Variable  | strategy         | _c::_m::context::ShoppingCart::new::strategy             |         
+u0:27 | Variable  | strategy         | _c::_m::context::ShoppingCart::new::strategy             |
 u0:28 | Function  | add_item         | _c::_m::context::ShoppingCart::add_item                  | [global]
-u0:29 | Variable  | name             | _c::_m::context::ShoppingCart::add_item::name            |         
-u0:30 | Variable  | price            | _c::_m::context::ShoppingCart::add_item::price           |         
-u0:31 | Variable  | quantity         | _c::_m::context::ShoppingCart::add_item::quantity        |         
+u0:29 | Variable  | name             | _c::_m::context::ShoppingCart::add_item::name            |
+u0:30 | Variable  | price            | _c::_m::context::ShoppingCart::add_item::price           |
+u0:31 | Variable  | quantity         | _c::_m::context::ShoppingCart::add_item::quantity        |
 u0:32 | Function  | set_strategy     | _c::_m::context::ShoppingCart::set_strategy              | [global]
-u0:33 | Variable  | strategy         | _c::_m::context::ShoppingCart::set_strategy::strategy    |         
+u0:33 | Variable  | strategy         | _c::_m::context::ShoppingCart::set_strategy::strategy    |
 u0:34 | Function  | calculate_total  | _c::_m::context::ShoppingCart::calculate_total           | [global]
-u0:35 | Variable  | price            | _c::_m::context::ShoppingCart::calculate_total::price    |         
-u0:36 | Variable  | qty              | _c::_m::context::ShoppingCart::calculate_total::qty      |         
+u0:35 | Variable  | price            | _c::_m::context::ShoppingCart::calculate_total::price    |
+u0:36 | Variable  | qty              | _c::_m::context::ShoppingCart::calculate_total::qty      |
 u0:37 | Function  | checkout         | _c::_m::context::ShoppingCart::checkout                  | [global]
-u0:38 | Variable  | subtotal         | _c::_m::context::ShoppingCart::checkout::subtotal        |         
-u1:39 | Crate     | crate            | _c::crate                                                |         
-u1:40 | File      | lib              | _c::lib                                                  |         
-u2:41 | Crate     | crate            | _c::crate                                                |         
-u2:42 | Module    | _m               | _c::_m                                                   |         
-u2:43 | File      | main             | _c::_m::main                                             |         
-u2:44 | Function  | main             | _c::_m::main::main                                       |         
-u2:45 | Variable  | cart             | _c::_m::main::main::cart                                 |         
-u3:46 | Crate     | crate            | _c::crate                                                |         
-u3:47 | Module    | _m               | _c::_m                                                   |         
-u3:48 | File      | strategy         | _c::_m::strategy                                         |         
+u0:38 | Variable  | subtotal         | _c::_m::context::ShoppingCart::checkout::subtotal        |
+u1:39 | Crate     | crate            | _c::crate                                                |
+u1:40 | File      | lib              | _c::lib                                                  |
+u2:41 | Crate     | crate            | _c::crate                                                |
+u2:42 | Module    | _m               | _c::_m                                                   |
+u2:43 | File      | main             | _c::_m::main                                             |
+u2:44 | Function  | main             | _c::_m::main::main                                       |
+u2:45 | Variable  | cart             | _c::_m::main::main::cart                                 |
+u3:46 | Crate     | crate            | _c::crate                                                |
+u3:47 | Module    | _m               | _c::_m                                                   |
+u3:48 | File      | strategy         | _c::_m::strategy                                         |
 u3:49 | Trait     | PricingStrategy  | _c::_m::strategy::PricingStrategy                        | [global]
-u3:50 | Function  | calculate        | _c::_m::strategy::PricingStrategy::calculate             |         
-u3:51 | Variable  | base_price       | _c::_m::strategy::PricingStrategy::calculate::base_price |         
-u3:52 | Variable  | quantity         | _c::_m::strategy::PricingStrategy::calculate::quantity   |         
-u3:53 | Function  | name             | _c::_m::strategy::PricingStrategy::name                  |         
+u3:50 | Function  | calculate        | _c::_m::strategy::PricingStrategy::calculate             |
+u3:51 | Variable  | base_price       | _c::_m::strategy::PricingStrategy::calculate::base_price |
+u3:52 | Variable  | quantity         | _c::_m::strategy::PricingStrategy::calculate::quantity   |
+u3:53 | Function  | name             | _c::_m::strategy::PricingStrategy::name                  |
 u3:54 | Struct    | RegularPricing   | _c::_m::strategy::RegularPricing                         | [global]
 u3:55 | Struct    | BulkDiscount     | _c::_m::strategy::BulkDiscount                           | [global]
-u3:56 | Field     | threshold        | _c::_m::strategy::BulkDiscount::threshold                |         
-u3:57 | Field     | discount_percent | _c::_m::strategy::BulkDiscount::discount_percent         |         
+u3:56 | Field     | threshold        | _c::_m::strategy::BulkDiscount::threshold                |
+u3:57 | Field     | discount_percent | _c::_m::strategy::BulkDiscount::discount_percent         |
 u3:58 | Function  | new              | _c::_m::strategy::BulkDiscount::new                      | [global]
-u3:59 | Variable  | threshold        | _c::_m::strategy::BulkDiscount::new::threshold           |         
-u3:60 | Variable  | discount_percent | _c::_m::strategy::BulkDiscount::new::discount_percent    |         
-u3:61 | Variable  | subtotal         | _c::_m::strategy::PricingStrategy::calculate::subtotal   |         
+u3:59 | Variable  | threshold        | _c::_m::strategy::BulkDiscount::new::threshold           |
+u3:60 | Variable  | discount_percent | _c::_m::strategy::BulkDiscount::new::discount_percent    |
+u3:61 | Variable  | subtotal         | _c::_m::strategy::PricingStrategy::calculate::subtotal   |
 u3:62 | Struct    | SeasonalSale     | _c::_m::strategy::SeasonalSale                           | [global]
-u3:63 | Field     | discount_percent | _c::_m::strategy::SeasonalSale::discount_percent         |         
-u3:64 | Variable  | subtotal         | _c::_m::strategy::PricingStrategy::calculate::subtotal   |         
+u3:63 | Field     | discount_percent | _c::_m::strategy::SeasonalSale::discount_percent         |
+u3:64 | Variable  | subtotal         | _c::_m::strategy::PricingStrategy::calculate::subtotal   |
 
 --- expect:symbol-deps ---
 u0:14 <- [u0:23, u0:28, u0:30, u0:34, u3:50, u3:51, u3:55, u3:57, u3:58, u3:60, u3:61, u3:62, u3:63, u3:64]
@@ -760,7 +760,7 @@ u3:64 -> [u0:14]
 ===============================================================================
 decorator-pattern
 ===============================================================================
-
+Tests decorator pattern: DataSource wrapped with Encryption, Compression, and Logging decorators.
 
 --- file: src/lib.rs ---
 pub mod component;
@@ -957,70 +957,70 @@ u0:16 | Primitive      | char                 | char                            
 u0:17 | Primitive      | str                  | str                                                        | [global]
 u0:18 | Primitive      | String               | String                                                     | [global]
 u0:19 | Crate          | _c                   | _c                                                         | [global]
-u0:20 | Crate          | crate                | _c::crate                                                  |         
-u0:21 | Module         | _m                   | _c::_m                                                     |         
-u0:22 | File           | component            | _c::_m::component                                          |         
+u0:20 | Crate          | crate                | _c::crate                                                  |
+u0:21 | Module         | _m                   | _c::_m                                                     |
+u0:22 | File           | component            | _c::_m::component                                          |
 u0:23 | Trait          | DataSource           | _c::_m::component::DataSource                              | [global]
-u0:24 | Function       | write                | _c::_m::component::DataSource::write                       |         
-u0:25 | Variable       | data                 | _c::_m::component::DataSource::write::data                 |         
-u0:26 | Function       | read                 | _c::_m::component::DataSource::read                        |         
+u0:24 | Function       | write                | _c::_m::component::DataSource::write                       |
+u0:25 | Variable       | data                 | _c::_m::component::DataSource::write::data                 |
+u0:26 | Function       | read                 | _c::_m::component::DataSource::read                        |
 u0:27 | Struct         | FileDataSource       | _c::_m::component::FileDataSource                          | [global]
-u0:28 | Field          | filename             | _c::_m::component::FileDataSource::filename                |         
-u0:29 | Field          | data                 | _c::_m::component::FileDataSource::data                    |         
+u0:28 | Field          | filename             | _c::_m::component::FileDataSource::filename                |
+u0:29 | Field          | data                 | _c::_m::component::FileDataSource::data                    |
 u0:30 | Function       | new                  | _c::_m::component::FileDataSource::new                     | [global]
-u0:31 | Variable       | filename             | _c::_m::component::FileDataSource::new::filename           |         
-u1:32 | Crate          | crate                | _c::crate                                                  |         
-u1:33 | Module         | _m                   | _c::_m                                                     |         
-u1:34 | File           | decorators           | _c::_m::decorators                                         |         
+u0:31 | Variable       | filename             | _c::_m::component::FileDataSource::new::filename           |
+u1:32 | Crate          | crate                | _c::crate                                                  |
+u1:33 | Module         | _m                   | _c::_m                                                     |
+u1:34 | File           | decorators           | _c::_m::decorators                                         |
 u1:35 | Struct         | DataSourceDecorator  | _c::_m::decorators::DataSourceDecorator                    | [global]
-u1:36 | TypeParameter  | D                    | _c::_m::decorators::DataSourceDecorator::D                 |         
-u1:37 | Field          | wrapped              | _c::_m::decorators::DataSourceDecorator::wrapped           |         
+u1:36 | TypeParameter  | D                    | _c::_m::decorators::DataSourceDecorator::D                 |
+u1:37 | Field          | wrapped              | _c::_m::decorators::DataSourceDecorator::wrapped           |
 u1:38 | Function       | new                  | _c::_m::decorators::DataSourceDecorator::new               | [global]
-u1:39 | Variable       | wrapped              | _c::_m::decorators::DataSourceDecorator::new::wrapped      |         
+u1:39 | Variable       | wrapped              | _c::_m::decorators::DataSourceDecorator::new::wrapped      |
 u1:40 | Struct         | EncryptionDecorator  | _c::_m::decorators::EncryptionDecorator                    | [global]
-u1:41 | TypeParameter  | D                    | _c::_m::decorators::EncryptionDecorator::D                 |         
-u1:42 | Field          | wrapped              | _c::_m::decorators::EncryptionDecorator::wrapped           |         
-u1:43 | Field          | key                  | _c::_m::decorators::EncryptionDecorator::key               |         
-u1:44 | Variable       | key                  | _c::_m::decorators::DataSourceDecorator::new::key          |         
-u1:45 | Function       | encrypt              | _c::_m::decorators::EncryptionDecorator::encrypt           |         
-u1:46 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::encrypt::data     |         
-u1:47 | Variable       | b                    | _c::_m::decorators::EncryptionDecorator::encrypt::b        |         
-u1:48 | Function       | decrypt              | _c::_m::decorators::EncryptionDecorator::decrypt           |         
-u1:49 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::decrypt::data     |         
-u1:50 | UnresolvedType | DataSource           | _c::_m::decorators::DataSource                             |         
-u1:51 | Function       | write                | _c::_m::decorators::EncryptionDecorator::write             |         
-u1:52 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::write::data       |         
-u1:53 | Variable       | encrypted            | _c::_m::decorators::EncryptionDecorator::write::encrypted  |         
-u1:54 | Function       | read                 | _c::_m::decorators::EncryptionDecorator::read              |         
-u1:55 | Variable       | encrypted            | _c::_m::decorators::EncryptionDecorator::read::encrypted   |         
+u1:41 | TypeParameter  | D                    | _c::_m::decorators::EncryptionDecorator::D                 |
+u1:42 | Field          | wrapped              | _c::_m::decorators::EncryptionDecorator::wrapped           |
+u1:43 | Field          | key                  | _c::_m::decorators::EncryptionDecorator::key               |
+u1:44 | Variable       | key                  | _c::_m::decorators::DataSourceDecorator::new::key          |
+u1:45 | Function       | encrypt              | _c::_m::decorators::EncryptionDecorator::encrypt           |
+u1:46 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::encrypt::data     |
+u1:47 | Variable       | b                    | _c::_m::decorators::EncryptionDecorator::encrypt::b        |
+u1:48 | Function       | decrypt              | _c::_m::decorators::EncryptionDecorator::decrypt           |
+u1:49 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::decrypt::data     |
+u1:50 | UnresolvedType | DataSource           | _c::_m::decorators::DataSource                             |
+u1:51 | Function       | write                | _c::_m::decorators::EncryptionDecorator::write             |
+u1:52 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::write::data       |
+u1:53 | Variable       | encrypted            | _c::_m::decorators::EncryptionDecorator::write::encrypted  |
+u1:54 | Function       | read                 | _c::_m::decorators::EncryptionDecorator::read              |
+u1:55 | Variable       | encrypted            | _c::_m::decorators::EncryptionDecorator::read::encrypted   |
 u1:56 | Struct         | CompressionDecorator | _c::_m::decorators::CompressionDecorator                   | [global]
-u1:57 | TypeParameter  | D                    | _c::_m::decorators::CompressionDecorator::D                |         
-u1:58 | Field          | wrapped              | _c::_m::decorators::CompressionDecorator::wrapped          |         
-u1:59 | Function       | compress             | _c::_m::decorators::CompressionDecorator::compress         |         
-u1:60 | Variable       | data                 | _c::_m::decorators::CompressionDecorator::compress::data   |         
-u1:61 | Variable       | result               | _c::_m::decorators::CompressionDecorator::compress::result |         
-u1:62 | Function       | decompress           | _c::_m::decorators::CompressionDecorator::decompress       |         
-u1:63 | Variable       | data                 | _c::_m::decorators::CompressionDecorator::decompress::data |         
-u1:64 | Variable       | compressed           | _c::_m::decorators::EncryptionDecorator::write::compressed |         
-u1:65 | Variable       | compressed           | _c::_m::decorators::EncryptionDecorator::read::compressed  |         
+u1:57 | TypeParameter  | D                    | _c::_m::decorators::CompressionDecorator::D                |
+u1:58 | Field          | wrapped              | _c::_m::decorators::CompressionDecorator::wrapped          |
+u1:59 | Function       | compress             | _c::_m::decorators::CompressionDecorator::compress         |
+u1:60 | Variable       | data                 | _c::_m::decorators::CompressionDecorator::compress::data   |
+u1:61 | Variable       | result               | _c::_m::decorators::CompressionDecorator::compress::result |
+u1:62 | Function       | decompress           | _c::_m::decorators::CompressionDecorator::decompress       |
+u1:63 | Variable       | data                 | _c::_m::decorators::CompressionDecorator::decompress::data |
+u1:64 | Variable       | compressed           | _c::_m::decorators::EncryptionDecorator::write::compressed |
+u1:65 | Variable       | compressed           | _c::_m::decorators::EncryptionDecorator::read::compressed  |
 u1:66 | Struct         | LoggingDecorator     | _c::_m::decorators::LoggingDecorator                       | [global]
-u1:67 | TypeParameter  | D                    | _c::_m::decorators::LoggingDecorator::D                    |         
-u1:68 | Field          | wrapped              | _c::_m::decorators::LoggingDecorator::wrapped              |         
-u1:69 | Field          | label                | _c::_m::decorators::LoggingDecorator::label                |         
-u1:70 | Variable       | label                | _c::_m::decorators::DataSourceDecorator::new::label        |         
-u1:71 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::read::data        |         
-u2:72 | Crate          | crate                | _c::crate                                                  |         
-u2:73 | File           | lib                  | _c::lib                                                    |         
-u3:74 | Crate          | crate                | _c::crate                                                  |         
-u3:75 | Module         | _m                   | _c::_m                                                     |         
-u3:76 | File           | main                 | _c::_m::main                                               |         
-u3:77 | Function       | main                 | _c::_m::main::main                                         |         
-u3:78 | Variable       | file                 | _c::_m::main::main::file                                   |         
-u3:79 | Variable       | encrypted            | _c::_m::main::main::encrypted                              |         
-u3:80 | Variable       | compressed           | _c::_m::main::main::compressed                             |         
-u3:81 | Variable       | logged               | _c::_m::main::main::logged                                 |         
-u3:82 | Variable       | data                 | _c::_m::main::main::data                                   |         
-u3:83 | Variable       | read_data            | _c::_m::main::main::read_data                              |         
+u1:67 | TypeParameter  | D                    | _c::_m::decorators::LoggingDecorator::D                    |
+u1:68 | Field          | wrapped              | _c::_m::decorators::LoggingDecorator::wrapped              |
+u1:69 | Field          | label                | _c::_m::decorators::LoggingDecorator::label                |
+u1:70 | Variable       | label                | _c::_m::decorators::DataSourceDecorator::new::label        |
+u1:71 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::read::data        |
+u2:72 | Crate          | crate                | _c::crate                                                  |
+u2:73 | File           | lib                  | _c::lib                                                    |
+u3:74 | Crate          | crate                | _c::crate                                                  |
+u3:75 | Module         | _m                   | _c::_m                                                     |
+u3:76 | File           | main                 | _c::_m::main                                               |
+u3:77 | Function       | main                 | _c::_m::main::main                                         |
+u3:78 | Variable       | file                 | _c::_m::main::main::file                                   |
+u3:79 | Variable       | encrypted            | _c::_m::main::main::encrypted                              |
+u3:80 | Variable       | compressed           | _c::_m::main::main::compressed                             |
+u3:81 | Variable       | logged               | _c::_m::main::main::logged                                 |
+u3:82 | Variable       | data                 | _c::_m::main::main::data                                   |
+u3:83 | Variable       | read_data            | _c::_m::main::main::read_data                              |
 
 --- expect:symbol-deps ---
 u0:1 <- [u1:59, u1:61]
@@ -1085,7 +1085,7 @@ u3:83 -> [u0:27]
 ===============================================================================
 command-pattern
 ===============================================================================
-
+Tests command pattern: Editor executes InsertCommand/DeleteCommand with undo/redo support.
 
 --- file: src/lib.rs ---
 pub mod commands;
@@ -1292,60 +1292,60 @@ u0:16 | Primitive | char          | char                                        
 u0:17 | Primitive | str           | str                                               | [global]
 u0:18 | Primitive | String        | String                                            | [global]
 u0:19 | Crate     | _c            | _c                                                | [global]
-u0:20 | Crate     | crate         | _c::crate                                         |         
-u0:21 | Module    | _m            | _c::_m                                            |         
-u0:22 | File      | commands      | _c::_m::commands                                  |         
+u0:20 | Crate     | crate         | _c::crate                                         |
+u0:21 | Module    | _m            | _c::_m                                            |
+u0:22 | File      | commands      | _c::_m::commands                                  |
 u0:23 | Trait     | Command       | _c::_m::commands::Command                         | [global]
-u0:24 | Function  | execute       | _c::_m::commands::Command::execute                |         
-u0:25 | Variable  | doc           | _c::_m::commands::Command::execute::doc           |         
-u0:26 | Function  | undo          | _c::_m::commands::Command::undo                   |         
-u0:27 | Variable  | doc           | _c::_m::commands::Command::undo::doc              |         
-u0:28 | Function  | describe      | _c::_m::commands::Command::describe               |         
+u0:24 | Function  | execute       | _c::_m::commands::Command::execute                |
+u0:25 | Variable  | doc           | _c::_m::commands::Command::execute::doc           |
+u0:26 | Function  | undo          | _c::_m::commands::Command::undo                   |
+u0:27 | Variable  | doc           | _c::_m::commands::Command::undo::doc              |
+u0:28 | Function  | describe      | _c::_m::commands::Command::describe               |
 u0:29 | Struct    | InsertCommand | _c::_m::commands::InsertCommand                   | [global]
-u0:30 | Field     | text          | _c::_m::commands::InsertCommand::text             |         
-u0:31 | Field     | position      | _c::_m::commands::InsertCommand::position         |         
+u0:30 | Field     | text          | _c::_m::commands::InsertCommand::text             |
+u0:31 | Field     | position      | _c::_m::commands::InsertCommand::position         |
 u0:32 | Function  | new           | _c::_m::commands::InsertCommand::new              | [global]
-u0:33 | Variable  | text          | _c::_m::commands::InsertCommand::new::text        |         
+u0:33 | Variable  | text          | _c::_m::commands::InsertCommand::new::text        |
 u0:34 | Struct    | DeleteCommand | _c::_m::commands::DeleteCommand                   | [global]
-u0:35 | Field     | count         | _c::_m::commands::DeleteCommand::count            |         
-u0:36 | Field     | deleted       | _c::_m::commands::DeleteCommand::deleted          |         
-u0:37 | Field     | position      | _c::_m::commands::DeleteCommand::position         |         
-u0:38 | Variable  | count         | _c::_m::commands::InsertCommand::new::count       |         
-u0:39 | Variable  | start         | _c::_m::commands::Command::execute::start         |         
-u1:40 | Crate     | crate         | _c::crate                                         |         
-u1:41 | Module    | _m            | _c::_m                                            |         
-u1:42 | File      | invoker       | _c::_m::invoker                                   |         
+u0:35 | Field     | count         | _c::_m::commands::DeleteCommand::count            |
+u0:36 | Field     | deleted       | _c::_m::commands::DeleteCommand::deleted          |
+u0:37 | Field     | position      | _c::_m::commands::DeleteCommand::position         |
+u0:38 | Variable  | count         | _c::_m::commands::InsertCommand::new::count       |
+u0:39 | Variable  | start         | _c::_m::commands::Command::execute::start         |
+u1:40 | Crate     | crate         | _c::crate                                         |
+u1:41 | Module    | _m            | _c::_m                                            |
+u1:42 | File      | invoker       | _c::_m::invoker                                   |
 u1:43 | Struct    | Editor        | _c::_m::invoker::Editor                           | [global]
-u1:44 | Field     | document      | _c::_m::invoker::Editor::document                 |         
-u1:45 | Field     | history       | _c::_m::invoker::Editor::history                  |         
-u1:46 | Field     | redo_stack    | _c::_m::invoker::Editor::redo_stack               |         
+u1:44 | Field     | document      | _c::_m::invoker::Editor::document                 |
+u1:45 | Field     | history       | _c::_m::invoker::Editor::history                  |
+u1:46 | Field     | redo_stack    | _c::_m::invoker::Editor::redo_stack               |
 u1:47 | Function  | new           | _c::_m::invoker::Editor::new                      | [global]
 u1:48 | Function  | execute       | _c::_m::invoker::Editor::execute                  | [global]
-u1:49 | Variable  | command       | _c::_m::invoker::Editor::execute::command         |         
+u1:49 | Variable  | command       | _c::_m::invoker::Editor::execute::command         |
 u1:50 | Function  | undo          | _c::_m::invoker::Editor::undo                     | [global]
 u1:51 | Function  | redo          | _c::_m::invoker::Editor::redo                     | [global]
 u1:52 | Function  | get_content   | _c::_m::invoker::Editor::get_content              | [global]
-u2:53 | Crate     | crate         | _c::crate                                         |         
-u2:54 | File      | lib           | _c::lib                                           |         
-u3:55 | Crate     | crate         | _c::crate                                         |         
-u3:56 | Module    | _m            | _c::_m                                            |         
-u3:57 | File      | main          | _c::_m::main                                      |         
-u3:58 | Function  | main          | _c::_m::main::main                                |         
-u3:59 | Variable  | editor        | _c::_m::main::main::editor                        |         
-u4:60 | Crate     | crate         | _c::crate                                         |         
-u4:61 | Module    | _m            | _c::_m                                            |         
-u4:62 | File      | receiver      | _c::_m::receiver                                  |         
+u2:53 | Crate     | crate         | _c::crate                                         |
+u2:54 | File      | lib           | _c::lib                                           |
+u3:55 | Crate     | crate         | _c::crate                                         |
+u3:56 | Module    | _m            | _c::_m                                            |
+u3:57 | File      | main          | _c::_m::main                                      |
+u3:58 | Function  | main          | _c::_m::main::main                                |
+u3:59 | Variable  | editor        | _c::_m::main::main::editor                        |
+u4:60 | Crate     | crate         | _c::crate                                         |
+u4:61 | Module    | _m            | _c::_m                                            |
+u4:62 | File      | receiver      | _c::_m::receiver                                  |
 u4:63 | Struct    | Document      | _c::_m::receiver::Document                        | [global]
-u4:64 | Field     | content       | _c::_m::receiver::Document::content               |         
-u4:65 | Field     | cursor        | _c::_m::receiver::Document::cursor                |         
+u4:64 | Field     | content       | _c::_m::receiver::Document::content               |
+u4:65 | Field     | cursor        | _c::_m::receiver::Document::cursor                |
 u4:66 | Function  | new           | _c::_m::receiver::Document::new                   | [global]
 u4:67 | Function  | insert        | _c::_m::receiver::Document::insert                | [global]
-u4:68 | Variable  | text          | _c::_m::receiver::Document::insert::text          |         
+u4:68 | Variable  | text          | _c::_m::receiver::Document::insert::text          |
 u4:69 | Function  | delete        | _c::_m::receiver::Document::delete                | [global]
-u4:70 | Variable  | count         | _c::_m::receiver::Document::delete::count         |         
-u4:71 | Variable  | start         | _c::_m::receiver::Document::delete::start         |         
+u4:70 | Variable  | count         | _c::_m::receiver::Document::delete::count         |
+u4:71 | Variable  | start         | _c::_m::receiver::Document::delete::start         |
 u4:72 | Function  | move_cursor   | _c::_m::receiver::Document::move_cursor           | [global]
-u4:73 | Variable  | position      | _c::_m::receiver::Document::move_cursor::position |         
+u4:73 | Variable  | position      | _c::_m::receiver::Document::move_cursor::position |
 u4:74 | Function  | get_content   | _c::_m::receiver::Document::get_content           | [global]
 u4:75 | Function  | get_cursor    | _c::_m::receiver::Document::get_cursor            | [global]
 
