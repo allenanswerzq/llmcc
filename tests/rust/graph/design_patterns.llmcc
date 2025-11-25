@@ -1,0 +1,1415 @@
+===============================================================================
+dependency-injection-basic
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod repository;
+pub mod service;
+pub mod di;
+
+--- file: src/repository.rs ---
+pub trait UserRepository {
+    fn find_by_id(&self, id: u64) -> Option<User>;
+    fn save(&mut self, user: User) -> u64;
+}
+
+#[derive(Clone)]
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+// Production implementation
+pub mod postgres {
+    use super::{User, UserRepository};
+
+    pub struct PostgresUserRepo {
+        connection_string: String,
+    }
+
+    impl PostgresUserRepo {
+        pub fn new(conn: &str) -> Self {
+            PostgresUserRepo { connection_string: conn.to_string() }
+        }
+    }
+
+    impl UserRepository for PostgresUserRepo {
+        fn find_by_id(&self, id: u64) -> Option<User> {
+            println!("PostgreSQL query: SELECT * FROM users WHERE id = {}", id);
+            Some(User { id, name: "DB User".to_string() })
+        }
+
+        fn save(&mut self, user: User) -> u64 {
+            println!("PostgreSQL: INSERT INTO users...");
+            user.id
+        }
+    }
+}
+
+// Test double
+pub mod mock {
+    use super::{User, UserRepository};
+    use std::collections::HashMap;
+
+    pub struct MockUserRepo {
+        users: HashMap<u64, User>,
+        next_id: u64,
+    }
+
+    impl MockUserRepo {
+        pub fn new() -> Self {
+            MockUserRepo { users: HashMap::new(), next_id: 1 }
+        }
+
+        pub fn with_user(mut self, user: User) -> Self {
+            self.users.insert(user.id, user);
+            self
+        }
+    }
+
+    impl UserRepository for MockUserRepo {
+        fn find_by_id(&self, id: u64) -> Option<User> {
+            self.users.get(&id).cloned()
+        }
+
+        fn save(&mut self, mut user: User) -> u64 {
+            if user.id == 0 {
+                user.id = self.next_id;
+                self.next_id += 1;
+            }
+            let id = user.id;
+            self.users.insert(id, user);
+            id
+        }
+    }
+}
+
+--- file: src/service.rs ---
+use crate::repository::{User, UserRepository};
+
+pub struct UserService<R: UserRepository> {
+    repo: R,
+}
+
+impl<R: UserRepository> UserService<R> {
+    pub fn new(repo: R) -> Self {
+        UserService { repo }
+    }
+
+    pub fn get_user(&self, id: u64) -> Option<User> {
+        self.repo.find_by_id(id)
+    }
+
+    pub fn create_user(&mut self, name: String) -> User {
+        let user = User { id: 0, name };
+        let id = self.repo.save(user.clone());
+        User { id, ..user }
+    }
+}
+
+--- file: src/di.rs ---
+use crate::repository::{UserRepository, postgres::PostgresUserRepo};
+use crate::service::UserService;
+
+pub struct Container {
+    pub user_service: UserService<PostgresUserRepo>,
+}
+
+impl Container {
+    pub fn new(database_url: &str) -> Self {
+        let repo = PostgresUserRepo::new(database_url);
+        Container {
+            user_service: UserService::new(repo),
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod repository;
+mod service;
+mod di;
+
+use di::Container;
+
+fn main() {
+    let container = Container::new("postgres://localhost/app");
+
+    if let Some(user) = container.user_service.get_user(1) {
+        println!("Found user: {}", user.name);
+    }
+}
+
+--- expect:symbols ---
+u0:1  | Primitive     | i32               | i32                                                               | [global]
+u0:2  | Primitive     | i64               | i64                                                               | [global]
+u0:3  | Primitive     | i16               | i16                                                               | [global]
+u0:4  | Primitive     | i8                | i8                                                                | [global]
+u0:5  | Primitive     | i128              | i128                                                              | [global]
+u0:6  | Primitive     | isize             | isize                                                             | [global]
+u0:7  | Primitive     | u32               | u32                                                               | [global]
+u0:8  | Primitive     | u64               | u64                                                               | [global]
+u0:9  | Primitive     | u16               | u16                                                               | [global]
+u0:10 | Primitive     | u8                | u8                                                                | [global]
+u0:11 | Primitive     | u128              | u128                                                              | [global]
+u0:12 | Primitive     | usize             | usize                                                             | [global]
+u0:13 | Primitive     | f32               | f32                                                               | [global]
+u0:14 | Primitive     | f64               | f64                                                               | [global]
+u0:15 | Primitive     | bool              | bool                                                              | [global]
+u0:16 | Primitive     | char              | char                                                              | [global]
+u0:17 | Primitive     | str               | str                                                               | [global]
+u0:18 | Primitive     | String            | String                                                            | [global]
+u0:19 | Crate         | _c                | _c                                                                | [global]
+u0:20 | Crate         | crate             | _c::crate                                                         |         
+u0:21 | Module        | _m                | _c::_m                                                            |         
+u0:22 | File          | di                | _c::_m::di                                                        |         
+u0:23 | Struct        | Container         | _c::_m::di::Container                                             | [global]
+u0:24 | Field         | user_service      | _c::_m::di::Container::user_service                               |         
+u0:25 | Function      | new               | _c::_m::di::Container::new                                        | [global]
+u0:26 | Variable      | database_url      | _c::_m::di::Container::new::database_url                          |         
+u0:27 | Variable      | repo              | _c::_m::di::Container::new::repo                                  |         
+u1:28 | Crate         | crate             | _c::crate                                                         |         
+u1:29 | File          | lib               | _c::lib                                                           |         
+u2:30 | Crate         | crate             | _c::crate                                                         |         
+u2:31 | Module        | _m                | _c::_m                                                            |         
+u2:32 | File          | main              | _c::_m::main                                                      |         
+u2:33 | Function      | main              | _c::_m::main::main                                                |         
+u2:34 | Variable      | container         | _c::_m::main::main::container                                     |         
+u3:35 | Crate         | crate             | _c::crate                                                         |         
+u3:36 | Module        | _m                | _c::_m                                                            |         
+u3:37 | File          | repository        | _c::_m::repository                                                |         
+u3:38 | Trait         | UserRepository    | _c::_m::repository::UserRepository                                | [global]
+u3:39 | Function      | find_by_id        | _c::_m::repository::UserRepository::find_by_id                    |         
+u3:40 | Variable      | id                | _c::_m::repository::UserRepository::find_by_id::id                |         
+u3:41 | Function      | save              | _c::_m::repository::UserRepository::save                          |         
+u3:42 | Variable      | user              | _c::_m::repository::UserRepository::save::user                    |         
+u3:43 | Struct        | User              | _c::_m::repository::User                                          | [global]
+u3:44 | Field         | id                | _c::_m::repository::User::id                                      |         
+u3:45 | Field         | name              | _c::_m::repository::User::name                                    |         
+u3:46 | Namespace     | postgres          | _c::_m::repository::postgres                                      | [global]
+u3:47 | Struct        | PostgresUserRepo  | _c::_m::repository::postgres::PostgresUserRepo                    | [global]
+u3:48 | Field         | connection_string | _c::_m::repository::postgres::PostgresUserRepo::connection_string |         
+u3:49 | Function      | new               | _c::_m::repository::postgres::PostgresUserRepo::new               | [global]
+u3:50 | Variable      | conn              | _c::_m::repository::postgres::PostgresUserRepo::new::conn         |         
+u3:51 | Namespace     | mock              | _c::_m::repository::mock                                          | [global]
+u3:52 | Struct        | MockUserRepo      | _c::_m::repository::mock::MockUserRepo                            | [global]
+u3:53 | Field         | users             | _c::_m::repository::mock::MockUserRepo::users                     |         
+u3:54 | Field         | next_id           | _c::_m::repository::mock::MockUserRepo::next_id                   |         
+u3:55 | Function      | with_user         | _c::_m::repository::mock::MockUserRepo::with_user                 | [global]
+u3:56 | Variable      | user              | _c::_m::repository::mock::MockUserRepo::with_user::user           |         
+u3:57 | Variable      | id                | _c::_m::repository::UserRepository::save::id                      |         
+u4:58 | Crate         | crate             | _c::crate                                                         |         
+u4:59 | Module        | _m                | _c::_m                                                            |         
+u4:60 | File          | service           | _c::_m::service                                                   |         
+u4:61 | Struct        | UserService       | _c::_m::service::UserService                                      | [global]
+u4:62 | TypeParameter | R                 | _c::_m::service::UserService::R                                   |         
+u4:63 | Field         | repo              | _c::_m::service::UserService::repo                                |         
+u4:64 | Function      | new               | _c::_m::service::UserService::new                                 | [global]
+u4:65 | Variable      | repo              | _c::_m::service::UserService::new::repo                           |         
+u4:66 | Function      | get_user          | _c::_m::service::UserService::get_user                            | [global]
+u4:67 | Variable      | id                | _c::_m::service::UserService::get_user::id                        |         
+u4:68 | Function      | create_user       | _c::_m::service::UserService::create_user                         | [global]
+u4:69 | Variable      | name              | _c::_m::service::UserService::create_user::name                   |         
+u4:70 | Variable      | user              | _c::_m::service::UserService::create_user::user                   |         
+u4:71 | Variable      | id                | _c::_m::service::UserService::create_user::id                     |         
+
+--- expect:symbol-deps ---
+u0:17 <- [u0:25, u0:26, u3:49, u3:50]
+u0:18 <- [u3:43, u3:45, u3:47, u3:48, u4:68, u4:69]
+u0:23 -> [u3:47, u4:61]
+u0:23 <- [u0:25]
+u0:24 -> [u3:47, u4:61]
+u0:25 -> [u0:17, u0:23, u3:49, u4:64]
+u0:25 <- [u2:33, u2:34]
+u0:26 -> [u0:17]
+u0:27 -> [u3:49]
+u0:8 <- [u3:39, u3:40, u3:41, u3:43, u3:44, u3:52, u3:54, u3:57, u4:66, u4:67]
+u2:33 -> [u0:25, u4:66]
+u2:34 -> [u0:25]
+u3:38 -> [u3:39, u3:41]
+u3:38 <- [u3:47, u3:52, u4:61]
+u3:39 -> [u0:8, u3:43]
+u3:39 <- [u3:38, u3:47, u3:52, u4:66]
+u3:40 -> [u0:8]
+u3:41 -> [u0:8, u3:43]
+u3:41 <- [u3:38, u3:47, u3:52, u4:68]
+u3:42 -> [u3:43]
+u3:43 -> [u0:18, u0:8]
+u3:43 <- [u3:39, u3:41, u3:42, u3:52, u3:53, u3:55, u3:56, u4:68, u4:70]
+u3:44 -> [u0:8]
+u3:45 -> [u0:18]
+u3:46 -> [u3:47]
+u3:47 -> [u0:18, u3:38, u3:39, u3:41]
+u3:47 <- [u0:23, u0:24, u3:46, u3:49]
+u3:48 -> [u0:18]
+u3:49 -> [u0:17, u3:47, u3:52]
+u3:49 <- [u0:25, u0:27]
+u3:50 -> [u0:17]
+u3:51 -> [u3:52]
+u3:52 -> [u0:8, u3:38, u3:39, u3:41, u3:43, u3:55]
+u3:52 <- [u3:49, u3:51]
+u3:53 -> [u3:43]
+u3:54 -> [u0:8]
+u3:55 -> [u3:43]
+u3:55 <- [u3:52]
+u3:56 -> [u3:43]
+u3:57 -> [u0:8]
+u4:61 -> [u3:38, u4:66, u4:68]
+u4:61 <- [u0:23, u0:24, u4:64]
+u4:64 -> [u4:61]
+u4:64 <- [u0:25]
+u4:66 -> [u0:8, u3:39]
+u4:66 <- [u2:33, u4:61]
+u4:67 -> [u0:8]
+u4:68 -> [u0:18, u3:41, u3:43]
+u4:68 <- [u4:61]
+u4:69 -> [u0:18]
+u4:70 -> [u3:43]
+
+
+===============================================================================
+observer-pattern
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod subject;
+pub mod observers;
+
+--- file: src/subject.rs ---
+pub trait Observer {
+    fn on_notify(&self, event: &str, data: &str);
+}
+
+pub struct Subject {
+    observers: Vec<Box<dyn Observer>>,
+    state: String,
+}
+
+impl Subject {
+    pub fn new() -> Self {
+        Subject {
+            observers: Vec::new(),
+            state: String::new(),
+        }
+    }
+
+    pub fn attach(&mut self, observer: Box<dyn Observer>) {
+        self.observers.push(observer);
+    }
+
+    pub fn set_state(&mut self, state: String) {
+        self.state = state.clone();
+        self.notify("state_changed", &state);
+    }
+
+    fn notify(&self, event: &str, data: &str) {
+        for observer in &self.observers {
+            observer.on_notify(event, data);
+        }
+    }
+}
+
+--- file: src/observers.rs ---
+use crate::subject::Observer;
+
+pub struct LoggingObserver {
+    prefix: String,
+}
+
+impl LoggingObserver {
+    pub fn new(prefix: &str) -> Self {
+        LoggingObserver { prefix: prefix.to_string() }
+    }
+}
+
+impl Observer for LoggingObserver {
+    fn on_notify(&self, event: &str, data: &str) {
+        println!("[{}] Event: {} - Data: {}", self.prefix, event, data);
+    }
+}
+
+pub struct MetricsObserver {
+    event_count: std::cell::Cell<u64>,
+}
+
+impl MetricsObserver {
+    pub fn new() -> Self {
+        MetricsObserver { event_count: std::cell::Cell::new(0) }
+    }
+
+    pub fn get_count(&self) -> u64 {
+        self.event_count.get()
+    }
+}
+
+impl Observer for MetricsObserver {
+    fn on_notify(&self, _event: &str, _data: &str) {
+        self.event_count.set(self.event_count.get() + 1);
+    }
+}
+
+pub struct FilteringObserver {
+    filter: String,
+}
+
+impl FilteringObserver {
+    pub fn new(filter: &str) -> Self {
+        FilteringObserver { filter: filter.to_string() }
+    }
+}
+
+impl Observer for FilteringObserver {
+    fn on_notify(&self, event: &str, data: &str) {
+        if event.contains(&self.filter) {
+            println!("[FILTERED] {}: {}", event, data);
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod subject;
+mod observers;
+
+use subject::Subject;
+use observers::{LoggingObserver, MetricsObserver, FilteringObserver};
+
+fn main() {
+    let mut subject = Subject::new();
+
+    subject.attach(Box::new(LoggingObserver::new("App")));
+    subject.attach(Box::new(MetricsObserver::new()));
+    subject.attach(Box::new(FilteringObserver::new("state")));
+
+    subject.set_state("initialized".to_string());
+    subject.set_state("running".to_string());
+    subject.set_state("stopped".to_string());
+}
+
+--- expect:symbols ---
+u0:1  | Primitive      | i32               | i32                                                   | [global]
+u0:2  | Primitive      | i64               | i64                                                   | [global]
+u0:3  | Primitive      | i16               | i16                                                   | [global]
+u0:4  | Primitive      | i8                | i8                                                    | [global]
+u0:5  | Primitive      | i128              | i128                                                  | [global]
+u0:6  | Primitive      | isize             | isize                                                 | [global]
+u0:7  | Primitive      | u32               | u32                                                   | [global]
+u0:8  | Primitive      | u64               | u64                                                   | [global]
+u0:9  | Primitive      | u16               | u16                                                   | [global]
+u0:10 | Primitive      | u8                | u8                                                    | [global]
+u0:11 | Primitive      | u128              | u128                                                  | [global]
+u0:12 | Primitive      | usize             | usize                                                 | [global]
+u0:13 | Primitive      | f32               | f32                                                   | [global]
+u0:14 | Primitive      | f64               | f64                                                   | [global]
+u0:15 | Primitive      | bool              | bool                                                  | [global]
+u0:16 | Primitive      | char              | char                                                  | [global]
+u0:17 | Primitive      | str               | str                                                   | [global]
+u0:18 | Primitive      | String            | String                                                | [global]
+u0:19 | Crate          | _c                | _c                                                    | [global]
+u0:20 | Crate          | crate             | _c::crate                                             |         
+u0:21 | File           | lib               | _c::lib                                               |         
+u1:22 | Crate          | crate             | _c::crate                                             |         
+u1:23 | Module         | _m                | _c::_m                                                |         
+u1:24 | File           | main              | _c::_m::main                                          |         
+u1:25 | Function       | main              | _c::_m::main::main                                    |         
+u1:26 | Variable       | subject           | _c::_m::main::main::subject                           |         
+u2:27 | Crate          | crate             | _c::crate                                             |         
+u2:28 | Module         | _m                | _c::_m                                                |         
+u2:29 | File           | observers         | _c::_m::observers                                     |         
+u2:30 | Struct         | LoggingObserver   | _c::_m::observers::LoggingObserver                    | [global]
+u2:31 | Field          | prefix            | _c::_m::observers::LoggingObserver::prefix            |         
+u2:32 | Function       | new               | _c::_m::observers::LoggingObserver::new               | [global]
+u2:33 | Variable       | prefix            | _c::_m::observers::LoggingObserver::new::prefix       |         
+u2:34 | UnresolvedType | Observer          | _c::_m::observers::Observer                           |         
+u2:35 | Function       | on_notify         | _c::_m::observers::LoggingObserver::on_notify         |         
+u2:36 | Variable       | event             | _c::_m::observers::LoggingObserver::on_notify::event  |         
+u2:37 | Variable       | data              | _c::_m::observers::LoggingObserver::on_notify::data   |         
+u2:38 | Struct         | MetricsObserver   | _c::_m::observers::MetricsObserver                    | [global]
+u2:39 | Field          | event_count       | _c::_m::observers::MetricsObserver::event_count       |         
+u2:40 | Function       | get_count         | _c::_m::observers::MetricsObserver::get_count         | [global]
+u2:41 | Variable       | _event            | _c::_m::observers::LoggingObserver::on_notify::_event |         
+u2:42 | Variable       | _data             | _c::_m::observers::LoggingObserver::on_notify::_data  |         
+u2:43 | Struct         | FilteringObserver | _c::_m::observers::FilteringObserver                  | [global]
+u2:44 | Field          | filter            | _c::_m::observers::FilteringObserver::filter          |         
+u2:45 | Variable       | filter            | _c::_m::observers::LoggingObserver::new::filter       |         
+u3:46 | Crate          | crate             | _c::crate                                             |         
+u3:47 | Module         | _m                | _c::_m                                                |         
+u3:48 | File           | subject           | _c::_m::subject                                       |         
+u3:49 | Trait          | Observer          | _c::_m::subject::Observer                             | [global]
+u3:50 | Function       | on_notify         | _c::_m::subject::Observer::on_notify                  |         
+u3:51 | Variable       | event             | _c::_m::subject::Observer::on_notify::event           |         
+u3:52 | Variable       | data              | _c::_m::subject::Observer::on_notify::data            |         
+u3:53 | Struct         | Subject           | _c::_m::subject::Subject                              | [global]
+u3:54 | Field          | observers         | _c::_m::subject::Subject::observers                   |         
+u3:55 | Field          | state             | _c::_m::subject::Subject::state                       |         
+u3:56 | Function       | new               | _c::_m::subject::Subject::new                         | [global]
+u3:57 | Function       | attach            | _c::_m::subject::Subject::attach                      | [global]
+u3:58 | Variable       | observer          | _c::_m::subject::Subject::attach::observer            |         
+u3:59 | Function       | set_state         | _c::_m::subject::Subject::set_state                   | [global]
+u3:60 | Variable       | state             | _c::_m::subject::Subject::set_state::state            |         
+u3:61 | Function       | notify            | _c::_m::subject::Subject::notify                      |         
+u3:62 | Variable       | event             | _c::_m::subject::Subject::notify::event               |         
+u3:63 | Variable       | data              | _c::_m::subject::Subject::notify::data                |         
+
+--- expect:symbol-deps ---
+u0:17 <- [u2:32, u2:33, u2:35, u2:36, u2:37, u2:41, u2:42, u2:45, u3:50, u3:51, u3:52, u3:61, u3:62, u3:63]
+u0:18 <- [u2:30, u2:31, u2:43, u2:44, u3:53, u3:55, u3:59, u3:60]
+u0:8 <- [u2:38, u2:40]
+u1:25 -> [u2:32, u3:56, u3:57, u3:59]
+u1:26 -> [u3:56]
+u2:30 -> [u0:18, u2:35]
+u2:30 <- [u2:32]
+u2:31 -> [u0:18]
+u2:32 -> [u0:17, u2:30, u2:38, u2:43]
+u2:32 <- [u1:25, u3:57]
+u2:33 -> [u0:17]
+u2:35 -> [u0:17]
+u2:35 <- [u2:30, u2:38, u2:43]
+u2:36 -> [u0:17]
+u2:37 -> [u0:17]
+u2:38 -> [u0:8, u2:35, u2:40]
+u2:38 <- [u2:32]
+u2:40 -> [u0:8]
+u2:40 <- [u2:38]
+u2:41 -> [u0:17]
+u2:42 -> [u0:17]
+u2:43 -> [u0:18, u2:35]
+u2:43 <- [u2:32]
+u2:44 -> [u0:18]
+u2:45 -> [u0:17]
+u3:49 -> [u3:50]
+u3:49 <- [u3:53, u3:54, u3:57, u3:58]
+u3:50 -> [u0:17]
+u3:50 <- [u3:49, u3:61]
+u3:51 -> [u0:17]
+u3:52 -> [u0:17]
+u3:53 -> [u0:18, u3:49, u3:57, u3:59, u3:61]
+u3:53 <- [u3:56]
+u3:54 -> [u3:49]
+u3:55 -> [u0:18]
+u3:56 -> [u3:53]
+u3:56 <- [u1:25, u1:26]
+u3:57 -> [u2:32, u3:49]
+u3:57 <- [u1:25, u3:53]
+u3:58 -> [u3:49]
+u3:59 -> [u0:18, u3:61]
+u3:59 <- [u1:25, u3:53]
+u3:60 -> [u0:18]
+u3:61 -> [u0:17, u3:50]
+u3:61 <- [u3:53, u3:59]
+u3:62 -> [u0:17]
+u3:63 -> [u0:17]
+
+
+===============================================================================
+strategy-pattern
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod strategy;
+pub mod context;
+
+--- file: src/strategy.rs ---
+pub trait PricingStrategy {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64;
+    fn name(&self) -> &str;
+}
+
+pub struct RegularPricing;
+
+impl PricingStrategy for RegularPricing {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64 {
+        base_price * quantity as f64
+    }
+
+    fn name(&self) -> &str {
+        "Regular"
+    }
+}
+
+pub struct BulkDiscount {
+    threshold: u32,
+    discount_percent: f64,
+}
+
+impl BulkDiscount {
+    pub fn new(threshold: u32, discount_percent: f64) -> Self {
+        BulkDiscount { threshold, discount_percent }
+    }
+}
+
+impl PricingStrategy for BulkDiscount {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64 {
+        let subtotal = base_price * quantity as f64;
+        if quantity >= self.threshold {
+            subtotal * (1.0 - self.discount_percent / 100.0)
+        } else {
+            subtotal
+        }
+    }
+
+    fn name(&self) -> &str {
+        "Bulk Discount"
+    }
+}
+
+pub struct SeasonalSale {
+    discount_percent: f64,
+}
+
+impl SeasonalSale {
+    pub fn new(discount_percent: f64) -> Self {
+        SeasonalSale { discount_percent }
+    }
+}
+
+impl PricingStrategy for SeasonalSale {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64 {
+        let subtotal = base_price * quantity as f64;
+        subtotal * (1.0 - self.discount_percent / 100.0)
+    }
+
+    fn name(&self) -> &str {
+        "Seasonal Sale"
+    }
+}
+
+--- file: src/context.rs ---
+use crate::strategy::PricingStrategy;
+
+pub struct ShoppingCart {
+    items: Vec<(String, f64, u32)>,  // (name, price, quantity)
+    strategy: Box<dyn PricingStrategy>,
+}
+
+impl ShoppingCart {
+    pub fn new(strategy: Box<dyn PricingStrategy>) -> Self {
+        ShoppingCart {
+            items: Vec::new(),
+            strategy,
+        }
+    }
+
+    pub fn add_item(&mut self, name: &str, price: f64, quantity: u32) {
+        self.items.push((name.to_string(), price, quantity));
+    }
+
+    pub fn set_strategy(&mut self, strategy: Box<dyn PricingStrategy>) {
+        println!("Changed pricing strategy to: {}", strategy.name());
+        self.strategy = strategy;
+    }
+
+    pub fn calculate_total(&self) -> f64 {
+        self.items.iter()
+            .map(|(_, price, qty)| self.strategy.calculate(*price, *qty))
+            .sum()
+    }
+
+    pub fn checkout(&self) {
+        println!("=== Checkout ({}) ===", self.strategy.name());
+        for (name, price, qty) in &self.items {
+            let subtotal = self.strategy.calculate(*price, *qty);
+            println!("  {} x{} @ ${:.2} = ${:.2}", name, qty, price, subtotal);
+        }
+        println!("Total: ${:.2}", self.calculate_total());
+    }
+}
+
+--- file: src/main.rs ---
+mod strategy;
+mod context;
+
+use strategy::{RegularPricing, BulkDiscount, SeasonalSale};
+use context::ShoppingCart;
+
+fn main() {
+    let mut cart = ShoppingCart::new(Box::new(RegularPricing));
+
+    cart.add_item("Widget", 10.00, 5);
+    cart.add_item("Gadget", 25.00, 2);
+
+    cart.checkout();
+
+    // Switch to bulk discount
+    cart.set_strategy(Box::new(BulkDiscount::new(3, 10.0)));
+    cart.checkout();
+
+    // Switch to seasonal sale
+    cart.set_strategy(Box::new(SeasonalSale::new(20.0)));
+    cart.checkout();
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32              | i32                                                      | [global]
+u0:2  | Primitive | i64              | i64                                                      | [global]
+u0:3  | Primitive | i16              | i16                                                      | [global]
+u0:4  | Primitive | i8               | i8                                                       | [global]
+u0:5  | Primitive | i128             | i128                                                     | [global]
+u0:6  | Primitive | isize            | isize                                                    | [global]
+u0:7  | Primitive | u32              | u32                                                      | [global]
+u0:8  | Primitive | u64              | u64                                                      | [global]
+u0:9  | Primitive | u16              | u16                                                      | [global]
+u0:10 | Primitive | u8               | u8                                                       | [global]
+u0:11 | Primitive | u128             | u128                                                     | [global]
+u0:12 | Primitive | usize            | usize                                                    | [global]
+u0:13 | Primitive | f32              | f32                                                      | [global]
+u0:14 | Primitive | f64              | f64                                                      | [global]
+u0:15 | Primitive | bool             | bool                                                     | [global]
+u0:16 | Primitive | char             | char                                                     | [global]
+u0:17 | Primitive | str              | str                                                      | [global]
+u0:18 | Primitive | String           | String                                                   | [global]
+u0:19 | Crate     | _c               | _c                                                       | [global]
+u0:20 | Crate     | crate            | _c::crate                                                |         
+u0:21 | Module    | _m               | _c::_m                                                   |         
+u0:22 | File      | context          | _c::_m::context                                          |         
+u0:23 | Struct    | ShoppingCart     | _c::_m::context::ShoppingCart                            | [global]
+u0:24 | Field     | items            | _c::_m::context::ShoppingCart::items                     |         
+u0:25 | Field     | strategy         | _c::_m::context::ShoppingCart::strategy                  |         
+u0:26 | Function  | new              | _c::_m::context::ShoppingCart::new                       | [global]
+u0:27 | Variable  | strategy         | _c::_m::context::ShoppingCart::new::strategy             |         
+u0:28 | Function  | add_item         | _c::_m::context::ShoppingCart::add_item                  | [global]
+u0:29 | Variable  | name             | _c::_m::context::ShoppingCart::add_item::name            |         
+u0:30 | Variable  | price            | _c::_m::context::ShoppingCart::add_item::price           |         
+u0:31 | Variable  | quantity         | _c::_m::context::ShoppingCart::add_item::quantity        |         
+u0:32 | Function  | set_strategy     | _c::_m::context::ShoppingCart::set_strategy              | [global]
+u0:33 | Variable  | strategy         | _c::_m::context::ShoppingCart::set_strategy::strategy    |         
+u0:34 | Function  | calculate_total  | _c::_m::context::ShoppingCart::calculate_total           | [global]
+u0:35 | Variable  | price            | _c::_m::context::ShoppingCart::calculate_total::price    |         
+u0:36 | Variable  | qty              | _c::_m::context::ShoppingCart::calculate_total::qty      |         
+u0:37 | Function  | checkout         | _c::_m::context::ShoppingCart::checkout                  | [global]
+u0:38 | Variable  | subtotal         | _c::_m::context::ShoppingCart::checkout::subtotal        |         
+u1:39 | Crate     | crate            | _c::crate                                                |         
+u1:40 | File      | lib              | _c::lib                                                  |         
+u2:41 | Crate     | crate            | _c::crate                                                |         
+u2:42 | Module    | _m               | _c::_m                                                   |         
+u2:43 | File      | main             | _c::_m::main                                             |         
+u2:44 | Function  | main             | _c::_m::main::main                                       |         
+u2:45 | Variable  | cart             | _c::_m::main::main::cart                                 |         
+u3:46 | Crate     | crate            | _c::crate                                                |         
+u3:47 | Module    | _m               | _c::_m                                                   |         
+u3:48 | File      | strategy         | _c::_m::strategy                                         |         
+u3:49 | Trait     | PricingStrategy  | _c::_m::strategy::PricingStrategy                        | [global]
+u3:50 | Function  | calculate        | _c::_m::strategy::PricingStrategy::calculate             |         
+u3:51 | Variable  | base_price       | _c::_m::strategy::PricingStrategy::calculate::base_price |         
+u3:52 | Variable  | quantity         | _c::_m::strategy::PricingStrategy::calculate::quantity   |         
+u3:53 | Function  | name             | _c::_m::strategy::PricingStrategy::name                  |         
+u3:54 | Struct    | RegularPricing   | _c::_m::strategy::RegularPricing                         | [global]
+u3:55 | Struct    | BulkDiscount     | _c::_m::strategy::BulkDiscount                           | [global]
+u3:56 | Field     | threshold        | _c::_m::strategy::BulkDiscount::threshold                |         
+u3:57 | Field     | discount_percent | _c::_m::strategy::BulkDiscount::discount_percent         |         
+u3:58 | Function  | new              | _c::_m::strategy::BulkDiscount::new                      | [global]
+u3:59 | Variable  | threshold        | _c::_m::strategy::BulkDiscount::new::threshold           |         
+u3:60 | Variable  | discount_percent | _c::_m::strategy::BulkDiscount::new::discount_percent    |         
+u3:61 | Variable  | subtotal         | _c::_m::strategy::PricingStrategy::calculate::subtotal   |         
+u3:62 | Struct    | SeasonalSale     | _c::_m::strategy::SeasonalSale                           | [global]
+u3:63 | Field     | discount_percent | _c::_m::strategy::SeasonalSale::discount_percent         |         
+u3:64 | Variable  | subtotal         | _c::_m::strategy::PricingStrategy::calculate::subtotal   |         
+
+--- expect:symbol-deps ---
+u0:14 <- [u0:23, u0:28, u0:30, u0:34, u3:50, u3:51, u3:55, u3:57, u3:58, u3:60, u3:61, u3:62, u3:63, u3:64]
+u0:17 <- [u0:28, u0:29, u3:53]
+u0:18 <- [u0:23, u0:24]
+u0:23 -> [u0:14, u0:18, u0:28, u0:32, u0:34, u0:37, u0:7, u3:49]
+u0:23 <- [u0:26, u2:44, u2:45]
+u0:24 -> [u0:18]
+u0:25 -> [u3:49]
+u0:26 -> [u0:23, u3:49]
+u0:26 <- [u2:44]
+u0:27 -> [u3:49]
+u0:28 -> [u0:14, u0:17, u0:7]
+u0:28 <- [u0:23, u2:44]
+u0:29 -> [u0:17]
+u0:30 -> [u0:14]
+u0:31 -> [u0:7]
+u0:32 -> [u3:49, u3:58]
+u0:32 <- [u0:23, u2:44]
+u0:33 -> [u3:49]
+u0:34 -> [u0:14, u3:50]
+u0:34 <- [u0:23]
+u0:37 -> [u3:50]
+u0:37 <- [u0:23, u2:44]
+u0:38 -> [u3:50]
+u0:7 <- [u0:23, u0:28, u0:31, u3:50, u3:52, u3:55, u3:56, u3:58, u3:59]
+u2:44 -> [u0:23, u0:26, u0:28, u0:32, u0:37, u3:58]
+u2:45 -> [u0:23]
+u3:49 -> [u3:50, u3:53]
+u3:49 <- [u0:23, u0:25, u0:26, u0:27, u0:32, u0:33, u3:54, u3:55, u3:62]
+u3:50 -> [u0:14, u0:7]
+u3:50 <- [u0:34, u0:37, u0:38, u3:49, u3:54, u3:55, u3:62]
+u3:51 -> [u0:14]
+u3:52 -> [u0:7]
+u3:53 -> [u0:17]
+u3:53 <- [u3:49, u3:54, u3:55, u3:62]
+u3:54 -> [u3:49, u3:50, u3:53]
+u3:55 -> [u0:14, u0:7, u3:49, u3:50, u3:53]
+u3:55 <- [u3:58]
+u3:56 -> [u0:7]
+u3:57 -> [u0:14]
+u3:58 -> [u0:14, u0:7, u3:55, u3:62]
+u3:58 <- [u0:32, u2:44]
+u3:59 -> [u0:7]
+u3:60 -> [u0:14]
+u3:61 -> [u0:14]
+u3:62 -> [u0:14, u3:49, u3:50, u3:53]
+u3:62 <- [u3:58]
+u3:63 -> [u0:14]
+u3:64 -> [u0:14]
+
+
+===============================================================================
+decorator-pattern
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod component;
+pub mod decorators;
+
+--- file: src/component.rs ---
+pub trait DataSource {
+    fn write(&mut self, data: &[u8]);
+    fn read(&self) -> Vec<u8>;
+}
+
+pub struct FileDataSource {
+    filename: String,
+    data: Vec<u8>,
+}
+
+impl FileDataSource {
+    pub fn new(filename: &str) -> Self {
+        FileDataSource {
+            filename: filename.to_string(),
+            data: Vec::new(),
+        }
+    }
+}
+
+impl DataSource for FileDataSource {
+    fn write(&mut self, data: &[u8]) {
+        println!("Writing {} bytes to {}", data.len(), self.filename);
+        self.data = data.to_vec();
+    }
+
+    fn read(&self) -> Vec<u8> {
+        println!("Reading from {}", self.filename);
+        self.data.clone()
+    }
+}
+
+--- file: src/decorators.rs ---
+use crate::component::DataSource;
+
+// Base decorator
+pub struct DataSourceDecorator<D: DataSource> {
+    wrapped: D,
+}
+
+impl<D: DataSource> DataSourceDecorator<D> {
+    pub fn new(wrapped: D) -> Self {
+        DataSourceDecorator { wrapped }
+    }
+}
+
+// Encryption decorator
+pub struct EncryptionDecorator<D: DataSource> {
+    wrapped: D,
+    key: u8,
+}
+
+impl<D: DataSource> EncryptionDecorator<D> {
+    pub fn new(wrapped: D, key: u8) -> Self {
+        EncryptionDecorator { wrapped, key }
+    }
+
+    fn encrypt(&self, data: &[u8]) -> Vec<u8> {
+        data.iter().map(|b| b ^ self.key).collect()
+    }
+
+    fn decrypt(&self, data: &[u8]) -> Vec<u8> {
+        // XOR encryption is symmetric
+        self.encrypt(data)
+    }
+}
+
+impl<D: DataSource> DataSource for EncryptionDecorator<D> {
+    fn write(&mut self, data: &[u8]) {
+        println!("Encrypting data...");
+        let encrypted = self.encrypt(data);
+        self.wrapped.write(&encrypted);
+    }
+
+    fn read(&self) -> Vec<u8> {
+        let encrypted = self.wrapped.read();
+        println!("Decrypting data...");
+        self.decrypt(&encrypted)
+    }
+}
+
+// Compression decorator
+pub struct CompressionDecorator<D: DataSource> {
+    wrapped: D,
+}
+
+impl<D: DataSource> CompressionDecorator<D> {
+    pub fn new(wrapped: D) -> Self {
+        CompressionDecorator { wrapped }
+    }
+
+    fn compress(&self, data: &[u8]) -> Vec<u8> {
+        // Simplified: just add a header
+        let mut result = vec![0xC0, 0x01];  // "Compressed" marker
+        result.extend_from_slice(data);
+        result
+    }
+
+    fn decompress(&self, data: &[u8]) -> Vec<u8> {
+        if data.len() >= 2 && data[0] == 0xC0 && data[1] == 0x01 {
+            data[2..].to_vec()
+        } else {
+            data.to_vec()
+        }
+    }
+}
+
+impl<D: DataSource> DataSource for CompressionDecorator<D> {
+    fn write(&mut self, data: &[u8]) {
+        println!("Compressing data...");
+        let compressed = self.compress(data);
+        self.wrapped.write(&compressed);
+    }
+
+    fn read(&self) -> Vec<u8> {
+        let compressed = self.wrapped.read();
+        println!("Decompressing data...");
+        self.decompress(&compressed)
+    }
+}
+
+// Logging decorator
+pub struct LoggingDecorator<D: DataSource> {
+    wrapped: D,
+    label: String,
+}
+
+impl<D: DataSource> LoggingDecorator<D> {
+    pub fn new(wrapped: D, label: &str) -> Self {
+        LoggingDecorator { wrapped, label: label.to_string() }
+    }
+}
+
+impl<D: DataSource> DataSource for LoggingDecorator<D> {
+    fn write(&mut self, data: &[u8]) {
+        println!("[{}] Writing {} bytes", self.label, data.len());
+        self.wrapped.write(data);
+        println!("[{}] Write complete", self.label);
+    }
+
+    fn read(&self) -> Vec<u8> {
+        println!("[{}] Reading...", self.label);
+        let data = self.wrapped.read();
+        println!("[{}] Read {} bytes", self.label, data.len());
+        data
+    }
+}
+
+--- file: src/main.rs ---
+mod component;
+mod decorators;
+
+use component::{DataSource, FileDataSource};
+use decorators::{EncryptionDecorator, CompressionDecorator, LoggingDecorator};
+
+fn main() {
+    // Create a decorated data source:
+    // Logging -> Compression -> Encryption -> File
+    let file = FileDataSource::new("data.bin");
+    let encrypted = EncryptionDecorator::new(file, 42);
+    let compressed = CompressionDecorator::new(encrypted);
+    let mut logged = LoggingDecorator::new(compressed, "DataPipeline");
+
+    let data = b"Hello, World!";
+    logged.write(data);
+
+    println!("\n--- Reading back ---\n");
+    let read_data = logged.read();
+    println!("\nResult: {:?}", String::from_utf8_lossy(&read_data));
+}
+
+--- expect:symbols ---
+u0:1  | Primitive      | i32                  | i32                                                        | [global]
+u0:2  | Primitive      | i64                  | i64                                                        | [global]
+u0:3  | Primitive      | i16                  | i16                                                        | [global]
+u0:4  | Primitive      | i8                   | i8                                                         | [global]
+u0:5  | Primitive      | i128                 | i128                                                       | [global]
+u0:6  | Primitive      | isize                | isize                                                      | [global]
+u0:7  | Primitive      | u32                  | u32                                                        | [global]
+u0:8  | Primitive      | u64                  | u64                                                        | [global]
+u0:9  | Primitive      | u16                  | u16                                                        | [global]
+u0:10 | Primitive      | u8                   | u8                                                         | [global]
+u0:11 | Primitive      | u128                 | u128                                                       | [global]
+u0:12 | Primitive      | usize                | usize                                                      | [global]
+u0:13 | Primitive      | f32                  | f32                                                        | [global]
+u0:14 | Primitive      | f64                  | f64                                                        | [global]
+u0:15 | Primitive      | bool                 | bool                                                       | [global]
+u0:16 | Primitive      | char                 | char                                                       | [global]
+u0:17 | Primitive      | str                  | str                                                        | [global]
+u0:18 | Primitive      | String               | String                                                     | [global]
+u0:19 | Crate          | _c                   | _c                                                         | [global]
+u0:20 | Crate          | crate                | _c::crate                                                  |         
+u0:21 | Module         | _m                   | _c::_m                                                     |         
+u0:22 | File           | component            | _c::_m::component                                          |         
+u0:23 | Trait          | DataSource           | _c::_m::component::DataSource                              | [global]
+u0:24 | Function       | write                | _c::_m::component::DataSource::write                       |         
+u0:25 | Variable       | data                 | _c::_m::component::DataSource::write::data                 |         
+u0:26 | Function       | read                 | _c::_m::component::DataSource::read                        |         
+u0:27 | Struct         | FileDataSource       | _c::_m::component::FileDataSource                          | [global]
+u0:28 | Field          | filename             | _c::_m::component::FileDataSource::filename                |         
+u0:29 | Field          | data                 | _c::_m::component::FileDataSource::data                    |         
+u0:30 | Function       | new                  | _c::_m::component::FileDataSource::new                     | [global]
+u0:31 | Variable       | filename             | _c::_m::component::FileDataSource::new::filename           |         
+u1:32 | Crate          | crate                | _c::crate                                                  |         
+u1:33 | Module         | _m                   | _c::_m                                                     |         
+u1:34 | File           | decorators           | _c::_m::decorators                                         |         
+u1:35 | Struct         | DataSourceDecorator  | _c::_m::decorators::DataSourceDecorator                    | [global]
+u1:36 | TypeParameter  | D                    | _c::_m::decorators::DataSourceDecorator::D                 |         
+u1:37 | Field          | wrapped              | _c::_m::decorators::DataSourceDecorator::wrapped           |         
+u1:38 | Function       | new                  | _c::_m::decorators::DataSourceDecorator::new               | [global]
+u1:39 | Variable       | wrapped              | _c::_m::decorators::DataSourceDecorator::new::wrapped      |         
+u1:40 | Struct         | EncryptionDecorator  | _c::_m::decorators::EncryptionDecorator                    | [global]
+u1:41 | TypeParameter  | D                    | _c::_m::decorators::EncryptionDecorator::D                 |         
+u1:42 | Field          | wrapped              | _c::_m::decorators::EncryptionDecorator::wrapped           |         
+u1:43 | Field          | key                  | _c::_m::decorators::EncryptionDecorator::key               |         
+u1:44 | Variable       | key                  | _c::_m::decorators::DataSourceDecorator::new::key          |         
+u1:45 | Function       | encrypt              | _c::_m::decorators::EncryptionDecorator::encrypt           |         
+u1:46 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::encrypt::data     |         
+u1:47 | Variable       | b                    | _c::_m::decorators::EncryptionDecorator::encrypt::b        |         
+u1:48 | Function       | decrypt              | _c::_m::decorators::EncryptionDecorator::decrypt           |         
+u1:49 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::decrypt::data     |         
+u1:50 | UnresolvedType | DataSource           | _c::_m::decorators::DataSource                             |         
+u1:51 | Function       | write                | _c::_m::decorators::EncryptionDecorator::write             |         
+u1:52 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::write::data       |         
+u1:53 | Variable       | encrypted            | _c::_m::decorators::EncryptionDecorator::write::encrypted  |         
+u1:54 | Function       | read                 | _c::_m::decorators::EncryptionDecorator::read              |         
+u1:55 | Variable       | encrypted            | _c::_m::decorators::EncryptionDecorator::read::encrypted   |         
+u1:56 | Struct         | CompressionDecorator | _c::_m::decorators::CompressionDecorator                   | [global]
+u1:57 | TypeParameter  | D                    | _c::_m::decorators::CompressionDecorator::D                |         
+u1:58 | Field          | wrapped              | _c::_m::decorators::CompressionDecorator::wrapped          |         
+u1:59 | Function       | compress             | _c::_m::decorators::CompressionDecorator::compress         |         
+u1:60 | Variable       | data                 | _c::_m::decorators::CompressionDecorator::compress::data   |         
+u1:61 | Variable       | result               | _c::_m::decorators::CompressionDecorator::compress::result |         
+u1:62 | Function       | decompress           | _c::_m::decorators::CompressionDecorator::decompress       |         
+u1:63 | Variable       | data                 | _c::_m::decorators::CompressionDecorator::decompress::data |         
+u1:64 | Variable       | compressed           | _c::_m::decorators::EncryptionDecorator::write::compressed |         
+u1:65 | Variable       | compressed           | _c::_m::decorators::EncryptionDecorator::read::compressed  |         
+u1:66 | Struct         | LoggingDecorator     | _c::_m::decorators::LoggingDecorator                       | [global]
+u1:67 | TypeParameter  | D                    | _c::_m::decorators::LoggingDecorator::D                    |         
+u1:68 | Field          | wrapped              | _c::_m::decorators::LoggingDecorator::wrapped              |         
+u1:69 | Field          | label                | _c::_m::decorators::LoggingDecorator::label                |         
+u1:70 | Variable       | label                | _c::_m::decorators::DataSourceDecorator::new::label        |         
+u1:71 | Variable       | data                 | _c::_m::decorators::EncryptionDecorator::read::data        |         
+u2:72 | Crate          | crate                | _c::crate                                                  |         
+u2:73 | File           | lib                  | _c::lib                                                    |         
+u3:74 | Crate          | crate                | _c::crate                                                  |         
+u3:75 | Module         | _m                   | _c::_m                                                     |         
+u3:76 | File           | main                 | _c::_m::main                                               |         
+u3:77 | Function       | main                 | _c::_m::main::main                                         |         
+u3:78 | Variable       | file                 | _c::_m::main::main::file                                   |         
+u3:79 | Variable       | encrypted            | _c::_m::main::main::encrypted                              |         
+u3:80 | Variable       | compressed           | _c::_m::main::main::compressed                             |         
+u3:81 | Variable       | logged               | _c::_m::main::main::logged                                 |         
+u3:82 | Variable       | data                 | _c::_m::main::main::data                                   |         
+u3:83 | Variable       | read_data            | _c::_m::main::main::read_data                              |         
+
+--- expect:symbol-deps ---
+u0:1 <- [u1:59, u1:61]
+u0:10 <- [u0:24, u0:25, u0:26, u0:27, u1:38, u1:40, u1:43, u1:44, u1:45, u1:46, u1:48, u1:49, u1:51, u1:52, u1:54, u1:59, u1:60, u1:62, u1:63]
+u0:17 <- [u0:30, u0:31, u1:38, u1:70, u3:77, u3:82]
+u0:18 <- [u0:27, u0:28, u1:66, u1:69]
+u0:23 -> [u0:24, u0:26]
+u0:23 <- [u0:27, u1:35, u1:40, u1:56, u1:66]
+u0:24 -> [u0:10]
+u0:24 <- [u0:23, u0:27]
+u0:25 -> [u0:10]
+u0:26 -> [u0:10]
+u0:26 <- [u0:23, u0:27]
+u0:27 -> [u0:10, u0:18, u0:23, u0:24, u0:26]
+u0:27 <- [u0:30, u3:77, u3:78, u3:79, u3:80, u3:81, u3:83]
+u0:28 -> [u0:18]
+u0:30 -> [u0:17, u0:27]
+u0:30 <- [u3:77]
+u0:31 -> [u0:17]
+u1:35 -> [u0:23]
+u1:35 <- [u1:38]
+u1:38 -> [u0:10, u0:17, u1:35, u1:40, u1:56, u1:66]
+u1:40 -> [u0:10, u0:23, u1:45, u1:48, u1:51, u1:54]
+u1:40 <- [u1:38]
+u1:43 -> [u0:10]
+u1:44 -> [u0:10]
+u1:45 -> [u0:10]
+u1:45 <- [u1:40, u1:48, u1:51, u1:53]
+u1:46 -> [u0:10]
+u1:48 -> [u0:10, u1:45]
+u1:48 <- [u1:40, u1:54]
+u1:49 -> [u0:10]
+u1:51 -> [u0:10, u1:45, u1:59]
+u1:51 <- [u1:40, u1:56, u1:66, u3:77]
+u1:52 -> [u0:10]
+u1:53 -> [u1:45]
+u1:54 -> [u0:10, u1:48, u1:62]
+u1:54 <- [u1:40, u1:56, u1:66, u3:77]
+u1:56 -> [u0:23, u1:51, u1:54, u1:59, u1:62]
+u1:56 <- [u1:38]
+u1:59 -> [u0:1, u0:10]
+u1:59 <- [u1:51, u1:56, u1:64]
+u1:60 -> [u0:10]
+u1:61 -> [u0:1]
+u1:62 -> [u0:10]
+u1:62 <- [u1:54, u1:56]
+u1:63 -> [u0:10]
+u1:64 -> [u1:59]
+u1:66 -> [u0:18, u0:23, u1:51, u1:54]
+u1:66 <- [u1:38]
+u1:69 -> [u0:18]
+u1:70 -> [u0:17]
+u3:77 -> [u0:17, u0:27, u0:30, u1:51, u1:54]
+u3:78 -> [u0:27]
+u3:79 -> [u0:27]
+u3:80 -> [u0:27]
+u3:81 -> [u0:27]
+u3:82 -> [u0:17]
+u3:83 -> [u0:27]
+
+
+===============================================================================
+command-pattern
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod commands;
+pub mod invoker;
+pub mod receiver;
+
+--- file: src/receiver.rs ---
+pub struct Document {
+    content: String,
+    cursor: usize,
+}
+
+impl Document {
+    pub fn new() -> Self {
+        Document { content: String::new(), cursor: 0 }
+    }
+
+    pub fn insert(&mut self, text: &str) {
+        self.content.insert_str(self.cursor, text);
+        self.cursor += text.len();
+    }
+
+    pub fn delete(&mut self, count: usize) {
+        let start = self.cursor.saturating_sub(count);
+        self.content.drain(start..self.cursor);
+        self.cursor = start;
+    }
+
+    pub fn move_cursor(&mut self, position: usize) {
+        self.cursor = position.min(self.content.len());
+    }
+
+    pub fn get_content(&self) -> &str {
+        &self.content
+    }
+
+    pub fn get_cursor(&self) -> usize {
+        self.cursor
+    }
+}
+
+--- file: src/commands.rs ---
+use crate::receiver::Document;
+
+pub trait Command {
+    fn execute(&mut self, doc: &mut Document);
+    fn undo(&mut self, doc: &mut Document);
+    fn describe(&self) -> String;
+}
+
+pub struct InsertCommand {
+    text: String,
+    position: usize,
+}
+
+impl InsertCommand {
+    pub fn new(text: &str) -> Self {
+        InsertCommand { text: text.to_string(), position: 0 }
+    }
+}
+
+impl Command for InsertCommand {
+    fn execute(&mut self, doc: &mut Document) {
+        self.position = doc.get_cursor();
+        doc.insert(&self.text);
+    }
+
+    fn undo(&mut self, doc: &mut Document) {
+        doc.move_cursor(self.position + self.text.len());
+        doc.delete(self.text.len());
+    }
+
+    fn describe(&self) -> String {
+        format!("Insert '{}'", self.text)
+    }
+}
+
+pub struct DeleteCommand {
+    count: usize,
+    deleted: String,
+    position: usize,
+}
+
+impl DeleteCommand {
+    pub fn new(count: usize) -> Self {
+        DeleteCommand { count, deleted: String::new(), position: 0 }
+    }
+}
+
+impl Command for DeleteCommand {
+    fn execute(&mut self, doc: &mut Document) {
+        self.position = doc.get_cursor();
+        let start = self.position.saturating_sub(self.count);
+        self.deleted = doc.get_content()[start..self.position].to_string();
+        doc.delete(self.count);
+    }
+
+    fn undo(&mut self, doc: &mut Document) {
+        doc.move_cursor(self.position - self.deleted.len());
+        doc.insert(&self.deleted);
+    }
+
+    fn describe(&self) -> String {
+        format!("Delete {} chars", self.count)
+    }
+}
+
+--- file: src/invoker.rs ---
+use crate::commands::Command;
+use crate::receiver::Document;
+
+pub struct Editor {
+    document: Document,
+    history: Vec<Box<dyn Command>>,
+    redo_stack: Vec<Box<dyn Command>>,
+}
+
+impl Editor {
+    pub fn new() -> Self {
+        Editor {
+            document: Document::new(),
+            history: Vec::new(),
+            redo_stack: Vec::new(),
+        }
+    }
+
+    pub fn execute(&mut self, mut command: Box<dyn Command>) {
+        println!("Execute: {}", command.describe());
+        command.execute(&mut self.document);
+        self.history.push(command);
+        self.redo_stack.clear();
+    }
+
+    pub fn undo(&mut self) {
+        if let Some(mut command) = self.history.pop() {
+            println!("Undo: {}", command.describe());
+            command.undo(&mut self.document);
+            self.redo_stack.push(command);
+        }
+    }
+
+    pub fn redo(&mut self) {
+        if let Some(mut command) = self.redo_stack.pop() {
+            println!("Redo: {}", command.describe());
+            command.execute(&mut self.document);
+            self.history.push(command);
+        }
+    }
+
+    pub fn get_content(&self) -> &str {
+        self.document.get_content()
+    }
+}
+
+--- file: src/main.rs ---
+mod commands;
+mod invoker;
+mod receiver;
+
+use commands::{InsertCommand, DeleteCommand};
+use invoker::Editor;
+
+fn main() {
+    let mut editor = Editor::new();
+
+    editor.execute(Box::new(InsertCommand::new("Hello")));
+    println!("Content: '{}'\n", editor.get_content());
+
+    editor.execute(Box::new(InsertCommand::new(" World")));
+    println!("Content: '{}'\n", editor.get_content());
+
+    editor.execute(Box::new(DeleteCommand::new(5)));
+    println!("Content: '{}'\n", editor.get_content());
+
+    println!("--- Undo ---");
+    editor.undo();
+    println!("Content: '{}'\n", editor.get_content());
+
+    editor.undo();
+    println!("Content: '{}'\n", editor.get_content());
+
+    println!("--- Redo ---");
+    editor.redo();
+    println!("Content: '{}'", editor.get_content());
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32           | i32                                               | [global]
+u0:2  | Primitive | i64           | i64                                               | [global]
+u0:3  | Primitive | i16           | i16                                               | [global]
+u0:4  | Primitive | i8            | i8                                                | [global]
+u0:5  | Primitive | i128          | i128                                              | [global]
+u0:6  | Primitive | isize         | isize                                             | [global]
+u0:7  | Primitive | u32           | u32                                               | [global]
+u0:8  | Primitive | u64           | u64                                               | [global]
+u0:9  | Primitive | u16           | u16                                               | [global]
+u0:10 | Primitive | u8            | u8                                                | [global]
+u0:11 | Primitive | u128          | u128                                              | [global]
+u0:12 | Primitive | usize         | usize                                             | [global]
+u0:13 | Primitive | f32           | f32                                               | [global]
+u0:14 | Primitive | f64           | f64                                               | [global]
+u0:15 | Primitive | bool          | bool                                              | [global]
+u0:16 | Primitive | char          | char                                              | [global]
+u0:17 | Primitive | str           | str                                               | [global]
+u0:18 | Primitive | String        | String                                            | [global]
+u0:19 | Crate     | _c            | _c                                                | [global]
+u0:20 | Crate     | crate         | _c::crate                                         |         
+u0:21 | Module    | _m            | _c::_m                                            |         
+u0:22 | File      | commands      | _c::_m::commands                                  |         
+u0:23 | Trait     | Command       | _c::_m::commands::Command                         | [global]
+u0:24 | Function  | execute       | _c::_m::commands::Command::execute                |         
+u0:25 | Variable  | doc           | _c::_m::commands::Command::execute::doc           |         
+u0:26 | Function  | undo          | _c::_m::commands::Command::undo                   |         
+u0:27 | Variable  | doc           | _c::_m::commands::Command::undo::doc              |         
+u0:28 | Function  | describe      | _c::_m::commands::Command::describe               |         
+u0:29 | Struct    | InsertCommand | _c::_m::commands::InsertCommand                   | [global]
+u0:30 | Field     | text          | _c::_m::commands::InsertCommand::text             |         
+u0:31 | Field     | position      | _c::_m::commands::InsertCommand::position         |         
+u0:32 | Function  | new           | _c::_m::commands::InsertCommand::new              | [global]
+u0:33 | Variable  | text          | _c::_m::commands::InsertCommand::new::text        |         
+u0:34 | Struct    | DeleteCommand | _c::_m::commands::DeleteCommand                   | [global]
+u0:35 | Field     | count         | _c::_m::commands::DeleteCommand::count            |         
+u0:36 | Field     | deleted       | _c::_m::commands::DeleteCommand::deleted          |         
+u0:37 | Field     | position      | _c::_m::commands::DeleteCommand::position         |         
+u0:38 | Variable  | count         | _c::_m::commands::InsertCommand::new::count       |         
+u0:39 | Variable  | start         | _c::_m::commands::Command::execute::start         |         
+u1:40 | Crate     | crate         | _c::crate                                         |         
+u1:41 | Module    | _m            | _c::_m                                            |         
+u1:42 | File      | invoker       | _c::_m::invoker                                   |         
+u1:43 | Struct    | Editor        | _c::_m::invoker::Editor                           | [global]
+u1:44 | Field     | document      | _c::_m::invoker::Editor::document                 |         
+u1:45 | Field     | history       | _c::_m::invoker::Editor::history                  |         
+u1:46 | Field     | redo_stack    | _c::_m::invoker::Editor::redo_stack               |         
+u1:47 | Function  | new           | _c::_m::invoker::Editor::new                      | [global]
+u1:48 | Function  | execute       | _c::_m::invoker::Editor::execute                  | [global]
+u1:49 | Variable  | command       | _c::_m::invoker::Editor::execute::command         |         
+u1:50 | Function  | undo          | _c::_m::invoker::Editor::undo                     | [global]
+u1:51 | Function  | redo          | _c::_m::invoker::Editor::redo                     | [global]
+u1:52 | Function  | get_content   | _c::_m::invoker::Editor::get_content              | [global]
+u2:53 | Crate     | crate         | _c::crate                                         |         
+u2:54 | File      | lib           | _c::lib                                           |         
+u3:55 | Crate     | crate         | _c::crate                                         |         
+u3:56 | Module    | _m            | _c::_m                                            |         
+u3:57 | File      | main          | _c::_m::main                                      |         
+u3:58 | Function  | main          | _c::_m::main::main                                |         
+u3:59 | Variable  | editor        | _c::_m::main::main::editor                        |         
+u4:60 | Crate     | crate         | _c::crate                                         |         
+u4:61 | Module    | _m            | _c::_m                                            |         
+u4:62 | File      | receiver      | _c::_m::receiver                                  |         
+u4:63 | Struct    | Document      | _c::_m::receiver::Document                        | [global]
+u4:64 | Field     | content       | _c::_m::receiver::Document::content               |         
+u4:65 | Field     | cursor        | _c::_m::receiver::Document::cursor                |         
+u4:66 | Function  | new           | _c::_m::receiver::Document::new                   | [global]
+u4:67 | Function  | insert        | _c::_m::receiver::Document::insert                | [global]
+u4:68 | Variable  | text          | _c::_m::receiver::Document::insert::text          |         
+u4:69 | Function  | delete        | _c::_m::receiver::Document::delete                | [global]
+u4:70 | Variable  | count         | _c::_m::receiver::Document::delete::count         |         
+u4:71 | Variable  | start         | _c::_m::receiver::Document::delete::start         |         
+u4:72 | Function  | move_cursor   | _c::_m::receiver::Document::move_cursor           | [global]
+u4:73 | Variable  | position      | _c::_m::receiver::Document::move_cursor::position |         
+u4:74 | Function  | get_content   | _c::_m::receiver::Document::get_content           | [global]
+u4:75 | Function  | get_cursor    | _c::_m::receiver::Document::get_cursor            | [global]
+
+--- expect:symbol-deps ---
+u0:12 <- [u0:24, u0:29, u0:31, u0:32, u0:34, u0:35, u0:37, u0:38, u0:39, u4:63, u4:65, u4:69, u4:70, u4:71, u4:72, u4:73, u4:75]
+u0:17 <- [u0:32, u0:33, u1:52, u4:67, u4:68, u4:74]
+u0:18 <- [u0:29, u0:30, u0:34, u0:36, u4:63, u4:64]
+u0:23 -> [u0:24, u0:26, u0:28]
+u0:23 <- [u0:29, u0:34, u1:43, u1:45, u1:46, u1:48, u1:49]
+u0:24 -> [u0:12, u4:63, u4:67, u4:69, u4:74, u4:75]
+u0:24 <- [u0:23, u0:29, u0:34]
+u0:25 -> [u4:63]
+u0:26 -> [u4:63, u4:67, u4:69, u4:72]
+u0:26 <- [u0:23, u0:29, u0:34]
+u0:27 -> [u4:63]
+u0:28 <- [u0:23, u0:29, u0:34]
+u0:29 -> [u0:12, u0:18, u0:23, u0:24, u0:26, u0:28]
+u0:29 <- [u0:32]
+u0:30 -> [u0:18]
+u0:31 -> [u0:12]
+u0:32 -> [u0:12, u0:17, u0:29, u0:34]
+u0:32 <- [u1:48, u3:58]
+u0:33 -> [u0:17]
+u0:34 -> [u0:12, u0:18, u0:23, u0:24, u0:26, u0:28]
+u0:34 <- [u0:32]
+u0:35 -> [u0:12]
+u0:36 -> [u0:18]
+u0:37 -> [u0:12]
+u0:38 -> [u0:12]
+u0:39 -> [u0:12]
+u1:43 -> [u0:23, u1:48, u1:50, u1:51, u1:52, u4:63]
+u1:43 <- [u1:47]
+u1:44 -> [u4:63]
+u1:45 -> [u0:23]
+u1:46 -> [u0:23]
+u1:47 -> [u1:43, u4:66]
+u1:47 <- [u3:58, u3:59]
+u1:48 -> [u0:23, u0:32]
+u1:48 <- [u1:43, u1:51, u3:58]
+u1:49 -> [u0:23]
+u1:50 <- [u1:43, u3:58]
+u1:51 -> [u1:48]
+u1:51 <- [u1:43, u3:58]
+u1:52 -> [u0:17]
+u1:52 <- [u1:43]
+u3:58 -> [u0:32, u1:47, u1:48, u1:50, u1:51]
+u3:59 -> [u1:47]
+u4:63 -> [u0:12, u0:18, u4:67, u4:69, u4:72, u4:74, u4:75]
+u4:63 <- [u0:24, u0:25, u0:26, u0:27, u1:43, u1:44, u4:66]
+u4:64 -> [u0:18]
+u4:65 -> [u0:12]
+u4:66 -> [u4:63]
+u4:66 <- [u1:47]
+u4:67 -> [u0:17]
+u4:67 <- [u0:24, u0:26, u4:63]
+u4:68 -> [u0:17]
+u4:69 -> [u0:12]
+u4:69 <- [u0:24, u0:26, u4:63]
+u4:70 -> [u0:12]
+u4:71 -> [u0:12]
+u4:72 -> [u0:12]
+u4:72 <- [u0:26, u4:63]
+u4:73 -> [u0:12]
+u4:74 -> [u0:17]
+u4:74 <- [u0:24, u4:63]
+u4:75 -> [u0:12]
+u4:75 <- [u0:24, u4:63]

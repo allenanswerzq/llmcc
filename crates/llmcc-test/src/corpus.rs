@@ -338,37 +338,33 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
             continue;
         }
 
-        let case = current.as_mut().ok_or_else(|| {
-            anyhow!(
-                "content encountered before case header in {}",
-                path.display()
-            )
-        })?;
-
-        if let Some((key, value)) = trimmed.split_once(':') {
-            let key = key.trim();
-            let value = value.trim();
-            match key {
-                "lang" => case.lang = value.to_string(),
-                "args" => {
-                    case.args = split(value)
-                        .map_err(|err| anyhow!("invalid args in {}: {}", path.display(), err))?
-                }
-                other => {
-                    return Err(anyhow!(
-                        "unsupported metadata '{}' in {} case {}",
-                        other,
-                        path.display(),
-                        case.name
-                    ));
+        // If we have a case but no pending section, we're in the metadata/description
+        // area between the banner and the first --- section. Only parse known metadata
+        // keys (lang, args), ignore everything else (descriptions, comments, etc.)
+        if current.is_some() && pending_section.is_none() {
+            if let Some((key, value)) = trimmed.split_once(':') {
+                let key = key.trim();
+                let value = value.trim();
+                let case = current.as_mut().unwrap();
+                match key {
+                    "lang" => case.lang = value.to_string(),
+                    "args" => {
+                        case.args = split(value)
+                            .map_err(|err| anyhow!("invalid args in {}: {}", path.display(), err))?
+                    }
+                    // Ignore unknown metadata - this allows descriptions and other text
+                    _ => {}
                 }
             }
-        } else {
+            // Ignore lines without ':' (plain description text)
+            continue;
+        }
+
+        // Content before any case header
+        if current.is_none() {
             return Err(anyhow!(
-                "unexpected line '{}' in {} (within case {})",
-                line,
-                path.display(),
-                case.name
+                "content encountered before case header in {}",
+                path.display()
             ));
         }
     }

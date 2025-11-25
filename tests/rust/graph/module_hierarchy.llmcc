@@ -1,0 +1,1090 @@
+===============================================================================
+module-hierarchy-basic
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod models;
+pub mod services;
+pub mod utils;
+
+pub use models::User;
+pub use services::UserService;
+
+--- file: src/models/mod.rs ---
+mod user;
+mod profile;
+
+pub use user::User;
+pub use profile::Profile;
+
+--- file: src/models/user.rs ---
+use super::profile::Profile;
+
+pub struct User {
+    pub id: u64,
+    pub name: String,
+    pub profile: Option<Profile>,
+}
+
+impl User {
+    pub fn new(id: u64, name: String) -> Self {
+        User { id, name, profile: None }
+    }
+
+    pub fn with_profile(mut self, profile: Profile) -> Self {
+        self.profile = Some(profile);
+        self
+    }
+}
+
+--- file: src/models/profile.rs ---
+pub struct Profile {
+    pub bio: String,
+    pub avatar_url: Option<String>,
+}
+
+impl Profile {
+    pub fn new(bio: String) -> Self {
+        Profile { bio, avatar_url: None }
+    }
+}
+
+--- file: src/services/mod.rs ---
+mod user_service;
+
+pub use user_service::UserService;
+
+--- file: src/services/user_service.rs ---
+use crate::models::{User, Profile};
+
+pub struct UserService {
+    users: Vec<User>,
+}
+
+impl UserService {
+    pub fn new() -> Self {
+        UserService { users: Vec::new() }
+    }
+
+    pub fn create_user(&mut self, name: String) -> &User {
+        let id = self.users.len() as u64 + 1;
+        let user = User::new(id, name);
+        self.users.push(user);
+        self.users.last().unwrap()
+    }
+
+    pub fn add_profile(&mut self, user_id: u64, bio: String) -> bool {
+        if let Some(user) = self.users.iter_mut().find(|u| u.id == user_id) {
+            user.profile = Some(Profile::new(bio));
+            true
+        } else {
+            false
+        }
+    }
+}
+
+--- file: src/utils/mod.rs ---
+mod validation;
+
+pub use validation::*;
+
+--- file: src/utils/validation.rs ---
+use crate::models::User;
+
+pub fn validate_user(user: &User) -> bool {
+    !user.name.is_empty()
+}
+
+pub fn validate_name(name: &str) -> bool {
+    name.len() >= 2 && name.len() <= 100
+}
+
+--- file: src/main.rs ---
+mod models;
+mod services;
+mod utils;
+
+use services::UserService;
+use utils::validate_user;
+
+fn main() {
+    let mut service = UserService::new();
+    let user = service.create_user("Alice".to_string());
+
+    if validate_user(user) {
+        println!("User {} is valid", user.name);
+    }
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32           | i32                                                     | [global]
+u0:2  | Primitive | i64           | i64                                                     | [global]
+u0:3  | Primitive | i16           | i16                                                     | [global]
+u0:4  | Primitive | i8            | i8                                                      | [global]
+u0:5  | Primitive | i128          | i128                                                    | [global]
+u0:6  | Primitive | isize         | isize                                                   | [global]
+u0:7  | Primitive | u32           | u32                                                     | [global]
+u0:8  | Primitive | u64           | u64                                                     | [global]
+u0:9  | Primitive | u16           | u16                                                     | [global]
+u0:10 | Primitive | u8            | u8                                                      | [global]
+u0:11 | Primitive | u128          | u128                                                    | [global]
+u0:12 | Primitive | usize         | usize                                                   | [global]
+u0:13 | Primitive | f32           | f32                                                     | [global]
+u0:14 | Primitive | f64           | f64                                                     | [global]
+u0:15 | Primitive | bool          | bool                                                    | [global]
+u0:16 | Primitive | char          | char                                                    | [global]
+u0:17 | Primitive | str           | str                                                     | [global]
+u0:18 | Primitive | String        | String                                                  | [global]
+u0:19 | Crate     | _c            | _c                                                      | [global]
+u0:20 | Crate     | crate         | _c::crate                                               |         
+u0:21 | File      | lib           | _c::lib                                                 |         
+u1:22 | Crate     | crate         | _c::crate                                               |         
+u1:23 | Module    | _m            | _c::_m                                                  |         
+u1:24 | File      | main          | _c::_m::main                                            |         
+u1:25 | Function  | main          | _c::_m::main::main                                      |         
+u1:26 | Variable  | service       | _c::_m::main::main::service                             |         
+u1:27 | Variable  | user          | _c::_m::main::main::user                                |         
+u2:28 | Crate     | crate         | _c::crate                                               |         
+u2:29 | Module    | models        | _c::models                                              |         
+u2:30 | File      | mod           | _c::models::mod                                         |         
+u3:31 | Crate     | crate         | _c::crate                                               |         
+u3:32 | Module    | _m            | _c::_m                                                  |         
+u3:33 | File      | profile       | _c::_m::profile                                         |         
+u3:34 | Struct    | Profile       | _c::_m::profile::Profile                                | [global]
+u3:35 | Field     | bio           | _c::_m::profile::Profile::bio                           |         
+u3:36 | Field     | avatar_url    | _c::_m::profile::Profile::avatar_url                    |         
+u3:37 | Function  | new           | _c::_m::profile::Profile::new                           | [global]
+u3:38 | Variable  | bio           | _c::_m::profile::Profile::new::bio                      |         
+u4:39 | Crate     | crate         | _c::crate                                               |         
+u4:40 | Module    | _m            | _c::_m                                                  |         
+u4:41 | File      | user          | _c::_m::user                                            |         
+u4:42 | Struct    | User          | _c::_m::user::User                                      | [global]
+u4:43 | Field     | id            | _c::_m::user::User::id                                  |         
+u4:44 | Field     | name          | _c::_m::user::User::name                                |         
+u4:45 | Field     | profile       | _c::_m::user::User::profile                             |         
+u4:46 | Function  | new           | _c::_m::user::User::new                                 | [global]
+u4:47 | Variable  | id            | _c::_m::user::User::new::id                             |         
+u4:48 | Variable  | name          | _c::_m::user::User::new::name                           |         
+u4:49 | Function  | with_profile  | _c::_m::user::User::with_profile                        | [global]
+u4:50 | Variable  | profile       | _c::_m::user::User::with_profile::profile               |         
+u5:51 | Crate     | crate         | _c::crate                                               |         
+u5:52 | Module    | services      | _c::services                                            |         
+u5:53 | File      | mod           | _c::services::mod                                       |         
+u6:54 | Crate     | crate         | _c::crate                                               |         
+u6:55 | Module    | _m            | _c::_m                                                  |         
+u6:56 | File      | user_service  | _c::_m::user_service                                    |         
+u6:57 | Struct    | UserService   | _c::_m::user_service::UserService                       | [global]
+u6:58 | Field     | users         | _c::_m::user_service::UserService::users                |         
+u6:59 | Function  | new           | _c::_m::user_service::UserService::new                  | [global]
+u6:60 | Function  | create_user   | _c::_m::user_service::UserService::create_user          | [global]
+u6:61 | Variable  | name          | _c::_m::user_service::UserService::create_user::name    |         
+u6:62 | Variable  | id            | _c::_m::user_service::UserService::create_user::id      |         
+u6:63 | Variable  | user          | _c::_m::user_service::UserService::create_user::user    |         
+u6:64 | Function  | add_profile   | _c::_m::user_service::UserService::add_profile          | [global]
+u6:65 | Variable  | user_id       | _c::_m::user_service::UserService::add_profile::user_id |         
+u6:66 | Variable  | bio           | _c::_m::user_service::UserService::add_profile::bio     |         
+u6:67 | Variable  | u             | _c::_m::user_service::UserService::add_profile::u       |         
+u7:68 | Crate     | crate         | _c::crate                                               |         
+u7:69 | Module    | utils         | _c::utils                                               |         
+u7:70 | File      | mod           | _c::utils::mod                                          |         
+u8:71 | Crate     | crate         | _c::crate                                               |         
+u8:72 | Module    | _m            | _c::_m                                                  |         
+u8:73 | File      | validation    | _c::_m::validation                                      |         
+u8:74 | Function  | validate_user | _c::_m::validation::validate_user                       | [global]
+u8:75 | Variable  | user          | _c::_m::validation::validate_user::user                 |         
+u8:76 | Function  | validate_name | _c::_m::validation::validate_name                       | [global]
+u8:77 | Variable  | name          | _c::_m::validation::validate_name::name                 |         
+
+--- expect:symbol-deps ---
+u0:15 <- [u6:64, u8:74, u8:76]
+u0:17 <- [u8:76, u8:77]
+u0:18 <- [u3:34, u3:35, u3:36, u3:37, u3:38, u4:42, u4:44, u4:46, u4:48, u6:60, u6:61, u6:64, u6:66]
+u0:8 <- [u4:42, u4:43, u4:46, u4:47, u6:60, u6:62, u6:64, u6:65]
+u1:25 -> [u6:59, u6:60, u8:74]
+u1:26 -> [u6:59]
+u1:27 -> [u6:59]
+u3:34 -> [u0:18]
+u3:34 <- [u3:37, u4:42, u4:45, u4:49, u4:50]
+u3:35 -> [u0:18]
+u3:36 -> [u0:18]
+u3:37 -> [u0:18, u3:34]
+u3:37 <- [u6:64]
+u3:38 -> [u0:18]
+u4:42 -> [u0:18, u0:8, u3:34, u4:49]
+u4:42 <- [u4:46, u6:57, u6:58, u6:60, u6:63, u8:74, u8:75]
+u4:43 -> [u0:8]
+u4:44 -> [u0:18]
+u4:45 -> [u3:34]
+u4:46 -> [u0:18, u0:8, u4:42]
+u4:46 <- [u6:60]
+u4:47 -> [u0:8]
+u4:48 -> [u0:18]
+u4:49 -> [u3:34]
+u4:49 <- [u4:42]
+u4:50 -> [u3:34]
+u6:57 -> [u4:42, u6:60, u6:64]
+u6:57 <- [u6:59]
+u6:58 -> [u4:42]
+u6:59 -> [u6:57]
+u6:59 <- [u1:25, u1:26, u1:27]
+u6:60 -> [u0:18, u0:8, u4:42, u4:46]
+u6:60 <- [u1:25, u6:57]
+u6:61 -> [u0:18]
+u6:62 -> [u0:8]
+u6:63 -> [u4:42]
+u6:64 -> [u0:15, u0:18, u0:8, u3:37]
+u6:64 <- [u6:57]
+u6:65 -> [u0:8]
+u6:66 -> [u0:18]
+u8:74 -> [u0:15, u4:42]
+u8:74 <- [u1:25]
+u8:75 -> [u4:42]
+u8:76 -> [u0:15, u0:17]
+u8:77 -> [u0:17]
+
+
+===============================================================================
+module-hierarchy-deep-nesting
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod domain;
+
+--- file: src/domain/mod.rs ---
+pub mod user;
+pub mod order;
+
+--- file: src/domain/user/mod.rs ---
+pub mod entity;
+pub mod value_object;
+pub mod repository;
+
+pub use entity::User;
+pub use value_object::Email;
+
+--- file: src/domain/user/entity.rs ---
+use super::value_object::Email;
+
+pub struct User {
+    pub id: u64,
+    pub email: Email,
+    pub name: String,
+}
+
+impl User {
+    pub fn new(id: u64, email: Email, name: String) -> Self {
+        User { id, email, name }
+    }
+}
+
+--- file: src/domain/user/value_object.rs ---
+pub struct Email(String);
+
+impl Email {
+    pub fn new(email: String) -> Option<Self> {
+        if email.contains('@') {
+            Some(Email(email))
+        } else {
+            None
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+--- file: src/domain/user/repository.rs ---
+use super::entity::User;
+
+pub trait UserRepository {
+    fn find_by_id(&self, id: u64) -> Option<User>;
+    fn save(&mut self, user: User) -> u64;
+}
+
+--- file: src/domain/order/mod.rs ---
+pub mod entity;
+pub mod line_item;
+
+pub use entity::Order;
+pub use line_item::LineItem;
+
+--- file: src/domain/order/entity.rs ---
+use super::line_item::LineItem;
+use crate::domain::user::User;
+
+pub struct Order {
+    pub id: u64,
+    pub user: User,
+    pub items: Vec<LineItem>,
+}
+
+impl Order {
+    pub fn new(id: u64, user: User) -> Self {
+        Order { id, user, items: Vec::new() }
+    }
+
+    pub fn add_item(&mut self, item: LineItem) {
+        self.items.push(item);
+    }
+
+    pub fn total(&self) -> f64 {
+        self.items.iter().map(|i| i.subtotal()).sum()
+    }
+}
+
+--- file: src/domain/order/line_item.rs ---
+pub struct LineItem {
+    pub product_name: String,
+    pub quantity: u32,
+    pub unit_price: f64,
+}
+
+impl LineItem {
+    pub fn new(product_name: String, quantity: u32, unit_price: f64) -> Self {
+        LineItem { product_name, quantity, unit_price }
+    }
+
+    pub fn subtotal(&self) -> f64 {
+        self.quantity as f64 * self.unit_price
+    }
+}
+
+--- file: src/main.rs ---
+mod domain;
+
+use domain::user::{User, Email};
+use domain::order::{Order, LineItem};
+
+fn main() {
+    let email = Email::new("alice@example.com".to_string()).unwrap();
+    let user = User::new(1, email, "Alice".to_string());
+
+    let mut order = Order::new(100, user);
+    order.add_item(LineItem::new("Widget".to_string(), 2, 19.99));
+    order.add_item(LineItem::new("Gadget".to_string(), 1, 49.99));
+
+    println!("Order total: ${:.2}", order.total());
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32            | i32                                                | [global]
+u0:2  | Primitive | i64            | i64                                                | [global]
+u0:3  | Primitive | i16            | i16                                                | [global]
+u0:4  | Primitive | i8             | i8                                                 | [global]
+u0:5  | Primitive | i128           | i128                                               | [global]
+u0:6  | Primitive | isize          | isize                                              | [global]
+u0:7  | Primitive | u32            | u32                                                | [global]
+u0:8  | Primitive | u64            | u64                                                | [global]
+u0:9  | Primitive | u16            | u16                                                | [global]
+u0:10 | Primitive | u8             | u8                                                 | [global]
+u0:11 | Primitive | u128           | u128                                               | [global]
+u0:12 | Primitive | usize          | usize                                              | [global]
+u0:13 | Primitive | f32            | f32                                                | [global]
+u0:14 | Primitive | f64            | f64                                                | [global]
+u0:15 | Primitive | bool           | bool                                               | [global]
+u0:16 | Primitive | char           | char                                               | [global]
+u0:17 | Primitive | str            | str                                                | [global]
+u0:18 | Primitive | String         | String                                             | [global]
+u0:19 | Crate     | _c             | _c                                                 | [global]
+u0:20 | Crate     | crate          | _c::crate                                          |         
+u0:21 | Module    | domain         | _c::domain                                         |         
+u0:22 | File      | mod            | _c::domain::mod                                    |         
+u1:23 | Crate     | crate          | _c::crate                                          |         
+u1:24 | Module    | _m             | _c::_m                                             |         
+u1:25 | File      | entity         | _c::_m::entity                                     |         
+u1:26 | Struct    | Order          | _c::_m::entity::Order                              | [global]
+u1:27 | Field     | id             | _c::_m::entity::Order::id                          |         
+u1:28 | Field     | user           | _c::_m::entity::Order::user                        |         
+u1:29 | Field     | items          | _c::_m::entity::Order::items                       |         
+u1:30 | Function  | new            | _c::_m::entity::Order::new                         | [global]
+u1:31 | Variable  | id             | _c::_m::entity::Order::new::id                     |         
+u1:32 | Variable  | user           | _c::_m::entity::Order::new::user                   |         
+u1:33 | Function  | add_item       | _c::_m::entity::Order::add_item                    | [global]
+u1:34 | Variable  | item           | _c::_m::entity::Order::add_item::item              |         
+u1:35 | Function  | total          | _c::_m::entity::Order::total                       | [global]
+u1:36 | Variable  | i              | _c::_m::entity::Order::total::i                    |         
+u2:37 | Crate     | crate          | _c::crate                                          |         
+u2:38 | Module    | _m             | _c::_m                                             |         
+u2:39 | File      | line_item      | _c::_m::line_item                                  |         
+u2:40 | Struct    | LineItem       | _c::_m::line_item::LineItem                        | [global]
+u2:41 | Field     | product_name   | _c::_m::line_item::LineItem::product_name          |         
+u2:42 | Field     | quantity       | _c::_m::line_item::LineItem::quantity              |         
+u2:43 | Field     | unit_price     | _c::_m::line_item::LineItem::unit_price            |         
+u2:44 | Function  | new            | _c::_m::line_item::LineItem::new                   | [global]
+u2:45 | Variable  | product_name   | _c::_m::line_item::LineItem::new::product_name     |         
+u2:46 | Variable  | quantity       | _c::_m::line_item::LineItem::new::quantity         |         
+u2:47 | Variable  | unit_price     | _c::_m::line_item::LineItem::new::unit_price       |         
+u2:48 | Function  | subtotal       | _c::_m::line_item::LineItem::subtotal              | [global]
+u3:49 | Crate     | crate          | _c::crate                                          |         
+u3:50 | Module    | order          | _c::order                                          |         
+u3:51 | File      | mod            | _c::order::mod                                     |         
+u4:52 | Crate     | crate          | _c::crate                                          |         
+u4:53 | Module    | _m             | _c::_m                                             |         
+u4:54 | File      | entity         | _c::_m::entity                                     |         
+u4:55 | Struct    | User           | _c::_m::entity::User                               | [global]
+u4:56 | Field     | id             | _c::_m::entity::User::id                           |         
+u4:57 | Field     | email          | _c::_m::entity::User::email                        |         
+u4:58 | Field     | name           | _c::_m::entity::User::name                         |         
+u4:59 | Function  | new            | _c::_m::entity::User::new                          | [global]
+u4:60 | Variable  | id             | _c::_m::entity::User::new::id                      |         
+u4:61 | Variable  | email          | _c::_m::entity::User::new::email                   |         
+u4:62 | Variable  | name           | _c::_m::entity::User::new::name                    |         
+u5:63 | Crate     | crate          | _c::crate                                          |         
+u5:64 | Module    | user           | _c::user                                           |         
+u5:65 | File      | mod            | _c::user::mod                                      |         
+u6:66 | Crate     | crate          | _c::crate                                          |         
+u6:67 | Module    | _m             | _c::_m                                             |         
+u6:68 | File      | repository     | _c::_m::repository                                 |         
+u6:69 | Trait     | UserRepository | _c::_m::repository::UserRepository                 | [global]
+u6:70 | Function  | find_by_id     | _c::_m::repository::UserRepository::find_by_id     |         
+u6:71 | Variable  | id             | _c::_m::repository::UserRepository::find_by_id::id |         
+u6:72 | Function  | save           | _c::_m::repository::UserRepository::save           |         
+u6:73 | Variable  | user           | _c::_m::repository::UserRepository::save::user     |         
+u7:74 | Crate     | crate          | _c::crate                                          |         
+u7:75 | Module    | _m             | _c::_m                                             |         
+u7:76 | File      | value_object   | _c::_m::value_object                               |         
+u7:77 | Struct    | Email          | _c::_m::value_object::Email                        | [global]
+u7:78 | Function  | new            | _c::_m::value_object::Email::new                   | [global]
+u7:79 | Variable  | email          | _c::_m::value_object::Email::new::email            |         
+u7:80 | Function  | as_str         | _c::_m::value_object::Email::as_str                | [global]
+u8:81 | Crate     | crate          | _c::crate                                          |         
+u8:82 | File      | lib            | _c::lib                                            |         
+u9:83 | Crate     | crate          | _c::crate                                          |         
+u9:84 | Module    | _m             | _c::_m                                             |         
+u9:85 | File      | main           | _c::_m::main                                       |         
+u9:86 | Function  | main           | _c::_m::main::main                                 |         
+u9:87 | Variable  | email          | _c::_m::main::main::email                          |         
+u9:88 | Variable  | user           | _c::_m::main::main::user                           |         
+u9:89 | Variable  | order          | _c::_m::main::main::order                          |         
+
+--- expect:symbol-deps ---
+u0:14 <- [u1:35, u2:40, u2:43, u2:44, u2:47, u2:48]
+u0:17 <- [u7:80]
+u0:18 <- [u2:40, u2:41, u2:44, u2:45, u4:55, u4:58, u4:59, u4:62, u7:78, u7:79]
+u0:7 <- [u2:40, u2:42, u2:44, u2:46]
+u0:8 <- [u1:26, u1:27, u1:30, u1:31, u4:55, u4:56, u4:59, u4:60, u6:70, u6:71, u6:72]
+u1:26 -> [u0:8, u1:33, u1:35, u2:40, u4:55]
+u1:26 <- [u1:30, u9:86, u9:89]
+u1:27 -> [u0:8]
+u1:28 -> [u4:55]
+u1:29 -> [u2:40]
+u1:30 -> [u0:8, u1:26, u4:55]
+u1:30 <- [u9:86]
+u1:31 -> [u0:8]
+u1:32 -> [u4:55]
+u1:33 -> [u2:40, u2:44]
+u1:33 <- [u1:26, u9:86]
+u1:34 -> [u2:40]
+u1:35 -> [u0:14, u2:48]
+u1:35 <- [u1:26]
+u2:40 -> [u0:14, u0:18, u0:7, u2:48]
+u2:40 <- [u1:26, u1:29, u1:33, u1:34, u2:44]
+u2:41 -> [u0:18]
+u2:42 -> [u0:7]
+u2:43 -> [u0:14]
+u2:44 -> [u0:14, u0:18, u0:7, u2:40]
+u2:44 <- [u1:33, u9:86]
+u2:45 -> [u0:18]
+u2:46 -> [u0:7]
+u2:47 -> [u0:14]
+u2:48 -> [u0:14]
+u2:48 <- [u1:35, u2:40]
+u4:55 -> [u0:18, u0:8, u7:77]
+u4:55 <- [u1:26, u1:28, u1:30, u1:32, u4:59, u6:72, u6:73, u9:86, u9:88]
+u4:56 -> [u0:8]
+u4:57 -> [u7:77]
+u4:58 -> [u0:18]
+u4:59 -> [u0:18, u0:8, u4:55, u7:77]
+u4:59 <- [u9:86]
+u4:60 -> [u0:8]
+u4:61 -> [u7:77]
+u4:62 -> [u0:18]
+u6:69 -> [u6:70, u6:72]
+u6:70 -> [u0:8]
+u6:70 <- [u6:69]
+u6:71 -> [u0:8]
+u6:72 -> [u0:8, u4:55]
+u6:72 <- [u6:69]
+u6:73 -> [u4:55]
+u7:77 -> [u7:78, u7:80]
+u7:77 <- [u4:55, u4:57, u4:59, u4:61]
+u7:78 -> [u0:18]
+u7:78 <- [u7:77, u9:86, u9:87]
+u7:79 -> [u0:18]
+u7:80 -> [u0:17]
+u7:80 <- [u7:77]
+u9:86 -> [u1:26, u1:30, u1:33, u2:44, u4:55, u4:59, u7:78]
+u9:87 -> [u7:78]
+u9:88 -> [u4:55]
+u9:89 -> [u1:26]
+
+
+===============================================================================
+module-reexports
+===============================================================================
+
+
+--- file: src/lib.rs ---
+mod internal;
+pub mod prelude;
+
+// Re-export main types at crate root
+pub use prelude::*;
+
+--- file: src/internal/mod.rs ---
+pub mod core_types;
+pub mod helpers;
+
+--- file: src/internal/core_types.rs ---
+pub struct Config {
+    pub name: String,
+    pub debug: bool,
+}
+
+pub struct Context {
+    pub config: Config,
+    pub id: u64,
+}
+
+pub struct Engine {
+    pub context: Context,
+}
+
+impl Engine {
+    pub fn new(config: Config) -> Self {
+        Engine {
+            context: Context { config, id: 1 },
+        }
+    }
+
+    pub fn run(&self) {
+        println!("Running engine: {}", self.context.config.name);
+    }
+}
+
+--- file: src/internal/helpers.rs ---
+use super::core_types::Config;
+
+pub fn default_config() -> Config {
+    Config {
+        name: "default".to_string(),
+        debug: false,
+    }
+}
+
+pub fn debug_config(name: &str) -> Config {
+    Config {
+        name: name.to_string(),
+        debug: true,
+    }
+}
+
+--- file: src/prelude.rs ---
+// Public facade - re-exports only what users need
+pub use crate::internal::core_types::{Config, Engine};
+pub use crate::internal::helpers::{default_config, debug_config};
+
+--- file: src/main.rs ---
+mod internal;
+mod prelude;
+
+// Users just import from prelude
+use prelude::{Engine, debug_config};
+
+fn main() {
+    let config = debug_config("my_app");
+    let engine = Engine::new(config);
+    engine.run();
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32            | i32                                     | [global]
+u0:2  | Primitive | i64            | i64                                     | [global]
+u0:3  | Primitive | i16            | i16                                     | [global]
+u0:4  | Primitive | i8             | i8                                      | [global]
+u0:5  | Primitive | i128           | i128                                    | [global]
+u0:6  | Primitive | isize          | isize                                   | [global]
+u0:7  | Primitive | u32            | u32                                     | [global]
+u0:8  | Primitive | u64            | u64                                     | [global]
+u0:9  | Primitive | u16            | u16                                     | [global]
+u0:10 | Primitive | u8             | u8                                      | [global]
+u0:11 | Primitive | u128           | u128                                    | [global]
+u0:12 | Primitive | usize          | usize                                   | [global]
+u0:13 | Primitive | f32            | f32                                     | [global]
+u0:14 | Primitive | f64            | f64                                     | [global]
+u0:15 | Primitive | bool           | bool                                    | [global]
+u0:16 | Primitive | char           | char                                    | [global]
+u0:17 | Primitive | str            | str                                     | [global]
+u0:18 | Primitive | String         | String                                  | [global]
+u0:19 | Crate     | _c             | _c                                      | [global]
+u0:20 | Crate     | crate          | _c::crate                               |         
+u0:21 | Module    | _m             | _c::_m                                  |         
+u0:22 | File      | core_types     | _c::_m::core_types                      |         
+u0:23 | Struct    | Config         | _c::_m::core_types::Config              | [global]
+u0:24 | Field     | name           | _c::_m::core_types::Config::name        |         
+u0:25 | Field     | debug          | _c::_m::core_types::Config::debug       |         
+u0:26 | Struct    | Context        | _c::_m::core_types::Context             | [global]
+u0:27 | Field     | config         | _c::_m::core_types::Context::config     |         
+u0:28 | Field     | id             | _c::_m::core_types::Context::id         |         
+u0:29 | Struct    | Engine         | _c::_m::core_types::Engine              | [global]
+u0:30 | Field     | context        | _c::_m::core_types::Engine::context     |         
+u0:31 | Function  | new            | _c::_m::core_types::Engine::new         | [global]
+u0:32 | Variable  | config         | _c::_m::core_types::Engine::new::config |         
+u0:33 | Function  | run            | _c::_m::core_types::Engine::run         | [global]
+u1:34 | Crate     | crate          | _c::crate                               |         
+u1:35 | Module    | _m             | _c::_m                                  |         
+u1:36 | File      | helpers        | _c::_m::helpers                         |         
+u1:37 | Function  | default_config | _c::_m::helpers::default_config         | [global]
+u1:38 | Function  | debug_config   | _c::_m::helpers::debug_config           | [global]
+u1:39 | Variable  | name           | _c::_m::helpers::debug_config::name     |         
+u2:40 | Crate     | crate          | _c::crate                               |         
+u2:41 | Module    | internal       | _c::internal                            |         
+u2:42 | File      | mod            | _c::internal::mod                       |         
+u3:43 | Crate     | crate          | _c::crate                               |         
+u3:44 | File      | lib            | _c::lib                                 |         
+u4:45 | Crate     | crate          | _c::crate                               |         
+u4:46 | Module    | _m             | _c::_m                                  |         
+u4:47 | File      | main           | _c::_m::main                            |         
+u4:48 | Function  | main           | _c::_m::main::main                      |         
+u4:49 | Variable  | config         | _c::_m::main::main::config              |         
+u4:50 | Variable  | engine         | _c::_m::main::main::engine              |         
+u5:51 | Crate     | crate          | _c::crate                               |         
+u5:52 | Module    | _m             | _c::_m                                  |         
+u5:53 | File      | prelude        | _c::_m::prelude                         |         
+
+--- expect:symbol-deps ---
+u0:15 <- [u0:23, u0:25]
+u0:17 <- [u1:38, u1:39]
+u0:18 <- [u0:23, u0:24]
+u0:23 -> [u0:15, u0:18]
+u0:23 <- [u0:26, u0:27, u0:31, u0:32, u1:37, u1:38]
+u0:24 -> [u0:18]
+u0:25 -> [u0:15]
+u0:26 -> [u0:23, u0:8]
+u0:26 <- [u0:29, u0:30, u0:31]
+u0:27 -> [u0:23]
+u0:28 -> [u0:8]
+u0:29 -> [u0:26, u0:33]
+u0:29 <- [u0:31, u4:48, u4:50]
+u0:30 -> [u0:26]
+u0:31 -> [u0:23, u0:26, u0:29]
+u0:31 <- [u4:48]
+u0:32 -> [u0:23]
+u0:33 <- [u0:29, u4:48]
+u0:8 <- [u0:26, u0:28]
+u1:37 -> [u0:23]
+u1:38 -> [u0:17, u0:23]
+u1:38 <- [u4:48, u4:49]
+u1:39 -> [u0:17]
+u4:48 -> [u0:29, u0:31, u0:33, u1:38]
+u4:49 -> [u1:38]
+u4:50 -> [u0:29]
+
+
+===============================================================================
+module-circular-reference
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub mod node;
+pub mod graph;
+
+--- file: src/node.rs ---
+use crate::graph::Graph;
+
+pub struct Node {
+    pub id: u64,
+    pub value: String,
+}
+
+impl Node {
+    pub fn new(id: u64, value: String) -> Self {
+        Node { id, value }
+    }
+
+    pub fn neighbors<'a>(&self, graph: &'a Graph) -> Vec<&'a Node> {
+        graph.get_neighbors(self.id)
+    }
+}
+
+--- file: src/graph.rs ---
+use crate::node::Node;
+use std::collections::HashMap;
+
+pub struct Graph {
+    nodes: HashMap<u64, Node>,
+    edges: Vec<(u64, u64)>,
+}
+
+impl Graph {
+    pub fn new() -> Self {
+        Graph { nodes: HashMap::new(), edges: Vec::new() }
+    }
+
+    pub fn add_node(&mut self, node: Node) {
+        self.nodes.insert(node.id, node);
+    }
+
+    pub fn add_edge(&mut self, from: u64, to: u64) {
+        self.edges.push((from, to));
+    }
+
+    pub fn get_node(&self, id: u64) -> Option<&Node> {
+        self.nodes.get(&id)
+    }
+
+    pub fn get_neighbors(&self, node_id: u64) -> Vec<&Node> {
+        self.edges
+            .iter()
+            .filter(|(from, _)| *from == node_id)
+            .filter_map(|(_, to)| self.nodes.get(to))
+            .collect()
+    }
+}
+
+--- file: src/main.rs ---
+mod node;
+mod graph;
+
+use node::Node;
+use graph::Graph;
+
+fn main() {
+    let mut g = Graph::new();
+    g.add_node(Node::new(1, "A".to_string()));
+    g.add_node(Node::new(2, "B".to_string()));
+    g.add_node(Node::new(3, "C".to_string()));
+
+    g.add_edge(1, 2);
+    g.add_edge(1, 3);
+
+    if let Some(node) = g.get_node(1) {
+        let neighbors = node.neighbors(&g);
+        println!("Node {} has {} neighbors", node.value, neighbors.len());
+    }
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32           | i32                                          | [global]
+u0:2  | Primitive | i64           | i64                                          | [global]
+u0:3  | Primitive | i16           | i16                                          | [global]
+u0:4  | Primitive | i8            | i8                                           | [global]
+u0:5  | Primitive | i128          | i128                                         | [global]
+u0:6  | Primitive | isize         | isize                                        | [global]
+u0:7  | Primitive | u32           | u32                                          | [global]
+u0:8  | Primitive | u64           | u64                                          | [global]
+u0:9  | Primitive | u16           | u16                                          | [global]
+u0:10 | Primitive | u8            | u8                                           | [global]
+u0:11 | Primitive | u128          | u128                                         | [global]
+u0:12 | Primitive | usize         | usize                                        | [global]
+u0:13 | Primitive | f32           | f32                                          | [global]
+u0:14 | Primitive | f64           | f64                                          | [global]
+u0:15 | Primitive | bool          | bool                                         | [global]
+u0:16 | Primitive | char          | char                                         | [global]
+u0:17 | Primitive | str           | str                                          | [global]
+u0:18 | Primitive | String        | String                                       | [global]
+u0:19 | Crate     | _c            | _c                                           | [global]
+u0:20 | Crate     | crate         | _c::crate                                    |         
+u0:21 | Module    | _m            | _c::_m                                       |         
+u0:22 | File      | graph         | _c::_m::graph                                |         
+u0:23 | Struct    | Graph         | _c::_m::graph::Graph                         | [global]
+u0:24 | Field     | nodes         | _c::_m::graph::Graph::nodes                  |         
+u0:25 | Field     | edges         | _c::_m::graph::Graph::edges                  |         
+u0:26 | Function  | new           | _c::_m::graph::Graph::new                    | [global]
+u0:27 | Function  | add_node      | _c::_m::graph::Graph::add_node               | [global]
+u0:28 | Variable  | node          | _c::_m::graph::Graph::add_node::node         |         
+u0:29 | Function  | add_edge      | _c::_m::graph::Graph::add_edge               | [global]
+u0:30 | Variable  | from          | _c::_m::graph::Graph::add_edge::from         |         
+u0:31 | Variable  | to            | _c::_m::graph::Graph::add_edge::to           |         
+u0:32 | Function  | get_node      | _c::_m::graph::Graph::get_node               | [global]
+u0:33 | Variable  | id            | _c::_m::graph::Graph::get_node::id           |         
+u0:34 | Function  | get_neighbors | _c::_m::graph::Graph::get_neighbors          | [global]
+u0:35 | Variable  | node_id       | _c::_m::graph::Graph::get_neighbors::node_id |         
+u0:36 | Variable  | from          | _c::_m::graph::Graph::get_neighbors::from    |         
+u0:37 | Variable  | to            | _c::_m::graph::Graph::get_neighbors::to      |         
+u1:38 | Crate     | crate         | _c::crate                                    |         
+u1:39 | File      | lib           | _c::lib                                      |         
+u2:40 | Crate     | crate         | _c::crate                                    |         
+u2:41 | Module    | _m            | _c::_m                                       |         
+u2:42 | File      | main          | _c::_m::main                                 |         
+u2:43 | Function  | main          | _c::_m::main::main                           |         
+u2:44 | Variable  | g             | _c::_m::main::main::g                        |         
+u2:45 | Variable  | neighbors     | _c::_m::main::main::neighbors                |         
+u3:46 | Crate     | crate         | _c::crate                                    |         
+u3:47 | Module    | _m            | _c::_m                                       |         
+u3:48 | File      | node          | _c::_m::node                                 |         
+u3:49 | Struct    | Node          | _c::_m::node::Node                           | [global]
+u3:50 | Field     | id            | _c::_m::node::Node::id                       |         
+u3:51 | Field     | value         | _c::_m::node::Node::value                    |         
+u3:52 | Function  | new           | _c::_m::node::Node::new                      | [global]
+u3:53 | Variable  | id            | _c::_m::node::Node::new::id                  |         
+u3:54 | Variable  | value         | _c::_m::node::Node::new::value               |         
+u3:55 | Function  | neighbors     | _c::_m::node::Node::neighbors                | [global]
+u3:56 | Variable  | graph         | _c::_m::node::Node::neighbors::graph         |         
+
+--- expect:symbol-deps ---
+u0:18 <- [u3:49, u3:51, u3:52, u3:54]
+u0:23 -> [u0:27, u0:29, u0:32, u0:34, u0:8, u3:49]
+u0:23 <- [u0:26, u3:55, u3:56]
+u0:24 -> [u3:49]
+u0:26 -> [u0:23]
+u0:26 <- [u2:43, u2:44]
+u0:27 -> [u3:49, u3:52]
+u0:27 <- [u0:23, u2:43]
+u0:28 -> [u3:49]
+u0:29 -> [u0:8]
+u0:29 <- [u0:23, u2:43]
+u0:30 -> [u0:8]
+u0:31 -> [u0:8]
+u0:32 -> [u0:8]
+u0:32 <- [u0:23, u2:43]
+u0:33 -> [u0:8]
+u0:34 -> [u0:8]
+u0:34 <- [u0:23, u3:55]
+u0:35 -> [u0:8]
+u0:8 <- [u0:23, u0:29, u0:30, u0:31, u0:32, u0:33, u0:34, u0:35, u3:49, u3:50, u3:52, u3:53]
+u2:43 -> [u0:26, u0:27, u0:29, u0:32, u3:48, u3:52, u3:55]
+u2:44 -> [u0:26]
+u2:45 -> [u3:48]
+u3:48 <- [u2:43, u2:45]
+u3:49 -> [u0:18, u0:8, u3:55]
+u3:49 <- [u0:23, u0:24, u0:27, u0:28, u3:52]
+u3:50 -> [u0:8]
+u3:51 -> [u0:18]
+u3:52 -> [u0:18, u0:8, u3:49]
+u3:52 <- [u0:27, u2:43]
+u3:53 -> [u0:8]
+u3:54 -> [u0:18]
+u3:55 -> [u0:23, u0:34]
+u3:55 <- [u2:43, u3:49]
+u3:56 -> [u0:23]
+
+
+===============================================================================
+module-private-public-boundary
+===============================================================================
+
+
+--- file: src/lib.rs ---
+mod internal;  // Private module
+pub mod api;   // Public module
+
+pub use api::Client;
+
+--- file: src/internal/mod.rs ---
+mod connection;
+mod protocol;
+
+pub use connection::Connection;
+pub use protocol::Protocol;
+
+--- file: src/internal/connection.rs ---
+pub struct Connection {
+    host: String,
+    port: u16,
+    connected: bool,
+}
+
+impl Connection {
+    pub fn new(host: &str, port: u16) -> Self {
+        Connection {
+            host: host.to_string(),
+            port,
+            connected: false,
+        }
+    }
+
+    pub fn connect(&mut self) -> bool {
+        self.connected = true;
+        true
+    }
+
+    pub fn disconnect(&mut self) {
+        self.connected = false;
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.connected
+    }
+}
+
+--- file: src/internal/protocol.rs ---
+pub enum Protocol {
+    Http,
+    Https,
+    Ws,
+    Wss,
+}
+
+impl Protocol {
+    pub fn default_port(&self) -> u16 {
+        match self {
+            Protocol::Http => 80,
+            Protocol::Https => 443,
+            Protocol::Ws => 80,
+            Protocol::Wss => 443,
+        }
+    }
+}
+
+--- file: src/api/mod.rs ---
+use crate::internal::{Connection, Protocol};
+
+pub struct Client {
+    conn: Connection,
+    protocol: Protocol,
+}
+
+impl Client {
+    pub fn new(host: &str, protocol: Protocol) -> Self {
+        let port = protocol.default_port();
+        Client {
+            conn: Connection::new(host, port),
+            protocol,
+        }
+    }
+
+    pub fn connect(&mut self) -> bool {
+        self.conn.connect()
+    }
+
+    pub fn disconnect(&mut self) {
+        self.conn.disconnect()
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.conn.is_connected()
+    }
+}
+
+// Re-export Protocol for users
+pub use crate::internal::Protocol;
+
+--- file: src/main.rs ---
+mod internal;
+mod api;
+
+use api::{Client, Protocol};
+
+fn main() {
+    let mut client = Client::new("example.com", Protocol::Https);
+
+    if client.connect() {
+        println!("Connected!");
+        client.disconnect();
+    }
+}
+
+--- expect:symbols ---
+u0:1  | Primitive   | i32          | i32                                          | [global]
+u0:2  | Primitive   | i64          | i64                                          | [global]
+u0:3  | Primitive   | i16          | i16                                          | [global]
+u0:4  | Primitive   | i8           | i8                                           | [global]
+u0:5  | Primitive   | i128         | i128                                         | [global]
+u0:6  | Primitive   | isize        | isize                                        | [global]
+u0:7  | Primitive   | u32          | u32                                          | [global]
+u0:8  | Primitive   | u64          | u64                                          | [global]
+u0:9  | Primitive   | u16          | u16                                          | [global]
+u0:10 | Primitive   | u8           | u8                                           | [global]
+u0:11 | Primitive   | u128         | u128                                         | [global]
+u0:12 | Primitive   | usize        | usize                                        | [global]
+u0:13 | Primitive   | f32          | f32                                          | [global]
+u0:14 | Primitive   | f64          | f64                                          | [global]
+u0:15 | Primitive   | bool         | bool                                         | [global]
+u0:16 | Primitive   | char         | char                                         | [global]
+u0:17 | Primitive   | str          | str                                          | [global]
+u0:18 | Primitive   | String       | String                                       | [global]
+u0:19 | Crate       | _c           | _c                                           | [global]
+u0:20 | Crate       | crate        | _c::crate                                    |         
+u0:21 | Module      | api          | _c::api                                      |         
+u0:22 | File        | mod          | _c::api::mod                                 |         
+u0:23 | Struct      | Client       | _c::api::mod::Client                         | [global]
+u0:24 | Field       | conn         | _c::api::mod::Client::conn                   |         
+u0:25 | Field       | protocol     | _c::api::mod::Client::protocol               |         
+u0:26 | Function    | new          | _c::api::mod::Client::new                    | [global]
+u0:27 | Variable    | host         | _c::api::mod::Client::new::host              |         
+u0:28 | Variable    | protocol     | _c::api::mod::Client::new::protocol          |         
+u0:29 | Variable    | port         | _c::api::mod::Client::new::port              |         
+u0:30 | Function    | connect      | _c::api::mod::Client::connect                | [global]
+u0:31 | Function    | disconnect   | _c::api::mod::Client::disconnect             | [global]
+u0:32 | Function    | is_connected | _c::api::mod::Client::is_connected           | [global]
+u1:33 | Crate       | crate        | _c::crate                                    |         
+u1:34 | Module      | _m           | _c::_m                                       |         
+u1:35 | File        | connection   | _c::_m::connection                           |         
+u1:36 | Struct      | Connection   | _c::_m::connection::Connection               | [global]
+u1:37 | Field       | host         | _c::_m::connection::Connection::host         |         
+u1:38 | Field       | port         | _c::_m::connection::Connection::port         |         
+u1:39 | Field       | connected    | _c::_m::connection::Connection::connected    |         
+u1:40 | Function    | new          | _c::_m::connection::Connection::new          | [global]
+u1:41 | Variable    | host         | _c::_m::connection::Connection::new::host    |         
+u1:42 | Variable    | port         | _c::_m::connection::Connection::new::port    |         
+u1:43 | Function    | connect      | _c::_m::connection::Connection::connect      | [global]
+u1:44 | Function    | disconnect   | _c::_m::connection::Connection::disconnect   | [global]
+u1:45 | Function    | is_connected | _c::_m::connection::Connection::is_connected | [global]
+u2:46 | Crate       | crate        | _c::crate                                    |         
+u2:47 | Module      | internal     | _c::internal                                 |         
+u2:48 | File        | mod          | _c::internal::mod                            |         
+u3:49 | Crate       | crate        | _c::crate                                    |         
+u3:50 | Module      | _m           | _c::_m                                       |         
+u3:51 | File        | protocol     | _c::_m::protocol                             |         
+u3:52 | Enum        | Protocol     | _c::_m::protocol::Protocol                   | [global]
+u3:53 | EnumVariant | Http         | _c::_m::protocol::Protocol::Http             |         
+u3:54 | EnumVariant | Https        | _c::_m::protocol::Protocol::Https            |         
+u3:55 | EnumVariant | Ws           | _c::_m::protocol::Protocol::Ws               |         
+u3:56 | EnumVariant | Wss          | _c::_m::protocol::Protocol::Wss              |         
+u3:57 | Function    | default_port | _c::_m::protocol::Protocol::default_port     | [global]
+u4:58 | Crate       | crate        | _c::crate                                    |         
+u4:59 | File        | lib          | _c::lib                                      |         
+u5:60 | Crate       | crate        | _c::crate                                    |         
+u5:61 | Module      | _m           | _c::_m                                       |         
+u5:62 | File        | main         | _c::_m::main                                 |         
+u5:63 | Function    | main         | _c::_m::main::main                           |         
+u5:64 | Variable    | client       | _c::_m::main::main::client                   |         
+
+--- expect:symbol-deps ---
+u0:15 <- [u0:30, u0:32, u1:36, u1:39, u1:43, u1:45]
+u0:17 <- [u0:26, u0:27, u1:40, u1:41]
+u0:18 <- [u1:36, u1:37]
+u0:23 -> [u0:30, u0:31, u0:32, u1:36, u3:52]
+u0:23 <- [u0:26, u5:63, u5:64]
+u0:24 -> [u1:36]
+u0:25 -> [u3:52]
+u0:26 -> [u0:17, u0:23, u1:40, u3:52, u3:57]
+u0:26 <- [u5:63]
+u0:27 -> [u0:17]
+u0:28 -> [u3:52]
+u0:29 -> [u3:52]
+u0:30 -> [u0:15]
+u0:30 <- [u0:23]
+u0:31 <- [u0:23]
+u0:32 -> [u0:15]
+u0:32 <- [u0:23]
+u0:9 <- [u1:36, u1:38, u1:40, u1:42, u3:57]
+u1:36 -> [u0:15, u0:18, u0:9, u1:43, u1:44, u1:45]
+u1:36 <- [u0:23, u0:24, u1:40]
+u1:37 -> [u0:18]
+u1:38 -> [u0:9]
+u1:39 -> [u0:15]
+u1:40 -> [u0:17, u0:9, u1:36]
+u1:40 <- [u0:26]
+u1:41 -> [u0:17]
+u1:42 -> [u0:9]
+u1:43 -> [u0:15]
+u1:43 <- [u1:36, u5:63]
+u1:44 <- [u1:36, u5:63]
+u1:45 -> [u0:15]
+u1:45 <- [u1:36]
+u3:52 -> [u3:53, u3:54, u3:55, u3:56]
+u3:52 <- [u0:23, u0:25, u0:26, u0:28, u0:29, u3:57, u5:63]
+u3:53 <- [u3:52, u3:57]
+u3:54 <- [u3:52, u3:57, u5:63]
+u3:55 <- [u3:52, u3:57]
+u3:56 <- [u3:52, u3:57]
+u3:57 -> [u0:9, u3:52, u3:53, u3:54, u3:55, u3:56]
+u3:57 <- [u0:26]
+u5:63 -> [u0:23, u0:26, u1:43, u1:44, u3:52, u3:54]
+u5:64 -> [u0:23]

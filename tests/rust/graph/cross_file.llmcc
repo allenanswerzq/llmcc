@@ -1,0 +1,1322 @@
+===============================================================================
+cross-file-struct-usage
+===============================================================================
+
+
+--- file: src/lib.rs ---
+pub struct User {
+    pub name: String,
+    pub age: u32,
+}
+
+impl User {
+    pub fn new(name: String, age: u32) -> Self {
+        Self { name, age }
+    }
+}
+
+--- file: src/main.rs ---
+use crate::User;
+
+fn main() {
+    let user = User::new("Alice".to_string(), 30);
+    println!("{}", user.name);
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32    | i32                      | [global]
+u0:2  | Primitive | i64    | i64                      | [global]
+u0:3  | Primitive | i16    | i16                      | [global]
+u0:4  | Primitive | i8     | i8                       | [global]
+u0:5  | Primitive | i128   | i128                     | [global]
+u0:6  | Primitive | isize  | isize                    | [global]
+u0:7  | Primitive | u32    | u32                      | [global]
+u0:8  | Primitive | u64    | u64                      | [global]
+u0:9  | Primitive | u16    | u16                      | [global]
+u0:10 | Primitive | u8     | u8                       | [global]
+u0:11 | Primitive | u128   | u128                     | [global]
+u0:12 | Primitive | usize  | usize                    | [global]
+u0:13 | Primitive | f32    | f32                      | [global]
+u0:14 | Primitive | f64    | f64                      | [global]
+u0:15 | Primitive | bool   | bool                     | [global]
+u0:16 | Primitive | char   | char                     | [global]
+u0:17 | Primitive | str    | str                      | [global]
+u0:18 | Primitive | String | String                   | [global]
+u0:19 | Crate     | _c     | _c                       | [global]
+u0:20 | Crate     | crate  | _c::crate                |         
+u0:21 | File      | lib    | _c::lib                  |         
+u0:22 | Struct    | User   | _c::lib::User            | [global]
+u0:23 | Field     | name   | _c::lib::User::name      |         
+u0:24 | Field     | age    | _c::lib::User::age       |         
+u0:25 | Function  | new    | _c::lib::User::new       | [global]
+u0:26 | Variable  | name   | _c::lib::User::new::name |         
+u0:27 | Variable  | age    | _c::lib::User::new::age  |         
+u1:28 | Crate     | crate  | _c::crate                |         
+u1:29 | Module    | _m     | _c::_m                   |         
+u1:30 | File      | main   | _c::_m::main             |         
+u1:31 | Function  | main   | _c::_m::main::main       |         
+u1:32 | Variable  | user   | _c::_m::main::main::user |         
+
+--- expect:symbol-deps ---
+u0:18 <- [u0:22, u0:23, u0:25, u0:26]
+u0:22 -> [u0:18, u0:25, u0:7]
+u0:22 <- [u1:31, u1:32]
+u0:23 -> [u0:18]
+u0:24 -> [u0:7]
+u0:25 -> [u0:18, u0:7]
+u0:25 <- [u0:22, u1:31]
+u0:26 -> [u0:18]
+u0:27 -> [u0:7]
+u0:7 <- [u0:22, u0:24, u0:25, u0:27]
+u1:31 -> [u0:22, u0:25]
+u1:32 -> [u0:22]
+
+
+===============================================================================
+cross-file-trait-implementation
+===============================================================================
+
+
+--- file: src/traits.rs ---
+pub trait Serializable {
+    fn serialize(&self) -> String;
+    fn deserialize(data: &str) -> Self where Self: Sized;
+}
+
+pub trait Validator {
+    fn validate(&self) -> bool;
+}
+
+--- file: src/models.rs ---
+use crate::traits::{Serializable, Validator};
+
+pub struct Config {
+    pub name: String,
+    pub enabled: bool,
+}
+
+impl Serializable for Config {
+    fn serialize(&self) -> String {
+        format!("{}:{}", self.name, self.enabled)
+    }
+
+    fn deserialize(data: &str) -> Self {
+        Config { name: data.to_string(), enabled: true }
+    }
+}
+
+impl Validator for Config {
+    fn validate(&self) -> bool {
+        !self.name.is_empty()
+    }
+}
+
+--- file: src/main.rs ---
+mod traits;
+mod models;
+
+use models::Config;
+use traits::{Serializable, Validator};
+
+fn main() {
+    let config = Config { name: "app".to_string(), enabled: true };
+    if config.validate() {
+        println!("{}", config.serialize());
+    }
+}
+
+--- expect:symbols ---
+u0:1  | Primitive      | i32          | i32                                             | [global]
+u0:2  | Primitive      | i64          | i64                                             | [global]
+u0:3  | Primitive      | i16          | i16                                             | [global]
+u0:4  | Primitive      | i8           | i8                                              | [global]
+u0:5  | Primitive      | i128         | i128                                            | [global]
+u0:6  | Primitive      | isize        | isize                                           | [global]
+u0:7  | Primitive      | u32          | u32                                             | [global]
+u0:8  | Primitive      | u64          | u64                                             | [global]
+u0:9  | Primitive      | u16          | u16                                             | [global]
+u0:10 | Primitive      | u8           | u8                                              | [global]
+u0:11 | Primitive      | u128         | u128                                            | [global]
+u0:12 | Primitive      | usize        | usize                                           | [global]
+u0:13 | Primitive      | f32          | f32                                             | [global]
+u0:14 | Primitive      | f64          | f64                                             | [global]
+u0:15 | Primitive      | bool         | bool                                            | [global]
+u0:16 | Primitive      | char         | char                                            | [global]
+u0:17 | Primitive      | str          | str                                             | [global]
+u0:18 | Primitive      | String       | String                                          | [global]
+u0:19 | Crate          | _c           | _c                                              | [global]
+u0:20 | Crate          | crate        | _c::crate                                       |         
+u0:21 | Module         | _m           | _c::_m                                          |         
+u0:22 | File           | main         | _c::_m::main                                    |         
+u0:23 | Function       | main         | _c::_m::main::main                              |         
+u0:24 | Variable       | config       | _c::_m::main::main::config                      |         
+u1:25 | Crate          | crate        | _c::crate                                       |         
+u1:26 | Module         | _m           | _c::_m                                          |         
+u1:27 | File           | models       | _c::_m::models                                  |         
+u1:28 | Struct         | Config       | _c::_m::models::Config                          | [global]
+u1:29 | Field          | name         | _c::_m::models::Config::name                    |         
+u1:30 | Field          | enabled      | _c::_m::models::Config::enabled                 |         
+u1:31 | UnresolvedType | Serializable | _c::_m::models::Serializable                    |         
+u1:32 | Function       | serialize    | _c::_m::models::Config::serialize               |         
+u1:33 | Function       | deserialize  | _c::_m::models::Config::deserialize             |         
+u1:34 | Variable       | data         | _c::_m::models::Config::deserialize::data       |         
+u1:35 | UnresolvedType | Validator    | _c::_m::models::Validator                       |         
+u1:36 | Function       | validate     | _c::_m::models::Config::validate                |         
+u2:37 | Crate          | crate        | _c::crate                                       |         
+u2:38 | Module         | _m           | _c::_m                                          |         
+u2:39 | File           | traits       | _c::_m::traits                                  |         
+u2:40 | Trait          | Serializable | _c::_m::traits::Serializable                    | [global]
+u2:41 | Function       | serialize    | _c::_m::traits::Serializable::serialize         |         
+u2:42 | Function       | deserialize  | _c::_m::traits::Serializable::deserialize       |         
+u2:43 | Variable       | data         | _c::_m::traits::Serializable::deserialize::data |         
+u2:44 | Trait          | Validator    | _c::_m::traits::Validator                       | [global]
+u2:45 | Function       | validate     | _c::_m::traits::Validator::validate             |         
+
+--- expect:symbol-deps ---
+u0:15 <- [u1:28, u1:30, u1:36, u2:45]
+u0:17 <- [u1:33, u1:34, u2:42, u2:43]
+u0:18 <- [u1:28, u1:29]
+u0:23 -> [u1:28, u2:45]
+u0:24 -> [u1:28]
+u1:28 -> [u0:15, u0:18, u1:32, u1:36]
+u1:28 <- [u0:23, u0:24, u1:33]
+u1:29 -> [u0:18]
+u1:30 -> [u0:15]
+u1:32 <- [u1:28]
+u1:33 -> [u0:17, u1:28]
+u1:34 -> [u0:17]
+u1:36 -> [u0:15]
+u1:36 <- [u1:28]
+u2:40 -> [u2:41, u2:42]
+u2:41 <- [u2:40]
+u2:42 -> [u0:17]
+u2:42 <- [u2:40]
+u2:43 -> [u0:17]
+u2:44 -> [u2:45]
+u2:45 -> [u0:15]
+u2:45 <- [u0:23, u2:44]
+
+
+===============================================================================
+cross-file-error-propagation
+===============================================================================
+
+
+--- file: src/error.rs ---
+#[derive(Debug)]
+pub enum AppError {
+    NotFound(String),
+    InvalidInput(String),
+    IoError(std::io::Error),
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::NotFound(msg) => write!(f, "Not found: {}", msg),
+            AppError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+            AppError::IoError(e) => write!(f, "IO error: {}", e),
+        }
+    }
+}
+
+pub type Result<T> = std::result::Result<T, AppError>;
+
+--- file: src/service.rs ---
+use crate::error::{AppError, Result};
+
+pub struct Service {
+    data: Vec<String>,
+}
+
+impl Service {
+    pub fn new() -> Self {
+        Service { data: Vec::new() }
+    }
+
+    pub fn get(&self, id: usize) -> Result<&String> {
+        self.data.get(id).ok_or_else(|| AppError::NotFound(id.to_string()))
+    }
+
+    pub fn add(&mut self, item: String) -> Result<usize> {
+        if item.is_empty() {
+            return Err(AppError::InvalidInput("empty item".to_string()));
+        }
+        self.data.push(item);
+        Ok(self.data.len() - 1)
+    }
+}
+
+--- file: src/main.rs ---
+mod error;
+mod service;
+
+use service::Service;
+
+fn main() -> error::Result<()> {
+    let mut svc = Service::new();
+    let id = svc.add("hello".to_string())?;
+    let item = svc.get(id)?;
+    println!("{}", item);
+    Ok(())
+}
+
+--- expect:symbols ---
+u0:1  | Primitive      | i32          | i32                                   | [global]
+u0:2  | Primitive      | i64          | i64                                   | [global]
+u0:3  | Primitive      | i16          | i16                                   | [global]
+u0:4  | Primitive      | i8           | i8                                    | [global]
+u0:5  | Primitive      | i128         | i128                                  | [global]
+u0:6  | Primitive      | isize        | isize                                 | [global]
+u0:7  | Primitive      | u32          | u32                                   | [global]
+u0:8  | Primitive      | u64          | u64                                   | [global]
+u0:9  | Primitive      | u16          | u16                                   | [global]
+u0:10 | Primitive      | u8           | u8                                    | [global]
+u0:11 | Primitive      | u128         | u128                                  | [global]
+u0:12 | Primitive      | usize        | usize                                 | [global]
+u0:13 | Primitive      | f32          | f32                                   | [global]
+u0:14 | Primitive      | f64          | f64                                   | [global]
+u0:15 | Primitive      | bool         | bool                                  | [global]
+u0:16 | Primitive      | char         | char                                  | [global]
+u0:17 | Primitive      | str          | str                                   | [global]
+u0:18 | Primitive      | String       | String                                | [global]
+u0:19 | Crate          | _c           | _c                                    | [global]
+u0:20 | Crate          | crate        | _c::crate                             |         
+u0:21 | Module         | _m           | _c::_m                                |         
+u0:22 | File           | error        | _c::_m::error                         |         
+u0:23 | Enum           | AppError     | _c::_m::error::AppError               | [global]
+u0:24 | EnumVariant    | NotFound     | _c::_m::error::AppError::NotFound     |         
+u0:25 | EnumVariant    | InvalidInput | _c::_m::error::AppError::InvalidInput |         
+u0:26 | EnumVariant    | IoError      | _c::_m::error::AppError::IoError      |         
+u0:27 | UnresolvedType | Display      | _c::_m::error::Display                |         
+u0:28 | Function       | fmt          | _c::_m::error::AppError::fmt          |         
+u0:29 | Variable       | f            | _c::_m::error::AppError::fmt::f       |         
+u0:30 | TypeAlias      | Result       | _c::_m::error::Result                 |         
+u0:31 | TypeParameter  | T            | _c::_m::error::T                      |         
+u1:32 | Crate          | crate        | _c::crate                             |         
+u1:33 | Module         | _m           | _c::_m                                |         
+u1:34 | File           | main         | _c::_m::main                          |         
+u1:35 | Function       | main         | _c::_m::main::main                    |         
+u1:36 | Variable       | svc          | _c::_m::main::main::svc               |         
+u1:37 | Variable       | id           | _c::_m::main::main::id                |         
+u1:38 | Variable       | item         | _c::_m::main::main::item              |         
+u2:39 | Crate          | crate        | _c::crate                             |         
+u2:40 | Module         | _m           | _c::_m                                |         
+u2:41 | File           | service      | _c::_m::service                       |         
+u2:42 | Struct         | Service      | _c::_m::service::Service              | [global]
+u2:43 | Field          | data         | _c::_m::service::Service::data        |         
+u2:44 | Function       | new          | _c::_m::service::Service::new         | [global]
+u2:45 | Function       | get          | _c::_m::service::Service::get         | [global]
+u2:46 | Variable       | id           | _c::_m::service::Service::get::id     |         
+u2:47 | Function       | add          | _c::_m::service::Service::add         | [global]
+u2:48 | Variable       | item         | _c::_m::service::Service::add::item   |         
+
+--- expect:symbol-deps ---
+u0:12 <- [u2:45, u2:46, u2:47]
+u0:18 <- [u0:23, u2:42, u2:43, u2:47, u2:48]
+u0:23 -> [u0:18, u0:24, u0:25, u0:26]
+u0:23 <- [u0:28, u0:30, u2:45, u2:47]
+u0:24 <- [u0:23, u0:28, u2:45]
+u0:25 <- [u0:23, u0:28, u2:47]
+u0:26 <- [u0:23, u0:28]
+u0:28 -> [u0:23, u0:24, u0:25, u0:26]
+u0:30 -> [u0:23]
+u1:35 -> [u2:44, u2:45, u2:47]
+u1:36 -> [u2:44]
+u1:37 -> [u2:44]
+u1:38 -> [u2:44]
+u2:42 -> [u0:18, u2:45, u2:47]
+u2:42 <- [u2:44]
+u2:43 -> [u0:18]
+u2:44 -> [u2:42]
+u2:44 <- [u1:35, u1:36, u1:37, u1:38]
+u2:45 -> [u0:12, u0:23, u0:24]
+u2:45 <- [u1:35, u2:42]
+u2:46 -> [u0:12]
+u2:47 -> [u0:12, u0:18, u0:23, u0:25]
+u2:47 <- [u1:35, u2:42]
+u2:48 -> [u0:18]
+
+
+===============================================================================
+cross-file-builder-pattern
+===============================================================================
+
+
+--- file: src/config.rs ---
+pub struct DatabaseConfig {
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    pub max_connections: u32,
+}
+
+--- file: src/builder.rs ---
+use crate::config::DatabaseConfig;
+
+pub struct DatabaseConfigBuilder {
+    host: Option<String>,
+    port: Option<u16>,
+    database: Option<String>,
+    max_connections: Option<u32>,
+}
+
+impl DatabaseConfigBuilder {
+    pub fn new() -> Self {
+        DatabaseConfigBuilder {
+            host: None,
+            port: None,
+            database: None,
+            max_connections: None,
+        }
+    }
+
+    pub fn host(mut self, host: &str) -> Self {
+        self.host = Some(host.to_string());
+        self
+    }
+
+    pub fn port(mut self, port: u16) -> Self {
+        self.port = Some(port);
+        self
+    }
+
+    pub fn database(mut self, db: &str) -> Self {
+        self.database = Some(db.to_string());
+        self
+    }
+
+    pub fn max_connections(mut self, max: u32) -> Self {
+        self.max_connections = Some(max);
+        self
+    }
+
+    pub fn build(self) -> DatabaseConfig {
+        DatabaseConfig {
+            host: self.host.unwrap_or_else(|| "localhost".to_string()),
+            port: self.port.unwrap_or(5432),
+            database: self.database.unwrap_or_else(|| "default".to_string()),
+            max_connections: self.max_connections.unwrap_or(10),
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod config;
+mod builder;
+
+use builder::DatabaseConfigBuilder;
+
+fn main() {
+    let config = DatabaseConfigBuilder::new()
+        .host("db.example.com")
+        .port(5432)
+        .database("myapp")
+        .max_connections(100)
+        .build();
+
+    println!("Connecting to {}:{}", config.host, config.port);
+}
+
+--- expect:symbols ---
+u0:1  | Primitive | i32                   | i32                                                          | [global]
+u0:2  | Primitive | i64                   | i64                                                          | [global]
+u0:3  | Primitive | i16                   | i16                                                          | [global]
+u0:4  | Primitive | i8                    | i8                                                           | [global]
+u0:5  | Primitive | i128                  | i128                                                         | [global]
+u0:6  | Primitive | isize                 | isize                                                        | [global]
+u0:7  | Primitive | u32                   | u32                                                          | [global]
+u0:8  | Primitive | u64                   | u64                                                          | [global]
+u0:9  | Primitive | u16                   | u16                                                          | [global]
+u0:10 | Primitive | u8                    | u8                                                           | [global]
+u0:11 | Primitive | u128                  | u128                                                         | [global]
+u0:12 | Primitive | usize                 | usize                                                        | [global]
+u0:13 | Primitive | f32                   | f32                                                          | [global]
+u0:14 | Primitive | f64                   | f64                                                          | [global]
+u0:15 | Primitive | bool                  | bool                                                         | [global]
+u0:16 | Primitive | char                  | char                                                         | [global]
+u0:17 | Primitive | str                   | str                                                          | [global]
+u0:18 | Primitive | String                | String                                                       | [global]
+u0:19 | Crate     | _c                    | _c                                                           | [global]
+u0:20 | Crate     | crate                 | _c::crate                                                    |         
+u0:21 | Module    | _m                    | _c::_m                                                       |         
+u0:22 | File      | builder               | _c::_m::builder                                              |         
+u0:23 | Struct    | DatabaseConfigBuilder | _c::_m::builder::DatabaseConfigBuilder                       | [global]
+u0:24 | Field     | host                  | _c::_m::builder::DatabaseConfigBuilder::host                 | [global]
+u0:25 | Field     | port                  | _c::_m::builder::DatabaseConfigBuilder::port                 | [global]
+u0:26 | Field     | database              | _c::_m::builder::DatabaseConfigBuilder::database             | [global]
+u0:27 | Field     | max_connections       | _c::_m::builder::DatabaseConfigBuilder::max_connections      | [global]
+u0:28 | Function  | new                   | _c::_m::builder::DatabaseConfigBuilder::new                  | [global]
+u0:29 | Variable  | host                  | _c::_m::builder::DatabaseConfigBuilder::host::host           |         
+u0:30 | Variable  | port                  | _c::_m::builder::DatabaseConfigBuilder::port::port           |         
+u0:31 | Variable  | db                    | _c::_m::builder::DatabaseConfigBuilder::database::db         |         
+u0:32 | Variable  | max                   | _c::_m::builder::DatabaseConfigBuilder::max_connections::max |         
+u0:33 | Function  | build                 | _c::_m::builder::DatabaseConfigBuilder::build                | [global]
+u1:34 | Crate     | crate                 | _c::crate                                                    |         
+u1:35 | Module    | _m                    | _c::_m                                                       |         
+u1:36 | File      | config                | _c::_m::config                                               |         
+u1:37 | Struct    | DatabaseConfig        | _c::_m::config::DatabaseConfig                               | [global]
+u1:38 | Field     | host                  | _c::_m::config::DatabaseConfig::host                         |         
+u1:39 | Field     | port                  | _c::_m::config::DatabaseConfig::port                         |         
+u1:40 | Field     | database              | _c::_m::config::DatabaseConfig::database                     |         
+u1:41 | Field     | max_connections       | _c::_m::config::DatabaseConfig::max_connections              |         
+u2:42 | Crate     | crate                 | _c::crate                                                    |         
+u2:43 | Module    | _m                    | _c::_m                                                       |         
+u2:44 | File      | main                  | _c::_m::main                                                 |         
+u2:45 | Function  | main                  | _c::_m::main::main                                           |         
+u2:46 | Variable  | config                | _c::_m::main::main::config                                   |         
+
+--- expect:symbol-deps ---
+u0:17 <- [u0:24, u0:26, u0:29, u0:31]
+u0:18 <- [u0:23, u0:24, u0:26, u1:37, u1:38, u1:40]
+u0:23 -> [u0:18, u0:24, u0:25, u0:26, u0:27, u0:33, u0:7, u0:9]
+u0:23 <- [u0:28, u2:45, u2:46]
+u0:24 -> [u0:17, u0:18]
+u0:24 <- [u0:23]
+u0:25 -> [u0:9]
+u0:25 <- [u0:23]
+u0:26 -> [u0:17, u0:18]
+u0:26 <- [u0:23]
+u0:27 -> [u0:7]
+u0:27 <- [u0:23]
+u0:28 -> [u0:23]
+u0:28 <- [u2:45]
+u0:29 -> [u0:17]
+u0:30 -> [u0:9]
+u0:31 -> [u0:17]
+u0:32 -> [u0:7]
+u0:33 -> [u1:37]
+u0:33 <- [u0:23, u2:45]
+u0:7 <- [u0:23, u0:27, u0:32, u1:37, u1:41]
+u0:9 <- [u0:23, u0:25, u0:30, u1:37, u1:39]
+u1:37 -> [u0:18, u0:7, u0:9]
+u1:37 <- [u0:33]
+u1:38 -> [u0:18]
+u1:39 -> [u0:9]
+u1:40 -> [u0:18]
+u1:41 -> [u0:7]
+u2:45 -> [u0:23, u0:28, u0:33]
+u2:46 -> [u0:23]
+
+
+===============================================================================
+cross-file-factory-pattern
+===============================================================================
+
+
+--- file: src/transport.rs ---
+pub trait Transport {
+    fn send(&self, data: &[u8]) -> bool;
+    fn recv(&self) -> Vec<u8>;
+}
+
+pub struct TcpTransport {
+    pub address: String,
+}
+
+pub struct UdpTransport {
+    pub address: String,
+}
+
+impl Transport for TcpTransport {
+    fn send(&self, data: &[u8]) -> bool {
+        println!("TCP send to {}: {} bytes", self.address, data.len());
+        true
+    }
+    fn recv(&self) -> Vec<u8> {
+        vec![]
+    }
+}
+
+impl Transport for UdpTransport {
+    fn send(&self, data: &[u8]) -> bool {
+        println!("UDP send to {}: {} bytes", self.address, data.len());
+        true
+    }
+    fn recv(&self) -> Vec<u8> {
+        vec![]
+    }
+}
+
+--- file: src/factory.rs ---
+use crate::transport::{Transport, TcpTransport, UdpTransport};
+
+pub enum TransportType {
+    Tcp,
+    Udp,
+}
+
+pub struct TransportFactory;
+
+impl TransportFactory {
+    pub fn create(kind: TransportType, address: &str) -> Box<dyn Transport> {
+        match kind {
+            TransportType::Tcp => Box::new(TcpTransport { address: address.to_string() }),
+            TransportType::Udp => Box::new(UdpTransport { address: address.to_string() }),
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod transport;
+mod factory;
+
+use factory::{TransportFactory, TransportType};
+
+fn main() {
+    let tcp = TransportFactory::create(TransportType::Tcp, "127.0.0.1:8080");
+    let udp = TransportFactory::create(TransportType::Udp, "127.0.0.1:9090");
+
+    tcp.send(b"hello tcp");
+    udp.send(b"hello udp");
+}
+
+--- expect:symbols ---
+u0:1  | Primitive   | i32              | i32                                                | [global]
+u0:2  | Primitive   | i64              | i64                                                | [global]
+u0:3  | Primitive   | i16              | i16                                                | [global]
+u0:4  | Primitive   | i8               | i8                                                 | [global]
+u0:5  | Primitive   | i128             | i128                                               | [global]
+u0:6  | Primitive   | isize            | isize                                              | [global]
+u0:7  | Primitive   | u32              | u32                                                | [global]
+u0:8  | Primitive   | u64              | u64                                                | [global]
+u0:9  | Primitive   | u16              | u16                                                | [global]
+u0:10 | Primitive   | u8               | u8                                                 | [global]
+u0:11 | Primitive   | u128             | u128                                               | [global]
+u0:12 | Primitive   | usize            | usize                                              | [global]
+u0:13 | Primitive   | f32              | f32                                                | [global]
+u0:14 | Primitive   | f64              | f64                                                | [global]
+u0:15 | Primitive   | bool             | bool                                               | [global]
+u0:16 | Primitive   | char             | char                                               | [global]
+u0:17 | Primitive   | str              | str                                                | [global]
+u0:18 | Primitive   | String           | String                                             | [global]
+u0:19 | Crate       | _c               | _c                                                 | [global]
+u0:20 | Crate       | crate            | _c::crate                                          |         
+u0:21 | Module      | _m               | _c::_m                                             |         
+u0:22 | File        | factory          | _c::_m::factory                                    |         
+u0:23 | Enum        | TransportType    | _c::_m::factory::TransportType                     | [global]
+u0:24 | EnumVariant | Tcp              | _c::_m::factory::TransportType::Tcp                |         
+u0:25 | EnumVariant | Udp              | _c::_m::factory::TransportType::Udp                |         
+u0:26 | Struct      | TransportFactory | _c::_m::factory::TransportFactory                  | [global]
+u0:27 | Function    | create           | _c::_m::factory::TransportFactory::create          | [global]
+u0:28 | Variable    | kind             | _c::_m::factory::TransportFactory::create::kind    |         
+u0:29 | Variable    | address          | _c::_m::factory::TransportFactory::create::address |         
+u1:30 | Crate       | crate            | _c::crate                                          |         
+u1:31 | Module      | _m               | _c::_m                                             |         
+u1:32 | File        | main             | _c::_m::main                                       |         
+u1:33 | Function    | main             | _c::_m::main::main                                 |         
+u1:34 | Variable    | tcp              | _c::_m::main::main::tcp                            |         
+u1:35 | Variable    | udp              | _c::_m::main::main::udp                            |         
+u2:36 | Crate       | crate            | _c::crate                                          |         
+u2:37 | Module      | _m               | _c::_m                                             |         
+u2:38 | File        | transport        | _c::_m::transport                                  |         
+u2:39 | Trait       | Transport        | _c::_m::transport::Transport                       | [global]
+u2:40 | Function    | send             | _c::_m::transport::Transport::send                 |         
+u2:41 | Variable    | data             | _c::_m::transport::Transport::send::data           |         
+u2:42 | Function    | recv             | _c::_m::transport::Transport::recv                 |         
+u2:43 | Struct      | TcpTransport     | _c::_m::transport::TcpTransport                    | [global]
+u2:44 | Field       | address          | _c::_m::transport::TcpTransport::address           |         
+u2:45 | Struct      | UdpTransport     | _c::_m::transport::UdpTransport                    | [global]
+u2:46 | Field       | address          | _c::_m::transport::UdpTransport::address           |         
+
+--- expect:symbol-deps ---
+u0:10 <- [u2:40, u2:41, u2:42]
+u0:15 <- [u2:40]
+u0:17 <- [u0:27, u0:29]
+u0:18 <- [u2:43, u2:44, u2:45, u2:46]
+u0:23 -> [u0:24, u0:25]
+u0:23 <- [u0:27, u0:28, u1:33]
+u0:24 <- [u0:23, u0:27, u1:33]
+u0:25 <- [u0:23, u0:27, u1:33]
+u0:26 -> [u0:27]
+u0:27 -> [u0:17, u0:23, u0:24, u0:25, u2:43, u2:45]
+u0:27 <- [u0:26, u1:33, u1:34, u1:35]
+u0:28 -> [u0:23]
+u0:29 -> [u0:17]
+u1:33 -> [u0:23, u0:24, u0:25, u0:27, u2:40]
+u1:34 -> [u0:27]
+u1:35 -> [u0:27]
+u2:39 -> [u2:40, u2:42]
+u2:39 <- [u2:43, u2:45]
+u2:40 -> [u0:10, u0:15]
+u2:40 <- [u1:33, u2:39, u2:43, u2:45]
+u2:41 -> [u0:10]
+u2:42 -> [u0:10]
+u2:42 <- [u2:39, u2:43, u2:45]
+u2:43 -> [u0:18, u2:39, u2:40, u2:42]
+u2:43 <- [u0:27]
+u2:44 -> [u0:18]
+u2:45 -> [u0:18, u2:39, u2:40, u2:42]
+u2:45 <- [u0:27]
+u2:46 -> [u0:18]
+
+
+===============================================================================
+cross-file-visitor-pattern
+===============================================================================
+
+
+--- file: src/ast.rs ---
+pub enum Expr {
+    Number(i64),
+    Binary { op: BinOp, left: Box<Expr>, right: Box<Expr> },
+    Unary { op: UnaryOp, expr: Box<Expr> },
+}
+
+pub enum BinOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+
+pub enum UnaryOp {
+    Neg,
+    Not,
+}
+
+--- file: src/visitor.rs ---
+use crate::ast::{Expr, BinOp, UnaryOp};
+
+pub trait ExprVisitor {
+    type Output;
+
+    fn visit_number(&mut self, n: i64) -> Self::Output;
+    fn visit_binary(&mut self, op: &BinOp, left: &Expr, right: &Expr) -> Self::Output;
+    fn visit_unary(&mut self, op: &UnaryOp, expr: &Expr) -> Self::Output;
+
+    fn visit(&mut self, expr: &Expr) -> Self::Output {
+        match expr {
+            Expr::Number(n) => self.visit_number(*n),
+            Expr::Binary { op, left, right } => self.visit_binary(op, left, right),
+            Expr::Unary { op, expr } => self.visit_unary(op, expr),
+        }
+    }
+}
+
+--- file: src/eval.rs ---
+use crate::ast::{Expr, BinOp, UnaryOp};
+use crate::visitor::ExprVisitor;
+
+pub struct Evaluator;
+
+impl ExprVisitor for Evaluator {
+    type Output = i64;
+
+    fn visit_number(&mut self, n: i64) -> i64 {
+        n
+    }
+
+    fn visit_binary(&mut self, op: &BinOp, left: &Expr, right: &Expr) -> i64 {
+        let l = self.visit(left);
+        let r = self.visit(right);
+        match op {
+            BinOp::Add => l + r,
+            BinOp::Sub => l - r,
+            BinOp::Mul => l * r,
+            BinOp::Div => l / r,
+        }
+    }
+
+    fn visit_unary(&mut self, op: &UnaryOp, expr: &Expr) -> i64 {
+        let v = self.visit(expr);
+        match op {
+            UnaryOp::Neg => -v,
+            UnaryOp::Not => if v == 0 { 1 } else { 0 },
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod ast;
+mod visitor;
+mod eval;
+
+use ast::{Expr, BinOp};
+use visitor::ExprVisitor;
+use eval::Evaluator;
+
+fn main() {
+    // (1 + 2) * 3
+    let expr = Expr::Binary {
+        op: BinOp::Mul,
+        left: Box::new(Expr::Binary {
+            op: BinOp::Add,
+            left: Box::new(Expr::Number(1)),
+            right: Box::new(Expr::Number(2)),
+        }),
+        right: Box::new(Expr::Number(3)),
+    };
+
+    let mut eval = Evaluator;
+    println!("Result: {}", eval.visit(&expr));
+}
+
+--- expect:symbols ---
+u0:1  | Primitive      | i32          | i32                                               | [global]
+u0:2  | Primitive      | i64          | i64                                               | [global]
+u0:3  | Primitive      | i16          | i16                                               | [global]
+u0:4  | Primitive      | i8           | i8                                                | [global]
+u0:5  | Primitive      | i128         | i128                                              | [global]
+u0:6  | Primitive      | isize        | isize                                             | [global]
+u0:7  | Primitive      | u32          | u32                                               | [global]
+u0:8  | Primitive      | u64          | u64                                               | [global]
+u0:9  | Primitive      | u16          | u16                                               | [global]
+u0:10 | Primitive      | u8           | u8                                                | [global]
+u0:11 | Primitive      | u128         | u128                                              | [global]
+u0:12 | Primitive      | usize        | usize                                             | [global]
+u0:13 | Primitive      | f32          | f32                                               | [global]
+u0:14 | Primitive      | f64          | f64                                               | [global]
+u0:15 | Primitive      | bool         | bool                                              | [global]
+u0:16 | Primitive      | char         | char                                              | [global]
+u0:17 | Primitive      | str          | str                                               | [global]
+u0:18 | Primitive      | String       | String                                            | [global]
+u0:19 | Crate          | _c           | _c                                                | [global]
+u0:20 | Crate          | crate        | _c::crate                                         |         
+u0:21 | Module         | _m           | _c::_m                                            |         
+u0:22 | File           | ast          | _c::_m::ast                                       |         
+u0:23 | Enum           | Expr         | _c::_m::ast::Expr                                 | [global]
+u0:24 | EnumVariant    | Number       | _c::_m::ast::Expr::Number                         |         
+u0:25 | EnumVariant    | Binary       | _c::_m::ast::Expr::Binary                         |         
+u0:26 | Field          | op           | _c::_m::ast::Expr::Binary::op                     |         
+u0:27 | Field          | left         | _c::_m::ast::Expr::Binary::left                   |         
+u0:28 | Field          | right        | _c::_m::ast::Expr::Binary::right                  |         
+u0:29 | EnumVariant    | Unary        | _c::_m::ast::Expr::Unary                          |         
+u0:30 | Field          | op           | _c::_m::ast::Expr::Unary::op                      |         
+u0:31 | Field          | expr         | _c::_m::ast::Expr::Unary::expr                    |         
+u0:32 | Enum           | BinOp        | _c::_m::ast::BinOp                                | [global]
+u0:33 | EnumVariant    | Add          | _c::_m::ast::BinOp::Add                           |         
+u0:34 | EnumVariant    | Sub          | _c::_m::ast::BinOp::Sub                           |         
+u0:35 | EnumVariant    | Mul          | _c::_m::ast::BinOp::Mul                           |         
+u0:36 | EnumVariant    | Div          | _c::_m::ast::BinOp::Div                           |         
+u0:37 | Enum           | UnaryOp      | _c::_m::ast::UnaryOp                              | [global]
+u0:38 | EnumVariant    | Neg          | _c::_m::ast::UnaryOp::Neg                         |         
+u0:39 | EnumVariant    | Not          | _c::_m::ast::UnaryOp::Not                         |         
+u1:40 | Crate          | crate        | _c::crate                                         |         
+u1:41 | Module         | _m           | _c::_m                                            |         
+u1:42 | File           | eval         | _c::_m::eval                                      |         
+u1:43 | Struct         | Evaluator    | _c::_m::eval::Evaluator                           | [global]
+u1:44 | UnresolvedType | ExprVisitor  | _c::_m::eval::ExprVisitor                         |         
+u1:45 | TypeAlias      | Output       | _c::_m::eval::Evaluator::Output                   |         
+u1:46 | Function       | visit_number | _c::_m::eval::Evaluator::visit_number             |         
+u1:47 | Variable       | n            | _c::_m::eval::Evaluator::visit_number::n          |         
+u1:48 | Function       | visit_binary | _c::_m::eval::Evaluator::visit_binary             |         
+u1:49 | Variable       | op           | _c::_m::eval::Evaluator::visit_binary::op         |         
+u1:50 | Variable       | left         | _c::_m::eval::Evaluator::visit_binary::left       |         
+u1:51 | Variable       | right        | _c::_m::eval::Evaluator::visit_binary::right      |         
+u1:52 | Variable       | l            | _c::_m::eval::Evaluator::visit_binary::l          |         
+u1:53 | Variable       | r            | _c::_m::eval::Evaluator::visit_binary::r          |         
+u1:54 | Function       | visit_unary  | _c::_m::eval::Evaluator::visit_unary              |         
+u1:55 | Variable       | op           | _c::_m::eval::Evaluator::visit_unary::op          |         
+u1:56 | Variable       | expr         | _c::_m::eval::Evaluator::visit_unary::expr        |         
+u1:57 | Variable       | v            | _c::_m::eval::Evaluator::visit_unary::v           |         
+u2:58 | Crate          | crate        | _c::crate                                         |         
+u2:59 | Module         | _m           | _c::_m                                            |         
+u2:60 | File           | main         | _c::_m::main                                      |         
+u2:61 | Function       | main         | _c::_m::main::main                                |         
+u2:62 | Variable       | expr         | _c::_m::main::main::expr                          |         
+u2:63 | Variable       | eval         | _c::_m::main::main::eval                          |         
+u3:64 | Crate          | crate        | _c::crate                                         |         
+u3:65 | Module         | _m           | _c::_m                                            |         
+u3:66 | File           | visitor      | _c::_m::visitor                                   |         
+u3:67 | Trait          | ExprVisitor  | _c::_m::visitor::ExprVisitor                      | [global]
+u3:68 | TypeAlias      | Output       | _c::_m::visitor::ExprVisitor::Output              |         
+u3:69 | Function       | visit_number | _c::_m::visitor::ExprVisitor::visit_number        |         
+u3:70 | Variable       | n            | _c::_m::visitor::ExprVisitor::visit_number::n     |         
+u3:71 | Function       | visit_binary | _c::_m::visitor::ExprVisitor::visit_binary        |         
+u3:72 | Variable       | op           | _c::_m::visitor::ExprVisitor::visit_binary::op    |         
+u3:73 | Variable       | left         | _c::_m::visitor::ExprVisitor::visit_binary::left  |         
+u3:74 | Variable       | right        | _c::_m::visitor::ExprVisitor::visit_binary::right |         
+u3:75 | Function       | visit_unary  | _c::_m::visitor::ExprVisitor::visit_unary         |         
+u3:76 | Variable       | op           | _c::_m::visitor::ExprVisitor::visit_unary::op     |         
+u3:77 | Variable       | expr         | _c::_m::visitor::ExprVisitor::visit_unary::expr   |         
+u3:78 | Function       | visit        | _c::_m::visitor::ExprVisitor::visit               |         
+u3:79 | Variable       | expr         | _c::_m::visitor::ExprVisitor::visit::expr         |         
+
+--- expect:symbol-deps ---
+u0:2 <- [u0:23, u1:43, u1:45, u1:46, u1:47, u1:48, u1:54, u3:69, u3:70]
+u0:23 -> [u0:2, u0:24, u0:25, u0:29, u0:32, u0:37]
+u0:23 <- [u1:48, u1:50, u1:51, u1:54, u1:56, u2:61, u3:71, u3:73, u3:74, u3:75, u3:77, u3:78, u3:79]
+u0:24 <- [u0:23, u2:61, u3:78]
+u0:25 <- [u0:23, u2:61, u2:62]
+u0:29 <- [u0:23]
+u0:32 -> [u0:33, u0:34, u0:35, u0:36]
+u0:32 <- [u0:23, u1:48, u1:49, u2:61, u3:71, u3:72]
+u0:33 <- [u0:32, u1:48, u2:61]
+u0:34 <- [u0:32, u1:48]
+u0:35 <- [u0:32, u1:48, u2:61]
+u0:36 <- [u0:32, u1:48]
+u0:37 -> [u0:38, u0:39]
+u0:37 <- [u0:23, u1:54, u1:55, u3:75, u3:76]
+u0:38 <- [u0:37, u1:54]
+u0:39 <- [u0:37, u1:54]
+u1:43 -> [u0:2, u1:45, u1:46, u1:48, u1:54]
+u1:43 <- [u2:61, u2:63]
+u1:45 -> [u0:2]
+u1:45 <- [u1:43]
+u1:46 -> [u0:2]
+u1:46 <- [u1:43]
+u1:47 -> [u0:2]
+u1:48 -> [u0:2, u0:23, u0:32, u0:33, u0:34, u0:35, u0:36, u3:78]
+u1:48 <- [u1:43]
+u1:49 -> [u0:32]
+u1:50 -> [u0:23]
+u1:51 -> [u0:23]
+u1:52 -> [u3:78]
+u1:53 -> [u3:78]
+u1:54 -> [u0:2, u0:23, u0:37, u0:38, u0:39, u3:78]
+u1:54 <- [u1:43]
+u1:55 -> [u0:37]
+u1:56 -> [u0:23]
+u1:57 -> [u3:78]
+u2:61 -> [u0:23, u0:24, u0:25, u0:32, u0:33, u0:35, u1:43]
+u2:62 -> [u0:25]
+u2:63 -> [u1:43]
+u3:67 -> [u3:68, u3:69, u3:71, u3:75, u3:78]
+u3:68 <- [u3:67]
+u3:69 -> [u0:2]
+u3:69 <- [u3:67, u3:78]
+u3:70 -> [u0:2]
+u3:71 -> [u0:23, u0:32]
+u3:71 <- [u3:67, u3:78]
+u3:72 -> [u0:32]
+u3:73 -> [u0:23]
+u3:74 -> [u0:23]
+u3:75 -> [u0:23, u0:37]
+u3:75 <- [u3:67, u3:78]
+u3:76 -> [u0:37]
+u3:77 -> [u0:23]
+u3:78 -> [u0:23, u0:24, u3:69, u3:71, u3:75]
+u3:78 <- [u1:48, u1:52, u1:53, u1:54, u1:57, u3:67]
+u3:79 -> [u0:23]
+
+
+===============================================================================
+cross-file-repository-pattern
+===============================================================================
+
+
+--- file: src/entity.rs ---
+#[derive(Clone, Debug)]
+pub struct User {
+    pub id: u64,
+    pub name: String,
+    pub email: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct Post {
+    pub id: u64,
+    pub user_id: u64,
+    pub title: String,
+    pub content: String,
+}
+
+--- file: src/repository.rs ---
+use crate::entity::{User, Post};
+
+pub trait Repository<T> {
+    fn find_by_id(&self, id: u64) -> Option<T>;
+    fn find_all(&self) -> Vec<T>;
+    fn save(&mut self, item: T) -> u64;
+    fn delete(&mut self, id: u64) -> bool;
+}
+
+pub trait UserRepository: Repository<User> {
+    fn find_by_email(&self, email: &str) -> Option<User>;
+}
+
+pub trait PostRepository: Repository<Post> {
+    fn find_by_user(&self, user_id: u64) -> Vec<Post>;
+}
+
+--- file: src/memory_repo.rs ---
+use crate::entity::{User, Post};
+use crate::repository::{Repository, UserRepository, PostRepository};
+use std::collections::HashMap;
+
+pub struct InMemoryUserRepo {
+    users: HashMap<u64, User>,
+    next_id: u64,
+}
+
+impl InMemoryUserRepo {
+    pub fn new() -> Self {
+        InMemoryUserRepo { users: HashMap::new(), next_id: 1 }
+    }
+}
+
+impl Repository<User> for InMemoryUserRepo {
+    fn find_by_id(&self, id: u64) -> Option<User> {
+        self.users.get(&id).cloned()
+    }
+
+    fn find_all(&self) -> Vec<User> {
+        self.users.values().cloned().collect()
+    }
+
+    fn save(&mut self, mut user: User) -> u64 {
+        if user.id == 0 {
+            user.id = self.next_id;
+            self.next_id += 1;
+        }
+        let id = user.id;
+        self.users.insert(id, user);
+        id
+    }
+
+    fn delete(&mut self, id: u64) -> bool {
+        self.users.remove(&id).is_some()
+    }
+}
+
+impl UserRepository for InMemoryUserRepo {
+    fn find_by_email(&self, email: &str) -> Option<User> {
+        self.users.values().find(|u| u.email == email).cloned()
+    }
+}
+
+--- file: src/main.rs ---
+mod entity;
+mod repository;
+mod memory_repo;
+
+use entity::User;
+use repository::{Repository, UserRepository};
+use memory_repo::InMemoryUserRepo;
+
+fn main() {
+    let mut repo = InMemoryUserRepo::new();
+
+    let user = User { id: 0, name: "Alice".to_string(), email: "alice@example.com".to_string() };
+    let id = repo.save(user);
+
+    if let Some(found) = repo.find_by_id(id) {
+        println!("Found: {:?}", found);
+    }
+
+    if let Some(by_email) = repo.find_by_email("alice@example.com") {
+        println!("By email: {:?}", by_email);
+    }
+}
+
+--- expect:symbols ---
+u0:1  | Primitive      | i32              | i32                                                         | [global]
+u0:2  | Primitive      | i64              | i64                                                         | [global]
+u0:3  | Primitive      | i16              | i16                                                         | [global]
+u0:4  | Primitive      | i8               | i8                                                          | [global]
+u0:5  | Primitive      | i128             | i128                                                        | [global]
+u0:6  | Primitive      | isize            | isize                                                       | [global]
+u0:7  | Primitive      | u32              | u32                                                         | [global]
+u0:8  | Primitive      | u64              | u64                                                         | [global]
+u0:9  | Primitive      | u16              | u16                                                         | [global]
+u0:10 | Primitive      | u8               | u8                                                          | [global]
+u0:11 | Primitive      | u128             | u128                                                        | [global]
+u0:12 | Primitive      | usize            | usize                                                       | [global]
+u0:13 | Primitive      | f32              | f32                                                         | [global]
+u0:14 | Primitive      | f64              | f64                                                         | [global]
+u0:15 | Primitive      | bool             | bool                                                        | [global]
+u0:16 | Primitive      | char             | char                                                        | [global]
+u0:17 | Primitive      | str              | str                                                         | [global]
+u0:18 | Primitive      | String           | String                                                      | [global]
+u0:19 | Crate          | _c               | _c                                                          | [global]
+u0:20 | Crate          | crate            | _c::crate                                                   |         
+u0:21 | Module         | _m               | _c::_m                                                      |         
+u0:22 | File           | entity           | _c::_m::entity                                              |         
+u0:23 | Struct         | User             | _c::_m::entity::User                                        | [global]
+u0:24 | Field          | id               | _c::_m::entity::User::id                                    |         
+u0:25 | Field          | name             | _c::_m::entity::User::name                                  |         
+u0:26 | Field          | email            | _c::_m::entity::User::email                                 |         
+u0:27 | Struct         | Post             | _c::_m::entity::Post                                        | [global]
+u0:28 | Field          | id               | _c::_m::entity::Post::id                                    |         
+u0:29 | Field          | user_id          | _c::_m::entity::Post::user_id                               |         
+u0:30 | Field          | title            | _c::_m::entity::Post::title                                 |         
+u0:31 | Field          | content          | _c::_m::entity::Post::content                               |         
+u1:32 | Crate          | crate            | _c::crate                                                   |         
+u1:33 | Module         | _m               | _c::_m                                                      |         
+u1:34 | File           | main             | _c::_m::main                                                |         
+u1:35 | Function       | main             | _c::_m::main::main                                          |         
+u1:36 | Variable       | repo             | _c::_m::main::main::repo                                    |         
+u1:37 | Variable       | user             | _c::_m::main::main::user                                    |         
+u1:38 | Variable       | id               | _c::_m::main::main::id                                      |         
+u2:39 | Crate          | crate            | _c::crate                                                   |         
+u2:40 | Module         | _m               | _c::_m                                                      |         
+u2:41 | File           | memory_repo      | _c::_m::memory_repo                                         |         
+u2:42 | Struct         | InMemoryUserRepo | _c::_m::memory_repo::InMemoryUserRepo                       | [global]
+u2:43 | Field          | users            | _c::_m::memory_repo::InMemoryUserRepo::users                |         
+u2:44 | Field          | next_id          | _c::_m::memory_repo::InMemoryUserRepo::next_id              |         
+u2:45 | Function       | new              | _c::_m::memory_repo::InMemoryUserRepo::new                  | [global]
+u2:46 | UnresolvedType | Repository       | _c::_m::memory_repo::Repository                             |         
+u2:47 | Function       | find_by_id       | _c::_m::memory_repo::InMemoryUserRepo::find_by_id           |         
+u2:48 | Variable       | id               | _c::_m::memory_repo::InMemoryUserRepo::find_by_id::id       |         
+u2:49 | Function       | find_all         | _c::_m::memory_repo::InMemoryUserRepo::find_all             |         
+u2:50 | Function       | save             | _c::_m::memory_repo::InMemoryUserRepo::save                 |         
+u2:51 | Variable       | user             | _c::_m::memory_repo::InMemoryUserRepo::save::user           |         
+u2:52 | Variable       | id               | _c::_m::memory_repo::InMemoryUserRepo::save::id             |         
+u2:53 | Function       | delete           | _c::_m::memory_repo::InMemoryUserRepo::delete               |         
+u2:54 | Variable       | id               | _c::_m::memory_repo::InMemoryUserRepo::delete::id           |         
+u2:55 | UnresolvedType | UserRepository   | _c::_m::memory_repo::UserRepository                         |         
+u2:56 | Function       | find_by_email    | _c::_m::memory_repo::InMemoryUserRepo::find_by_email        |         
+u2:57 | Variable       | email            | _c::_m::memory_repo::InMemoryUserRepo::find_by_email::email |         
+u2:58 | Variable       | u                | _c::_m::memory_repo::InMemoryUserRepo::find_by_email::u     |         
+u3:59 | Crate          | crate            | _c::crate                                                   |         
+u3:60 | Module         | _m               | _c::_m                                                      |         
+u3:61 | File           | repository       | _c::_m::repository                                          |         
+u3:62 | Trait          | Repository       | _c::_m::repository::Repository                              | [global]
+u3:63 | TypeParameter  | T                | _c::_m::repository::Repository::T                           |         
+u3:64 | Function       | find_by_id       | _c::_m::repository::Repository::find_by_id                  |         
+u3:65 | Variable       | id               | _c::_m::repository::Repository::find_by_id::id              |         
+u3:66 | Function       | find_all         | _c::_m::repository::Repository::find_all                    |         
+u3:67 | Function       | save             | _c::_m::repository::Repository::save                        |         
+u3:68 | Variable       | item             | _c::_m::repository::Repository::save::item                  |         
+u3:69 | Function       | delete           | _c::_m::repository::Repository::delete                      |         
+u3:70 | Variable       | id               | _c::_m::repository::Repository::delete::id                  |         
+u3:71 | Trait          | UserRepository   | _c::_m::repository::UserRepository                          | [global]
+u3:72 | Function       | find_by_email    | _c::_m::repository::UserRepository::find_by_email           |         
+u3:73 | Variable       | email            | _c::_m::repository::UserRepository::find_by_email::email    |         
+u3:74 | Trait          | PostRepository   | _c::_m::repository::PostRepository                          | [global]
+u3:75 | Function       | find_by_user     | _c::_m::repository::PostRepository::find_by_user            |         
+u3:76 | Variable       | user_id          | _c::_m::repository::PostRepository::find_by_user::user_id   |         
+
+--- expect:symbol-deps ---
+u0:15 <- [u2:53, u3:69]
+u0:17 <- [u2:56, u2:57, u3:72, u3:73]
+u0:18 <- [u0:23, u0:25, u0:26, u0:27, u0:30, u0:31]
+u0:23 -> [u0:18, u0:8]
+u0:23 <- [u1:35, u1:37, u2:42, u2:43, u2:50, u2:51, u3:71]
+u0:24 -> [u0:8]
+u0:25 -> [u0:18]
+u0:26 -> [u0:18]
+u0:27 -> [u0:18, u0:8]
+u0:27 <- [u3:74]
+u0:28 -> [u0:8]
+u0:29 -> [u0:8]
+u0:30 -> [u0:18]
+u0:31 -> [u0:18]
+u0:8 <- [u0:23, u0:24, u0:27, u0:28, u0:29, u2:42, u2:44, u2:47, u2:48, u2:50, u2:52, u2:53, u2:54, u3:64, u3:65, u3:67, u3:69, u3:70, u3:75, u3:76]
+u1:35 -> [u0:23, u2:42, u2:45, u3:64, u3:67, u3:72]
+u1:36 -> [u2:42]
+u1:37 -> [u0:23]
+u1:38 -> [u2:42]
+u2:42 -> [u0:23, u0:8, u2:47, u2:49, u2:50, u2:53, u2:56]
+u2:42 <- [u1:35, u1:36, u1:38, u2:45]
+u2:43 -> [u0:23]
+u2:44 -> [u0:8]
+u2:45 -> [u2:42]
+u2:45 <- [u1:35]
+u2:47 -> [u0:8]
+u2:47 <- [u2:42]
+u2:48 -> [u0:8]
+u2:49 <- [u2:42]
+u2:50 -> [u0:23, u0:8]
+u2:50 <- [u2:42]
+u2:51 -> [u0:23]
+u2:52 -> [u0:8]
+u2:53 -> [u0:15, u0:8]
+u2:53 <- [u2:42]
+u2:54 -> [u0:8]
+u2:56 -> [u0:17]
+u2:56 <- [u2:42]
+u2:57 -> [u0:17]
+u3:62 -> [u3:64, u3:66, u3:67, u3:69]
+u3:62 <- [u3:71, u3:74]
+u3:64 -> [u0:8]
+u3:64 <- [u1:35, u3:62]
+u3:65 -> [u0:8]
+u3:66 <- [u3:62]
+u3:67 -> [u0:8]
+u3:67 <- [u1:35, u3:62]
+u3:69 -> [u0:15, u0:8]
+u3:69 <- [u3:62]
+u3:70 -> [u0:8]
+u3:71 -> [u0:23, u3:62, u3:72]
+u3:72 -> [u0:17]
+u3:72 <- [u1:35, u3:71]
+u3:73 -> [u0:17]
+u3:74 -> [u0:27, u3:62, u3:75]
+u3:75 -> [u0:8]
+u3:75 <- [u3:74]
+u3:76 -> [u0:8]
+
+
+===============================================================================
+cross-file-event-driven
+===============================================================================
+
+
+--- file: src/events.rs ---
+pub enum Event {
+    UserCreated { id: u64, name: String },
+    UserUpdated { id: u64, name: String },
+    UserDeleted { id: u64 },
+    OrderPlaced { id: u64, user_id: u64, total: f64 },
+}
+
+--- file: src/handler.rs ---
+use crate::events::Event;
+
+pub trait EventHandler {
+    fn handle(&self, event: &Event);
+}
+
+pub struct LoggingHandler;
+
+impl EventHandler for LoggingHandler {
+    fn handle(&self, event: &Event) {
+        match event {
+            Event::UserCreated { id, name } => println!("User {} created: {}", id, name),
+            Event::UserUpdated { id, name } => println!("User {} updated: {}", id, name),
+            Event::UserDeleted { id } => println!("User {} deleted", id),
+            Event::OrderPlaced { id, user_id, total } => {
+                println!("Order {} placed by user {}: ${}", id, user_id, total)
+            }
+        }
+    }
+}
+
+pub struct MetricsHandler {
+    pub event_count: std::cell::Cell<u64>,
+}
+
+impl EventHandler for MetricsHandler {
+    fn handle(&self, _event: &Event) {
+        self.event_count.set(self.event_count.get() + 1);
+    }
+}
+
+--- file: src/bus.rs ---
+use crate::events::Event;
+use crate::handler::EventHandler;
+
+pub struct EventBus {
+    handlers: Vec<Box<dyn EventHandler>>,
+}
+
+impl EventBus {
+    pub fn new() -> Self {
+        EventBus { handlers: Vec::new() }
+    }
+
+    pub fn register(&mut self, handler: Box<dyn EventHandler>) {
+        self.handlers.push(handler);
+    }
+
+    pub fn publish(&self, event: Event) {
+        for handler in &self.handlers {
+            handler.handle(&event);
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod events;
+mod handler;
+mod bus;
+
+use events::Event;
+use handler::{LoggingHandler, MetricsHandler};
+use bus::EventBus;
+
+fn main() {
+    let mut bus = EventBus::new();
+    bus.register(Box::new(LoggingHandler));
+    bus.register(Box::new(MetricsHandler { event_count: std::cell::Cell::new(0) }));
+
+    bus.publish(Event::UserCreated { id: 1, name: "Alice".to_string() });
+    bus.publish(Event::OrderPlaced { id: 100, user_id: 1, total: 99.99 });
+}
+
+--- expect:symbols ---
+u0:1  | Primitive   | i32            | i32                                           | [global]
+u0:2  | Primitive   | i64            | i64                                           | [global]
+u0:3  | Primitive   | i16            | i16                                           | [global]
+u0:4  | Primitive   | i8             | i8                                            | [global]
+u0:5  | Primitive   | i128           | i128                                          | [global]
+u0:6  | Primitive   | isize          | isize                                         | [global]
+u0:7  | Primitive   | u32            | u32                                           | [global]
+u0:8  | Primitive   | u64            | u64                                           | [global]
+u0:9  | Primitive   | u16            | u16                                           | [global]
+u0:10 | Primitive   | u8             | u8                                            | [global]
+u0:11 | Primitive   | u128           | u128                                          | [global]
+u0:12 | Primitive   | usize          | usize                                         | [global]
+u0:13 | Primitive   | f32            | f32                                           | [global]
+u0:14 | Primitive   | f64            | f64                                           | [global]
+u0:15 | Primitive   | bool           | bool                                          | [global]
+u0:16 | Primitive   | char           | char                                          | [global]
+u0:17 | Primitive   | str            | str                                           | [global]
+u0:18 | Primitive   | String         | String                                        | [global]
+u0:19 | Crate       | _c             | _c                                            | [global]
+u0:20 | Crate       | crate          | _c::crate                                     |         
+u0:21 | Module      | _m             | _c::_m                                        |         
+u0:22 | File        | bus            | _c::_m::bus                                   |         
+u0:23 | Struct      | EventBus       | _c::_m::bus::EventBus                         | [global]
+u0:24 | Field       | handlers       | _c::_m::bus::EventBus::handlers               |         
+u0:25 | Function    | new            | _c::_m::bus::EventBus::new                    | [global]
+u0:26 | Function    | register       | _c::_m::bus::EventBus::register               | [global]
+u0:27 | Variable    | handler        | _c::_m::bus::EventBus::register::handler      |         
+u0:28 | Function    | publish        | _c::_m::bus::EventBus::publish                | [global]
+u0:29 | Variable    | event          | _c::_m::bus::EventBus::publish::event         |         
+u1:30 | Crate       | crate          | _c::crate                                     |         
+u1:31 | Module      | _m             | _c::_m                                        |         
+u1:32 | File        | events         | _c::_m::events                                |         
+u1:33 | Enum        | Event          | _c::_m::events::Event                         | [global]
+u1:34 | EnumVariant | UserCreated    | _c::_m::events::Event::UserCreated            |         
+u1:35 | Field       | id             | _c::_m::events::Event::UserCreated::id        |         
+u1:36 | Field       | name           | _c::_m::events::Event::UserCreated::name      |         
+u1:37 | EnumVariant | UserUpdated    | _c::_m::events::Event::UserUpdated            |         
+u1:38 | Field       | id             | _c::_m::events::Event::UserUpdated::id        |         
+u1:39 | Field       | name           | _c::_m::events::Event::UserUpdated::name      |         
+u1:40 | EnumVariant | UserDeleted    | _c::_m::events::Event::UserDeleted            |         
+u1:41 | Field       | id             | _c::_m::events::Event::UserDeleted::id        |         
+u1:42 | EnumVariant | OrderPlaced    | _c::_m::events::Event::OrderPlaced            |         
+u1:43 | Field       | id             | _c::_m::events::Event::OrderPlaced::id        |         
+u1:44 | Field       | user_id        | _c::_m::events::Event::OrderPlaced::user_id   |         
+u1:45 | Field       | total          | _c::_m::events::Event::OrderPlaced::total     |         
+u2:46 | Crate       | crate          | _c::crate                                     |         
+u2:47 | Module      | _m             | _c::_m                                        |         
+u2:48 | File        | handler        | _c::_m::handler                               |         
+u2:49 | Trait       | EventHandler   | _c::_m::handler::EventHandler                 | [global]
+u2:50 | Function    | handle         | _c::_m::handler::EventHandler::handle         |         
+u2:51 | Variable    | event          | _c::_m::handler::EventHandler::handle::event  |         
+u2:52 | Struct      | LoggingHandler | _c::_m::handler::LoggingHandler               | [global]
+u2:53 | Struct      | MetricsHandler | _c::_m::handler::MetricsHandler               | [global]
+u2:54 | Field       | event_count    | _c::_m::handler::MetricsHandler::event_count  |         
+u2:55 | Variable    | _event         | _c::_m::handler::EventHandler::handle::_event |         
+u3:56 | Crate       | crate          | _c::crate                                     |         
+u3:57 | Module      | _m             | _c::_m                                        |         
+u3:58 | File        | main           | _c::_m::main                                  |         
+u3:59 | Function    | main           | _c::_m::main::main                            |         
+u3:60 | Variable    | bus            | _c::_m::main::main::bus                       |         
+
+--- expect:symbol-deps ---
+u0:14 <- [u1:33]
+u0:18 <- [u1:33]
+u0:23 -> [u0:26, u0:28, u2:49]
+u0:23 <- [u0:25, u3:59, u3:60]
+u0:24 -> [u2:49]
+u0:25 -> [u0:23]
+u0:25 <- [u3:59]
+u0:26 -> [u2:49]
+u0:26 <- [u0:23, u3:59]
+u0:27 -> [u2:49]
+u0:28 -> [u1:33, u2:50]
+u0:28 <- [u0:23, u3:59]
+u0:29 -> [u1:33]
+u0:8 <- [u1:33, u2:53]
+u1:33 -> [u0:14, u0:18, u0:8, u1:34, u1:37, u1:40, u1:42]
+u1:33 <- [u0:28, u0:29, u2:50, u2:51, u2:55]
+u1:34 <- [u1:33]
+u1:37 <- [u1:33]
+u1:40 <- [u1:33]
+u1:42 <- [u1:33]
+u2:49 -> [u2:50]
+u2:49 <- [u0:23, u0:24, u0:26, u0:27, u2:52, u2:53]
+u2:50 -> [u1:33]
+u2:50 <- [u0:28, u2:49, u2:52, u2:53]
+u2:51 -> [u1:33]
+u2:52 -> [u2:49, u2:50]
+u2:53 -> [u0:8, u2:49, u2:50]
+u2:53 <- [u3:59]
+u2:55 -> [u1:33]
+u3:59 -> [u0:23, u0:25, u0:26, u0:28, u2:53]
+u3:60 -> [u0:23]
