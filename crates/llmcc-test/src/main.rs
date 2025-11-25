@@ -4,7 +4,8 @@ use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 
 use llmcc_test::{
-    CaseOutcome, CaseStatus, Corpus, RunnerConfig, run_cases, run_cases_for_file_with_parallel,
+    CaseOutcome, CaseStatus, Corpus, GraphOptions, ProcessingOptions, RunnerConfig, run_cases,
+    run_cases_for_file_with_parallel,
 };
 
 #[derive(Parser, Debug)]
@@ -31,18 +32,10 @@ enum Command {
         /// Keep the temporary project directory for inspection
         #[arg(long = "keep-temps")]
         keep_temps: bool,
-        /// Process files in parallel (default: false for stable ordering)
-        #[arg(long)]
-        parallel: bool,
-        /// Print IR during symbol resolution
-        #[arg(long = "print-ir", default_value = "false")]
-        print_ir: bool,
-        /// Component grouping depth for graph visualization (0=flat, 1=crate, 2=modules, etc.)
-        #[arg(long = "component-depth", default_value = "2")]
-        component_depth: usize,
-        /// Number of top PageRank nodes to include (enables pagerank filtering)
-        #[arg(long = "pagerank-top-k")]
-        pagerank_top_k: Option<usize>,
+        #[command(flatten)]
+        graph: GraphOptions,
+        #[command(flatten)]
+        processing: ProcessingOptions,
     },
     /// Run the entire corpus (optionally filtered by case id)
     RunAll {
@@ -63,18 +56,10 @@ enum Command {
         /// Keep the temporary project directory for inspection
         #[arg(long = "keep-temps")]
         keep_temps: bool,
-        /// Process files in parallel (default: false for stable ordering)
-        #[arg(long)]
-        parallel: bool,
-        /// Print IR during symbol resolution
-        #[arg(long = "print-ir", default_value = "false")]
-        print_ir: bool,
-        /// Component grouping depth for graph visualization (0=flat, 1=crate, 2=modules, etc.)
-        #[arg(long = "component-depth", default_value = "2")]
-        component_depth: usize,
-        /// Number of top PageRank nodes to include (enables pagerank filtering)
-        #[arg(long = "pagerank-top-k")]
-        pagerank_top_k: Option<usize>,
+        #[command(flatten)]
+        graph: GraphOptions,
+        #[command(flatten)]
+        processing: ProcessingOptions,
     },
     /// List available cases (optionally filtering by substring)
     List {
@@ -90,29 +75,16 @@ fn main() -> Result<()> {
             file,
             update,
             keep_temps,
-            parallel,
-            print_ir,
-            component_depth,
-            pagerank_top_k,
-        } => run_single_command(
-            cli.root,
-            file,
-            update,
-            keep_temps,
-            parallel,
-            print_ir,
-            component_depth,
-            pagerank_top_k,
-        ),
+            graph,
+            processing,
+        } => run_single_command(cli.root, file, update, keep_temps, graph, processing),
         Command::RunAll {
             filter,
             case,
             update,
             keep_temps,
-            parallel,
-            print_ir,
-            component_depth,
-            pagerank_top_k,
+            graph,
+            processing,
         } => {
             let (should_update, update_filter) = match update {
                 Some(value) if value.is_empty() => (true, None),
@@ -125,10 +97,8 @@ fn main() -> Result<()> {
                 effective_filter,
                 should_update,
                 keep_temps,
-                parallel,
-                print_ir,
-                component_depth,
-                pagerank_top_k,
+                graph,
+                processing,
             )
         }
         Command::List { filter } => list_command(cli.root, filter),
@@ -140,10 +110,8 @@ fn run_all_command(
     filter: Option<String>,
     update: bool,
     keep_temps: bool,
-    parallel: bool,
-    print_ir: bool,
-    component_depth: usize,
-    pagerank_top_k: Option<usize>,
+    graph: GraphOptions,
+    processing: ProcessingOptions,
 ) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let outcomes = run_cases(
@@ -152,10 +120,8 @@ fn run_all_command(
             filter: filter.clone(),
             update,
             keep_temps,
-            parallel,
-            print_ir,
-            component_depth,
-            pagerank_top_k,
+            graph,
+            processing,
         },
     )?;
 
@@ -179,10 +145,8 @@ fn run_single_command(
     file: PathBuf,
     update: bool,
     keep_temps: bool,
-    parallel: bool,
-    print_ir: bool,
-    component_depth: usize,
-    pagerank_top_k: Option<usize>,
+    graph: GraphOptions,
+    processing: ProcessingOptions,
 ) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let root_canon = root
@@ -224,10 +188,10 @@ fn run_single_command(
         entry,
         update,
         keep_temps,
-        parallel,
-        print_ir,
-        component_depth,
-        pagerank_top_k,
+        processing.parallel,
+        processing.print_ir,
+        graph.component_depth,
+        graph.pagerank_top_k,
     )?;
     let summary = print_outcomes(&outcomes);
 

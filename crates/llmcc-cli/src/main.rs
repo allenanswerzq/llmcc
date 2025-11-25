@@ -3,8 +3,8 @@ use anyhow::anyhow;
 use clap::ArgGroup;
 use clap::Parser;
 
-use llmcc::LlmccOptions;
-use llmcc::run_main;
+use llmcc_cli::LlmccOptions;
+use llmcc_cli::run_main;
 // use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
 

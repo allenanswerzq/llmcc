@@ -3,6 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
+use llmcc_cli::{GraphOptions, ProcessingOptions};
 use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
@@ -18,6 +19,8 @@ use tempfile::TempDir;
 use walkdir::WalkDir;
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
+
+pub use llmcc_cli::{GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions};
 
 #[derive(Clone)]
 struct SymbolSnapshot {
@@ -48,15 +51,10 @@ pub struct RunnerConfig {
     pub filter: Option<String>,
     pub update: bool,
     pub keep_temps: bool,
-    /// When false (default), processes files sequentially in declaration order.
-    /// When true, may process files in parallel for better performance.
-    pub parallel: bool,
-    /// Whether to print IR during symbol resolution.
-    pub print_ir: bool,
-    /// Component grouping depth for graph visualization (default: 2 for top-level modules).
-    pub component_depth: usize,
-    /// Number of top PageRank nodes to include (None = all nodes, Some(0) = disabled).
-    pub pagerank_top_k: Option<usize>,
+    /// Graph building and visualization options.
+    pub graph: GraphOptions,
+    /// Processing behavior options.
+    pub processing: ProcessingOptions,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,10 +83,10 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.filter.as_deref(),
             &mut matched,
             config.keep_temps,
-            config.parallel,
-            config.print_ir,
-            config.component_depth,
-            config.pagerank_top_k,
+            config.processing.parallel,
+            config.processing.print_ir,
+            config.graph.component_depth,
+            config.graph.pagerank_top_k,
         )?);
     }
 

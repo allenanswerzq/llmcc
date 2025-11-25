@@ -1,3 +1,5 @@
+pub mod options;
+
 use std::collections::HashSet;
 use std::io;
 use std::sync::Once;
@@ -11,6 +13,8 @@ use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
+
+pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
 
 fn should_skip_dir(name: &str) -> bool {
     matches!(
