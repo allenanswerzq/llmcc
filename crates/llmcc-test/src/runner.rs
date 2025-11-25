@@ -48,6 +48,11 @@ pub struct RunnerConfig {
     pub filter: Option<String>,
     pub update: bool,
     pub keep_temps: bool,
+    /// When false (default), processes files sequentially in declaration order.
+    /// When true, may process files in parallel for better performance.
+    pub parallel: bool,
+    /// Whether to print IR during symbol resolution.
+    pub print_ir: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,6 +81,8 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.filter.as_deref(),
             &mut matched,
             config.keep_temps,
+            config.parallel,
+            config.print_ir,
         )?);
     }
 
@@ -94,8 +101,18 @@ pub fn run_cases_for_file(
     update: bool,
     keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
+    run_cases_for_file_with_parallel(file, update, keep_temps, false, true)
+}
+
+pub fn run_cases_for_file_with_parallel(
+    file: &mut CorpusFile,
+    update: bool,
+    keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
+) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
-    run_cases_in_file(file, update, None, &mut matched, keep_temps)
+    run_cases_in_file(file, update, None, &mut matched, keep_temps, parallel, print_ir)
 }
 
 fn run_cases_in_file(
@@ -104,6 +121,8 @@ fn run_cases_in_file(
     filter: Option<&str>,
     matched: &mut usize,
     keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
@@ -133,7 +152,7 @@ fn run_cases_in_file(
         printed_case_header = true;
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
-            evaluate_case(case, update, keep_temps)?
+            evaluate_case(case, update, keep_temps, parallel, print_ir)?
         };
         if mutated {
             file.mark_dirty();
@@ -151,6 +170,8 @@ fn evaluate_case(
     case: &mut CorpusCase,
     update: bool,
     keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
 
@@ -167,7 +188,7 @@ fn evaluate_case(
 
     reset_symbol_id_counter();
     reset_block_id_counter();
-    let summary = build_pipeline_summary(case, keep_temps)?;
+    let summary = build_pipeline_summary(case, keep_temps, parallel, print_ir)?;
     let mut mutated = false;
     let mut status = CaseStatus::Passed;
     let mut failures = Vec::new();
@@ -212,7 +233,12 @@ fn evaluate_case(
     ))
 }
 
-fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<PipelineSummary> {
+fn build_pipeline_summary(
+    case: &CorpusCase,
+    keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
+) -> Result<PipelineSummary> {
     let needs_symbols = case
         .expectations
         .iter()
@@ -251,15 +277,26 @@ fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<Pipelin
             project.root().display()
         );
     }
+
+    // Get file paths in declaration order from the case
+    let file_paths: Vec<String> = case
+        .files
+        .iter()
+        .map(|f| project.root().join(&f.path).to_string_lossy().to_string())
+        .collect();
+
+    let options = PipelineOptions::new()
+        .with_file_paths(file_paths)
+        .with_keep_symbols(needs_symbols)
+        .with_build_graph(needs_graph)
+        .with_build_block_reports(needs_block_reports)
+        .with_build_block_graph(needs_block_graph)
+        .with_keep_symbol_deps(needs_symbol_deps)
+        .with_parallel(parallel)
+        .with_print_ir(print_ir);
+
     let summary = match case.lang.as_str() {
-        "rust" => collect_pipeline::<LangRust>(
-            project.root(),
-            needs_symbols,
-            needs_graph,
-            needs_block_reports,
-            needs_block_graph,
-            needs_symbol_deps,
-        )?,
+        "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -281,6 +318,73 @@ struct PipelineSummary {
     block_deps: Option<Vec<SymbolDependencySnapshot>>,
     symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
     block_graph: Option<String>,
+}
+
+/// Options for configuring the pipeline collection process.
+#[derive(Debug, Clone, Default)]
+pub struct PipelineOptions {
+    /// File paths to process (in declaration order).
+    pub file_paths: Vec<String>,
+    /// Whether to collect symbol information.
+    pub keep_symbols: bool,
+    /// Whether to build the dependency graph.
+    pub build_graph: bool,
+    /// Whether to build block reports (blocks and block-deps).
+    pub build_block_reports: bool,
+    /// Whether to build the block graph.
+    pub build_block_graph: bool,
+    /// Whether to collect symbol dependencies.
+    pub keep_symbol_deps: bool,
+    /// When true, may process files in parallel.
+    pub parallel: bool,
+    /// Whether to print IR during symbol resolution.
+    pub print_ir: bool,
+}
+
+impl PipelineOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_file_paths(mut self, paths: Vec<String>) -> Self {
+        self.file_paths = paths;
+        self
+    }
+
+    pub fn with_keep_symbols(mut self, keep: bool) -> Self {
+        self.keep_symbols = keep;
+        self
+    }
+
+    pub fn with_build_graph(mut self, build: bool) -> Self {
+        self.build_graph = build;
+        self
+    }
+
+    pub fn with_build_block_reports(mut self, build: bool) -> Self {
+        self.build_block_reports = build;
+        self
+    }
+
+    pub fn with_build_block_graph(mut self, build: bool) -> Self {
+        self.build_block_graph = build;
+        self
+    }
+
+    pub fn with_keep_symbol_deps(mut self, keep: bool) -> Self {
+        self.keep_symbol_deps = keep;
+        self
+    }
+
+    pub fn with_parallel(mut self, parallel: bool) -> Self {
+        self.parallel = parallel;
+        self
+    }
+
+    pub fn with_print_ir(mut self, print: bool) -> Self {
+        self.print_ir = print;
+        self
+    }
 }
 
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
@@ -808,52 +912,72 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
 
 fn collect_pipeline<L>(
     project_root: &Path,
-    keep_symbols: bool,
-    build_graph: bool,
-    build_block_reports: bool,
-    build_block_graph: bool,
-    keep_symbol_deps: bool,
+    options: &PipelineOptions,
 ) -> Result<PipelineSummary>
 where
     L: LanguageTraitImpl,
 {
-    let files = discover_language_files::<L>(project_root)?;
-    let cc = CompileCtxt::from_files::<L>(&files).unwrap();
-    build_llmcc_ir::<L>(&cc, IrBuildOption).unwrap();
+    // Use provided file paths (preserves declaration order) or discover them
+    let files = if options.file_paths.is_empty() {
+        discover_language_files::<L>(project_root, options.parallel)?
+    } else {
+        // Filter to only include files with supported extensions
+        let supported = L::supported_extensions();
+        options
+            .file_paths
+            .iter()
+            .filter(|path| {
+                Path::new(path)
+                    .extension()
+                    .and_then(|ext| ext.to_str())
+                    .map(|ext| supported.iter().any(|s| s.eq_ignore_ascii_case(ext)))
+                    .unwrap_or(false)
+            })
+            .cloned()
+            .collect()
+    };
 
-    // Use new unified API for symbol collection with optional IR printing
+    let cc = CompileCtxt::from_files::<L>(&files).unwrap();
+
+    // Use sequential mode when not parallel to ensure stable ordering
+    let sequential = !options.parallel;
+    let ir_option = IrBuildOption::new().with_sequential(sequential);
+    build_llmcc_ir::<L>(&cc, ir_option).unwrap();
+
     let resolver_option = ResolverOption::default()
-        .with_print_ir(true)
-        .with_sequential(true);
+        .with_print_ir(options.print_ir)
+        .with_sequential(sequential);
     let globals = collect_symbols_with::<L>(&cc, &resolver_option);
 
     // Bind symbols using new unified API
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
-    let mut project_graph = if build_graph || build_block_reports || build_block_graph {
-        Some(ProjectGraph::new(&cc))
-    } else {
-        None
-    };
+    let mut project_graph =
+        if options.build_graph || options.build_block_reports || options.build_block_graph {
+            Some(ProjectGraph::new(&cc))
+        } else {
+            None
+        };
     if let Some(project) = project_graph.as_mut() {
         let unit_graphs =
-            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(true)).unwrap();
+            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(sequential))
+                .unwrap();
         project.add_children(unit_graphs);
     }
     let (graph_dot, block_list, block_deps, block_graph) = if let Some(mut project) = project_graph
     {
         project.link_units();
-        let graph = if build_graph {
+        let graph = if options.build_graph {
             Some(project.render_design_graph())
         } else {
             None
         };
-        let (list, deps) = if build_block_reports {
+        let (list, deps) = if options.build_block_reports {
             let (blocks, deps) = render_block_reports(&project);
             (Some(blocks), Some(deps))
         } else {
             (None, None)
         };
-        let block_graph = if build_block_graph {
+        let block_graph = if options.build_block_graph {
             Some(render_block_graph(&project))
         } else {
             None
@@ -863,13 +987,13 @@ where
         (None, None, None, None)
     };
 
-    let symbols = if keep_symbols {
+    let symbols = if options.keep_symbols {
         Some(snapshot_symbols(&cc))
     } else {
         None
     };
 
-    let symbol_deps = if keep_symbol_deps {
+    let symbol_deps = if options.keep_symbol_deps {
         Some(snapshot_symbol_dependencies(&cc))
     } else {
         None
@@ -885,7 +1009,7 @@ where
     })
 }
 
-fn discover_language_files<L: LanguageTraitImpl>(root: &Path) -> Result<Vec<String>> {
+fn discover_language_files<L: LanguageTraitImpl>(root: &Path, parallel: bool) -> Result<Vec<String>> {
     let supported = L::supported_extensions();
     let mut files = Vec::new();
 
@@ -909,7 +1033,10 @@ fn discover_language_files<L: LanguageTraitImpl>(root: &Path) -> Result<Vec<Stri
         files.push(entry.path().to_string_lossy().to_string());
     }
 
-    files.sort();
+    // Only sort when parallel mode is enabled; sequential mode preserves discovery order
+    if parallel {
+        files.sort();
+    }
     Ok(files)
 }
 

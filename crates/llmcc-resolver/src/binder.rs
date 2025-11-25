@@ -237,16 +237,22 @@ impl<'a> BinderScopes<'a> {
     }
 }
 
-/// parallel binding symbols
+/// Bind symbols, optionally in parallel based on config.
 pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
     config: &ResolverOption,
 ) {
-    (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
+    let bind_unit = |unit_index: usize| {
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
         L::bind_symbols(unit, node, globals, config);
-    })
+    };
+
+    if config.sequential {
+        (0..cc.files.len()).for_each(bind_unit);
+    } else {
+        (0..cc.files.len()).into_par_iter().for_each(bind_unit);
+    }
 }

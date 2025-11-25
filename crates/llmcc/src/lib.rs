@@ -85,7 +85,7 @@ where
     log_parse_metrics(&cc.build_metrics);
 
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc, IrBuildOption)?;
+    build_llmcc_ir::<L>(&cc, IrBuildOption::default())?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let symbols_start = Instant::now();

@@ -3,7 +3,9 @@ use std::path::PathBuf;
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 
-use llmcc_test::{CaseOutcome, CaseStatus, Corpus, RunnerConfig, run_cases, run_cases_for_file};
+use llmcc_test::{
+    CaseOutcome, CaseStatus, Corpus, RunnerConfig, run_cases, run_cases_for_file_with_parallel,
+};
 
 #[derive(Parser, Debug)]
 #[command(name = "llmcc-test", about = "Corpus runner for llmcc", version)]
@@ -29,6 +31,12 @@ enum Command {
         /// Keep the temporary project directory for inspection
         #[arg(long = "keep-temps")]
         keep_temps: bool,
+        /// Process files in parallel (default: false for stable ordering)
+        #[arg(long)]
+        parallel: bool,
+        /// Print IR during symbol resolution
+        #[arg(long = "print-ir", default_value = "false")]
+        print_ir: bool,
     },
     /// Run the entire corpus (optionally filtered by case id)
     RunAll {
@@ -49,6 +57,12 @@ enum Command {
         /// Keep the temporary project directory for inspection
         #[arg(long = "keep-temps")]
         keep_temps: bool,
+        /// Process files in parallel (default: false for stable ordering)
+        #[arg(long)]
+        parallel: bool,
+        /// Print IR during symbol resolution
+        #[arg(long = "print-ir", default_value = "true")]
+        print_ir: bool,
     },
     /// List available cases (optionally filtering by substring)
     List {
@@ -64,12 +78,16 @@ fn main() -> Result<()> {
             file,
             update,
             keep_temps,
-        } => run_single_command(cli.root, file, update, keep_temps),
+            parallel,
+            print_ir,
+        } => run_single_command(cli.root, file, update, keep_temps, parallel, print_ir),
         Command::RunAll {
             filter,
             case,
             update,
             keep_temps,
+            parallel,
+            print_ir,
         } => {
             let (should_update, update_filter) = match update {
                 Some(value) if value.is_empty() => (true, None),
@@ -77,7 +95,7 @@ fn main() -> Result<()> {
                 None => (false, None),
             };
             let effective_filter = filter.or(case).or(update_filter);
-            run_all_command(cli.root, effective_filter, should_update, keep_temps)
+            run_all_command(cli.root, effective_filter, should_update, keep_temps, parallel, print_ir)
         }
         Command::List { filter } => list_command(cli.root, filter),
     }
@@ -88,6 +106,8 @@ fn run_all_command(
     filter: Option<String>,
     update: bool,
     keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
 ) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let outcomes = run_cases(
@@ -96,6 +116,8 @@ fn run_all_command(
             filter: filter.clone(),
             update,
             keep_temps,
+            parallel,
+            print_ir,
         },
     )?;
 
@@ -114,7 +136,14 @@ fn run_all_command(
     Ok(())
 }
 
-fn run_single_command(root: PathBuf, file: PathBuf, update: bool, keep_temps: bool) -> Result<()> {
+fn run_single_command(
+    root: PathBuf,
+    file: PathBuf,
+    update: bool,
+    keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
+) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let root_canon = root
         .canonicalize()
@@ -151,7 +180,7 @@ fn run_single_command(root: PathBuf, file: PathBuf, update: bool, keep_temps: bo
         ));
     };
 
-    let outcomes = run_cases_for_file(entry, update, keep_temps)?;
+    let outcomes = run_cases_for_file_with_parallel(entry, update, keep_temps, parallel, print_ir)?;
     let summary = print_outcomes(&outcomes);
 
     if update {

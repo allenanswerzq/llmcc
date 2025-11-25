@@ -1007,7 +1007,7 @@ mod tests {
             .map(|src| src.as_bytes().to_vec())
             .collect::<Vec<_>>();
         let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
-        build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
+        build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
         let resolver_option = ResolverOption::default()
             .with_sequential(true)
             .with_print_ir(true);

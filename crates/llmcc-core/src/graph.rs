@@ -267,7 +267,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
     pub fn render_design_graph(&self) -> String {
         let top_k = self.top_k;
-        let nodes = self.collect_sorted_compact_nodes(top_k);
+        let nodes = self.collect_sorted_nodes(top_k);
 
         if nodes.is_empty() {
             return "digraph project {\n}\n".to_string();
@@ -275,7 +275,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         let renderer = GraphRenderer::new(&nodes);
         let node_index = renderer.build_node_index();
-        let edges = self.collect_compact_edges(renderer.nodes(), &node_index);
+        let edges = self.collect_edges(renderer.nodes(), &node_index);
 
         renderer.render(&edges)
     }
@@ -308,7 +308,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         ranked_order.map(|ordered| ordered.into_iter().collect())
     }
 
-    fn collect_compact_nodes(
+    fn collect_nodes(
         &self,
         interesting_kinds: &[BlockKind],
         ranked_filter: Option<&HashSet<BlockId>>,
@@ -368,18 +368,18 @@ impl<'tcx> ProjectGraph<'tcx> {
             .collect()
     }
 
-    fn collect_sorted_compact_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
+    fn collect_sorted_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
         let ranked_filter = if self.pagerank_enabled {
             self.ranked_block_filter(top_k, &INTERESTING_KINDS)
         } else {
             None
         };
-        let mut nodes = self.collect_compact_nodes(&INTERESTING_KINDS, ranked_filter.as_ref());
+        let mut nodes = self.collect_nodes(&INTERESTING_KINDS, ranked_filter.as_ref());
         nodes.sort_by(|a, b| a.name.cmp(&b.name));
         nodes
     }
 
-    fn collect_compact_edges(
+    fn collect_edges(
         &self,
         nodes: &[CompactNode],
         node_index: &HashMap<BlockId, usize>,
