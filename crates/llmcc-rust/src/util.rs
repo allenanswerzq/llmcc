@@ -29,26 +29,34 @@ pub fn parse_crate_name(file_path: &str) -> Option<String> {
 }
 
 /// Parse the module name from a Rust source file path.
+///
+/// This function determines the module name for a Rust source file:
+/// - `src/lib.rs` or `src/main.rs` → None (crate root, no module)
+/// - `src/data/mod.rs` → Some("data") (module directory)
+/// - `src/data/entity.rs` → Some("data") (file in module directory inherits parent)
+/// - `src/foo.rs` (sibling to lib.rs) → None (top-level module, handled separately)
 pub fn parse_module_name(file_path: &str) -> Option<String> {
-    let file_stem = Path::new(file_path).file_stem().and_then(|n| n.to_str());
+    let path = Path::new(file_path);
+    let file_stem = path.file_stem().and_then(|n| n.to_str())?;
 
-    let file_name = file_stem?;
-
-    // Special case: if this is lib.rs, it's the crate root
-    if file_name == "lib" {
+    // Special case: lib.rs and main.rs are crate roots, no module
+    if file_stem == "lib" || file_stem == "main" {
         return None;
     }
 
-    // If this is mod.rs, get the parent directory name
-    if file_name == "mod" {
-        return Path::new(file_path)
-            .parent()
-            .and_then(|p| p.file_name())
-            .and_then(|n| n.to_str())
-            .map(|s| s.to_string());
+    let parent = path.parent()?;
+    let parent_name = parent.file_name().and_then(|n| n.to_str())?;
+
+    // If parent is "src", this is a top-level file (e.g., src/foo.rs)
+    // These are handled as top-level modules, not nested modules
+    if parent_name == "src" {
+        return None;
     }
 
-    Some("_m".to_string())
+    // If this is mod.rs, the module name is the parent directory
+    // If this is another file (e.g., entity.rs in src/data/), the module is also the parent directory
+    // Both cases: return the parent directory name as the module
+    Some(parent_name.to_string())
 }
 
 /// Return the file name (without the `.rs` extension) for a Rust source path.

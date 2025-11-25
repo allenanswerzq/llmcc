@@ -11,7 +11,39 @@ pub(crate) struct CompactNode {
     pub(crate) unit_index: usize,
     pub(crate) name: String,
     pub(crate) location: Option<String>,
-    pub(crate) component: String,
+    /// Hierarchical component path derived from FQN, e.g., ["crate", "data", "entity"]
+    pub(crate) component_path: Vec<String>,
+}
+
+impl CompactNode {
+    /// Get component path as a joined string for display
+    #[allow(dead_code)]
+    pub(crate) fn component_display(&self) -> String {
+        self.component_path.join("::")
+    }
+}
+
+/// Extract component path from FQN at given depth
+/// FQN: "_c::data::entity::User"
+/// depth=1 → ["_c"]
+/// depth=2 → ["_c", "data"]
+/// depth=3 → ["_c", "data", "entity"]
+pub(crate) fn extract_component_path(fqn: &str, depth: usize) -> Vec<String> {
+    if depth == 0 {
+        return vec![];
+    }
+    let parts: Vec<&str> = fqn.split("::").collect();
+    // Take up to `depth` parts, excluding the symbol name itself
+    let module_parts = if parts.len() > 1 {
+        &parts[..parts.len() - 1]
+    } else {
+        &parts[..]
+    };
+    module_parts
+        .iter()
+        .take(depth)
+        .map(|s| s.to_string())
+        .collect()
 }
 
 pub(crate) struct GraphRenderer<'a> {
@@ -46,60 +78,44 @@ impl<'a> GraphRenderer<'a> {
         }
 
         let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-        render_compact_dot(&pruned.nodes, &reduced_edges)
+        render_nested_dot(&pruned.nodes, &reduced_edges)
     }
 }
 
-fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -> String {
-    let mut component_groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
+/// A tree structure for organizing nodes by their component paths
+#[derive(Default)]
+struct ComponentTree {
+    /// Direct child nodes at this level
+    node_indices: Vec<usize>,
+    /// Child component subtrees
+    children: BTreeMap<String, ComponentTree>,
+}
+
+impl ComponentTree {
+    fn insert(&mut self, path: &[String], node_idx: usize) {
+        if path.is_empty() {
+            self.node_indices.push(node_idx);
+        } else {
+            let child = self.children.entry(path[0].clone()).or_default();
+            child.insert(&path[1..], node_idx);
+        }
+    }
+}
+
+fn render_nested_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -> String {
+    // Build component tree from node paths
+    let mut tree = ComponentTree::default();
     for (idx, node) in nodes.iter().enumerate() {
-        component_groups
-            .entry(node.component.clone())
-            .or_default()
-            .push(idx);
+        tree.insert(&node.component_path, idx);
     }
 
     let mut output = String::from("digraph project {\n");
+    let mut counter = 0usize;
 
-    for (subgraph_counter, (crate_path, node_indices)) in component_groups.iter_mut().enumerate() {
-        node_indices.sort_by(|&a, &b| {
-            let node_a = &nodes[a];
-            let node_b = &nodes[b];
+    // Render the tree recursively
+    render_component_tree(&mut output, &tree, nodes, &mut counter, 1);
 
-            node_a
-                .location
-                .as_ref()
-                .cmp(&node_b.location.as_ref())
-                .then_with(|| node_a.name.cmp(&node_b.name))
-                .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
-        });
-
-        output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));
-        output.push_str(&format!(
-            "    label=\"{}\";\n",
-            escape_dot_label(crate_path)
-        ));
-        output.push_str("    style=filled;\n");
-        output.push_str("    color=lightgrey;\n");
-
-        for &idx in node_indices.iter() {
-            let node = &nodes[idx];
-            let node_name = format!("n{}", node.block_id.as_u32());
-            let label = escape_dot_label(&node.name);
-            let mut attrs = vec![format!("label=\"{}\"", label)];
-
-            if let Some(location) = &node.location {
-                let (_display, full) = summarize_location(location);
-                let escaped_full = escape_dot_attr(&full);
-                attrs.push(format!("full_path=\"{}\"", escaped_full));
-            }
-
-            output.push_str(&format!("    {} [{}];\n", node_name, attrs.join(", ")));
-        }
-
-        output.push_str("  }\n");
-    }
-
+    // Render edges
     for &(from, to) in edges {
         let from_name = format!("n{}", nodes[from].block_id.as_u32());
         let to_name = format!("n{}", nodes[to].block_id.as_u32());
@@ -108,6 +124,65 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
 
     output.push_str("}\n");
     output
+}
+
+fn render_component_tree(
+    output: &mut String,
+    tree: &ComponentTree,
+    nodes: &[CompactNode],
+    counter: &mut usize,
+    indent_level: usize,
+) {
+    let indent = "  ".repeat(indent_level);
+
+    // Render child subtrees (nested subgraphs)
+    for (component_name, subtree) in &tree.children {
+        let cluster_id = *counter;
+        *counter += 1;
+
+        output.push_str(&format!("{}subgraph cluster_{} {{\n", indent, cluster_id));
+        output.push_str(&format!(
+            "{}  label=\"{}\";\n",
+            indent,
+            escape_dot_label(component_name)
+        ));
+        output.push_str(&format!("{}  style=filled;\n", indent));
+        output.push_str(&format!("{}  color=lightgrey;\n", indent));
+
+        // Recursively render children
+        render_component_tree(output, subtree, nodes, counter, indent_level + 1);
+
+        output.push_str(&format!("{}}}\n", indent));
+    }
+
+    // Render nodes at this level
+    let mut sorted_indices = tree.node_indices.clone();
+    sorted_indices.sort_by(|&a, &b| {
+        let node_a = &nodes[a];
+        let node_b = &nodes[b];
+
+        node_a
+            .location
+            .as_ref()
+            .cmp(&node_b.location.as_ref())
+            .then_with(|| node_a.name.cmp(&node_b.name))
+            .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
+    });
+
+    for idx in sorted_indices {
+        let node = &nodes[idx];
+        let node_name = format!("n{}", node.block_id.as_u32());
+        let label = escape_dot_label(&node.name);
+        let mut attrs = vec![format!("label=\"{}\"", label)];
+
+        if let Some(location) = &node.location {
+            let (_display, full) = summarize_location(location);
+            let escaped_full = escape_dot_attr(&full);
+            attrs.push(format!("full_path=\"{}\"", escaped_full));
+        }
+
+        output.push_str(&format!("{}{}[{}];\n", indent, node_name, attrs.join(", ")));
+    }
 }
 
 fn escape_dot_label(input: &str) -> String {

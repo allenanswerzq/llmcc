@@ -284,10 +284,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         let start_depth = scopes.scope_depth();
         let mut crate_alias: Option<&Symbol> = None;
 
-        // Set the component name from crate name for graph rendering
+        // Parse crate name and set up crate scope
         if let Some(crate_name) = parse_crate_name(file_path) {
-            scopes.set_component(&crate_name);
-
             if let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate) {
                 scopes.push_scope_with(node, Some(symbol));
 

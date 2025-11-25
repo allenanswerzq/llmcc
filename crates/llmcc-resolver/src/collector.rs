@@ -18,8 +18,6 @@ pub struct CollectorScopes<'a> {
     interner: &'a InternPool,
     scopes: ScopeStack<'a>,
     globals: &'a Scope<'a>,
-    /// Software component name for symbols in this unit
-    component: Option<InternedStr>,
 }
 
 impl<'a> std::fmt::Debug for CollectorScopes<'a> {
@@ -50,7 +48,6 @@ impl<'a> CollectorScopes<'a> {
             interner: &cc.interner,
             scopes,
             globals,
-            component: None,
         }
     }
 
@@ -132,18 +129,6 @@ impl<'a> CollectorScopes<'a> {
         self.scopes.top()
     }
 
-    /// Set the software component name for symbols in this unit
-    #[inline]
-    pub fn set_component(&mut self, component: &str) {
-        self.component = Some(self.interner.intern(component));
-    }
-
-    /// Get the software component name for symbols in this unit
-    #[inline]
-    pub fn component(&self) -> Option<InternedStr> {
-        self.component
-    }
-
     /// Build fully qualified name from current scope
     pub fn build_fqn(&self, name: &str) -> InternedStr {
         let fqn_str = self
@@ -183,10 +168,6 @@ impl<'a> CollectorScopes<'a> {
             symbol.add_defining(node.id());
             if let Some(parent) = self.top() {
                 symbol.set_parent_scope(parent.id());
-            }
-            // Set the software component if available
-            if let Some(component) = self.component {
-                symbol.set_component(component);
             }
         }
     }

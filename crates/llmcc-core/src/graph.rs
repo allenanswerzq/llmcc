@@ -3,8 +3,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use crate::block::{BlockId, BlockKind, BlockRelation};
 use crate::block_rel::BlockRelationMap;
 use crate::context::CompileCtxt;
-use crate::graph_render::CompactNode;
-use crate::graph_render::GraphRenderer;
+use crate::graph_render::{extract_component_path, CompactNode, GraphRenderer};
 use crate::pagerank::PageRanker;
 
 #[derive(Debug, Clone)]
@@ -74,6 +73,8 @@ pub struct ProjectGraph<'tcx> {
     units: Vec<UnitGraph>,
     top_k: Option<usize>,
     pagerank_enabled: bool,
+    /// Component grouping depth from FQN for graph visualization
+    component_depth: usize,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -83,7 +84,13 @@ impl<'tcx> ProjectGraph<'tcx> {
             units: Vec::new(),
             top_k: None,
             pagerank_enabled: false,
+            component_depth: 2, // Default to top-level modules
         }
+    }
+
+    /// Set the component depth for graph visualization
+    pub fn set_component_depth(&mut self, depth: usize) {
+        self.component_depth = depth;
     }
 
     pub fn add_child(&mut self, graph: UnitGraph) {
@@ -314,6 +321,8 @@ impl<'tcx> ProjectGraph<'tcx> {
         ranked_filter: Option<&HashSet<BlockId>>,
     ) -> Vec<CompactNode> {
         let block_indexes = self.cc.block_indexes.read();
+        let component_depth = self.component_depth;
+
         block_indexes
             .block_id_index
             .iter()
@@ -357,22 +366,25 @@ impl<'tcx> ProjectGraph<'tcx> {
                     })
                     .or(Some(path.clone()));
 
-                // Get component from the symbol associated with this block's scope
-                let component = block
+                // Get component path from the symbol's FQN
+                let component_path = block
                     .opt_node()
                     .and_then(|node| node.as_scope())
                     .and_then(|scope_node| scope_node.opt_scope())
                     .and_then(|scope| scope.opt_symbol())
-                    .and_then(|symbol| symbol.component())
-                    .and_then(|interned| self.cc.interner.resolve_owned(interned))
-                    .unwrap_or_else(|| "unknown".to_string());
+                    .and_then(|symbol| {
+                        let fqn = symbol.fqn();
+                        self.cc.interner.resolve_owned(fqn)
+                    })
+                    .map(|fqn| extract_component_path(&fqn, component_depth))
+                    .unwrap_or_else(|| vec!["unknown".to_string()]);
 
                 Some(CompactNode {
                     block_id,
                     unit_index: *unit_index,
                     name: display_name,
                     location,
-                    component,
+                    component_path,
                 })
             })
             .collect()

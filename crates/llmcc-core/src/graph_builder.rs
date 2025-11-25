@@ -19,9 +19,25 @@ use crate::visit::HirVisitor;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GraphBuildConfig;
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct GraphBuildOption {
     pub sequential: bool,
+    /// Component grouping depth from FQN for graph visualization:
+    /// - 0: No grouping (flat graph, no clusters)
+    /// - 1: Crate level only
+    /// - 2: Top-level modules (data, service, api)
+    /// - 3+: Deeper sub-modules
+    /// - usize::MAX: Full depth (each file/module gets own cluster)
+    pub component_depth: usize,
+}
+
+impl Default for GraphBuildOption {
+    fn default() -> Self {
+        Self {
+            sequential: false,
+            component_depth: 2, // Default to top-level modules
+        }
+    }
 }
 
 impl GraphBuildOption {
@@ -31,6 +47,11 @@ impl GraphBuildOption {
 
     pub fn with_sequential(mut self, sequential: bool) -> Self {
         self.sequential = sequential;
+        self
+    }
+
+    pub fn with_component_depth(mut self, depth: usize) -> Self {
+        self.component_depth = depth;
         self
     }
 }

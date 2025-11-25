@@ -169,10 +169,6 @@ pub struct Symbol {
     /// Example: inner definition shadows outer definition in nested scope.
     /// Forms a linked list of definitions traversable via following `previous` pointers.
     pub previous: RwLock<Option<SymId>>,
-    /// Software component name this symbol belongs to.
-    /// Used for grouping symbols in graphs and visualizations.
-    /// Typically derived from the crate/module path or file location.
-    pub component: RwLock<Option<InternedStr>>,
 }
 
 impl Clone for Symbol {
@@ -193,7 +189,6 @@ impl Clone for Symbol {
             depends: RwLock::new(self.depends.read().clone()),
             depended: RwLock::new(self.depended.read().clone()),
             previous: RwLock::new(*self.previous.read()),
-            component: RwLock::new(*self.component.read()),
         }
     }
 }
@@ -258,7 +253,6 @@ impl Symbol {
             depends: RwLock::new(Vec::new()),
             depended: RwLock::new(Vec::new()),
             previous: RwLock::new(None),
-            component: RwLock::new(None),
         }
     }
 
@@ -468,19 +462,6 @@ impl Symbol {
     #[inline]
     pub fn set_previous(&self, sym_id: SymId) {
         *self.previous.write() = Some(sym_id);
-    }
-
-    /// Gets the software component name this symbol belongs to.
-    #[inline]
-    pub fn component(&self) -> Option<InternedStr> {
-        *self.component.read()
-    }
-
-    /// Sets the software component name this symbol belongs to.
-    /// Typically derived from the crate/module path or file location.
-    #[inline]
-    pub fn set_component(&self, component: InternedStr) {
-        *self.component.write() = Some(component);
     }
 }
 

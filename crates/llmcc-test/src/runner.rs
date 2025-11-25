@@ -53,6 +53,10 @@ pub struct RunnerConfig {
     pub parallel: bool,
     /// Whether to print IR during symbol resolution.
     pub print_ir: bool,
+    /// Component grouping depth for graph visualization (default: 2 for top-level modules).
+    pub component_depth: usize,
+    /// Number of top PageRank nodes to include (None = all nodes, Some(0) = disabled).
+    pub pagerank_top_k: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -83,6 +87,8 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.keep_temps,
             config.parallel,
             config.print_ir,
+            config.component_depth,
+            config.pagerank_top_k,
         )?);
     }
 
@@ -101,7 +107,7 @@ pub fn run_cases_for_file(
     update: bool,
     keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
-    run_cases_for_file_with_parallel(file, update, keep_temps, false, true)
+    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, 2, None)
 }
 
 pub fn run_cases_for_file_with_parallel(
@@ -110,9 +116,21 @@ pub fn run_cases_for_file_with_parallel(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
-    run_cases_in_file(file, update, None, &mut matched, keep_temps, parallel, print_ir)
+    run_cases_in_file(
+        file,
+        update,
+        None,
+        &mut matched,
+        keep_temps,
+        parallel,
+        print_ir,
+        component_depth,
+        pagerank_top_k,
+    )
 }
 
 fn run_cases_in_file(
@@ -123,6 +141,8 @@ fn run_cases_in_file(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
@@ -152,7 +172,7 @@ fn run_cases_in_file(
         printed_case_header = true;
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
-            evaluate_case(case, update, keep_temps, parallel, print_ir)?
+            evaluate_case(case, update, keep_temps, parallel, print_ir, component_depth, pagerank_top_k)?
         };
         if mutated {
             file.mark_dirty();
@@ -172,6 +192,8 @@ fn evaluate_case(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
 
@@ -188,23 +210,25 @@ fn evaluate_case(
 
     reset_symbol_id_counter();
     reset_block_id_counter();
-    let summary = build_pipeline_summary(case, keep_temps, parallel, print_ir)?;
+    let summary = build_pipeline_summary(case, keep_temps, parallel, print_ir, component_depth, pagerank_top_k)?;
     let mut mutated = false;
     let mut status = CaseStatus::Passed;
     let mut failures = Vec::new();
 
+    let temp_dir_path = summary.temp_dir_path.as_deref();
     for expect in &mut case.expectations {
         let kind = expect.kind.as_str();
         let actual = render_expectation(kind, &summary, &case_id)?;
-        let expected_norm = normalize(kind, &expect.value);
-        let actual_norm = normalize(kind, &actual);
+        let expected_norm = normalize(kind, &expect.value, None);
+        let actual_norm = normalize(kind, &actual, temp_dir_path);
 
         if expected_norm == actual_norm {
             continue;
         }
 
         if update {
-            expect.value = ensure_trailing_newline(actual);
+            // Save the normalized version with $TMP placeholder
+            expect.value = ensure_trailing_newline(actual_norm);
             mutated = true;
             status = CaseStatus::Updated;
         } else {
@@ -238,6 +262,8 @@ fn build_pipeline_summary(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<PipelineSummary> {
     let needs_symbols = case
         .expectations
@@ -270,6 +296,7 @@ fn build_pipeline_summary(
     }
 
     let project = materialize_case(case, keep_temps)?;
+    let temp_dir_path = project.root().to_string_lossy().to_string();
     if keep_temps && project.is_persistent() {
         println!(
             "preserved materialized project for {} at {}",
@@ -293,9 +320,11 @@ fn build_pipeline_summary(
         .with_build_block_graph(needs_block_graph)
         .with_keep_symbol_deps(needs_symbol_deps)
         .with_parallel(parallel)
-        .with_print_ir(print_ir);
+        .with_print_ir(print_ir)
+        .with_component_depth(component_depth)
+        .with_pagerank_top_k(pagerank_top_k);
 
-    let summary = match case.lang.as_str() {
+    let mut summary = match case.lang.as_str() {
         "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         other => {
             return Err(anyhow!(
@@ -305,6 +334,7 @@ fn build_pipeline_summary(
             ));
         }
     };
+    summary.temp_dir_path = Some(temp_dir_path);
     drop(project);
 
     Ok(summary)
@@ -318,6 +348,9 @@ struct PipelineSummary {
     block_deps: Option<Vec<SymbolDependencySnapshot>>,
     symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
     block_graph: Option<String>,
+    /// The temp directory path used for this test case.
+    /// Used to replace actual paths with $TMP placeholder.
+    temp_dir_path: Option<String>,
 }
 
 /// Options for configuring the pipeline collection process.
@@ -339,6 +372,10 @@ pub struct PipelineOptions {
     pub parallel: bool,
     /// Whether to print IR during symbol resolution.
     pub print_ir: bool,
+    /// Component grouping depth for graph visualization (default: 2).
+    pub component_depth: usize,
+    /// Number of top PageRank nodes to include (None = all nodes).
+    pub pagerank_top_k: Option<usize>,
 }
 
 impl PipelineOptions {
@@ -383,6 +420,16 @@ impl PipelineOptions {
 
     pub fn with_print_ir(mut self, print: bool) -> Self {
         self.print_ir = print;
+        self
+    }
+
+    pub fn with_component_depth(mut self, depth: usize) -> Self {
+        self.component_depth = depth;
+        self
+    }
+
+    pub fn with_pagerank_top_k(mut self, top_k: Option<usize>) -> Self {
+        self.pagerank_top_k = top_k;
         self
     }
 }
@@ -586,11 +633,19 @@ fn format_expectation_diff(kind: &str, expected: &str, actual: &str) -> String {
     buf
 }
 
-fn normalize(kind: &str, text: &str) -> String {
+fn normalize(kind: &str, text: &str, temp_dir_path: Option<&str>) -> String {
     let canonical = text
         .replace("\r\n", "\n")
         .trim_end_matches('\n')
         .to_string();
+
+    // Replace temp directory path with $TMP placeholder (for actual output)
+    // or replace $TMP with temp directory path (for expected value)
+    let canonical = if let Some(tmp_path) = temp_dir_path {
+        canonical.replace(tmp_path, "$TMP")
+    } else {
+        canonical
+    };
 
     match kind {
         "symbols" | "blocks" => normalize_symbols(&canonical),
@@ -692,63 +747,9 @@ fn is_empty_relation(line: &str) -> bool {
 }
 
 fn normalize_graph(text: &str) -> String {
-    let trimmed = text.trim();
-    if trimmed.starts_with("digraph") {
-        normalize_dot_paths(trimmed)
-    } else {
-        trimmed.to_string()
-    }
-}
-
-fn normalize_graph_path(path: &str) -> String {
-    use std::path::Path;
-
-    let (path_part, line_part) = match path.rsplit_once(':') {
-        Some((p, line)) if line.chars().all(|ch| ch.is_ascii_digit()) => (p, format!(":{line}")),
-        _ => (path, String::new()),
-    };
-
-    let path_obj = Path::new(path_part);
-    let components: Vec<_> = path_obj
-        .components()
-        .filter_map(|comp| comp.as_os_str().to_str())
-        .collect();
-
-    let start = components
-        .iter()
-        .rposition(|comp| *comp == "src")
-        .map(|idx| idx.saturating_sub(1))
-        .unwrap_or(components.len().saturating_sub(3));
-
-    let mut shortened = components[start..].join("/");
-    if shortened.is_empty() {
-        shortened = path_obj
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or(path_part)
-            .to_string();
-    }
-
-    format!("{shortened}{line_part}")
-}
-
-fn normalize_dot_paths(dot: &str) -> String {
-    dot.lines()
-        .map(|line| {
-            if let Some(start) = line.find("full_path=") {
-                let prefix = &line[..start];
-                let rest = &line[start..];
-                if let Some((before_path, after_path)) = rest.split_once('"')
-                    && let Some((path, suffix)) = after_path.split_once('"')
-                {
-                    let normalized = normalize_graph_path(path);
-                    return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
-                }
-            }
-            line.to_string()
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+    // Just return the trimmed text as-is since temp path replacement
+    // is already handled in the normalize() function
+    text.trim().to_string()
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -953,14 +954,23 @@ where
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
     let mut project_graph =
         if options.build_graph || options.build_block_reports || options.build_block_graph {
-            Some(ProjectGraph::new(&cc))
+            let mut graph = ProjectGraph::new(&cc);
+            graph.set_component_depth(options.component_depth);
+            if let Some(top_k) = options.pagerank_top_k {
+                graph.set_top_k(Some(top_k));
+            }
+            Some(graph)
         } else {
             None
         };
     if let Some(project) = project_graph.as_mut() {
-        let unit_graphs =
-            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(sequential))
-                .unwrap();
+        let unit_graphs = build_llmcc_graph::<L>(
+            &cc,
+            GraphBuildOption::new()
+                .with_sequential(sequential)
+                .with_component_depth(options.component_depth),
+        )
+        .unwrap();
         project.add_children(unit_graphs);
     }
     let (graph_dot, block_list, block_deps, block_graph) = if let Some(mut project) = project_graph
@@ -1006,6 +1016,7 @@ where
         block_deps,
         symbol_deps,
         block_graph,
+        temp_dir_path: None,
     })
 }
 

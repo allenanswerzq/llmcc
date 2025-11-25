@@ -37,6 +37,12 @@ enum Command {
         /// Print IR during symbol resolution
         #[arg(long = "print-ir", default_value = "false")]
         print_ir: bool,
+        /// Component grouping depth for graph visualization (0=flat, 1=crate, 2=modules, etc.)
+        #[arg(long = "component-depth", default_value = "2")]
+        component_depth: usize,
+        /// Number of top PageRank nodes to include (enables pagerank filtering)
+        #[arg(long = "pagerank-top-k")]
+        pagerank_top_k: Option<usize>,
     },
     /// Run the entire corpus (optionally filtered by case id)
     RunAll {
@@ -63,6 +69,12 @@ enum Command {
         /// Print IR during symbol resolution
         #[arg(long = "print-ir", default_value = "false")]
         print_ir: bool,
+        /// Component grouping depth for graph visualization (0=flat, 1=crate, 2=modules, etc.)
+        #[arg(long = "component-depth", default_value = "2")]
+        component_depth: usize,
+        /// Number of top PageRank nodes to include (enables pagerank filtering)
+        #[arg(long = "pagerank-top-k")]
+        pagerank_top_k: Option<usize>,
     },
     /// List available cases (optionally filtering by substring)
     List {
@@ -80,7 +92,18 @@ fn main() -> Result<()> {
             keep_temps,
             parallel,
             print_ir,
-        } => run_single_command(cli.root, file, update, keep_temps, parallel, print_ir),
+            component_depth,
+            pagerank_top_k,
+        } => run_single_command(
+            cli.root,
+            file,
+            update,
+            keep_temps,
+            parallel,
+            print_ir,
+            component_depth,
+            pagerank_top_k,
+        ),
         Command::RunAll {
             filter,
             case,
@@ -88,6 +111,8 @@ fn main() -> Result<()> {
             keep_temps,
             parallel,
             print_ir,
+            component_depth,
+            pagerank_top_k,
         } => {
             let (should_update, update_filter) = match update {
                 Some(value) if value.is_empty() => (true, None),
@@ -95,7 +120,16 @@ fn main() -> Result<()> {
                 None => (false, None),
             };
             let effective_filter = filter.or(case).or(update_filter);
-            run_all_command(cli.root, effective_filter, should_update, keep_temps, parallel, print_ir)
+            run_all_command(
+                cli.root,
+                effective_filter,
+                should_update,
+                keep_temps,
+                parallel,
+                print_ir,
+                component_depth,
+                pagerank_top_k,
+            )
         }
         Command::List { filter } => list_command(cli.root, filter),
     }
@@ -108,6 +142,8 @@ fn run_all_command(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let outcomes = run_cases(
@@ -118,6 +154,8 @@ fn run_all_command(
             keep_temps,
             parallel,
             print_ir,
+            component_depth,
+            pagerank_top_k,
         },
     )?;
 
@@ -143,6 +181,8 @@ fn run_single_command(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let root_canon = root
@@ -180,7 +220,15 @@ fn run_single_command(
         ));
     };
 
-    let outcomes = run_cases_for_file_with_parallel(entry, update, keep_temps, parallel, print_ir)?;
+    let outcomes = run_cases_for_file_with_parallel(
+        entry,
+        update,
+        keep_temps,
+        parallel,
+        print_ir,
+        component_depth,
+        pagerank_top_k,
+    )?;
     let summary = print_outcomes(&outcomes);
 
     if update {

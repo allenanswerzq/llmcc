@@ -180,141 +180,140 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1    | Primitive      | i32                | i32                                                            | [global]
-u0:2    | Primitive      | i64                | i64                                                            | [global]
-u0:3    | Primitive      | i16                | i16                                                            | [global]
-u0:4    | Primitive      | i8                 | i8                                                             | [global]
-u0:5    | Primitive      | i128               | i128                                                           | [global]
-u0:6    | Primitive      | isize              | isize                                                          | [global]
-u0:7    | Primitive      | u32                | u32                                                            | [global]
-u0:8    | Primitive      | u64                | u64                                                            | [global]
-u0:9    | Primitive      | u16                | u16                                                            | [global]
-u0:10   | Primitive      | u8                 | u8                                                             | [global]
-u0:11   | Primitive      | u128               | u128                                                           | [global]
-u0:12   | Primitive      | usize              | usize                                                          | [global]
-u0:13   | Primitive      | f32                | f32                                                            | [global]
-u0:14   | Primitive      | f64                | f64                                                            | [global]
-u0:15   | Primitive      | bool               | bool                                                           | [global]
-u0:16   | Primitive      | char               | char                                                           | [global]
-u0:17   | Primitive      | str                | str                                                            | [global]
-u0:18   | Primitive      | String             | String                                                         | [global]
-u0:19   | Crate          | _c                 | _c                                                             | [global]
-u0:20   | Crate          | crate              | _c::crate                                                      |         
-u0:21   | File           | lib                | _c::lib                                                        |         
-u1:22   | Crate          | crate              | _c::crate                                                      |         
-u1:23   | Module         | data               | _c::data                                                       |         
-u1:24   | File           | mod                | _c::data::mod                                                  |         
-u2:25   | Crate          | crate              | _c::crate                                                      |         
-u2:26   | Module         | _m                 | _c::_m                                                         |         
-u2:27   | File           | entity             | _c::_m::entity                                                 |         
-u2:28   | Struct         | User               | _c::_m::entity::User                                           | [global]
-u2:29   | Field          | id                 | _c::_m::entity::User::id                                       |         
-u2:30   | Field          | email              | _c::_m::entity::User::email                                    |         
-u2:31   | Field          | password_hash      | _c::_m::entity::User::password_hash                            |         
-u3:32   | Crate          | crate              | _c::crate                                                      |         
-u3:33   | Module         | _m                 | _c::_m                                                         |         
-u3:34   | File           | repository         | _c::_m::repository                                             |         
-u3:35   | Struct         | UserRepository     | _c::_m::repository::UserRepository                             | [global]
-u3:36   | Field          | storage            | _c::_m::repository::UserRepository::storage                    |         
-u3:37   | Field          | next_id            | _c::_m::repository::UserRepository::next_id                    |         
-u3:38   | Function       | new                | _c::_m::repository::UserRepository::new                        | [global]
-u3:39   | Function       | find_by_id         | _c::_m::repository::UserRepository::find_by_id                 | [global]
-u3:40   | Variable       | id                 | _c::_m::repository::UserRepository::find_by_id::id             |         
-u3:41   | Function       | find_by_email      | _c::_m::repository::UserRepository::find_by_email              | [global]
-u3:42   | Variable       | email              | _c::_m::repository::UserRepository::find_by_email::email       |         
-u3:43   | Variable       | u                  | _c::_m::repository::UserRepository::find_by_email::u           |         
-u3:44   | Function       | insert             | _c::_m::repository::UserRepository::insert                     | [global]
-u3:45   | Variable       | email              | _c::_m::repository::UserRepository::insert::email              |         
-u3:46   | Variable       | password_hash      | _c::_m::repository::UserRepository::insert::password_hash      |         
-u3:47   | Variable       | user               | _c::_m::repository::UserRepository::insert::user               |         
-u4:48   | Crate          | crate              | _c::crate                                                      |         
-u4:49   | Module         | service            | _c::service                                                    |         
-u4:50   | File           | mod                | _c::service::mod                                               |         
-u5:51   | Crate          | crate              | _c::crate                                                      |         
-u5:52   | Module         | _m                 | _c::_m                                                         |         
-u5:53   | File           | user_service       | _c::_m::user_service                                           |         
-u5:54   | Struct         | UserService        | _c::_m::user_service::UserService                              | [global]
-u5:55   | Field          | repo               | _c::_m::user_service::UserService::repo                        |         
-u5:56   | Function       | new                | _c::_m::user_service::UserService::new                         | [global]
-u5:57   | Variable       | repo               | _c::_m::user_service::UserService::new::repo                   |         
-u5:58   | Function       | get_user           | _c::_m::user_service::UserService::get_user                    | [global]
-u5:59   | Variable       | id                 | _c::_m::user_service::UserService::get_user::id                |         
-u5:60   | Function       | create_user        | _c::_m::user_service::UserService::create_user                 | [global]
-u5:61   | Variable       | email              | _c::_m::user_service::UserService::create_user::email          |         
-u5:62   | Variable       | password           | _c::_m::user_service::UserService::create_user::password       |         
-u5:63   | Variable       | hash               | _c::_m::user_service::UserService::create_user::hash           |         
-u6:64   | Crate          | crate              | _c::crate                                                      |         
-u6:65   | Module         | _m                 | _c::_m                                                         |         
-u6:66   | File           | auth_service       | _c::_m::auth_service                                           |         
-u6:67   | Struct         | AuthService        | _c::_m::auth_service::AuthService                              | [global]
-u6:68   | Field          | repo               | _c::_m::auth_service::AuthService::repo                        |         
-u6:69   | Function       | new                | _c::_m::auth_service::AuthService::new                         | [global]
-u6:70   | Variable       | repo               | _c::_m::auth_service::AuthService::new::repo                   |         
-u6:71   | Function       | authenticate       | _c::_m::auth_service::AuthService::authenticate                | [global]
-u6:72   | Variable       | email              | _c::_m::auth_service::AuthService::authenticate::email         |         
-u6:73   | Variable       | password           | _c::_m::auth_service::AuthService::authenticate::password      |         
-u6:74   | Variable       | user               | _c::_m::auth_service::AuthService::authenticate::user          |         
-u6:75   | Variable       | expected_hash      | _c::_m::auth_service::AuthService::authenticate::expected_hash |         
-u7:76   | Crate          | crate              | _c::crate                                                      |         
-u7:77   | Module         | api                | _c::api                                                        |         
-u7:78   | File           | mod                | _c::api::mod                                                   |         
-u8:79   | Crate          | crate              | _c::crate                                                      |         
-u8:80   | Module         | _m                 | _c::_m                                                         |         
-u8:81   | File           | dto                | _c::_m::dto                                                    |         
-u8:82   | Struct         | UserDto            | _c::_m::dto::UserDto                                           | [global]
-u8:83   | Field          | id                 | _c::_m::dto::UserDto::id                                       |         
-u8:84   | Field          | email              | _c::_m::dto::UserDto::email                                    |         
-u8:85   | UnresolvedType | From               | _c::_m::dto::From                                              |         
-u8:86   | Function       | from               | _c::_m::dto::UserDto::from                                     |         
-u8:87   | Variable       | user               | _c::_m::dto::UserDto::from::user                               |         
-u8:88   | Struct         | CreateUserRequest  | _c::_m::dto::CreateUserRequest                                 | [global]
-u8:89   | Field          | email              | _c::_m::dto::CreateUserRequest::email                          |         
-u8:90   | Field          | password           | _c::_m::dto::CreateUserRequest::password                       |         
-u8:91   | Struct         | LoginRequest       | _c::_m::dto::LoginRequest                                      | [global]
-u8:92   | Field          | email              | _c::_m::dto::LoginRequest::email                               |         
-u8:93   | Field          | password           | _c::_m::dto::LoginRequest::password                            |         
-u9:94   | Crate          | crate              | _c::crate                                                      |         
-u9:95   | Module         | _m                 | _c::_m                                                         |         
-u9:96   | File           | handlers           | _c::_m::handlers                                               |         
-u9:97   | Function       | handle_get_user    | _c::_m::handlers::handle_get_user                              | [global]
-u9:98   | Variable       | service            | _c::_m::handlers::handle_get_user::service                     |         
-u9:99   | Variable       | id                 | _c::_m::handlers::handle_get_user::id                          |         
-u9:100  | Function       | handle_create_user | _c::_m::handlers::handle_create_user                           | [global]
-u9:101  | Variable       | service            | _c::_m::handlers::handle_create_user::service                  |         
-u9:102  | Variable       | req                | _c::_m::handlers::handle_create_user::req                      |         
-u9:103  | Variable       | user               | _c::_m::handlers::handle_create_user::user                     |         
-u9:104  | Function       | handle_login       | _c::_m::handlers::handle_login                                 | [global]
-u9:105  | Variable       | service            | _c::_m::handlers::handle_login::service                        |         
-u9:106  | Variable       | req                | _c::_m::handlers::handle_login::req                            |         
-u10:107 | Crate          | crate              | _c::crate                                                      |         
-u10:108 | Module         | _m                 | _c::_m                                                         |         
-u10:109 | File           | main               | _c::_m::main                                                   |         
-u10:110 | Function       | main               | _c::_m::main::main                                             |         
-u10:111 | Variable       | repo               | _c::_m::main::main::repo                                       |         
-u10:112 | Variable       | user_service       | _c::_m::main::main::user_service                               |         
-u10:113 | Variable       | req                | _c::_m::main::main::req                                        |         
-u10:114 | Variable       | created            | _c::_m::main::main::created                                    |         
+u0:1    | Primitive      | i32                | i32                                                                 | [global]
+u0:2    | Primitive      | i64                | i64                                                                 | [global]
+u0:3    | Primitive      | i16                | i16                                                                 | [global]
+u0:4    | Primitive      | i8                 | i8                                                                  | [global]
+u0:5    | Primitive      | i128               | i128                                                                | [global]
+u0:6    | Primitive      | isize              | isize                                                               | [global]
+u0:7    | Primitive      | u32                | u32                                                                 | [global]
+u0:8    | Primitive      | u64                | u64                                                                 | [global]
+u0:9    | Primitive      | u16                | u16                                                                 | [global]
+u0:10   | Primitive      | u8                 | u8                                                                  | [global]
+u0:11   | Primitive      | u128               | u128                                                                | [global]
+u0:12   | Primitive      | usize              | usize                                                               | [global]
+u0:13   | Primitive      | f32                | f32                                                                 | [global]
+u0:14   | Primitive      | f64                | f64                                                                 | [global]
+u0:15   | Primitive      | bool               | bool                                                                | [global]
+u0:16   | Primitive      | char               | char                                                                | [global]
+u0:17   | Primitive      | str                | str                                                                 | [global]
+u0:18   | Primitive      | String             | String                                                              | [global]
+u0:19   | Crate          | _c                 | _c                                                                  | [global]
+u0:20   | Crate          | crate              | _c::crate                                                           |
+u0:21   | File           | lib                | _c::lib                                                             |
+u1:22   | Crate          | crate              | _c::crate                                                           |
+u1:23   | Module         | data               | _c::data                                                            |
+u1:24   | File           | mod                | _c::data::mod                                                       |
+u2:25   | Crate          | crate              | _c::crate                                                           |
+u2:26   | Module         | data               | _c::data                                                            |
+u2:27   | File           | entity             | _c::data::entity                                                    |
+u2:28   | Struct         | User               | _c::data::entity::User                                              | [global]
+u2:29   | Field          | id                 | _c::data::entity::User::id                                          |
+u2:30   | Field          | email              | _c::data::entity::User::email                                       |
+u2:31   | Field          | password_hash      | _c::data::entity::User::password_hash                               |
+u3:32   | Crate          | crate              | _c::crate                                                           |
+u3:33   | Module         | data               | _c::data                                                            |
+u3:34   | File           | repository         | _c::data::repository                                                |
+u3:35   | Struct         | UserRepository     | _c::data::repository::UserRepository                                | [global]
+u3:36   | Field          | storage            | _c::data::repository::UserRepository::storage                       |
+u3:37   | Field          | next_id            | _c::data::repository::UserRepository::next_id                       |
+u3:38   | Function       | new                | _c::data::repository::UserRepository::new                           | [global]
+u3:39   | Function       | find_by_id         | _c::data::repository::UserRepository::find_by_id                    | [global]
+u3:40   | Variable       | id                 | _c::data::repository::UserRepository::find_by_id::id                |
+u3:41   | Function       | find_by_email      | _c::data::repository::UserRepository::find_by_email                 | [global]
+u3:42   | Variable       | email              | _c::data::repository::UserRepository::find_by_email::email          |
+u3:43   | Variable       | u                  | _c::data::repository::UserRepository::find_by_email::u              |
+u3:44   | Function       | insert             | _c::data::repository::UserRepository::insert                        | [global]
+u3:45   | Variable       | email              | _c::data::repository::UserRepository::insert::email                 |
+u3:46   | Variable       | password_hash      | _c::data::repository::UserRepository::insert::password_hash         |
+u3:47   | Variable       | user               | _c::data::repository::UserRepository::insert::user                  |
+u4:48   | Crate          | crate              | _c::crate                                                           |
+u4:49   | Module         | service            | _c::service                                                         |
+u4:50   | File           | mod                | _c::service::mod                                                    |
+u5:51   | Crate          | crate              | _c::crate                                                           |
+u5:52   | Module         | service            | _c::service                                                         |
+u5:53   | File           | user_service       | _c::service::user_service                                           |
+u5:54   | Struct         | UserService        | _c::service::user_service::UserService                              | [global]
+u5:55   | Field          | repo               | _c::service::user_service::UserService::repo                        |
+u5:56   | Function       | new                | _c::service::user_service::UserService::new                         | [global]
+u5:57   | Variable       | repo               | _c::service::user_service::UserService::new::repo                   |
+u5:58   | Function       | get_user           | _c::service::user_service::UserService::get_user                    | [global]
+u5:59   | Variable       | id                 | _c::service::user_service::UserService::get_user::id                |
+u5:60   | Function       | create_user        | _c::service::user_service::UserService::create_user                 | [global]
+u5:61   | Variable       | email              | _c::service::user_service::UserService::create_user::email          |
+u5:62   | Variable       | password           | _c::service::user_service::UserService::create_user::password       |
+u5:63   | Variable       | hash               | _c::service::user_service::UserService::create_user::hash           |
+u6:64   | Crate          | crate              | _c::crate                                                           |
+u6:65   | Module         | service            | _c::service                                                         |
+u6:66   | File           | auth_service       | _c::service::auth_service                                           |
+u6:67   | Struct         | AuthService        | _c::service::auth_service::AuthService                              | [global]
+u6:68   | Field          | repo               | _c::service::auth_service::AuthService::repo                        |
+u6:69   | Function       | new                | _c::service::auth_service::AuthService::new                         | [global]
+u6:70   | Variable       | repo               | _c::service::auth_service::AuthService::new::repo                   |
+u6:71   | Function       | authenticate       | _c::service::auth_service::AuthService::authenticate                | [global]
+u6:72   | Variable       | email              | _c::service::auth_service::AuthService::authenticate::email         |
+u6:73   | Variable       | password           | _c::service::auth_service::AuthService::authenticate::password      |
+u6:74   | Variable       | user               | _c::service::auth_service::AuthService::authenticate::user          |
+u6:75   | Variable       | expected_hash      | _c::service::auth_service::AuthService::authenticate::expected_hash |
+u7:76   | Crate          | crate              | _c::crate                                                           |
+u7:77   | Module         | api                | _c::api                                                             |
+u7:78   | File           | mod                | _c::api::mod                                                        |
+u8:79   | Crate          | crate              | _c::crate                                                           |
+u8:80   | Module         | api                | _c::api                                                             |
+u8:81   | File           | dto                | _c::api::dto                                                        |
+u8:82   | Struct         | UserDto            | _c::api::dto::UserDto                                               | [global]
+u8:83   | Field          | id                 | _c::api::dto::UserDto::id                                           |
+u8:84   | Field          | email              | _c::api::dto::UserDto::email                                        |
+u8:85   | UnresolvedType | From               | _c::api::dto::From                                                  |
+u8:86   | Function       | from               | _c::api::dto::UserDto::from                                         |
+u8:87   | Variable       | user               | _c::api::dto::UserDto::from::user                                   |
+u8:88   | Struct         | CreateUserRequest  | _c::api::dto::CreateUserRequest                                     | [global]
+u8:89   | Field          | email              | _c::api::dto::CreateUserRequest::email                              |
+u8:90   | Field          | password           | _c::api::dto::CreateUserRequest::password                           |
+u8:91   | Struct         | LoginRequest       | _c::api::dto::LoginRequest                                          | [global]
+u8:92   | Field          | email              | _c::api::dto::LoginRequest::email                                   |
+u8:93   | Field          | password           | _c::api::dto::LoginRequest::password                                |
+u9:94   | Crate          | crate              | _c::crate                                                           |
+u9:95   | Module         | api                | _c::api                                                             |
+u9:96   | File           | handlers           | _c::api::handlers                                                   |
+u9:97   | Function       | handle_get_user    | _c::api::handlers::handle_get_user                                  | [global]
+u9:98   | Variable       | service            | _c::api::handlers::handle_get_user::service                         |
+u9:99   | Variable       | id                 | _c::api::handlers::handle_get_user::id                              |
+u9:100  | Function       | handle_create_user | _c::api::handlers::handle_create_user                               | [global]
+u9:101  | Variable       | service            | _c::api::handlers::handle_create_user::service                      |
+u9:102  | Variable       | req                | _c::api::handlers::handle_create_user::req                          |
+u9:103  | Variable       | user               | _c::api::handlers::handle_create_user::user                         |
+u9:104  | Function       | handle_login       | _c::api::handlers::handle_login                                     | [global]
+u9:105  | Variable       | service            | _c::api::handlers::handle_login::service                            |
+u9:106  | Variable       | req                | _c::api::handlers::handle_login::req                                |
+u10:107 | Crate          | crate              | _c::crate                                                           |
+u10:108 | File           | main               | _c::main                                                            |
+u10:109 | Function       | main               | _c::main::main                                                      |
+u10:110 | Variable       | repo               | _c::main::main::repo                                                |
+u10:111 | Variable       | user_service       | _c::main::main::user_service                                        |
+u10:112 | Variable       | req                | _c::main::main::req                                                 |
+u10:113 | Variable       | created            | _c::main::main::created                                             |
 
 --- expect:symbol-deps ---
 u0:17 <- [u3:41, u3:42, u5:60, u5:63, u6:71, u6:72, u6:73, u6:75]
 u0:18 <- [u2:28, u2:30, u2:31, u3:44, u3:45, u3:46, u5:60, u5:61, u5:62, u8:82, u8:84, u8:88, u8:89, u8:90, u8:91, u8:92, u8:93]
 u0:8 <- [u2:28, u2:29, u3:35, u3:37, u3:39, u3:40, u5:58, u5:59, u8:82, u8:83, u9:97, u9:99]
-u10:110 -> [u3:35, u3:38, u5:54, u5:56, u8:88, u9:100, u9:97]
-u10:111 -> [u3:35]
-u10:112 -> [u5:54]
-u10:113 -> [u8:88]
-u10:114 -> [u9:100]
+u10:109 -> [u3:35, u3:38, u5:54, u5:56, u8:88, u9:100, u9:97]
+u10:110 -> [u3:35]
+u10:111 -> [u5:54]
+u10:112 -> [u8:88]
+u10:113 -> [u9:100]
 u2:28 -> [u0:18, u0:8]
 u2:28 <- [u3:35, u3:36, u3:44, u3:47, u8:86, u8:87]
 u2:29 -> [u0:8]
 u2:30 -> [u0:18]
 u2:31 -> [u0:18]
 u3:35 -> [u0:8, u2:28, u3:39, u3:41, u3:44]
-u3:35 <- [u10:110, u10:111, u3:38, u5:54, u5:55, u5:56, u5:57, u6:67, u6:68, u6:69, u6:70, u6:71, u6:74]
+u3:35 <- [u10:109, u10:110, u3:38, u5:54, u5:55, u5:56, u5:57, u6:67, u6:68, u6:69, u6:70, u6:71, u6:74]
 u3:36 -> [u2:28]
 u3:37 -> [u0:8]
 u3:38 -> [u3:35]
-u3:38 <- [u10:110]
+u3:38 <- [u10:109]
 u3:39 -> [u0:8]
 u3:39 <- [u3:35, u5:58]
 u3:40 -> [u0:8]
@@ -327,10 +326,10 @@ u3:45 -> [u0:18]
 u3:46 -> [u0:18]
 u3:47 -> [u2:28]
 u5:54 -> [u3:35, u5:58, u5:60]
-u5:54 <- [u10:110, u10:112, u5:56, u9:100, u9:101, u9:103, u9:97, u9:98]
+u5:54 <- [u10:109, u10:111, u5:56, u9:100, u9:101, u9:103, u9:97, u9:98]
 u5:55 -> [u3:35]
 u5:56 -> [u3:35, u5:54]
-u5:56 <- [u10:110]
+u5:56 <- [u10:109]
 u5:57 -> [u3:35]
 u5:58 -> [u0:8, u3:39]
 u5:58 <- [u5:54, u9:97]
@@ -359,7 +358,7 @@ u8:86 -> [u2:28, u8:82]
 u8:86 <- [u9:100]
 u8:87 -> [u2:28]
 u8:88 -> [u0:18]
-u8:88 <- [u10:110, u10:113, u9:100, u9:102]
+u8:88 <- [u10:109, u10:112, u9:100, u9:102]
 u8:89 -> [u0:18]
 u8:90 -> [u0:18]
 u8:91 -> [u0:18]
@@ -367,7 +366,7 @@ u8:91 <- [u9:104, u9:106]
 u8:92 -> [u0:18]
 u8:93 -> [u0:18]
 u9:100 -> [u5:54, u5:60, u8:86, u8:88]
-u9:100 <- [u10:110, u10:114]
+u9:100 <- [u10:109, u10:113]
 u9:101 -> [u5:54]
 u9:102 -> [u8:88]
 u9:103 -> [u5:54]
@@ -375,9 +374,58 @@ u9:104 -> [u6:67, u6:71, u8:91]
 u9:105 -> [u6:67]
 u9:106 -> [u8:91]
 u9:97 -> [u0:8, u5:54, u5:58]
-u9:97 <- [u10:110]
+u9:97 <- [u10:109]
 u9:98 -> [u5:54]
 u9:99 -> [u0:8]
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="_c";
+    style=filled;
+    color=lightgrey;
+    subgraph cluster_1 {
+      label="api";
+      style=filled;
+      color=lightgrey;
+      n29[label="CreateUserRequest", full_path="$TMP/src/api/dto.rs:14"];
+      n30[label="LoginRequest", full_path="$TMP/src/api/dto.rs:19"];
+      n34[label="handle_login", full_path="$TMP/src/api/handlers.rs:13"];
+      n32[label="handle_get_user", full_path="$TMP/src/api/handlers.rs:4"];
+      n33[label="handle_create_user", full_path="$TMP/src/api/handlers.rs:8"];
+    }
+    subgraph cluster_2 {
+      label="data";
+      style=filled;
+      color=lightgrey;
+      n4[label="User", full_path="$TMP/src/data/entity.rs:2"];
+      n6[label="UserRepository", full_path="$TMP/src/data/repository.rs:4"];
+    }
+    subgraph cluster_3 {
+      label="main";
+      style=filled;
+      color=lightgrey;
+      n36[label="main", full_path="$TMP/src/main.rs:9"];
+    }
+    subgraph cluster_4 {
+      label="service";
+      style=filled;
+      color=lightgrey;
+      n20[label="AuthService", full_path="$TMP/src/service/auth_service.rs:3"];
+      n14[label="UserService", full_path="$TMP/src/service/user_service.rs:3"];
+    }
+  }
+  n6 -> n4;
+  n14 -> n6;
+  n20 -> n6;
+  n34 -> n20;
+  n34 -> n30;
+  n32 -> n14;
+  n33 -> n14;
+  n33 -> n29;
+  n36 -> n32;
+  n36 -> n33;
+}
 
 
 ===============================================================================
@@ -660,171 +708,170 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1    | Primitive      | i32                    | i32                                                                          | [global]
-u0:2    | Primitive      | i64                    | i64                                                                          | [global]
-u0:3    | Primitive      | i16                    | i16                                                                          | [global]
-u0:4    | Primitive      | i8                     | i8                                                                           | [global]
-u0:5    | Primitive      | i128                   | i128                                                                         | [global]
-u0:6    | Primitive      | isize                  | isize                                                                        | [global]
-u0:7    | Primitive      | u32                    | u32                                                                          | [global]
-u0:8    | Primitive      | u64                    | u64                                                                          | [global]
-u0:9    | Primitive      | u16                    | u16                                                                          | [global]
-u0:10   | Primitive      | u8                     | u8                                                                           | [global]
-u0:11   | Primitive      | u128                   | u128                                                                         | [global]
-u0:12   | Primitive      | usize                  | usize                                                                        | [global]
-u0:13   | Primitive      | f32                    | f32                                                                          | [global]
-u0:14   | Primitive      | f64                    | f64                                                                          | [global]
-u0:15   | Primitive      | bool                   | bool                                                                         | [global]
-u0:16   | Primitive      | char                   | char                                                                         | [global]
-u0:17   | Primitive      | str                    | str                                                                          | [global]
-u0:18   | Primitive      | String                 | String                                                                       | [global]
-u0:19   | Crate          | _c                     | _c                                                                           | [global]
-u0:20   | Crate          | crate                  | _c::crate                                                                    |         
-u0:21   | File           | lib                    | _c::lib                                                                      |         
-u1:22   | Crate          | crate                  | _c::crate                                                                    |         
-u1:23   | Module         | domain                 | _c::domain                                                                   |         
-u1:24   | File           | mod                    | _c::domain::mod                                                              |         
-u2:25   | Crate          | crate                  | _c::crate                                                                    |         
-u2:26   | Module         | _m                     | _c::_m                                                                       |         
-u2:27   | File           | product                | _c::_m::product                                                              |         
-u2:28   | Struct         | Product                | _c::_m::product::Product                                                     | [global]
-u2:29   | Field          | id                     | _c::_m::product::Product::id                                                 |         
-u2:30   | Field          | name                   | _c::_m::product::Product::name                                               |         
-u2:31   | Field          | price                  | _c::_m::product::Product::price                                              |         
-u2:32   | Field          | stock                  | _c::_m::product::Product::stock                                              |         
-u3:33   | Crate          | crate                  | _c::crate                                                                    |         
-u3:34   | Module         | _m                     | _c::_m                                                                       |         
-u3:35   | File           | order                  | _c::_m::order                                                                |         
-u3:36   | Enum           | OrderStatus            | _c::_m::order::OrderStatus                                                   | [global]
-u3:37   | EnumVariant    | Pending                | _c::_m::order::OrderStatus::Pending                                          |         
-u3:38   | EnumVariant    | Confirmed              | _c::_m::order::OrderStatus::Confirmed                                        |         
-u3:39   | EnumVariant    | Shipped                | _c::_m::order::OrderStatus::Shipped                                          |         
-u3:40   | EnumVariant    | Delivered              | _c::_m::order::OrderStatus::Delivered                                        |         
-u3:41   | Struct         | Order                  | _c::_m::order::Order                                                         | [global]
-u3:42   | Field          | id                     | _c::_m::order::Order::id                                                     |         
-u3:43   | Field          | products               | _c::_m::order::Order::products                                               |         
-u3:44   | Field          | status                 | _c::_m::order::Order::status                                                 |         
-u3:45   | Function       | new                    | _c::_m::order::Order::new                                                    | [global]
-u3:46   | Variable       | id                     | _c::_m::order::Order::new::id                                                |         
-u3:47   | Function       | add_product            | _c::_m::order::Order::add_product                                            | [global]
-u3:48   | Variable       | product                | _c::_m::order::Order::add_product::product                                   |         
-u3:49   | Variable       | quantity               | _c::_m::order::Order::add_product::quantity                                  |         
-u3:50   | Function       | total                  | _c::_m::order::Order::total                                                  | [global]
-u3:51   | Variable       | p                      | _c::_m::order::Order::total::p                                               |         
-u3:52   | Variable       | q                      | _c::_m::order::Order::total::q                                               |         
-u3:53   | Function       | confirm                | _c::_m::order::Order::confirm                                                | [global]
-u4:54   | Crate          | crate                  | _c::crate                                                                    |         
-u4:55   | Module         | ports                  | _c::ports                                                                    |         
-u4:56   | File           | mod                    | _c::ports::mod                                                               |         
-u5:57   | Crate          | crate                  | _c::crate                                                                    |         
-u5:58   | Module         | _m                     | _c::_m                                                                       |         
-u5:59   | File           | inbound                | _c::_m::inbound                                                              |         
-u5:60   | Trait          | OrderUseCase           | _c::_m::inbound::OrderUseCase                                                | [global]
-u5:61   | Function       | create_order           | _c::_m::inbound::OrderUseCase::create_order                                  |         
-u5:62   | Function       | add_to_order           | _c::_m::inbound::OrderUseCase::add_to_order                                  |         
-u5:63   | Variable       | order_id               | _c::_m::inbound::OrderUseCase::add_to_order::order_id                        |         
-u5:64   | Variable       | product_id             | _c::_m::inbound::OrderUseCase::add_to_order::product_id                      |         
-u5:65   | Variable       | quantity               | _c::_m::inbound::OrderUseCase::add_to_order::quantity                        |         
-u5:66   | Function       | confirm_order          | _c::_m::inbound::OrderUseCase::confirm_order                                 |         
-u5:67   | Variable       | order_id               | _c::_m::inbound::OrderUseCase::confirm_order::order_id                       |         
-u5:68   | Function       | get_order              | _c::_m::inbound::OrderUseCase::get_order                                     |         
-u5:69   | Variable       | order_id               | _c::_m::inbound::OrderUseCase::get_order::order_id                           |         
-u5:70   | Trait          | ProductUseCase         | _c::_m::inbound::ProductUseCase                                              | [global]
-u5:71   | Function       | get_product            | _c::_m::inbound::ProductUseCase::get_product                                 |         
-u5:72   | Variable       | id                     | _c::_m::inbound::ProductUseCase::get_product::id                             |         
-u5:73   | Function       | list_products          | _c::_m::inbound::ProductUseCase::list_products                               |         
-u6:74   | Crate          | crate                  | _c::crate                                                                    |         
-u6:75   | Module         | _m                     | _c::_m                                                                       |         
-u6:76   | File           | outbound               | _c::_m::outbound                                                             |         
-u6:77   | Trait          | OrderRepository        | _c::_m::outbound::OrderRepository                                            | [global]
-u6:78   | Function       | save                   | _c::_m::outbound::OrderRepository::save                                      |         
-u6:79   | Variable       | order                  | _c::_m::outbound::OrderRepository::save::order                               |         
-u6:80   | Function       | find_by_id             | _c::_m::outbound::OrderRepository::find_by_id                                |         
-u6:81   | Variable       | id                     | _c::_m::outbound::OrderRepository::find_by_id::id                            |         
-u6:82   | Function       | update                 | _c::_m::outbound::OrderRepository::update                                    |         
-u6:83   | Variable       | order                  | _c::_m::outbound::OrderRepository::update::order                             |         
-u6:84   | Trait          | ProductRepository      | _c::_m::outbound::ProductRepository                                          | [global]
-u6:85   | Function       | find_all               | _c::_m::outbound::ProductRepository::find_all                                |         
-u6:86   | Trait          | NotificationService    | _c::_m::outbound::NotificationService                                        | [global]
-u6:87   | Function       | notify_order_confirmed | _c::_m::outbound::NotificationService::notify_order_confirmed                |         
-u6:88   | Variable       | order                  | _c::_m::outbound::NotificationService::notify_order_confirmed::order         |         
-u7:89   | Crate          | crate                  | _c::crate                                                                    |         
-u7:90   | Module         | adapters               | _c::adapters                                                                 |         
-u7:91   | File           | mod                    | _c::adapters::mod                                                            |         
-u8:92   | Crate          | crate                  | _c::crate                                                                    |         
-u8:93   | Module         | _m                     | _c::_m                                                                       |         
-u8:94   | File           | memory_order_repo      | _c::_m::memory_order_repo                                                    |         
-u8:95   | Struct         | InMemoryOrderRepo      | _c::_m::memory_order_repo::InMemoryOrderRepo                                 | [global]
-u8:96   | Field          | orders                 | _c::_m::memory_order_repo::InMemoryOrderRepo::orders                         |         
-u8:97   | Field          | next_id                | _c::_m::memory_order_repo::InMemoryOrderRepo::next_id                        |         
-u8:98   | Function       | new                    | _c::_m::memory_order_repo::InMemoryOrderRepo::new                            | [global]
-u8:99   | UnresolvedType | OrderRepository        | _c::_m::memory_order_repo::OrderRepository                                   |         
-u8:100  | Function       | save                   | _c::_m::memory_order_repo::InMemoryOrderRepo::save                           |         
-u8:101  | Variable       | order                  | _c::_m::memory_order_repo::InMemoryOrderRepo::save::order                    |         
-u8:102  | Variable       | id                     | _c::_m::memory_order_repo::InMemoryOrderRepo::save::id                       |         
-u8:103  | Function       | find_by_id             | _c::_m::memory_order_repo::InMemoryOrderRepo::find_by_id                     |         
-u8:104  | Variable       | id                     | _c::_m::memory_order_repo::InMemoryOrderRepo::find_by_id::id                 |         
-u8:105  | Function       | update                 | _c::_m::memory_order_repo::InMemoryOrderRepo::update                         |         
-u8:106  | Variable       | order                  | _c::_m::memory_order_repo::InMemoryOrderRepo::update::order                  |         
-u9:107  | Crate          | crate                  | _c::crate                                                                    |         
-u9:108  | Module         | _m                     | _c::_m                                                                       |         
-u9:109  | File           | memory_product_repo    | _c::_m::memory_product_repo                                                  |         
-u9:110  | Struct         | InMemoryProductRepo    | _c::_m::memory_product_repo::InMemoryProductRepo                             | [global]
-u9:111  | Field          | products               | _c::_m::memory_product_repo::InMemoryProductRepo::products                   |         
-u9:112  | Function       | new                    | _c::_m::memory_product_repo::InMemoryProductRepo::new                        | [global]
-u9:113  | Variable       | products               | _c::_m::memory_product_repo::InMemoryProductRepo::new::products              |         
-u9:114  | UnresolvedType | ProductRepository      | _c::_m::memory_product_repo::ProductRepository                               |         
-u9:115  | Function       | find_by_id             | _c::_m::memory_product_repo::InMemoryProductRepo::find_by_id                 |         
-u9:116  | Variable       | id                     | _c::_m::memory_product_repo::InMemoryProductRepo::find_by_id::id             |         
-u9:117  | Function       | find_all               | _c::_m::memory_product_repo::InMemoryProductRepo::find_all                   |         
-u10:118 | Crate          | crate                  | _c::crate                                                                    |         
-u10:119 | Module         | _m                     | _c::_m                                                                       |         
-u10:120 | File           | email_notification     | _c::_m::email_notification                                                   |         
-u10:121 | Struct         | EmailNotification      | _c::_m::email_notification::EmailNotification                                | [global]
-u10:122 | UnresolvedType | NotificationService    | _c::_m::email_notification::NotificationService                              |         
-u10:123 | Function       | notify_order_confirmed | _c::_m::email_notification::EmailNotification::notify_order_confirmed        |         
-u10:124 | Variable       | order                  | _c::_m::email_notification::EmailNotification::notify_order_confirmed::order |         
-u11:125 | Crate          | crate                  | _c::crate                                                                    |         
-u11:126 | Module         | application            | _c::application                                                              |         
-u11:127 | File           | mod                    | _c::application::mod                                                         |         
-u12:128 | Crate          | crate                  | _c::crate                                                                    |         
-u12:129 | Module         | _m                     | _c::_m                                                                       |         
-u12:130 | File           | order_service          | _c::_m::order_service                                                        |         
-u12:131 | Struct         | OrderService           | _c::_m::order_service::OrderService                                          | [global]
-u12:132 | TypeParameter  | O                      | _c::_m::order_service::OrderService::O                                       |         
-u12:133 | TypeParameter  | P                      | _c::_m::order_service::OrderService::P                                       |         
-u12:134 | TypeParameter  | N                      | _c::_m::order_service::OrderService::N                                       |         
-u12:135 | Field          | order_repo             | _c::_m::order_service::OrderService::order_repo                              |         
-u12:136 | Field          | product_repo           | _c::_m::order_service::OrderService::product_repo                            |         
-u12:137 | Field          | notification           | _c::_m::order_service::OrderService::notification                            |         
-u12:138 | Function       | new                    | _c::_m::order_service::OrderService::new                                     | [global]
-u12:139 | Variable       | order_repo             | _c::_m::order_service::OrderService::new::order_repo                         |         
-u12:140 | Variable       | product_repo           | _c::_m::order_service::OrderService::new::product_repo                       |         
-u12:141 | Variable       | notification           | _c::_m::order_service::OrderService::new::notification                       |         
-u12:142 | UnresolvedType | OrderUseCase           | _c::_m::order_service::OrderUseCase                                          |         
-u12:143 | Function       | create_order           | _c::_m::order_service::OrderService::create_order                            |         
-u12:144 | Variable       | order                  | _c::_m::order_service::OrderService::create_order::order                     |         
-u12:145 | Variable       | id                     | _c::_m::order_service::OrderService::create_order::id                        |         
-u12:146 | Function       | add_to_order           | _c::_m::order_service::OrderService::add_to_order                            |         
-u12:147 | Variable       | order_id               | _c::_m::order_service::OrderService::add_to_order::order_id                  |         
-u12:148 | Variable       | product_id             | _c::_m::order_service::OrderService::add_to_order::product_id                |         
-u12:149 | Variable       | quantity               | _c::_m::order_service::OrderService::add_to_order::quantity                  |         
-u12:150 | Variable       | product                | _c::_m::order_service::OrderService::add_to_order::product                   |         
-u12:151 | Variable       | order                  | _c::_m::order_service::OrderService::add_to_order::order                     |         
-u12:152 | Function       | confirm_order          | _c::_m::order_service::OrderService::confirm_order                           |         
-u12:153 | Variable       | order_id               | _c::_m::order_service::OrderService::confirm_order::order_id                 |         
-u12:154 | Variable       | order                  | _c::_m::order_service::OrderService::confirm_order::order                    |         
-u12:155 | Function       | get_order              | _c::_m::order_service::OrderService::get_order                               |         
-u12:156 | Variable       | order_id               | _c::_m::order_service::OrderService::get_order::order_id                     |         
-u13:157 | Crate          | crate                  | _c::crate                                                                    |         
-u13:158 | Module         | _m                     | _c::_m                                                                       |         
-u13:159 | File           | main                   | _c::_m::main                                                                 |         
-u13:160 | Function       | main                   | _c::_m::main::main                                                           |         
-u13:161 | Variable       | order_repo             | _c::_m::main::main::order_repo                                               |         
-u13:162 | Variable       | product_repo           | _c::_m::main::main::product_repo                                             |         
-u13:163 | Variable       | notification           | _c::_m::main::main::notification                                             |         
-u13:164 | Variable       | service                | _c::_m::main::main::service                                                  |         
-u13:165 | Variable       | order                  | _c::_m::main::main::order                                                    |         
+u0:1    | Primitive      | i32                    | i32                                                                                | [global]
+u0:2    | Primitive      | i64                    | i64                                                                                | [global]
+u0:3    | Primitive      | i16                    | i16                                                                                | [global]
+u0:4    | Primitive      | i8                     | i8                                                                                 | [global]
+u0:5    | Primitive      | i128                   | i128                                                                               | [global]
+u0:6    | Primitive      | isize                  | isize                                                                              | [global]
+u0:7    | Primitive      | u32                    | u32                                                                                | [global]
+u0:8    | Primitive      | u64                    | u64                                                                                | [global]
+u0:9    | Primitive      | u16                    | u16                                                                                | [global]
+u0:10   | Primitive      | u8                     | u8                                                                                 | [global]
+u0:11   | Primitive      | u128                   | u128                                                                               | [global]
+u0:12   | Primitive      | usize                  | usize                                                                              | [global]
+u0:13   | Primitive      | f32                    | f32                                                                                | [global]
+u0:14   | Primitive      | f64                    | f64                                                                                | [global]
+u0:15   | Primitive      | bool                   | bool                                                                               | [global]
+u0:16   | Primitive      | char                   | char                                                                               | [global]
+u0:17   | Primitive      | str                    | str                                                                                | [global]
+u0:18   | Primitive      | String                 | String                                                                             | [global]
+u0:19   | Crate          | _c                     | _c                                                                                 | [global]
+u0:20   | Crate          | crate                  | _c::crate                                                                          |
+u0:21   | File           | lib                    | _c::lib                                                                            |
+u1:22   | Crate          | crate                  | _c::crate                                                                          |
+u1:23   | Module         | domain                 | _c::domain                                                                         |
+u1:24   | File           | mod                    | _c::domain::mod                                                                    |
+u2:25   | Crate          | crate                  | _c::crate                                                                          |
+u2:26   | Module         | domain                 | _c::domain                                                                         |
+u2:27   | File           | product                | _c::domain::product                                                                |
+u2:28   | Struct         | Product                | _c::domain::product::Product                                                       | [global]
+u2:29   | Field          | id                     | _c::domain::product::Product::id                                                   |
+u2:30   | Field          | name                   | _c::domain::product::Product::name                                                 |
+u2:31   | Field          | price                  | _c::domain::product::Product::price                                                |
+u2:32   | Field          | stock                  | _c::domain::product::Product::stock                                                |
+u3:33   | Crate          | crate                  | _c::crate                                                                          |
+u3:34   | Module         | domain                 | _c::domain                                                                         |
+u3:35   | File           | order                  | _c::domain::order                                                                  |
+u3:36   | Enum           | OrderStatus            | _c::domain::order::OrderStatus                                                     | [global]
+u3:37   | EnumVariant    | Pending                | _c::domain::order::OrderStatus::Pending                                            |
+u3:38   | EnumVariant    | Confirmed              | _c::domain::order::OrderStatus::Confirmed                                          |
+u3:39   | EnumVariant    | Shipped                | _c::domain::order::OrderStatus::Shipped                                            |
+u3:40   | EnumVariant    | Delivered              | _c::domain::order::OrderStatus::Delivered                                          |
+u3:41   | Struct         | Order                  | _c::domain::order::Order                                                           | [global]
+u3:42   | Field          | id                     | _c::domain::order::Order::id                                                       |
+u3:43   | Field          | products               | _c::domain::order::Order::products                                                 |
+u3:44   | Field          | status                 | _c::domain::order::Order::status                                                   |
+u3:45   | Function       | new                    | _c::domain::order::Order::new                                                      | [global]
+u3:46   | Variable       | id                     | _c::domain::order::Order::new::id                                                  |
+u3:47   | Function       | add_product            | _c::domain::order::Order::add_product                                              | [global]
+u3:48   | Variable       | product                | _c::domain::order::Order::add_product::product                                     |
+u3:49   | Variable       | quantity               | _c::domain::order::Order::add_product::quantity                                    |
+u3:50   | Function       | total                  | _c::domain::order::Order::total                                                    | [global]
+u3:51   | Variable       | p                      | _c::domain::order::Order::total::p                                                 |
+u3:52   | Variable       | q                      | _c::domain::order::Order::total::q                                                 |
+u3:53   | Function       | confirm                | _c::domain::order::Order::confirm                                                  | [global]
+u4:54   | Crate          | crate                  | _c::crate                                                                          |
+u4:55   | Module         | ports                  | _c::ports                                                                          |
+u4:56   | File           | mod                    | _c::ports::mod                                                                     |
+u5:57   | Crate          | crate                  | _c::crate                                                                          |
+u5:58   | Module         | ports                  | _c::ports                                                                          |
+u5:59   | File           | inbound                | _c::ports::inbound                                                                 |
+u5:60   | Trait          | OrderUseCase           | _c::ports::inbound::OrderUseCase                                                   | [global]
+u5:61   | Function       | create_order           | _c::ports::inbound::OrderUseCase::create_order                                     |
+u5:62   | Function       | add_to_order           | _c::ports::inbound::OrderUseCase::add_to_order                                     |
+u5:63   | Variable       | order_id               | _c::ports::inbound::OrderUseCase::add_to_order::order_id                           |
+u5:64   | Variable       | product_id             | _c::ports::inbound::OrderUseCase::add_to_order::product_id                         |
+u5:65   | Variable       | quantity               | _c::ports::inbound::OrderUseCase::add_to_order::quantity                           |
+u5:66   | Function       | confirm_order          | _c::ports::inbound::OrderUseCase::confirm_order                                    |
+u5:67   | Variable       | order_id               | _c::ports::inbound::OrderUseCase::confirm_order::order_id                          |
+u5:68   | Function       | get_order              | _c::ports::inbound::OrderUseCase::get_order                                        |
+u5:69   | Variable       | order_id               | _c::ports::inbound::OrderUseCase::get_order::order_id                              |
+u5:70   | Trait          | ProductUseCase         | _c::ports::inbound::ProductUseCase                                                 | [global]
+u5:71   | Function       | get_product            | _c::ports::inbound::ProductUseCase::get_product                                    |
+u5:72   | Variable       | id                     | _c::ports::inbound::ProductUseCase::get_product::id                                |
+u5:73   | Function       | list_products          | _c::ports::inbound::ProductUseCase::list_products                                  |
+u6:74   | Crate          | crate                  | _c::crate                                                                          |
+u6:75   | Module         | ports                  | _c::ports                                                                          |
+u6:76   | File           | outbound               | _c::ports::outbound                                                                |
+u6:77   | Trait          | OrderRepository        | _c::ports::outbound::OrderRepository                                               | [global]
+u6:78   | Function       | save                   | _c::ports::outbound::OrderRepository::save                                         |
+u6:79   | Variable       | order                  | _c::ports::outbound::OrderRepository::save::order                                  |
+u6:80   | Function       | find_by_id             | _c::ports::outbound::OrderRepository::find_by_id                                   |
+u6:81   | Variable       | id                     | _c::ports::outbound::OrderRepository::find_by_id::id                               |
+u6:82   | Function       | update                 | _c::ports::outbound::OrderRepository::update                                       |
+u6:83   | Variable       | order                  | _c::ports::outbound::OrderRepository::update::order                                |
+u6:84   | Trait          | ProductRepository      | _c::ports::outbound::ProductRepository                                             | [global]
+u6:85   | Function       | find_all               | _c::ports::outbound::ProductRepository::find_all                                   |
+u6:86   | Trait          | NotificationService    | _c::ports::outbound::NotificationService                                           | [global]
+u6:87   | Function       | notify_order_confirmed | _c::ports::outbound::NotificationService::notify_order_confirmed                   |
+u6:88   | Variable       | order                  | _c::ports::outbound::NotificationService::notify_order_confirmed::order            |
+u7:89   | Crate          | crate                  | _c::crate                                                                          |
+u7:90   | Module         | adapters               | _c::adapters                                                                       |
+u7:91   | File           | mod                    | _c::adapters::mod                                                                  |
+u8:92   | Crate          | crate                  | _c::crate                                                                          |
+u8:93   | Module         | adapters               | _c::adapters                                                                       |
+u8:94   | File           | memory_order_repo      | _c::adapters::memory_order_repo                                                    |
+u8:95   | Struct         | InMemoryOrderRepo      | _c::adapters::memory_order_repo::InMemoryOrderRepo                                 | [global]
+u8:96   | Field          | orders                 | _c::adapters::memory_order_repo::InMemoryOrderRepo::orders                         |
+u8:97   | Field          | next_id                | _c::adapters::memory_order_repo::InMemoryOrderRepo::next_id                        |
+u8:98   | Function       | new                    | _c::adapters::memory_order_repo::InMemoryOrderRepo::new                            | [global]
+u8:99   | UnresolvedType | OrderRepository        | _c::adapters::memory_order_repo::OrderRepository                                   |
+u8:100  | Function       | save                   | _c::adapters::memory_order_repo::InMemoryOrderRepo::save                           |
+u8:101  | Variable       | order                  | _c::adapters::memory_order_repo::InMemoryOrderRepo::save::order                    |
+u8:102  | Variable       | id                     | _c::adapters::memory_order_repo::InMemoryOrderRepo::save::id                       |
+u8:103  | Function       | find_by_id             | _c::adapters::memory_order_repo::InMemoryOrderRepo::find_by_id                     |
+u8:104  | Variable       | id                     | _c::adapters::memory_order_repo::InMemoryOrderRepo::find_by_id::id                 |
+u8:105  | Function       | update                 | _c::adapters::memory_order_repo::InMemoryOrderRepo::update                         |
+u8:106  | Variable       | order                  | _c::adapters::memory_order_repo::InMemoryOrderRepo::update::order                  |
+u9:107  | Crate          | crate                  | _c::crate                                                                          |
+u9:108  | Module         | adapters               | _c::adapters                                                                       |
+u9:109  | File           | memory_product_repo    | _c::adapters::memory_product_repo                                                  |
+u9:110  | Struct         | InMemoryProductRepo    | _c::adapters::memory_product_repo::InMemoryProductRepo                             | [global]
+u9:111  | Field          | products               | _c::adapters::memory_product_repo::InMemoryProductRepo::products                   |
+u9:112  | Function       | new                    | _c::adapters::memory_product_repo::InMemoryProductRepo::new                        | [global]
+u9:113  | Variable       | products               | _c::adapters::memory_product_repo::InMemoryProductRepo::new::products              |
+u9:114  | UnresolvedType | ProductRepository      | _c::adapters::memory_product_repo::ProductRepository                               |
+u9:115  | Function       | find_by_id             | _c::adapters::memory_product_repo::InMemoryProductRepo::find_by_id                 |
+u9:116  | Variable       | id                     | _c::adapters::memory_product_repo::InMemoryProductRepo::find_by_id::id             |
+u9:117  | Function       | find_all               | _c::adapters::memory_product_repo::InMemoryProductRepo::find_all                   |
+u10:118 | Crate          | crate                  | _c::crate                                                                          |
+u10:119 | Module         | adapters               | _c::adapters                                                                       |
+u10:120 | File           | email_notification     | _c::adapters::email_notification                                                   |
+u10:121 | Struct         | EmailNotification      | _c::adapters::email_notification::EmailNotification                                | [global]
+u10:122 | UnresolvedType | NotificationService    | _c::adapters::email_notification::NotificationService                              |
+u10:123 | Function       | notify_order_confirmed | _c::adapters::email_notification::EmailNotification::notify_order_confirmed        |
+u10:124 | Variable       | order                  | _c::adapters::email_notification::EmailNotification::notify_order_confirmed::order |
+u11:125 | Crate          | crate                  | _c::crate                                                                          |
+u11:126 | Module         | application            | _c::application                                                                    |
+u11:127 | File           | mod                    | _c::application::mod                                                               |
+u12:128 | Crate          | crate                  | _c::crate                                                                          |
+u12:129 | Module         | application            | _c::application                                                                    |
+u12:130 | File           | order_service          | _c::application::order_service                                                     |
+u12:131 | Struct         | OrderService           | _c::application::order_service::OrderService                                       | [global]
+u12:132 | TypeParameter  | O                      | _c::application::order_service::OrderService::O                                    |
+u12:133 | TypeParameter  | P                      | _c::application::order_service::OrderService::P                                    |
+u12:134 | TypeParameter  | N                      | _c::application::order_service::OrderService::N                                    |
+u12:135 | Field          | order_repo             | _c::application::order_service::OrderService::order_repo                           |
+u12:136 | Field          | product_repo           | _c::application::order_service::OrderService::product_repo                         |
+u12:137 | Field          | notification           | _c::application::order_service::OrderService::notification                         |
+u12:138 | Function       | new                    | _c::application::order_service::OrderService::new                                  | [global]
+u12:139 | Variable       | order_repo             | _c::application::order_service::OrderService::new::order_repo                      |
+u12:140 | Variable       | product_repo           | _c::application::order_service::OrderService::new::product_repo                    |
+u12:141 | Variable       | notification           | _c::application::order_service::OrderService::new::notification                    |
+u12:142 | UnresolvedType | OrderUseCase           | _c::application::order_service::OrderUseCase                                       |
+u12:143 | Function       | create_order           | _c::application::order_service::OrderService::create_order                         |
+u12:144 | Variable       | order                  | _c::application::order_service::OrderService::create_order::order                  |
+u12:145 | Variable       | id                     | _c::application::order_service::OrderService::create_order::id                     |
+u12:146 | Function       | add_to_order           | _c::application::order_service::OrderService::add_to_order                         |
+u12:147 | Variable       | order_id               | _c::application::order_service::OrderService::add_to_order::order_id               |
+u12:148 | Variable       | product_id             | _c::application::order_service::OrderService::add_to_order::product_id             |
+u12:149 | Variable       | quantity               | _c::application::order_service::OrderService::add_to_order::quantity               |
+u12:150 | Variable       | product                | _c::application::order_service::OrderService::add_to_order::product                |
+u12:151 | Variable       | order                  | _c::application::order_service::OrderService::add_to_order::order                  |
+u12:152 | Function       | confirm_order          | _c::application::order_service::OrderService::confirm_order                        |
+u12:153 | Variable       | order_id               | _c::application::order_service::OrderService::confirm_order::order_id              |
+u12:154 | Variable       | order                  | _c::application::order_service::OrderService::confirm_order::order                 |
+u12:155 | Function       | get_order              | _c::application::order_service::OrderService::get_order                            |
+u12:156 | Variable       | order_id               | _c::application::order_service::OrderService::get_order::order_id                  |
+u13:157 | Crate          | crate                  | _c::crate                                                                          |
+u13:158 | File           | main                   | _c::main                                                                           |
+u13:159 | Function       | main                   | _c::main::main                                                                     |
+u13:160 | Variable       | order_repo             | _c::main::main::order_repo                                                         |
+u13:161 | Variable       | product_repo           | _c::main::main::product_repo                                                       |
+u13:162 | Variable       | notification           | _c::main::main::notification                                                       |
+u13:163 | Variable       | service                | _c::main::main::service                                                            |
+u13:164 | Variable       | order                  | _c::main::main::order                                                              |
 
 --- expect:symbol-deps ---
 u0:14 <- [u2:28, u2:31, u3:50]
@@ -833,34 +880,34 @@ u0:18 <- [u2:28, u2:30]
 u0:7 <- [u12:146, u12:149, u2:28, u2:32, u3:41, u3:47, u3:49, u5:62, u5:65]
 u0:8 <- [u12:146, u12:147, u12:148, u12:152, u12:153, u12:155, u12:156, u2:28, u2:29, u3:41, u3:42, u3:45, u3:46, u5:62, u5:63, u5:64, u5:66, u5:67, u5:68, u5:69, u5:71, u5:72, u6:78, u6:80, u6:81, u8:100, u8:102, u8:103, u8:104, u8:95, u8:97, u9:110, u9:115, u9:116]
 u10:121 -> [u10:123]
-u10:121 <- [u13:160, u13:163]
+u10:121 <- [u13:159, u13:162]
 u10:123 -> [u3:41]
 u10:123 <- [u10:121, u12:152]
 u10:124 -> [u3:41]
 u12:131 -> [u12:143, u12:146, u12:152, u12:155, u6:77, u6:84, u6:86]
-u12:131 <- [u12:138, u13:160, u13:164, u13:165]
+u12:131 <- [u12:138, u13:159, u13:163, u13:164]
 u12:138 -> [u12:131]
-u12:138 <- [u13:160]
+u12:138 <- [u13:159]
 u12:143 -> [u3:41, u3:45, u8:100, u9:115]
-u12:143 <- [u12:131, u13:160]
+u12:143 <- [u12:131, u13:159]
 u12:144 -> [u3:41]
 u12:146 -> [u0:15, u0:7, u0:8, u3:47, u8:105, u9:115]
-u12:146 <- [u12:131, u13:160]
+u12:146 <- [u12:131, u13:159]
 u12:147 -> [u0:8]
 u12:148 -> [u0:8]
 u12:149 -> [u0:7]
 u12:152 -> [u0:15, u0:8, u10:123, u3:53, u8:105, u9:115]
-u12:152 <- [u12:131, u13:160]
+u12:152 <- [u12:131, u13:159]
 u12:153 -> [u0:8]
 u12:155 -> [u0:8, u9:115]
-u12:155 <- [u12:131, u13:160]
+u12:155 <- [u12:131, u13:159]
 u12:156 -> [u0:8]
-u13:160 -> [u10:121, u12:131, u12:138, u12:143, u12:146, u12:152, u12:155, u8:95, u8:98, u9:110, u9:112]
-u13:161 -> [u8:95]
-u13:162 -> [u9:110]
-u13:163 -> [u10:121]
+u13:159 -> [u10:121, u12:131, u12:138, u12:143, u12:146, u12:152, u12:155, u8:95, u8:98, u9:110, u9:112]
+u13:160 -> [u8:95]
+u13:161 -> [u9:110]
+u13:162 -> [u10:121]
+u13:163 -> [u12:131]
 u13:164 -> [u12:131]
-u13:165 -> [u12:131]
 u2:28 -> [u0:14, u0:18, u0:7, u0:8]
 u2:28 <- [u3:41, u3:43, u3:47, u3:48, u9:110, u9:111, u9:112]
 u2:29 -> [u0:8]
@@ -937,16 +984,16 @@ u8:105 -> [u0:15, u3:41]
 u8:105 <- [u12:146, u12:152, u8:95]
 u8:106 -> [u3:41]
 u8:95 -> [u0:8, u3:41, u8:100, u8:103, u8:105]
-u8:95 <- [u13:160, u13:161, u8:98]
+u8:95 <- [u13:159, u13:160, u8:98]
 u8:96 -> [u3:41]
 u8:97 -> [u0:8]
 u8:98 -> [u8:95]
-u8:98 <- [u13:160]
+u8:98 <- [u13:159]
 u9:110 -> [u0:8, u2:28, u9:115, u9:117]
-u9:110 <- [u13:160, u13:162, u9:112]
+u9:110 <- [u13:159, u13:161, u9:112]
 u9:111 -> [u2:28]
 u9:112 -> [u2:28, u9:110]
-u9:112 <- [u13:160]
+u9:112 <- [u13:159]
 u9:115 -> [u0:8]
 u9:115 <- [u12:143, u12:146, u12:152, u12:155, u9:110]
 u9:116 -> [u0:8]
@@ -1217,146 +1264,145 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1   | Primitive      | i32                 | i32                                                                   | [global]
-u0:2   | Primitive      | i64                 | i64                                                                   | [global]
-u0:3   | Primitive      | i16                 | i16                                                                   | [global]
-u0:4   | Primitive      | i8                  | i8                                                                    | [global]
-u0:5   | Primitive      | i128                | i128                                                                  | [global]
-u0:6   | Primitive      | isize               | isize                                                                 | [global]
-u0:7   | Primitive      | u32                 | u32                                                                   | [global]
-u0:8   | Primitive      | u64                 | u64                                                                   | [global]
-u0:9   | Primitive      | u16                 | u16                                                                   | [global]
-u0:10  | Primitive      | u8                  | u8                                                                    | [global]
-u0:11  | Primitive      | u128                | u128                                                                  | [global]
-u0:12  | Primitive      | usize               | usize                                                                 | [global]
-u0:13  | Primitive      | f32                 | f32                                                                   | [global]
-u0:14  | Primitive      | f64                 | f64                                                                   | [global]
-u0:15  | Primitive      | bool                | bool                                                                  | [global]
-u0:16  | Primitive      | char                | char                                                                  | [global]
-u0:17  | Primitive      | str                 | str                                                                   | [global]
-u0:18  | Primitive      | String              | String                                                                | [global]
-u0:19  | Crate          | _c                  | _c                                                                    | [global]
-u0:20  | Crate          | crate               | _c::crate                                                             |         
-u0:21  | File           | lib                 | _c::lib                                                               |         
-u1:22  | Crate          | crate               | _c::crate                                                             |         
-u1:23  | Module         | entities            | _c::entities                                                          |         
-u1:24  | File           | mod                 | _c::entities::mod                                                     |         
-u2:25  | Crate          | crate               | _c::crate                                                             |         
-u2:26  | Module         | _m                  | _c::_m                                                                |         
-u2:27  | File           | task                | _c::_m::task                                                          |         
-u2:28  | Enum           | TaskStatus          | _c::_m::task::TaskStatus                                              | [global]
-u2:29  | EnumVariant    | Todo                | _c::_m::task::TaskStatus::Todo                                        |         
-u2:30  | EnumVariant    | InProgress          | _c::_m::task::TaskStatus::InProgress                                  |         
-u2:31  | EnumVariant    | Done                | _c::_m::task::TaskStatus::Done                                        |         
-u2:32  | Enum           | Priority            | _c::_m::task::Priority                                                | [global]
-u2:33  | EnumVariant    | Low                 | _c::_m::task::Priority::Low                                           |         
-u2:34  | EnumVariant    | Medium              | _c::_m::task::Priority::Medium                                        |         
-u2:35  | EnumVariant    | High                | _c::_m::task::Priority::High                                          |         
-u2:36  | Struct         | Task                | _c::_m::task::Task                                                    | [global]
-u2:37  | Field          | id                  | _c::_m::task::Task::id                                                |         
-u2:38  | Field          | title               | _c::_m::task::Task::title                                             |         
-u2:39  | Field          | description         | _c::_m::task::Task::description                                       |         
-u2:40  | Field          | status              | _c::_m::task::Task::status                                            |         
-u2:41  | Field          | priority            | _c::_m::task::Task::priority                                          |         
-u2:42  | Function       | new                 | _c::_m::task::Task::new                                               | [global]
-u2:43  | Variable       | id                  | _c::_m::task::Task::new::id                                           |         
-u2:44  | Variable       | title               | _c::_m::task::Task::new::title                                        |         
-u2:45  | Variable       | priority            | _c::_m::task::Task::new::priority                                     |         
-u2:46  | Function       | start               | _c::_m::task::Task::start                                             | [global]
-u2:47  | Function       | complete            | _c::_m::task::Task::complete                                          | [global]
-u2:48  | Function       | is_done             | _c::_m::task::Task::is_done                                           | [global]
-u3:49  | Crate          | crate               | _c::crate                                                             |         
-u3:50  | Module         | use_cases           | _c::use_cases                                                         |         
-u3:51  | File           | mod                 | _c::use_cases::mod                                                    |         
-u4:52  | Crate          | crate               | _c::crate                                                             |         
-u4:53  | Module         | _m                  | _c::_m                                                                |         
-u4:54  | File           | ports               | _c::_m::ports                                                         |         
-u4:55  | Trait          | TaskGateway         | _c::_m::ports::TaskGateway                                            | [global]
-u4:56  | Function       | save                | _c::_m::ports::TaskGateway::save                                      |         
-u4:57  | Variable       | task                | _c::_m::ports::TaskGateway::save::task                                |         
-u4:58  | Function       | find_by_id          | _c::_m::ports::TaskGateway::find_by_id                                |         
-u4:59  | Variable       | id                  | _c::_m::ports::TaskGateway::find_by_id::id                            |         
-u4:60  | Function       | find_all            | _c::_m::ports::TaskGateway::find_all                                  |         
-u4:61  | Function       | update              | _c::_m::ports::TaskGateway::update                                    |         
-u4:62  | Variable       | task                | _c::_m::ports::TaskGateway::update::task                              |         
-u4:63  | Function       | delete              | _c::_m::ports::TaskGateway::delete                                    |         
-u4:64  | Variable       | id                  | _c::_m::ports::TaskGateway::delete::id                                |         
-u4:65  | Trait          | TaskPresenter       | _c::_m::ports::TaskPresenter                                          | [global]
-u4:66  | Function       | present_task        | _c::_m::ports::TaskPresenter::present_task                            |         
-u4:67  | Variable       | task                | _c::_m::ports::TaskPresenter::present_task::task                      |         
-u4:68  | Function       | present_task_list   | _c::_m::ports::TaskPresenter::present_task_list                       |         
-u4:69  | Variable       | tasks               | _c::_m::ports::TaskPresenter::present_task_list::tasks                |         
-u4:70  | Function       | present_error       | _c::_m::ports::TaskPresenter::present_error                           |         
-u4:71  | Variable       | message             | _c::_m::ports::TaskPresenter::present_error::message                  |         
-u5:72  | Crate          | crate               | _c::crate                                                             |         
-u5:73  | Module         | _m                  | _c::_m                                                                |         
-u5:74  | File           | task_use_cases      | _c::_m::task_use_cases                                                |         
-u5:75  | Struct         | CreateTaskUseCase   | _c::_m::task_use_cases::CreateTaskUseCase                             | [global]
-u5:76  | TypeParameter  | G                   | _c::_m::task_use_cases::CreateTaskUseCase::G                          |         
-u5:77  | TypeParameter  | P                   | _c::_m::task_use_cases::CreateTaskUseCase::P                          |         
-u5:78  | Field          | gateway             | _c::_m::task_use_cases::CreateTaskUseCase::gateway                    |         
-u5:79  | Field          | presenter           | _c::_m::task_use_cases::CreateTaskUseCase::presenter                  |         
-u5:80  | Function       | new                 | _c::_m::task_use_cases::CreateTaskUseCase::new                        | [global]
-u5:81  | Variable       | gateway             | _c::_m::task_use_cases::CreateTaskUseCase::new::gateway               |         
-u5:82  | Variable       | presenter           | _c::_m::task_use_cases::CreateTaskUseCase::new::presenter             |         
-u5:83  | Function       | execute             | _c::_m::task_use_cases::CreateTaskUseCase::execute                    | [global]
-u5:84  | Variable       | title               | _c::_m::task_use_cases::CreateTaskUseCase::execute::title             |         
-u5:85  | Variable       | priority            | _c::_m::task_use_cases::CreateTaskUseCase::execute::priority          |         
-u5:86  | Variable       | task                | _c::_m::task_use_cases::CreateTaskUseCase::execute::task              |         
-u5:87  | Variable       | id                  | _c::_m::task_use_cases::CreateTaskUseCase::execute::id                |         
-u5:88  | Struct         | CompleteTaskUseCase | _c::_m::task_use_cases::CompleteTaskUseCase                           | [global]
-u5:89  | TypeParameter  | G                   | _c::_m::task_use_cases::CompleteTaskUseCase::G                        |         
-u5:90  | TypeParameter  | P                   | _c::_m::task_use_cases::CompleteTaskUseCase::P                        |         
-u5:91  | Field          | gateway             | _c::_m::task_use_cases::CompleteTaskUseCase::gateway                  |         
-u5:92  | Field          | presenter           | _c::_m::task_use_cases::CompleteTaskUseCase::presenter                |         
-u5:93  | Variable       | task_id             | _c::_m::task_use_cases::CreateTaskUseCase::execute::task_id           |         
-u5:94  | Struct         | ListTasksUseCase    | _c::_m::task_use_cases::ListTasksUseCase                              | [global]
-u5:95  | TypeParameter  | G                   | _c::_m::task_use_cases::ListTasksUseCase::G                           |         
-u5:96  | TypeParameter  | P                   | _c::_m::task_use_cases::ListTasksUseCase::P                           |         
-u5:97  | Field          | gateway             | _c::_m::task_use_cases::ListTasksUseCase::gateway                     |         
-u5:98  | Field          | presenter           | _c::_m::task_use_cases::ListTasksUseCase::presenter                   |         
-u5:99  | Variable       | tasks               | _c::_m::task_use_cases::CreateTaskUseCase::execute::tasks             |         
-u6:100 | Crate          | crate               | _c::crate                                                             |         
-u6:101 | Module         | interface_adapters  | _c::interface_adapters                                                |         
-u6:102 | File           | mod                 | _c::interface_adapters::mod                                           |         
-u7:103 | Crate          | crate               | _c::crate                                                             |         
-u7:104 | Module         | _m                  | _c::_m                                                                |         
-u7:105 | File           | memory_gateway      | _c::_m::memory_gateway                                                |         
-u7:106 | Struct         | InMemoryTaskGateway | _c::_m::memory_gateway::InMemoryTaskGateway                           | [global]
-u7:107 | Field          | tasks               | _c::_m::memory_gateway::InMemoryTaskGateway::tasks                    |         
-u7:108 | Field          | next_id             | _c::_m::memory_gateway::InMemoryTaskGateway::next_id                  |         
-u7:109 | Function       | new                 | _c::_m::memory_gateway::InMemoryTaskGateway::new                      | [global]
-u7:110 | UnresolvedType | TaskGateway         | _c::_m::memory_gateway::TaskGateway                                   |         
-u7:111 | Function       | save                | _c::_m::memory_gateway::InMemoryTaskGateway::save                     |         
-u7:112 | Variable       | task                | _c::_m::memory_gateway::InMemoryTaskGateway::save::task               |         
-u7:113 | Variable       | id                  | _c::_m::memory_gateway::InMemoryTaskGateway::save::id                 |         
-u7:114 | Function       | find_by_id          | _c::_m::memory_gateway::InMemoryTaskGateway::find_by_id               |         
-u7:115 | Variable       | id                  | _c::_m::memory_gateway::InMemoryTaskGateway::find_by_id::id           |         
-u7:116 | Function       | find_all            | _c::_m::memory_gateway::InMemoryTaskGateway::find_all                 |         
-u7:117 | Function       | update              | _c::_m::memory_gateway::InMemoryTaskGateway::update                   |         
-u7:118 | Variable       | task                | _c::_m::memory_gateway::InMemoryTaskGateway::update::task             |         
-u7:119 | Function       | delete              | _c::_m::memory_gateway::InMemoryTaskGateway::delete                   |         
-u7:120 | Variable       | id                  | _c::_m::memory_gateway::InMemoryTaskGateway::delete::id               |         
-u8:121 | Crate          | crate               | _c::crate                                                             |         
-u8:122 | Module         | _m                  | _c::_m                                                                |         
-u8:123 | File           | console_presenter   | _c::_m::console_presenter                                             |         
-u8:124 | Struct         | ConsolePresenter    | _c::_m::console_presenter::ConsolePresenter                           | [global]
-u8:125 | UnresolvedType | TaskPresenter       | _c::_m::console_presenter::TaskPresenter                              |         
-u8:126 | Function       | present_task        | _c::_m::console_presenter::ConsolePresenter::present_task             |         
-u8:127 | Variable       | task                | _c::_m::console_presenter::ConsolePresenter::present_task::task       |         
-u8:128 | Function       | present_task_list   | _c::_m::console_presenter::ConsolePresenter::present_task_list        |         
-u8:129 | Variable       | tasks               | _c::_m::console_presenter::ConsolePresenter::present_task_list::tasks |         
-u8:130 | Function       | present_error       | _c::_m::console_presenter::ConsolePresenter::present_error            |         
-u8:131 | Variable       | message             | _c::_m::console_presenter::ConsolePresenter::present_error::message   |         
-u9:132 | Crate          | crate               | _c::crate                                                             |         
-u9:133 | Module         | _m                  | _c::_m                                                                |         
-u9:134 | File           | main                | _c::_m::main                                                          |         
-u9:135 | Function       | main                | _c::_m::main::main                                                    |         
-u9:136 | Variable       | gateway             | _c::_m::main::main::gateway                                           |         
-u9:137 | Variable       | presenter           | _c::_m::main::main::presenter                                         |         
-u9:138 | Variable       | create              | _c::_m::main::main::create                                            |         
-u9:139 | Variable       | complete            | _c::_m::main::main::complete                                          |         
-u9:140 | Variable       | list                | _c::_m::main::main::list                                              |         
+u0:1   | Primitive      | i32                 | i32                                                                                   | [global]
+u0:2   | Primitive      | i64                 | i64                                                                                   | [global]
+u0:3   | Primitive      | i16                 | i16                                                                                   | [global]
+u0:4   | Primitive      | i8                  | i8                                                                                    | [global]
+u0:5   | Primitive      | i128                | i128                                                                                  | [global]
+u0:6   | Primitive      | isize               | isize                                                                                 | [global]
+u0:7   | Primitive      | u32                 | u32                                                                                   | [global]
+u0:8   | Primitive      | u64                 | u64                                                                                   | [global]
+u0:9   | Primitive      | u16                 | u16                                                                                   | [global]
+u0:10  | Primitive      | u8                  | u8                                                                                    | [global]
+u0:11  | Primitive      | u128                | u128                                                                                  | [global]
+u0:12  | Primitive      | usize               | usize                                                                                 | [global]
+u0:13  | Primitive      | f32                 | f32                                                                                   | [global]
+u0:14  | Primitive      | f64                 | f64                                                                                   | [global]
+u0:15  | Primitive      | bool                | bool                                                                                  | [global]
+u0:16  | Primitive      | char                | char                                                                                  | [global]
+u0:17  | Primitive      | str                 | str                                                                                   | [global]
+u0:18  | Primitive      | String              | String                                                                                | [global]
+u0:19  | Crate          | _c                  | _c                                                                                    | [global]
+u0:20  | Crate          | crate               | _c::crate                                                                             |
+u0:21  | File           | lib                 | _c::lib                                                                               |
+u1:22  | Crate          | crate               | _c::crate                                                                             |
+u1:23  | Module         | entities            | _c::entities                                                                          |
+u1:24  | File           | mod                 | _c::entities::mod                                                                     |
+u2:25  | Crate          | crate               | _c::crate                                                                             |
+u2:26  | Module         | entities            | _c::entities                                                                          |
+u2:27  | File           | task                | _c::entities::task                                                                    |
+u2:28  | Enum           | TaskStatus          | _c::entities::task::TaskStatus                                                        | [global]
+u2:29  | EnumVariant    | Todo                | _c::entities::task::TaskStatus::Todo                                                  |
+u2:30  | EnumVariant    | InProgress          | _c::entities::task::TaskStatus::InProgress                                            |
+u2:31  | EnumVariant    | Done                | _c::entities::task::TaskStatus::Done                                                  |
+u2:32  | Enum           | Priority            | _c::entities::task::Priority                                                          | [global]
+u2:33  | EnumVariant    | Low                 | _c::entities::task::Priority::Low                                                     |
+u2:34  | EnumVariant    | Medium              | _c::entities::task::Priority::Medium                                                  |
+u2:35  | EnumVariant    | High                | _c::entities::task::Priority::High                                                    |
+u2:36  | Struct         | Task                | _c::entities::task::Task                                                              | [global]
+u2:37  | Field          | id                  | _c::entities::task::Task::id                                                          |
+u2:38  | Field          | title               | _c::entities::task::Task::title                                                       |
+u2:39  | Field          | description         | _c::entities::task::Task::description                                                 |
+u2:40  | Field          | status              | _c::entities::task::Task::status                                                      |
+u2:41  | Field          | priority            | _c::entities::task::Task::priority                                                    |
+u2:42  | Function       | new                 | _c::entities::task::Task::new                                                         | [global]
+u2:43  | Variable       | id                  | _c::entities::task::Task::new::id                                                     |
+u2:44  | Variable       | title               | _c::entities::task::Task::new::title                                                  |
+u2:45  | Variable       | priority            | _c::entities::task::Task::new::priority                                               |
+u2:46  | Function       | start               | _c::entities::task::Task::start                                                       | [global]
+u2:47  | Function       | complete            | _c::entities::task::Task::complete                                                    | [global]
+u2:48  | Function       | is_done             | _c::entities::task::Task::is_done                                                     | [global]
+u3:49  | Crate          | crate               | _c::crate                                                                             |
+u3:50  | Module         | use_cases           | _c::use_cases                                                                         |
+u3:51  | File           | mod                 | _c::use_cases::mod                                                                    |
+u4:52  | Crate          | crate               | _c::crate                                                                             |
+u4:53  | Module         | use_cases           | _c::use_cases                                                                         |
+u4:54  | File           | ports               | _c::use_cases::ports                                                                  |
+u4:55  | Trait          | TaskGateway         | _c::use_cases::ports::TaskGateway                                                     | [global]
+u4:56  | Function       | save                | _c::use_cases::ports::TaskGateway::save                                               |
+u4:57  | Variable       | task                | _c::use_cases::ports::TaskGateway::save::task                                         |
+u4:58  | Function       | find_by_id          | _c::use_cases::ports::TaskGateway::find_by_id                                         |
+u4:59  | Variable       | id                  | _c::use_cases::ports::TaskGateway::find_by_id::id                                     |
+u4:60  | Function       | find_all            | _c::use_cases::ports::TaskGateway::find_all                                           |
+u4:61  | Function       | update              | _c::use_cases::ports::TaskGateway::update                                             |
+u4:62  | Variable       | task                | _c::use_cases::ports::TaskGateway::update::task                                       |
+u4:63  | Function       | delete              | _c::use_cases::ports::TaskGateway::delete                                             |
+u4:64  | Variable       | id                  | _c::use_cases::ports::TaskGateway::delete::id                                         |
+u4:65  | Trait          | TaskPresenter       | _c::use_cases::ports::TaskPresenter                                                   | [global]
+u4:66  | Function       | present_task        | _c::use_cases::ports::TaskPresenter::present_task                                     |
+u4:67  | Variable       | task                | _c::use_cases::ports::TaskPresenter::present_task::task                               |
+u4:68  | Function       | present_task_list   | _c::use_cases::ports::TaskPresenter::present_task_list                                |
+u4:69  | Variable       | tasks               | _c::use_cases::ports::TaskPresenter::present_task_list::tasks                         |
+u4:70  | Function       | present_error       | _c::use_cases::ports::TaskPresenter::present_error                                    |
+u4:71  | Variable       | message             | _c::use_cases::ports::TaskPresenter::present_error::message                           |
+u5:72  | Crate          | crate               | _c::crate                                                                             |
+u5:73  | Module         | use_cases           | _c::use_cases                                                                         |
+u5:74  | File           | task_use_cases      | _c::use_cases::task_use_cases                                                         |
+u5:75  | Struct         | CreateTaskUseCase   | _c::use_cases::task_use_cases::CreateTaskUseCase                                      | [global]
+u5:76  | TypeParameter  | G                   | _c::use_cases::task_use_cases::CreateTaskUseCase::G                                   |
+u5:77  | TypeParameter  | P                   | _c::use_cases::task_use_cases::CreateTaskUseCase::P                                   |
+u5:78  | Field          | gateway             | _c::use_cases::task_use_cases::CreateTaskUseCase::gateway                             |
+u5:79  | Field          | presenter           | _c::use_cases::task_use_cases::CreateTaskUseCase::presenter                           |
+u5:80  | Function       | new                 | _c::use_cases::task_use_cases::CreateTaskUseCase::new                                 | [global]
+u5:81  | Variable       | gateway             | _c::use_cases::task_use_cases::CreateTaskUseCase::new::gateway                        |
+u5:82  | Variable       | presenter           | _c::use_cases::task_use_cases::CreateTaskUseCase::new::presenter                      |
+u5:83  | Function       | execute             | _c::use_cases::task_use_cases::CreateTaskUseCase::execute                             | [global]
+u5:84  | Variable       | title               | _c::use_cases::task_use_cases::CreateTaskUseCase::execute::title                      |
+u5:85  | Variable       | priority            | _c::use_cases::task_use_cases::CreateTaskUseCase::execute::priority                   |
+u5:86  | Variable       | task                | _c::use_cases::task_use_cases::CreateTaskUseCase::execute::task                       |
+u5:87  | Variable       | id                  | _c::use_cases::task_use_cases::CreateTaskUseCase::execute::id                         |
+u5:88  | Struct         | CompleteTaskUseCase | _c::use_cases::task_use_cases::CompleteTaskUseCase                                    | [global]
+u5:89  | TypeParameter  | G                   | _c::use_cases::task_use_cases::CompleteTaskUseCase::G                                 |
+u5:90  | TypeParameter  | P                   | _c::use_cases::task_use_cases::CompleteTaskUseCase::P                                 |
+u5:91  | Field          | gateway             | _c::use_cases::task_use_cases::CompleteTaskUseCase::gateway                           |
+u5:92  | Field          | presenter           | _c::use_cases::task_use_cases::CompleteTaskUseCase::presenter                         |
+u5:93  | Variable       | task_id             | _c::use_cases::task_use_cases::CreateTaskUseCase::execute::task_id                    |
+u5:94  | Struct         | ListTasksUseCase    | _c::use_cases::task_use_cases::ListTasksUseCase                                       | [global]
+u5:95  | TypeParameter  | G                   | _c::use_cases::task_use_cases::ListTasksUseCase::G                                    |
+u5:96  | TypeParameter  | P                   | _c::use_cases::task_use_cases::ListTasksUseCase::P                                    |
+u5:97  | Field          | gateway             | _c::use_cases::task_use_cases::ListTasksUseCase::gateway                              |
+u5:98  | Field          | presenter           | _c::use_cases::task_use_cases::ListTasksUseCase::presenter                            |
+u5:99  | Variable       | tasks               | _c::use_cases::task_use_cases::CreateTaskUseCase::execute::tasks                      |
+u6:100 | Crate          | crate               | _c::crate                                                                             |
+u6:101 | Module         | interface_adapters  | _c::interface_adapters                                                                |
+u6:102 | File           | mod                 | _c::interface_adapters::mod                                                           |
+u7:103 | Crate          | crate               | _c::crate                                                                             |
+u7:104 | Module         | interface_adapters  | _c::interface_adapters                                                                |
+u7:105 | File           | memory_gateway      | _c::interface_adapters::memory_gateway                                                |
+u7:106 | Struct         | InMemoryTaskGateway | _c::interface_adapters::memory_gateway::InMemoryTaskGateway                           | [global]
+u7:107 | Field          | tasks               | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::tasks                    |
+u7:108 | Field          | next_id             | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::next_id                  |
+u7:109 | Function       | new                 | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::new                      | [global]
+u7:110 | UnresolvedType | TaskGateway         | _c::interface_adapters::memory_gateway::TaskGateway                                   |
+u7:111 | Function       | save                | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::save                     |
+u7:112 | Variable       | task                | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::save::task               |
+u7:113 | Variable       | id                  | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::save::id                 |
+u7:114 | Function       | find_by_id          | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::find_by_id               |
+u7:115 | Variable       | id                  | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::find_by_id::id           |
+u7:116 | Function       | find_all            | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::find_all                 |
+u7:117 | Function       | update              | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::update                   |
+u7:118 | Variable       | task                | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::update::task             |
+u7:119 | Function       | delete              | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::delete                   |
+u7:120 | Variable       | id                  | _c::interface_adapters::memory_gateway::InMemoryTaskGateway::delete::id               |
+u8:121 | Crate          | crate               | _c::crate                                                                             |
+u8:122 | Module         | interface_adapters  | _c::interface_adapters                                                                |
+u8:123 | File           | console_presenter   | _c::interface_adapters::console_presenter                                             |
+u8:124 | Struct         | ConsolePresenter    | _c::interface_adapters::console_presenter::ConsolePresenter                           | [global]
+u8:125 | UnresolvedType | TaskPresenter       | _c::interface_adapters::console_presenter::TaskPresenter                              |
+u8:126 | Function       | present_task        | _c::interface_adapters::console_presenter::ConsolePresenter::present_task             |
+u8:127 | Variable       | task                | _c::interface_adapters::console_presenter::ConsolePresenter::present_task::task       |
+u8:128 | Function       | present_task_list   | _c::interface_adapters::console_presenter::ConsolePresenter::present_task_list        |
+u8:129 | Variable       | tasks               | _c::interface_adapters::console_presenter::ConsolePresenter::present_task_list::tasks |
+u8:130 | Function       | present_error       | _c::interface_adapters::console_presenter::ConsolePresenter::present_error            |
+u8:131 | Variable       | message             | _c::interface_adapters::console_presenter::ConsolePresenter::present_error::message   |
+u9:132 | Crate          | crate               | _c::crate                                                                             |
+u9:133 | File           | main                | _c::main                                                                              |
+u9:134 | Function       | main                | _c::main::main                                                                        |
+u9:135 | Variable       | gateway             | _c::main::main::gateway                                                               |
+u9:136 | Variable       | presenter           | _c::main::main::presenter                                                             |
+u9:137 | Variable       | create              | _c::main::main::create                                                                |
+u9:138 | Variable       | complete            | _c::main::main::complete                                                              |
+u9:139 | Variable       | list                | _c::main::main::list                                                                  |
 
 --- expect:symbol-deps ---
 u0:15 <- [u2:48, u4:61, u4:63, u7:117, u7:119]
@@ -1369,10 +1415,10 @@ u2:29 <- [u2:28, u2:42]
 u2:30 <- [u2:28, u2:46]
 u2:31 <- [u2:28, u2:47, u2:48]
 u2:32 -> [u2:33, u2:34, u2:35]
-u2:32 <- [u2:36, u2:41, u2:42, u2:45, u5:83, u5:85, u9:135]
-u2:33 <- [u2:32, u9:135]
-u2:34 <- [u2:32, u9:135]
-u2:35 <- [u2:32, u9:135]
+u2:32 <- [u2:36, u2:41, u2:42, u2:45, u5:83, u5:85, u9:134]
+u2:33 <- [u2:32, u9:134]
+u2:34 <- [u2:32, u9:134]
+u2:35 <- [u2:32, u9:134]
 u2:36 -> [u0:18, u0:8, u2:28, u2:32, u2:46, u2:47, u2:48]
 u2:36 <- [u2:42, u4:56, u4:57, u4:61, u4:62, u4:66, u4:67, u4:68, u4:69, u5:83, u5:86, u7:106, u7:107, u7:111, u7:112, u7:117, u7:118, u8:126, u8:127, u8:128, u8:129]
 u2:37 -> [u0:8]
@@ -1421,9 +1467,9 @@ u5:75 -> [u4:55, u4:65, u5:83]
 u5:75 <- [u5:80]
 u5:78 <- [u5:83, u5:87]
 u5:80 -> [u5:75, u5:88, u5:94]
-u5:80 <- [u9:135]
+u5:80 <- [u9:134]
 u5:83 -> [u0:18, u0:8, u2:32, u2:36, u2:42, u2:47, u5:78, u5:97, u7:111, u7:114, u7:116, u7:117, u8:126, u8:128, u8:130]
-u5:83 <- [u5:75, u5:88, u5:94, u9:135]
+u5:83 <- [u5:75, u5:88, u5:94, u9:134]
 u5:84 -> [u0:18]
 u5:85 -> [u2:32]
 u5:86 -> [u2:36]
@@ -1432,15 +1478,15 @@ u5:88 -> [u4:55, u4:65, u5:83]
 u5:88 <- [u5:80]
 u5:93 -> [u0:8]
 u5:94 -> [u4:55, u4:65, u5:83]
-u5:94 <- [u5:80, u9:135, u9:138]
+u5:94 <- [u5:80, u9:134, u9:137]
 u5:97 <- [u5:83, u5:99]
 u5:99 -> [u5:97]
 u7:106 -> [u0:8, u2:36, u7:111, u7:114, u7:116, u7:117, u7:119]
-u7:106 <- [u7:109, u9:135, u9:136, u9:139, u9:140]
+u7:106 <- [u7:109, u9:134, u9:135, u9:138, u9:139]
 u7:107 -> [u2:36]
 u7:108 -> [u0:8]
 u7:109 -> [u7:106]
-u7:109 <- [u9:135]
+u7:109 <- [u9:134]
 u7:111 -> [u0:8, u2:36]
 u7:111 <- [u5:83, u7:106]
 u7:112 -> [u2:36]
@@ -1456,7 +1502,7 @@ u7:119 -> [u0:15, u0:8]
 u7:119 <- [u7:106]
 u7:120 -> [u0:8]
 u8:124 -> [u8:126, u8:128, u8:130]
-u8:124 <- [u9:135, u9:137]
+u8:124 <- [u9:134, u9:136]
 u8:126 -> [u2:36]
 u8:126 <- [u5:83, u8:124, u8:128]
 u8:127 -> [u2:36]
@@ -1466,9 +1512,9 @@ u8:129 -> [u2:36]
 u8:130 -> [u0:17]
 u8:130 <- [u5:83, u8:124]
 u8:131 -> [u0:17]
-u9:135 -> [u2:32, u2:33, u2:34, u2:35, u5:80, u5:83, u5:94, u7:106, u7:109, u8:124]
-u9:136 -> [u7:106]
-u9:137 -> [u8:124]
-u9:138 -> [u5:94]
+u9:134 -> [u2:32, u2:33, u2:34, u2:35, u5:80, u5:83, u5:94, u7:106, u7:109, u8:124]
+u9:135 -> [u7:106]
+u9:136 -> [u8:124]
+u9:137 -> [u5:94]
+u9:138 -> [u7:106]
 u9:139 -> [u7:106]
-u9:140 -> [u7:106]
