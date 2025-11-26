@@ -3,7 +3,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use crate::block::{BlockId, BlockKind, BlockRelation};
 use crate::block_rel::BlockRelationMap;
 use crate::context::CompileCtxt;
-use crate::graph_render::{extract_component_path, CompactNode, GraphRenderer};
+use crate::graph_render::{CompactNode, GraphRenderer};
 use crate::pagerank::PageRanker;
 
 #[derive(Debug, Clone)]
@@ -284,7 +284,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let node_index = renderer.build_node_index();
         let edges = self.collect_edges(renderer.nodes(), &node_index);
 
-        renderer.render(&edges)
+        renderer.render(&edges, self.component_depth)
     }
 
     fn ranked_block_filter(
@@ -321,7 +321,6 @@ impl<'tcx> ProjectGraph<'tcx> {
         ranked_filter: Option<&HashSet<BlockId>>,
     ) -> Vec<CompactNode> {
         let block_indexes = self.cc.block_indexes.read();
-        let component_depth = self.component_depth;
 
         block_indexes
             .block_id_index
@@ -366,25 +365,24 @@ impl<'tcx> ProjectGraph<'tcx> {
                     })
                     .or(Some(path.clone()));
 
-                // Get component path from the symbol's FQN
-                let component_path = block
+                // Get FQN from the symbol for hierarchical grouping
+                let fqn = block
                     .opt_node()
                     .and_then(|node| node.as_scope())
                     .and_then(|scope_node| scope_node.opt_scope())
                     .and_then(|scope| scope.opt_symbol())
                     .and_then(|symbol| {
-                        let fqn = symbol.fqn();
-                        self.cc.interner.resolve_owned(fqn)
+                        let fqn_key = symbol.fqn();
+                        self.cc.interner.resolve_owned(fqn_key)
                     })
-                    .map(|fqn| extract_component_path(&fqn, component_depth))
-                    .unwrap_or_else(|| vec!["unknown".to_string()]);
+                    .unwrap_or_else(|| "unknown".to_string());
 
                 Some(CompactNode {
                     block_id,
                     unit_index: *unit_index,
                     name: display_name,
                     location,
-                    component_path,
+                    fqn,
                 })
             })
             .collect()

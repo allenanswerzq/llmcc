@@ -450,7 +450,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        let outer_target = ExprResolver::new(unit, scopes).resolve_call_target(node, parent);
+        let mut resolver = ExprResolver::new(unit, scopes);
+        let outer_target = resolver.resolve_call_target(node, parent);
 
         if let Some(sym) = outer_target
             && let Some(ns) = namespace.opt_symbol()
@@ -463,6 +464,17 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 ns.add_dependency(parent_enum, Some(&[SymKind::TypeParameter]));
             } else {
                 ns.add_dependency(sym, Some(&[SymKind::TypeParameter]));
+            }
+        }
+
+        // For scoped calls like Type::method(), also add dependency on the Type
+        if let Some(func_node) = node.child_by_field(*unit, LangRust::field_function)
+            && func_node.kind_id() == LangRust::scoped_identifier
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            // Get the path prefix (the type part of Type::method)
+            if let Some(path_type) = resolver.resolve_scoped_call_receiver(&func_node) {
+                ns.add_dependency(path_type, Some(&[SymKind::TypeParameter]));
             }
         }
 

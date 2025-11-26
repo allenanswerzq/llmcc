@@ -696,6 +696,28 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     }
 
     // ------------------------------------------------------------------------
+
+    /// For a scoped call like `Type::method()`, returns the Type symbol.
+    /// The node should be a scoped_identifier like `Type::method`.
+    pub fn resolve_scoped_call_receiver(
+        &mut self,
+        node: &HirNode<'tcx>,
+    ) -> Option<&'tcx Symbol> {
+        if node.kind_id() != LangRust::scoped_identifier {
+            return None;
+        }
+
+        let children = node.children_nodes(self.unit);
+        let non_trivia: Vec<_> = children.iter().filter(|c| !is_trivia(c)).collect();
+
+        if non_trivia.len() < 2 {
+            return None;
+        }
+
+        // The first part is the path (Type in Type::method)
+        let path_node = non_trivia.first()?;
+        self.resolve_path_prefix(path_node)
+    }
     // Generic Type Argument Collection
     // ------------------------------------------------------------------------
 

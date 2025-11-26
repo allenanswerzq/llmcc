@@ -1,0 +1,365 @@
+===============================================================================
+nested-module-scoped-call
+===============================================================================
+Tests dependency tracking for nested module paths like foo::bar::Baz::new()
+
+--- file: src/main.rs ---
+mod foo {
+    pub mod bar {
+        pub struct Baz {
+            pub value: i32,
+        }
+
+        impl Baz {
+            pub fn new() -> Self {
+                Baz { value: 0 }
+            }
+        }
+    }
+}
+
+fn main() {
+    let x = foo::bar::Baz::new();
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | main | _c::main |
+u0:22 | Namespace | foo | _c::main::foo |
+u0:23 | Namespace | bar | _c::main::foo::bar | [global]
+u0:24 | Struct | Baz | _c::main::foo::bar::Baz | [global]
+u0:25 | Field | value | _c::main::foo::bar::Baz::value |
+u0:26 | Function | new | _c::main::foo::bar::Baz::new | [global]
+u0:27 | Function | main | _c::main::main |
+u0:28 | Variable | x | _c::main::main::x |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:24, u0:25]
+u0:22 -> [u0:23]
+u0:23 -> [u0:24]
+u0:23 <- [u0:22]
+u0:24 -> [u0:1]
+u0:24 <- [u0:23, u0:26, u0:27, u0:28]
+u0:25 -> [u0:1]
+u0:26 -> [u0:24]
+u0:26 <- [u0:27]
+u0:27 -> [u0:24, u0:26]
+u0:28 -> [u0:24]
+
+
+===============================================================================
+method-chaining-after-scoped-call
+===============================================================================
+Tests dependency tracking for method chaining: Type::new().a().b().c()
+
+--- file: src/main.rs ---
+struct Builder {
+    value: i32,
+}
+
+impl Builder {
+    fn new() -> Self {
+        Builder { value: 0 }
+    }
+
+    fn a(self) -> Self {
+        self
+    }
+
+    fn b(self) -> Self {
+        self
+    }
+
+    fn c(self) -> i32 {
+        self.value
+    }
+}
+
+fn main() {
+    let x = Builder::new().a().b().c();
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | main | _c::main |
+u0:22 | Struct | Builder | _c::main::Builder |
+u0:23 | Field | value | _c::main::Builder::value |
+u0:24 | Function | new | _c::main::Builder::new |
+u0:25 | Function | a | _c::main::Builder::a |
+u0:26 | Function | b | _c::main::Builder::b |
+u0:27 | Function | c | _c::main::Builder::c |
+u0:28 | Function | main | _c::main::main |
+u0:29 | Variable | x | _c::main::main::x |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:22, u0:23, u0:27]
+u0:22 -> [u0:1, u0:25, u0:26, u0:27]
+u0:22 <- [u0:24, u0:28, u0:29]
+u0:23 -> [u0:1]
+u0:24 -> [u0:22]
+u0:24 <- [u0:28]
+u0:25 <- [u0:22, u0:28]
+u0:26 <- [u0:22, u0:28]
+u0:27 -> [u0:1]
+u0:27 <- [u0:22, u0:28]
+u0:28 -> [u0:22, u0:24, u0:25, u0:26, u0:27]
+u0:29 -> [u0:22]
+
+
+===============================================================================
+deeply-nested-module-path
+===============================================================================
+Tests dependency tracking for deeply nested module paths
+
+--- file: src/main.rs ---
+mod a {
+    pub mod b {
+        pub mod c {
+            pub mod d {
+                pub struct E;
+
+                impl E {
+                    pub fn create() -> Self {
+                        E
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn main() {
+    let x = a::b::c::d::E::create();
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | main | _c::main |
+u0:22 | Namespace | a | _c::main::a |
+u0:23 | Namespace | b | _c::main::a::b | [global]
+u0:24 | Namespace | c | _c::main::a::b::c | [global]
+u0:25 | Namespace | d | _c::main::a::b::c::d | [global]
+u0:26 | Struct | E | _c::main::a::b::c::d::E | [global]
+u0:27 | Function | create | _c::main::a::b::c::d::E::create | [global]
+u0:28 | Function | main | _c::main::main |
+u0:29 | Variable | x | _c::main::main::x |
+
+--- expect:symbol-deps ---
+u0:22 -> [u0:23]
+u0:23 -> [u0:24]
+u0:23 <- [u0:22]
+u0:24 -> [u0:25]
+u0:24 <- [u0:23]
+u0:25 -> [u0:26]
+u0:25 <- [u0:24]
+u0:26 -> [u0:27]
+u0:26 <- [u0:25, u0:28, u0:29]
+u0:27 <- [u0:26, u0:28]
+u0:28 -> [u0:26, u0:27]
+u0:29 -> [u0:26]
+
+
+===============================================================================
+multiple-scoped-calls-same-function
+===============================================================================
+Tests multiple scoped calls to different types in the same function
+
+--- file: src/main.rs ---
+struct Foo;
+struct Bar;
+struct Baz;
+
+impl Foo {
+    fn new() -> Self { Foo }
+}
+
+impl Bar {
+    fn new() -> Self { Bar }
+}
+
+impl Baz {
+    fn new() -> Self { Baz }
+}
+
+fn main() {
+    let a = Foo::new();
+    let b = Bar::new();
+    let c = Baz::new();
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | main | _c::main |
+u0:22 | Struct | Foo | _c::main::Foo |
+u0:23 | Struct | Bar | _c::main::Bar |
+u0:24 | Struct | Baz | _c::main::Baz |
+u0:25 | Function | new | _c::main::Foo::new |
+u0:26 | Function | new | _c::main::Bar::new |
+u0:27 | Function | new | _c::main::Baz::new |
+u0:28 | Function | main | _c::main::main |
+u0:29 | Variable | a | _c::main::main::a |
+u0:30 | Variable | b | _c::main::main::b |
+u0:31 | Variable | c | _c::main::main::c |
+
+--- expect:symbol-deps ---
+u0:22 -> [u0:25]
+u0:22 <- [u0:28, u0:29]
+u0:23 -> [u0:26]
+u0:23 <- [u0:28, u0:30]
+u0:24 -> [u0:27]
+u0:24 <- [u0:28, u0:31]
+u0:25 <- [u0:22, u0:28]
+u0:26 <- [u0:23, u0:28]
+u0:27 <- [u0:24, u0:28]
+u0:28 -> [u0:22, u0:23, u0:24, u0:25, u0:26, u0:27]
+u0:29 -> [u0:22]
+u0:30 -> [u0:23]
+u0:31 -> [u0:24]
+
+
+===============================================================================
+scoped-call-with-generic-type
+===============================================================================
+Tests scoped calls with generic types like Vec::<i32>::new()
+
+--- file: src/main.rs ---
+struct Container<T> {
+    items: T,
+}
+
+impl<T> Container<T> {
+    fn new(item: T) -> Self {
+        Container { items: item }
+    }
+
+    fn with_capacity(cap: usize) -> Self {
+        Container { items: Default::default() }
+    }
+}
+
+fn main() {
+    let x = Container::<i32>::new(42);
+    let y = Container::<String>::with_capacity(10);
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | main | _c::main |
+u0:22 | Struct | Container | _c::main::Container |
+u0:23 | TypeParameter | T | _c::main::Container::T |
+u0:24 | Field | items | _c::main::Container::items |
+u0:25 | Function | new | _c::main::Container::new |
+u0:26 | Variable | item | _c::main::Container::new::item |
+u0:27 | Function | with_capacity | _c::main::Container::with_capacity |
+u0:28 | Variable | cap | _c::main::Container::with_capacity::cap |
+u0:29 | Function | main | _c::main::main |
+u0:30 | Variable | x | _c::main::main::x |
+u0:31 | Variable | y | _c::main::main::y |
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:29]
+u0:12 <- [u0:27, u0:28]
+u0:22 <- [u0:25, u0:27, u0:29, u0:30, u0:31]
+u0:25 -> [u0:22]
+u0:25 <- [u0:29]
+u0:27 -> [u0:12, u0:22]
+u0:27 <- [u0:29]
+u0:28 -> [u0:12]
+u0:29 -> [u0:1, u0:22, u0:25, u0:27]
+u0:30 -> [u0:22]
+u0:31 -> [u0:22]

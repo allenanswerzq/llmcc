@@ -204,14 +204,14 @@ u0:29 | Variable  | f      | _c::main::func::f |
 u0:30 | Variable  | b      | _c::main::func::b |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:25, u0:26]
+u0:22 <- [u0:25, u0:26, u0:28]
 u0:23 <- [u0:25, u0:27, u0:28, u0:30]
 u0:24 <- [u0:28]
 u0:25 -> [u0:22, u0:23]
 u0:25 <- [u0:28]
 u0:26 -> [u0:22]
 u0:27 -> [u0:23]
-u0:28 -> [u0:23, u0:24, u0:25]
+u0:28 -> [u0:22, u0:23, u0:24, u0:25]
 u0:30 -> [u0:23]
 
 
@@ -290,7 +290,7 @@ u0:36 | Variable  | f             | _c::main::func::f                 |
 u0:37 | Variable  | b             | _c::main::func::b                 |         
 
 --- expect:symbol-deps ---
-u0:22 <- [u0:30, u0:31]
+u0:22 <- [u0:30, u0:31, u0:35]
 u0:23 <- [u0:26, u0:27, u0:32, u0:33, u0:35, u0:37]
 u0:24 -> [u0:25, u0:26]
 u0:24 <- [u0:30]
@@ -308,7 +308,7 @@ u0:32 -> [u0:23, u0:25]
 u0:32 <- [u0:35]
 u0:33 -> [u0:23]
 u0:34 <- [u0:35]
-u0:35 -> [u0:23, u0:29, u0:30, u0:32, u0:34]
+u0:35 -> [u0:22, u0:23, u0:29, u0:30, u0:32, u0:34]
 u0:37 -> [u0:23]
 
 --- expect:blocks ---
@@ -334,8 +334,8 @@ u0:11 <- [u0:14]
 u0:12 -> [u0:3, u0:5]
 u0:12 <- [u0:14]
 u0:13 <- [u0:14]
-u0:14 -> [u0:10, u0:11, u0:12, u0:13, u0:3]
-u0:2 <- [u0:11]
+u0:14 -> [u0:10, u0:11, u0:12, u0:13, u0:2, u0:3]
+u0:2 <- [u0:11, u0:14]
 u0:3 <- [u0:12, u0:14, u0:7]
 u0:4 -> [u0:5, u0:7]
 u0:4 <- [u0:11]
@@ -347,14 +347,23 @@ u0:9 <- [u0:5]
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Foo", full_path="$TMP/app/src/main.rs:1"];
       n10[label="foo", full_path="$TMP/app/src/main.rs:14"];
       n11[label="add", full_path="$TMP/app/src/main.rs:15"];
@@ -366,6 +375,8 @@ digraph project {
       n5[label="ComputeResult", full_path="$TMP/app/src/main.rs:5"];
     }
   }
+
+  // Edges
   n11 -> n2;
   n11 -> n4;
   n12 -> n3;
@@ -451,6 +462,7 @@ u0:35 | Variable  | f             | _c::main::func::f                 |
 u0:36 | Variable  | b             | _c::main::func::b                 |         
 
 --- expect:symbol-deps ---
+u0:22 <- [u0:34]
 u0:23 <- [u0:26, u0:27, u0:32, u0:33, u0:34, u0:36]
 u0:24 -> [u0:25, u0:26]
 u0:24 <- [u0:30]
@@ -467,7 +479,7 @@ u0:31 -> [u0:25]
 u0:32 -> [u0:23, u0:25]
 u0:32 <- [u0:30, u0:34]
 u0:33 -> [u0:23]
-u0:34 -> [u0:23, u0:29, u0:30, u0:32]
+u0:34 -> [u0:22, u0:23, u0:29, u0:30, u0:32]
 u0:36 -> [u0:23]
 
 --- expect:blocks ---
@@ -491,7 +503,8 @@ u0:11 -> [u0:12, u0:4, u0:5]
 u0:11 <- [u0:13]
 u0:12 -> [u0:3, u0:5]
 u0:12 <- [u0:11, u0:13]
-u0:13 -> [u0:10, u0:11, u0:12, u0:3]
+u0:13 -> [u0:10, u0:11, u0:12, u0:2, u0:3]
+u0:2 <- [u0:13]
 u0:3 <- [u0:12, u0:13, u0:7]
 u0:4 -> [u0:5, u0:7]
 u0:4 <- [u0:11]
@@ -503,14 +516,24 @@ u0:9 <- [u0:5]
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
+      n2[label="Foo", full_path="$TMP/app/src/main.rs:1"];
       n10[label="foo", full_path="$TMP/app/src/main.rs:14"];
       n11[label="add", full_path="$TMP/app/src/main.rs:15"];
       n12[label="compute", full_path="$TMP/app/src/main.rs:18"];
@@ -520,10 +543,13 @@ digraph project {
       n5[label="ComputeResult", full_path="$TMP/app/src/main.rs:5"];
     }
   }
+
+  // Edges
   n11 -> n12;
   n11 -> n4;
   n12 -> n3;
   n12 -> n5;
+  n13 -> n2;
   n13 -> n10;
   n13 -> n11;
   n4 -> n5;
@@ -581,7 +607,8 @@ u0:25 | Variable  | b      | _c::main::foo::b |
 
 --- expect:symbol-deps ---
 u0:1 <- [u0:23, u0:25]
-u0:23 -> [u0:1]
+u0:22 <- [u0:23]
+u0:23 -> [u0:1, u0:22]
 u0:25 -> [u0:1]
 
 --- expect:blocks ---
@@ -590,10 +617,35 @@ u0:2 | class | Foo
 u0:3 | func  | foo
 
 --- expect:block-deps ---
-
+u0:2 <- [u0:3]
+u0:3 -> [u0:2]
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
+    subgraph cluster_1 {
+      label="main";
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
+      n2[label="Foo", full_path="$TMP/app/src/main.rs:1"];
+      n3[label="foo", full_path="$TMP/app/src/main.rs:3"];
+    }
+  }
+
+  // Edges
+  n3 -> n2;
 }
 
 
@@ -663,18 +715,29 @@ u0:3 | func  | make_tuples
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="TupleThing", full_path="$TMP/app/src/main.rs:1"];
       n3[label="make_tuples", full_path="$TMP/app/src/main.rs:3"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -794,14 +857,23 @@ u0:7 | func  | func
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="SomeStruct", full_path="$TMP/app/src/main.rs:1"];
       n5[label="User", full_path="$TMP/app/src/main.rs:12"];
       n6[label="Instant", full_path="$TMP/app/src/main.rs:19"];
@@ -810,6 +882,8 @@ digraph project {
       n4[label="Point", full_path="$TMP/app/src/main.rs:7"];
     }
   }
+
+  // Edges
   n7 -> n2;
   n7 -> n5;
   n7 -> n6;
@@ -883,18 +957,29 @@ u0:3 | func  | build_user
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="User", full_path="$TMP/app/src/main.rs:1"];
       n3[label="build_user", full_path="$TMP/app/src/main.rs:6"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -970,18 +1055,29 @@ u0:3 | func  | main
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Config", full_path="$TMP/app/src/main.rs:1"];
       n3[label="main", full_path="$TMP/app/src/main.rs:6"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1045,18 +1141,29 @@ u0:3 | func  | check
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Guard", full_path="$TMP/app/src/main.rs:1"];
       n3[label="check", full_path="$TMP/app/src/main.rs:5"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1122,18 +1229,29 @@ u0:3 -> [u0:2]
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Dish", full_path="$TMP/app/src/main.rs:1"];
       n3[label="parse", full_path="$TMP/app/src/main.rs:2"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1196,18 +1314,29 @@ u0:3 | func  | process
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Queue", full_path="$TMP/app/src/main.rs:1"];
       n3[label="process", full_path="$TMP/app/src/main.rs:5"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1265,18 +1394,29 @@ u0:3 | func  | process_value
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Value", full_path="$TMP/app/src/main.rs:1"];
       n3[label="process_value", full_path="$TMP/app/src/main.rs:3"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1340,18 +1480,29 @@ u0:3 | func  | loop_until
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="State", full_path="$TMP/app/src/main.rs:1"];
       n3[label="loop_until", full_path="$TMP/app/src/main.rs:5"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1417,18 +1568,29 @@ u0:3 | func  | count
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Counter", full_path="$TMP/app/src/main.rs:1"];
       n3[label="count", full_path="$TMP/app/src/main.rs:5"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1486,18 +1648,29 @@ u0:3 | func  | iterate
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Container", full_path="$TMP/app/src/main.rs:1"];
       n3[label="iterate", full_path="$TMP/app/src/main.rs:3"];
     }
   }
+
+  // Edges
   n3 -> n2;
 }
 
@@ -1602,14 +1775,23 @@ u0:7 -> [u0:2, u0:3, u0:5, u0:6]
 
 --- expect:graph ---
 digraph project {
+  edge [arrowsize=0.8, color="#666666"];
+  graph [fontname="Helvetica Bold", fontsize=12];
+
   subgraph cluster_0 {
     label="_c";
-    style=filled;
-    color=lightgrey;
+    style="rounded,filled";
+    fillcolor="#E8F4FD";
+    color="#4A90D9";
+    penwidth=2;
+    margin=16;
     subgraph cluster_1 {
       label="main";
-      style=filled;
-      color=lightgrey;
+      style="rounded,filled";
+      fillcolor="#E8F8E8";
+      color="#4CAF50";
+      penwidth=2;
+      margin=16;
       n2[label="Foo", full_path="$TMP/app/src/main.rs:1"];
       n6[label="foo", full_path="$TMP/app/src/main.rs:11"];
       n7[label="bar", full_path="$TMP/app/src/main.rs:15"];
@@ -1618,6 +1800,8 @@ digraph project {
       n5[label="MyStruct", full_path="$TMP/app/src/main.rs:7"];
     }
   }
+
+  // Edges
   n6 -> n4;
   n7 -> n6;
   n7 -> n5;
@@ -1802,12 +1986,15 @@ u1:32 | Function      | foo    | _c::main::foo  |
 --- expect:symbol-deps ---
 u0:22 <- [u1:32]
 u0:23 -> [u0:24]
+u0:23 <- [u1:32]
 u0:24 <- [u0:23, u1:32]
 u1:27 -> [u1:28]
+u1:27 <- [u1:32]
 u1:28 <- [u1:27, u1:32]
 u1:29 -> [u1:31]
+u1:29 <- [u1:32]
 u1:31 <- [u1:29, u1:32]
-u1:32 -> [u0:22, u0:24, u1:28, u1:31]
+u1:32 -> [u0:22, u0:23, u0:24, u1:27, u1:28, u1:29, u1:31]
 
 --- expect:block-graph ---
 (root:1 foo
@@ -1831,10 +2018,12 @@ u1:32 -> [u0:22, u0:24, u1:28, u1:31]
 u0:2 <- [u1:11]
 u0:3 <- [u1:11]
 u1:10 <- [u1:11, u1:8]
-u1:11 -> [u0:2, u0:3, u1:10, u1:7]
+u1:11 -> [u0:2, u0:3, u1:10, u1:5, u1:7, u1:8]
 u1:5 -> [u1:7]
+u1:5 <- [u1:11]
 u1:7 <- [u1:11, u1:5]
 u1:8 -> [u1:10]
+u1:8 <- [u1:11]
 
 
 ===============================================================================
@@ -1982,11 +2171,12 @@ u0:24 | Namespace | m2     | _c::main::m1::m2      |
 u0:25 | Function  | bar    | _c::main::m1::m2::bar |         
 
 --- expect:symbol-deps ---
+u0:21 <- [u0:25]
 u0:22 <- [u0:25]
 u0:23 -> [u0:24]
 u0:24 -> [u0:25]
 u0:24 <- [u0:23]
-u0:25 -> [u0:22]
+u0:25 -> [u0:21, u0:22]
 u0:25 <- [u0:24]
 
 --- expect:blocks ---
