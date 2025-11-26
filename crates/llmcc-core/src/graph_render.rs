@@ -111,7 +111,7 @@ fn render_nested_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>, co
     // output.push_str("  compound=true;\n");
     // output.push_str("  newrank=true;\n");
     // output.push_str("  node [shape=box, style=\"rounded,filled\", fontname=\"Helvetica\", fontsize=11, fillcolor=white];\n");
-    output.push_str("  edge [arrowsize=0.8, color=\"#666666\"];\n");
+    // output.push_str("  edge [arrowsize=0.8, color=\"#666666\"];\n");
     output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n");
     output.push_str("\n");
 
@@ -136,11 +136,11 @@ fn render_nested_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>, co
 /// Returns (fill_color, border_color) for the subgraph
 fn get_depth_colors(depth: usize) -> (&'static str, &'static str) {
     match depth % 5 {
-        0 => ("#E8F4FD", "#4A90D9"),  // Light blue
-        1 => ("#E8F8E8", "#4CAF50"),  // Light green
-        2 => ("#FFF8E1", "#FFA726"),  // Light orange
-        3 => ("#F3E5F5", "#9C27B0"),  // Light purple
-        4 => ("#FFEBEE", "#EF5350"),  // Light red
+        0 => ("#F5F5F5", "#757575"),  // Light grey / Dark grey
+        1 => ("#EEEEEE", "#616161"),  // Lighter grey / Medium grey
+        2 => ("#E0E0E0", "#424242"),  // Medium grey / Darker grey
+        3 => ("#FAFAFA", "#9E9E9E"),  // Near white / Grey
+        4 => ("#F0F0F0", "#808080"),  // Soft grey / Neutral grey
         _ => ("#F5F5F5", "#9E9E9E"),  // Light grey (fallback)
     }
 }
@@ -167,11 +167,13 @@ fn render_component_tree(
             indent,
             escape_dot_label(component_name)
         ));
-        output.push_str(&format!("{}  style=\"rounded,filled\";\n", indent));
-        output.push_str(&format!("{}  fillcolor=\"{}\";\n", indent, fill_color));
-        output.push_str(&format!("{}  color=\"{}\";\n", indent, border_color));
-        output.push_str(&format!("{}  penwidth=2;\n", indent));
-        output.push_str(&format!("{}  margin=16;\n", indent));
+        if depth != 0 {
+            output.push_str(&format!("{}  style=\"filled\";\n", indent));
+            output.push_str(&format!("{}  fillcolor=\"{}\";\n", indent, fill_color));
+            output.push_str(&format!("{}  color=\"{}\";\n", indent, border_color));
+        }
+        // output.push_str(&format!("{}  penwidth=2;\n", indent));
+        // output.push_str(&format!("{}  margin=16;\n", indent));
 
         // Recursively render children with increased depth
         render_component_tree(output, subtree, nodes, counter, indent_level + 1, depth + 1);

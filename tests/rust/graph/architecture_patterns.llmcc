@@ -378,23 +378,15 @@ u9:99 -> [u0:18]
 
 --- expect:graph ---
 digraph project {
-  edge [arrowsize=0.8, color="#666666"];
   graph [fontname="Helvetica Bold", fontsize=12];
 
   subgraph cluster_0 {
     label="_c";
-    style="rounded,filled";
-    fillcolor="#E8F4FD";
-    color="#4A90D9";
-    penwidth=2;
-    margin=16;
     subgraph cluster_1 {
       label="api";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
       n9[label="CreateUserRequest", full_path="$TMP/src/api/dto.rs:14"];
       n10[label="LoginRequest", full_path="$TMP/src/api/dto.rs:19"];
       n6[label="UserDto", full_path="$TMP/src/api/dto.rs:3"];
@@ -404,30 +396,24 @@ digraph project {
     }
     subgraph cluster_2 {
       label="data";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
       n17[label="User", full_path="$TMP/src/data/entity.rs:2"];
       n19[label="UserRepository", full_path="$TMP/src/data/repository.rs:4"];
     }
     subgraph cluster_3 {
       label="main";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
       n3[label="main", full_path="$TMP/src/main.rs:9"];
     }
     subgraph cluster_4 {
       label="service";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
       n33[label="AuthService", full_path="$TMP/src/service/auth_service.rs:3"];
       n27[label="UserService", full_path="$TMP/src/service/user_service.rs:3"];
     }
@@ -1555,74 +1541,60 @@ u9:147 -> [u9:141]
 
 --- expect:graph ---
 digraph project {
-  edge [arrowsize=0.8, color="#666666"];
   graph [fontname="Helvetica Bold", fontsize=12];
 
   subgraph cluster_0 {
     label="_c";
-    style="rounded,filled";
-    fillcolor="#E8F4FD";
-    color="#4A90D9";
-    penwidth=2;
-    margin=16;
     subgraph cluster_1 {
       label="entities";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
       n8[label="Task", full_path="$TMP/src/entities/task.rs:16"];
       n6[label="TaskStatus", full_path="$TMP/src/entities/task.rs:2"];
       n7[label="Priority", full_path="$TMP/src/entities/task.rs:9"];
     }
     subgraph cluster_2 {
       label="interface_adapters";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
       n26[label="ConsolePresenter", full_path="$TMP/src/interface_adapters/console_presenter.rs:4"];
       n16[label="InMemoryTaskGateway", full_path="$TMP/src/interface_adapters/memory_gateway.rs:5"];
     }
     subgraph cluster_3 {
       label="main";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
       n3[label="main", full_path="$TMP/src/main.rs:9"];
     }
     subgraph cluster_4 {
       label="use_cases";
-      style="rounded,filled";
-      fillcolor="#E8F8E8";
-      color="#4CAF50";
-      penwidth=2;
-      margin=16;
-      n38[label="present_task", full_path="$TMP/src/use_cases/ports.rs:13"];
-      n39[label="present_task_list", full_path="$TMP/src/use_cases/ports.rs:14"];
-      n33[label="save", full_path="$TMP/src/use_cases/ports.rs:5"];
-      n36[label="update", full_path="$TMP/src/use_cases/ports.rs:8"];
-      n46[label="CompleteTaskUseCase", full_path="$TMP/src/use_cases/task_use_cases.rs:23"];
-      n42[label="CreateTaskUseCase", full_path="$TMP/src/use_cases/task_use_cases.rs:4"];
-      n50[label="ListTasksUseCase", full_path="$TMP/src/use_cases/task_use_cases.rs:47"];
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n39[label="TaskPresenter", full_path="$TMP/src/use_cases/ports.rs:12"];
+      n33[label="TaskGateway", full_path="$TMP/src/use_cases/ports.rs:4"];
+      n48[label="CompleteTaskUseCase", full_path="$TMP/src/use_cases/task_use_cases.rs:23"];
+      n44[label="CreateTaskUseCase", full_path="$TMP/src/use_cases/task_use_cases.rs:4"];
+      n52[label="ListTasksUseCase", full_path="$TMP/src/use_cases/task_use_cases.rs:47"];
     }
   }
 
   // Edges
   n3 -> n16;
   n3 -> n26;
-  n3 -> n46;
-  n3 -> n42;
-  n3 -> n50;
+  n3 -> n48;
+  n3 -> n44;
+  n3 -> n52;
   n8 -> n6;
   n8 -> n7;
   n16 -> n8;
-  n38 -> n8;
-  n39 -> n8;
-  n33 -> n8;
-  n36 -> n8;
+  n48 -> n39;
+  n48 -> n33;
+  n44 -> n39;
+  n44 -> n33;
+  n52 -> n39;
+  n52 -> n33;
 }

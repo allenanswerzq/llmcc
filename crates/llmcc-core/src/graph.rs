@@ -44,7 +44,7 @@ pub struct GraphNode {
     pub block_id: BlockId,
 }
 
-const INTERESTING_KINDS: [BlockKind; 3] = [BlockKind::Class, BlockKind::Enum, BlockKind::Func];
+const INTERESTING_KINDS: [BlockKind; 4] = [BlockKind::Class, BlockKind::Trait, BlockKind::Enum, BlockKind::Func];
 
 /// ProjectGraph represents a complete compilation project with all units and their inter-dependencies.
 ///

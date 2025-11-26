@@ -1513,16 +1513,18 @@ u0:32 -> [u0:12]
 u0:32 <- [u0:31]
 
 --- expect:blocks ---
-u0:1 | root  | main
-u0:2 | class | Text
-u0:3 | class | Range
-u0:4 | func  | splice
-u0:5 | func  | uninit_array
+u0:1 | root | main |  | 
+u0:2 | class | Text |  | 
+u0:3 | trait | Into |  | 
+u0:4 | class | Range |  | 
+u0:5 | func | splice |  | 
+u0:6 | func | uninit_array |  | 
 
 --- expect:block-deps ---
-u0:2 <- [u0:4]
-u0:3 <- [u0:4]
-u0:4 -> [u0:2, u0:3]
+u0:2 <- [u0:5]
+u0:3 <- [u0:5]
+u0:4 <- [u0:5]
+u0:5 -> [u0:2, u0:3, u0:4]
 
 
 ===============================================================================

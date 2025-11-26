@@ -6,7 +6,7 @@ use crate::DynError;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockMethod,
-    BlockRoot, BlockStmt,
+    BlockRoot, BlockStmt, BlockTrait,
 };
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
@@ -109,6 +109,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block = BlockClass::from_hir(id, node, parent, children);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Class(block_ref)
+            }
+            BlockKind::Trait => {
+                let block = BlockTrait::from_hir(id, node, parent, children);
+                let block_ref = self.unit.cc.block_arena.alloc(block);
+                BasicBlock::Trait(block_ref)
             }
             BlockKind::Stmt => {
                 let stmt = BlockStmt::from_hir(id, node, parent, children);
@@ -249,7 +254,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             while let Some(parent_id) = current_parent {
                 let parent_node = unit.hir_node(parent_id);
                 let parent_kind = Language::block_kind(parent_node.kind_id());
-                if matches!(parent_kind, BlockKind::Class | BlockKind::Impl) {
+                if matches!(parent_kind, BlockKind::Class | BlockKind::Trait | BlockKind::Impl) {
                     block_kind = BlockKind::Method;
                     break;
                 }
@@ -306,6 +311,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             BlockKind::Func
             | BlockKind::Method
             | BlockKind::Class
+            | BlockKind::Trait
             | BlockKind::Enum
             | BlockKind::Const
             // | BlockKind::Impl
@@ -322,6 +328,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             BlockKind::Func
             | BlockKind::Method
             | BlockKind::Class
+            | BlockKind::Trait
             | BlockKind::Enum
             | BlockKind::Const
             | BlockKind::Impl

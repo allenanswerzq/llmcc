@@ -1,0 +1,287 @@
+===============================================================================
+trait-in-graph
+===============================================================================
+Tests that traits appear in the graph with proper dependencies
+
+--- file: src/main.rs ---
+trait Drawable {
+    fn draw(&self);
+}
+
+trait Movable {
+    fn move_to(&mut self, x: i32, y: i32);
+}
+
+struct Circle {
+    x: i32,
+    y: i32,
+    radius: i32,
+}
+
+impl Drawable for Circle {
+    fn draw(&self) {
+        println!("Drawing circle at ({}, {}) with radius {}", self.x, self.y, self.radius);
+    }
+}
+
+impl Movable for Circle {
+    fn move_to(&mut self, x: i32, y: i32) {
+        self.x = x;
+        self.y = y;
+    }
+}
+
+fn render(item: &impl Drawable) {
+    item.draw();
+}
+
+fn main() {
+    let mut circle = Circle { x: 0, y: 0, radius: 10 };
+    render(&circle);
+    circle.move_to(5, 5);
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate | 
+u0:21 | File | main | _c::main | 
+u0:22 | Trait | Drawable | _c::main::Drawable | 
+u0:23 | Function | draw | _c::main::Drawable::draw | 
+u0:24 | Trait | Movable | _c::main::Movable | 
+u0:25 | Function | move_to | _c::main::Movable::move_to | 
+u0:26 | Variable | x | _c::main::Movable::move_to::x | 
+u0:27 | Variable | y | _c::main::Movable::move_to::y | 
+u0:28 | Struct | Circle | _c::main::Circle | 
+u0:29 | Field | x | _c::main::Circle::x | 
+u0:30 | Field | y | _c::main::Circle::y | 
+u0:31 | Field | radius | _c::main::Circle::radius | 
+u0:32 | Function | draw | _c::main::Circle::draw | 
+u0:33 | Function | move_to | _c::main::Circle::move_to | 
+u0:34 | Variable | x | _c::main::Circle::move_to::x | 
+u0:35 | Variable | y | _c::main::Circle::move_to::y | 
+u0:36 | Function | render | _c::main::render | 
+u0:37 | Variable | item | _c::main::render::item | 
+u0:38 | Function | main | _c::main::main | 
+u0:39 | Variable | circle | _c::main::main::circle | 
+
+--- expect:symbol-deps ---
+u0:1 <- [u0:25, u0:26, u0:27, u0:28, u0:29, u0:30, u0:31, u0:33, u0:34, u0:35]
+u0:22 -> [u0:23]
+u0:22 <- [u0:28, u0:36, u0:37]
+u0:23 <- [u0:22, u0:36]
+u0:24 -> [u0:25]
+u0:24 <- [u0:28]
+u0:25 -> [u0:1]
+u0:25 <- [u0:24]
+u0:26 -> [u0:1]
+u0:27 -> [u0:1]
+u0:28 -> [u0:1, u0:22, u0:24, u0:32, u0:33]
+u0:28 <- [u0:38, u0:39]
+u0:29 -> [u0:1]
+u0:30 -> [u0:1]
+u0:31 -> [u0:1]
+u0:32 <- [u0:28]
+u0:33 -> [u0:1]
+u0:33 <- [u0:28, u0:38]
+u0:34 -> [u0:1]
+u0:35 -> [u0:1]
+u0:36 -> [u0:22, u0:23]
+u0:36 <- [u0:38]
+u0:37 -> [u0:22]
+u0:38 -> [u0:28, u0:33, u0:36]
+u0:39 -> [u0:28]
+
+--- expect:block-graph ---
+(root:1 main (trait:2 Drawable (method:3 draw)) (trait:4 Movable (method:5 move_to)) (class:6 Circle) (impl:7 Circle (method:8 draw)) (impl:9 Circle (method:10 move_to)) (func:11 render) (func:12 main))
+
+--- expect:graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n2[label="Drawable", full_path="$TMP/src/main.rs:1"];
+      n11[label="render", full_path="$TMP/src/main.rs:28"];
+      n12[label="main", full_path="$TMP/src/main.rs:32"];
+      n4[label="Movable", full_path="$TMP/src/main.rs:5"];
+      n6[label="Circle", full_path="$TMP/src/main.rs:9"];
+    }
+  }
+
+  // Edges
+  n11 -> n2;
+  n12 -> n11;
+  n12 -> n6;
+  n6 -> n2;
+  n6 -> n4;
+}
+
+
+===============================================================================
+trait-with-associated-types
+===============================================================================
+Tests traits with associated types appearing in graph
+
+--- file: src/main.rs ---
+trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item>;
+}
+
+struct Counter {
+    count: u32,
+}
+
+impl Iterator for Counter {
+    type Item = u32;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        self.count += 1;
+        Some(self.count)
+    }
+}
+
+fn main() {
+    let mut counter = Counter { count: 0 };
+    counter.next();
+}
+
+--- expect:symbol-deps ---
+u0:22 -> [u0:23, u0:24]
+u0:22 <- [u0:25]
+u0:23 <- [u0:22]
+u0:24 <- [u0:22]
+u0:25 -> [u0:22, u0:27, u0:28, u0:7]
+u0:25 <- [u0:29, u0:30]
+u0:26 -> [u0:7]
+u0:27 -> [u0:7]
+u0:27 <- [u0:25]
+u0:28 <- [u0:25, u0:29]
+u0:29 -> [u0:25, u0:28]
+u0:30 -> [u0:25]
+u0:7 <- [u0:25, u0:26, u0:27]
+
+--- expect:graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n2[label="Iterator", full_path="$TMP/src/main.rs:1"];
+      n7[label="main", full_path="$TMP/src/main.rs:19"];
+      n4[label="Counter", full_path="$TMP/src/main.rs:6"];
+    }
+  }
+
+  // Edges
+  n7 -> n4;
+  n4 -> n2;
+}
+
+
+===============================================================================
+trait-inheritance
+===============================================================================
+Tests trait inheritance (supertraits) in graph
+
+--- file: src/main.rs ---
+trait Animal {
+    fn name(&self) -> &str;
+}
+
+trait Pet: Animal {
+    fn owner(&self) -> &str;
+}
+
+struct Dog {
+    name: String,
+    owner: String,
+}
+
+impl Animal for Dog {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl Pet for Dog {
+    fn owner(&self) -> &str {
+        &self.owner
+    }
+}
+
+fn main() {
+    let dog = Dog { name: "Buddy".to_string(), owner: "Alice".to_string() };
+}
+
+--- expect:symbol-deps ---
+u0:17 <- [u0:23, u0:25, u0:27, u0:28]
+u0:18 <- [u0:26, u0:27, u0:28]
+u0:22 -> [u0:23]
+u0:22 <- [u0:24, u0:26]
+u0:23 -> [u0:17]
+u0:23 <- [u0:22]
+u0:24 -> [u0:22, u0:25]
+u0:24 <- [u0:26]
+u0:25 -> [u0:17]
+u0:25 <- [u0:24]
+u0:26 -> [u0:18, u0:22, u0:24, u0:27, u0:28]
+u0:26 <- [u0:29, u0:30]
+u0:27 -> [u0:17, u0:18]
+u0:27 <- [u0:26]
+u0:28 -> [u0:17, u0:18]
+u0:28 <- [u0:26]
+u0:29 -> [u0:26]
+u0:30 -> [u0:26]
+
+--- expect:graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n2[label="Animal", full_path="$TMP/src/main.rs:1"];
+      n11[label="main", full_path="$TMP/src/main.rs:26"];
+      n4[label="Pet", full_path="$TMP/src/main.rs:5"];
+      n6[label="Dog", full_path="$TMP/src/main.rs:9"];
+    }
+  }
+
+  // Edges
+  n11 -> n6;
+  n4 -> n2;
+  n6 -> n4;
+}
