@@ -25,6 +25,7 @@ use crate::interner::InternPool;
 /// Incremented on each new symbol creation to ensure uniqueness.
 static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(1);
 
+
 /// Resets the global symbol ID counter to 1.
 /// Use this only during testing or when resetting the entire symbol table.
 #[inline]

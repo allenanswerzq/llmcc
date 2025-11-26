@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirIdent, HirKind, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
@@ -883,14 +883,14 @@ pub fn collect_symbols<'tcx>(
     _config: &ResolverOption,
 ) -> &'tcx Scope<'tcx> {
     let cc = unit.cc;
-    let arena = cc.arena();
-    let unit_globals = arena.alloc(Scope::new(HirId(unit.index)));
-    let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
+    // The unit-level scope is already pushed onto scope_stack by collect_symbols_with
+    let globals = scope_stack.first();
+    let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, globals);
 
     let mut visit = CollectorVisitor::new();
-    visit.visit_node(&unit, node, &mut scopes, unit_globals, None);
+    visit.visit_node(&unit, node, &mut scopes, globals, None);
 
-    unit_globals
+    globals
 }
 
 #[cfg(test)]

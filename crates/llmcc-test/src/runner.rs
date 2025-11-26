@@ -10,7 +10,7 @@ use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, BlockRelation, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
-use llmcc_core::symbol::reset_symbol_id_counter;
+use llmcc_core::symbol::{reset_scope_id_counter, reset_symbol_id_counter};
 
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
@@ -218,6 +218,7 @@ fn evaluate_case(
     }
 
     reset_symbol_id_counter();
+    reset_scope_id_counter();
     reset_block_id_counter();
     let summary = build_pipeline_summary(
         case,

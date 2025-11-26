@@ -466,6 +466,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         let scope = self.arena.alloc(Scope::new(owner));
         // Scope is in arena; scope_map will be built via build_lookup_maps_from_arena()
         self.owner_to_scope_id.write().insert(owner, scope.id());
+        self.scope_map.write().push(scope);
         scope
     }
 
@@ -547,12 +548,6 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         self.arena.alloc(Scope::new(owner))
-    }
-
-    /// Merge the second scope into the first.
-    pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
-        // Merge symbols from second into first
-        first.merge_with(second, self.arena());
     }
 
     pub fn set_file_root_id(&self, index: usize, start: HirId) {

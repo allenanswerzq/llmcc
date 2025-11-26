@@ -281,34 +281,6 @@ impl<'a> CollectorScopes<'a> {
     }
 }
 
-/// Apply symbols collected from a single compilation unit to the global context.
-fn apply_collected_symbols<'tcx>(
-    cc: &'tcx CompileCtxt<'tcx>,
-    arena: &'tcx Arena<'tcx>,
-    final_globals: &'tcx Scope<'tcx>,
-    unit_globals: &'tcx Scope<'tcx>,
-    merge_time: &std::sync::atomic::AtomicU64,
-    _alloc_time: &std::sync::atomic::AtomicU64,
-) -> &'tcx Scope<'tcx> {
-    use std::time::Instant;
-    use std::sync::atomic::Ordering;
-
-    // Collect all scopes from arena
-    let scopes: Vec<_> = arena.scope();
-
-    // Merge global scope
-    for scope in &scopes {
-        if scope.id() == unit_globals.id() {
-            let start = Instant::now();
-            cc.merge_two_scopes(final_globals, unit_globals);
-            merge_time.fetch_add(start.elapsed().as_nanos() as u64, Ordering::Relaxed);
-            break;
-        }
-    }
-
-    final_globals
-}
-
 /// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
 ///
 /// At the collect pass, we can only know all the sutff in a single compilation unit, because of the
@@ -325,18 +297,21 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     let total_start = Instant::now();
 
     let scope_stack = L::collect_init(cc);
-    let scope_stack_clone = scope_stack.clone();
+    let globals = cc.create_globals();
 
     // Atomic counters for parallel timing
     let visit_time_ns = AtomicU64::new(0);
 
     let collect_unit = |i: usize| {
-        let unit_scope_stack = scope_stack_clone.clone();
+        let unit_scope_stack = scope_stack.clone();
         let unit = cc.compile_unit(i);
         let node = unit.hir_node(unit.file_root_id().unwrap());
 
+        // Push the pre-allocated unit-level scope onto the stack
+        unit_scope_stack.push(globals);
+
         let visit_start = Instant::now();
-        let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
+        L::collect_symbols(unit, node, unit_scope_stack, config);
         visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         if config.print_ir {
@@ -344,47 +319,30 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
             println!("=== IR for unit {} ===", i);
             let _ = print_llmcc_ir(unit);
         }
-
-        unit_globals
     };
 
     let parallel_start = Instant::now();
-    let unit_globals_vec = if config.sequential {
-        (0..cc.files.len()).map(collect_unit).collect::<Vec<_>>()
+    if config.sequential {
+        (0..cc.files.len()).for_each(collect_unit);
     } else {
         (0..cc.files.len())
             .into_par_iter()
-            .map(collect_unit)
-            .collect::<Vec<_>>()
+            .for_each(collect_unit);
     };
     let parallel_elapsed = parallel_start.elapsed();
-
-    let merge_start = Instant::now();
-    let merge_time = AtomicU64::new(0);
-    let alloc_time = AtomicU64::new(0);
-    let arena = &cc.arena;
-    let globals = scope_stack.first();
-    for unit_globals in unit_globals_vec.iter() {
-        apply_collected_symbols(cc, arena, globals, unit_globals, &merge_time, &alloc_time);
-    }
 
     let maps_start = Instant::now();
     cc.build_lookup_maps_from_arena();
     let maps_elapsed = maps_start.elapsed();
 
-    let merge_elapsed = merge_start.elapsed();
-
     let total_elapsed = total_start.elapsed();
     let visit_total_ms = visit_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
-    let merge_scopes_ms = merge_time.load(Ordering::Relaxed) as f64 / 1_000_000.0;
 
     tracing::info!(
-        "Symbol collection breakdown: total={:.2}s, parallel_wall={:.2}s, visitor_cpu={:.2}s, merge_wall={:.2}s (merge_scopes={:.2}s, build_maps={:.2}s)",
+        "Symbol collection breakdown: total={:.2}s, parallel_wall={:.2}s, visitor_cpu={:.2}s, build_maps={:.2}s",
         total_elapsed.as_secs_f64(),
         parallel_elapsed.as_secs_f64(),
         visit_total_ms / 1000.0,
-        merge_elapsed.as_secs_f64(),
-        merge_scopes_ms / 1000.0,
         maps_elapsed.as_secs_f64()
     );
 
