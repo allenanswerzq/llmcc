@@ -20,6 +20,11 @@ pub struct GraphOptions {
     /// When set, only the top K most important nodes are shown.
     #[arg(long = "pagerank-top-k")]
     pub pagerank_top_k: Option<usize>,
+
+    /// Generate architecture graph (data flow) instead of dependency graph.
+    /// Architecture graph shows: param_type -> func -> return_type
+    #[arg(long = "arch-graph")]
+    pub architecture_graph: bool,
 }
 
 /// Common options for controlling processing behavior.

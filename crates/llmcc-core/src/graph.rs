@@ -5,6 +5,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::CompileCtxt;
 use crate::graph_render::{CompactNode, GraphRenderer};
 use crate::pagerank::PageRanker;
+use crate::symbol::{DepKind, SymId};
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -320,28 +321,29 @@ impl<'tcx> ProjectGraph<'tcx> {
     /// Edge direction in arch graph:
     /// - ParamType: param_type -> func (input flows into function)
     /// - ReturnType: func -> return_type (output flows from function)
-    /// - Implements: trait -> impl_struct (trait is realized by struct)
-    /// - FieldType: struct -> field_type (struct contains field)
-    /// - Calls: caller -> callee (normal call direction)
-    /// - Uses/Instantiates: from -> to (normal dependency direction)
+    /// - Implements: impl_struct -> trait (struct advertises trait capability)
+    /// - Calls: caller -> callee (control flow follows call sites)
+    /// - FieldType / Calls / Instantiates: from -> to (normal dependency direction)
+    /// - Uses: fallback from -> to when no more specific edge exists
     fn collect_arch_edges(
         &self,
         nodes: &[CompactNode],
         node_index: &HashMap<BlockId, usize>,
     ) -> BTreeSet<(usize, usize)> {
-        use crate::symbol::DepKind;
-
         let mut edges = BTreeSet::new();
         let symbol_map = self.cc.symbol_map.read();
 
         for node in nodes {
-            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
+            let Some(_unit_graph) = self.unit_graph(node.unit_index) else {
                 continue;
             };
             let from_idx = node_index[&node.block_id];
 
-            // Find symbol by block_id directly
-            let symbol_opt = self.cc.find_symbol_by_block_id(node.block_id);
+            // Use the symbol captured during node collection when available
+            let symbol_opt = node
+                .sym_id
+                .and_then(|sym_id| symbol_map.get(&sym_id))
+                .copied();
 
             if let Some(symbol) = symbol_opt {
                 // Use typed dependencies for arch graph
@@ -358,6 +360,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     };
 
                     // Determine edge direction based on DepKind
+                    // For arch-graph, prioritize specific kinds over generic Uses
                     match dep_kind {
                         DepKind::ParamType => {
                             // Input: param_type -> func
@@ -368,27 +371,32 @@ impl<'tcx> ProjectGraph<'tcx> {
                             edges.insert((from_idx, to_idx));
                         }
                         DepKind::Implements => {
-                            // Trait -> implementing struct
-                            edges.insert((to_idx, from_idx));
+                            // implementing_struct -> trait (struct points to trait)
+                            edges.insert((from_idx, to_idx));
                         }
-                        DepKind::FieldType
-                        | DepKind::Calls
-                        | DepKind::Uses
-                        | DepKind::Instantiates => {
+                        DepKind::FieldType | DepKind::Calls | DepKind::Instantiates => {
                             // Normal direction: from -> to
                             edges.insert((from_idx, to_idx));
                         }
-                    }
-                }
-            } else {
-                // Fallback to block-level dependencies (same as dep-graph)
-                let dependencies = unit_graph
-                    .edges()
-                    .get_related(node.block_id, BlockRelation::DependsOn);
-
-                for dep_block_id in dependencies {
-                    if let Some(&to_idx) = node_index.get(&dep_block_id) {
-                        edges.insert((from_idx, to_idx));
+                        DepKind::Uses => {
+                            // Skip Uses if there's a more specific DepKind for this relationship
+                            // Only add if no other edge exists between these nodes
+                            let has_specific = depends.iter().any(|(id, kind)| {
+                                *id == dep_id
+                                    && matches!(
+                                        kind,
+                                        DepKind::ParamType
+                                            | DepKind::ReturnType
+                                            | DepKind::Implements
+                                            | DepKind::FieldType
+                                            | DepKind::Calls
+                                            | DepKind::Instantiates
+                                    )
+                            });
+                            if !has_specific {
+                                edges.insert((from_idx, to_idx));
+                            }
+                        }
                     }
                 }
             }
@@ -475,17 +483,20 @@ impl<'tcx> ProjectGraph<'tcx> {
                     })
                     .or(Some(path.clone()));
 
-                // Get FQN from the symbol for hierarchical grouping
-                let fqn = block
+                let mut sym_id: Option<SymId> = None;
+                let mut fqn = "unknown".to_string();
+
+                if let Some(symbol) = block
                     .opt_node()
                     .and_then(|node| node.as_scope())
                     .and_then(|scope_node| scope_node.opt_scope())
                     .and_then(|scope| scope.opt_symbol())
-                    .and_then(|symbol| {
-                        let fqn_key = symbol.fqn();
-                        self.cc.interner.resolve_owned(fqn_key)
-                    })
-                    .unwrap_or_else(|| "unknown".to_string());
+                {
+                    sym_id = Some(symbol.id());
+                    if let Some(resolved) = self.cc.interner.resolve_owned(symbol.fqn()) {
+                        fqn = resolved;
+                    }
+                }
 
                 Some(CompactNode {
                     block_id,
@@ -493,6 +504,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     name: display_name,
                     location,
                     fqn,
+                    sym_id,
                 })
             })
             .collect()

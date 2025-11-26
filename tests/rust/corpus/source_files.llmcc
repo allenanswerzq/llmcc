@@ -470,6 +470,20 @@ u0:22 | Function  | main   | _c::main::main |
 
 --- expect:dep-graph ---
 digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n2[label="main", full_path="$TMP/src/main.rs:2"];
+    }
+  }
+
+  // Edges
 }
 
 --- expect:symbol-deps ---
@@ -510,6 +524,20 @@ u0:22 | Function  | main   | _c::main::main |
 
 --- expect:dep-graph ---
 digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n2[label="main", full_path="$TMP/src/main.rs:2"];
+    }
+  }
+
+  // Edges
 }
 
 --- expect:symbol-deps ---

@@ -72,18 +72,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         Self::add_type_dependencies(owner, ty, &args);
     }
 
-    fn add_type_dependencies_with_kind_visitor(
-        &mut self,
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
-        owner: &Symbol,
-        dep_kind: DepKind,
-    ) {
-        let mut resolver = ExprResolver::new(unit, scopes);
-        let (ty, args) = resolver.resolve_type_with_args(node);
-        Self::add_type_dependencies_with_kind(owner, ty, &args, dep_kind);
-    }
 
     fn visit_scoped_named(
         &mut self,

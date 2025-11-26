@@ -400,28 +400,34 @@ impl Symbol {
     }
 
     /// Adds a symbol that this symbol depends on with a specific dependency kind.
-    /// Ignores self-dependencies. Only adds if target not already present (first kind wins).
+    /// Ignores self-dependencies. Allows tracking multiple dependency kinds between the same symbols.
     pub fn add_depends_on(&self, sym_id: SymId, dep_kind: DepKind) {
         if sym_id == self.id {
             return;
         }
         let mut deps = self.depends.write();
-        // Check if we already depend on this symbol (regardless of kind)
-        if deps.iter().any(|(id, _)| *id == sym_id) {
+        // Check if we already recorded this relationship with the same kind
+        if deps
+            .iter()
+            .any(|(id, kind)| *id == sym_id && *kind == dep_kind)
+        {
             return;
         }
         deps.push((sym_id, dep_kind));
     }
 
     /// Adds a symbol that depends on this symbol (reverse dependency) with a specific kind.
-    /// Ignores self-dependencies. Only adds if source not already present (first kind wins).
+    /// Ignores self-dependencies. Allows multiple dependency kinds from the same source symbol.
     pub fn add_depended_by(&self, sym_id: SymId, dep_kind: DepKind) {
         if sym_id == self.id {
             return;
         }
         let mut deps = self.depended.write();
-        // Check if this symbol already depends on us (regardless of kind)
-        if deps.iter().any(|(id, _)| *id == sym_id) {
+        // Check if this relationship with the same kind already exists
+        if deps
+            .iter()
+            .any(|(id, kind)| *id == sym_id && *kind == dep_kind)
+        {
             return;
         }
         deps.push((sym_id, dep_kind));

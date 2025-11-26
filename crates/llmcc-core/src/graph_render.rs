@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 
+use crate::symbol::SymId;
 use crate::BlockId;
 
 #[derive(Clone)]
@@ -11,6 +12,7 @@ pub(crate) struct CompactNode {
     pub(crate) location: Option<String>,
     /// Fully qualified name for hierarchical grouping
     pub(crate) fqn: String,
+    pub(crate) sym_id: Option<SymId>,
 }
 
 impl CompactNode {
@@ -77,13 +79,19 @@ impl<'a> GraphRenderer<'a> {
             return format!("digraph {} {{\n}}\n", title);
         }
 
-        let pruned = prune_compact_components(self.nodes, edges);
-        if pruned.nodes.is_empty() {
+        if self.nodes.is_empty() {
             return format!("digraph {} {{\n}}\n", title);
         }
 
-        let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-        render_nested_dot_with_title(&pruned.nodes, &reduced_edges, component_depth, title)
+        render_nested_dot_with_title(&self.nodes, &edges, component_depth, title)
+
+        // TODO:
+        // let pruned = prune_compact_components(self.nodes, edges);
+        // if self.nodes.is_empty() {
+        //     return format!("digraph {} {{\n}}\n", title);
+        // }
+        // let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
+        // render_nested_dot_with_title(&pruned.nodes, &reduced_edges, component_depth, title)
     }
 }
 
@@ -273,79 +281,28 @@ fn summarize_location(location: &str) -> (String, String) {
     (display, location.to_string())
 }
 
+#[allow(dead_code)]
 fn reduce_transitive_edges(
     nodes: &[CompactNode],
     edges: &BTreeSet<(usize, usize)>,
 ) -> BTreeSet<(usize, usize)> {
+    // Temporarily skip transitive reduction to avoid dropping edges like
+    // main -> render. TODO: reinstate smarter reduction once edge retention
+    // rules are clarified.
     if nodes.is_empty() {
-        return BTreeSet::new();
+        BTreeSet::new()
+    } else {
+        edges.clone()
     }
-
-    let mut adjacency: HashMap<usize, Vec<usize>> = HashMap::new();
-    for &(from, to) in edges.iter() {
-        adjacency.entry(from).or_default().push(to);
-    }
-
-    let mut minimal_edges = BTreeSet::new();
-
-    for &(from, to) in edges.iter() {
-        if !has_alternative_path(from, to, &adjacency, (from, to)) {
-            minimal_edges.insert((from, to));
-        }
-    }
-
-    minimal_edges
 }
 
-fn has_alternative_path(
-    start: usize,
-    target: usize,
-    adjacency: &HashMap<usize, Vec<usize>>,
-    edge_to_skip: (usize, usize),
-) -> bool {
-    let mut visited = HashSet::new();
-    let mut stack: Vec<usize> = adjacency
-        .get(&start)
-        .into_iter()
-        .flat_map(|neighbors| neighbors.iter())
-        .filter_map(|&neighbor| {
-            if (start, neighbor) == edge_to_skip {
-                None
-            } else {
-                Some(neighbor)
-            }
-        })
-        .collect();
-
-    while let Some(current) = stack.pop() {
-        if !visited.insert(current) {
-            continue;
-        }
-
-        if current == target {
-            return true;
-        }
-
-        if let Some(neighbors) = adjacency.get(&current) {
-            for &neighbor in neighbors {
-                if (current, neighbor) == edge_to_skip {
-                    continue;
-                }
-                if !visited.contains(&neighbor) {
-                    stack.push(neighbor);
-                }
-            }
-        }
-    }
-
-    false
-}
-
+#[allow(dead_code)]
 struct PrunedGraph {
     nodes: Vec<CompactNode>,
     edges: BTreeSet<(usize, usize)>,
 }
 
+#[allow(dead_code)]
 fn prune_compact_components(
     nodes: &[CompactNode],
     edges: &BTreeSet<(usize, usize)>,
@@ -417,6 +374,7 @@ fn prune_compact_components(
     }
 }
 
+#[allow(dead_code)]
 fn find_connected_components(
     node_count: usize,
     edges: &BTreeSet<(usize, usize)>,
