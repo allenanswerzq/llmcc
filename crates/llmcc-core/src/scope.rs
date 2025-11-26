@@ -126,6 +126,17 @@ impl<'tcx> Scope<'tcx> {
         symbol.id
     }
 
+    /// Inserts a symbol into this scope using FQN as the key.
+    /// This is used for global scope to avoid name collisions (e.g., multiple `new` functions).
+    pub fn insert_with_fqn(&self, symbol: &'tcx Symbol) -> SymId {
+        self.symbols
+            .write()
+            .entry(symbol.fqn())
+            .or_default()
+            .push(symbol);
+        symbol.id
+    }
+
     /// Looks up all symbols with the given name in this specific scope.
     pub fn lookup_symbols(&self, name: InternedStr) -> Option<Vec<&'tcx Symbol>> {
         self.symbols.read().get(&name).cloned()

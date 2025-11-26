@@ -150,7 +150,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
         if is_pub {
             if !at_global {
-                scopes.globals().insert(sym);
+                // Use FQN for global scope to avoid name collisions
+                // (e.g., CreateTaskUseCase::new vs CompleteTaskUseCase::new)
+                scopes.globals().insert_with_fqn(sym);
             }
             sym.set_is_global(true);
             return;
@@ -158,7 +160,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
         if is_pub_crate {
             if !at_global {
-                scopes.globals().insert(sym);
+                scopes.globals().insert_with_fqn(sym);
             }
             sym.set_is_global(true);
             return;
@@ -168,7 +170,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             && let Some(parent_sym) = scope.opt_symbol()
             && parent_sym.is_global()
         {
-            scopes.globals().insert(sym);
+            scopes.globals().insert_with_fqn(sym);
         }
     }
 
