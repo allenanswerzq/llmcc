@@ -249,10 +249,11 @@ fn evaluate_case(
             status = CaseStatus::Updated;
         } else {
             status = CaseStatus::Failed;
+            // Use normalized values for diff so $TMP replacement is visible
             failures.push(format_expectation_diff(
                 &expect.kind,
-                &expect.value,
-                &actual,
+                &expected_norm,
+                &actual_norm,
             ));
         }
     }

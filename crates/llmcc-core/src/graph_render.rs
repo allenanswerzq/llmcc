@@ -318,7 +318,12 @@ fn render_arch_component_tree(
         }
 
         // Build node line directly
-        let _ = write!(output, "n{}[label=\"{}\"", node.block_id.as_u32(), escape_dot_label(&node.name));
+        let _ = write!(
+            output,
+            "n{}[label=\"{}\"",
+            node.block_id.as_u32(),
+            escape_dot_label(&node.name)
+        );
 
         if let Some(location) = &node.location {
             let (_display, full) = summarize_location(location);
@@ -426,7 +431,12 @@ fn render_component_tree(
         }
 
         // Build node line directly
-        let _ = write!(output, "n{}[label=\"{}\"", node.block_id.as_u32(), escape_dot_label(&node.name));
+        let _ = write!(
+            output,
+            "n{}[label=\"{}\"",
+            node.block_id.as_u32(),
+            escape_dot_label(&node.name)
+        );
 
         if let Some(location) = &node.location {
             let (_display, full) = summarize_location(location);

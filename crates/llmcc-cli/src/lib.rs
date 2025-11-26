@@ -86,6 +86,7 @@ where
     let requested_files = discover_requested_files::<L>(opts)?;
 
     let parse_start = Instant::now();
+    info!("Parsing total {} files", requested_files.len());
     let cc = CompileCtxt::from_files::<L>(&requested_files)?;
     info!(
         "Parsing & tree-sitter: {:.2}s",

@@ -1146,8 +1146,8 @@ u3:74 | Variable | expr | _c::main::main::expr |
 u3:75 | Variable | eval | _c::main::main::eval |
 
 --- expect:symbol-deps ---
-u0:2 <- [u0:22, u1:43, u1:43, u1:44, u2:56, u2:58, u2:59, u2:59, u2:60, u2:61, u2:67]
-u0:22 -> [u0:2, u0:23, u0:24, u0:28, u0:31, u0:36]
+u0:2 <- [u0:22, u0:22, u1:43, u1:43, u1:44, u2:56, u2:58, u2:59, u2:59, u2:60, u2:61, u2:67]
+u0:22 -> [u0:2, u0:2, u0:23, u0:24, u0:28, u0:31, u0:36]
 u0:22 <- [u1:45, u1:47, u1:48, u1:49, u1:51, u1:52, u1:52, u1:53, u2:61, u2:63, u2:64, u2:67, u2:69, u3:73, u3:73]
 u0:23 <- [u0:22, u1:52, u3:73]
 u0:24 <- [u0:22, u3:73, u3:74]
@@ -1285,8 +1285,10 @@ digraph architecture {
       n6[label="ExprVisitor", full_path="$TMP/src/visitor.rs:3", sym_ty="Trait", shape=box];
     }
   }
-  n6 -> n12 [from="trait", to="impl"];
   n18 -> n2 [from="caller", to="callee"];
+  n2 -> n3 [from="struct", to="field"];
+  n2 -> n4 [from="struct", to="field"];
+  n6 -> n12 [from="trait", to="impl"];
 }
 
 

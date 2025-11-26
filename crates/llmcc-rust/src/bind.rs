@@ -887,15 +887,26 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     symbol.add_dependency(arg, Some(&[SymKind::TypeParameter]));
                 }
 
-                if let Some(ns) = namespace.opt_symbol() {
-                    ns.add_dependency(ty.unwrap_or(symbol), Some(&[SymKind::TypeParameter]));
+                // Use FieldType for enum variant inner types so they appear in arch-graph
+                if let Some(ns) = namespace.opt_symbol()
+                    && let Some(primary) = ty
+                {
+                    ns.add_dependency_with_kind(
+                        primary,
+                        DepKind::FieldType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
                 }
             }
 
+            // Handle tuple-like enum variants: Root(&'hir HirRoot)
+            // The type is in the body field as ordered_field_declaration_list
             if let Some(body_node) = node.child_by_field(*unit, LangRust::field_body)
                 && let Some(ns) = namespace.opt_symbol()
             {
-                self.add_type_dependencies_with(unit, &body_node, scopes, ns);
+                let mut resolver = ExprResolver::new(unit, scopes);
+                let (ty, args) = resolver.resolve_type_with_args(&body_node);
+                Self::add_type_dependencies_with_kind(ns, ty, &args, DepKind::FieldType);
             }
         }
     }
