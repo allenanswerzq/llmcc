@@ -232,215 +232,227 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1   | Primitive      | i32            | i32                                                 | [global]
-u0:2   | Primitive      | i64            | i64                                                 | [global]
-u0:3   | Primitive      | i16            | i16                                                 | [global]
-u0:4   | Primitive      | i8             | i8                                                  | [global]
-u0:5   | Primitive      | i128           | i128                                                | [global]
-u0:6   | Primitive      | isize          | isize                                               | [global]
-u0:7   | Primitive      | u32            | u32                                                 | [global]
-u0:8   | Primitive      | u64            | u64                                                 | [global]
-u0:9   | Primitive      | u16            | u16                                                 | [global]
-u0:10  | Primitive      | u8             | u8                                                  | [global]
-u0:11  | Primitive      | u128           | u128                                                | [global]
-u0:12  | Primitive      | usize          | usize                                               | [global]
-u0:13  | Primitive      | f32            | f32                                                 | [global]
-u0:14  | Primitive      | f64            | f64                                                 | [global]
-u0:15  | Primitive      | bool           | bool                                                | [global]
-u0:16  | Primitive      | char           | char                                                | [global]
-u0:17  | Primitive      | str            | str                                                 | [global]
-u0:18  | Primitive      | String         | String                                              | [global]
-u0:19  | Crate          | _c             | _c                                                  | [global]
-u0:20  | Crate          | crate          | _c::crate                                           |         
-u0:21  | File           | lib            | _c::lib                                             |         
-u1:22  | Crate          | crate          | _c::crate                                           |         
-u1:23  | File           | types          | _c::types                                           |         
-u1:24  | Struct         | Id             | _c::types::Id                                       | [global]
-u1:25  | Struct         | Timestamp      | _c::types::Timestamp                                | [global]
-u1:26  | Struct         | Money          | _c::types::Money                                    | [global]
-u1:27  | Field          | cents          | _c::types::Money::cents                             |         
-u1:28  | Field          | currency       | _c::types::Money::currency                          |         
-u1:29  | Function       | new            | _c::types::Money::new                               | [global]
-u1:30  | Variable       | cents          | _c::types::Money::new::cents                        |         
-u1:31  | Variable       | currency       | _c::types::Money::new::currency                     |         
-u1:32  | Function       | usd            | _c::types::Money::usd                               | [global]
-u1:33  | Variable       | cents          | _c::types::Money::usd::cents                        |         
-u2:34  | Crate          | crate          | _c::crate                                           |         
-u2:35  | File           | traits         | _c::traits                                          |         
-u2:36  | Trait          | Entity         | _c::traits::Entity                                  | [global]
-u2:37  | Function       | id             | _c::traits::Entity::id                              |         
-u2:38  | Trait          | Repository     | _c::traits::Repository                              | [global]
-u2:39  | TypeParameter  | T              | _c::traits::Repository::T                           |         
-u2:40  | Function       | find           | _c::traits::Repository::find                        |         
-u2:41  | Variable       | id             | _c::traits::Repository::find::id                    |         
-u2:42  | Function       | save           | _c::traits::Repository::save                        |         
-u2:43  | Variable       | entity         | _c::traits::Repository::save::entity                |         
-u3:44  | Crate          | crate          | _c::crate                                           |         
-u3:45  | File           | lib            | _c::lib                                             |         
-u4:46  | Crate          | crate          | _c::crate                                           |         
-u4:47  | File           | user           | _c::user                                            |         
-u4:48  | Struct         | User           | _c::user::User                                      | [global]
-u4:49  | Field          | id             | _c::user::User::id                                  |         
-u4:50  | Field          | name           | _c::user::User::name                                |         
-u4:51  | Field          | email          | _c::user::User::email                               |         
-u4:52  | Function       | new            | _c::user::User::new                                 | [global]
-u4:53  | Variable       | id             | _c::user::User::new::id                             |         
-u4:54  | Variable       | name           | _c::user::User::new::name                           |         
-u4:55  | Variable       | email          | _c::user::User::new::email                          |         
-u4:56  | UnresolvedType | Entity         | _c::user::Entity                                    |         
-u5:57  | Crate          | crate          | _c::crate                                           |         
-u5:58  | File           | account        | _c::account                                         |         
-u5:59  | Struct         | Account        | _c::account::Account                                | [global]
-u5:60  | Field          | id             | _c::account::Account::id                            |         
-u5:61  | Field          | user           | _c::account::Account::user                          |         
-u5:62  | Field          | balance        | _c::account::Account::balance                       |         
-u5:63  | Function       | new            | _c::account::Account::new                           | [global]
-u5:64  | Variable       | id             | _c::account::Account::new::id                       |         
-u5:65  | Variable       | user           | _c::account::Account::new::user                     |         
-u5:66  | Function       | deposit        | _c::account::Account::deposit                       | [global]
-u5:67  | Variable       | amount         | _c::account::Account::deposit::amount               |         
-u5:68  | Function       | withdraw       | _c::account::Account::withdraw                      | [global]
-u5:69  | Variable       | amount         | _c::account::Account::withdraw::amount              |         
-u5:70  | UnresolvedType | Entity         | _c::account::Entity                                 |         
-u6:71  | Crate          | crate          | _c::crate                                           |         
-u6:72  | File           | lib            | _c::lib                                             |         
-u7:73  | Crate          | crate          | _c::crate                                           |         
-u7:74  | File           | repos          | _c::repos                                           |         
-u7:75  | Struct         | UserRepo       | _c::repos::UserRepo                                 | [global]
-u7:76  | Field          | users          | _c::repos::UserRepo::users                          |         
-u7:77  | Field          | next_id        | _c::repos::UserRepo::next_id                        |         
-u7:78  | Function       | new            | _c::repos::UserRepo::new                            | [global]
-u7:79  | UnresolvedType | Repository     | _c::repos::Repository                               |         
-u7:80  | Function       | find           | _c::repos::UserRepo::find                           |         
-u7:81  | Variable       | id             | _c::repos::UserRepo::find::id                       |         
-u7:82  | Function       | save           | _c::repos::UserRepo::save                           |         
-u7:83  | Variable       | user           | _c::repos::UserRepo::save::user                     |         
-u7:84  | Variable       | id             | _c::repos::UserRepo::save::id                       |         
-u7:85  | Struct         | AccountRepo    | _c::repos::AccountRepo                              | [global]
-u7:86  | Field          | accounts       | _c::repos::AccountRepo::accounts                    |         
-u7:87  | Field          | next_id        | _c::repos::AccountRepo::next_id                     |         
-u7:88  | Variable       | account        | _c::repos::UserRepo::save::account                  |         
-u7:89  | Variable       | id             | _c::repos::UserRepo::save::id                       |         
-u8:90  | Crate          | crate          | _c::crate                                           |         
-u8:91  | File           | services       | _c::services                                        |         
-u8:92  | Struct         | BankingService | _c::services::BankingService                        | [global]
-u8:93  | Field          | users          | _c::services::BankingService::users                 |         
-u8:94  | Field          | accounts       | _c::services::BankingService::accounts              |         
-u8:95  | Function       | new            | _c::services::BankingService::new                   | [global]
-u8:96  | Function       | create_user    | _c::services::BankingService::create_user           | [global]
-u8:97  | Variable       | name           | _c::services::BankingService::create_user::name     |         
-u8:98  | Variable       | email          | _c::services::BankingService::create_user::email    |         
-u8:99  | Variable       | user           | _c::services::BankingService::create_user::user     |         
-u8:100 | Function       | open_account   | _c::services::BankingService::open_account          | [global]
-u8:101 | Variable       | user_id        | _c::services::BankingService::open_account::user_id |         
-u8:102 | Variable       | user           | _c::services::BankingService::open_account::user    |         
-u8:103 | Variable       | account        | _c::services::BankingService::open_account::account |         
-u8:104 | Function       | deposit        | _c::services::BankingService::deposit               | [global]
-u8:105 | Variable       | account_id     | _c::services::BankingService::deposit::account_id   |         
-u8:106 | Variable       | amount         | _c::services::BankingService::deposit::amount       |         
-u9:107 | Crate          | crate          | _c::crate                                           |         
-u9:108 | File           | main           | _c::main                                            |         
-u9:109 | Function       | main           | _c::main::main                                      |         
-u9:110 | Variable       | bank           | _c::main::main::bank                                |         
-u9:111 | Variable       | user_id        | _c::main::main::user_id                             |         
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate | 
+u0:21 | File | lib | _c::lib | 
+u1:22 | Crate | crate | _c::crate | 
+u1:23 | File | repos | _c::repos | 
+u1:24 | Struct | UserRepo | _c::repos::UserRepo | [global]
+u1:25 | Field | users | _c::repos::UserRepo::users | 
+u1:26 | Field | next_id | _c::repos::UserRepo::next_id | 
+u1:27 | Function | new | _c::repos::UserRepo::new | [global]
+u1:28 | UnresolvedType | Repository | _c::repos::Repository | 
+u1:29 | Function | find | _c::repos::UserRepo::find | 
+u1:30 | Variable | id | _c::repos::UserRepo::find::id | 
+u1:31 | Function | save | _c::repos::UserRepo::save | 
+u1:32 | Variable | user | _c::repos::UserRepo::save::user | 
+u1:33 | Variable | id | _c::repos::UserRepo::save::id | 
+u1:34 | Struct | AccountRepo | _c::repos::AccountRepo | [global]
+u1:35 | Field | accounts | _c::repos::AccountRepo::accounts | 
+u1:36 | Field | next_id | _c::repos::AccountRepo::next_id | 
+u1:37 | Function | new | _c::repos::AccountRepo::new | [global]
+u1:38 | Function | find | _c::repos::AccountRepo::find | 
+u1:39 | Variable | id | _c::repos::AccountRepo::find::id | 
+u1:40 | Function | save | _c::repos::AccountRepo::save | 
+u1:41 | Variable | account | _c::repos::AccountRepo::save::account | 
+u1:42 | Variable | id | _c::repos::AccountRepo::save::id | 
+u2:43 | Crate | crate | _c::crate | 
+u2:44 | File | services | _c::services | 
+u2:45 | Struct | BankingService | _c::services::BankingService | [global]
+u2:46 | Field | users | _c::services::BankingService::users | 
+u2:47 | Field | accounts | _c::services::BankingService::accounts | 
+u2:48 | Function | new | _c::services::BankingService::new | [global]
+u2:49 | Function | create_user | _c::services::BankingService::create_user | [global]
+u2:50 | Variable | name | _c::services::BankingService::create_user::name | 
+u2:51 | Variable | email | _c::services::BankingService::create_user::email | 
+u2:52 | Variable | user | _c::services::BankingService::create_user::user | 
+u2:53 | Function | open_account | _c::services::BankingService::open_account | [global]
+u2:54 | Variable | user_id | _c::services::BankingService::open_account::user_id | 
+u2:55 | Variable | user | _c::services::BankingService::open_account::user | 
+u2:56 | Variable | account | _c::services::BankingService::open_account::account | 
+u2:57 | Function | deposit | _c::services::BankingService::deposit | [global]
+u2:58 | Variable | account_id | _c::services::BankingService::deposit::account_id | 
+u2:59 | Variable | amount | _c::services::BankingService::deposit::amount | 
+u3:60 | Crate | crate | _c::crate | 
+u3:61 | File | lib | _c::lib | 
+u4:62 | Crate | crate | _c::crate | 
+u4:63 | File | types | _c::types | 
+u4:64 | Struct | Id | _c::types::Id | [global]
+u4:65 | Struct | Timestamp | _c::types::Timestamp | [global]
+u4:66 | Struct | Money | _c::types::Money | [global]
+u4:67 | Field | cents | _c::types::Money::cents | 
+u4:68 | Field | currency | _c::types::Money::currency | 
+u4:69 | Function | new | _c::types::Money::new | [global]
+u4:70 | Variable | cents | _c::types::Money::new::cents | 
+u4:71 | Variable | currency | _c::types::Money::new::currency | 
+u4:72 | Function | usd | _c::types::Money::usd | [global]
+u4:73 | Variable | cents | _c::types::Money::usd::cents | 
+u5:74 | Crate | crate | _c::crate | 
+u5:75 | File | traits | _c::traits | 
+u5:76 | Trait | Entity | _c::traits::Entity | [global]
+u5:77 | Function | id | _c::traits::Entity::id | 
+u5:78 | Trait | Repository | _c::traits::Repository | [global]
+u5:79 | TypeParameter | T | _c::traits::Repository::T | 
+u5:80 | Function | find | _c::traits::Repository::find | 
+u5:81 | Variable | id | _c::traits::Repository::find::id | 
+u5:82 | Function | save | _c::traits::Repository::save | 
+u5:83 | Variable | entity | _c::traits::Repository::save::entity | 
+u6:84 | Crate | crate | _c::crate | 
+u6:85 | File | lib | _c::lib | 
+u7:86 | Crate | crate | _c::crate | 
+u7:87 | File | user | _c::user | 
+u7:88 | Struct | User | _c::user::User | [global]
+u7:89 | Field | id | _c::user::User::id | 
+u7:90 | Field | name | _c::user::User::name | 
+u7:91 | Field | email | _c::user::User::email | 
+u7:92 | Function | new | _c::user::User::new | [global]
+u7:93 | Variable | id | _c::user::User::new::id | 
+u7:94 | Variable | name | _c::user::User::new::name | 
+u7:95 | Variable | email | _c::user::User::new::email | 
+u7:96 | UnresolvedType | Entity | _c::user::Entity | 
+u8:97 | Crate | crate | _c::crate | 
+u8:98 | File | account | _c::account | 
+u8:99 | Struct | Account | _c::account::Account | [global]
+u8:100 | Field | id | _c::account::Account::id | 
+u8:101 | Field | user | _c::account::Account::user | 
+u8:102 | Field | balance | _c::account::Account::balance | 
+u8:103 | Function | new | _c::account::Account::new | [global]
+u8:104 | Variable | id | _c::account::Account::new::id | 
+u8:105 | Variable | user | _c::account::Account::new::user | 
+u8:106 | Function | deposit | _c::account::Account::deposit | [global]
+u8:107 | Variable | amount | _c::account::Account::deposit::amount | 
+u8:108 | Function | withdraw | _c::account::Account::withdraw | [global]
+u8:109 | Variable | amount | _c::account::Account::withdraw::amount | 
+u8:110 | UnresolvedType | Entity | _c::account::Entity | 
+u9:111 | Crate | crate | _c::crate | 
+u9:112 | File | main | _c::main | 
+u9:113 | Function | main | _c::main::main | 
+u9:114 | Variable | bank | _c::main::main::bank | 
+u9:115 | Variable | user_id | _c::main::main::user_id | 
 
 --- expect:symbol-deps ---
-u0:15 <- [u5:68, u8:104]
-u0:17 <- [u1:29, u1:31]
-u0:18 <- [u1:26, u1:28, u4:48, u4:50, u4:51, u4:52, u4:54, u4:55, u8:96, u8:97, u8:98]
-u0:2 <- [u1:26, u1:27, u1:29, u1:30, u1:32, u1:33, u8:104, u8:106]
-u0:8 <- [u1:24, u1:25, u4:52, u4:53, u5:63, u5:64, u7:75, u7:77, u7:85, u7:87]
-u1:24 -> [u0:8]
-u1:24 <- [u2:40, u2:41, u4:48, u4:49, u5:59, u5:60, u7:80, u7:81, u7:82, u7:84, u7:89, u8:100, u8:101, u8:104, u8:105]
-u1:25 -> [u0:8]
-u1:26 -> [u0:18, u0:2, u1:32]
-u1:26 <- [u1:29, u5:59, u5:62, u5:66, u5:67, u5:68, u5:69]
-u1:27 -> [u0:2]
-u1:28 -> [u0:18]
-u1:29 -> [u0:17, u0:2, u1:26]
-u1:29 <- [u1:32]
-u1:30 -> [u0:2]
-u1:31 -> [u0:17]
-u1:32 -> [u0:2, u1:29]
-u1:32 <- [u1:26, u5:63, u8:104]
-u1:33 -> [u0:2]
-u2:36 -> [u2:37]
-u2:36 <- [u2:38]
-u2:37 <- [u2:36]
-u2:38 -> [u2:36, u2:40, u2:42]
-u2:40 -> [u1:24]
-u2:40 <- [u2:38]
-u2:41 -> [u1:24]
-u2:42 <- [u2:38]
-u4:48 -> [u0:18, u1:24, u4:49]
-u4:48 <- [u4:52, u5:59, u5:61, u5:63, u5:65, u7:75, u7:76, u7:82, u7:83, u8:96, u8:99]
-u4:49 -> [u1:24]
-u4:49 <- [u4:48]
-u4:50 -> [u0:18]
-u4:51 -> [u0:18]
-u4:52 -> [u0:18, u0:8, u4:48]
-u4:52 <- [u8:96]
-u4:53 -> [u0:8]
-u4:54 -> [u0:18]
-u4:55 -> [u0:18]
-u5:59 -> [u1:24, u1:26, u4:48, u5:60, u5:66, u5:68]
-u5:59 <- [u5:63, u7:82, u7:85, u7:86, u7:88, u8:100, u8:103]
-u5:60 -> [u1:24]
-u5:60 <- [u5:59]
-u5:61 -> [u4:48]
-u5:62 -> [u1:26]
-u5:63 -> [u0:8, u1:32, u4:48, u5:59]
-u5:63 <- [u8:100]
-u5:64 -> [u0:8]
-u5:65 -> [u4:48]
-u5:66 -> [u1:26]
-u5:66 <- [u5:59]
-u5:67 -> [u1:26]
-u5:68 -> [u0:15, u1:26]
-u5:68 <- [u5:59]
-u5:69 -> [u1:26]
-u7:75 -> [u0:8, u4:48, u7:80, u7:82]
-u7:75 <- [u7:78, u8:100, u8:102, u8:92, u8:93]
-u7:76 -> [u4:48]
-u7:77 -> [u0:8]
-u7:78 -> [u7:75, u7:85]
-u7:78 <- [u8:95]
-u7:80 -> [u1:24]
-u7:80 <- [u7:75, u7:85, u8:100, u8:104]
-u7:81 -> [u1:24]
-u7:82 -> [u1:24, u4:48, u5:59]
-u7:82 <- [u7:75, u7:85, u8:100, u8:96]
-u7:83 -> [u4:48]
-u7:84 -> [u1:24]
-u7:85 -> [u0:8, u5:59, u7:80, u7:82]
-u7:85 <- [u7:78, u8:92, u8:94]
-u7:86 -> [u5:59]
-u7:87 -> [u0:8]
-u7:88 -> [u5:59]
-u7:89 -> [u1:24]
-u8:100 -> [u1:24, u5:59, u5:63, u7:75, u7:80, u7:82]
-u8:100 <- [u8:92, u9:109]
-u8:101 -> [u1:24]
-u8:102 -> [u7:75]
-u8:103 -> [u5:59]
-u8:104 -> [u0:15, u0:2, u1:24, u1:32, u7:80]
-u8:104 <- [u8:92, u9:109]
-u8:105 -> [u1:24]
-u8:106 -> [u0:2]
-u8:92 -> [u7:75, u7:85, u8:100, u8:104, u8:96]
-u8:92 <- [u8:95, u9:109, u9:110, u9:111]
-u8:93 -> [u7:75]
-u8:94 -> [u7:85]
-u8:95 -> [u7:78, u8:92]
-u8:95 <- [u9:109]
-u8:96 -> [u0:18, u4:48, u4:52, u7:82]
-u8:96 <- [u8:92, u9:109]
-u8:97 -> [u0:18]
-u8:98 -> [u0:18]
-u8:99 -> [u4:48]
-u9:109 -> [u8:100, u8:104, u8:92, u8:95, u8:96]
-u9:110 -> [u8:92]
-u9:111 -> [u8:92]
+u0:1 <- [u2:49, u2:52, u2:53, u2:56]
+u0:15 <- [u2:57, u8:108]
+u0:17 <- [u4:69, u4:71]
+u0:18 <- [u2:49, u2:50, u2:51, u4:66, u4:68, u7:88, u7:90, u7:91, u7:92, u7:94, u7:95]
+u0:2 <- [u2:57, u2:59, u4:66, u4:67, u4:69, u4:70, u4:72, u4:73]
+u0:8 <- [u1:24, u1:26, u1:34, u1:36, u4:64, u4:65, u7:92, u7:93, u8:103, u8:104]
+u1:24 -> [u0:8, u1:29, u1:31, u7:88]
+u1:24 <- [u1:27, u2:45, u2:46, u2:53, u2:55]
+u1:25 -> [u7:88]
+u1:26 -> [u0:8]
+u1:27 -> [u1:24]
+u1:27 <- [u2:48]
+u1:29 -> [u4:64]
+u1:29 <- [u1:24]
+u1:30 -> [u4:64]
+u1:31 -> [u4:64, u7:88]
+u1:31 <- [u1:24]
+u1:32 -> [u7:88]
+u1:33 -> [u4:64]
+u1:34 -> [u0:8, u1:38, u1:40, u8:99]
+u1:34 <- [u1:37, u2:45, u2:47]
+u1:35 -> [u8:99]
+u1:36 -> [u0:8]
+u1:37 -> [u1:34]
+u1:37 <- [u2:48]
+u1:38 -> [u4:64]
+u1:38 <- [u1:34]
+u1:39 -> [u4:64]
+u1:40 -> [u4:64, u8:99]
+u1:40 <- [u1:34]
+u1:41 -> [u8:99]
+u1:42 -> [u4:64]
+u2:45 -> [u1:24, u1:34, u2:49, u2:53, u2:57]
+u2:45 <- [u2:48, u9:113, u9:114, u9:115]
+u2:46 -> [u1:24]
+u2:47 -> [u1:34]
+u2:48 -> [u1:27, u1:37, u2:45]
+u2:48 <- [u9:113]
+u2:49 -> [u0:1, u0:18, u5:82, u7:92]
+u2:49 <- [u2:45, u9:113]
+u2:50 -> [u0:18]
+u2:51 -> [u0:18]
+u2:52 -> [u0:1]
+u2:53 -> [u0:1, u1:24, u4:64, u5:80, u5:82, u8:103]
+u2:53 <- [u2:45, u9:113]
+u2:54 -> [u4:64]
+u2:55 -> [u1:24]
+u2:56 -> [u0:1]
+u2:57 -> [u0:15, u0:2, u4:64, u4:72, u5:80]
+u2:57 <- [u2:45]
+u2:58 -> [u4:64]
+u2:59 -> [u0:2]
+u4:64 -> [u0:8]
+u4:64 <- [u1:29, u1:30, u1:31, u1:33, u1:38, u1:39, u1:40, u1:42, u2:53, u2:54, u2:57, u2:58, u5:80, u5:81, u7:88, u7:89, u8:100, u8:99]
+u4:65 -> [u0:8]
+u4:66 -> [u0:18, u0:2, u4:72]
+u4:66 <- [u4:69, u8:102, u8:106, u8:107, u8:108, u8:109, u8:99]
+u4:67 -> [u0:2]
+u4:68 -> [u0:18]
+u4:69 -> [u0:17, u0:2, u4:66]
+u4:69 <- [u4:72]
+u4:70 -> [u0:2]
+u4:71 -> [u0:17]
+u4:72 -> [u0:2, u4:69]
+u4:72 <- [u2:57, u4:66, u8:103]
+u4:73 -> [u0:2]
+u5:76 -> [u5:77]
+u5:76 <- [u5:78]
+u5:77 <- [u5:76]
+u5:78 -> [u5:76, u5:80, u5:82]
+u5:80 -> [u4:64]
+u5:80 <- [u2:53, u2:57, u5:78]
+u5:81 -> [u4:64]
+u5:82 <- [u2:49, u2:53, u5:78]
+u7:88 -> [u0:18, u4:64, u7:89]
+u7:88 <- [u1:24, u1:25, u1:31, u1:32, u7:92, u8:101, u8:103, u8:105, u8:99]
+u7:89 -> [u4:64]
+u7:89 <- [u7:88]
+u7:90 -> [u0:18]
+u7:91 -> [u0:18]
+u7:92 -> [u0:18, u0:8, u7:88]
+u7:92 <- [u2:49]
+u7:93 -> [u0:8]
+u7:94 -> [u0:18]
+u7:95 -> [u0:18]
+u8:100 -> [u4:64]
+u8:100 <- [u8:99]
+u8:101 -> [u7:88]
+u8:102 -> [u4:66]
+u8:103 -> [u0:8, u4:72, u7:88, u8:99]
+u8:103 <- [u2:53]
+u8:104 -> [u0:8]
+u8:105 -> [u7:88]
+u8:106 -> [u4:66]
+u8:106 <- [u8:99, u9:113]
+u8:107 -> [u4:66]
+u8:108 -> [u0:15, u4:66]
+u8:108 <- [u8:99]
+u8:109 -> [u4:66]
+u8:99 -> [u4:64, u4:66, u7:88, u8:100, u8:106, u8:108]
+u8:99 <- [u1:34, u1:35, u1:40, u1:41, u8:103]
+u9:113 -> [u2:45, u2:48, u2:49, u2:53, u8:106]
+u9:114 -> [u2:45]
+u9:115 -> [u2:45]
 
 
 ===============================================================================
@@ -627,194 +639,192 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1   | Primitive      | i32                | i32                                                      | [global]
-u0:2   | Primitive      | i64                | i64                                                      | [global]
-u0:3   | Primitive      | i16                | i16                                                      | [global]
-u0:4   | Primitive      | i8                 | i8                                                       | [global]
-u0:5   | Primitive      | i128               | i128                                                     | [global]
-u0:6   | Primitive      | isize              | isize                                                    | [global]
-u0:7   | Primitive      | u32                | u32                                                      | [global]
-u0:8   | Primitive      | u64                | u64                                                      | [global]
-u0:9   | Primitive      | u16                | u16                                                      | [global]
-u0:10  | Primitive      | u8                 | u8                                                       | [global]
-u0:11  | Primitive      | u128               | u128                                                     | [global]
-u0:12  | Primitive      | usize              | usize                                                    | [global]
-u0:13  | Primitive      | f32                | f32                                                      | [global]
-u0:14  | Primitive      | f64                | f64                                                      | [global]
-u0:15  | Primitive      | bool               | bool                                                     | [global]
-u0:16  | Primitive      | char               | char                                                     | [global]
-u0:17  | Primitive      | str                | str                                                      | [global]
-u0:18  | Primitive      | String             | String                                                   | [global]
-u0:19  | Crate          | _c                 | _c                                                       | [global]
-u0:20  | Crate          | crate              | _c::crate                                                |         
-u0:21  | File           | lib                | _c::lib                                                  |         
-u1:22  | Crate          | crate              | _c::crate                                                |         
-u1:23  | Module         | plugin_api         | _c::plugin_api                                           |         
-u1:24  | File           | mod                | _c::plugin_api::mod                                      |         
-u1:25  | Trait          | Plugin             | _c::plugin_api::mod::Plugin                              | [global]
-u1:26  | Function       | name               | _c::plugin_api::mod::Plugin::name                        |         
-u1:27  | Function       | version            | _c::plugin_api::mod::Plugin::version                     |         
-u1:28  | Function       | initialize         | _c::plugin_api::mod::Plugin::initialize                  |         
-u1:29  | Function       | shutdown           | _c::plugin_api::mod::Plugin::shutdown                    |         
-u1:30  | Trait          | TextProcessor      | _c::plugin_api::mod::TextProcessor                       | [global]
-u1:31  | Function       | process            | _c::plugin_api::mod::TextProcessor::process              |         
-u1:32  | Variable       | input              | _c::plugin_api::mod::TextProcessor::process::input       |         
-u1:33  | Trait          | Analyzer           | _c::plugin_api::mod::Analyzer                            | [global]
-u1:34  | Function       | analyze            | _c::plugin_api::mod::Analyzer::analyze                   |         
-u1:35  | Variable       | input              | _c::plugin_api::mod::Analyzer::analyze::input            |         
-u1:36  | Struct         | AnalysisResult     | _c::plugin_api::mod::AnalysisResult                      | [global]
-u1:37  | Field          | word_count         | _c::plugin_api::mod::AnalysisResult::word_count          |         
-u1:38  | Field          | char_count         | _c::plugin_api::mod::AnalysisResult::char_count          |         
-u1:39  | Field          | line_count         | _c::plugin_api::mod::AnalysisResult::line_count          |         
-u2:40  | Crate          | crate              | _c::crate                                                |         
-u2:41  | Module         | core               | _c::core                                                 |         
-u2:42  | File           | mod                | _c::core::mod                                            |         
-u2:43  | Struct         | PluginManager      | _c::core::mod::PluginManager                             | [global]
-u2:44  | Field          | processors         | _c::core::mod::PluginManager::processors                 |         
-u2:45  | Field          | analyzers          | _c::core::mod::PluginManager::analyzers                  |         
-u2:46  | Function       | new                | _c::core::mod::PluginManager::new                        | [global]
-u2:47  | Function       | register_processor | _c::core::mod::PluginManager::register_processor         | [global]
-u2:48  | Variable       | plugin             | _c::core::mod::PluginManager::register_processor::plugin |         
-u2:49  | Function       | register_analyzer  | _c::core::mod::PluginManager::register_analyzer          | [global]
-u2:50  | Variable       | plugin             | _c::core::mod::PluginManager::register_analyzer::plugin  |         
-u2:51  | Function       | process_text       | _c::core::mod::PluginManager::process_text               | [global]
-u2:52  | Variable       | input              | _c::core::mod::PluginManager::process_text::input        |         
-u2:53  | Variable       | result             | _c::core::mod::PluginManager::process_text::result       |         
-u2:54  | Function       | shutdown           | _c::core::mod::PluginManager::shutdown                   | [global]
-u3:55  | Crate          | crate              | _c::crate                                                |         
-u3:56  | Module         | plugins            | _c::plugins                                              |         
-u3:57  | File           | mod                | _c::plugins::mod                                         |         
-u4:58  | Crate          | crate              | _c::crate                                                |         
-u4:59  | Module         | plugins            | _c::plugins                                              |         
-u4:60  | File           | uppercase          | _c::plugins::uppercase                                   |         
-u4:61  | Struct         | UppercasePlugin    | _c::plugins::uppercase::UppercasePlugin                  | [global]
-u4:62  | Field          | initialized        | _c::plugins::uppercase::UppercasePlugin::initialized     |         
-u4:63  | Function       | new                | _c::plugins::uppercase::UppercasePlugin::new             | [global]
-u4:64  | UnresolvedType | Plugin             | _c::plugins::uppercase::Plugin                           |         
-u4:65  | Function       | name               | _c::plugins::uppercase::UppercasePlugin::name            |         
-u4:66  | Function       | version            | _c::plugins::uppercase::UppercasePlugin::version         |         
-u4:67  | Function       | initialize         | _c::plugins::uppercase::UppercasePlugin::initialize      |         
-u4:68  | Function       | shutdown           | _c::plugins::uppercase::UppercasePlugin::shutdown        |         
-u4:69  | UnresolvedType | TextProcessor      | _c::plugins::uppercase::TextProcessor                    |         
-u4:70  | Function       | process            | _c::plugins::uppercase::UppercasePlugin::process         |         
-u4:71  | Variable       | input              | _c::plugins::uppercase::UppercasePlugin::process::input  |         
-u5:72  | Crate          | crate              | _c::crate                                                |         
-u5:73  | Module         | plugins            | _c::plugins                                              |         
-u5:74  | File           | trimmer            | _c::plugins::trimmer                                     |         
-u5:75  | Struct         | TrimmerPlugin      | _c::plugins::trimmer::TrimmerPlugin                      | [global]
-u5:76  | Function       | new                | _c::plugins::trimmer::TrimmerPlugin::new                 | [global]
-u5:77  | UnresolvedType | Plugin             | _c::plugins::trimmer::Plugin                             |         
-u5:78  | Function       | name               | _c::plugins::trimmer::TrimmerPlugin::name                |         
-u5:79  | Function       | version            | _c::plugins::trimmer::TrimmerPlugin::version             |         
-u5:80  | Function       | initialize         | _c::plugins::trimmer::TrimmerPlugin::initialize          |         
-u5:81  | Function       | shutdown           | _c::plugins::trimmer::TrimmerPlugin::shutdown            |         
-u5:82  | UnresolvedType | TextProcessor      | _c::plugins::trimmer::TextProcessor                      |         
-u5:83  | Function       | process            | _c::plugins::trimmer::TrimmerPlugin::process             |         
-u5:84  | Variable       | input              | _c::plugins::trimmer::TrimmerPlugin::process::input      |         
-u6:85  | Crate          | crate              | _c::crate                                                |         
-u6:86  | Module         | plugins            | _c::plugins                                              |         
-u6:87  | File           | counter            | _c::plugins::counter                                     |         
-u6:88  | Struct         | CounterPlugin      | _c::plugins::counter::CounterPlugin                      | [global]
-u6:89  | Function       | new                | _c::plugins::counter::CounterPlugin::new                 | [global]
-u6:90  | UnresolvedType | Plugin             | _c::plugins::counter::Plugin                             |         
-u6:91  | Function       | name               | _c::plugins::counter::CounterPlugin::name                |         
-u6:92  | Function       | version            | _c::plugins::counter::CounterPlugin::version             |         
-u6:93  | Function       | initialize         | _c::plugins::counter::CounterPlugin::initialize          |         
-u6:94  | Function       | shutdown           | _c::plugins::counter::CounterPlugin::shutdown            |         
-u6:95  | UnresolvedType | Analyzer           | _c::plugins::counter::Analyzer                           |         
-u6:96  | Function       | analyze            | _c::plugins::counter::CounterPlugin::analyze             |         
-u6:97  | Variable       | input              | _c::plugins::counter::CounterPlugin::analyze::input      |         
-u7:98  | Crate          | crate              | _c::crate                                                |         
-u7:99  | File           | main               | _c::main                                                 |         
-u7:100 | Function       | main               | _c::main::main                                           |         
-u7:101 | Variable       | manager            | _c::main::main::manager                                  |         
-u7:102 | Variable       | input              | _c::main::main::input                                    |         
-u7:103 | Variable       | processed          | _c::main::main::processed                                |         
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate | 
+u0:21 | File | lib | _c::lib | 
+u1:22 | Crate | crate | _c::crate | 
+u1:23 | File | main | _c::main | 
+u1:24 | Function | main | _c::main::main | 
+u1:25 | Variable | manager | _c::main::main::manager | 
+u1:26 | Variable | input | _c::main::main::input | 
+u1:27 | Variable | processed | _c::main::main::processed | 
+u2:28 | Crate | crate | _c::crate | 
+u2:29 | Module | core | _c::core | 
+u2:30 | File | mod | _c::core::mod | 
+u2:31 | Struct | PluginManager | _c::core::mod::PluginManager | [global]
+u2:32 | Field | processors | _c::core::mod::PluginManager::processors | 
+u2:33 | Field | analyzers | _c::core::mod::PluginManager::analyzers | 
+u2:34 | Function | new | _c::core::mod::PluginManager::new | [global]
+u2:35 | Function | register_processor | _c::core::mod::PluginManager::register_processor | [global]
+u2:36 | Variable | plugin | _c::core::mod::PluginManager::register_processor::plugin | 
+u2:37 | Function | register_analyzer | _c::core::mod::PluginManager::register_analyzer | [global]
+u2:38 | Variable | plugin | _c::core::mod::PluginManager::register_analyzer::plugin | 
+u2:39 | Function | process_text | _c::core::mod::PluginManager::process_text | [global]
+u2:40 | Variable | input | _c::core::mod::PluginManager::process_text::input | 
+u2:41 | Variable | result | _c::core::mod::PluginManager::process_text::result | 
+u2:42 | Function | shutdown | _c::core::mod::PluginManager::shutdown | [global]
+u3:43 | Crate | crate | _c::crate | 
+u3:44 | Module | plugin_api | _c::plugin_api | 
+u3:45 | File | mod | _c::plugin_api::mod | 
+u3:46 | Trait | Plugin | _c::plugin_api::mod::Plugin | [global]
+u3:47 | Function | name | _c::plugin_api::mod::Plugin::name | 
+u3:48 | Function | version | _c::plugin_api::mod::Plugin::version | 
+u3:49 | Function | initialize | _c::plugin_api::mod::Plugin::initialize | 
+u3:50 | Function | shutdown | _c::plugin_api::mod::Plugin::shutdown | 
+u3:51 | Trait | TextProcessor | _c::plugin_api::mod::TextProcessor | [global]
+u3:52 | Function | process | _c::plugin_api::mod::TextProcessor::process | 
+u3:53 | Variable | input | _c::plugin_api::mod::TextProcessor::process::input | 
+u3:54 | Trait | Analyzer | _c::plugin_api::mod::Analyzer | [global]
+u3:55 | Function | analyze | _c::plugin_api::mod::Analyzer::analyze | 
+u3:56 | Variable | input | _c::plugin_api::mod::Analyzer::analyze::input | 
+u3:57 | Struct | AnalysisResult | _c::plugin_api::mod::AnalysisResult | [global]
+u3:58 | Field | word_count | _c::plugin_api::mod::AnalysisResult::word_count | 
+u3:59 | Field | char_count | _c::plugin_api::mod::AnalysisResult::char_count | 
+u3:60 | Field | line_count | _c::plugin_api::mod::AnalysisResult::line_count | 
+u4:61 | Crate | crate | _c::crate | 
+u4:62 | Module | plugins | _c::plugins | 
+u4:63 | File | mod | _c::plugins::mod | 
+u5:64 | Crate | crate | _c::crate | 
+u5:65 | Module | plugins | _c::plugins | 
+u5:66 | File | uppercase | _c::plugins::uppercase | 
+u5:67 | Struct | UppercasePlugin | _c::plugins::uppercase::UppercasePlugin | [global]
+u5:68 | Field | initialized | _c::plugins::uppercase::UppercasePlugin::initialized | 
+u5:69 | Function | new | _c::plugins::uppercase::UppercasePlugin::new | [global]
+u5:70 | UnresolvedType | Plugin | _c::plugins::uppercase::Plugin | 
+u5:71 | Function | name | _c::plugins::uppercase::UppercasePlugin::name | 
+u5:72 | Function | version | _c::plugins::uppercase::UppercasePlugin::version | 
+u5:73 | Function | initialize | _c::plugins::uppercase::UppercasePlugin::initialize | 
+u5:74 | Function | shutdown | _c::plugins::uppercase::UppercasePlugin::shutdown | 
+u5:75 | UnresolvedType | TextProcessor | _c::plugins::uppercase::TextProcessor | 
+u5:76 | Function | process | _c::plugins::uppercase::UppercasePlugin::process | 
+u5:77 | Variable | input | _c::plugins::uppercase::UppercasePlugin::process::input | 
+u6:78 | Crate | crate | _c::crate | 
+u6:79 | Module | plugins | _c::plugins | 
+u6:80 | File | trimmer | _c::plugins::trimmer | 
+u6:81 | Struct | TrimmerPlugin | _c::plugins::trimmer::TrimmerPlugin | [global]
+u6:82 | Function | new | _c::plugins::trimmer::TrimmerPlugin::new | [global]
+u6:83 | UnresolvedType | Plugin | _c::plugins::trimmer::Plugin | 
+u6:84 | Function | name | _c::plugins::trimmer::TrimmerPlugin::name | 
+u6:85 | Function | version | _c::plugins::trimmer::TrimmerPlugin::version | 
+u6:86 | Function | initialize | _c::plugins::trimmer::TrimmerPlugin::initialize | 
+u6:87 | Function | shutdown | _c::plugins::trimmer::TrimmerPlugin::shutdown | 
+u6:88 | UnresolvedType | TextProcessor | _c::plugins::trimmer::TextProcessor | 
+u6:89 | Function | process | _c::plugins::trimmer::TrimmerPlugin::process | 
+u6:90 | Variable | input | _c::plugins::trimmer::TrimmerPlugin::process::input | 
+u7:91 | Crate | crate | _c::crate | 
+u7:92 | Module | plugins | _c::plugins | 
+u7:93 | File | counter | _c::plugins::counter | 
+u7:94 | Struct | CounterPlugin | _c::plugins::counter::CounterPlugin | [global]
+u7:95 | Function | new | _c::plugins::counter::CounterPlugin::new | [global]
+u7:96 | UnresolvedType | Plugin | _c::plugins::counter::Plugin | 
+u7:97 | Function | name | _c::plugins::counter::CounterPlugin::name | 
+u7:98 | Function | version | _c::plugins::counter::CounterPlugin::version | 
+u7:99 | Function | initialize | _c::plugins::counter::CounterPlugin::initialize | 
+u7:100 | Function | shutdown | _c::plugins::counter::CounterPlugin::shutdown | 
+u7:101 | UnresolvedType | Analyzer | _c::plugins::counter::Analyzer | 
+u7:102 | Function | analyze | _c::plugins::counter::CounterPlugin::analyze | 
+u7:103 | Variable | input | _c::plugins::counter::CounterPlugin::analyze::input | 
 
 --- expect:symbol-deps ---
-u0:12 <- [u1:36, u1:37, u1:38, u1:39]
-u0:15 <- [u4:61, u4:62]
-u0:17 <- [u1:26, u1:27, u1:31, u1:32, u1:34, u1:35, u2:51, u2:52, u2:53, u4:65, u4:66, u4:70, u4:71, u5:78, u5:79, u5:83, u5:84, u6:91, u6:92, u6:96, u6:97, u7:100, u7:102]
-u1:25 -> [u1:26, u1:27, u1:28, u1:29]
-u1:25 <- [u1:30, u1:33]
+u0:12 <- [u3:57, u3:58, u3:59, u3:60]
+u0:15 <- [u5:67, u5:68]
+u0:17 <- [u1:24, u1:26, u2:39, u2:40, u2:41, u3:47, u3:48, u3:52, u3:53, u3:55, u3:56, u5:71, u5:72, u5:76, u5:77, u6:84, u6:85, u6:89, u6:90, u7:102, u7:103, u7:97, u7:98]
+u1:24 -> [u0:17, u2:34, u2:35, u2:37, u2:39, u5:69, u6:82, u7:100, u7:95]
 u1:26 -> [u0:17]
-u1:26 <- [u1:25]
-u1:27 -> [u0:17]
-u1:27 <- [u1:25]
-u1:28 <- [u1:25]
-u1:29 <- [u1:25]
-u1:30 -> [u1:25, u1:31]
-u1:30 <- [u2:43, u2:44, u2:47, u2:48]
-u1:31 -> [u0:17]
-u1:31 <- [u1:30]
-u1:32 -> [u0:17]
-u1:33 -> [u1:25, u1:34]
-u1:33 <- [u2:43, u2:45, u2:49, u2:50]
-u1:34 -> [u0:17]
-u1:34 <- [u1:33]
-u1:35 -> [u0:17]
-u1:36 -> [u0:12]
-u1:36 <- [u6:96]
-u1:37 -> [u0:12]
-u1:38 -> [u0:12]
-u1:39 -> [u0:12]
-u2:43 -> [u1:30, u1:33, u2:47, u2:49, u2:51, u2:54]
-u2:43 <- [u2:46, u7:100, u7:101, u7:103]
-u2:44 -> [u1:30]
-u2:45 -> [u1:33]
-u2:46 -> [u2:43]
-u2:46 <- [u7:100]
-u2:47 -> [u1:30, u4:63, u5:76, u6:93]
-u2:47 <- [u2:43, u7:100]
-u2:48 -> [u1:30]
-u2:49 -> [u1:33, u6:89, u6:93]
-u2:49 <- [u2:43, u7:100]
-u2:50 -> [u1:33]
-u2:51 -> [u0:17, u5:83]
-u2:51 <- [u2:43, u7:100]
-u2:52 -> [u0:17]
-u2:53 -> [u0:17]
-u2:54 <- [u2:43]
-u4:61 -> [u0:15, u4:65, u4:66, u4:67, u4:68, u4:70]
-u4:61 <- [u4:63]
-u4:62 -> [u0:15]
-u4:63 -> [u4:61]
-u4:63 <- [u2:47, u7:100]
-u4:65 -> [u0:17]
-u4:65 <- [u4:61]
-u4:66 -> [u0:17]
-u4:66 <- [u4:61]
-u4:67 <- [u4:61]
-u4:68 <- [u4:61]
-u4:70 -> [u0:17]
-u4:70 <- [u4:61]
-u4:71 -> [u0:17]
-u5:75 -> [u5:76, u5:78, u5:79, u5:80, u5:81, u5:83]
-u5:76 <- [u2:47, u5:75, u7:100]
-u5:78 -> [u0:17]
-u5:78 <- [u5:75]
-u5:79 -> [u0:17]
-u5:79 <- [u5:75]
-u5:80 <- [u5:75]
-u5:81 <- [u5:75]
-u5:83 -> [u0:17]
-u5:83 <- [u2:51, u5:75]
-u5:84 -> [u0:17]
-u6:88 -> [u6:89, u6:91, u6:92, u6:93, u6:94, u6:96]
-u6:89 <- [u2:49, u6:88, u7:100]
-u6:91 -> [u0:17]
-u6:91 <- [u6:88]
-u6:92 -> [u0:17]
-u6:92 <- [u6:88]
-u6:93 <- [u2:47, u2:49, u6:88]
-u6:94 <- [u6:88, u7:100]
-u6:96 -> [u0:17, u1:36]
-u6:96 <- [u6:88]
-u6:97 -> [u0:17]
-u7:100 -> [u0:17, u2:43, u2:46, u2:47, u2:49, u2:51, u4:63, u5:76, u6:89, u6:94]
-u7:101 -> [u2:43]
-u7:102 -> [u0:17]
-u7:103 -> [u2:43]
+u2:31 -> [u2:35, u2:37, u2:39, u2:42, u3:51, u3:54]
+u2:31 <- [u2:34]
+u2:32 -> [u3:51]
+u2:33 -> [u3:54]
+u2:34 -> [u2:31]
+u2:34 <- [u1:24]
+u2:35 -> [u3:51, u5:69, u6:82, u7:99]
+u2:35 <- [u1:24, u2:31]
+u2:36 -> [u3:51]
+u2:37 -> [u3:54, u7:95, u7:99]
+u2:37 <- [u1:24, u2:31]
+u2:38 -> [u3:54]
+u2:39 -> [u0:17, u6:89]
+u2:39 <- [u1:24, u2:31]
+u2:40 -> [u0:17]
+u2:41 -> [u0:17]
+u2:42 <- [u2:31]
+u3:46 -> [u3:47, u3:48, u3:49, u3:50]
+u3:46 <- [u3:51, u3:54]
+u3:47 -> [u0:17]
+u3:47 <- [u3:46]
+u3:48 -> [u0:17]
+u3:48 <- [u3:46]
+u3:49 <- [u3:46]
+u3:50 <- [u3:46]
+u3:51 -> [u3:46, u3:52]
+u3:51 <- [u2:31, u2:32, u2:35, u2:36]
+u3:52 -> [u0:17]
+u3:52 <- [u3:51]
+u3:53 -> [u0:17]
+u3:54 -> [u3:46, u3:55]
+u3:54 <- [u2:31, u2:33, u2:37, u2:38]
+u3:55 -> [u0:17]
+u3:55 <- [u3:54]
+u3:56 -> [u0:17]
+u3:57 -> [u0:12]
+u3:57 <- [u7:102]
+u3:58 -> [u0:12]
+u3:59 -> [u0:12]
+u3:60 -> [u0:12]
+u5:67 -> [u0:15, u5:71, u5:72, u5:73, u5:74, u5:76]
+u5:67 <- [u5:69]
+u5:68 -> [u0:15]
+u5:69 -> [u5:67]
+u5:69 <- [u1:24, u2:35]
+u5:71 -> [u0:17]
+u5:71 <- [u5:67]
+u5:72 -> [u0:17]
+u5:72 <- [u5:67]
+u5:73 <- [u5:67]
+u5:74 <- [u5:67]
+u5:76 -> [u0:17]
+u5:76 <- [u5:67]
+u5:77 -> [u0:17]
+u6:81 -> [u6:82, u6:84, u6:85, u6:86, u6:87, u6:89]
+u6:82 <- [u1:24, u2:35, u6:81]
+u6:84 -> [u0:17]
+u6:84 <- [u6:81]
+u6:85 -> [u0:17]
+u6:85 <- [u6:81]
+u6:86 <- [u6:81]
+u6:87 <- [u6:81]
+u6:89 -> [u0:17]
+u6:89 <- [u2:39, u6:81]
+u6:90 -> [u0:17]
+u7:100 <- [u1:24, u7:94]
+u7:102 -> [u0:17, u3:57]
+u7:102 <- [u7:94]
+u7:103 -> [u0:17]
+u7:94 -> [u7:100, u7:102, u7:95, u7:97, u7:98, u7:99]
+u7:95 <- [u1:24, u2:37, u7:94]
+u7:97 -> [u0:17]
+u7:97 <- [u7:94]
+u7:98 -> [u0:17]
+u7:98 <- [u7:94]
+u7:99 <- [u2:35, u2:37, u7:94]
 
 
 ===============================================================================

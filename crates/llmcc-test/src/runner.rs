@@ -303,15 +303,10 @@ fn build_pipeline_summary(
         );
     }
 
-    // Get file paths in declaration order from the case
-    let file_paths: Vec<String> = case
-        .files
-        .iter()
-        .map(|f| project.root().join(&f.path).to_string_lossy().to_string())
-        .collect();
-
+    // Don't provide file_paths - let collect_pipeline use discover_language_files
+    // which handles the prefixed filenames we created in materialize_case
     let options = PipelineOptions::new()
-        .with_file_paths(file_paths)
+        // file_paths is empty, so discover_language_files will be used
         .with_keep_symbols(needs_symbols)
         .with_build_graph(needs_graph)
         .with_build_block_reports(needs_block_reports)
@@ -880,8 +875,19 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     let temp_dir = tempfile::tempdir().context("failed to create temp dir for llmcc-test")?;
     let root_path = temp_dir.path().to_path_buf();
 
-    for file in &case.files {
-        let abs_path = root_path.join(Path::new(&file.path));
+    for (idx, file) in case.files.iter().enumerate() {
+        // Add numeric prefix to filename to preserve declaration order after WalkDir + sort
+        let original_path = Path::new(&file.path);
+        let prefixed_filename = format!(
+            "{:03}_{}",
+            idx,
+            original_path.file_name().unwrap_or_default().to_string_lossy()
+        );
+        let prefixed_path = original_path
+            .parent()
+            .map(|p| p.join(&prefixed_filename))
+            .unwrap_or_else(|| PathBuf::from(&prefixed_filename));
+        let abs_path = root_path.join(&prefixed_path);
         if let Some(parent) = abs_path.parent() {
             fs::create_dir_all(parent)
                 .with_context(|| format!("failed to create {}", parent.display()))?;
@@ -896,7 +902,8 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     }
 
     if keep_temps {
-        let preserved = temp_dir.path().to_path_buf();
+        // Use keep() to consume TempDir without deleting the directory
+        let preserved = temp_dir.keep();
         return Ok(MaterializedProject {
             temp_dir: None,
             root_path: preserved,
@@ -917,10 +924,11 @@ where
     L: LanguageTraitImpl,
 {
     // Use provided file paths (preserves declaration order) or discover them
-    let files = if options.file_paths.is_empty() {
+    let files: Vec<(String, String)> = if options.file_paths.is_empty() {
         discover_language_files::<L>(project_root, options.parallel)?
     } else {
         // Filter to only include files with supported extensions
+        // For explicitly provided paths, use the same path as both physical and logical
         let supported = L::supported_extensions();
         options
             .file_paths
@@ -932,11 +940,11 @@ where
                     .map(|ext| supported.iter().any(|s| s.eq_ignore_ascii_case(ext)))
                     .unwrap_or(false)
             })
-            .cloned()
+            .map(|path| (path.clone(), path.clone()))
             .collect()
     };
 
-    let cc = CompileCtxt::from_files::<L>(&files).unwrap();
+    let cc = CompileCtxt::from_files_with_logical::<L>(&files).unwrap();
 
     // Use sequential mode when not parallel to ensure stable ordering
     let sequential = !options.parallel;
@@ -1018,7 +1026,7 @@ where
     })
 }
 
-fn discover_language_files<L: LanguageTraitImpl>(root: &Path, parallel: bool) -> Result<Vec<String>> {
+fn discover_language_files<L: LanguageTraitImpl>(root: &Path, _parallel: bool) -> Result<Vec<(String, String)>> {
     let supported = L::supported_extensions();
     let mut files = Vec::new();
 
@@ -1042,11 +1050,40 @@ fn discover_language_files<L: LanguageTraitImpl>(root: &Path, parallel: bool) ->
         files.push(entry.path().to_string_lossy().to_string());
     }
 
-    // Only sort when parallel mode is enabled; sequential mode preserves discovery order
-    if parallel {
-        files.sort();
-    }
+    // Always sort to ensure deterministic ordering based on prefixed filenames
+    files.sort();
+
+    // Return both physical path (with prefix) and logical path (without prefix)
+    let files: Vec<(String, String)> = files
+        .into_iter()
+        .map(|physical_path| {
+            let logical_path = strip_numeric_prefix_from_path(&physical_path);
+            (physical_path, logical_path)
+        })
+        .collect();
+
     Ok(files)
+}
+
+/// Strips numeric prefix like "000_" from the filename component of a path.
+/// For example: "/tmp/src/000_main.rs" -> "/tmp/src/main.rs"
+fn strip_numeric_prefix_from_path(path: &str) -> String {
+    let path = Path::new(path);
+    let Some(filename) = path.file_name().and_then(|f| f.to_str()) else {
+        return path.to_string_lossy().to_string();
+    };
+
+    // Check for pattern: 3 digits followed by underscore
+    if filename.len() > 4 && filename[..3].chars().all(|c| c.is_ascii_digit()) && &filename[3..4] == "_" {
+        let stripped_filename = &filename[4..];
+        if let Some(parent) = path.parent() {
+            return parent.join(stripped_filename).to_string_lossy().to_string();
+        } else {
+            return stripped_filename.to_string();
+        }
+    }
+
+    path.to_string_lossy().to_string()
 }
 
 fn render_block_graph(project: &ProjectGraph) -> String {

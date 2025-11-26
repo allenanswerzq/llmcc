@@ -104,14 +104,20 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Invokes a closure for each symbol in this scope.
+    /// Iterates in deterministic order by sorting keys.
     pub fn for_each_symbol<F>(&self, mut visit: F)
     where
         F: FnMut(&'tcx Symbol),
     {
         let symbols = self.symbols.read();
-        for symbol_vec in symbols.values() {
-            for symbol in symbol_vec {
-                visit(symbol);
+        // Sort keys for deterministic iteration order
+        let mut keys: Vec<_> = symbols.keys().copied().collect();
+        keys.sort();
+        for key in keys {
+            if let Some(symbol_vec) = symbols.get(&key) {
+                for symbol in symbol_vec {
+                    visit(symbol);
+                }
             }
         }
     }
