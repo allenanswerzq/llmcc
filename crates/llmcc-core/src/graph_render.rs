@@ -3,8 +3,6 @@ use std::path::Path;
 
 use crate::BlockId;
 
-const EMPTY_GRAPH_DOT: &str = "digraph project {\n}\n";
-
 #[derive(Clone)]
 pub(crate) struct CompactNode {
     pub(crate) block_id: BlockId,
@@ -61,18 +59,31 @@ impl<'a> GraphRenderer<'a> {
         node_index
     }
 
-    pub(crate) fn render(&self, edges: &BTreeSet<(usize, usize)>, component_depth: usize) -> String {
+    pub(crate) fn render(
+        &self,
+        edges: &BTreeSet<(usize, usize)>,
+        component_depth: usize,
+    ) -> String {
+        self.render_with_title(edges, component_depth, "project")
+    }
+
+    pub(crate) fn render_with_title(
+        &self,
+        edges: &BTreeSet<(usize, usize)>,
+        component_depth: usize,
+        title: &str,
+    ) -> String {
         if self.nodes.is_empty() {
-            return EMPTY_GRAPH_DOT.to_string();
+            return format!("digraph {} {{\n}}\n", title);
         }
 
         let pruned = prune_compact_components(self.nodes, edges);
         if pruned.nodes.is_empty() {
-            return EMPTY_GRAPH_DOT.to_string();
+            return format!("digraph {} {{\n}}\n", title);
         }
 
         let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-        render_nested_dot(&pruned.nodes, &reduced_edges, component_depth)
+        render_nested_dot_with_title(&pruned.nodes, &reduced_edges, component_depth, title)
     }
 }
 
@@ -96,7 +107,12 @@ impl ComponentTree {
     }
 }
 
-fn render_nested_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>, component_depth: usize) -> String {
+fn render_nested_dot_with_title(
+    nodes: &[CompactNode],
+    edges: &BTreeSet<(usize, usize)>,
+    component_depth: usize,
+    title: &str,
+) -> String {
     // Build component tree from node paths derived from FQN
     let mut tree = ComponentTree::default();
     for (idx, node) in nodes.iter().enumerate() {
@@ -104,7 +120,7 @@ fn render_nested_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>, co
         tree.insert(&path, idx);
     }
 
-    let mut output = String::from("digraph project {\n");
+    let mut output = format!("digraph {} {{\n", title);
 
     // Global graph attributes for better visualization
     // output.push_str("  rankdir=TB;\n");
@@ -136,12 +152,12 @@ fn render_nested_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>, co
 /// Returns (fill_color, border_color) for the subgraph
 fn get_depth_colors(depth: usize) -> (&'static str, &'static str) {
     match depth % 5 {
-        0 => ("#F5F5F5", "#757575"),  // Light grey / Dark grey
-        1 => ("#EEEEEE", "#616161"),  // Lighter grey / Medium grey
-        2 => ("#E0E0E0", "#424242"),  // Medium grey / Darker grey
-        3 => ("#FAFAFA", "#9E9E9E"),  // Near white / Grey
-        4 => ("#F0F0F0", "#808080"),  // Soft grey / Neutral grey
-        _ => ("#F5F5F5", "#9E9E9E"),  // Light grey (fallback)
+        0 => ("#F5F5F5", "#757575"), // Light grey / Dark grey
+        1 => ("#EEEEEE", "#616161"), // Lighter grey / Medium grey
+        2 => ("#E0E0E0", "#424242"), // Medium grey / Darker grey
+        3 => ("#FAFAFA", "#9E9E9E"), // Near white / Grey
+        4 => ("#F0F0F0", "#808080"), // Soft grey / Neutral grey
+        _ => ("#F5F5F5", "#9E9E9E"), // Light grey (fallback)
     }
 }
 

@@ -927,7 +927,7 @@ mod tests {
             .get(&sym_id)
             .copied()
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
-        let deps = symbol.depends.read().clone();
+        let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
             if let Some(target) = map.get(&dep) {

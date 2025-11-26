@@ -345,7 +345,7 @@ u0:7 -> [u0:3, u0:5]
 u0:7 <- [u0:4]
 u0:9 <- [u0:5]
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -506,7 +506,7 @@ u0:7 -> [u0:3, u0:5]
 u0:7 <- [u0:4]
 u0:9 <- [u0:5]
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -604,7 +604,7 @@ u0:3 | func  | foo
 u0:2 <- [u0:3]
 u0:3 -> [u0:2]
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -689,7 +689,7 @@ u0:1 | root  | main
 u0:2 | class | TupleThing
 u0:3 | func  | make_tuples
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -787,23 +787,23 @@ u0:38 | Variable  | u           | _c::main::func::u            |
 u0:39 | Variable  | i           | _c::main::func::i            |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:23]
-u0:10 <- [u0:31, u0:33]
-u0:14 <- [u0:22, u0:25, u0:27, u0:28, u0:29]
+u0:1 <- [u0:22, u0:22, u0:23]
+u0:10 <- [u0:31, u0:31, u0:33]
+u0:14 <- [u0:22, u0:22, u0:25, u0:27, u0:27, u0:28, u0:29]
 u0:17 <- [u0:31]
 u0:18 <- [u0:22, u0:24]
-u0:22 -> [u0:1, u0:14, u0:18]
+u0:22 -> [u0:1, u0:1, u0:14, u0:14, u0:18]
 u0:22 <- [u0:36, u0:37]
 u0:23 -> [u0:1]
 u0:24 -> [u0:18]
 u0:25 -> [u0:14]
 u0:26 <- [u0:36]
-u0:27 -> [u0:14]
+u0:27 -> [u0:14, u0:14]
 u0:27 <- [u0:36]
 u0:28 -> [u0:14]
 u0:29 -> [u0:14]
 u0:30 -> [u0:31]
-u0:31 -> [u0:10, u0:17, u0:7]
+u0:31 -> [u0:10, u0:10, u0:17, u0:7, u0:7]
 u0:31 <- [u0:30, u0:36, u0:38]
 u0:33 -> [u0:10]
 u0:34 -> [u0:7]
@@ -812,7 +812,7 @@ u0:36 -> [u0:22, u0:26, u0:27, u0:31, u0:35]
 u0:37 -> [u0:22]
 u0:38 -> [u0:31]
 u0:39 -> [u0:35]
-u0:7 <- [u0:31, u0:34]
+u0:7 <- [u0:31, u0:31, u0:34]
 
 --- expect:blocks ---
 u0:1 | root  | main
@@ -823,7 +823,7 @@ u0:5 | class | User
 u0:6 | class | Instant
 u0:7 | func  | func
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -901,21 +901,21 @@ u0:26 | Variable  | score      | _c::main::build_user::score |
 u0:27 | Variable  | base       | _c::main::build_user::base  |         
 
 --- expect:symbol-deps ---
-u0:22 -> [u0:7]
-u0:22 <- [u0:25, u0:27]
+u0:22 -> [u0:7, u0:7]
+u0:22 <- [u0:25, u0:25, u0:27]
 u0:23 -> [u0:7]
 u0:24 -> [u0:7]
-u0:25 -> [u0:22, u0:7]
+u0:25 -> [u0:22, u0:22, u0:7, u0:7]
 u0:26 -> [u0:7]
 u0:27 -> [u0:22]
-u0:7 <- [u0:22, u0:23, u0:24, u0:25, u0:26]
+u0:7 <- [u0:22, u0:22, u0:23, u0:24, u0:25, u0:25, u0:26]
 
 --- expect:blocks ---
 u0:1 | root  | main
 u0:2 | class | User
 u0:3 | func  | build_user
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -991,8 +991,8 @@ u0:26 | Variable  | cfg    | _c::main::main::cfg |
 u0:27 | Variable  | y      | _c::main::main::y   |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:23, u0:24, u0:25, u0:27]
-u0:22 -> [u0:1]
+u0:1 <- [u0:22, u0:22, u0:23, u0:24, u0:25, u0:27]
+u0:22 -> [u0:1, u0:1]
 u0:22 <- [u0:25, u0:26]
 u0:23 -> [u0:1]
 u0:24 -> [u0:1]
@@ -1005,7 +1005,7 @@ u0:1 | root  | main
 u0:2 | class | Config
 u0:3 | func  | main
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1083,7 +1083,7 @@ u0:1 | root  | main
 u0:2 | class | Guard
 u0:3 | func  | check
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1163,7 +1163,7 @@ u0:3 | func  | parse
 u0:2 <- [u0:3]
 u0:3 -> [u0:2]
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1240,7 +1240,7 @@ u0:1 | root  | main
 u0:2 | class | Queue
 u0:3 | func  | process
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1312,7 +1312,7 @@ u0:1 | root  | main
 u0:2 | class | Value
 u0:3 | func  | process_value
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1378,8 +1378,8 @@ u0:24 | Function  | loop_until | _c::main::loop_until        |
 u0:25 | Variable  | state      | _c::main::loop_until::state |         
 
 --- expect:symbol-deps ---
-u0:15 <- [u0:22, u0:23, u0:24]
-u0:22 -> [u0:15]
+u0:15 <- [u0:22, u0:22, u0:23, u0:24]
+u0:22 -> [u0:15, u0:15]
 u0:22 <- [u0:24, u0:25]
 u0:23 -> [u0:15]
 u0:24 -> [u0:15, u0:22]
@@ -1390,7 +1390,7 @@ u0:1 | root  | main
 u0:2 | class | State
 u0:3 | func  | loop_until
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1458,8 +1458,8 @@ u0:24 | Function  | count   | _c::main::count          |
 u0:25 | Variable  | counter | _c::main::count::counter |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:23]
-u0:22 -> [u0:1]
+u0:1 <- [u0:22, u0:22, u0:23]
+u0:22 -> [u0:1, u0:1]
 u0:22 <- [u0:24, u0:25]
 u0:23 -> [u0:1]
 u0:24 -> [u0:22]
@@ -1470,7 +1470,7 @@ u0:1 | root  | main
 u0:2 | class | Counter
 u0:3 | func  | count
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1542,7 +1542,7 @@ u0:1 | root  | main
 u0:2 | class | Container
 u0:3 | func  | iterate
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1661,7 +1661,7 @@ u0:6 -> [u0:4]
 u0:6 <- [u0:7]
 u0:7 -> [u0:2, u0:3, u0:5, u0:6]
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
   graph [fontname="Helvetica Bold", fontsize=12];
 
@@ -1966,11 +1966,11 @@ u0:22 -> [u0:23]
 u0:22 <- [u0:24]
 u0:23 <- [u0:22]
 u0:24 -> [u0:22, u0:25, u0:26]
-u0:24 <- [u0:27, u0:28]
+u0:24 <- [u0:27, u0:27, u0:28]
 u0:25 <- [u0:24, u0:26]
 u0:26 -> [u0:25]
 u0:26 <- [u0:24, u0:27]
-u0:27 -> [u0:24, u0:26]
+u0:27 -> [u0:24, u0:24, u0:26]
 u0:28 -> [u0:24]
 
 
@@ -2123,12 +2123,12 @@ u0:32 | Variable      | c        | _c::main::caller::c    |
 u0:1 <- [u0:29]
 u0:10 <- [u0:29]
 u0:12 <- [u0:25, u0:27]
-u0:22 <- [u0:29, u0:30, u0:31]
+u0:22 <- [u0:29, u0:29, u0:30, u0:31]
 u0:25 -> [u0:12, u0:27]
-u0:25 <- [u0:29, u0:32]
+u0:25 <- [u0:29, u0:29, u0:32]
 u0:27 -> [u0:12]
 u0:27 <- [u0:25]
-u0:29 -> [u0:1, u0:10, u0:22, u0:25]
+u0:29 -> [u0:1, u0:10, u0:22, u0:22, u0:25, u0:25]
 u0:30 -> [u0:22]
 u0:31 -> [u0:22]
 u0:32 -> [u0:25]
@@ -2205,17 +2205,17 @@ u0:39 | Variable      | x                  | _c::main::caller::x                
 u0:40 | Variable      | y                  | _c::main::caller::y                  |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:25, u0:26, u0:28, u0:30, u0:31, u0:32, u0:38, u0:40]
-u0:22 -> [u0:1]
-u0:22 <- [u0:30, u0:33]
+u0:1 <- [u0:22, u0:22, u0:25, u0:26, u0:28, u0:30, u0:30, u0:31, u0:32, u0:38, u0:40]
+u0:22 -> [u0:1, u0:1]
+u0:22 <- [u0:30, u0:30, u0:33]
 u0:25 -> [u0:1]
 u0:26 -> [u0:1]
 u0:28 -> [u0:1]
-u0:30 -> [u0:1, u0:22, u0:34]
+u0:30 -> [u0:1, u0:1, u0:22, u0:22, u0:34, u0:34]
 u0:31 -> [u0:1]
 u0:32 -> [u0:1]
 u0:33 -> [u0:22]
-u0:34 <- [u0:30, u0:37]
+u0:34 <- [u0:30, u0:30, u0:37]
 u0:37 -> [u0:34]
 u0:38 -> [u0:1]
 u0:40 -> [u0:1]
@@ -2287,11 +2287,11 @@ u0:38 | Variable      | c                    | _c::main::caller::c              
 u0:39 | Variable      | sum                  | _c::main::caller::sum                  |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:27, u0:28, u0:29, u0:30, u0:31, u0:32, u0:35, u0:36, u0:37, u0:38, u0:39]
+u0:1 <- [u0:22, u0:27, u0:27, u0:28, u0:29, u0:30, u0:31, u0:32, u0:35, u0:36, u0:37, u0:38, u0:39]
 u0:15 <- [u0:22, u0:27]
 u0:22 -> [u0:1, u0:15]
-u0:22 <- [u0:27, u0:33, u0:34]
-u0:27 -> [u0:1, u0:15, u0:22, u0:35]
+u0:22 <- [u0:27, u0:27, u0:33, u0:34]
+u0:27 -> [u0:1, u0:1, u0:15, u0:22, u0:22, u0:35]
 u0:28 -> [u0:1]
 u0:29 -> [u0:1]
 u0:30 -> [u0:1]
@@ -2363,13 +2363,13 @@ u0:27 | Variable  | counter        | _c::main::caller::counter       |
 u0:28 | Closure   | gen            | _c::main::caller::gen           |         
 
 --- expect:symbol-deps ---
-u0:1 <- [u0:22, u0:23, u0:24, u0:25, u0:26, u0:28]
-u0:22 -> [u0:1]
-u0:22 <- [u0:26, u0:27]
+u0:1 <- [u0:22, u0:22, u0:23, u0:24, u0:25, u0:26, u0:28]
+u0:22 -> [u0:1, u0:1]
+u0:22 <- [u0:26, u0:26, u0:27]
 u0:23 -> [u0:1]
 u0:24 -> [u0:1]
 u0:25 -> [u0:1]
-u0:26 -> [u0:1, u0:22]
+u0:26 -> [u0:1, u0:22, u0:22]
 u0:27 -> [u0:22]
 u0:28 -> [u0:1]
 

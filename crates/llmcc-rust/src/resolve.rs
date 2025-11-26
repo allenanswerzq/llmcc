@@ -699,10 +699,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
     /// For a scoped call like `Type::method()`, returns the Type symbol.
     /// The node should be a scoped_identifier like `Type::method`.
-    pub fn resolve_scoped_call_receiver(
-        &mut self,
-        node: &HirNode<'tcx>,
-    ) -> Option<&'tcx Symbol> {
+    pub fn resolve_scoped_call_receiver(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         if node.kind_id() != LangRust::scoped_identifier {
             return None;
         }

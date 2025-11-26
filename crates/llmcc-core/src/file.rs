@@ -31,7 +31,10 @@ impl FileId {
     /// Create a FileId by reading from `physical_path` but storing `logical_path`.
     /// This is useful when files have prefixes (like "000_") that should be stripped
     /// for downstream processing while still reading the actual file from disk.
-    pub fn new_path_with_logical(physical_path: &str, logical_path: String) -> std::io::Result<Self> {
+    pub fn new_path_with_logical(
+        physical_path: &str,
+        logical_path: String,
+    ) -> std::io::Result<Self> {
         let mut file = StdFile::open(physical_path)?;
         let capacity = file.metadata().map(|meta| meta.len() as usize).unwrap_or(0);
         let mut content = Vec::with_capacity(capacity);
@@ -104,7 +107,10 @@ impl File {
     }
 
     /// Create a File by reading from `physical_path` but storing `logical_path`.
-    pub fn new_file_with_logical(physical_path: &str, logical_path: String) -> std::io::Result<Self> {
+    pub fn new_file_with_logical(
+        physical_path: &str,
+        logical_path: String,
+    ) -> std::io::Result<Self> {
         Ok(File {
             file: FileId::new_path_with_logical(physical_path, logical_path)?,
         })

@@ -44,7 +44,12 @@ pub struct GraphNode {
     pub block_id: BlockId,
 }
 
-const INTERESTING_KINDS: [BlockKind; 4] = [BlockKind::Class, BlockKind::Trait, BlockKind::Enum, BlockKind::Func];
+const INTERESTING_KINDS: [BlockKind; 4] = [
+    BlockKind::Class,
+    BlockKind::Trait,
+    BlockKind::Enum,
+    BlockKind::Func,
+];
 
 /// ProjectGraph represents a complete compilation project with all units and their inter-dependencies.
 ///
@@ -157,7 +162,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             let mut seen_dependents = HashSet::new();
 
-            for &dependent_id in dependents_guard.iter() {
+            for &(dependent_id, _dep_kind) in dependents_guard.iter() {
                 if !seen_dependents.insert(dependent_id) {
                     continue;
                 }
@@ -285,6 +290,111 @@ impl<'tcx> ProjectGraph<'tcx> {
         let edges = self.collect_edges(renderer.nodes(), &node_index);
 
         renderer.render(&edges, self.component_depth)
+    }
+
+    /// Render an architecture graph showing input/output relations.
+    ///
+    /// In an architecture graph:
+    /// - Input arguments have edges pointing TO the function
+    /// - Function has edges pointing TO return types (output)
+    /// - Traits have edges pointing TO structs that implement them
+    ///
+    /// This is different from the dependency graph which shows "uses" relationships.
+    pub fn render_arch_graph(&self) -> String {
+        let top_k = self.top_k;
+        let nodes = self.collect_sorted_nodes(top_k);
+
+        if nodes.is_empty() {
+            return "digraph architecture {\n}\n".to_string();
+        }
+
+        let renderer = GraphRenderer::new(&nodes);
+        let node_index = renderer.build_node_index();
+        let edges = self.collect_arch_edges(renderer.nodes(), &node_index);
+
+        renderer.render_with_title(&edges, self.component_depth, "architecture")
+    }
+
+    /// Collect edges for the architecture graph based on DepKind.
+    ///
+    /// Edge direction in arch graph:
+    /// - ParamType: param_type -> func (input flows into function)
+    /// - ReturnType: func -> return_type (output flows from function)
+    /// - Implements: trait -> impl_struct (trait is realized by struct)
+    /// - FieldType: struct -> field_type (struct contains field)
+    /// - Calls: caller -> callee (normal call direction)
+    /// - Uses/Instantiates: from -> to (normal dependency direction)
+    fn collect_arch_edges(
+        &self,
+        nodes: &[CompactNode],
+        node_index: &HashMap<BlockId, usize>,
+    ) -> BTreeSet<(usize, usize)> {
+        use crate::symbol::DepKind;
+
+        let mut edges = BTreeSet::new();
+        let symbol_map = self.cc.symbol_map.read();
+
+        for node in nodes {
+            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
+                continue;
+            };
+            let from_idx = node_index[&node.block_id];
+
+            // Find symbol by block_id directly
+            let symbol_opt = self.cc.find_symbol_by_block_id(node.block_id);
+
+            if let Some(symbol) = symbol_opt {
+                // Use typed dependencies for arch graph
+                let depends = symbol.depends.read();
+                for &(dep_id, dep_kind) in depends.iter() {
+                    let Some(dep_symbol) = symbol_map.get(&dep_id) else {
+                        continue;
+                    };
+                    let Some(dep_block_id) = dep_symbol.block_id() else {
+                        continue;
+                    };
+                    let Some(&to_idx) = node_index.get(&dep_block_id) else {
+                        continue;
+                    };
+
+                    // Determine edge direction based on DepKind
+                    match dep_kind {
+                        DepKind::ParamType => {
+                            // Input: param_type -> func
+                            edges.insert((to_idx, from_idx));
+                        }
+                        DepKind::ReturnType => {
+                            // Output: func -> return_type
+                            edges.insert((from_idx, to_idx));
+                        }
+                        DepKind::Implements => {
+                            // Trait -> implementing struct
+                            edges.insert((to_idx, from_idx));
+                        }
+                        DepKind::FieldType
+                        | DepKind::Calls
+                        | DepKind::Uses
+                        | DepKind::Instantiates => {
+                            // Normal direction: from -> to
+                            edges.insert((from_idx, to_idx));
+                        }
+                    }
+                }
+            } else {
+                // Fallback to block-level dependencies (same as dep-graph)
+                let dependencies = unit_graph
+                    .edges()
+                    .get_related(node.block_id, BlockRelation::DependsOn);
+
+                for dep_block_id in dependencies {
+                    if let Some(&to_idx) = node_index.get(&dep_block_id) {
+                        edges.insert((from_idx, to_idx));
+                    }
+                }
+            }
+        }
+
+        edges
     }
 
     fn ranked_block_filter(

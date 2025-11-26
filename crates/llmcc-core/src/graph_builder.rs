@@ -200,7 +200,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             return;
         };
 
-        let dependencies = symbol.depends.read().clone();
+        let dependencies = symbol.depends_ids();
         for dep_id in dependencies {
             self.link_dependency(dep_id, from_block, edges, unresolved);
         }
@@ -254,7 +254,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             while let Some(parent_id) = current_parent {
                 let parent_node = unit.hir_node(parent_id);
                 let parent_kind = Language::block_kind(parent_node.kind_id());
-                if matches!(parent_kind, BlockKind::Class | BlockKind::Trait | BlockKind::Impl) {
+                if matches!(
+                    parent_kind,
+                    BlockKind::Class | BlockKind::Trait | BlockKind::Impl
+                ) {
                     block_kind = BlockKind::Method;
                     break;
                 }

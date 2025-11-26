@@ -353,10 +353,12 @@ impl<'tcx> CompileCtxt<'tcx> {
         let mut files_with_index: Vec<(usize, File)> = paths
             .par_iter()
             .enumerate()
-            .map(|(index, (physical, logical))| -> std::io::Result<(usize, File)> {
-                let file = File::new_file_with_logical(physical, logical.clone())?;
-                Ok((index, file))
-            })
+            .map(
+                |(index, (physical, logical))| -> std::io::Result<(usize, File)> {
+                    let file = File::new_file_with_logical(physical, logical.clone())?;
+                    Ok((index, file))
+                },
+            )
             .collect::<std::io::Result<Vec<_>>>()?;
 
         files_with_index.sort_by_key(|(index, _)| *index);

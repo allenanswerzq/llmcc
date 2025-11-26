@@ -1,7 +1,7 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode, HirScope};
 use llmcc_core::scope::Scope;
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{DepKind, SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
 use crate::resolve::ExprResolver;
@@ -43,11 +43,20 @@ impl<'tcx> BinderVisitor<'tcx> {
     }
 
     fn add_type_dependencies(owner: &Symbol, ty: Option<&Symbol>, args: &[&Symbol]) {
+        Self::add_type_dependencies_with_kind(owner, ty, args, DepKind::Uses);
+    }
+
+    fn add_type_dependencies_with_kind(
+        owner: &Symbol,
+        ty: Option<&Symbol>,
+        args: &[&Symbol],
+        dep_kind: DepKind,
+    ) {
         if let Some(symbol) = ty {
-            owner.add_dependency(symbol, Some(&[SymKind::TypeParameter]));
+            owner.add_dependency_with_kind(symbol, dep_kind, Some(&[SymKind::TypeParameter]));
         }
         for arg in args {
-            owner.add_dependency(arg, Some(&[SymKind::TypeParameter]));
+            owner.add_dependency_with_kind(arg, dep_kind, Some(&[SymKind::TypeParameter]));
         }
     }
 
@@ -61,6 +70,19 @@ impl<'tcx> BinderVisitor<'tcx> {
         let mut resolver = ExprResolver::new(unit, scopes);
         let (ty, args) = resolver.resolve_type_with_args(node);
         Self::add_type_dependencies(owner, ty, &args);
+    }
+
+    fn add_type_dependencies_with_kind_visitor(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        owner: &Symbol,
+        dep_kind: DepKind,
+    ) {
+        let mut resolver = ExprResolver::new(unit, scopes);
+        let (ty, args) = resolver.resolve_type_with_args(node);
+        Self::add_type_dependencies_with_kind(owner, ty, &args, dep_kind);
     }
 
     fn visit_scoped_named(
@@ -254,10 +276,14 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ret_sym) = ret_ty.opt_symbol()
         {
             fn_sym.set_type_of(ret_sym.id());
-            fn_sym.add_dependency(ret_sym, None);
+            fn_sym.add_dependency_with_kind(ret_sym, DepKind::ReturnType, None);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency(ret_sym, Some(&[SymKind::TypeParameter]));
+                ns.add_dependency_with_kind(
+                    ret_sym,
+                    DepKind::ReturnType,
+                    Some(&[SymKind::TypeParameter]),
+                );
             }
         }
     }
@@ -357,7 +383,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 let target_scope = unit.cc.get_scope(target_scope);
                 let trait_scope = unit.cc.get_scope(trait_scope);
                 target_scope.add_parent(trait_scope);
-                target_sym.add_dependency(trait_sym, None);
+                target_sym.add_dependency_with_kind(trait_sym, DepKind::Implements, None);
             }
         }
     }
@@ -461,9 +487,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(parent_enum_id) = sym.type_of()
                 && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
             {
-                ns.add_dependency(parent_enum, Some(&[SymKind::TypeParameter]));
+                ns.add_dependency_with_kind(
+                    parent_enum,
+                    DepKind::Calls,
+                    Some(&[SymKind::TypeParameter]),
+                );
             } else {
-                ns.add_dependency(sym, Some(&[SymKind::TypeParameter]));
+                ns.add_dependency_with_kind(sym, DepKind::Calls, Some(&[SymKind::TypeParameter]));
             }
         }
 
@@ -778,13 +808,21 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 let (ty, args) = resolver.resolve_type_with_args(&type_node);
                 if let Some(primary) = ty {
                     symbol.set_type_of(primary.id());
-                    symbol.add_dependency(primary, Some(&[SymKind::TypeParameter]));
+                    symbol.add_dependency_with_kind(
+                        primary,
+                        DepKind::FieldType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
                 }
                 for arg in &args {
-                    symbol.add_dependency(arg, Some(&[SymKind::TypeParameter]));
+                    symbol.add_dependency_with_kind(
+                        arg,
+                        DepKind::FieldType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
                 }
 
-                Self::add_type_dependencies(owner_sym, ty, &args);
+                Self::add_type_dependencies_with_kind(owner_sym, ty, &args, DepKind::FieldType);
             }
         }
     }
@@ -850,19 +888,27 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             {
                 if let Some(primary) = ty {
                     symbol.set_type_of(primary.id());
-                    symbol.add_dependency(primary, Some(&[SymKind::TypeParameter]));
+                    symbol.add_dependency_with_kind(
+                        primary,
+                        DepKind::ParamType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
                 }
                 for arg in &args {
-                    symbol.add_dependency(arg, Some(&[SymKind::TypeParameter]));
+                    symbol.add_dependency_with_kind(
+                        arg,
+                        DepKind::ParamType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
                 }
             }
 
             if let Some(owner) = parent {
-                Self::add_type_dependencies(owner, ty, &args);
+                Self::add_type_dependencies_with_kind(owner, ty, &args, DepKind::ParamType);
             }
 
             if let Some(ns) = namespace.opt_symbol() {
-                Self::add_type_dependencies(ns, ty, &args);
+                Self::add_type_dependencies_with_kind(ns, ty, &args, DepKind::ParamType);
             }
         }
     }
@@ -1067,7 +1113,7 @@ mod tests {
             .get(&sym_id)
             .copied()
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
-        let deps = symbol.depends.read().clone();
+        let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
             if let Some(target) = map.get(&dep) {

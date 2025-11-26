@@ -19,7 +19,7 @@ pub fn add(a: i32, b: i32) -> i32 {
 --- expect:symbols ---
  0 | Function     | crate::add [global]
 
---- expect:graph ---
+--- expect:dep-graph ---
 digraph project {
     // adjacency snapshot here
 }
@@ -59,8 +59,10 @@ cargo run -p llmcc-test -- list      # discover case ids
   may exist per case, allowing cross-file relationships.
 * `--- expect:symbols ---` stores a textual snapshot of the symbol table derived
   from the resolver.
-* `--- expect:graph ---` records the DOT output from `ProjectGraph::render_design_graph()`,
+* `--- expect:dep-graph ---` records the DOT output from `ProjectGraph::render_design_graph()`,
   allowing callers to lock down dependency edges visually.
+* `--- expect:arch-graph ---` records the DOT output from `ProjectGraph::render_arch_graph()`,
+  showing input/output flow (params→func→return, trait→impl).
 * `` lists the block-level dependency relations (the
   `DependsOn` edges) in a stable textual format, useful when you care about
   relationships but not the DOT syntax.

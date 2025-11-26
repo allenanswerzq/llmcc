@@ -99,6 +99,29 @@ pub enum SymKind {
     UnresolvedType,
 }
 
+/// Classification of dependency relationship between symbols.
+/// Used to build different graph representations:
+/// - Dependency graph: A depends on B (A uses B)
+/// - Architecture graph: Shows data flow direction (input → func → output)
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
+pub enum DepKind {
+    /// General dependency (A uses/references B)
+    #[default]
+    Uses,
+    /// Function parameter type (param_type → func)
+    ParamType,
+    /// Function return type (func → return_type)
+    ReturnType,
+    /// Struct/Enum implements trait (trait → struct)
+    Implements,
+    /// Struct field type (field_type → struct)
+    FieldType,
+    /// Function/method call (caller → callee)
+    Calls,
+    /// Type instantiation (type → user)
+    Instantiates,
+}
+
 /// Represents a named entity in source code.
 ///
 /// Symbols track metadata about functions, structs, variables, and other named elements.
@@ -158,12 +181,12 @@ pub struct Symbol {
     /// Whether the symbol is globally visible/exported.
     /// Used to distinguish public symbols from private ones.
     pub is_global: RwLock<bool>,
-    /// Symbols that this symbol depends on (general dependency relation).
-    /// Can represent various relationships: field_of, type_of, called_by, calls, etc.
-    pub depends: RwLock<Vec<SymId>>,
-    /// Symbols that depend on this symbol (reverse dependency relation).
+    /// Symbols that this symbol depends on with their dependency kind.
+    /// Stores (target_sym_id, dep_kind) pairs for different graph representations.
+    pub depends: RwLock<Vec<(SymId, DepKind)>>,
+    /// Symbols that depend on this symbol with their dependency kind (reverse relation).
     /// Used for reverse lookups and impact analysis.
-    pub depended: RwLock<Vec<SymId>>,
+    pub depended: RwLock<Vec<(SymId, DepKind)>>,
     /// Previous version/definition of this symbol (for shadowing and multi-definition tracking).
     /// Used to chain multiple definitions of the same symbol in different scopes or contexts.
     /// Example: inner definition shadows outer definition in nested scope.
@@ -376,30 +399,32 @@ impl Symbol {
         *self.is_global.write() = value;
     }
 
-    /// Adds a symbol that this symbol depends on.
-    /// Ignores self-dependencies and duplicate entries.
-    pub fn add_depends_on(&self, sym_id: SymId) {
+    /// Adds a symbol that this symbol depends on with a specific dependency kind.
+    /// Ignores self-dependencies. Only adds if target not already present (first kind wins).
+    pub fn add_depends_on(&self, sym_id: SymId, dep_kind: DepKind) {
         if sym_id == self.id {
             return;
         }
         let mut deps = self.depends.write();
-        if deps.contains(&sym_id) {
+        // Check if we already depend on this symbol (regardless of kind)
+        if deps.iter().any(|(id, _)| *id == sym_id) {
             return;
         }
-        deps.push(sym_id);
+        deps.push((sym_id, dep_kind));
     }
 
-    /// Adds a symbol that depends on this symbol (reverse dependency).
-    /// Ignores self-dependencies and duplicate entries.
-    pub fn add_depended_by(&self, sym_id: SymId) {
+    /// Adds a symbol that depends on this symbol (reverse dependency) with a specific kind.
+    /// Ignores self-dependencies. Only adds if source not already present (first kind wins).
+    pub fn add_depended_by(&self, sym_id: SymId, dep_kind: DepKind) {
         if sym_id == self.id {
             return;
         }
         let mut deps = self.depended.write();
-        if deps.contains(&sym_id) {
+        // Check if this symbol already depends on us (regardless of kind)
+        if deps.iter().any(|(id, _)| *id == sym_id) {
             return;
         }
-        deps.push(sym_id);
+        deps.push((sym_id, dep_kind));
     }
 
     /// Adds a HIR node as an additional definition location.
@@ -419,7 +444,20 @@ impl Symbol {
     /// Adds a bidirectional dependency between this symbol and another.
     /// Ignores self-dependencies, duplicates, and circular references.
     /// When `ignore_kinds` is provided, the dependency is skipped if the target matches.
+    /// Uses `DepKind::Uses` as the default dependency kind.
     pub fn add_dependency(&self, other: &Symbol, ignore_kinds: Option<&[SymKind]>) {
+        self.add_dependency_with_kind(other, DepKind::Uses, ignore_kinds);
+    }
+
+    /// Adds a bidirectional dependency with a specific dependency kind.
+    /// Ignores self-dependencies, duplicates, and circular references.
+    /// When `ignore_kinds` is provided, the dependency is skipped if the target matches.
+    pub fn add_dependency_with_kind(
+        &self,
+        other: &Symbol,
+        dep_kind: DepKind,
+        ignore_kinds: Option<&[SymKind]>,
+    ) {
         if let Some(kinds) = ignore_kinds
             && kinds.iter().any(|kind| other.kind() == *kind)
         {
@@ -428,14 +466,28 @@ impl Symbol {
         if self.id == other.id {
             return;
         }
-        // if self.kind() == other.kind() && self.name == other.name {
-        //     return;
-        // }
-        if other.depends.read().contains(&self.id) {
+        // Check for circular reference with same dep_kind
+        if other
+            .depends
+            .read()
+            .iter()
+            .any(|(id, kind)| *id == self.id && *kind == dep_kind)
+        {
             return;
         }
-        self.add_depends_on(other.id);
-        other.add_depended_by(self.id);
+        self.add_depends_on(other.id, dep_kind);
+        other.add_depended_by(self.id, dep_kind);
+    }
+
+    /// Gets all dependency target IDs (ignoring DepKind).
+    /// For backward compatibility with code that only needs the target symbols.
+    pub fn depends_ids(&self) -> Vec<SymId> {
+        self.depends.read().iter().map(|(id, _)| *id).collect()
+    }
+
+    /// Gets all reverse dependency source IDs (ignoring DepKind).
+    pub fn depended_ids(&self) -> Vec<SymId> {
+        self.depended.read().iter().map(|(id, _)| *id).collect()
     }
 
     /// Gets the block ID associated with this symbol.
@@ -642,8 +694,8 @@ mod tests {
 
         sym1.add_dependency(&sym2, None);
 
-        assert!(sym1.depends.read().contains(&sym2.id));
-        assert!(sym2.depended.read().contains(&sym1.id));
+        assert!(sym1.depends.read().iter().any(|(id, _)| *id == sym2.id));
+        assert!(sym2.depended.read().iter().any(|(id, _)| *id == sym1.id));
     }
 
     #[test]
@@ -652,8 +704,8 @@ mod tests {
         let pool = create_test_intern_pool();
         let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
 
-        symbol.add_depends_on(symbol.id);
-        assert!(!symbol.depends.read().contains(&symbol.id));
+        symbol.add_depends_on(symbol.id, DepKind::Uses);
+        assert!(!symbol.depends.read().iter().any(|(id, _)| *id == symbol.id));
     }
 
     #[test]
@@ -663,11 +715,15 @@ mod tests {
         let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("sym1"));
         let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("sym2"));
 
-        sym1.add_depends_on(sym2.id);
-        sym1.add_depends_on(sym2.id);
+        sym1.add_depends_on(sym2.id, DepKind::Uses);
+        sym1.add_depends_on(sym2.id, DepKind::Uses);
 
-        // Should only have one entry
+        // Should only have one entry with same DepKind
         assert_eq!(sym1.depends.read().len(), 1);
+
+        // Adding with different DepKind should create a new entry
+        sym1.add_depends_on(sym2.id, DepKind::Calls);
+        assert_eq!(sym1.depends.read().len(), 2);
     }
 
     #[test]
