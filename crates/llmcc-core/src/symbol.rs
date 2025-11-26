@@ -120,6 +120,8 @@ pub enum DepKind {
     Calls,
     /// Type instantiation (type → user)
     Instantiates,
+    /// Generic type bound (trait_bound → struct)
+    TypeBound,
 }
 
 /// Represents a named entity in source code.

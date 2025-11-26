@@ -3,7 +3,7 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use crate::block::{BlockId, BlockKind, BlockRelation};
 use crate::block_rel::BlockRelationMap;
 use crate::context::CompileCtxt;
-use crate::graph_render::{CompactNode, GraphRenderer};
+use crate::graph_render::{CompactNode, GraphRenderer, LabeledEdge};
 use crate::pagerank::PageRanker;
 use crate::symbol::{DepKind, SymId};
 
@@ -13,7 +13,7 @@ pub struct UnitGraph {
     unit_index: usize,
     /// Root block ID of this unit
     root: BlockId,
-    /// Edges of this graph unit
+    /// Edge of this graph unit
     edges: BlockRelationMap,
 }
 
@@ -313,7 +313,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         let node_index = renderer.build_node_index();
         let edges = self.collect_arch_edges(renderer.nodes(), &node_index);
 
-        renderer.render_with_title(&edges, self.component_depth, "architecture")
+        renderer.render_arch(&edges, self.component_depth)
     }
 
     /// Collect edges for the architecture graph based on DepKind.
@@ -329,7 +329,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         &self,
         nodes: &[CompactNode],
         node_index: &HashMap<BlockId, usize>,
-    ) -> BTreeSet<(usize, usize)> {
+    ) -> BTreeSet<LabeledEdge> {
         let mut edges = BTreeSet::new();
         let symbol_map = self.cc.symbol_map.read();
 
@@ -364,19 +364,28 @@ impl<'tcx> ProjectGraph<'tcx> {
                     match dep_kind {
                         DepKind::ParamType => {
                             // Input: param_type -> func
-                            edges.insert((to_idx, from_idx));
+                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::ParamType));
                         }
                         DepKind::ReturnType => {
                             // Output: func -> return_type
-                            edges.insert((from_idx, to_idx));
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::ReturnType));
                         }
                         DepKind::Implements => {
-                            // implementing_struct -> trait (struct points to trait)
-                            edges.insert((from_idx, to_idx));
+                            // trait -> implementing_struct (trait flows to implementor)
+                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::Implements));
                         }
-                        DepKind::FieldType | DepKind::Calls | DepKind::Instantiates => {
-                            // Normal direction: from -> to
-                            edges.insert((from_idx, to_idx));
+                        DepKind::FieldType => {
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::FieldType));
+                        }
+                        DepKind::Calls => {
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Calls));
+                        }
+                        DepKind::Instantiates => {
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Instantiates));
+                        }
+                        DepKind::TypeBound => {
+                            // Type bound flows into struct: trait_bound -> struct
+                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::TypeBound));
                         }
                         DepKind::Uses => {
                             // Skip Uses if there's a more specific DepKind for this relationship
@@ -391,10 +400,11 @@ impl<'tcx> ProjectGraph<'tcx> {
                                             | DepKind::FieldType
                                             | DepKind::Calls
                                             | DepKind::Instantiates
+                                            | DepKind::TypeBound
                                     )
                             });
                             if !has_specific {
-                                edges.insert((from_idx, to_idx));
+                                edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Uses));
                             }
                         }
                     }
@@ -484,6 +494,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     .or(Some(path.clone()));
 
                 let mut sym_id: Option<SymId> = None;
+                let mut sym_kind = None;
                 let mut fqn = "unknown".to_string();
 
                 if let Some(symbol) = block
@@ -493,6 +504,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     .and_then(|scope| scope.opt_symbol())
                 {
                     sym_id = Some(symbol.id());
+                    sym_kind = Some(symbol.kind());
                     if let Some(resolved) = self.cc.interner.resolve_owned(symbol.fqn()) {
                         fqn = resolved;
                     }
@@ -505,6 +517,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     location,
                     fqn,
                     sym_id,
+                    sym_kind,
                 })
             })
             .collect()

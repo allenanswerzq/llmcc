@@ -46,6 +46,10 @@ impl<'tcx> BinderVisitor<'tcx> {
         Self::add_type_dependencies_with_kind(owner, ty, args, DepKind::Uses);
     }
 
+    fn add_type_bound_dependencies(owner: &Symbol, ty: Option<&Symbol>, args: &[&Symbol]) {
+        Self::add_type_dependencies_with_kind(owner, ty, args, DepKind::TypeBound);
+    }
+
     fn add_type_dependencies_with_kind(
         owner: &Symbol,
         ty: Option<&Symbol>,
@@ -70,6 +74,18 @@ impl<'tcx> BinderVisitor<'tcx> {
         let mut resolver = ExprResolver::new(unit, scopes);
         let (ty, args) = resolver.resolve_type_with_args(node);
         Self::add_type_dependencies(owner, ty, &args);
+    }
+
+    fn add_type_bound_with(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        owner: &Symbol,
+    ) {
+        let mut resolver = ExprResolver::new(unit, scopes);
+        let (ty, args) = resolver.resolve_type_with_args(node);
+        Self::add_type_bound_dependencies(owner, ty, &args);
     }
 
 
@@ -333,27 +349,37 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
             && let Some(target_sym) = type_ident.opt_symbol()
         {
+            // Resolve to get the actual struct/type symbol for cross-module cases
+            let resolved_target = if let Some(type_node) =
+                node.child_by_field(*unit, LangRust::field_type)
+            {
+                let mut resolver = ExprResolver::new(unit, scopes);
+                resolver.resolve_type_node(&type_node)
+            } else {
+                None
+            };
+
+            // Use resolved target if available, otherwise fall back to local symbol
+            let actual_target = resolved_target.unwrap_or(target_sym);
+
             if target_sym.kind() == SymKind::UnresolvedType {
                 // Resolve the type for the impl type now
-                if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-                    let mut resolver = ExprResolver::new(unit, scopes);
-                    if let Some(resolved) = resolver.resolve_type_node(&type_node)
-                        && resolved.id() != target_sym.id()
-                        && !matches!(resolved.kind(), SymKind::UnresolvedType)
+                if let Some(resolved) = resolved_target
+                    && resolved.id() != target_sym.id()
+                    && !matches!(resolved.kind(), SymKind::UnresolvedType)
+                {
+                    // Update the unresolved symbol to point to the actual type
+                    target_sym.set_kind(resolved.kind());
+                    target_sym.add_dependency(resolved, None);
+                    target_sym.set_is_global(resolved.is_global());
+                    if let Some(resolved_scope) = resolved.opt_scope()
+                        && let Some(target_scoped) = target_sym.opt_scope()
                     {
-                        // Update the unresolved symbol to point to the actual type
-                        target_sym.set_kind(resolved.kind());
-                        target_sym.add_dependency(resolved, None);
-                        target_sym.set_is_global(resolved.is_global());
-                        if let Some(resolved_scope) = resolved.opt_scope()
-                            && let Some(target_scoped) = target_sym.opt_scope()
-                        {
-                            // Build parent scope relationship
-                            let target_scope = unit.cc.get_scope(target_scoped);
-                            let resolved_scope = unit.cc.get_scope(resolved_scope);
-                            target_scope.add_parent(resolved_scope);
-                            resolved_scope.add_parent(target_scope);
-                        }
+                        // Build parent scope relationship
+                        let target_scope = unit.cc.get_scope(target_scoped);
+                        let resolved_scope = unit.cc.get_scope(resolved_scope);
+                        target_scope.add_parent(resolved_scope);
+                        resolved_scope.add_parent(target_scope);
                     }
                 }
             }
@@ -362,16 +388,20 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 self.add_type_dependencies_with(unit, &type_node, scopes, target_sym);
             }
 
-            if let Some(target_scope) = target_sym.opt_scope()
-                && let Some(trait_ident) =
-                    node.child_identifier_by_field(*unit, LangRust::field_trait)
-                && let Some(trait_sym) = trait_ident.opt_symbol()
-                && let Some(trait_scope) = trait_sym.opt_scope()
-            {
-                let target_scope = unit.cc.get_scope(target_scope);
-                let trait_scope = unit.cc.get_scope(trait_scope);
-                target_scope.add_parent(trait_scope);
-                target_sym.add_dependency_with_kind(trait_sym, DepKind::Implements, None);
+            // Handle trait impl: impl Trait for Type
+            // Use resolver to properly handle cross-module trait references
+            // Add dependency FROM the actual struct TO the trait
+            if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
+                let mut resolver = ExprResolver::new(unit, scopes);
+                if let Some(trait_sym) = resolver.resolve_type_node(&trait_node)
+                    && let Some(target_scope) = actual_target.opt_scope()
+                    && let Some(trait_scope) = trait_sym.opt_scope()
+                {
+                    let target_scope = unit.cc.get_scope(target_scope);
+                    let trait_scope = unit.cc.get_scope(trait_scope);
+                    target_scope.add_parent(trait_scope);
+                    actual_target.add_dependency_with_kind(trait_sym, DepKind::Implements, None);
+                }
             }
         }
     }
@@ -570,10 +600,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        // Type parameter bounds like `T: Trait` - use TypeBound dependency
         if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
             && let Some(owner) = namespace.opt_symbol()
         {
-            self.add_type_dependencies_with(unit, &bounds, scopes, owner);
+            self.add_type_bound_with(unit, &bounds, scopes, owner);
         }
 
         self.visit_children(unit, node, scopes, namespace, parent);
