@@ -60,6 +60,8 @@ fn run_llmcc(
         print_ir,
         print_block,
         design_graph: print_design_graph,
+        arch_graph: false,
+        dep_graph: false,
         pagerank,
         top_k,
         query,

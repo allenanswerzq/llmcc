@@ -202,31 +202,31 @@ u0:18 <- [u3:33, u3:35, u3:37, u3:39, u4:45, u4:46, u4:47, u4:48, u4:49, u6:59, 
 u0:8 <- [u3:33, u3:33, u3:34, u3:37, u3:37, u3:38, u6:59, u6:63, u6:63, u6:64]
 u1:24 -> [u6:56, u6:58, u6:59, u8:73]
 u3:33 -> [u0:18, u0:8, u0:8, u3:40, u4:45]
-u3:33 <- [u3:37, u3:37, u3:40, u6:56, u6:57, u6:59, u6:62, u8:73, u8:74]
+u3:33 <- [u3:37, u6:56, u6:57, u6:59, u6:59, u6:62, u8:73, u8:74]
 u3:34 -> [u0:8]
 u3:35 -> [u0:18]
 u3:36 -> [u4:45]
-u3:37 -> [u0:18, u0:8, u0:8, u3:33, u3:33]
+u3:37 -> [u0:18, u0:8, u0:8, u3:33]
 u3:37 <- [u6:59]
 u3:38 -> [u0:8]
 u3:39 -> [u0:18]
-u3:40 -> [u3:33, u4:45]
+u3:40 -> [u4:45]
 u3:40 <- [u3:33]
 u3:41 -> [u4:45]
 u4:45 -> [u0:18]
-u4:45 <- [u3:33, u3:36, u3:40, u3:41, u4:48, u4:48, u6:63]
+u4:45 <- [u3:33, u3:36, u3:40, u3:41, u4:48, u6:63]
 u4:46 -> [u0:18]
 u4:47 -> [u0:18]
-u4:48 -> [u0:18, u4:45, u4:45]
+u4:48 -> [u0:18, u4:45]
 u4:48 <- [u6:63]
 u4:49 -> [u0:18]
 u6:56 -> [u3:33, u6:59, u6:63]
-u6:56 <- [u1:24, u6:58, u6:58]
+u6:56 <- [u1:24, u6:58]
 u6:57 -> [u3:33]
 u6:57 <- [u6:59, u6:61]
-u6:58 -> [u6:56, u6:56]
+u6:58 -> [u6:56]
 u6:58 <- [u1:24]
-u6:59 -> [u0:18, u0:8, u3:33, u3:37, u6:57]
+u6:59 -> [u0:18, u0:8, u3:33, u3:33, u3:37, u6:57]
 u6:59 <- [u1:24, u6:56]
 u6:60 -> [u0:18]
 u6:61 -> [u6:57]
@@ -248,13 +248,6 @@ digraph architecture {
   subgraph cluster_0 {
     label="_c";
     subgraph cluster_1 {
-      label="main";
-      style="filled";
-      fillcolor="#EEEEEE";
-      color="#616161";
-      n3[label="main", full_path="$TMP/src/main.rs:8", sym_ty="Function"];
-    }
-    subgraph cluster_2 {
       label="models";
       style="filled";
       fillcolor="#EEEEEE";
@@ -262,14 +255,14 @@ digraph architecture {
       n11[label="Profile", full_path="$TMP/src/models/profile.rs:1", sym_ty="Struct", shape=box];
       n6[label="User", full_path="$TMP/src/models/user.rs:3", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_3 {
+    subgraph cluster_2 {
       label="services";
       style="filled";
       fillcolor="#EEEEEE";
       color="#616161";
       n16[label="UserService", full_path="$TMP/src/services/user_service.rs:3", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_4 {
+    subgraph cluster_3 {
       label="utils";
       style="filled";
       fillcolor="#EEEEEE";
@@ -281,8 +274,6 @@ digraph architecture {
   n6 -> n11 [from="struct", to="field"];
   n6 -> n23 [from="input", to="func"];
   n16 -> n6 [from="struct", to="field"];
-  n3 -> n16 [from="user", to="used"];
-  n3 -> n23 [from="caller", to="callee"];
 }
 
 
@@ -513,11 +504,11 @@ u1:25 -> [u0:17]
 u1:26 -> [u0:1]
 u1:27 -> [u0:1]
 u4:37 -> [u0:8, u0:8, u4:44, u4:46, u5:51, u7:66]
-u4:37 <- [u1:24, u4:41, u4:41]
+u4:37 <- [u1:24, u4:41]
 u4:38 -> [u0:8]
 u4:39 -> [u7:66]
 u4:40 -> [u5:51]
-u4:41 -> [u0:8, u0:8, u4:37, u4:37, u7:66]
+u4:41 -> [u0:8, u0:8, u4:37, u7:66]
 u4:41 <- [u1:24]
 u4:42 -> [u0:8]
 u4:43 -> [u7:66]
@@ -527,11 +518,11 @@ u4:45 -> [u5:51]
 u4:46 -> [u0:14, u5:59]
 u4:46 <- [u4:37]
 u5:51 -> [u0:14, u0:14, u0:18, u0:7, u0:7, u5:59]
-u5:51 <- [u1:24, u4:37, u4:40, u4:44, u4:45, u5:55, u5:55]
+u5:51 <- [u1:24, u4:37, u4:40, u4:44, u4:45, u5:55]
 u5:52 -> [u0:18]
 u5:53 -> [u0:7]
 u5:54 -> [u0:14]
-u5:55 -> [u0:14, u0:14, u0:18, u0:7, u0:7, u5:51, u5:51]
+u5:55 -> [u0:14, u0:14, u0:18, u0:7, u0:7, u5:51]
 u5:55 <- [u1:24, u4:44]
 u5:56 -> [u0:18]
 u5:57 -> [u0:7]
@@ -539,11 +530,11 @@ u5:58 -> [u0:14]
 u5:59 -> [u0:14]
 u5:59 <- [u4:46, u5:51]
 u7:66 -> [u0:18, u0:8, u0:8, u8:77]
-u7:66 <- [u1:24, u4:37, u4:39, u4:41, u4:43, u7:70, u7:70, u9:87, u9:88]
+u7:66 <- [u1:24, u4:37, u4:39, u4:41, u4:43, u7:70, u9:85, u9:87, u9:88]
 u7:67 -> [u0:8]
 u7:68 -> [u8:77]
 u7:69 -> [u0:18]
-u7:70 -> [u0:18, u0:8, u0:8, u7:66, u7:66, u8:77]
+u7:70 -> [u0:18, u0:8, u0:8, u7:66, u8:77]
 u7:70 <- [u1:24]
 u7:71 -> [u0:8]
 u7:72 -> [u8:77]
@@ -556,13 +547,12 @@ u8:79 -> [u0:18]
 u8:80 -> [u0:17]
 u8:80 <- [u8:77]
 u9:84 -> [u9:85, u9:87]
-u9:85 -> [u0:8, u0:8]
+u9:85 -> [u0:8, u0:8, u7:66]
 u9:85 <- [u9:84]
 u9:86 -> [u0:8]
 u9:87 -> [u0:8, u7:66]
 u9:87 <- [u9:84]
 u9:88 -> [u7:66]
-
 
 --- expect:arch-graph ---
 digraph architecture {
@@ -571,13 +561,6 @@ digraph architecture {
   subgraph cluster_0 {
     label="_c";
     subgraph cluster_1 {
-      label="main";
-      style="filled";
-      fillcolor="#EEEEEE";
-      color="#616161";
-      n3[label="main", full_path="$TMP/src/main.rs:6", sym_ty="Function"];
-    }
-    subgraph cluster_2 {
       label="order";
       style="filled";
       fillcolor="#EEEEEE";
@@ -585,7 +568,7 @@ digraph architecture {
       n7[label="Order", full_path="$TMP/src/domain/order/entity.rs:4", sym_ty="Struct", shape=box];
       n13[label="LineItem", full_path="$TMP/src/domain/order/line_item.rs:1", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_3 {
+    subgraph cluster_2 {
       label="user";
       style="filled";
       fillcolor="#EEEEEE";
@@ -598,10 +581,6 @@ digraph architecture {
   n7 -> n13 [from="struct", to="field"];
   n7 -> n19 [from="struct", to="field"];
   n19 -> n23 [from="struct", to="field"];
-  n3 -> n23 [from="user", to="used"];
-  n3 -> n13 [from="user", to="used"];
-  n3 -> n7 [from="user", to="used"];
-  n3 -> n19 [from="user", to="used"];
 }
 
 
@@ -745,7 +724,7 @@ u2:26 -> [u4:41, u4:43, u4:45, u5:50, u5:50]
 u2:27 -> [u5:50]
 u2:28 -> [u5:50]
 u4:35 -> [u0:15, u0:15, u0:18]
-u4:35 <- [u4:38, u4:39, u4:43, u4:44, u5:49, u5:50]
+u4:35 <- [u4:38, u4:39, u4:43, u4:44, u5:49, u5:49, u5:50, u5:50]
 u4:36 -> [u0:18]
 u4:37 -> [u0:15]
 u4:38 -> [u0:8, u0:8, u4:35]
@@ -753,16 +732,73 @@ u4:38 <- [u4:41, u4:42, u4:43]
 u4:39 -> [u4:35]
 u4:40 -> [u0:8]
 u4:41 -> [u4:38, u4:45]
-u4:41 <- [u2:26, u4:43, u4:43]
+u4:41 <- [u2:26, u4:43]
 u4:42 -> [u4:38]
-u4:43 -> [u4:35, u4:38, u4:41, u4:41]
+u4:43 -> [u4:35, u4:38, u4:41]
 u4:43 <- [u2:26]
 u4:44 -> [u4:35]
 u4:45 <- [u2:26, u4:41]
-u5:49 -> [u4:35]
-u5:50 -> [u0:17, u0:17, u4:35]
+u5:49 -> [u4:35, u4:35]
+u5:50 -> [u0:17, u0:17, u4:35, u4:35]
 u5:50 <- [u2:26, u2:26, u2:27, u2:28]
 u5:51 -> [u0:17]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="internal";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n7[label="Config", full_path="$TMP/src/internal/core_types.rs:1"];
+      n9[label="Engine", full_path="$TMP/src/internal/core_types.rs:11"];
+      n8[label="Context", full_path="$TMP/src/internal/core_types.rs:6"];
+      n15[label="debug_config", full_path="$TMP/src/internal/helpers.rs:10"];
+      n14[label="default_config", full_path="$TMP/src/internal/helpers.rs:3"];
+    }
+    subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n4[label="main", full_path="$TMP/src/main.rs:7"];
+    }
+  }
+  n8 -> n7;
+  n9 -> n8;
+  n15 -> n7;
+  n14 -> n7;
+  n4 -> n9;
+  n4 -> n15;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="internal";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n7[label="Config", full_path="$TMP/src/internal/core_types.rs:1", sym_ty="Struct", shape=box];
+      n9[label="Engine", full_path="$TMP/src/internal/core_types.rs:11", sym_ty="Struct", shape=box];
+      n8[label="Context", full_path="$TMP/src/internal/core_types.rs:6", sym_ty="Struct", shape=box];
+      n15[label="debug_config", full_path="$TMP/src/internal/helpers.rs:10", sym_ty="Function"];
+      n14[label="default_config", full_path="$TMP/src/internal/helpers.rs:3", sym_ty="Function"];
+    }
+  }
+  n8 -> n7 [from="struct", to="field"];
+  n9 -> n8 [from="struct", to="field"];
+  n15 -> n7 [from="func", to="output"];
+  n14 -> n7 [from="func", to="output"];
+}
 
 
 ===============================================================================
@@ -908,20 +944,20 @@ u3:53 | Variable  | neighbors     | _c::main::main::neighbors                |
 u0:18 <- [u1:24, u1:26, u1:27, u1:29]
 u0:8 <- [u1:24, u1:24, u1:25, u1:27, u1:27, u1:28, u2:34, u2:40, u2:40, u2:41, u2:42, u2:43, u2:43, u2:44, u2:45, u2:45, u2:46]
 u1:24 -> [u0:18, u0:8, u0:8, u1:30]
-u1:24 <- [u1:27, u1:27, u2:34, u2:35, u2:38, u2:39, u3:51]
+u1:24 <- [u1:27, u1:30, u2:34, u2:35, u2:38, u2:39, u2:43, u2:45, u3:51]
 u1:25 -> [u0:8]
 u1:26 -> [u0:18]
-u1:27 -> [u0:18, u0:8, u0:8, u1:24, u1:24]
+u1:27 -> [u0:18, u0:8, u0:8, u1:24]
 u1:27 <- [u2:38, u3:51]
 u1:28 -> [u0:8]
 u1:29 -> [u0:18]
-u1:30 -> [u2:34, u2:45]
+u1:30 -> [u1:24, u2:34, u2:45]
 u1:30 <- [u1:24, u3:51]
 u1:31 -> [u2:34]
 u2:34 -> [u0:8, u1:24, u2:38, u2:40, u2:43, u2:45]
-u2:34 <- [u1:30, u1:31, u2:37, u2:37, u3:51, u3:52]
+u2:34 <- [u1:30, u1:31, u2:37, u3:51, u3:52]
 u2:35 -> [u1:24]
-u2:37 -> [u2:34, u2:34]
+u2:37 -> [u2:34]
 u2:37 <- [u3:51]
 u2:38 -> [u1:24, u1:27]
 u2:38 <- [u2:34, u3:51]
@@ -930,14 +966,71 @@ u2:40 -> [u0:8, u0:8]
 u2:40 <- [u2:34, u3:51]
 u2:41 -> [u0:8]
 u2:42 -> [u0:8]
-u2:43 -> [u0:8, u0:8]
+u2:43 -> [u0:8, u0:8, u1:24]
 u2:43 <- [u2:34, u3:51]
 u2:44 -> [u0:8]
-u2:45 -> [u0:8, u0:8]
+u2:45 -> [u0:8, u0:8, u1:24]
 u2:45 <- [u1:30, u2:34]
 u2:46 -> [u0:8]
 u3:51 -> [u1:24, u1:27, u1:30, u2:34, u2:37, u2:38, u2:40, u2:43]
 u3:52 -> [u2:34]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="graph";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n8[label="Graph", full_path="$TMP/src/graph.rs:4"];
+    }
+    subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n16[label="main", full_path="$TMP/src/main.rs:7"];
+    }
+    subgraph cluster_3 {
+      label="node";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="Node", full_path="$TMP/src/node.rs:3"];
+    }
+  }
+  n8 -> n3;
+  n16 -> n8;
+  n16 -> n3;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="graph";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n8[label="Graph", full_path="$TMP/src/graph.rs:4", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_2 {
+      label="node";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="Node", full_path="$TMP/src/node.rs:3", sym_ty="Struct", shape=box];
+    }
+  }
+  n8 -> n3 [from="struct", to="field"];
+}
 
 
 ===============================================================================
@@ -1128,10 +1221,10 @@ u0:9 <- [u4:45, u4:45, u4:47, u4:49, u4:49, u4:51, u5:63]
 u1:24 -> [u0:17, u2:29, u2:32, u4:52, u4:53, u5:58, u5:60]
 u1:25 -> [u0:17]
 u2:29 -> [u2:36, u2:37, u2:38, u4:45, u5:58]
-u2:29 <- [u1:24, u2:32, u2:32]
+u2:29 <- [u1:24, u2:32]
 u2:30 -> [u4:45]
 u2:31 -> [u5:58]
-u2:32 -> [u0:17, u0:17, u2:29, u2:29, u4:45, u4:49, u5:58, u5:58, u5:63]
+u2:32 -> [u0:17, u0:17, u2:29, u4:45, u4:49, u5:58, u5:58, u5:63]
 u2:32 <- [u1:24]
 u2:33 -> [u0:17]
 u2:34 -> [u5:58]
@@ -1142,11 +1235,11 @@ u2:37 <- [u2:29]
 u2:38 -> [u0:15]
 u2:38 <- [u2:29]
 u4:45 -> [u0:15, u0:15, u0:18, u0:9, u0:9, u4:52, u4:53, u4:54]
-u4:45 <- [u2:29, u2:30, u2:32, u4:49, u4:49]
+u4:45 <- [u2:29, u2:30, u2:32, u4:49]
 u4:46 -> [u0:18]
 u4:47 -> [u0:9]
 u4:48 -> [u0:15]
-u4:49 -> [u0:17, u0:17, u0:9, u0:9, u4:45, u4:45]
+u4:49 -> [u0:17, u0:17, u0:9, u0:9, u4:45]
 u4:49 <- [u2:32]
 u4:50 -> [u0:17]
 u4:51 -> [u0:9]
@@ -1163,3 +1256,64 @@ u5:61 <- [u5:58, u5:63]
 u5:62 <- [u5:58, u5:63]
 u5:63 -> [u0:9, u5:58, u5:59, u5:60, u5:61, u5:62]
 u5:63 <- [u2:32]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="api";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n5[label="Client", full_path="$TMP/src/api/mod.rs:3"];
+    }
+    subgraph cluster_2 {
+      label="internal";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n13[label="Connection", full_path="$TMP/src/internal/connection.rs:1"];
+      n20[label="Protocol", full_path="$TMP/src/internal/protocol.rs:1"];
+    }
+    subgraph cluster_3 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="main", full_path="$TMP/src/main.rs:6"];
+    }
+  }
+  n5 -> n13;
+  n5 -> n20;
+  n3 -> n5;
+  n3 -> n20;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="api";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n5[label="Client", full_path="$TMP/src/api/mod.rs:3", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_2 {
+      label="internal";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n13[label="Connection", full_path="$TMP/src/internal/connection.rs:1", sym_ty="Struct", shape=box];
+      n20[label="Protocol", full_path="$TMP/src/internal/protocol.rs:1", sym_ty="Enum", shape=box];
+    }
+  }
+  n5 -> n13 [from="struct", to="field"];
+  n5 -> n20 [from="struct", to="field"];
+}

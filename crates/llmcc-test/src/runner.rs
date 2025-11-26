@@ -133,6 +133,7 @@ pub fn run_cases_for_file_with_parallel(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run_cases_in_file(
     file: &mut CorpusFile,
     update: bool,

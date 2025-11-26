@@ -134,10 +134,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     /// Resolves the `crate` keyword to the crate root symbol.
     pub fn resolve_crate_root(&self) -> Option<&'tcx Symbol> {
         // Try direct lookup first
-        if let Some(sym) = self.scopes.lookup_symbol("crate") {
-            if sym.kind() == SymKind::Crate {
-                return Some(sym);
-            }
+        if let Some(sym) = self.scopes.lookup_symbol("crate")
+            && sym.kind() == SymKind::Crate
+        {
+            return Some(sym);
         }
         // Fall back to searching scope stack
         self.scopes.scopes().iter().iter().find_map(|scope| {
@@ -247,10 +247,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     ) -> Option<&'tcx Symbol> {
         // Handle scoped types like `std::io::Result`
         let kind = type_node.kind_id();
-        if kind == LangRust::scoped_identifier || kind == LangRust::scoped_type_identifier {
-            if let Some(sym) = self.resolve_scoped_identifier_type(type_node, None) {
-                return Some(sym);
-            }
+        if (kind == LangRust::scoped_identifier || kind == LangRust::scoped_type_identifier)
+            && let Some(sym) = self.resolve_scoped_identifier_type(type_node, None)
+        {
+            return Some(sym);
         }
 
         let ident = type_node.find_identifier(*self.unit)?;
@@ -361,20 +361,19 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             .iter()
             .find_map(|(token_id, outcome)| {
                 // Match by kind ID
-                if let Some(k) = kind_id {
-                    if *token_id == k {
-                        return Some(*outcome);
-                    }
+                if let Some(k) = kind_id
+                    && *token_id == k
+                {
+                    return Some(*outcome);
                 }
                 // Match by text
                 if let Some(t) = text {
                     let trimmed = t.trim();
-                    if !trimmed.is_empty() {
-                        if let Some(token_text) = LangRust::token_str(*token_id) {
-                            if token_text == trimmed {
-                                return Some(*outcome);
-                            }
-                        }
+                    if !trimmed.is_empty()
+                        && let Some(token_text) = LangRust::token_str(*token_id)
+                        && token_text == trimmed
+                    {
+                        return Some(*outcome);
                     }
                 }
                 None
@@ -489,10 +488,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     fn infer_first_non_trivia_child(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         for child_id in node.children() {
             let child = self.unit.hir_node(*child_id);
-            if !is_trivia(&child) {
-                if let Some(ty) = self.infer_type_from_expr(&child) {
-                    return Some(ty);
-                }
+            if !is_trivia(&child)
+                && let Some(ty) = self.infer_type_from_expr(&child)
+            {
+                return Some(ty);
             }
         }
         None
@@ -581,12 +580,12 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         let ty = self.unit.opt_get_symbol(type_id)?;
 
         // Handle `Self` type substitution
-        if self.is_self_type(ty) {
-            if let Some(parent_scope_id) = sym.parent_scope() {
-                let parent_scope = self.unit.get_scope(parent_scope_id);
-                if let Some(parent_sym) = parent_scope.opt_symbol() {
-                    return Some(parent_sym);
-                }
+        if self.is_self_type(ty)
+            && let Some(parent_scope_id) = sym.parent_scope()
+        {
+            let parent_scope = self.unit.get_scope(parent_scope_id);
+            if let Some(parent_sym) = parent_scope.opt_symbol() {
+                return Some(parent_sym);
             }
         }
 
@@ -735,10 +734,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     ) {
         // Resolve type identifiers
         if node.kind_id() == LangRust::type_identifier {
-            if let Some(ty) = self.infer_type_from_expr_from_node(node) {
-                if !symbols.iter().any(|s| s.id() == ty.id()) {
-                    symbols.push(ty);
-                }
+            if let Some(ty) = self.infer_type_from_expr_from_node(node)
+                && !symbols.iter().any(|s| s.id() == ty.id())
+            {
+                symbols.push(ty);
             }
             return;
         }
@@ -802,7 +801,7 @@ pub const BINARY_OPERATOR_TOKENS: &[(u16, BinaryOperatorOutcome)] = &[
 ];
 
 /// Returns `true` if the given syntax kind represents an identifier.
-pub fn is_identifier_kind(kind_id: u16) -> bool {
+fn is_identifier_kind(kind_id: u16) -> bool {
     matches!(
         kind_id,
         LangRust::identifier

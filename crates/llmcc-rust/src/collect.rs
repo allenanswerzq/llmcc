@@ -287,15 +287,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         let mut crate_alias: Option<&Symbol> = None;
 
         // Parse crate name and set up crate scope
-        if let Some(crate_name) = parse_crate_name(file_path) {
-            if let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate) {
-                scopes.push_scope_with(node, Some(symbol));
+        if let Some(crate_name) = parse_crate_name(file_path)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
+        {
+            scopes.push_scope_with(node, Some(symbol));
 
-                // Insert 'crate' alias pointing to this globals
-                if let Some(crate_sym) = scopes.lookup_or_insert("crate", node, SymKind::Crate) {
-                    crate_sym.set_scope(scopes.globals().id());
-                    crate_alias = Some(crate_sym);
-                }
+            // Insert 'crate' alias pointing to this globals
+            if let Some(crate_sym) = scopes.lookup_or_insert("crate", node, SymKind::Crate) {
+                crate_sym.set_scope(scopes.globals().id());
+                crate_alias = Some(crate_sym);
             }
         }
 

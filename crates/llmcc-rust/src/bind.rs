@@ -88,7 +88,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         Self::add_type_bound_dependencies(owner, ty, &args);
     }
 
-
     fn visit_scoped_named(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -180,12 +179,11 @@ impl<'tcx> BinderVisitor<'tcx> {
         outer_target: &'tcx Symbol,
         parent: Option<&Symbol>,
     ) {
-        if node.kind_id() == LangRust::call_expression {
-            if let Some(inner_sym) =
+        if node.kind_id() == LangRust::call_expression
+            && let Some(inner_sym) =
                 ExprResolver::new(unit, scopes).resolve_call_target(node, parent)
-            {
-                outer_target.add_dependency(inner_sym, Some(&[SymKind::TypeParameter]));
-            }
+        {
+            outer_target.add_dependency(inner_sym, Some(&[SymKind::TypeParameter]));
         }
         for child in node.children_nodes(unit) {
             Self::collect_nested_call_deps(unit, scopes, &child, outer_target, parent);
@@ -274,20 +272,32 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
 
         // At this point, all return type node should already be bound
-        let ret_node = node.child_identifier_by_field(*unit, LangRust::field_return_type);
-        if let Some(fn_sym) = sn.opt_symbol()
-            && let Some(ret_ty) = ret_node
-            && let Some(ret_sym) = ret_ty.opt_symbol()
-        {
-            fn_sym.set_type_of(ret_sym.id());
-            fn_sym.add_dependency_with_kind(ret_sym, DepKind::ReturnType, None);
+        let ret_ident = node.child_identifier_by_field(*unit, LangRust::field_return_type);
+        let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
 
-            if let Some(ns) = namespace.opt_symbol() {
-                ns.add_dependency_with_kind(
-                    ret_sym,
-                    DepKind::ReturnType,
-                    Some(&[SymKind::TypeParameter]),
-                );
+        if let Some(fn_sym) = sn.opt_symbol() {
+            // Handle the main return type identifier (e.g., Option in Option<UserDto>)
+            if let Some(ret_ty) = ret_ident
+                && let Some(ret_sym) = ret_ty.opt_symbol()
+            {
+                fn_sym.set_type_of(ret_sym.id());
+                // fn_sym.add_dependency_with_kind(ret_sym, DepKind::ReturnType, None);
+
+                if let Some(ns) = namespace.opt_symbol() {
+                    ns.add_dependency_with_kind(
+                        ret_sym,
+                        DepKind::ReturnType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
+                }
+            }
+
+            if let Some(ref ret_node) = ret_full_node {
+                let type_args =
+                    ExprResolver::new(unit, scopes).collect_type_argument_symbols(ret_node);
+                for arg_sym in type_args {
+                    fn_sym.add_dependency_with_kind(arg_sym, DepKind::ReturnType, None);
+                }
             }
         }
     }
@@ -350,14 +360,13 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(target_sym) = type_ident.opt_symbol()
         {
             // Resolve to get the actual struct/type symbol for cross-module cases
-            let resolved_target = if let Some(type_node) =
-                node.child_by_field(*unit, LangRust::field_type)
-            {
-                let mut resolver = ExprResolver::new(unit, scopes);
-                resolver.resolve_type_node(&type_node)
-            } else {
-                None
-            };
+            let resolved_target =
+                if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                    let mut resolver = ExprResolver::new(unit, scopes);
+                    resolver.resolve_type_node(&type_node)
+                } else {
+                    None
+                };
 
             // Use resolved target if available, otherwise fall back to local symbol
             let actual_target = resolved_target.unwrap_or(target_sym);
@@ -664,10 +673,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(owner) = parent {
             Self::add_type_dependencies(owner, ty, &args);
         }
-        if let Some(ns_owner) = namespace.opt_symbol() {
-            if parent.map(|sym| sym.id()) != Some(ns_owner.id()) {
-                Self::add_type_dependencies(ns_owner, ty, &args);
-            }
+        if let Some(ns_owner) = namespace.opt_symbol()
+            && parent.map(|sym| sym.id()) != Some(ns_owner.id())
+        {
+            Self::add_type_dependencies(ns_owner, ty, &args);
         }
     }
 
@@ -684,10 +693,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // Add dependency from parent (trait) to the associated type
         if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(type_sym) = type_ident.opt_symbol()
+            && let Some(parent_sym) = parent
         {
-            if let Some(parent_sym) = parent {
-                parent_sym.add_dependency(type_sym, None);
-            }
+            parent_sym.add_dependency(type_sym, None);
         }
 
         if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
@@ -953,10 +961,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             Self::add_type_dependencies(ns_owner, ty, &args);
         }
 
-        if let Some(parent_owner) = parent {
-            if namespace.opt_symbol().map(|sym| sym.id()) != Some(parent_owner.id()) {
-                Self::add_type_dependencies(parent_owner, ty, &args);
-            }
+        if let Some(parent_owner) = parent
+            && namespace.opt_symbol().map(|sym| sym.id()) != Some(parent_owner.id())
+        {
+            Self::add_type_dependencies(parent_owner, ty, &args);
         }
     }
 

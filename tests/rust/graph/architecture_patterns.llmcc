@@ -228,9 +228,11 @@ digraph project {
   n13 -> n9;
   n13 -> n6;
   n13 -> n27;
+  n12 -> n6;
   n12 -> n27;
   n14 -> n33;
   n14 -> n10;
+  n14 -> n6;
   n3 -> n9;
   n3 -> n19;
   n3 -> n27;
@@ -265,13 +267,6 @@ digraph architecture {
       n19[label="UserRepository", full_path="$TMP/src/data/repository.rs:4", sym_ty="Struct", shape=box];
     }
     subgraph cluster_3 {
-      label="main";
-      style="filled";
-      fillcolor="#EEEEEE";
-      color="#616161";
-      n3[label="main", full_path="$TMP/src/main.rs:9", sym_ty="Function"];
-    }
-    subgraph cluster_4 {
       label="service";
       style="filled";
       fillcolor="#EEEEEE";
@@ -288,12 +283,9 @@ digraph architecture {
   n27 -> n19 [from="struct", to="field"];
   n27 -> n13 [from="input", to="func"];
   n27 -> n12 [from="input", to="func"];
-  n13 -> n6 [from="user", to="used"];
-  n3 -> n9 [from="user", to="used"];
-  n3 -> n19 [from="user", to="used"];
-  n3 -> n27 [from="user", to="used"];
-  n3 -> n13 [from="caller", to="callee"];
-  n3 -> n12 [from="caller", to="callee"];
+  n13 -> n6 [from="func", to="output"];
+  n12 -> n6 [from="func", to="output"];
+  n14 -> n6 [from="func", to="output"];
 }
 
 
@@ -675,13 +667,6 @@ digraph architecture {
       n36[label="Product", full_path="$TMP/src/domain/product.rs:2", sym_ty="Struct", shape=box];
     }
     subgraph cluster_4 {
-      label="main";
-      style="filled";
-      fillcolor="#EEEEEE";
-      color="#616161";
-      n3[label="main", full_path="$TMP/src/main.rs:10", sym_ty="Function"];
-    }
-    subgraph cluster_5 {
       label="ports";
       style="filled";
       fillcolor="#EEEEEE";
@@ -704,10 +689,6 @@ digraph architecture {
   n47 -> n26 [from="trait", to="impl"];
   n60 -> n14 [from="trait", to="impl"];
   n60 -> n26 [from="bound", to="generic"];
-  n3 -> n21 [from="user", to="used"];
-  n3 -> n6 [from="user", to="used"];
-  n3 -> n14 [from="user", to="used"];
-  n3 -> n26 [from="user", to="used"];
 }
 
 
@@ -1060,13 +1041,6 @@ digraph architecture {
       n16[label="InMemoryTaskGateway", full_path="$TMP/src/interface_adapters/memory_gateway.rs:5", sym_ty="Struct", shape=box];
     }
     subgraph cluster_3 {
-      label="main";
-      style="filled";
-      fillcolor="#EEEEEE";
-      color="#616161";
-      n3[label="main", full_path="$TMP/src/main.rs:9", sym_ty="Function"];
-    }
-    subgraph cluster_4 {
       label="use_cases";
       style="filled";
       fillcolor="#EEEEEE";
@@ -1089,10 +1063,4 @@ digraph architecture {
   n39 -> n26 [from="trait", to="impl"];
   n39 -> n44 [from="bound", to="generic"];
   n39 -> n52 [from="bound", to="generic"];
-  n3 -> n48 [from="user", to="used"];
-  n3 -> n26 [from="user", to="used"];
-  n3 -> n44 [from="user", to="used"];
-  n3 -> n16 [from="user", to="used"];
-  n3 -> n52 [from="user", to="used"];
-  n3 -> n7 [from="user", to="used"];
 }

@@ -352,11 +352,12 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
         // If we have a case but no pending section, we're in the metadata/description
         // area between the banner and the first --- section. Parse known metadata
         // keys (lang, args), capture everything else as description.
-        if current.is_some() && pending_section.is_none() {
+        if let Some(ref mut case) = current
+            && pending_section.is_none()
+        {
             if let Some((key, value)) = trimmed.split_once(':') {
                 let key = key.trim();
                 let value = value.trim();
-                let case = current.as_mut().unwrap();
                 match key {
                     "lang" => case.lang = value.to_string(),
                     "args" => {
@@ -368,7 +369,7 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
                 }
             } else {
                 // Plain text (no colon) - capture as description
-                current.as_mut().unwrap().description.push(line.to_string());
+                case.description.push(line.to_string());
             }
             continue;
         }

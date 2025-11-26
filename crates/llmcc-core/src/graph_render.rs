@@ -1,8 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 
-use crate::symbol::{DepKind, SymId, SymKind};
 use crate::BlockId;
+use crate::symbol::{DepKind, SymId, SymKind};
 
 /// Edge with labeled from/to DepKind for architecture graphs
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -25,7 +25,12 @@ impl LabeledEdge {
             DepKind::TypeBound => ("bound", "generic"),
             DepKind::Uses => ("user", "used"),
         };
-        Self { from_idx, to_idx, from_kind, to_kind }
+        Self {
+            from_idx,
+            to_idx,
+            from_kind,
+            to_kind,
+        }
     }
 }
 
@@ -39,6 +44,8 @@ pub(crate) struct CompactNode {
     pub(crate) fqn: String,
     pub(crate) sym_id: Option<SymId>,
     pub(crate) sym_kind: Option<SymKind>,
+    /// Whether the symbol is public (for filtering private helpers in arch-graph)
+    pub(crate) is_public: bool,
 }
 
 impl CompactNode {
@@ -109,7 +116,7 @@ impl<'a> GraphRenderer<'a> {
             return format!("digraph {} {{\n}}\n", title);
         }
 
-        render_nested_dot_with_title(&self.nodes, &edges, component_depth, title)
+        render_nested_dot_with_title(self.nodes, edges, component_depth, title)
 
         // TODO:
         // let pruned = prune_compact_components(self.nodes, edges);
@@ -129,7 +136,7 @@ impl<'a> GraphRenderer<'a> {
         if self.nodes.is_empty() {
             return "digraph architecture {\n}\n".to_string();
         }
-        render_arch_dot(&self.nodes, edges, component_depth)
+        render_arch_dot(self.nodes, edges, component_depth)
     }
 }
 
@@ -175,7 +182,7 @@ fn render_nested_dot_with_title(
     // output.push_str("  node [shape=box, style=\"rounded,filled\", fontname=\"Helvetica\", fontsize=11, fillcolor=white];\n");
     // output.push_str("  edge [arrowsize=0.8, color=\"#666666\"];\n");
     output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n");
-    output.push_str("\n");
+    output.push('\n');
 
     let mut counter = 0usize;
 
@@ -208,7 +215,7 @@ fn render_arch_dot(
 
     let mut output = "digraph architecture {\n".to_string();
     output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n");
-    output.push_str("\n");
+    output.push('\n');
 
     let mut counter = 0usize;
 
@@ -292,7 +299,10 @@ fn render_arch_component_tree(
         if let Some(sym_kind) = &node.sym_kind {
             attrs.push(format!("sym_ty=\"{:?}\"", sym_kind));
             // Use box shape for type-like symbols (Struct, Trait, Enum)
-            if matches!(sym_kind, SymKind::Struct | SymKind::Trait | SymKind::Enum) {
+            if matches!(sym_kind, SymKind::Struct | SymKind::Enum) {
+                attrs.push("shape=box".to_string());
+            }
+            if matches!(sym_kind, SymKind::Trait) {
                 attrs.push("shape=box".to_string());
             }
         }

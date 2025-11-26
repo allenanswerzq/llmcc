@@ -149,17 +149,12 @@ digraph architecture {
       fillcolor="#EEEEEE";
       color="#616161";
       n2[label="Drawable", full_path="$TMP/src/main.rs:1", sym_ty="Trait", shape=box];
-      n11[label="render", full_path="$TMP/src/main.rs:28", sym_ty="Function"];
-      n12[label="main", full_path="$TMP/src/main.rs:32", sym_ty="Function"];
       n4[label="Movable", full_path="$TMP/src/main.rs:5", sym_ty="Trait", shape=box];
       n6[label="Circle", full_path="$TMP/src/main.rs:9", sym_ty="Struct", shape=box];
     }
   }
   n2 -> n6 [from="trait", to="impl"];
-  n2 -> n11 [from="input", to="func"];
   n4 -> n6 [from="trait", to="impl"];
-  n12 -> n6 [from="user", to="used"];
-  n12 -> n11 [from="caller", to="callee"];
 }
 
 
@@ -195,13 +190,15 @@ fn main() {
 --- expect:symbol-deps ---
 u0:22 -> [u0:23, u0:24]
 u0:22 <- [u0:25]
-u0:23 <- [u0:22]
+u0:23 <- [u0:22, u0:24]
+u0:24 -> [u0:23]
 u0:24 <- [u0:22]
 u0:25 -> [u0:22, u0:27, u0:28, u0:7, u0:7]
 u0:25 <- [u0:29, u0:30]
 u0:26 -> [u0:7]
 u0:27 -> [u0:7]
-u0:27 <- [u0:25]
+u0:27 <- [u0:25, u0:28]
+u0:28 -> [u0:27]
 u0:28 <- [u0:25, u0:29]
 u0:29 -> [u0:25, u0:28]
 u0:30 -> [u0:25]
@@ -239,12 +236,10 @@ digraph architecture {
       fillcolor="#EEEEEE";
       color="#616161";
       n2[label="Iterator", full_path="$TMP/src/main.rs:1", sym_ty="Trait", shape=box];
-      n7[label="main", full_path="$TMP/src/main.rs:19", sym_ty="Function"];
       n4[label="Counter", full_path="$TMP/src/main.rs:6", sym_ty="Struct", shape=box];
     }
   }
   n2 -> n4 [from="trait", to="impl"];
-  n7 -> n4 [from="user", to="used"];
 }
 
 

@@ -5,7 +5,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::CompileCtxt;
 use crate::graph_render::{CompactNode, GraphRenderer, LabeledEdge};
 use crate::pagerank::PageRanker;
-use crate::symbol::{DepKind, SymId};
+use crate::symbol::{DepKind, SymId, SymKind};
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -303,7 +303,20 @@ impl<'tcx> ProjectGraph<'tcx> {
     /// This is different from the dependency graph which shows "uses" relationships.
     pub fn render_arch_graph(&self) -> String {
         let top_k = self.top_k;
-        let nodes = self.collect_sorted_nodes(top_k);
+        let all_nodes = self.collect_sorted_nodes(top_k);
+
+        // Filter nodes for arch-graph:
+        // - Keep all types (Struct, Trait, Enum) regardless of visibility
+        // - Only keep public functions (private functions are implementation details)
+        let nodes: Vec<_> = all_nodes
+            .into_iter()
+            .filter(|node| {
+                match node.sym_kind {
+                    Some(SymKind::Function) => node.is_public,
+                    _ => true, // Keep all other kinds (Struct, Trait, Enum, etc.)
+                }
+            })
+            .collect();
 
         if nodes.is_empty() {
             return "digraph architecture {\n}\n".to_string();
@@ -388,24 +401,11 @@ impl<'tcx> ProjectGraph<'tcx> {
                             edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::TypeBound));
                         }
                         DepKind::Uses => {
-                            // Skip Uses if there's a more specific DepKind for this relationship
-                            // Only add if no other edge exists between these nodes
-                            let has_specific = depends.iter().any(|(id, kind)| {
-                                *id == dep_id
-                                    && matches!(
-                                        kind,
-                                        DepKind::ParamType
-                                            | DepKind::ReturnType
-                                            | DepKind::Implements
-                                            | DepKind::FieldType
-                                            | DepKind::Calls
-                                            | DepKind::Instantiates
-                                            | DepKind::TypeBound
-                                    )
-                            });
-                            if !has_specific {
-                                edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Uses));
-                            }
+                            // For arch-graph, skip generic Uses dependencies
+                            // Arch-graph focuses on structural relationships:
+                            // - type flows (params, returns, fields, bounds)
+                            // - trait implementations
+                            // Uses captures too many incidental references (e.g., enum variants in expressions)
                         }
                     }
                 }
@@ -496,6 +496,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                 let mut sym_id: Option<SymId> = None;
                 let mut sym_kind = None;
                 let mut fqn = "unknown".to_string();
+                let mut is_public = false;
 
                 if let Some(symbol) = block
                     .opt_node()
@@ -505,6 +506,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                 {
                     sym_id = Some(symbol.id());
                     sym_kind = Some(symbol.kind());
+                    is_public = symbol.is_global();
                     if let Some(resolved) = self.cc.interner.resolve_owned(symbol.fqn()) {
                         fqn = resolved;
                     }
@@ -518,6 +520,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     fqn,
                     sym_id,
                     sym_kind,
+                    is_public,
                 })
             })
             .collect()
