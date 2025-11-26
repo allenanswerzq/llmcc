@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use anyhow::{Context, Result, anyhow};
 use clap::{Parser, Subcommand};
 
-use llmcc_test::{CaseOutcome, CaseStatus, Corpus, RunnerConfig, run_cases, run_cases_for_file};
+use llmcc_test::{
+    CaseOutcome, CaseStatus, Corpus, GraphOptions, ProcessingOptions, RunnerConfig, run_cases,
+    run_cases_for_file_with_parallel,
+};
 
 #[derive(Parser, Debug)]
 #[command(name = "llmcc-test", about = "Corpus runner for llmcc", version)]
@@ -29,6 +32,10 @@ enum Command {
         /// Keep the temporary project directory for inspection
         #[arg(long = "keep-temps")]
         keep_temps: bool,
+        #[command(flatten)]
+        graph: GraphOptions,
+        #[command(flatten)]
+        processing: ProcessingOptions,
     },
     /// Run the entire corpus (optionally filtered by case id)
     RunAll {
@@ -49,6 +56,10 @@ enum Command {
         /// Keep the temporary project directory for inspection
         #[arg(long = "keep-temps")]
         keep_temps: bool,
+        #[command(flatten)]
+        graph: GraphOptions,
+        #[command(flatten)]
+        processing: ProcessingOptions,
     },
     /// List available cases (optionally filtering by substring)
     List {
@@ -64,12 +75,16 @@ fn main() -> Result<()> {
             file,
             update,
             keep_temps,
-        } => run_single_command(cli.root, file, update, keep_temps),
+            graph,
+            processing,
+        } => run_single_command(cli.root, file, update, keep_temps, graph, processing),
         Command::RunAll {
             filter,
             case,
             update,
             keep_temps,
+            graph,
+            processing,
         } => {
             let (should_update, update_filter) = match update {
                 Some(value) if value.is_empty() => (true, None),
@@ -77,7 +92,14 @@ fn main() -> Result<()> {
                 None => (false, None),
             };
             let effective_filter = filter.or(case).or(update_filter);
-            run_all_command(cli.root, effective_filter, should_update, keep_temps)
+            run_all_command(
+                cli.root,
+                effective_filter,
+                should_update,
+                keep_temps,
+                graph,
+                processing,
+            )
         }
         Command::List { filter } => list_command(cli.root, filter),
     }
@@ -88,6 +110,8 @@ fn run_all_command(
     filter: Option<String>,
     update: bool,
     keep_temps: bool,
+    graph: GraphOptions,
+    processing: ProcessingOptions,
 ) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let outcomes = run_cases(
@@ -96,6 +120,8 @@ fn run_all_command(
             filter: filter.clone(),
             update,
             keep_temps,
+            graph,
+            processing,
         },
     )?;
 
@@ -114,7 +140,14 @@ fn run_all_command(
     Ok(())
 }
 
-fn run_single_command(root: PathBuf, file: PathBuf, update: bool, keep_temps: bool) -> Result<()> {
+fn run_single_command(
+    root: PathBuf,
+    file: PathBuf,
+    update: bool,
+    keep_temps: bool,
+    graph: GraphOptions,
+    processing: ProcessingOptions,
+) -> Result<()> {
     let mut corpus = Corpus::load(&root)?;
     let root_canon = root
         .canonicalize()
@@ -151,7 +184,15 @@ fn run_single_command(root: PathBuf, file: PathBuf, update: bool, keep_temps: bo
         ));
     };
 
-    let outcomes = run_cases_for_file(entry, update, keep_temps)?;
+    let outcomes = run_cases_for_file_with_parallel(
+        entry,
+        update,
+        keep_temps,
+        processing.parallel,
+        processing.print_ir,
+        graph.component_depth,
+        graph.pagerank_top_k,
+    )?;
     let summary = print_outcomes(&outcomes);
 
     if update {

@@ -26,14 +26,27 @@ pub fn next_hir_id() -> HirId {
 
 /// Configuration for IR building behavior.
 ///
-/// This is currently a zero-sized marker type but is provided for future extensibility.
-/// Future versions may include options like:
-/// - Error recovery strategies
-/// - Symbol table generation
-/// - Scope depth limits
-/// - Performance tuning parameters
+/// This configuration controls how the IR builder processes files.
+/// By default, files are processed in parallel for better performance.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct IrBuildOption;
+pub struct IrBuildOption {
+    /// When true, process files sequentially to ensure deterministic ordering.
+    /// When false (default), process files in parallel for better performance.
+    pub sequential: bool,
+}
+
+impl IrBuildOption {
+    /// Create a new IrBuildOption with default settings.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set whether to process files sequentially.
+    pub fn with_sequential(mut self, sequential: bool) -> Self {
+        self.sequential = sequential;
+        self
+    }
+}
 
 /// IR builder that transforms parse trees into HIR nodes using a per-unit arena.
 struct HirBuilder<'unit, Language> {
@@ -210,25 +223,28 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     cc: &'tcx CompileCtxt<'tcx>,
     config: IrBuildOption,
 ) -> Result<(), DynError> {
-    let results: Vec<Result<BuildResult, DynError>> = (0..cc.files.len())
-        .into_par_iter()
-        .map(|index| {
-            let file_path = cc.file_path(index).map(|p| p.to_string());
-            let file_bytes = cc.files[index].content();
+    let build_one = |index: usize| -> Result<BuildResult, DynError> {
+        let file_path = cc.file_path(index).map(|p| p.to_string());
+        let file_bytes = cc.files[index].content();
 
-            let parse_tree = cc
-                .get_parse_tree(index)
-                .ok_or_else(|| format!("No parse tree for unit {}", index))?;
+        let parse_tree = cc
+            .get_parse_tree(index)
+            .ok_or_else(|| format!("No parse tree for unit {}", index))?;
 
-            let file_root_id =
-                build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;
+        let file_root_id =
+            build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;
 
-            Ok(BuildResult {
-                index,
-                file_root_id,
-            })
+        Ok(BuildResult {
+            index,
+            file_root_id,
         })
-        .collect();
+    };
+
+    let results: Vec<Result<BuildResult, DynError>> = if config.sequential {
+        (0..cc.files.len()).map(build_one).collect()
+    } else {
+        (0..cc.files.len()).into_par_iter().map(build_one).collect()
+    };
 
     // Collect and sort results
     let mut results: Vec<BuildResult> = results.into_iter().collect::<Result<Vec<_>, _>>()?;

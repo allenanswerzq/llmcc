@@ -2,8 +2,37 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 
 use crate::BlockId;
+use crate::symbol::{DepKind, SymId, SymKind};
 
-const EMPTY_GRAPH_DOT: &str = "digraph project {\n}\n";
+/// Edge with labeled from/to DepKind for architecture graphs
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct LabeledEdge {
+    pub from_idx: usize,
+    pub to_idx: usize,
+    pub from_kind: &'static str,
+    pub to_kind: &'static str,
+}
+
+impl LabeledEdge {
+    pub fn new(from_idx: usize, to_idx: usize, kind: DepKind) -> Self {
+        let (from_kind, to_kind) = match kind {
+            DepKind::ParamType => ("input", "func"),
+            DepKind::ReturnType => ("func", "output"),
+            DepKind::Calls => ("caller", "callee"),
+            DepKind::Implements => ("trait", "impl"),
+            DepKind::FieldType => ("struct", "field"),
+            DepKind::Instantiates => ("caller", "type"),
+            DepKind::TypeBound => ("bound", "generic"),
+            DepKind::Uses => ("user", "used"),
+        };
+        Self {
+            from_idx,
+            to_idx,
+            from_kind,
+            to_kind,
+        }
+    }
+}
 
 #[derive(Clone)]
 pub(crate) struct CompactNode {
@@ -11,7 +40,37 @@ pub(crate) struct CompactNode {
     pub(crate) unit_index: usize,
     pub(crate) name: String,
     pub(crate) location: Option<String>,
-    pub(crate) group: String,
+    /// Fully qualified name for hierarchical grouping
+    pub(crate) fqn: String,
+    pub(crate) sym_id: Option<SymId>,
+    pub(crate) sym_kind: Option<SymKind>,
+    /// Whether the symbol is public (for filtering private helpers in arch-graph)
+    pub(crate) is_public: bool,
+}
+
+impl CompactNode {
+    /// Extract component path from FQN at given depth
+    /// FQN: "_c::data::entity::User"
+    /// depth=1 → ["_c"]
+    /// depth=2 → ["_c", "data"]
+    /// depth=3 → ["_c", "data", "entity"]
+    pub(crate) fn component_path(&self, depth: usize) -> Vec<String> {
+        if depth == 0 {
+            return vec![];
+        }
+        let parts: Vec<&str> = self.fqn.split("::").collect();
+        // Take up to `depth` parts, excluding the symbol name itself
+        let module_parts = if parts.len() > 1 {
+            &parts[..parts.len() - 1]
+        } else {
+            &parts[..]
+        };
+        module_parts
+            .iter()
+            .take(depth)
+            .map(|s| s.to_string())
+            .collect()
+    }
 }
 
 pub(crate) struct GraphRenderer<'a> {
@@ -35,71 +94,102 @@ impl<'a> GraphRenderer<'a> {
         node_index
     }
 
-    pub(crate) fn render(&self, edges: &BTreeSet<(usize, usize)>) -> String {
+    pub(crate) fn render(
+        &self,
+        edges: &BTreeSet<(usize, usize)>,
+        component_depth: usize,
+    ) -> String {
+        self.render_with_title(edges, component_depth, "project")
+    }
+
+    pub(crate) fn render_with_title(
+        &self,
+        edges: &BTreeSet<(usize, usize)>,
+        component_depth: usize,
+        title: &str,
+    ) -> String {
         if self.nodes.is_empty() {
-            return EMPTY_GRAPH_DOT.to_string();
+            return format!("digraph {} {{\n}}\n", title);
         }
 
-        let pruned = prune_compact_components(self.nodes, edges);
-        if pruned.nodes.is_empty() {
-            return EMPTY_GRAPH_DOT.to_string();
+        if self.nodes.is_empty() {
+            return format!("digraph {} {{\n}}\n", title);
         }
 
-        let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-        render_compact_dot(&pruned.nodes, &reduced_edges)
+        render_nested_dot_with_title(self.nodes, edges, component_depth, title)
+
+        // TODO:
+        // let pruned = prune_compact_components(self.nodes, edges);
+        // if self.nodes.is_empty() {
+        //     return format!("digraph {} {{\n}}\n", title);
+        // }
+        // let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
+        // render_nested_dot_with_title(&pruned.nodes, &reduced_edges, component_depth, title)
+    }
+
+    /// Render architecture graph with labeled edges showing DepKind
+    pub(crate) fn render_arch(
+        &self,
+        edges: &BTreeSet<LabeledEdge>,
+        component_depth: usize,
+    ) -> String {
+        if self.nodes.is_empty() {
+            return "digraph architecture {\n}\n".to_string();
+        }
+        render_arch_dot(self.nodes, edges, component_depth)
     }
 }
 
-fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -> String {
-    let mut crate_groups: BTreeMap<String, Vec<usize>> = BTreeMap::new();
-    for (idx, node) in nodes.iter().enumerate() {
-        crate_groups
-            .entry(node.group.clone())
-            .or_default()
-            .push(idx);
-    }
+/// A tree structure for organizing nodes by their component paths
+#[derive(Default)]
+struct ComponentTree {
+    /// Direct child nodes at this level
+    node_indices: Vec<usize>,
+    /// Child component subtrees
+    children: BTreeMap<String, ComponentTree>,
+}
 
-    let mut output = String::from("digraph project {\n");
-
-    for (subgraph_counter, (crate_path, node_indices)) in crate_groups.iter_mut().enumerate() {
-        node_indices.sort_by(|&a, &b| {
-            let node_a = &nodes[a];
-            let node_b = &nodes[b];
-
-            node_a
-                .location
-                .as_ref()
-                .cmp(&node_b.location.as_ref())
-                .then_with(|| node_a.name.cmp(&node_b.name))
-                .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
-        });
-
-        output.push_str(&format!("  subgraph cluster_{} {{\n", subgraph_counter));
-        output.push_str(&format!(
-            "    label=\"{}\";\n",
-            escape_dot_label(crate_path)
-        ));
-        output.push_str("    style=filled;\n");
-        output.push_str("    color=lightgrey;\n");
-
-        for &idx in node_indices.iter() {
-            let node = &nodes[idx];
-            let node_name = format!("n{}", node.block_id.as_u32());
-            let label = escape_dot_label(&node.name);
-            let mut attrs = vec![format!("label=\"{}\"", label)];
-
-            if let Some(location) = &node.location {
-                let (_display, full) = summarize_location(location);
-                let escaped_full = escape_dot_attr(&full);
-                attrs.push(format!("full_path=\"{}\"", escaped_full));
-            }
-
-            output.push_str(&format!("    {} [{}];\n", node_name, attrs.join(", ")));
+impl ComponentTree {
+    fn insert(&mut self, path: &[String], node_idx: usize) {
+        if path.is_empty() {
+            self.node_indices.push(node_idx);
+        } else {
+            let child = self.children.entry(path[0].clone()).or_default();
+            child.insert(&path[1..], node_idx);
         }
+    }
+}
 
-        output.push_str("  }\n");
+fn render_nested_dot_with_title(
+    nodes: &[CompactNode],
+    edges: &BTreeSet<(usize, usize)>,
+    component_depth: usize,
+    title: &str,
+) -> String {
+    // Build component tree from node paths derived from FQN
+    let mut tree = ComponentTree::default();
+    for (idx, node) in nodes.iter().enumerate() {
+        let path = node.component_path(component_depth);
+        tree.insert(&path, idx);
     }
 
+    let mut output = format!("digraph {} {{\n", title);
+
+    // Global graph attributes for better visualization
+    // output.push_str("  rankdir=TB;\n");
+    // output.push_str("  compound=true;\n");
+    // output.push_str("  newrank=true;\n");
+    // output.push_str("  node [shape=box, style=\"rounded,filled\", fontname=\"Helvetica\", fontsize=11, fillcolor=white];\n");
+    // output.push_str("  edge [arrowsize=0.8, color=\"#666666\"];\n");
+    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n");
+    output.push('\n');
+
+    let mut counter = 0usize;
+
+    // Render the tree recursively, starting at depth 0
+    render_component_tree(&mut output, &tree, nodes, &mut counter, 1, 0);
+
+    // Render edges
     for &(from, to) in edges {
         let from_name = format!("n{}", nodes[from].block_id.as_u32());
         let to_name = format!("n{}", nodes[to].block_id.as_u32());
@@ -108,6 +198,196 @@ fn render_compact_dot(nodes: &[CompactNode], edges: &BTreeSet<(usize, usize)>) -
 
     output.push_str("}\n");
     output
+}
+
+/// Render architecture graph with labeled edges showing from/to DepKind
+fn render_arch_dot(
+    nodes: &[CompactNode],
+    edges: &BTreeSet<LabeledEdge>,
+    component_depth: usize,
+) -> String {
+    // Build component tree from node paths derived from FQN
+    let mut tree = ComponentTree::default();
+    for (idx, node) in nodes.iter().enumerate() {
+        let path = node.component_path(component_depth);
+        tree.insert(&path, idx);
+    }
+
+    let mut output = "digraph architecture {\n".to_string();
+    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n");
+    output.push('\n');
+
+    let mut counter = 0usize;
+
+    // Render the tree recursively with sym_ty attribute
+    render_arch_component_tree(&mut output, &tree, nodes, &mut counter, 1, 0);
+
+    // Render labeled edges with from/to attributes
+    for edge in edges {
+        let from_name = format!("n{}", nodes[edge.from_idx].block_id.as_u32());
+        let to_name = format!("n{}", nodes[edge.to_idx].block_id.as_u32());
+        output.push_str(&format!(
+            "  {} -> {} [from=\"{}\", to=\"{}\"];\n",
+            from_name, to_name, edge.from_kind, edge.to_kind
+        ));
+    }
+
+    output.push_str("}\n");
+    output
+}
+
+fn render_arch_component_tree(
+    output: &mut String,
+    tree: &ComponentTree,
+    nodes: &[CompactNode],
+    counter: &mut usize,
+    indent_level: usize,
+    depth: usize,
+) {
+    let indent = "  ".repeat(indent_level);
+    let (fill_color, border_color) = get_depth_colors(depth);
+
+    // Render child subtrees (nested subgraphs)
+    for (component_name, subtree) in &tree.children {
+        let cluster_id = *counter;
+        *counter += 1;
+
+        output.push_str(&format!("{}subgraph cluster_{} {{\n", indent, cluster_id));
+        output.push_str(&format!(
+            "{}  label=\"{}\";\n",
+            indent,
+            escape_dot_label(component_name)
+        ));
+        if depth != 0 {
+            output.push_str(&format!("{}  style=\"filled\";\n", indent));
+            output.push_str(&format!("{}  fillcolor=\"{}\";\n", indent, fill_color));
+            output.push_str(&format!("{}  color=\"{}\";\n", indent, border_color));
+        }
+
+        // Recursively render children with increased depth
+        render_arch_component_tree(output, subtree, nodes, counter, indent_level + 1, depth + 1);
+
+        output.push_str(&format!("{}}}\n", indent));
+    }
+
+    // Render nodes at this level with sym_ty attribute
+    let mut sorted_indices = tree.node_indices.clone();
+    sorted_indices.sort_by(|&a, &b| {
+        let node_a = &nodes[a];
+        let node_b = &nodes[b];
+
+        node_a
+            .location
+            .as_ref()
+            .cmp(&node_b.location.as_ref())
+            .then_with(|| node_a.name.cmp(&node_b.name))
+            .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
+    });
+
+    for idx in sorted_indices {
+        let node = &nodes[idx];
+        let node_name = format!("n{}", node.block_id.as_u32());
+        let label = escape_dot_label(&node.name);
+        let mut attrs = vec![format!("label=\"{}\"", label)];
+
+        if let Some(location) = &node.location {
+            let (_display, full) = summarize_location(location);
+            let escaped_full = escape_dot_attr(&full);
+            attrs.push(format!("full_path=\"{}\"", escaped_full));
+        }
+
+        if let Some(sym_kind) = &node.sym_kind {
+            attrs.push(format!("sym_ty=\"{:?}\"", sym_kind));
+            // Use box shape for type-like symbols (Struct, Trait, Enum)
+            if matches!(sym_kind, SymKind::Struct | SymKind::Enum) {
+                attrs.push("shape=box".to_string());
+            }
+            if matches!(sym_kind, SymKind::Trait) {
+                attrs.push("shape=box".to_string());
+            }
+        }
+
+        output.push_str(&format!("{}{}[{}];\n", indent, node_name, attrs.join(", ")));
+    }
+}
+
+/// Color palette for different nesting depths
+/// Returns (fill_color, border_color) for the subgraph
+fn get_depth_colors(depth: usize) -> (&'static str, &'static str) {
+    match depth % 5 {
+        0 => ("#F5F5F5", "#757575"), // Light grey / Dark grey
+        1 => ("#EEEEEE", "#616161"), // Lighter grey / Medium grey
+        2 => ("#E0E0E0", "#424242"), // Medium grey / Darker grey
+        3 => ("#FAFAFA", "#9E9E9E"), // Near white / Grey
+        4 => ("#F0F0F0", "#808080"), // Soft grey / Neutral grey
+        _ => ("#F5F5F5", "#9E9E9E"), // Light grey (fallback)
+    }
+}
+
+fn render_component_tree(
+    output: &mut String,
+    tree: &ComponentTree,
+    nodes: &[CompactNode],
+    counter: &mut usize,
+    indent_level: usize,
+    depth: usize,
+) {
+    let indent = "  ".repeat(indent_level);
+    let (fill_color, border_color) = get_depth_colors(depth);
+
+    // Render child subtrees (nested subgraphs)
+    for (component_name, subtree) in &tree.children {
+        let cluster_id = *counter;
+        *counter += 1;
+
+        output.push_str(&format!("{}subgraph cluster_{} {{\n", indent, cluster_id));
+        output.push_str(&format!(
+            "{}  label=\"{}\";\n",
+            indent,
+            escape_dot_label(component_name)
+        ));
+        if depth != 0 {
+            output.push_str(&format!("{}  style=\"filled\";\n", indent));
+            output.push_str(&format!("{}  fillcolor=\"{}\";\n", indent, fill_color));
+            output.push_str(&format!("{}  color=\"{}\";\n", indent, border_color));
+        }
+        // output.push_str(&format!("{}  penwidth=2;\n", indent));
+        // output.push_str(&format!("{}  margin=16;\n", indent));
+
+        // Recursively render children with increased depth
+        render_component_tree(output, subtree, nodes, counter, indent_level + 1, depth + 1);
+
+        output.push_str(&format!("{}}}\n", indent));
+    }
+
+    // Render nodes at this level
+    let mut sorted_indices = tree.node_indices.clone();
+    sorted_indices.sort_by(|&a, &b| {
+        let node_a = &nodes[a];
+        let node_b = &nodes[b];
+
+        node_a
+            .location
+            .as_ref()
+            .cmp(&node_b.location.as_ref())
+            .then_with(|| node_a.name.cmp(&node_b.name))
+            .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
+    });
+
+    for idx in sorted_indices {
+        let node = &nodes[idx];
+        let node_name = format!("n{}", node.block_id.as_u32());
+        let label = escape_dot_label(&node.name);
+        let mut attrs = vec![format!("label=\"{}\"", label)];
+
+        if let Some(location) = &node.location {
+            let (_display, full) = summarize_location(location);
+            let escaped_full = escape_dot_attr(&full);
+            attrs.push(format!("full_path=\"{}\"", escaped_full));
+        }
+
+        output.push_str(&format!("{}{}[{}];\n", indent, node_name, attrs.join(", ")));
+    }
 }
 
 fn escape_dot_label(input: &str) -> String {
@@ -156,79 +436,28 @@ fn summarize_location(location: &str) -> (String, String) {
     (display, location.to_string())
 }
 
+#[allow(dead_code)]
 fn reduce_transitive_edges(
     nodes: &[CompactNode],
     edges: &BTreeSet<(usize, usize)>,
 ) -> BTreeSet<(usize, usize)> {
+    // Temporarily skip transitive reduction to avoid dropping edges like
+    // main -> render. TODO: reinstate smarter reduction once edge retention
+    // rules are clarified.
     if nodes.is_empty() {
-        return BTreeSet::new();
+        BTreeSet::new()
+    } else {
+        edges.clone()
     }
-
-    let mut adjacency: HashMap<usize, Vec<usize>> = HashMap::new();
-    for &(from, to) in edges.iter() {
-        adjacency.entry(from).or_default().push(to);
-    }
-
-    let mut minimal_edges = BTreeSet::new();
-
-    for &(from, to) in edges.iter() {
-        if !has_alternative_path(from, to, &adjacency, (from, to)) {
-            minimal_edges.insert((from, to));
-        }
-    }
-
-    minimal_edges
 }
 
-fn has_alternative_path(
-    start: usize,
-    target: usize,
-    adjacency: &HashMap<usize, Vec<usize>>,
-    edge_to_skip: (usize, usize),
-) -> bool {
-    let mut visited = HashSet::new();
-    let mut stack: Vec<usize> = adjacency
-        .get(&start)
-        .into_iter()
-        .flat_map(|neighbors| neighbors.iter())
-        .filter_map(|&neighbor| {
-            if (start, neighbor) == edge_to_skip {
-                None
-            } else {
-                Some(neighbor)
-            }
-        })
-        .collect();
-
-    while let Some(current) = stack.pop() {
-        if !visited.insert(current) {
-            continue;
-        }
-
-        if current == target {
-            return true;
-        }
-
-        if let Some(neighbors) = adjacency.get(&current) {
-            for &neighbor in neighbors {
-                if (current, neighbor) == edge_to_skip {
-                    continue;
-                }
-                if !visited.contains(&neighbor) {
-                    stack.push(neighbor);
-                }
-            }
-        }
-    }
-
-    false
-}
-
+#[allow(dead_code)]
 struct PrunedGraph {
     nodes: Vec<CompactNode>,
     edges: BTreeSet<(usize, usize)>,
 }
 
+#[allow(dead_code)]
 fn prune_compact_components(
     nodes: &[CompactNode],
     edges: &BTreeSet<(usize, usize)>,
@@ -300,6 +529,7 @@ fn prune_compact_components(
     }
 }
 
+#[allow(dead_code)]
 fn find_connected_components(
     node_count: usize,
     edges: &BTreeSet<(usize, usize)>,

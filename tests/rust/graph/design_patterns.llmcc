@@ -1,0 +1,1925 @@
+===============================================================================
+dependency-injection-basic
+===============================================================================
+Tests DI pattern: UserService depends on UserRepository trait, allowing PostgresUserRepo or MockUserRepo.
+
+--- file: src/lib.rs ---
+pub mod repository;
+pub mod service;
+pub mod di;
+
+--- file: src/repository.rs ---
+pub trait UserRepository {
+    fn find_by_id(&self, id: u64) -> Option<User>;
+    fn save(&mut self, user: User) -> u64;
+}
+
+#[derive(Clone)]
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+// Production implementation
+pub mod postgres {
+    use super::{User, UserRepository};
+
+    pub struct PostgresUserRepo {
+        connection_string: String,
+    }
+
+    impl PostgresUserRepo {
+        pub fn new(conn: &str) -> Self {
+            PostgresUserRepo { connection_string: conn.to_string() }
+        }
+    }
+
+    impl UserRepository for PostgresUserRepo {
+        fn find_by_id(&self, id: u64) -> Option<User> {
+            println!("PostgreSQL query: SELECT * FROM users WHERE id = {}", id);
+            Some(User { id, name: "DB User".to_string() })
+        }
+
+        fn save(&mut self, user: User) -> u64 {
+            println!("PostgreSQL: INSERT INTO users...");
+            user.id
+        }
+    }
+}
+
+// Test double
+pub mod mock {
+    use super::{User, UserRepository};
+    use std::collections::HashMap;
+
+    pub struct MockUserRepo {
+        users: HashMap<u64, User>,
+        next_id: u64,
+    }
+
+    impl MockUserRepo {
+        pub fn new() -> Self {
+            MockUserRepo { users: HashMap::new(), next_id: 1 }
+        }
+
+        pub fn with_user(mut self, user: User) -> Self {
+            self.users.insert(user.id, user);
+            self
+        }
+    }
+
+    impl UserRepository for MockUserRepo {
+        fn find_by_id(&self, id: u64) -> Option<User> {
+            self.users.get(&id).cloned()
+        }
+
+        fn save(&mut self, mut user: User) -> u64 {
+            if user.id == 0 {
+                user.id = self.next_id;
+                self.next_id += 1;
+            }
+            let id = user.id;
+            self.users.insert(id, user);
+            id
+        }
+    }
+}
+
+--- file: src/service.rs ---
+use crate::repository::{User, UserRepository};
+
+pub struct UserService<R: UserRepository> {
+    repo: R,
+}
+
+impl<R: UserRepository> UserService<R> {
+    pub fn new(repo: R) -> Self {
+        UserService { repo }
+    }
+
+    pub fn get_user(&self, id: u64) -> Option<User> {
+        self.repo.find_by_id(id)
+    }
+
+    pub fn create_user(&mut self, name: String) -> User {
+        let user = User { id: 0, name };
+        let id = self.repo.save(user.clone());
+        User { id, ..user }
+    }
+}
+
+--- file: src/di.rs ---
+use crate::repository::{UserRepository, postgres::PostgresUserRepo};
+use crate::service::UserService;
+
+pub struct Container {
+    pub user_service: UserService<PostgresUserRepo>,
+}
+
+impl Container {
+    pub fn new(database_url: &str) -> Self {
+        let repo = PostgresUserRepo::new(database_url);
+        Container {
+            user_service: UserService::new(repo),
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod repository;
+mod service;
+mod di;
+
+use di::Container;
+
+fn main() {
+    let container = Container::new("postgres://localhost/app");
+
+    if let Some(user) = container.user_service.get_user(1) {
+        println!("Found user: {}", user.name);
+    }
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u1:22 | Crate | crate | _c::crate |
+u1:23 | File | repository | _c::repository |
+u1:24 | Trait | UserRepository | _c::repository::UserRepository | [global]
+u1:25 | Function | find_by_id | _c::repository::UserRepository::find_by_id |
+u1:26 | Variable | id | _c::repository::UserRepository::find_by_id::id |
+u1:27 | Function | save | _c::repository::UserRepository::save |
+u1:28 | Variable | user | _c::repository::UserRepository::save::user |
+u1:29 | Struct | User | _c::repository::User | [global]
+u1:30 | Field | id | _c::repository::User::id |
+u1:31 | Field | name | _c::repository::User::name |
+u1:32 | Namespace | postgres | _c::repository::postgres | [global]
+u1:33 | Struct | PostgresUserRepo | _c::repository::postgres::PostgresUserRepo | [global]
+u1:34 | Field | connection_string | _c::repository::postgres::PostgresUserRepo::connection_string |
+u1:35 | Function | new | _c::repository::postgres::PostgresUserRepo::new | [global]
+u1:36 | Variable | conn | _c::repository::postgres::PostgresUserRepo::new::conn |
+u1:37 | Function | find_by_id | _c::repository::postgres::PostgresUserRepo::find_by_id |
+u1:38 | Variable | id | _c::repository::postgres::PostgresUserRepo::find_by_id::id |
+u1:39 | Function | save | _c::repository::postgres::PostgresUserRepo::save |
+u1:40 | Variable | user | _c::repository::postgres::PostgresUserRepo::save::user |
+u1:41 | Namespace | mock | _c::repository::mock | [global]
+u1:42 | Struct | MockUserRepo | _c::repository::mock::MockUserRepo | [global]
+u1:43 | Field | users | _c::repository::mock::MockUserRepo::users |
+u1:44 | Field | next_id | _c::repository::mock::MockUserRepo::next_id |
+u1:45 | Function | new | _c::repository::mock::MockUserRepo::new | [global]
+u1:46 | Function | with_user | _c::repository::mock::MockUserRepo::with_user | [global]
+u1:47 | Variable | user | _c::repository::mock::MockUserRepo::with_user::user |
+u1:48 | Function | find_by_id | _c::repository::mock::MockUserRepo::find_by_id |
+u1:49 | Variable | id | _c::repository::mock::MockUserRepo::find_by_id::id |
+u1:50 | Function | save | _c::repository::mock::MockUserRepo::save |
+u1:51 | Variable | user | _c::repository::mock::MockUserRepo::save::user |
+u1:52 | Variable | id | _c::repository::mock::MockUserRepo::save::id |
+u2:53 | Crate | crate | _c::crate |
+u2:54 | File | service | _c::service |
+u2:55 | Struct | UserService | _c::service::UserService | [global]
+u2:56 | TypeParameter | R | _c::service::UserService::R |
+u2:57 | Field | repo | _c::service::UserService::repo |
+u2:58 | Function | new | _c::service::UserService::new | [global]
+u2:59 | Variable | repo | _c::service::UserService::new::repo |
+u2:60 | Function | get_user | _c::service::UserService::get_user | [global]
+u2:61 | Variable | id | _c::service::UserService::get_user::id |
+u2:62 | Function | create_user | _c::service::UserService::create_user | [global]
+u2:63 | Variable | name | _c::service::UserService::create_user::name |
+u2:64 | Variable | user | _c::service::UserService::create_user::user |
+u2:65 | Variable | id | _c::service::UserService::create_user::id |
+u3:66 | Crate | crate | _c::crate |
+u3:67 | File | di | _c::di |
+u3:68 | Struct | Container | _c::di::Container | [global]
+u3:69 | Field | user_service | _c::di::Container::user_service |
+u3:70 | Function | new | _c::di::Container::new | [global]
+u3:71 | Variable | database_url | _c::di::Container::new::database_url |
+u3:72 | Variable | repo | _c::di::Container::new::repo |
+u4:73 | Crate | crate | _c::crate |
+u4:74 | File | main | _c::main |
+u4:75 | Function | main | _c::main::main |
+u4:76 | Variable | container | _c::main::main::container |
+
+--- expect:symbol-deps ---
+u0:17 <- [u1:35, u1:35, u1:36, u3:70, u3:70, u3:71]
+u0:18 <- [u1:29, u1:31, u1:33, u1:34, u2:62, u2:63]
+u0:8 <- [u1:25, u1:25, u1:26, u1:27, u1:29, u1:29, u1:30, u1:37, u1:37, u1:38, u1:39, u1:42, u1:42, u1:44, u1:48, u1:48, u1:49, u1:50, u1:52, u2:60, u2:60, u2:61]
+u1:24 -> [u1:25, u1:27]
+u1:24 <- [u1:33, u1:42, u2:55]
+u1:25 -> [u0:8, u0:8, u1:29]
+u1:25 <- [u1:24]
+u1:26 -> [u0:8]
+u1:27 -> [u0:8, u1:29]
+u1:27 <- [u1:24]
+u1:28 -> [u1:29]
+u1:29 -> [u0:18, u0:8, u0:8]
+u1:29 <- [u1:25, u1:27, u1:28, u1:37, u1:37, u1:39, u1:40, u1:42, u1:43, u1:46, u1:47, u1:48, u1:50, u1:51, u2:60, u2:62, u2:62, u2:64]
+u1:30 -> [u0:8]
+u1:31 -> [u0:18]
+u1:32 -> [u1:33]
+u1:33 -> [u0:18, u1:24, u1:37, u1:39]
+u1:33 <- [u1:32, u1:35, u3:68, u3:69, u3:70, u3:72]
+u1:34 -> [u0:18]
+u1:35 -> [u0:17, u0:17, u1:33]
+u1:35 <- [u3:70]
+u1:36 -> [u0:17]
+u1:37 -> [u0:8, u0:8, u1:29, u1:29]
+u1:37 <- [u1:33]
+u1:38 -> [u0:8]
+u1:39 -> [u0:8, u1:29]
+u1:39 <- [u1:33]
+u1:40 -> [u1:29]
+u1:41 -> [u1:42]
+u1:42 -> [u0:8, u0:8, u1:24, u1:29, u1:46, u1:48, u1:50]
+u1:42 <- [u1:41, u1:45]
+u1:43 -> [u1:29]
+u1:44 -> [u0:8]
+u1:45 -> [u1:42]
+u1:46 -> [u1:29]
+u1:46 <- [u1:42]
+u1:47 -> [u1:29]
+u1:48 -> [u0:8, u0:8, u1:29]
+u1:48 <- [u1:42, u2:60]
+u1:49 -> [u0:8]
+u1:50 -> [u0:8, u1:29]
+u1:50 <- [u1:42, u2:62]
+u1:51 -> [u1:29]
+u1:52 -> [u0:8]
+u2:55 -> [u1:24, u2:60, u2:62]
+u2:55 <- [u2:58, u3:68, u3:69, u3:70]
+u2:58 -> [u2:55]
+u2:58 <- [u3:70]
+u2:60 -> [u0:8, u0:8, u1:29, u1:48]
+u2:60 <- [u2:55, u4:75]
+u2:61 -> [u0:8]
+u2:62 -> [u0:18, u1:29, u1:29, u1:50]
+u2:62 <- [u2:55]
+u2:63 -> [u0:18]
+u2:64 -> [u1:29]
+u3:68 -> [u1:33, u2:55]
+u3:68 <- [u3:70, u4:75, u4:76]
+u3:69 -> [u1:33, u2:55]
+u3:70 -> [u0:17, u0:17, u1:33, u1:35, u2:55, u2:58, u3:68]
+u3:70 <- [u4:75]
+u3:71 -> [u0:17]
+u3:72 -> [u1:33]
+u4:75 -> [u2:60, u3:68, u3:70]
+u4:76 -> [u3:68]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="di";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n27[label="Container", full_path="$TMP/src/di.rs:4"];
+    }
+    subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n31[label="main", full_path="$TMP/src/main.rs:7"];
+    }
+    subgraph cluster_3 {
+      label="repository";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="UserRepository", full_path="$TMP/src/repository.rs:1"];
+      n7[label="PostgresUserRepo", full_path="$TMP/src/repository.rs:16"];
+      n13[label="MockUserRepo", full_path="$TMP/src/repository.rs:44"];
+      n6[label="User", full_path="$TMP/src/repository.rs:7"];
+    }
+    subgraph cluster_4 {
+      label="service";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n21[label="UserService", full_path="$TMP/src/service.rs:3"];
+    }
+  }
+  n27 -> n7;
+  n27 -> n21;
+  n13 -> n6;
+  n13 -> n3;
+  n7 -> n3;
+  n21 -> n3;
+  n31 -> n27;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="di";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n27[label="Container", full_path="$TMP/src/di.rs:4", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_2 {
+      label="repository";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="UserRepository", full_path="$TMP/src/repository.rs:1", sym_ty="Trait", shape=box];
+      n7[label="PostgresUserRepo", full_path="$TMP/src/repository.rs:16", sym_ty="Struct", shape=box];
+      n13[label="MockUserRepo", full_path="$TMP/src/repository.rs:44", sym_ty="Struct", shape=box];
+      n6[label="User", full_path="$TMP/src/repository.rs:7", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_3 {
+      label="service";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n21[label="UserService", full_path="$TMP/src/service.rs:3", sym_ty="Struct", shape=box];
+    }
+  }
+  n27 -> n7 [from="struct", to="field"];
+  n27 -> n21 [from="struct", to="field"];
+  n13 -> n6 [from="struct", to="field"];
+  n3 -> n13 [from="trait", to="impl"];
+  n3 -> n7 [from="trait", to="impl"];
+  n3 -> n21 [from="bound", to="generic"];
+}
+
+
+===============================================================================
+observer-pattern
+===============================================================================
+Tests observer pattern: Subject notifies multiple observers (Logging, Metrics, Filtering) on state change.
+
+--- file: src/lib.rs ---
+pub mod subject;
+pub mod observers;
+
+--- file: src/subject.rs ---
+pub trait Observer {
+    fn on_notify(&self, event: &str, data: &str);
+}
+
+pub struct Subject {
+    observers: Vec<Box<dyn Observer>>,
+    state: String,
+}
+
+impl Subject {
+    pub fn new() -> Self {
+        Subject {
+            observers: Vec::new(),
+            state: String::new(),
+        }
+    }
+
+    pub fn attach(&mut self, observer: Box<dyn Observer>) {
+        self.observers.push(observer);
+    }
+
+    pub fn set_state(&mut self, state: String) {
+        self.state = state.clone();
+        self.notify("state_changed", &state);
+    }
+
+    fn notify(&self, event: &str, data: &str) {
+        for observer in &self.observers {
+            observer.on_notify(event, data);
+        }
+    }
+}
+
+--- file: src/observers.rs ---
+use crate::subject::Observer;
+
+pub struct LoggingObserver {
+    prefix: String,
+}
+
+impl LoggingObserver {
+    pub fn new(prefix: &str) -> Self {
+        LoggingObserver { prefix: prefix.to_string() }
+    }
+}
+
+impl Observer for LoggingObserver {
+    fn on_notify(&self, event: &str, data: &str) {
+        println!("[{}] Event: {} - Data: {}", self.prefix, event, data);
+    }
+}
+
+pub struct MetricsObserver {
+    event_count: std::cell::Cell<u64>,
+}
+
+impl MetricsObserver {
+    pub fn new() -> Self {
+        MetricsObserver { event_count: std::cell::Cell::new(0) }
+    }
+
+    pub fn get_count(&self) -> u64 {
+        self.event_count.get()
+    }
+}
+
+impl Observer for MetricsObserver {
+    fn on_notify(&self, _event: &str, _data: &str) {
+        self.event_count.set(self.event_count.get() + 1);
+    }
+}
+
+pub struct FilteringObserver {
+    filter: String,
+}
+
+impl FilteringObserver {
+    pub fn new(filter: &str) -> Self {
+        FilteringObserver { filter: filter.to_string() }
+    }
+}
+
+impl Observer for FilteringObserver {
+    fn on_notify(&self, event: &str, data: &str) {
+        if event.contains(&self.filter) {
+            println!("[FILTERED] {}: {}", event, data);
+        }
+    }
+}
+
+--- file: src/main.rs ---
+mod subject;
+mod observers;
+
+use subject::Subject;
+use observers::{LoggingObserver, MetricsObserver, FilteringObserver};
+
+fn main() {
+    let mut subject = Subject::new();
+
+    subject.attach(Box::new(LoggingObserver::new("App")));
+    subject.attach(Box::new(MetricsObserver::new()));
+    subject.attach(Box::new(FilteringObserver::new("state")));
+
+    subject.set_state("initialized".to_string());
+    subject.set_state("running".to_string());
+    subject.set_state("stopped".to_string());
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u1:22 | Crate | crate | _c::crate |
+u1:23 | File | subject | _c::subject |
+u1:24 | Trait | Observer | _c::subject::Observer | [global]
+u1:25 | Function | on_notify | _c::subject::Observer::on_notify |
+u1:26 | Variable | event | _c::subject::Observer::on_notify::event |
+u1:27 | Variable | data | _c::subject::Observer::on_notify::data |
+u1:28 | Struct | Subject | _c::subject::Subject | [global]
+u1:29 | Field | observers | _c::subject::Subject::observers |
+u1:30 | Field | state | _c::subject::Subject::state |
+u1:31 | Function | new | _c::subject::Subject::new | [global]
+u1:32 | Function | attach | _c::subject::Subject::attach | [global]
+u1:33 | Variable | observer | _c::subject::Subject::attach::observer |
+u1:34 | Function | set_state | _c::subject::Subject::set_state | [global]
+u1:35 | Variable | state | _c::subject::Subject::set_state::state |
+u1:36 | Function | notify | _c::subject::Subject::notify |
+u1:37 | Variable | event | _c::subject::Subject::notify::event |
+u1:38 | Variable | data | _c::subject::Subject::notify::data |
+u2:39 | Crate | crate | _c::crate |
+u2:40 | File | observers | _c::observers |
+u2:41 | Struct | LoggingObserver | _c::observers::LoggingObserver | [global]
+u2:42 | Field | prefix | _c::observers::LoggingObserver::prefix |
+u2:43 | Function | new | _c::observers::LoggingObserver::new | [global]
+u2:44 | Variable | prefix | _c::observers::LoggingObserver::new::prefix |
+u2:45 | UnresolvedType | Observer | _c::observers::Observer |
+u2:46 | Function | on_notify | _c::observers::LoggingObserver::on_notify |
+u2:47 | Variable | event | _c::observers::LoggingObserver::on_notify::event |
+u2:48 | Variable | data | _c::observers::LoggingObserver::on_notify::data |
+u2:49 | Struct | MetricsObserver | _c::observers::MetricsObserver | [global]
+u2:50 | Field | event_count | _c::observers::MetricsObserver::event_count |
+u2:51 | Function | new | _c::observers::MetricsObserver::new | [global]
+u2:52 | Function | get_count | _c::observers::MetricsObserver::get_count | [global]
+u2:53 | Function | on_notify | _c::observers::MetricsObserver::on_notify |
+u2:54 | Variable | _event | _c::observers::MetricsObserver::on_notify::_event |
+u2:55 | Variable | _data | _c::observers::MetricsObserver::on_notify::_data |
+u2:56 | Struct | FilteringObserver | _c::observers::FilteringObserver | [global]
+u2:57 | Field | filter | _c::observers::FilteringObserver::filter |
+u2:58 | Function | new | _c::observers::FilteringObserver::new | [global]
+u2:59 | Variable | filter | _c::observers::FilteringObserver::new::filter |
+u2:60 | Function | on_notify | _c::observers::FilteringObserver::on_notify |
+u2:61 | Variable | event | _c::observers::FilteringObserver::on_notify::event |
+u2:62 | Variable | data | _c::observers::FilteringObserver::on_notify::data |
+u3:63 | Crate | crate | _c::crate |
+u3:64 | File | main | _c::main |
+u3:65 | Function | main | _c::main::main |
+u3:66 | Variable | subject | _c::main::main::subject |
+
+--- expect:symbol-deps ---
+u0:17 <- [u1:25, u1:25, u1:26, u1:27, u1:36, u1:36, u1:37, u1:38, u2:43, u2:43, u2:44, u2:46, u2:46, u2:47, u2:48, u2:53, u2:53, u2:54, u2:55, u2:58, u2:58, u2:59, u2:60, u2:60, u2:61, u2:62]
+u0:18 <- [u1:28, u1:30, u1:31, u1:34, u1:35, u2:41, u2:42, u2:56, u2:57]
+u0:8 <- [u2:49, u2:52]
+u1:24 -> [u1:25]
+u1:24 <- [u1:28, u1:29, u1:32, u1:33, u2:41, u2:49, u2:56]
+u1:25 -> [u0:17, u0:17]
+u1:25 <- [u1:24]
+u1:26 -> [u0:17]
+u1:27 -> [u0:17]
+u1:28 -> [u0:18, u1:24, u1:32, u1:34, u1:36]
+u1:28 <- [u1:31, u3:65, u3:66]
+u1:29 -> [u1:24]
+u1:30 -> [u0:18]
+u1:31 -> [u0:18, u1:28]
+u1:31 <- [u3:65]
+u1:32 -> [u1:24, u2:43, u2:51, u2:58]
+u1:32 <- [u1:28, u3:65]
+u1:33 -> [u1:24]
+u1:34 -> [u0:18, u1:36]
+u1:34 <- [u1:28, u3:65]
+u1:35 -> [u0:18]
+u1:36 -> [u0:17, u0:17, u2:60]
+u1:36 <- [u1:28, u1:34]
+u1:37 -> [u0:17]
+u1:38 -> [u0:17]
+u2:41 -> [u0:18, u1:24, u2:46]
+u2:41 <- [u2:43, u3:65]
+u2:42 -> [u0:18]
+u2:43 -> [u0:17, u0:17, u2:41]
+u2:43 <- [u1:32, u3:65]
+u2:44 -> [u0:17]
+u2:46 -> [u0:17, u0:17]
+u2:46 <- [u2:41]
+u2:47 -> [u0:17]
+u2:48 -> [u0:17]
+u2:49 -> [u0:8, u1:24, u2:52, u2:53]
+u2:49 <- [u2:51, u3:65]
+u2:51 -> [u2:49]
+u2:51 <- [u1:32, u3:65]
+u2:52 -> [u0:8]
+u2:52 <- [u2:49]
+u2:53 -> [u0:17, u0:17]
+u2:53 <- [u2:49]
+u2:54 -> [u0:17]
+u2:55 -> [u0:17]
+u2:56 -> [u0:18, u1:24, u2:60]
+u2:56 <- [u2:58, u3:65]
+u2:57 -> [u0:18]
+u2:58 -> [u0:17, u0:17, u2:56]
+u2:58 <- [u1:32, u3:65]
+u2:59 -> [u0:17]
+u2:60 -> [u0:17, u0:17]
+u2:60 <- [u1:36, u2:56]
+u2:61 -> [u0:17]
+u2:62 -> [u0:17]
+u3:65 -> [u1:28, u1:31, u1:32, u1:34, u2:41, u2:43, u2:49, u2:51, u2:56, u2:58]
+u3:66 -> [u1:28]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n29[label="main", full_path="$TMP/src/main.rs:7"];
+    }
+    subgraph cluster_2 {
+      label="observers";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n17[label="MetricsObserver", full_path="$TMP/src/observers.rs:19"];
+      n12[label="LoggingObserver", full_path="$TMP/src/observers.rs:3"];
+      n23[label="FilteringObserver", full_path="$TMP/src/observers.rs:39"];
+    }
+    subgraph cluster_3 {
+      label="subject";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="Observer", full_path="$TMP/src/subject.rs:1"];
+      n5[label="Subject", full_path="$TMP/src/subject.rs:5"];
+    }
+  }
+  n23 -> n3;
+  n12 -> n3;
+  n17 -> n3;
+  n5 -> n3;
+  n29 -> n23;
+  n29 -> n12;
+  n29 -> n17;
+  n29 -> n5;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="observers";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n17[label="MetricsObserver", full_path="$TMP/src/observers.rs:19", sym_ty="Struct", shape=box];
+      n12[label="LoggingObserver", full_path="$TMP/src/observers.rs:3", sym_ty="Struct", shape=box];
+      n23[label="FilteringObserver", full_path="$TMP/src/observers.rs:39", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_2 {
+      label="subject";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="Observer", full_path="$TMP/src/subject.rs:1", sym_ty="Trait", shape=box];
+      n5[label="Subject", full_path="$TMP/src/subject.rs:5", sym_ty="Struct", shape=box];
+    }
+  }
+  n3 -> n23 [from="trait", to="impl"];
+  n3 -> n12 [from="trait", to="impl"];
+  n3 -> n17 [from="trait", to="impl"];
+  n5 -> n3 [from="struct", to="field"];
+}
+
+
+===============================================================================
+strategy-pattern
+===============================================================================
+Tests strategy pattern: ShoppingCart uses interchangeable PricingStrategy implementations.
+
+--- file: src/lib.rs ---
+pub mod strategy;
+pub mod context;
+
+--- file: src/strategy.rs ---
+pub trait PricingStrategy {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64;
+    fn name(&self) -> &str;
+}
+
+pub struct RegularPricing;
+
+impl PricingStrategy for RegularPricing {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64 {
+        base_price * quantity as f64
+    }
+
+    fn name(&self) -> &str {
+        "Regular"
+    }
+}
+
+pub struct BulkDiscount {
+    threshold: u32,
+    discount_percent: f64,
+}
+
+impl BulkDiscount {
+    pub fn new(threshold: u32, discount_percent: f64) -> Self {
+        BulkDiscount { threshold, discount_percent }
+    }
+}
+
+impl PricingStrategy for BulkDiscount {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64 {
+        let subtotal = base_price * quantity as f64;
+        if quantity >= self.threshold {
+            subtotal * (1.0 - self.discount_percent / 100.0)
+        } else {
+            subtotal
+        }
+    }
+
+    fn name(&self) -> &str {
+        "Bulk Discount"
+    }
+}
+
+pub struct SeasonalSale {
+    discount_percent: f64,
+}
+
+impl SeasonalSale {
+    pub fn new(discount_percent: f64) -> Self {
+        SeasonalSale { discount_percent }
+    }
+}
+
+impl PricingStrategy for SeasonalSale {
+    fn calculate(&self, base_price: f64, quantity: u32) -> f64 {
+        let subtotal = base_price * quantity as f64;
+        subtotal * (1.0 - self.discount_percent / 100.0)
+    }
+
+    fn name(&self) -> &str {
+        "Seasonal Sale"
+    }
+}
+
+--- file: src/context.rs ---
+use crate::strategy::PricingStrategy;
+
+pub struct ShoppingCart {
+    items: Vec<(String, f64, u32)>,  // (name, price, quantity)
+    strategy: Box<dyn PricingStrategy>,
+}
+
+impl ShoppingCart {
+    pub fn new(strategy: Box<dyn PricingStrategy>) -> Self {
+        ShoppingCart {
+            items: Vec::new(),
+            strategy,
+        }
+    }
+
+    pub fn add_item(&mut self, name: &str, price: f64, quantity: u32) {
+        self.items.push((name.to_string(), price, quantity));
+    }
+
+    pub fn set_strategy(&mut self, strategy: Box<dyn PricingStrategy>) {
+        println!("Changed pricing strategy to: {}", strategy.name());
+        self.strategy = strategy;
+    }
+
+    pub fn calculate_total(&self) -> f64 {
+        self.items.iter()
+            .map(|(_, price, qty)| self.strategy.calculate(*price, *qty))
+            .sum()
+    }
+
+    pub fn checkout(&self) {
+        println!("=== Checkout ({}) ===", self.strategy.name());
+        for (name, price, qty) in &self.items {
+            let subtotal = self.strategy.calculate(*price, *qty);
+            println!("  {} x{} @ ${:.2} = ${:.2}", name, qty, price, subtotal);
+        }
+        println!("Total: ${:.2}", self.calculate_total());
+    }
+}
+
+--- file: src/main.rs ---
+mod strategy;
+mod context;
+
+use strategy::{RegularPricing, BulkDiscount, SeasonalSale};
+use context::ShoppingCart;
+
+fn main() {
+    let mut cart = ShoppingCart::new(Box::new(RegularPricing));
+
+    cart.add_item("Widget", 10.00, 5);
+    cart.add_item("Gadget", 25.00, 2);
+
+    cart.checkout();
+
+    // Switch to bulk discount
+    cart.set_strategy(Box::new(BulkDiscount::new(3, 10.0)));
+    cart.checkout();
+
+    // Switch to seasonal sale
+    cart.set_strategy(Box::new(SeasonalSale::new(20.0)));
+    cart.checkout();
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u1:22 | Crate | crate | _c::crate |
+u1:23 | File | strategy | _c::strategy |
+u1:24 | Trait | PricingStrategy | _c::strategy::PricingStrategy | [global]
+u1:25 | Function | calculate | _c::strategy::PricingStrategy::calculate |
+u1:26 | Variable | base_price | _c::strategy::PricingStrategy::calculate::base_price |
+u1:27 | Variable | quantity | _c::strategy::PricingStrategy::calculate::quantity |
+u1:28 | Function | name | _c::strategy::PricingStrategy::name |
+u1:29 | Struct | RegularPricing | _c::strategy::RegularPricing | [global]
+u1:30 | Function | calculate | _c::strategy::RegularPricing::calculate |
+u1:31 | Variable | base_price | _c::strategy::RegularPricing::calculate::base_price |
+u1:32 | Variable | quantity | _c::strategy::RegularPricing::calculate::quantity |
+u1:33 | Function | name | _c::strategy::RegularPricing::name |
+u1:34 | Struct | BulkDiscount | _c::strategy::BulkDiscount | [global]
+u1:35 | Field | threshold | _c::strategy::BulkDiscount::threshold |
+u1:36 | Field | discount_percent | _c::strategy::BulkDiscount::discount_percent |
+u1:37 | Function | new | _c::strategy::BulkDiscount::new | [global]
+u1:38 | Variable | threshold | _c::strategy::BulkDiscount::new::threshold |
+u1:39 | Variable | discount_percent | _c::strategy::BulkDiscount::new::discount_percent |
+u1:40 | Function | calculate | _c::strategy::BulkDiscount::calculate |
+u1:41 | Variable | base_price | _c::strategy::BulkDiscount::calculate::base_price |
+u1:42 | Variable | quantity | _c::strategy::BulkDiscount::calculate::quantity |
+u1:43 | Variable | subtotal | _c::strategy::BulkDiscount::calculate::subtotal |
+u1:44 | Function | name | _c::strategy::BulkDiscount::name |
+u1:45 | Struct | SeasonalSale | _c::strategy::SeasonalSale | [global]
+u1:46 | Field | discount_percent | _c::strategy::SeasonalSale::discount_percent |
+u1:47 | Function | new | _c::strategy::SeasonalSale::new | [global]
+u1:48 | Variable | discount_percent | _c::strategy::SeasonalSale::new::discount_percent |
+u1:49 | Function | calculate | _c::strategy::SeasonalSale::calculate |
+u1:50 | Variable | base_price | _c::strategy::SeasonalSale::calculate::base_price |
+u1:51 | Variable | quantity | _c::strategy::SeasonalSale::calculate::quantity |
+u1:52 | Variable | subtotal | _c::strategy::SeasonalSale::calculate::subtotal |
+u1:53 | Function | name | _c::strategy::SeasonalSale::name |
+u2:54 | Crate | crate | _c::crate |
+u2:55 | File | context | _c::context |
+u2:56 | Struct | ShoppingCart | _c::context::ShoppingCart | [global]
+u2:57 | Field | items | _c::context::ShoppingCart::items |
+u2:58 | Field | strategy | _c::context::ShoppingCart::strategy |
+u2:59 | Function | new | _c::context::ShoppingCart::new | [global]
+u2:60 | Variable | strategy | _c::context::ShoppingCart::new::strategy |
+u2:61 | Function | add_item | _c::context::ShoppingCart::add_item | [global]
+u2:62 | Variable | name | _c::context::ShoppingCart::add_item::name |
+u2:63 | Variable | price | _c::context::ShoppingCart::add_item::price |
+u2:64 | Variable | quantity | _c::context::ShoppingCart::add_item::quantity |
+u2:65 | Function | set_strategy | _c::context::ShoppingCart::set_strategy | [global]
+u2:66 | Variable | strategy | _c::context::ShoppingCart::set_strategy::strategy |
+u2:67 | Function | calculate_total | _c::context::ShoppingCart::calculate_total | [global]
+u2:68 | Variable | price | _c::context::ShoppingCart::calculate_total::price |
+u2:69 | Variable | qty | _c::context::ShoppingCart::calculate_total::qty |
+u2:70 | Function | checkout | _c::context::ShoppingCart::checkout | [global]
+u2:71 | Variable | subtotal | _c::context::ShoppingCart::checkout::subtotal |
+u3:72 | Crate | crate | _c::crate |
+u3:73 | File | main | _c::main |
+u3:74 | Function | main | _c::main::main |
+u3:75 | Variable | cart | _c::main::main::cart |
+
+--- expect:symbol-deps ---
+u0:14 <- [u1:25, u1:25, u1:26, u1:30, u1:30, u1:31, u1:34, u1:34, u1:36, u1:37, u1:37, u1:39, u1:40, u1:40, u1:41, u1:43, u1:45, u1:45, u1:46, u1:47, u1:47, u1:48, u1:49, u1:49, u1:50, u1:52, u2:56, u2:61, u2:61, u2:63, u2:67]
+u0:17 <- [u1:28, u1:33, u1:44, u1:53, u2:61, u2:61, u2:62]
+u0:18 <- [u2:56, u2:56, u2:57]
+u0:7 <- [u1:25, u1:25, u1:27, u1:30, u1:30, u1:32, u1:34, u1:34, u1:35, u1:37, u1:37, u1:38, u1:40, u1:40, u1:42, u1:49, u1:49, u1:51, u2:56, u2:61, u2:61, u2:64]
+u1:24 -> [u1:25, u1:28]
+u1:24 <- [u1:29, u1:34, u1:45, u2:56, u2:58, u2:59, u2:60, u2:65, u2:66]
+u1:25 -> [u0:14, u0:14, u0:7, u0:7]
+u1:25 <- [u1:24]
+u1:26 -> [u0:14]
+u1:27 -> [u0:7]
+u1:28 -> [u0:17]
+u1:28 <- [u1:24]
+u1:29 -> [u1:24, u1:30, u1:33]
+u1:30 -> [u0:14, u0:14, u0:7, u0:7]
+u1:30 <- [u1:29]
+u1:31 -> [u0:14]
+u1:32 -> [u0:7]
+u1:33 -> [u0:17]
+u1:33 <- [u1:29]
+u1:34 -> [u0:14, u0:14, u0:7, u0:7, u1:24, u1:40, u1:44]
+u1:34 <- [u1:37, u3:74]
+u1:35 -> [u0:7]
+u1:36 -> [u0:14]
+u1:37 -> [u0:14, u0:14, u0:7, u0:7, u1:34]
+u1:37 <- [u2:65, u3:74]
+u1:38 -> [u0:7]
+u1:39 -> [u0:14]
+u1:40 -> [u0:14, u0:14, u0:7, u0:7]
+u1:40 <- [u1:34]
+u1:41 -> [u0:14]
+u1:42 -> [u0:7]
+u1:43 -> [u0:14]
+u1:44 -> [u0:17]
+u1:44 <- [u1:34]
+u1:45 -> [u0:14, u0:14, u1:24, u1:49, u1:53]
+u1:45 <- [u1:47, u3:74]
+u1:46 -> [u0:14]
+u1:47 -> [u0:14, u0:14, u1:45]
+u1:47 <- [u2:65, u3:74]
+u1:48 -> [u0:14]
+u1:49 -> [u0:14, u0:14, u0:7, u0:7]
+u1:49 <- [u1:45, u2:67, u2:70]
+u1:50 -> [u0:14]
+u1:51 -> [u0:7]
+u1:52 -> [u0:14]
+u1:53 -> [u0:17]
+u1:53 <- [u1:45]
+u2:56 -> [u0:14, u0:18, u0:18, u0:7, u1:24, u2:61, u2:65, u2:67, u2:70]
+u2:56 <- [u2:59, u3:74, u3:75]
+u2:57 -> [u0:18]
+u2:58 -> [u1:24]
+u2:58 <- [u2:70, u2:71]
+u2:59 -> [u1:24, u2:56]
+u2:59 <- [u3:74]
+u2:60 -> [u1:24]
+u2:61 -> [u0:14, u0:14, u0:17, u0:17, u0:7, u0:7]
+u2:61 <- [u2:56, u3:74]
+u2:62 -> [u0:17]
+u2:63 -> [u0:14]
+u2:64 -> [u0:7]
+u2:65 -> [u1:24, u1:37, u1:47]
+u2:65 <- [u2:56, u3:74]
+u2:66 -> [u1:24]
+u2:67 -> [u0:14, u1:49]
+u2:67 <- [u2:56]
+u2:70 -> [u1:49, u2:58]
+u2:70 <- [u2:56, u3:74]
+u2:71 -> [u2:58]
+u3:74 -> [u1:34, u1:37, u1:45, u1:47, u2:56, u2:59, u2:61, u2:65, u2:70]
+u3:75 -> [u2:56]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="context";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n23[label="ShoppingCart", full_path="$TMP/src/context.rs:3"];
+    }
+    subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n31[label="main", full_path="$TMP/src/main.rs:7"];
+    }
+    subgraph cluster_3 {
+      label="strategy";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="PricingStrategy", full_path="$TMP/src/strategy.rs:1"];
+      n10[label="BulkDiscount", full_path="$TMP/src/strategy.rs:18"];
+      n16[label="SeasonalSale", full_path="$TMP/src/strategy.rs:44"];
+      n6[label="RegularPricing", full_path="$TMP/src/strategy.rs:6"];
+    }
+  }
+  n10 -> n3;
+  n6 -> n3;
+  n16 -> n3;
+  n23 -> n3;
+  n31 -> n10;
+  n31 -> n16;
+  n31 -> n23;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="context";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n23[label="ShoppingCart", full_path="$TMP/src/context.rs:3", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_2 {
+      label="strategy";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="PricingStrategy", full_path="$TMP/src/strategy.rs:1", sym_ty="Trait", shape=box];
+      n10[label="BulkDiscount", full_path="$TMP/src/strategy.rs:18", sym_ty="Struct", shape=box];
+      n16[label="SeasonalSale", full_path="$TMP/src/strategy.rs:44", sym_ty="Struct", shape=box];
+      n6[label="RegularPricing", full_path="$TMP/src/strategy.rs:6", sym_ty="Struct", shape=box];
+    }
+  }
+  n3 -> n10 [from="trait", to="impl"];
+  n3 -> n6 [from="trait", to="impl"];
+  n3 -> n16 [from="trait", to="impl"];
+  n23 -> n3 [from="struct", to="field"];
+}
+
+
+===============================================================================
+decorator-pattern
+===============================================================================
+Tests decorator pattern: DataSource wrapped with Encryption, Compression, and Logging decorators.
+
+--- file: src/lib.rs ---
+pub mod component;
+pub mod decorators;
+
+--- file: src/component.rs ---
+pub trait DataSource {
+    fn write(&mut self, data: &[u8]);
+    fn read(&self) -> Vec<u8>;
+}
+
+pub struct FileDataSource {
+    filename: String,
+    data: Vec<u8>,
+}
+
+impl FileDataSource {
+    pub fn new(filename: &str) -> Self {
+        FileDataSource {
+            filename: filename.to_string(),
+            data: Vec::new(),
+        }
+    }
+}
+
+impl DataSource for FileDataSource {
+    fn write(&mut self, data: &[u8]) {
+        println!("Writing {} bytes to {}", data.len(), self.filename);
+        self.data = data.to_vec();
+    }
+
+    fn read(&self) -> Vec<u8> {
+        println!("Reading from {}", self.filename);
+        self.data.clone()
+    }
+}
+
+--- file: src/decorators.rs ---
+use crate::component::DataSource;
+
+// Base decorator
+pub struct DataSourceDecorator<D: DataSource> {
+    wrapped: D,
+}
+
+impl<D: DataSource> DataSourceDecorator<D> {
+    pub fn new(wrapped: D) -> Self {
+        DataSourceDecorator { wrapped }
+    }
+}
+
+// Encryption decorator
+pub struct EncryptionDecorator<D: DataSource> {
+    wrapped: D,
+    key: u8,
+}
+
+impl<D: DataSource> EncryptionDecorator<D> {
+    pub fn new(wrapped: D, key: u8) -> Self {
+        EncryptionDecorator { wrapped, key }
+    }
+
+    fn encrypt(&self, data: &[u8]) -> Vec<u8> {
+        data.iter().map(|b| b ^ self.key).collect()
+    }
+
+    fn decrypt(&self, data: &[u8]) -> Vec<u8> {
+        // XOR encryption is symmetric
+        self.encrypt(data)
+    }
+}
+
+impl<D: DataSource> DataSource for EncryptionDecorator<D> {
+    fn write(&mut self, data: &[u8]) {
+        println!("Encrypting data...");
+        let encrypted = self.encrypt(data);
+        self.wrapped.write(&encrypted);
+    }
+
+    fn read(&self) -> Vec<u8> {
+        let encrypted = self.wrapped.read();
+        println!("Decrypting data...");
+        self.decrypt(&encrypted)
+    }
+}
+
+// Compression decorator
+pub struct CompressionDecorator<D: DataSource> {
+    wrapped: D,
+}
+
+impl<D: DataSource> CompressionDecorator<D> {
+    pub fn new(wrapped: D) -> Self {
+        CompressionDecorator { wrapped }
+    }
+
+    fn compress(&self, data: &[u8]) -> Vec<u8> {
+        // Simplified: just add a header
+        let mut result = vec![0xC0, 0x01];  // "Compressed" marker
+        result.extend_from_slice(data);
+        result
+    }
+
+    fn decompress(&self, data: &[u8]) -> Vec<u8> {
+        if data.len() >= 2 && data[0] == 0xC0 && data[1] == 0x01 {
+            data[2..].to_vec()
+        } else {
+            data.to_vec()
+        }
+    }
+}
+
+impl<D: DataSource> DataSource for CompressionDecorator<D> {
+    fn write(&mut self, data: &[u8]) {
+        println!("Compressing data...");
+        let compressed = self.compress(data);
+        self.wrapped.write(&compressed);
+    }
+
+    fn read(&self) -> Vec<u8> {
+        let compressed = self.wrapped.read();
+        println!("Decompressing data...");
+        self.decompress(&compressed)
+    }
+}
+
+// Logging decorator
+pub struct LoggingDecorator<D: DataSource> {
+    wrapped: D,
+    label: String,
+}
+
+impl<D: DataSource> LoggingDecorator<D> {
+    pub fn new(wrapped: D, label: &str) -> Self {
+        LoggingDecorator { wrapped, label: label.to_string() }
+    }
+}
+
+impl<D: DataSource> DataSource for LoggingDecorator<D> {
+    fn write(&mut self, data: &[u8]) {
+        println!("[{}] Writing {} bytes", self.label, data.len());
+        self.wrapped.write(data);
+        println!("[{}] Write complete", self.label);
+    }
+
+    fn read(&self) -> Vec<u8> {
+        println!("[{}] Reading...", self.label);
+        let data = self.wrapped.read();
+        println!("[{}] Read {} bytes", self.label, data.len());
+        data
+    }
+}
+
+--- file: src/main.rs ---
+mod component;
+mod decorators;
+
+use component::{DataSource, FileDataSource};
+use decorators::{EncryptionDecorator, CompressionDecorator, LoggingDecorator};
+
+fn main() {
+    // Create a decorated data source:
+    // Logging -> Compression -> Encryption -> File
+    let file = FileDataSource::new("data.bin");
+    let encrypted = EncryptionDecorator::new(file, 42);
+    let compressed = CompressionDecorator::new(encrypted);
+    let mut logged = LoggingDecorator::new(compressed, "DataPipeline");
+
+    let data = b"Hello, World!";
+    logged.write(data);
+
+    println!("\n--- Reading back ---\n");
+    let read_data = logged.read();
+    println!("\nResult: {:?}", String::from_utf8_lossy(&read_data));
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u1:22 | Crate | crate | _c::crate |
+u1:23 | File | component | _c::component |
+u1:24 | Trait | DataSource | _c::component::DataSource | [global]
+u1:25 | Function | write | _c::component::DataSource::write |
+u1:26 | Variable | data | _c::component::DataSource::write::data |
+u1:27 | Function | read | _c::component::DataSource::read |
+u1:28 | Struct | FileDataSource | _c::component::FileDataSource | [global]
+u1:29 | Field | filename | _c::component::FileDataSource::filename |
+u1:30 | Field | data | _c::component::FileDataSource::data |
+u1:31 | Function | new | _c::component::FileDataSource::new | [global]
+u1:32 | Variable | filename | _c::component::FileDataSource::new::filename |
+u1:33 | Function | write | _c::component::FileDataSource::write |
+u1:34 | Variable | data | _c::component::FileDataSource::write::data |
+u1:35 | Function | read | _c::component::FileDataSource::read |
+u2:36 | Crate | crate | _c::crate |
+u2:37 | File | decorators | _c::decorators |
+u2:38 | Struct | DataSourceDecorator | _c::decorators::DataSourceDecorator | [global]
+u2:39 | TypeParameter | D | _c::decorators::DataSourceDecorator::D |
+u2:40 | Field | wrapped | _c::decorators::DataSourceDecorator::wrapped |
+u2:41 | Function | new | _c::decorators::DataSourceDecorator::new | [global]
+u2:42 | Variable | wrapped | _c::decorators::DataSourceDecorator::new::wrapped |
+u2:43 | Struct | EncryptionDecorator | _c::decorators::EncryptionDecorator | [global]
+u2:44 | TypeParameter | D | _c::decorators::EncryptionDecorator::D |
+u2:45 | Field | wrapped | _c::decorators::EncryptionDecorator::wrapped |
+u2:46 | Field | key | _c::decorators::EncryptionDecorator::key |
+u2:47 | Function | new | _c::decorators::EncryptionDecorator::new | [global]
+u2:48 | Variable | wrapped | _c::decorators::EncryptionDecorator::new::wrapped |
+u2:49 | Variable | key | _c::decorators::EncryptionDecorator::new::key |
+u2:50 | Function | encrypt | _c::decorators::EncryptionDecorator::encrypt |
+u2:51 | Variable | data | _c::decorators::EncryptionDecorator::encrypt::data |
+u2:52 | Variable | b | _c::decorators::EncryptionDecorator::encrypt::b |
+u2:53 | Function | decrypt | _c::decorators::EncryptionDecorator::decrypt |
+u2:54 | Variable | data | _c::decorators::EncryptionDecorator::decrypt::data |
+u2:55 | UnresolvedType | DataSource | _c::decorators::DataSource |
+u2:56 | Function | write | _c::decorators::EncryptionDecorator::write |
+u2:57 | Variable | data | _c::decorators::EncryptionDecorator::write::data |
+u2:58 | Variable | encrypted | _c::decorators::EncryptionDecorator::write::encrypted |
+u2:59 | Function | read | _c::decorators::EncryptionDecorator::read |
+u2:60 | Variable | encrypted | _c::decorators::EncryptionDecorator::read::encrypted |
+u2:61 | Struct | CompressionDecorator | _c::decorators::CompressionDecorator | [global]
+u2:62 | TypeParameter | D | _c::decorators::CompressionDecorator::D |
+u2:63 | Field | wrapped | _c::decorators::CompressionDecorator::wrapped |
+u2:64 | Function | new | _c::decorators::CompressionDecorator::new | [global]
+u2:65 | Variable | wrapped | _c::decorators::CompressionDecorator::new::wrapped |
+u2:66 | Function | compress | _c::decorators::CompressionDecorator::compress |
+u2:67 | Variable | data | _c::decorators::CompressionDecorator::compress::data |
+u2:68 | Variable | result | _c::decorators::CompressionDecorator::compress::result |
+u2:69 | Function | decompress | _c::decorators::CompressionDecorator::decompress |
+u2:70 | Variable | data | _c::decorators::CompressionDecorator::decompress::data |
+u2:71 | Function | write | _c::decorators::CompressionDecorator::write |
+u2:72 | Variable | data | _c::decorators::CompressionDecorator::write::data |
+u2:73 | Variable | compressed | _c::decorators::CompressionDecorator::write::compressed |
+u2:74 | Function | read | _c::decorators::CompressionDecorator::read |
+u2:75 | Variable | compressed | _c::decorators::CompressionDecorator::read::compressed |
+u2:76 | Struct | LoggingDecorator | _c::decorators::LoggingDecorator | [global]
+u2:77 | TypeParameter | D | _c::decorators::LoggingDecorator::D |
+u2:78 | Field | wrapped | _c::decorators::LoggingDecorator::wrapped |
+u2:79 | Field | label | _c::decorators::LoggingDecorator::label |
+u2:80 | Function | new | _c::decorators::LoggingDecorator::new | [global]
+u2:81 | Variable | wrapped | _c::decorators::LoggingDecorator::new::wrapped |
+u2:82 | Variable | label | _c::decorators::LoggingDecorator::new::label |
+u2:83 | Function | write | _c::decorators::LoggingDecorator::write |
+u2:84 | Variable | data | _c::decorators::LoggingDecorator::write::data |
+u2:85 | Function | read | _c::decorators::LoggingDecorator::read |
+u2:86 | Variable | data | _c::decorators::LoggingDecorator::read::data |
+u3:87 | Crate | crate | _c::crate |
+u3:88 | File | main | _c::main |
+u3:89 | Function | main | _c::main::main |
+u3:90 | Variable | file | _c::main::main::file |
+u3:91 | Variable | encrypted | _c::main::main::encrypted |
+u3:92 | Variable | compressed | _c::main::main::compressed |
+u3:93 | Variable | logged | _c::main::main::logged |
+u3:94 | Variable | data | _c::main::main::data |
+u3:95 | Variable | read_data | _c::main::main::read_data |
+
+--- expect:symbol-deps ---
+u0:1 <- [u2:66, u2:68]
+u0:10 <- [u1:25, u1:25, u1:26, u1:27, u1:28, u1:33, u1:33, u1:34, u1:35, u2:43, u2:43, u2:46, u2:47, u2:47, u2:49, u2:50, u2:50, u2:51, u2:53, u2:53, u2:54, u2:56, u2:56, u2:57, u2:59, u2:66, u2:66, u2:67, u2:69, u2:69, u2:70, u2:71, u2:71, u2:72, u2:74, u2:83, u2:83, u2:84, u2:85]
+u0:17 <- [u1:31, u1:31, u1:32, u2:80, u2:80, u2:82, u3:89, u3:94]
+u0:18 <- [u1:28, u1:29, u2:76, u2:79]
+u1:24 -> [u1:25, u1:27]
+u1:24 <- [u1:28, u2:38, u2:43, u2:43, u2:61, u2:61, u2:76, u2:76]
+u1:25 -> [u0:10, u0:10]
+u1:25 <- [u1:24]
+u1:26 -> [u0:10]
+u1:27 -> [u0:10]
+u1:27 <- [u1:24]
+u1:28 -> [u0:10, u0:18, u1:24, u1:33, u1:35]
+u1:28 <- [u1:31, u3:89, u3:90]
+u1:29 -> [u0:18]
+u1:31 -> [u0:17, u0:17, u1:28]
+u1:31 <- [u3:89]
+u1:32 -> [u0:17]
+u1:33 -> [u0:10, u0:10]
+u1:33 <- [u1:28]
+u1:34 -> [u0:10]
+u1:35 -> [u0:10]
+u1:35 <- [u1:28]
+u2:38 -> [u1:24]
+u2:38 <- [u2:41]
+u2:41 -> [u2:38]
+u2:43 -> [u0:10, u0:10, u1:24, u1:24, u2:50, u2:53, u2:56, u2:59]
+u2:43 <- [u2:47, u3:89, u3:91]
+u2:46 -> [u0:10]
+u2:47 -> [u0:10, u0:10, u2:43]
+u2:47 <- [u3:89]
+u2:49 -> [u0:10]
+u2:50 -> [u0:10, u0:10]
+u2:50 <- [u2:43, u2:53, u2:56, u2:56, u2:58]
+u2:51 -> [u0:10]
+u2:53 -> [u0:10, u0:10, u2:50]
+u2:53 <- [u2:43, u2:59]
+u2:54 -> [u0:10]
+u2:56 -> [u0:10, u0:10, u2:50, u2:50]
+u2:56 <- [u2:43]
+u2:57 -> [u0:10]
+u2:58 -> [u2:50]
+u2:59 -> [u0:10, u2:53]
+u2:59 <- [u2:43]
+u2:61 -> [u1:24, u1:24, u2:66, u2:69, u2:71, u2:74]
+u2:61 <- [u2:64, u3:89, u3:92]
+u2:64 -> [u2:61]
+u2:64 <- [u3:89]
+u2:66 -> [u0:1, u0:10, u0:10]
+u2:66 <- [u2:61, u2:71, u2:71, u2:73]
+u2:67 -> [u0:10]
+u2:68 -> [u0:1]
+u2:69 -> [u0:10, u0:10]
+u2:69 <- [u2:61, u2:74]
+u2:70 -> [u0:10]
+u2:71 -> [u0:10, u0:10, u2:66, u2:66]
+u2:71 <- [u2:61]
+u2:72 -> [u0:10]
+u2:73 -> [u2:66]
+u2:74 -> [u0:10, u2:69]
+u2:74 <- [u2:61]
+u2:76 -> [u0:18, u1:24, u1:24, u2:83, u2:85]
+u2:76 <- [u2:80, u3:89, u3:93, u3:95]
+u2:79 -> [u0:18]
+u2:80 -> [u0:17, u0:17, u2:76]
+u2:80 <- [u3:89]
+u2:82 -> [u0:17]
+u2:83 -> [u0:10, u0:10]
+u2:83 <- [u2:76, u3:89]
+u2:84 -> [u0:10]
+u2:85 -> [u0:10]
+u2:85 <- [u2:76, u3:89]
+u3:89 -> [u0:17, u1:28, u1:31, u2:43, u2:47, u2:61, u2:64, u2:76, u2:80, u2:83, u2:85]
+u3:90 -> [u1:28]
+u3:91 -> [u2:43]
+u3:92 -> [u2:61]
+u3:93 -> [u2:76]
+u3:94 -> [u0:17]
+u3:95 -> [u2:76]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="component";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="DataSource", full_path="$TMP/src/component.rs:1"];
+      n6[label="FileDataSource", full_path="$TMP/src/component.rs:6"];
+    }
+    subgraph cluster_2 {
+      label="decorators";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n16[label="EncryptionDecorator", full_path="$TMP/src/decorators.rs:15"];
+      n13[label="DataSourceDecorator", full_path="$TMP/src/decorators.rs:4"];
+      n24[label="CompressionDecorator", full_path="$TMP/src/decorators.rs:50"];
+      n32[label="LoggingDecorator", full_path="$TMP/src/decorators.rs:90"];
+    }
+    subgraph cluster_3 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n39[label="main", full_path="$TMP/src/main.rs:7"];
+    }
+  }
+  n24 -> n3;
+  n13 -> n3;
+  n16 -> n3;
+  n6 -> n3;
+  n32 -> n3;
+  n39 -> n24;
+  n39 -> n16;
+  n39 -> n6;
+  n39 -> n32;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="component";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="DataSource", full_path="$TMP/src/component.rs:1", sym_ty="Trait", shape=box];
+      n6[label="FileDataSource", full_path="$TMP/src/component.rs:6", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_2 {
+      label="decorators";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n16[label="EncryptionDecorator", full_path="$TMP/src/decorators.rs:15", sym_ty="Struct", shape=box];
+      n13[label="DataSourceDecorator", full_path="$TMP/src/decorators.rs:4", sym_ty="Struct", shape=box];
+      n24[label="CompressionDecorator", full_path="$TMP/src/decorators.rs:50", sym_ty="Struct", shape=box];
+      n32[label="LoggingDecorator", full_path="$TMP/src/decorators.rs:90", sym_ty="Struct", shape=box];
+    }
+  }
+  n3 -> n24 [from="bound", to="generic"];
+  n3 -> n24 [from="trait", to="impl"];
+  n3 -> n13 [from="bound", to="generic"];
+  n3 -> n16 [from="bound", to="generic"];
+  n3 -> n16 [from="trait", to="impl"];
+  n3 -> n6 [from="trait", to="impl"];
+  n3 -> n32 [from="bound", to="generic"];
+  n3 -> n32 [from="trait", to="impl"];
+}
+
+
+===============================================================================
+command-pattern
+===============================================================================
+Tests command pattern: Editor executes InsertCommand/DeleteCommand with undo/redo support.
+
+--- file: src/lib.rs ---
+pub mod commands;
+pub mod invoker;
+pub mod receiver;
+
+--- file: src/receiver.rs ---
+pub struct Document {
+    content: String,
+    cursor: usize,
+}
+
+impl Document {
+    pub fn new() -> Self {
+        Document { content: String::new(), cursor: 0 }
+    }
+
+    pub fn insert(&mut self, text: &str) {
+        self.content.insert_str(self.cursor, text);
+        self.cursor += text.len();
+    }
+
+    pub fn delete(&mut self, count: usize) {
+        let start = self.cursor.saturating_sub(count);
+        self.content.drain(start..self.cursor);
+        self.cursor = start;
+    }
+
+    pub fn move_cursor(&mut self, position: usize) {
+        self.cursor = position.min(self.content.len());
+    }
+
+    pub fn get_content(&self) -> &str {
+        &self.content
+    }
+
+    pub fn get_cursor(&self) -> usize {
+        self.cursor
+    }
+}
+
+--- file: src/commands.rs ---
+use crate::receiver::Document;
+
+pub trait Command {
+    fn execute(&mut self, doc: &mut Document);
+    fn undo(&mut self, doc: &mut Document);
+    fn describe(&self) -> String;
+}
+
+pub struct InsertCommand {
+    text: String,
+    position: usize,
+}
+
+impl InsertCommand {
+    pub fn new(text: &str) -> Self {
+        InsertCommand { text: text.to_string(), position: 0 }
+    }
+}
+
+impl Command for InsertCommand {
+    fn execute(&mut self, doc: &mut Document) {
+        self.position = doc.get_cursor();
+        doc.insert(&self.text);
+    }
+
+    fn undo(&mut self, doc: &mut Document) {
+        doc.move_cursor(self.position + self.text.len());
+        doc.delete(self.text.len());
+    }
+
+    fn describe(&self) -> String {
+        format!("Insert '{}'", self.text)
+    }
+}
+
+pub struct DeleteCommand {
+    count: usize,
+    deleted: String,
+    position: usize,
+}
+
+impl DeleteCommand {
+    pub fn new(count: usize) -> Self {
+        DeleteCommand { count, deleted: String::new(), position: 0 }
+    }
+}
+
+impl Command for DeleteCommand {
+    fn execute(&mut self, doc: &mut Document) {
+        self.position = doc.get_cursor();
+        let start = self.position.saturating_sub(self.count);
+        self.deleted = doc.get_content()[start..self.position].to_string();
+        doc.delete(self.count);
+    }
+
+    fn undo(&mut self, doc: &mut Document) {
+        doc.move_cursor(self.position - self.deleted.len());
+        doc.insert(&self.deleted);
+    }
+
+    fn describe(&self) -> String {
+        format!("Delete {} chars", self.count)
+    }
+}
+
+--- file: src/invoker.rs ---
+use crate::commands::Command;
+use crate::receiver::Document;
+
+pub struct Editor {
+    document: Document,
+    history: Vec<Box<dyn Command>>,
+    redo_stack: Vec<Box<dyn Command>>,
+}
+
+impl Editor {
+    pub fn new() -> Self {
+        Editor {
+            document: Document::new(),
+            history: Vec::new(),
+            redo_stack: Vec::new(),
+        }
+    }
+
+    pub fn execute(&mut self, mut command: Box<dyn Command>) {
+        println!("Execute: {}", command.describe());
+        command.execute(&mut self.document);
+        self.history.push(command);
+        self.redo_stack.clear();
+    }
+
+    pub fn undo(&mut self) {
+        if let Some(mut command) = self.history.pop() {
+            println!("Undo: {}", command.describe());
+            command.undo(&mut self.document);
+            self.redo_stack.push(command);
+        }
+    }
+
+    pub fn redo(&mut self) {
+        if let Some(mut command) = self.redo_stack.pop() {
+            println!("Redo: {}", command.describe());
+            command.execute(&mut self.document);
+            self.history.push(command);
+        }
+    }
+
+    pub fn get_content(&self) -> &str {
+        self.document.get_content()
+    }
+}
+
+--- file: src/main.rs ---
+mod commands;
+mod invoker;
+mod receiver;
+
+use commands::{InsertCommand, DeleteCommand};
+use invoker::Editor;
+
+fn main() {
+    let mut editor = Editor::new();
+
+    editor.execute(Box::new(InsertCommand::new("Hello")));
+    println!("Content: '{}'\n", editor.get_content());
+
+    editor.execute(Box::new(InsertCommand::new(" World")));
+    println!("Content: '{}'\n", editor.get_content());
+
+    editor.execute(Box::new(DeleteCommand::new(5)));
+    println!("Content: '{}'\n", editor.get_content());
+
+    println!("--- Undo ---");
+    editor.undo();
+    println!("Content: '{}'\n", editor.get_content());
+
+    editor.undo();
+    println!("Content: '{}'\n", editor.get_content());
+
+    println!("--- Redo ---");
+    editor.redo();
+    println!("Content: '{}'", editor.get_content());
+}
+
+--- expect:symbols ---
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u1:22 | Crate | crate | _c::crate |
+u1:23 | File | receiver | _c::receiver |
+u1:24 | Struct | Document | _c::receiver::Document | [global]
+u1:25 | Field | content | _c::receiver::Document::content |
+u1:26 | Field | cursor | _c::receiver::Document::cursor |
+u1:27 | Function | new | _c::receiver::Document::new | [global]
+u1:28 | Function | insert | _c::receiver::Document::insert | [global]
+u1:29 | Variable | text | _c::receiver::Document::insert::text |
+u1:30 | Function | delete | _c::receiver::Document::delete | [global]
+u1:31 | Variable | count | _c::receiver::Document::delete::count |
+u1:32 | Variable | start | _c::receiver::Document::delete::start |
+u1:33 | Function | move_cursor | _c::receiver::Document::move_cursor | [global]
+u1:34 | Variable | position | _c::receiver::Document::move_cursor::position |
+u1:35 | Function | get_content | _c::receiver::Document::get_content | [global]
+u1:36 | Function | get_cursor | _c::receiver::Document::get_cursor | [global]
+u2:37 | Crate | crate | _c::crate |
+u2:38 | File | commands | _c::commands |
+u2:39 | Trait | Command | _c::commands::Command | [global]
+u2:40 | Function | execute | _c::commands::Command::execute |
+u2:41 | Variable | doc | _c::commands::Command::execute::doc |
+u2:42 | Function | undo | _c::commands::Command::undo |
+u2:43 | Variable | doc | _c::commands::Command::undo::doc |
+u2:44 | Function | describe | _c::commands::Command::describe |
+u2:45 | Struct | InsertCommand | _c::commands::InsertCommand | [global]
+u2:46 | Field | text | _c::commands::InsertCommand::text |
+u2:47 | Field | position | _c::commands::InsertCommand::position |
+u2:48 | Function | new | _c::commands::InsertCommand::new | [global]
+u2:49 | Variable | text | _c::commands::InsertCommand::new::text |
+u2:50 | Function | execute | _c::commands::InsertCommand::execute |
+u2:51 | Variable | doc | _c::commands::InsertCommand::execute::doc |
+u2:52 | Function | undo | _c::commands::InsertCommand::undo |
+u2:53 | Variable | doc | _c::commands::InsertCommand::undo::doc |
+u2:54 | Function | describe | _c::commands::InsertCommand::describe |
+u2:55 | Struct | DeleteCommand | _c::commands::DeleteCommand | [global]
+u2:56 | Field | count | _c::commands::DeleteCommand::count |
+u2:57 | Field | deleted | _c::commands::DeleteCommand::deleted |
+u2:58 | Field | position | _c::commands::DeleteCommand::position |
+u2:59 | Function | new | _c::commands::DeleteCommand::new | [global]
+u2:60 | Variable | count | _c::commands::DeleteCommand::new::count |
+u2:61 | Function | execute | _c::commands::DeleteCommand::execute |
+u2:62 | Variable | doc | _c::commands::DeleteCommand::execute::doc |
+u2:63 | Variable | start | _c::commands::DeleteCommand::execute::start |
+u2:64 | Function | undo | _c::commands::DeleteCommand::undo |
+u2:65 | Variable | doc | _c::commands::DeleteCommand::undo::doc |
+u2:66 | Function | describe | _c::commands::DeleteCommand::describe |
+u3:67 | Crate | crate | _c::crate |
+u3:68 | File | invoker | _c::invoker |
+u3:69 | Struct | Editor | _c::invoker::Editor | [global]
+u3:70 | Field | document | _c::invoker::Editor::document |
+u3:71 | Field | history | _c::invoker::Editor::history |
+u3:72 | Field | redo_stack | _c::invoker::Editor::redo_stack |
+u3:73 | Function | new | _c::invoker::Editor::new | [global]
+u3:74 | Function | execute | _c::invoker::Editor::execute | [global]
+u3:75 | Variable | command | _c::invoker::Editor::execute::command |
+u3:76 | Function | undo | _c::invoker::Editor::undo | [global]
+u3:77 | Function | redo | _c::invoker::Editor::redo | [global]
+u3:78 | Function | get_content | _c::invoker::Editor::get_content | [global]
+u4:79 | Crate | crate | _c::crate |
+u4:80 | File | main | _c::main |
+u4:81 | Function | main | _c::main::main |
+u4:82 | Variable | editor | _c::main::main::editor |
+
+--- expect:symbol-deps ---
+u0:12 <- [u1:24, u1:24, u1:26, u1:30, u1:30, u1:31, u1:32, u1:33, u1:33, u1:34, u1:36, u2:45, u2:45, u2:47, u2:55, u2:55, u2:56, u2:58, u2:59, u2:59, u2:60, u2:61, u2:63]
+u0:17 <- [u1:28, u1:28, u1:29, u1:35, u2:48, u2:48, u2:49, u3:78]
+u0:18 <- [u1:24, u1:25, u1:27, u2:44, u2:45, u2:46, u2:54, u2:55, u2:57, u2:59, u2:66]
+u1:24 -> [u0:12, u0:12, u0:18, u1:28, u1:30, u1:33, u1:35, u1:36]
+u1:24 <- [u1:27, u2:40, u2:41, u2:42, u2:43, u2:50, u2:51, u2:52, u2:53, u2:61, u2:62, u2:64, u2:65, u3:69, u3:70, u3:73]
+u1:25 -> [u0:18]
+u1:26 -> [u0:12]
+u1:27 -> [u0:18, u1:24]
+u1:27 <- [u3:73]
+u1:28 -> [u0:17, u0:17]
+u1:28 <- [u1:24, u2:50, u2:64]
+u1:29 -> [u0:17]
+u1:30 -> [u0:12, u0:12]
+u1:30 <- [u1:24, u2:52, u2:61]
+u1:31 -> [u0:12]
+u1:32 -> [u0:12]
+u1:33 -> [u0:12, u0:12]
+u1:33 <- [u1:24, u2:52, u2:64]
+u1:34 -> [u0:12]
+u1:35 -> [u0:17]
+u1:35 <- [u1:24]
+u1:36 -> [u0:12]
+u1:36 <- [u1:24, u2:50, u2:61]
+u2:39 -> [u2:40, u2:42, u2:44]
+u2:39 <- [u2:45, u2:55, u3:69, u3:71, u3:72, u3:74, u3:75]
+u2:40 -> [u1:24]
+u2:40 <- [u2:39]
+u2:41 -> [u1:24]
+u2:42 -> [u1:24]
+u2:42 <- [u2:39]
+u2:43 -> [u1:24]
+u2:44 -> [u0:18]
+u2:44 <- [u2:39]
+u2:45 -> [u0:12, u0:12, u0:18, u2:39, u2:50, u2:52, u2:54]
+u2:45 <- [u2:48, u4:81]
+u2:46 -> [u0:18]
+u2:47 -> [u0:12]
+u2:48 -> [u0:17, u0:17, u2:45]
+u2:48 <- [u3:74, u4:81]
+u2:49 -> [u0:17]
+u2:50 -> [u1:24, u1:28, u1:36]
+u2:50 <- [u2:45]
+u2:51 -> [u1:24]
+u2:52 -> [u1:24, u1:30, u1:33]
+u2:52 <- [u2:45]
+u2:53 -> [u1:24]
+u2:54 -> [u0:18]
+u2:54 <- [u2:45]
+u2:55 -> [u0:12, u0:12, u0:18, u2:39, u2:61, u2:64, u2:66]
+u2:55 <- [u2:59, u4:81]
+u2:56 -> [u0:12]
+u2:57 -> [u0:18]
+u2:58 -> [u0:12]
+u2:59 -> [u0:12, u0:12, u0:18, u2:55]
+u2:59 <- [u3:74, u4:81]
+u2:60 -> [u0:12]
+u2:61 -> [u0:12, u1:24, u1:30, u1:36, u3:78]
+u2:61 <- [u2:55]
+u2:62 -> [u1:24]
+u2:63 -> [u0:12]
+u2:64 -> [u1:24, u1:28, u1:33]
+u2:64 <- [u2:55]
+u2:65 -> [u1:24]
+u2:66 -> [u0:18]
+u2:66 <- [u2:55]
+u3:69 -> [u1:24, u2:39, u3:74, u3:76, u3:77, u3:78]
+u3:69 <- [u3:73, u4:81, u4:82]
+u3:70 -> [u1:24]
+u3:71 -> [u2:39]
+u3:72 -> [u2:39]
+u3:73 -> [u1:24, u1:27, u3:69]
+u3:73 <- [u4:81]
+u3:74 -> [u2:39, u2:48, u2:59]
+u3:74 <- [u3:69, u3:77, u4:81]
+u3:75 -> [u2:39]
+u3:76 <- [u3:69, u4:81]
+u3:77 -> [u3:74]
+u3:77 <- [u3:69, u4:81]
+u3:78 -> [u0:17]
+u3:78 <- [u2:61, u3:69]
+u4:81 -> [u2:45, u2:48, u2:55, u2:59, u3:69, u3:73, u3:74, u3:76, u3:77]
+u4:82 -> [u3:69]
+
+--- expect:dep-graph ---
+digraph project {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="commands";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n12[label="Command", full_path="$TMP/src/commands.rs:3"];
+      n23[label="DeleteCommand", full_path="$TMP/src/commands.rs:36"];
+      n16[label="InsertCommand", full_path="$TMP/src/commands.rs:9"];
+    }
+    subgraph cluster_2 {
+      label="invoker";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n31[label="Editor", full_path="$TMP/src/invoker.rs:4"];
+    }
+    subgraph cluster_3 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n39[label="main", full_path="$TMP/src/main.rs:8"];
+    }
+    subgraph cluster_4 {
+      label="receiver";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="Document", full_path="$TMP/src/receiver.rs:1"];
+    }
+  }
+  n23 -> n12;
+  n31 -> n12;
+  n31 -> n3;
+  n16 -> n12;
+  n39 -> n23;
+  n39 -> n31;
+  n39 -> n16;
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  graph [fontname="Helvetica Bold", fontsize=12];
+
+  subgraph cluster_0 {
+    label="_c";
+    subgraph cluster_1 {
+      label="commands";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n12[label="Command", full_path="$TMP/src/commands.rs:3", sym_ty="Trait", shape=box];
+      n23[label="DeleteCommand", full_path="$TMP/src/commands.rs:36", sym_ty="Struct", shape=box];
+      n16[label="InsertCommand", full_path="$TMP/src/commands.rs:9", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_2 {
+      label="invoker";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n31[label="Editor", full_path="$TMP/src/invoker.rs:4", sym_ty="Struct", shape=box];
+    }
+    subgraph cluster_3 {
+      label="receiver";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="Document", full_path="$TMP/src/receiver.rs:1", sym_ty="Struct", shape=box];
+    }
+  }
+  n12 -> n23 [from="trait", to="impl"];
+  n12 -> n16 [from="trait", to="impl"];
+  n31 -> n12 [from="struct", to="field"];
+  n31 -> n3 [from="struct", to="field"];
+}

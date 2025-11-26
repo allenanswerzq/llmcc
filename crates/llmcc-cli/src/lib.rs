@@ -1,3 +1,5 @@
+pub mod options;
+
 use std::collections::HashSet;
 use std::io;
 use std::sync::Once;
@@ -11,6 +13,8 @@ use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
+
+pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
 
 fn should_skip_dir(name: &str) -> bool {
     matches!(
@@ -55,6 +59,8 @@ pub struct LlmccOptions {
     pub print_ir: bool,
     pub print_block: bool,
     pub design_graph: bool,
+    pub dep_graph: bool,
+    pub arch_graph: bool,
     pub pagerank: bool,
     pub top_k: Option<usize>,
     pub query: Option<String>,
@@ -85,7 +91,7 @@ where
     log_parse_metrics(&cc.build_metrics);
 
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc, IrBuildOption)?;
+    build_llmcc_ir::<L>(&cc, IrBuildOption::default())?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let symbols_start = Instant::now();
@@ -129,8 +135,8 @@ fn validate_options(opts: &LlmccOptions) -> Result<(), DynError> {
         return Err("Specify either --file or --dir, not both".into());
     }
 
-    if opts.pagerank && !opts.design_graph {
-        return Err("--pagerank requires --design-graph".into());
+    if opts.pagerank && !(opts.design_graph || opts.dep_graph || opts.arch_graph) {
+        return Err("--pagerank requires --design-graph, --dep-graph, or --arch-graph".into());
     }
 
     if opts.depends && opts.dependents {
@@ -253,27 +259,35 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
 }
 
 fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
-    if opts.design_graph {
+    // Check if any graph output is requested
+    let wants_dep_graph = opts.design_graph || opts.dep_graph;
+    let wants_arch_graph = opts.arch_graph;
+
+    if wants_dep_graph || wants_arch_graph {
         if opts.pagerank {
             let limit = Some(opts.top_k.unwrap_or(80));
             pg.set_top_k(limit);
+        }
 
-            let pagerank_start = Instant::now();
-            let result = pg.render_design_graph();
+        let render_start = Instant::now();
+        let result = if wants_arch_graph {
+            pg.render_arch_graph()
+        } else {
+            pg.render_design_graph()
+        };
+
+        if opts.pagerank {
             info!(
                 "PageRank & graph rendering: {:.2}s",
-                pagerank_start.elapsed().as_secs_f64()
+                render_start.elapsed().as_secs_f64()
             );
-            Some(result)
         } else {
-            let render_start = Instant::now();
-            let result = pg.render_design_graph();
             info!(
                 "Graph rendering: {:.2}s",
                 render_start.elapsed().as_secs_f64()
             );
-            Some(result)
         }
+        Some(result)
     } else if let Some(name) = opts.query.as_ref() {
         let query = ProjectQuery::new(&*pg);
         let query_result = if opts.dependents {

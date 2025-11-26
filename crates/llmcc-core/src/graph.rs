@@ -3,9 +3,9 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use crate::block::{BlockId, BlockKind, BlockRelation};
 use crate::block_rel::BlockRelationMap;
 use crate::context::CompileCtxt;
-use crate::graph_render::CompactNode;
-use crate::graph_render::GraphRenderer;
+use crate::graph_render::{CompactNode, GraphRenderer, LabeledEdge};
 use crate::pagerank::PageRanker;
+use crate::symbol::{DepKind, SymId, SymKind};
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -13,7 +13,7 @@ pub struct UnitGraph {
     unit_index: usize,
     /// Root block ID of this unit
     root: BlockId,
-    /// Edges of this graph unit
+    /// Edge of this graph unit
     edges: BlockRelationMap,
 }
 
@@ -45,7 +45,12 @@ pub struct GraphNode {
     pub block_id: BlockId,
 }
 
-const INTERESTING_KINDS: [BlockKind; 3] = [BlockKind::Class, BlockKind::Enum, BlockKind::Func];
+const INTERESTING_KINDS: [BlockKind; 4] = [
+    BlockKind::Class,
+    BlockKind::Trait,
+    BlockKind::Enum,
+    BlockKind::Func,
+];
 
 /// ProjectGraph represents a complete compilation project with all units and their inter-dependencies.
 ///
@@ -74,6 +79,8 @@ pub struct ProjectGraph<'tcx> {
     units: Vec<UnitGraph>,
     top_k: Option<usize>,
     pagerank_enabled: bool,
+    /// Component grouping depth from FQN for graph visualization
+    component_depth: usize,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -83,7 +90,13 @@ impl<'tcx> ProjectGraph<'tcx> {
             units: Vec::new(),
             top_k: None,
             pagerank_enabled: false,
+            component_depth: 2, // Default to top-level modules
         }
+    }
+
+    /// Set the component depth for graph visualization
+    pub fn set_component_depth(&mut self, depth: usize) {
+        self.component_depth = depth;
     }
 
     pub fn add_child(&mut self, graph: UnitGraph) {
@@ -150,7 +163,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             let mut seen_dependents = HashSet::new();
 
-            for &dependent_id in dependents_guard.iter() {
+            for &(dependent_id, _dep_kind) in dependents_guard.iter() {
                 if !seen_dependents.insert(dependent_id) {
                     continue;
                 }
@@ -267,17 +280,139 @@ impl<'tcx> ProjectGraph<'tcx> {
 
     pub fn render_design_graph(&self) -> String {
         let top_k = self.top_k;
-        let nodes = self.collect_sorted_compact_nodes(top_k);
+        let nodes = self.collect_sorted_nodes(top_k);
 
         if nodes.is_empty() {
-            return "digraph DesignGraph {\n}\n".to_string();
+            return "digraph project {\n}\n".to_string();
         }
 
         let renderer = GraphRenderer::new(&nodes);
         let node_index = renderer.build_node_index();
-        let edges = self.collect_compact_edges(renderer.nodes(), &node_index);
+        let edges = self.collect_edges(renderer.nodes(), &node_index);
 
-        renderer.render(&edges)
+        renderer.render(&edges, self.component_depth)
+    }
+
+    /// Render an architecture graph showing input/output relations.
+    ///
+    /// In an architecture graph:
+    /// - Input arguments have edges pointing TO the function
+    /// - Function has edges pointing TO return types (output)
+    /// - Traits have edges pointing TO structs that implement them
+    ///
+    /// This is different from the dependency graph which shows "uses" relationships.
+    pub fn render_arch_graph(&self) -> String {
+        let top_k = self.top_k;
+        let all_nodes = self.collect_sorted_nodes(top_k);
+
+        // Filter nodes for arch-graph:
+        // - Keep all types (Struct, Trait, Enum) regardless of visibility
+        // - Only keep public functions (private functions are implementation details)
+        let nodes: Vec<_> = all_nodes
+            .into_iter()
+            .filter(|node| {
+                match node.sym_kind {
+                    Some(SymKind::Function) => node.is_public,
+                    _ => true, // Keep all other kinds (Struct, Trait, Enum, etc.)
+                }
+            })
+            .collect();
+
+        if nodes.is_empty() {
+            return "digraph architecture {\n}\n".to_string();
+        }
+
+        let renderer = GraphRenderer::new(&nodes);
+        let node_index = renderer.build_node_index();
+        let edges = self.collect_arch_edges(renderer.nodes(), &node_index);
+
+        renderer.render_arch(&edges, self.component_depth)
+    }
+
+    /// Collect edges for the architecture graph based on DepKind.
+    ///
+    /// Edge direction in arch graph:
+    /// - ParamType: param_type -> func (input flows into function)
+    /// - ReturnType: func -> return_type (output flows from function)
+    /// - Implements: impl_struct -> trait (struct advertises trait capability)
+    /// - Calls: caller -> callee (control flow follows call sites)
+    /// - FieldType / Calls / Instantiates: from -> to (normal dependency direction)
+    /// - Uses: fallback from -> to when no more specific edge exists
+    fn collect_arch_edges(
+        &self,
+        nodes: &[CompactNode],
+        node_index: &HashMap<BlockId, usize>,
+    ) -> BTreeSet<LabeledEdge> {
+        let mut edges = BTreeSet::new();
+        let symbol_map = self.cc.symbol_map.read();
+
+        for node in nodes {
+            let Some(_unit_graph) = self.unit_graph(node.unit_index) else {
+                continue;
+            };
+            let from_idx = node_index[&node.block_id];
+
+            // Use the symbol captured during node collection when available
+            let symbol_opt = node
+                .sym_id
+                .and_then(|sym_id| symbol_map.get(&sym_id))
+                .copied();
+
+            if let Some(symbol) = symbol_opt {
+                // Use typed dependencies for arch graph
+                let depends = symbol.depends.read();
+                for &(dep_id, dep_kind) in depends.iter() {
+                    let Some(dep_symbol) = symbol_map.get(&dep_id) else {
+                        continue;
+                    };
+                    let Some(dep_block_id) = dep_symbol.block_id() else {
+                        continue;
+                    };
+                    let Some(&to_idx) = node_index.get(&dep_block_id) else {
+                        continue;
+                    };
+
+                    // Determine edge direction based on DepKind
+                    // For arch-graph, prioritize specific kinds over generic Uses
+                    match dep_kind {
+                        DepKind::ParamType => {
+                            // Input: param_type -> func
+                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::ParamType));
+                        }
+                        DepKind::ReturnType => {
+                            // Output: func -> return_type
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::ReturnType));
+                        }
+                        DepKind::Implements => {
+                            // trait -> implementing_struct (trait flows to implementor)
+                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::Implements));
+                        }
+                        DepKind::FieldType => {
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::FieldType));
+                        }
+                        DepKind::Calls => {
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Calls));
+                        }
+                        DepKind::Instantiates => {
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Instantiates));
+                        }
+                        DepKind::TypeBound => {
+                            // Type bound flows into struct: trait_bound -> struct
+                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::TypeBound));
+                        }
+                        DepKind::Uses => {
+                            // For arch-graph, skip generic Uses dependencies
+                            // Arch-graph focuses on structural relationships:
+                            // - type flows (params, returns, fields, bounds)
+                            // - trait implementations
+                            // Uses captures too many incidental references (e.g., enum variants in expressions)
+                        }
+                    }
+                }
+            }
+        }
+
+        edges
     }
 
     fn ranked_block_filter(
@@ -308,12 +443,13 @@ impl<'tcx> ProjectGraph<'tcx> {
         ranked_order.map(|ordered| ordered.into_iter().collect())
     }
 
-    fn collect_compact_nodes(
+    fn collect_nodes(
         &self,
         interesting_kinds: &[BlockKind],
         ranked_filter: Option<&HashSet<BlockId>>,
     ) -> Vec<CompactNode> {
         let block_indexes = self.cc.block_indexes.read();
+
         block_indexes
             .block_id_index
             .iter()
@@ -357,29 +493,51 @@ impl<'tcx> ProjectGraph<'tcx> {
                     })
                     .or(Some(path.clone()));
 
+                let mut sym_id: Option<SymId> = None;
+                let mut sym_kind = None;
+                let mut fqn = "unknown".to_string();
+                let mut is_public = false;
+
+                if let Some(symbol) = block
+                    .opt_node()
+                    .and_then(|node| node.as_scope())
+                    .and_then(|scope_node| scope_node.opt_scope())
+                    .and_then(|scope| scope.opt_symbol())
+                {
+                    sym_id = Some(symbol.id());
+                    sym_kind = Some(symbol.kind());
+                    is_public = symbol.is_global();
+                    if let Some(resolved) = self.cc.interner.resolve_owned(symbol.fqn()) {
+                        fqn = resolved;
+                    }
+                }
+
                 Some(CompactNode {
                     block_id,
                     unit_index: *unit_index,
                     name: display_name,
                     location,
-                    group: "todo".into(),
+                    fqn,
+                    sym_id,
+                    sym_kind,
+                    is_public,
                 })
             })
             .collect()
     }
 
-    fn collect_sorted_compact_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
+    fn collect_sorted_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
         let ranked_filter = if self.pagerank_enabled {
             self.ranked_block_filter(top_k, &INTERESTING_KINDS)
         } else {
             None
         };
-        let mut nodes = self.collect_compact_nodes(&INTERESTING_KINDS, ranked_filter.as_ref());
+        let mut nodes = self.collect_nodes(&INTERESTING_KINDS, ranked_filter.as_ref());
         nodes.sort_by(|a, b| a.name.cmp(&b.name));
         nodes
     }
 
-    fn collect_compact_edges(
+    fn collect_edges(
         &self,
         nodes: &[CompactNode],
         node_index: &HashMap<BlockId, usize>,

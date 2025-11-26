@@ -1,313 +1,245 @@
 ===============================================================================
 call-target-callkind-function-one
 ===============================================================================
+Tests basic function call resolution where main() calls helper().
 
-
---- file: app/src/main.rs ---
-mod helpers {
-    pub fn compute() {}
+--- file: src/main.rs ---
+fn helper() -> i32 {
+    42
 }
 
-fn function_demo() {
-    helpers::compute();
+fn main() {
+    let x = helper();
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32           | i32                            | [global]
-u0:2  | Primitive | i64           | i64                            | [global]
-u0:3  | Primitive | i16           | i16                            | [global]
-u0:4  | Primitive | i8            | i8                             | [global]
-u0:5  | Primitive | i128          | i128                           | [global]
-u0:6  | Primitive | isize         | isize                          | [global]
-u0:7  | Primitive | u32           | u32                            | [global]
-u0:8  | Primitive | u64           | u64                            | [global]
-u0:9  | Primitive | u16           | u16                            | [global]
-u0:10 | Primitive | u8            | u8                             | [global]
-u0:11 | Primitive | u128          | u128                           | [global]
-u0:12 | Primitive | usize         | usize                          | [global]
-u0:13 | Primitive | f32           | f32                            | [global]
-u0:14 | Primitive | f64           | f64                            | [global]
-u0:15 | Primitive | bool          | bool                           | [global]
-u0:16 | Primitive | char          | char                           | [global]
-u0:17 | Primitive | str           | str                            | [global]
-u0:18 | Primitive | String        | String                         | [global]
-u0:19 | Crate     | _c            | _c                             | [global]
-u0:20 | Crate     | crate         | _c::crate                      |         
-u0:21 | Module    | _m            | _c::_m                         |         
-u0:22 | File      | main          | _c::_m::main                   |         
-u0:23 | Namespace | helpers       | _c::_m::main::helpers          |         
-u0:24 | Function  | compute       | _c::_m::main::helpers::compute | [global]
-u0:25 | Function  | function_demo | _c::_m::main::function_demo    |         
+u0:1  | Primitive | i32    | i32               | [global]
+u0:2  | Primitive | i64    | i64               | [global]
+u0:3  | Primitive | i16    | i16               | [global]
+u0:4  | Primitive | i8     | i8                | [global]
+u0:5  | Primitive | i128   | i128              | [global]
+u0:6  | Primitive | isize  | isize             | [global]
+u0:7  | Primitive | u32    | u32               | [global]
+u0:8  | Primitive | u64    | u64               | [global]
+u0:9  | Primitive | u16    | u16               | [global]
+u0:10 | Primitive | u8     | u8                | [global]
+u0:11 | Primitive | u128   | u128              | [global]
+u0:12 | Primitive | usize  | usize             | [global]
+u0:13 | Primitive | f32    | f32               | [global]
+u0:14 | Primitive | f64    | f64               | [global]
+u0:15 | Primitive | bool   | bool              | [global]
+u0:16 | Primitive | char   | char              | [global]
+u0:17 | Primitive | str    | str               | [global]
+u0:18 | Primitive | String | String            | [global]
+u0:19 | Crate     | _c     | _c                | [global]
+u0:20 | Crate     | crate  | _c::crate         |         
+u0:21 | File      | main   | _c::main          |         
+u0:22 | Function  | helper | _c::main::helper  |         
+u0:23 | Function  | main   | _c::main::main    |         
+u0:24 | Variable  | x      | _c::main::main::x |         
 
 --- expect:symbol-deps ---
-u0:23 -> [u0:24]
-u0:23 <- [u0:25]
-u0:24 <- [u0:23, u0:25]
-u0:25 -> [u0:23, u0:24]
-
---- expect:graph ---
-digraph project {
-  subgraph cluster_0 {
-    label="todo";
-    style=filled;
-    color=lightgrey;
-    n2 [label="compute", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpdXyRAN/app/src/main.rs:2"];
-    n3 [label="function_demo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpdXyRAN/app/src/main.rs:5"];
-  }
-  n3 -> n2;
-}
+u0:1 <- [u0:22]
+u0:22 -> [u0:1]
+u0:22 <- [u0:23, u0:23, u0:24]
+u0:23 -> [u0:22, u0:22]
+u0:24 -> [u0:22]
 
 
 ===============================================================================
 call-target-callkind-function-two
 ===============================================================================
+Tests function call with multiple arguments: main() calls add(a, b).
 
-
---- file: app/src/main.rs ---
-struct Foo;
-struct Baz;
-struct SessionBuilder;
-
-impl SessionBuilder {
-    fn new() -> Self {
-        SessionBuilder
-    }
-
-    fn static_func() -> Foo {}
+--- file: src/main.rs ---
+fn add(a: i32, b: i32) -> i32 {
+    a + b
 }
 
-fn qualified_call(baz: &Baz) {
-    SessionBuilder::new();
-    let x = SessionBuilder::static_func();
+fn main() {
+    let result = add(1, 2);
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32            | i32                                       | [global]
-u0:2  | Primitive | i64            | i64                                       | [global]
-u0:3  | Primitive | i16            | i16                                       | [global]
-u0:4  | Primitive | i8             | i8                                        | [global]
-u0:5  | Primitive | i128           | i128                                      | [global]
-u0:6  | Primitive | isize          | isize                                     | [global]
-u0:7  | Primitive | u32            | u32                                       | [global]
-u0:8  | Primitive | u64            | u64                                       | [global]
-u0:9  | Primitive | u16            | u16                                       | [global]
-u0:10 | Primitive | u8             | u8                                        | [global]
-u0:11 | Primitive | u128           | u128                                      | [global]
-u0:12 | Primitive | usize          | usize                                     | [global]
-u0:13 | Primitive | f32            | f32                                       | [global]
-u0:14 | Primitive | f64            | f64                                       | [global]
-u0:15 | Primitive | bool           | bool                                      | [global]
-u0:16 | Primitive | char           | char                                      | [global]
-u0:17 | Primitive | str            | str                                       | [global]
-u0:18 | Primitive | String         | String                                    | [global]
-u0:19 | Crate     | _c             | _c                                        | [global]
-u0:20 | Crate     | crate          | _c::crate                                 |         
-u0:21 | Module    | _m             | _c::_m                                    |         
-u0:22 | File      | main           | _c::_m::main                              |         
-u0:23 | Struct    | Foo            | _c::_m::main::Foo                         |         
-u0:24 | Struct    | Baz            | _c::_m::main::Baz                         |         
-u0:25 | Struct    | SessionBuilder | _c::_m::main::SessionBuilder              |         
-u0:26 | Function  | new            | _c::_m::main::SessionBuilder::new         |         
-u0:27 | Function  | static_func    | _c::_m::main::SessionBuilder::static_func |         
-u0:28 | Function  | qualified_call | _c::_m::main::qualified_call              |         
-u0:29 | Variable  | baz            | _c::_m::main::qualified_call::baz         |         
-u0:30 | Variable  | x              | _c::_m::main::qualified_call::x           |         
+u0:1  | Primitive | i32    | i32                    | [global]
+u0:2  | Primitive | i64    | i64                    | [global]
+u0:3  | Primitive | i16    | i16                    | [global]
+u0:4  | Primitive | i8     | i8                     | [global]
+u0:5  | Primitive | i128   | i128                   | [global]
+u0:6  | Primitive | isize  | isize                  | [global]
+u0:7  | Primitive | u32    | u32                    | [global]
+u0:8  | Primitive | u64    | u64                    | [global]
+u0:9  | Primitive | u16    | u16                    | [global]
+u0:10 | Primitive | u8     | u8                     | [global]
+u0:11 | Primitive | u128   | u128                   | [global]
+u0:12 | Primitive | usize  | usize                  | [global]
+u0:13 | Primitive | f32    | f32                    | [global]
+u0:14 | Primitive | f64    | f64                    | [global]
+u0:15 | Primitive | bool   | bool                   | [global]
+u0:16 | Primitive | char   | char                   | [global]
+u0:17 | Primitive | str    | str                    | [global]
+u0:18 | Primitive | String | String                 | [global]
+u0:19 | Crate     | _c     | _c                     | [global]
+u0:20 | Crate     | crate  | _c::crate              |         
+u0:21 | File      | main   | _c::main               |         
+u0:22 | Function  | add    | _c::main::add          |         
+u0:23 | Variable  | a      | _c::main::add::a       |         
+u0:24 | Variable  | b      | _c::main::add::b       |         
+u0:25 | Function  | main   | _c::main::main         |         
+u0:26 | Variable  | result | _c::main::main::result |         
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:25, u0:27, u0:28, u0:30]
-u0:24 <- [u0:28, u0:29]
-u0:25 -> [u0:23, u0:26, u0:27]
-u0:25 <- [u0:28]
-u0:26 <- [u0:25, u0:28]
-u0:27 -> [u0:23]
-u0:27 <- [u0:25, u0:28]
-u0:28 -> [u0:23, u0:24, u0:25, u0:26, u0:27]
-u0:29 -> [u0:24]
-u0:30 -> [u0:23]
-
---- expect:blocks ---
-u0:1  | root   | main          
-u0:2  | class  | Foo           
-u0:3  | class  | Baz           
-u0:4  | class  | SessionBuilder
-u0:5  | impl   | SessionBuilder
-u0:6  | method | new           
-u0:7  | method | static_func   
-u0:8  | func   | qualified_call
-u0:9  | call   | block#9       
-u0:10 | call   | block#10      
-
---- expect:block-deps ---
-u0:2 <- [u0:4, u0:7, u0:8]
-u0:3 <- [u0:8]
-u0:4 -> [u0:2, u0:6, u0:7]
-u0:4 <- [u0:8]
-u0:6 <- [u0:4, u0:8]
-u0:7 -> [u0:2]
-u0:7 <- [u0:4, u0:8]
-u0:8 -> [u0:2, u0:3, u0:4, u0:6, u0:7]
-
---- expect:graph ---
-digraph project {
-  subgraph cluster_0 {
-    label="todo";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Foo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:1"];
-    n8 [label="qualified_call", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:13"];
-    n3 [label="Baz", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:2"];
-    n4 [label="SessionBuilder", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpzG2oW4/app/src/main.rs:3"];
-  }
-  n8 -> n3;
-  n8 -> n4;
-  n4 -> n2;
-}
+u0:1 <- [u0:22, u0:22, u0:23, u0:24]
+u0:22 -> [u0:1, u0:1]
+u0:22 <- [u0:25, u0:25, u0:26]
+u0:23 -> [u0:1]
+u0:24 -> [u0:1]
+u0:25 -> [u0:22, u0:22]
+u0:26 -> [u0:22]
 
 
 ===============================================================================
 call-target-callkind-macro
 ===============================================================================
-
+Tests macro invocation call kind detection with say_hello!().
 
 --- file: src/main.rs ---
-macro_rules! log_value {
-    ($value:expr) => {{
-        let _captured = $value;
-    }};
+macro_rules! say_hello {
+    () => {
+        println!("Hello!");
+    };
 }
 
-fn macro_demo() {
-    log_value!("hi");
+fn main() {
+    say_hello!();
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32        | i32                      | [global]
-u0:2  | Primitive | i64        | i64                      | [global]
-u0:3  | Primitive | i16        | i16                      | [global]
-u0:4  | Primitive | i8         | i8                       | [global]
-u0:5  | Primitive | i128       | i128                     | [global]
-u0:6  | Primitive | isize      | isize                    | [global]
-u0:7  | Primitive | u32        | u32                      | [global]
-u0:8  | Primitive | u64        | u64                      | [global]
-u0:9  | Primitive | u16        | u16                      | [global]
-u0:10 | Primitive | u8         | u8                       | [global]
-u0:11 | Primitive | u128       | u128                     | [global]
-u0:12 | Primitive | usize      | usize                    | [global]
-u0:13 | Primitive | f32        | f32                      | [global]
-u0:14 | Primitive | f64        | f64                      | [global]
-u0:15 | Primitive | bool       | bool                     | [global]
-u0:16 | Primitive | char       | char                     | [global]
-u0:17 | Primitive | str        | str                      | [global]
-u0:18 | Primitive | String     | String                   | [global]
-u0:19 | Crate     | _c         | _c                       | [global]
-u0:20 | Crate     | crate      | _c::crate                |         
-u0:21 | Module    | _m         | _c::_m                   |         
-u0:22 | File      | main       | _c::_m::main             |         
-u0:23 | Macro     | log_value  | _c::_m::main::log_value  |         
-u0:24 | Function  | macro_demo | _c::_m::main::macro_demo |         
+u0:1  | Primitive | i32       | i32                 | [global]
+u0:2  | Primitive | i64       | i64                 | [global]
+u0:3  | Primitive | i16       | i16                 | [global]
+u0:4  | Primitive | i8        | i8                  | [global]
+u0:5  | Primitive | i128      | i128                | [global]
+u0:6  | Primitive | isize     | isize               | [global]
+u0:7  | Primitive | u32       | u32                 | [global]
+u0:8  | Primitive | u64       | u64                 | [global]
+u0:9  | Primitive | u16       | u16                 | [global]
+u0:10 | Primitive | u8        | u8                  | [global]
+u0:11 | Primitive | u128      | u128                | [global]
+u0:12 | Primitive | usize     | usize               | [global]
+u0:13 | Primitive | f32       | f32                 | [global]
+u0:14 | Primitive | f64       | f64                 | [global]
+u0:15 | Primitive | bool      | bool                | [global]
+u0:16 | Primitive | char      | char                | [global]
+u0:17 | Primitive | str       | str                 | [global]
+u0:18 | Primitive | String    | String              | [global]
+u0:19 | Crate     | _c        | _c                  | [global]
+u0:20 | Crate     | crate     | _c::crate           |         
+u0:21 | File      | main      | _c::main            |         
+u0:22 | Macro     | say_hello | _c::main::say_hello |         
+u0:23 | Function  | main      | _c::main::main      |         
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:24]
-u0:24 -> [u0:23]
+u0:22 <- [u0:23]
+u0:23 -> [u0:22]
 
 
 ===============================================================================
 call-target-callkind-chain-method-callchainroot-invocation
 ===============================================================================
+Tests method chain where root is an invocation: Builder::new().add(1).add(2).build().
 
-
---- file: app/src/main.rs ---
-struct Builder;
+--- file: src/main.rs ---
+struct Builder {
+    value: i32,
+}
 
 impl Builder {
     fn new() -> Self {
-        Builder
+        Builder { value: 0 }
     }
 
-    fn step(self) -> Self {
+    fn add(mut self, n: i32) -> Self {
+        self.value += n;
         self
     }
 
-    fn finish(self) {}
+    fn build(self) -> i32 {
+        self.value
+    }
 }
 
-fn chain_invocation_demo() {
-    Builder::new().step().finish();
+fn main() {
+    let result = Builder::new().add(1).add(2).build();
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32                   | i32                                 | [global]
-u0:2  | Primitive | i64                   | i64                                 | [global]
-u0:3  | Primitive | i16                   | i16                                 | [global]
-u0:4  | Primitive | i8                    | i8                                  | [global]
-u0:5  | Primitive | i128                  | i128                                | [global]
-u0:6  | Primitive | isize                 | isize                               | [global]
-u0:7  | Primitive | u32                   | u32                                 | [global]
-u0:8  | Primitive | u64                   | u64                                 | [global]
-u0:9  | Primitive | u16                   | u16                                 | [global]
-u0:10 | Primitive | u8                    | u8                                  | [global]
-u0:11 | Primitive | u128                  | u128                                | [global]
-u0:12 | Primitive | usize                 | usize                               | [global]
-u0:13 | Primitive | f32                   | f32                                 | [global]
-u0:14 | Primitive | f64                   | f64                                 | [global]
-u0:15 | Primitive | bool                  | bool                                | [global]
-u0:16 | Primitive | char                  | char                                | [global]
-u0:17 | Primitive | str                   | str                                 | [global]
-u0:18 | Primitive | String                | String                              | [global]
-u0:19 | Crate     | _c                    | _c                                  | [global]
-u0:20 | Crate     | crate                 | _c::crate                           |         
-u0:21 | Module    | _m                    | _c::_m                              |         
-u0:22 | File      | main                  | _c::_m::main                        |         
-u0:23 | Struct    | Builder               | _c::_m::main::Builder               |         
-u0:24 | Function  | new                   | _c::_m::main::Builder::new          |         
-u0:25 | Function  | step                  | _c::_m::main::Builder::step         |         
-u0:26 | Function  | finish                | _c::_m::main::Builder::finish       |         
-u0:27 | Function  | chain_invocation_demo | _c::_m::main::chain_invocation_demo |         
+u0:1  | Primitive | i32     | i32                       | [global]
+u0:2  | Primitive | i64     | i64                       | [global]
+u0:3  | Primitive | i16     | i16                       | [global]
+u0:4  | Primitive | i8      | i8                        | [global]
+u0:5  | Primitive | i128    | i128                      | [global]
+u0:6  | Primitive | isize   | isize                     | [global]
+u0:7  | Primitive | u32     | u32                       | [global]
+u0:8  | Primitive | u64     | u64                       | [global]
+u0:9  | Primitive | u16     | u16                       | [global]
+u0:10 | Primitive | u8      | u8                        | [global]
+u0:11 | Primitive | u128    | u128                      | [global]
+u0:12 | Primitive | usize   | usize                     | [global]
+u0:13 | Primitive | f32     | f32                       | [global]
+u0:14 | Primitive | f64     | f64                       | [global]
+u0:15 | Primitive | bool    | bool                      | [global]
+u0:16 | Primitive | char    | char                      | [global]
+u0:17 | Primitive | str     | str                       | [global]
+u0:18 | Primitive | String  | String                    | [global]
+u0:19 | Crate     | _c      | _c                        | [global]
+u0:20 | Crate     | crate   | _c::crate                 |         
+u0:21 | File      | main    | _c::main                  |         
+u0:22 | Struct    | Builder | _c::main::Builder         |         
+u0:23 | Field     | value   | _c::main::Builder::value  |         
+u0:24 | Function  | new     | _c::main::Builder::new    |         
+u0:25 | Function  | add     | _c::main::Builder::add    |         
+u0:26 | Variable  | n       | _c::main::Builder::add::n |         
+u0:27 | Function  | build   | _c::main::Builder::build  |         
+u0:28 | Function  | main    | _c::main::main            |         
+u0:29 | Variable  | result  | _c::main::main::result    |         
 
 --- expect:symbol-deps ---
-u0:23 -> [u0:24, u0:25, u0:26]
-u0:23 <- [u0:27]
-u0:24 <- [u0:23, u0:27]
-u0:25 <- [u0:23, u0:27]
-u0:26 <- [u0:23, u0:27]
-u0:27 -> [u0:23, u0:24, u0:25, u0:26]
-
---- expect:graph ---
-digraph project {
-  subgraph cluster_0 {
-    label="todo";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Builder", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpbhenZw/app/src/main.rs:1"];
-    n7 [label="chain_invocation_demo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpbhenZw/app/src/main.rs:15"];
-  }
-  n7 -> n2;
-}
+u0:1 <- [u0:22, u0:22, u0:23, u0:25, u0:25, u0:26, u0:27]
+u0:22 -> [u0:1, u0:1, u0:25, u0:27]
+u0:22 <- [u0:24, u0:28, u0:29]
+u0:23 -> [u0:1]
+u0:24 -> [u0:22]
+u0:24 <- [u0:28]
+u0:25 -> [u0:1, u0:1]
+u0:25 <- [u0:22, u0:28]
+u0:26 -> [u0:1]
+u0:27 -> [u0:1]
+u0:27 <- [u0:22, u0:28]
+u0:28 -> [u0:22, u0:24, u0:25, u0:27]
+u0:29 -> [u0:22]
 
 
 ===============================================================================
 call-target-callkind-chain-method-callchainroot-expr
 ===============================================================================
+Tests method chain where root is a variable expression: data.iter().map().count().
 
-
---- file: app/src/main.rs ---
+--- file: src/main.rs ---
 struct Data;
+
 struct Iter;
 
 impl Data {
-    fn iter(&self) -> Iter {
-        Iter
-    }
+    fn new() -> Self { Data }
+
+    fn iter(&self) -> Iter { Iter }
 }
 
 impl Iter {
-    fn map(&self) -> Iter {
-        Iter
-    }
+    fn map(&self) -> Iter { Iter }
 
-    fn count(&self) -> usize {
-        0
-    }
+    fn count(&self) -> usize { 0 }
 }
 
 fn expr_chain() {
@@ -316,90 +248,63 @@ fn expr_chain() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32        | i32                            | [global]
-u0:2  | Primitive | i64        | i64                            | [global]
-u0:3  | Primitive | i16        | i16                            | [global]
-u0:4  | Primitive | i8         | i8                             | [global]
-u0:5  | Primitive | i128       | i128                           | [global]
-u0:6  | Primitive | isize      | isize                          | [global]
-u0:7  | Primitive | u32        | u32                            | [global]
-u0:8  | Primitive | u64        | u64                            | [global]
-u0:9  | Primitive | u16        | u16                            | [global]
-u0:10 | Primitive | u8         | u8                             | [global]
-u0:11 | Primitive | u128       | u128                           | [global]
-u0:12 | Primitive | usize      | usize                          | [global]
-u0:13 | Primitive | f32        | f32                            | [global]
-u0:14 | Primitive | f64        | f64                            | [global]
-u0:15 | Primitive | bool       | bool                           | [global]
-u0:16 | Primitive | char       | char                           | [global]
-u0:17 | Primitive | str        | str                            | [global]
-u0:18 | Primitive | String     | String                         | [global]
-u0:19 | Crate     | _c         | _c                             | [global]
-u0:20 | Crate     | crate      | _c::crate                      |         
-u0:21 | Module    | _m         | _c::_m                         |         
-u0:22 | File      | main       | _c::_m::main                   |         
-u0:23 | Struct    | Data       | _c::_m::main::Data             |         
-u0:24 | Struct    | Iter       | _c::_m::main::Iter             |         
-u0:25 | Function  | iter       | _c::_m::main::Data::iter       |         
-u0:26 | Function  | map        | _c::_m::main::Iter::map        |         
-u0:27 | Function  | count      | _c::_m::main::Iter::count      |         
-u0:28 | Function  | expr_chain | _c::_m::main::expr_chain       |         
-u0:29 | Variable  | data       | _c::_m::main::expr_chain::data |         
+u0:1  | Primitive | i32        | i32                        | [global]
+u0:2  | Primitive | i64        | i64                        | [global]
+u0:3  | Primitive | i16        | i16                        | [global]
+u0:4  | Primitive | i8         | i8                         | [global]
+u0:5  | Primitive | i128       | i128                       | [global]
+u0:6  | Primitive | isize      | isize                      | [global]
+u0:7  | Primitive | u32        | u32                        | [global]
+u0:8  | Primitive | u64        | u64                        | [global]
+u0:9  | Primitive | u16        | u16                        | [global]
+u0:10 | Primitive | u8         | u8                         | [global]
+u0:11 | Primitive | u128       | u128                       | [global]
+u0:12 | Primitive | usize      | usize                      | [global]
+u0:13 | Primitive | f32        | f32                        | [global]
+u0:14 | Primitive | f64        | f64                        | [global]
+u0:15 | Primitive | bool       | bool                       | [global]
+u0:16 | Primitive | char       | char                       | [global]
+u0:17 | Primitive | str        | str                        | [global]
+u0:18 | Primitive | String     | String                     | [global]
+u0:19 | Crate     | _c         | _c                         | [global]
+u0:20 | Crate     | crate      | _c::crate                  |         
+u0:21 | File      | main       | _c::main                   |         
+u0:22 | Struct    | Data       | _c::main::Data             |         
+u0:23 | Struct    | Iter       | _c::main::Iter             |         
+u0:24 | Function  | new        | _c::main::Data::new        |         
+u0:25 | Function  | iter       | _c::main::Data::iter       |         
+u0:26 | Function  | map        | _c::main::Iter::map        |         
+u0:27 | Function  | count      | _c::main::Iter::count      |         
+u0:28 | Function  | expr_chain | _c::main::expr_chain       |         
+u0:29 | Variable  | data       | _c::main::expr_chain::data |         
 
 --- expect:symbol-deps ---
 u0:12 <- [u0:27]
-u0:23 -> [u0:24, u0:25]
-u0:23 <- [u0:28]
-u0:24 -> [u0:26, u0:27]
-u0:24 <- [u0:23, u0:25]
-u0:25 -> [u0:24]
-u0:25 <- [u0:23]
-u0:26 <- [u0:24]
+u0:22 -> [u0:23, u0:24, u0:25]
+u0:22 <- [u0:28, u0:29]
+u0:23 -> [u0:26, u0:27]
+u0:23 <- [u0:22, u0:25, u0:26]
+u0:24 <- [u0:22, u0:28]
+u0:25 -> [u0:23]
+u0:25 <- [u0:22, u0:28]
+u0:26 -> [u0:23]
+u0:26 <- [u0:23, u0:28]
 u0:27 -> [u0:12]
-u0:27 <- [u0:24]
-u0:28 -> [u0:23]
-
---- expect:blocks ---
-u0:1  | root   | main      
-u0:2  | class  | Data      
-u0:3  | class  | Iter      
-u0:4  | impl   | Data      
-u0:5  | method | iter      
-u0:6  | impl   | Iter      
-u0:7  | method | map       
-u0:8  | method | count     
-u0:9  | func   | expr_chain
-u0:10 | call   | block#10  
-u0:11 | call   | block#11  
-
---- expect:graph ---
-digraph project {
-  subgraph cluster_0 {
-    label="todo";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Data", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp8f2VDN/app/src/main.rs:1"];
-    n3 [label="Iter", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp8f2VDN/app/src/main.rs:2"];
-    n9 [label="expr_chain", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmp8f2VDN/app/src/main.rs:20"];
-  }
-  n2 -> n3;
-  n9 -> n2;
-}
+u0:27 <- [u0:23, u0:28]
+u0:28 -> [u0:22, u0:24, u0:25, u0:26, u0:27]
+u0:29 -> [u0:22]
 
 
 ===============================================================================
 call-target-callkind-chain-variable
 ===============================================================================
+Tests method call on intermediate variable: cursor = stream.advance(); cursor.flush().
 
-
---- file: app/src/main.rs ---
+--- file: src/main.rs ---
 struct Stream;
 
 impl Stream {
-    fn advance(&mut self) -> &mut Self {
-        self
-    }
-
+    fn advance(&mut self) -> &mut Self { self }
     fn flush(&self) {}
 }
 
@@ -409,69 +314,39 @@ fn chain_variable_demo(mut stream: Stream) {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32                 | i32                                       | [global]
-u0:2  | Primitive | i64                 | i64                                       | [global]
-u0:3  | Primitive | i16                 | i16                                       | [global]
-u0:4  | Primitive | i8                  | i8                                        | [global]
-u0:5  | Primitive | i128                | i128                                      | [global]
-u0:6  | Primitive | isize               | isize                                     | [global]
-u0:7  | Primitive | u32                 | u32                                       | [global]
-u0:8  | Primitive | u64                 | u64                                       | [global]
-u0:9  | Primitive | u16                 | u16                                       | [global]
-u0:10 | Primitive | u8                  | u8                                        | [global]
-u0:11 | Primitive | u128                | u128                                      | [global]
-u0:12 | Primitive | usize               | usize                                     | [global]
-u0:13 | Primitive | f32                 | f32                                       | [global]
-u0:14 | Primitive | f64                 | f64                                       | [global]
-u0:15 | Primitive | bool                | bool                                      | [global]
-u0:16 | Primitive | char                | char                                      | [global]
-u0:17 | Primitive | str                 | str                                       | [global]
-u0:18 | Primitive | String              | String                                    | [global]
-u0:19 | Crate     | _c                  | _c                                        | [global]
-u0:20 | Crate     | crate               | _c::crate                                 |         
-u0:21 | Module    | _m                  | _c::_m                                    |         
-u0:22 | File      | main                | _c::_m::main                              |         
-u0:23 | Struct    | Stream              | _c::_m::main::Stream                      |         
-u0:24 | Function  | advance             | _c::_m::main::Stream::advance             |         
-u0:25 | Function  | flush               | _c::_m::main::Stream::flush               |         
-u0:26 | Function  | chain_variable_demo | _c::_m::main::chain_variable_demo         |         
-u0:27 | Variable  | stream              | _c::_m::main::chain_variable_demo::stream |         
-u0:28 | Variable  | cursor              | _c::_m::main::chain_variable_demo::cursor |         
+u0:1  | Primitive | i32                 | i32                                   | [global]
+u0:2  | Primitive | i64                 | i64                                   | [global]
+u0:3  | Primitive | i16                 | i16                                   | [global]
+u0:4  | Primitive | i8                  | i8                                    | [global]
+u0:5  | Primitive | i128                | i128                                  | [global]
+u0:6  | Primitive | isize               | isize                                 | [global]
+u0:7  | Primitive | u32                 | u32                                   | [global]
+u0:8  | Primitive | u64                 | u64                                   | [global]
+u0:9  | Primitive | u16                 | u16                                   | [global]
+u0:10 | Primitive | u8                  | u8                                    | [global]
+u0:11 | Primitive | u128                | u128                                  | [global]
+u0:12 | Primitive | usize               | usize                                 | [global]
+u0:13 | Primitive | f32                 | f32                                   | [global]
+u0:14 | Primitive | f64                 | f64                                   | [global]
+u0:15 | Primitive | bool                | bool                                  | [global]
+u0:16 | Primitive | char                | char                                  | [global]
+u0:17 | Primitive | str                 | str                                   | [global]
+u0:18 | Primitive | String              | String                                | [global]
+u0:19 | Crate     | _c                  | _c                                    | [global]
+u0:20 | Crate     | crate               | _c::crate                             |         
+u0:21 | File      | main                | _c::main                              |         
+u0:22 | Struct    | Stream              | _c::main::Stream                      |         
+u0:23 | Function  | advance             | _c::main::Stream::advance             |         
+u0:24 | Function  | flush               | _c::main::Stream::flush               |         
+u0:25 | Function  | chain_variable_demo | _c::main::chain_variable_demo         |         
+u0:26 | Variable  | stream              | _c::main::chain_variable_demo::stream |         
+u0:27 | Variable  | cursor              | _c::main::chain_variable_demo::cursor |         
 
 --- expect:symbol-deps ---
-u0:23 -> [u0:24, u0:25]
-u0:23 <- [u0:26, u0:27, u0:28]
-u0:24 <- [u0:23, u0:26]
-u0:25 <- [u0:23, u0:26]
-u0:26 -> [u0:23, u0:24, u0:25]
-u0:27 -> [u0:23]
-u0:28 -> [u0:23]
-
---- expect:blocks ---
-u0:1 | root   | main               
-u0:2 | class  | Stream             
-u0:3 | impl   | Stream             
-u0:4 | method | advance            
-u0:5 | method | flush              
-u0:6 | func   | chain_variable_demo
-u0:7 | call   | block#7            
-u0:8 | call   | block#8            
-
---- expect:block-deps ---
-u0:2 -> [u0:4, u0:5]
-u0:2 <- [u0:6]
-u0:4 <- [u0:2, u0:6]
-u0:5 <- [u0:2, u0:6]
-u0:6 -> [u0:2, u0:4, u0:5]
-
---- expect:graph ---
-digraph project {
-  subgraph cluster_0 {
-    label="todo";
-    style=filled;
-    color=lightgrey;
-    n2 [label="Stream", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpJiw0jU/app/src/main.rs:1"];
-    n6 [label="chain_variable_demo", full_path="/private/var/folders/rk/clc9y9hn0m32mr3ls_j801kw0000gn/T/.tmpJiw0jU/app/src/main.rs:11"];
-  }
-  n6 -> n2;
-}
+u0:22 -> [u0:23, u0:24]
+u0:22 <- [u0:25, u0:25, u0:26, u0:27]
+u0:23 <- [u0:22, u0:25]
+u0:24 <- [u0:22, u0:25]
+u0:25 -> [u0:22, u0:22, u0:23, u0:24]
+u0:26 -> [u0:22]
+u0:27 -> [u0:22]

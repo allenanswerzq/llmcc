@@ -3,8 +3,8 @@ use anyhow::anyhow;
 use clap::ArgGroup;
 use clap::Parser;
 
-use llmcc::LlmccOptions;
-use llmcc::run_main;
+use llmcc_cli::LlmccOptions;
+use llmcc_cli::run_main;
 // use llmcc_python::LangPython;
 use llmcc_rust::LangRust;
 
@@ -50,13 +50,29 @@ pub struct Cli {
     #[arg(long, default_value_t = false)]
     print_block: bool,
 
-    /// Render a scoped design graph for the provided files or directories
+    /// Render a scoped design graph for the provided files or directories (alias for --dep-graph)
     #[arg(
         long = "design-graph",
         default_value_t = false,
-        conflicts_with_all = ["depends", "dependents", "query"]
+        conflicts_with_all = ["depends", "dependents", "query", "arch_graph"]
     )]
     design_graph: bool,
+
+    /// Render a dependency graph showing what each block depends on
+    #[arg(
+        long = "dep-graph",
+        default_value_t = false,
+        conflicts_with_all = ["depends", "dependents", "query", "arch_graph"]
+    )]
+    dep_graph: bool,
+
+    /// Render an architecture graph showing input/output flow (params→func→return, trait→impl)
+    #[arg(
+        long = "arch-graph",
+        default_value_t = false,
+        conflicts_with_all = ["depends", "dependents", "query", "design_graph", "dep_graph"]
+    )]
+    arch_graph: bool,
 
     /// Summarize query output with file path and line range instead of full code blocks
     #[arg(long, default_value_t = false)]
@@ -100,8 +116,10 @@ pub fn run(args: Cli) -> Result<()> {
         eprintln!("Warning: --depends/--dependents flags are ignored without --query");
     }
 
-    if args.pagerank && !args.design_graph {
-        return Err(anyhow!("--pagerank requires --design-graph"));
+    if args.pagerank && !(args.design_graph || args.dep_graph || args.arch_graph) {
+        return Err(anyhow!(
+            "--pagerank requires --design-graph, --dep-graph, or --arch-graph"
+        ));
     }
 
     let opts = LlmccOptions {
@@ -110,6 +128,8 @@ pub fn run(args: Cli) -> Result<()> {
         print_ir: args.print_ir,
         print_block: args.print_block,
         design_graph: args.design_graph,
+        dep_graph: args.dep_graph,
+        arch_graph: args.arch_graph,
         pagerank: args.pagerank,
         top_k: args.top_k,
         query: args.query,
