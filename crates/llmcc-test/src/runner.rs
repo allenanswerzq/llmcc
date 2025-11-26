@@ -1227,7 +1227,7 @@ fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
     let symbol_map = cc.symbol_map.read();
     let interner = &cc.interner;
     let mut rows = Vec::with_capacity(symbol_map.len());
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in symbol_map.iter() {
         let fqn_str = interner
             .resolve_owned(*symbol.fqn.read())
             .unwrap_or_else(|| "?".to_string());
@@ -1254,7 +1254,7 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
 
     // Build initial cache of all symbols
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in symbol_map.iter() {
         let sym_id_num = symbol.id().0 as u32;
         let label = format!(
             "u{}:{}",
@@ -1272,26 +1272,28 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     }
 
     // Fill in dependencies
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in symbol_map.iter() {
         let sym_id_num = symbol.id().0 as u32;
         let deps = symbol.depends_ids();
         for dep in deps {
-            if let Some(_target) = symbol_map.get(&dep) {
-                let dep_id_num = dep.0 as u32;
-                let dep_label = format!(
-                    "u{}:{}",
-                    _target.unit_index().unwrap_or_default(),
-                    dep_id_num
-                );
-                if let Some(entry) = cache.get_mut(&sym_id_num) {
-                    entry.depends_on.push(dep_label.clone());
-                }
-                if let Some(target_entry) = cache.get_mut(&dep_id_num) {
-                    target_entry.depended_by.push(format!(
+            if let Some(idx) = dep.0.checked_sub(1) {
+                if let Some(_target) = symbol_map.get(idx) {
+                    let dep_id_num = dep.0 as u32;
+                    let dep_label = format!(
                         "u{}:{}",
-                        symbol.unit_index().unwrap_or_default(),
-                        sym_id_num
-                    ));
+                        _target.unit_index().unwrap_or_default(),
+                        dep_id_num
+                    );
+                    if let Some(entry) = cache.get_mut(&sym_id_num) {
+                        entry.depends_on.push(dep_label.clone());
+                    }
+                    if let Some(target_entry) = cache.get_mut(&dep_id_num) {
+                        target_entry.depended_by.push(format!(
+                            "u{}:{}",
+                            symbol.unit_index().unwrap_or_default(),
+                            sym_id_num
+                        ));
+                    }
                 }
             }
         }

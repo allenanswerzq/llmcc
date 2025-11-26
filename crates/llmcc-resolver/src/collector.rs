@@ -130,32 +130,22 @@ impl<'a> CollectorScopes<'a> {
     }
 
     /// Build fully qualified name from current scope
+    /// Finds the nearest enclosing scope with a symbol and uses its FQN
     pub fn build_fqn(&self, name: &str) -> InternedStr {
-        let fqn_str = self
-            .scopes
-            .iter()
-            .into_iter()
-            .rev()
-            .find_map(|scope| {
-                scope.opt_symbol().and_then(|parent_sym| {
-                    // Read the InternedStr FQN of the scope's symbol
-                    let fqn = parent_sym.fqn.read();
-                    // Resolve the InternedStr to an owned String
-                    self.interner.resolve_owned(*fqn)
-                })
-            })
-            .map(|scope_fqn| {
-                // If we have a scope FQN, format it as "scope::name"
-                format!("{}::{}", scope_fqn, name)
-            })
-            .unwrap_or_else(|| {
-                // If any step failed (no scope, no symbol, or no resolved scope FQN),
-                // the FQN is just the name itself.
-                name.to_string()
-            });
-
-        // Intern the final FQN string
-        self.interner().intern(&fqn_str)
+        // Walk up the scope stack to find the first scope with a symbol (namespace)
+        // In practice this is usually 0-2 levels up (block -> function -> module)
+        for scope in self.scopes.iter().into_iter().rev() {
+            if let Some(ns_sym) = scope.opt_symbol() {
+                let ns_fqn = ns_sym.fqn();
+                if let Some(ns_fqn_str) = self.interner.resolve_owned(ns_fqn) {
+                    // Found namespace with FQN, format as "namespace::name"
+                    let fqn_str = format!("{}::{}", ns_fqn_str, name);
+                    return self.interner.intern(&fqn_str);
+                }
+            }
+        }
+        // No enclosing namespace with FQN found, just use the name
+        self.interner.intern(name)
     }
 
     /// Initialize a symbol with common properties
@@ -297,17 +287,22 @@ fn apply_collected_symbols<'tcx>(
     arena: &'tcx Arena<'tcx>,
     final_globals: &'tcx Scope<'tcx>,
     unit_globals: &'tcx Scope<'tcx>,
+    merge_time: &std::sync::atomic::AtomicU64,
+    _alloc_time: &std::sync::atomic::AtomicU64,
 ) -> &'tcx Scope<'tcx> {
-    // Transfer all scopes from per-unit arena to global
-    for scope in arena.scope() {
+    use std::time::Instant;
+    use std::sync::atomic::Ordering;
+
+    // Collect all scopes from arena
+    let scopes: Vec<_> = arena.scope();
+
+    // Merge global scope
+    for scope in &scopes {
         if scope.id() == unit_globals.id() {
-            // For the global scope: merge into the final global scope
-            // This combines all global-level symbols into one scope
+            let start = Instant::now();
             cc.merge_two_scopes(final_globals, unit_globals);
-        } else {
-            // For all other scopes: allocate new instances in the global arena
-            // while preserving their IDs and symbol relationships
-            cc.alloc_scope_with(scope);
+            merge_time.fetch_add(start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+            break;
         }
     }
 
@@ -324,13 +319,25 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolverOption,
 ) -> &'a Scope<'a> {
+    use std::time::Instant;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    let total_start = Instant::now();
+
     let scope_stack = L::collect_init(cc);
     let scope_stack_clone = scope_stack.clone();
-    let collect_unit = move |i: usize| {
+
+    // Atomic counters for parallel timing
+    let visit_time_ns = AtomicU64::new(0);
+
+    let collect_unit = |i: usize| {
         let unit_scope_stack = scope_stack_clone.clone();
         let unit = cc.compile_unit(i);
         let node = unit.hir_node(unit.file_root_id().unwrap());
+
+        let visit_start = Instant::now();
         let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
+        visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         if config.print_ir {
             use llmcc_core::printer::print_llmcc_ir;
@@ -341,6 +348,7 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         unit_globals
     };
 
+    let parallel_start = Instant::now();
     let unit_globals_vec = if config.sequential {
         (0..cc.files.len()).map(collect_unit).collect::<Vec<_>>()
     } else {
@@ -349,11 +357,36 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
             .map(collect_unit)
             .collect::<Vec<_>>()
     };
+    let parallel_elapsed = parallel_start.elapsed();
 
+    let merge_start = Instant::now();
+    let merge_time = AtomicU64::new(0);
+    let alloc_time = AtomicU64::new(0);
     let arena = &cc.arena;
     let globals = scope_stack.first();
     for unit_globals in unit_globals_vec.iter() {
-        apply_collected_symbols(cc, arena, globals, unit_globals);
+        apply_collected_symbols(cc, arena, globals, unit_globals, &merge_time, &alloc_time);
     }
+
+    let maps_start = Instant::now();
+    cc.build_lookup_maps_from_arena();
+    let maps_elapsed = maps_start.elapsed();
+
+    let merge_elapsed = merge_start.elapsed();
+
+    let total_elapsed = total_start.elapsed();
+    let visit_total_ms = visit_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+    let merge_scopes_ms = merge_time.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+
+    tracing::info!(
+        "Symbol collection breakdown: total={:.2}s, parallel_wall={:.2}s, visitor_cpu={:.2}s, merge_wall={:.2}s (merge_scopes={:.2}s, build_maps={:.2}s)",
+        total_elapsed.as_secs_f64(),
+        parallel_elapsed.as_secs_f64(),
+        visit_total_ms / 1000.0,
+        merge_elapsed.as_secs_f64(),
+        merge_scopes_ms / 1000.0,
+        maps_elapsed.as_secs_f64()
+    );
+
     globals
 }

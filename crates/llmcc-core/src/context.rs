@@ -122,23 +122,23 @@ impl<'tcx> CompileUnit<'tcx> {
             .and_then(|parented| parented.parent())
     }
 
-    /// Get an existing scope or None if it doesn't exist
+    /// Get an existing scope or None if it doesn't exist.
+    /// Uses O(1) direct indexing. ScopeIds start from 1.
     pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from scope_map
-        self.cc.scope_map.read().get(&scope_id).copied()
+        let idx = scope_id.0.checked_sub(1)?;
+        self.cc.scope_map.read().get(idx).copied()
     }
 
-    pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.cc.symbol_map.read().get(&owner).copied()
+    /// Get symbol by SymId using O(1) direct indexing.
+    /// SymIds start from 1, so index = sym_id.0 - 1
+    pub fn opt_get_symbol(self, sym_id: SymId) -> Option<&'tcx Symbol> {
+        let idx = sym_id.0.checked_sub(1)?;
+        self.cc.symbol_map.read().get(idx).copied()
     }
 
     /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.cc
-            .scope_map
-            .read()
-            .get(&scope_id)
-            .copied()
+        self.opt_get_scope(scope_id)
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
@@ -243,12 +243,12 @@ pub struct CompileCtxt<'tcx> {
 
     // HirId -> ParentedNode
     pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // ScopeId -> Scope
-    pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
+    // ScopeId -> Scope (sorted Vec for O(1) indexed access, index = scope_id.0 - 1)
+    pub scope_map: RwLock<Vec<&'tcx Scope<'tcx>>>,
     // HirId -> ScopeId
     pub owner_to_scope_id: RwLock<HashMap<HirId, ScopeId>>,
-    // SymId -> &Symbol
-    pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
+    // SymId -> &Symbol (sorted Vec for O(1) indexed access, index = sym_id.0 - 1)
+    pub symbol_map: RwLock<Vec<&'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
     // BlockId -> ParentedBlock
@@ -330,9 +330,9 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
-            scope_map: RwLock::new(HashMap::new()),
+            scope_map: RwLock::new(Vec::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
+            symbol_map: RwLock::new(Vec::new()),
             block_arena: BlockArena::default(),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
@@ -377,9 +377,9 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             hir_map: RwLock::new(HashMap::new()),
-            scope_map: RwLock::new(HashMap::new()),
+            scope_map: RwLock::new(Vec::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
+            symbol_map: RwLock::new(Vec::new()),
             block_arena: BlockArena::default(),
             block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
@@ -464,7 +464,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.write().insert(scope.id(), scope);
+        // Scope is in arena; scope_map will be built via build_lookup_maps_from_arena()
         self.owner_to_scope_id.write().insert(owner, scope.id());
         scope
     }
@@ -473,20 +473,27 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
     }
 
+    /// Get scope by ScopeId using O(1) direct indexing.
+    /// ScopeIds start from 1, so index = scope_id.0 - 1
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
+        let idx = scope_id.0.checked_sub(1).expect("Invalid ScopeId 0");
         self.scope_map
             .read()
-            .get(&scope_id)
+            .get(idx)
             .copied()
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
-    pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.symbol_map.read().get(&owner).cloned()
+    /// Get symbol by SymId using O(1) direct indexing.
+    /// SymIds start from 1, so index = sym_id.0 - 1
+    /// Requires `build_symbol_map_from_arena()` to have been called first.
+    pub fn opt_get_symbol(&'tcx self, sym_id: SymId) -> Option<&'tcx Symbol> {
+        let idx = sym_id.0.checked_sub(1)?;
+        self.symbol_map.read().get(idx).copied()
     }
 
-    pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
-        self.opt_get_symbol(owner)
+    pub fn get_symbol(&'tcx self, sym_id: SymId) -> &'tcx Symbol {
+        self.opt_get_symbol(sym_id)
             .expect("SymId not mapped to Symbol in CompileCtxt")
     }
 
@@ -494,7 +501,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
         self.symbol_map
             .read()
-            .values()
+            .iter()
             .find(|symbol| symbol.block_id() == Some(block_id))
             .copied()
     }
@@ -504,36 +511,16 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self.arena
     }
 
-    /// Allocate a new scope based on an existing one, cloning its contents.
-    ///
-    /// The existing ones are from the other arena, and we want to allocate in
-    /// this arena.
-    pub fn alloc_scope_with(&'tcx self, existing: &'tcx Scope<'tcx>) -> &'tcx Scope<'tcx> {
-        let scope_id = existing.id();
-        let scope = existing;
+    pub fn build_lookup_maps_from_arena(&'tcx self) {
+        // Build symbol_map: sorted Vec for O(1) lookup by sym_id.0 - 1
+        let mut symbols = self.arena.symbol();
+        symbols.sort_unstable_by_key(|s| s.id().0);
+        *self.symbol_map.write() = symbols;
 
-        // Update scope_map
-        self.scope_map.write().insert(scope_id, scope);
-        scope.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        scope
-    }
-
-    /// Register a batch of scopes in the global scope map without cloning them.
-    pub fn update_scope_map<I>(&'tcx self, scopes: I)
-    where
-        I: IntoIterator<Item = &'tcx Scope<'tcx>>,
-    {
-        let mut scope_map = self.scope_map.write();
-        let mut symbol_map = self.symbol_map.write();
-        for scope in scopes {
-            scope_map.insert(scope.id(), scope);
-            scope.for_each_symbol(|sym| {
-                symbol_map.insert(sym.id(), sym);
-            });
-        }
+        // Build scope_map: sorted Vec for O(1) lookup by scope_id.0 - 1
+        let mut scopes = self.arena.scope();
+        scopes.sort_unstable_by_key(|s| s.id().0);
+        *self.scope_map.write() = scopes;
     }
 
     /// Allocate a new HIR identifier node with the given ID, name and symbol
@@ -563,31 +550,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     /// Merge the second scope into the first.
-    ///
-    /// This combines all symbols from the second scope into the first scope,
-    /// and updates the scope_map to reference the merged result.
-    ///
-    /// # Arguments
-    /// * `first` - The target scope to merge into
-    /// * `second` - The source scope to merge from
-    ///
-    /// # Side Effects
-    /// - All symbols from `second` are merged into `first`
-    /// - The symbol_map is updated to point all merged symbols to the symbol_map
-    /// - The scope_map is updated to redirect second's scope ID to first
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
-
-        // Update all symbol map entries for symbols now in first scope
-        // We need to register the merged symbols in the global symbol_map
-        first.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        // Remap scope references from second to first
-        // If any code had a reference to second's scope ID, it should now map to first
-        self.scope_map.write().insert(second.id(), first);
     }
 
     pub fn set_file_root_id(&self, index: usize, start: HirId) {

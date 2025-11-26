@@ -1095,7 +1095,7 @@ mod tests {
     use crate::token::LangRust;
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-    use llmcc_core::symbol::{SymId, SymKind};
+    use llmcc_core::symbol::{SymId, SymKind, reset_symbol_id_counter, reset_scope_id_counter};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
     use pretty_assertions::assert_eq;
 
@@ -1103,6 +1103,10 @@ mod tests {
     where
         F: for<'a> FnOnce(&'a CompileCtxt<'a>),
     {
+        // Reset ID counters so SymIds start from 1 for direct indexing
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+
         let bytes = sources
             .iter()
             .map(|src| src.as_bytes().to_vec())
@@ -1122,19 +1126,21 @@ mod tests {
         cc.symbol_map
             .read()
             .iter()
-            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
-            .map(|(id, _)| *id)
+            .find(|symbol| symbol.name == name_key && symbol.kind() == kind)
+            .map(|symbol| symbol.id())
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 
     fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
+        let idx = sym_id.0.checked_sub(1)?;
         let map = cc.symbol_map.read();
-        let symbol = map.get(&sym_id).copied()?;
+        let symbol = map.get(idx).copied()?;
         let ty_id = symbol.type_of();
         drop(map);
         let ty_id = ty_id?;
+        let idx = ty_id.0.checked_sub(1)?;
         let map = cc.symbol_map.read();
-        let ty_symbol = map.get(&ty_id).copied()?;
+        let ty_symbol = map.get(idx).copied()?;
         cc.interner.resolve_owned(ty_symbol.name)
     }
 
@@ -1152,17 +1158,20 @@ mod tests {
 
     fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
         let map = cc.symbol_map.read();
+        let idx = sym_id.0.checked_sub(1).expect("invalid sym_id");
         let symbol = map
-            .get(&sym_id)
+            .get(idx)
             .copied()
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
         let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
-            if let Some(target) = map.get(&dep) {
-                let fqn_key = target.fqn();
-                if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
-                    names.push(fqn);
+            if let Some(idx) = dep.0.checked_sub(1) {
+                if let Some(target) = map.get(idx) {
+                    let fqn_key = target.fqn();
+                    if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
+                        names.push(fqn);
+                    }
                 }
             }
         }

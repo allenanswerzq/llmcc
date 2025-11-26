@@ -355,14 +355,19 @@ impl<'tcx> ProjectGraph<'tcx> {
             // Use the symbol captured during node collection when available
             let symbol_opt = node
                 .sym_id
-                .and_then(|sym_id| symbol_map.get(&sym_id))
+                .and_then(|sym_id| sym_id.0.checked_sub(1))
+                .and_then(|idx| symbol_map.get(idx))
                 .copied();
 
             if let Some(symbol) = symbol_opt {
                 // Use typed dependencies for arch graph
                 let depends = symbol.depends.read();
                 for &(dep_id, dep_kind) in depends.iter() {
-                    let Some(dep_symbol) = symbol_map.get(&dep_id) else {
+                    let idx = match dep_id.0.checked_sub(1) {
+                        Some(i) => i,
+                        None => continue,
+                    };
+                    let Some(dep_symbol) = symbol_map.get(idx) else {
                         continue;
                     };
                     let Some(dep_block_id) = dep_symbol.block_id() else {

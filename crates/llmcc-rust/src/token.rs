@@ -28,7 +28,7 @@ impl LanguageTraitImpl for LangRust {
             symbol.set_fqn(name);
             symbol.set_is_global(true);
             globals.insert(symbol);
-            cc.symbol_map.write().insert(symbol.id(), symbol);
+            // Symbol will be added to symbol_map when build_symbol_map_from_arena() is called
         }
 
         stack
