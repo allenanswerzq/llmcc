@@ -454,7 +454,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait)
@@ -475,8 +475,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             }
         }
 
-        if let Some(sn) = node.as_scope()
-            && let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
+        let Some(sn) = node.as_scope() else {
+            return;
+        };
+
+        if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
             && let Some(type_name) = Self::type_name_from_node(unit, &type_node)
         {
@@ -490,13 +493,23 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 // Primitives don't have scopes, so we need to allocate one for the impl
                 let needs_scope = symbol.opt_scope().is_none();
                 self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, needs_scope);
+                return;
             } else if let Some(symbol) =
                 scopes.lookup_or_insert(type_name, node, SymKind::UnresolvedType)
             {
                 type_ident.set_symbol(symbol);
                 self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, true);
+                return;
             }
         }
+
+        // Fallback: if we couldn't resolve the type, still set a scope so bind phase doesn't panic
+        let scope = unit.cc.alloc_scope(node.id());
+        sn.set_scope(scope);
+        let depth = scopes.scope_depth();
+        scopes.push_scope_with(node, None);
+        self.visit_children(unit, node, scopes, namespace, None);
+        scopes.pop_until(depth);
     }
 
     fn visit_macro_definition(

@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::fmt::Write;
 use std::path::Path;
 
 use crate::BlockId;
@@ -166,6 +167,11 @@ fn render_nested_dot_with_title(
     component_depth: usize,
     title: &str,
 ) -> String {
+    // Pre-allocate output buffer based on expected size
+    // Rough estimate: 100 bytes per node + 50 bytes per edge + base overhead
+    let estimated_size = nodes.len() * 100 + edges.len() * 50 + 200;
+    let mut output = String::with_capacity(estimated_size);
+
     // Build component tree from node paths derived from FQN
     let mut tree = ComponentTree::default();
     for (idx, node) in nodes.iter().enumerate() {
@@ -173,16 +179,8 @@ fn render_nested_dot_with_title(
         tree.insert(&path, idx);
     }
 
-    let mut output = format!("digraph {} {{\n", title);
-
-    // Global graph attributes for better visualization
-    // output.push_str("  rankdir=TB;\n");
-    // output.push_str("  compound=true;\n");
-    // output.push_str("  newrank=true;\n");
-    // output.push_str("  node [shape=box, style=\"rounded,filled\", fontname=\"Helvetica\", fontsize=11, fillcolor=white];\n");
-    // output.push_str("  edge [arrowsize=0.8, color=\"#666666\"];\n");
-    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n");
-    output.push('\n');
+    let _ = writeln!(output, "digraph {} {{", title);
+    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n\n");
 
     let mut counter = 0usize;
 
@@ -191,9 +189,12 @@ fn render_nested_dot_with_title(
 
     // Render edges
     for &(from, to) in edges {
-        let from_name = format!("n{}", nodes[from].block_id.as_u32());
-        let to_name = format!("n{}", nodes[to].block_id.as_u32());
-        output.push_str(&format!("  {} -> {};\n", from_name, to_name));
+        let _ = writeln!(
+            output,
+            "  n{} -> n{};",
+            nodes[from].block_id.as_u32(),
+            nodes[to].block_id.as_u32()
+        );
     }
 
     output.push_str("}\n");
@@ -206,6 +207,10 @@ fn render_arch_dot(
     edges: &BTreeSet<LabeledEdge>,
     component_depth: usize,
 ) -> String {
+    // Pre-allocate output buffer based on expected size
+    let estimated_size = nodes.len() * 150 + edges.len() * 80 + 200;
+    let mut output = String::with_capacity(estimated_size);
+
     // Build component tree from node paths derived from FQN
     let mut tree = ComponentTree::default();
     for (idx, node) in nodes.iter().enumerate() {
@@ -213,9 +218,8 @@ fn render_arch_dot(
         tree.insert(&path, idx);
     }
 
-    let mut output = "digraph architecture {\n".to_string();
-    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n");
-    output.push('\n');
+    output.push_str("digraph architecture {\n");
+    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n\n");
 
     let mut counter = 0usize;
 
@@ -224,12 +228,14 @@ fn render_arch_dot(
 
     // Render labeled edges with from/to attributes
     for edge in edges {
-        let from_name = format!("n{}", nodes[edge.from_idx].block_id.as_u32());
-        let to_name = format!("n{}", nodes[edge.to_idx].block_id.as_u32());
-        output.push_str(&format!(
-            "  {} -> {} [from=\"{}\", to=\"{}\"];\n",
-            from_name, to_name, edge.from_kind, edge.to_kind
-        ));
+        let _ = writeln!(
+            output,
+            "  n{} -> n{} [from=\"{}\", to=\"{}\"];",
+            nodes[edge.from_idx].block_id.as_u32(),
+            nodes[edge.to_idx].block_id.as_u32(),
+            edge.from_kind,
+            edge.to_kind
+        );
     }
 
     output.push_str("}\n");
@@ -244,7 +250,6 @@ fn render_arch_component_tree(
     indent_level: usize,
     depth: usize,
 ) {
-    let indent = "  ".repeat(indent_level);
     let (fill_color, border_color) = get_depth_colors(depth);
 
     // Render child subtrees (nested subgraphs)
@@ -252,22 +257,42 @@ fn render_arch_component_tree(
         let cluster_id = *counter;
         *counter += 1;
 
-        output.push_str(&format!("{}subgraph cluster_{} {{\n", indent, cluster_id));
-        output.push_str(&format!(
-            "{}  label=\"{}\";\n",
-            indent,
-            escape_dot_label(component_name)
-        ));
+        // Write subgraph header
+        for _ in 0..indent_level {
+            output.push_str("  ");
+        }
+        let _ = writeln!(output, "subgraph cluster_{} {{", cluster_id);
+
+        // Write label
+        for _ in 0..indent_level {
+            output.push_str("  ");
+        }
+        let _ = writeln!(output, "  label=\"{}\";", escape_dot_label(component_name));
+
         if depth != 0 {
-            output.push_str(&format!("{}  style=\"filled\";\n", indent));
-            output.push_str(&format!("{}  fillcolor=\"{}\";\n", indent, fill_color));
-            output.push_str(&format!("{}  color=\"{}\";\n", indent, border_color));
+            for _ in 0..indent_level {
+                output.push_str("  ");
+            }
+            output.push_str("  style=\"filled\";\n");
+
+            for _ in 0..indent_level {
+                output.push_str("  ");
+            }
+            let _ = writeln!(output, "  fillcolor=\"{}\";", fill_color);
+
+            for _ in 0..indent_level {
+                output.push_str("  ");
+            }
+            let _ = writeln!(output, "  color=\"{}\";", border_color);
         }
 
         // Recursively render children with increased depth
         render_arch_component_tree(output, subtree, nodes, counter, indent_level + 1, depth + 1);
 
-        output.push_str(&format!("{}}}\n", indent));
+        for _ in 0..indent_level {
+            output.push_str("  ");
+        }
+        output.push_str("}\n");
     }
 
     // Render nodes at this level with sym_ty attribute
@@ -286,28 +311,29 @@ fn render_arch_component_tree(
 
     for idx in sorted_indices {
         let node = &nodes[idx];
-        let node_name = format!("n{}", node.block_id.as_u32());
-        let label = escape_dot_label(&node.name);
-        let mut attrs = vec![format!("label=\"{}\"", label)];
+
+        // Write indent
+        for _ in 0..indent_level {
+            output.push_str("  ");
+        }
+
+        // Build node line directly
+        let _ = write!(output, "n{}[label=\"{}\"", node.block_id.as_u32(), escape_dot_label(&node.name));
 
         if let Some(location) = &node.location {
             let (_display, full) = summarize_location(location);
-            let escaped_full = escape_dot_attr(&full);
-            attrs.push(format!("full_path=\"{}\"", escaped_full));
+            let _ = write!(output, ", full_path=\"{}\"", escape_dot_attr(&full));
         }
 
         if let Some(sym_kind) = &node.sym_kind {
-            attrs.push(format!("sym_ty=\"{:?}\"", sym_kind));
+            let _ = write!(output, ", sym_ty=\"{:?}\"", sym_kind);
             // Use box shape for type-like symbols (Struct, Trait, Enum)
-            if matches!(sym_kind, SymKind::Struct | SymKind::Enum) {
-                attrs.push("shape=box".to_string());
-            }
-            if matches!(sym_kind, SymKind::Trait) {
-                attrs.push("shape=box".to_string());
+            if matches!(sym_kind, SymKind::Struct | SymKind::Enum | SymKind::Trait) {
+                output.push_str(", shape=box");
             }
         }
 
-        output.push_str(&format!("{}{}[{}];\n", indent, node_name, attrs.join(", ")));
+        output.push_str("];\n");
     }
 }
 
@@ -332,7 +358,6 @@ fn render_component_tree(
     indent_level: usize,
     depth: usize,
 ) {
-    let indent = "  ".repeat(indent_level);
     let (fill_color, border_color) = get_depth_colors(depth);
 
     // Render child subtrees (nested subgraphs)
@@ -340,24 +365,42 @@ fn render_component_tree(
         let cluster_id = *counter;
         *counter += 1;
 
-        output.push_str(&format!("{}subgraph cluster_{} {{\n", indent, cluster_id));
-        output.push_str(&format!(
-            "{}  label=\"{}\";\n",
-            indent,
-            escape_dot_label(component_name)
-        ));
-        if depth != 0 {
-            output.push_str(&format!("{}  style=\"filled\";\n", indent));
-            output.push_str(&format!("{}  fillcolor=\"{}\";\n", indent, fill_color));
-            output.push_str(&format!("{}  color=\"{}\";\n", indent, border_color));
+        // Write subgraph header
+        for _ in 0..indent_level {
+            output.push_str("  ");
         }
-        // output.push_str(&format!("{}  penwidth=2;\n", indent));
-        // output.push_str(&format!("{}  margin=16;\n", indent));
+        let _ = writeln!(output, "subgraph cluster_{} {{", cluster_id);
+
+        // Write label
+        for _ in 0..indent_level {
+            output.push_str("  ");
+        }
+        let _ = writeln!(output, "  label=\"{}\";", escape_dot_label(component_name));
+
+        if depth != 0 {
+            for _ in 0..indent_level {
+                output.push_str("  ");
+            }
+            output.push_str("  style=\"filled\";\n");
+
+            for _ in 0..indent_level {
+                output.push_str("  ");
+            }
+            let _ = writeln!(output, "  fillcolor=\"{}\";", fill_color);
+
+            for _ in 0..indent_level {
+                output.push_str("  ");
+            }
+            let _ = writeln!(output, "  color=\"{}\";", border_color);
+        }
 
         // Recursively render children with increased depth
         render_component_tree(output, subtree, nodes, counter, indent_level + 1, depth + 1);
 
-        output.push_str(&format!("{}}}\n", indent));
+        for _ in 0..indent_level {
+            output.push_str("  ");
+        }
+        output.push_str("}\n");
     }
 
     // Render nodes at this level
@@ -376,17 +419,21 @@ fn render_component_tree(
 
     for idx in sorted_indices {
         let node = &nodes[idx];
-        let node_name = format!("n{}", node.block_id.as_u32());
-        let label = escape_dot_label(&node.name);
-        let mut attrs = vec![format!("label=\"{}\"", label)];
+
+        // Write indent
+        for _ in 0..indent_level {
+            output.push_str("  ");
+        }
+
+        // Build node line directly
+        let _ = write!(output, "n{}[label=\"{}\"", node.block_id.as_u32(), escape_dot_label(&node.name));
 
         if let Some(location) = &node.location {
             let (_display, full) = summarize_location(location);
-            let escaped_full = escape_dot_attr(&full);
-            attrs.push(format!("full_path=\"{}\"", escaped_full));
+            let _ = write!(output, ", full_path=\"{}\"", escape_dot_attr(&full));
         }
 
-        output.push_str(&format!("{}{}[{}];\n", indent, node_name, attrs.join(", ")));
+        output.push_str("];\n");
     }
 }
 

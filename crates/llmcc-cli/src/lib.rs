@@ -33,8 +33,10 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
+#[allow(dead_code)]
 static RAYON_INIT: Once = Once::new();
 
+#[allow(dead_code)]
 fn init_rayon_pool() {
     RAYON_INIT.call_once(|| {
         let available = std::thread::available_parallelism()
@@ -56,6 +58,7 @@ fn init_rayon_pool() {
 pub struct LlmccOptions {
     pub files: Vec<String>,
     pub dirs: Vec<String>,
+    pub output: Option<String>,
     pub print_ir: bool,
     pub print_block: bool,
     pub design_graph: bool,
@@ -76,7 +79,7 @@ where
 {
     let total_start = Instant::now();
 
-    init_rayon_pool();
+    // init_rayon_pool();
 
     validate_options(opts)?;
 
@@ -95,7 +98,9 @@ where
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let symbols_start = Instant::now();
-    let resolver_option = ResolverOption::default().with_print_ir(opts.print_ir);
+    let resolver_option = ResolverOption::default()
+        .with_print_ir(opts.print_ir)
+        .with_sequential(false);
     let globals = collect_symbols_with::<L>(&cc, &resolver_option);
     info!(
         "Symbol collection: {:.2}s",

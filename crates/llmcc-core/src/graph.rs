@@ -480,9 +480,8 @@ impl<'tcx> ProjectGraph<'tcx> {
                     .or_else(|| unit.file().path())
                     .unwrap_or("<unknown>");
 
-                let path = std::fs::canonicalize(raw_path)
-                    .map(|p| p.to_string_lossy().to_string())
-                    .unwrap_or_else(|_| raw_path.to_string());
+                // Use raw path directly - canonicalize is very expensive
+                let path = raw_path.to_string();
 
                 let file_bytes = unit.file().content();
                 let location = block

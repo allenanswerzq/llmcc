@@ -57,6 +57,7 @@ fn run_llmcc(
     let opts = LlmccOptions {
         files: files.unwrap_or_default(),
         dirs: dirs.unwrap_or_default(),
+        output: None,
         print_ir,
         print_block,
         design_graph: print_design_graph,

@@ -276,6 +276,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
 
         if let Some(fn_sym) = sn.opt_symbol() {
+            // Mark main function as global (entry point)
+            if unit.interner().resolve_owned(fn_sym.name).as_deref() == Some("main") {
+                fn_sym.set_is_global(true);
+            }
+
             // Handle the main return type identifier (e.g., Option in Option<UserDto>)
             if let Some(ret_ty) = ret_ident
                 && let Some(ret_sym) = ret_ty.opt_symbol()
