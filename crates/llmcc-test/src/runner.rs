@@ -716,6 +716,8 @@ fn normalize_symbols(text: &str) -> String {
             }
 
             let canonical = format!("{label} | {kind} | {name} | {fqn} | {global}");
+            // Trim trailing whitespace from the row (e.g., when global is empty)
+            let canonical = canonical.trim_end().to_string();
             Some((unit, id, canonical))
         })
         .collect();
@@ -778,9 +780,32 @@ fn is_empty_relation(line: &str) -> bool {
 }
 
 fn normalize_graph(text: &str) -> String {
-    // Just return the trimmed text as-is since temp path replacement
-    // is already handled in the normalize() function
-    text.trim().to_string()
+    // Parse graph and sort edges for deterministic comparison
+    let mut lines: Vec<&str> = text.trim().lines().collect();
+
+    // Find where edges start (after closing brace of last subgraph)
+    // Edges are lines like "  n1 -> n2;" or "  n1 -> n2 [...];"
+    let edge_re = regex::Regex::new(r"^\s*n\d+\s*->\s*n\d+").unwrap();
+
+    let mut edge_start = None;
+    let mut edge_end = None;
+
+    for (i, line) in lines.iter().enumerate() {
+        if edge_re.is_match(line) {
+            if edge_start.is_none() {
+                edge_start = Some(i);
+            }
+            edge_end = Some(i);
+        }
+    }
+
+    // Sort the edges if found
+    if let (Some(start), Some(end)) = (edge_start, edge_end) {
+        let edges = &mut lines[start..=end];
+        edges.sort();
+    }
+
+    lines.join("\n")
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
