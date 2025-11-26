@@ -346,7 +346,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
 
 [[package]]
-name = "llmcc"
+name = "llmcc-bindings"
+version = "0.2.50"
+dependencies = [
+ "llmcc-cli",
+ "llmcc-core",
+ "llmcc-rust",
+ "pyo3",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "llmcc-cli"
 version = "0.2.50"
 dependencies = [
  "anyhow",
@@ -360,18 +372,6 @@ dependencies = [
  "tempfile",
  "tracing",
  "tracing-subscriber",
-]
-
-[[package]]
-name = "llmcc-bindings"
-version = "0.2.50"
-dependencies = [
- "llmcc",
- "llmcc-core",
- "llmcc-rust",
- "pyo3",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -437,6 +437,7 @@ version = "0.2.50"
 dependencies = [
  "anyhow",
  "clap",
+ "llmcc-cli",
  "llmcc-core",
  "llmcc-resolver",
  "llmcc-rust",

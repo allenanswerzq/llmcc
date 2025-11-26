@@ -10,6 +10,7 @@ declare_arena!(BlockArena {
     blk_func: BlockFunc<'a>,
     blk_method: BlockMethod<'a>,
     blk_class: BlockClass<'a>,
+    blk_trait: BlockTrait<'a>,
     blk_impl: BlockImpl<'a>,
     blk_stmt: BlockStmt<'a>,
     blk_call: BlockCall<'a>,
@@ -28,9 +29,11 @@ pub enum BlockKind {
     Root,
     Func,
     Method,
+    Closure,
     Stmt,
     Call,
     Class,
+    Trait,
     Enum,
     Const,
     Impl,
@@ -48,6 +51,7 @@ pub enum BasicBlock<'blk> {
     Call(&'blk BlockCall<'blk>),
     Enum(&'blk BlockEnum<'blk>),
     Class(&'blk BlockClass<'blk>),
+    Trait(&'blk BlockTrait<'blk>),
     Impl(&'blk BlockImpl<'blk>),
     Const(&'blk BlockConst<'blk>),
     Field(&'blk BlockField<'blk>),
@@ -81,6 +85,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Func(block) => Some(&block.base),
             BasicBlock::Method(block) => Some(&block.base),
             BasicBlock::Class(block) => Some(&block.base),
+            BasicBlock::Trait(block) => Some(&block.base),
             BasicBlock::Impl(block) => Some(&block.base),
             BasicBlock::Stmt(block) => Some(&block.base),
             BasicBlock::Call(block) => Some(&block.base),
@@ -363,6 +368,29 @@ impl<'blk> BlockClass<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
+        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self::new(base, name)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockTrait<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+}
+
+impl<'blk> BlockTrait<'blk> {
+    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
+        Self { base, name }
+    }
+
+    pub fn from_hir(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Trait, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
         Self::new(base, name)
     }

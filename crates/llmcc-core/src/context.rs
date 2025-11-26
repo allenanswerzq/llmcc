@@ -342,6 +342,53 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
+    /// Create a new CompileCtxt from files with separate physical and logical paths.
+    /// Physical paths are used to read files from disk; logical paths are stored for display.
+    /// Each element is (physical_path, logical_path).
+    pub fn from_files_with_logical<L: LanguageTrait>(
+        paths: &[(String, String)],
+    ) -> std::io::Result<Self> {
+        let read_start = Instant::now();
+
+        let mut files_with_index: Vec<(usize, File)> = paths
+            .par_iter()
+            .enumerate()
+            .map(
+                |(index, (physical, logical))| -> std::io::Result<(usize, File)> {
+                    let file = File::new_file_with_logical(physical, logical.clone())?;
+                    Ok((index, file))
+                },
+            )
+            .collect::<std::io::Result<Vec<_>>>()?;
+
+        files_with_index.sort_by_key(|(index, _)| *index);
+        let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
+
+        let file_read_seconds = read_start.elapsed().as_secs_f64();
+
+        let (parse_trees, mut metrics) = Self::parse_files_with_metrics::<L>(&files);
+        metrics.file_read_seconds = file_read_seconds;
+
+        let count = files.len();
+        Ok(Self {
+            arena: Arena::default(),
+            interner: InternPool::default(),
+            files,
+            parse_trees,
+            hir_root_ids: RwLock::new(vec![None; count]),
+            hir_map: RwLock::new(HashMap::new()),
+            scope_map: RwLock::new(HashMap::new()),
+            owner_to_scope_id: RwLock::new(HashMap::new()),
+            symbol_map: RwLock::new(HashMap::new()),
+            block_arena: BlockArena::default(),
+            block_map: RwLock::new(HashMap::new()),
+            unresolve_symbols: RwLock::new(Vec::new()),
+            related_map: BlockRelationMap::default(),
+            block_indexes: RwLock::new(BlockIndexMaps::new()),
+            build_metrics: metrics,
+        })
+    }
+
     fn parse_files_with_metrics<L: LanguageTrait>(
         files: &[File],
     ) -> (Vec<Option<Box<dyn ParseTree>>>, BuildMetrics) {

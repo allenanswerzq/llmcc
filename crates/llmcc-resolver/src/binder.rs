@@ -192,6 +192,12 @@ impl<'a> BinderScopes<'a> {
         self.scopes.lookup_symbol(name)
     }
 
+    /// Look up a symbol only in the global scope.
+    /// Used for crate-root paths like ::f or ::g::h.
+    pub fn lookup_global_symbol(&self, name: &str) -> Option<&'a Symbol> {
+        self.scopes.lookup_global_symbol(name)
+    }
+
     pub fn lookup_symbol_with(
         &self,
         name: &str,
@@ -231,16 +237,22 @@ impl<'a> BinderScopes<'a> {
     }
 }
 
-/// parallel binding symbols
+/// Bind symbols, optionally in parallel based on config.
 pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
     config: &ResolverOption,
 ) {
-    (0..cc.files.len()).into_par_iter().for_each(|unit_index| {
+    let bind_unit = |unit_index: usize| {
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
         L::bind_symbols(unit, node, globals, config);
-    })
+    };
+
+    if config.sequential {
+        (0..cc.files.len()).for_each(bind_unit);
+    } else {
+        (0..cc.files.len()).into_par_iter().for_each(bind_unit);
+    }
 }

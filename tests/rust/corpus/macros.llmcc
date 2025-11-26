@@ -23,47 +23,44 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32    | i32                   | [global]
-u0:2  | Primitive | i64    | i64                   | [global]
-u0:3  | Primitive | i16    | i16                   | [global]
-u0:4  | Primitive | i8     | i8                    | [global]
-u0:5  | Primitive | i128   | i128                  | [global]
-u0:6  | Primitive | isize  | isize                 | [global]
-u0:7  | Primitive | u32    | u32                   | [global]
-u0:8  | Primitive | u64    | u64                   | [global]
-u0:9  | Primitive | u16    | u16                   | [global]
-u0:10 | Primitive | u8     | u8                    | [global]
-u0:11 | Primitive | u128   | u128                  | [global]
-u0:12 | Primitive | usize  | usize                 | [global]
-u0:13 | Primitive | f32    | f32                   | [global]
-u0:14 | Primitive | f64    | f64                   | [global]
-u0:15 | Primitive | bool   | bool                  | [global]
-u0:16 | Primitive | char   | char                  | [global]
-u0:17 | Primitive | str    | str                   | [global]
-u0:18 | Primitive | String | String                | [global]
-u0:19 | Crate     | _c     | _c                    | [global]
-u0:20 | Crate     | crate  | _c::crate             |         
-u0:21 | Module    | _m     | _c::_m                |         
-u0:22 | File      | main   | _c::_m::main          |         
-u0:23 | Macro     | a      | _c::_m::main::a       |         
-u0:24 | Namespace | d      | _c::_m::main::d       |         
-u0:25 | Macro     | e      | _c::_m::main::d::e    |         
-u0:26 | Namespace | f      | _c::_m::main::f       |         
-u0:27 | Namespace | g      | _c::_m::main::f::g    |         
-u0:28 | Macro     | h      | _c::_m::main::f::g::h |         
-u0:29 | Function  | foo    | _c::_m::main::foo     |         
+u0:1  | Primitive | i32    | i32               | [global]
+u0:2  | Primitive | i64    | i64               | [global]
+u0:3  | Primitive | i16    | i16               | [global]
+u0:4  | Primitive | i8     | i8                | [global]
+u0:5  | Primitive | i128   | i128              | [global]
+u0:6  | Primitive | isize  | isize             | [global]
+u0:7  | Primitive | u32    | u32               | [global]
+u0:8  | Primitive | u64    | u64               | [global]
+u0:9  | Primitive | u16    | u16               | [global]
+u0:10 | Primitive | u8     | u8                | [global]
+u0:11 | Primitive | u128   | u128              | [global]
+u0:12 | Primitive | usize  | usize             | [global]
+u0:13 | Primitive | f32    | f32               | [global]
+u0:14 | Primitive | f64    | f64               | [global]
+u0:15 | Primitive | bool   | bool              | [global]
+u0:16 | Primitive | char   | char              | [global]
+u0:17 | Primitive | str    | str               | [global]
+u0:18 | Primitive | String | String            | [global]
+u0:19 | Crate     | _c     | _c                | [global]
+u0:20 | Crate     | crate  | _c::crate         |         
+u0:21 | File      | main   | _c::main          |         
+u0:22 | Macro     | a      | _c::main::a       |         
+u0:23 | Namespace | d      | _c::main::d       |         
+u0:24 | Macro     | e      | _c::main::d::e    |         
+u0:25 | Namespace | f      | _c::main::f       |         
+u0:26 | Namespace | g      | _c::main::f::g    |         
+u0:27 | Macro     | h      | _c::main::f::g::h |         
+u0:28 | Function  | foo    | _c::main::foo     |         
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:29]
-u0:24 -> [u0:25]
-u0:24 <- [u0:29]
-u0:25 <- [u0:24, u0:29]
+u0:22 <- [u0:28]
+u0:23 -> [u0:24]
+u0:24 <- [u0:23, u0:28]
+u0:25 -> [u0:26]
 u0:26 -> [u0:27]
-u0:26 <- [u0:29]
-u0:27 -> [u0:28]
-u0:27 <- [u0:26]
-u0:28 <- [u0:27, u0:29]
-u0:29 -> [u0:23, u0:24, u0:25, u0:26, u0:28]
+u0:26 <- [u0:25]
+u0:27 <- [u0:26, u0:28]
+u0:28 -> [u0:22, u0:24, u0:27]
 
 
 ===============================================================================
@@ -91,34 +88,33 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32    | i32               | [global]
-u0:2  | Primitive | i64    | i64               | [global]
-u0:3  | Primitive | i16    | i16               | [global]
-u0:4  | Primitive | i8     | i8                | [global]
-u0:5  | Primitive | i128   | i128              | [global]
-u0:6  | Primitive | isize  | isize             | [global]
-u0:7  | Primitive | u32    | u32               | [global]
-u0:8  | Primitive | u64    | u64               | [global]
-u0:9  | Primitive | u16    | u16               | [global]
-u0:10 | Primitive | u8     | u8                | [global]
-u0:11 | Primitive | u128   | u128              | [global]
-u0:12 | Primitive | usize  | usize             | [global]
-u0:13 | Primitive | f32    | f32               | [global]
-u0:14 | Primitive | f64    | f64               | [global]
-u0:15 | Primitive | bool   | bool              | [global]
-u0:16 | Primitive | char   | char              | [global]
-u0:17 | Primitive | str    | str               | [global]
-u0:18 | Primitive | String | String            | [global]
-u0:19 | Crate     | _c     | _c                | [global]
-u0:20 | Crate     | crate  | _c::crate         |         
-u0:21 | Module    | _m     | _c::_m            |         
-u0:22 | File      | main   | _c::_m::main      |         
-u0:23 | Macro     | a      | _c::_m::main::a   |         
-u0:24 | Function  | foo    | _c::_m::main::foo |         
+u0:1  | Primitive | i32    | i32           | [global]
+u0:2  | Primitive | i64    | i64           | [global]
+u0:3  | Primitive | i16    | i16           | [global]
+u0:4  | Primitive | i8     | i8            | [global]
+u0:5  | Primitive | i128   | i128          | [global]
+u0:6  | Primitive | isize  | isize         | [global]
+u0:7  | Primitive | u32    | u32           | [global]
+u0:8  | Primitive | u64    | u64           | [global]
+u0:9  | Primitive | u16    | u16           | [global]
+u0:10 | Primitive | u8     | u8            | [global]
+u0:11 | Primitive | u128   | u128          | [global]
+u0:12 | Primitive | usize  | usize         | [global]
+u0:13 | Primitive | f32    | f32           | [global]
+u0:14 | Primitive | f64    | f64           | [global]
+u0:15 | Primitive | bool   | bool          | [global]
+u0:16 | Primitive | char   | char          | [global]
+u0:17 | Primitive | str    | str           | [global]
+u0:18 | Primitive | String | String        | [global]
+u0:19 | Crate     | _c     | _c            | [global]
+u0:20 | Crate     | crate  | _c::crate     |         
+u0:21 | File      | main   | _c::main      |         
+u0:22 | Macro     | a      | _c::main::a   |         
+u0:23 | Function  | foo    | _c::main::foo |         
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:24]
-u0:24 -> [u0:23]
+u0:22 <- [u0:23]
+u0:23 -> [u0:22]
 
 
 ===============================================================================
@@ -136,34 +132,33 @@ fn foo() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32    | i32               | [global]
-u0:2  | Primitive | i64    | i64               | [global]
-u0:3  | Primitive | i16    | i16               | [global]
-u0:4  | Primitive | i8     | i8                | [global]
-u0:5  | Primitive | i128   | i128              | [global]
-u0:6  | Primitive | isize  | isize             | [global]
-u0:7  | Primitive | u32    | u32               | [global]
-u0:8  | Primitive | u64    | u64               | [global]
-u0:9  | Primitive | u16    | u16               | [global]
-u0:10 | Primitive | u8     | u8                | [global]
-u0:11 | Primitive | u128   | u128              | [global]
-u0:12 | Primitive | usize  | usize             | [global]
-u0:13 | Primitive | f32    | f32               | [global]
-u0:14 | Primitive | f64    | f64               | [global]
-u0:15 | Primitive | bool   | bool              | [global]
-u0:16 | Primitive | char   | char              | [global]
-u0:17 | Primitive | str    | str               | [global]
-u0:18 | Primitive | String | String            | [global]
-u0:19 | Crate     | _c     | _c                | [global]
-u0:20 | Crate     | crate  | _c::crate         |         
-u0:21 | Module    | _m     | _c::_m            |         
-u0:22 | File      | main   | _c::_m::main      |         
-u0:23 | Macro     | ok     | _c::_m::main::ok  |         
-u0:24 | Function  | foo    | _c::_m::main::foo |         
+u0:1  | Primitive | i32    | i32           | [global]
+u0:2  | Primitive | i64    | i64           | [global]
+u0:3  | Primitive | i16    | i16           | [global]
+u0:4  | Primitive | i8     | i8            | [global]
+u0:5  | Primitive | i128   | i128          | [global]
+u0:6  | Primitive | isize  | isize         | [global]
+u0:7  | Primitive | u32    | u32           | [global]
+u0:8  | Primitive | u64    | u64           | [global]
+u0:9  | Primitive | u16    | u16           | [global]
+u0:10 | Primitive | u8     | u8            | [global]
+u0:11 | Primitive | u128   | u128          | [global]
+u0:12 | Primitive | usize  | usize         | [global]
+u0:13 | Primitive | f32    | f32           | [global]
+u0:14 | Primitive | f64    | f64           | [global]
+u0:15 | Primitive | bool   | bool          | [global]
+u0:16 | Primitive | char   | char          | [global]
+u0:17 | Primitive | str    | str           | [global]
+u0:18 | Primitive | String | String        | [global]
+u0:19 | Crate     | _c     | _c            | [global]
+u0:20 | Crate     | crate  | _c::crate     |         
+u0:21 | File      | main   | _c::main      |         
+u0:22 | Macro     | ok     | _c::main::ok  |         
+u0:23 | Function  | foo    | _c::main::foo |         
 
 --- expect:symbol-deps ---
-u0:23 <- [u0:24]
-u0:24 -> [u0:23]
+u0:22 <- [u0:23]
+u0:23 -> [u0:22]
 
 
 ===============================================================================
@@ -206,33 +201,32 @@ macro_rules! empty [
 ];
 
 --- expect:symbols ---
-u0:1  | Primitive | i32         | i32                       | [global]
-u0:2  | Primitive | i64         | i64                       | [global]
-u0:3  | Primitive | i16         | i16                       | [global]
-u0:4  | Primitive | i8          | i8                        | [global]
-u0:5  | Primitive | i128        | i128                      | [global]
-u0:6  | Primitive | isize       | isize                     | [global]
-u0:7  | Primitive | u32         | u32                       | [global]
-u0:8  | Primitive | u64         | u64                       | [global]
-u0:9  | Primitive | u16         | u16                       | [global]
-u0:10 | Primitive | u8          | u8                        | [global]
-u0:11 | Primitive | u128        | u128                      | [global]
-u0:12 | Primitive | usize       | usize                     | [global]
-u0:13 | Primitive | f32         | f32                       | [global]
-u0:14 | Primitive | f64         | f64                       | [global]
-u0:15 | Primitive | bool        | bool                      | [global]
-u0:16 | Primitive | char        | char                      | [global]
-u0:17 | Primitive | str         | str                       | [global]
-u0:18 | Primitive | String      | String                    | [global]
-u0:19 | Crate     | _c          | _c                        | [global]
-u0:20 | Crate     | crate       | _c::crate                 |         
-u0:21 | Module    | _m          | _c::_m                    |         
-u0:22 | File      | main        | _c::_m::main              |         
-u0:23 | Macro     | say_hello   | _c::_m::main::say_hello   |         
-u0:24 | Macro     | four        | _c::_m::main::four        |         
-u0:25 | Macro     | foo         | _c::_m::main::foo         |         
-u0:26 | Macro     | o_O         | _c::_m::main::o_O         |         
-u0:27 | Macro     | zero_or_one | _c::_m::main::zero_or_one |         
-u0:28 | Macro     | empty       | _c::_m::main::empty       |         
+u0:1  | Primitive | i32         | i32                   | [global]
+u0:2  | Primitive | i64         | i64                   | [global]
+u0:3  | Primitive | i16         | i16                   | [global]
+u0:4  | Primitive | i8          | i8                    | [global]
+u0:5  | Primitive | i128        | i128                  | [global]
+u0:6  | Primitive | isize       | isize                 | [global]
+u0:7  | Primitive | u32         | u32                   | [global]
+u0:8  | Primitive | u64         | u64                   | [global]
+u0:9  | Primitive | u16         | u16                   | [global]
+u0:10 | Primitive | u8          | u8                    | [global]
+u0:11 | Primitive | u128        | u128                  | [global]
+u0:12 | Primitive | usize       | usize                 | [global]
+u0:13 | Primitive | f32         | f32                   | [global]
+u0:14 | Primitive | f64         | f64                   | [global]
+u0:15 | Primitive | bool        | bool                  | [global]
+u0:16 | Primitive | char        | char                  | [global]
+u0:17 | Primitive | str         | str                   | [global]
+u0:18 | Primitive | String      | String                | [global]
+u0:19 | Crate     | _c          | _c                    | [global]
+u0:20 | Crate     | crate       | _c::crate             |         
+u0:21 | File      | main        | _c::main              |         
+u0:22 | Macro     | say_hello   | _c::main::say_hello   |         
+u0:23 | Macro     | four        | _c::main::four        |         
+u0:24 | Macro     | foo         | _c::main::foo         |         
+u0:25 | Macro     | o_O         | _c::main::o_O         |         
+u0:26 | Macro     | zero_or_one | _c::main::zero_or_one |         
+u0:27 | Macro     | empty       | _c::main::empty       |         
 
 --- expect:symbol-deps ---

@@ -30,4 +30,5 @@ pub use pagerank::{PageRankConfig, PageRanker, RankedBlock};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
 pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
+pub use symbol::DepKind;
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

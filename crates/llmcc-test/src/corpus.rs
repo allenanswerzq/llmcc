@@ -150,6 +150,10 @@ pub struct CorpusCase {
     pub args: Vec<String>,
     pub files: Vec<TestFile>,
     pub expectations: Vec<CorpusCaseExpectation>,
+    /// Comments lines (starting with $//)
+    pub comments: Vec<String>,
+    /// Description text between banner and first --- section
+    pub description: Vec<String>,
 }
 
 impl CorpusCase {
@@ -180,13 +184,25 @@ impl CorpusCase {
 
     pub fn render(&self) -> String {
         let mut buf = String::new();
+        // Render comments first
+        for comment in &self.comments {
+            buf.push_str(comment);
+            buf.push('\n');
+        }
         buf.push_str(CASE_BANNER);
         buf.push('\n');
         buf.push_str(&self.name);
         buf.push('\n');
         buf.push_str(CASE_BANNER);
         buf.push('\n');
-        buf.push('\n');
+        // Render description after banner
+        for desc_line in &self.description {
+            buf.push_str(desc_line);
+            buf.push('\n');
+        }
+        if self.description.is_empty() {
+            buf.push('\n');
+        }
         if self.lang != "rust" {
             buf.push_str(&format!("lang: {}\n", self.lang));
         }
@@ -235,12 +251,14 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
     let mut section_lines: Vec<String> = Vec::new();
     let mut awaiting_banner_name = false;
     let mut awaiting_banner_close = false;
+    let mut pending_comments: Vec<String> = Vec::new();
 
     for raw_line in content.lines() {
         let line = raw_line.trim_end_matches('\r');
         let trimmed = line.trim();
 
         if trimmed.starts_with("$//") {
+            pending_comments.push(line.to_string());
             continue;
         }
 
@@ -280,6 +298,8 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
                 args: Vec::new(),
                 files: Vec::new(),
                 expectations: Vec::new(),
+                comments: std::mem::take(&mut pending_comments),
+                description: Vec::new(),
             });
             awaiting_banner_name = false;
             awaiting_banner_close = true;
@@ -308,6 +328,8 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
                 args: Vec::new(),
                 files: Vec::new(),
                 expectations: Vec::new(),
+                comments: std::mem::take(&mut pending_comments),
+                description: Vec::new(),
             });
             continue;
         }
@@ -327,37 +349,36 @@ fn parse_corpus_file(suite: &str, path: &Path, content: &str) -> Result<Vec<Corp
             continue;
         }
 
-        let case = current.as_mut().ok_or_else(|| {
-            anyhow!(
+        // If we have a case but no pending section, we're in the metadata/description
+        // area between the banner and the first --- section. Parse known metadata
+        // keys (lang, args), capture everything else as description.
+        if let Some(ref mut case) = current
+            && pending_section.is_none()
+        {
+            if let Some((key, value)) = trimmed.split_once(':') {
+                let key = key.trim();
+                let value = value.trim();
+                match key {
+                    "lang" => case.lang = value.to_string(),
+                    "args" => {
+                        case.args = split(value)
+                            .map_err(|err| anyhow!("invalid args in {}: {}", path.display(), err))?
+                    }
+                    // Unknown key:value - treat as description line
+                    _ => case.description.push(line.to_string()),
+                }
+            } else {
+                // Plain text (no colon) - capture as description
+                case.description.push(line.to_string());
+            }
+            continue;
+        }
+
+        // Content before any case header
+        if current.is_none() {
+            return Err(anyhow!(
                 "content encountered before case header in {}",
                 path.display()
-            )
-        })?;
-
-        if let Some((key, value)) = trimmed.split_once(':') {
-            let key = key.trim();
-            let value = value.trim();
-            match key {
-                "lang" => case.lang = value.to_string(),
-                "args" => {
-                    case.args = split(value)
-                        .map_err(|err| anyhow!("invalid args in {}: {}", path.display(), err))?
-                }
-                other => {
-                    return Err(anyhow!(
-                        "unsupported metadata '{}' in {} case {}",
-                        other,
-                        path.display(),
-                        case.name
-                    ));
-                }
-            }
-        } else {
-            return Err(anyhow!(
-                "unexpected line '{}' in {} (within case {})",
-                line,
-                path.display(),
-                case.name
             ));
         }
     }

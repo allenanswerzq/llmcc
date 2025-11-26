@@ -6,7 +6,7 @@ use crate::DynError;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl, BlockMethod,
-    BlockRoot, BlockStmt,
+    BlockRoot, BlockStmt, BlockTrait,
 };
 use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
@@ -19,9 +19,25 @@ use crate::visit::HirVisitor;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GraphBuildConfig;
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct GraphBuildOption {
     pub sequential: bool,
+    /// Component grouping depth from FQN for graph visualization:
+    /// - 0: No grouping (flat graph, no clusters)
+    /// - 1: Crate level only
+    /// - 2: Top-level modules (data, service, api)
+    /// - 3+: Deeper sub-modules
+    /// - usize::MAX: Full depth (each file/module gets own cluster)
+    pub component_depth: usize,
+}
+
+impl Default for GraphBuildOption {
+    fn default() -> Self {
+        Self {
+            sequential: false,
+            component_depth: 2, // Default to top-level modules
+        }
+    }
 }
 
 impl GraphBuildOption {
@@ -31,6 +47,11 @@ impl GraphBuildOption {
 
     pub fn with_sequential(mut self, sequential: bool) -> Self {
         self.sequential = sequential;
+        self
+    }
+
+    pub fn with_component_depth(mut self, depth: usize) -> Self {
+        self.component_depth = depth;
         self
     }
 }
@@ -88,6 +109,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block = BlockClass::from_hir(id, node, parent, children);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Class(block_ref)
+            }
+            BlockKind::Trait => {
+                let block = BlockTrait::from_hir(id, node, parent, children);
+                let block_ref = self.unit.cc.block_arena.alloc(block);
+                BasicBlock::Trait(block_ref)
             }
             BlockKind::Stmt => {
                 let stmt = BlockStmt::from_hir(id, node, parent, children);
@@ -174,7 +200,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             return;
         };
 
-        let dependencies = symbol.depends.read().clone();
+        let dependencies = symbol.depends_ids();
         for dep_id in dependencies {
             self.link_dependency(dep_id, from_block, edges, unresolved);
         }
@@ -228,7 +254,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             while let Some(parent_id) = current_parent {
                 let parent_node = unit.hir_node(parent_id);
                 let parent_kind = Language::block_kind(parent_node.kind_id());
-                if matches!(parent_kind, BlockKind::Class | BlockKind::Impl) {
+                if matches!(
+                    parent_kind,
+                    BlockKind::Class | BlockKind::Trait | BlockKind::Impl
+                ) {
                     block_kind = BlockKind::Method;
                     break;
                 }
@@ -285,11 +314,13 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             BlockKind::Func
             | BlockKind::Method
             | BlockKind::Class
+            | BlockKind::Trait
             | BlockKind::Enum
             | BlockKind::Const
-            | BlockKind::Impl
-            | BlockKind::Field
-            | BlockKind::Call => self.build_block(unit, node, parent, false),
+            // | BlockKind::Impl
+            // | BlockKind::Field
+            // | BlockKind::Call
+             => self.build_block(unit, node, parent, false),
             _ => self.visit_children(unit, node, parent),
         }
     }
@@ -300,6 +331,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             BlockKind::Func
             | BlockKind::Method
             | BlockKind::Class
+            | BlockKind::Trait
             | BlockKind::Enum
             | BlockKind::Const
             | BlockKind::Impl

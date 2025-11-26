@@ -3,6 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, anyhow};
+use llmcc_cli::{GraphOptions, ProcessingOptions};
 use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
@@ -18,6 +19,10 @@ use tempfile::TempDir;
 use walkdir::WalkDir;
 
 use crate::corpus::{Corpus, CorpusCase, CorpusFile};
+
+pub use llmcc_cli::{
+    GraphOptions as SharedGraphOptions, ProcessingOptions as SharedProcessingOptions,
+};
 
 #[derive(Clone)]
 struct SymbolSnapshot {
@@ -48,6 +53,10 @@ pub struct RunnerConfig {
     pub filter: Option<String>,
     pub update: bool,
     pub keep_temps: bool,
+    /// Graph building and visualization options.
+    pub graph: GraphOptions,
+    /// Processing behavior options.
+    pub processing: ProcessingOptions,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,6 +85,10 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.filter.as_deref(),
             &mut matched,
             config.keep_temps,
+            config.processing.parallel,
+            config.processing.print_ir,
+            config.graph.component_depth,
+            config.graph.pagerank_top_k,
         )?);
     }
 
@@ -94,16 +107,43 @@ pub fn run_cases_for_file(
     update: bool,
     keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
-    let mut matched = 0usize;
-    run_cases_in_file(file, update, None, &mut matched, keep_temps)
+    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, 2, None)
 }
 
+pub fn run_cases_for_file_with_parallel(
+    file: &mut CorpusFile,
+    update: bool,
+    keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
+) -> Result<Vec<CaseOutcome>> {
+    let mut matched = 0usize;
+    run_cases_in_file(
+        file,
+        update,
+        None,
+        &mut matched,
+        keep_temps,
+        parallel,
+        print_ir,
+        component_depth,
+        pagerank_top_k,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
 fn run_cases_in_file(
     file: &mut CorpusFile,
     update: bool,
     filter: Option<&str>,
     matched: &mut usize,
     keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
@@ -133,7 +173,15 @@ fn run_cases_in_file(
         printed_case_header = true;
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
-            evaluate_case(case, update, keep_temps)?
+            evaluate_case(
+                case,
+                update,
+                keep_temps,
+                parallel,
+                print_ir,
+                component_depth,
+                pagerank_top_k,
+            )?
         };
         if mutated {
             file.mark_dirty();
@@ -151,6 +199,10 @@ fn evaluate_case(
     case: &mut CorpusCase,
     update: bool,
     keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
 
@@ -167,23 +219,32 @@ fn evaluate_case(
 
     reset_symbol_id_counter();
     reset_block_id_counter();
-    let summary = build_pipeline_summary(case, keep_temps)?;
+    let summary = build_pipeline_summary(
+        case,
+        keep_temps,
+        parallel,
+        print_ir,
+        component_depth,
+        pagerank_top_k,
+    )?;
     let mut mutated = false;
     let mut status = CaseStatus::Passed;
     let mut failures = Vec::new();
 
+    let temp_dir_path = summary.temp_dir_path.as_deref();
     for expect in &mut case.expectations {
         let kind = expect.kind.as_str();
         let actual = render_expectation(kind, &summary, &case_id)?;
-        let expected_norm = normalize(kind, &expect.value);
-        let actual_norm = normalize(kind, &actual);
+        let expected_norm = normalize(kind, &expect.value, None);
+        let actual_norm = normalize(kind, &actual, temp_dir_path);
 
         if expected_norm == actual_norm {
             continue;
         }
 
         if update {
-            expect.value = ensure_trailing_newline(actual);
+            // Save the normalized version with $TMP placeholder
+            expect.value = ensure_trailing_newline(actual_norm);
             mutated = true;
             status = CaseStatus::Updated;
         } else {
@@ -212,15 +273,26 @@ fn evaluate_case(
     ))
 }
 
-fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<PipelineSummary> {
+fn build_pipeline_summary(
+    case: &CorpusCase,
+    keep_temps: bool,
+    parallel: bool,
+    print_ir: bool,
+    component_depth: usize,
+    pagerank_top_k: Option<usize>,
+) -> Result<PipelineSummary> {
     let needs_symbols = case
         .expectations
         .iter()
         .any(|expect| expect.kind == "symbols");
-    let needs_graph = case
+    let needs_dep_graph = case
         .expectations
         .iter()
-        .any(|expect| expect.kind == "graph");
+        .any(|expect| expect.kind == "dep-graph");
+    let needs_arch_graph = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "arch-graph");
     let needs_block_reports = case
         .expectations
         .iter()
@@ -235,7 +307,8 @@ fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<Pipelin
         .any(|expect| expect.kind == "symbol-deps");
 
     if !needs_symbols
-        && !needs_graph
+        && !needs_dep_graph
+        && !needs_arch_graph
         && !needs_block_reports
         && !needs_block_graph
         && !needs_symbol_deps
@@ -244,6 +317,7 @@ fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<Pipelin
     }
 
     let project = materialize_case(case, keep_temps)?;
+    let temp_dir_path = project.root().to_string_lossy().to_string();
     if keep_temps && project.is_persistent() {
         println!(
             "preserved materialized project for {} at {}",
@@ -251,15 +325,24 @@ fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<Pipelin
             project.root().display()
         );
     }
-    let summary = match case.lang.as_str() {
-        "rust" => collect_pipeline::<LangRust>(
-            project.root(),
-            needs_symbols,
-            needs_graph,
-            needs_block_reports,
-            needs_block_graph,
-            needs_symbol_deps,
-        )?,
+
+    // Don't provide file_paths - let collect_pipeline use discover_language_files
+    // which handles the prefixed filenames we created in materialize_case
+    let options = PipelineOptions::new()
+        // file_paths is empty, so discover_language_files will be used
+        .with_keep_symbols(needs_symbols)
+        .with_build_dep_graph(needs_dep_graph)
+        .with_build_arch_graph(needs_arch_graph)
+        .with_build_block_reports(needs_block_reports)
+        .with_build_block_graph(needs_block_graph)
+        .with_keep_symbol_deps(needs_symbol_deps)
+        .with_parallel(parallel)
+        .with_print_ir(print_ir)
+        .with_component_depth(component_depth)
+        .with_pagerank_top_k(pagerank_top_k);
+
+    let mut summary = match case.lang.as_str() {
+        "rust" => collect_pipeline::<LangRust>(project.root(), &options)?,
         other => {
             return Err(anyhow!(
                 "unsupported lang '{}' requested by {}",
@@ -268,6 +351,7 @@ fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<Pipelin
             ));
         }
     };
+    summary.temp_dir_path = Some(temp_dir_path);
     drop(project);
 
     Ok(summary)
@@ -276,11 +360,103 @@ fn build_pipeline_summary(case: &CorpusCase, keep_temps: bool) -> Result<Pipelin
 #[derive(Default)]
 struct PipelineSummary {
     symbols: Option<Vec<SymbolSnapshot>>,
-    graph_dot: Option<String>,
+    dep_graph_dot: Option<String>,
+    arch_graph_dot: Option<String>,
     block_list: Option<Vec<BlockSnapshot>>,
     block_deps: Option<Vec<SymbolDependencySnapshot>>,
     symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
     block_graph: Option<String>,
+    /// The temp directory path used for this test case.
+    /// Used to replace actual paths with $TMP placeholder.
+    temp_dir_path: Option<String>,
+}
+
+/// Options for configuring the pipeline collection process.
+#[derive(Debug, Clone, Default)]
+pub struct PipelineOptions {
+    /// File paths to process (in declaration order).
+    pub file_paths: Vec<String>,
+    /// Whether to collect symbol information.
+    pub keep_symbols: bool,
+    /// Whether to build the dependency graph.
+    pub build_dep_graph: bool,
+    /// Whether to build the architecture graph.
+    pub build_arch_graph: bool,
+    /// Whether to build block reports (blocks and block-deps).
+    pub build_block_reports: bool,
+    /// Whether to build the block graph.
+    pub build_block_graph: bool,
+    /// Whether to collect symbol dependencies.
+    pub keep_symbol_deps: bool,
+    /// When true, may process files in parallel.
+    pub parallel: bool,
+    /// Whether to print IR during symbol resolution.
+    pub print_ir: bool,
+    /// Component grouping depth for graph visualization (default: 2).
+    pub component_depth: usize,
+    /// Number of top PageRank nodes to include (None = all nodes).
+    pub pagerank_top_k: Option<usize>,
+}
+
+impl PipelineOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_file_paths(mut self, paths: Vec<String>) -> Self {
+        self.file_paths = paths;
+        self
+    }
+
+    pub fn with_keep_symbols(mut self, keep: bool) -> Self {
+        self.keep_symbols = keep;
+        self
+    }
+
+    pub fn with_build_dep_graph(mut self, build: bool) -> Self {
+        self.build_dep_graph = build;
+        self
+    }
+
+    pub fn with_build_arch_graph(mut self, build: bool) -> Self {
+        self.build_arch_graph = build;
+        self
+    }
+
+    pub fn with_build_block_reports(mut self, build: bool) -> Self {
+        self.build_block_reports = build;
+        self
+    }
+
+    pub fn with_build_block_graph(mut self, build: bool) -> Self {
+        self.build_block_graph = build;
+        self
+    }
+
+    pub fn with_keep_symbol_deps(mut self, keep: bool) -> Self {
+        self.keep_symbol_deps = keep;
+        self
+    }
+
+    pub fn with_parallel(mut self, parallel: bool) -> Self {
+        self.parallel = parallel;
+        self
+    }
+
+    pub fn with_print_ir(mut self, print: bool) -> Self {
+        self.print_ir = print;
+        self
+    }
+
+    pub fn with_component_depth(mut self, depth: usize) -> Self {
+        self.component_depth = depth;
+        self
+    }
+
+    pub fn with_pagerank_top_k(mut self, top_k: Option<usize>) -> Self {
+        self.pagerank_top_k = top_k;
+        self
+    }
 }
 
 fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> Result<String> {
@@ -292,9 +468,15 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 .ok_or_else(|| anyhow!("case {} requested symbols but summary missing", case_id))?;
             Ok(render_symbol_snapshot(symbols))
         }
-        "graph" => summary.graph_dot.clone().ok_or_else(|| {
+        "dep-graph" => summary.dep_graph_dot.clone().ok_or_else(|| {
             anyhow!(
-                "case {} requested graph output but summary missing",
+                "case {} requested dep-graph output but summary missing",
+                case_id
+            )
+        }),
+        "arch-graph" => summary.arch_graph_dot.clone().ok_or_else(|| {
+            anyhow!(
+                "case {} requested arch-graph output but summary missing",
                 case_id
             )
         }),
@@ -482,16 +664,24 @@ fn format_expectation_diff(kind: &str, expected: &str, actual: &str) -> String {
     buf
 }
 
-fn normalize(kind: &str, text: &str) -> String {
+fn normalize(kind: &str, text: &str, temp_dir_path: Option<&str>) -> String {
     let canonical = text
         .replace("\r\n", "\n")
         .trim_end_matches('\n')
         .to_string();
 
+    // Replace temp directory path with $TMP placeholder (for actual output)
+    // or replace $TMP with temp directory path (for expected value)
+    let canonical = if let Some(tmp_path) = temp_dir_path {
+        canonical.replace(tmp_path, "$TMP")
+    } else {
+        canonical
+    };
+
     match kind {
         "symbols" | "blocks" => normalize_symbols(&canonical),
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
-        "graph" => normalize_graph(&canonical),
+        "dep-graph" | "arch-graph" => normalize_graph(&canonical),
         "block-graph" => normalize_block_graph(&canonical),
         _ => canonical,
     }
@@ -588,63 +778,9 @@ fn is_empty_relation(line: &str) -> bool {
 }
 
 fn normalize_graph(text: &str) -> String {
-    let trimmed = text.trim();
-    if trimmed.starts_with("digraph") {
-        normalize_dot_paths(trimmed)
-    } else {
-        trimmed.to_string()
-    }
-}
-
-fn normalize_graph_path(path: &str) -> String {
-    use std::path::Path;
-
-    let (path_part, line_part) = match path.rsplit_once(':') {
-        Some((p, line)) if line.chars().all(|ch| ch.is_ascii_digit()) => (p, format!(":{line}")),
-        _ => (path, String::new()),
-    };
-
-    let path_obj = Path::new(path_part);
-    let components: Vec<_> = path_obj
-        .components()
-        .filter_map(|comp| comp.as_os_str().to_str())
-        .collect();
-
-    let start = components
-        .iter()
-        .rposition(|comp| *comp == "src")
-        .map(|idx| idx.saturating_sub(1))
-        .unwrap_or(components.len().saturating_sub(3));
-
-    let mut shortened = components[start..].join("/");
-    if shortened.is_empty() {
-        shortened = path_obj
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or(path_part)
-            .to_string();
-    }
-
-    format!("{shortened}{line_part}")
-}
-
-fn normalize_dot_paths(dot: &str) -> String {
-    dot.lines()
-        .map(|line| {
-            if let Some(start) = line.find("full_path=") {
-                let prefix = &line[..start];
-                let rest = &line[start..];
-                if let Some((before_path, after_path)) = rest.split_once('"')
-                    && let Some((path, suffix)) = after_path.split_once('"')
-                {
-                    let normalized = normalize_graph_path(path);
-                    return format!("{}{}\"{}\"{}", prefix, before_path, normalized, suffix);
-                }
-            }
-            line.to_string()
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+    // Just return the trimmed text as-is since temp path replacement
+    // is already handled in the normalize() function
+    text.trim().to_string()
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -777,8 +913,22 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     let temp_dir = tempfile::tempdir().context("failed to create temp dir for llmcc-test")?;
     let root_path = temp_dir.path().to_path_buf();
 
-    for file in &case.files {
-        let abs_path = root_path.join(Path::new(&file.path));
+    for (idx, file) in case.files.iter().enumerate() {
+        // Add numeric prefix to filename to preserve declaration order after WalkDir + sort
+        let original_path = Path::new(&file.path);
+        let prefixed_filename = format!(
+            "{:03}_{}",
+            idx,
+            original_path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+        );
+        let prefixed_path = original_path
+            .parent()
+            .map(|p| p.join(&prefixed_filename))
+            .unwrap_or_else(|| PathBuf::from(&prefixed_filename));
+        let abs_path = root_path.join(&prefixed_path);
         if let Some(parent) = abs_path.parent() {
             fs::create_dir_all(parent)
                 .with_context(|| format!("failed to create {}", parent.display()))?;
@@ -793,7 +943,8 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     }
 
     if keep_temps {
-        let preserved = temp_dir.path().to_path_buf();
+        // Use keep() to consume TempDir without deleting the directory
+        let preserved = temp_dir.keep();
         return Ok(MaterializedProject {
             temp_dir: None,
             root_path: preserved,
@@ -806,70 +957,105 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     })
 }
 
-fn collect_pipeline<L>(
-    project_root: &Path,
-    keep_symbols: bool,
-    build_graph: bool,
-    build_block_reports: bool,
-    build_block_graph: bool,
-    keep_symbol_deps: bool,
-) -> Result<PipelineSummary>
+fn collect_pipeline<L>(project_root: &Path, options: &PipelineOptions) -> Result<PipelineSummary>
 where
     L: LanguageTraitImpl,
 {
-    let files = discover_language_files::<L>(project_root)?;
-    let cc = CompileCtxt::from_files::<L>(&files).unwrap();
-    build_llmcc_ir::<L>(&cc, IrBuildOption).unwrap();
+    // Use provided file paths (preserves declaration order) or discover them
+    let files: Vec<(String, String)> = if options.file_paths.is_empty() {
+        discover_language_files::<L>(project_root, options.parallel)?
+    } else {
+        // Filter to only include files with supported extensions
+        // For explicitly provided paths, use the same path as both physical and logical
+        let supported = L::supported_extensions();
+        options
+            .file_paths
+            .iter()
+            .filter(|path| {
+                Path::new(path)
+                    .extension()
+                    .and_then(|ext| ext.to_str())
+                    .map(|ext| supported.iter().any(|s| s.eq_ignore_ascii_case(ext)))
+                    .unwrap_or(false)
+            })
+            .map(|path| (path.clone(), path.clone()))
+            .collect()
+    };
 
-    // Use new unified API for symbol collection with optional IR printing
+    let cc = CompileCtxt::from_files_with_logical::<L>(&files).unwrap();
+
+    // Use sequential mode when not parallel to ensure stable ordering
+    let sequential = !options.parallel;
+    let ir_option = IrBuildOption::new().with_sequential(sequential);
+    build_llmcc_ir::<L>(&cc, ir_option).unwrap();
+
     let resolver_option = ResolverOption::default()
-        .with_print_ir(true)
-        .with_sequential(true);
+        .with_print_ir(options.print_ir)
+        .with_sequential(sequential);
     let globals = collect_symbols_with::<L>(&cc, &resolver_option);
 
     // Bind symbols using new unified API
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
-    let mut project_graph = if build_graph || build_block_reports || build_block_graph {
-        Some(ProjectGraph::new(&cc))
+    let mut project_graph = if options.build_dep_graph
+        || options.build_arch_graph
+        || options.build_block_reports
+        || options.build_block_graph
+    {
+        let mut graph = ProjectGraph::new(&cc);
+        graph.set_component_depth(options.component_depth);
+        if let Some(top_k) = options.pagerank_top_k {
+            graph.set_top_k(Some(top_k));
+        }
+        Some(graph)
     } else {
         None
     };
     if let Some(project) = project_graph.as_mut() {
-        let unit_graphs =
-            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(true)).unwrap();
+        let unit_graphs = build_llmcc_graph::<L>(
+            &cc,
+            GraphBuildOption::new()
+                .with_sequential(sequential)
+                .with_component_depth(options.component_depth),
+        )
+        .unwrap();
         project.add_children(unit_graphs);
     }
-    let (graph_dot, block_list, block_deps, block_graph) = if let Some(mut project) = project_graph
-    {
-        project.link_units();
-        let graph = if build_graph {
-            Some(project.render_design_graph())
+    let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph) =
+        if let Some(mut project) = project_graph {
+            project.link_units();
+            let dep_graph = if options.build_dep_graph {
+                Some(project.render_design_graph())
+            } else {
+                None
+            };
+            let arch_graph = if options.build_arch_graph {
+                Some(project.render_arch_graph())
+            } else {
+                None
+            };
+            let (list, deps) = if options.build_block_reports {
+                let (blocks, deps) = render_block_reports(&project);
+                (Some(blocks), Some(deps))
+            } else {
+                (None, None)
+            };
+            let block_graph = if options.build_block_graph {
+                Some(render_block_graph(&project))
+            } else {
+                None
+            };
+            (dep_graph, arch_graph, list, deps, block_graph)
         } else {
-            None
+            (None, None, None, None, None)
         };
-        let (list, deps) = if build_block_reports {
-            let (blocks, deps) = render_block_reports(&project);
-            (Some(blocks), Some(deps))
-        } else {
-            (None, None)
-        };
-        let block_graph = if build_block_graph {
-            Some(render_block_graph(&project))
-        } else {
-            None
-        };
-        (graph, list, deps, block_graph)
-    } else {
-        (None, None, None, None)
-    };
 
-    let symbols = if keep_symbols {
+    let symbols = if options.keep_symbols {
         Some(snapshot_symbols(&cc))
     } else {
         None
     };
 
-    let symbol_deps = if keep_symbol_deps {
+    let symbol_deps = if options.keep_symbol_deps {
         Some(snapshot_symbol_dependencies(&cc))
     } else {
         None
@@ -877,15 +1063,20 @@ where
 
     Ok(PipelineSummary {
         symbols,
-        graph_dot,
+        dep_graph_dot,
+        arch_graph_dot,
         block_list,
         block_deps,
         symbol_deps,
         block_graph,
+        temp_dir_path: None,
     })
 }
 
-fn discover_language_files<L: LanguageTraitImpl>(root: &Path) -> Result<Vec<String>> {
+fn discover_language_files<L: LanguageTraitImpl>(
+    root: &Path,
+    _parallel: bool,
+) -> Result<Vec<(String, String)>> {
     let supported = L::supported_extensions();
     let mut files = Vec::new();
 
@@ -909,8 +1100,43 @@ fn discover_language_files<L: LanguageTraitImpl>(root: &Path) -> Result<Vec<Stri
         files.push(entry.path().to_string_lossy().to_string());
     }
 
+    // Always sort to ensure deterministic ordering based on prefixed filenames
     files.sort();
+
+    // Return both physical path (with prefix) and logical path (without prefix)
+    let files: Vec<(String, String)> = files
+        .into_iter()
+        .map(|physical_path| {
+            let logical_path = strip_numeric_prefix_from_path(&physical_path);
+            (physical_path, logical_path)
+        })
+        .collect();
+
     Ok(files)
+}
+
+/// Strips numeric prefix like "000_" from the filename component of a path.
+/// For example: "/tmp/src/000_main.rs" -> "/tmp/src/main.rs"
+fn strip_numeric_prefix_from_path(path: &str) -> String {
+    let path = Path::new(path);
+    let Some(filename) = path.file_name().and_then(|f| f.to_str()) else {
+        return path.to_string_lossy().to_string();
+    };
+
+    // Check for pattern: 3 digits followed by underscore
+    if filename.len() > 4
+        && filename[..3].chars().all(|c| c.is_ascii_digit())
+        && &filename[3..4] == "_"
+    {
+        let stripped_filename = &filename[4..];
+        if let Some(parent) = path.parent() {
+            return parent.join(stripped_filename).to_string_lossy().to_string();
+        } else {
+            return stripped_filename.to_string();
+        }
+    }
+
+    path.to_string_lossy().to_string()
 }
 
 fn render_block_graph(project: &ProjectGraph) -> String {
@@ -1022,7 +1248,7 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     // Fill in dependencies
     for (_sym_id, symbol) in symbol_map.iter() {
         let sym_id_num = symbol.id().0 as u32;
-        let deps = symbol.depends.read().clone();
+        let deps = symbol.depends_ids();
         for dep in deps {
             if let Some(_target) = symbol_map.get(&dep) {
                 let dep_id_num = dep.0 as u32;

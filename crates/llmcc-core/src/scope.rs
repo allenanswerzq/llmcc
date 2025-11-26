@@ -104,14 +104,20 @@ impl<'tcx> Scope<'tcx> {
     }
 
     /// Invokes a closure for each symbol in this scope.
+    /// Iterates in deterministic order by sorting keys.
     pub fn for_each_symbol<F>(&self, mut visit: F)
     where
         F: FnMut(&'tcx Symbol),
     {
         let symbols = self.symbols.read();
-        for symbol_vec in symbols.values() {
-            for symbol in symbol_vec {
-                visit(symbol);
+        // Sort keys for deterministic iteration order
+        let mut keys: Vec<_> = symbols.keys().copied().collect();
+        keys.sort();
+        for key in keys {
+            if let Some(symbol_vec) = symbols.get(&key) {
+                for symbol in symbol_vec {
+                    visit(symbol);
+                }
             }
         }
     }
@@ -121,6 +127,17 @@ impl<'tcx> Scope<'tcx> {
         self.symbols
             .write()
             .entry(symbol.name)
+            .or_default()
+            .push(symbol);
+        symbol.id
+    }
+
+    /// Inserts a symbol into this scope using FQN as the key.
+    /// This is used for global scope to avoid name collisions (e.g., multiple `new` functions).
+    pub fn insert_with_fqn(&self, symbol: &'tcx Symbol) -> SymId {
+        self.symbols
+            .write()
+            .entry(symbol.fqn())
             .or_default()
             .push(symbol);
         symbol.id
@@ -284,6 +301,17 @@ impl<'tcx> ScopeStack<'tcx> {
                 .lookup_symbols(name_key)
                 .and_then(|matches| matches.last().copied())
         })
+    }
+
+    /// Look up a symbol only in the global (first) scope.
+    /// Used for crate-root paths like ::f or ::g::h.
+    pub fn lookup_global_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+        let name_key = self.interner.intern(name);
+        let stack = self.stack.read();
+        let global_scope = stack.first()?;
+        global_scope
+            .lookup_symbols(name_key)
+            .and_then(|matches| matches.last().copied())
     }
 
     pub fn lookup_symbol_with(

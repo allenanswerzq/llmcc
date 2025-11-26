@@ -127,7 +127,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
             if text.starts_with("pub") {
                 if text == "pub" {
                     is_pub = true;
-                } else if text.contains("crate") {
+                } else {
+                    // All pub(...) variants: pub(crate), pub(super), pub(self), pub(in path)
+                    // are considered globally visible for indexing purposes
                     is_pub_crate = true;
                 }
                 break;
@@ -148,7 +150,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
         if is_pub {
             if !at_global {
-                scopes.globals().insert(sym);
+                // Use FQN for global scope to avoid name collisions
+                // (e.g., CreateTaskUseCase::new vs CompleteTaskUseCase::new)
+                scopes.globals().insert_with_fqn(sym);
             }
             sym.set_is_global(true);
             return;
@@ -156,8 +160,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
 
         if is_pub_crate {
             if !at_global {
-                scopes.globals().insert(sym);
+                scopes.globals().insert_with_fqn(sym);
             }
+            sym.set_is_global(true);
             return;
         }
 
@@ -165,7 +170,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             && let Some(parent_sym) = scope.opt_symbol()
             && parent_sym.is_global()
         {
-            scopes.globals().insert(sym);
+            scopes.globals().insert_with_fqn(sym);
         }
     }
 
@@ -281,6 +286,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         let start_depth = scopes.scope_depth();
         let mut crate_alias: Option<&Symbol> = None;
 
+        // Parse crate name and set up crate scope
         if let Some(crate_name) = parse_crate_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
         {
@@ -476,12 +482,14 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         {
             if let Some(symbol) = scopes.lookup_symbol_with(
                 type_name,
-                Some(vec![SymKind::Struct, SymKind::Enum]),
+                Some(vec![SymKind::Struct, SymKind::Enum, SymKind::Primitive]),
                 None,
                 None,
             ) {
                 type_ident.set_symbol(symbol);
-                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, false);
+                // Primitives don't have scopes, so we need to allocate one for the impl
+                let needs_scope = symbol.opt_scope().is_none();
+                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, needs_scope);
             } else if let Some(symbol) =
                 scopes.lookup_or_insert(type_name, node, SymKind::UnresolvedType)
             {
@@ -744,6 +752,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        // Get the parent enum symbol before creating the variant
+        let parent_enum = parent.or_else(|| namespace.opt_symbol());
+
         self.visit_scoped_named(
             unit,
             node,
@@ -753,6 +764,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::EnumVariant,
             LangRust::field_name,
         );
+
+        // Set type_of on the variant to point to the parent enum
+        if let Some(enum_sym) = parent_enum
+            && let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
+            && let Some(variant_sym) =
+                scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::EnumVariant]), None, None)
+        {
+            variant_sym.set_type_of(enum_sym.id);
+        }
     }
 
     fn visit_parameter(
@@ -776,6 +796,36 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         }
     }
 
+    fn visit_closure_expression(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        // Create a scope for the closure
+        if let Some(sn) = node.as_scope() {
+            let scope = unit.cc.alloc_scope(node.id());
+            sn.set_scope(scope);
+
+            // Link scope to parent namespace
+            scope.add_parent(namespace);
+
+            scopes.push_scope(scope);
+
+            // Collect closure parameters
+            if let Some(params) = node.child_by_field(*unit, LangRust::field_parameters) {
+                let _ = Self::collect_pattern_identifiers(unit, &params, scopes, SymKind::Variable);
+            }
+
+            self.visit_children(unit, node, scopes, scope, parent);
+            scopes.pop_scope();
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
+    }
+
     fn visit_let_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -784,11 +834,32 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
-            let _ = Self::collect_pattern_identifiers(unit, &pattern, scopes, SymKind::Variable);
-        }
+        // Check if value is a closure expression to determine symbol kind
+        let is_closure = node
+            .child_by_field(*unit, LangRust::field_value)
+            .map(|v| v.kind_id() == LangRust::closure_expression)
+            .unwrap_or(false);
 
-        self.visit_children(unit, node, scopes, namespace, parent);
+        let kind = if is_closure {
+            SymKind::Closure
+        } else {
+            SymKind::Variable
+        };
+
+        // Collect the pattern identifier(s) with appropriate kind
+        let let_syms = if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
+            Self::collect_pattern_identifiers(unit, &pattern, scopes, kind)
+        } else {
+            vec![]
+        };
+
+        // For closures, pass the let symbol as parent so closure scope gets linked
+        // Use first symbol if it's a simple pattern, otherwise use parent
+        if is_closure && !let_syms.is_empty() {
+            self.visit_children(unit, node, scopes, namespace, Some(let_syms[0]));
+        } else {
+            self.visit_children(unit, node, scopes, namespace, parent);
+        }
     }
 }
 
@@ -827,7 +898,7 @@ mod tests {
             .map(|src| src.as_bytes().to_vec())
             .collect::<Vec<_>>();
         let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
-        build_llmcc_ir::<LangRust>(&cc, IrBuildOption).unwrap();
+        build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
         let resolver_option = ResolverOption::default()
             .with_sequential(true)
             .with_print_ir(true);
@@ -856,7 +927,7 @@ mod tests {
             .get(&sym_id)
             .copied()
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
-        let deps = symbol.depends.read().clone();
+        let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
             if let Some(target) = map.get(&dep) {
@@ -881,6 +952,42 @@ mod tests {
         cc.interner.resolve_owned(ty_symbol.name)
     }
 
+    /// Check if a string looks like a UUID (8-4-4-4-12 hex pattern).
+    fn is_uuid_like(s: &str) -> bool {
+        let parts: Vec<&str> = s.split('-').collect();
+        if parts.len() != 5 {
+            return false;
+        }
+        let expected_lens = [8, 4, 4, 4, 12];
+        parts
+            .iter()
+            .zip(expected_lens.iter())
+            .all(|(part, &len)| part.len() == len && part.chars().all(|c| c.is_ascii_hexdigit()))
+    }
+
+    /// Check if an expected pattern matches an actual FQN.
+    /// The `_m` segment in the expected pattern is treated as a wildcard that matches any UUID.
+    fn fqn_matches_pattern(actual: &str, expected: &str) -> bool {
+        let actual_parts: Vec<&str> = actual.split("::").collect();
+        let expected_parts: Vec<&str> = expected.split("::").collect();
+
+        if actual_parts.len() != expected_parts.len() {
+            return false;
+        }
+
+        actual_parts
+            .iter()
+            .zip(expected_parts.iter())
+            .all(|(actual_part, expected_part)| {
+                if *expected_part == "_m" {
+                    // _m is a wildcard that matches any UUID
+                    is_uuid_like(actual_part)
+                } else {
+                    actual_part == expected_part
+                }
+            })
+    }
+
     fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
         with_compiled_unit(source, |cc| {
             for (name, kind, deps) in expectations {
@@ -892,7 +999,10 @@ mod tests {
 
                 let mut missing = Vec::new();
                 for expected_dep in &expected {
-                    if !actual.iter().any(|actual_dep| actual_dep == expected_dep) {
+                    if !actual
+                        .iter()
+                        .any(|actual_dep| fqn_matches_pattern(actual_dep, expected_dep))
+                    {
                         missing.push(expected_dep.clone());
                     }
                 }
@@ -977,13 +1087,14 @@ fn execute() -> Response {
     RequestBuilder::new().set_header("x-header").send()
 }
 "#;
+        // Scoped function calls should only depend on the method, not the struct
+        // Response is still a dependency because it's the return type
         assert_dependencies(
             &[source],
             &[(
                 "execute",
                 SymKind::Function,
                 &[
-                    "_c::_m::source_0::RequestBuilder",
                     "_c::_m::source_0::RequestBuilder::new",
                     "_c::_m::source_0::RequestBuilder::set_header",
                     "_c::_m::source_0::RequestBuilder::send",
@@ -1065,13 +1176,10 @@ fn run() {
     Foo::build();
 }
 "#;
+        // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["_c::_m::source_0::Foo", "_c::_m::source_0::Foo::build"],
-            )],
+            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::build"])],
         );
     }
 
@@ -1092,14 +1200,40 @@ fn run() {
     <Foo as Greeter>::greet();
 }
 "#;
+        // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["_c::_m::source_0::Foo", "_c::_m::source_0::Foo::greet"],
-            )],
+            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::greet"])],
         );
+    }
+
+    #[test]
+    fn closure_symbol_kind() {
+        let source = r#"
+fn caller() {
+    let add_one = |n: i32| n + 1;
+    let mul = |a, b| a * b;
+    let product = mul(3, 4);
+    let closure_with_block = |x| {
+        let y = x + 1;
+        y * 2
+    };
+}
+"#;
+        with_compiled_unit(&[source], |cc| {
+            // Check that closures are found as Closure kind
+            let add_one_sym = find_symbol_id(cc, "add_one", SymKind::Closure);
+            assert!(add_one_sym.0 > 0, "add_one should be found as Closure");
+
+            let mul_sym = find_symbol_id(cc, "mul", SymKind::Closure);
+            assert!(mul_sym.0 > 0, "mul should be found as Closure");
+
+            let closure_with_block_sym = find_symbol_id(cc, "closure_with_block", SymKind::Closure);
+            assert!(
+                closure_with_block_sym.0 > 0,
+                "closure_with_block should be found as Closure"
+            );
+        });
     }
 
     #[test]

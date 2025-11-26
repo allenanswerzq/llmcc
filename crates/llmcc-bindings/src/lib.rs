@@ -1,6 +1,6 @@
 #![allow(clippy::useless_conversion)]
 #![allow(unsafe_op_in_unsafe_fn)]
-use llmcc::{LlmccOptions, run_main};
+use llmcc_cli::{LlmccOptions, run_main};
 // use llmcc_python::LangPython;  // TODO: will be added back in the future
 use llmcc_rust::LangRust;
 use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
@@ -60,6 +60,8 @@ fn run_llmcc(
         print_ir,
         print_block,
         design_graph: print_design_graph,
+        arch_graph: false,
+        dep_graph: false,
         pagerank,
         top_k,
         query,
