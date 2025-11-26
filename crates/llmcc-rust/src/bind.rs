@@ -1069,6 +1069,42 @@ mod tests {
         names
     }
 
+    /// Check if a string looks like a UUID (8-4-4-4-12 hex pattern).
+    fn is_uuid_like(s: &str) -> bool {
+        let parts: Vec<&str> = s.split('-').collect();
+        if parts.len() != 5 {
+            return false;
+        }
+        let expected_lens = [8, 4, 4, 4, 12];
+        parts
+            .iter()
+            .zip(expected_lens.iter())
+            .all(|(part, &len)| part.len() == len && part.chars().all(|c| c.is_ascii_hexdigit()))
+    }
+
+    /// Check if an expected pattern matches an actual FQN.
+    /// The `_m` segment in the expected pattern is treated as a wildcard that matches any UUID.
+    fn fqn_matches_pattern(actual: &str, expected: &str) -> bool {
+        let actual_parts: Vec<&str> = actual.split("::").collect();
+        let expected_parts: Vec<&str> = expected.split("::").collect();
+
+        if actual_parts.len() != expected_parts.len() {
+            return false;
+        }
+
+        actual_parts
+            .iter()
+            .zip(expected_parts.iter())
+            .all(|(actual_part, expected_part)| {
+                if *expected_part == "_m" {
+                    // _m is a wildcard that matches any UUID
+                    is_uuid_like(actual_part)
+                } else {
+                    actual_part == expected_part
+                }
+            })
+    }
+
     fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
         with_compiled_unit(source, |cc| {
             for (name, kind, deps) in expectations {
@@ -1078,7 +1114,10 @@ mod tests {
 
                 let mut missing = Vec::new();
                 for expected_dep in &expected {
-                    if !actual.iter().any(|actual_dep| actual_dep == expected_dep) {
+                    if !actual
+                        .iter()
+                        .any(|actual_dep| fqn_matches_pattern(actual_dep, expected_dep))
+                    {
                         missing.push(expected_dep.clone());
                     }
                 }

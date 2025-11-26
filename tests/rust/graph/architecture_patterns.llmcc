@@ -1518,3 +1518,53 @@ u9:136 -> [u8:124]
 u9:137 -> [u5:94]
 u9:138 -> [u7:106]
 u9:139 -> [u7:106]
+
+--- expect:graph ---
+digraph project {
+  subgraph cluster_0 {
+    label="_c";
+    style=filled;
+    color=lightgrey;
+    subgraph cluster_1 {
+      label="entities";
+      style=filled;
+      color=lightgrey;
+      n6[label="Task", full_path="$TMP/src/entities/task.rs:16"];
+      n4[label="TaskStatus", full_path="$TMP/src/entities/task.rs:2"];
+      n5[label="Priority", full_path="$TMP/src/entities/task.rs:9"];
+    }
+    subgraph cluster_2 {
+      label="interface_adapters";
+      style=filled;
+      color=lightgrey;
+      n47[label="ConsolePresenter", full_path="$TMP/src/interface_adapters/console_presenter.rs:4"];
+      n37[label="InMemoryTaskGateway", full_path="$TMP/src/interface_adapters/memory_gateway.rs:5"];
+    }
+    subgraph cluster_3 {
+      label="main";
+      style=filled;
+      color=lightgrey;
+      n53[label="main", full_path="$TMP/src/main.rs:9"];
+    }
+    subgraph cluster_4 {
+      label="use_cases";
+      style=filled;
+      color=lightgrey;
+      n19[label="present_task", full_path="$TMP/src/use_cases/ports.rs:13"];
+      n20[label="present_task_list", full_path="$TMP/src/use_cases/ports.rs:14"];
+      n14[label="save", full_path="$TMP/src/use_cases/ports.rs:5"];
+      n17[label="update", full_path="$TMP/src/use_cases/ports.rs:8"];
+      n31[label="ListTasksUseCase", full_path="$TMP/src/use_cases/task_use_cases.rs:47"];
+    }
+  }
+  n6 -> n4;
+  n6 -> n5;
+  n19 -> n6;
+  n20 -> n6;
+  n14 -> n6;
+  n17 -> n6;
+  n37 -> n6;
+  n53 -> n31;
+  n53 -> n37;
+  n53 -> n47;
+}
