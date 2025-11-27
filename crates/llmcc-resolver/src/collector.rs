@@ -297,18 +297,12 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     let total_start = Instant::now();
 
     let scope_stack = L::collect_init(cc);
-    let globals = cc.create_globals();
-
-    // Atomic counters for parallel timing
     let visit_time_ns = AtomicU64::new(0);
 
     let collect_unit = |i: usize| {
         let unit_scope_stack = scope_stack.clone();
         let unit = cc.compile_unit(i);
         let node = unit.hir_node(unit.file_root_id().unwrap());
-
-        // Push the pre-allocated unit-level scope onto the stack
-        unit_scope_stack.push(globals);
 
         let visit_start = Instant::now();
         L::collect_symbols(unit, node, unit_scope_stack, config);
@@ -346,5 +340,5 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         maps_elapsed.as_secs_f64()
     );
 
-    globals
+    scope_stack.first()
 }

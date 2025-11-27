@@ -65,14 +65,6 @@ impl<'tcx> Scope<'tcx> {
         new_scope
     }
 
-    /// Merge existing scope into this scope.
-    #[inline]
-    pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
-        other.for_each_symbol(|source_symbol| {
-            self.insert(source_symbol);
-        });
-    }
-
     #[inline]
     pub fn add_parent(&self, parent: &'tcx Scope<'tcx>) {
         self.parents.write().push(parent);
