@@ -4,7 +4,7 @@ use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{Arena, HirNode};
-use llmcc_core::scope::{Scope, ScopeStack};
+use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 
 use rayon::prelude::*;
@@ -130,21 +130,16 @@ impl<'a> CollectorScopes<'a> {
     }
 
     /// Build fully qualified name from current scope
-    /// Finds the nearest enclosing scope with a symbol and uses its FQN
     pub fn build_fqn(&self, name: &str) -> InternedStr {
-        // Walk up the scope stack to find the first scope with a symbol (namespace)
-        // In practice this is usually 0-2 levels up (block -> function -> module)
         for scope in self.scopes.iter().into_iter().rev() {
             if let Some(ns_sym) = scope.opt_symbol() {
                 let ns_fqn = ns_sym.fqn();
                 if let Some(ns_fqn_str) = self.interner.resolve_owned(ns_fqn) {
-                    // Found namespace with FQN, format as "namespace::name"
                     let fqn_str = format!("{}::{}", ns_fqn_str, name);
                     return self.interner.intern(&fqn_str);
                 }
             }
         }
-        // No enclosing namespace with FQN found, just use the name
         self.interner.intern(name)
     }
 
@@ -170,7 +165,9 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert(name, node)?;
+        let symbol = self
+            .scopes
+            .lookup_or_insert(name, node.id(), LookupOptions::current())?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -183,7 +180,9 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
+        let symbol = self
+            .scopes
+            .lookup_or_insert(name, node.id(), LookupOptions::chained())?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -196,7 +195,9 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
+        let symbol =
+            self.scopes
+                .lookup_or_insert_parent(name, node.id(), LookupOptions::current())?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -209,75 +210,21 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_global(name, node)?;
+        let symbol =
+            self.scopes
+                .lookup_or_insert_global(name, node.id(), LookupOptions::current())?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
         Some(symbol)
     }
 
-    /// Find or insert symbol with custom lookup options
-    #[inline]
-    pub fn lookup_or_insert_with(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-        options: llmcc_core::scope::LookupOptions,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
-        self.init_symbol(symbol, name, node, kind);
-        Some(symbol)
-    }
-
     pub fn lookup_symbol_with(
         &self,
-        name: &str,
-        kind_filters: Option<Vec<SymKind>>,
-        unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
+        name_sym: &'a Symbol,
+        kind_filters: Vec<SymKind>,
     ) -> Option<&'a Symbol> {
-        let name_key = self.interner.intern(name);
-        let fqn_keys = fqn_filters.as_ref().map(|filters| {
-            filters
-                .iter()
-                .map(|fqn| self.interner.intern(fqn))
-                .collect::<Vec<_>>()
-        });
-        let kind_filters_ref = kind_filters.as_ref();
-        let unit_filters_ref = unit_filters.as_ref();
-        let fqn_keys_ref = fqn_keys.as_ref();
-
-        for scope in self.scopes.iter().into_iter().rev() {
-            let Some(symbols) = scope.lookup_symbols(name_key) else {
-                continue;
-            };
-
-            for symbol in symbols.into_iter().rev() {
-                if let Some(filters) = kind_filters_ref
-                    && !filters.iter().any(|kind| symbol.kind() == *kind)
-                {
-                    continue;
-                }
-
-                if let Some(filters) = unit_filters_ref
-                    && !filters
-                        .iter()
-                        .any(|unit| symbol.unit_index() == Some(*unit))
-                {
-                    continue;
-                }
-
-                if let Some(filters) = fqn_keys_ref
-                    && !filters.iter().any(|fqn| symbol.fqn() == *fqn)
-                {
-                    continue;
-                }
-
-                return Some(symbol);
-            }
-        }
-
-        None
+        let option = LookupOptions::current().with_kind_filters(kind_filters);
+        self.scopes.lookup_symbol(name_sym, option)
     }
 }
 
@@ -295,20 +242,13 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     use std::sync::atomic::{AtomicU64, Ordering};
 
     let total_start = Instant::now();
-
     let scope_stack = L::collect_init(cc);
-    let globals = cc.create_globals();
-
-    // Atomic counters for parallel timing
     let visit_time_ns = AtomicU64::new(0);
 
     let collect_unit = |i: usize| {
         let unit_scope_stack = scope_stack.clone();
         let unit = cc.compile_unit(i);
         let node = unit.hir_node(unit.file_root_id().unwrap());
-
-        // Push the pre-allocated unit-level scope onto the stack
-        unit_scope_stack.push(globals);
 
         let visit_start = Instant::now();
         L::collect_symbols(unit, node, unit_scope_stack, config);
@@ -346,5 +286,5 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         maps_elapsed.as_secs_f64()
     );
 
-    globals
+    scope_stack.first()
 }

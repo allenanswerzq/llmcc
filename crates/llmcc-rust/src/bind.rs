@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode, HirScope};
-use llmcc_core::scope::Scope;
+use llmcc_core::scope::{LookupOptions, Scope};
 use llmcc_core::symbol::{DepKind, SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
@@ -30,9 +30,11 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) {
         if let Some(ident) = node.find_identifier(*unit)
             && let Some(owner) = namespace.opt_symbol()
-            && let Some(sym) = ident
-                .opt_symbol()
-                .or_else(|| scopes.lookup_symbol(&ident.name))
+            && let Some(sym) = ident.opt_symbol().or_else(|| {
+                let option = LookupOptions::current();
+                // If no symbol on ident, try lookup using ident's symbol
+                ident.opt_symbol().and_then(|s| scopes.lookup_symbol(s, option))
+            })
             && matches!(
                 sym.kind(),
                 SymKind::Const | SymKind::Static | SymKind::EnumVariant
@@ -145,7 +147,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             let field_ty = {
                 let mut resolver = ExprResolver::new(unit, scopes);
                 resolver
-                    .resolve_field_type(ty, &field_ident.name)
+                    .resolve_field(ty, &field_ident.name)
                     .and_then(|(_, ty)| ty)
             };
             if let Some(field_ty) = field_ty {
@@ -205,38 +207,65 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         // Process crate scope
         if let Some(crate_name) = parse_crate_name(file_path) {
-            let symbol = if scopes.scope_depth() > 0 {
-                scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
+            let symbols = if scopes.scope_depth() > 0 {
+                scopes.lookup_globals_with(&crate_name, Some(SymKind::Crate))
             } else {
                 return;
             };
 
-            if let Some(symbol) = symbol
-                && let Some(scope_id) = symbol.opt_scope()
-            {
-                scopes.push_scope(scope_id);
+            if let Some(symbols) = symbols {
+                if symbols.len() > 1 {
+                    tracing::warn!(
+                        "multiple crate symbols found for '{}' in {}",
+                        crate_name,
+                        file_path
+                    );
+                }
+                if let Some(symbol) = symbols.first()
+                    && let Some(scope_id) = symbol.opt_scope()
+                {
+                    scopes.push_scope(scope_id);
+                }
             }
         }
 
-        if let Some(scope_id) = parse_module_name(file_path).and_then(|module_name| {
-            scopes
-                .lookup_or_insert(&module_name, node, SymKind::Module)
-                .and_then(|symbol| symbol.opt_scope())
-        }) {
-            scopes.push_scope(scope_id);
+        if let Some(module_name) = parse_module_name(file_path) {
+            if let Some(symbols) = scopes.lookup_globals_with(&module_name, Some(SymKind::Module)) {
+                if symbols.len() > 1 {
+                    tracing::warn!(
+                        "multiple module symbols found for '{}' in {}",
+                        module_name,
+                        file_path
+                    );
+                }
+                if let Some(symbol) = symbols.first()
+                    && let Some(scope_id) = symbol.opt_scope()
+                {
+                    scopes.push_scope(scope_id);
+                }
+            }
         }
 
         if let Some(file_name) = parse_file_name(file_path) {
             let file_sym_opt = if scopes.scope_depth() > 0 {
-                scopes.lookup_or_insert(&file_name, node, SymKind::File)
+                scopes.lookup_globals_with(&file_name, Some(SymKind::File))
             } else {
                 return;
             };
 
-            if let Some(symbol) = file_sym_opt
-                && let Some(scope_id) = symbol.opt_scope()
-            {
-                scopes.push_scope(scope_id);
+            if let Some(symbols) = file_sym_opt {
+                if symbols.len() > 1 {
+                    tracing::warn!(
+                        "multiple file symbols found for '{}' in {}",
+                        file_name,
+                        file_path
+                    );
+                }
+                if let Some(symbol) = symbols.first()
+                    && let Some(scope_id) = symbol.opt_scope()
+                {
+                    scopes.push_scope(scope_id);
+                }
             }
         }
 
@@ -836,7 +865,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
         {
             let mut resolver = ExprResolver::new(unit, scopes);
-            if let Some((symbol, _)) = resolver.resolve_field_type(owner_sym, &name_node.name) {
+            if let Some((symbol, _)) = resolver.resolve_field(owner_sym, &name_node.name) {
                 let (ty, args) = resolver.resolve_type_with_args(&type_node);
                 if let Some(primary) = ty {
                     symbol.set_type_of(primary.id());
@@ -1009,8 +1038,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // For scoped identifiers like E::V1 or E::V2, resolve the full path
         // If it's an enum variant, add dependency on the parent enum via type_of
         if let Some(owner) = namespace.opt_symbol()
-            && let Some(sym) =
-                ExprResolver::new(unit, scopes).resolve_scoped_identifier_type(node, None)
+            && let Some(sym) = ExprResolver::new(unit, scopes).resolve_scoped_identifier(node, None)
             && sym.kind() == SymKind::EnumVariant
             && let Some(parent_enum_id) = sym.type_of()
             && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
@@ -1095,7 +1123,7 @@ mod tests {
     use crate::token::LangRust;
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-    use llmcc_core::symbol::{SymId, SymKind, reset_symbol_id_counter, reset_scope_id_counter};
+    use llmcc_core::symbol::{SymId, SymKind, reset_scope_id_counter, reset_symbol_id_counter};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
     use pretty_assertions::assert_eq;
 

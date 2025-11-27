@@ -222,22 +222,21 @@ digraph project {
       n27[label="UserService", full_path="$TMP/src/service/user_service.rs:3"];
     }
   }
-  n33 -> n19;
-  n19 -> n17;
-  n27 -> n19;
-  n13 -> n9;
-  n13 -> n6;
-  n13 -> n27;
-  n12 -> n6;
   n12 -> n27;
-  n14 -> n33;
+  n12 -> n6;
+  n13 -> n27;
+  n13 -> n6;
+  n13 -> n9;
   n14 -> n10;
+  n14 -> n33;
   n14 -> n6;
-  n3 -> n9;
+  n19 -> n17;
+  n27 -> n17;
+  n27 -> n19;
   n3 -> n19;
   n3 -> n27;
-  n3 -> n13;
-  n3 -> n12;
+  n3 -> n9;
+  n33 -> n19;
 }
 
 --- expect:arch-graph ---
@@ -282,19 +281,19 @@ digraph architecture {
       n27[label="UserService", full_path="$TMP/src/service/user_service.rs:3", sym_ty="Struct", shape=box];
     }
   }
-  n33 -> n19 [from="struct", to="field"];
-  n33 -> n14 [from="input", to="func"];
-  n9 -> n13 [from="input", to="func"];
   n10 -> n14 [from="input", to="func"];
-  n19 -> n17 [from="struct", to="field"];
-  n27 -> n19 [from="struct", to="field"];
-  n27 -> n13 [from="input", to="func"];
-  n27 -> n12 [from="input", to="func"];
-  n13 -> n6 [from="func", to="output"];
   n12 -> n6 [from="func", to="output"];
+  n13 -> n6 [from="func", to="output"];
   n14 -> n6 [from="func", to="output"];
-  n3 -> n13 [from="caller", to="callee"];
-  n3 -> n12 [from="caller", to="callee"];
+  n19 -> n17 [from="func", to="output"];
+  n19 -> n17 [from="struct", to="field"];
+  n27 -> n12 [from="input", to="func"];
+  n27 -> n13 [from="input", to="func"];
+  n27 -> n17 [from="func", to="output"];
+  n27 -> n19 [from="struct", to="field"];
+  n33 -> n14 [from="input", to="func"];
+  n33 -> n19 [from="struct", to="field"];
+  n9 -> n13 [from="input", to="func"];
 }
 
 
@@ -627,21 +626,22 @@ digraph project {
       n56[label="OrderRepository", full_path="$TMP/src/ports/outbound.rs:4"];
     }
   }
-  n21 -> n63;
-  n6 -> n39;
-  n6 -> n56;
   n14 -> n36;
   n14 -> n60;
-  n39 -> n38;
-  n39 -> n36;
-  n26 -> n63;
-  n26 -> n56;
+  n21 -> n63;
   n26 -> n47;
+  n26 -> n56;
   n26 -> n60;
-  n3 -> n21;
-  n3 -> n6;
+  n26 -> n63;
   n3 -> n14;
+  n3 -> n21;
   n3 -> n26;
+  n3 -> n6;
+  n39 -> n36;
+  n39 -> n38;
+  n47 -> n39;
+  n6 -> n39;
+  n6 -> n56;
 }
 
 --- expect:arch-graph ---
@@ -694,17 +694,18 @@ digraph architecture {
       n56[label="OrderRepository", full_path="$TMP/src/ports/outbound.rs:4", sym_ty="Trait", shape=box];
     }
   }
-  n6 -> n39 [from="struct", to="field"];
   n14 -> n36 [from="struct", to="field"];
-  n63 -> n21 [from="trait", to="impl"];
-  n63 -> n26 [from="bound", to="generic"];
-  n39 -> n38 [from="struct", to="field"];
   n39 -> n36 [from="struct", to="field"];
-  n56 -> n6 [from="trait", to="impl"];
-  n56 -> n26 [from="bound", to="generic"];
+  n39 -> n38 [from="struct", to="field"];
   n47 -> n26 [from="trait", to="impl"];
+  n47 -> n39 [from="func", to="output"];
+  n56 -> n26 [from="bound", to="generic"];
+  n56 -> n6 [from="trait", to="impl"];
+  n6 -> n39 [from="struct", to="field"];
   n60 -> n14 [from="trait", to="impl"];
   n60 -> n26 [from="bound", to="generic"];
+  n63 -> n21 [from="trait", to="impl"];
+  n63 -> n26 [from="bound", to="generic"];
 }
 
 

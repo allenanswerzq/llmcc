@@ -5,7 +5,7 @@ use std::fmt;
 use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
-use crate::ir::{Arena, HirId, HirNode};
+use crate::ir::{Arena, HirId};
 use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
 
 /// Represents a single level in the scope hierarchy.
@@ -65,14 +65,6 @@ impl<'tcx> Scope<'tcx> {
         new_scope
     }
 
-    /// Merge existing scope into this scope.
-    #[inline]
-    pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
-        other.for_each_symbol(|source_symbol| {
-            self.insert(source_symbol);
-        });
-    }
-
     #[inline]
     pub fn add_parent(&self, parent: &'tcx Scope<'tcx>) {
         self.parents.write().push(parent);
@@ -101,25 +93,6 @@ impl<'tcx> Scope<'tcx> {
     #[inline]
     pub fn parents(&self) -> Vec<&'tcx Scope<'tcx>> {
         self.parents.read().clone()
-    }
-
-    /// Invokes a closure for each symbol in this scope.
-    /// Iterates in deterministic order by sorting keys.
-    pub fn for_each_symbol<F>(&self, mut visit: F)
-    where
-        F: FnMut(&'tcx Symbol),
-    {
-        let symbols = self.symbols.read();
-        // Sort keys for deterministic iteration order
-        let mut keys: Vec<_> = symbols.keys().copied().collect();
-        keys.sort();
-        for key in keys {
-            if let Some(symbol_vec) = symbols.get(&key) {
-                for symbol in symbol_vec {
-                    visit(symbol);
-                }
-            }
-        }
     }
 
     /// Inserts a symbol into this scope.
@@ -152,23 +125,39 @@ impl<'tcx> Scope<'tcx> {
     pub fn lookup_symbols_with(
         &self,
         name: InternedStr,
-        kind_filter: Option<SymKind>,
-        unit_filter: Option<usize>,
-        fqn_filter: Option<InternedStr>,
+        option: &LookupOptions,
     ) -> Option<Vec<&'tcx Symbol>> {
         let symbols = self.lookup_symbols(name)?;
 
         let filtered: Vec<&'tcx Symbol> = symbols
             .into_iter()
             .filter(|symbol| {
-                let kind_match = kind_filter.is_none_or(|k| k == symbol.kind());
-                let unit_match = unit_filter.is_none_or(|u| Some(u) == symbol.unit_index());
-                let fqn_match = fqn_filter.is_none_or(|fq| fq == symbol.fqn());
-                kind_match && unit_match && fqn_match
+                let kind_match = option
+                    .kind_filters
+                    .as_ref()
+                    .is_none_or(|kinds| kinds.iter().any(|k| *k == symbol.kind()));
+                let unit_match = option
+                    .unit_filters
+                    .as_ref()
+                    .is_none_or(|units| symbol.unit_index().is_some_and(|u| units.contains(&u)));
+                kind_match && unit_match
             })
             .collect();
 
         (!filtered.is_empty()).then_some(filtered)
+    }
+
+    /// Iterates over all symbols in this scope.
+    pub fn for_each_symbol<F>(&self, mut f: F)
+    where
+        F: FnMut(&'tcx Symbol),
+    {
+        let symbols = self.symbols.read();
+        for syms in symbols.values() {
+            for sym in syms {
+                f(sym);
+            }
+        }
     }
 }
 
@@ -280,111 +269,119 @@ impl<'tcx> ScopeStack<'tcx> {
         self.stack.read().last().copied()
     }
 
-    /// Normalize name helper.
+    pub fn lookup_symbols(
+        &self,
+        symbol: &'tcx Symbol,
+        option: LookupOptions,
+    ) -> Option<Vec<&'tcx Symbol>> {
+        let simple_key = symbol.name;
+        let fqn_key = symbol.fqn();
+
+        let stack = self.stack.read();
+        if stack.is_empty() {
+            return None;
+        }
+
+        if option.global {
+            // search global scope with fqn key
+            return stack[0].lookup_symbols_with(fqn_key, &option);
+        }
+
+        // search local scope with simple name key
+        stack[1..]
+            .iter()
+            .rev()
+            .find_map(|scope| scope.lookup_symbols_with(simple_key, &option))
+            .or_else(|| {
+                // search global scope with fqn key
+                stack[0].lookup_symbols_with(fqn_key, &option)
+            })
+    }
+
+    pub fn lookup_symbol(
+        &self,
+        symbol: &'tcx Symbol,
+        option: LookupOptions,
+    ) -> Option<&'tcx Symbol> {
+        let symbols = self.lookup_symbols(symbol, option)?;
+        if symbols.len() == 1 {
+            return Some(symbols[0]);
+        } else {
+            tracing::warn!(
+                "ambiguous symbol lookup for '{}', found {} candidates",
+                self.interner.resolve_owned(symbol.fqn())?,
+                symbols.len()
+            );
+            return None;
+        }
+    }
+
+    /// String-based symbol lookup (for identifiers without pre-set symbols)
+    pub fn lookup_symbol_by_name(
+        &self,
+        name: &str,
+        option: LookupOptions,
+    ) -> Option<&'tcx Symbol> {
+        let name_key = self.interner.intern(name);
+        let stack = self.stack.read();
+        if stack.is_empty() {
+            return None;
+        }
+
+        if option.global {
+            let symbols = stack[0].lookup_symbols_with(name_key, &option)?;
+            return symbols.into_iter().next();
+        }
+
+        // Search local scopes first, then global
+        stack[1..]
+            .iter()
+            .rev()
+            .find_map(|scope| scope.lookup_symbols_with(name_key, &option))
+            .or_else(|| stack[0].lookup_symbols_with(name_key, &option))
+            .and_then(|symbols| symbols.into_iter().next())
+    }
+
+    pub fn lookup_or_insert(
+        &self,
+        name: &str,
+        node: HirId,
+        option: LookupOptions,
+    ) -> Option<&'tcx Symbol> {
+        self.handle_lookup_or_insert(name, node, option)
+    }
+
+    pub fn lookup_or_insert_global(
+        &self,
+        name: &str,
+        node: HirId,
+        option: LookupOptions,
+    ) -> Option<&'tcx Symbol> {
+        let option = option.with_global(true);
+        self.handle_lookup_or_insert(name, node, option)
+    }
+
+    pub fn lookup_or_insert_parent(
+        &self,
+        name: &str,
+        node: HirId,
+        option: LookupOptions,
+    ) -> Option<&'tcx Symbol> {
+        let option = option.with_parent(true);
+        self.handle_lookup_or_insert(name, node, option)
+    }
+
     fn normalize_name(&self, name: &str, force: bool) -> Option<InternedStr> {
         let name_to_intern = if !name.is_empty() {
             name
         } else if force {
-            "___anonymous___"
+            "___llmcc_anonymous"
         } else {
             return None;
         };
         Some(self.interner.intern(name_to_intern))
     }
 
-    pub fn lookup_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
-        let name_key = self.interner.intern(name);
-        let stack = self.stack.read();
-
-        stack.iter().rev().find_map(|scope| {
-            scope
-                .lookup_symbols(name_key)
-                .and_then(|matches| matches.last().copied())
-        })
-    }
-
-    /// Look up a symbol only in the global (first) scope.
-    /// Used for crate-root paths like ::f or ::g::h.
-    pub fn lookup_global_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
-        let name_key = self.interner.intern(name);
-        let stack = self.stack.read();
-        let global_scope = stack.first()?;
-        global_scope
-            .lookup_symbols(name_key)
-            .and_then(|matches| matches.last().copied())
-    }
-
-    pub fn lookup_symbol_with(
-        &self,
-        name: &str,
-        kind_filters: Option<Vec<SymKind>>,
-        unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
-    ) -> Option<&'tcx Symbol> {
-        if name.is_empty() {
-            return None;
-        }
-        let name_key = self.interner.intern(name);
-        let fqn_keys = fqn_filters.map(|filters| {
-            filters
-                .into_iter()
-                .map(|fqn| self.interner.intern(fqn))
-                .collect::<Vec<_>>()
-        });
-        let stack = self.stack.read();
-
-        stack.iter().rev().find_map(|scope| {
-            let matches = scope.lookup_symbols(name_key)?;
-            matches.iter().rev().find_map(|symbol| {
-                if let Some(kinds) = &kind_filters
-                    && !kinds.iter().any(|kind| symbol.kind() == *kind)
-                {
-                    return None;
-                }
-                if let Some(units) = &unit_filters
-                    && !units.iter().any(|unit| symbol.unit_index() == Some(*unit))
-                {
-                    return None;
-                }
-                if let Some(fqn_keys) = &fqn_keys
-                    && !fqn_keys.iter().any(|fqn_key| symbol.fqn() == *fqn_key)
-                {
-                    return None;
-                }
-                Some(*symbol)
-            })
-        })
-    }
-
-    /// Find existing symbol or insert new one in the current scope.
-    pub fn lookup_or_insert(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
-        self.handle_lookup_or_insert(name, node.id(), LookupOptions::current())
-    }
-
-    /// Find or insert with chaining (shadowing support).
-    pub fn lookup_or_insert_chained(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
-        self.handle_lookup_or_insert(name, node.id(), LookupOptions::chained())
-    }
-
-    pub fn lookup_or_insert_parent(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
-        self.handle_lookup_or_insert(name, node.id(), LookupOptions::parent())
-    }
-
-    pub fn lookup_or_insert_global(&self, name: &str, node: &HirNode) -> Option<&'tcx Symbol> {
-        self.handle_lookup_or_insert(name, node.id(), LookupOptions::global())
-    }
-
-    /// Full control API.
-    pub fn lookup_or_insert_with(
-        &self,
-        name: &str,
-        node: &HirNode,
-        options: LookupOptions,
-    ) -> Option<&'tcx Symbol> {
-        self.handle_lookup_or_insert(name, node.id(), options)
-    }
-
-    /// Internal implementation for lookup/insert logic.
     fn handle_lookup_or_insert(
         &self,
         name: &str,
@@ -392,7 +389,6 @@ impl<'tcx> ScopeStack<'tcx> {
         options: LookupOptions,
     ) -> Option<&'tcx Symbol> {
         let name_key = self.normalize_name(name, options.force)?;
-
         let stack = self.stack.read();
         if stack.is_empty() {
             return None;
@@ -407,18 +403,24 @@ impl<'tcx> ScopeStack<'tcx> {
         };
 
         let existing_symbols = scope.and_then(|s| s.lookup_symbols(name_key));
-        let latest_existing = existing_symbols.as_ref().and_then(|v| v.last().copied());
-        if !options.top
-            && let Some(existing) = latest_existing
-        {
-            return Some(existing);
-        }
 
+        debug_assert!(
+            !existing_symbols
+                .as_ref()
+                .map_or(false, |v| v.len() > 1 && !options.chain),
+            "symbol {:?} already exists in scope {:?} and chaining is disabled",
+            name_key,
+            scope.map(|s| s.id())
+        );
+
+        let latest_existing = existing_symbols.as_ref().and_then(|v| v.last().copied());
         let new_symbol = Symbol::new(node, name_key);
-        if options.top
-            && let Some(prev) = latest_existing
-        {
-            new_symbol.set_previous(prev.id);
+        if let Some(existing) = latest_existing {
+            if !options.chain {
+                return Some(existing);
+            } else {
+                new_symbol.set_previous(existing.id);
+            }
         }
 
         let allocated = self.arena.alloc(new_symbol);
@@ -430,59 +432,39 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Default)]
 pub struct LookupOptions {
     pub global: bool,
     pub parent: bool,
-    /// If true, always creates a new symbol, chaining it to any existing one (shadowing).
-    /// If false, returns the existing symbol if found.
-    pub top: bool,
+    pub chain: bool,
     pub force: bool,
+    pub kind_filters: Option<Vec<SymKind>>,
+    pub unit_filters: Option<Vec<usize>>,
 }
 
 impl LookupOptions {
     pub fn current() -> Self {
-        Self {
-            global: false,
-            parent: false,
-            top: false,
-            force: false,
-        }
+        Self::default()
     }
 
     pub fn global() -> Self {
         Self {
             global: true,
-            parent: false,
-            top: false,
-            force: false,
+            ..Default::default()
         }
     }
 
     pub fn parent() -> Self {
         Self {
-            global: false,
             parent: true,
-            top: false,
-            force: false,
+            ..Default::default()
         }
     }
 
     pub fn chained() -> Self {
         Self {
-            global: false,
-            parent: false,
-            top: true,
-            force: false,
-        }
-    }
-
-    pub fn anonymous() -> Self {
-        Self {
-            global: false,
-            parent: false,
-            top: false,
-            force: true,
+            chain: true,
+            ..Default::default()
         }
     }
 
@@ -496,13 +478,18 @@ impl LookupOptions {
         self
     }
 
-    pub fn with_top(mut self, top: bool) -> Self {
-        self.top = top;
+    pub fn with_chain(mut self, chain: bool) -> Self {
+        self.chain = chain;
         self
     }
 
     pub fn with_force(mut self, force: bool) -> Self {
         self.force = force;
+        self
+    }
+
+    pub fn with_kind_filters(mut self, kinds: Vec<SymKind>) -> Self {
+        self.kind_filters = Some(kinds);
         self
     }
 }

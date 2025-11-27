@@ -204,21 +204,19 @@ u1:29 | File | models | _c::models |
 u1:30 | Struct | Config | _c::models::Config | [global]
 u1:31 | Field | name | _c::models::Config::name |
 u1:32 | Field | enabled | _c::models::Config::enabled |
-u1:33 | UnresolvedType | Serializable | _c::models::Serializable |
-u1:34 | Function | serialize | _c::models::Config::serialize |
-u1:35 | Function | deserialize | _c::models::Config::deserialize |
-u1:36 | Variable | data | _c::models::Config::deserialize::data |
-u1:37 | UnresolvedType | Validator | _c::models::Validator |
-u1:38 | Function | validate | _c::models::Config::validate |
-u2:39 | Crate | crate | _c::crate |
-u2:40 | File | main | _c::main |
-u2:41 | Function | main | _c::main::main | [global]
-u2:42 | Variable | config | _c::main::main::config |
+u1:33 | Function | serialize | _c::models::Config::serialize |
+u1:34 | Function | deserialize | _c::models::Config::deserialize |
+u1:35 | Variable | data | _c::models::Config::deserialize::data |
+u1:36 | Function | validate | _c::models::Config::validate |
+u2:37 | Crate | crate | _c::crate |
+u2:38 | File | main | _c::main |
+u2:39 | Function | main | _c::main::main | [global]
+u2:40 | Variable | config | _c::main::main::config |
 
 --- expect:symbol-deps ---
-u0:15 <- [u0:27, u1:30, u1:30, u1:32, u1:38]
-u0:17 <- [u0:24, u0:24, u0:25, u1:35, u1:35, u1:36]
-u0:18 <- [u0:23, u1:30, u1:31, u1:34]
+u0:15 <- [u0:27, u1:30, u1:30, u1:32, u1:36]
+u0:17 <- [u0:24, u0:24, u0:25, u1:34, u1:34, u1:35]
+u0:18 <- [u0:23, u1:30, u1:31, u1:33]
 u0:22 -> [u0:23, u0:24]
 u0:22 <- [u1:30]
 u0:23 -> [u0:18]
@@ -230,18 +228,18 @@ u0:26 -> [u0:27]
 u0:26 <- [u1:30]
 u0:27 -> [u0:15]
 u0:27 <- [u0:26]
-u1:30 -> [u0:15, u0:15, u0:18, u0:22, u0:26, u1:34, u1:38]
-u1:30 <- [u1:35, u2:41, u2:42]
+u1:30 -> [u0:15, u0:15, u0:18, u0:22, u0:26, u1:33, u1:36]
+u1:30 <- [u1:34, u2:39, u2:40]
 u1:31 -> [u0:18]
 u1:32 -> [u0:15]
-u1:34 -> [u0:18]
-u1:34 <- [u1:30]
-u1:35 -> [u0:17, u0:17, u1:30]
-u1:36 -> [u0:17]
-u1:38 -> [u0:15]
-u1:38 <- [u1:30, u2:41]
-u2:41 -> [u1:30, u1:38]
-u2:42 -> [u1:30]
+u1:33 -> [u0:18]
+u1:33 <- [u1:30]
+u1:34 -> [u0:17, u0:17, u1:30]
+u1:35 -> [u0:17]
+u1:36 -> [u0:15]
+u1:36 <- [u1:30, u2:39]
+u2:39 -> [u1:30, u1:36]
+u2:40 -> [u1:30]
 
 --- expect:dep-graph ---
 digraph project {
@@ -427,8 +425,8 @@ u0:12 <- [u1:36, u1:36, u1:37, u1:38]
 u0:18 <- [u0:22, u1:33, u1:34, u1:36, u1:38, u1:39]
 u0:22 -> [u0:18, u0:23, u0:24, u0:25]
 u0:22 <- [u0:27, u0:29, u1:36, u1:36, u1:38, u1:38]
-u0:23 <- [u0:22, u0:27, u1:36]
-u0:24 <- [u0:22, u0:27, u1:38]
+u0:23 <- [u0:22, u0:27]
+u0:24 <- [u0:22, u0:27]
 u0:25 <- [u0:22, u0:27]
 u0:27 -> [u0:22, u0:23, u0:24, u0:25]
 u0:29 -> [u0:22]
@@ -437,10 +435,10 @@ u1:33 <- [u1:35, u2:42, u2:43, u2:44, u2:45]
 u1:34 -> [u0:18]
 u1:35 -> [u1:33]
 u1:35 <- [u2:42]
-u1:36 -> [u0:12, u0:12, u0:18, u0:22, u0:22, u0:23]
+u1:36 -> [u0:12, u0:12, u0:18, u0:22, u0:22]
 u1:36 <- [u1:33, u2:42]
 u1:37 -> [u0:12]
-u1:38 -> [u0:12, u0:18, u0:22, u0:22, u0:24]
+u1:38 -> [u0:12, u0:18, u0:22, u0:22]
 u1:38 <- [u1:33, u2:42]
 u1:39 -> [u0:18]
 u2:42 -> [u1:33, u1:35, u1:36, u1:38]
@@ -639,15 +637,15 @@ u2:43 | Variable | config | _c::main::main::config |
 u0:17 <- [u1:30, u1:30, u1:32, u1:32, u1:35, u1:37]
 u0:18 <- [u0:22, u0:23, u0:25, u1:29, u1:30, u1:32]
 u0:22 -> [u0:18, u0:7, u0:7, u0:9, u0:9]
-u0:22 <- [u1:39, u1:39]
+u0:22 <- [u1:29, u1:39, u1:39, u2:42, u2:43]
 u0:23 -> [u0:18]
 u0:24 -> [u0:9]
 u0:25 -> [u0:18]
 u0:26 -> [u0:7]
 u0:7 <- [u0:22, u0:22, u0:26, u1:29, u1:33, u1:33, u1:38]
 u0:9 <- [u0:22, u0:22, u0:24, u1:29, u1:31, u1:31, u1:36]
-u1:29 -> [u0:18, u0:7, u0:9, u1:30, u1:31, u1:32, u1:33, u1:39]
-u1:29 <- [u1:34, u2:42, u2:43]
+u1:29 -> [u0:18, u0:22, u0:7, u0:9, u1:30, u1:31, u1:32, u1:33, u1:39]
+u1:29 <- [u1:34, u2:42]
 u1:30 -> [u0:17, u0:17, u0:18]
 u1:30 <- [u1:29]
 u1:31 -> [u0:9, u0:9]
@@ -664,8 +662,8 @@ u1:37 -> [u0:17]
 u1:38 -> [u0:7]
 u1:39 -> [u0:22, u0:22]
 u1:39 <- [u1:29, u2:42]
-u2:42 -> [u1:29, u1:34, u1:39]
-u2:43 -> [u1:29]
+u2:42 -> [u0:22, u1:29, u1:34, u1:39]
+u2:43 -> [u0:22]
 
 --- expect:dep-graph ---
 digraph project {
@@ -695,7 +693,9 @@ digraph project {
       n13[label="main", full_path="$TMP/src/main.rs:6"];
     }
   }
+  n13 -> n2;
   n13 -> n4;
+  n4 -> n2;
 }
 
 --- expect:arch-graph ---
@@ -726,6 +726,7 @@ digraph architecture {
       n13[label="main", full_path="$TMP/src/main.rs:6", sym_ty="Function"];
     }
   }
+  n4 -> n2 [from="func", to="output"];
 }
 
 
@@ -876,21 +877,21 @@ u0:31 -> [u0:10]
 u0:32 -> [u0:10]
 u0:32 <- [u0:26]
 u0:33 -> [u0:10, u0:10, u0:15]
-u0:33 <- [u0:28, u2:47]
+u0:33 <- [u0:28]
 u0:34 -> [u0:10]
 u0:35 -> [u0:10]
 u0:35 <- [u0:28]
 u1:38 -> [u1:39, u1:40]
 u1:38 <- [u1:42, u1:42, u1:43, u2:47, u2:48, u2:49]
-u1:39 <- [u1:38, u1:42, u2:47]
-u1:40 <- [u1:38, u1:42, u2:47]
+u1:39 <- [u1:38]
+u1:40 <- [u1:38]
 u1:41 -> [u1:42]
 u1:41 <- [u2:47]
-u1:42 -> [u0:17, u0:17, u0:22, u0:26, u0:28, u1:38, u1:38, u1:39, u1:40]
+u1:42 -> [u0:17, u0:17, u0:22, u0:26, u0:28, u1:38, u1:38]
 u1:42 <- [u1:41, u2:47]
 u1:43 -> [u1:38]
 u1:44 -> [u0:17]
-u2:47 -> [u0:33, u1:38, u1:39, u1:40, u1:41, u1:42]
+u2:47 -> [u1:38, u1:41, u1:42]
 u2:48 -> [u1:38]
 u2:49 -> [u1:38]
 
@@ -1125,43 +1126,42 @@ u1:53 | Variable | expr | _c::visitor::ExprVisitor::visit::expr |
 u2:54 | Crate | crate | _c::crate |
 u2:55 | File | eval | _c::eval |
 u2:56 | Struct | Evaluator | _c::eval::Evaluator | [global]
-u2:57 | UnresolvedType | ExprVisitor | _c::eval::ExprVisitor |
-u2:58 | TypeAlias | Output | _c::eval::Evaluator::Output |
-u2:59 | Function | visit_number | _c::eval::Evaluator::visit_number |
-u2:60 | Variable | n | _c::eval::Evaluator::visit_number::n |
-u2:61 | Function | visit_binary | _c::eval::Evaluator::visit_binary |
-u2:62 | Variable | op | _c::eval::Evaluator::visit_binary::op |
-u2:63 | Variable | left | _c::eval::Evaluator::visit_binary::left |
-u2:64 | Variable | right | _c::eval::Evaluator::visit_binary::right |
-u2:65 | Variable | l | _c::eval::Evaluator::visit_binary::l |
-u2:66 | Variable | r | _c::eval::Evaluator::visit_binary::r |
-u2:67 | Function | visit_unary | _c::eval::Evaluator::visit_unary |
-u2:68 | Variable | op | _c::eval::Evaluator::visit_unary::op |
-u2:69 | Variable | expr | _c::eval::Evaluator::visit_unary::expr |
-u2:70 | Variable | v | _c::eval::Evaluator::visit_unary::v |
-u3:71 | Crate | crate | _c::crate |
-u3:72 | File | main | _c::main |
-u3:73 | Function | main | _c::main::main | [global]
-u3:74 | Variable | expr | _c::main::main::expr |
-u3:75 | Variable | eval | _c::main::main::eval |
+u2:57 | TypeAlias | Output | _c::eval::Evaluator::Output |
+u2:58 | Function | visit_number | _c::eval::Evaluator::visit_number |
+u2:59 | Variable | n | _c::eval::Evaluator::visit_number::n |
+u2:60 | Function | visit_binary | _c::eval::Evaluator::visit_binary |
+u2:61 | Variable | op | _c::eval::Evaluator::visit_binary::op |
+u2:62 | Variable | left | _c::eval::Evaluator::visit_binary::left |
+u2:63 | Variable | right | _c::eval::Evaluator::visit_binary::right |
+u2:64 | Variable | l | _c::eval::Evaluator::visit_binary::l |
+u2:65 | Variable | r | _c::eval::Evaluator::visit_binary::r |
+u2:66 | Function | visit_unary | _c::eval::Evaluator::visit_unary |
+u2:67 | Variable | op | _c::eval::Evaluator::visit_unary::op |
+u2:68 | Variable | expr | _c::eval::Evaluator::visit_unary::expr |
+u2:69 | Variable | v | _c::eval::Evaluator::visit_unary::v |
+u3:70 | Crate | crate | _c::crate |
+u3:71 | File | main | _c::main |
+u3:72 | Function | main | _c::main::main | [global]
+u3:73 | Variable | expr | _c::main::main::expr |
+u3:74 | Variable | eval | _c::main::main::eval |
 
 --- expect:symbol-deps ---
-u0:2 <- [u0:22, u0:22, u1:43, u1:43, u1:44, u2:56, u2:58, u2:59, u2:59, u2:60, u2:61, u2:67]
+u0:2 <- [u0:22, u0:22, u1:43, u1:43, u1:44, u2:56, u2:57, u2:58, u2:58, u2:59, u2:60, u2:66]
 u0:22 -> [u0:2, u0:2, u0:23, u0:24, u0:28, u0:31, u0:36]
-u0:22 <- [u1:45, u1:47, u1:48, u1:49, u1:51, u1:52, u1:52, u1:53, u2:61, u2:63, u2:64, u2:67, u2:69, u3:73, u3:73]
-u0:23 <- [u0:22, u1:52, u3:73]
-u0:24 <- [u0:22, u3:73, u3:74]
+u0:22 <- [u1:45, u1:47, u1:48, u1:49, u1:51, u1:52, u1:52, u1:53, u2:60, u2:60, u2:62, u2:63, u2:64, u2:65, u2:66, u2:66, u2:68, u2:69, u3:72, u3:72]
+u0:23 <- [u0:22]
+u0:24 <- [u0:22, u3:72, u3:73]
 u0:28 <- [u0:22]
 u0:31 -> [u0:32, u0:33, u0:34, u0:35]
-u0:31 <- [u0:22, u1:45, u1:46, u2:61, u2:61, u2:62, u3:73]
-u0:32 <- [u0:31, u2:61, u3:73]
-u0:33 <- [u0:31, u2:61]
-u0:34 <- [u0:31, u2:61, u3:73]
-u0:35 <- [u0:31, u2:61]
+u0:31 <- [u0:22, u1:45, u1:46, u2:60, u2:60, u2:61, u3:72]
+u0:32 <- [u0:31]
+u0:33 <- [u0:31]
+u0:34 <- [u0:31]
+u0:35 <- [u0:31]
 u0:36 -> [u0:37, u0:38]
-u0:36 <- [u0:22, u1:49, u1:50, u2:67, u2:67, u2:68]
-u0:37 <- [u0:36, u2:67]
-u0:38 <- [u0:36, u2:67]
+u0:36 <- [u0:22, u1:49, u1:50, u2:66, u2:66, u2:67]
+u0:37 <- [u0:36]
+u0:38 <- [u0:36]
 u1:41 -> [u1:42, u1:43, u1:45, u1:49, u1:52]
 u1:41 <- [u2:56]
 u1:42 <- [u1:41, u1:43, u1:45, u1:49, u1:52]
@@ -1177,31 +1177,31 @@ u1:49 -> [u0:22, u0:36, u1:42]
 u1:49 <- [u1:41, u1:52]
 u1:50 -> [u0:36]
 u1:51 -> [u0:22]
-u1:52 -> [u0:22, u0:22, u0:23, u1:42, u1:43, u1:45, u1:49]
-u1:52 <- [u1:41, u2:61, u2:61, u2:65, u2:66, u2:67, u2:67, u2:70]
+u1:52 -> [u0:22, u0:22, u1:42, u1:43, u1:45, u1:49]
+u1:52 <- [u1:41]
 u1:53 -> [u0:22]
-u2:56 -> [u0:2, u1:41, u2:58, u2:59, u2:61, u2:67]
-u2:56 <- [u3:73, u3:75]
-u2:58 -> [u0:2]
+u2:56 -> [u0:2, u1:41, u2:57, u2:58, u2:60, u2:66]
+u2:56 <- [u3:72, u3:74]
+u2:57 -> [u0:2]
+u2:57 <- [u2:56]
+u2:58 -> [u0:2, u0:2]
 u2:58 <- [u2:56]
-u2:59 -> [u0:2, u0:2]
-u2:59 <- [u2:56]
-u2:60 -> [u0:2]
-u2:61 -> [u0:2, u0:22, u0:31, u0:31, u0:32, u0:33, u0:34, u0:35, u1:52, u1:52]
-u2:61 <- [u2:56]
-u2:62 -> [u0:31]
+u2:59 -> [u0:2]
+u2:60 -> [u0:2, u0:22, u0:22, u0:31, u0:31]
+u2:60 <- [u2:56]
+u2:61 -> [u0:31]
+u2:62 -> [u0:22]
 u2:63 -> [u0:22]
 u2:64 -> [u0:22]
-u2:65 -> [u1:52]
-u2:66 -> [u1:52]
-u2:67 -> [u0:2, u0:22, u0:36, u0:36, u0:37, u0:38, u1:52, u1:52]
-u2:67 <- [u2:56]
-u2:68 -> [u0:36]
+u2:65 -> [u0:22]
+u2:66 -> [u0:2, u0:22, u0:22, u0:36, u0:36]
+u2:66 <- [u2:56]
+u2:67 -> [u0:36]
+u2:68 -> [u0:22]
 u2:69 -> [u0:22]
-u2:70 -> [u1:52]
-u3:73 -> [u0:22, u0:22, u0:23, u0:24, u0:31, u0:32, u0:34, u2:56]
-u3:74 -> [u0:24]
-u3:75 -> [u2:56]
+u3:72 -> [u0:22, u0:22, u0:24, u0:31, u2:56]
+u3:73 -> [u0:24]
+u3:74 -> [u2:56]
 
 --- expect:dep-graph ---
 digraph project {
@@ -1455,32 +1455,30 @@ u2:50 | Struct | InMemoryUserRepo | _c::memory_repo::InMemoryUserRepo | [global]
 u2:51 | Field | users | _c::memory_repo::InMemoryUserRepo::users |
 u2:52 | Field | next_id | _c::memory_repo::InMemoryUserRepo::next_id |
 u2:53 | Function | new | _c::memory_repo::InMemoryUserRepo::new | [global]
-u2:54 | UnresolvedType | Repository | _c::memory_repo::Repository |
-u2:55 | Function | find_by_id | _c::memory_repo::InMemoryUserRepo::find_by_id |
-u2:56 | Variable | id | _c::memory_repo::InMemoryUserRepo::find_by_id::id |
-u2:57 | Function | find_all | _c::memory_repo::InMemoryUserRepo::find_all |
-u2:58 | Function | save | _c::memory_repo::InMemoryUserRepo::save |
-u2:59 | Variable | user | _c::memory_repo::InMemoryUserRepo::save::user |
-u2:60 | Variable | id | _c::memory_repo::InMemoryUserRepo::save::id |
-u2:61 | Function | delete | _c::memory_repo::InMemoryUserRepo::delete |
-u2:62 | Variable | id | _c::memory_repo::InMemoryUserRepo::delete::id |
-u2:63 | UnresolvedType | UserRepository | _c::memory_repo::UserRepository |
-u2:64 | Function | find_by_email | _c::memory_repo::InMemoryUserRepo::find_by_email |
-u2:65 | Variable | email | _c::memory_repo::InMemoryUserRepo::find_by_email::email |
-u2:66 | Variable | u | _c::memory_repo::InMemoryUserRepo::find_by_email::u |
-u3:67 | Crate | crate | _c::crate |
-u3:68 | File | main | _c::main |
-u3:69 | Function | main | _c::main::main | [global]
-u3:70 | Variable | repo | _c::main::main::repo |
-u3:71 | Variable | user | _c::main::main::user |
-u3:72 | Variable | id | _c::main::main::id |
+u2:54 | Function | find_by_id | _c::memory_repo::InMemoryUserRepo::find_by_id |
+u2:55 | Variable | id | _c::memory_repo::InMemoryUserRepo::find_by_id::id |
+u2:56 | Function | find_all | _c::memory_repo::InMemoryUserRepo::find_all |
+u2:57 | Function | save | _c::memory_repo::InMemoryUserRepo::save |
+u2:58 | Variable | user | _c::memory_repo::InMemoryUserRepo::save::user |
+u2:59 | Variable | id | _c::memory_repo::InMemoryUserRepo::save::id |
+u2:60 | Function | delete | _c::memory_repo::InMemoryUserRepo::delete |
+u2:61 | Variable | id | _c::memory_repo::InMemoryUserRepo::delete::id |
+u2:62 | Function | find_by_email | _c::memory_repo::InMemoryUserRepo::find_by_email |
+u2:63 | Variable | email | _c::memory_repo::InMemoryUserRepo::find_by_email::email |
+u2:64 | Variable | u | _c::memory_repo::InMemoryUserRepo::find_by_email::u |
+u3:65 | Crate | crate | _c::crate |
+u3:66 | File | main | _c::main |
+u3:67 | Function | main | _c::main::main | [global]
+u3:68 | Variable | repo | _c::main::main::repo |
+u3:69 | Variable | user | _c::main::main::user |
+u3:70 | Variable | id | _c::main::main::id |
 
 --- expect:symbol-deps ---
-u0:15 <- [u1:40, u2:61]
-u0:17 <- [u1:43, u1:43, u1:44, u2:64, u2:64, u2:65]
+u0:15 <- [u1:40, u2:60]
+u0:17 <- [u1:43, u1:43, u1:44, u2:62, u2:62, u2:63]
 u0:18 <- [u0:22, u0:24, u0:25, u0:26, u0:29, u0:30]
 u0:22 -> [u0:18, u0:8, u0:8]
-u0:22 <- [u1:42, u1:43, u2:50, u2:51, u2:55, u2:57, u2:58, u2:59, u2:64, u3:69, u3:71]
+u0:22 <- [u1:42, u1:43, u2:50, u2:51, u2:54, u2:56, u2:57, u2:58, u2:62, u3:67, u3:69]
 u0:23 -> [u0:8]
 u0:24 -> [u0:18]
 u0:25 -> [u0:18]
@@ -1490,7 +1488,7 @@ u0:27 -> [u0:8]
 u0:28 -> [u0:8]
 u0:29 -> [u0:18]
 u0:30 -> [u0:18]
-u0:8 <- [u0:22, u0:22, u0:23, u0:26, u0:26, u0:27, u0:28, u1:35, u1:35, u1:36, u1:38, u1:40, u1:40, u1:41, u1:46, u1:46, u1:47, u2:50, u2:50, u2:52, u2:55, u2:55, u2:56, u2:58, u2:60, u2:61, u2:61, u2:62]
+u0:8 <- [u0:22, u0:22, u0:23, u0:26, u0:26, u0:27, u0:28, u1:35, u1:35, u1:36, u1:38, u1:40, u1:40, u1:41, u1:46, u1:46, u1:47, u2:50, u2:50, u2:52, u2:54, u2:54, u2:55, u2:57, u2:59, u2:60, u2:60, u2:61]
 u1:33 -> [u1:35, u1:37, u1:38, u1:40]
 u1:33 <- [u1:42, u1:45, u2:50]
 u1:34 <- [u1:35, u1:37]
@@ -1513,31 +1511,31 @@ u1:45 -> [u0:26, u1:33, u1:46]
 u1:46 -> [u0:26, u0:8, u0:8]
 u1:46 <- [u1:45]
 u1:47 -> [u0:8]
-u2:50 -> [u0:22, u0:8, u0:8, u1:33, u1:42, u2:55, u2:57, u2:58, u2:61, u2:64]
-u2:50 <- [u2:53, u3:69, u3:70, u3:72]
+u2:50 -> [u0:22, u0:8, u0:8, u1:33, u1:42, u2:54, u2:56, u2:57, u2:60, u2:62]
+u2:50 <- [u2:53, u3:67, u3:68, u3:70]
 u2:51 -> [u0:22]
 u2:52 -> [u0:8]
 u2:53 -> [u2:50]
-u2:53 <- [u3:69]
-u2:55 -> [u0:22, u0:8, u0:8]
-u2:55 <- [u2:50, u3:69]
-u2:56 -> [u0:8]
-u2:57 -> [u0:22]
-u2:57 <- [u2:50]
-u2:58 -> [u0:22, u0:8]
-u2:58 <- [u2:50, u3:69]
-u2:59 -> [u0:22]
-u2:60 -> [u0:8]
-u2:61 -> [u0:15, u0:8, u0:8]
-u2:61 <- [u2:50]
-u2:62 -> [u0:8]
-u2:64 -> [u0:17, u0:17, u0:22]
-u2:64 <- [u2:50, u3:69]
-u2:65 -> [u0:17]
-u3:69 -> [u0:22, u2:50, u2:53, u2:55, u2:58, u2:64]
+u2:53 <- [u3:67]
+u2:54 -> [u0:22, u0:8, u0:8]
+u2:54 <- [u2:50, u3:67]
+u2:55 -> [u0:8]
+u2:56 -> [u0:22]
+u2:56 <- [u2:50]
+u2:57 -> [u0:22, u0:8]
+u2:57 <- [u2:50, u3:67]
+u2:58 -> [u0:22]
+u2:59 -> [u0:8]
+u2:60 -> [u0:15, u0:8, u0:8]
+u2:60 <- [u2:50]
+u2:61 -> [u0:8]
+u2:62 -> [u0:17, u0:17, u0:22]
+u2:62 <- [u2:50, u3:67]
+u2:63 -> [u0:17]
+u3:67 -> [u0:22, u2:50, u2:53, u2:54, u2:57, u2:62]
+u3:68 -> [u2:50]
+u3:69 -> [u0:22]
 u3:70 -> [u2:50]
-u3:71 -> [u0:22]
-u3:72 -> [u2:50]
 
 --- expect:dep-graph ---
 digraph project {
@@ -1802,7 +1800,7 @@ u1:42 -> [u0:22]
 u1:43 -> [u0:8, u1:37, u1:45]
 u1:43 <- [u3:58]
 u1:45 -> [u0:22]
-u1:45 <- [u1:43, u2:54]
+u1:45 <- [u1:43]
 u1:46 -> [u0:22]
 u2:49 -> [u1:37, u2:52, u2:54]
 u2:49 <- [u2:51, u3:58, u3:59]
@@ -1812,7 +1810,7 @@ u2:51 <- [u3:58]
 u2:52 -> [u1:37]
 u2:52 <- [u2:49, u3:58]
 u2:53 -> [u1:37]
-u2:54 -> [u0:22, u1:45]
+u2:54 -> [u0:22]
 u2:54 <- [u2:49, u3:58]
 u2:55 -> [u0:22]
 u3:58 -> [u1:43, u2:49, u2:51, u2:52, u2:54]

@@ -70,10 +70,6 @@ impl<'a> BinderScopes<'a> {
     }
 
     /// Gets the current depth of the scope stack.
-    ///
-    /// - 0 means no scope has been pushed yet
-    /// - 1 means global scope is active
-    /// - 2+ means nested scopes are active
     #[inline]
     pub fn scope_depth(&self) -> usize {
         self.scopes.depth()
@@ -81,15 +77,11 @@ impl<'a> BinderScopes<'a> {
 
     /// Pushes a new scope created from a symbol onto the stack.
     pub fn push_scope(&mut self, id: ScopeId) {
-        // NOTE: this is the biggest difference from CollectorScopes, we would expect
-        // the scope must already exist in the CompileUnit
         let scope = self.unit.get_scope(id);
         self.scopes.push(scope);
     }
 
     pub fn push_scope_recursive(&mut self, id: ScopeId) {
-        // NOTE: this is the biggest difference from CollectorScopes, we would expect
-        // the scope must already exist in the CompileUnit
         let scope = self.unit.get_scope(id);
         self.scopes.push_recursive(scope);
     }
@@ -116,7 +108,6 @@ impl<'a> BinderScopes<'a> {
     }
 
     /// Gets the global scope.
-    ///
     #[inline]
     pub fn globals(&self) -> &'a Scope<'a> {
         self.scopes
@@ -125,115 +116,80 @@ impl<'a> BinderScopes<'a> {
             .expect("global scope should always be present")
     }
 
-    /// Find or insert symbol in the current scope.
-    #[inline]
-    pub fn lookup_or_insert(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
+    /// Lookup symbol using another symbol's name (local) and FQN (global).
+    pub fn lookup_symbol(&self, name_sym: &'a Symbol, option: LookupOptions) -> Option<&'a Symbol> {
+        self.scopes.lookup_symbol(name_sym, option)
     }
 
-    /// Find or insert symbol with chaining enabled for shadowing support.
-    #[inline]
-    pub fn lookup_or_insert_chained(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
+    /// Look up a symbol only in the global scope using FQN.
+    pub fn lookup_globals(&self, name_sym: &'a Symbol) -> Option<&'a Symbol> {
+        self.scopes.lookup_symbol(name_sym, LookupOptions::global())
     }
 
-    /// Find or insert symbol in the parent scope.
-    pub fn lookup_or_insert_parent(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
+    /// Lookup global symbols by name.
+    pub fn lookup_globals_with(&self, name: &str, kind_filter: Option<SymKind>) -> Option<Vec<&'a Symbol>> {
+        let globals = self.scopes.first();
+        let name_key = self.unit.cc.interner.intern(name);
+        globals.lookup_symbols(name_key).filter(|syms| {
+            if let Some(k) = kind_filter {
+                syms.iter().any(|s| s.kind() == k)
+            } else {
+                true
+            }
+        })
     }
 
-    /// Find or insert symbol in the global scope.
-    pub fn lookup_or_insert_global(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_global(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
-    }
-
-    /// Full control API for symbol lookup and insertion with custom options.
-    pub fn lookup_or_insert_with(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-        options: LookupOptions,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
-        symbol.set_kind(kind);
-        Some(symbol)
-    }
-
-    pub fn lookup_symbol(&self, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_symbol(name)
-    }
-
-    /// Look up a symbol only in the global scope.
-    /// Used for crate-root paths like ::f or ::g::h.
-    pub fn lookup_global_symbol(&self, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_global_symbol(name)
-    }
-
+    /// Lookup symbol with kind filters.
     pub fn lookup_symbol_with(
         &self,
-        name: &str,
-        kind_filters: Option<Vec<SymKind>>,
-        unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
+        name_sym: &'a Symbol,
+        kind_filters: Vec<SymKind>,
     ) -> Option<&'a Symbol> {
-        self.scopes
-            .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
+        let mut option = LookupOptions::current();
+        if !kind_filters.is_empty() {
+            option = option.with_kind_filters(kind_filters);
+        }
+        self.scopes.lookup_symbol(name_sym, option)
     }
 
+    /// String-based symbol lookup with kind filters (for identifiers without pre-set symbols)
+    pub fn lookup_symbol_by_name(
+        &self,
+        name: &str,
+        kind_filters: Vec<SymKind>,
+    ) -> Option<&'a Symbol> {
+        let mut option = LookupOptions::current();
+        if !kind_filters.is_empty() {
+            option = option.with_kind_filters(kind_filters);
+        }
+        self.scopes.lookup_symbol_by_name(name, option)
+    }
+
+    /// Lookup member symbol using owner's scope.
     pub fn lookup_member_symbol(
         &self,
         obj_type_symbol: &'a Symbol,
-        member_name: &str,
+        member_sym: &'a Symbol,
         kind_filter: Option<SymKind>,
     ) -> Option<&'a Symbol> {
         let scope_id = obj_type_symbol.opt_scope()?;
         let scope = self.unit.get_scope(scope_id);
 
-        // We create a new ScopeStack here instead of using `self.scopes` to ensure isolation.
-        // If we used `self.scopes`, a failed member lookup would fall back to searching
-        // the current lexical scope (e.g., local variables), which is incorrect for
-        // member access (dot operator).
+        // Create isolated scope stack for member lookup
         let scopes = ScopeStack::new(&self.unit.cc.arena, &self.unit.cc.interner);
         scopes.push_recursive(scope);
 
-        let kind_filters = kind_filter.map(|k| {
-            if k == SymKind::Function {
+        let mut option = LookupOptions::current();
+        if let Some(k) = kind_filter {
+            let kinds = if k == SymKind::Function {
                 vec![SymKind::Function, SymKind::Method]
             } else {
                 vec![k]
-            }
-        });
+            };
+            option = option.with_kind_filters(kinds);
+        }
 
-        scopes.lookup_symbol_with(member_name, kind_filters, None, None)
+        scopes.lookup_symbol(member_sym, option)
     }
 }
 
