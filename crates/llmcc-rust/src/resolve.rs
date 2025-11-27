@@ -1,6 +1,7 @@
 //! Expression resolver and type inference for Rust language.
+use llmcc_core::HirId;
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirKind, HirNode};
+use llmcc_core::ir::{HirIdent, HirKind, HirNode};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::scope::LookupOptions;
 use llmcc_core::symbol::{SymKind, Symbol};
@@ -98,19 +99,32 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     }
 
     /// Looks up a callable symbol (function, macro, or closure) by name.
-    pub fn resolve_callable_symbol(&self, name_sym: &'tcx Symbol) -> Option<&'tcx Symbol> {
-        let result = self.scopes.lookup_symbol_with(
-            name_sym,
-            vec![SymKind::Function, SymKind::Macro, SymKind::Closure],
-        );
-        eprintln!(
-            "DEBUG resolve_callable_symbol: name_sym.name={:?}, name_sym.fqn={:?}, name_sym.kind={:?}, result={:?}",
-            self.unit.cc.interner.resolve_owned(name_sym.name),
-            self.unit.cc.interner.resolve_owned(name_sym.fqn()),
-            name_sym.kind(),
-            result.map(|s| self.unit.cc.interner.resolve_owned(s.name))
-        );
-        result
+    pub fn resolve_callable_symbol(&self, ident: &'tcx HirIdent<'tcx>) -> Option<&'tcx Symbol> {
+        if let Some(name_sym) = ident.opt_symbol() {
+            let result = self.scopes.lookup_symbol_with(
+                name_sym,
+                vec![SymKind::Function, SymKind::Macro, SymKind::Closure],
+            );
+            eprintln!(
+                "DEBUG resolve_callable_symbol: name_sym.name={:?}, name_sym.fqn={:?}, name_sym.kind={:?}, result={:?}",
+                self.unit.cc.interner.resolve_owned(name_sym.name),
+                self.unit.cc.interner.resolve_owned(name_sym.fqn()),
+                name_sym.kind(),
+                result.map(|s| self.unit.cc.interner.resolve_owned(s.name))
+            );
+            result
+        } else {
+            let result = self.scopes.lookup_symbol_by_name(
+                &ident.name,
+                vec![SymKind::Function, SymKind::Macro, SymKind::Closure],
+            );
+            eprintln!(
+                "DEBUG resolve_callable_symbol: name_sym.name={:?}, result={:?}",
+                ident.name,
+                result.map(|s| self.unit.cc.interner.resolve_owned(s.name))
+            );
+            result
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -611,11 +625,13 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             }
             k if is_wrapper_expression(k) => self.resolve_wrapped_symbol(node, caller),
             _ => {
+                eprintln!(
+                    "DEBUG resolve_expression_symbol: unhandled kind_id={}",
+                    kind
+                );
                 // Try to get symbol from HirIdent if available
-                if let Some(ident) = node.as_ident()
-                    && let Some(sym) = ident.opt_symbol()
-                {
-                    return self.resolve_callable_symbol(sym);
+                if let Some(ident) = node.as_ident() {
+                    return self.resolve_callable_symbol(ident);
                 }
                 None
             }
@@ -640,14 +656,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
                     .opt_symbol()
                     .map(|s| self.unit.cc.interner.resolve_owned(s.name))
             );
-            if let Some(sym) = ident.opt_symbol() {
-                let result = self.resolve_callable_symbol(sym);
-                eprintln!(
-                    "DEBUG resolve_identifier_symbol: resolve_callable_symbol result={:?}",
-                    result.map(|s| self.unit.cc.interner.resolve_owned(s.name))
-                );
-                return result;
-            }
+            return self.resolve_callable_symbol(ident);
         }
         None
     }
@@ -656,19 +665,24 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     fn resolve_field_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let field = node.child_by_field(*self.unit, LangRust::field_field)?;
 
-        // Get symbol from HirIdent
-        let field_sym = field.as_ident().and_then(|i| i.opt_symbol())?;
+        // Get name and optionally symbol from HirIdent
+        let ident = field.as_ident()?;
+        let name = &ident.name;
 
-        // Try associated function first
-        if let Some(callable) = self.resolve_callable_symbol(field_sym) {
+        // Try associated function first using name
+        if let Some(callable) = self.resolve_callable_symbol(ident) {
             return Some(callable);
         }
 
         // Try method on receiver type
         let value = node.child_by_field(*self.unit, LangRust::field_value)?;
         let obj_type = self.infer_type_from_expr(&value)?;
-        self.scopes
-            .lookup_member_symbol(obj_type, field_sym, Some(SymKind::Function))
+        
+        // For member lookup, we need a symbol - use the ident's if available
+        if let Some(field_sym) = ident.opt_symbol() {
+            return self.scopes.lookup_member_symbol(obj_type, field_sym, Some(SymKind::Function));
+        }
+        None
     }
 
     /// Resolves through a child field to find the underlying symbol.
@@ -683,7 +697,12 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             "DEBUG resolve_child_field: child.kind_id={}",
             child.kind_id()
         );
-        self.resolve_expression_symbol(&child, caller)
+        let result = self.resolve_expression_symbol(&child, caller);
+        eprintln!(
+            "DEBUG resolve_child_field: result={:?}",
+            result
+        );
+        result
     }
 
     /// Resolves through a wrapper expression (await, try, parentheses).

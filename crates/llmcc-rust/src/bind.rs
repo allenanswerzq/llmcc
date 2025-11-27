@@ -216,7 +216,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         let file_path = unit.file_path().unwrap();
         let depth = scopes.scope_depth();
-        eprintln!("DEBUG visit_source_file: file_path={}, initial_depth={}", file_path, depth);
+        eprintln!(
+            "DEBUG visit_source_file: file_path={}, initial_depth={}",
+            file_path, depth
+        );
 
         // Process crate scope
         if let Some(crate_name) = parse_crate_name(file_path) {
@@ -237,7 +240,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 if let Some(symbol) = symbols.first()
                     && let Some(scope_id) = symbol.opt_scope()
                 {
-                    eprintln!("DEBUG visit_source_file: pushing crate scope {:?}", crate_name);
+                    eprintln!(
+                        "DEBUG visit_source_file: pushing crate scope {:?}",
+                        crate_name
+                    );
                     scopes.push_scope(scope_id);
                 }
             }
@@ -251,7 +257,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(symbol) = symbols.iter().find(|s| s.kind() == SymKind::Module)
                 && let Some(scope_id) = symbol.opt_scope()
             {
-                eprintln!("DEBUG visit_source_file: pushing module scope {:?}", module_name);
+                eprintln!(
+                    "DEBUG visit_source_file: pushing module scope {:?}",
+                    module_name
+                );
                 scopes.push_scope(scope_id);
             }
         }
@@ -264,12 +273,18 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(symbol) = symbols.iter().find(|s| s.kind() == SymKind::File)
                 && let Some(scope_id) = symbol.opt_scope()
             {
-                eprintln!("DEBUG visit_source_file: pushing file scope {:?}", file_name);
+                eprintln!(
+                    "DEBUG visit_source_file: pushing file scope {:?}",
+                    file_name
+                );
                 scopes.push_scope(scope_id);
             }
         }
 
-        eprintln!("DEBUG visit_source_file: after pushing, depth={}", scopes.scope_depth());
+        eprintln!(
+            "DEBUG visit_source_file: after pushing, depth={}",
+            scopes.scope_depth()
+        );
         self.visit_children(unit, node, scopes, namespace, parent);
         scopes.pop_until(depth);
     }

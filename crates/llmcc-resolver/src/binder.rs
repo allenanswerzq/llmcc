@@ -156,6 +156,18 @@ impl<'a> BinderScopes<'a> {
         self.scopes.lookup_symbol(name_sym, option)
     }
 
+    pub fn lookup_symbol_by_name(
+        &self,
+        name: &str,
+        kind_filters: Vec<SymKind>,
+    ) -> Option<&'a Symbol> {
+        let mut option = LookupOptions::current();
+        if !kind_filters.is_empty() {
+            option = option.with_kind_filters(kind_filters);
+        }
+        self.scopes.lookup_symbol_by_name(name, option)
+    }
+
     /// Lookup member symbol using owner's scope.
     pub fn lookup_member_symbol(
         &self,

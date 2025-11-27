@@ -580,15 +580,23 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Skip if already has a symbol set (e.g., from function declaration)
         if ident.opt_symbol().is_some() {
-            eprintln!("DEBUG visit_identifier: ident.name={} SKIPPED - already has symbol", ident.name);
+            eprintln!(
+                "DEBUG visit_identifier: ident.name={} SKIPPED - already has symbol",
+                ident.name
+            );
             return;
         }
 
-        eprintln!("DEBUG visit_identifier: ident.name={}, scope_depth={}, node.id={:?}",
-            ident.name, scopes.scope_depth(), node.id());
+        eprintln!(
+            "DEBUG visit_identifier: ident.name={}, scope_depth={}, node.id={:?}",
+            ident.name,
+            scopes.scope_depth(),
+            node.id()
+        );
 
         if let Some(symbol) = scopes.lookup_or_insert(&ident.name, node, SymKind::UnresolvedType) {
-            eprintln!("DEBUG visit_identifier: found/created symbol fqn={:?}, kind={:?}",
+            eprintln!(
+                "DEBUG visit_identifier: found/created symbol fqn={:?}, kind={:?}",
                 unit.cc.interner.resolve_owned(symbol.fqn()),
                 symbol.kind()
             );
@@ -604,24 +612,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let ident = node.as_ident().unwrap();
-
-        // Skip if already has a symbol set (e.g., from function declaration)
-        if ident.opt_symbol().is_some() {
-            eprintln!("DEBUG visit_identifier: ident.name={} SKIPPED - already has symbol", ident.name);
-            return;
-        }
-
-        eprintln!("DEBUG visit_identifier: ident.name={}, scope_depth={}, node.id={:?}",
-            ident.name, scopes.scope_depth(), node.id());
-
-        if let Some(symbol) = scopes.lookup_or_insert(&ident.name, node, SymKind::UnresolvedType) {
-            eprintln!("DEBUG visit_identifier: found/created symbol fqn={:?}, kind={:?}",
-                unit.cc.interner.resolve_owned(symbol.fqn()),
-                symbol.kind()
-            );
-            ident.set_symbol(symbol);
-        }
     }
 
     fn visit_type_parameter(

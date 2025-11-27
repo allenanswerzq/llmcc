@@ -276,8 +276,12 @@ impl<'tcx> ScopeStack<'tcx> {
     ) -> Option<Vec<&'tcx Symbol>> {
         let name_key = self.interner.intern(name);
         let stack = self.stack.read();
-        eprintln!("DEBUG lookup_symbols_by_name: name={}, stack.len={}, kind_filters={:?}",
-            name, stack.len(), option.kind_filters);
+        eprintln!(
+            "DEBUG lookup_symbols_by_name: name={}, stack.len={}, kind_filters={:?}",
+            name,
+            stack.len(),
+            option.kind_filters
+        );
         if stack.is_empty() {
             return None;
         }
@@ -294,8 +298,11 @@ impl<'tcx> ScopeStack<'tcx> {
             .rev()
             .find_map(|scope| {
                 let found = scope.lookup_symbols_with(name_key, &option);
-                eprintln!("DEBUG lookup_symbols_by_name: checking scope {:?}, found={:?}",
-                    scope.opt_symbol().map(|s| self.interner.resolve_owned(s.name)),
+                eprintln!(
+                    "DEBUG lookup_symbols_by_name: checking scope {:?}, found={:?}",
+                    scope
+                        .opt_symbol()
+                        .map(|s| self.interner.resolve_owned(s.name)),
                     found.as_ref().map(|v| v.len())
                 );
                 found
@@ -303,7 +310,8 @@ impl<'tcx> ScopeStack<'tcx> {
             .or_else(|| {
                 // search global scope
                 let found = stack[0].lookup_symbols_with(name_key, &option);
-                eprintln!("DEBUG lookup_symbols_by_name: checking global scope, found={:?}",
+                eprintln!(
+                    "DEBUG lookup_symbols_by_name: checking global scope, found={:?}",
                     found.as_ref().map(|v| v.len())
                 );
                 found
