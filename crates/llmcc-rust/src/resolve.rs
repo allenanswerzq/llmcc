@@ -1,16 +1,8 @@
-//! Expression resolver for Rust language.
-//!
-//! This module provides type inference and symbol resolution for Rust expressions.
-//! It handles:
-//! - Literal type inference (integers, floats, strings, etc.)
-//! - Binary and unary operator type resolution
-//! - Field access and method call resolution
-//! - Scoped identifier resolution (e.g., `std::io::Result`)
-//! - Generic type argument collection
-
+//! Expression resolver and type inference for Rust language.
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::LanguageTrait;
+use llmcc_core::scope::LookupOptions;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
 
@@ -31,35 +23,6 @@ pub struct ExprResolver<'a, 'tcx> {
 impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     pub fn new(unit: &'a CompileUnit<'tcx>, scopes: &'a BinderScopes<'tcx>) -> Self {
         Self { unit, scopes }
-    }
-
-    // ------------------------------------------------------------------------
-    // Identifier Helpers
-    // ------------------------------------------------------------------------
-
-    /// Extracts the final segment from a potentially qualified name.
-    ///
-    /// Example: `"std::io::Result"` → `"Result"`
-    pub fn normalize_identifier(name: &str) -> String {
-        name.rsplit("::").next().unwrap_or(name).to_string()
-    }
-
-    /// Extracts the identifier name from a node, handling special tokens.
-    pub fn identifier_name(&self, node: &HirNode<'tcx>) -> Option<String> {
-        // Direct identifier
-        if let Some(ident) = node.as_ident() {
-            return Some(Self::normalize_identifier(&ident.name));
-        }
-        // Nested identifier
-        if let Some(ident) = node.find_identifier(*self.unit) {
-            return Some(Self::normalize_identifier(&ident.name));
-        }
-        // Special tokens
-        match node.kind_id() {
-            k if k == LangRust::super_token => Some("super".to_string()),
-            k if k == LangRust::crate_token => Some("crate".to_string()),
-            _ => None,
-        }
     }
 
     /// Returns the first non-trivia child node.
@@ -100,17 +63,29 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         symbol
     }
 
-    /// Resolves a field on a type, returning the field symbol and its type.
-    pub fn resolve_field_type(
+    /// Resolves a field in a symbol's scope, returning the field symbol and its type.
+    pub fn resolve_field(
         &mut self,
-        owner: &'tcx Symbol,
+        symbol: &'tcx Symbol,
         field_name: &str,
     ) -> Option<(&'tcx Symbol, Option<&'tcx Symbol>)> {
-        let owner = Self::resolve_canonical_type(self.unit, owner);
-        let scope_id = owner.opt_scope()?;
+        let symbol = Self::resolve_canonical_type(self.unit, symbol);
+        let scope_id = symbol.opt_scope()?;
         let scope = self.unit.cc.get_scope(scope_id);
         let field_key = self.unit.cc.interner.intern(field_name);
-        let field_symbol = scope.lookup_symbols(field_key)?.last().copied()?;
+        let field_symbols = scope.lookup_symbols(field_key)?;
+        if field_symbols.len() > 1 {
+            let fqn = self.unit.cc.interner.resolve_owned(symbol.fqn()).unwrap_or_default();
+            let fp = self.unit.file_path().unwrap_or("<unknown>");
+            tracing::warn!(
+                "ambiguous field '{}' on symbol '{}' in {}",
+                field_name,
+                fqn,
+                fp
+            );
+            return None;
+        }
+        let field_symbol = field_symbols.last().copied()?;
         let field_type = field_symbol
             .type_of()
             .and_then(|ty_id| self.unit.opt_get_symbol(ty_id));
@@ -118,12 +93,18 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     }
 
     /// Looks up a callable symbol (function, macro, or closure) by name.
-    pub fn lookup_callable_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+    pub fn resolve_callable_symbol(&self, name_sym: &'tcx Symbol) -> Option<&'tcx Symbol> {
         self.scopes.lookup_symbol_with(
+            name_sym,
+            vec![SymKind::Function, SymKind::Macro, SymKind::Closure],
+        )
+    }
+
+    /// Looks up a callable symbol by name string.
+    pub fn lookup_callable_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
+        self.scopes.lookup_symbol_by_name(
             name,
-            Some(vec![SymKind::Function, SymKind::Macro, SymKind::Closure]),
-            None,
-            None,
+            vec![SymKind::Function, SymKind::Macro, SymKind::Closure],
         )
     }
 
@@ -133,18 +114,21 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
     /// Resolves the `crate` keyword to the crate root symbol.
     pub fn resolve_crate_root(&self) -> Option<&'tcx Symbol> {
-        // Try direct lookup first
-        if let Some(sym) = self.scopes.lookup_symbol("crate")
-            && sym.kind() == SymKind::Crate
-        {
-            return Some(sym);
-        }
-        // Fall back to searching scope stack
-        self.scopes.scopes().iter().iter().find_map(|scope| {
+        // Search scope stack for crate symbol
+        let stack = self.scopes.scopes().iter();
+        stack.iter().find_map(|scope| {
             scope
                 .opt_symbol()
                 .filter(|sym| sym.kind() == SymKind::Crate)
         })
+    }
+
+    /// Returns `true` if the symbol kind represents a module-like container.
+    fn is_module_like(kind: SymKind) -> bool {
+        matches!(
+            kind,
+            SymKind::Module | SymKind::File | SymKind::Crate | SymKind::Namespace
+        )
     }
 
     /// Resolves `super` relative to an optional anchor symbol.
@@ -177,16 +161,8 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         })
     }
 
-    /// Returns `true` if the symbol kind represents a module-like container.
-    fn is_module_like(kind: SymKind) -> bool {
-        matches!(
-            kind,
-            SymKind::Module | SymKind::File | SymKind::Crate | SymKind::Namespace
-        )
-    }
-
     /// Resolves a scoped identifier like `foo::bar::Baz`.
-    pub fn resolve_scoped_identifier_type(
+    pub fn resolve_scoped_identifier(
         &mut self,
         node: &HirNode<'tcx>,
         _caller: Option<&Symbol>,
@@ -196,8 +172,14 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
         // Handle `::name` (crate root reference)
         if non_trivia.len() == 1 {
-            let name = self.identifier_name(non_trivia.first()?)?;
-            return self.scopes.lookup_global_symbol(&name);
+            let name_node = non_trivia.first()?;
+            // Get symbol from HirIdent if available
+            if let Some(ident) = name_node.as_ident()
+                && let Some(sym) = ident.opt_symbol()
+            {
+                return self.scopes.lookup_globals(sym);
+            }
+            return None;
         }
 
         if non_trivia.len() < 2 {
@@ -206,7 +188,6 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
         let path_node = non_trivia.first()?;
         let name_node = non_trivia.last()?;
-        let name = self.identifier_name(name_node)?;
 
         // Resolve the path prefix
         let path_symbol = self.resolve_path_prefix(path_node)?;
@@ -216,20 +197,31 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             return self.resolve_super_relative_to(Some(path_symbol));
         }
 
-        self.scopes.lookup_member_symbol(path_symbol, &name, None)
+        // Get symbol from HirIdent for member lookup
+        if let Some(ident) = name_node.as_ident()
+            && let Some(sym) = ident.opt_symbol()
+        {
+            return self.scopes.lookup_member_symbol(path_symbol, sym, None);
+        }
+        None
     }
 
     /// Resolves the prefix part of a scoped path.
     fn resolve_path_prefix(&mut self, path_node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         match path_node.kind_id() {
             k if k == LangRust::scoped_identifier => {
-                self.resolve_scoped_identifier_type(path_node, None)
+                self.resolve_scoped_identifier(path_node, None)
             }
             k if k == LangRust::super_token => self.resolve_super_relative_to(None),
             k if k == LangRust::crate_token => self.resolve_crate_root(),
             _ => {
-                let path_name = self.identifier_name(path_node)?;
-                self.scopes.lookup_symbol(&path_name)
+                // Get symbol from HirIdent if available
+                if let Some(ident) = path_node.as_ident()
+                    && let Some(sym) = ident.opt_symbol()
+                {
+                    return self.scopes.lookup_symbol(sym, LookupOptions::current());
+                }
+                None
             }
         }
     }
@@ -238,24 +230,19 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     // Type Resolution
     // ------------------------------------------------------------------------
 
-    /// Resolves a type from an explicit type annotation node.
-    ///
-    /// Handles scoped identifiers and looks up type symbols.
-    pub fn infer_type_from_expr_from_node(
+    /// Infer a type from an explicit type annotation node.
+    pub fn infer_explicit_annotation_type(
         &mut self,
         type_node: &HirNode<'tcx>,
     ) -> Option<&'tcx Symbol> {
-        // Handle scoped types like `std::io::Result`
-        let kind = type_node.kind_id();
-        if (kind == LangRust::scoped_identifier || kind == LangRust::scoped_type_identifier)
-            && let Some(sym) = self.resolve_scoped_identifier_type(type_node, None)
+        if is_scoped_identifier_kind(type_node.kind_id())
+            && let Some(sym) = self.resolve_scoped_identifier(type_node, None)
         {
             return Some(sym);
         }
 
         let ident = type_node.find_identifier(*self.unit)?;
 
-        // Look up existing type symbol
         const TYPE_KINDS: &[SymKind] = &[
             SymKind::Struct,
             SymKind::Enum,
@@ -266,22 +253,19 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             SymKind::UnresolvedType,
         ];
 
-        if let Some(existing) =
-            self.scopes
-                .lookup_symbol_with(&ident.name, Some(TYPE_KINDS.to_vec()), None, None)
-        {
-            return Some(existing);
+        if let Some(symbol) = ident.opt_symbol() {
+            if let Some(found) = self.scopes.lookup_symbol_with(symbol, TYPE_KINDS.to_vec()) {
+                return Some(found);
+            }
         }
 
-        // Insert as unresolved type
-        self.scopes
-            .lookup_or_insert_global(&ident.name, type_node, SymKind::UnresolvedType)
+        None
     }
 
     /// Resolves a type expression, trying syntactic resolution first,
     /// then falling back to expression inference.
     pub fn resolve_type_node(&mut self, type_node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.infer_type_from_expr_from_node(type_node)
+        self.infer_explicit_annotation_type(type_node)
             .or_else(|| self.infer_type_from_expr(type_node))
     }
 
@@ -299,23 +283,19 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         (ty, args)
     }
 
-    /// Looks up or creates a primitive type symbol.
-    fn primitive_type(&mut self, node: &HirNode<'tcx>, name: &str) -> Option<&'tcx Symbol> {
-        self.scopes
-            .lookup_or_insert_global(name, node, SymKind::Primitive)
-    }
-
     // ------------------------------------------------------------------------
     // Literal Type Inference
     // ------------------------------------------------------------------------
+    /// Looks up or creates a primitive type symbol.
+    fn primitive_type(&mut self, node: &HirNode<'tcx>, name: &str) -> Option<&'tcx Symbol> {
+        let symbols = self.scopes.lookup_globals_with(name, None)?;
+        if symbols.len() > 1 {
+            tracing::warn!("ambiguous primitive type '{}'", name);
+        }
+        symbols.first().copied()
+    }
 
     /// Infers the type of a literal node.
-    ///
-    /// - `42` → `i32`
-    /// - `3.14` → `f64`
-    /// - `"hello"` → `str`
-    /// - `true` → `bool`
-    /// - `'a'` → `char`
     fn infer_literal_kind(&mut self, kind_id: u16, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let primitive_name = match kind_id {
             k if k == LangRust::integer_literal => "i32",
@@ -436,19 +416,17 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         let value_node = node.child_by_field(*self.unit, LangRust::field_value)?;
         let field_node = node.child_by_field(*self.unit, LangRust::field_field)?;
         let field_ident = field_node.as_ident()?;
+        let field_sym = field_ident.opt_symbol()?;
 
         let obj_type = self.infer_type_from_expr(&value_node)?;
 
         // Look up field or method
         let field_symbol = self
             .scopes
-            .lookup_member_symbol(obj_type, &field_ident.name, Some(SymKind::Field))
+            .lookup_member_symbol(obj_type, field_sym, Some(SymKind::Field))
             .or_else(|| {
-                self.scopes.lookup_member_symbol(
-                    obj_type,
-                    &field_ident.name,
-                    Some(SymKind::Function),
-                )
+                self.scopes
+                    .lookup_member_symbol(obj_type, field_sym, Some(SymKind::Function))
             })?;
 
         let field_type_id = field_symbol.type_of()?;
@@ -465,7 +443,8 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     /// Infers the type of an identifier by looking up its symbol.
     fn infer_identifier_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let ident = node.as_ident()?;
-        let symbol = self.scopes.lookup_symbol(&ident.name)?;
+        let sym = ident.opt_symbol()?;
+        let symbol = self.scopes.lookup_symbol(sym, LookupOptions::current())?;
 
         symbol
             .type_of()
@@ -547,7 +526,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
                 // Try field_name first, then field_type for struct expressions
                 node.child_by_field(*self.unit, LangRust::field_name)
                     .or_else(|| node.child_by_field(*self.unit, LangRust::field_type))
-                    .and_then(|ty| self.infer_type_from_expr_from_node(&ty))
+                    .and_then(|ty| self.infer_explicit_annotation_type(&ty))
             }
             k if k == LangRust::call_expression => self.infer_child_field_type(
                 node,
@@ -573,7 +552,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
     /// Infers the type of a scoped identifier with `Self` handling.
     fn infer_scoped_identifier_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let sym = self.resolve_scoped_identifier_type(node, None)?;
+        let sym = self.resolve_scoped_identifier(node, None)?;
 
         // Check if symbol has a type annotation
         let type_id = sym.type_of()?;
@@ -619,19 +598,17 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             k if k == LangRust::call_expression => {
                 self.resolve_child_field(node, LangRust::field_function, caller)
             }
-            k if Self::is_wrapper_expression(k) => self.resolve_wrapped_symbol(node, caller),
+            k if is_wrapper_expression(k) => self.resolve_wrapped_symbol(node, caller),
             _ => {
-                let name = self.identifier_name(node)?;
-                self.lookup_callable_symbol(&name)
+                // Try to get symbol from HirIdent if available
+                if let Some(ident) = node.as_ident()
+                    && let Some(sym) = ident.opt_symbol()
+                {
+                    return self.resolve_callable_symbol(sym);
+                }
+                None
             }
         }
-    }
-
-    /// Checks if a syntax kind represents a wrapper expression.
-    fn is_wrapper_expression(kind: u16) -> bool {
-        kind == LangRust::await_expression
-            || kind == LangRust::try_expression
-            || kind == LangRust::parenthesized_expression
     }
 
     /// Resolves an identifier or scoped identifier to a symbol.
@@ -641,27 +618,48 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
         if node.kind_id() == LangRust::scoped_identifier {
-            return self.resolve_scoped_identifier_type(node, caller);
+            return self.resolve_scoped_identifier(node, caller);
         }
-        let name = self.identifier_name(node)?;
-        self.lookup_callable_symbol(&name)
+        // Try to get symbol from HirIdent if available
+        if let Some(ident) = node.as_ident() {
+            if let Some(sym) = ident.opt_symbol() {
+                return self.resolve_callable_symbol(sym);
+            }
+            // Fallback to name-based lookup
+            return self.lookup_callable_symbol(&ident.name);
+        }
+        None
     }
 
     /// Resolves a field expression to its callable symbol.
     fn resolve_field_symbol(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         let field = node.child_by_field(*self.unit, LangRust::field_field)?;
-        let name = self.identifier_name(&field)?;
 
-        // Try associated function first
-        if let Some(symbol) = self.lookup_callable_symbol(&name) {
-            return Some(symbol);
+        // Get name and optionally symbol from HirIdent
+        let ident = field.as_ident()?;
+        let name = &ident.name;
+
+        // Try associated function first using name
+        if let Some(callable) = self.lookup_callable_symbol(name) {
+            return Some(callable);
         }
 
         // Try method on receiver type
         let value = node.child_by_field(*self.unit, LangRust::field_value)?;
         let obj_type = self.infer_type_from_expr(&value)?;
-        self.scopes
-            .lookup_member_symbol(obj_type, &name, Some(SymKind::Function))
+        
+        // For member lookup, we need a symbol - use the ident's if available
+        if let Some(field_sym) = ident.opt_symbol() {
+            return self.scopes.lookup_member_symbol(obj_type, field_sym, Some(SymKind::Function));
+        }
+        
+        // Fallback: create a temporary lookup using the scope directly
+        let scope_id = obj_type.opt_scope()?;
+        let scope = self.unit.cc.get_scope(scope_id);
+        let name_key = self.unit.cc.interner.intern(name);
+        scope.lookup_symbols(name_key)?.into_iter().find(|s| {
+            matches!(s.kind(), SymKind::Function | SymKind::Method)
+        })
     }
 
     /// Resolves through a child field to find the underlying symbol.
@@ -734,7 +732,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
     ) {
         // Resolve type identifiers
         if node.kind_id() == LangRust::type_identifier {
-            if let Some(ty) = self.infer_type_from_expr_from_node(node)
+            if let Some(ty) = self.infer_explicit_annotation_type(node)
                 && !symbols.iter().any(|s| s.id() == ty.id())
             {
                 symbols.push(ty);
@@ -809,6 +807,20 @@ fn is_identifier_kind(kind_id: u16) -> bool {
             | LangRust::field_identifier
             | LangRust::type_identifier
     )
+}
+
+fn is_scoped_identifier_kind(kind_id: u16) -> bool {
+    matches!(
+        kind_id,
+        LangRust::scoped_identifier | LangRust::scoped_type_identifier
+    )
+}
+
+/// Checks if a syntax kind represents a wrapper expression.
+fn is_wrapper_expression(kind: u16) -> bool {
+    kind == LangRust::await_expression
+        || kind == LangRust::try_expression
+        || kind == LangRust::parenthesized_expression
 }
 
 /// Returns `true` if the HIR node is trivia (whitespace/comments).

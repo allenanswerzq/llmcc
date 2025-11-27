@@ -4,7 +4,7 @@ use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{Arena, HirNode};
-use llmcc_core::scope::{Scope, ScopeStack};
+use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 
 use rayon::prelude::*;
@@ -131,31 +131,16 @@ impl<'a> CollectorScopes<'a> {
 
     /// Build fully qualified name from current scope
     pub fn build_fqn(&self, name: &str) -> InternedStr {
-        let fqn_str = self
-            .scopes
-            .iter()
-            .into_iter()
-            .rev()
-            .find_map(|scope| {
-                scope.opt_symbol().and_then(|parent_sym| {
-                    // Read the InternedStr FQN of the scope's symbol
-                    let fqn = parent_sym.fqn.read();
-                    // Resolve the InternedStr to an owned String
-                    self.interner.resolve_owned(*fqn)
-                })
-            })
-            .map(|scope_fqn| {
-                // If we have a scope FQN, format it as "scope::name"
-                format!("{}::{}", scope_fqn, name)
-            })
-            .unwrap_or_else(|| {
-                // If any step failed (no scope, no symbol, or no resolved scope FQN),
-                // the FQN is just the name itself.
-                name.to_string()
-            });
-
-        // Intern the final FQN string
-        self.interner().intern(&fqn_str)
+        for scope in self.scopes.iter().into_iter().rev() {
+            if let Some(ns_sym) = scope.opt_symbol() {
+                let ns_fqn = ns_sym.fqn();
+                if let Some(ns_fqn_str) = self.interner.resolve_owned(ns_fqn) {
+                    let fqn_str = format!("{}::{}", ns_fqn_str, name);
+                    return self.interner.intern(&fqn_str);
+                }
+            }
+        }
+        self.interner.intern(name)
     }
 
     /// Initialize a symbol with common properties
@@ -180,7 +165,9 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert(name, node)?;
+        let symbol = self
+            .scopes
+            .lookup_or_insert(name, node.id(), LookupOptions::current())?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -193,7 +180,9 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
+        let symbol = self
+            .scopes
+            .lookup_or_insert(name, node.id(), LookupOptions::chained())?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -206,7 +195,9 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
+        let symbol =
+            self.scopes
+                .lookup_or_insert_parent(name, node.id(), LookupOptions::current())?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -219,99 +210,22 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_global(name, node)?;
+        let symbol =
+            self.scopes
+                .lookup_or_insert_global(name, node.id(), LookupOptions::current())?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
         Some(symbol)
     }
 
-    /// Find or insert symbol with custom lookup options
-    #[inline]
-    pub fn lookup_or_insert_with(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-        options: llmcc_core::scope::LookupOptions,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
-        self.init_symbol(symbol, name, node, kind);
-        Some(symbol)
-    }
-
     pub fn lookup_symbol_with(
         &self,
-        name: &str,
-        kind_filters: Option<Vec<SymKind>>,
-        unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
+        name_sym: &'a Symbol,
+        kind_filters: Vec<SymKind>,
     ) -> Option<&'a Symbol> {
-        let name_key = self.interner.intern(name);
-        let fqn_keys = fqn_filters.as_ref().map(|filters| {
-            filters
-                .iter()
-                .map(|fqn| self.interner.intern(fqn))
-                .collect::<Vec<_>>()
-        });
-        let kind_filters_ref = kind_filters.as_ref();
-        let unit_filters_ref = unit_filters.as_ref();
-        let fqn_keys_ref = fqn_keys.as_ref();
-
-        for scope in self.scopes.iter().into_iter().rev() {
-            let Some(symbols) = scope.lookup_symbols(name_key) else {
-                continue;
-            };
-
-            for symbol in symbols.into_iter().rev() {
-                if let Some(filters) = kind_filters_ref
-                    && !filters.iter().any(|kind| symbol.kind() == *kind)
-                {
-                    continue;
-                }
-
-                if let Some(filters) = unit_filters_ref
-                    && !filters
-                        .iter()
-                        .any(|unit| symbol.unit_index() == Some(*unit))
-                {
-                    continue;
-                }
-
-                if let Some(filters) = fqn_keys_ref
-                    && !filters.iter().any(|fqn| symbol.fqn() == *fqn)
-                {
-                    continue;
-                }
-
-                return Some(symbol);
-            }
-        }
-
-        None
+        let option = LookupOptions::current().with_kind_filters(kind_filters);
+        self.scopes.lookup_symbol(name_sym, option)
     }
-}
-
-/// Apply symbols collected from a single compilation unit to the global context.
-fn apply_collected_symbols<'tcx>(
-    cc: &'tcx CompileCtxt<'tcx>,
-    arena: &'tcx Arena<'tcx>,
-    final_globals: &'tcx Scope<'tcx>,
-    unit_globals: &'tcx Scope<'tcx>,
-) -> &'tcx Scope<'tcx> {
-    // Transfer all scopes from per-unit arena to global
-    for scope in arena.scope() {
-        if scope.id() == unit_globals.id() {
-            // For the global scope: merge into the final global scope
-            // This combines all global-level symbols into one scope
-            cc.merge_two_scopes(final_globals, unit_globals);
-        } else {
-            // For all other scopes: allocate new instances in the global arena
-            // while preserving their IDs and symbol relationships
-            cc.alloc_scope_with(scope);
-        }
-    }
-
-    final_globals
 }
 
 /// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
@@ -324,36 +238,53 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolverOption,
 ) -> &'a Scope<'a> {
+    use std::time::Instant;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    let total_start = Instant::now();
     let scope_stack = L::collect_init(cc);
-    let scope_stack_clone = scope_stack.clone();
-    let collect_unit = move |i: usize| {
-        let unit_scope_stack = scope_stack_clone.clone();
+    let visit_time_ns = AtomicU64::new(0);
+
+    let collect_unit = |i: usize| {
+        let unit_scope_stack = scope_stack.clone();
         let unit = cc.compile_unit(i);
         let node = unit.hir_node(unit.file_root_id().unwrap());
-        let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
+
+        let visit_start = Instant::now();
+        L::collect_symbols(unit, node, unit_scope_stack, config);
+        visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         if config.print_ir {
             use llmcc_core::printer::print_llmcc_ir;
             println!("=== IR for unit {} ===", i);
             let _ = print_llmcc_ir(unit);
         }
-
-        unit_globals
     };
 
-    let unit_globals_vec = if config.sequential {
-        (0..cc.files.len()).map(collect_unit).collect::<Vec<_>>()
+    let parallel_start = Instant::now();
+    if config.sequential {
+        (0..cc.files.len()).for_each(collect_unit);
     } else {
         (0..cc.files.len())
             .into_par_iter()
-            .map(collect_unit)
-            .collect::<Vec<_>>()
+            .for_each(collect_unit);
     };
+    let parallel_elapsed = parallel_start.elapsed();
 
-    let arena = &cc.arena;
-    let globals = scope_stack.first();
-    for unit_globals in unit_globals_vec.iter() {
-        apply_collected_symbols(cc, arena, globals, unit_globals);
-    }
-    globals
+    let maps_start = Instant::now();
+    cc.build_lookup_maps_from_arena();
+    let maps_elapsed = maps_start.elapsed();
+
+    let total_elapsed = total_start.elapsed();
+    let visit_total_ms = visit_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+
+    tracing::info!(
+        "Symbol collection breakdown: total={:.2}s, parallel_wall={:.2}s, visitor_cpu={:.2}s, build_maps={:.2}s",
+        total_elapsed.as_secs_f64(),
+        parallel_elapsed.as_secs_f64(),
+        visit_total_ms / 1000.0,
+        maps_elapsed.as_secs_f64()
+    );
+
+    scope_stack.first()
 }

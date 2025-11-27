@@ -10,7 +10,7 @@ use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, BlockRelation, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
-use llmcc_core::symbol::reset_symbol_id_counter;
+use llmcc_core::symbol::{reset_scope_id_counter, reset_symbol_id_counter};
 
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;
@@ -218,6 +218,7 @@ fn evaluate_case(
     }
 
     reset_symbol_id_counter();
+    reset_scope_id_counter();
     reset_block_id_counter();
     let summary = build_pipeline_summary(
         case,
@@ -249,10 +250,11 @@ fn evaluate_case(
             status = CaseStatus::Updated;
         } else {
             status = CaseStatus::Failed;
+            // Use normalized values for diff so $TMP replacement is visible
             failures.push(format_expectation_diff(
                 &expect.kind,
-                &expect.value,
-                &actual,
+                &expected_norm,
+                &actual_norm,
             ));
         }
     }
@@ -716,6 +718,8 @@ fn normalize_symbols(text: &str) -> String {
             }
 
             let canonical = format!("{label} | {kind} | {name} | {fqn} | {global}");
+            // Trim trailing whitespace from the row (e.g., when global is empty)
+            let canonical = canonical.trim_end().to_string();
             Some((unit, id, canonical))
         })
         .collect();
@@ -778,9 +782,32 @@ fn is_empty_relation(line: &str) -> bool {
 }
 
 fn normalize_graph(text: &str) -> String {
-    // Just return the trimmed text as-is since temp path replacement
-    // is already handled in the normalize() function
-    text.trim().to_string()
+    // Parse graph and sort edges for deterministic comparison
+    let mut lines: Vec<&str> = text.trim().lines().collect();
+
+    // Find where edges start (after closing brace of last subgraph)
+    // Edges are lines like "  n1 -> n2;" or "  n1 -> n2 [...];"
+    let edge_re = regex::Regex::new(r"^\s*n\d+\s*->\s*n\d+").unwrap();
+
+    let mut edge_start = None;
+    let mut edge_end = None;
+
+    for (i, line) in lines.iter().enumerate() {
+        if edge_re.is_match(line) {
+            if edge_start.is_none() {
+                edge_start = Some(i);
+            }
+            edge_end = Some(i);
+        }
+    }
+
+    // Sort the edges if found
+    if let (Some(start), Some(end)) = (edge_start, edge_end) {
+        let edges = &mut lines[start..=end];
+        edges.sort();
+    }
+
+    lines.join("\n")
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -1201,7 +1228,7 @@ fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
     let symbol_map = cc.symbol_map.read();
     let interner = &cc.interner;
     let mut rows = Vec::with_capacity(symbol_map.len());
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in symbol_map.iter() {
         let fqn_str = interner
             .resolve_owned(*symbol.fqn.read())
             .unwrap_or_else(|| "?".to_string());
@@ -1228,7 +1255,7 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
 
     // Build initial cache of all symbols
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in symbol_map.iter() {
         let sym_id_num = symbol.id().0 as u32;
         let label = format!(
             "u{}:{}",
@@ -1246,26 +1273,28 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     }
 
     // Fill in dependencies
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in symbol_map.iter() {
         let sym_id_num = symbol.id().0 as u32;
         let deps = symbol.depends_ids();
         for dep in deps {
-            if let Some(_target) = symbol_map.get(&dep) {
-                let dep_id_num = dep.0 as u32;
-                let dep_label = format!(
-                    "u{}:{}",
-                    _target.unit_index().unwrap_or_default(),
-                    dep_id_num
-                );
-                if let Some(entry) = cache.get_mut(&sym_id_num) {
-                    entry.depends_on.push(dep_label.clone());
-                }
-                if let Some(target_entry) = cache.get_mut(&dep_id_num) {
-                    target_entry.depended_by.push(format!(
+            if let Some(idx) = dep.0.checked_sub(1) {
+                if let Some(_target) = symbol_map.get(idx) {
+                    let dep_id_num = dep.0 as u32;
+                    let dep_label = format!(
                         "u{}:{}",
-                        symbol.unit_index().unwrap_or_default(),
-                        sym_id_num
-                    ));
+                        _target.unit_index().unwrap_or_default(),
+                        dep_id_num
+                    );
+                    if let Some(entry) = cache.get_mut(&sym_id_num) {
+                        entry.depends_on.push(dep_label.clone());
+                    }
+                    if let Some(target_entry) = cache.get_mut(&dep_id_num) {
+                        target_entry.depended_by.push(format!(
+                            "u{}:{}",
+                            symbol.unit_index().unwrap_or_default(),
+                            sym_id_num
+                        ));
+                    }
                 }
             }
         }

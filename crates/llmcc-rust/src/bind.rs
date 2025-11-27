@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode, HirScope};
-use llmcc_core::scope::Scope;
+use llmcc_core::scope::{LookupOptions, Scope};
 use llmcc_core::symbol::{DepKind, SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
@@ -30,9 +30,11 @@ impl<'tcx> BinderVisitor<'tcx> {
     ) {
         if let Some(ident) = node.find_identifier(*unit)
             && let Some(owner) = namespace.opt_symbol()
-            && let Some(sym) = ident
-                .opt_symbol()
-                .or_else(|| scopes.lookup_symbol(&ident.name))
+            && let Some(sym) = ident.opt_symbol().or_else(|| {
+                let option = LookupOptions::current();
+                // If no symbol on ident, try lookup using ident's symbol
+                ident.opt_symbol().and_then(|s| scopes.lookup_symbol(s, option))
+            })
             && matches!(
                 sym.kind(),
                 SymKind::Const | SymKind::Static | SymKind::EnumVariant
@@ -145,7 +147,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             let field_ty = {
                 let mut resolver = ExprResolver::new(unit, scopes);
                 resolver
-                    .resolve_field_type(ty, &field_ident.name)
+                    .resolve_field(ty, &field_ident.name)
                     .and_then(|(_, ty)| ty)
             };
             if let Some(field_ty) = field_ty {
@@ -205,38 +207,65 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         // Process crate scope
         if let Some(crate_name) = parse_crate_name(file_path) {
-            let symbol = if scopes.scope_depth() > 0 {
-                scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
+            let symbols = if scopes.scope_depth() > 0 {
+                scopes.lookup_globals_with(&crate_name, Some(SymKind::Crate))
             } else {
                 return;
             };
 
-            if let Some(symbol) = symbol
-                && let Some(scope_id) = symbol.opt_scope()
-            {
-                scopes.push_scope(scope_id);
+            if let Some(symbols) = symbols {
+                if symbols.len() > 1 {
+                    tracing::warn!(
+                        "multiple crate symbols found for '{}' in {}",
+                        crate_name,
+                        file_path
+                    );
+                }
+                if let Some(symbol) = symbols.first()
+                    && let Some(scope_id) = symbol.opt_scope()
+                {
+                    scopes.push_scope(scope_id);
+                }
             }
         }
 
-        if let Some(scope_id) = parse_module_name(file_path).and_then(|module_name| {
-            scopes
-                .lookup_or_insert(&module_name, node, SymKind::Module)
-                .and_then(|symbol| symbol.opt_scope())
-        }) {
-            scopes.push_scope(scope_id);
+        if let Some(module_name) = parse_module_name(file_path) {
+            if let Some(symbols) = scopes.lookup_globals_with(&module_name, Some(SymKind::Module)) {
+                if symbols.len() > 1 {
+                    tracing::warn!(
+                        "multiple module symbols found for '{}' in {}",
+                        module_name,
+                        file_path
+                    );
+                }
+                if let Some(symbol) = symbols.first()
+                    && let Some(scope_id) = symbol.opt_scope()
+                {
+                    scopes.push_scope(scope_id);
+                }
+            }
         }
 
         if let Some(file_name) = parse_file_name(file_path) {
             let file_sym_opt = if scopes.scope_depth() > 0 {
-                scopes.lookup_or_insert(&file_name, node, SymKind::File)
+                scopes.lookup_globals_with(&file_name, Some(SymKind::File))
             } else {
                 return;
             };
 
-            if let Some(symbol) = file_sym_opt
-                && let Some(scope_id) = symbol.opt_scope()
-            {
-                scopes.push_scope(scope_id);
+            if let Some(symbols) = file_sym_opt {
+                if symbols.len() > 1 {
+                    tracing::warn!(
+                        "multiple file symbols found for '{}' in {}",
+                        file_name,
+                        file_path
+                    );
+                }
+                if let Some(symbol) = symbols.first()
+                    && let Some(scope_id) = symbol.opt_scope()
+                {
+                    scopes.push_scope(scope_id);
+                }
             }
         }
 
@@ -276,6 +305,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
 
         if let Some(fn_sym) = sn.opt_symbol() {
+            // Mark main function as global (entry point)
+            if unit.interner().resolve_owned(fn_sym.name).as_deref() == Some("main") {
+                fn_sym.set_is_global(true);
+            }
+
             // Handle the main return type identifier (e.g., Option in Option<UserDto>)
             if let Some(ret_ty) = ret_ident
                 && let Some(ret_sym) = ret_ty.opt_symbol()
@@ -831,7 +865,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
         {
             let mut resolver = ExprResolver::new(unit, scopes);
-            if let Some((symbol, _)) = resolver.resolve_field_type(owner_sym, &name_node.name) {
+            if let Some((symbol, _)) = resolver.resolve_field(owner_sym, &name_node.name) {
                 let (ty, args) = resolver.resolve_type_with_args(&type_node);
                 if let Some(primary) = ty {
                     symbol.set_type_of(primary.id());
@@ -882,15 +916,26 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     symbol.add_dependency(arg, Some(&[SymKind::TypeParameter]));
                 }
 
-                if let Some(ns) = namespace.opt_symbol() {
-                    ns.add_dependency(ty.unwrap_or(symbol), Some(&[SymKind::TypeParameter]));
+                // Use FieldType for enum variant inner types so they appear in arch-graph
+                if let Some(ns) = namespace.opt_symbol()
+                    && let Some(primary) = ty
+                {
+                    ns.add_dependency_with_kind(
+                        primary,
+                        DepKind::FieldType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
                 }
             }
 
+            // Handle tuple-like enum variants: Root(&'hir HirRoot)
+            // The type is in the body field as ordered_field_declaration_list
             if let Some(body_node) = node.child_by_field(*unit, LangRust::field_body)
                 && let Some(ns) = namespace.opt_symbol()
             {
-                self.add_type_dependencies_with(unit, &body_node, scopes, ns);
+                let mut resolver = ExprResolver::new(unit, scopes);
+                let (ty, args) = resolver.resolve_type_with_args(&body_node);
+                Self::add_type_dependencies_with_kind(ns, ty, &args, DepKind::FieldType);
             }
         }
     }
@@ -993,8 +1038,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // For scoped identifiers like E::V1 or E::V2, resolve the full path
         // If it's an enum variant, add dependency on the parent enum via type_of
         if let Some(owner) = namespace.opt_symbol()
-            && let Some(sym) =
-                ExprResolver::new(unit, scopes).resolve_scoped_identifier_type(node, None)
+            && let Some(sym) = ExprResolver::new(unit, scopes).resolve_scoped_identifier(node, None)
             && sym.kind() == SymKind::EnumVariant
             && let Some(parent_enum_id) = sym.type_of()
             && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
@@ -1079,7 +1123,7 @@ mod tests {
     use crate::token::LangRust;
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-    use llmcc_core::symbol::{SymId, SymKind};
+    use llmcc_core::symbol::{SymId, SymKind, reset_scope_id_counter, reset_symbol_id_counter};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
     use pretty_assertions::assert_eq;
 
@@ -1087,6 +1131,10 @@ mod tests {
     where
         F: for<'a> FnOnce(&'a CompileCtxt<'a>),
     {
+        // Reset ID counters so SymIds start from 1 for direct indexing
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+
         let bytes = sources
             .iter()
             .map(|src| src.as_bytes().to_vec())
@@ -1106,19 +1154,21 @@ mod tests {
         cc.symbol_map
             .read()
             .iter()
-            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
-            .map(|(id, _)| *id)
+            .find(|symbol| symbol.name == name_key && symbol.kind() == kind)
+            .map(|symbol| symbol.id())
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 
     fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
+        let idx = sym_id.0.checked_sub(1)?;
         let map = cc.symbol_map.read();
-        let symbol = map.get(&sym_id).copied()?;
+        let symbol = map.get(idx).copied()?;
         let ty_id = symbol.type_of();
         drop(map);
         let ty_id = ty_id?;
+        let idx = ty_id.0.checked_sub(1)?;
         let map = cc.symbol_map.read();
-        let ty_symbol = map.get(&ty_id).copied()?;
+        let ty_symbol = map.get(idx).copied()?;
         cc.interner.resolve_owned(ty_symbol.name)
     }
 
@@ -1136,17 +1186,20 @@ mod tests {
 
     fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
         let map = cc.symbol_map.read();
+        let idx = sym_id.0.checked_sub(1).expect("invalid sym_id");
         let symbol = map
-            .get(&sym_id)
+            .get(idx)
             .copied()
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
         let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
-            if let Some(target) = map.get(&dep) {
-                let fqn_key = target.fqn();
-                if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
-                    names.push(fqn);
+            if let Some(idx) = dep.0.checked_sub(1) {
+                if let Some(target) = map.get(idx) {
+                    let fqn_key = target.fqn();
+                    if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
+                        names.push(fqn);
+                    }
                 }
             }
         }

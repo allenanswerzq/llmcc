@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirIdent, HirKind, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
@@ -228,25 +228,29 @@ impl<'tcx> CollectorVisitor<'tcx> {
         if let Some(sn) = node.as_scope()
             && let Some(ident) = node.child_identifier_by_field(*unit, field_id)
         {
-            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
-            {
+            // First create a placeholder symbol to get FQN for lookup
+            let placeholder = scopes.lookup_or_insert(&ident.name, node, kind);
+            let Some(placeholder) = placeholder else {
+                return;
+            };
+
+            // Try to find existing symbol with matching kind
+            if let Some(sym) = scopes.lookup_symbol_with(placeholder, vec![kind]) {
                 let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
-            } else if let Some(sym) = scopes.lookup_symbol_with(
-                &ident.name,
-                Some(vec![SymKind::UnresolvedType]),
-                None,
-                None,
-            ) {
+            } else if let Some(sym) =
+                scopes.lookup_symbol_with(placeholder, vec![SymKind::UnresolvedType])
+            {
                 sym.set_kind(kind);
                 sym.set_fqn(scopes.build_fqn(&ident.name));
                 let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
-            } else if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
-                Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident, true);
+            } else {
+                // Use the placeholder we created
+                Self::handle_global_visibility(unit, node, scopes, placeholder);
+                self.visit_with_scope(unit, node, scopes, placeholder, sn, ident, true);
             }
         }
     }
@@ -454,49 +458,65 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
         if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait)
             && let Some(trait_name) = Self::type_name_from_node(unit, &trait_node)
         {
-            if let Some(symbol) =
-                scopes.lookup_symbol_with(trait_name, Some(vec![SymKind::Trait]), None, None)
-                && let Some(trait_ident) =
-                    node.child_identifier_by_field(*unit, LangRust::field_trait)
-            {
-                trait_ident.set_symbol(symbol);
-            } else if let Some(symbol) =
+            // Create placeholder to get FQN for lookup
+            if let Some(placeholder) =
                 scopes.lookup_or_insert(trait_name, node, SymKind::UnresolvedType)
-                && let Some(trait_ident) =
-                    node.child_identifier_by_field(*unit, LangRust::field_trait)
             {
-                trait_ident.set_symbol(symbol);
+                if let Some(symbol) = scopes.lookup_symbol_with(placeholder, vec![SymKind::Trait])
+                    && let Some(trait_ident) =
+                        node.child_identifier_by_field(*unit, LangRust::field_trait)
+                {
+                    trait_ident.set_symbol(symbol);
+                } else if let Some(trait_ident) =
+                    node.child_identifier_by_field(*unit, LangRust::field_trait)
+                {
+                    trait_ident.set_symbol(placeholder);
+                }
             }
         }
 
-        if let Some(sn) = node.as_scope()
-            && let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
+        let Some(sn) = node.as_scope() else {
+            return;
+        };
+
+        if let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
             && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
             && let Some(type_name) = Self::type_name_from_node(unit, &type_node)
         {
-            if let Some(symbol) = scopes.lookup_symbol_with(
-                type_name,
-                Some(vec![SymKind::Struct, SymKind::Enum, SymKind::Primitive]),
-                None,
-                None,
-            ) {
-                type_ident.set_symbol(symbol);
-                // Primitives don't have scopes, so we need to allocate one for the impl
-                let needs_scope = symbol.opt_scope().is_none();
-                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, needs_scope);
-            } else if let Some(symbol) =
+            // Create placeholder to get FQN for lookup
+            if let Some(placeholder) =
                 scopes.lookup_or_insert(type_name, node, SymKind::UnresolvedType)
             {
-                type_ident.set_symbol(symbol);
-                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, true);
+                if let Some(symbol) = scopes.lookup_symbol_with(
+                    placeholder,
+                    vec![SymKind::Struct, SymKind::Enum, SymKind::Primitive],
+                ) {
+                    type_ident.set_symbol(symbol);
+                    // Primitives don't have scopes, so we need to allocate one for the impl
+                    let needs_scope = symbol.opt_scope().is_none();
+                    self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, needs_scope);
+                    return;
+                } else {
+                    type_ident.set_symbol(placeholder);
+                    self.visit_with_scope(unit, node, scopes, placeholder, sn, type_ident, true);
+                    return;
+                }
             }
         }
+
+        // Fallback: if we couldn't resolve the type, still set a scope so bind phase doesn't panic
+        let scope = unit.cc.alloc_scope(node.id());
+        sn.set_scope(scope);
+        let depth = scopes.scope_depth();
+        scopes.push_scope_with(node, None);
+        self.visit_children(unit, node, scopes, namespace, None);
+        scopes.pop_until(depth);
     }
 
     fn visit_macro_definition(
@@ -583,20 +603,24 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(symbol) = scopes.lookup_symbol_with(
-            &ident.name,
-            Some(vec![
-                SymKind::Struct,
-                SymKind::Enum,
-                SymKind::Trait,
-                SymKind::Function,
-                SymKind::TypeAlias,
-            ]),
-            None,
-            None,
-        ) {
-            ident.set_symbol(symbol);
-            return;
+
+        // Create placeholder to get FQN for lookup
+        if let Some(placeholder) =
+            scopes.lookup_or_insert(&ident.name, node, SymKind::UnresolvedType)
+        {
+            if let Some(symbol) = scopes.lookup_symbol_with(
+                placeholder,
+                vec![
+                    SymKind::Struct,
+                    SymKind::Enum,
+                    SymKind::Trait,
+                    SymKind::Function,
+                    SymKind::TypeAlias,
+                ],
+            ) {
+                ident.set_symbol(symbol);
+                return;
+            }
         }
 
         if ident.name == "Self"
@@ -768,10 +792,17 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Set type_of on the variant to point to the parent enum
         if let Some(enum_sym) = parent_enum
             && let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
-            && let Some(variant_sym) =
-                scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::EnumVariant]), None, None)
         {
-            variant_sym.set_type_of(enum_sym.id);
+            // Create placeholder to get FQN for lookup
+            if let Some(placeholder) =
+                scopes.lookup_or_insert(&ident.name, node, SymKind::EnumVariant)
+            {
+                if let Some(variant_sym) =
+                    scopes.lookup_symbol_with(placeholder, vec![SymKind::EnumVariant])
+                {
+                    variant_sym.set_type_of(enum_sym.id);
+                }
+            }
         }
     }
 
@@ -870,14 +901,14 @@ pub fn collect_symbols<'tcx>(
     _config: &ResolverOption,
 ) -> &'tcx Scope<'tcx> {
     let cc = unit.cc;
-    let arena = cc.arena();
-    let unit_globals = arena.alloc(Scope::new(HirId(unit.index)));
-    let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
+    // The unit-level scope is already pushed onto scope_stack by collect_symbols_with
+    let globals = scope_stack.first();
+    let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, globals);
 
     let mut visit = CollectorVisitor::new();
-    visit.visit_node(&unit, node, &mut scopes, unit_globals, None);
+    visit.visit_node(&unit, node, &mut scopes, globals, None);
 
-    unit_globals
+    globals
 }
 
 #[cfg(test)]
@@ -886,13 +917,17 @@ mod tests {
 
     use llmcc_core::context::CompileCtxt;
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-    use llmcc_core::symbol::{SymId, SymKind};
+    use llmcc_core::symbol::{SymId, SymKind, reset_scope_id_counter, reset_symbol_id_counter};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
     fn with_compiled_unit<F>(sources: &[&str], check: F)
     where
         F: FnOnce(&CompileCtxt<'_>),
     {
+        // Reset ID counters so SymIds start from 1 for direct indexing
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+
         let bytes = sources
             .iter()
             .map(|src| src.as_bytes().to_vec())
@@ -916,24 +951,27 @@ mod tests {
         cc.symbol_map
             .read()
             .iter()
-            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
-            .map(|(id, _)| *id)
+            .find(|symbol| symbol.name == name_key && symbol.kind() == kind)
+            .map(|symbol| symbol.id())
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 
     fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
         let map = cc.symbol_map.read();
+        let idx = sym_id.0.checked_sub(1).expect("invalid sym_id");
         let symbol = map
-            .get(&sym_id)
+            .get(idx)
             .copied()
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
         let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
-            if let Some(target) = map.get(&dep) {
-                let fqn_key = target.fqn();
-                if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
-                    names.push(fqn);
+            if let Some(idx) = dep.0.checked_sub(1) {
+                if let Some(target) = map.get(idx) {
+                    let fqn_key = target.fqn();
+                    if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
+                        names.push(fqn);
+                    }
                 }
             }
         }
@@ -942,13 +980,15 @@ mod tests {
     }
 
     fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
+        let idx = sym_id.0.checked_sub(1)?;
         let map = cc.symbol_map.read();
-        let symbol = map.get(&sym_id).copied()?;
+        let symbol = map.get(idx).copied()?;
         let ty_id = symbol.type_of();
         drop(map);
         let ty_id = ty_id?;
+        let idx = ty_id.0.checked_sub(1)?;
         let map = cc.symbol_map.read();
-        let ty_symbol = map.get(&ty_id).copied()?;
+        let ty_symbol = map.get(idx).copied()?;
         cc.interner.resolve_owned(ty_symbol.name)
     }
 
