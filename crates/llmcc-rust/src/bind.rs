@@ -33,7 +33,9 @@ impl<'tcx> BinderVisitor<'tcx> {
             && let Some(sym) = ident.opt_symbol().or_else(|| {
                 let option = LookupOptions::current();
                 // If no symbol on ident, try lookup using ident's symbol
-                ident.opt_symbol().and_then(|s| scopes.lookup_symbol(s, option))
+                ident
+                    .opt_symbol()
+                    .and_then(|s| scopes.lookup_symbol(s, option))
             })
             && matches!(
                 sym.kind(),
@@ -106,6 +108,16 @@ impl<'tcx> BinderVisitor<'tcx> {
             .or(parent);
 
         scopes.push_scope_node(sn);
+        let top_scope = scopes.top();
+        eprintln!(
+            "DEBUG visit_scoped_named: sn.opt_ident={:?}, sn.scope().id={}, top_scope.id={}, top_scope.opt_symbol={:?}",
+            sn.opt_ident().map(|i| i.name.as_str()),
+            sn.scope().id(),
+            top_scope.id(),
+            top_scope
+                .opt_symbol()
+                .map(|s| unit.cc.interner.resolve_owned(s.name))
+        );
         self.visit_children(unit, node, scopes, scopes.top(), child_parent);
         scopes.pop_until(depth);
 
@@ -204,6 +216,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         let file_path = unit.file_path().unwrap();
         let depth = scopes.scope_depth();
+        eprintln!("DEBUG visit_source_file: file_path={}, initial_depth={}", file_path, depth);
 
         // Process crate scope
         if let Some(crate_name) = parse_crate_name(file_path) {
@@ -224,51 +237,39 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 if let Some(symbol) = symbols.first()
                     && let Some(scope_id) = symbol.opt_scope()
                 {
+                    eprintln!("DEBUG visit_source_file: pushing crate scope {:?}", crate_name);
                     scopes.push_scope(scope_id);
                 }
             }
         }
 
         if let Some(module_name) = parse_module_name(file_path) {
-            if let Some(symbols) = scopes.lookup_globals_with(&module_name, Some(SymKind::Module)) {
-                if symbols.len() > 1 {
-                    tracing::warn!(
-                        "multiple module symbols found for '{}' in {}",
-                        module_name,
-                        file_path
-                    );
-                }
-                if let Some(symbol) = symbols.first()
-                    && let Some(scope_id) = symbol.opt_scope()
-                {
-                    scopes.push_scope(scope_id);
-                }
+            // Module symbol was inserted in crate scope during collection, look there
+            let name_key = unit.cc.interner.intern(&module_name);
+            let scope = scopes.top();
+            if let Some(symbols) = scope.lookup_symbols(name_key)
+                && let Some(symbol) = symbols.iter().find(|s| s.kind() == SymKind::Module)
+                && let Some(scope_id) = symbol.opt_scope()
+            {
+                eprintln!("DEBUG visit_source_file: pushing module scope {:?}", module_name);
+                scopes.push_scope(scope_id);
             }
         }
 
         if let Some(file_name) = parse_file_name(file_path) {
-            let file_sym_opt = if scopes.scope_depth() > 0 {
-                scopes.lookup_globals_with(&file_name, Some(SymKind::File))
-            } else {
-                return;
-            };
-
-            if let Some(symbols) = file_sym_opt {
-                if symbols.len() > 1 {
-                    tracing::warn!(
-                        "multiple file symbols found for '{}' in {}",
-                        file_name,
-                        file_path
-                    );
-                }
-                if let Some(symbol) = symbols.first()
-                    && let Some(scope_id) = symbol.opt_scope()
-                {
-                    scopes.push_scope(scope_id);
-                }
+            // File symbol was inserted in module scope during collection, look there
+            let name_key = unit.cc.interner.intern(&file_name);
+            let scope = scopes.top();
+            if let Some(symbols) = scope.lookup_symbols(name_key)
+                && let Some(symbol) = symbols.iter().find(|s| s.kind() == SymKind::File)
+                && let Some(scope_id) = symbol.opt_scope()
+            {
+                eprintln!("DEBUG visit_source_file: pushing file scope {:?}", file_name);
+                scopes.push_scope(scope_id);
             }
         }
 
+        eprintln!("DEBUG visit_source_file: after pushing, depth={}", scopes.scope_depth());
         self.visit_children(unit, node, scopes, namespace, parent);
         scopes.pop_until(depth);
     }
@@ -540,6 +541,14 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let mut resolver = ExprResolver::new(unit, scopes);
         let outer_target = resolver.resolve_call_target(node, parent);
 
+        eprintln!(
+            "DEBUG visit_call_expression: outer_target={:?}, namespace.opt_symbol={:?}",
+            outer_target.map(|s| unit.cc.interner.resolve_owned(s.name)),
+            namespace
+                .opt_symbol()
+                .map(|s| unit.cc.interner.resolve_owned(s.name))
+        );
+
         if let Some(sym) = outer_target
             && let Some(ns) = namespace.opt_symbol()
         {
@@ -554,6 +563,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     Some(&[SymKind::TypeParameter]),
                 );
             } else {
+                eprintln!(
+                    "DEBUG adding dependency: {} -> {}",
+                    unit.cc.interner.resolve_owned(ns.name).unwrap_or_default(),
+                    unit.cc.interner.resolve_owned(sym.name).unwrap_or_default()
+                );
                 ns.add_dependency_with_kind(sym, DepKind::Calls, Some(&[SymKind::TypeParameter]));
             }
         }

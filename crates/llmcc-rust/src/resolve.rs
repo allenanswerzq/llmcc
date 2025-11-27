@@ -75,7 +75,12 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         let field_key = self.unit.cc.interner.intern(field_name);
         let field_symbols = scope.lookup_symbols(field_key)?;
         if field_symbols.len() > 1 {
-            let fqn = self.unit.cc.interner.resolve_owned(symbol.fqn()).unwrap_or_default();
+            let fqn = self
+                .unit
+                .cc
+                .interner
+                .resolve_owned(symbol.fqn())
+                .unwrap_or_default();
             let fp = self.unit.file_path().unwrap_or("<unknown>");
             tracing::warn!(
                 "ambiguous field '{}' on symbol '{}' in {}",
@@ -94,10 +99,18 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
     /// Looks up a callable symbol (function, macro, or closure) by name.
     pub fn resolve_callable_symbol(&self, name_sym: &'tcx Symbol) -> Option<&'tcx Symbol> {
-        self.scopes.lookup_symbol_with(
+        let result = self.scopes.lookup_symbol_with(
             name_sym,
             vec![SymKind::Function, SymKind::Macro, SymKind::Closure],
-        )
+        );
+        eprintln!(
+            "DEBUG resolve_callable_symbol: name_sym.name={:?}, name_sym.fqn={:?}, name_sym.kind={:?}, result={:?}",
+            self.unit.cc.interner.resolve_owned(name_sym.name),
+            self.unit.cc.interner.resolve_owned(name_sym.fqn()),
+            name_sym.kind(),
+            result.map(|s| self.unit.cc.interner.resolve_owned(s.name))
+        );
+        result
     }
 
     // ------------------------------------------------------------------------
@@ -581,7 +594,13 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         node: &HirNode<'tcx>,
         caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
-        match node.kind_id() {
+        let kind = node.kind_id();
+        eprintln!(
+            "DEBUG resolve_expression_symbol: kind_id={}, is_identifier_kind={}",
+            kind,
+            is_identifier_kind(kind)
+        );
+        match kind {
             k if is_identifier_kind(k) => self.resolve_identifier_symbol(node, caller),
             k if k == LangRust::field_expression => self.resolve_field_symbol(node),
             k if k == LangRust::reference_expression => {
@@ -613,10 +632,22 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             return self.resolve_scoped_identifier(node, caller);
         }
         // Try to get symbol from HirIdent if available
-        if let Some(ident) = node.as_ident()
-            && let Some(sym) = ident.opt_symbol()
-        {
-            return self.resolve_callable_symbol(sym);
+        if let Some(ident) = node.as_ident() {
+            eprintln!(
+                "DEBUG resolve_identifier_symbol: ident.name={}, ident.opt_symbol={:?}",
+                ident.name,
+                ident
+                    .opt_symbol()
+                    .map(|s| self.unit.cc.interner.resolve_owned(s.name))
+            );
+            if let Some(sym) = ident.opt_symbol() {
+                let result = self.resolve_callable_symbol(sym);
+                eprintln!(
+                    "DEBUG resolve_identifier_symbol: resolve_callable_symbol result={:?}",
+                    result.map(|s| self.unit.cc.interner.resolve_owned(s.name))
+                );
+                return result;
+            }
         }
         None
     }
@@ -648,6 +679,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
         let child = node.child_by_field(*self.unit, field_id)?;
+        eprintln!(
+            "DEBUG resolve_child_field: child.kind_id={}",
+            child.kind_id()
+        );
         self.resolve_expression_symbol(&child, caller)
     }
 
@@ -667,6 +702,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         node: &HirNode<'tcx>,
         caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
+        eprintln!(
+            "DEBUG resolve_call_target: entered, node.kind_id={}",
+            node.kind_id()
+        );
         self.resolve_child_field(node, LangRust::field_function, caller)
     }
 

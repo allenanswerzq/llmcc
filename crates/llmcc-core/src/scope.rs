@@ -269,33 +269,57 @@ impl<'tcx> ScopeStack<'tcx> {
         self.stack.read().last().copied()
     }
 
-    pub fn lookup_symbols(
+    pub fn lookup_symbols_by_name(
         &self,
-        symbol: &'tcx Symbol,
+        name: &str,
         option: LookupOptions,
     ) -> Option<Vec<&'tcx Symbol>> {
-        let simple_key = symbol.name;
-        let fqn_key = symbol.fqn();
-
+        let name_key = self.interner.intern(name);
         let stack = self.stack.read();
+        eprintln!("DEBUG lookup_symbols_by_name: name={}, stack.len={}, kind_filters={:?}",
+            name, stack.len(), option.kind_filters);
         if stack.is_empty() {
             return None;
         }
 
         if option.global {
-            // search global scope with fqn key
-            return stack[0].lookup_symbols_with(fqn_key, &option);
+            // search global scope, note that we store fqn in global scope
+            // so name_key is actually fqn here
+            return stack[0].lookup_symbols_with(name_key, &option);
         }
 
-        // search local scope with simple name key
-        stack[1..]
+        // search local scopes
+        let result = stack[1..]
             .iter()
             .rev()
-            .find_map(|scope| scope.lookup_symbols_with(simple_key, &option))
-            .or_else(|| {
-                // search global scope with fqn key
-                stack[0].lookup_symbols_with(fqn_key, &option)
+            .find_map(|scope| {
+                let found = scope.lookup_symbols_with(name_key, &option);
+                eprintln!("DEBUG lookup_symbols_by_name: checking scope {:?}, found={:?}",
+                    scope.opt_symbol().map(|s| self.interner.resolve_owned(s.name)),
+                    found.as_ref().map(|v| v.len())
+                );
+                found
             })
+            .or_else(|| {
+                // search global scope
+                let found = stack[0].lookup_symbols_with(name_key, &option);
+                eprintln!("DEBUG lookup_symbols_by_name: checking global scope, found={:?}",
+                    found.as_ref().map(|v| v.len())
+                );
+                found
+            });
+        result
+    }
+
+    pub fn lookup_symbols(
+        &self,
+        symbol: &'tcx Symbol,
+        option: LookupOptions,
+    ) -> Option<Vec<&'tcx Symbol>> {
+        let name_key = self.interner.resolve_owned(symbol.name)?;
+        let fqn_key = self.interner.resolve_owned(symbol.fqn())?;
+        self.lookup_symbols_by_name(&name_key, option.clone())
+            .or_else(|| self.lookup_symbols_by_name(&fqn_key, option))
     }
 
     pub fn lookup_symbol(
@@ -313,6 +337,20 @@ impl<'tcx> ScopeStack<'tcx> {
                 symbols.len()
             );
             return None;
+        }
+    }
+
+    pub fn lookup_symbol_by_name(&self, name: &str, option: LookupOptions) -> Option<&'tcx Symbol> {
+        let symbols = self.lookup_symbols_by_name(name, option)?;
+        if symbols.len() == 1 {
+            return Some(symbols[0]);
+        } else {
+            tracing::warn!(
+                "ambiguous symbol lookup for '{}', found {} candidates",
+                name,
+                symbols.len()
+            );
+            return symbols.last().copied();
         }
     }
 
@@ -368,41 +406,49 @@ impl<'tcx> ScopeStack<'tcx> {
             return None;
         }
 
+        debug_assert!(!stack.is_empty());
         let scope = if options.global {
             stack.first().copied()
         } else if options.parent && stack.len() >= 2 {
             stack.get(stack.len() - 2).copied()
         } else {
             stack.last().copied()
-        };
+        }?;
 
-        let existing_symbols = scope.and_then(|s| s.lookup_symbols(name_key));
+        let symbols = scope.lookup_symbols_with(name_key, &options);
 
-        debug_assert!(
-            !existing_symbols
-                .as_ref()
-                .map_or(false, |v| v.len() > 1 && !options.chain),
-            "symbol {:?} already exists in scope {:?} and chaining is disabled",
-            name_key,
-            scope.map(|s| s.id())
-        );
-
-        let latest_existing = existing_symbols.as_ref().and_then(|v| v.last().copied());
-        let new_symbol = Symbol::new(node, name_key);
-        if let Some(existing) = latest_existing {
-            if !options.chain {
-                return Some(existing);
-            } else {
-                new_symbol.set_previous(existing.id);
+        if !options.chain {
+            // If exactly one symbol found, return it
+            if let Some(ref syms) = symbols {
+                if syms.len() == 1 {
+                    return Some(syms[0]);
+                }
+                if syms.len() > 1 {
+                    tracing::warn!(
+                        "ambiguous symbol lookup for '{}', found {} candidates",
+                        self.interner.resolve_owned(name_key).unwrap_or_default(),
+                        syms.len()
+                    );
+                    return syms.last().copied();
+                }
             }
-        }
 
-        let allocated = self.arena.alloc(new_symbol);
-        if let Some(s) = scope {
-            s.insert(allocated);
+            // No matching symbol found (or ambiguous), create a new one
+            let new_symbol = Symbol::new(node, name_key);
+            let allocated = self.arena.alloc(new_symbol);
+            scope.insert(allocated);
+            return Some(allocated);
+        } else {
+            let new_symbol = Symbol::new(node, name_key);
+            if let Some(ref syms) = symbols {
+                if let Some(existing) = syms.last() {
+                    new_symbol.set_previous(existing.id);
+                }
+            }
+            let allocated = self.arena.alloc(new_symbol);
+            scope.insert(allocated);
+            return Some(allocated);
         }
-
-        Some(allocated)
     }
 }
 

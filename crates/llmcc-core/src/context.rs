@@ -123,17 +123,24 @@ impl<'tcx> CompileUnit<'tcx> {
     }
 
     /// Get an existing scope or None if it doesn't exist.
-    /// Uses O(1) direct indexing. ScopeIds start from 1.
+    /// Uses binary search on sorted scope_map for O(log n) lookup.
     pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        let idx = scope_id.0.checked_sub(1)?;
-        self.cc.scope_map.read().get(idx).copied()
+        let scope_map = self.cc.scope_map.read();
+        // Binary search for the scope with matching ID
+        scope_map
+            .binary_search_by_key(&scope_id.0, |s| s.id().0)
+            .ok()
+            .and_then(|idx| scope_map.get(idx).copied())
     }
 
-    /// Get symbol by SymId using O(1) direct indexing.
-    /// SymIds start from 1, so index = sym_id.0 - 1
+    /// Get symbol by SymId using binary search on sorted symbol_map for O(log n) lookup.
     pub fn opt_get_symbol(self, sym_id: SymId) -> Option<&'tcx Symbol> {
-        let idx = sym_id.0.checked_sub(1)?;
-        self.cc.symbol_map.read().get(idx).copied()
+        let symbol_map = self.cc.symbol_map.read();
+        // Binary search for the symbol with matching ID
+        symbol_map
+            .binary_search_by_key(&sym_id.0, |s| s.id().0)
+            .ok()
+            .and_then(|idx| symbol_map.get(idx).copied())
     }
 
     /// Get an existing scope or panics if it doesn't exist
@@ -474,23 +481,24 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
     }
 
-    /// Get scope by ScopeId using O(1) direct indexing.
-    /// ScopeIds start from 1, so index = scope_id.0 - 1
+    /// Get scope by ScopeId using binary search on sorted scope_map.
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        let idx = scope_id.0.checked_sub(1).expect("Invalid ScopeId 0");
-        self.scope_map
-            .read()
-            .get(idx)
-            .copied()
+        let scope_map = self.scope_map.read();
+        scope_map
+            .binary_search_by_key(&scope_id.0, |s| s.id().0)
+            .ok()
+            .and_then(|idx| scope_map.get(idx).copied())
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
-    /// Get symbol by SymId using O(1) direct indexing.
-    /// SymIds start from 1, so index = sym_id.0 - 1
+    /// Get symbol by SymId using binary search on sorted symbol_map.
     /// Requires `build_symbol_map_from_arena()` to have been called first.
     pub fn opt_get_symbol(&'tcx self, sym_id: SymId) -> Option<&'tcx Symbol> {
-        let idx = sym_id.0.checked_sub(1)?;
-        self.symbol_map.read().get(idx).copied()
+        let symbol_map = self.symbol_map.read();
+        symbol_map
+            .binary_search_by_key(&sym_id.0, |s| s.id().0)
+            .ok()
+            .and_then(|idx| symbol_map.get(idx).copied())
     }
 
     pub fn get_symbol(&'tcx self, sym_id: SymId) -> &'tcx Symbol {

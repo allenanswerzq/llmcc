@@ -165,9 +165,8 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self
-            .scopes
-            .lookup_or_insert(name, node.id(), LookupOptions::current())?;
+        let option = LookupOptions::current().with_kind_filters(vec![kind]);
+        let symbol = self.scopes.lookup_or_insert(name, node.id(), option)?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -180,9 +179,8 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self
-            .scopes
-            .lookup_or_insert(name, node.id(), LookupOptions::chained())?;
+        let option = LookupOptions::chained().with_kind_filters(vec![kind]);
+        let symbol = self.scopes.lookup_or_insert(name, node.id(), option)?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -195,9 +193,10 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol =
-            self.scopes
-                .lookup_or_insert_parent(name, node.id(), LookupOptions::current())?;
+        let option = LookupOptions::parent().with_kind_filters(vec![kind]);
+        let symbol = self
+            .scopes
+            .lookup_or_insert_parent(name, node.id(), option)?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -210,21 +209,18 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol =
-            self.scopes
-                .lookup_or_insert_global(name, node.id(), LookupOptions::current())?;
+        let option = LookupOptions::global().with_kind_filters(vec![kind]);
+        let symbol = self
+            .scopes
+            .lookup_or_insert_global(name, node.id(), option)?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
         Some(symbol)
     }
 
-    pub fn lookup_symbol_with(
-        &self,
-        name_sym: &'a Symbol,
-        kind_filters: Vec<SymKind>,
-    ) -> Option<&'a Symbol> {
+    pub fn lookup_symbol_with(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
         let option = LookupOptions::current().with_kind_filters(kind_filters);
-        self.scopes.lookup_symbol(name_sym, option)
+        self.scopes.lookup_symbol_by_name(name, option)
     }
 }
 

@@ -127,7 +127,11 @@ impl<'a> BinderScopes<'a> {
     }
 
     /// Lookup global symbols by name.
-    pub fn lookup_globals_with(&self, name: &str, kind_filter: Option<SymKind>) -> Option<Vec<&'a Symbol>> {
+    pub fn lookup_globals_with(
+        &self,
+        name: &str,
+        kind_filter: Option<SymKind>,
+    ) -> Option<Vec<&'a Symbol>> {
         let globals = self.scopes.first();
         let name_key = self.unit.cc.interner.intern(name);
         globals.lookup_symbols(name_key).filter(|syms| {
