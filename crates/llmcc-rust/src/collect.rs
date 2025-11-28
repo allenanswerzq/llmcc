@@ -926,24 +926,25 @@ mod tests {
         kind: SymKind,
     ) -> llmcc_core::symbol::SymId {
         let name_key = cc.interner.intern(name);
-        cc.symbol_map
-            .read()
+        cc.arena
+            .symbol()
             .iter()
-            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
-            .map(|(id, _)| *id)
+            .find(|symbol| symbol.name == name_key && symbol.kind() == kind)
+            .map(|symbol| symbol.id())
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 
     fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map
-            .get(&sym_id)
+        let symbols = cc.arena.symbol();
+        let symbol = symbols
+            .iter()
+            .find(|s| s.id() == sym_id)
             .copied()
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
         let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
-            if let Some(target) = map.get(&dep) {
+            if let Some(target) = symbols.iter().find(|s| s.id() == dep).copied() {
                 let fqn_key = target.fqn();
                 if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
                     names.push(fqn);
@@ -955,13 +956,10 @@ mod tests {
     }
 
     fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map.get(&sym_id).copied()?;
-        let ty_id = symbol.type_of();
-        drop(map);
-        let ty_id = ty_id?;
-        let map = cc.symbol_map.read();
-        let ty_symbol = map.get(&ty_id).copied()?;
+        let symbols = cc.arena.symbol();
+        let symbol = symbols.iter().find(|s| s.id() == sym_id).copied()?;
+        let ty_id = symbol.type_of()?;
+        let ty_symbol = symbols.iter().find(|s| s.id() == ty_id).copied()?;
         cc.interner.resolve_owned(ty_symbol.name)
     }
 

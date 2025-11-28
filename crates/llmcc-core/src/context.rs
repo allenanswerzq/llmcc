@@ -83,13 +83,28 @@ impl<'tcx> CompileUnit<'tcx> {
         self.get_text(node.start_byte(), node.end_byte())
     }
 
-    /// Get a HIR node by ID, returning None if not found
+    /// Get a HIR node by ID. Searches across all HIR types in the arena.
     pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.cc
-            .hir_map
-            .read()
-            .get(&id)
-            .map(|parented| parented.node)
+        // Search across all HIR node types in the arena
+        if let Some(n) = self.cc.arena.hir_root().iter().find(|n| n.base.id == id) {
+            return Some(HirNode::Root(n));
+        }
+        if let Some(n) = self.cc.arena.hir_text().iter().find(|n| n.base.id == id) {
+            return Some(HirNode::Text(n));
+        }
+        if let Some(n) = self.cc.arena.hir_internal().iter().find(|n| n.base.id == id) {
+            return Some(HirNode::Internal(n));
+        }
+        if let Some(n) = self.cc.arena.hir_scope().iter().find(|n| n.base.id == id) {
+            return Some(HirNode::Scope(n));
+        }
+        if let Some(n) = self.cc.arena.hir_file().iter().find(|n| n.base.id == id) {
+            return Some(HirNode::File(n));
+        }
+        if let Some(n) = self.cc.arena.hir_ident().iter().find(|n| n.base.id == id) {
+            return Some(HirNode::Ident(n));
+        }
+        None
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -98,16 +113,13 @@ impl<'tcx> CompileUnit<'tcx> {
             .unwrap_or_else(|| panic!("hir node not found {}", id))
     }
 
-    /// Get a HIR node by ID, returning None if not found
-    pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
-        self.cc
-            .block_map
-            .read()
-            .get(&id)
-            .map(|parented| parented.block.clone())
+    /// Get a basic block by ID from block_arena
+    pub fn opt_bb(self, _id: BlockId) -> Option<BasicBlock<'tcx>> {
+        // TODO: implement block lookup from block_arena when needed
+        None
     }
 
-    /// Get a HIR node by ID, panicking if not found
+    /// Get a basic block by ID, panicking if not found
     pub fn bb(self, id: BlockId) -> BasicBlock<'tcx> {
         self.opt_bb(id)
             .unwrap_or_else(|| panic!("basic block not found: {}", id))
@@ -115,41 +127,28 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get the parent of a HIR node
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
-        self.cc
-            .hir_map
-            .read()
-            .get(&id)
-            .and_then(|parented| parented.parent())
+        self.opt_hir_node(id).and_then(|n| n.parent())
     }
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from scope_map
-        self.cc.scope_map.read().get(&scope_id).copied()
+        self.cc.opt_get_scope(scope_id)
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.cc.symbol_map.read().get(&owner).copied()
+        self.cc.opt_get_symbol(owner)
     }
 
     /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.cc
-            .scope_map
-            .read()
-            .get(&scope_id)
-            .copied()
-            .expect("ScopeId not mapped to Scope in CompileCtxt")
+        self.cc.get_scope(scope_id)
     }
 
     pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
         self.cc.unresolve_symbols.write().push(symbol);
     }
 
-    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
-        let parented = ParentedBlock::new(parent, block.clone());
-        self.cc.block_map.write().insert(id, parented);
-
+    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
         // Register the block in the index maps
         let block_kind = block.kind();
         let block_name = block
@@ -241,18 +240,10 @@ pub struct CompileCtxt<'tcx> {
     pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
-    // HirId -> ParentedNode
-    pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // ScopeId -> Scope
-    pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
     // HirId -> ScopeId
     pub owner_to_scope_id: RwLock<HashMap<HirId, ScopeId>>,
-    // SymId -> &Symbol
-    pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
-    // BlockId -> ParentedBlock
-    pub block_map: RwLock<HashMap<BlockId, ParentedBlock<'tcx>>>,
     pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 
@@ -329,12 +320,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            hir_map: RwLock::new(HashMap::new()),
-            scope_map: RwLock::new(HashMap::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
@@ -376,12 +363,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            hir_map: RwLock::new(HashMap::new()),
-            scope_map: RwLock::new(HashMap::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
@@ -464,7 +447,6 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.write().insert(scope.id(), scope);
         self.owner_to_scope_id.write().insert(owner, scope.id());
         scope
     }
@@ -473,28 +455,39 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
     }
 
-    pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.scope_map
-            .read()
-            .get(&scope_id)
+    /// Get scope by ID. Iterates through arena to find matching scope.
+    pub fn opt_get_scope(&'tcx self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
+        self.arena
+            .scope()
+            .iter()
+            .find(|s| s.id() == scope_id)
             .copied()
-            .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
-    pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.symbol_map.read().get(&owner).cloned()
+    pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
+        self.opt_get_scope(scope_id)
+            .expect("ScopeId not found in arena")
     }
 
-    pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
-        self.opt_get_symbol(owner)
-            .expect("SymId not mapped to Symbol in CompileCtxt")
+    /// Get symbol by ID. Iterates through arena to find matching symbol.
+    pub fn opt_get_symbol(&'tcx self, sym_id: SymId) -> Option<&'tcx Symbol> {
+        self.arena
+            .symbol()
+            .iter()
+            .find(|s| s.id() == sym_id)
+            .copied()
+    }
+
+    pub fn get_symbol(&'tcx self, sym_id: SymId) -> &'tcx Symbol {
+        self.opt_get_symbol(sym_id)
+            .expect("SymId not found in arena")
     }
 
     /// Find the primary symbol associated with a block ID
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
-        self.symbol_map
-            .read()
-            .values()
+        self.arena
+            .symbol()
+            .iter()
             .find(|symbol| symbol.block_id() == Some(block_id))
             .copied()
     }
@@ -504,36 +497,18 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self.arena
     }
 
-    /// Allocate a new scope based on an existing one, cloning its contents.
-    ///
-    /// The existing ones are from the other arena, and we want to allocate in
-    /// this arena.
+    /// Just returns the scope - no map update needed, already in arena.
     pub fn alloc_scope_with(&'tcx self, existing: &'tcx Scope<'tcx>) -> &'tcx Scope<'tcx> {
-        let scope_id = existing.id();
-        let scope = existing;
-
-        // Update scope_map
-        self.scope_map.write().insert(scope_id, scope);
-        scope.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        scope
+        existing
     }
 
-    /// Register a batch of scopes in the global scope map without cloning them.
+    /// No-op: scopes and symbols are already in arena.
+    #[allow(unused_variables)]
     pub fn update_scope_map<I>(&'tcx self, scopes: I)
     where
         I: IntoIterator<Item = &'tcx Scope<'tcx>>,
     {
-        let mut scope_map = self.scope_map.write();
-        let mut symbol_map = self.symbol_map.write();
-        for scope in scopes {
-            scope_map.insert(scope.id(), scope);
-            scope.for_each_symbol(|sym| {
-                symbol_map.insert(sym.id(), sym);
-            });
-        }
+        // No-op: arena already contains these
     }
 
     /// Allocate a new HIR identifier node with the given ID, name and symbol
@@ -564,8 +539,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Merge the second scope into the first.
     ///
-    /// This combines all symbols from the second scope into the first scope,
-    /// and updates the scope_map to reference the merged result.
+    /// This combines all symbols from the second scope into the first scope.
     ///
     /// # Arguments
     /// * `first` - The target scope to merge into
@@ -573,21 +547,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     ///
     /// # Side Effects
     /// - All symbols from `second` are merged into `first`
-    /// - The symbol_map is updated to point all merged symbols to the symbol_map
-    /// - The scope_map is updated to redirect second's scope ID to first
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
-
-        // Update all symbol map entries for symbols now in first scope
-        // We need to register the merged symbols in the global symbol_map
-        first.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        // Remap scope references from second to first
-        // If any code had a reference to second's scope ID, it should now map to first
-        self.scope_map.write().insert(second.id(), first);
     }
 
     pub fn set_file_root_id(&self, index: usize, start: HirId) {
@@ -621,8 +583,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Clear all maps (useful for testing)
     #[cfg(test)]
     pub fn clear(&self) {
-        self.hir_map.write().clear();
-        self.scope_map.write().clear();
         self.owner_to_scope_id.write().clear();
     }
 }

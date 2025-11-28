@@ -39,7 +39,7 @@ fn generate_sources(num_files: usize, lines_per_file: usize) -> Vec<Vec<u8>> {
 fn build_and_count<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> usize {
     let result = build_llmcc_ir::<LangSimple>(cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
-    cc.hir_map.read().len()
+    (cc.arena.hir_root().len() + cc.arena.hir_text().len() + cc.arena.hir_internal().len() + cc.arena.hir_scope().len() + cc.arena.hir_file().len() + cc.arena.hir_ident().len())
 }
 
 // ============================================================================
@@ -65,9 +65,9 @@ fn helper() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
-    assert!(!hir_map.is_empty(), "HIR map should contain nodes");
-    println!("✅ Single file build: {} nodes", hir_map.len());
+    let hir_node_count = cc.arena.hir_root().len() + cc.arena.hir_text().len() + cc.arena.hir_internal().len() + cc.arena.hir_scope().len() + cc.arena.hir_file().len() + cc.arena.hir_ident().len();
+    assert!(hir_node_count > 0, "HIR map should contain nodes");
+    println!("✅ Single file build: {} nodes", hir_node_count);
 }
 
 /// Test 2: Multiple files sequential build
@@ -83,15 +83,15 @@ fn test_ir_build_multiple_files_sequential() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "Multi-file IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
+    let hir_node_count = cc.arena.hir_root().len() + cc.arena.hir_text().len() + cc.arena.hir_internal().len() + cc.arena.hir_scope().len() + cc.arena.hir_file().len() + cc.arena.hir_ident().len();
     assert!(
-        !hir_map.is_empty(),
+        hir_node_count > 0,
         "HIR map should contain nodes from all files"
     );
     println!(
         "✅ Multiple file build: {} files, {} nodes",
         sources.len(),
-        hir_map.len()
+        hir_node_count
     );
 }
 
@@ -125,25 +125,25 @@ fn main() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
+    let hir_node_count = cc.arena.hir_root().len() + cc.arena.hir_text().len() + cc.arena.hir_internal().len() + cc.arena.hir_scope().len() + cc.arena.hir_file().len() + cc.arena.hir_ident().len();
     const EXPECTED_NODES: usize = 5;
 
     assert_eq!(
-        hir_map.len(),
+        hir_node_count,
         EXPECTED_NODES,
         "Expected exactly {} nodes for 'fn main() {{ x = 5 }}', got {}",
         EXPECTED_NODES,
-        hir_map.len()
+        hir_node_count
     );
 
     let file_root = cc.file_root_id(0);
     assert!(file_root.is_some(), "File must have root");
     assert!(
-        hir_map.contains_key(&file_root.unwrap()),
+        cc.arena.hir_root().iter().any(|n| n.base.id == file_root.unwrap()) || cc.arena.hir_file().iter().any(|n| n.base.id == file_root.unwrap()),
         "Root must be in map"
     );
 
-    println!("✅ Correctness test passed: {} nodes", hir_map.len());
+    println!("✅ Correctness test passed: {} nodes", hir_node_count);
 }
 /// Test 5: Verify thread pool reuse across build phases
 #[test]
@@ -201,7 +201,7 @@ fn file2_func2() { f = 6 }"#
     }
 
     // Verify all IDs are unique
-    let all_ids: HashSet<_> = cc.hir_map.read().keys().cloned().collect();
+    let all_ids: HashSet<_> = cc.arena.hir_root().iter().map(|n| n.base.id).chain(cc.arena.hir_text().iter().map(|n| n.base.id)).chain(cc.arena.hir_internal().iter().map(|n| n.base.id)).chain(cc.arena.hir_scope().iter().map(|n| n.base.id)).chain(cc.arena.hir_file().iter().map(|n| n.base.id)).chain(cc.arena.hir_ident().iter().map(|n| n.base.id)).collect();
     assert_eq!(
         all_ids.len(),
         hir_nodes,
@@ -224,7 +224,7 @@ fn test_ir_build_no_id_collisions() {
 
     let cc1 = CompileCtxt::from_sources::<LangSimple>(&sources1);
     build_and_count(&cc1);
-    let ids1: Vec<_> = cc1.hir_map.read().keys().cloned().collect();
+    let ids1: Vec<_> = cc1.arena.hir_root().iter().map(|n| n.base.id).chain(cc1.arena.hir_text().iter().map(|n| n.base.id)).chain(cc1.arena.hir_internal().iter().map(|n| n.base.id)).chain(cc1.arena.hir_scope().iter().map(|n| n.base.id)).chain(cc1.arena.hir_file().iter().map(|n| n.base.id)).chain(cc1.arena.hir_ident().iter().map(|n| n.base.id)).collect();
 
     let sources2: Vec<_> = (0..10)
         .map(|i| format!("fn func_2_{}() {{ y = {} }}", i, i).into_bytes())
@@ -232,7 +232,7 @@ fn test_ir_build_no_id_collisions() {
 
     let cc2 = CompileCtxt::from_sources::<LangSimple>(&sources2);
     build_and_count(&cc2);
-    let ids2: Vec<_> = cc2.hir_map.read().keys().cloned().collect();
+    let ids2: Vec<_> = cc2.arena.hir_root().iter().map(|n| n.base.id).chain(cc2.arena.hir_text().iter().map(|n| n.base.id)).chain(cc2.arena.hir_internal().iter().map(|n| n.base.id)).chain(cc2.arena.hir_scope().iter().map(|n| n.base.id)).chain(cc2.arena.hir_file().iter().map(|n| n.base.id)).chain(cc2.arena.hir_ident().iter().map(|n| n.base.id)).collect();
 
     let set1: HashSet<_> = ids1.iter().cloned().collect();
     let set2: HashSet<_> = ids2.iter().cloned().collect();
@@ -272,7 +272,7 @@ fn helper() {
 
     let root_id = file_root.unwrap();
     assert!(
-        cc.hir_map.read().contains_key(&root_id),
+        cc.arena.hir_root().iter().any(|n| n.base.id == root_id) || cc.arena.hir_file().iter().any(|n| n.base.id == root_id),
         "Root must be in map"
     );
 
