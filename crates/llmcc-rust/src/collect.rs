@@ -118,59 +118,25 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
-    fn check_visibility(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> (bool, bool) {
-        let mut is_pub = false;
-        let mut is_pub_crate = false;
-
+    fn is_public(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> bool {
         for child in node.children_nodes(unit) {
             let text = unit.hir_text(&child);
             if text.starts_with("pub") {
-                if text == "pub" {
-                    is_pub = true;
-                } else {
-                    // All pub(...) variants: pub(crate), pub(super), pub(self), pub(in path)
-                    // are considered globally visible for indexing purposes
-                    is_pub_crate = true;
-                }
-                break;
+                return true;
             }
         }
-        (is_pub, is_pub_crate)
+        false
     }
 
-    fn handle_global_visibility(
+    fn insert_globals_symbol_if(
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         sym: &'tcx Symbol,
     ) {
-        // Check visibility
-        let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
-        let at_global = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
-
-        if is_pub {
-            if !at_global {
-                // Use FQN for global scope to avoid name collisions
-                // (e.g., CreateTaskUseCase::new vs CompleteTaskUseCase::new)
-                scopes.globals().insert_with_fqn(sym);
-            }
+        if Self::is_public(unit, node) {
+            scopes.globals().insert_global_index(sym, scopes.interner());
             sym.set_is_global(true);
-            return;
-        }
-
-        if is_pub_crate {
-            if !at_global {
-                scopes.globals().insert_with_fqn(sym);
-            }
-            sym.set_is_global(true);
-            return;
-        }
-
-        if let Some(scope) = scopes.top()
-            && let Some(parent_sym) = scope.opt_symbol()
-            && parent_sym.is_global()
-        {
-            scopes.globals().insert_with_fqn(sym);
         }
     }
 
@@ -231,7 +197,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
             {
                 let needs_scope = sym.opt_scope().is_none();
-                Self::handle_global_visibility(unit, node, scopes, sym);
+                Self::insert_globals_symbol_if(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
             } else if let Some(sym) = scopes.lookup_symbol_with(
                 &ident.name,
@@ -242,10 +208,10 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 sym.set_kind(kind);
                 sym.set_fqn(scopes.build_fqn(&ident.name));
                 let needs_scope = sym.opt_scope().is_none();
-                Self::handle_global_visibility(unit, node, scopes, sym);
+                Self::insert_globals_symbol_if(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
             } else if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
-                Self::handle_global_visibility(unit, node, scopes, sym);
+                Self::insert_globals_symbol_if(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, true);
             }
         }
@@ -885,6 +851,7 @@ pub fn collect_symbols<'tcx>(
     let cc = unit.cc;
     let arena = cc.arena();
     let unit_globals = arena.alloc(Scope::new(HirId(unit.index)));
+    unit_globals.enable_global_index();
     let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();

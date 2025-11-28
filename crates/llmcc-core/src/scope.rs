@@ -7,6 +7,7 @@ use std::sync::atomic::Ordering;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId, HirNode};
 use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
+use crate::trie::SymbolTrie;
 
 /// Represents a single level in the scope hierarchy.
 pub struct Scope<'tcx> {
@@ -26,6 +27,8 @@ pub struct Scope<'tcx> {
     /// If this scope was merged into another, points to the target scope ID.
     /// Used to redirect lookups from merged scopes to their parent scope.
     redirect: RwLock<Option<ScopeId>>,
+    /// Optional trie index used for fast suffix lookups of global symbols.
+    globals: RwLock<Option<SymbolTrie<'tcx>>>,
 }
 
 impl<'tcx> Scope<'tcx> {
@@ -44,38 +47,74 @@ impl<'tcx> Scope<'tcx> {
             parents: RwLock::new(Vec::new()),
             children: RwLock::new(Vec::new()),
             redirect: RwLock::new(None),
+            globals: RwLock::new(None),
         }
-    }
-
-    /// Creates a new scope from an existing scope, copying its structure.
-    pub fn new_from<'src>(other: &Scope<'src>, arena: &'tcx Arena<'tcx>) -> Self {
-        let symbol_ref = other.symbol.read().map(|s| arena.alloc(s.clone()));
-
-        let new_scope = Self {
-            id: other.id,
-            symbols: RwLock::new(HashMap::new()),
-            owner: other.owner,
-            symbol: RwLock::new(symbol_ref),
-            parents: RwLock::new(Vec::new()),
-            children: RwLock::new(Vec::new()),
-            redirect: RwLock::new(None),
-        };
-
-        // Deep copy symbols
-        other.for_each_symbol(|source_symbol| {
-            let allocated = arena.alloc(source_symbol.clone());
-            new_scope.insert(allocated);
-        });
-
-        new_scope
     }
 
     /// Merge existing scope into this scope.
     #[inline]
-    pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
+    pub fn merge_with(
+        &self,
+        other: &'tcx Scope<'tcx>,
+        _arena: &'tcx Arena<'tcx>,
+        interner: &InternPool,
+    ) {
         other.for_each_symbol(|source_symbol| {
             self.insert(source_symbol);
+            self.insert_global_index(source_symbol, interner);
         });
+    }
+
+    /// Enable the optional global trie index for this scope.
+    ///
+    /// Only scopes that participate in global lookups should enable this to avoid
+    /// the overhead for regular lexical scopes.
+    pub fn enable_global_index(&self) {
+        let mut guard = self.globals.write();
+        if guard.is_none() {
+            *guard = Some(SymbolTrie::default());
+        }
+    }
+
+    /// Returns true when a global trie index is available.
+    pub fn has_global_index(&self) -> bool {
+        self.globals.read().is_some()
+    }
+
+    /// Insert a symbol into the global trie index if present.
+    pub fn insert_global_index(&self, symbol: &'tcx Symbol, interner: &InternPool) {
+        let guard = self.globals.read();
+        if let Some(trie) = guard.as_ref() {
+            trie.insert_symbol(symbol, interner);
+        }
+    }
+
+    /// Lookup symbols by suffix using the global trie index.
+    pub fn lookup_global_suffix(
+        &self,
+        suffix: &[InternedStr],
+        kind_filters: Option<&[SymKind]>,
+        unit_filters: Option<&[usize]>,
+    ) -> Vec<&'tcx Symbol> {
+        let guard = self.globals.read();
+        guard
+            .as_ref()
+            .map(|trie| trie.lookup_symbol_suffix(suffix, kind_filters, unit_filters))
+            .unwrap_or_default()
+    }
+
+    /// Lookup symbols by full path using the global trie index.
+    pub fn lookup_global_exact(
+        &self,
+        path: &[InternedStr],
+        kind_filters: Option<&[SymKind]>,
+        unit_filters: Option<&[usize]>,
+    ) -> Vec<&'tcx Symbol> {
+        let guard = self.globals.read();
+        guard
+            .as_ref()
+            .map(|trie| trie.lookup_symbol_exact(path, kind_filters, unit_filters))
+            .unwrap_or_default()
     }
 
     #[inline]
@@ -147,43 +186,9 @@ impl<'tcx> Scope<'tcx> {
         symbol.id
     }
 
-    /// Inserts a symbol into this scope using FQN as the key.
-    /// This is used for global scope to avoid name collisions (e.g., multiple `new` functions).
-    pub fn insert_with_fqn(&self, symbol: &'tcx Symbol) -> SymId {
-        self.symbols
-            .write()
-            .entry(symbol.fqn())
-            .or_default()
-            .push(symbol);
-        symbol.id
-    }
-
     /// Looks up all symbols with the given name in this specific scope.
     pub fn lookup_symbols(&self, name: InternedStr) -> Option<Vec<&'tcx Symbol>> {
         self.symbols.read().get(&name).cloned()
-    }
-
-    /// Looks up symbols with optional kind and unit filters within this scope.
-    pub fn lookup_symbols_with(
-        &self,
-        name: InternedStr,
-        kind_filter: Option<SymKind>,
-        unit_filter: Option<usize>,
-        fqn_filter: Option<InternedStr>,
-    ) -> Option<Vec<&'tcx Symbol>> {
-        let symbols = self.lookup_symbols(name)?;
-
-        let filtered: Vec<&'tcx Symbol> = symbols
-            .into_iter()
-            .filter(|symbol| {
-                let kind_match = kind_filter.is_none_or(|k| k == symbol.kind());
-                let unit_match = unit_filter.is_none_or(|u| Some(u) == symbol.unit_index());
-                let fqn_match = fqn_filter.is_none_or(|fq| fq == symbol.fqn());
-                kind_match && unit_match && fqn_match
-            })
-            .collect();
-
-        (!filtered.is_empty()).then_some(filtered)
     }
 }
 
@@ -300,11 +305,41 @@ impl<'tcx> ScopeStack<'tcx> {
         let name_to_intern = if !name.is_empty() {
             name
         } else if force {
-            "___anonymous___"
+            "_-llmcc-anonymous-_"
         } else {
             return None;
         };
         Some(self.interner.intern(name_to_intern))
+    }
+
+    fn symbol_matches_filters(
+        symbol: &'tcx Symbol,
+        kind_filters: Option<&[SymKind]>,
+        unit_filters: Option<&[usize]>,
+        fqn_filters: Option<&[InternedStr]>,
+    ) -> bool {
+        if let Some(filters) = kind_filters {
+            if !filters.iter().any(|expected| symbol.kind() == *expected) {
+                return false;
+            }
+        }
+
+        if let Some(filters) = unit_filters {
+            if !filters
+                .iter()
+                .any(|expected| symbol.unit_index() == Some(*expected))
+            {
+                return false;
+            }
+        }
+
+        if let Some(filters) = fqn_filters {
+            if !filters.iter().any(|expected| symbol.fqn() == *expected) {
+                return false;
+            }
+        }
+
+        true
     }
 
     pub fn lookup_symbol(&self, name: &str) -> Option<&'tcx Symbol> {
@@ -324,9 +359,23 @@ impl<'tcx> ScopeStack<'tcx> {
         let name_key = self.interner.intern(name);
         let stack = self.stack.read();
         let global_scope = stack.first()?;
-        global_scope
+        if let Some(symbol) = global_scope
             .lookup_symbols(name_key)
             .and_then(|matches| matches.last().copied())
+        {
+            return Some(symbol);
+        }
+
+        if global_scope.has_global_index() {
+            let suffix = [name_key];
+            return global_scope
+                .lookup_global_suffix(&suffix, None, None)
+                .into_iter()
+                .rev()
+                .next();
+        }
+
+        None
     }
 
     pub fn lookup_symbol_with(
@@ -346,28 +395,42 @@ impl<'tcx> ScopeStack<'tcx> {
                 .map(|fqn| self.interner.intern(fqn))
                 .collect::<Vec<_>>()
         });
+        let kind_filters_slice = kind_filters.as_ref().map(Vec::as_slice);
+        let unit_filters_slice = unit_filters.as_ref().map(Vec::as_slice);
+        let fqn_keys_slice = fqn_keys.as_ref().map(Vec::as_slice);
         let stack = self.stack.read();
 
         stack.iter().rev().find_map(|scope| {
-            let matches = scope.lookup_symbols(name_key)?;
-            matches.iter().rev().find_map(|symbol| {
-                if let Some(kinds) = &kind_filters
-                    && !kinds.iter().any(|kind| symbol.kind() == *kind)
-                {
-                    return None;
+            if let Some(matches) = scope.lookup_symbols(name_key) {
+                if let Some(symbol) = matches.iter().rev().find(|symbol| {
+                    Self::symbol_matches_filters(
+                        *symbol,
+                        kind_filters_slice,
+                        unit_filters_slice,
+                        fqn_keys_slice,
+                    )
+                }) {
+                    return Some(*symbol);
                 }
-                if let Some(units) = &unit_filters
-                    && !units.iter().any(|unit| symbol.unit_index() == Some(*unit))
-                {
-                    return None;
+            }
+
+            if scope.has_global_index() {
+                let suffix = [name_key];
+                let trie_matches =
+                    scope.lookup_global_suffix(&suffix, kind_filters_slice, unit_filters_slice);
+                for symbol in trie_matches.into_iter().rev() {
+                    if Self::symbol_matches_filters(
+                        symbol,
+                        kind_filters_slice,
+                        unit_filters_slice,
+                        fqn_keys_slice,
+                    ) {
+                        return Some(symbol);
+                    }
                 }
-                if let Some(fqn_keys) = &fqn_keys
-                    && !fqn_keys.iter().any(|fqn_key| symbol.fqn() == *fqn_key)
-                {
-                    return None;
-                }
-                Some(*symbol)
-            })
+            }
+
+            None
         })
     }
 

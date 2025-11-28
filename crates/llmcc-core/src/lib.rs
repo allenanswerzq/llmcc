@@ -16,6 +16,7 @@ pub mod printer;
 pub mod query;
 pub mod scope;
 pub mod symbol;
+pub mod trie;
 pub mod visit;
 
 pub type DynError = Box<dyn std::error::Error + Send + Sync>;
