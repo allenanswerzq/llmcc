@@ -1,7 +1,6 @@
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use std::cmp::Ordering as CmpOrdering;
-use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::ops::Deref;
@@ -119,21 +118,27 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from scope_map
-        self.cc.scope_map.read().get(&scope_id).copied()
+        // Direct lookup from Arena using offset, following redirects if scope was merged
+        let index = (scope_id.0).saturating_sub(1);
+        self.cc.arena.scope().get(index).and_then(|scope| {
+            if let Some(target_id) = scope.get_redirect() {
+                // Follow redirect chain
+                self.opt_get_scope(target_id)
+            } else {
+                Some(scope)
+            }
+        })
     }
 
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.cc.symbol_map.read().get(&owner).copied()
+        // Direct lookup from Arena using offset
+        let index = (owner.0).saturating_sub(1);
+        self.cc.arena.symbol().get(index).copied()
     }
 
     /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.cc
-            .scope_map
-            .read()
-            .get(&scope_id)
-            .copied()
+        self.opt_get_scope(scope_id)
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
@@ -214,11 +219,6 @@ pub struct CompileCtxt<'tcx> {
     /// Generic parse trees from language-specific parsers
     pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
-
-    // ScopeId -> Scope
-    pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
-    // SymId -> &Symbol
-    pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
     pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
@@ -302,8 +302,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            scope_map: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
@@ -351,8 +349,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            scope_map: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
@@ -436,7 +432,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.write().insert(scope.id(), scope);
+        // Scope already in Arena
         scope
     }
 
@@ -445,15 +441,17 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.scope_map
-            .read()
-            .get(&scope_id)
+        let index = (scope_id.0).saturating_sub(1);
+        self.arena
+            .scope()
+            .get(index)
             .copied()
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.symbol_map.read().get(&owner).cloned()
+        let index = (owner.0).saturating_sub(1);
+        self.arena.symbol().get(index).cloned()
     }
 
     pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
@@ -461,16 +459,11 @@ impl<'tcx> CompileCtxt<'tcx> {
             .expect("SymId not mapped to Symbol in CompileCtxt")
     }
 
-    /// Insert a symbol into the symbol map
-    pub fn insert_symbol(&self, symbol: &'tcx Symbol) {
-        self.symbol_map.write().insert(symbol.id(), symbol);
-    }
-
     /// Find the primary symbol associated with a block ID
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
-        self.symbol_map
-            .read()
-            .values()
+        self.arena
+            .symbol()
+            .iter()
             .find(|symbol| symbol.block_id() == Some(block_id))
             .copied()
     }
@@ -478,38 +471,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Access the arena for allocations
     pub fn arena(&'tcx self) -> &'tcx Arena<'tcx> {
         &self.arena
-    }
-
-    /// Allocate a new scope based on an existing one, cloning its contents.
-    ///
-    /// The existing ones are from the other arena, and we want to allocate in
-    /// this arena.
-    pub fn alloc_scope_with(&'tcx self, existing: &'tcx Scope<'tcx>) -> &'tcx Scope<'tcx> {
-        let scope_id = existing.id();
-        let scope = existing;
-
-        // Update scope_map
-        self.scope_map.write().insert(scope_id, scope);
-        scope.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        scope
-    }
-
-    /// Register a batch of scopes in the global scope map without cloning them.
-    pub fn update_scope_map<I>(&'tcx self, scopes: I)
-    where
-        I: IntoIterator<Item = &'tcx Scope<'tcx>>,
-    {
-        let mut scope_map = self.scope_map.write();
-        let mut symbol_map = self.symbol_map.write();
-        for scope in scopes {
-            scope_map.insert(scope.id(), scope);
-            scope.for_each_symbol(|sym| {
-                symbol_map.insert(sym.id(), sym);
-            });
-        }
     }
 
     /// Allocate a new HIR identifier node with the given ID, name and symbol
@@ -540,30 +501,13 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Merge the second scope into the first.
     ///
-    /// This combines all symbols from the second scope into the first scope,
-    /// and updates the scope_map to reference the merged result.
-    ///
-    /// # Arguments
-    /// * `first` - The target scope to merge into
-    /// * `second` - The source scope to merge from
-    ///
-    /// # Side Effects
-    /// - All symbols from `second` are merged into `first`
-    /// - The symbol_map is updated to point all merged symbols to the symbol_map
-    /// - The scope_map is updated to redirect second's scope ID to first
+    /// This combines all symbols from the second scope into the first scope.
+    /// Any future lookup of second's scope ID will redirect to first.
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
-
-        // Update all symbol map entries for symbols now in first scope
-        // We need to register the merged symbols in the global symbol_map
-        first.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        // Remap scope references from second to first
-        // If any code had a reference to second's scope ID, it should now map to first
-        self.scope_map.write().insert(second.id(), first);
+        // Redirect second's scope ID to first's scope ID so lookups redirect
+        second.set_redirect(first.id());
     }
 
     pub fn set_file_root_id(&self, index: usize, start: HirId) {
@@ -595,13 +539,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     // ========== HIR Map APIs ==========
-
-    /// Insert a HIR node into the Arena
-    /// This method is now a no-op since nodes are allocated directly through the Arena
-    pub fn insert_hir_node(&self, _id: HirId, _node: HirNode<'tcx>) {
-        // Nodes are now managed by the Arena's allocation system
-        // This method is kept for API compatibility but does nothing
-    }
 
     /// Get a HIR node by ID from the Arena (O(1) lookup using ID as index)
     /// HIR IDs correspond directly to positions in the Arena vector
@@ -679,22 +616,24 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Get all symbols from the symbol map
     pub fn get_all_symbols(&'tcx self) -> Vec<&'tcx Symbol> {
-        self.symbol_map.read().values().copied().collect()
+        self.arena.symbol().iter()
+            .copied()
+            .collect()
     }
 
-    /// Get the count of registered symbols
+    /// Get the count of registered symbols (excluding unresolved)
     pub fn symbol_count(&self) -> usize {
-        self.symbol_map.read().len()
+        self.arena.symbol().iter()
+            .count()
     }
 
-    /// Iterate over all symbols and their IDs
+    /// Iterate over all symbols and their IDs (excluding unresolved)
     pub fn for_each_symbol<F>(&self, mut f: F)
     where
         F: FnMut(SymId, &'tcx Symbol),
     {
-        let symbol_map = self.symbol_map.read();
-        for (sym_id, symbol) in symbol_map.iter() {
-            f(*sym_id, symbol);
+        for symbol in self.arena.symbol().iter() {
+            f(symbol.id(), symbol);
         }
     }
 
@@ -711,9 +650,4 @@ impl<'tcx> CompileCtxt<'tcx> {
         self.unresolve_symbols.read().len()
     }
 
-    /// Clear all maps (useful for testing)
-    #[cfg(test)]
-    pub fn clear(&self) {
-        self.scope_map.write().clear();
-    }
 }

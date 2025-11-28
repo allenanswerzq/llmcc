@@ -1098,8 +1098,6 @@ mod tests {
     use llmcc_core::symbol::{SymId, SymKind};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
     use pretty_assertions::assert_eq;
-    use serial_test::serial;
-
     fn with_compiled_unit<F>(sources: &[&str], check: F)
     where
         F: for<'a> FnOnce(&'a CompileCtxt<'a>),
@@ -1118,13 +1116,12 @@ mod tests {
         check(&cc);
     }
 
-    fn find_symbol_id(cc: &CompileCtxt<'_>, name: &str, kind: SymKind) -> SymId {
+    fn find_symbol_id<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) -> SymId {
         let name_key = cc.interner.intern(name);
-        cc.symbol_map
-            .read()
-            .iter()
-            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
-            .map(|(id, _)| *id)
+        cc.get_all_symbols()
+            .into_iter()
+            .find(|symbol| symbol.name == name_key && symbol.kind() == kind)
+            .map(|symbol| symbol.id())
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 

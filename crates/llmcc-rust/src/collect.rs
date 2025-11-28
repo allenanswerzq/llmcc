@@ -901,11 +901,9 @@ mod tests {
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
     use llmcc_core::symbol::{SymId, SymKind};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
-    use serial_test::serial;
-
     fn with_compiled_unit<F>(sources: &[&str], check: F)
     where
-        F: FnOnce(&CompileCtxt<'_>),
+        F: for<'a> FnOnce(&'a CompileCtxt<'a>),
     {
         let bytes = sources
             .iter()
@@ -921,30 +919,27 @@ mod tests {
         check(&cc);
     }
 
-    fn find_symbol_id(
-        cc: &CompileCtxt<'_>,
+    fn find_symbol_id<'a>(
+        cc: &'a CompileCtxt<'a>,
         name: &str,
         kind: SymKind,
     ) -> llmcc_core::symbol::SymId {
         let name_key = cc.interner.intern(name);
-        cc.symbol_map
-            .read()
-            .iter()
-            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
-            .map(|(id, _)| *id)
+        cc.get_all_symbols()
+            .into_iter()
+            .find(|symbol| symbol.name == name_key && symbol.kind() == kind)
+            .map(|symbol| symbol.id())
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 
-    fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map
-            .get(&sym_id)
-            .copied()
+    fn dependency_names<'a>(cc: &'a CompileCtxt<'a>, sym_id: SymId) -> Vec<String> {
+        let symbol = cc
+            .opt_get_symbol(sym_id)
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
         let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
-            if let Some(target) = map.get(&dep) {
+            if let Some(target) = cc.opt_get_symbol(dep) {
                 let fqn_key = target.fqn();
                 if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
                     names.push(fqn);
@@ -955,14 +950,10 @@ mod tests {
         names
     }
 
-    fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map.get(&sym_id).copied()?;
-        let ty_id = symbol.type_of();
-        drop(map);
-        let ty_id = ty_id?;
-        let map = cc.symbol_map.read();
-        let ty_symbol = map.get(&ty_id).copied()?;
+    fn type_name_of<'a>(cc: &'a CompileCtxt<'a>, sym_id: SymId) -> Option<String> {
+        let symbol = cc.opt_get_symbol(sym_id)?;
+        let ty_id = symbol.type_of()?;
+        let ty_symbol = cc.opt_get_symbol(ty_id)?;
         cc.interner.resolve_owned(ty_symbol.name)
     }
 
@@ -1008,8 +999,6 @@ mod tests {
                 let sym_id = find_symbol_id(cc, name, *kind);
                 let actual = dependency_names(cc, sym_id);
                 let expected: Vec<String> = deps.iter().map(|s| s.to_string()).collect();
-                println!("AAA_{:?}", actual);
-                println!("EEE_{:?}", expected);
 
                 let mut missing = Vec::new();
                 for expected_dep in &expected {

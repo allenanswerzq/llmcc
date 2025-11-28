@@ -255,6 +255,10 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
         let ident = type_node.find_identifier(*self.unit)?;
 
+        if let Some(symbol) = ident.opt_symbol() {
+            return Some(symbol);
+        }
+
         // Look up existing type symbol
         const TYPE_KINDS: &[SymKind] = &[
             SymKind::Struct,

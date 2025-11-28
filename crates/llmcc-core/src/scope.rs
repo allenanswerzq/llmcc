@@ -23,6 +23,9 @@ pub struct Scope<'tcx> {
     /// Child scopes nested within this scope.
     #[allow(dead_code)]
     children: RwLock<Vec<&'tcx Scope<'tcx>>>,
+    /// If this scope was merged into another, points to the target scope ID.
+    /// Used to redirect lookups from merged scopes to their parent scope.
+    redirect: RwLock<Option<ScopeId>>,
 }
 
 impl<'tcx> Scope<'tcx> {
@@ -40,6 +43,7 @@ impl<'tcx> Scope<'tcx> {
             symbol: RwLock::new(symbol),
             parents: RwLock::new(Vec::new()),
             children: RwLock::new(Vec::new()),
+            redirect: RwLock::new(None),
         }
     }
 
@@ -54,6 +58,7 @@ impl<'tcx> Scope<'tcx> {
             symbol: RwLock::new(symbol_ref),
             parents: RwLock::new(Vec::new()),
             children: RwLock::new(Vec::new()),
+            redirect: RwLock::new(None),
         };
 
         // Deep copy symbols
@@ -96,6 +101,16 @@ impl<'tcx> Scope<'tcx> {
     #[inline]
     pub fn id(&self) -> ScopeId {
         self.id
+    }
+
+    /// If this scope was redirected (merged into another), get the target scope ID.
+    pub fn get_redirect(&self) -> Option<ScopeId> {
+        *self.redirect.read()
+    }
+
+    /// Set the redirect for this scope (used when merging scopes).
+    pub fn set_redirect(&self, target: ScopeId) {
+        *self.redirect.write() = Some(target);
     }
 
     #[inline]

@@ -28,7 +28,6 @@ impl LanguageTraitImpl for LangRust {
             symbol.set_fqn(name);
             symbol.set_is_global(true);
             globals.insert(symbol);
-            cc.insert_symbol(symbol);
         }
 
         stack

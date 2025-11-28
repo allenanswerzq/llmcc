@@ -47,7 +47,7 @@ pub fn reset_scope_id_counter() {
 
 /// Unique identifier for symbols within a compilation unit.
 /// Symbols are allocated sequentially, starting from ID 1.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default, PartialOrd, Ord)]
 pub struct SymId(pub usize);
 
 impl std::fmt::Display for SymId {
@@ -58,7 +58,7 @@ impl std::fmt::Display for SymId {
 
 /// Unique identifier for scopes within a compilation unit.
 /// Scopes are allocated sequentially, starting from ID 1.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug, Default, PartialOrd, Ord)]
 pub struct ScopeId(pub usize);
 
 impl std::fmt::Display for ScopeId {

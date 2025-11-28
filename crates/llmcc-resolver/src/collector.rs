@@ -304,10 +304,6 @@ fn apply_collected_symbols<'tcx>(
             // For the global scope: merge into the final global scope
             // This combines all global-level symbols into one scope
             cc.merge_two_scopes(final_globals, unit_globals);
-        } else {
-            // For all other scopes: allocate new instances in the global arena
-            // while preserving their IDs and symbol relationships
-            cc.alloc_scope_with(scope);
         }
     }
 
@@ -355,5 +351,9 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     for unit_globals in unit_globals_vec.iter() {
         apply_collected_symbols(cc, arena, globals, unit_globals);
     }
+
+    cc.arena.scope_sort_by(|scope| scope.id());
+    cc.arena.symbol_sort_by(|symbol| symbol.id());
+
     globals
 }
