@@ -122,10 +122,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             return;
         }
 
-        let unresolved_symbols = {
-            let mut unresolved = self.cc.unresolve_symbols.write();
-            std::mem::take(&mut *unresolved)
-        };
+        let unresolved_symbols = self.cc.take_unresolved_symbols();
 
         if unresolved_symbols.is_empty() {
             return;
@@ -256,8 +253,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_by_name(&self, name: &str) -> Option<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read();
-        let matches = block_indexes.find_by_name(name);
+        let matches = self.cc.find_blocks_by_name(name);
 
         matches.first().map(|(unit_index, _, block_id)| GraphNode {
             unit_index: *unit_index,
@@ -266,8 +262,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_name(&self, name: &str) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read();
-        let matches = block_indexes.find_by_name(name);
+        let matches = self.cc.find_blocks_by_name(name);
 
         matches
             .into_iter()
@@ -344,7 +339,6 @@ impl<'tcx> ProjectGraph<'tcx> {
         node_index: &HashMap<BlockId, usize>,
     ) -> BTreeSet<LabeledEdge> {
         let mut edges = BTreeSet::new();
-        let symbol_map = self.cc.symbol_map.read();
 
         for node in nodes {
             let Some(_unit_graph) = self.unit_graph(node.unit_index) else {
@@ -355,14 +349,13 @@ impl<'tcx> ProjectGraph<'tcx> {
             // Use the symbol captured during node collection when available
             let symbol_opt = node
                 .sym_id
-                .and_then(|sym_id| symbol_map.get(&sym_id))
-                .copied();
+                .and_then(|sym_id| self.cc.opt_get_symbol(sym_id));
 
             if let Some(symbol) = symbol_opt {
                 // Use typed dependencies for arch graph
                 let depends = symbol.depends.read();
                 for &(dep_id, dep_kind) in depends.iter() {
-                    let Some(dep_symbol) = symbol_map.get(&dep_id) else {
+                    let Some(dep_symbol) = self.cc.opt_get_symbol(dep_id) else {
                         continue;
                     };
                     let Some(dep_block_id) = dep_symbol.block_id() else {
@@ -448,13 +441,12 @@ impl<'tcx> ProjectGraph<'tcx> {
         interesting_kinds: &[BlockKind],
         ranked_filter: Option<&HashSet<BlockId>>,
     ) -> Vec<CompactNode> {
-        let block_indexes = self.cc.block_indexes.read();
+        let all_blocks = self.cc.get_all_blocks();
 
-        block_indexes
-            .block_id_index
-            .iter()
-            .filter_map(|(&block_id, (unit_index, name_opt, kind))| {
-                if !interesting_kinds.contains(kind) {
+        all_blocks
+            .into_iter()
+            .filter_map(|(block_id, unit_index, name_opt, kind)| {
+                if !interesting_kinds.contains(&kind) {
                     return None;
                 }
 
@@ -464,7 +456,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     return None;
                 }
 
-                let unit = self.cc.compile_unit(*unit_index);
+                let unit = self.cc.compile_unit(unit_index);
                 let block = unit.bb(block_id);
                 let display_name = name_opt
                     .clone()
@@ -513,7 +505,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
                 Some(CompactNode {
                     block_id,
-                    unit_index: *unit_index,
+                    unit_index,
                     name: display_name,
                     location,
                     fqn,
@@ -564,8 +556,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read();
-        let matches = block_indexes.find_by_name(name);
+        let matches = self.cc.find_blocks_by_name(name);
 
         matches
             .iter()
@@ -577,8 +568,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_kind(&self, block_kind: BlockKind) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read();
-        let matches = block_indexes.find_by_kind(block_kind);
+        let matches = self.cc.find_blocks_by_kind(block_kind);
 
         matches
             .into_iter()
@@ -590,8 +580,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_by_kind_in(&self, block_kind: BlockKind, unit_index: usize) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read();
-        let block_ids = block_indexes.find_by_kind_and_unit(block_kind, unit_index);
+        let block_ids = self.cc.find_blocks_by_kind_in_unit(block_kind, unit_index);
 
         block_ids
             .into_iter()
@@ -603,8 +592,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn blocks_in(&self, unit_index: usize) -> Vec<GraphNode> {
-        let block_indexes = self.cc.block_indexes.read();
-        let matches = block_indexes.find_by_unit(unit_index);
+        let matches = self.cc.find_blocks_in_unit(unit_index);
 
         matches
             .into_iter()
@@ -616,8 +604,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     pub fn block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
-        let block_indexes = self.cc.block_indexes.read();
-        block_indexes.get_block_info(block_id)
+        self.cc.get_block_info(block_id)
     }
 
     pub fn find_related_blocks(
@@ -638,9 +625,9 @@ impl<'tcx> ProjectGraph<'tcx> {
                     let dependencies = unit
                         .edges
                         .get_related(node.block_id, BlockRelation::DependsOn);
-                    let block_indexes = self.cc.block_indexes.read();
                     for dep_block_id in dependencies {
-                        let dep_unit_index = block_indexes
+                        let dep_unit_index = self
+                            .cc
                             .get_block_info(dep_block_id)
                             .map(|(idx, _, _)| idx)
                             .unwrap_or(node.unit_index);
@@ -657,12 +644,11 @@ impl<'tcx> ProjectGraph<'tcx> {
                         .edges
                         .get_related(node.block_id, BlockRelation::DependedBy);
                     if !dependents.is_empty() {
-                        let indexes = self.cc.block_indexes.read();
                         for dep_block_id in dependents {
                             if !seen.insert(dep_block_id) {
                                 continue;
                             }
-                            if let Some((dep_unit_idx, _, _)) = indexes.get_block_info(dep_block_id)
+                            if let Some((dep_unit_idx, _, _)) = self.cc.get_block_info(dep_block_id)
                             {
                                 result.push(GraphNode {
                                     unit_index: dep_unit_idx,
@@ -804,7 +790,6 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut result = HashSet::new();
         let mut visited = HashSet::new();
         let mut stack = vec![node.block_id];
-        let block_indexes = self.cc.block_indexes.read();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -817,7 +802,8 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .get_related(current_block, BlockRelation::DependsOn);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
-                    let dep_unit_index = block_indexes
+                    let dep_unit_index = self
+                        .cc
                         .get_block_info(dep_block_id)
                         .map(|(idx, _, _)| idx)
                         .unwrap_or(node.unit_index);
@@ -842,7 +828,6 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut result = HashSet::new();
         let mut visited = HashSet::new();
         let mut stack = vec![node.block_id];
-        let block_indexes = self.cc.block_indexes.read();
 
         while let Some(current_block) = stack.pop() {
             if visited.contains(&current_block) {
@@ -855,7 +840,8 @@ impl<'tcx> ProjectGraph<'tcx> {
                 .get_related(current_block, BlockRelation::DependedBy);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
-                    let dep_unit_index = block_indexes
+                    let dep_unit_index = self
+                        .cc
                         .get_block_info(dep_block_id)
                         .map(|(idx, _, _)| idx)
                         .unwrap_or(node.unit_index);

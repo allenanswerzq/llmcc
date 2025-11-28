@@ -490,6 +490,11 @@ impl<'tcx> CompileCtxt<'tcx> {
             .expect("SymId not mapped to Symbol in CompileCtxt")
     }
 
+    /// Insert a symbol into the symbol map
+    pub fn insert_symbol(&self, symbol: &'tcx Symbol) {
+        self.symbol_map.write().insert(symbol.id(), symbol);
+    }
+
     /// Find the primary symbol associated with a block ID
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
         self.symbol_map
@@ -616,6 +621,120 @@ impl<'tcx> CompileCtxt<'tcx> {
             .iter()
             .filter_map(|f| f.path().map(|p| p.to_string()))
             .collect()
+    }
+
+    // ========== HIR Map APIs ==========
+
+    /// Insert a HIR node into the map
+    pub fn insert_hir_node(&self, id: HirId, node: HirNode<'tcx>) {
+        let parented = ParentedNode::new(node);
+        self.hir_map.write().insert(id, parented);
+    }
+
+    /// Get a HIR node by ID
+    pub fn get_hir_node(&self, id: HirId) -> Option<HirNode<'tcx>> {
+        self.hir_map.read().get(&id).map(|parented| parented.node)
+    }
+
+    /// Check if a HIR node exists
+    pub fn hir_node_exists(&self, id: HirId) -> bool {
+        self.hir_map.read().contains_key(&id)
+    }
+
+    /// Get the total count of HIR nodes
+    pub fn hir_node_count(&self) -> usize {
+        self.hir_map.read().len()
+    }
+
+    /// Get all HIR node IDs
+    pub fn all_hir_node_ids(&self) -> Vec<HirId> {
+        self.hir_map.read().keys().cloned().collect()
+    }
+
+    // ========== Block Indexes APIs ==========
+
+    /// Get all blocks by name
+    pub fn find_blocks_by_name(
+        &self,
+        name: &str,
+    ) -> Vec<(usize, crate::block::BlockKind, BlockId)> {
+        self.block_indexes.read().find_by_name(name)
+    }
+
+    /// Get all blocks by kind
+    pub fn find_blocks_by_kind(
+        &self,
+        kind: crate::block::BlockKind,
+    ) -> Vec<(usize, Option<String>, BlockId)> {
+        self.block_indexes.read().find_by_kind(kind)
+    }
+
+    /// Get blocks in a specific unit
+    pub fn find_blocks_in_unit(
+        &self,
+        unit_index: usize,
+    ) -> Vec<(Option<String>, crate::block::BlockKind, BlockId)> {
+        self.block_indexes.read().find_by_unit(unit_index)
+    }
+
+    /// Get blocks of a specific kind in a specific unit
+    pub fn find_blocks_by_kind_in_unit(
+        &self,
+        kind: crate::block::BlockKind,
+        unit_index: usize,
+    ) -> Vec<BlockId> {
+        self.block_indexes
+            .read()
+            .find_by_kind_and_unit(kind, unit_index)
+    }
+
+    /// Get block info by ID
+    pub fn get_block_info(
+        &self,
+        block_id: BlockId,
+    ) -> Option<(usize, Option<String>, crate::block::BlockKind)> {
+        self.block_indexes.read().get_block_info(block_id)
+    }
+
+    /// Get all blocks with their metadata
+    pub fn get_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
+        self.block_indexes.read().iter_all_blocks()
+    }
+
+    // ========== Symbol Map APIs ==========
+
+    /// Get all symbols from the symbol map
+    pub fn get_all_symbols(&'tcx self) -> Vec<&'tcx Symbol> {
+        self.symbol_map.read().values().copied().collect()
+    }
+
+    /// Get the count of registered symbols
+    pub fn symbol_count(&self) -> usize {
+        self.symbol_map.read().len()
+    }
+
+    /// Iterate over all symbols and their IDs
+    pub fn for_each_symbol<F>(&self, mut f: F)
+    where
+        F: FnMut(SymId, &'tcx Symbol),
+    {
+        let symbol_map = self.symbol_map.read();
+        for (sym_id, symbol) in symbol_map.iter() {
+            f(*sym_id, symbol);
+        }
+    }
+
+    // ========== Unresolved Symbols APIs ==========
+
+    /// Get and clear all unresolved symbols
+    pub fn take_unresolved_symbols(&self) -> Vec<&'tcx Symbol> {
+        let mut unresolved = self.unresolve_symbols.write();
+        std::mem::take(&mut *unresolved)
+    }
+
+    /// Get the count of unresolved symbols without clearing
+    pub fn unresolved_symbol_count(&self) -> usize {
+        self.unresolve_symbols.read().len()
     }
 
     /// Clear all maps (useful for testing)

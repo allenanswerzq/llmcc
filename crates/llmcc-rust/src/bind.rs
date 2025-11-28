@@ -1127,14 +1127,10 @@ mod tests {
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
 
-    fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map.get(&sym_id).copied()?;
-        let ty_id = symbol.type_of();
-        drop(map);
-        let ty_id = ty_id?;
-        let map = cc.symbol_map.read();
-        let ty_symbol = map.get(&ty_id).copied()?;
+    fn type_name_of<'a>(cc: &'a CompileCtxt<'a>, sym_id: SymId) -> Option<String> {
+        let symbol = cc.opt_get_symbol(sym_id)?;
+        let ty_id = symbol.type_of()?;
+        let ty_symbol = cc.opt_get_symbol(ty_id)?;
         cc.interner.resolve_owned(ty_symbol.name)
     }
 
@@ -1150,16 +1146,14 @@ mod tests {
         });
     }
 
-    fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map
-            .get(&sym_id)
-            .copied()
+    fn dependency_names<'a>(cc: &'a CompileCtxt<'a>, sym_id: SymId) -> Vec<String> {
+        let symbol = cc
+            .opt_get_symbol(sym_id)
             .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
         let deps = symbol.depends_ids();
         let mut names = Vec::new();
         for dep in deps {
-            if let Some(target) = map.get(&dep) {
+            if let Some(target) = cc.opt_get_symbol(dep) {
                 let fqn_key = target.fqn();
                 if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
                     names.push(fqn);

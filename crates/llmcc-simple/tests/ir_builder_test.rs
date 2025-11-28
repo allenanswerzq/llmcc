@@ -39,7 +39,7 @@ fn generate_sources(num_files: usize, lines_per_file: usize) -> Vec<Vec<u8>> {
 fn build_and_count<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> usize {
     let result = build_llmcc_ir::<LangSimple>(cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
-    cc.hir_map.read().len()
+    cc.hir_node_count()
 }
 
 // ============================================================================
@@ -65,9 +65,9 @@ fn helper() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
-    assert!(!hir_map.is_empty(), "HIR map should contain nodes");
-    println!("✅ Single file build: {} nodes", hir_map.len());
+    let node_count = cc.hir_node_count();
+    assert!(node_count > 0, "HIR map should contain nodes");
+    println!("✅ Single file build: {} nodes", node_count);
 }
 
 /// Test 2: Multiple files sequential build
@@ -83,15 +83,15 @@ fn test_ir_build_multiple_files_sequential() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "Multi-file IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
+    let node_count = cc.hir_node_count();
     assert!(
-        !hir_map.is_empty(),
+        node_count > 0,
         "HIR map should contain nodes from all files"
     );
     println!(
         "✅ Multiple file build: {} files, {} nodes",
         sources.len(),
-        hir_map.len()
+        node_count
     );
 }
 
@@ -125,25 +125,23 @@ fn main() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
+    let node_count = cc.hir_node_count();
     const EXPECTED_NODES: usize = 5;
 
     assert_eq!(
-        hir_map.len(),
-        EXPECTED_NODES,
+        node_count, EXPECTED_NODES,
         "Expected exactly {} nodes for 'fn main() {{ x = 5 }}', got {}",
-        EXPECTED_NODES,
-        hir_map.len()
+        EXPECTED_NODES, node_count
     );
 
     let file_root = cc.file_root_id(0);
     assert!(file_root.is_some(), "File must have root");
     assert!(
-        hir_map.contains_key(&file_root.unwrap()),
+        cc.hir_node_exists(file_root.unwrap()),
         "Root must be in map"
     );
 
-    println!("✅ Correctness test passed: {} nodes", hir_map.len());
+    println!("✅ Correctness test passed: {} nodes", node_count);
 }
 /// Test 5: Verify thread pool reuse across build phases
 #[test]
@@ -201,7 +199,7 @@ fn file2_func2() { f = 6 }"#
     }
 
     // Verify all IDs are unique
-    let all_ids: HashSet<_> = cc.hir_map.read().keys().cloned().collect();
+    let all_ids: HashSet<_> = cc.all_hir_node_ids().into_iter().collect();
     assert_eq!(
         all_ids.len(),
         hir_nodes,
@@ -224,7 +222,7 @@ fn test_ir_build_no_id_collisions() {
 
     let cc1 = CompileCtxt::from_sources::<LangSimple>(&sources1);
     build_and_count(&cc1);
-    let ids1: Vec<_> = cc1.hir_map.read().keys().cloned().collect();
+    let ids1: Vec<_> = cc1.all_hir_node_ids();
 
     let sources2: Vec<_> = (0..10)
         .map(|i| format!("fn func_2_{}() {{ y = {} }}", i, i).into_bytes())
@@ -232,7 +230,7 @@ fn test_ir_build_no_id_collisions() {
 
     let cc2 = CompileCtxt::from_sources::<LangSimple>(&sources2);
     build_and_count(&cc2);
-    let ids2: Vec<_> = cc2.hir_map.read().keys().cloned().collect();
+    let ids2: Vec<_> = cc2.all_hir_node_ids();
 
     let set1: HashSet<_> = ids1.iter().cloned().collect();
     let set2: HashSet<_> = ids2.iter().cloned().collect();
@@ -271,10 +269,7 @@ fn helper() {
     assert!(file_root.is_some(), "File should have root");
 
     let root_id = file_root.unwrap();
-    assert!(
-        cc.hir_map.read().contains_key(&root_id),
-        "Root must be in map"
-    );
+    assert!(cc.hir_node_exists(root_id), "Root must be in map");
 
     println!("✅ Structure integrity: {} nodes", hir_nodes);
 }

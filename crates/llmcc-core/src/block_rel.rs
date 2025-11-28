@@ -522,6 +522,17 @@ impl BlockIndexMaps {
         self.block_id_index.contains_key(&block_id)
     }
 
+    /// Get an iterator over all blocks with their metadata
+    /// Returns (block_id, unit_index, block_name, block_kind)
+    pub fn iter_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, BlockKind)> {
+        self.block_id_index
+            .iter()
+            .map(|(&block_id, (unit_index, name, kind))| {
+                (block_id, *unit_index, name.clone(), *kind)
+            })
+            .collect()
+    }
+
     /// Clear all indexes
     pub fn clear(&mut self) {
         self.block_name_index.clear();

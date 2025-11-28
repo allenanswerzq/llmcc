@@ -1223,11 +1223,11 @@ fn render_block_graph_node(
     buf.push_str(")\n");
 }
 
-fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
-    let symbol_map = cc.symbol_map.read();
+fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
+    let symbols = cc.get_all_symbols();
     let interner = &cc.interner;
-    let mut rows = Vec::with_capacity(symbol_map.len());
-    for (_sym_id, symbol) in symbol_map.iter() {
+    let mut rows = Vec::with_capacity(symbols.len());
+    for symbol in symbols {
         let fqn_str = interner
             .resolve_owned(*symbol.fqn.read())
             .unwrap_or_else(|| "?".to_string());
@@ -1247,14 +1247,14 @@ fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
 
     rows
 }
-fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySnapshot> {
+fn snapshot_symbol_dependencies<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolDependencySnapshot> {
     use std::collections::HashMap;
 
-    let symbol_map = cc.symbol_map.read();
+    let symbols = cc.get_all_symbols();
     let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
 
     // Build initial cache of all symbols
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in &symbols {
         let sym_id_num = symbol.id().0 as u32;
         let label = format!(
             "u{}:{}",
@@ -1272,15 +1272,15 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     }
 
     // Fill in dependencies
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in &symbols {
         let sym_id_num = symbol.id().0 as u32;
         let deps = symbol.depends_ids();
         for dep in deps {
-            if let Some(_target) = symbol_map.get(&dep) {
+            if let Some(target) = cc.opt_get_symbol(dep) {
                 let dep_id_num = dep.0 as u32;
                 let dep_label = format!(
                     "u{}:{}",
-                    _target.unit_index().unwrap_or_default(),
+                    target.unit_index().unwrap_or_default(),
                     dep_id_num
                 );
                 if let Some(entry) = cache.get_mut(&sym_id_num) {
@@ -1310,15 +1310,14 @@ fn render_block_reports(
     use std::collections::BTreeMap;
     use std::collections::HashMap;
 
-    let indexes = project.cc.block_indexes.read();
     let mut units: BTreeMap<usize, Vec<(BlockDescriptor, Vec<BlockDescriptor>)>> = BTreeMap::new();
 
     for unit_graph in project.units() {
         let unit_index = unit_graph.unit_index();
         let mut entries = Vec::new();
 
-        for (_name_opt, kind, block_id) in indexes.find_by_unit(unit_index) {
-            let Some(mut desc) = describe_block(block_id, &indexes) else {
+        for (_name_opt, kind, block_id) in project.cc.find_blocks_in_unit(unit_index) {
+            let Some(mut desc) = describe_block(block_id, project.cc) else {
                 continue;
             };
             desc.kind = kind.to_string();
@@ -1330,7 +1329,7 @@ fn render_block_reports(
             deps.dedup();
             let mut dep_descs: Vec<BlockDescriptor> = deps
                 .into_iter()
-                .filter_map(|id| describe_block(id, &indexes))
+                .filter_map(|id| describe_block(id, project.cc))
                 .collect();
             dep_descs.sort_by(|a, b| (a.unit, &a.name).cmp(&(b.unit, &b.name)));
             entries.push((desc, dep_descs));
@@ -1406,9 +1405,9 @@ struct BlockDescriptor {
 
 fn describe_block(
     block_id: llmcc_core::graph_builder::BlockId,
-    indexes: &llmcc_core::block_rel::BlockIndexMaps,
+    cc: &llmcc_core::context::CompileCtxt,
 ) -> Option<BlockDescriptor> {
-    let (unit, name, kind) = indexes.get_block_info(block_id)?;
+    let (unit, name, kind) = cc.get_block_info(block_id)?;
     let name = name.unwrap_or_else(|| format!("block#{block_id}"));
     Some(BlockDescriptor {
         name,

@@ -9,7 +9,6 @@ use rayon::prelude::*;
 
 use crate::DynError;
 use crate::context::CompileCtxt;
-use crate::context::ParentedNode;
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
@@ -267,42 +266,34 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
 
 /// Rebuild the hir_map from all allocated HirNodes in the arena.
 fn build_hir_map<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> Result<(), DynError> {
-    let mut hir_map = cc.hir_map.write();
-
     for hir_root in cc.arena.hir_root().iter() {
-        let node = HirNode::Root(hir_root);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_root.base.id, parented);
+        let node = HirNode::Root(*hir_root);
+        cc.insert_hir_node(hir_root.base.id, node);
     }
 
     for hir_text in cc.arena.hir_text().iter() {
-        let node = HirNode::Text(hir_text);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_text.base.id, parented);
+        let node = HirNode::Text(*hir_text);
+        cc.insert_hir_node(hir_text.base.id, node);
     }
 
     for hir_internal in cc.arena.hir_internal().iter() {
-        let node = HirNode::Internal(hir_internal);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_internal.base.id, parented);
+        let node = HirNode::Internal(*hir_internal);
+        cc.insert_hir_node(hir_internal.base.id, node);
     }
 
     for hir_scope in cc.arena.hir_scope().iter() {
-        let node = HirNode::Scope(hir_scope);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_scope.base.id, parented);
+        let node = HirNode::Scope(*hir_scope);
+        cc.insert_hir_node(hir_scope.base.id, node);
     }
 
     for hir_file in cc.arena.hir_file().iter() {
-        let node = HirNode::File(hir_file);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_file.base.id, parented);
+        let node = HirNode::File(*hir_file);
+        cc.insert_hir_node(hir_file.base.id, node);
     }
 
     for hir_ident in cc.arena.hir_ident().iter() {
-        let node = HirNode::Ident(hir_ident);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_ident.base.id, parented);
+        let node = HirNode::Ident(*hir_ident);
+        cc.insert_hir_node(hir_ident.base.id, node);
     }
 
     Ok(())
