@@ -9,7 +9,7 @@ use std::time::Instant;
 use tree_sitter::Node;
 use uuid::Uuid;
 
-use crate::block::{BasicBlock, BlockArena, BlockId};
+use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
@@ -97,11 +97,13 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
+        // Direct indexing into block arena Vec using BlockId (offset by 1 since BlockId starts at 1)
+        let index = (id.0 as usize).saturating_sub(1);
         self.cc
-            .block_map
-            .read()
-            .get(&id)
-            .map(|parented| parented.block.clone())
+            .block_arena
+            .bb()
+            .get(index)
+            .map(|bb| (*bb).clone())
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -139,17 +141,18 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.unresolve_symbols.write().push(symbol);
     }
 
-    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
-        let parented = ParentedBlock::new(parent, block.clone());
-        self.cc.block_map.write().insert(id, parented);
-
-        // Register the block in the index maps
+    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
+        // Get block info before allocation
         let block_kind = block.kind();
         let block_name = block
             .base()
             .and_then(|base| base.opt_get_name())
             .map(|s| s.to_string());
 
+        // Allocate block into the Arena Vec using BlockId as index
+        self.cc.block_arena.alloc(block);
+
+        // Register the block in the index maps
         self.cc
             .block_indexes
             .write()
@@ -187,28 +190,6 @@ impl<'tcx> ParentedNode<'tcx> {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct ParentedBlock<'tcx> {
-    pub parent: BlockId,
-    pub block: BasicBlock<'tcx>,
-}
-
-impl<'tcx> ParentedBlock<'tcx> {
-    pub fn new(parent: BlockId, block: BasicBlock<'tcx>) -> Self {
-        Self { parent, block }
-    }
-
-    /// Get a reference to the wrapped node
-    pub fn block(&self) -> &BasicBlock<'tcx> {
-        &self.block
-    }
-
-    /// Get the parent ID
-    pub fn parent(&self) -> BlockId {
-        self.parent
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct FileParseMetric {
     pub path: String,
@@ -236,14 +217,10 @@ pub struct CompileCtxt<'tcx> {
 
     // ScopeId -> Scope
     pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
-    // HirId -> ScopeId
-    pub owner_to_scope_id: RwLock<HashMap<HirId, ScopeId>>,
     // SymId -> &Symbol
     pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
 
     pub block_arena: BlockArena<'tcx>,
-    // BlockId -> ParentedBlock
-    pub block_map: RwLock<HashMap<BlockId, ParentedBlock<'tcx>>>,
     pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 
@@ -297,6 +274,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
+        reset_block_id_counter();
 
         let read_start = Instant::now();
 
@@ -325,10 +303,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             scope_map: RwLock::new(HashMap::new()),
-            owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
@@ -345,6 +321,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
+        reset_block_id_counter();
 
         let read_start = Instant::now();
 
@@ -375,10 +352,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             scope_map: RwLock::new(HashMap::new()),
-            owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
@@ -462,7 +437,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         let scope = self.arena.alloc(Scope::new(owner));
         self.scope_map.write().insert(scope.id(), scope);
-        self.owner_to_scope_id.write().insert(owner, scope.id());
         scope
     }
 
@@ -741,6 +715,5 @@ impl<'tcx> CompileCtxt<'tcx> {
     #[cfg(test)]
     pub fn clear(&self) {
         self.scope_map.write().clear();
-        self.owner_to_scope_id.write().clear();
     }
 }
