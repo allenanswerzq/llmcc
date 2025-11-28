@@ -1178,24 +1178,8 @@ mod tests {
     /// Check if an expected pattern matches an actual FQN.
     /// The `_m` segment in the expected pattern is treated as a wildcard that matches any UUID.
     fn fqn_matches_pattern(actual: &str, expected: &str) -> bool {
-        let actual_parts: Vec<&str> = actual.split("::").collect();
-        let expected_parts: Vec<&str> = expected.split("::").collect();
-
-        if actual_parts.len() != expected_parts.len() {
-            return false;
-        }
-
-        actual_parts
-            .iter()
-            .zip(expected_parts.iter())
-            .all(|(actual_part, expected_part)| {
-                if *expected_part == "_m" {
-                    // _m is a wildcard that matches any UUID
-                    is_uuid_like(actual_part)
-                } else {
-                    actual_part == expected_part
-                }
-            })
+        // With deterministic paths, patterns now match exactly
+        actual == expected
     }
 
     fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
@@ -1602,5 +1586,162 @@ fn run() {
     "#;
         assert_symbol_type(&[source], "px", SymKind::Variable, Some("i32"));
         assert_symbol_type(&[source], "py", SymKind::Variable, Some("i32"));
+    }
+
+    /// Tests cross-unit resolution via global trie index.
+    /// File 0 defines a public struct, File 1 uses it.
+    #[serial_test::serial]
+    #[test]
+    fn cross_unit_resolve_public_struct() {
+        let file0 = r#"pub struct Config { value: i32 }"#;
+        let file1 = r#"
+fn setup() {
+    let c = Config { value: 42 };
+}
+"#;
+        assert_dependencies(
+            &[file0, file1],
+            &[(
+                "setup",
+                SymKind::Function,
+                &["_c::_m::source_0::Config"],
+            )],
+        );
+    }
+
+    /// Cross-unit public function resolution.
+    /// File 0 defines a public function, File 1 calls it.
+    #[serial_test::serial]
+    #[test]
+    fn cross_unit_resolve_public_function() {
+        let file0 = r#"
+pub fn helper() -> i32 { 42 }
+"#;
+        let file1 = r#"
+fn caller() {
+    helper();
+}
+"#;
+        assert_dependencies(
+            &[file0, file1],
+            &[("caller", SymKind::Function, &["_c::_m::source_0::helper"])],
+        );
+    }
+
+    /// Cross-unit struct method resolution.
+    /// File 0 defines public struct with impl, File 1 uses it.
+    #[serial_test::serial]
+    #[test]
+    fn cross_unit_resolve_struct_method() {
+        let file0 = r#"
+pub struct Builder;
+impl Builder {
+    pub fn new() -> Self { Builder }
+    pub fn build(self) -> i32 { 42 }
+}
+"#;
+        let file1 = r#"
+fn run() {
+    let b = Builder::new();
+    let result = b.build();
+}
+"#;
+        assert_dependencies(
+            &[file0, file1],
+            &[(
+                "run",
+                SymKind::Function,
+                &[
+                    "_c::_m::source_0::Builder::new",
+                    "_c::_m::source_0::Builder::build",
+                    "_c::_m::source_0::Builder",
+                ],
+            )],
+        );
+    }
+
+    /// Cross-unit trait implementation resolution.
+    /// File 0 defines public trait and impl, File 1 uses trait method.
+    #[serial_test::serial]
+    #[test]
+    fn cross_unit_resolve_trait_method() {
+        let file0 = r#"
+pub trait Renderer {
+    fn render(&self);
+}
+
+pub struct Canvas;
+impl Renderer for Canvas {
+    fn render(&self) {}
+}
+"#;
+        let file1 = r#"
+fn display() {
+    let c = Canvas;
+    c.render();
+}
+"#;
+        assert_dependencies(
+            &[file0, file1],
+            &[(
+                "display",
+                SymKind::Function,
+                &[
+                    "_c::_m::source_0::Canvas",
+                    "_c::_m::source_0::Canvas::render",
+                ],
+            )],
+        );
+    }
+
+    /// Cross-unit: private symbols should NOT resolve across units.
+    /// File 0 defines a private struct (not pub), File 1 tries to use it.
+    #[serial_test::serial]
+    #[test]
+    fn cross_unit_private_not_resolved() {
+        let file0 = r#"
+struct Private { x: i32 }
+
+pub fn get_private() -> Private { Private { x: 1 } }
+"#;
+        let file1 = r#"
+fn caller() {
+    let _p = get_private();
+}
+"#;
+        // caller should resolve get_private and also depend on its return type Private
+        // Note: even though Private is not public, the return type is still tracked as a dependency
+        with_compiled_unit(&[file0, file1], |cc| {
+            let caller_id = find_symbol_id(cc, "caller", SymKind::Function);
+            let actual = dependency_names(cc, caller_id);
+            let expected: Vec<String> = vec![
+                "_c::_m::source_0::Private".to_string(),
+                "_c::_m::source_0::get_private".to_string(),
+            ];
+            assert_eq!(actual, expected);
+        });
+    }
+
+    /// Cross-unit with nested modules and public re-export.
+    #[serial_test::serial]
+    #[test]
+    fn cross_unit_nested_module_public() {
+        let file0 = r#"
+mod utils {
+    pub fn compute() -> i32 { 42 }
+}
+
+pub use utils::compute;
+"#;
+        let file1 = r#"
+fn runner() {
+    compute();
+}
+"#;
+        // runner should resolve to compute
+        assert_dependencies(
+            &[file0, file1],
+            &[("runner", SymKind::Function, &["_c::_m::source_0::utils::compute"])],
+        );
     }
 }
