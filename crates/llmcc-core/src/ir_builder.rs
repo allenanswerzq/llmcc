@@ -269,37 +269,37 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
 fn build_hir_map<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> Result<(), DynError> {
     let mut hir_map = cc.hir_map.write();
 
-    for hir_root in cc.arena.hir_root() {
+    for hir_root in cc.arena.hir_root().iter() {
         let node = HirNode::Root(hir_root);
         let parented = ParentedNode::new(node);
         hir_map.insert(hir_root.base.id, parented);
     }
 
-    for hir_text in cc.arena.hir_text() {
+    for hir_text in cc.arena.hir_text().iter() {
         let node = HirNode::Text(hir_text);
         let parented = ParentedNode::new(node);
         hir_map.insert(hir_text.base.id, parented);
     }
 
-    for hir_internal in cc.arena.hir_internal() {
+    for hir_internal in cc.arena.hir_internal().iter() {
         let node = HirNode::Internal(hir_internal);
         let parented = ParentedNode::new(node);
         hir_map.insert(hir_internal.base.id, parented);
     }
 
-    for hir_scope in cc.arena.hir_scope() {
+    for hir_scope in cc.arena.hir_scope().iter() {
         let node = HirNode::Scope(hir_scope);
         let parented = ParentedNode::new(node);
         hir_map.insert(hir_scope.base.id, parented);
     }
 
-    for hir_file in cc.arena.hir_file() {
+    for hir_file in cc.arena.hir_file().iter() {
         let node = HirNode::File(hir_file);
         let parented = ParentedNode::new(node);
         hir_map.insert(hir_file.base.id, parented);
     }
 
-    for hir_ident in cc.arena.hir_ident() {
+    for hir_ident in cc.arena.hir_ident().iter() {
         let node = HirNode::Ident(hir_ident);
         let parented = ParentedNode::new(node);
         hir_map.insert(hir_ident.base.id, parented);

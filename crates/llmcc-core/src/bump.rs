@@ -32,6 +32,15 @@ macro_rules! declare_arena {
                 }
             }
 
+            /// Create ArenaInner with pre-allocated capacity for each field.
+            #[allow(dead_code)]
+            pub fn new_with_capacity(cap: usize) -> Self {
+                Self {
+                    herd: Herd::new(),
+                    $( $field: RwLock::new(Vec::with_capacity(cap)), )*
+                }
+            }
+
             /// Clear all allocations and reset memory.
             #[allow(dead_code)]
             pub fn reset(&mut self) {
@@ -48,9 +57,22 @@ macro_rules! declare_arena {
             // ----- Auto-generated getters -----
             $(
                 paste::paste! {
+                    /// Get read access to all items (returns a guard, no clone).
                     #[inline]
-                    pub fn [<$field>](&self) -> Vec<&'a $ty> {
-                        self.$field.read().clone()
+                    pub fn [<$field>](&self) -> parking_lot::RwLockReadGuard<'_, Vec<&'a $ty>> {
+                        self.$field.read()
+                    }
+
+                    /// Get count without cloning the Vec.
+                    #[inline]
+                    pub fn [<len_ $field>](&self) -> usize {
+                        self.$field.read().len()
+                    }
+
+                    /// Sort items in-place by a key function.
+                    #[inline]
+                    pub fn [<$field _sort_by>]<K: Ord>(&self, f: impl FnMut(&&'a $ty) -> K) {
+                        self.$field.write().sort_by_key(f);
                     }
                 }
             )*
@@ -118,7 +140,6 @@ macro_rules! declare_arena {
                 fn insert_into(self, arena: &'a ArenaInner<'a>) -> &'a Self {
                     let member = arena.herd.get();
                     let r = member.alloc(self);
-                    drop(member);
                     arena.$field.write().push(r);
                     r
                 }
@@ -647,5 +668,138 @@ mod tests {
             75,
             "All symbols from all threads should be present"
         );
+    }
+
+    #[test]
+    fn test_arena_len_method() {
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        assert_eq!(arena.len_symbols(), 0);
+        assert_eq!(arena.len_scopes(), 0);
+
+        // Allocate some symbols
+        for i in 0..5 {
+            let name = pool.intern(format!("sym_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            arena.alloc(symbol);
+        }
+
+        // Verify len without cloning
+        assert_eq!(arena.len_symbols(), 5);
+        assert_eq!(arena.len_scopes(), 0);
+
+        // Allocate some scopes
+        for i in 0..3 {
+            let scope = Scope::new(create_test_hir_id(100 + i as u32));
+            arena.alloc(scope);
+        }
+
+        assert_eq!(arena.len_scopes(), 3);
+    }
+
+    #[test]
+    fn test_arena_sort_by_symbols() {
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate symbols out of order
+        let mut allocated = Vec::new();
+        for i in [5, 2, 8, 1, 9, 3, 7, 4, 6, 0] {
+            let name = pool.intern(format!("sym_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            let sym_ref = arena.alloc(symbol);
+            allocated.push(sym_ref.id.0);
+        }
+
+        // Sort in-place by id
+        arena.symbols_sort_by(|s| s.id.0);
+
+        // Get symbols (now sorted)
+        let symbols = arena.symbols();
+        assert_eq!(symbols.len(), 10);
+
+        // Verify sorted by id (ascending order of auto-assigned SymIds)
+        let ids: Vec<usize> = symbols.iter().map(|s| s.id.0).collect();
+        let mut expected = allocated.clone();
+        expected.sort();
+        assert_eq!(ids, expected);
+    }
+
+    #[test]
+    fn test_arena_sort_by_scopes() {
+        let arena = TestArena::new();
+
+        // Allocate scopes out of order
+        let mut allocated = Vec::new();
+        for i in [30, 10, 20, 50, 40] {
+            let scope = Scope::new(create_test_hir_id(i as u32));
+            let scope_ref = arena.alloc(scope);
+            allocated.push(scope_ref.id().0);
+        }
+
+        // Sort in-place by id
+        arena.scopes_sort_by(|s| s.id().0);
+
+        // Get scopes (now sorted)
+        let scopes = arena.scopes();
+        assert_eq!(scopes.len(), 5);
+
+        // Verify sorted by id (ascending order of auto-assigned ScopeIds)
+        let ids: Vec<usize> = scopes.iter().map(|s| s.id().0).collect();
+        let mut expected = allocated.clone();
+        expected.sort();
+        assert_eq!(ids, expected);
+    }
+
+    #[test]
+    fn test_arena_sort_by_empty() {
+        let arena = TestArena::new();
+
+        // Sort empty arena should not panic
+        arena.symbols_sort_by(|s| s.id.0);
+        assert!(arena.symbols().is_empty());
+    }
+
+    #[test]
+    fn test_arena_len_parallel() {
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate in parallel
+        (0..100).into_par_iter().for_each(|i| {
+            let name = pool.intern(format!("parallel_len_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            arena.alloc(symbol);
+        });
+
+        // Verify len works correctly after parallel allocation
+        assert_eq!(arena.len_symbols(), 100);
+    }
+
+    #[test]
+    fn test_arena_sort_by_parallel() {
+        let arena = TestArena::new();
+        let pool = InternPool::new();
+
+        // Allocate in parallel (random order due to parallelism)
+        (0..100).into_par_iter().for_each(|i| {
+            let name = pool.intern(format!("parallel_sym_{}", i));
+            let symbol = Symbol::new(create_test_hir_id(i as u32), name);
+            arena.alloc(symbol);
+        });
+
+        // Sort in-place
+        arena.symbols_sort_by(|s| s.id.0);
+
+        // Get symbols - should be in order now
+        let symbols = arena.symbols();
+        assert_eq!(symbols.len(), 100);
+
+        // Verify sorted (each id should be <= next id)
+        let ids: Vec<usize> = symbols.iter().map(|s| s.id.0).collect();
+        for i in 0..ids.len() - 1 {
+            assert!(ids[i] <= ids[i + 1], "IDs should be sorted");
+        }
     }
 }

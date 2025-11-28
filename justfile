@@ -35,6 +35,10 @@ cargo-release:
 clippy:
     cargo clippy --all-targets --workspace -- -D warnings
 
+quick-test: cargo-test
+    cargo run -p llmcc-test -- run-all
+
+
 release version:
     #!/bin/bash
     set -e
