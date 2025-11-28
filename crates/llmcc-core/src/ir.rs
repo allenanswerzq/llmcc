@@ -8,11 +8,11 @@ use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
 declare_arena!(Arena {
-    hir_root: HirRoot,
+    hir_node: HirNode<'a>,
+    hir_file: HirFile,
     hir_text: HirText,
     hir_internal: HirInternal,
     hir_scope: HirScope<'a>,
-    hir_file: HirFile,
     hir_ident: HirIdent<'a>,
     scope: Scope<'a>,
     symbol: Symbol,

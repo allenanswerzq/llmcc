@@ -23,6 +23,11 @@ pub fn next_hir_id() -> HirId {
     HirId(id)
 }
 
+/// Reset the global HIR ID counter to 0 (for testing isolation)
+pub fn reset_hir_id_counter() {
+    HIR_ID_COUNTER.store(0, Ordering::SeqCst);
+}
+
 /// Configuration for IR building behavior.
 ///
 /// This configuration controls how the IR builder processes files.
@@ -89,7 +94,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let child_ids: Vec<HirId> = children.iter().map(|n| n.id()).collect();
         let base = self.make_base(id, parent, node, kind, child_ids);
 
-        match kind {
+        let hir_node = match kind {
             HirKind::File => {
                 let path = self.file_path.clone().unwrap_or_default();
                 let hir_file = HirFile::new(base, path);
@@ -127,7 +132,10 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
                 HirNode::Ident(allocated)
             }
             _other => panic!("unsupported HIR kind for node {}", node.debug_info()),
-        }
+        };
+
+        // Allocate the HirNode wrapper in the Arena's hir_node collection
+        *self.arena.alloc(hir_node)
     }
 
     /// Collect all valid child nodes from a parse node.
@@ -258,43 +266,8 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
         cc.set_file_root_id(index, file_root_id);
     }
 
-    // Sequential phase: Build hir_map from all allocated nodes
-    build_hir_map(cc)?;
-
-    Ok(())
-}
-
-/// Rebuild the hir_map from all allocated HirNodes in the arena.
-fn build_hir_map<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> Result<(), DynError> {
-    for hir_root in cc.arena.hir_root().iter() {
-        let node = HirNode::Root(*hir_root);
-        cc.insert_hir_node(hir_root.base.id, node);
-    }
-
-    for hir_text in cc.arena.hir_text().iter() {
-        let node = HirNode::Text(*hir_text);
-        cc.insert_hir_node(hir_text.base.id, node);
-    }
-
-    for hir_internal in cc.arena.hir_internal().iter() {
-        let node = HirNode::Internal(*hir_internal);
-        cc.insert_hir_node(hir_internal.base.id, node);
-    }
-
-    for hir_scope in cc.arena.hir_scope().iter() {
-        let node = HirNode::Scope(*hir_scope);
-        cc.insert_hir_node(hir_scope.base.id, node);
-    }
-
-    for hir_file in cc.arena.hir_file().iter() {
-        let node = HirNode::File(*hir_file);
-        cc.insert_hir_node(hir_file.base.id, node);
-    }
-
-    for hir_ident in cc.arena.hir_ident().iter() {
-        let node = HirNode::Ident(*hir_ident);
-        cc.insert_hir_node(hir_ident.base.id, node);
-    }
+    // Sequential phase: sort hir nodes by ID, so we can do O(1) lookups later
+    cc.arena.hir_node_sort_by(|node| node.id().0);
 
     Ok(())
 }

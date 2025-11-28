@@ -14,9 +14,10 @@ use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
+use crate::ir_builder::reset_hir_id_counter;
 use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
-use crate::symbol::{ScopeId, SymId, Symbol};
+use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -85,11 +86,7 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.cc
-            .hir_map
-            .read()
-            .get(&id)
-            .map(|parented| parented.node)
+        self.cc.get_hir_node(id)
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -115,11 +112,7 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get the parent of a HIR node
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
-        self.cc
-            .hir_map
-            .read()
-            .get(&id)
-            .and_then(|parented| parented.parent())
+        self.opt_hir_node(id).and_then(|node| node.parent())
     }
 
     /// Get an existing scope or None if it doesn't exist
@@ -241,8 +234,6 @@ pub struct CompileCtxt<'tcx> {
     pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
-    // HirId -> ParentedNode
-    pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
     // ScopeId -> Scope
     pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
     // HirId -> ScopeId
@@ -303,6 +294,10 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Create a new CompileCtxt from files
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
+        reset_hir_id_counter();
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+
         let read_start = Instant::now();
 
         let mut files_with_index: Vec<(usize, File)> = paths
@@ -329,7 +324,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
@@ -348,6 +342,10 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn from_files_with_logical<L: LanguageTrait>(
         paths: &[(String, String)],
     ) -> std::io::Result<Self> {
+        reset_hir_id_counter();
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+
         let read_start = Instant::now();
 
         let mut files_with_index: Vec<(usize, File)> = paths
@@ -376,7 +374,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            hir_map: RwLock::new(HashMap::new()),
             scope_map: RwLock::new(HashMap::new()),
             owner_to_scope_id: RwLock::new(HashMap::new()),
             symbol_map: RwLock::new(HashMap::new()),
@@ -625,30 +622,33 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     // ========== HIR Map APIs ==========
 
-    /// Insert a HIR node into the map
-    pub fn insert_hir_node(&self, id: HirId, node: HirNode<'tcx>) {
-        let parented = ParentedNode::new(node);
-        self.hir_map.write().insert(id, parented);
+    /// Insert a HIR node into the Arena
+    /// This method is now a no-op since nodes are allocated directly through the Arena
+    pub fn insert_hir_node(&self, _id: HirId, _node: HirNode<'tcx>) {
+        // Nodes are now managed by the Arena's allocation system
+        // This method is kept for API compatibility but does nothing
     }
 
-    /// Get a HIR node by ID
+    /// Get a HIR node by ID from the Arena (O(1) lookup using ID as index)
+    /// HIR IDs correspond directly to positions in the Arena vector
     pub fn get_hir_node(&self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.hir_map.read().get(&id).map(|parented| parented.node)
+        self.arena.hir_node().get(id.0).map(|node_ref| **node_ref)
     }
 
-    /// Check if a HIR node exists
+    /// Check if a HIR node exists in the Arena (O(1) check using ID as index)
     pub fn hir_node_exists(&self, id: HirId) -> bool {
-        self.hir_map.read().contains_key(&id)
+        let hir_nodes = self.arena.hir_node();
+        id.0 < hir_nodes.len()
     }
 
-    /// Get the total count of HIR nodes
+    /// Get the total count of HIR nodes in the Arena
     pub fn hir_node_count(&self) -> usize {
-        self.hir_map.read().len()
+        self.arena.hir_node().len()
     }
 
-    /// Get all HIR node IDs
+    /// Get all HIR node IDs from the Arena
     pub fn all_hir_node_ids(&self) -> Vec<HirId> {
-        self.hir_map.read().keys().cloned().collect()
+        self.arena.hir_node().iter().map(|node| node.id()).collect()
     }
 
     // ========== Block Indexes APIs ==========
@@ -740,7 +740,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Clear all maps (useful for testing)
     #[cfg(test)]
     pub fn clear(&self) {
-        self.hir_map.write().clear();
         self.scope_map.write().clear();
         self.owner_to_scope_id.write().clear();
     }

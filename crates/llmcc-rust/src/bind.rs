@@ -1098,6 +1098,7 @@ mod tests {
     use llmcc_core::symbol::{SymId, SymKind};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
     use pretty_assertions::assert_eq;
+    use serial_test::serial;
 
     fn with_compiled_unit<F>(sources: &[&str], check: F)
     where
@@ -1228,6 +1229,7 @@ mod tests {
         });
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_shadowing_basic() {
         let source = r#"
@@ -1246,6 +1248,7 @@ fn run() {
         assert_symbol_type(&[source], "z", SymKind::Variable, Some("i32"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_type_inference_literals() {
         let source = r#"
@@ -1262,6 +1265,7 @@ fn run() {
         assert_symbol_type(&[source], "d", SymKind::Variable, Some("bool"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_type_inference_binary_ops() {
         let source = r#"
@@ -1278,6 +1282,7 @@ fn run() {
         assert_symbol_type(&[source], "d", SymKind::Variable, Some("bool"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_type_inference_struct_field_access() {
         let source = r#"
@@ -1297,6 +1302,7 @@ fn run() {
         assert_symbol_type(&[source], "py", SymKind::Variable, Some("f64"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_type_inference_function_return() {
         let source = r#"
@@ -1310,6 +1316,7 @@ fn run() {
         assert_symbol_type(&[source], "u", SymKind::Variable, Some("User"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_type_inference_method_return() {
         let source = r#"
@@ -1327,6 +1334,7 @@ fn run() {
         assert_symbol_type(&[source], "x", SymKind::Variable, Some("Foo"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_method_call_return_type_dependency() {
         let source = r#"
@@ -1358,6 +1366,7 @@ fn func() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_type_inference_chain() {
         let source = r#"
@@ -1370,6 +1379,7 @@ fn run() {
         assert_symbol_type(&[source], "c", SymKind::Variable, Some("i32"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_trait_default_method_resolution() {
         let source = r#"
@@ -1398,6 +1408,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_call_in_let_simple() {
         let source = r#"
@@ -1412,6 +1423,7 @@ fn bar() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_call_in_let_method() {
         let source = r#"
@@ -1434,6 +1446,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_const_item() {
         let source = r#"
@@ -1447,6 +1460,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_call_expression_simple() {
         let source = r#"
@@ -1461,6 +1475,7 @@ fn bar() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_call_expression_method() {
         let source = r#"
@@ -1483,6 +1498,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_call_expression_associated() {
         let source = r#"
@@ -1501,6 +1517,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_call_expression_nested() {
         let source = r#"
@@ -1520,6 +1537,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_call_expression_chain() {
         let source = r#"
@@ -1547,6 +1565,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_let_declaration_inference() {
         let source = r#"
@@ -1559,6 +1578,7 @@ fn run() {
         assert_symbol_type(&[source], "y", SymKind::Variable, Some("f64"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_let_declaration_struct_pattern() {
         let source = r#"
@@ -1574,6 +1594,7 @@ fn run() {
         assert_symbol_type(&[source], "y", SymKind::Variable, Some("i32"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn test_let_declaration_struct_pattern_with_alias() {
         let source = r#"

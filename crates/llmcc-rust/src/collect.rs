@@ -901,6 +901,7 @@ mod tests {
     use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
     use llmcc_core::symbol::{SymId, SymKind};
     use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
+    use serial_test::serial;
 
     fn with_compiled_unit<F>(sources: &[&str], check: F)
     where
@@ -1043,6 +1044,7 @@ mod tests {
         });
     }
 
+    #[serial_test::serial]
     #[test]
     fn call_expression_basic_dependency() {
         let source = r#"
@@ -1057,6 +1059,7 @@ fn caller() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn method_call_dependency_expr() {
         let source = r#"
@@ -1083,6 +1086,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn method_call_dependency_chained() {
         let source = r#"
@@ -1117,6 +1121,7 @@ fn execute() -> Response {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn wrapped_call_dependency() {
         let source = r#"
@@ -1139,6 +1144,7 @@ async fn entry() -> Result<(), ()> {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn macro_invocation_dependency() {
         let source = r#"
@@ -1154,6 +1160,7 @@ fn call_macro() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn scoped_function_dependency() {
         let source = r#"
@@ -1175,6 +1182,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn associated_function_dependency() {
         let source = r#"
@@ -1196,6 +1204,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn trait_fully_qualified_call_dependency() {
         let source = r#"
@@ -1220,6 +1229,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn closure_symbol_kind() {
         let source = r#"
@@ -1249,6 +1259,7 @@ fn caller() {
         });
     }
 
+    #[serial_test::serial]
     #[test]
     fn namespaced_macro_dependency() {
         let source = r#"
@@ -1273,6 +1284,7 @@ fn run() {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn super_module_function_dependency() {
         let source = r#"
@@ -1291,6 +1303,7 @@ mod outer {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn variable_type_annotation() {
         let source = r#"
@@ -1305,6 +1318,7 @@ fn run() {
         assert_symbol_type(&[source], "other", SymKind::Variable, Some("Foo"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn static_type_annotation() {
         let source = r#"
@@ -1314,6 +1328,7 @@ static GLOBAL: Foo = Foo;
         assert_symbol_type(&[source], "GLOBAL", SymKind::Static, Some("Foo"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn parameter_type_annotation() {
         let source = r#"
@@ -1326,6 +1341,7 @@ fn consume(param: Foo) {
         assert_symbol_type(&[source], "param", SymKind::Variable, Some("Foo"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn field_type_annotation() {
         let source = r#"
@@ -1337,6 +1353,7 @@ struct Bucket {
         assert_symbol_type(&[source], "item", SymKind::Field, Some("Bar"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn const_and_type_alias_types() {
         let source = r#"
@@ -1348,6 +1365,7 @@ const ANSWER: i32 = 42;
         assert_symbol_type(&[source], "ANSWER", SymKind::Const, Some("i32"));
     }
 
+    #[serial_test::serial]
     #[test]
     fn struct_field_generic_dependency() {
         let source = r#"
@@ -1375,6 +1393,7 @@ struct Container {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn enum_variant_dependency() {
         let source = r#"
@@ -1389,6 +1408,7 @@ enum Wrapper {
         );
     }
 
+    #[serial_test::serial]
     #[test]
     fn let_statement_generic_dependency() {
         let source = r#"
