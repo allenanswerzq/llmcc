@@ -25,7 +25,6 @@ impl LanguageTraitImpl for LangRust {
             let name = cc.interner.intern(prim);
             let symbol = cc.arena().alloc(Symbol::new(CompileCtxt::GLOBAL_SCOPE_OWNER, name));
             symbol.set_kind(SymKind::Primitive);
-            symbol.set_fqn(name);
             symbol.set_is_global(true);
             globals.insert(symbol);
         }

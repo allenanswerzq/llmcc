@@ -486,7 +486,6 @@ impl<'tcx> ProjectGraph<'tcx> {
 
                 let mut sym_id: Option<SymId> = None;
                 let mut sym_kind = None;
-                let mut fqn = "unknown".to_string();
                 let mut is_public = false;
 
                 if let Some(symbol) = block
@@ -498,17 +497,14 @@ impl<'tcx> ProjectGraph<'tcx> {
                     sym_id = Some(symbol.id());
                     sym_kind = Some(symbol.kind());
                     is_public = symbol.is_global();
-                    if let Some(resolved) = self.cc.interner.resolve_owned(symbol.fqn()) {
-                        fqn = resolved;
-                    }
                 }
 
                 Some(CompactNode {
                     block_id,
                     unit_index,
-                    name: display_name,
+                    name: display_name.clone(),
                     location,
-                    fqn,
+                    fqn: display_name,
                     sym_id,
                     sym_kind,
                     is_public,

@@ -147,17 +147,6 @@ impl<'tcx> Scope<'tcx> {
         symbol.id
     }
 
-    /// Inserts a symbol into this scope using FQN as the key.
-    /// This is used for global scope to avoid name collisions (e.g., multiple `new` functions).
-    pub fn insert_with_fqn(&self, symbol: &'tcx Symbol) -> SymId {
-        self.symbols
-            .write()
-            .entry(symbol.fqn())
-            .or_default()
-            .push(symbol);
-        symbol.id
-    }
-
     /// Looks up all symbols with the given name in this specific scope.
     pub fn lookup_symbols(&self, name: InternedStr) -> Option<Vec<&'tcx Symbol>> {
         self.symbols.read().get(&name).cloned()
@@ -169,7 +158,6 @@ impl<'tcx> Scope<'tcx> {
         name: InternedStr,
         kind_filter: Option<SymKind>,
         unit_filter: Option<usize>,
-        fqn_filter: Option<InternedStr>,
     ) -> Option<Vec<&'tcx Symbol>> {
         let symbols = self.lookup_symbols(name)?;
 
@@ -178,8 +166,7 @@ impl<'tcx> Scope<'tcx> {
             .filter(|symbol| {
                 let kind_match = kind_filter.is_none_or(|k| k == symbol.kind());
                 let unit_match = unit_filter.is_none_or(|u| Some(u) == symbol.unit_index());
-                let fqn_match = fqn_filter.is_none_or(|fq| fq == symbol.fqn());
-                kind_match && unit_match && fqn_match
+                kind_match && unit_match
             })
             .collect();
 
@@ -334,18 +321,11 @@ impl<'tcx> ScopeStack<'tcx> {
         name: &str,
         kind_filters: Option<Vec<SymKind>>,
         unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
     ) -> Option<&'tcx Symbol> {
         if name.is_empty() {
             return None;
         }
         let name_key = self.interner.intern(name);
-        let fqn_keys = fqn_filters.map(|filters| {
-            filters
-                .into_iter()
-                .map(|fqn| self.interner.intern(fqn))
-                .collect::<Vec<_>>()
-        });
         let stack = self.stack.read();
 
         stack.iter().rev().find_map(|scope| {
@@ -358,11 +338,6 @@ impl<'tcx> ScopeStack<'tcx> {
                 }
                 if let Some(units) = &unit_filters
                     && !units.iter().any(|unit| symbol.unit_index() == Some(*unit))
-                {
-                    return None;
-                }
-                if let Some(fqn_keys) = &fqn_keys
-                    && !fqn_keys.iter().any(|fqn_key| symbol.fqn() == *fqn_key)
                 {
                     return None;
                 }

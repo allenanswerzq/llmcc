@@ -123,7 +123,6 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             name,
             Some(vec![SymKind::Function, SymKind::Macro, SymKind::Closure]),
             None,
-            None,
         )
     }
 
@@ -272,7 +271,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
         if let Some(existing) =
             self.scopes
-                .lookup_symbol_with(&ident.name, Some(TYPE_KINDS.to_vec()), None, None)
+                .lookup_symbol_with(&ident.name, Some(TYPE_KINDS.to_vec()), None)
         {
             return Some(existing);
         }

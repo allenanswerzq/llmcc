@@ -2,7 +2,6 @@
 use llmcc_core::LanguageTrait;
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
-use llmcc_core::interner::InternedStr;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
@@ -129,42 +128,12 @@ impl<'a> CollectorScopes<'a> {
         self.scopes.top()
     }
 
-    /// Build fully qualified name from current scope
-    pub fn build_fqn(&self, name: &str) -> InternedStr {
-        let fqn_str = self
-            .scopes
-            .iter()
-            .into_iter()
-            .rev()
-            .find_map(|scope| {
-                scope.opt_symbol().and_then(|parent_sym| {
-                    // Read the InternedStr FQN of the scope's symbol
-                    let fqn = parent_sym.fqn.read();
-                    // Resolve the InternedStr to an owned String
-                    self.interner.resolve_owned(*fqn)
-                })
-            })
-            .map(|scope_fqn| {
-                // If we have a scope FQN, format it as "scope::name"
-                format!("{}::{}", scope_fqn, name)
-            })
-            .unwrap_or_else(|| {
-                // If any step failed (no scope, no symbol, or no resolved scope FQN),
-                // the FQN is just the name itself.
-                name.to_string()
-            });
-
-        // Intern the final FQN string
-        self.interner().intern(&fqn_str)
-    }
-
     /// Initialize a symbol with common properties
-    fn init_symbol(&self, symbol: &'a Symbol, name: &str, node: &HirNode<'a>, kind: SymKind) {
+    fn init_symbol(&self, symbol: &'a Symbol, _name: &str, node: &HirNode<'a>, kind: SymKind) {
         if symbol.kind() == SymKind::Unknown {
             symbol.set_owner(node.id());
             symbol.set_kind(kind);
             symbol.set_unit_index(self.unit_index());
-            symbol.set_fqn(self.build_fqn(name));
             symbol.add_defining(node.id());
             if let Some(parent) = self.top() {
                 symbol.set_parent_scope(parent.id());
@@ -244,18 +213,10 @@ impl<'a> CollectorScopes<'a> {
         name: &str,
         kind_filters: Option<Vec<SymKind>>,
         unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
     ) -> Option<&'a Symbol> {
         let name_key = self.interner.intern(name);
-        let fqn_keys = fqn_filters.as_ref().map(|filters| {
-            filters
-                .iter()
-                .map(|fqn| self.interner.intern(fqn))
-                .collect::<Vec<_>>()
-        });
         let kind_filters_ref = kind_filters.as_ref();
         let unit_filters_ref = unit_filters.as_ref();
-        let fqn_keys_ref = fqn_keys.as_ref();
 
         for scope in self.scopes.iter().into_iter().rev() {
             let Some(symbols) = scope.lookup_symbols(name_key) else {
@@ -273,12 +234,6 @@ impl<'a> CollectorScopes<'a> {
                     && !filters
                         .iter()
                         .any(|unit| symbol.unit_index() == Some(*unit))
-                {
-                    continue;
-                }
-
-                if let Some(filters) = fqn_keys_ref
-                    && !filters.iter().any(|fqn| symbol.fqn() == *fqn)
                 {
                     continue;
                 }
@@ -315,6 +270,7 @@ fn apply_collected_symbols<'tcx>(
 /// At the collect pass, we can only know all the sutff in a single compilation unit, because of the
 /// random order of collecting, for symbols we can not resolve at the unit, we just create a symbol
 /// placeholder, and resolve them in the later binding phase.
+///
 #[rustfmt::skip]
 pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,

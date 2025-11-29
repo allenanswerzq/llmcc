@@ -1152,9 +1152,8 @@ mod tests {
         let mut names = Vec::new();
         for dep in deps {
             if let Some(target) = cc.opt_get_symbol(dep) {
-                let fqn_key = target.fqn();
-                if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
-                    names.push(fqn);
+                if let Some(name) = cc.interner.resolve_owned(target.name) {
+                    names.push(name);
                 }
             }
         }
@@ -1175,29 +1174,6 @@ mod tests {
             .all(|(part, &len)| part.len() == len && part.chars().all(|c| c.is_ascii_hexdigit()))
     }
 
-    /// Check if an expected pattern matches an actual FQN.
-    /// The `_m` segment in the expected pattern is treated as a wildcard that matches any UUID.
-    fn fqn_matches_pattern(actual: &str, expected: &str) -> bool {
-        let actual_parts: Vec<&str> = actual.split("::").collect();
-        let expected_parts: Vec<&str> = expected.split("::").collect();
-
-        if actual_parts.len() != expected_parts.len() {
-            return false;
-        }
-
-        actual_parts
-            .iter()
-            .zip(expected_parts.iter())
-            .all(|(actual_part, expected_part)| {
-                if *expected_part == "_m" {
-                    // _m is a wildcard that matches any UUID
-                    is_uuid_like(actual_part)
-                } else {
-                    actual_part == expected_part
-                }
-            })
-    }
-
     fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
         with_compiled_unit(source, |cc| {
             for (name, kind, deps) in expectations {
@@ -1209,7 +1185,7 @@ mod tests {
                 for expected_dep in &expected {
                     if !actual
                         .iter()
-                        .any(|actual_dep| fqn_matches_pattern(actual_dep, expected_dep))
+                        .any(|actual_dep| actual_dep == expected_dep)
                     {
                         missing.push(expected_dep.clone());
                     }
@@ -1217,7 +1193,7 @@ mod tests {
 
                 assert!(
                     missing.is_empty(),
-                    "dependency mismatch for symbol {name}: expected suffixes {:?}, actual FQNs {:?}, missing {:?}",
+                    "dependency mismatch for symbol {name}: expected suffixes {:?}, actual dependencies {:?}, missing {:?}",
                     expected,
                     actual,
                     missing
@@ -1355,9 +1331,9 @@ fn func() {
                 "func",
                 SymKind::Function,
                 &[
-                    "_c::_m::source_0::MyStruct",
-                    "_c::_m::source_0::Foo", // Return type of foo() method
-                    "_c::_m::source_0::MyStruct::foo",
+                    "MyStruct",
+                    "Foo", // Return type of foo() method
+                    "foo",
                 ],
             )],
         );
@@ -1398,8 +1374,8 @@ fn run() {
                 "run",
                 SymKind::Function,
                 &[
-                    "_c::_m::source_0::Foo",
-                    "_c::_m::source_0::Greeter::greet", // Should resolve to trait method
+                    "Foo",
+                    "greet", // Should resolve to trait method
                 ],
             )],
         );
@@ -1416,7 +1392,7 @@ fn bar() {
 "#;
         assert_dependencies(
             &[source],
-            &[("bar", SymKind::Function, &["_c::_m::source_0::foo"])],
+            &[("bar", SymKind::Function, &["foo"])],
         );
     }
 

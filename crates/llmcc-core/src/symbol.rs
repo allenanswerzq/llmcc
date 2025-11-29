@@ -152,11 +152,9 @@ pub struct Symbol {
     /// Interned key for the symbol name, used for fast lookup and comparison.
     /// Interned names allow O(1) equality checks.
     pub name: InternedStr,
-    /// Interned key for the fully qualified name (module path + name).
-    /// Updated when the symbol's scope is determined.
-    pub fqn: RwLock<InternedStr>,
     /// Which compile unit this symbol is defined in.
     /// May be updated during compilation if the symbol spans multiple files.
+    /// NOTE: compile unit doesn't mean a single file, it can be multiple files combined.
     pub unit_index: RwLock<Option<usize>>,
     /// Owning HIR node that introduces the symbol (e.g. function def, struct def).
     /// Immutable once set; represents the primary definition location.
@@ -202,7 +200,6 @@ impl Clone for Symbol {
             id: self.id,
             owner: RwLock::new(*self.owner.read()),
             name: self.name,
-            fqn: RwLock::new(*self.fqn.read()),
             unit_index: RwLock::new(*self.unit_index.read()),
             defining: RwLock::new(self.defining.read().clone()),
             scope: RwLock::new(*self.scope.read()),
@@ -266,7 +263,6 @@ impl Symbol {
             id: sym_id,
             owner: RwLock::new(owner),
             name: name_key,
-            fqn: RwLock::new(name_key),
             unit_index: RwLock::new(None),
             defining: RwLock::new(Vec::new()),
             scope: RwLock::new(None),
@@ -304,18 +300,6 @@ impl Symbol {
     pub fn format_compact(&self) -> String {
         let owner = *self.owner.read();
         format!("{}->{} <{:?}>", self.id, owner, self.name)
-    }
-
-    /// Sets the fully qualified name for this symbol.
-    /// Should be called when the symbol's scope hierarchy is determined.
-    #[inline]
-    pub fn set_fqn(&self, fqn: InternedStr) {
-        *self.fqn.write() = fqn;
-    }
-
-    #[inline]
-    pub fn fqn(&self) -> InternedStr {
-        *self.fqn.read()
     }
 
     /// Gets the scope ID this symbol belongs to.
@@ -654,17 +638,6 @@ mod tests {
         // Second call should not change the value
         symbol.set_unit_index(2);
         assert_eq!(symbol.unit_index(), Some(1));
-    }
-
-    #[test]
-    fn test_symbol_fqn() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("symbol"));
-        let fqn = pool.intern("module::symbol");
-
-        symbol.set_fqn(fqn);
-        assert_eq!(*symbol.fqn.read(), fqn);
     }
 
     #[test]

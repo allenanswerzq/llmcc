@@ -30,7 +30,6 @@ struct SymbolSnapshot {
     id: u32,
     kind: String,
     name: String,
-    fqn: String,
     is_global: bool,
 }
 
@@ -533,7 +532,6 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
             .then_with(|| a.id.cmp(&b.id))
             .then_with(|| a.kind.cmp(&b.kind))
             .then_with(|| a.name.cmp(&b.name))
-            .then_with(|| a.fqn.cmp(&b.fqn))
     });
 
     let label_width = rows
@@ -543,7 +541,6 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
         .unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
     let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
-    let fqn_width = rows.iter().map(|row| row.fqn.len()).max().unwrap_or(0);
     let global_width = if rows.iter().any(|row| row.is_global) {
         "[global]".len()
     } else {
@@ -555,7 +552,7 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
         let label = format!("u{}:{}", row.unit, row.id);
         let _ = writeln!(
             buf,
-            "{:<label_width$} | {:kind_width$} | {:name_width$} | {:fqn_width$} | {:global_width$}",
+            "{:<label_width$} | {:kind_width$} | {:name_width$} | {:global_width$}",
             label,
             row.kind,
             row.name,
@@ -564,7 +561,6 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
             label_width = label_width,
             kind_width = kind_width,
             name_width = name_width,
-            fqn_width = fqn_width,
             global_width = global_width,
         );
     }
@@ -706,17 +702,9 @@ fn normalize_symbols(text: &str) -> String {
             let (unit, id) = parse_unit_and_id(label);
             let kind = parts.get(1).copied().unwrap_or("");
             let name = parts.get(2).copied().unwrap_or("");
-            let mut fqn = parts.get(3).copied().unwrap_or("");
-            let mut global = parts.get(4).copied().unwrap_or("");
+            let mut global = parts.get(3).copied().unwrap_or("");
 
-            if parts.len() == 4 && fqn.ends_with("[global]") {
-                if let Some(stripped) = fqn.strip_suffix(" [global]") {
-                    fqn = stripped.trim_end();
-                }
-                global = "[global]";
-            }
-
-            let canonical = format!("{label} | {kind} | {name} | {fqn} | {global}");
+            let canonical = format!("{label} | {kind} | {name} | {global}");
             // Trim trailing whitespace from the row (e.g., when global is empty)
             let canonical = canonical.trim_end().to_string();
             Some((unit, id, canonical))
@@ -1229,8 +1217,6 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
     let mut rows = Vec::with_capacity(symbols.len());
     for symbol in symbols {
         let fqn_str = interner
-            .resolve_owned(*symbol.fqn.read())
-            .unwrap_or_else(|| "?".to_string());
         let name_str = interner
             .resolve_owned(symbol.name)
             .unwrap_or_else(|| "?".to_string());
@@ -1240,7 +1226,6 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
             id: symbol.id().0 as u32,
             kind: format!("{:?}", symbol.kind()),
             name: name_str,
-            fqn: fqn_str,
             is_global: symbol.is_global(),
         });
     }

@@ -146,22 +146,13 @@ impl<'tcx> CollectorVisitor<'tcx> {
     ) {
         // Check visibility
         let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
-        let at_global = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
 
         if is_pub {
-            if !at_global {
-                // Use FQN for global scope to avoid name collisions
-                // (e.g., CreateTaskUseCase::new vs CompleteTaskUseCase::new)
-                scopes.globals().insert_with_fqn(sym);
-            }
             sym.set_is_global(true);
             return;
         }
 
         if is_pub_crate {
-            if !at_global {
-                scopes.globals().insert_with_fqn(sym);
-            }
             sym.set_is_global(true);
             return;
         }
@@ -170,7 +161,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             && let Some(parent_sym) = scope.opt_symbol()
             && parent_sym.is_global()
         {
-            scopes.globals().insert_with_fqn(sym);
+            sym.set_is_global(true);
         }
     }
 
@@ -228,7 +219,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         if let Some(sn) = node.as_scope()
             && let Some(ident) = node.child_identifier_by_field(*unit, field_id)
         {
-            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
+            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None)
             {
                 let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
@@ -237,10 +228,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 &ident.name,
                 Some(vec![SymKind::UnresolvedType]),
                 None,
-                None,
             ) {
                 sym.set_kind(kind);
-                sym.set_fqn(scopes.build_fqn(&ident.name));
                 let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
@@ -461,7 +450,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             && let Some(trait_name) = Self::type_name_from_node(unit, &trait_node)
         {
             if let Some(symbol) =
-                scopes.lookup_symbol_with(trait_name, Some(vec![SymKind::Trait]), None, None)
+                scopes.lookup_symbol_with(trait_name, Some(vec![SymKind::Trait]), None)
                 && let Some(trait_ident) =
                     node.child_identifier_by_field(*unit, LangRust::field_trait)
             {
@@ -486,7 +475,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             if let Some(symbol) = scopes.lookup_symbol_with(
                 type_name,
                 Some(vec![SymKind::Struct, SymKind::Enum, SymKind::Primitive]),
-                None,
                 None,
             ) {
                 type_ident.set_symbol(symbol);
@@ -605,7 +593,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 SymKind::Function,
                 SymKind::TypeAlias,
             ]),
-            None,
             None,
         ) {
             ident.set_symbol(symbol);
@@ -782,7 +769,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(enum_sym) = parent_enum
             && let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
             && let Some(variant_sym) =
-                scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::EnumVariant]), None, None)
+                scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::EnumVariant]), None)
         {
             variant_sym.set_type_of(enum_sym.id);
         }
@@ -940,9 +927,8 @@ mod tests {
         let mut names = Vec::new();
         for dep in deps {
             if let Some(target) = cc.opt_get_symbol(dep) {
-                let fqn_key = target.fqn();
-                if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
-                    names.push(fqn);
+                if let Some(name) = cc.interner.resolve_owned(target.name) {
+                    names.push(name);
                 }
             }
         }
@@ -970,29 +956,6 @@ mod tests {
             .all(|(part, &len)| part.len() == len && part.chars().all(|c| c.is_ascii_hexdigit()))
     }
 
-    /// Check if an expected pattern matches an actual FQN.
-    /// The `_m` segment in the expected pattern is treated as a wildcard that matches any UUID.
-    fn fqn_matches_pattern(actual: &str, expected: &str) -> bool {
-        let actual_parts: Vec<&str> = actual.split("::").collect();
-        let expected_parts: Vec<&str> = expected.split("::").collect();
-
-        if actual_parts.len() != expected_parts.len() {
-            return false;
-        }
-
-        actual_parts
-            .iter()
-            .zip(expected_parts.iter())
-            .all(|(actual_part, expected_part)| {
-                if *expected_part == "_m" {
-                    // _m is a wildcard that matches any UUID
-                    is_uuid_like(actual_part)
-                } else {
-                    actual_part == expected_part
-                }
-            })
-    }
-
     fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
         with_compiled_unit(source, |cc| {
             for (name, kind, deps) in expectations {
@@ -1004,7 +967,7 @@ mod tests {
                 for expected_dep in &expected {
                     if !actual
                         .iter()
-                        .any(|actual_dep| fqn_matches_pattern(actual_dep, expected_dep))
+                        .any(|actual_dep| actual_dep == expected_dep)
                     {
                         missing.push(expected_dep.clone());
                     }
@@ -1012,7 +975,7 @@ mod tests {
 
                 assert!(
                     missing.is_empty(),
-                    "dependency mismatch for symbol {name}: expected suffixes {:?}, actual FQNs {:?}, missing {:?}",
+                    "dependency mismatch for symbol {name}: expected suffixes {:?}, actual dependencies {:?}, missing {:?}",
                     expected,
                     actual,
                     missing
@@ -1044,7 +1007,7 @@ fn caller() {
 "#;
         assert_dependencies(
             &[source],
-            &[("caller", SymKind::Function, &["_c::_m::source_0::callee"])],
+            &[("caller", SymKind::Function, &["callee"])],
         );
     }
 
@@ -1068,8 +1031,8 @@ fn run() {
                 "run",
                 SymKind::Function,
                 &[
-                    "_c::_m::source_0::MyStruct",
-                    "_c::_m::source_0::MyStruct::foo",
+                    "MyStruct",
+                    "foo",
                 ],
             )],
         );
@@ -1101,10 +1064,10 @@ fn execute() -> Response {
                 "execute",
                 SymKind::Function,
                 &[
-                    "_c::_m::source_0::RequestBuilder::new",
-                    "_c::_m::source_0::RequestBuilder::set_header",
-                    "_c::_m::source_0::RequestBuilder::send",
-                    "_c::_m::source_0::Response",
+                    "new",
+                    "set_header",
+                    "send",
+                    "Response",
                 ],
             )],
         );
@@ -1128,7 +1091,7 @@ async fn entry() -> Result<(), ()> {
             &[(
                 "entry",
                 SymKind::Function,
-                &["_c::_m::source_0::async_task", "_c::_m::source_0::maybe"],
+                &["async_task", "maybe"],
             )],
         );
     }
@@ -1145,7 +1108,7 @@ fn call_macro() {
 "#;
         assert_dependencies(
             &[source],
-            &[("call_macro", SymKind::Function, &["_c::_m::source_0::ping"])],
+            &[("call_macro", SymKind::Function, &["ping"])],
         );
     }
 
@@ -1166,7 +1129,7 @@ fn run() {
             &[(
                 "run",
                 SymKind::Function,
-                &["_c::_m::source_0::helpers::compute"],
+                &["compute"],
             )],
         );
     }
@@ -1189,7 +1152,7 @@ fn run() {
         // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
-            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::build"])],
+            &[("run", SymKind::Function, &["build"])],
         );
     }
 
@@ -1214,7 +1177,7 @@ fn run() {
         // Scoped function calls should only depend on the method, not the struct
         assert_dependencies(
             &[source],
-            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::greet"])],
+            &[("run", SymKind::Function, &["greet"])],
         );
     }
 
@@ -1268,7 +1231,7 @@ fn run() {
             &[(
                 "run",
                 SymKind::Function,
-                &["_c::_m::source_0::outer::inner::shout"],
+                &["shout"],
             )],
         );
     }
@@ -1288,7 +1251,7 @@ mod outer {
 "#;
         assert_dependencies(
             &[source],
-            &[("run", SymKind::Function, &["_c::_m::source_0::outer::top"])],
+            &[("run", SymKind::Function, &["top"])],
         );
     }
 
@@ -1371,12 +1334,12 @@ struct Container {
                 (
                     "Container",
                     SymKind::Struct,
-                    &["_c::_m::source_0::Foo", "_c::_m::source_0::List"],
+                    &["Foo", "List"],
                 ),
                 (
                     "data",
                     SymKind::Field,
-                    &["_c::_m::source_0::Foo", "_c::_m::source_0::List"],
+                    &["Foo", "List"],
                 ),
             ],
         );
@@ -1393,7 +1356,7 @@ enum Wrapper {
 "#;
         assert_dependencies(
             &[source],
-            &[("Wrapper", SymKind::Enum, &["_c::_m::source_0::Foo"])],
+            &[("Wrapper", SymKind::Enum, &["Foo"])],
         );
     }
 
@@ -1419,18 +1382,18 @@ fn run() {
                     "value",
                     SymKind::Variable,
                     &[
-                        "_c::_m::source_0::Bar",
-                        "_c::_m::source_0::Foo",
-                        "_c::_m::source_0::Result",
+                        "Bar",
+                        "Foo",
+                        "Result",
                     ],
                 ),
                 (
                     "run",
                     SymKind::Function,
                     &[
-                        "_c::_m::source_0::Bar",
-                        "_c::_m::source_0::Foo",
-                        "_c::_m::source_0::Result",
+                        "Bar",
+                        "Foo",
+                        "Result",
                     ],
                 ),
             ],

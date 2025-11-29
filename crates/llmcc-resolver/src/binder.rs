@@ -203,10 +203,9 @@ impl<'a> BinderScopes<'a> {
         name: &str,
         kind_filters: Option<Vec<SymKind>>,
         unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
     ) -> Option<&'a Symbol> {
         self.scopes
-            .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
+            .lookup_symbol_with(name, kind_filters, unit_filters)
     }
 
     pub fn lookup_member_symbol(
@@ -233,7 +232,7 @@ impl<'a> BinderScopes<'a> {
             }
         });
 
-        scopes.lookup_symbol_with(member_name, kind_filters, None, None)
+        scopes.lookup_symbol_with(member_name, kind_filters, None)
     }
 }
 
