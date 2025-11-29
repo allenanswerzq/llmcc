@@ -65,24 +65,6 @@ impl<'tcx> Scope<'tcx> {
         });
     }
 
-    /// Merge only global (public) symbols from existing scope into this scope.
-    /// Used for multi-unit compilation to maintain cross-unit symbol visibility.
-    #[inline]
-    pub fn merge_with_filtered(
-        &self,
-        other: &'tcx Scope<'tcx>,
-        _arena: &'tcx Arena<'tcx>,
-        interner: &InternPool,
-    ) {
-        other.for_each_symbol(|source_symbol| {
-            // Only merge symbols marked as global (public cross-unit symbols)
-            if source_symbol.is_global() {
-                self.insert(source_symbol);
-                self.insert_global_index(source_symbol, interner);
-            }
-        });
-    }
-
     /// Enable the optional global trie index for this scope.
     ///
     /// Only scopes that participate in global lookups should enable this to avoid
@@ -416,7 +398,6 @@ impl<'tcx> ScopeStack<'tcx> {
         let kind_filters_slice = kind_filters.as_ref().map(Vec::as_slice);
         let unit_filters_slice = unit_filters.as_ref().map(Vec::as_slice);
         let fqn_keys_slice = fqn_keys.as_ref().map(Vec::as_slice);
-
         let stack = self.stack.read();
 
         stack.iter().rev().find_map(|scope| {
@@ -536,7 +517,6 @@ pub struct LookupOptions {
     pub top: bool,
     pub force: bool,
 }
-
 
 impl LookupOptions {
     pub fn current() -> Self {

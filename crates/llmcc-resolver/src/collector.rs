@@ -253,26 +253,18 @@ impl<'a> CollectorScopes<'a> {
 }
 
 /// Apply symbols collected from a single compilation unit to the global context.
-/// For single-unit compilations, all top-level symbols are merged (same-unit access).
-/// For multi-unit compilations, only public symbols are merged (cross-unit access).
 fn apply_collected_symbols<'tcx>(
     cc: &'tcx CompileCtxt<'tcx>,
     arena: &'tcx Arena<'tcx>,
     final_globals: &'tcx Scope<'tcx>,
     unit_globals: &'tcx Scope<'tcx>,
-    is_single_unit: bool,
 ) -> &'tcx Scope<'tcx> {
     // Transfer all scopes from per-unit arena to global
     for scope in arena.scope().iter() {
         if scope.id() == unit_globals.id() {
             // For the global scope: merge into the final global scope
-            // For single-unit: merge everything
-            // For multi-unit: only merge public symbols (via is_global flag)
-            if is_single_unit {
-                cc.merge_two_scopes(final_globals, unit_globals);
-            } else {
-                cc.merge_two_scopes_filtered(final_globals, unit_globals);
-            }
+            // This combines all global-level symbols into one scope
+            cc.merge_two_scopes(final_globals, unit_globals);
         }
     }
 
@@ -317,9 +309,8 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
 
     let arena = &cc.arena;
     let globals = scope_stack.first();
-    let is_single_unit = cc.files.len() == 1;
     for unit_globals in unit_globals_vec.iter() {
-        apply_collected_symbols(cc, arena, globals, unit_globals, is_single_unit);
+        apply_collected_symbols(cc, arena, globals, unit_globals);
     }
 
     cc.arena.scope_sort_by(|scope| scope.id());

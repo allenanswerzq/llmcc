@@ -6,6 +6,7 @@ use std::io::Write;
 use std::ops::Deref;
 use std::time::Instant;
 use tree_sitter::Node;
+use uuid::Uuid;
 
 use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
@@ -238,43 +239,33 @@ impl<'tcx> std::fmt::Debug for CompileCtxt<'tcx> {
 
 impl<'tcx> CompileCtxt<'tcx> {
     /// Create a new CompileCtxt from source code
-    ///
-    /// Uses a fixed deterministic temp directory for all tests.
-    /// Tests using this function MUST be marked with #[serial_test::serial]
-    /// to avoid parallel execution issues.
     pub fn from_sources<L: LanguageTrait>(sources: &[Vec<u8>]) -> Self {
-        // Use a fixed deterministic test temp directory
-        // ALL tests using this must run serially via #[serial_test::serial]
-        let temp_dir = std::env::temp_dir().join("llmcc_test");
+        // Write sources to a unique temporary directory using UUID
+        let temp_dir = std::env::temp_dir()
+            .join("llmcc")
+            .join(Uuid::new_v4().to_string());
         let _ = fs::create_dir_all(&temp_dir);
 
-        let physical_and_logical: Vec<(String, String)> = sources
+        let paths: Vec<String> = sources
             .iter()
             .enumerate()
             .map(|(index, src)| {
-                let filename = format!("source_{}.rs", index);
-                let physical_path = temp_dir.join(&filename);
-
-                if let Ok(mut file) = fs::File::create(&physical_path) {
+                let path = temp_dir.join(format!("source_{}.rs", index));
+                if let Ok(mut file) = fs::File::create(&path) {
                     let _ = file.write_all(src);
                 }
-
-                let physical = physical_path.to_string_lossy().to_string();
-                // Use logical path that will result in crate name "_c" and module "_m"
-                // When parse_crate_name walks up from /fake/crate/_m/source_N.rs,
-                // it won't find a Cargo.toml and returns "_c" as fallback.
-                // parse_module_name will find "_m" as the module directory.
-                let logical = format!("/fake/crate/_m/{}", filename);
-                (physical, logical)
+                path.to_string_lossy().to_string()
             })
             .collect();
 
-        // Use from_files_with_logical to set deterministic logical paths
-        Self::from_files_with_logical::<L>(&physical_and_logical).unwrap_or_else(|_| {
+        // Use from_files to parse and build context
+        Self::from_files::<L>(&paths).unwrap_or_else(|_| {
             // Fallback: create empty context if temp file creation fails
             Self::default()
         })
-    }    /// Create a new CompileCtxt from files
+    }
+
+    /// Create a new CompileCtxt from files
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
@@ -512,15 +503,6 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena(), &self.interner);
-        // Redirect second's scope ID to first's scope ID so lookups redirect
-        second.set_redirect(first.id());
-    }
-
-    /// Merge only public (global) symbols from second scope into first.
-    /// Used for multi-unit compilation to maintain cross-unit symbol visibility.
-    pub fn merge_two_scopes_filtered(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
-        // Merge only global (public) symbols from second into first
-        first.merge_with_filtered(second, self.arena(), &self.interner);
         // Redirect second's scope ID to first's scope ID so lookups redirect
         second.set_redirect(first.id());
     }
