@@ -98,7 +98,11 @@ impl<'tcx> CompileUnit<'tcx> {
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
         // Direct indexing into block arena Vec using BlockId (offset by 1 since BlockId starts at 1)
         let index = (id.0 as usize).saturating_sub(1);
-        self.cc.block_arena.bb().get(index).map(|bb| (*bb).clone())
+        self.cc
+            .block_arena
+            .bb()
+            .get(index)
+            .map(|bb| (*bb).clone())
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -428,7 +432,6 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         let scope = self.arena.alloc(Scope::new(owner));
-        scope.enable_global_index();
         // Scope already in Arena
         scope
     }
@@ -502,7 +505,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Any future lookup of second's scope ID will redirect to first.
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
-        first.merge_with(second, self.arena(), &self.interner);
+        first.merge_with(second, self.arena());
         // Redirect second's scope ID to first's scope ID so lookups redirect
         second.set_redirect(first.id());
     }
@@ -613,12 +616,15 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Get all symbols from the symbol map
     pub fn get_all_symbols(&'tcx self) -> Vec<&'tcx Symbol> {
-        self.arena.symbol().iter().copied().collect()
+        self.arena.symbol().iter()
+            .copied()
+            .collect()
     }
 
     /// Get the count of registered symbols (excluding unresolved)
     pub fn symbol_count(&self) -> usize {
-        self.arena.symbol().iter().count()
+        self.arena.symbol().iter()
+            .count()
     }
 
     /// Iterate over all symbols and their IDs (excluding unresolved)
@@ -643,4 +649,5 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn unresolved_symbol_count(&self) -> usize {
         self.unresolve_symbols.read().len()
     }
+
 }
