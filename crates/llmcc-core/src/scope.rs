@@ -137,20 +137,19 @@ impl<'tcx> Scope<'tcx> {
     pub fn lookup_symbols(
         &self,
         name: InternedStr,
-        kind_filters: Option<Vec<SymKind>>,
-        unit_filters: Option<Vec<usize>>,
+        options: LookupOptions,
     ) -> Option<Vec<&'tcx Symbol>> {
         let symbols = self.symbols.read().get(&name).cloned()?;
 
         let filtered: Vec<&'tcx Symbol> = symbols
             .iter()
             .filter(|symbol| {
-                if let Some(kinds) = &kind_filters
+                if let Some(kinds) = &options.kind_filters
                     && !kinds.iter().any(|kind| symbol.kind() == *kind)
                 {
                     return false;
                 }
-                if let Some(units) = &unit_filters
+                if let Some(units) = &options.unit_filters
                     && !units.iter().any(|unit| symbol.unit_index() == Some(*unit))
                 {
                     return false;
@@ -312,8 +311,7 @@ impl<'tcx> ScopeStack<'tcx> {
         stack.iter().rev().find_map(|scope| {
             scope.lookup_symbols(
                 name_key,
-                options.kind_filters.clone(),
-                options.unit_filters.clone(),
+                options.clone(),
             )
         })
     }
@@ -355,7 +353,7 @@ impl<'tcx> ScopeStack<'tcx> {
             stack.last().copied()?
         };
 
-        let symbols = scope.lookup_symbols(name_key, None, None);
+        let symbols = scope.lookup_symbols(name_key, LookupOptions::default());
         if let Some(mut symbols) = symbols {
             debug_assert!(!symbols.is_empty());
 
@@ -429,8 +427,7 @@ impl<'tcx> ScopeStack<'tcx> {
         let name_key = self.interner.intern(part);
         let symbols = scope.lookup_symbols(
             name_key,
-            options.kind_filters.clone(),
-            options.unit_filters.clone(),
+            options.clone(),
         )?;
 
         // If this is the last part, return the symbols
@@ -810,7 +807,7 @@ mod tests {
         let syms = result.unwrap();
         assert_eq!(syms.len(), 1);
         let sym = syms[0];
-        let global_lookup = global.lookup_symbols(interner.intern("global_only"), None, None);
+        let global_lookup = global.lookup_symbols(interner.intern("global_only"), LookupOptions::default());
         assert!(global_lookup.is_some());
         assert_eq!(global_lookup.unwrap()[0].id, sym.id);
     }
@@ -833,9 +830,9 @@ mod tests {
 
         assert!(result.is_some());
         let _syms = result.unwrap();
-        let inner_lookup = inner_scope.lookup_symbols(interner.intern("parent_target"), None, None);
+        let inner_lookup = inner_scope.lookup_symbols(interner.intern("parent_target"), LookupOptions::default());
         assert!(inner_lookup.is_none());
-        let parent_lookup = global.lookup_symbols(interner.intern("parent_target"), None, None);
+        let parent_lookup = global.lookup_symbols(interner.intern("parent_target"), LookupOptions::default());
         assert!(parent_lookup.is_some());
     }
 
@@ -897,8 +894,8 @@ mod tests {
         source_scope.insert(sym2);
         target_scope.merge_with(source_scope, &arena);
 
-        let lookup1 = target_scope.lookup_symbols(interner.intern("merged1"), None, None);
-        let lookup2 = target_scope.lookup_symbols(interner.intern("merged2"), None, None);
+        let lookup1 = target_scope.lookup_symbols(interner.intern("merged1"), LookupOptions::default());
+        let lookup2 = target_scope.lookup_symbols(interner.intern("merged2"), LookupOptions::default());
         assert!(lookup1.is_some());
         assert!(lookup2.is_some());
     }
