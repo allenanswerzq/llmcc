@@ -167,7 +167,7 @@ impl<'tcx> BinderVisitor<'tcx> {
             return;
         }
 
-        for child in pattern.children_nodes(unit) {
+        for child in pattern.children(unit) {
             Self::bind_pattern_to_type(unit, scopes, &child, ty, &[]);
         }
     }
@@ -185,7 +185,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         {
             outer_target.add_dependency(inner_sym, Some(&[SymKind::TypeParameter]));
         }
-        for child in node.children_nodes(unit) {
+        for child in node.children(unit) {
             Self::collect_nested_call_deps(unit, scopes, &child, outer_target, parent);
         }
     }
@@ -591,7 +591,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     type_sym.add_dependency(arg, Some(&[SymKind::TypeParameter]));
                 }
 
-                for child in node.children_nodes(unit) {
+                for child in node.children(unit) {
                     if child.kind_id() == LangRust::where_clause
                         || child.kind_id() == LangRust::where_predicate
                     {
@@ -769,7 +769,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             return;
         };
 
-        for child in node.children_nodes(unit) {
+        for child in node.children(unit) {
             if matches!(child.kind(), HirKind::Text | HirKind::Comment) {
                 continue;
             }

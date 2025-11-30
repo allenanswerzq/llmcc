@@ -176,7 +176,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
 
         // Recurse into children
-        for &child_id in node.children() {
+        for &child_id in node.child_ids() {
             let child = self.unit.hir_node(child_id);
             self.collect_edges(child, edges, visited, unresolved);
         }

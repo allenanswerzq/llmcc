@@ -1216,7 +1216,6 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
     let interner = &cc.interner;
     let mut rows = Vec::with_capacity(symbols.len());
     for symbol in symbols {
-        let fqn_str = interner
         let name_str = interner
             .resolve_owned(symbol.name)
             .unwrap_or_else(|| "?".to_string());

@@ -190,7 +190,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
         node: &HirNode<'tcx>,
         _caller: Option<&Symbol>,
     ) -> Option<&'tcx Symbol> {
-        let children = node.children_nodes(self.unit);
+        let children = node.children(self.unit);
         let non_trivia: Vec<_> = children.iter().filter(|c| !is_trivia(c)).collect();
 
         // Handle `::name` (crate root reference)
@@ -398,7 +398,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
 
     /// Infers the type of a binary expression like `a + b`.
     fn infer_binary_operator_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children_nodes(self.unit);
+        let children = node.children(self.unit);
         let left_child = children.first()?;
 
         // Strategy 1: Find operator by child node kind
@@ -706,7 +706,7 @@ impl<'a, 'tcx> ExprResolver<'a, 'tcx> {
             return None;
         }
 
-        let children = node.children_nodes(self.unit);
+        let children = node.children(self.unit);
         let non_trivia: Vec<_> = children.iter().filter(|c| !is_trivia(c)).collect();
 
         if non_trivia.len() < 2 {

@@ -308,12 +308,10 @@ impl<'tcx> ScopeStack<'tcx> {
         let name_key = self.interner.intern(name);
         let stack = self.stack.read();
 
-        stack.iter().rev().find_map(|scope| {
-            scope.lookup_symbols(
-                name_key,
-                options.clone(),
-            )
-        })
+        stack
+            .iter()
+            .rev()
+            .find_map(|scope| scope.lookup_symbols(name_key, options.clone()))
     }
 
     /// Normalize name helper.
@@ -359,7 +357,7 @@ impl<'tcx> ScopeStack<'tcx> {
 
             if symbols.len() > 1 {
                 tracing::trace!(
-                    "found mutpile {} symbols for name '{}' in scope {:?}",
+                    "found mutpile {} symbols for name '{}' in scope {:?}, use the last one",
                     symbols.len(),
                     name,
                     scope.id()
@@ -404,8 +402,19 @@ impl<'tcx> ScopeStack<'tcx> {
             return None;
         }
 
-        // Start from the global scope
-        let current_scope = *stack.first()?;
+        // search in forward order to find the current scope where names[0] is defined
+        let mut current_scope = *stack.first()?;
+        if options.shift_start {
+            for i in 0..stack.len() {
+                if stack[i]
+                    .lookup_symbols(self.interner.intern(qualified_name[0]), options.clone())
+                    .is_some()
+                {
+                    current_scope = stack[i];
+                    break;
+                }
+            }
+        }
 
         // Recursively try all symbol choices
         self.lookup_qualified_recursive(current_scope, qualified_name, 0, &options)
@@ -425,10 +434,7 @@ impl<'tcx> ScopeStack<'tcx> {
 
         let part = qualified_name[index];
         let name_key = self.interner.intern(part);
-        let symbols = scope.lookup_symbols(
-            name_key,
-            options.clone(),
-        )?;
+        let symbols = scope.lookup_symbols(name_key, options.clone())?;
 
         // If this is the last part, return the symbols
         if index == qualified_name.len() - 1 {
@@ -472,6 +478,7 @@ pub struct LookupOptions {
     pub parent: bool,
     pub chained: bool,
     pub force: bool,
+    pub shift_start: bool,
     pub kind_filters: Option<Vec<SymKind>>,
     pub unit_filters: Option<Vec<usize>>,
 }
@@ -526,6 +533,11 @@ impl LookupOptions {
 
     pub fn with_force(mut self, force: bool) -> Self {
         self.force = force;
+        self
+    }
+
+    pub fn with_shift_start(mut self, shift: bool) -> Self {
+        self.shift_start = shift;
         self
     }
 
@@ -807,7 +819,8 @@ mod tests {
         let syms = result.unwrap();
         assert_eq!(syms.len(), 1);
         let sym = syms[0];
-        let global_lookup = global.lookup_symbols(interner.intern("global_only"), LookupOptions::default());
+        let global_lookup =
+            global.lookup_symbols(interner.intern("global_only"), LookupOptions::default());
         assert!(global_lookup.is_some());
         assert_eq!(global_lookup.unwrap()[0].id, sym.id);
     }
@@ -830,9 +843,11 @@ mod tests {
 
         assert!(result.is_some());
         let _syms = result.unwrap();
-        let inner_lookup = inner_scope.lookup_symbols(interner.intern("parent_target"), LookupOptions::default());
+        let inner_lookup =
+            inner_scope.lookup_symbols(interner.intern("parent_target"), LookupOptions::default());
         assert!(inner_lookup.is_none());
-        let parent_lookup = global.lookup_symbols(interner.intern("parent_target"), LookupOptions::default());
+        let parent_lookup =
+            global.lookup_symbols(interner.intern("parent_target"), LookupOptions::default());
         assert!(parent_lookup.is_some());
     }
 
@@ -894,8 +909,10 @@ mod tests {
         source_scope.insert(sym2);
         target_scope.merge_with(source_scope, &arena);
 
-        let lookup1 = target_scope.lookup_symbols(interner.intern("merged1"), LookupOptions::default());
-        let lookup2 = target_scope.lookup_symbols(interner.intern("merged2"), LookupOptions::default());
+        let lookup1 =
+            target_scope.lookup_symbols(interner.intern("merged1"), LookupOptions::default());
+        let lookup2 =
+            target_scope.lookup_symbols(interner.intern("merged2"), LookupOptions::default());
         assert!(lookup1.is_some());
         assert!(lookup2.is_some());
     }
@@ -1243,6 +1260,50 @@ mod tests {
         // Then try crate_sym2 (succeeds)
         let result =
             scope_stack.lookup_qualified(&["crate", "foo", "bar"], LookupOptions::current());
+        assert!(result.is_some());
+        let symbols = result.unwrap();
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, interner.intern("bar"));
+        assert_eq!(symbols[0].kind(), SymKind::Variable);
+    }
+
+    #[test]
+    #[serial(counter_tests)]
+    fn test_lookup_qualified_with_stack_iteration() {
+        reset_scope_id_counter();
+        reset_symbol_id_counter();
+        let arena = Arena::new();
+        let interner = InternPool::new();
+        let scope_stack = ScopeStack::new(&arena, &interner);
+
+        // Create a stack with multiple scopes
+        let global_scope = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(global_scope);
+
+        let inner_scope1 = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(inner_scope1);
+
+        let inner_scope2 = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(inner_scope2);
+
+        // Add "foo" symbol in inner_scope1 (not in global or inner_scope2)
+        let foo_sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("foo")));
+        foo_sym.set_kind(SymKind::Module);
+        inner_scope1.insert(foo_sym);
+
+        let foo_scope = arena.alloc(Scope::new(HirId::new()));
+        foo_sym.set_scope(foo_scope.id());
+
+        // Add "bar" in foo's scope
+        let bar_sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("bar")));
+        bar_sym.set_kind(SymKind::Variable);
+        foo_scope.insert(bar_sym);
+
+        // Lookup should find "foo" in inner_scope1 (searching forward through stack)
+        let result = scope_stack.lookup_qualified(
+            &["foo", "bar"],
+            LookupOptions::current().with_shift_start(true),
+        );
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 1);

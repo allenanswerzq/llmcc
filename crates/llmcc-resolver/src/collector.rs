@@ -148,7 +148,7 @@ impl<'a> CollectorScopes<'a> {
         }
     }
 
-    /// Find or insert symbol in current scope
+    /// Find or insert symbol in current
     #[inline]
     pub fn lookup_or_insert(
         &self,
@@ -156,49 +156,10 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        tracing::trace!("looking up or inserting '{}' in current scope", name);
+        tracing::trace!("lookup or insert scope stack '{}' in current", name);
         let symbols = self
             .scopes
             .lookup_or_insert(name, node.id(), LookupOptions::current())?;
-        let symbol = symbols.last().copied()?;
-        self.init_symbol(symbol, name, node, kind);
-        tracing::trace!("found symbol [{}]", symbol.format(Some(self.interner)));
-        Some(symbol)
-    }
-
-    /// Find or insert symbol with chaining for shadowing support
-    #[inline]
-    pub fn lookup_or_insert_chained(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        tracing::trace!(
-            "looking up or inserting chained '{}' in current scope",
-            name
-        );
-        let symbols = self
-            .scopes
-            .lookup_or_insert(name, node.id(), LookupOptions::chained())?;
-        let symbol = symbols.last().copied()?;
-        self.init_symbol(symbol, name, node, kind);
-        tracing::trace!("found symbol [{}]", symbol.format(Some(self.interner)));
-        Some(symbol)
-    }
-
-    /// Find or insert symbol in parent scope
-    #[inline]
-    pub fn lookup_or_insert_parent(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        tracing::trace!("looking up or inserting '{}' in parent scope", name);
-        let symbols = self
-            .scopes
-            .lookup_or_insert(name, node.id(), LookupOptions::parent())?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         tracing::trace!("found symbol [{}]", symbol.format(Some(self.interner)));
@@ -213,7 +174,7 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        tracing::trace!("looking up or inserting '{}' in global scope", name);
+        tracing::trace!("lookup or insert scope stack '{}' in global scope", name);
         let symbols = self
             .scopes
             .lookup_or_insert(name, node.id(), LookupOptions::global())?;
@@ -227,21 +188,28 @@ impl<'a> CollectorScopes<'a> {
         Some(symbol)
     }
 
-    /// Find or insert symbol with custom lookup options
+    /// Lookup symbols by name with options
     #[inline]
-    pub fn lookup_or_insert_with(
+    pub fn lookup_symbols(
         &self,
         name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-        options: LookupOptions,
-    ) -> Option<&'a Symbol> {
-        tracing::trace!("looking up or inserting '{}' with custom options", name);
-        let symbols = self.scopes.lookup_or_insert(name, node.id(), options)?;
-        let symbol = symbols.last().copied()?;
-        self.init_symbol(symbol, name, node, kind);
-        tracing::trace!("found symbol [{}]", symbol.format(Some(self.interner)));
-        Some(symbol)
+        kind_filters: Vec<SymKind>,
+    ) -> Option<Vec<&'a Symbol>> {
+        let options = LookupOptions::current().with_kind_filters(kind_filters);
+        tracing::trace!("lookup symbols '{}' with options", name);
+        self.scopes.lookup_symbols(name, options)
+    }
+
+    #[inline]
+    pub fn lookup_symbol(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
+        let symbols = self.lookup_symbols(name, kind_filters)?;
+        if symbols.len() > 1 {
+            tracing::warn!(
+                "multiple symbols found for '{}', returning the last one",
+                name
+            );
+        }
+        symbols.last().copied()
     }
 }
 

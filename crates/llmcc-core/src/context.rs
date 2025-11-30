@@ -468,8 +468,8 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self.arena
     }
 
-    /// Allocate a new HIR identifier node with the given ID, name and symbol
-    pub fn alloc_hir_ident(
+    /// Allocate a new file identifier node with the given ID, name and symbol
+    pub fn alloc_file_ident(
         &'tcx self,
         id: HirId,
         name: &str,
