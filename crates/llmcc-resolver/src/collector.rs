@@ -149,7 +149,8 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert(name, node)?;
+        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::current())?;
+        let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -162,7 +163,8 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
+        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::chained())?;
+        let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -175,7 +177,8 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
+        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::parent())?;
+        let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }
@@ -188,7 +191,8 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_global(name, node)?;
+        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::global())?;
+        let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
         Some(symbol)
@@ -203,7 +207,8 @@ impl<'a> CollectorScopes<'a> {
         kind: SymKind,
         options: llmcc_core::scope::LookupOptions,
     ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
+        let symbols = self.scopes.lookup_or_insert(name, node.id(), options)?;
+        let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
     }

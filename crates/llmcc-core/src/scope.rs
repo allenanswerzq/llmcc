@@ -180,24 +180,11 @@ impl<'tcx> fmt::Debug for ScopeStack<'tcx> {
         let scopes_debug: Vec<_> = stack
             .iter()
             .map(|scope| {
-                let _symbol_desc = scope.opt_symbol().cloned();
                 let mut symbol_entries: Vec<String> = Vec::new();
 
-                if let Some(interner) = scope.interner {
-                    scope.for_each_symbol(|s| {
-                        let kind = format!("{:?}", s.kind());
-                        if let Some(name) = interner.resolve_owned(s.name) {
-                            symbol_entries.push(format!("[{}:{}] {}", s.id.0, kind, name));
-                        } else {
-                            symbol_entries.push(format!("[{}:{}]?", s.id.0, kind));
-                        }
-                    });
-                } else {
-                    scope.for_each_symbol(|s| {
-                        let kind = format!("{:?}", s.kind());
-                        symbol_entries.push(format!("[{}:{}]", s.id.0, kind));
-                    });
-                }
+                scope.for_each_symbol(|s| {
+                    symbol_entries.push(s.format(Some(self.interner)));
+                });
 
                 (scope.id(), scope.owner, symbol_entries)
             })
@@ -215,23 +202,9 @@ impl<'tcx> fmt::Debug for Scope<'tcx> {
         let symbol_desc = self.opt_symbol().cloned();
         let mut symbol_entries: Vec<String> = Vec::new();
 
-        if let Some(interner) = self.interner {
-            // With interner: show symbol names with id and kind
-            self.for_each_symbol(|s| {
-                let kind = format!("{:?}", s.kind());
-                if let Some(name) = interner.resolve_owned(s.name) {
-                    symbol_entries.push(format!("[{}:{}]{}", s.id.0, kind, name));
-                } else {
-                    symbol_entries.push(format!("[{}:{}]?", s.id.0, kind));
-                }
-            });
-        } else {
-            // Without interner: show id and kind only
-            self.for_each_symbol(|s| {
-                let kind = format!("{:?}", s.kind());
-                symbol_entries.push(format!("[{}:{}]", s.id.0, kind));
-            });
-        }
+        self.for_each_symbol(|s| {
+            symbol_entries.push(s.format(self.interner));
+        });
 
         f.debug_struct("Scope")
             .field("id", &self.id)
@@ -335,8 +308,7 @@ impl<'tcx> ScopeStack<'tcx> {
     pub fn lookup_symbols(
         &self,
         name: &str,
-        kind_filters: Option<Vec<SymKind>>,
-        unit_filters: Option<Vec<usize>>,
+        options: LookupOptions,
     ) -> Option<Vec<&'tcx Symbol>> {
         if name.is_empty() {
             return None;
@@ -345,7 +317,7 @@ impl<'tcx> ScopeStack<'tcx> {
         let stack = self.stack.read();
 
         stack.iter().rev().find_map(|scope| {
-            scope.lookup_symbols(name_key, kind_filters.clone(), unit_filters.clone())
+            scope.lookup_symbols(name_key, options.kind_filters.clone(), options.unit_filters.clone())
         })
     }
 
@@ -422,12 +394,14 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct LookupOptions {
     pub global: bool,
     pub parent: bool,
     pub chained: bool,
     pub force: bool,
+    pub kind_filters: Option<Vec<SymKind>>,
+    pub unit_filters: Option<Vec<usize>>,
 }
 
 impl LookupOptions {
@@ -482,6 +456,16 @@ impl LookupOptions {
         self.force = force;
         self
     }
+
+    pub fn with_kind_filters(mut self, kind_filters: Vec<SymKind>) -> Self {
+        self.kind_filters = Some(kind_filters);
+        self
+    }
+
+    pub fn with_unit_filters(mut self, unit_filters: Vec<usize>) -> Self {
+        self.unit_filters = Some(unit_filters);
+        self
+    }
 }
 
 #[cfg(test)]
@@ -499,7 +483,7 @@ mod tests {
         let global_scope = arena.alloc(Scope::new(HirId::new()));
         scope_stack.push(global_scope);
 
-        let result = scope_stack.lookup_symbols("", None, None);
+        let result = scope_stack.lookup_symbols("", LookupOptions::default());
         assert!(result.is_none());
     }
 
@@ -511,7 +495,7 @@ mod tests {
         let global_scope = arena.alloc(Scope::new(HirId::new()));
         scope_stack.push(global_scope);
 
-        let result = scope_stack.lookup_symbols("nonexistent", None, None);
+        let result = scope_stack.lookup_symbols("nonexistent", LookupOptions::default());
         assert!(result.is_none());
     }
 
@@ -526,7 +510,7 @@ mod tests {
         let sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("test")));
         global.insert(sym);
 
-        let result = scope_stack.lookup_symbols("test", None, None);
+        let result = scope_stack.lookup_symbols("test", LookupOptions::default());
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 1);
@@ -545,7 +529,7 @@ mod tests {
         global.insert(sym1);
         global.insert(sym2);
 
-        let result = scope_stack.lookup_symbols("overload", None, None);
+        let result = scope_stack.lookup_symbols("overload", LookupOptions::default());
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 2);
@@ -566,7 +550,7 @@ mod tests {
         global.insert(func_sym);
         global.insert(var_sym);
 
-        let result = scope_stack.lookup_symbols("item", Some(vec![SymKind::Function]), None);
+        let result = scope_stack.lookup_symbols("item", LookupOptions::default().with_kind_filters(vec![SymKind::Function]));
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 1);
@@ -585,7 +569,7 @@ mod tests {
         var_sym.set_kind(SymKind::Variable);
         global.insert(var_sym);
 
-        let result = scope_stack.lookup_symbols("item", Some(vec![SymKind::Function]), None);
+        let result = scope_stack.lookup_symbols("item", LookupOptions::default().with_kind_filters(vec![SymKind::Function]));
         assert!(result.is_none());
     }
 
@@ -604,7 +588,7 @@ mod tests {
         global.insert(sym1);
         global.insert(sym2);
 
-        let result = scope_stack.lookup_symbols("unit_sym", None, Some(vec![1]));
+        let result = scope_stack.lookup_symbols("unit_sym", LookupOptions::default().with_unit_filters(vec![1]));
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 1);
@@ -627,7 +611,7 @@ mod tests {
         inner_scope.add_parent(global);
         scope_stack.push(inner_scope);
 
-        let result = scope_stack.lookup_symbols("shared", None, None);
+        let result = scope_stack.lookup_symbols("shared", LookupOptions::default());
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 1);
@@ -647,7 +631,7 @@ mod tests {
         inner_scope.add_parent(global);
         scope_stack.push(inner_scope);
 
-        let result = scope_stack.lookup_symbols("outer_only", None, None);
+        let result = scope_stack.lookup_symbols("outer_only", LookupOptions::default());
         assert!(result.is_some());
     }
 
@@ -860,7 +844,7 @@ mod tests {
     #[test]
     fn test_scope_debug_format() {
         let arena = Arena::new();
-        let interner = InternPool::new();
+        let _interner = InternPool::new();
         let global_scope = arena.alloc(Scope::new(HirId::new()));
 
         let debug_str = format!("{:?}", global_scope);

@@ -295,11 +295,22 @@ impl Symbol {
         *self.owner.write() = owner;
     }
 
-    /// Returns a compact string representation for debugging.
-    /// Format: `{symbol_id}->{owner} <{name}>`
-    pub fn format_compact(&self) -> String {
-        let owner = *self.owner.read();
-        format!("{}->{} <{:?}>", self.id, owner, self.name)
+    /// Formats the symbol as `[id:kind]name` with optional interner for resolving the name.
+    /// If interner is provided, shows the actual symbol name. Otherwise shows `?` if name can't be resolved.
+    /// Format examples:
+    /// - With interner: `[1:Function]my_function`
+    /// - Without interner: `[1:Function]?`
+    pub fn format(&self, interner: Option<&crate::interner::InternPool>) -> String {
+        let kind = format!("{:?}", self.kind());
+        if let Some(interner) = interner {
+            if let Some(name) = interner.resolve_owned(self.name) {
+                format!("[{}:{}]{}", self.id.0, kind, name)
+            } else {
+                format!("[{}:{}]?", self.id.0, kind)
+            }
+        } else {
+            format!("[{}:{}]", self.id.0, kind)
+        }
     }
 
     /// Gets the scope ID this symbol belongs to.
@@ -739,18 +750,6 @@ mod tests {
         assert_eq!(sym2.previous(), Some(sym1.id));
         assert_eq!(sym3.previous(), Some(sym2.id));
         assert_eq!(sym1.previous(), None);
-    }
-
-    #[test]
-    fn test_symbol_format_compact() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let id = create_test_hir_id(5);
-        let symbol = Symbol::new(id, pool.intern("test"));
-
-        let formatted = symbol.format_compact();
-        assert!(formatted.contains("->"));
-        assert!(formatted.contains("5")); // id
     }
 
     #[test]
