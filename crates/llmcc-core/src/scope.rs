@@ -73,9 +73,14 @@ impl<'tcx> Scope<'tcx> {
     /// Merge existing scope into this scope.
     #[inline]
     pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
-        other.for_each_symbol(|source_symbol| {
-            self.insert(source_symbol);
-        });
+        let other_symbols = other.symbols.read().clone();
+        let mut self_symbols = self.symbols.write();
+
+        for (name_key, symbol_vec) in other_symbols {
+            self_symbols.entry(name_key)
+                .or_insert_with(Vec::new)
+                .extend(symbol_vec);
+        }
     }
 
     #[inline]

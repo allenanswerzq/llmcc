@@ -246,25 +246,6 @@ impl<'a> CollectorScopes<'a> {
     }
 }
 
-/// Apply symbols collected from a single compilation unit to the global context.
-fn apply_collected_symbols<'tcx>(
-    cc: &'tcx CompileCtxt<'tcx>,
-    arena: &'tcx Arena<'tcx>,
-    final_globals: &'tcx Scope<'tcx>,
-    unit_globals: &'tcx Scope<'tcx>,
-) -> &'tcx Scope<'tcx> {
-    // Transfer all scopes from per-unit arena to global
-    for scope in arena.scope().iter() {
-        if scope.id() == unit_globals.id() {
-            // For the global scope: merge into the final global scope
-            // This combines all global-level symbols into one scope
-            cc.merge_two_scopes(final_globals, unit_globals);
-        }
-    }
-
-    final_globals
-}
-
 /// Collect symbols from a compilation unit by invoking visitor on CollectorScopes
 ///
 /// At the collect pass, we can only know all the sutff in a single compilation unit, because of the
@@ -302,10 +283,9 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
             .collect::<Vec<_>>()
     };
 
-    let arena = &cc.arena;
     let globals = scope_stack.first();
     for unit_globals in unit_globals_vec.iter() {
-        apply_collected_symbols(cc, arena, globals, unit_globals);
+        cc.merge_two_scopes(globals, unit_globals);
     }
 
     cc.arena.scope_sort_by(|scope| scope.id());

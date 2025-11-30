@@ -1161,19 +1161,6 @@ mod tests {
         names
     }
 
-    /// Check if a string looks like a UUID (8-4-4-4-12 hex pattern).
-    fn is_uuid_like(s: &str) -> bool {
-        let parts: Vec<&str> = s.split('-').collect();
-        if parts.len() != 5 {
-            return false;
-        }
-        let expected_lens = [8, 4, 4, 4, 12];
-        parts
-            .iter()
-            .zip(expected_lens.iter())
-            .all(|(part, &len)| part.len() == len && part.chars().all(|c| c.is_ascii_hexdigit()))
-    }
-
     fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
         with_compiled_unit(source, |cc| {
             for (name, kind, deps) in expectations {
