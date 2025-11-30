@@ -149,7 +149,11 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::current())?;
+        let symbols = self.scopes.lookup_or_insert(
+            name,
+            node.id(),
+            llmcc_core::scope::LookupOptions::current(),
+        )?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
@@ -163,7 +167,11 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::chained())?;
+        let symbols = self.scopes.lookup_or_insert(
+            name,
+            node.id(),
+            llmcc_core::scope::LookupOptions::chained(),
+        )?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
@@ -177,7 +185,11 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::parent())?;
+        let symbols = self.scopes.lookup_or_insert(
+            name,
+            node.id(),
+            llmcc_core::scope::LookupOptions::parent(),
+        )?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         Some(symbol)
@@ -191,7 +203,11 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbols = self.scopes.lookup_or_insert(name, node.id(), llmcc_core::scope::LookupOptions::global())?;
+        let symbols = self.scopes.lookup_or_insert(
+            name,
+            node.id(),
+            llmcc_core::scope::LookupOptions::global(),
+        )?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);

@@ -61,10 +61,7 @@ impl<'tcx> Scope<'tcx> {
         let mut self_symbols = self.symbols.write();
 
         for (name_key, symbol_vec) in other_symbols {
-            self_symbols
-                .entry(name_key)
-                .or_insert_with(Vec::new)
-                .extend(symbol_vec);
+            self_symbols.entry(name_key).or_default().extend(symbol_vec);
         }
     }
 
@@ -305,11 +302,7 @@ impl<'tcx> ScopeStack<'tcx> {
 
     /// This should be the only pure api to lookup symbols following the
     /// lexical scope backwards.
-    pub fn lookup_symbols(
-        &self,
-        name: &str,
-        options: LookupOptions,
-    ) -> Option<Vec<&'tcx Symbol>> {
+    pub fn lookup_symbols(&self, name: &str, options: LookupOptions) -> Option<Vec<&'tcx Symbol>> {
         if name.is_empty() {
             return None;
         }
@@ -317,7 +310,11 @@ impl<'tcx> ScopeStack<'tcx> {
         let stack = self.stack.read();
 
         stack.iter().rev().find_map(|scope| {
-            scope.lookup_symbols(name_key, options.kind_filters.clone(), options.unit_filters.clone())
+            scope.lookup_symbols(
+                name_key,
+                options.kind_filters.clone(),
+                options.unit_filters.clone(),
+            )
         })
     }
 
@@ -379,17 +376,95 @@ impl<'tcx> ScopeStack<'tcx> {
                 let allocated = self.arena.alloc(new_symbol);
                 scope.insert(allocated);
                 symbols.push(allocated);
-                return Some(symbols);
+                Some(symbols)
             } else {
                 // return existing symbols
-                return Some(symbols);
+                Some(symbols)
             }
         } else {
             // not name found, create new symbol
             let new_symbol = Symbol::new(node, name_key);
             let allocated = self.arena.alloc(new_symbol);
             scope.insert(allocated);
-            return Some(vec![allocated]);
+            Some(vec![allocated])
+        }
+    }
+
+    /// Lookup a qualified name like `crate::foo::bar` by resolving each part sequentially.
+    /// Starts from the global (first) scope and follows the scope chain through the symbol hierarchy.
+    pub fn lookup_qualified(
+        &self,
+        qualified_name: &[&str],
+        options: LookupOptions,
+    ) -> Option<Vec<&'tcx Symbol>> {
+        if qualified_name.is_empty() {
+            return None;
+        }
+
+        let stack = self.stack.read();
+        if stack.is_empty() {
+            return None;
+        }
+
+        // Start from the global scope
+        let current_scope = *stack.first()?;
+
+        // Recursively try all symbol choices
+        self.lookup_qualified_recursive(current_scope, qualified_name, 0, &options)
+    }
+
+    /// Helper for recursive qualified lookup that tries all symbol choices.
+    fn lookup_qualified_recursive(
+        &self,
+        scope: &'tcx Scope<'tcx>,
+        qualified_name: &[&str],
+        index: usize,
+        options: &LookupOptions,
+    ) -> Option<Vec<&'tcx Symbol>> {
+        if index >= qualified_name.len() {
+            return None;
+        }
+
+        let part = qualified_name[index];
+        let name_key = self.interner.intern(part);
+        let symbols = scope.lookup_symbols(
+            name_key,
+            options.kind_filters.clone(),
+            options.unit_filters.clone(),
+        )?;
+
+        // If this is the last part, return the symbols
+        if index == qualified_name.len() - 1 {
+            return Some(symbols);
+        }
+
+        // Try each symbol as a potential next scope in the hierarchy
+        let mut results = Vec::new();
+        for symbol in symbols {
+            if let Some(symbol_scope_id) = symbol.opt_scope() {
+                // ScopeId.0 is 0-indexed (directly usable for arena indexing)
+                let scope_index = symbol_scope_id.0;
+                let scopes_slice = self.arena.scope();
+                if scope_index < scopes_slice.len() {
+                    let next_scope = &scopes_slice[scope_index];
+                    debug_assert!(next_scope.id() == symbol_scope_id);
+                    // Recursively try to find the rest of the path
+                    if let Some(result) = self.lookup_qualified_recursive(
+                        next_scope,
+                        qualified_name,
+                        index + 1,
+                        options,
+                    ) {
+                        results.extend(result);
+                    }
+                }
+            }
+        }
+
+        if results.is_empty() {
+            None
+        } else {
+            Some(results)
         }
     }
 }
@@ -473,9 +548,11 @@ mod tests {
     use super::*;
     use crate::interner::InternPool;
     use crate::ir::{Arena, HirId};
-    use crate::symbol::{SymKind, Symbol};
+    use crate::symbol::{SymKind, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
+    use serial_test::serial;
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_empty_name() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -488,6 +565,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_not_found() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -500,6 +578,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_single_match() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -517,6 +596,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_multiple_matches() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -536,6 +616,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_kind_filter() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -550,7 +631,10 @@ mod tests {
         global.insert(func_sym);
         global.insert(var_sym);
 
-        let result = scope_stack.lookup_symbols("item", LookupOptions::default().with_kind_filters(vec![SymKind::Function]));
+        let result = scope_stack.lookup_symbols(
+            "item",
+            LookupOptions::default().with_kind_filters(vec![SymKind::Function]),
+        );
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 1);
@@ -558,6 +642,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_kind_filter_no_match() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -569,11 +654,15 @@ mod tests {
         var_sym.set_kind(SymKind::Variable);
         global.insert(var_sym);
 
-        let result = scope_stack.lookup_symbols("item", LookupOptions::default().with_kind_filters(vec![SymKind::Function]));
+        let result = scope_stack.lookup_symbols(
+            "item",
+            LookupOptions::default().with_kind_filters(vec![SymKind::Function]),
+        );
         assert!(result.is_none());
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_unit_filter() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -588,7 +677,10 @@ mod tests {
         global.insert(sym1);
         global.insert(sym2);
 
-        let result = scope_stack.lookup_symbols("unit_sym", LookupOptions::default().with_unit_filters(vec![1]));
+        let result = scope_stack.lookup_symbols(
+            "unit_sym",
+            LookupOptions::default().with_unit_filters(vec![1]),
+        );
         assert!(result.is_some());
         let symbols = result.unwrap();
         assert_eq!(symbols.len(), 1);
@@ -596,6 +688,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_with_nested_scopes() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -618,6 +711,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_symbol_falls_back_to_outer_scope() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -636,6 +730,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_or_insert_creates_new_symbol() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -652,6 +747,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_or_insert_returns_existing_symbol() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -672,6 +768,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_or_insert_chained() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -694,6 +791,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_or_insert_global() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -718,6 +816,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_or_insert_parent() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -741,6 +840,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_or_insert_anonymous() {
         let arena = Arena::new();
         let _interner = InternPool::new();
@@ -758,6 +858,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_options() {
         let opts = LookupOptions::current();
         assert!(!opts.global && !opts.parent && !opts.chained && !opts.force);
@@ -769,6 +870,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_lookup_options_builders() {
         let opts = LookupOptions::current()
             .with_global(true)
@@ -782,6 +884,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_merge() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -801,6 +904,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_stack_depth() {
         let arena = Arena::new();
         let _interner = InternPool::new();
@@ -822,6 +926,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_stack_pop_until() {
         let arena = Arena::new();
         let _interner = InternPool::new();
@@ -842,6 +947,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_debug_format() {
         let arena = Arena::new();
         let _interner = InternPool::new();
@@ -854,6 +960,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_stack_debug_format_empty() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -868,6 +975,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_stack_debug_format_multiple_scopes() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -887,6 +995,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_stack_debug_shows_correct_depth() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -900,6 +1009,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_debug_contains_symbol_info() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -913,6 +1023,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_debug_shows_symbol_names_with_interner() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -930,6 +1041,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_debug_without_interner() {
         let arena = Arena::new();
         let global_scope = arena.alloc(Scope::new(HirId::new()));
@@ -945,6 +1057,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_stack_debug_with_multiple_scopes_and_symbols() {
         let arena = Arena::new();
         let interner = InternPool::new();
@@ -978,5 +1091,165 @@ mod tests {
         assert!(debug_str.contains("global_var"));
         assert!(debug_str.contains("local_func"));
         assert!(debug_str.contains("param"));
+    }
+
+    #[test]
+    #[serial(counter_tests)]
+    fn test_lookup_qualified_single_part() {
+        reset_scope_id_counter();
+        reset_symbol_id_counter();
+        let arena = Arena::new();
+        let interner = InternPool::new();
+        let scope_stack = ScopeStack::new(&arena, &interner);
+        let global_scope = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(global_scope);
+
+        let sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("crate")));
+        global_scope.insert(sym);
+
+        // Lookup single part
+        let result = scope_stack.lookup_qualified(&["crate"], LookupOptions::default());
+        assert!(result.is_some());
+        let symbols = result.unwrap();
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, interner.intern("crate"));
+    }
+
+    #[test]
+    #[serial(counter_tests)]
+    fn test_lookup_qualified_multi_part() {
+        reset_scope_id_counter();
+        reset_symbol_id_counter();
+        let arena = Arena::new();
+        let interner = InternPool::new();
+        let scope_stack = ScopeStack::new(&arena, &interner);
+
+        // Create global scope with "crate" symbol
+        let global_scope = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(global_scope);
+
+        let crate_sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("crate")));
+        global_scope.insert(crate_sym);
+
+        // Create scope for crate with two "foo" symbols
+        let crate_scope = arena.alloc(Scope::new(HirId::new()));
+        crate_sym.set_scope(crate_scope.id());
+
+        let foo_sym1 = arena.alloc(Symbol::new(HirId::new(), interner.intern("foo")));
+        crate_scope.insert(foo_sym1);
+
+        let foo_sym2 = arena.alloc(Symbol::new(HirId::new(), interner.intern("foo")));
+        crate_scope.insert(foo_sym2);
+
+        // Create scope for first foo with "bar" symbol
+        let foo_scope1 = arena.alloc(Scope::new(HirId::new()));
+        foo_sym1.set_scope(foo_scope1.id());
+
+        let bar_sym1 = arena.alloc(Symbol::new(HirId::new(), interner.intern("bar")));
+        bar_sym1.set_kind(SymKind::Function);
+        foo_scope1.insert(bar_sym1);
+
+        // Create scope for second foo with "bar" symbol
+        let foo_scope2 = arena.alloc(Scope::new(HirId::new()));
+        foo_sym2.set_scope(foo_scope2.id());
+
+        let bar_sym2 = arena.alloc(Symbol::new(HirId::new(), interner.intern("bar")));
+        bar_sym2.set_kind(SymKind::Variable);
+        foo_scope2.insert(bar_sym2);
+
+        // Lookup qualified path: crate::foo::bar
+        let result =
+            scope_stack.lookup_qualified(&["crate", "foo", "bar"], LookupOptions::current());
+        assert!(result.is_some());
+        let symbols = result.unwrap();
+        assert_eq!(symbols.len(), 2);
+        assert_eq!(symbols[0].name, interner.intern("bar"));
+        assert_eq!(symbols[1].name, interner.intern("bar"));
+    }
+
+    #[test]
+    #[serial(counter_tests)]
+    fn test_lookup_qualified_not_found() {
+        reset_scope_id_counter();
+        reset_symbol_id_counter();
+        let arena = Arena::new();
+        let interner = InternPool::new();
+        let scope_stack = ScopeStack::new(&arena, &interner);
+        let global_scope = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(global_scope);
+
+        // Lookup non-existent qualified path
+        let result = scope_stack.lookup_qualified(&["missing", "path"], LookupOptions::current());
+        assert!(result.is_none());
+    }
+
+    #[test]
+    #[serial(counter_tests)]
+    fn test_lookup_qualified_partial_path() {
+        reset_scope_id_counter();
+        reset_symbol_id_counter();
+        let arena = Arena::new();
+        let interner = InternPool::new();
+        let scope_stack = ScopeStack::new(&arena, &interner);
+
+        let global_scope = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(global_scope);
+
+        let crate_sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("crate")));
+        global_scope.insert(crate_sym);
+
+        let crate_scope = arena.alloc(Scope::new(HirId::new()));
+        crate_sym.set_scope(crate_scope.id());
+
+        // Path exists but second part doesn't
+        let result = scope_stack.lookup_qualified(&["crate", "missing"], LookupOptions::current());
+        assert!(result.is_none());
+    }
+
+    #[test]
+    #[serial(counter_tests)]
+    fn test_lookup_qualified_multiple_choices() {
+        reset_scope_id_counter();
+        reset_symbol_id_counter();
+        let arena = Arena::new();
+        let interner = InternPool::new();
+        let scope_stack = ScopeStack::new(&arena, &interner);
+
+        let global_scope = arena.alloc(Scope::new(HirId::new()));
+        scope_stack.push(global_scope);
+
+        // Create two "crate" symbols (ambiguous)
+        let crate_sym1 = arena.alloc(Symbol::new(HirId::new(), interner.intern("crate")));
+        let crate_sym2 = arena.alloc(Symbol::new(HirId::new(), interner.intern("crate")));
+        global_scope.insert(crate_sym1);
+        global_scope.insert(crate_sym2);
+
+        // First crate has a scope but no "foo"
+        let crate_scope1 = arena.alloc(Scope::new(HirId::new()));
+        crate_sym1.set_scope(crate_scope1.id());
+
+        // Second crate has a scope with "foo"
+        let crate_scope2 = arena.alloc(Scope::new(HirId::new()));
+        crate_sym2.set_scope(crate_scope2.id());
+
+        let foo_sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("foo")));
+        crate_scope2.insert(foo_sym);
+
+        let foo_scope = arena.alloc(Scope::new(HirId::new()));
+        foo_sym.set_scope(foo_scope.id());
+
+        let bar_sym = arena.alloc(Symbol::new(HirId::new(), interner.intern("bar")));
+        bar_sym.set_kind(SymKind::Variable);
+        foo_scope.insert(bar_sym);
+
+        // Should recursively try crate_sym1 first (fails at foo lookup)
+        // Then try crate_sym2 (succeeds)
+        let result =
+            scope_stack.lookup_qualified(&["crate", "foo", "bar"], LookupOptions::current());
+        assert!(result.is_some());
+        let symbols = result.unwrap();
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].name, interner.intern("bar"));
+        assert_eq!(symbols[0].kind(), SymKind::Variable);
     }
 }

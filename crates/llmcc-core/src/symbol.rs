@@ -21,28 +21,24 @@ use crate::interner::InternPool;
 
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
-/// Global atomic counter for assigning unique symbol IDs.
-/// Incremented on each new symbol creation to ensure uniqueness.
-static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(1);
+static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(0);
 
-/// Resets the global symbol ID counter to 1.
+/// Resets the global symbol ID counter to 0.
 /// Use this only during testing or when resetting the entire symbol table.
 #[inline]
 pub fn reset_symbol_id_counter() {
-    NEXT_SYMBOL_ID.store(1, Ordering::SeqCst);
+    NEXT_SYMBOL_ID.store(0, Ordering::SeqCst);
 }
 
 /// Global atomic counter for assigning unique scope IDs.
 /// Incremented on each new scope creation to ensure uniqueness.
-/// Global atomic counter for assigning unique scope IDs.
-/// Incremented on each new scope creation to ensure uniqueness.
-pub(crate) static NEXT_SCOPE_ID: AtomicUsize = AtomicUsize::new(1);
+pub(crate) static NEXT_SCOPE_ID: AtomicUsize = AtomicUsize::new(0);
 
-/// Resets the global scope ID counter to 1.
+/// Resets the global scope ID counter to 0.
 /// Use this only during testing or when resetting the entire scope table.
 #[inline]
 pub fn reset_scope_id_counter() {
-    NEXT_SCOPE_ID.store(1, Ordering::SeqCst);
+    NEXT_SCOPE_ID.store(0, Ordering::SeqCst);
 }
 
 /// Unique identifier for symbols within a compilation unit.
@@ -523,6 +519,7 @@ impl Symbol {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     fn create_test_hir_id(index: u32) -> HirId {
         HirId(index as usize)
@@ -533,21 +530,24 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_sym_id_creation() {
         reset_symbol_id_counter();
         let id1 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
         let id2 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
-        assert_eq!(id1.0, 1);
-        assert_eq!(id2.0, 2);
+        assert_eq!(id1.0, 0);
+        assert_eq!(id2.0, 1);
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_sym_id_display() {
         let id = SymId(42);
         assert_eq!(id.to_string(), "42");
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_sym_id_equality() {
         let id1 = SymId(42);
         let id2 = SymId(42);
@@ -557,24 +557,28 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_id_creation() {
         let id = ScopeId(10);
         assert_eq!(id.0, 10);
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_scope_id_display() {
         let id = ScopeId(99);
         assert_eq!(id.to_string(), "99");
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_kind_equality() {
         assert_eq!(SymKind::Function, SymKind::Function);
         assert_ne!(SymKind::Function, SymKind::Struct);
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_creation() {
         reset_symbol_id_counter();
         reset_scope_id_counter();
@@ -595,6 +599,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_monotonic_ids() {
         // Note: This test verifies monotonic IDs but is order-dependent.
         // IDs should only increase: if this test runs after others that create symbols,
@@ -614,6 +619,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_kind_setter_getter() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -627,6 +633,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_global_flag() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -638,6 +645,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_unit_index_only_set_once() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -652,6 +660,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_type_of() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -663,6 +672,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_scope_hierarchy() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -678,6 +688,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_add_dependency() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -691,6 +702,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_ignore_self_dependency() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -701,6 +713,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_duplicate_dependency() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -719,6 +732,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_add_defining_locations() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -737,6 +751,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_previous_chain() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -753,6 +768,7 @@ mod tests {
     }
 
     #[test]
+    #[serial(counter_tests)]
     fn test_symbol_clone() {
         reset_symbol_id_counter();
         let pool = create_test_intern_pool();
@@ -768,17 +784,5 @@ mod tests {
         assert_eq!(cloned.kind(), symbol.kind());
         assert_eq!(cloned.is_global(), symbol.is_global());
         assert_eq!(cloned.unit_index(), symbol.unit_index());
-    }
-
-    #[test]
-    fn test_reset_counters() {
-        reset_symbol_id_counter();
-        reset_scope_id_counter();
-
-        let id1 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
-        let scope_id1 = ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::SeqCst));
-
-        assert_eq!(id1.0, 1);
-        assert_eq!(scope_id1.0, 1);
     }
 }
