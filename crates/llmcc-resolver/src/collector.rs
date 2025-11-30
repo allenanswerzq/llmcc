@@ -77,9 +77,9 @@ impl<'a> CollectorScopes<'a> {
             .alloc(Scope::new_with(node.id(), symbol, Some(self.interner)));
         if let Some(symbol) = symbol {
             tracing::trace!(
-                "setting scope {:?} for symbol [{}]",
+                "set symbol scope {} to {:?}",
+                symbol.format(Some(self.interner)),
                 scope.id(),
-                symbol.format(Some(self.interner))
             );
             symbol.set_scope(scope.id());
             if let Some(parent_scope) = self.scopes.top() {
@@ -142,7 +142,7 @@ impl<'a> CollectorScopes<'a> {
                 symbol.set_parent_scope(parent.id());
             }
             tracing::trace!(
-                "initialized symbol [{}]",
+                "initialized symbol '{}'",
                 symbol.format(Some(self.interner))
             );
         }
@@ -162,7 +162,7 @@ impl<'a> CollectorScopes<'a> {
             .lookup_or_insert(name, node.id(), LookupOptions::current())?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
-        tracing::trace!("found symbol [{}]", symbol.format(Some(self.interner)));
+        tracing::trace!("found symbol '{}'", symbol.format(Some(self.interner)));
         Some(symbol)
     }
 
@@ -181,10 +181,6 @@ impl<'a> CollectorScopes<'a> {
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);
-        tracing::trace!(
-            "found global symbol [{}]",
-            symbol.format(Some(self.interner))
-        );
         Some(symbol)
     }
 
@@ -222,7 +218,10 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolverOption,
 ) -> &'a Scope<'a> {
-    tracing::info!("starting symbol collection for {} units", cc.files.len());
+    tracing::info!(
+        "starting symbol collection for totaol {} units",
+        cc.files.len()
+    );
 
     let scope_stack = L::collect_init(cc);
     let scope_stack_clone = scope_stack.clone();

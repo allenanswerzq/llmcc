@@ -365,6 +365,7 @@ impl<'tcx> ScopeStack<'tcx> {
             }
 
             if options.chained {
+                tracing::trace!("chained lookup requested for symbol '{}'", name);
                 // create new symbol chained to existing one
                 let symbol = symbols.last().copied().unwrap();
                 let new_symbol = Symbol::new(node, name_key);
@@ -374,10 +375,20 @@ impl<'tcx> ScopeStack<'tcx> {
                 symbols.push(allocated);
                 Some(symbols)
             } else {
+                tracing::trace!(
+                    "found existing symbol(s) for name '{}' in scope {:?}",
+                    name,
+                    scope.id()
+                );
                 // return existing symbols
                 Some(symbols)
             }
         } else {
+            tracing::trace!(
+                "symbol '{}' not found in scope {:?}, creating new symbol",
+                name,
+                scope.id()
+            );
             // not name found, create new symbol
             let new_symbol = Symbol::new(node, name_key);
             let allocated = self.arena.alloc(new_symbol);

@@ -300,7 +300,7 @@ impl Symbol {
         let kind = format!("{:?}", self.kind());
         if let Some(interner) = interner {
             if let Some(name) = interner.resolve_owned(self.name) {
-                format!("[{}:{}]{}", self.id.0, kind, name)
+                format!("[{}:{}] {}", self.id.0, kind, name)
             } else {
                 format!("[{}:{}]?", self.id.0, kind)
             }

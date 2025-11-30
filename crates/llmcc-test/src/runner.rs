@@ -556,7 +556,6 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
             label,
             row.kind,
             row.name,
-            row.fqn,
             if row.is_global { "[global]" } else { "" },
             label_width = label_width,
             kind_width = kind_width,
