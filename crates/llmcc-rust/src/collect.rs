@@ -219,16 +219,13 @@ impl<'tcx> CollectorVisitor<'tcx> {
         if let Some(sn) = node.as_scope()
             && let Some(ident) = node.child_identifier_by_field(*unit, field_id)
         {
-            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None)
-            {
+            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None) {
                 let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
-            } else if let Some(sym) = scopes.lookup_symbol_with(
-                &ident.name,
-                Some(vec![SymKind::UnresolvedType]),
-                None,
-            ) {
+            } else if let Some(sym) =
+                scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::UnresolvedType]), None)
+            {
                 sym.set_kind(kind);
                 let needs_scope = sym.opt_scope().is_none();
                 Self::handle_global_visibility(unit, node, scopes, sym);
@@ -952,10 +949,7 @@ mod tests {
 
                 let mut missing = Vec::new();
                 for expected_dep in &expected {
-                    if !actual
-                        .iter()
-                        .any(|actual_dep| actual_dep == expected_dep)
-                    {
+                    if !actual.iter().any(|actual_dep| actual_dep == expected_dep) {
                         missing.push(expected_dep.clone());
                     }
                 }
@@ -992,10 +986,7 @@ fn caller() {
     callee();
 }
 "#;
-        assert_dependencies(
-            &[source],
-            &[("caller", SymKind::Function, &["callee"])],
-        );
+        assert_dependencies(&[source], &[("caller", SymKind::Function, &["callee"])]);
     }
 
     #[serial_test::serial]
@@ -1014,14 +1005,7 @@ fn run() {
 "#;
         assert_dependencies(
             &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &[
-                    "MyStruct",
-                    "foo",
-                ],
-            )],
+            &[("run", SymKind::Function, &["MyStruct", "foo"])],
         );
     }
 
@@ -1050,12 +1034,7 @@ fn execute() -> Response {
             &[(
                 "execute",
                 SymKind::Function,
-                &[
-                    "new",
-                    "set_header",
-                    "send",
-                    "Response",
-                ],
+                &["new", "set_header", "send", "Response"],
             )],
         );
     }
@@ -1075,11 +1054,7 @@ async fn entry() -> Result<(), ()> {
 "#;
         assert_dependencies(
             &[source],
-            &[(
-                "entry",
-                SymKind::Function,
-                &["async_task", "maybe"],
-            )],
+            &[("entry", SymKind::Function, &["async_task", "maybe"])],
         );
     }
 
@@ -1093,10 +1068,7 @@ fn call_macro() {
     ping!();
 }
 "#;
-        assert_dependencies(
-            &[source],
-            &[("call_macro", SymKind::Function, &["ping"])],
-        );
+        assert_dependencies(&[source], &[("call_macro", SymKind::Function, &["ping"])]);
     }
 
     #[serial_test::serial]
@@ -1111,14 +1083,7 @@ fn run() {
     helpers::compute();
 }
 "#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["compute"],
-            )],
-        );
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["compute"])]);
     }
 
     #[serial_test::serial]
@@ -1137,10 +1102,7 @@ fn run() {
 }
 "#;
         // Scoped function calls should only depend on the method, not the struct
-        assert_dependencies(
-            &[source],
-            &[("run", SymKind::Function, &["build"])],
-        );
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["build"])]);
     }
 
     #[serial_test::serial]
@@ -1162,10 +1124,7 @@ fn run() {
 }
 "#;
         // Scoped function calls should only depend on the method, not the struct
-        assert_dependencies(
-            &[source],
-            &[("run", SymKind::Function, &["greet"])],
-        );
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["greet"])]);
     }
 
     #[serial_test::serial]
@@ -1213,14 +1172,7 @@ fn run() {
     outer::inner::shout!();
 }
 "#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["shout"],
-            )],
-        );
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["shout"])]);
     }
 
     #[serial_test::serial]
@@ -1236,10 +1188,7 @@ mod outer {
     }
 }
 "#;
-        assert_dependencies(
-            &[source],
-            &[("run", SymKind::Function, &["top"])],
-        );
+        assert_dependencies(&[source], &[("run", SymKind::Function, &["top"])]);
     }
 
     #[serial_test::serial]
@@ -1318,16 +1267,8 @@ struct Container {
         assert_dependencies(
             &[source],
             &[
-                (
-                    "Container",
-                    SymKind::Struct,
-                    &["Foo", "List"],
-                ),
-                (
-                    "data",
-                    SymKind::Field,
-                    &["Foo", "List"],
-                ),
+                ("Container", SymKind::Struct, &["Foo", "List"]),
+                ("data", SymKind::Field, &["Foo", "List"]),
             ],
         );
     }
@@ -1341,10 +1282,7 @@ enum Wrapper {
     Item(Foo),
 }
 "#;
-        assert_dependencies(
-            &[source],
-            &[("Wrapper", SymKind::Enum, &["Foo"])],
-        );
+        assert_dependencies(&[source], &[("Wrapper", SymKind::Enum, &["Foo"])]);
     }
 
     #[serial_test::serial]
@@ -1365,24 +1303,8 @@ fn run() {
         assert_dependencies(
             &[source],
             &[
-                (
-                    "value",
-                    SymKind::Variable,
-                    &[
-                        "Bar",
-                        "Foo",
-                        "Result",
-                    ],
-                ),
-                (
-                    "run",
-                    SymKind::Function,
-                    &[
-                        "Bar",
-                        "Foo",
-                        "Result",
-                    ],
-                ),
+                ("value", SymKind::Variable, &["Bar", "Foo", "Result"]),
+                ("run", SymKind::Function, &["Bar", "Foo", "Result"]),
             ],
         );
     }

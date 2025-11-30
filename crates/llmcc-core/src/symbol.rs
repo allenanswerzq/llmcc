@@ -224,7 +224,7 @@ impl fmt::Debug for Symbol {
             .field("kind", &clone.kind())
             .field("owner", &clone.owner())
             .field("unit_index", &clone.unit_index())
-            .field("scope", &clone.scope())
+            .field("scope", &clone.opt_scope())
             .field("parent_scope", &clone.parent_scope())
             .field("defining", &clone.defining_hir_nodes())
             .field("depends", &clone.depends.read())

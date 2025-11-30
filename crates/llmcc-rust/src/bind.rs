@@ -1170,10 +1170,7 @@ mod tests {
 
                 let mut missing = Vec::new();
                 for expected_dep in &expected {
-                    if !actual
-                        .iter()
-                        .any(|actual_dep| actual_dep == expected_dep)
-                    {
+                    if !actual.iter().any(|actual_dep| actual_dep == expected_dep) {
                         missing.push(expected_dep.clone());
                     }
                 }
@@ -1318,8 +1315,7 @@ fn func() {
                 "func",
                 SymKind::Function,
                 &[
-                    "MyStruct",
-                    "Foo", // Return type of foo() method
+                    "MyStruct", "Foo", // Return type of foo() method
                     "foo",
                 ],
             )],
@@ -1361,8 +1357,7 @@ fn run() {
                 "run",
                 SymKind::Function,
                 &[
-                    "Foo",
-                    "greet", // Should resolve to trait method
+                    "Foo", "greet", // Should resolve to trait method
                 ],
             )],
         );
@@ -1377,10 +1372,7 @@ fn bar() {
     let x = foo();
 }
 "#;
-        assert_dependencies(
-            &[source],
-            &[("bar", SymKind::Function, &["foo"])],
-        );
+        assert_dependencies(&[source], &[("bar", SymKind::Function, &["foo"])]);
     }
 
     #[serial_test::serial]
