@@ -428,7 +428,8 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
         // Scope already in Arena
-        self.arena.alloc(Scope::new(owner)) as _
+        self.arena
+            .alloc(Scope::new_with(owner, None, Some(&self.interner)))
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
@@ -491,7 +492,8 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.arena.alloc(Scope::new(owner))
+        self.arena
+            .alloc(Scope::new_with(owner, None, Some(&self.interner)))
     }
 
     /// Merge the second scope into the first.

@@ -327,6 +327,7 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 
     /// Internal implementation for lookup/insert logic.
+    /// This is the only entry point to create a symbol
     pub fn lookup_or_insert(
         &self,
         name: &str,
@@ -339,7 +340,12 @@ impl<'tcx> ScopeStack<'tcx> {
         if stack.is_empty() {
             return None;
         }
-
+        tracing::trace!(
+            "lookup or insert symbol '{}' with options {:?} in stack {:#?}",
+            name,
+            options,
+            stack
+        );
         let scope = if options.global {
             tracing::trace!("lookup global scope for symbol '{}'", name);
             stack.first().copied()?

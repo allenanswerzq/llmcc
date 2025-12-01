@@ -1,8 +1,8 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
-use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
+use llmcc_core::{next_hir_id, scope};
 use llmcc_resolver::{CollectorScopes, ResolverOption};
 
 use std::collections::HashMap;
@@ -10,6 +10,9 @@ use std::collections::HashMap;
 use crate::LangRust;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
+
+/// Callback type for scope entry actions
+type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&HirNode<'tcx>, &mut CollectorScopes<'tcx>)>;
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -116,9 +119,10 @@ impl<'tcx> CollectorVisitor<'tcx> {
         // Try looking up by primary kind
         if let Some(symbol) = scopes.lookup_symbol(name, vec![primary_kind]) {
             tracing::trace!(
-                "found existing symbol '{}' of kind {:?}",
+                "found existing symbol '{}' of kind {:?} {:?}",
                 name,
-                primary_kind
+                primary_kind,
+                symbol,
             );
             return Some(symbol);
         }
@@ -126,9 +130,10 @@ impl<'tcx> CollectorVisitor<'tcx> {
         // Try unresolved type if not found
         if let Some(symbol) = scopes.lookup_symbol(name, vec![SymKind::UnresolvedType]) {
             tracing::trace!(
-                "found existing unresolved symbol '{}', converting to {:?}",
+                "found existing unresolved symbol '{}', converting to {:?}, {:?}",
                 name,
-                primary_kind
+                primary_kind,
+                symbol,
             );
             symbol.set_kind(primary_kind);
             return Some(symbol);
@@ -159,6 +164,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         sym: &'tcx Symbol,
         sn: &'tcx HirScope<'tcx>,
         ident: &'tcx HirIdent<'tcx>,
+        on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
         tracing::trace!(
             "visiting with scope for symbol {}",
@@ -184,6 +190,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         sn.set_scope(scope);
 
         scopes.push_scope(scope);
+        if let Some(callback) = on_scope_enter {
+            callback(node, scopes);
+        }
         self.visit_children(unit, node, scopes, scope, Some(sym));
         scopes.pop_scope();
     }
@@ -200,11 +209,16 @@ impl<'tcx> CollectorVisitor<'tcx> {
         parent: Option<&Symbol>,
         kind: SymKind,
         field_id: u16,
+        on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
-        tracing::trace!("visiting scoped named node with kind '{:?}'", kind);
         if let Some((sn, ident)) = node.scope_and_ident_by_field(*unit, field_id) {
+            tracing::trace!(
+                "visiting scoped named node with kind '{:?}' '{}'",
+                kind,
+                ident.name
+            );
             if let Some(sym) = self.lookup_or_convert(unit, scopes, &ident.name, node, kind) {
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident);
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, on_scope_enter);
             }
         } else {
             tracing::warn!("scoped named node is missing scope or ident, skipping");
@@ -223,8 +237,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting block");
         if let Some(sn) = node.as_scope() {
-            tracing::trace!("visiting block node {}", node.format(*unit));
             let scope = unit.cc.alloc_scope(node.id());
             sn.set_scope(scope);
 
@@ -245,6 +259,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting source_file");
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
 
@@ -301,6 +316,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting mod_item");
         if node.child_by_field(*unit, LangRust::field_body).is_none() {
             return;
         }
@@ -312,6 +328,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Namespace,
             LangRust::field_name,
+            None,
         );
     }
 
@@ -325,6 +342,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting function_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -333,6 +351,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Function,
             LangRust::field_name,
+            None,
         );
     }
 
@@ -346,6 +365,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting function_signature_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -354,6 +374,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Function,
             LangRust::field_name,
+            None,
         );
     }
 
@@ -367,6 +388,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting struct_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -375,8 +397,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Struct,
             LangRust::field_name,
+            Some(Box::new(|node, scopes| {
+                let _ = scopes.lookup_or_insert(&"self", node, SymKind::Field);
+                let _ = scopes.lookup_or_insert(&"Self", node, SymKind::TypeAlias);
+            })),
         );
     }
+
     /// AST: enum Name { variants... }
     /// Purpose: Declare enum symbol, create enum scope for variants
     fn visit_enum_item(
@@ -387,6 +414,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting enum_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -395,6 +423,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Enum,
             LangRust::field_name,
+            None,
         );
     }
 
@@ -408,6 +437,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting trait_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -416,6 +446,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Trait,
             LangRust::field_name,
+            None,
         );
     }
 
@@ -429,6 +460,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting impl_item");
         if let Some(ti) = node.child_identifier_by_field(*unit, LangRust::field_trait) {
             if let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Trait)
@@ -442,7 +474,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Struct)
             {
                 ti.set_symbol(symbol);
-                self.visit_with_scope(unit, node, scopes, symbol, sn, ti);
+                self.visit_with_scope(unit, node, scopes, symbol, sn, ti, None);
                 return;
             }
         }
@@ -458,6 +490,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting macro_definition");
         self.visit_scoped_named(
             unit,
             node,
@@ -466,6 +499,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Macro,
             LangRust::field_name,
+            None,
         );
     }
 
@@ -479,6 +513,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting const_item");
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::Const, LangRust::field_name)
         {
@@ -496,6 +531,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting static_item");
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::Static, LangRust::field_name)
         {
@@ -513,6 +549,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting type_item");
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::TypeAlias, LangRust::field_name)
         {
@@ -530,6 +567,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting type_identifier");
         let ident = node.as_ident().unwrap();
         if let Some(symbol) = scopes.lookup_symbol(
             &ident.name,
@@ -556,6 +594,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting type_parameter");
         let _ = self.declare_symbol(
             unit,
             node,
@@ -576,6 +615,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting const_parameter");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::Const, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -590,6 +630,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting associated_type");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::TypeAlias, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -604,6 +645,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting where_predicate");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -618,6 +660,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting array_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -631,6 +674,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting tuple_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -644,6 +688,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting primitive_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -657,6 +702,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting abstract_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -670,6 +716,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting field_declaration");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -684,6 +731,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting enum_variant");
         // Get the parent enum symbol before creating the variant
         let parent_enum = parent.or_else(|| namespace.opt_symbol());
 
@@ -695,6 +743,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::EnumVariant,
             LangRust::field_name,
+            None,
         );
 
         // Set type_of on the variant to point to the parent enum
@@ -716,6 +765,21 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting parameter");
+
+        // Check if this is a 'self' parameter
+        if let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_pattern) {
+            if ident.name == "self" {
+                // For 'self' parameters, try to resolve it as a Field in the current scope
+                if let Some(symbol) = scopes.lookup_symbol(&ident.name, vec![SymKind::Field]) {
+                    ident.set_symbol(symbol);
+                    self.visit_children(unit, node, scopes, namespace, Some(symbol));
+                    return;
+                }
+            }
+        }
+
+        // For non-self parameters, declare as Variable
         if let Some(symbol) = self.declare_symbol(
             unit,
             node,
@@ -737,6 +801,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting closure_expression");
         // Create a scope for the closure
         if let Some(sn) = node.as_scope() {
             let scope = unit.cc.alloc_scope(node.id());
@@ -767,6 +832,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        tracing::trace!("visiting let_declaration");
         // Check if value is a closure expression to determine symbol kind
         let is_closure = node
             .child_by_field(*unit, LangRust::field_value)
@@ -860,8 +926,6 @@ mod tests {
             .map(|symbol| symbol.id())
             .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
     }
-
-    // Tests for visit_* functions
 
     #[serial_test::serial]
     #[test]
@@ -1233,6 +1297,68 @@ mod tests {
         with_compiled_unit(&[&source], |cc| {
             assert!(find_symbol_id(cc, "T", SymKind::TypeParameter).0 > 0);
             assert!(find_symbol_id(cc, "U", SymKind::TypeParameter).0 > 0);
+        });
+    }
+
+    #[serial_test::serial]
+    #[test]
+    fn visit_method_with_self_parameter() {
+        let source = dedent(
+            "
+            struct Counter {
+                count: i32,
+            }
+
+            impl Counter {
+                fn increment(&mut self) {
+                    self.count += 1;
+                }
+
+                fn get_count(&self) -> i32 {
+                    self.count
+                }
+            }
+            ",
+        );
+        with_compiled_unit(&[&source], |cc| {
+            // Verify struct is collected
+            let counter_id = find_symbol_id(cc, "Counter", SymKind::Struct);
+            assert!(counter_id.0 > 0);
+
+            // Verify methods are collected
+            assert!(find_symbol_id(cc, "increment", SymKind::Function).0 > 0);
+            assert!(find_symbol_id(cc, "get_count", SymKind::Function).0 > 0);
+
+            // Verify field is collected
+            assert!(find_symbol_id(cc, "count", SymKind::Field).0 > 0);
+
+            assert!(find_symbol_id(cc, "self", SymKind::Field).0 > 0);
+            assert!(find_symbol_id(cc, "Self", SymKind::TypeAlias).0 > 0);
+        });
+    }
+
+    #[serial_test::serial]
+    #[test]
+    fn visit_self_in_different_parameter_forms() {
+        let source = dedent(
+            "
+            struct MyType;
+
+            impl MyType {
+                fn by_value(self) {}
+                fn by_mut_ref(&mut self) {}
+                fn by_ref(&self) {}
+            }
+            ",
+        );
+        with_compiled_unit(&[&source], |cc| {
+            // Verify struct
+            assert!(find_symbol_id(cc, "MyType", SymKind::Struct).0 > 0);
+
+            // Verify all three methods are collected
+            assert!(find_symbol_id(cc, "by_value", SymKind::Function).0 > 0);
+            assert!(find_symbol_id(cc, "by_mut_ref", SymKind::Function).0 > 0);
+            assert!(find_symbol_id(cc, "by_ref", SymKind::Function).0 > 0);
         });
     }
 }

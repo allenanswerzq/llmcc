@@ -191,8 +191,12 @@ impl<'a> CollectorScopes<'a> {
         name: &str,
         kind_filters: Vec<SymKind>,
     ) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!(
+            "lookup symbols '{}' with filters {:?}",
+            name,
+            kind_filters.clone()
+        );
         let options = LookupOptions::current().with_kind_filters(kind_filters);
-        tracing::trace!("lookup symbols '{}' with options", name);
         self.scopes.lookup_symbols(name, options)
     }
 
