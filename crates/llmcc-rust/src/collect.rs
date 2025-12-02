@@ -567,21 +567,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting type_identifier");
-        let ident = node.as_ident().unwrap();
-        if let Some(symbol) = scopes.lookup_symbol(
-            &ident.name,
-            vec![
-                SymKind::Struct,
-                SymKind::Enum,
-                SymKind::Trait,
-                SymKind::Function,
-                SymKind::TypeAlias,
-            ],
-        ) {
-            ident.set_symbol(symbol);
-            return;
-        }
     }
 
     /// AST: Generic type parameter T or K in fn<T, K>(...) or struct<T> { ... }

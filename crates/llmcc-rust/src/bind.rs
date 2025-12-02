@@ -6,41 +6,24 @@ use llmcc_resolver::{BinderScopes, ResolverOption};
 
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;
-use crate::ty::TyCtxt;
+use crate::ty::{self, TyCtxt};
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
-type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BinderScopes<'tcx>) + 'tcx>;
+type ScopeEntryCallback<'tcx> =
+    Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BinderScopes<'tcx>) + 'tcx>;
 
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
 pub struct BinderVisitor<'tcx> {
     phantom: std::marker::PhantomData<&'tcx ()>,
+    collect_type_depend: Vec<DepKind>,
 }
 
 impl<'tcx> BinderVisitor<'tcx> {
     fn new() -> Self {
         Self {
             phantom: std::marker::PhantomData,
-        }
-    }
-
-    fn collect_types_depends(
-        &mut self,
-        unit: &CompileUnit<'tcx>,
-        scopes: &mut BinderScopes<'tcx>,
-        node: &HirNode<'tcx>,
-        owner: &Symbol,
-        dep_kind: DepKind,
-    ) {
-        let types = TyCtxt::new(unit, scopes).collect_types(node);
-        tracing::trace!("collected {} types under", types.len());
-        for ty in types {
-            tracing::trace!(
-                "adding type dep from '{}' to '{}'",
-                owner.format(Some(&unit.interner())),
-                ty.format(Some(&unit.interner())),
-            );
-            owner.add_depends_with(ty, dep_kind, Some(&[SymKind::TypeParameter]));
+            collect_type_depend: Vec::new(),
         }
     }
 
@@ -134,24 +117,6 @@ impl<'tcx> BinderVisitor<'tcx> {
 
     //     for child in pattern.children(unit) {
     //         Self::bind_pattern_to_type(unit, scopes, &child, ty, &[]);
-    //     }
-    // }
-
-    // fn collect_nested_call_deps(
-    //     unit: &CompileUnit<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     outer_target: &'tcx Symbol,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     if node.kind_id() == LangRust::call_expression
-    //         && let Some(inner_sym) =
-    //             TyCtxt::new(unit, scopes).resolve_call_target(node, parent)
-    //     {
-    //         outer_target.add_depends(inner_sym, Some(&[SymKind::TypeParameter]));
-    //     }
-    //     for child in node.children(unit) {
-    //         Self::collect_nested_call_deps(unit, scopes, &child, outer_target, parent);
     //     }
     // }
 }
@@ -255,6 +220,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         tracing::trace!("visit_function_item");
         let sn = node.as_scope().unwrap();
+        let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
+        if let Some(ref _ret_node) = ret_full_node {
+            self.collect_type_depend.push(DepKind::ReturnType);
+        }
+
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
         // At this point, all return type node should already be bound
@@ -278,11 +248,71 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     Some(&[SymKind::TypeParameter]),
                 );
             }
+        }
 
-            // let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
-            // if let Some(ref ret_node) = ret_full_node {
-            //     self.collect_types_depends(unit, scopes, ret_node, fn_sym, DepKind::ReturnType);
-            // }
+        if let Some(ref _ret_node) = ret_full_node {
+            self.collect_type_depend.pop();
+        }
+    }
+
+    fn visit_generic_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.collect_type_depend.push(DepKind::Used);
+        self.visit_children(unit, node, scopes, namespace, parent);
+        self.collect_type_depend.pop();
+    }
+
+    fn visit_primitive_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        let ident = node.as_ident().unwrap();
+        if let Some(symbol) = scopes.lookup_global(&ident.name, vec![SymKind::Primitive]) {
+            ident.set_symbol(symbol);
+            if let Some(ns) = namespace.opt_symbol()
+                && let Some(&ty_depend) = self.collect_type_depend.last()
+            {
+                ns.add_depends_with(symbol, ty_depend, Some(&[SymKind::TypeParameter]));
+            }
+        }
+    }
+
+    fn visit_type_identifier(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        tracing::trace!("visiting type_identifier");
+        let ident = node.as_ident().unwrap();
+        if let Some(symbol) = scopes.lookup_symbol(
+            &ident.name,
+            vec![
+                SymKind::Struct,
+                SymKind::Enum,
+                SymKind::Trait,
+                SymKind::Function,
+                SymKind::TypeAlias,
+            ],
+        ) {
+            ident.set_symbol(symbol);
+            if let Some(ns) = namespace.opt_symbol()
+                && let Some(&ty_depend) = self.collect_type_depend.last()
+            {
+                ns.add_depends_with(symbol, ty_depend, Some(&[SymKind::TypeParameter]));
+            }
         }
     }
 
@@ -1302,12 +1332,20 @@ mod tests {
     #[serial_test::serial]
     fn test_visit_impl_item() {
         let source = r#"
+            trait Printable {
+                fn print(&self);
+            }
             struct Inner;
             struct Container<T>(T);
 
             impl Container<Inner> {
                 fn new(value: Inner) -> Container<Inner> {
                     Container(value)
+                }
+            }
+
+            impl Printable for Container<Inner> {
+                fn print(&self) {
                 }
             }
         "#;

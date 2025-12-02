@@ -187,14 +187,17 @@ impl<'a> BinderScopes<'a> {
     pub fn lookup_qualified(
         &self,
         qualified_name: &[&str],
-        kind_filters: Vec<SymKind>,
+        kind_filters: Option<Vec<SymKind>>,
     ) -> Option<Vec<&'a Symbol>> {
         tracing::trace!(
-            "lookup qualified {:?} with filters {:?}",
+            "lookup qualified {:?} with kind_filters {:?}",
             qualified_name,
             kind_filters.clone()
         );
-        let options = LookupOptions::default().with_kind_filters(kind_filters);
+        let mut options = LookupOptions::default().with_shift_start(true);
+        if let Some(filters) = kind_filters {
+            options = options.with_kind_filters(filters)
+        }
         let symbols = self.scopes.lookup_qualified(qualified_name, options)?;
         Some(symbols)
     }

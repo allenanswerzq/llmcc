@@ -407,17 +407,34 @@ impl<'tcx> ScopeStack<'tcx> {
         }
 
         // search in forward order to find the current scope where names[0] is defined
+        let name_key = self.interner.intern(qualified_name[0]);
         let mut current_scope = *stack.first()?;
         if options.shift_start {
             for i in 0..stack.len() {
-                if stack[i]
-                    .lookup_symbols(self.interner.intern(qualified_name[0]), options.clone())
-                    .is_some()
-                {
+                if stack[i].lookup_symbols(name_key, options.clone()).is_some() {
                     current_scope = stack[i];
                     break;
                 }
             }
+            tracing::trace!(
+                "lookup_qualified: shifted start to scope {:?} for '{}'",
+                current_scope.id(),
+                qualified_name[0]
+            );
+        }
+
+        if current_scope
+            .lookup_symbols(name_key, options.clone())
+            .is_none()
+        {
+            tracing::trace!(
+                "lookup_qualified: starting scope {:?} does not contain '{}' options: {:?}, stack {:#?}",
+                current_scope.id(),
+                qualified_name[0],
+                options,
+                stack
+            );
+            return None;
         }
 
         // Recursively try all symbol choices
@@ -436,9 +453,23 @@ impl<'tcx> ScopeStack<'tcx> {
             return None;
         }
 
+        tracing::trace!(
+            "lookup_qualified_recursive: scope {:?}, part '{}'",
+            scope.id(),
+            qualified_name[index]
+        );
         let part = qualified_name[index];
         let name_key = self.interner.intern(part);
         let symbols = scope.lookup_symbols(name_key, options.clone())?;
+        tracing::trace!(
+            "lookup_qualified_recursive: found {:?} symbols for '{}' in scope {:?}",
+            symbols
+                .iter()
+                .map(|s| s.format(Some(self.interner)))
+                .collect::<Vec<_>>(),
+            part,
+            scope.id()
+        );
 
         // If this is the last part, return the symbols
         if index == qualified_name.len() - 1 {
@@ -455,6 +486,11 @@ impl<'tcx> ScopeStack<'tcx> {
                 if scope_index < scopes_slice.len() {
                     let next_scope = &scopes_slice[scope_index];
                     debug_assert!(next_scope.id() == symbol_scope_id);
+                    tracing::trace!(
+                        "lookup_qualified_recursive: descending into scope {:?} for symbol '{}'",
+                        next_scope.id(),
+                        symbol.format(Some(self.interner))
+                    );
                     // Recursively try to find the rest of the path
                     if let Some(result) = self.lookup_qualified_recursive(
                         next_scope,
