@@ -68,8 +68,7 @@ impl LanguageTraitImpl for LangRust {
     ) {
         unsafe {
             let config = config as *const C as *const ResolverOption;
-            // TODO: bind symbols
-            // crate::bind::bind_symbols(unit, &node, globals, &*config);
+            crate::bind::bind_symbols(unit, &node, globals, &*config);
         }
     }
 }

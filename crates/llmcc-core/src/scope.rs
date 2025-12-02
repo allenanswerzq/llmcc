@@ -340,20 +340,15 @@ impl<'tcx> ScopeStack<'tcx> {
         if stack.is_empty() {
             return None;
         }
-        tracing::trace!(
-            "lookup or insert symbol '{}' with options {:?} in stack {:#?}",
-            name,
-            options,
-            stack
-        );
+
         let scope = if options.global {
-            tracing::trace!("lookup global scope for symbol '{}'", name);
+            tracing::trace!("lookup_or_insert: '{}' in global scope", name);
             stack.first().copied()?
         } else if options.parent && stack.len() >= 2 {
-            tracing::trace!("lookup parent scope for symbol '{}'", name);
+            tracing::trace!("lookup_or_insert: '{}' in parent scope", name);
             stack.get(stack.len() - 2).copied()?
         } else {
-            tracing::trace!("lookup current scope for symbol '{}'", name);
+            tracing::trace!("lookup_or_insert: '{}' in current scope", name);
             stack.last().copied()?
         };
 
@@ -361,17 +356,8 @@ impl<'tcx> ScopeStack<'tcx> {
         if let Some(mut symbols) = symbols {
             debug_assert!(!symbols.is_empty());
 
-            if symbols.len() > 1 {
-                tracing::trace!(
-                    "found mutpile {} symbols for name '{}' in scope {:?}, use the last one",
-                    symbols.len(),
-                    name,
-                    scope.id()
-                );
-            }
-
             if options.chained {
-                tracing::trace!("chained lookup requested for symbol '{}'", name);
+                tracing::debug!("chained symbol '{}' in scope {:?}", name, scope.id());
                 // create new symbol chained to existing one
                 let symbol = symbols.last().copied().unwrap();
                 let new_symbol = Symbol::new(node, name_key);
@@ -381,21 +367,12 @@ impl<'tcx> ScopeStack<'tcx> {
                 symbols.push(allocated);
                 Some(symbols)
             } else {
-                tracing::trace!(
-                    "found existing symbol(s) for name '{}' in scope {:?}",
-                    name,
-                    scope.id()
-                );
-                // return existing symbols
+                tracing::trace!("found existing symbol '{}' in scope {:?}", name, scope.id());
                 Some(symbols)
             }
         } else {
-            tracing::trace!(
-                "symbol '{}' not found in scope {:?}, creating new symbol",
-                name,
-                scope.id()
-            );
-            // not name found, create new symbol
+            tracing::trace!("create new symbol '{}' in scope {:?}", name, scope.id());
+            // not found, create new symbol
             let new_symbol = Symbol::new(node, name_key);
             let allocated = self.arena.alloc(new_symbol);
             scope.insert(allocated);

@@ -132,7 +132,7 @@ impl<'a> CollectorScopes<'a> {
     }
 
     /// Initialize a symbol with common properties
-    fn init_symbol(&self, symbol: &'a Symbol, _name: &str, node: &HirNode<'a>, kind: SymKind) {
+    fn init_symbol(&self, symbol: &'a Symbol, name: &str, node: &HirNode<'a>, kind: SymKind) {
         if symbol.kind() == SymKind::Unknown {
             symbol.set_owner(node.id());
             symbol.set_kind(kind);
@@ -141,10 +141,7 @@ impl<'a> CollectorScopes<'a> {
             if let Some(parent) = self.top() {
                 symbol.set_parent_scope(parent.id());
             }
-            tracing::trace!(
-                "initialized symbol '{}'",
-                symbol.format(Some(self.interner))
-            );
+            tracing::trace!("init_symbol: {} id={:?}", name, symbol.id());
         }
     }
 
@@ -156,13 +153,11 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        tracing::trace!("lookup or insert scope stack '{}' in current", name);
         let symbols = self
             .scopes
             .lookup_or_insert(name, node.id(), LookupOptions::current())?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
-        tracing::trace!("found symbol '{}'", symbol.format(Some(self.interner)));
         Some(symbol)
     }
 
@@ -174,7 +169,6 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        tracing::trace!("lookup or insert scope stack '{}' in global scope", name);
         let symbols = self
             .scopes
             .lookup_or_insert(name, node.id(), LookupOptions::global())?;
@@ -259,6 +253,10 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
 
     let globals = scope_stack.globals();
 
+    tracing::debug!("sorting scopes and symbols");
+    cc.arena.scope_sort_by(|scope| scope.id());
+    cc.arena.symbol_sort_by(|symbol| symbol.id());
+
     tracing::debug!(
         "merging {} unit scopes into global scope",
         unit_globals_vec.len()
@@ -267,10 +265,6 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         tracing::trace!("merging unit {} global scope", i);
         cc.merge_two_scopes(globals, unit_globals);
     }
-
-    tracing::debug!("sorting scopes and symbols");
-    cc.arena.scope_sort_by(|scope| scope.id());
-    cc.arena.symbol_sort_by(|symbol| symbol.id());
 
     tracing::info!("symbol collection complete");
     globals

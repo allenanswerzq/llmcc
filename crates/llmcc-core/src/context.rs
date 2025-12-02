@@ -55,6 +55,13 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.interner.resolve_owned(symbol)
     }
 
+    /// Resolve an interned symbol to string reference with "<unnamed>" as default.
+    /// Useful for display purposes where you need a string that lives for 'static or is owned.
+    pub fn resolve_name_or(&self, symbol: InternedStr, default: &str) -> String {
+        self.resolve_interned_owned(symbol)
+            .unwrap_or_else(|| default.to_string())
+    }
+
     pub fn file_root_id(&self) -> Option<HirId> {
         self.cc.file_root_id(self.index)
     }
@@ -114,22 +121,12 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from Arena using offset, following redirects if scope was merged
-        let index = scope_id.0;
-        self.cc.arena.scope().get(index).and_then(|scope| {
-            if let Some(target_id) = scope.get_redirect() {
-                // Follow redirect chain
-                self.opt_get_scope(target_id)
-            } else {
-                Some(scope)
-            }
-        })
+        self.cc.opt_get_scope(scope_id)
     }
 
+    /// Get a symbol by ID, delegating to CompileCtxt
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        // Direct lookup from Arena using offset
-        let index = owner.0;
-        self.cc.arena.symbol().get(index).copied()
+        self.cc.opt_get_symbol(owner)
     }
 
     /// Get an existing scope or panics if it doesn't exist
@@ -445,9 +442,22 @@ impl<'tcx> CompileCtxt<'tcx> {
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
+    pub fn opt_get_scope(&'tcx self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
+        // Direct lookup from Arena using offset, following redirects if scope was merged
+        let index = scope_id.0;
+        self.arena.scope().get(index).and_then(|scope| {
+            if let Some(target_id) = scope.get_redirect() {
+                // Follow redirect chain
+                self.opt_get_scope(target_id)
+            } else {
+                Some(scope)
+            }
+        })
+    }
+
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
         let index = (owner.0).saturating_sub(1);
-        self.arena.symbol().get(index).cloned()
+        self.arena.symbol().get(index).copied()
     }
 
     pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {

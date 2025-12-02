@@ -1,10 +1,10 @@
 #[macro_use]
 extern crate llmcc_core;
 
-// mod bind;
+mod bind;
 mod collect;
-// mod resolve;
 mod token;
+mod ty;
 mod util;
 
 pub const RUST_PRIMITIVES: &[&str] = &[
@@ -12,7 +12,7 @@ pub const RUST_PRIMITIVES: &[&str] = &[
     "f64", "bool", "char", "str", "String",
 ];
 
-// pub use crate::bind::BinderVisitor;
+pub use crate::bind::BinderVisitor;
 pub use crate::collect::CollectorVisitor;
 
 pub use llmcc_core::{

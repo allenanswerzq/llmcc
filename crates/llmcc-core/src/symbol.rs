@@ -219,26 +219,6 @@ impl fmt::Debug for Symbol {
 
 impl Symbol {
     /// Creates a new symbol with the given HIR node owner and interned name.
-    ///
-    /// Assigns a unique monotonic ID to the symbol. The symbol is initialized with:
-    /// - Unknown kind
-    /// - No unit index
-    /// - No scope or parent scope
-    /// - No type information
-    /// - Not marked as global
-    /// - Empty dependency lists
-    /// - No previous definition
-    ///
-    /// # Arguments
-    /// * `owner` - The HIR node that introduces this symbol
-    /// * `name_key` - The interned name of the symbol
-    ///
-    /// # Example
-    /// ```ignore
-    /// let symbol = Symbol::new(id, interned_name);
-    /// assert_eq!(symbol.kind(), SymKind::Unknown);
-    /// assert!(!symbol.is_global());
-    /// ```
     pub fn new(owner: HirId, name_key: InternedStr) -> Self {
         let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
         let sym_id = SymId(id);
@@ -273,17 +253,12 @@ impl Symbol {
     }
 
     /// Sets the owner HIR node of this symbol.
-    /// Typically only updated once during symbol creation.
     #[inline]
     pub fn set_owner(&self, owner: HirId) {
         *self.owner.write() = owner;
     }
 
-    /// Formats the symbol as `[id:kind]name` with optional interner for resolving the name.
-    /// If interner is provided, shows the actual symbol name. Otherwise shows `?` if name can't be resolved.
-    /// Format examples:
-    /// - With interner: `[1:Function]my_function`
-    /// - Without interner: `[1:Function]?`
+    /// Formats the symbol
     pub fn format(&self, interner: Option<&crate::interner::InternPool>) -> String {
         let kind = format!("{:?}", self.kind());
         if let Some(interner) = interner {
@@ -349,6 +324,7 @@ impl Symbol {
     /// Sets the type of this symbol.
     #[inline]
     pub fn set_type_of(&self, ty: SymId) {
+        tracing::trace!("setting type of symbol {} to symbol {}", self.id, ty,);
         *self.type_of.write() = Some(ty);
     }
 
@@ -429,39 +405,53 @@ impl Symbol {
     }
 
     /// Adds a bidirectional dependency between this symbol and another.
-    /// Ignores self-dependencies, duplicates, and circular references.
-    /// When `ignore_kinds` is provided, the dependency is skipped if the target matches.
-    /// Uses `DepKind::Uses` as the default dependency kind.
-    pub fn add_dependency(&self, other: &Symbol, ignore_kinds: Option<&[SymKind]>) {
-        self.add_dependency_with_kind(other, DepKind::Uses, ignore_kinds);
+    pub fn add_depends(&self, other: &Symbol, ignore_kinds: Option<&[SymKind]>) {
+        self.add_depends_with(other, DepKind::Uses, ignore_kinds);
     }
 
     /// Adds a bidirectional dependency with a specific dependency kind.
-    /// Ignores self-dependencies, duplicates, and circular references.
-    /// When `ignore_kinds` is provided, the dependency is skipped if the target matches.
-    pub fn add_dependency_with_kind(
+    pub fn add_depends_with(
         &self,
         other: &Symbol,
         dep_kind: DepKind,
         ignore_kinds: Option<&[SymKind]>,
     ) {
+        // Skip if target is in the ignore list
         if let Some(kinds) = ignore_kinds
             && kinds.iter().any(|kind| other.kind() == *kind)
         {
+            tracing::trace!("skip_dep: {} -> {} (ignored kind)", self.id, other.id);
             return;
         }
-        if self.id == other.id {
+
+        // Skip if dependency already exists with same kind
+        let deps = self.depends.read();
+        if deps
+            .iter()
+            .any(|(id, kind)| *id == other.id && *kind == dep_kind)
+        {
+            tracing::trace!("skip_dep: {} -> {} (duplicate {:?})", self.id, other.id, dep_kind);
             return;
         }
-        // Check for circular reference with same dep_kind
-        if other
-            .depends
-            .read()
+        drop(deps);
+
+        // Skip if circular dependency would be created
+        let other_deps = other.depends.read();
+        if other_deps
             .iter()
             .any(|(id, kind)| *id == self.id && *kind == dep_kind)
         {
+            tracing::trace!("skip_dep: {} -> {} (circular {:?})", self.id, other.id, dep_kind);
             return;
         }
+        drop(other_deps);
+
+        tracing::trace!(
+            "add_depends: {} -> {} ({:?})",
+            self.id,
+            other.id,
+            dep_kind
+        );
         self.add_depends_on(other.id, dep_kind);
         other.add_depended_by(self.id, dep_kind);
     }
@@ -683,7 +673,7 @@ mod tests {
         let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("func1"));
         let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("func2"));
 
-        sym1.add_dependency(&sym2, None);
+        sym1.add_depends(&sym2, None);
 
         assert!(sym1.depends.read().iter().any(|(id, _)| *id == sym2.id));
         assert!(sym2.depended.read().iter().any(|(id, _)| *id == sym1.id));
