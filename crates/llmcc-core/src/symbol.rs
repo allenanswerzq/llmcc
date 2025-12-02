@@ -104,6 +104,8 @@ pub enum DepKind {
     /// General dependency (A uses/references B)
     #[default]
     Uses,
+    /// General dependency (A used by B)
+    Used,
     /// Function parameter type (param_type → func)
     ParamType,
     /// Function return type (func → return_type)
@@ -430,7 +432,12 @@ impl Symbol {
             .iter()
             .any(|(id, kind)| *id == other.id && *kind == dep_kind)
         {
-            tracing::trace!("skip_dep: {} -> {} (duplicate {:?})", self.id, other.id, dep_kind);
+            tracing::trace!(
+                "skip_dep: {} -> {} (duplicate {:?})",
+                self.id,
+                other.id,
+                dep_kind
+            );
             return;
         }
         drop(deps);
@@ -441,17 +448,17 @@ impl Symbol {
             .iter()
             .any(|(id, kind)| *id == self.id && *kind == dep_kind)
         {
-            tracing::trace!("skip_dep: {} -> {} (circular {:?})", self.id, other.id, dep_kind);
+            tracing::trace!(
+                "skip_dep: {} -> {} (circular {:?})",
+                self.id,
+                other.id,
+                dep_kind
+            );
             return;
         }
         drop(other_deps);
 
-        tracing::trace!(
-            "add_depends: {} -> {} ({:?})",
-            self.id,
-            other.id,
-            dep_kind
-        );
+        tracing::trace!("add_depends: {} -> {} ({:?})", self.id, other.id, dep_kind);
         self.add_depends_on(other.id, dep_kind);
         other.add_depended_by(self.id, dep_kind);
     }

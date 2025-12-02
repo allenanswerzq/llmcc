@@ -62,6 +62,11 @@ impl<'tcx> CompileUnit<'tcx> {
             .unwrap_or_else(|| default.to_string())
     }
 
+    /// Resolve an interned symbol to string, using "<unnamed>" as default if not found.
+    pub fn resolve_name(&self, symbol: InternedStr) -> String {
+        self.resolve_name_or(symbol, "<unnamed>")
+    }
+
     pub fn file_root_id(&self) -> Option<HirId> {
         self.cc.file_root_id(self.index)
     }

@@ -307,11 +307,21 @@ impl<'tcx> ScopeStack<'tcx> {
         }
         let name_key = self.interner.intern(name);
         let stack = self.stack.read();
+        tracing::trace!("stack: {:#?}", stack);
 
-        stack
+        let symbols = stack
             .iter()
             .rev()
-            .find_map(|scope| scope.lookup_symbols(name_key, options.clone()))
+            .find_map(|scope| scope.lookup_symbols(name_key, options.clone()));
+        tracing::trace!(
+            "lookup_symbols: '{}' found {:?} in scope stack",
+            name,
+            symbols.as_ref().map(|syms| syms
+                .iter()
+                .map(|s| s.format(Some(self.interner)))
+                .collect::<Vec<_>>())
+        );
+        symbols
     }
 
     /// Normalize name helper.

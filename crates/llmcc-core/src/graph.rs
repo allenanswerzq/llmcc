@@ -400,6 +400,9 @@ impl<'tcx> ProjectGraph<'tcx> {
                             // - trait implementations
                             // Uses captures too many incidental references (e.g., enum variants in expressions)
                         }
+                        DepKind::Used => {
+                            // Skip generic Used dependencies to keep arch-graph focused on structural flows
+                        }
                     }
                 }
             }

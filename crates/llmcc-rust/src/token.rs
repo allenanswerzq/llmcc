@@ -7,6 +7,7 @@ use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::{CompileCtxt, CompileUnit};
 use llmcc_resolver::ResolverOption;
 
+use tracing_subscriber::field::debug;
 #[allow(clippy::single_component_path_imports)]
 use tree_sitter_rust;
 
@@ -20,6 +21,7 @@ impl LanguageTraitImpl for LangRust {
         let stack = ScopeStack::new(cc.arena(), &cc.interner);
         let globals = cc.create_globals();
         stack.push(globals);
+        debug_assert!(stack.depth() == 1);
 
         for prim in crate::RUST_PRIMITIVES {
             let name = cc.interner.intern(prim);
