@@ -9,6 +9,8 @@ use crate::token::LangRust;
 use crate::ty::TyCtxt;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
+type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&CompileUnit<'tcx>, &'tcx HirScope<'tcx>, &mut BinderScopes<'tcx>) + 'tcx>;
+
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
 pub struct BinderVisitor<'tcx> {
@@ -42,18 +44,6 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
     }
 
-    // fn add_type_bound_with(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     owner: &Symbol,
-    // ) {
-    //     let mut resolver = TyCtxt::new(unit, scopes);
-    //     let (ty, args) = resolver.resolve_type_with_args(node);
-    //     Self::add_type_bound_dependencies(owner, ty, &args);
-    // }
-
     fn visit_scoped_named(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -62,6 +52,7 @@ impl<'tcx> BinderVisitor<'tcx> {
         scopes: &mut BinderScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
+        on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
         let depth = scopes.scope_depth();
         let child_parent = sn
@@ -70,6 +61,9 @@ impl<'tcx> BinderVisitor<'tcx> {
             .or(parent);
 
         scopes.push_scope_node(sn);
+        if let Some(callback) = on_scope_enter {
+            callback(unit, sn, scopes);
+        }
         self.visit_children(unit, node, scopes, scopes.top(), child_parent);
         scopes.pop_until(depth);
 
@@ -236,7 +230,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
 
         let sn = node.as_scope().unwrap();
-        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
     }
 
     fn visit_function_signature_item(
@@ -261,7 +255,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         tracing::trace!("visit_function_item");
         let sn = node.as_scope().unwrap();
-        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
         // At this point, all return type node should already be bound
         let ret_ident = node.child_ident_by_field(*unit, LangRust::field_return_type);
@@ -285,10 +279,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 );
             }
 
-            let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
-            if let Some(ref ret_node) = ret_full_node {
-                self.collect_types_depends(unit, scopes, ret_node, fn_sym, DepKind::ReturnType);
-            }
+            // let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
+            // if let Some(ref ret_node) = ret_full_node {
+            //     self.collect_types_depends(unit, scopes, ret_node, fn_sym, DepKind::ReturnType);
+            // }
         }
     }
 
@@ -302,25 +296,33 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         tracing::trace!("binding struct_item");
         let sn = node.as_scope().unwrap();
-        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
-
-        // lets bind Self/self to the struct type symbol
-        for key in ["Self", "self"] {
-            if let Some(self_sym) = scopes.lookup_symbol(key, vec![SymKind::TypeAlias]) {
-                if let Some(struct_sym) = sn.opt_symbol() {
-                    tracing::trace!(
-                        "binding '{}' to struct type '{}'",
-                        key,
-                        struct_sym.format(Some(&unit.interner())),
-                    );
-                    self_sym.set_type_of(struct_sym.id());
-                    // assign scope
-                    if let Some(struct_scope) = struct_sym.opt_scope() {
-                        self_sym.set_scope(struct_scope);
+        self.visit_scoped_named(
+            unit,
+            node,
+            sn,
+            scopes,
+            namespace,
+            parent,
+            Some(Box::new(|unit, sn, scopes| {
+                // lets bind Self/self to the struct type symbol
+                for key in ["Self", "self"] {
+                    if let Some(self_sym) = scopes.lookup_symbol(key, vec![SymKind::TypeAlias]) {
+                        if let Some(struct_sym) = sn.opt_symbol() {
+                            tracing::trace!(
+                                "binding '{}' to struct type '{}'",
+                                key,
+                                struct_sym.format(Some(&unit.interner())),
+                            );
+                            self_sym.set_type_of(struct_sym.id());
+                            // assign scope
+                            if let Some(struct_scope) = struct_sym.opt_scope() {
+                                self_sym.set_scope(struct_scope);
+                            }
+                        }
                     }
                 }
-            }
-        }
+            })),
+        );
     }
 
     fn visit_impl_item(
@@ -333,7 +335,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         tracing::trace!("binding impl_item");
         let sn = node.as_scope().unwrap();
-        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
         let target_ident = node.child_ident_by_field(*unit, LangRust::field_type);
         if let Some(target_sym) = target_ident.and_then(|ident| ident.opt_symbol()) {
@@ -373,7 +375,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 }
             }
 
-            self.collect_types_depends(unit, scopes, &target_node, target_sym, DepKind::Used);
+            // self.collect_types_depends(unit, scopes, &target_node, target_sym, DepKind::Used);
 
             if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
                 let mut ty_ctxt = TyCtxt::new(unit, scopes);
@@ -431,12 +433,12 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             }
         }
 
-        // Add depends from call target to nested call targets in arguments
-        if let Some(target_symbol) = target
-            && let Some(args_node) = node.child_by_field(*unit, LangRust::field_arguments)
-        {
-            self.collect_types_depends(unit, scopes, &args_node, target_symbol, DepKind::Used);
-        }
+        // // Add depends from call target to nested call targets in arguments
+        // if let Some(target_symbol) = target
+        //     && let Some(args_node) = node.child_by_field(*unit, LangRust::field_arguments)
+        // {
+        //     self.collect_types_depends(unit, scopes, &args_node, target_symbol, DepKind::Used);
+        // }
     }
 
     fn visit_enum_item(
@@ -448,7 +450,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         let sn = node.as_scope().unwrap();
-        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
     }
 
     fn visit_trait_item(
@@ -460,17 +462,17 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         let sn = node.as_scope().unwrap();
-        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
-        if let Some(trait_sym) = sn.opt_symbol()
-            && let Some(bounds_node) = node.child_by_field(*unit, LangRust::field_bounds)
-        {
-            tracing::trace!(
-                "collecting type bounds for trait '{}'",
-                trait_sym.format(Some(&unit.interner())),
-            );
-            self.collect_types_depends(unit, scopes, &bounds_node, trait_sym, DepKind::TypeBound);
-        }
+        // if let Some(trait_sym) = sn.opt_symbol()
+        //     && let Some(bounds_node) = node.child_by_field(*unit, LangRust::field_bounds)
+        // {
+        //     tracing::trace!(
+        //         "collecting type bounds for trait '{}'",
+        //         trait_sym.format(Some(&unit.interner())),
+        //     );
+        //     self.collect_types_depends(unit, scopes, &bounds_node, trait_sym, DepKind::TypeBound);
+        // }
     }
 
     fn visit_macro_definition(
@@ -482,7 +484,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         let sn = node.as_scope().unwrap();
-        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
     }
 
     fn visit_macro_invocation(

@@ -113,7 +113,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             LangRust::char_literal => self.primitive_type("char"),
 
             // Structural Inference
-            LangRust::scoped_identifier => self.infer_scoped_identifier(node, kinds_filter.clone()),
+            LangRust::scoped_identifier => self.infer_scoped_identifier(node, None),
             LangRust::struct_expression => self.infer_struct_expression(node),
             LangRust::call_expression => self.infer_child_field(node, LangRust::field_function),
             LangRust::if_expression => self.infer_if_expression(node),
@@ -152,24 +152,6 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             );
         }
         symbols.last().copied()
-    }
-
-    fn infer_text_literal(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let value = self.as_text_literal(node)?;
-
-        if value.chars().all(|c| c.is_ascii_digit()) {
-            return self.primitive_type("i32");
-        }
-        if value == "true" || value == "false" {
-            return self.primitive_type("bool");
-        }
-        if value.starts_with('"') {
-            return self.primitive_type("str");
-        }
-        if value.contains('.') && value.chars().all(|c| c.is_ascii_digit() || c == '.') {
-            return self.primitive_type("f64");
-        }
-        None
     }
 
     /// Collects all child nodes that are identifiers.
