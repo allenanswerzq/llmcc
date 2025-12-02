@@ -7,7 +7,6 @@ use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::{CompileCtxt, CompileUnit};
 use llmcc_resolver::ResolverOption;
 
-use tracing_subscriber::field::debug;
 #[allow(clippy::single_component_path_imports)]
 use tree_sitter_rust;
 

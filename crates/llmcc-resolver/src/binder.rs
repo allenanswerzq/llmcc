@@ -182,6 +182,22 @@ impl<'a> BinderScopes<'a> {
             .into_iter()
             .last()
     }
+
+    /// Look up a qualified path (e.g., foo::Bar::baz) with optional kind filters.
+    pub fn lookup_qualified(
+        &self,
+        qualified_name: &[&str],
+        kind_filters: Vec<SymKind>,
+    ) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!(
+            "lookup qualified {:?} with filters {:?}",
+            qualified_name,
+            kind_filters.clone()
+        );
+        let options = LookupOptions::default().with_kind_filters(kind_filters);
+        let symbols = self.scopes.lookup_qualified(qualified_name, options)?;
+        Some(symbols)
+    }
 }
 
 /// Bind symbols from all compilation units, optionally in parallel.

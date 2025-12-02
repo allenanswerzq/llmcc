@@ -20,46 +20,41 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx> {
         Self { unit, scopes }
     }
 
-    /// Infers the type of any expression node.
-    pub fn infer_expr_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        TyImpl::new(self).infer_expr_type(node)
+    /// Infers the type with optional symbol kind filtering.
+    /// If `kind_filter` is provided, restricts lookup to those kinds (e.g., for callable resolution).
+    fn infer_expr_filtered(
+        &mut self,
+        node: &HirNode<'tcx>,
+        kinds_filter: Option<Vec<SymKind>>,
+    ) -> Option<&'tcx Symbol> {
+        TyImpl::new(self).infer_expr_impl(node, kinds_filter)
+    }
+
+    /// Infers the type of any expression node without filtering.
+    pub fn infer_expr(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        self.infer_expr_filtered(node, None)
     }
 
     /// Resolves an expression to its underlying callable symbol.
     pub fn resolve_callable(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        TyImpl::new(self).resolve_callable(node)
+        self.infer_expr_filtered(node, Some(vec![SymKind::Function, SymKind::Closure]))
     }
 
     /// Resolves a type node
     pub fn resolve_type(&mut self, type_node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.infer_expr_type(type_node)
-    }
-
-    /// Collects all type symbols from a generic type expression.
-    pub fn collect_types(&mut self, node: &HirNode<'tcx>) -> Vec<&'tcx Symbol> {
-        let mut symbols = Vec::new();
-        TyImpl::new(self).collect_generic_symbols(node, &mut symbols);
-        symbols
-    }
-
-    /// Resolves a scoped identifier like `foo::bar::Baz`.
-    pub fn resolve_scoped_path(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        TyImpl::new(self).resolve_scoped_path(node)
-    }
-
-    /// Helper: Resolves canonical type (follows aliases).
-    pub fn resolve_type_of(unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Symbol {
-        TyImpl::resolve_type_of(unit, symbol)
-    }
-
-    /// Helper: Resolves the receiver of a scoped call.
-    pub fn resolve_path_prefix(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        TyImpl::new(self).resolve_scoped_path(node)
-    }
-
-    /// Helper: Resolves the target of a call expression.
-    pub fn resolve_callee(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        TyImpl::new(self).resolve_callable_child_field(node, LangRust::field_function)
+        self.infer_expr_filtered(
+            type_node,
+            Some(vec![
+                SymKind::Struct,
+                SymKind::Enum,
+                SymKind::Trait,
+                SymKind::TypeAlias,
+                SymKind::TypeParameter,
+                SymKind::Primitive,
+                SymKind::Macro,
+                SymKind::UnresolvedType,
+            ]),
+        )
     }
 
     /// Helper: Check if symbol is the `Self` type.
@@ -67,6 +62,18 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx> {
         // Check by comparing the symbol name - interned strings can be compared
         // This is a temporary implementation; ideally we'd have better type info
         false
+    }
+
+    /// Collects all type symbols from a generic type expression.
+    pub fn collect_types(&mut self, node: &HirNode<'tcx>) -> Vec<&'tcx Symbol> {
+        let mut symbols = Vec::new();
+        TyImpl::new(self).collect_types(node, &mut symbols);
+        symbols
+    }
+
+    /// Resolves canonical type (follows aliases).
+    pub fn resolve_type_of(unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Symbol {
+        TyImpl::resolve_type_of(unit, symbol)
     }
 }
 
@@ -86,7 +93,17 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
     // ========================================================================
     // Type Inference
     // ========================================================================
-    fn infer_expr_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+
+    /// calling with no kind filters
+    fn infer_expr_no_filter(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        self.infer_expr_impl(node, None)
+    }
+
+    fn infer_expr_impl(
+        &mut self,
+        node: &HirNode<'tcx>,
+        kinds_filter: Option<Vec<SymKind>>,
+    ) -> Option<&'tcx Symbol> {
         match node.kind_id() {
             // Literals
             LangRust::integer_literal => self.primitive_type("i32"),
@@ -96,37 +113,29 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             LangRust::char_literal => self.primitive_type("char"),
 
             // Structural Inference
-            LangRust::scoped_identifier => self.infer_scoped_identifier(node),
+            LangRust::scoped_identifier => self.infer_scoped_identifier(node, kinds_filter.clone()),
             LangRust::struct_expression => self.infer_struct_expression(node),
             LangRust::call_expression => self.infer_child_field(node, LangRust::field_function),
             LangRust::if_expression => self.infer_if_expression(node),
             LangRust::block => self.infer_block(node),
             LangRust::unary_expression => self.infer_child_field(node, LangRust::field_argument),
             LangRust::binary_expression => self.infer_binary_expression(node),
-            LangRust::field_expression => self.infer_field_expression(node),
+            LangRust::field_expression => self.infer_field_expression(node, kinds_filter.clone()),
             LangRust::primitive_type => {
                 let prim_name = self.ty.unit.hir_text(node);
                 self.primitive_type(&prim_name)
             }
             _ => {
                 // Try to resolve as identifier first
-                let ident = node.find_identifier(&self.ty.unit)?;
+                let ident = node.find_ident(&self.ty.unit)?;
                 if let Some(symbol) = ident.opt_symbol() {
                     return Some(symbol);
                 }
-                // Fall back to lookup by name with type filters
-                const TYPE_KINDS: &[SymKind] = &[
-                    SymKind::Struct,
-                    SymKind::Enum,
-                    SymKind::Trait,
-                    SymKind::TypeAlias,
-                    SymKind::TypeParameter,
-                    SymKind::Primitive,
-                    SymKind::UnresolvedType,
-                ];
-                self.ty
-                    .scopes
-                    .lookup_symbol(&ident.name, TYPE_KINDS.to_vec())
+                // Fall back to lookup by name with kind filters
+                if let Some(lookup_kinds) = kinds_filter {
+                    return self.ty.scopes.lookup_symbol(&ident.name, lookup_kinds);
+                }
+                None
             }
         }
     }
@@ -163,17 +172,68 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         None
     }
 
-    fn infer_scoped_identifier(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let sym = self.resolve_scoped_path(node)?;
-        let type_id = sym.type_of()?;
-        let ty = self.ty.unit.opt_get_symbol(type_id)?;
-        Some(ty)
+    /// Collects all child nodes that are identifiers.
+    pub fn collect_idents(&self, node: &HirNode<'tcx>) -> Vec<HirNode<'tcx>> {
+        let mut identifiers: Vec<HirNode<'_>> = Vec::new();
+        Self::collect_ident_recursive(self.ty.unit, node, &mut identifiers);
+        identifiers
+    }
+
+    fn infer_scoped_identifier(
+        &mut self,
+        node: &HirNode<'tcx>,
+        kinds_filter: Option<Vec<SymKind>>,
+    ) -> Option<&'tcx Symbol> {
+        // Collect all identifier parts of the scoped path (e.g., foo::Bar::baz)
+        let idents = self.collect_idents(node);
+
+        if idents.is_empty() {
+            return None;
+        }
+
+        // Extract names from identifiers
+        let qualified_names: Vec<&str> = idents
+            .iter()
+            .filter_map(|i| i.as_ident().map(|ident| ident.name.as_str()))
+            .collect();
+
+        if qualified_names.is_empty() {
+            return None;
+        }
+
+        tracing::trace!("resolving scoped ident with '{:?}'", qualified_names);
+
+        // Use lookup_qualified to resolve the full path
+        let kind_filters = kinds_filter.unwrap_or_default();
+        let symbols = self
+            .ty
+            .scopes
+            .lookup_qualified(&qualified_names, kind_filters)?;
+
+        tracing::trace!(
+            "found {:?} symbols for scoped ident '{:?}'",
+            symbols
+                .iter()
+                .map(|s| s.format(Some(self.ty.unit.interner())))
+                .collect::<Vec<_>>(),
+            qualified_names
+        );
+
+        // Use the last matching symbol
+        let symbol = symbols.last().copied()?;
+        if symbol.kind() == SymKind::TypeAlias {
+            // Get the type of the resolved symbol
+            let type_id = symbol.type_of()?;
+            self.ty.unit.opt_get_symbol(type_id)
+        } else {
+            Some(symbol)
+        }
     }
 
     fn infer_struct_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         node.child_by_field(*self.ty.unit, LangRust::field_name)
             .or_else(|| node.child_by_field(*self.ty.unit, LangRust::field_type))
-            .and_then(|ty_node| self.infer_expr_type(&ty_node))
+            .and_then(|ty_node| self.infer_expr_no_filter(&ty_node))
     }
 
     fn infer_if_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
@@ -190,7 +250,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             .rev()
             .find(|child| !Self::is_trivia(child))?;
 
-        self.infer_expr_type(last_child)
+        self.infer_expr_no_filter(last_child)
     }
 
     fn infer_binary_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
@@ -198,29 +258,49 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
 
         match outcome {
             Some(BinaryOperatorOutcome::ReturnsBool) => self.primitive_type("bool"),
-            Some(BinaryOperatorOutcome::ReturnsLeftOperand) => self.infer_expr_type(&left_node),
+            Some(BinaryOperatorOutcome::ReturnsLeftOperand) => {
+                self.infer_expr_no_filter(&left_node)
+            }
             None => None,
         }
     }
 
-    fn infer_field_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+    fn infer_field_expression(
+        &mut self,
+        node: &HirNode<'tcx>,
+        kinds_filter: Option<Vec<SymKind>>,
+    ) -> Option<&'tcx Symbol> {
         let value_node = node.child_by_field(*self.ty.unit, LangRust::field_value)?;
+        let obj_type = self.ty.infer_expr(&value_node)?;
+
         let field_node = node.child_by_field(*self.ty.unit, LangRust::field_field)?;
         let field_ident = field_node.as_ident()?;
 
-        let obj_type = self.infer_expr_type(&value_node)?;
-
-        let field_symbol = self
-            .ty
-            .scopes
-            .lookup_member_symbol(obj_type, &field_ident.name, Some(SymKind::Field))
-            .or_else(|| {
+        // Try to find field with kind filtering
+        let field_symbol = if let Some(ref kinds) = kinds_filter {
+            // For callable resolution, look for function members
+            if kinds.contains(&SymKind::Function) {
                 self.ty.scopes.lookup_member_symbol(
                     obj_type,
                     &field_ident.name,
                     Some(SymKind::Function),
                 )
-            })?;
+            } else {
+                None
+            }
+        } else {
+            // For type resolution, try field first, then function
+            self.ty
+                .scopes
+                .lookup_member_symbol(obj_type, &field_ident.name, Some(SymKind::Field))
+                .or_else(|| {
+                    self.ty.scopes.lookup_member_symbol(
+                        obj_type,
+                        &field_ident.name,
+                        Some(SymKind::Function),
+                    )
+                })
+        }?;
 
         let field_type_id = field_symbol.type_of()?;
         let field_type = self.ty.unit.opt_get_symbol(field_type_id)?;
@@ -234,101 +314,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
 
     fn infer_child_field(&mut self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
         let child = node.child_by_field(*self.ty.unit, field_id)?;
-        self.infer_expr_type(&child)
-    }
-
-    // ========================================================================
-    // Symbol Resolution
-    // ========================================================================
-
-    fn resolve_callable(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        match node.kind_id() {
-            // Direct identifier (name lookup)
-            k if self.is_identifier_kind(k) => self.resolve_callable_identifier(node),
-
-            // Field or method access: obj.method
-            LangRust::field_expression => self.resolve_callable_field_access(node),
-
-            // Call expression: fn()
-            LangRust::call_expression => {
-                self.resolve_callable_child_field(node, LangRust::field_function)
-            }
-
-            // Reference expression: &fn
-            LangRust::reference_expression => {
-                self.resolve_callable_child_field(node, LangRust::field_value)
-            }
-
-            // Wrapper expressions: await fn, try fn, (fn)
-            k if self.is_wrapper_expression(k) => self.resolve_callable_wrapped(node),
-
-            _ => None,
-        }
-    }
-
-    fn resolve_callable_identifier(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        if node.kind_id() == LangRust::scoped_identifier {
-            return self.resolve_scoped_path(node);
-        } else if let Some(ident) = node.as_ident() {
-            return self
-                .ty
-                .scopes
-                .lookup_symbol(&ident.name, vec![SymKind::Function, SymKind::Closure]);
-        }
-        None
-    }
-
-    fn resolve_callable_field_access(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let value_node = node.child_by_field(*self.ty.unit, LangRust::field_value)?;
-        let obj_type = self.infer_expr_type(&value_node)?;
-
-        let field_node = node.child_by_field(*self.ty.unit, LangRust::field_field)?;
-        if let Some(ident) = field_node.as_ident() {
-            return self.ty.scopes.lookup_member_symbol(
-                obj_type,
-                &ident.name,
-                Some(SymKind::Function),
-            );
-        }
-        None
-    }
-
-    fn resolve_callable_child_field(
-        &mut self,
-        node: &HirNode<'tcx>,
-        field_id: u16,
-    ) -> Option<&'tcx Symbol> {
-        let child_node = node.child_by_field(*self.ty.unit, field_id)?;
-        self.resolve_callable(&child_node)
-    }
-
-    fn resolve_callable_wrapped(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let child_node = self.first_significant_child(node)?;
-        self.resolve_callable(&child_node)
-    }
-
-    fn is_identifier_kind(&self, kind_id: u16) -> bool {
-        matches!(
-            kind_id,
-            LangRust::identifier
-                | LangRust::scoped_identifier
-                | LangRust::field_identifier
-                | LangRust::type_identifier
-        )
-    }
-
-    fn is_wrapper_expression(&self, kind: u16) -> bool {
-        matches!(
-            kind,
-            LangRust::await_expression
-                | LangRust::try_expression
-                | LangRust::parenthesized_expression
-        )
-    }
-
-    fn resolve_scoped_path(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let ident = node.as_ident()?;
-        self.ty.scopes.lookup_symbol(&ident.name, vec![])
+        self.ty.infer_expr(&child)
     }
 
     fn resolve_type_of(unit: &CompileUnit<'tcx>, mut current_symbol: &'tcx Symbol) -> &'tcx Symbol {
@@ -348,11 +334,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         current_symbol
     }
 
-    fn collect_generic_symbols(
-        &mut self,
-        node: &HirNode<'tcx>,
-        collected_symbols: &mut Vec<&'tcx Symbol>,
-    ) {
+    fn collect_types(&mut self, node: &HirNode<'tcx>, collected_symbols: &mut Vec<&'tcx Symbol>) {
         if let Some(type_symbol) = self.ty.resolve_type(node)
             && !collected_symbols.iter().any(|s| s.id() == type_symbol.id())
         {
@@ -362,9 +344,39 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         let children = node.children(self.ty.unit);
         for child_node in children {
             if !Self::is_trivia(&child_node) {
-                self.collect_generic_symbols(&child_node, collected_symbols);
+                self.collect_types(&child_node, collected_symbols);
             }
         }
+    }
+
+    /// Collects all child nodes that are identifiers
+    fn collect_ident_recursive(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        identifiers: &mut Vec<HirNode<'tcx>>,
+    ) {
+        // Check if current node is an identifier kind
+        if node.kind_id() == LangRust::identifier {
+            identifiers.push(*node);
+        }
+
+        // Recursively check children
+        let children = node.children(unit);
+        for child_node in children {
+            if !Self::is_trivia(&child_node) {
+                Self::collect_ident_recursive(unit, &child_node, identifiers);
+            }
+        }
+    }
+
+    fn is_identifier_kind(kind_id: u16) -> bool {
+        matches!(
+            kind_id,
+            LangRust::identifier
+                | LangRust::scoped_identifier
+                | LangRust::field_identifier
+                | LangRust::type_identifier
+        )
     }
 
     fn is_trivia(node: &HirNode) -> bool {

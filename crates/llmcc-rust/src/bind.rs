@@ -25,8 +25,8 @@ impl<'tcx> BinderVisitor<'tcx> {
     fn collect_types_depends(
         &mut self,
         unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
         scopes: &mut BinderScopes<'tcx>,
+        node: &HirNode<'tcx>,
         owner: &Symbol,
         dep_kind: DepKind,
     ) {
@@ -208,6 +208,20 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
+    fn visit_block(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        let sn = node.as_scope().unwrap();
+        scopes.push_scope(sn.scope().id());
+        self.visit_children(unit, node, scopes, namespace, parent);
+        scopes.pop_scope();
+    }
+
     fn visit_mod_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -223,6 +237,18 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         let sn = node.as_scope().unwrap();
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+    }
+
+    fn visit_function_signature_item(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        tracing::trace!("visit_function_signature_item");
+        self.visit_function_item(unit, node, scopes, namespace, parent);
     }
 
     fn visit_function_item(
@@ -261,7 +287,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
             let ret_full_node = node.child_by_field(*unit, LangRust::field_return_type);
             if let Some(ref ret_node) = ret_full_node {
-                self.collect_types_depends(unit, ret_node, scopes, fn_sym, DepKind::ReturnType);
+                self.collect_types_depends(unit, scopes, ret_node, fn_sym, DepKind::ReturnType);
             }
         }
     }
@@ -277,6 +303,24 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         tracing::trace!("binding struct_item");
         let sn = node.as_scope().unwrap();
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+
+        // lets bind Self/self to the struct type symbol
+        for key in ["Self", "self"] {
+            if let Some(self_sym) = scopes.lookup_symbol(key, vec![SymKind::TypeAlias]) {
+                if let Some(struct_sym) = sn.opt_symbol() {
+                    tracing::trace!(
+                        "binding '{}' to struct type '{}'",
+                        key,
+                        struct_sym.format(Some(&unit.interner())),
+                    );
+                    self_sym.set_type_of(struct_sym.id());
+                    // assign scope
+                    if let Some(struct_scope) = struct_sym.opt_scope() {
+                        self_sym.set_scope(struct_scope);
+                    }
+                }
+            }
+        }
     }
 
     fn visit_impl_item(
@@ -302,6 +346,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     && resolved.id() != target_sym.id()
                     && !matches!(resolved.kind(), SymKind::UnresolvedType)
                 {
+                    tracing::trace!(
+                        "resolving impl target type '{}' to '{}'",
+                        target_sym.format(Some(&unit.interner())),
+                        resolved.format(Some(&unit.interner())),
+                    );
                     // Update the unresolved symbol to point to the actual type
                     target_sym.set_kind(resolved.kind());
                     target_sym.add_depends(resolved, None);
@@ -311,6 +360,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                         && let Some(target_scoped) = target_sym.opt_scope()
                     {
                         // Build parent scope relationship
+                        tracing::trace!(
+                            "connecting impl target '{}' and resolved type '{}'",
+                            resolved_scope,
+                            target_scoped
+                        );
                         let target_scope = unit.get_scope(target_scoped);
                         let resolved_scope = unit.get_scope(resolved_scope);
                         target_scope.add_parent(resolved_scope);
@@ -319,7 +373,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 }
             }
 
-            self.collect_types_depends(unit, &target_node, scopes, target_sym, DepKind::Used);
+            self.collect_types_depends(unit, scopes, &target_node, target_sym, DepKind::Used);
 
             if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait) {
                 let mut ty_ctxt = TyCtxt::new(unit, scopes);
@@ -337,79 +391,117 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
-    // fn visit_enum_item(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     let sn = node.as_scope().unwrap();
-    //     self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
-    // }
+    fn visit_call_expression(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    // fn visit_trait_item(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     let sn = node.as_scope().unwrap();
-    //     self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+        let mut ty_ctxt = TyCtxt::new(unit, scopes);
+        let target = ty_ctxt.resolve_callable(node);
 
-    //     // Process trait bounds (supertrait dependencies)
-    //     if let Some(trait_sym) = sn.opt_symbol()
-    //         && let Some(bounds_node) = node.child_by_field(*unit, LangRust::field_bounds)
-    //     {
-    //         self.add_type_dependencies_with(unit, &bounds_node, scopes, trait_sym);
-    //     }
-    // }
+        if let Some(target_symbol) = target
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            if target_symbol.kind() == SymKind::EnumVariant
+                && let Some(enum_symbol_id) = target_symbol.type_of()
+                && let Some(enum_symbol) = unit.opt_get_symbol(enum_symbol_id)
+            {
+                ns.add_depends_with(enum_symbol, DepKind::Calls, Some(&[SymKind::TypeParameter]));
+            } else {
+                ns.add_depends_with(
+                    target_symbol,
+                    DepKind::Calls,
+                    Some(&[SymKind::TypeParameter]),
+                );
+            }
+        }
 
-    // fn visit_function_signature_item(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_function_item(unit, node, scopes, namespace, parent);
-    // }
+        // For scoped calls like Type::method(), also add depends on the Type
+        if let Some(func_node) = node.child_by_field(*unit, LangRust::field_function)
+            && func_node.kind_id() == LangRust::scoped_identifier
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            if let Some(path_type) = ty_ctxt.resolve_type(&func_node) {
+                ns.add_depends_with(path_type, DepKind::Uses, Some(&[SymKind::TypeParameter]));
+            }
+        }
 
-    // fn visit_macro_definition(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     let sn = node.as_scope().unwrap();
-    //     self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
-    // }
+        // Add depends from call target to nested call targets in arguments
+        if let Some(target_symbol) = target
+            && let Some(args_node) = node.child_by_field(*unit, LangRust::field_arguments)
+        {
+            self.collect_types_depends(unit, scopes, &args_node, target_symbol, DepKind::Used);
+        }
+    }
 
-    // fn visit_macro_invocation(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+    fn visit_enum_item(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        let sn = node.as_scope().unwrap();
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+    }
 
-    //     // Get the macro name from the macro_invocation
-    //     if let Some(macro_node) = node.child_by_field(*unit, LangRust::field_macro)
-    //         && let Some(sym) =
-    //             TyCtxt::new(unit, scopes).resolve_expression_symbol(&macro_node, parent)
-    //         && let Some(ns) = namespace.opt_symbol()
-    //     {
-    //         ns.add_depends(sym, Some(&[SymKind::TypeParameter]));
-    //     }
-    // }
+    fn visit_trait_item(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        let sn = node.as_scope().unwrap();
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+
+        if let Some(trait_sym) = sn.opt_symbol()
+            && let Some(bounds_node) = node.child_by_field(*unit, LangRust::field_bounds)
+        {
+            tracing::trace!(
+                "collecting type bounds for trait '{}'",
+                trait_sym.format(Some(&unit.interner())),
+            );
+            self.collect_types_depends(unit, scopes, &bounds_node, trait_sym, DepKind::TypeBound);
+        }
+    }
+
+    fn visit_macro_definition(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        let sn = node.as_scope().unwrap();
+        self.visit_scoped_named(unit, node, sn, scopes, namespace, parent);
+    }
+
+    fn visit_macro_invocation(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        if let Some(macro_node) = node.child_by_field(*unit, LangRust::field_macro)
+            && let Some(sym) = TyCtxt::new(unit, scopes).resolve_type(&macro_node)
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            ns.add_depends_with(sym, DepKind::Calls, Some(&[SymKind::TypeParameter]));
+        }
+    }
 
     // fn visit_const_item(
     //     &mut self,
@@ -444,70 +536,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     //     parent: Option<&Symbol>,
     // ) {
     //     self.visit_const_item(unit, node, scopes, namespace, parent);
-    // }
-
-    // fn visit_call_expression(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
-
-    //     let mut resolver = TyCtxt::new(unit, scopes);
-    //     let outer_target = resolver.resolve_call_target(node, parent);
-
-    //     if let Some(sym) = outer_target
-    //         && let Some(ns) = namespace.opt_symbol()
-    //     {
-    //         // If call target is an EnumVariant, depend on parent enum instead
-    //         if sym.kind() == SymKind::EnumVariant
-    //             && let Some(parent_enum_id) = sym.type_of()
-    //             && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
-    //         {
-    //             ns.add_depends_with(
-    //                 parent_enum,
-    //                 DepKind::Calls,
-    //                 Some(&[SymKind::TypeParameter]),
-    //             );
-    //         } else {
-    //             ns.add_depends_with(sym, DepKind::Calls, Some(&[SymKind::TypeParameter]));
-    //         }
-    //     }
-
-    //     // For scoped calls like Type::method(), also add dependency on the Type
-    //     if let Some(func_node) = node.child_by_field(*unit, LangRust::field_function)
-    //         && func_node.kind_id() == LangRust::scoped_identifier
-    //         && let Some(ns) = namespace.opt_symbol()
-    //     {
-    //         // Get the path prefix (the type part of Type::method)
-    //         if let Some(path_type) = resolver.resolve_scoped_call_receiver(&func_node) {
-    //             ns.add_depends(path_type, Some(&[SymKind::TypeParameter]));
-    //         }
-    //     }
-
-    //     // Add dependencies from outer call target to nested call targets in arguments
-    //     if let Some(outer_sym) = outer_target
-    //         && let Some(args_node) = node.child_by_field(*unit, LangRust::field_arguments)
-    //     {
-    //         Self::collect_nested_call_deps(unit, scopes, &args_node, outer_sym, parent);
-    //     }
-    // }
-
-    // fn visit_block(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     let sn = node.as_scope().unwrap();
-    //     scopes.push_scope(sn.scope().id());
-    //     self.visit_children(unit, node, scopes, namespace, parent);
-    //     scopes.pop_scope();
     // }
 
     // fn visit_type_item(
@@ -874,7 +902,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     //         let (ty, args) = resolver.resolve_type_with_args(&type_node);
 
     //         if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern)
-    //             && let Some(ident) = pattern.find_identifier(*unit)
+    //             && let Some(ident) = pattern.find_ident(*unit)
     //             && let Some(symbol) = ident.opt_symbol()
     //         {
     //             if let Some(primary) = ty {
@@ -1151,6 +1179,16 @@ mod tests {
         );
     }
 
+    fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
+        let name_key = cc.interner.intern(name);
+        let all_symbols = cc.get_all_symbols();
+        let symbol = all_symbols
+            .iter()
+            .find(|sym| sym.name == name_key && sym.kind() == kind)
+            .expect(&format!("symbol {} with kind {:?} not found", name, kind));
+        assert!(symbol.id().0 > 0, "symbol should have a valid id");
+    }
+
     #[test]
     #[serial_test::serial]
     fn test_visit_source_file() {
@@ -1192,9 +1230,34 @@ mod tests {
             fn get_value() -> Option<i32> {
                 Some(42)
             }
+
+            struct User {
+                name: String,
+            }
+
+            impl User {
+                fn new(name: String) -> User {
+                    User { name }
+                }
+
+                fn foo() {
+                    println!("foo");
+                }
+
+                fn display(&self) {
+                    println!("User: {}", self.name);
+                    Self::foo();
+                }
+            }
+
+            fn main() {
+                let user = User::new(String::from("Alice"));
+                user.display();
+            }
         "#;
 
         with_compiled_unit(&[source], |cc| {
+            // Test return type dependencies for standalone function
             assert_depends(
                 cc,
                 "get_value",
@@ -1210,6 +1273,25 @@ mod tests {
                 "i32",
                 SymKind::Primitive,
                 Some(DepKind::ReturnType),
+            );
+
+            // Test return type in impl block (explicit type instead of Self)
+            assert_depends(
+                cc,
+                "new",
+                SymKind::Function,
+                "User",
+                SymKind::Struct,
+                Some(DepKind::ReturnType),
+            );
+
+            assert_depends(
+                cc,
+                "display",
+                SymKind::Function,
+                "foo",
+                SymKind::Function,
+                Some(DepKind::Uses),
             );
         });
     }
@@ -1237,6 +1319,121 @@ mod tests {
                 SymKind::Struct,
                 Some(DepKind::Used),
             );
+
+            assert_depends(
+                cc,
+                "Container",
+                SymKind::Struct,
+                "new",
+                SymKind::Function,
+                Some(DepKind::Uses),
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_struct_item() {
+        let source = r#"
+            struct User {
+                name: String,
+            }
+        "#;
+
+        with_compiled_unit(&[source], |cc| {
+            assert_exists(cc, "User", SymKind::Struct);
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_enum_item() {
+        let source = r#"
+            enum Color {
+                Red,
+                Green,
+                Blue,
+            }
+        "#;
+
+        with_compiled_unit(&[source], |cc| {
+            assert_exists(cc, "Color", SymKind::Enum);
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_trait_item() {
+        let source = r#"
+            trait Display {
+                fn display(&self);
+            }
+        "#;
+
+        with_compiled_unit(&[source], |cc| {
+            assert_depends(
+                cc,
+                "Display",
+                SymKind::Trait,
+                "display",
+                SymKind::Function,
+                Some(DepKind::Uses),
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_macro_definition() {
+        let source = r#"
+            macro_rules! hello {
+                () => {
+                    println!("Hello!");
+                };
+            }
+        "#;
+
+        with_compiled_unit(&[source], |cc| {
+            assert_exists(cc, "hello", SymKind::Macro);
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_macro_invocation() {
+        let source = r#"
+            macro_rules! hello {
+                () => {
+                    println!("Hello!");
+                };
+            }
+
+            fn main() {
+                hello!();
+            }
+        "#;
+
+        with_compiled_unit(&[source], |cc| {
+            assert_depends(
+                cc,
+                "main",
+                SymKind::Function,
+                "hello",
+                SymKind::Macro,
+                Some(DepKind::Calls),
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_function_signature_item() {
+        let source = r#"
+            fn add(a: i32, b: i32) -> i32;
+        "#;
+
+        with_compiled_unit(&[source], |cc| {
+            assert_exists(cc, "add", SymKind::Function);
         });
     }
 }

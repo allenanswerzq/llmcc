@@ -133,7 +133,7 @@ impl<'hir> HirNode<'hir> {
 
     /// Find the identifier for the first child node that is an identifier or interior node.
     /// Recursively searches for identifiers within interior nodes.
-    pub fn find_identifier(&self, unit: &CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
+    pub fn find_ident(&self, unit: &CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
         if self.is_kind(HirKind::Identifier) {
             return self.as_ident();
         }
@@ -142,7 +142,7 @@ impl<'hir> HirNode<'hir> {
                 return child.as_ident();
             }
             if child.is_kind(HirKind::Internal)
-                && let Some(id) = child.find_identifier(&unit)
+                && let Some(id) = child.find_ident(&unit)
             {
                 return Some(id);
             }
@@ -159,7 +159,7 @@ impl<'hir> HirNode<'hir> {
         debug_assert!(!self.is_kind(HirKind::Identifier));
         for child in self.children(&unit) {
             if child.field_id() == field_id {
-                return child.find_identifier(&unit);
+                return child.find_ident(&unit);
             }
         }
         None

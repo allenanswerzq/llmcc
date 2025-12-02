@@ -398,7 +398,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::Struct,
             LangRust::field_name,
             Some(Box::new(|node, scopes| {
-                let _ = scopes.lookup_or_insert(&"self", node, SymKind::Field);
+                let _ = scopes.lookup_or_insert(&"self", node, SymKind::TypeAlias);
                 let _ = scopes.lookup_or_insert(&"Self", node, SymKind::TypeAlias);
             })),
         );
