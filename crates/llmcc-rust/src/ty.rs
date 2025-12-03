@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirId, HirKind, HirNode};
 use llmcc_core::lang_def::LanguageTrait;
@@ -15,17 +13,11 @@ use crate::token::LangRust;
 pub struct TyCtxt<'a, 'tcx> {
     pub unit: &'a CompileUnit<'tcx>,
     pub scopes: &'a BinderScopes<'tcx>,
-    // TOOD: do we need to add cache with filter keys as well?
-    symbol_cache: HashMap<HirId, Option<&'tcx Symbol>>,
 }
 
 impl<'a, 'tcx> TyCtxt<'a, 'tcx> {
     pub fn new(unit: &'a CompileUnit<'tcx>, scopes: &'a BinderScopes<'tcx>) -> Self {
-        Self {
-            unit,
-            scopes,
-            symbol_cache: HashMap::new(),
-        }
+        Self { unit, scopes }
     }
 
     /// Infers the type with optional symbol kind filtering.
@@ -35,24 +27,7 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx> {
         node: &HirNode<'tcx>,
         kind_filters: Option<Vec<SymKind>>,
     ) -> Option<&'tcx Symbol> {
-        let node_id = node.id();
-        // let filter_key = Self::make_filter_key(&kind_filters);
-        // let cache_key = (node_id, filter_key);
-        let cache_key = node_id;
-
-        // Check cache first
-        if let Some(cached_result) = self.symbol_cache.get(&cache_key) {
-            tracing::trace!(
-                "cache hit for node {:?} with filter {:?}",
-                node_id,
-                kind_filters
-            );
-            return *cached_result;
-        }
-
-        let result = TyImpl::new(self).infer_impl(node, kind_filters);
-        self.symbol_cache.insert(cache_key, result);
-        result
+        TyImpl::new(self).infer_impl(node, kind_filters)
     }
 
     /// Infers the type of any expression node without filtering.
@@ -82,29 +57,11 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx> {
         )
     }
 
-    /// Helper: Check if symbol is the `Self` type.
-    pub fn is_self(&self, symbol: &Symbol) -> bool {
-        // Check by comparing the symbol name - interned strings can be compared
-        // This is a temporary implementation; ideally we'd have better type info
-        false
-    }
-
-    /// Collects all type symbols from a generic type expression.
-    pub fn collect_types(&mut self, node: &HirNode<'tcx>) -> Vec<&'tcx Symbol> {
-        let mut symbols = Vec::new();
-        TyImpl::new(self).collect_types(node, &mut symbols);
-        symbols
-    }
-
     /// Resolves canonical type (follows aliases).
     pub fn resolve_type_of(unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Symbol {
         TyImpl::resolve_type_of(unit, symbol)
     }
 }
-
-// ============================================================================
-// Internal Implementation
-// ============================================================================
 
 struct TyImpl<'a, 'b, 'tcx> {
     ty: &'b mut TyCtxt<'a, 'tcx>,
@@ -114,10 +71,6 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
     fn new(ty: &'b mut TyCtxt<'a, 'tcx>) -> Self {
         Self { ty }
     }
-
-    // ========================================================================
-    // Type Inference
-    // ========================================================================
 
     /// calling with no kind filters
     fn infer_no_filter(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
@@ -313,11 +266,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         let field_type_id = field_symbol.type_of()?;
         let field_type = self.ty.unit.opt_get_symbol(field_type_id)?;
 
-        if self.ty.is_self(field_type) {
-            Some(obj_type)
-        } else {
-            Some(field_type)
-        }
+        Some(field_type)
     }
 
     fn infer_child_field(&mut self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
@@ -451,10 +400,6 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             })
     }
 }
-
-// ============================================================================
-// Constants & Enums
-// ============================================================================
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum BinaryOperatorOutcome {

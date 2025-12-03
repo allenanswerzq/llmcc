@@ -38,6 +38,27 @@ clippy:
 qtest: cargo-test
     cargo run -p llmcc-test -- run-all
 
+# Install cargo-llvm-cov (auto-confirm prompts)
+install-coverage:
+    command -v cargo-llvm-cov > /dev/null || echo y | cargo install cargo-llvm-cov
+
+# Generate HTML coverage report
+coverage-html: install-coverage
+    cargo llvm-cov --html
+
+# Generate LCOV format coverage report (for CI/CD tools like Codecov)
+coverage-lcov: install-coverage
+    cargo llvm-cov --lcov --output-path {{root}}/coverage.lcov
+
+# Generate JSON format coverage report
+coverage-json: install-coverage
+    cargo llvm-cov --json --output-path {{root}}/coverage.json
+
+# Full coverage report (HTML + cleanup)
+coverage: coverage-html
+    echo "coverage report generated in target/llvm-cov/html"
+    xdg-open target/llvm-cov/html/index.html
+
 
 release version:
     #!/bin/bash

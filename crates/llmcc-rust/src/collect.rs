@@ -850,4 +850,3 @@ pub fn collect_symbols<'tcx>(
 
     unit_globals
 }
-

@@ -253,6 +253,22 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     Some(&[SymKind::TypeParameter]),
                 );
             }
+
+            // Also try to resolve return type using type inference for complex paths (e.g., crate::Type)
+            if let Some(ret_type_node) = node.child_by_field(*unit, LangRust::field_return_type) {
+                let mut ty_ctxt = TyCtxt::new(unit, scopes);
+                if let Some(resolved_type) = ty_ctxt.resolve_type(&ret_type_node) {
+                    // Only set if we haven't already set it via simple identifier
+                    if fn_sym.type_of().is_none() {
+                        fn_sym.set_type_of(resolved_type.id());
+                    }
+                    fn_sym.add_depends_with(
+                        resolved_type,
+                        DepKind::ReturnType,
+                        Some(&[SymKind::TypeParameter]),
+                    );
+                }
+            }
         }
     }
 
@@ -956,4 +972,3 @@ pub fn bind_symbols<'tcx>(
     let mut visit = BinderVisitor::new();
     visit.visit_node(&unit, node, &mut scopes, namespace, None);
 }
-
