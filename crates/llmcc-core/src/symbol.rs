@@ -91,6 +91,7 @@ pub enum SymKind {
     Primitive,
     TypeAlias,
     TypeParameter,
+    GenericType,
     ConstParameter,
     UnresolvedType,
 }
@@ -418,6 +419,10 @@ impl Symbol {
         dep_kind: DepKind,
         ignore_kinds: Option<&[SymKind]>,
     ) {
+        if self.id == other.id {
+            tracing::trace!("skip_dep: {} -> {} (self-depends)", self.id, other.id);
+            return;
+        }
         // Skip if target is in the ignore list
         if let Some(kinds) = ignore_kinds
             && kinds.iter().any(|kind| other.kind() == *kind)

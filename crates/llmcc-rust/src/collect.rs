@@ -108,20 +108,20 @@ impl<'tcx> CollectorVisitor<'tcx> {
         scopes: &mut CollectorScopes<'tcx>,
         name: &str,
         node: &HirNode<'tcx>,
-        primary_kind: SymKind,
+        kind: SymKind,
     ) -> Option<&'tcx Symbol> {
         tracing::trace!(
             "looking up or converting symbol '{}' of kind {:?}",
             name,
-            primary_kind
+            kind
         );
 
         // Try looking up by primary kind
-        if let Some(symbol) = scopes.lookup_symbol(name, vec![primary_kind]) {
+        if let Some(symbol) = scopes.lookup_symbol(name, vec![kind]) {
             tracing::trace!(
                 "found existing symbol '{}' of kind {:?} {:?}",
                 name,
-                primary_kind,
+                kind,
                 symbol,
             );
             return Some(symbol);
@@ -132,16 +132,15 @@ impl<'tcx> CollectorVisitor<'tcx> {
             tracing::trace!(
                 "found existing unresolved symbol '{}', converting to {:?}, {:?}",
                 name,
-                primary_kind,
+                kind,
                 symbol,
             );
-            symbol.set_kind(primary_kind);
             return Some(symbol);
         }
 
         // Insert new symbol with primary kind
-        if let Some(symbol) = scopes.lookup_or_insert(name, node, primary_kind) {
-            tracing::trace!("inserting new symbol '{}' of kind {:?}", name, primary_kind);
+        if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
+            tracing::trace!("inserting new symbol '{}' of kind {:?}", name, kind,);
             // create a scope for this symbol if needed
             if symbol.opt_scope().is_none() {
                 let scope = self.alloc_scope(unit, symbol);
@@ -156,6 +155,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     /// AST: Any scoped node (module, function, trait, impl, etc.)
     /// Purpose: Set up scope hierarchy, link identifiers to symbols, and push/pop scopes
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(skip_all)]
     fn visit_with_scope(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -200,6 +200,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     /// AST: Generic scoped-named item handler (module, function, struct, enum, trait, macro, etc.)
     /// Purpose: Declare a named symbol with scope, lookup or insert it, and establish scope hierarchy
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(skip_all)]
     fn visit_scoped_named(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -229,6 +230,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
 impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
     /// AST: block { ... }
     /// Purpose: Create a new lexical scope for block-scoped variables and statements
+    #[tracing::instrument(skip_all)]
     fn visit_block(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -237,7 +239,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting block");
         if let Some(sn) = node.as_scope() {
             let scope = unit.cc.alloc_scope(node.id());
             sn.set_scope(scope);
@@ -251,6 +252,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     /// AST: source_file - root node of the compilation unit
     /// Purpose: Parse crate/module names, create file scope, set up global symbol namespace
     #[rustfmt::skip]
+    #[tracing::instrument(skip_all)]
     fn visit_source_file(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -259,7 +261,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting source_file");
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
 
@@ -308,6 +309,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: mod name { ... } or mod name;
     /// Purpose: Create namespace scope for module, declare module symbol
+    #[tracing::instrument(skip_all)]
     fn visit_mod_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -316,7 +318,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting mod_item");
         if node.child_by_field(*unit, LangRust::field_body).is_none() {
             return;
         }
@@ -334,6 +335,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: fn name(...) -> Type { ... }
     /// Purpose: Declare function symbol, create function scope for parameters and body
+    #[tracing::instrument(skip_all)]
     fn visit_function_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -342,7 +344,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting function_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -357,6 +358,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: extern "C" fn signature or trait method signature
     /// Purpose: Declare function symbol for extern/trait function signatures
+    #[tracing::instrument(skip_all)]
     fn visit_function_signature_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -365,7 +367,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting function_signature_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -380,6 +381,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: struct Name { fields... } or struct Name(types...);
     /// Purpose: Declare struct symbol, create struct scope for fields and methods
+    #[tracing::instrument(skip_all)]
     fn visit_struct_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -388,7 +390,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting struct_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -406,6 +407,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: enum Name { variants... }
     /// Purpose: Declare enum symbol, create enum scope for variants
+    #[tracing::instrument(skip_all)]
     fn visit_enum_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -414,7 +416,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting enum_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -429,6 +430,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: trait Name { associated items... }
     /// Purpose: Declare trait symbol, create trait scope for methods and associated types
+    #[tracing::instrument(skip_all)]
     fn visit_trait_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -437,7 +439,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting trait_item");
         self.visit_scoped_named(
             unit,
             node,
@@ -452,6 +453,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: impl [Trait for] Type { methods... }
     /// Purpose: Create impl scope for methods
+    #[tracing::instrument(skip_all)]
     fn visit_impl_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -460,7 +462,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting impl_item");
         if let Some(ti) = node.child_ident_by_field(*unit, LangRust::field_trait) {
             if let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Trait)
@@ -471,8 +472,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         if let Some((sn, ti)) = node.scope_and_ident_by_field(*unit, LangRust::field_type) {
             if let Some(symbol) =
-                self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Struct)
+                self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::UnresolvedType)
             {
+                tracing::trace!(
+                    "visiting impl for type '{}', {:?}",
+                    ti.name,
+                    symbol.format(Some(scopes.interner())),
+                );
                 ti.set_symbol(symbol);
                 self.visit_with_scope(unit, node, scopes, symbol, sn, ti, None);
                 return;
@@ -482,6 +488,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: macro_rules! name { ... }
     /// Purpose: Declare macro symbol for later macro invocation resolution
+    #[tracing::instrument(skip_all)]
     fn visit_macro_definition(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -490,7 +497,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting macro_definition");
         self.visit_scoped_named(
             unit,
             node,
@@ -505,6 +511,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: const NAME: Type = value;
     /// Purpose: Declare const symbol and visit initializer expression for dependencies
+    #[tracing::instrument(skip_all)]
     fn visit_const_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -513,7 +520,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting const_item");
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::Const, LangRust::field_name)
         {
@@ -523,6 +529,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: static NAME: Type = value;
     /// Purpose: Declare static symbol and visit initializer expression for dependencies
+    #[tracing::instrument(skip_all)]
     fn visit_static_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -531,7 +538,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting static_item");
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::Static, LangRust::field_name)
         {
@@ -541,6 +547,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: type Name = AnotherType;
     /// Purpose: Declare type alias symbol and visit the aliased type for dependencies
+    #[tracing::instrument(skip_all)]
     fn visit_type_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -549,7 +556,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting type_item");
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::TypeAlias, LangRust::field_name)
         {
@@ -557,20 +563,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         }
     }
 
-    /// AST: Identifier used in type context (e.g., type annotation, generics)
-    /// Purpose: Resolve type identifier to struct/enum/trait/function/type-alias symbol
-    fn visit_type_identifier(
-        &mut self,
-        _unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
-        _parent: Option<&Symbol>,
-    ) {
-    }
-
     /// AST: Generic type parameter T or K in fn<T, K>(...) or struct<T> { ... }
     /// Purpose: Declare type parameter symbol within generic scope
+    #[tracing::instrument(skip_all)]
     fn visit_type_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -579,7 +574,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting type_parameter");
         let _ = self.declare_symbol(
             unit,
             node,
@@ -592,6 +586,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
     /// AST: Generic const parameter N in fn<const N: usize>(...) or struct<const N: usize> { ... }
     /// Purpose: Declare const parameter symbol and add dependency to owner
+    #[tracing::instrument(skip_all)]
     fn visit_const_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -600,13 +595,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting const_parameter");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::Const, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
     /// AST: type Assoc = Type; in trait definition
     /// Purpose: Declare associated type symbol within trait scope
+    #[tracing::instrument(skip_all)]
     fn visit_associated_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -615,13 +610,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting associated_type");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::TypeAlias, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
     /// AST: where T: Trait, U: Send, ... in generic bounds
     /// Purpose: Visit where clause bounds for type dependency tracking
+    #[tracing::instrument(skip_all)]
     fn visit_where_predicate(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -630,13 +625,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting where_predicate");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
     /// AST: [Type; N] or [Type]
     /// Purpose: Visit array type element and length for dependency tracking
+    #[tracing::instrument(skip_all)]
     fn visit_array_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -645,12 +640,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting array_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
     /// AST: (Type1, Type2, ...) tuple type
     /// Purpose: Visit tuple element types for dependency tracking
+    #[tracing::instrument(skip_all)]
     fn visit_tuple_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -659,12 +654,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting tuple_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
     /// AST: i32, u64, f32, bool, str, etc. - primitive type keyword
     /// Purpose: Visit primitive type children (minimal, mostly a no-op)
+    #[tracing::instrument(skip_all)]
     fn visit_primitive_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -673,7 +668,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting primitive_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -687,7 +681,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting abstract_type");
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -701,7 +694,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting field_declaration");
         let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
@@ -716,7 +708,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting enum_variant");
         // Get the parent enum symbol before creating the variant
         let parent_enum = parent.or_else(|| namespace.opt_symbol());
 
@@ -750,8 +741,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting parameter");
-
         // Check if this is a 'self' parameter
         if let Some(ident) = node.child_ident_by_field(*unit, LangRust::field_pattern) {
             if ident.name == "self" {
@@ -786,7 +775,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting closure_expression");
         // Create a scope for the closure
         if let Some(sn) = node.as_scope() {
             let scope = unit.cc.alloc_scope(node.id());
@@ -817,7 +805,6 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        tracing::trace!("visiting let_declaration");
         // Check if value is a closure expression to determine symbol kind
         let is_closure = node
             .child_by_field(*unit, LangRust::field_value)

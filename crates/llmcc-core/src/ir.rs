@@ -224,6 +224,26 @@ impl<'hir> HirNode<'hir> {
             _ => None,
         }
     }
+
+    /// Recursively collect all identifier nodes under this node
+    pub fn collect_idents(&self, unit: &CompileUnit<'hir>) -> Vec<&'hir HirIdent<'hir>> {
+        let mut idents = Vec::new();
+        self.collect_idents_impl(unit, &mut idents);
+        idents
+    }
+
+    /// Helper function for recursively collecting identifier nodes
+    fn collect_idents_impl(&self, unit: &CompileUnit<'hir>, idents: &mut Vec<&'hir HirIdent<'hir>>) {
+        // If this node is an identifier, collect it
+        if let Some(ident) = self.as_ident() {
+            idents.push(ident);
+        }
+
+        // Recursively collect from all children
+        for child in self.children(unit) {
+            child.collect_idents_impl(unit, idents);
+        }
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
