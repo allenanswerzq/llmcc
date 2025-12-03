@@ -151,7 +151,7 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Find identifier for the first child with a matching field ID.
-    pub fn child_ident_by_field(
+    pub fn ident_by_field(
         &self,
         unit: CompileUnit<'hir>,
         field_id: u16,
@@ -189,7 +189,7 @@ impl<'hir> HirNode<'hir> {
         }
     }
 
-    /// Get scope and child identifier by field - convenience method combining as_scope() and child_ident_by_field()
+    /// Get scope and child identifier by field - convenience method combining as_scope() and ident_by_field()
     #[inline]
     pub fn scope_and_ident_by_field(
         &self,
@@ -197,7 +197,7 @@ impl<'hir> HirNode<'hir> {
         field_id: u16,
     ) -> Option<(&'hir HirScope<'hir>, &'hir HirIdent<'hir>)> {
         let scope = self.as_scope()?;
-        let ident = self.child_ident_by_field(unit, field_id)?;
+        let ident = self.ident_by_field(unit, field_id)?;
         Some((scope, ident))
     }
 
@@ -233,7 +233,11 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Helper function for recursively collecting identifier nodes
-    fn collect_idents_impl(&self, unit: &CompileUnit<'hir>, idents: &mut Vec<&'hir HirIdent<'hir>>) {
+    fn collect_idents_impl(
+        &self,
+        unit: &CompileUnit<'hir>,
+        idents: &mut Vec<&'hir HirIdent<'hir>>,
+    ) {
         // If this node is an identifier, collect it
         if let Some(ident) = self.as_ident() {
             idents.push(ident);

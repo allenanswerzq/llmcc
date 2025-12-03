@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirNode, HirScope};
+use llmcc_core::ir::{HirKind, HirNode, HirScope};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{DepKind, SymKind, Symbol};
 use llmcc_resolver::{BinderScopes, ResolverOption};
@@ -22,6 +22,27 @@ impl<'tcx> BinderVisitor<'tcx> {
     fn new() -> Self {
         Self {
             phantom: std::marker::PhantomData,
+        }
+    }
+
+    /// Helper function to add dependencies from a symbol to all identifiers in a node.
+    /// This handles trait bounds, where clause bounds, type arguments, and function arguments.
+    fn collect_type_depends(
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        symbol: &Symbol,
+        dep_kind: DepKind,
+    ) {
+        for ident in node.collect_idents(unit) {
+            if let Some(ident_sym) = ident.opt_symbol() {
+                tracing::trace!(
+                    "adding dependency from '{}' to '{}' with kind '{:?}'",
+                    symbol.format(Some(&unit.interner())),
+                    ident_sym.format(Some(&unit.interner())),
+                    dep_kind,
+                );
+                symbol.add_depends_with(ident_sym, dep_kind, Some(&[SymKind::TypeParameter]));
+            }
         }
     }
 
@@ -96,7 +117,7 @@ impl<'tcx> BinderVisitor<'tcx> {
     //         return;
     //     }
 
-    //     if let Some(field_ident) = pattern.child_ident_by_field(*unit, LangRust::field_name) {
+    //     if let Some(field_ident) = pattern.ident_by_field(*unit, LangRust::field_name) {
     //         let field_ty = {
     //             let mut resolver = TyCtxt::new(unit, scopes);
     //             resolver
@@ -230,7 +251,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
         // At this point, all return type node should already be bound
-        let ret_ident = node.child_ident_by_field(*unit, LangRust::field_return_type);
+        let ret_ident = node.ident_by_field(*unit, LangRust::field_return_type);
 
         if let Some(fn_sym) = sn.opt_symbol() {
             // Mark main function as global (entry point)
@@ -279,7 +300,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         let ident = node.as_ident().unwrap();
         if let Some(symbol) = ident.opt_symbol()
-            && symbol.kind() != SymKind::UnresolvedType {
+            && symbol.kind() != SymKind::UnresolvedType
+        {
             return;
         }
 
@@ -344,7 +366,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let target_ident = node.child_ident_by_field(*unit, LangRust::field_type);
+        let target_ident = node.ident_by_field(*unit, LangRust::field_type);
         if let Some(target_sym) = target_ident.and_then(|ident| ident.opt_symbol()) {
             let target_node = node.child_by_field(*unit, LangRust::field_type).unwrap();
             let target_resolved = TyCtxt::new(unit, scopes).resolve_type(&target_node);
@@ -406,24 +428,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             let target_scope = unit.get_scope(target_sym.opt_scope().unwrap());
             self.visit_scoped_named(unit, node, sn, scopes, target_scope, Some(target_sym), None);
 
-            // Should already bound
-            let target_type_args = target_node.child_by_field(*unit, LangRust::field_type_arguments);
-            if let Some(arg) = target_type_args {
-                for arg_ident in arg.collect_idents(unit)
-                {
-                    if let Some(arg_sym) = arg_ident.opt_symbol() {
-                        tracing::trace!(
-                            "adding type args depends from impl target '{}' to arg '{}'",
-                            target_sym.format(Some(&unit.interner())),
-                            arg_sym.format(Some(&unit.interner())),
-                        );
-                        target_sym.add_depends_with(
-                            arg_sym,
-                            DepKind::Uses,
-                            Some(&[SymKind::TypeParameter]),
-                        );
-                    }
-                }
+            if let Some(arg) = target_node.child_by_field(*unit, LangRust::field_type_arguments) {
+                Self::collect_type_depends(unit, &arg, target_sym, DepKind::Uses);
             }
         }
     }
@@ -468,12 +474,12 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             }
         }
 
-        // // Add depends from call target to nested call targets in arguments
-        // if let Some(target_symbol) = target
-        //     && let Some(args_node) = node.child_by_field(*unit, LangRust::field_arguments)
-        // {
-        //     self.collect_types_depends(unit, scopes, &args_node, target_symbol, DepKind::Used);
-        // }
+        // Add depends from call target to nested call targets in arguments
+        if let Some(arg) = node.child_by_field(*unit, LangRust::field_arguments)
+            && let Some(target_sym) = target
+        {
+            Self::collect_type_depends(unit, &arg, target_sym, DepKind::Uses);
+        }
     }
 
     fn visit_enum_item(
@@ -499,15 +505,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         let sn = node.as_scope().unwrap();
         self.visit_scoped_named(unit, node, sn, scopes, namespace, parent, None);
 
-        // if let Some(trait_sym) = sn.opt_symbol()
-        //     && let Some(bounds_node) = node.child_by_field(*unit, LangRust::field_bounds)
-        // {
-        //     tracing::trace!(
-        //         "collecting type bounds for trait '{}'",
-        //         trait_sym.format(Some(&unit.interner())),
-        //     );
-        //     self.collect_types_depends(unit, scopes, &bounds_node, trait_sym, DepKind::TypeBound);
-        // }
+        if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
+            && let Some(trait_sym) = sn.opt_symbol()
+        {
+            Self::collect_type_depends(unit, &bounds, trait_sym, DepKind::TypeBound);
+        }
     }
 
     fn visit_macro_definition(
@@ -540,473 +542,383 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
-    // fn visit_const_item(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     _parent: Option<&Symbol>,
-    // ) {
-    //     if let Some(const_ident) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(const_sym) = const_ident.opt_symbol()
-    //         && let Some(const_ty) = node.child_by_field(*unit, LangRust::field_type)
-    //         && let Some(ty) = {
-    //             let mut resolver = TyCtxt::new(unit, scopes);
-    //             resolver.resolve_type_node(&const_ty)
-    //         }
-    //     {
-    //         const_sym.set_type_of(ty.id());
-    //         const_sym.add_depends(ty, None);
-    //         if let Some(ns) = namespace.opt_symbol() {
-    //             ns.add_depends(const_sym, Some(&[SymKind::TypeParameter]));
-    //         }
-    //     }
-    // }
+    fn visit_const_item(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
+    ) {
+        if let Some(const_ident) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(const_ty) = node.child_by_field(*unit, LangRust::field_type)
+            && let Some(const_sym) = const_ident.opt_symbol()
+            && let Some(ty) = TyCtxt::new(unit, scopes).resolve_type(&const_ty)
+        {
+            const_sym.set_type_of(ty.id());
+            const_sym.add_depends(ty, None);
+            if let Some(ns) = namespace.opt_symbol() {
+                ns.add_depends(const_sym, Some(&[SymKind::TypeParameter]));
+            }
+        }
+    }
 
-    // fn visit_static_item(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_const_item(unit, node, scopes, namespace, parent);
-    // }
+    fn visit_static_item(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_const_item(unit, node, scopes, namespace, parent);
+    }
 
-    // fn visit_type_item(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+    #[tracing::instrument(skip_all)]
+    fn visit_type_item(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     if let Some(type_ident) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(type_sym) = type_ident.opt_symbol()
-    //     {
-    //         // Add dependency from parent (impl target) to the type alias
-    //         if let Some(parent_sym) = parent {
-    //             parent_sym.add_depends(type_sym, None);
-    //         }
+        if let Some(type_ident) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(type_sym) = type_ident.opt_symbol()
+        {
+            tracing::trace!(
+                "visiting type alias '{}' for resolution",
+                type_sym.format(Some(&unit.interner())),
+            );
 
-    //         if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-    //             let mut resolver = TyCtxt::new(unit, scopes);
-    //             let (ty, args) = resolver.resolve_type_with_args(&type_node);
-    //             if let Some(primary) = ty {
-    //                 type_sym.set_type_of(primary.id());
-    //                 type_sym.add_depends(primary, Some(&[SymKind::TypeParameter]));
-    //             }
-    //             for arg in &args {
-    //                 type_sym.add_depends(arg, Some(&[SymKind::TypeParameter]));
-    //             }
+            // Resolve the type that this alias points to
+            if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+                let mut ty_ctxt = TyCtxt::new(unit, scopes);
+                if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
+                    tracing::trace!(
+                        "type alias '{}' resolves to '{}'",
+                        type_sym.format(Some(&unit.interner())),
+                        resolved_type.format(Some(&unit.interner())),
+                    );
 
-    //             for child in node.children(unit) {
-    //                 if child.kind_id() == LangRust::where_clause
-    //                     || child.kind_id() == LangRust::where_predicate
-    //                 {
-    //                     self.add_type_dependencies_with(unit, &child, scopes, type_sym);
-    //                 }
-    //             }
+                    type_sym.set_type_of(resolved_type.id());
+                    type_sym.add_depends_with(
+                        resolved_type,
+                        DepKind::Alias,
+                        Some(&[SymKind::TypeParameter]),
+                    );
+                }
+            }
 
-    //             if let Some(ns) = namespace.opt_symbol() {
-    //                 Self::add_type_dependencies(ns, ty, &args);
-    //             }
-    //         }
-    //     }
-    // }
+            // Handle where clauses if present
+            for child in node.children(unit) {
+                if child.kind_id() == LangRust::where_clause {
+                    Self::collect_type_depends(unit, &child, type_sym, DepKind::Uses);
+                }
+            }
+        }
+    }
 
-    // fn visit_type_parameter(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     // Type parameter bounds like `T: Trait` - use TypeBound dependency
-    //     if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
-    //         && let Some(owner) = namespace.opt_symbol()
-    //     {
-    //         self.add_type_bound_with(unit, &bounds, scopes, owner);
-    //     }
+    fn visit_type_parameter(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+        if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            Self::collect_type_depends(unit, &bounds, ns, DepKind::TypeBound);
+        }
+    }
 
-    //     if let Some(type_ident) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(type_sym) = type_ident.opt_symbol()
-    //         && let Some(default_type_node) =
-    //             node.child_by_field(*unit, LangRust::field_default_type)
-    //     {
-    //         let mut resolver = TyCtxt::new(unit, scopes);
-    //         let (ty, args) = resolver.resolve_type_with_args(&default_type_node);
-    //         if let Some(symbol) = ty {
-    //             type_sym.add_depends(symbol, None);
+    fn visit_const_parameter(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //             if let Some(ns) = namespace.opt_symbol() {
-    //                 ns.add_depends(symbol, Some(&[SymKind::TypeParameter]));
-    //             }
-    //         }
+        // Const parameters have a type like `const N: usize`
+        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
+            && let Some(name_ident) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(const_sym) = name_ident.opt_symbol()
+        {
+            if let Some(ty) = TyCtxt::new(unit, scopes).resolve_type(&type_node) {
+                const_sym.set_type_of(ty.id());
+                const_sym.add_depends(ty, Some(&[SymKind::TypeParameter]));
 
-    //         if let Some(ns) = namespace.opt_symbol() {
-    //             for arg in args {
-    //                 ns.add_depends(arg, Some(&[SymKind::TypeParameter]));
-    //             }
-    //         }
-    //     }
-    // }
+                if let Some(ns) = namespace.opt_symbol() {
+                    ns.add_depends(ty, Some(&[SymKind::TypeParameter]));
+                }
+            }
+        }
+    }
 
-    // fn visit_const_parameter(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+    fn visit_associated_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) else {
-    //         return;
-    //     };
+        if let Some(type_ident) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(type_sym) = type_ident.opt_symbol()
+            && let Some(type_node) = node.child_by_field(*unit, LangRust::field_default_type)
+        {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
+            if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
+                type_sym.set_type_of(resolved_type.id());
+                type_sym.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
 
-    //     let mut resolver = TyCtxt::new(unit, scopes);
-    //     let (ty, args) = resolver.resolve_type_with_args(&type_node);
+                // Add namespace dependency
+                if let Some(ns) = namespace.opt_symbol() {
+                    ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                }
+            }
+        }
+    }
 
-    //     if let Some(name_ident) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(symbol) = name_ident.opt_symbol()
-    //     {
-    //         if let Some(primary) = ty {
-    //             symbol.set_type_of(primary.id());
-    //             symbol.add_depends(primary, Some(&[SymKind::TypeParameter]));
-    //         }
-    //         for arg in &args {
-    //             symbol.add_depends(arg, Some(&[SymKind::TypeParameter]));
-    //         }
-    //     }
+    fn visit_where_predicate(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     if let Some(owner) = parent {
-    //         Self::add_type_dependencies(owner, ty, &args);
-    //     }
-    //     if let Some(ns_owner) = namespace.opt_symbol()
-    //         && parent.map(|sym| sym.id()) != Some(ns_owner.id())
-    //     {
-    //         Self::add_type_dependencies(ns_owner, ty, &args);
-    //     }
-    // }
+        // Where predicates add bounds to types. Example: T: Trait + Display
+        // The bounds should be added as TypeBound dependencies to the owner
+        if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            Self::collect_type_depends(unit, &bounds, ns, DepKind::TypeBound);
+        }
+    }
 
-    // fn visit_associated_type(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+    fn visit_array_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     // Add dependency from parent (trait) to the associated type
-    //     if let Some(type_ident) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(type_sym) = type_ident.opt_symbol()
-    //         && let Some(parent_sym) = parent
-    //     {
-    //         parent_sym.add_depends(type_sym, None);
-    //     }
+        // Array types track the element type: [T; N]
+        if let Some(element_ty) = node.child_by_field(*unit, LangRust::field_element)
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
+            if let Some(resolved_type) = ty_ctxt.resolve_type(&element_ty) {
+                ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+            }
+        }
+    }
 
-    //     if let Some(type_ident) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(type_sym) = type_ident.opt_symbol()
-    //         && let Some(type_node) = node.child_by_field(*unit, LangRust::field_default_type)
-    //     {
-    //         let mut resolver = TyCtxt::new(unit, scopes);
-    //         let (ty, args) = resolver.resolve_type_with_args(&type_node);
-    //         if let Some(primary) = ty {
-    //             type_sym.add_depends(primary, Some(&[SymKind::TypeParameter]));
-    //         }
-    //         for arg in &args {
-    //             type_sym.add_depends(arg, Some(&[SymKind::TypeParameter]));
-    //         }
+    fn visit_tuple_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //         if let Some(ns) = namespace.opt_symbol() {
-    //             Self::add_type_dependencies(ns, ty, &args);
-    //         }
-    //     }
-    // }
+        // Tuple types track all element types: (T1, T2, T3)
+        if let Some(ns) = namespace.opt_symbol() {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
 
-    // fn visit_where_predicate(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     if let Some(bounds) = node.child_by_field(*unit, LangRust::field_bounds)
-    //         && let Some(owner) = namespace.opt_symbol()
-    //     {
-    //         self.add_type_dependencies_with(unit, &bounds, scopes, owner);
-    //     }
-    //     self.visit_children(unit, node, scopes, namespace, parent);
-    // }
+            // Tuple elements are direct children (no named field)
+            for child in node.children(unit) {
+                // Skip non-type nodes
+                if matches!(child.kind(), HirKind::Text | HirKind::Comment) {
+                    continue;
+                }
 
-    // fn visit_array_type(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+                if let Some(resolved_type) = ty_ctxt.resolve_type(&child) {
+                    ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                }
+            }
+        }
+    }
 
-    //     if let Some(element_ty) = node.child_by_field(*unit, LangRust::field_element)
-    //         && let Some(owner) = namespace.opt_symbol()
-    //     {
-    //         self.add_type_dependencies_with(unit, &element_ty, scopes, owner);
-    //     }
-    // }
+    fn visit_abstract_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    // fn visit_tuple_type(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+        // Abstract types (impl Trait) track the trait bound: impl Iterator, impl Clone, etc.
+        if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait)
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
+            if let Some(resolved_trait) = ty_ctxt.resolve_type(&trait_node) {
+                ns.add_depends(resolved_trait, Some(&[SymKind::TypeParameter]));
+            }
+        }
+    }
 
-    //     let Some(owner) = namespace.opt_symbol() else {
-    //         return;
-    //     };
+    fn visit_generic_type(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     for child in node.children(unit) {
-    //         if matches!(child.kind(), HirKind::Text | HirKind::Comment) {
-    //             continue;
-    //         }
+        // Generic types track both the container type and all type arguments
+        // Example: Vec<Message>, Option<Config>, HashMap<K, V>
+        let owner_sym = if let Some(sym) = namespace.opt_symbol() {
+            sym
+        } else if let Some(parent_sym) = parent
+            && let Some(resolved) = unit.opt_get_symbol(parent_sym.id())
+        {
+            resolved
+        } else {
+            return;
+        };
 
-    //         self.add_type_dependencies_with(unit, &child, scopes, owner);
-    //     }
-    // }
+        // First, resolve the container type (Vec, Option, HashMap, etc.)
+        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
+            if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
+                owner_sym.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+            }
+        }
 
-    // fn visit_primitive_type(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+        // Second, resolve all type arguments
+        if let Some(type_args_node) = node.child_by_field(*unit, LangRust::field_type_arguments) {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
 
-    //     let Some(owner) = namespace.opt_symbol() else {
-    //         return;
-    //     };
+            // Type arguments are children of the type_arguments node
+            for arg_child in type_args_node.children(unit) {
+                // Skip non-type nodes (Text, Comment, punctuation like '<', '>', ',')
+                if matches!(arg_child.kind(), HirKind::Text | HirKind::Comment) {
+                    continue;
+                }
 
-    //     self.add_type_dependencies_with(unit, node, scopes, owner);
-    // }
+                // Try to resolve each type argument
+                if let Some(resolved_arg_type) = ty_ctxt.resolve_type(&arg_child) {
+                    owner_sym.add_depends(resolved_arg_type, Some(&[SymKind::TypeParameter]));
+                }
+            }
+        }
+    }
 
-    // fn visit_abstract_type(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+    fn visit_field_declaration(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait)
-    //         && let Some(owner) = namespace.opt_symbol()
-    //     {
-    //         self.add_type_dependencies_with(unit, &trait_node, scopes, owner);
-    //     }
-    // }
+        // Struct/enum fields track their type dependencies
+        let owner_sym = if let Some(sym) = namespace.opt_symbol() {
+            sym
+        } else if let Some(parent_sym) = parent
+            && let Some(resolved) = unit.opt_get_symbol(parent_sym.id())
+        {
+            resolved
+        } else {
+            return;
+        };
 
-    // fn visit_field_declaration(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+        if let Some(_name_node) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
+        {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
+            if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
+                owner_sym.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+            }
+        }
+    }
 
-    //     let owner_sym = if let Some(sym) = namespace.opt_symbol() {
-    //         sym
-    //     } else if let Some(parent_sym) = parent
-    //         && let Some(resolved) = unit.opt_get_symbol(parent_sym.id())
-    //     {
-    //         resolved
-    //     } else {
-    //         return;
-    //     };
+    fn visit_enum_variant(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     if let Some(name_node) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
-    //     {
-    //         let mut resolver = TyCtxt::new(unit, scopes);
-    //         if let Some((symbol, _)) = resolver.resolve_field_type(owner_sym, &name_node.name) {
-    //             let (ty, args) = resolver.resolve_type_with_args(&type_node);
-    //             if let Some(primary) = ty {
-    //                 symbol.set_type_of(primary.id());
-    //                 symbol.add_depends_with(
-    //                     primary,
-    //                     DepKind::FieldType,
-    //                     Some(&[SymKind::TypeParameter]),
-    //                 );
-    //             }
-    //             for arg in &args {
-    //                 symbol.add_depends_with(
-    //                     arg,
-    //                     DepKind::FieldType,
-    //                     Some(&[SymKind::TypeParameter]),
-    //                 );
-    //             }
+        // Enum variants track the types of their associated data
+        if let Some(name_node) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(symbol) = name_node.opt_symbol()
+            && let Some(ns) = namespace.opt_symbol()
+        {
+            // Add dependency from variant to enum
+            ns.add_depends(symbol, Some(&[SymKind::TypeParameter]));
 
-    //             Self::add_type_dependencies_with_kind(owner_sym, ty, &args, DepKind::FieldType);
-    //         }
-    //     }
-    // }
+            // Handle tuple-like variants: Value(i32, String)
+            // The types are in the body field
+            if let Some(body_node) = node.child_by_field(*unit, LangRust::field_body) {
+                // Collect all identifiers in the body (field types)
+                for ident in body_node.collect_idents(unit) {
+                    if let Some(ident_sym) = ident.opt_symbol() {
+                        symbol.add_depends(ident_sym, Some(&[SymKind::TypeParameter]));
+                        // Also add to enum for architecture tracking
+                        ns.add_depends(ident_sym, Some(&[SymKind::TypeParameter]));
+                    }
+                }
+            }
+        }
+    }
 
-    // fn visit_enum_variant(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
+    fn visit_parameter(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
 
-    //     if let Some(name_node) = node.child_ident_by_field(*unit, LangRust::field_name)
-    //         && let Some(symbol) = name_node.opt_symbol()
-    //     {
-    //         if let Some(ns) = namespace.opt_symbol() {
-    //             ns.add_depends(symbol, Some(&[SymKind::TypeParameter]));
-    //         }
+        // Parameters track their type dependencies
+        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
+            let mut ty_ctxt = TyCtxt::new(unit, scopes);
+            if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
+                // Add dependency from containing function/method to parameter type
+                if let Some(owner) = parent {
+                    owner.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                }
 
-    //         if let Some(value_node) = node.child_by_field(*unit, LangRust::field_value) {
-    //             let mut resolver = TyCtxt::new(unit, scopes);
-    //             let (ty, args) = resolver.resolve_type_with_args(&value_node);
-    //             if let Some(primary) = ty {
-    //                 symbol.add_depends(primary, Some(&[SymKind::TypeParameter]));
-    //             }
-
-    //             for arg in &args {
-    //                 symbol.add_depends(arg, Some(&[SymKind::TypeParameter]));
-    //             }
-
-    //             // Use FieldType for enum variant inner types so they appear in arch-graph
-    //             if let Some(ns) = namespace.opt_symbol()
-    //                 && let Some(primary) = ty
-    //             {
-    //                 ns.add_depends_with(
-    //                     primary,
-    //                     DepKind::FieldType,
-    //                     Some(&[SymKind::TypeParameter]),
-    //                 );
-    //             }
-    //         }
-
-    //         // Handle tuple-like enum variants: Root(&'hir HirRoot)
-    //         // The type is in the body field as ordered_field_declaration_list
-    //         if let Some(body_node) = node.child_by_field(*unit, LangRust::field_body)
-    //             && let Some(ns) = namespace.opt_symbol()
-    //         {
-    //             let mut resolver = TyCtxt::new(unit, scopes);
-    //             let (ty, args) = resolver.resolve_type_with_args(&body_node);
-    //             Self::add_type_dependencies_with_kind(ns, ty, &args, DepKind::FieldType);
-    //         }
-    //     }
-    // }
-
-    // fn visit_parameter(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
-
-    //     if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) {
-    //         let mut resolver = TyCtxt::new(unit, scopes);
-    //         let (ty, args) = resolver.resolve_type_with_args(&type_node);
-
-    //         if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern)
-    //             && let Some(ident) = pattern.find_ident(*unit)
-    //             && let Some(symbol) = ident.opt_symbol()
-    //         {
-    //             if let Some(primary) = ty {
-    //                 symbol.set_type_of(primary.id());
-    //                 symbol.add_depends_with(
-    //                     primary,
-    //                     DepKind::ParamType,
-    //                     Some(&[SymKind::TypeParameter]),
-    //                 );
-    //             }
-    //             for arg in &args {
-    //                 symbol.add_depends_with(
-    //                     arg,
-    //                     DepKind::ParamType,
-    //                     Some(&[SymKind::TypeParameter]),
-    //                 );
-    //             }
-    //         }
-
-    //         if let Some(owner) = parent {
-    //             Self::add_type_dependencies_with_kind(owner, ty, &args, DepKind::ParamType);
-    //         }
-
-    //         if let Some(ns) = namespace.opt_symbol() {
-    //             Self::add_type_dependencies_with_kind(ns, ty, &args, DepKind::ParamType);
-    //         }
-    //     }
-    // }
-
-    // fn visit_self_parameter(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     parent: Option<&Symbol>,
-    // ) {
-    //     self.visit_children(unit, node, scopes, namespace, parent);
-
-    //     let Some(type_node) = node.child_by_field(*unit, LangRust::field_type) else {
-    //         return;
-    //     };
-
-    //     let mut resolver = TyCtxt::new(unit, scopes);
-    //     let (ty, args) = resolver.resolve_type_with_args(&type_node);
-
-    //     if let Some(ns_owner) = namespace.opt_symbol() {
-    //         Self::add_type_dependencies(ns_owner, ty, &args);
-    //     }
-
-    //     if let Some(parent_owner) = parent
-    //         && namespace.opt_symbol().map(|sym| sym.id()) != Some(parent_owner.id())
-    //     {
-    //         Self::add_type_dependencies(parent_owner, ty, &args);
-    //     }
-    // }
-
-    // fn visit_identifier(
-    //     &mut self,
-    //     unit: &CompileUnit<'tcx>,
-    //     node: &HirNode<'tcx>,
-    //     scopes: &mut BinderScopes<'tcx>,
-    //     namespace: &'tcx Scope<'tcx>,
-    //     _parent: Option<&Symbol>,
-    // ) {
-    //     Self::add_const_dependency(unit, scopes, node, namespace);
-    // }
+                // Also add from namespace (closure, etc.)
+                if let Some(ns) = namespace.opt_symbol() {
+                    ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                }
+            }
+        }
+    }
 
     // fn visit_scoped_identifier(
     //     &mut self,
@@ -1016,9 +928,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     //     namespace: &'tcx Scope<'tcx>,
     //     parent: Option<&Symbol>,
     // ) {
-    //     // First try the standard const dependency check (for simple name lookups)
-    //     Self::add_const_dependency(unit, scopes, node, namespace);
-
     //     // For scoped identifiers like E::V1 or E::V2, resolve the full path
     //     // If it's an enum variant, add dependency on the parent enum via type_of
     //     if let Some(owner) = namespace.opt_symbol()
@@ -1302,14 +1211,6 @@ mod tests {
                 SymKind::Struct,
                 Some(DepKind::ReturnType),
             );
-            assert_depends(
-                cc,
-                "get_value",
-                SymKind::Function,
-                "i32",
-                SymKind::Primitive,
-                Some(DepKind::ReturnType),
-            );
 
             // Test return type in impl block (explicit type instead of Self)
             assert_depends(
@@ -1372,7 +1273,7 @@ mod tests {
                 cc,
                 "Container",
                 SymKind::Struct,
-                "Inner",
+                "Outer",
                 SymKind::Struct,
                 Some(DepKind::Uses),
             );
@@ -1416,9 +1317,25 @@ mod tests {
             trait Display {
                 fn display(&self);
             }
+
+            trait Clone {
+                fn clone(&self) -> Self;
+            }
+
+            trait Iterator {
+                type Item;
+                fn next(&mut self) -> Option<Self::Item>;
+            }
+
+            trait Sized {}
+
+            trait FromIterator<T>: Sized + Clone {
+                fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self;
+            }
         "#;
 
         with_compiled_unit(&[source], |cc| {
+            // Test Display trait with method
             assert_depends(
                 cc,
                 "Display",
@@ -1426,6 +1343,35 @@ mod tests {
                 "display",
                 SymKind::Function,
                 Some(DepKind::Uses),
+            );
+
+            // Test Clone trait
+            assert_depends(
+                cc,
+                "Clone",
+                SymKind::Trait,
+                "clone",
+                SymKind::Function,
+                Some(DepKind::Uses),
+            );
+
+            // Test FromIterator trait with bound
+            assert_depends(
+                cc,
+                "FromIterator",
+                SymKind::Trait,
+                "Sized",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            assert_depends(
+                cc,
+                "FromIterator",
+                SymKind::Trait,
+                "Clone",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
             );
         });
     }
@@ -1482,6 +1428,1023 @@ mod tests {
 
         with_compiled_unit(&[source], |cc| {
             assert_exists(cc, "add", SymKind::Function);
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_type_item() {
+        let source = r#"
+            trait Printable {
+                fn print(&self);
+            }
+
+            trait Serializable {
+                fn serialize(&self) -> String;
+            }
+
+            struct Data<T> {
+                value: T,
+            }
+
+            type PrintableData<T> = Data<T> where T: Printable;
+            type SerializableCollection<T> = Data<T> where T: Serializable + Printable;
+        "#;
+
+        with_compiled_unit(&[source], |cc| {
+            // Test type alias with where clause
+            assert_exists(cc, "PrintableData", SymKind::TypeAlias);
+            assert_depends(
+                cc,
+                "PrintableData",
+                SymKind::TypeAlias,
+                "Data",
+                SymKind::Struct,
+                Some(DepKind::Alias),
+            );
+
+            assert_depends(
+                cc,
+                "PrintableData",
+                SymKind::TypeAlias,
+                "Printable",
+                SymKind::Trait,
+                Some(DepKind::Uses),
+            );
+
+            // Test type alias with multiple where clause bounds
+            assert_exists(cc, "SerializableCollection", SymKind::TypeAlias);
+            assert_depends(
+                cc,
+                "SerializableCollection",
+                SymKind::TypeAlias,
+                "Data",
+                SymKind::Struct,
+                Some(DepKind::Alias),
+            );
+
+            assert_depends(
+                cc,
+                "SerializableCollection",
+                SymKind::TypeAlias,
+                "Serializable",
+                SymKind::Trait,
+                Some(DepKind::Uses),
+            );
+            assert_depends(
+                cc,
+                "SerializableCollection",
+                SymKind::TypeAlias,
+                "Printable",
+                SymKind::Trait,
+                Some(DepKind::Uses),
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_type_parameter() {
+        let source = r#"
+            pub trait Trait1 {}
+            pub trait Trait2 {}
+
+            // Test simple bound
+            pub fn simple<T: Trait1>() {}
+
+            // Test multiple bounds
+            pub fn multiple<U: Trait1 + Trait2>() {}
+
+            // Test struct with type parameter bounds
+            pub struct GenericStruct<V: Trait1> {
+                val: V,
+            }
+
+            // Test trait with type parameter bounds
+            pub trait GenericTrait<W: Trait2> {
+                fn method(&self);
+            }
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test simple bound: T should have TypeBound dependency on Trait1
+            assert_depends(
+                cc,
+                "simple",
+                SymKind::Function,
+                "Trait1",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            // Test multiple bounds: U should have TypeBound dependencies on both traits
+            assert_depends(
+                cc,
+                "multiple",
+                SymKind::Function,
+                "Trait1",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+            assert_depends(
+                cc,
+                "multiple",
+                SymKind::Function,
+                "Trait2",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            // Test struct with type parameter bounds
+            assert_depends(
+                cc,
+                "GenericStruct",
+                SymKind::Struct,
+                "Trait1",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            // Test trait with type parameter bounds
+            assert_depends(
+                cc,
+                "GenericTrait",
+                SymKind::Trait,
+                "Trait2",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_const_parameter() {
+        let source = r#"
+            // Custom complex types for const parameters
+            pub struct Config;
+            pub struct Settings;
+            pub enum Mode { Fast, Slow }
+
+            // Test const parameter with custom type
+            pub fn process_config<const CFG: Config>() {}
+
+            // Test const parameter in struct with custom type
+            pub struct Container<const S: Settings> {
+                data: u32,
+            }
+
+            // Test const parameter in trait with custom type
+            pub trait Processor<const M: Mode> {
+                fn process(&self);
+            }
+
+            // Test multiple const parameters with complex types
+            pub struct Complex<const A: Settings, const B: Config> {
+                value: i32,
+            }
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test const parameter in function: function should depend on Config
+            assert_depends(
+                cc,
+                "process_config",
+                SymKind::Function,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test const parameter in struct: struct should depend on Settings
+            assert_depends(
+                cc,
+                "Container",
+                SymKind::Struct,
+                "Settings",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test const parameter in trait: trait should depend on Mode
+            assert_depends(
+                cc,
+                "Processor",
+                SymKind::Trait,
+                "Mode",
+                SymKind::Enum,
+                None,
+            );
+
+            // Test multiple const parameters: Complex should depend on both Settings and Config
+            assert_depends(
+                cc,
+                "Complex",
+                SymKind::Struct,
+                "Settings",
+                SymKind::Struct,
+                None,
+            );
+
+            assert_depends(
+                cc,
+                "Complex",
+                SymKind::Struct,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_associated_type() {
+        let source = r#"
+            // Custom types
+            pub struct DataType;
+            pub struct ConfigType;
+            pub struct ResultType;
+
+            // Test associated type with default
+            pub trait Processor {
+                type OutputType = DataType;
+                type InputType = ConfigType;
+            }
+
+            // Test associated type with complex default
+            pub trait Handler {
+                type ResponseType = ResultType;
+            }
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Associated types with defaults should have Alias dependencies to their types
+
+            // Test OutputType associated type depends on DataType struct
+            assert_depends(
+                cc,
+                "OutputType",
+                SymKind::TypeAlias,
+                "DataType",
+                SymKind::Struct,
+                Some(DepKind::Alias),
+            );
+
+            // Test InputType associated type depends on ConfigType struct
+            assert_depends(
+                cc,
+                "InputType",
+                SymKind::TypeAlias,
+                "ConfigType",
+                SymKind::Struct,
+                Some(DepKind::Alias),
+            );
+
+            // Test ResponseType associated type depends on ResultType struct
+            assert_depends(
+                cc,
+                "ResponseType",
+                SymKind::TypeAlias,
+                "ResultType",
+                SymKind::Struct,
+                Some(DepKind::Alias),
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_where_predicate() {
+        let source = r#"
+            // Traits for bounds
+            pub trait Clone {}
+            pub trait Display {}
+            pub trait Debug {}
+            pub trait Sized {}
+
+            // Test where predicate on function
+            pub fn process<T>() where T: Clone + Display {}
+
+            // Test where predicate on struct
+            pub struct Container<T> where T: Debug {
+                value: T,
+            }
+
+            // Test where predicate on trait
+            pub trait Iterable<T> where T: Clone {
+                fn iter(&self) -> T;
+            }
+
+            // Test where predicate with multiple bounds
+            pub fn complex<U>() where U: Clone + Display + Debug {}
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test where predicate on function: process should depend on Clone and Display
+            assert_depends(
+                cc,
+                "process",
+                SymKind::Function,
+                "Clone",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            assert_depends(
+                cc,
+                "process",
+                SymKind::Function,
+                "Display",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            // Test where predicate on struct: Container should depend on Debug
+            assert_depends(
+                cc,
+                "Container",
+                SymKind::Struct,
+                "Debug",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            // Test where predicate on trait: Iterable should depend on Clone
+            assert_depends(
+                cc,
+                "Iterable",
+                SymKind::Trait,
+                "Clone",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            // Test complex where predicate with multiple bounds
+            assert_depends(
+                cc,
+                "complex",
+                SymKind::Function,
+                "Clone",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            assert_depends(
+                cc,
+                "complex",
+                SymKind::Function,
+                "Display",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+
+            assert_depends(
+                cc,
+                "complex",
+                SymKind::Function,
+                "Debug",
+                SymKind::Trait,
+                Some(DepKind::TypeBound),
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_array_type() {
+        let source = r#"
+            // Custom struct for array elements
+            pub struct Data;
+            pub struct Config;
+            pub struct Message;
+
+            // Test simple array type
+            pub fn process_array(arr: [Data; 10]) {}
+
+            // Test array type in struct
+            pub struct Buffer {
+                items: [Config; 5],
+            }
+
+            // Test array type in function return
+            pub fn create_messages() -> [Message; 3] {
+                [Message, Message, Message]
+            }
+
+            // Test nested array type
+            pub fn process_matrix(matrix: [[Data; 4]; 3]) {}
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test array element type dependency in function parameter
+            assert_depends(
+                cc,
+                "process_array",
+                SymKind::Function,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test array element type dependency in struct field
+            assert_depends(
+                cc,
+                "Buffer",
+                SymKind::Struct,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test array element type dependency in return type
+            assert_depends(
+                cc,
+                "create_messages",
+                SymKind::Function,
+                "Message",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test nested array element type dependency
+            assert_depends(
+                cc,
+                "process_matrix",
+                SymKind::Function,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_tuple_type() {
+        let source = r#"
+            pub struct Config {}
+            pub struct Message {}
+            pub struct Data {}
+            pub struct Response {}
+
+            // Test function with tuple parameter
+            pub fn handle_pair(pair: (Config, Message)) {}
+
+            // Test struct with tuple field
+            pub struct Container {
+                items: (Data, Response, Config),
+            }
+
+            // Test function with tuple return type
+            pub fn create_triple() -> (Message, Data, Config) {
+                todo!()
+            }
+
+            // Test nested tuple types
+            pub fn nested_tuples(data: ((Config, Message), (Data, Response))) {}
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test function parameter tuple: handle_pair depends on Config and Message
+            assert_depends(
+                cc,
+                "handle_pair",
+                SymKind::Function,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "handle_pair",
+                SymKind::Function,
+                "Message",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test struct field tuple: Container depends on Data, Response, Config
+            assert_depends(
+                cc,
+                "Container",
+                SymKind::Struct,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "Container",
+                SymKind::Struct,
+                "Response",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "Container",
+                SymKind::Struct,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test function return type tuple: create_triple depends on Message, Data, Config
+            assert_depends(
+                cc,
+                "create_triple",
+                SymKind::Function,
+                "Message",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "create_triple",
+                SymKind::Function,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "create_triple",
+                SymKind::Function,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test nested tuple: nested_tuples depends on all types in nested tuples
+            assert_depends(
+                cc,
+                "nested_tuples",
+                SymKind::Function,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "nested_tuples",
+                SymKind::Function,
+                "Message",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "nested_tuples",
+                SymKind::Function,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+            assert_depends(
+                cc,
+                "nested_tuples",
+                SymKind::Function,
+                "Response",
+                SymKind::Struct,
+                None,
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_abstract_type() {
+        let source = r#"
+            pub trait Iterator {}
+            pub trait Display {}
+            pub trait Clone {}
+            pub trait Send {}
+            pub trait Sync {}
+
+            // Test function with impl Trait return type (simple)
+            pub fn get_iterator() -> impl Iterator {
+                todo!()
+            }
+
+            // Test function with impl Trait return type (generic trait with args)
+            pub fn get_display() -> impl Display {
+                todo!()
+            }
+
+            // Test struct impl block method with impl Trait
+            pub struct Worker;
+            impl Worker {
+                pub fn create_clone(&self) -> impl Clone {
+                    todo!()
+                }
+            }
+
+            // Test trait method with impl Trait
+            pub trait Producer {
+                fn produce(&self) -> impl Display;
+            }
+
+            // Test multiple impl Trait in different functions
+            pub fn sync_handler() -> impl Sync {
+                todo!()
+            }
+
+            // Test impl Trait with single bound using + operator
+            pub fn bounded_iterator() -> impl Iterator + Send {
+                todo!()
+            }
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test 1: get_iterator should depend on Iterator trait
+            assert_depends(
+                cc,
+                "get_iterator",
+                SymKind::Function,
+                "Iterator",
+                SymKind::Trait,
+                None,
+            );
+
+            // Test 2: get_display should depend on Display trait
+            assert_depends(
+                cc,
+                "get_display",
+                SymKind::Function,
+                "Display",
+                SymKind::Trait,
+                None,
+            );
+
+            // Test 3: Worker::create_clone should depend on Clone trait
+            assert_depends(
+                cc,
+                "create_clone",
+                SymKind::Function,
+                "Clone",
+                SymKind::Trait,
+                None,
+            );
+
+            // Test 4: sync_handler should depend on Sync trait
+            assert_depends(
+                cc,
+                "sync_handler",
+                SymKind::Function,
+                "Sync",
+                SymKind::Trait,
+                None,
+            );
+
+            // Test 5: bounded_iterator should depend on Iterator (primary trait)
+            // The + operator creates a bounded_type node, so Iterator is the first trait
+            assert_depends(
+                cc,
+                "bounded_iterator",
+                SymKind::Function,
+                "Iterator",
+                SymKind::Trait,
+                None,
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_enum_variant() {
+        let source = r#"
+            pub struct Point {}
+            pub struct Data {}
+            pub struct Message {}
+
+            // Test enum with tuple-like variants
+            pub enum Result {
+                Ok(Point),
+                Error(Data),
+            }
+
+            // Test enum with struct-like variants
+            pub enum Response {
+                Success { value: Message },
+                Failed { reason: Data },
+            }
+
+            // Test enum with unit and data variants mixed
+            pub enum Status {
+                Running,
+                Stopped(Point),
+                Error(Data, Message),
+            }
+
+            // Test function that uses enum variants
+            pub fn create_result() -> Result {
+                todo!()
+            }
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test 1: Result enum should depend on Point (from Ok variant)
+            assert_depends(
+                cc,
+                "Result",
+                SymKind::Enum,
+                "Point",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 2: Result enum should depend on Data (from Error variant)
+            assert_depends(
+                cc,
+                "Result",
+                SymKind::Enum,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 3: Response enum should depend on Message (from Success field)
+            assert_depends(
+                cc,
+                "Response",
+                SymKind::Enum,
+                "Message",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 4: Response enum should depend on Data (from Failed field)
+            assert_depends(
+                cc,
+                "Response",
+                SymKind::Enum,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 5: Status enum should depend on Point
+            assert_depends(
+                cc,
+                "Status",
+                SymKind::Enum,
+                "Point",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 6: Status enum should depend on Data
+            assert_depends(
+                cc,
+                "Status",
+                SymKind::Enum,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 7: Status enum should depend on Message
+            assert_depends(
+                cc,
+                "Status",
+                SymKind::Enum,
+                "Message",
+                SymKind::Struct,
+                None,
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_parameter() {
+        let source = r#"
+            pub struct Point {}
+            pub struct Config {}
+            pub struct Data {}
+
+            // Test function with single parameter
+            pub fn process_point(pt: Point) {}
+
+            // Test function with multiple parameters
+            pub fn combined(cfg: Config, data: Data) {}
+
+            // Test function with reference parameter
+            pub fn read_data(d: &Data) {}
+
+            // Test method with self and parameters
+            pub struct Handler;
+            impl Handler {
+                pub fn handle(&self, pt: Point) {}
+
+                pub fn process(&mut self, cfg: Config) {}
+            }
+
+            // Test trait method with parameters
+            pub trait Processor {
+                fn process(&self, data: Data);
+                fn configure(&self, cfg: Config);
+            }
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test 1: process_point depends on Point (parameter type)
+            assert_depends(
+                cc,
+                "process_point",
+                SymKind::Function,
+                "Point",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 2: combined depends on Config
+            assert_depends(
+                cc,
+                "combined",
+                SymKind::Function,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 3: combined depends on Data
+            assert_depends(
+                cc,
+                "combined",
+                SymKind::Function,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 4: read_data depends on Data (even with &)
+            assert_depends(
+                cc,
+                "read_data",
+                SymKind::Function,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 5: Handler::handle depends on Point (from method parameter)
+            assert_depends(
+                cc,
+                "handle",
+                SymKind::Function,
+                "Point",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 6: Handler::process depends on Config
+            assert_depends(
+                cc,
+                "process",
+                SymKind::Function,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+        });
+    }
+
+    #[test]
+    #[serial_test::serial]
+    fn test_visit_field_declaration() {
+        let source = r#"
+            pub struct Point {}
+            pub struct Config {}
+            pub struct Data {}
+            pub struct Message {}
+            pub struct Request {}
+            pub struct Response {}
+
+            // Test struct with single field
+            pub struct Container {
+                item: Point,
+            }
+
+            // Test struct with multiple fields
+            pub struct Package {
+                config: Config,
+                data: Data,
+            }
+
+            // Test struct with simple field
+            pub struct Handler {
+                config: Config,
+            }
+
+            // Test struct with Vec<T> generic field
+            pub struct MessageQueue {
+                messages: Vec<Message>,
+            }
+
+            // Test struct with Option<T> generic field
+            pub struct OptionalConfig {
+                cfg: Option<Config>,
+            }
+
+            // Test struct with multiple generic fields
+            pub struct Pipeline {
+                requests: Vec<Request>,
+                responses: Option<Response>,
+            }
+
+            // Test struct with nested generic types
+            pub struct ComplexStorage {
+                items: Vec<Vec<Data>>,
+            }
+
+            // Test function returning struct type
+            pub fn create_package() -> Package {
+                todo!()
+            }
+            "#;
+        with_compiled_unit(&[source], |cc| {
+            // Test 1: Container struct depends on Point (from field)
+            assert_depends(
+                cc,
+                "Container",
+                SymKind::Struct,
+                "Point",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 2: Package struct depends on Config
+            assert_depends(
+                cc,
+                "Package",
+                SymKind::Struct,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 3: Package struct depends on Data
+            assert_depends(
+                cc,
+                "Package",
+                SymKind::Struct,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 4: Handler struct depends on Config
+            assert_depends(
+                cc,
+                "Handler",
+                SymKind::Struct,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 5: MessageQueue struct depends on Message (generic type arg)
+            assert_depends(
+                cc,
+                "MessageQueue",
+                SymKind::Struct,
+                "Message",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 6: OptionalConfig struct depends on Config (generic type arg in Option)
+            assert_depends(
+                cc,
+                "OptionalConfig",
+                SymKind::Struct,
+                "Config",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 7: Pipeline struct depends on Request
+            assert_depends(
+                cc,
+                "Pipeline",
+                SymKind::Struct,
+                "Request",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 8: Pipeline struct depends on Response
+            assert_depends(
+                cc,
+                "Pipeline",
+                SymKind::Struct,
+                "Response",
+                SymKind::Struct,
+                None,
+            );
+
+            // Test 9: ComplexStorage struct depends on Data (nested Vec<Vec<>>)
+            assert_depends(
+                cc,
+                "ComplexStorage",
+                SymKind::Struct,
+                "Data",
+                SymKind::Struct,
+                None,
+            );
         });
     }
 }

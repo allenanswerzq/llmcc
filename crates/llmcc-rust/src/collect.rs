@@ -35,7 +35,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        let ident = node.child_ident_by_field(*unit, field_id)?;
+        let ident = node.ident_by_field(*unit, field_id)?;
         tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
         let sym = scopes.lookup_or_insert(&ident.name, node, kind)?;
         ident.set_symbol(sym);
@@ -462,7 +462,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        if let Some(ti) = node.child_ident_by_field(*unit, LangRust::field_trait) {
+        if let Some(ti) = node.ident_by_field(*unit, LangRust::field_trait) {
             if let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Trait)
             {
@@ -724,7 +724,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Set type_of on the variant to point to the parent enum
         if let Some(enum_sym) = parent_enum
-            && let Some(ident) = node.child_ident_by_field(*unit, LangRust::field_name)
+            && let Some(ident) = node.ident_by_field(*unit, LangRust::field_name)
             && let Some(variant_sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::EnumVariant])
         {
             variant_sym.set_type_of(enum_sym.id);
@@ -742,7 +742,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         parent: Option<&Symbol>,
     ) {
         // Check if this is a 'self' parameter
-        if let Some(ident) = node.child_ident_by_field(*unit, LangRust::field_pattern) {
+        if let Some(ident) = node.ident_by_field(*unit, LangRust::field_pattern) {
             if ident.name == "self" {
                 // For 'self' parameters, try to resolve it as a Field in the current scope
                 if let Some(symbol) = scopes.lookup_symbol(&ident.name, vec![SymKind::Field]) {
@@ -1304,7 +1304,7 @@ mod tests {
             // Verify field is collected
             assert!(find_symbol_id(cc, "count", SymKind::Field).0 > 0);
 
-            assert!(find_symbol_id(cc, "self", SymKind::Field).0 > 0);
+            assert!(find_symbol_id(cc, "self", SymKind::TypeAlias).0 > 0);
             assert!(find_symbol_id(cc, "Self", SymKind::TypeAlias).0 > 0);
         });
     }

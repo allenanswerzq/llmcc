@@ -26,6 +26,7 @@ impl LabeledEdge {
             DepKind::TypeBound => ("bound", "generic"),
             DepKind::Uses => ("user", "used"),
             DepKind::Used => ("user", "used"),
+            DepKind::Alias => ("alias", "target"),
         };
         Self {
             from_idx,

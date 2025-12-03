@@ -403,6 +403,10 @@ impl<'tcx> ProjectGraph<'tcx> {
                         DepKind::Used => {
                             // Skip generic Used dependencies to keep arch-graph focused on structural flows
                         }
+                        DepKind::Alias => {
+                            // Type alias points to resolved type
+                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Alias));
+                        }
                     }
                 }
             }

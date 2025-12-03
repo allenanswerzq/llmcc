@@ -105,6 +105,8 @@ pub enum DepKind {
     /// General dependency (A uses/references B)
     #[default]
     Uses,
+    /// Type alias (alias → target_type)
+    Alias,
     /// General dependency (A used by B)
     Used,
     /// Function parameter type (param_type → func)
