@@ -10,22 +10,14 @@ pub fn with_compiled_unit<F>(sources: &[&str], check: F)
 where
     F: for<'a> FnOnce(&'a CompileCtxt<'a>),
 {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE)
-        .with_test_writer()
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).with_test_writer().try_init();
 
-    let bytes = sources
-        .iter()
-        .map(|src| src.as_bytes().to_vec())
-        .collect::<Vec<_>>();
+    let bytes = sources.iter().map(|src| src.as_bytes().to_vec()).collect::<Vec<_>>();
 
     let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
     build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
 
-    let resolver_option = ResolverOption::default()
-        .with_sequential(true)
-        .with_print_ir(true);
+    let resolver_option = ResolverOption::default().with_sequential(true).with_print_ir(true);
     let globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
     bind_symbols_with::<LangRust>(&cc, globals, &resolver_option);
     check(&cc);
@@ -36,32 +28,20 @@ pub fn with_collected_unit<F>(sources: &[&str], check: F)
 where
     F: for<'a> FnOnce(&'a CompileCtxt<'a>),
 {
-    let _ = tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::TRACE)
-        .with_test_writer()
-        .try_init();
+    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).with_test_writer().try_init();
 
-    let bytes = sources
-        .iter()
-        .map(|src| src.as_bytes().to_vec())
-        .collect::<Vec<_>>();
+    let bytes = sources.iter().map(|src| src.as_bytes().to_vec()).collect::<Vec<_>>();
 
     let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
     build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
 
-    let resolver_option = ResolverOption::default()
-        .with_sequential(true)
-        .with_print_ir(true);
+    let resolver_option = ResolverOption::default().with_sequential(true).with_print_ir(true);
     let _globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
     check(&cc);
 }
 
 #[allow(dead_code)]
-pub fn find_symbol_id<'a>(
-    cc: &'a CompileCtxt<'a>,
-    name: &str,
-    kind: SymKind,
-) -> llmcc_core::symbol::SymId {
+pub fn find_symbol_id<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) -> llmcc_core::symbol::SymId {
     let name_key = cc.interner.intern(name);
     cc.get_all_symbols()
         .into_iter()
@@ -70,14 +50,7 @@ pub fn find_symbol_id<'a>(
         .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
 }
 
-pub fn assert_depends<'a>(
-    cc: &'a CompileCtxt<'a>,
-    from_name: &str,
-    from_kind: SymKind,
-    to_name: &str,
-    to_kind: SymKind,
-    dep_kind: Option<DepKind>,
-) {
+pub fn assert_depends<'a>(cc: &'a CompileCtxt<'a>, from_name: &str, from_kind: SymKind, to_name: &str, to_kind: SymKind, dep_kind: Option<DepKind>) {
     let from_sym = cc
         .get_all_symbols()
         .iter()
@@ -102,17 +75,9 @@ pub fn assert_depends<'a>(
     let to_id = to_sym.id();
 
     let has_dep = if let Some(kind) = dep_kind {
-        from_sym
-            .depends
-            .read()
-            .iter()
-            .any(|(dep_id, dep_k)| *dep_id == to_id && *dep_k == kind)
+        from_sym.depends.read().iter().any(|(dep_id, dep_k)| *dep_id == to_id && *dep_k == kind)
     } else {
-        from_sym
-            .depends
-            .read()
-            .iter()
-            .any(|(dep_id, _)| *dep_id == to_id)
+        from_sym.depends.read().iter().any(|(dep_id, _)| *dep_id == to_id)
     };
 
     assert!(
@@ -122,9 +87,7 @@ pub fn assert_depends<'a>(
         from_kind,
         to_name,
         to_kind,
-        dep_kind
-            .map(|k| format!(" with kind {:?}", k))
-            .unwrap_or_default()
+        dep_kind.map(|k| format!(" with kind {:?}", k)).unwrap_or_default()
     );
 }
 
@@ -142,10 +105,7 @@ pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
 /// Batch assertion for multiple dependencies using a vector of tuples
 /// Each tuple contains: (from_name, from_kind, to_name, to_kind, dep_kind)
 #[allow(dead_code)]
-pub fn assert_depends_batch<'a>(
-    cc: &'a CompileCtxt<'a>,
-    deps: Vec<(&str, SymKind, &str, SymKind, Option<DepKind>)>,
-) {
+pub fn assert_depends_batch<'a>(cc: &'a CompileCtxt<'a>, deps: Vec<(&str, SymKind, &str, SymKind, Option<DepKind>)>) {
     for (from_name, from_kind, to_name, to_kind, dep_kind) in deps {
         assert_depends(cc, from_name, from_kind, to_name, to_kind, dep_kind);
     }

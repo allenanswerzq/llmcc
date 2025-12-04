@@ -30,14 +30,7 @@ fn test_primitive_i32_literal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -51,14 +44,7 @@ fn test_primitive_f64_literal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "f64",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "f64", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -72,14 +58,7 @@ fn test_primitive_string_literal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "str",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "str", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -93,14 +72,7 @@ fn test_primitive_bool_literal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -114,14 +86,7 @@ fn test_primitive_char_literal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "char",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "char", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -139,14 +104,7 @@ fn test_binary_expression_bool_comparison_returns_bool() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -160,14 +118,7 @@ fn test_binary_expression_greater_than_returns_bool() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -181,14 +132,7 @@ fn test_binary_expression_less_than_returns_bool() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -202,14 +146,7 @@ fn test_binary_expression_arithmetic_returns_left_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -223,14 +160,7 @@ fn test_binary_expression_multiply_returns_left_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -244,14 +174,7 @@ fn test_binary_expression_divide_returns_left_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -265,14 +188,7 @@ fn test_binary_expression_modulo_returns_left_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -286,14 +202,7 @@ fn test_binary_expression_logical_and_returns_bool() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -307,14 +216,7 @@ fn test_binary_expression_logical_or_returns_bool() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -337,14 +239,7 @@ fn test_struct_expression_simple() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Point", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -366,14 +261,7 @@ fn test_struct_expression_with_nested_structs() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Service",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Service", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -392,14 +280,7 @@ fn test_struct_expression_enum_variant() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Result",
-            SymKind::Enum,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Result", SymKind::Enum, Some(DepKind::ReturnType));
     });
 }
 
@@ -421,14 +302,7 @@ fn test_if_expression_returns_consequence_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -448,14 +322,7 @@ fn test_if_expression_struct_return() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Value",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Value", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -473,14 +340,7 @@ fn test_if_expression_string_literal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "str",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "str", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -500,14 +360,7 @@ fn test_block_returns_last_expression_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -527,14 +380,7 @@ fn test_block_with_multiple_statements() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Result",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Result", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -554,14 +400,7 @@ fn test_nested_blocks() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -589,14 +428,7 @@ fn test_field_expression_simple_struct_field() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_data",
-            SymKind::Function,
-            "Data",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_data", SymKind::Function, "Data", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -618,14 +450,7 @@ fn test_field_expression_method_call() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "process",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "process", SymKind::Function, "Handler", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -645,14 +470,7 @@ fn test_field_expression_primitive_field() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_count",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_count", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -680,14 +498,7 @@ fn test_field_expression_nested_field_access() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_inner",
-            SymKind::Function,
-            "Inner",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_inner", SymKind::Function, "Inner", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -707,14 +518,7 @@ fn test_scoped_identifier_simple_local() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Point", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -738,23 +542,9 @@ fn test_scoped_identifier_self_method_call() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "use_handler",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "use_handler", SymKind::Function, "Handler", SymKind::Struct, Some(DepKind::ReturnType));
 
-        assert_depends(
-            cc,
-            "use_handler",
-            SymKind::Function,
-            "create_handler",
-            SymKind::Function,
-            Some(DepKind::Calls),
-        );
+        assert_depends(cc, "use_handler", SymKind::Function, "create_handler", SymKind::Function, Some(DepKind::Calls));
     });
 }
 
@@ -778,23 +568,9 @@ fn test_scoped_identifier_self_associated_fn() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "init",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "init", SymKind::Function, "Config", SymKind::Struct, Some(DepKind::ReturnType));
 
-        assert_depends(
-            cc,
-            "init",
-            SymKind::Function,
-            "create_config",
-            SymKind::Function,
-            Some(DepKind::Calls),
-        );
+        assert_depends(cc, "init", SymKind::Function, "create_config", SymKind::Function, Some(DepKind::Calls));
     });
 }
 
@@ -814,14 +590,7 @@ fn test_scoped_identifier_crate_root() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "create_util",
-            SymKind::Function,
-            "Util",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "create_util", SymKind::Function, "Util", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -882,14 +651,7 @@ fn test_scoped_identifier_trait_associated_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "Handler",
-            SymKind::Struct,
-            "Processor",
-            SymKind::Trait,
-            Some(DepKind::Implements),
-        );
+        assert_depends(cc, "Handler", SymKind::Struct, "Processor", SymKind::Trait, Some(DepKind::Implements));
     });
 }
 
@@ -912,14 +674,7 @@ fn test_scoped_identifier_enum_variant_fully_qualified() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_status",
-            SymKind::Function,
-            "Status",
-            SymKind::Enum,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_status", SymKind::Function, "Status", SymKind::Enum, Some(DepKind::ReturnType));
     });
 }
 
@@ -944,14 +699,7 @@ fn test_scoped_identifier_generic_type_parameter() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "Processor",
-            SymKind::Struct,
-            "Handler",
-            SymKind::Trait,
-            Some(DepKind::Uses),
-        );
+        assert_depends(cc, "Processor", SymKind::Struct, "Handler", SymKind::Trait, Some(DepKind::Uses));
     });
 }
 
@@ -970,14 +718,7 @@ fn test_scoped_identifier_use_statement_simple() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_util",
-            SymKind::Function,
-            "Util",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_util", SymKind::Function, "Util", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -993,14 +734,7 @@ fn test_scoped_identifier_module_qualified_path() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "create_helper",
-            SymKind::Function,
-            "Helper",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "create_helper", SymKind::Function, "Helper", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1026,27 +760,9 @@ fn test_scoped_identifier_multiple_paths_in_same_fn() {
         assert_depends_batch(
             cc,
             vec![
-                (
-                    "complex",
-                    SymKind::Function,
-                    "Config",
-                    SymKind::Struct,
-                    Some(DepKind::ReturnType),
-                ),
-                (
-                    "multi_uses",
-                    SymKind::Function,
-                    "Config",
-                    SymKind::Struct,
-                    Some(DepKind::ReturnType),
-                ),
-                (
-                    "multi_uses",
-                    SymKind::Function,
-                    "Handler",
-                    SymKind::Struct,
-                    Some(DepKind::ReturnType),
-                ),
+                ("complex", SymKind::Function, "Config", SymKind::Struct, Some(DepKind::ReturnType)),
+                ("multi_uses", SymKind::Function, "Config", SymKind::Struct, Some(DepKind::ReturnType)),
+                ("multi_uses", SymKind::Function, "Handler", SymKind::Struct, Some(DepKind::ReturnType)),
             ],
         );
     });
@@ -1066,14 +782,7 @@ fn test_scoped_identifier_trait_with_type_param() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "process_with_trait",
-            SymKind::Function,
-            "Logger",
-            SymKind::Trait,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "process_with_trait", SymKind::Function, "Logger", SymKind::Trait, Some(DepKind::ReturnType));
     });
 }
 
@@ -1095,23 +804,9 @@ fn test_scoped_identifier_self_type_in_impl_return() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "new",
-            SymKind::Function,
-            "Builder",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "new", SymKind::Function, "Builder", SymKind::Struct, Some(DepKind::ReturnType));
 
-        assert_depends(
-            cc,
-            "with_config",
-            SymKind::Function,
-            "Builder",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "with_config", SymKind::Function, "Builder", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1131,14 +826,7 @@ fn test_scoped_identifier_super_keyword() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "use_parent",
-            SymKind::Function,
-            "Parent",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "use_parent", SymKind::Function, "Parent", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1162,14 +850,7 @@ fn test_scoped_identifier_self_keyword_field_access() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_config",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_config", SymKind::Function, "Config", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1190,14 +871,7 @@ fn test_scoped_identifier_qualified_path_in_generic() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "create",
-            SymKind::Function,
-            "Result",
-            SymKind::Enum,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "create", SymKind::Function, "Result", SymKind::Enum, Some(DepKind::ReturnType));
     });
 }
 
@@ -1216,14 +890,7 @@ fn test_scoped_identifier_absolute_path_crate_colon_colon() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "access_global",
-            SymKind::Function,
-            "Global",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "access_global", SymKind::Function, "Global", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1241,14 +908,7 @@ fn test_unary_expression_negation() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1262,14 +922,7 @@ fn test_unary_expression_logical_not() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1283,14 +936,7 @@ fn test_unary_expression_dereference() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1314,14 +960,7 @@ fn test_call_expression_returns_function_return_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Result",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Result", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1341,14 +980,7 @@ fn test_call_expression_with_args() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Data",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Data", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1372,14 +1004,7 @@ fn test_call_expression_method_on_self() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Handler", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1401,14 +1026,7 @@ fn test_type_alias_resolution() {
 
     with_compiled_unit(&[source], |cc| {
         // Function return depends on the type alias
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "StringType",
-            SymKind::TypeAlias,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "StringType", SymKind::TypeAlias, Some(DepKind::ReturnType));
     });
 }
 
@@ -1427,14 +1045,7 @@ fn test_chained_type_alias_resolution() {
 
     with_compiled_unit(&[source], |cc| {
         // Function depends on the outer alias
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "OuterType",
-            SymKind::TypeAlias,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "OuterType", SymKind::TypeAlias, Some(DepKind::ReturnType));
     });
 }
 
@@ -1462,14 +1073,7 @@ fn test_complex_nested_expressions() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_items",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_items", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1492,14 +1096,7 @@ fn test_match_like_if_chain() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "A",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "A", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1515,14 +1112,7 @@ fn test_binary_with_struct_operands() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "compare",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "compare", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1544,14 +1134,7 @@ fn test_generic_struct_return() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Option",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Option", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1594,14 +1177,7 @@ fn test_if_expression_type_inference() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_value",
-            SymKind::Function,
-            "Value",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "get_value", SymKind::Function, "Value", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -1615,14 +1191,7 @@ fn test_binary_expression_bool_operation() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "compare",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "compare", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1636,14 +1205,7 @@ fn test_binary_expression_arithmetic() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "add",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "add", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1663,14 +1225,7 @@ fn test_field_expression_access() {
 
     with_compiled_unit(&[source], |cc| {
         // The field access should have used Point
-        assert_depends(
-            cc,
-            "get_x",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            Some(DepKind::Uses),
-        );
+        assert_depends(cc, "get_x", SymKind::Function, "Point", SymKind::Struct, Some(DepKind::Uses));
     });
 }
 
@@ -1690,14 +1245,7 @@ fn test_field_expression_method_call_uncovered() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "use_handler",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            Some(DepKind::Uses),
-        );
+        assert_depends(cc, "use_handler", SymKind::Function, "Handler", SymKind::Struct, Some(DepKind::Uses));
     });
 }
 
@@ -1725,14 +1273,7 @@ fn test_logical_and_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "check",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "check", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1746,14 +1287,7 @@ fn test_logical_or_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "check",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "check", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1767,14 +1301,7 @@ fn test_subtraction_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "subtract",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "subtract", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1788,14 +1315,7 @@ fn test_multiplication_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "multiply",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "multiply", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1809,14 +1329,7 @@ fn test_division_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "divide",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "divide", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1830,14 +1343,7 @@ fn test_modulo_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "modulo",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "modulo", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1851,14 +1357,7 @@ fn test_comparison_less_than() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "less_than",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "less_than", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1872,14 +1371,7 @@ fn test_comparison_greater_than() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "greater_than",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "greater_than", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1893,14 +1385,7 @@ fn test_comparison_less_equal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "less_equal",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "less_equal", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1914,14 +1399,7 @@ fn test_comparison_greater_equal() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "greater_equal",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "greater_equal", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1935,14 +1413,7 @@ fn test_not_equal_comparison() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "not_equal",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "not_equal", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1956,14 +1427,7 @@ fn test_nested_binary_expressions() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "calc",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "calc", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -1998,14 +1462,7 @@ fn test_block_with_statements_and_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "block_expr",
-            SymKind::Function,
-            "Result",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "block_expr", SymKind::Function, "Result", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -2043,14 +1500,7 @@ fn test_collect_types_from_generic() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "use_container",
-            SymKind::Function,
-            "Container",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "use_container", SymKind::Function, "Container", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -2065,14 +1515,7 @@ fn test_block_empty_or_only_comments() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "comment_only",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "comment_only", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -2113,14 +1556,7 @@ fn test_multiple_field_accesses() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "get_inner",
-            SymKind::Function,
-            "Outer",
-            SymKind::Struct,
-            Some(DepKind::Uses),
-        );
+        assert_depends(cc, "get_inner", SymKind::Function, "Outer", SymKind::Struct, Some(DepKind::Uses));
     });
 }
 
@@ -2253,14 +1689,7 @@ fn test_match_expression_types() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "check_status",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "check_status", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -2421,14 +1850,7 @@ fn test_is_trivia_filtering() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -2520,14 +1942,7 @@ fn test_generic_with_multiple_type_params() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Result",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Result", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -2555,14 +1970,7 @@ fn test_trait_method_call_returns_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "handle",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "handle", SymKind::Function, "Handler", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -2580,14 +1988,7 @@ fn test_associated_function_return() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "origin",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "origin", SymKind::Function, "Point", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -2624,14 +2025,7 @@ fn test_multiple_return_statements_same_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Value",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Value", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -2648,14 +2042,7 @@ fn test_deeply_nested_generic() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Option",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Option", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -2882,14 +2269,7 @@ fn test_infer_binary_expression_bool_result() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "check_bool",
-            SymKind::Function,
-            "bool",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "check_bool", SymKind::Function, "bool", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 
@@ -3033,14 +2413,7 @@ fn test_block_last_expression_return_type() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "Value",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "Value", SymKind::Struct, Some(DepKind::ReturnType));
     });
 }
 
@@ -3334,14 +2707,7 @@ fn test_trivia_skip_in_block() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "test",
-            SymKind::Function,
-            "i32",
-            SymKind::Primitive,
-            Some(DepKind::ReturnType),
-        );
+        assert_depends(cc, "test", SymKind::Function, "i32", SymKind::Primitive, Some(DepKind::ReturnType));
     });
 }
 

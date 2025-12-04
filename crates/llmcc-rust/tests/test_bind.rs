@@ -24,14 +24,7 @@ fn test_visit_mod_item() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
-            cc,
-            "source_0",
-            SymKind::File,
-            "utils",
-            SymKind::Namespace,
-            None,
-        );
+        assert_depends(cc, "source_0", SymKind::File, "utils", SymKind::Namespace, None);
     });
 }
 
@@ -74,27 +67,9 @@ fn test_visit_function_item() {
         assert_depends_batch(
             cc,
             vec![
-                (
-                    "get_value",
-                    SymKind::Function,
-                    "Option",
-                    SymKind::Struct,
-                    Some(DepKind::ReturnType),
-                ),
-                (
-                    "new",
-                    SymKind::Function,
-                    "User",
-                    SymKind::Struct,
-                    Some(DepKind::ReturnType),
-                ),
-                (
-                    "display",
-                    SymKind::Function,
-                    "foo",
-                    SymKind::Function,
-                    Some(DepKind::Uses),
-                ),
+                ("get_value", SymKind::Function, "Option", SymKind::Struct, Some(DepKind::ReturnType)),
+                ("new", SymKind::Function, "User", SymKind::Struct, Some(DepKind::ReturnType)),
+                ("display", SymKind::Function, "foo", SymKind::Function, Some(DepKind::Uses)),
             ],
         );
     });
@@ -130,20 +105,8 @@ fn test_visit_impl_item() {
         assert_depends_batch(
             cc,
             vec![
-                (
-                    "Container",
-                    SymKind::Struct,
-                    "new",
-                    SymKind::Function,
-                    Some(DepKind::Uses),
-                ),
-                (
-                    "Container",
-                    SymKind::Struct,
-                    "Outer",
-                    SymKind::Struct,
-                    Some(DepKind::Uses),
-                ),
+                ("Container", SymKind::Struct, "new", SymKind::Function, Some(DepKind::Uses)),
+                ("Container", SymKind::Struct, "Outer", SymKind::Struct, Some(DepKind::Uses)),
             ],
         );
     });
@@ -207,34 +170,10 @@ fn test_visit_trait_item() {
         assert_depends_batch(
             cc,
             vec![
-                (
-                    "Display",
-                    SymKind::Trait,
-                    "display",
-                    SymKind::Function,
-                    Some(DepKind::Uses),
-                ),
-                (
-                    "Clone",
-                    SymKind::Trait,
-                    "clone",
-                    SymKind::Function,
-                    Some(DepKind::Uses),
-                ),
-                (
-                    "FromIterator",
-                    SymKind::Trait,
-                    "Sized",
-                    SymKind::Trait,
-                    Some(DepKind::TypeBound),
-                ),
-                (
-                    "FromIterator",
-                    SymKind::Trait,
-                    "Clone",
-                    SymKind::Trait,
-                    Some(DepKind::TypeBound),
-                ),
+                ("Display", SymKind::Trait, "display", SymKind::Function, Some(DepKind::Uses)),
+                ("Clone", SymKind::Trait, "clone", SymKind::Function, Some(DepKind::Uses)),
+                ("FromIterator", SymKind::Trait, "Sized", SymKind::Trait, Some(DepKind::TypeBound)),
+                ("FromIterator", SymKind::Trait, "Clone", SymKind::Trait, Some(DepKind::TypeBound)),
             ],
         );
     });
@@ -272,16 +211,7 @@ fn test_visit_macro_invocation() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends_batch(
-            cc,
-            vec![(
-                "main",
-                SymKind::Function,
-                "hello",
-                SymKind::Macro,
-                Some(DepKind::Calls),
-            )],
-        );
+        assert_depends_batch(cc, vec![("main", SymKind::Function, "hello", SymKind::Macro, Some(DepKind::Calls))]);
     });
 }
 
@@ -324,41 +254,11 @@ fn test_visit_type_item() {
         assert_depends_batch(
             cc,
             vec![
-                (
-                    "PrintableData",
-                    SymKind::TypeAlias,
-                    "Data",
-                    SymKind::Struct,
-                    Some(DepKind::Alias),
-                ),
-                (
-                    "PrintableData",
-                    SymKind::TypeAlias,
-                    "Printable",
-                    SymKind::Trait,
-                    Some(DepKind::Uses),
-                ),
-                (
-                    "SerializableCollection",
-                    SymKind::TypeAlias,
-                    "Data",
-                    SymKind::Struct,
-                    Some(DepKind::Alias),
-                ),
-                (
-                    "SerializableCollection",
-                    SymKind::TypeAlias,
-                    "Serializable",
-                    SymKind::Trait,
-                    Some(DepKind::Uses),
-                ),
-                (
-                    "SerializableCollection",
-                    SymKind::TypeAlias,
-                    "Printable",
-                    SymKind::Trait,
-                    Some(DepKind::Uses),
-                ),
+                ("PrintableData", SymKind::TypeAlias, "Data", SymKind::Struct, Some(DepKind::Alias)),
+                ("PrintableData", SymKind::TypeAlias, "Printable", SymKind::Trait, Some(DepKind::Uses)),
+                ("SerializableCollection", SymKind::TypeAlias, "Data", SymKind::Struct, Some(DepKind::Alias)),
+                ("SerializableCollection", SymKind::TypeAlias, "Serializable", SymKind::Trait, Some(DepKind::Uses)),
+                ("SerializableCollection", SymKind::TypeAlias, "Printable", SymKind::Trait, Some(DepKind::Uses)),
             ],
         );
     });
@@ -436,90 +336,18 @@ fn test_visit_let_declaration() {
             vec![
                 ("setup", SymKind::Function, "Config", SymKind::Struct, None),
                 ("setup", SymKind::Function, "Message", SymKind::Struct, None),
-                (
-                    "handle_request",
-                    SymKind::Function,
-                    "Handler",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "handle_request",
-                    SymKind::Function,
-                    "Request",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "complex_flow",
-                    SymKind::Function,
-                    "Config",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "complex_flow",
-                    SymKind::Function,
-                    "Message",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "inferred_types",
-                    SymKind::Function,
-                    "Point",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "inferred_types",
-                    SymKind::Function,
-                    "Handler",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "process_reference_pattern",
-                    SymKind::Function,
-                    "Config",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "process_mutable_pattern",
-                    SymKind::Function,
-                    "Handler",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "process_mutable_pattern",
-                    SymKind::Function,
-                    "Request",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "process_scoped_types",
-                    SymKind::Function,
-                    "Point",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "process_scoped_types",
-                    SymKind::Function,
-                    "Message",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "pattern_with_type",
-                    SymKind::Function,
-                    "Config",
-                    SymKind::Struct,
-                    None,
-                ),
+                ("handle_request", SymKind::Function, "Handler", SymKind::Struct, None),
+                ("handle_request", SymKind::Function, "Request", SymKind::Struct, None),
+                ("complex_flow", SymKind::Function, "Config", SymKind::Struct, None),
+                ("complex_flow", SymKind::Function, "Message", SymKind::Struct, None),
+                ("inferred_types", SymKind::Function, "Point", SymKind::Struct, None),
+                ("inferred_types", SymKind::Function, "Handler", SymKind::Struct, None),
+                ("process_reference_pattern", SymKind::Function, "Config", SymKind::Struct, None),
+                ("process_mutable_pattern", SymKind::Function, "Handler", SymKind::Struct, None),
+                ("process_mutable_pattern", SymKind::Function, "Request", SymKind::Struct, None),
+                ("process_scoped_types", SymKind::Function, "Point", SymKind::Struct, None),
+                ("process_scoped_types", SymKind::Function, "Message", SymKind::Struct, None),
+                ("pattern_with_type", SymKind::Function, "Config", SymKind::Struct, None),
             ],
         );
     });
@@ -575,35 +403,11 @@ fn test_visit_struct_expression() {
         assert_depends_batch(
             cc,
             vec![
-                (
-                    "create_point",
-                    SymKind::Function,
-                    "Point",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "create_config",
-                    SymKind::Function,
-                    "Config",
-                    SymKind::Struct,
-                    None,
-                ),
-                (
-                    "create_config",
-                    SymKind::Function,
-                    "Person",
-                    SymKind::Struct,
-                    None,
-                ),
+                ("create_point", SymKind::Function, "Point", SymKind::Struct, None),
+                ("create_config", SymKind::Function, "Config", SymKind::Struct, None),
+                ("create_config", SymKind::Function, "Person", SymKind::Struct, None),
                 ("process", SymKind::Function, "Point", SymKind::Struct, None),
-                (
-                    "process",
-                    SymKind::Function,
-                    "Config",
-                    SymKind::Struct,
-                    None,
-                ),
+                ("process", SymKind::Function, "Config", SymKind::Struct, None),
             ],
         );
     });
