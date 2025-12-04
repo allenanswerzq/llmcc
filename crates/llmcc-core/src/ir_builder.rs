@@ -118,7 +118,11 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
                     if let HirNode::Ident(ident_node) = child {
                         Some(*ident_node)
                     } else {
-                        None
+                        let text = self.get_text(&base);
+                        tracing::trace!("scope crate non-identifier ident '{}'", text);
+                        let hir_ident = HirIdent::new(base.clone(), text);
+                        let allocated = self.arena.alloc(hir_ident);
+                        Some(allocated)
                     }
                 });
                 let hir_scope = HirScope::new(base, ident);

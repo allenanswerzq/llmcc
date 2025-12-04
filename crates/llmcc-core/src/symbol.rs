@@ -10,6 +10,7 @@
 
 use parking_lot::RwLock;
 use std::fmt;
+use strum_macros::EnumIter;
 
 use crate::graph_builder::BlockId;
 use crate::interner::InternedStr;
@@ -64,16 +65,13 @@ impl std::fmt::Display for ScopeId {
 }
 
 /// Classification of what kind of named entity a symbol represents.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter)]
 pub enum SymKind {
     Unknown,
-    // logical grouping for mutliple modules
+    UnresolvedType,
     Crate,
-    // logical grouping for mutiple files
     Module,
-    // logaical grouping for mutliple source code blocks
     File,
-    // logical grouping for multiple entities
     Namespace,
     Struct,
     Enum,
@@ -92,8 +90,36 @@ pub enum SymKind {
     TypeAlias,
     TypeParameter,
     GenericType,
-    ConstParameter,
-    UnresolvedType,
+    CompositeType,
+}
+
+impl Default for SymKind {
+    fn default() -> Self {
+        SymKind::Unknown
+    }
+}
+
+impl SymKind {
+    pub fn is_resolved(&self) -> bool {
+        !matches!(self, SymKind::UnresolvedType)
+    }
+
+    /// Checks if the symbol kind represents a type definition.
+    pub fn type_kinds() -> Vec<SymKind> {
+        vec![
+            SymKind::Struct,
+            SymKind::Enum,
+            SymKind::Trait,
+            SymKind::Function,
+            SymKind::Const,
+            SymKind::Static,
+            SymKind::Primitive,
+            SymKind::GenericType,
+            SymKind::CompositeType,
+            SymKind::TypeAlias,
+            SymKind::Namespace,
+        ]
+    }
 }
 
 /// Represents a named entity in source code.
@@ -158,6 +184,16 @@ pub struct Symbol {
     /// Example: inner definition shadows outer definition in nested scope.
     /// Forms a linked list of definitions traversable via following `previous` pointers.
     pub previous: RwLock<Option<SymId>>,
+    /// For compound types (tuple, array, struct, enum), tracks the types of nested components.
+    /// For tuple types: element types in order.
+    /// For struct/enum: field types in declaration order.
+    /// For array types: single element type.
+    pub nested_types: RwLock<Vec<SymId>>,
+    /// For field symbols, tracks which symbol owns this field (parent struct, enum, or object).
+    /// Set to the symbol that contains/defines this field.
+    /// Examples: enum variant's FieldOf is the enum; struct field's FieldOf is the struct;
+    /// tuple field (by index) FieldOf is the tuple/value being accessed.
+    pub field_of: RwLock<Option<SymId>>,
 }
 
 impl Clone for Symbol {
@@ -175,6 +211,8 @@ impl Clone for Symbol {
             block_id: RwLock::new(*self.block_id.read()),
             is_global: RwLock::new(*self.is_global.read()),
             previous: RwLock::new(*self.previous.read()),
+            nested_types: RwLock::new(self.nested_types.read().clone()),
+            field_of: RwLock::new(*self.field_of.read()),
         }
     }
 }
@@ -204,6 +242,8 @@ impl Symbol {
             block_id: RwLock::new(None),
             is_global: RwLock::new(false),
             previous: RwLock::new(None),
+            nested_types: RwLock::new(Vec::new()),
+            field_of: RwLock::new(None),
         }
     }
 
@@ -360,6 +400,43 @@ impl Symbol {
     #[inline]
     pub fn set_previous(&self, sym_id: SymId) {
         *self.previous.write() = Some(sym_id);
+    }
+
+    /// Gets the nested types for compound types (tuples, arrays, structs, enums).
+    /// Returns None if no nested types have been set, Some(vec) otherwise.
+    #[inline]
+    pub fn nested_types(&self) -> Option<Vec<SymId>> {
+        let types = self.nested_types.read();
+        if types.is_empty() {
+            None
+        } else {
+            Some(types.clone())
+        }
+    }
+
+    /// Adds a type to the nested types list for compound types.
+    /// For tuples/arrays, this is in element order. For structs/enums, in field order.
+    #[inline]
+    pub fn add_nested_type(&self, ty: SymId) {
+        self.nested_types.write().push(ty);
+    }
+
+    /// Replaces all nested types with a new list.
+    #[inline]
+    pub fn set_nested_types(&self, types: Vec<SymId>) {
+        *self.nested_types.write() = types;
+    }
+
+    /// Gets which symbol owns this field (parent struct, enum, or object being accessed).
+    #[inline]
+    pub fn field_of(&self) -> Option<SymId> {
+        *self.field_of.read()
+    }
+
+    /// Sets which symbol owns this field.
+    #[inline]
+    pub fn set_field_of(&self, owner: SymId) {
+        *self.field_of.write() = Some(owner);
     }
 }
 

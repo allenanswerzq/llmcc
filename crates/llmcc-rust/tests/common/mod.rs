@@ -57,7 +57,6 @@ pub fn find_symbol_id<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) ->
         .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
 }
 
-
 #[allow(dead_code)]
 pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
     let name_key = cc.interner.intern(name);
@@ -72,4 +71,3 @@ pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
     // prints all symbol for debugging
     assert!(symbol.id().0 > 0, "symbol should have a valid id");
 }
-

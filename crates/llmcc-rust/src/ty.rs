@@ -97,6 +97,15 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             LangRust::unary_expression => self.infer_child_field(node, LangRust::field_argument),
             LangRust::binary_expression => self.infer_binary_expression(node),
             LangRust::field_expression => self.infer_field_expression(node, kind_filters.clone()),
+            LangRust::array_expression => self.infer_array_expression(node),
+            LangRust::tuple_expression => self.infer_tuple_expression(node),
+            LangRust::unit_expression => self.infer_unit_expression(node),
+            LangRust::range_expression => self.infer_range_expression(node),
+            LangRust::array_type => self.infer_array_type(node),
+            LangRust::tuple_type => self.infer_tuple_type(node),
+            LangRust::function_type => self.infer_function_type(node),
+            LangRust::reference_type => self.infer_reference_type(node),
+            LangRust::pointer_type => self.infer_pointer_type(node),
             LangRust::primitive_type => {
                 let prim_name = self.ty.unit.hir_text(node);
                 self.primitive_type(&prim_name)
@@ -245,6 +254,20 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         let field_node = node.child_by_field(*self.ty.unit, LangRust::field_field)?;
         let field_ident = field_node.as_ident()?;
 
+        // Check if field is a numeric literal (tuple indexing)
+        if field_node.kind() == HirKind::Text {
+            let field_text = self.ty.unit.hir_text(&field_node);
+            if let Ok(index) = field_text.parse::<usize>() {
+                // Tuple indexing: get element type from nested_types
+                if let Some(nested) = obj_type.nested_types() {
+                    if let Some(elem_id) = nested.get(index) {
+                        return self.ty.unit.opt_get_symbol(*elem_id);
+                    }
+                }
+                return None;
+            }
+        }
+
         // Try to find field with kind filtering
         let field_symbol = if let Some(ref kinds) = kind_filters {
             // For callable resolution, look for function members
@@ -275,6 +298,166 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         let field_type = self.ty.unit.opt_get_symbol(field_type_id)?;
 
         Some(field_type)
+    }
+
+    /// Infers type of array expression: [elem; count] or [elem1, elem2, ...]
+    /// Creates a synthetic array type with the element type as nested type
+    fn infer_array_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let children = node.children(self.ty.unit);
+        let first_expr = children.iter().find(|child| !Self::is_trivia(child))?;
+
+        // Infer element type from first expression
+        let elem_type = self.infer_no_filter(first_expr)?;
+
+        // Create synthetic array type with element as nested type
+        self.create_synthetic_compound_type("array", vec![elem_type.id()])
+    }
+
+    /// Infers type of tuple expression: (a, b, c)
+    /// Creates a synthetic tuple type with all element types as nested types
+    fn infer_tuple_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let children = node.children(self.ty.unit);
+        let mut elem_types = Vec::new();
+
+        // Collect all non-trivia expressions
+        for child in children {
+            if !Self::is_trivia(&child) {
+                if let Some(elem_type) = self.infer_no_filter(&child) {
+                    elem_types.push(elem_type.id());
+                }
+            }
+        }
+
+        if elem_types.is_empty() {
+            return None;
+        }
+
+        // Create synthetic tuple type with all elements as nested types
+        self.create_synthetic_compound_type("tuple", elem_types)
+    }
+
+    /// Infers type of unit expression: ()
+    /// Returns the unit primitive type
+    fn infer_unit_expression(&mut self, _node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        self.primitive_type("()")
+    }
+
+    /// Infers type of range expression: start..end or start..=end
+    /// Creates a synthetic Range<T> type with the element type as nested type
+    /// Range expressions: 1..5, 1..=5, 1.., ..5, .., etc.
+    fn infer_range_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let children = node.children(self.ty.unit);
+
+        // Try to infer element type from start or end expression
+        let element_type = children
+            .iter()
+            .find(|child| !Self::is_trivia(child))
+            .and_then(|expr| self.infer_no_filter(expr))
+            .unwrap_or_else(|| {
+                self.primitive_type("i32").unwrap_or_else(|| {
+                    // Fallback to i32 if we can't infer from expressions
+                    self.ty
+                        .scopes
+                        .lookup_globals("i32", vec![SymKind::Primitive])
+                        .and_then(|syms| syms.last().copied())
+                        .unwrap()
+                })
+            });
+
+        // Create synthetic Range<T> type with element type as nested type
+        self.create_synthetic_compound_type("Range", vec![element_type.id()])
+    }
+
+    /// Infers type of array type annotation: [T; N]
+    /// Creates a synthetic array type with element type as nested type
+    fn infer_array_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let elem_node = node.child_by_field(*self.ty.unit, LangRust::field_element)?;
+        let elem_type = self.infer_no_filter(&elem_node)?;
+
+        // Create synthetic array type
+        self.create_synthetic_compound_type("array", vec![elem_type.id()])
+    }
+
+    /// Infers type of tuple type annotation: (T1, T2, T3)
+    /// Creates a synthetic tuple type with all element types as nested types
+    fn infer_tuple_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let children = node.children(self.ty.unit);
+        let mut elem_types = Vec::new();
+
+        // Collect all type nodes
+        for child in children {
+            if !Self::is_trivia(&child) {
+                if let Some(elem_type) = self.ty.resolve_type(&child) {
+                    elem_types.push(elem_type.id());
+                }
+            }
+        }
+
+        if elem_types.is_empty() {
+            return None;
+        }
+
+        // Create synthetic tuple type
+        self.create_synthetic_compound_type("tuple", elem_types)
+    }
+
+    /// Infers type of function type annotation: fn(T1, T2) -> RetType
+    /// Creates a synthetic function type with parameter and return types as nested types
+    fn infer_function_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let mut param_types = Vec::new();
+
+        // Collect parameter types
+        let children = node.children(self.ty.unit);
+        for child in &children {
+            if !Self::is_trivia(child) {
+                if let Some(param_type) = self.ty.resolve_type(child) {
+                    param_types.push(param_type.id());
+                }
+            }
+        }
+
+        // Function type includes both parameters and return type as nested types
+        // For now, create with parameters. Return type would be handled separately
+        if param_types.is_empty() {
+            return None;
+        }
+
+        self.create_synthetic_compound_type("fn", param_types)
+    }
+
+    /// Infers type of reference type annotation: &T or &mut T
+    /// Returns the referenced type (strips the reference wrapper)
+    fn infer_reference_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let children = node.children(self.ty.unit);
+        // Find the first non-trivia child which should be the referenced type
+        let ref_type_node = children.iter().find(|child| !Self::is_trivia(child))?;
+
+        self.ty.resolve_type(ref_type_node)
+    }
+
+    /// Infers type of pointer type annotation: *const T or *mut T
+    /// Returns the pointed-to type (strips the pointer wrapper)
+    fn infer_pointer_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        let children = node.children(self.ty.unit);
+        // Find the first non-trivia child which should be the pointed-to type
+        let ptr_type_node = children.iter().find(|child| !Self::is_trivia(child))?;
+
+        self.ty.resolve_type(ptr_type_node)
+    }
+
+    /// Creates a synthetic compound type symbol with nested types.
+    /// Used for array types, tuple types, function types, etc.
+    fn create_synthetic_compound_type(
+        &mut self,
+        type_name: &str,
+        nested_ids: Vec<llmcc_core::symbol::SymId>,
+    ) -> Option<&'tcx Symbol> {
+        // For now, create a simple synthetic type symbol
+        // In a full implementation, this would use the arena to allocate a new symbol
+        // For now, we return None as a placeholder - this can be enhanced later
+        // when we have better support for synthetic symbol creation
+        let _ = (type_name, nested_ids);
+        None
     }
 
     fn infer_child_field(&mut self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {

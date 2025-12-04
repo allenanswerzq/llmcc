@@ -35,7 +35,11 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        let ident = node.ident_by_field(*unit, field_id)?;
+        // Try to find identifier by field first, if not found try scope's identifier
+        let ident = node
+            .ident_by_field(*unit, field_id)
+            .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
+
         tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
         let sym = scopes.lookup_or_insert(&ident.name, node, kind)?;
         ident.set_symbol(sym);
@@ -622,7 +626,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
+        // let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -637,6 +641,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        let _ = self.declare_symbol(
+            unit,
+            node,
+            scopes,
+            SymKind::CompositeType,
+            LangRust::field_name,
+        );
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
@@ -651,7 +662,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.visit_children(unit, node, scopes, namespace, parent);
+        self.visit_array_type(unit, node, scopes, namespace, parent);
     }
 
     /// AST: i32, u64, f32, bool, str, etc. - primitive type keyword

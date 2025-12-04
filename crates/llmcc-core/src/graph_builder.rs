@@ -200,7 +200,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // Dependencies are now tracked at the block level via BlockRelation.
     }
 
-
     fn build_block(
         &mut self,
         unit: CompileUnit<'tcx>,
