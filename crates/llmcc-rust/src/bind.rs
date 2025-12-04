@@ -41,7 +41,7 @@ impl<'tcx> BinderVisitor<'tcx> {
                     ident_sym.format(Some(unit.interner())),
                     dep_kind,
                 );
-                symbol.add_depends_with(ident_sym, dep_kind, Some(&[SymKind::TypeParameter]));
+                symbol.add_depends_with(ident_sym, dep_kind);
             }
         }
     }
@@ -88,7 +88,7 @@ impl<'tcx> BinderVisitor<'tcx> {
                 sym.format(Some(unit.interner())),
                 dep_kind,
             );
-            ns.add_depends_with(sym, dep_kind, None);
+            ns.add_depends_with(sym, dep_kind);
         }
     }
 
@@ -109,14 +109,14 @@ impl<'tcx> BinderVisitor<'tcx> {
             if let Some(type_node) = pattern_node.child_by_field(*unit, LangRust::field_type)
                 && let Some(pattern_type) = ty_ctxt.resolve_type(&type_node)
             {
-                ns.add_depends(pattern_type, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(pattern_type, DepKind::Uses);
             }
 
             // For scoped identifiers in patterns (module::Type or E::Variant)
             if pattern_node.kind_id() == LangRust::scoped_identifier
                 && let Some(resolved) = ty_ctxt.resolve_type(pattern_node)
             {
-                ns.add_depends(resolved, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(resolved, DepKind::Uses);
             }
 
             // Recursively process nested patterns (field patterns, tuple elements, etc.)
@@ -250,7 +250,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 fn_sym.add_depends_with(
                     ret_sym,
                     DepKind::ReturnType,
-                    Some(&[SymKind::TypeParameter]),
                 );
             }
 
@@ -265,7 +264,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     fn_sym.add_depends_with(
                         resolved_type,
                         DepKind::ReturnType,
-                        Some(&[SymKind::TypeParameter]),
                     );
                 }
             }
@@ -383,7 +381,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     // Update the unresolved symbol to point to the actual type
                     target_sym.set_type_of(resolved.id());
                     target_sym.set_kind(resolved.kind());
-                    target_sym.add_depends(resolved, None);
+                    target_sym.add_depends_with(resolved, DepKind::Uses);
                     target_sym.set_is_global(resolved.is_global());
 
                     if let Some(resolved_scope) = resolved.opt_scope()
@@ -417,7 +415,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     trait_sym.format(Some(unit.interner())),
                 );
                 target_scope.add_parent(trait_scope);
-                target_resolved.add_depends_with(trait_sym, DepKind::Implements, None);
+                target_resolved.add_depends_with(trait_sym, DepKind::Implements);
             }
 
             let sn = node.as_scope().unwrap();
@@ -450,12 +448,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 && let Some(enum_symbol_id) = target_symbol.type_of()
                 && let Some(enum_symbol) = unit.opt_get_symbol(enum_symbol_id)
             {
-                ns.add_depends_with(enum_symbol, DepKind::Calls, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(enum_symbol, DepKind::Calls);
             } else {
                 ns.add_depends_with(
                     target_symbol,
                     DepKind::Calls,
-                    Some(&[SymKind::TypeParameter]),
                 );
             }
         }
@@ -466,7 +463,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ns) = namespace.opt_symbol()
             && let Some(path_type) = ty_ctxt.resolve_type(&func_node)
         {
-            ns.add_depends_with(path_type, DepKind::Uses, Some(&[SymKind::TypeParameter]));
+            ns.add_depends_with(path_type, DepKind::Uses);
         }
 
         // Add depends from call target to nested call targets in arguments
@@ -533,7 +530,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(sym) = TyCtxt::new(unit, scopes).resolve_type(&macro_node)
             && let Some(ns) = namespace.opt_symbol()
         {
-            ns.add_depends_with(sym, DepKind::Calls, Some(&[SymKind::TypeParameter]));
+            ns.add_depends_with(sym, DepKind::Calls);
         }
     }
 
@@ -551,9 +548,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ty) = TyCtxt::new(unit, scopes).resolve_type(&const_ty)
         {
             const_sym.set_type_of(ty.id());
-            const_sym.add_depends(ty, None);
+            const_sym.add_depends_with(ty, DepKind::Uses);
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_depends(const_sym, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(const_sym, DepKind::Uses);
             }
         }
     }
@@ -602,7 +599,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                     type_sym.add_depends_with(
                         resolved_type,
                         DepKind::Alias,
-                        Some(&[SymKind::TypeParameter]),
                     );
                 }
             }
@@ -650,10 +646,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(ty) = TyCtxt::new(unit, scopes).resolve_type(&type_node)
         {
             const_sym.set_type_of(ty.id());
-            const_sym.add_depends(ty, Some(&[SymKind::TypeParameter]));
+            const_sym.add_depends_with(ty, DepKind::Uses);
 
             if let Some(ns) = namespace.opt_symbol() {
-                ns.add_depends(ty, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(ty, DepKind::Uses);
             }
         }
     }
@@ -675,11 +671,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             let mut ty_ctxt = TyCtxt::new(unit, scopes);
             if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
                 type_sym.set_type_of(resolved_type.id());
-                type_sym.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
-
-                // Add namespace dependency
+                type_sym.add_depends_with(resolved_type, DepKind::Uses);
                 if let Some(ns) = namespace.opt_symbol() {
-                    ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                    ns.add_depends_with(resolved_type, DepKind::Uses);
                 }
             }
         }
@@ -720,7 +714,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             let mut ty_ctxt = TyCtxt::new(unit, scopes);
             if let Some(resolved_type) = ty_ctxt.resolve_type(&element_ty) {
-                ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(resolved_type, DepKind::Uses);
             }
         }
     }
@@ -747,7 +741,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 }
 
                 if let Some(resolved_type) = ty_ctxt.resolve_type(&child) {
-                    ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                    ns.add_depends_with(resolved_type, DepKind::Uses);
                 }
             }
         }
@@ -769,7 +763,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             let mut ty_ctxt = TyCtxt::new(unit, scopes);
             if let Some(resolved_trait) = ty_ctxt.resolve_type(&trait_node) {
-                ns.add_depends(resolved_trait, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(resolved_trait, DepKind::Uses);
             }
         }
     }
@@ -800,7 +794,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         {
             let mut ty_ctxt = TyCtxt::new(unit, scopes);
             if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
-                owner_sym.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                owner_sym.add_depends_with(resolved_type, DepKind::Uses);
             }
         }
     }
@@ -820,8 +814,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(symbol) = name_node.opt_symbol()
             && let Some(ns) = namespace.opt_symbol()
         {
-            // Add dependency from variant to enum
-            ns.add_depends(symbol, Some(&[SymKind::TypeParameter]));
+            ns.add_depends_with(symbol, DepKind::Uses);
 
             // Handle tuple-like variants: Value(i32, String)
             // The types are in the body field
@@ -829,9 +822,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 // Collect all identifiers in the body (field types)
                 for ident in body_node.collect_idents(unit) {
                     if let Some(ident_sym) = ident.opt_symbol() {
-                        symbol.add_depends(ident_sym, Some(&[SymKind::TypeParameter]));
-                        // Also add to enum for architecture tracking
-                        ns.add_depends(ident_sym, Some(&[SymKind::TypeParameter]));
+                        symbol.add_depends_with(ident_sym, DepKind::Uses);
+                        ns.add_depends_with(ident_sym, DepKind::Uses);
                     }
                 }
             }
@@ -854,12 +846,12 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             if let Some(resolved_type) = ty_ctxt.resolve_type(&type_node) {
                 // Add dependency from containing function/method to parameter type
                 if let Some(owner) = parent {
-                    owner.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                    owner.add_depends_with(resolved_type, DepKind::Uses);
                 }
 
                 // Also add from namespace (closure, etc.)
                 if let Some(ns) = namespace.opt_symbol() {
-                    ns.add_depends(resolved_type, Some(&[SymKind::TypeParameter]));
+                    ns.add_depends_with(resolved_type, DepKind::Uses);
                 }
             }
         }
@@ -882,7 +874,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(parent_enum_id) = sym.type_of()
             && let Some(parent_enum) = unit.opt_get_symbol(parent_enum_id)
         {
-            owner.add_depends(parent_enum, Some(&[SymKind::TypeParameter]));
+            owner.add_depends_with(parent_enum, DepKind::Uses);
         }
     }
 
@@ -923,7 +915,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ty) = resolved_type
             && let Some(ns) = namespace.opt_symbol()
         {
-            ns.add_depends(ty, Some(&[SymKind::TypeParameter]));
+            ns.add_depends_with(ty, DepKind::Uses);
         }
 
         // Handle pattern-based dependencies (struct patterns, tuple patterns, etc.)
@@ -951,7 +943,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             if let Some(struct_type) = ty_ctxt.resolve_type(&name_node)
                 && let Some(ns) = namespace.opt_symbol()
             {
-                ns.add_depends(struct_type, Some(&[SymKind::TypeParameter]));
+                ns.add_depends_with(struct_type, DepKind::Uses);
             }
         }
     }

@@ -43,6 +43,8 @@ fn test_visit_function_item() {
         }
 
         impl User {
+            // new -> User (return type)
+            // User -> new (uses)
             fn new(name: String) -> User {
                 User { name }
             }
@@ -76,8 +78,10 @@ fn test_visit_function_item() {
                 ("User", SymKind::Struct, "new", SymKind::Function, Some(DepKind::Uses)),
                 ("User", SymKind::Struct, "foo", SymKind::Function, Some(DepKind::Uses)),
                 ("User", SymKind::Struct, "display", SymKind::Function, Some(DepKind::Uses)),
+                ("User", SymKind::Struct, "foo", SymKind::Function, Some(DepKind::Uses)),
+                ("User", SymKind::Struct, "display", SymKind::Function, Some(DepKind::Uses)),
                 ("new", SymKind::Function, "User", SymKind::Struct, Some(DepKind::ReturnType)),
-                ("display", SymKind::Function, "foo", SymKind::Function, Some(DepKind::Uses)),
+                ("display", SymKind::Function, "foo", SymKind::Function, Some(DepKind::Calls)),
                 ("main", SymKind::Function, "User", SymKind::Struct, Some(DepKind::Uses)),
                 ("main", SymKind::Function, "new", SymKind::Function, Some(DepKind::Calls)),
                 ("main", SymKind::Function, "display", SymKind::Function, Some(DepKind::Calls)),

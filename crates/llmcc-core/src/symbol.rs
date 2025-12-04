@@ -425,25 +425,15 @@ impl Symbol {
         self.defining.read().clone()
     }
 
-    /// Adds a bidirectional dependency between this symbol and another.
-    pub fn add_depends(&self, other: &Symbol, ignore_kinds: Option<&[SymKind]>) {
-        self.add_depends_with(other, DepKind::Uses, ignore_kinds);
-    }
-
     /// Adds a bidirectional dependency with a specific dependency kind.
-    pub fn add_depends_with(
-        &self,
-        other: &Symbol,
-        dep_kind: DepKind,
-        ignore_kinds: Option<&[SymKind]>,
-    ) {
+    pub fn add_depends_with(&self, other: &Symbol, dep_kind: DepKind) {
         if self.id == other.id {
             tracing::trace!("skip_dep: {} -> {} (self-depends)", self.id, other.id);
             return;
         }
         // Skip if target is in the ignore list
-        if let Some(kinds) = ignore_kinds
-            && kinds.iter().any(|kind| other.kind() == *kind)
+        let ignore_kinds = vec![SymKind::TypeParameter];
+        if ignore_kinds.iter().any(|kind| other.kind() == *kind)
         {
             tracing::trace!("skip_dep: {} -> {} (ignored kind)", self.id, other.id);
             return;
@@ -465,19 +455,18 @@ impl Symbol {
         }
         drop(deps);
 
-        // Skip if circular dependency would be created
+        // Warn if circular dependency would be created (but allow it)
         let other_deps = other.depends.read();
         if other_deps
             .iter()
             .any(|(id, kind)| *id == self.id && *kind == dep_kind)
         {
-            tracing::trace!(
-                "skip_dep: {} -> {} (circular {:?})",
+            tracing::warn!(
+                "circular_dep: {} -> {} ({:?})",
                 self.id,
                 other.id,
                 dep_kind
             );
-            return;
         }
         drop(other_deps);
 
@@ -736,7 +725,7 @@ mod tests {
         let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("func1"));
         let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("func2"));
 
-        sym1.add_depends(&sym2, None);
+        sym1.add_depends_with(&sym2, DepKind::Uses);
 
         assert!(sym1.depends.read().iter().any(|(id, _)| *id == sym2.id));
         assert!(sym2.depended.read().iter().any(|(id, _)| *id == sym1.id));

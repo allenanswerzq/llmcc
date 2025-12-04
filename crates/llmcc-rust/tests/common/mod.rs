@@ -59,9 +59,6 @@ pub fn find_symbol_id<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) ->
 
 pub fn assert_depends<'a>(cc: &'a CompileCtxt<'a>, from_name: &str, from_kind: SymKind, to_name: &str, to_kind: SymKind, dep_kind: Option<DepKind>) {
     let all_symbols = cc.get_all_symbols();
-    for sym in &all_symbols {
-        tracing::debug!("Symbol: {:?}", sym.format_with_deps(Some(&cc.interner)));
-    }
     let from_sym = all_symbols
         .iter()
         .find(|sym| {
@@ -119,6 +116,10 @@ pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
 /// Each tuple contains: (from_name, from_kind, to_name, to_kind, dep_kind)
 #[allow(dead_code)]
 pub fn assert_depends_batch<'a>(cc: &'a CompileCtxt<'a>, deps: Vec<(&str, SymKind, &str, SymKind, Option<DepKind>)>) {
+    let all_symbols = cc.get_all_symbols();
+    for sym in &all_symbols {
+        tracing::debug!("Symbol: {:?}", sym.format_with_deps(Some(&cc.interner)));
+    }
     for (from_name, from_kind, to_name, to_kind, dep_kind) in deps {
         assert_depends(cc, from_name, from_kind, to_name, to_kind, dep_kind);
     }
