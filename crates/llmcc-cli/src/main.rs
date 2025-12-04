@@ -101,6 +101,10 @@ pub struct Cli {
     /// Return blocks that depend on the queried symbol
     #[arg(long, default_value_t = false, conflicts_with = "depends")]
     dependents: bool,
+
+    /// Output file path (writes to file instead of stdout, faster for large graphs)
+    #[arg(short = 'o', long = "output", value_name = "FILE")]
+    output: Option<String>,
 }
 
 pub fn run(args: Cli) -> Result<()> {
@@ -113,7 +117,7 @@ pub fn run(args: Cli) -> Result<()> {
     }
 
     if args.query.is_none() && (args.depends || args.dependents) {
-        eprintln!("Warning: --depends/--dependents flags are ignored without --query");
+        tracing::warn!("Warning: --depends/--dependents flags are ignored without --query");
     }
 
     if args.pagerank && !(args.design_graph || args.dep_graph || args.arch_graph) {
@@ -125,6 +129,7 @@ pub fn run(args: Cli) -> Result<()> {
     let opts = LlmccOptions {
         files: args.files,
         dirs: args.dirs,
+        output: args.output.clone(),
         print_ir: args.print_ir,
         print_block: args.print_block,
         design_graph: args.design_graph,
@@ -146,7 +151,12 @@ pub fn run(args: Cli) -> Result<()> {
     };
 
     if let Ok(Some(output)) = result {
-        println!("{output}");
+        if let Some(ref path) = args.output {
+            std::fs::write(path, &output)?;
+            tracing::info!("output written to: {}", path);
+        } else {
+            println!("{output}");
+        }
     }
     Ok(())
 }

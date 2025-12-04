@@ -6,6 +6,7 @@ use crate::declare_arena;
 use crate::ir::HirNode;
 
 declare_arena!(BlockArena {
+    bb: BasicBlock<'a>,
     blk_root: BlockRoot<'a>,
     blk_func: BlockFunc<'a>,
     blk_method: BlockMethod<'a>,
@@ -77,6 +78,10 @@ impl<'blk> BasicBlock<'blk> {
         format!("{}:{} {}", kind, block_id, name)
     }
 
+    pub fn id(&self) -> BlockId {
+        self.block_id()
+    }
+
     /// Get the base block information regardless of variant
     pub fn base(&self) -> Option<&BlockBase<'blk>> {
         match self {
@@ -131,7 +136,7 @@ impl<'blk> BasicBlock<'blk> {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default, PartialOrd, Ord)]
 pub struct BlockId(pub u32);
 
 /// Global counter for allocating unique Block IDs

@@ -344,7 +344,7 @@ u8:109 | Variable | amount | _c::account::Account::withdraw::amount |
 u8:110 | UnresolvedType | Entity | _c::account::Entity |
 u9:111 | Crate | crate | _c::crate |
 u9:112 | File | main | _c::main |
-u9:113 | Function | main | _c::main::main |
+u9:113 | Function | main | _c::main::main | [global]
 u9:114 | Variable | bank | _c::main::main::bank |
 u9:115 | Variable | user_id | _c::main::main::user_id |
 
@@ -548,6 +548,13 @@ digraph architecture {
       n44[label="Account", full_path="$TMP/crates/domain/src/account.rs:4", sym_ty="Struct", shape=box];
     }
     subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n52[label="main", full_path="$TMP/src/main.rs:5", sym_ty="Function"];
+    }
+    subgraph cluster_3 {
       label="repos";
       style="filled";
       fillcolor="#EEEEEE";
@@ -555,14 +562,14 @@ digraph architecture {
       n9[label="AccountRepo", full_path="$TMP/crates/app/src/repos.rs:29", sym_ty="Struct", shape=box];
       n3[label="UserRepo", full_path="$TMP/crates/app/src/repos.rs:5", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_3 {
+    subgraph cluster_4 {
       label="services";
       style="filled";
       fillcolor="#EEEEEE";
       color="#616161";
       n16[label="BankingService", full_path="$TMP/crates/app/src/services.rs:5", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_4 {
+    subgraph cluster_5 {
       label="traits";
       style="filled";
       fillcolor="#EEEEEE";
@@ -570,7 +577,7 @@ digraph architecture {
       n31[label="Entity", full_path="$TMP/crates/core/src/traits.rs:3", sym_ty="Trait", shape=box];
       n33[label="Repository", full_path="$TMP/crates/core/src/traits.rs:7", sym_ty="Trait", shape=box];
     }
-    subgraph cluster_5 {
+    subgraph cluster_6 {
       label="types";
       style="filled";
       fillcolor="#EEEEEE";
@@ -579,7 +586,7 @@ digraph architecture {
       n25[label="Timestamp", full_path="$TMP/crates/core/src/types.rs:5", sym_ty="Struct", shape=box];
       n26[label="Money", full_path="$TMP/crates/core/src/types.rs:8", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_6 {
+    subgraph cluster_7 {
       label="user";
       style="filled";
       fillcolor="#EEEEEE";
@@ -810,7 +817,7 @@ u0:20 | Crate | crate | _c::crate |
 u0:21 | File | lib | _c::lib |
 u1:22 | Crate | crate | _c::crate |
 u1:23 | File | main | _c::main |
-u1:24 | Function | main | _c::main::main |
+u1:24 | Function | main | _c::main::main | [global]
 u1:25 | Variable | manager | _c::main::main::manager |
 u1:26 | Variable | input | _c::main::main::input |
 u1:27 | Variable | processed | _c::main::main::processed |
@@ -1045,6 +1052,13 @@ digraph architecture {
       n5[label="PluginManager", full_path="$TMP/src/core/mod.rs:3", sym_ty="Struct", shape=box];
     }
     subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="main", full_path="$TMP/src/main.rs:8", sym_ty="Function"];
+    }
+    subgraph cluster_3 {
       label="plugin_api";
       style="filled";
       fillcolor="#EEEEEE";
@@ -1054,7 +1068,7 @@ digraph architecture {
       n22[label="AnalysisResult", full_path="$TMP/src/plugin_api/mod.rs:16", sym_ty="Struct", shape=box];
       n18[label="TextProcessor", full_path="$TMP/src/plugin_api/mod.rs:8", sym_ty="Trait", shape=box];
     }
-    subgraph cluster_3 {
+    subgraph cluster_4 {
       label="plugins";
       style="filled";
       fillcolor="#EEEEEE";
@@ -1279,107 +1293,107 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive      | i32           | i32                                      | [global]
-u0:2  | Primitive      | i64           | i64                                      | [global]
-u0:3  | Primitive      | i16           | i16                                      | [global]
-u0:4  | Primitive      | i8            | i8                                       | [global]
-u0:5  | Primitive      | i128          | i128                                     | [global]
-u0:6  | Primitive      | isize         | isize                                    | [global]
-u0:7  | Primitive      | u32           | u32                                      | [global]
-u0:8  | Primitive      | u64           | u64                                      | [global]
-u0:9  | Primitive      | u16           | u16                                      | [global]
-u0:10 | Primitive      | u8            | u8                                       | [global]
-u0:11 | Primitive      | u128          | u128                                     | [global]
-u0:12 | Primitive      | usize         | usize                                    | [global]
-u0:13 | Primitive      | f32           | f32                                      | [global]
-u0:14 | Primitive      | f64           | f64                                      | [global]
-u0:15 | Primitive      | bool          | bool                                     | [global]
-u0:16 | Primitive      | char          | char                                     | [global]
-u0:17 | Primitive      | str           | str                                      | [global]
-u0:18 | Primitive      | String        | String                                   | [global]
-u0:19 | Crate          | _c            | _c                                       | [global]
-u0:20 | Crate          | crate         | _c::crate                                |
-u0:21 | File           | lib           | _c::lib                                  |
-u0:22 | Namespace      | format        | _c::lib::format                          | [global]
-u0:23 | Trait          | Formatter     | _c::lib::format::Formatter               | [global]
-u0:24 | Function       | format        | _c::lib::format::Formatter::format       |
-u0:25 | Variable       | data          | _c::lib::format::Formatter::format::data |
-u0:26 | Function       | parse         | _c::lib::format::Formatter::parse        |
-u0:27 | Variable       | input         | _c::lib::format::Formatter::parse::input |
-u1:28 | Crate          | crate         | _c::crate                                |
-u1:29 | File           | core          | _c::core                                 |
-u1:30 | Struct         | Data          | _c::core::Data                           | [global]
-u1:31 | Field          | fields        | _c::core::Data::fields                   |
-u1:32 | Enum           | Value         | _c::core::Value                          | [global]
-u1:33 | EnumVariant    | Null          | _c::core::Value::Null                    |
-u1:34 | EnumVariant    | Bool          | _c::core::Value::Bool                    |
-u1:35 | EnumVariant    | Number        | _c::core::Value::Number                  |
-u1:36 | EnumVariant    | String        | _c::core::Value::String                  |
-u1:37 | EnumVariant    | Array         | _c::core::Value::Array                   |
-u1:38 | Function       | new           | _c::core::Data::new                      | [global]
-u1:39 | Function       | set           | _c::core::Data::set                      | [global]
-u1:40 | Variable       | key           | _c::core::Data::set::key                 |
-u1:41 | Variable       | value         | _c::core::Data::set::value               |
-u1:42 | Function       | get           | _c::core::Data::get                      | [global]
-u1:43 | Variable       | key           | _c::core::Data::get::key                 |
-u1:44 | Variable       | k             | _c::core::Data::get::k                   |
-u1:45 | Variable       | v             | _c::core::Data::get::v                   |
-u2:46 | Crate          | crate         | _c::crate                                |
-u2:47 | File           | json          | _c::json                                 |
-u2:48 | Struct         | JsonFormatter | _c::json::JsonFormatter                  | [global]
-u2:49 | UnresolvedType | Formatter     | _c::json::Formatter                      |
-u2:50 | Function       | format        | _c::json::JsonFormatter::format          |
-u2:51 | Variable       | data          | _c::json::JsonFormatter::format::data    |
-u2:52 | Variable       | fields        | _c::json::JsonFormatter::format::fields  |
-u2:53 | Variable       | k             | _c::json::JsonFormatter::format::k       |
-u2:54 | Variable       | v             | _c::json::JsonFormatter::format::v       |
-u2:55 | Function       | parse         | _c::json::JsonFormatter::parse           |
-u2:56 | Variable       | _input        | _c::json::JsonFormatter::parse::_input   |
-u2:57 | Function       | format_value  | _c::json::format_value                   |
-u2:58 | Variable       | v             | _c::json::format_value::v                |
-u2:59 | Variable       | items         | _c::json::format_value::items            |
-u3:60 | Crate          | crate         | _c::crate                                |
-u3:61 | File           | xml           | _c::xml                                  |
-u3:62 | Struct         | XmlFormatter  | _c::xml::XmlFormatter                    | [global]
-u3:63 | UnresolvedType | Formatter     | _c::xml::Formatter                       |
-u3:64 | Function       | format        | _c::xml::XmlFormatter::format            |
-u3:65 | Variable       | data          | _c::xml::XmlFormatter::format::data      |
-u3:66 | Variable       | fields        | _c::xml::XmlFormatter::format::fields    |
-u3:67 | Variable       | k             | _c::xml::XmlFormatter::format::k         |
-u3:68 | Variable       | v             | _c::xml::XmlFormatter::format::v         |
-u3:69 | Function       | parse         | _c::xml::XmlFormatter::parse             |
-u3:70 | Variable       | _input        | _c::xml::XmlFormatter::parse::_input     |
-u3:71 | Function       | format_value  | _c::xml::format_value                    |
-u3:72 | Variable       | v             | _c::xml::format_value::v                 |
-u3:73 | Variable       | v             | _c::xml::format_value::v                 |
-u4:74 | Crate          | crate         | _c::crate                                |
-u4:75 | File           | yaml          | _c::yaml                                 |
-u4:76 | Struct         | YamlFormatter | _c::yaml::YamlFormatter                  | [global]
-u4:77 | UnresolvedType | Formatter     | _c::yaml::Formatter                      |
-u4:78 | Function       | format        | _c::yaml::YamlFormatter::format          |
-u4:79 | Variable       | data          | _c::yaml::YamlFormatter::format::data    |
-u4:80 | Variable       | k             | _c::yaml::YamlFormatter::format::k       |
-u4:81 | Variable       | v             | _c::yaml::YamlFormatter::format::v       |
-u4:82 | Function       | parse         | _c::yaml::YamlFormatter::parse           |
-u4:83 | Variable       | _input        | _c::yaml::YamlFormatter::parse::_input   |
-u4:84 | Function       | format_value  | _c::yaml::format_value                   |
-u4:85 | Variable       | v             | _c::yaml::format_value::v                |
-u4:86 | Variable       | indent        | _c::yaml::format_value::indent           |
-u4:87 | Variable       | prefix        | _c::yaml::format_value::prefix           |
-u4:88 | Variable       | items         | _c::yaml::format_value::items            |
-u4:89 | Variable       | v             | _c::yaml::format_value::v                |
-u5:90 | Crate          | crate         | _c::crate                                |
-u5:91 | File           | main          | _c::main                                 |
-u5:92 | Function       | main          | _c::main::main                           |
-u5:93 | Variable       | data          | _c::main::main::data                     |
-u5:94 | Variable       | formatter     | _c::main::main::formatter                |
-u5:95 | Variable       | formatter     | _c::main::main::formatter                |
-u5:96 | Variable       | formatter     | _c::main::main::formatter                |
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u0:22 | Namespace | format | _c::lib::format | [global]
+u0:23 | Trait | Formatter | _c::lib::format::Formatter | [global]
+u0:24 | Function | format | _c::lib::format::Formatter::format |
+u0:25 | Variable | data | _c::lib::format::Formatter::format::data |
+u0:26 | Function | parse | _c::lib::format::Formatter::parse |
+u0:27 | Variable | input | _c::lib::format::Formatter::parse::input |
+u1:28 | Crate | crate | _c::crate |
+u1:29 | File | core | _c::core |
+u1:30 | Struct | Data | _c::core::Data | [global]
+u1:31 | Field | fields | _c::core::Data::fields |
+u1:32 | Enum | Value | _c::core::Value | [global]
+u1:33 | EnumVariant | Null | _c::core::Value::Null |
+u1:34 | EnumVariant | Bool | _c::core::Value::Bool |
+u1:35 | EnumVariant | Number | _c::core::Value::Number |
+u1:36 | EnumVariant | String | _c::core::Value::String |
+u1:37 | EnumVariant | Array | _c::core::Value::Array |
+u1:38 | Function | new | _c::core::Data::new | [global]
+u1:39 | Function | set | _c::core::Data::set | [global]
+u1:40 | Variable | key | _c::core::Data::set::key |
+u1:41 | Variable | value | _c::core::Data::set::value |
+u1:42 | Function | get | _c::core::Data::get | [global]
+u1:43 | Variable | key | _c::core::Data::get::key |
+u1:44 | Variable | k | _c::core::Data::get::k |
+u1:45 | Variable | v | _c::core::Data::get::v |
+u2:46 | Crate | crate | _c::crate |
+u2:47 | File | json | _c::json |
+u2:48 | Struct | JsonFormatter | _c::json::JsonFormatter | [global]
+u2:49 | UnresolvedType | Formatter | _c::json::Formatter |
+u2:50 | Function | format | _c::json::JsonFormatter::format |
+u2:51 | Variable | data | _c::json::JsonFormatter::format::data |
+u2:52 | Variable | fields | _c::json::JsonFormatter::format::fields |
+u2:53 | Variable | k | _c::json::JsonFormatter::format::k |
+u2:54 | Variable | v | _c::json::JsonFormatter::format::v |
+u2:55 | Function | parse | _c::json::JsonFormatter::parse |
+u2:56 | Variable | _input | _c::json::JsonFormatter::parse::_input |
+u2:57 | Function | format_value | _c::json::format_value |
+u2:58 | Variable | v | _c::json::format_value::v |
+u2:59 | Variable | items | _c::json::format_value::items |
+u3:60 | Crate | crate | _c::crate |
+u3:61 | File | xml | _c::xml |
+u3:62 | Struct | XmlFormatter | _c::xml::XmlFormatter | [global]
+u3:63 | UnresolvedType | Formatter | _c::xml::Formatter |
+u3:64 | Function | format | _c::xml::XmlFormatter::format |
+u3:65 | Variable | data | _c::xml::XmlFormatter::format::data |
+u3:66 | Variable | fields | _c::xml::XmlFormatter::format::fields |
+u3:67 | Variable | k | _c::xml::XmlFormatter::format::k |
+u3:68 | Variable | v | _c::xml::XmlFormatter::format::v |
+u3:69 | Function | parse | _c::xml::XmlFormatter::parse |
+u3:70 | Variable | _input | _c::xml::XmlFormatter::parse::_input |
+u3:71 | Function | format_value | _c::xml::format_value |
+u3:72 | Variable | v | _c::xml::format_value::v |
+u3:73 | Variable | v | _c::xml::format_value::v |
+u4:74 | Crate | crate | _c::crate |
+u4:75 | File | yaml | _c::yaml |
+u4:76 | Struct | YamlFormatter | _c::yaml::YamlFormatter | [global]
+u4:77 | UnresolvedType | Formatter | _c::yaml::Formatter |
+u4:78 | Function | format | _c::yaml::YamlFormatter::format |
+u4:79 | Variable | data | _c::yaml::YamlFormatter::format::data |
+u4:80 | Variable | k | _c::yaml::YamlFormatter::format::k |
+u4:81 | Variable | v | _c::yaml::YamlFormatter::format::v |
+u4:82 | Function | parse | _c::yaml::YamlFormatter::parse |
+u4:83 | Variable | _input | _c::yaml::YamlFormatter::parse::_input |
+u4:84 | Function | format_value | _c::yaml::format_value |
+u4:85 | Variable | v | _c::yaml::format_value::v |
+u4:86 | Variable | indent | _c::yaml::format_value::indent |
+u4:87 | Variable | prefix | _c::yaml::format_value::prefix |
+u4:88 | Variable | items | _c::yaml::format_value::items |
+u4:89 | Variable | v | _c::yaml::format_value::v |
+u5:90 | Crate | crate | _c::crate |
+u5:91 | File | main | _c::main |
+u5:92 | Function | main | _c::main::main | [global]
+u5:93 | Variable | data | _c::main::main::data |
+u5:94 | Variable | formatter | _c::main::main::formatter |
+u5:95 | Variable | formatter | _c::main::main::formatter |
+u5:96 | Variable | formatter | _c::main::main::formatter |
 
 --- expect:symbol-deps ---
 u0:12 <- [u4:84, u4:84, u4:86]
-u0:14 <- [u1:32]
-u0:15 <- [u1:32]
+u0:14 <- [u1:32, u1:32]
+u0:15 <- [u1:32, u1:32]
 u0:17 <- [u0:26, u0:26, u0:27, u1:39, u1:39, u1:40, u1:42, u1:42, u1:43, u2:55, u2:55, u2:56, u3:69, u3:69, u3:70, u4:82, u4:82, u4:83, u4:84, u4:87]
 u0:18 <- [u0:24, u1:30, u1:30, u1:31, u1:32, u2:50, u2:50, u2:52, u2:57, u2:57, u2:59, u3:64, u3:64, u3:66, u3:71, u4:78, u4:84, u4:84, u4:88]
 u0:22 -> [u0:23]
@@ -1394,7 +1408,7 @@ u0:27 -> [u0:17]
 u1:30 -> [u0:18, u0:18, u1:32, u1:32, u1:39, u1:42]
 u1:30 <- [u0:24, u0:25, u0:26, u1:38, u2:50, u2:51, u2:55, u2:55, u3:64, u3:65, u3:69, u3:69, u4:78, u4:79, u4:82, u4:82, u5:92, u5:93]
 u1:31 -> [u0:18, u1:32]
-u1:32 -> [u0:14, u0:15, u0:18, u1:33, u1:34, u1:35, u1:36, u1:37]
+u1:32 -> [u0:14, u0:14, u0:15, u0:15, u0:18, u1:33, u1:34, u1:35, u1:36, u1:37]
 u1:32 <- [u1:30, u1:30, u1:31, u1:39, u1:41, u1:42, u2:57, u2:57, u2:58, u3:71, u3:71, u3:72, u4:84, u4:84, u4:85, u5:92, u5:92]
 u1:33 <- [u1:32, u2:57, u3:71, u4:84]
 u1:34 <- [u1:32, u1:39, u2:57, u3:71, u4:84, u5:92]
@@ -1504,8 +1518,8 @@ digraph project {
   n19 -> n2;
   n25 -> n2;
   n23 -> n7;
-  n17 -> n7;
   n29 -> n7;
+  n17 -> n7;
   n31 -> n6;
   n31 -> n7;
 }
@@ -1539,13 +1553,20 @@ digraph architecture {
       n2[label="Formatter", full_path="$TMP/src/lib.rs:15", sym_ty="Trait", shape=box];
     }
     subgraph cluster_4 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n31[label="main", full_path="$TMP/src/main.rs:17", sym_ty="Function"];
+    }
+    subgraph cluster_5 {
       label="xml";
       style="filled";
       fillcolor="#EEEEEE";
       color="#616161";
       n19[label="XmlFormatter", full_path="$TMP/src/xml.rs:4", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_5 {
+    subgraph cluster_6 {
       label="yaml";
       style="filled";
       fillcolor="#EEEEEE";
@@ -1557,6 +1578,7 @@ digraph architecture {
   n2 -> n13 [from="trait", to="impl"];
   n2 -> n19 [from="trait", to="impl"];
   n2 -> n25 [from="trait", to="impl"];
+  n31 -> n7 [from="caller", to="callee"];
 }
 
 
@@ -1693,67 +1715,67 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32             | i32                                          | [global]
-u0:2  | Primitive | i64             | i64                                          | [global]
-u0:3  | Primitive | i16             | i16                                          | [global]
-u0:4  | Primitive | i8              | i8                                           | [global]
-u0:5  | Primitive | i128            | i128                                         | [global]
-u0:6  | Primitive | isize           | isize                                        | [global]
-u0:7  | Primitive | u32             | u32                                          | [global]
-u0:8  | Primitive | u64             | u64                                          | [global]
-u0:9  | Primitive | u16             | u16                                          | [global]
-u0:10 | Primitive | u8              | u8                                           | [global]
-u0:11 | Primitive | u128            | u128                                         | [global]
-u0:12 | Primitive | usize           | usize                                        | [global]
-u0:13 | Primitive | f32             | f32                                          | [global]
-u0:14 | Primitive | f64             | f64                                          | [global]
-u0:15 | Primitive | bool            | bool                                         | [global]
-u0:16 | Primitive | char            | char                                         | [global]
-u0:17 | Primitive | str             | str                                          | [global]
-u0:18 | Primitive | String          | String                                       | [global]
-u0:19 | Crate     | _c              | _c                                           | [global]
-u0:20 | Crate     | crate           | _c::crate                                    |
-u0:21 | File      | lib             | _c::lib                                      |
-u1:22 | Crate     | crate           | _c::crate                                    |
-u1:23 | File      | config          | _c::config                                   |
-u1:24 | Static    | CONFIG          | _c::config::CONFIG                           |
-u1:25 | Struct    | AppConfig       | _c::config::AppConfig                        | [global]
-u1:26 | Field     | database_url    | _c::config::AppConfig::database_url          |
-u1:27 | Field     | max_connections | _c::config::AppConfig::max_connections       |
-u1:28 | Field     | log_level       | _c::config::AppConfig::log_level             |
-u1:29 | Function  | init            | _c::config::AppConfig::init                  | [global]
-u1:30 | Variable  | database_url    | _c::config::AppConfig::init::database_url    |
-u1:31 | Variable  | max_connections | _c::config::AppConfig::init::max_connections |
-u1:32 | Variable  | log_level       | _c::config::AppConfig::init::log_level       |
-u1:33 | Function  | get             | _c::config::AppConfig::get                   | [global]
-u2:34 | Crate     | crate           | _c::crate                                    |
-u2:35 | File      | cache           | _c::cache                                    |
-u2:36 | Static    | CACHE           | _c::cache::CACHE                             |
-u2:37 | Struct    | Cache           | _c::cache::Cache                             | [global]
-u2:38 | Field     | data            | _c::cache::Cache::data                       |
-u2:39 | Function  | init            | _c::cache::Cache::init                       | [global]
-u2:40 | Variable  | lock            | _c::cache::Cache::init::lock                 |
-u2:41 | Function  | get             | _c::cache::Cache::get                        | [global]
-u2:42 | Variable  | key             | _c::cache::Cache::get::key                   |
-u2:43 | Variable  | lock            | _c::cache::Cache::get::lock                  |
-u2:44 | Function  | set             | _c::cache::Cache::set                        | [global]
-u2:45 | Variable  | key             | _c::cache::Cache::set::key                   |
-u2:46 | Variable  | value           | _c::cache::Cache::set::value                 |
-u2:47 | Variable  | lock            | _c::cache::Cache::set::lock                  |
-u2:48 | Function  | clear           | _c::cache::Cache::clear                      | [global]
-u2:49 | Variable  | lock            | _c::cache::Cache::clear::lock                |
-u3:50 | Crate     | crate           | _c::crate                                    |
-u3:51 | File      | service         | _c::service                                  |
-u3:52 | Struct    | DataService     | _c::service::DataService                     | [global]
-u3:53 | Function  | new             | _c::service::DataService::new                | [global]
-u3:54 | Function  | fetch           | _c::service::DataService::fetch              | [global]
-u3:55 | Variable  | key             | _c::service::DataService::fetch::key         |
-u3:56 | Variable  | config          | _c::service::DataService::fetch::config      |
-u3:57 | Variable  | value           | _c::service::DataService::fetch::value       |
-u4:58 | Crate     | crate           | _c::crate                                    |
-u4:59 | File      | main            | _c::main                                     |
-u4:60 | Function  | main            | _c::main::main                               |
-u4:61 | Variable  | svc             | _c::main::main::svc                          |
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u1:22 | Crate | crate | _c::crate |
+u1:23 | File | config | _c::config |
+u1:24 | Static | CONFIG | _c::config::CONFIG |
+u1:25 | Struct | AppConfig | _c::config::AppConfig | [global]
+u1:26 | Field | database_url | _c::config::AppConfig::database_url |
+u1:27 | Field | max_connections | _c::config::AppConfig::max_connections |
+u1:28 | Field | log_level | _c::config::AppConfig::log_level |
+u1:29 | Function | init | _c::config::AppConfig::init | [global]
+u1:30 | Variable | database_url | _c::config::AppConfig::init::database_url |
+u1:31 | Variable | max_connections | _c::config::AppConfig::init::max_connections |
+u1:32 | Variable | log_level | _c::config::AppConfig::init::log_level |
+u1:33 | Function | get | _c::config::AppConfig::get | [global]
+u2:34 | Crate | crate | _c::crate |
+u2:35 | File | cache | _c::cache |
+u2:36 | Static | CACHE | _c::cache::CACHE |
+u2:37 | Struct | Cache | _c::cache::Cache | [global]
+u2:38 | Field | data | _c::cache::Cache::data |
+u2:39 | Function | init | _c::cache::Cache::init | [global]
+u2:40 | Variable | lock | _c::cache::Cache::init::lock |
+u2:41 | Function | get | _c::cache::Cache::get | [global]
+u2:42 | Variable | key | _c::cache::Cache::get::key |
+u2:43 | Variable | lock | _c::cache::Cache::get::lock |
+u2:44 | Function | set | _c::cache::Cache::set | [global]
+u2:45 | Variable | key | _c::cache::Cache::set::key |
+u2:46 | Variable | value | _c::cache::Cache::set::value |
+u2:47 | Variable | lock | _c::cache::Cache::set::lock |
+u2:48 | Function | clear | _c::cache::Cache::clear | [global]
+u2:49 | Variable | lock | _c::cache::Cache::clear::lock |
+u3:50 | Crate | crate | _c::crate |
+u3:51 | File | service | _c::service |
+u3:52 | Struct | DataService | _c::service::DataService | [global]
+u3:53 | Function | new | _c::service::DataService::new | [global]
+u3:54 | Function | fetch | _c::service::DataService::fetch | [global]
+u3:55 | Variable | key | _c::service::DataService::fetch::key |
+u3:56 | Variable | config | _c::service::DataService::fetch::config |
+u3:57 | Variable | value | _c::service::DataService::fetch::value |
+u4:58 | Crate | crate | _c::crate |
+u4:59 | File | main | _c::main |
+u4:60 | Function | main | _c::main::main | [global]
+u4:61 | Variable | svc | _c::main::main::svc |
 
 --- expect:symbol-deps ---
 u0:17 <- [u2:41, u2:41, u2:42, u3:54, u3:54, u3:55, u3:57]
@@ -1855,6 +1877,13 @@ digraph architecture {
       n4[label="AppConfig", full_path="$TMP/src/config.rs:5", sym_ty="Struct", shape=box];
     }
     subgraph cluster_3 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n22[label="main", full_path="$TMP/src/main.rs:9", sym_ty="Function"];
+    }
+    subgraph cluster_4 {
       label="service";
       style="filled";
       fillcolor="#EEEEEE";

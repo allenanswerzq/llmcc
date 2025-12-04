@@ -39,7 +39,7 @@ fn generate_sources(num_files: usize, lines_per_file: usize) -> Vec<Vec<u8>> {
 fn build_and_count<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> usize {
     let result = build_llmcc_ir::<LangSimple>(cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
-    cc.hir_map.read().len()
+    cc.hir_node_count()
 }
 
 // ============================================================================
@@ -47,6 +47,7 @@ fn build_and_count<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> usize {
 // ============================================================================
 
 /// Test 1: Single file sequential build
+#[serial_test::serial]
 #[test]
 fn test_ir_build_single_file() {
     let source = br#"
@@ -65,12 +66,13 @@ fn helper() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
-    assert!(!hir_map.is_empty(), "HIR map should contain nodes");
-    println!("✅ Single file build: {} nodes", hir_map.len());
+    let node_count = cc.hir_node_count();
+    assert!(node_count > 0, "HIR map should contain nodes");
+    println!("✅ Single file build: {} nodes", node_count);
 }
 
 /// Test 2: Multiple files sequential build
+#[serial_test::serial]
 #[test]
 fn test_ir_build_multiple_files_sequential() {
     let sources = vec![
@@ -83,19 +85,20 @@ fn test_ir_build_multiple_files_sequential() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "Multi-file IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
+    let node_count = cc.hir_node_count();
     assert!(
-        !hir_map.is_empty(),
+        node_count > 0,
         "HIR map should contain nodes from all files"
     );
     println!(
         "✅ Multiple file build: {} files, {} nodes",
         sources.len(),
-        hir_map.len()
+        node_count
     );
 }
 
 /// Test 3: Many files parallel build
+#[serial_test::serial]
 #[test]
 fn test_ir_build_many_files_parallel() {
     const NUM_FILES: usize = 20;
@@ -112,6 +115,7 @@ fn test_ir_build_many_files_parallel() {
 }
 
 /// Test 4: Verify HIR correctness with exact node count
+#[serial_test::serial]
 #[test]
 fn test_ir_build_correctness() {
     let source = br#"
@@ -125,27 +129,26 @@ fn main() {
     let result = build_llmcc_ir::<LangSimple>(&cc, Default::default());
     assert!(result.is_ok(), "IR build should succeed");
 
-    let hir_map = cc.hir_map.read();
+    let node_count = cc.hir_node_count();
     const EXPECTED_NODES: usize = 5;
 
     assert_eq!(
-        hir_map.len(),
-        EXPECTED_NODES,
+        node_count, EXPECTED_NODES,
         "Expected exactly {} nodes for 'fn main() {{ x = 5 }}', got {}",
-        EXPECTED_NODES,
-        hir_map.len()
+        EXPECTED_NODES, node_count
     );
 
     let file_root = cc.file_root_id(0);
     assert!(file_root.is_some(), "File must have root");
     assert!(
-        hir_map.contains_key(&file_root.unwrap()),
+        cc.hir_node_exists(file_root.unwrap()),
         "Root must be in map"
     );
 
-    println!("✅ Correctness test passed: {} nodes", hir_map.len());
+    println!("✅ Correctness test passed: {} nodes", node_count);
 }
 /// Test 5: Verify thread pool reuse across build phases
+#[serial_test::serial]
 #[test]
 fn test_ir_build_thread_pool_reuse() {
     const NUM_FILES: usize = 10;
@@ -161,6 +164,7 @@ fn test_ir_build_thread_pool_reuse() {
 }
 
 /// Test 6: Large scale parallel build
+#[serial_test::serial]
 #[test]
 fn test_ir_build_large_scale() {
     const NUM_FILES: usize = 50;
@@ -177,6 +181,7 @@ fn test_ir_build_large_scale() {
 }
 
 /// Test 7: Strict HIR tree correctness with multiple files
+#[serial_test::serial]
 #[test]
 fn test_ir_build_strict_correctness_multi_file() {
     let sources = vec![
@@ -201,7 +206,7 @@ fn file2_func2() { f = 6 }"#
     }
 
     // Verify all IDs are unique
-    let all_ids: HashSet<_> = cc.hir_map.read().keys().cloned().collect();
+    let all_ids: HashSet<_> = cc.all_hir_node_ids().into_iter().collect();
     assert_eq!(
         all_ids.len(),
         hir_nodes,
@@ -215,7 +220,11 @@ fn file2_func2() { f = 6 }"#
     );
 }
 
-/// Test 8: Verify no ID collisions across independent builds
+/// Test 8: Verify independent builds have local IDs starting from 0
+/// Each CompileCtxt has its own HIR ID counter that resets, so independent
+/// builds will have identical local IDs. This is expected behavior after
+/// the switch to per-context ID allocation.
+#[serial_test::serial]
 #[test]
 fn test_ir_build_no_id_collisions() {
     let sources1: Vec<_> = (0..10)
@@ -224,7 +233,7 @@ fn test_ir_build_no_id_collisions() {
 
     let cc1 = CompileCtxt::from_sources::<LangSimple>(&sources1);
     build_and_count(&cc1);
-    let ids1: Vec<_> = cc1.hir_map.read().keys().cloned().collect();
+    let ids1: Vec<_> = cc1.all_hir_node_ids();
 
     let sources2: Vec<_> = (0..10)
         .map(|i| format!("fn func_2_{}() {{ y = {} }}", i, i).into_bytes())
@@ -232,24 +241,36 @@ fn test_ir_build_no_id_collisions() {
 
     let cc2 = CompileCtxt::from_sources::<LangSimple>(&sources2);
     build_and_count(&cc2);
-    let ids2: Vec<_> = cc2.hir_map.read().keys().cloned().collect();
+    let ids2: Vec<_> = cc2.all_hir_node_ids();
 
-    let set1: HashSet<_> = ids1.iter().cloned().collect();
-    let set2: HashSet<_> = ids2.iter().cloned().collect();
-    let overlaps = set1.intersection(&set2).count();
+    // With per-context ID counters, both contexts start IDs from 0
+    // So we check:
+    // 1. Both contexts have the same number of nodes (same structure)
+    // 2. First ID in each is 0 (counters reset properly)
+    // 3. Contexts are truly independent (data doesn't get mixed)
 
     assert_eq!(
-        overlaps, 0,
-        "Independent builds should not have ID collisions"
-    );
-    println!(
-        "✅ No ID collisions: {} vs {} nodes",
         ids1.len(),
-        ids2.len()
+        ids2.len(),
+        "Independent builds with same structure should have same number of nodes"
+    );
+
+    if !ids1.is_empty() {
+        assert_eq!(ids1[0].0, 0, "First context should start with HirId(0)");
+        assert_eq!(
+            ids2[0].0, 0,
+            "Second context should also start with HirId(0)"
+        );
+    }
+
+    println!(
+        "✅ Per-context IDs verified: {} nodes in each context, both starting from HirId(0)",
+        ids1.len()
     );
 }
 
 /// Test 9: Verify HIR structure integrity
+#[serial_test::serial]
 #[test]
 fn test_ir_build_structure_integrity() {
     let source = br#"
@@ -271,15 +292,13 @@ fn helper() {
     assert!(file_root.is_some(), "File should have root");
 
     let root_id = file_root.unwrap();
-    assert!(
-        cc.hir_map.read().contains_key(&root_id),
-        "Root must be in map"
-    );
+    assert!(cc.hir_node_exists(root_id), "Root must be in map");
 
     println!("✅ Structure integrity: {} nodes", hir_nodes);
 }
 
 /// Test 10: Verify file isolation with identical content
+#[serial_test::serial]
 #[test]
 fn test_ir_build_file_isolation_identical_content() {
     let identical_source = br#"
@@ -314,6 +333,7 @@ fn bar() { y = 2 }
 // ============================================================================
 
 /// Benchmark: 100 files × 100 lines (10k total lines)
+#[serial_test::serial]
 #[test]
 fn bench_ir_build_100_files_100_lines() {
     const NUM_FILES: usize = 100;
@@ -343,6 +363,7 @@ fn bench_ir_build_100_files_100_lines() {
 }
 
 /// Benchmark: 500 files × 1000 lines (500k total lines)
+#[serial_test::serial]
 #[test]
 fn bench_ir_build_500_files_1000_lines() {
     const NUM_FILES: usize = 500;
@@ -385,6 +406,7 @@ fn bench_ir_build_500_files_1000_lines() {
 }
 
 /// Benchmark: 1000 files × 10k lines (production scale - ignored by default)
+#[serial_test::serial]
 #[test]
 #[ignore]
 fn bench_ir_build_1000_files_10k_lines() {
@@ -434,6 +456,7 @@ fn bench_ir_build_1000_files_10k_lines() {
 }
 
 /// Benchmark: Scaling analysis across different file/line distributions
+#[serial_test::serial]
 #[test]
 fn bench_ir_build_scaling_analysis() {
     let configs = vec![

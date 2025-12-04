@@ -141,7 +141,7 @@ u0:20 | Crate | crate | _c::crate |
 u0:21 | File | lib | _c::lib |
 u1:22 | Crate | crate | _c::crate |
 u1:23 | File | main | _c::main |
-u1:24 | Function | main | _c::main::main |
+u1:24 | Function | main | _c::main::main | [global]
 u1:25 | Variable | service | _c::main::main::service |
 u1:26 | Variable | user | _c::main::main::user |
 u2:27 | Crate | crate | _c::crate |
@@ -248,6 +248,13 @@ digraph architecture {
   subgraph cluster_0 {
     label="_c";
     subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="main", full_path="$TMP/src/main.rs:8", sym_ty="Function"];
+    }
+    subgraph cluster_2 {
       label="models";
       style="filled";
       fillcolor="#EEEEEE";
@@ -255,14 +262,14 @@ digraph architecture {
       n11[label="Profile", full_path="$TMP/src/models/profile.rs:1", sym_ty="Struct", shape=box];
       n6[label="User", full_path="$TMP/src/models/user.rs:3", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_2 {
+    subgraph cluster_3 {
       label="services";
       style="filled";
       fillcolor="#EEEEEE";
       color="#616161";
       n16[label="UserService", full_path="$TMP/src/services/user_service.rs:3", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_3 {
+    subgraph cluster_4 {
       label="utils";
       style="filled";
       fillcolor="#EEEEEE";
@@ -274,6 +281,7 @@ digraph architecture {
   n6 -> n11 [from="struct", to="field"];
   n6 -> n23 [from="input", to="func"];
   n16 -> n6 [from="struct", to="field"];
+  n3 -> n23 [from="caller", to="callee"];
 }
 
 
@@ -426,7 +434,7 @@ u0:20 | Crate | crate | _c::crate |
 u0:21 | File | lib | _c::lib |
 u1:22 | Crate | crate | _c::crate |
 u1:23 | File | main | _c::main |
-u1:24 | Function | main | _c::main::main |
+u1:24 | Function | main | _c::main::main | [global]
 u1:25 | Variable | email | _c::main::main::email |
 u1:26 | Variable | user | _c::main::main::user |
 u1:27 | Variable | order | _c::main::main::order |
@@ -561,6 +569,13 @@ digraph architecture {
   subgraph cluster_0 {
     label="_c";
     subgraph cluster_1 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="main", full_path="$TMP/src/main.rs:6", sym_ty="Function"];
+    }
+    subgraph cluster_2 {
       label="order";
       style="filled";
       fillcolor="#EEEEEE";
@@ -568,7 +583,7 @@ digraph architecture {
       n7[label="Order", full_path="$TMP/src/domain/order/entity.rs:4", sym_ty="Struct", shape=box];
       n13[label="LineItem", full_path="$TMP/src/domain/order/line_item.rs:1", sym_ty="Struct", shape=box];
     }
-    subgraph cluster_2 {
+    subgraph cluster_3 {
       label="user";
       style="filled";
       fillcolor="#EEEEEE";
@@ -688,7 +703,7 @@ u1:22 | Crate | crate | _c::crate |
 u1:23 | File | prelude | _c::prelude |
 u2:24 | Crate | crate | _c::crate |
 u2:25 | File | main | _c::main |
-u2:26 | Function | main | _c::main::main |
+u2:26 | Function | main | _c::main::main | [global]
 u2:27 | Variable | config | _c::main::main::config |
 u2:28 | Variable | engine | _c::main::main::engine |
 u3:29 | Crate | crate | _c::crate |
@@ -793,11 +808,19 @@ digraph architecture {
       n15[label="debug_config", full_path="$TMP/src/internal/helpers.rs:10", sym_ty="Function"];
       n14[label="default_config", full_path="$TMP/src/internal/helpers.rs:3", sym_ty="Function"];
     }
+    subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n4[label="main", full_path="$TMP/src/main.rs:7", sym_ty="Function"];
+    }
   }
   n8 -> n7 [from="struct", to="field"];
   n9 -> n8 [from="struct", to="field"];
   n15 -> n7 [from="func", to="output"];
   n14 -> n7 [from="func", to="output"];
+  n4 -> n15 [from="caller", to="callee"];
 }
 
 
@@ -886,59 +909,59 @@ fn main() {
 }
 
 --- expect:symbols ---
-u0:1  | Primitive | i32           | i32                                      | [global]
-u0:2  | Primitive | i64           | i64                                      | [global]
-u0:3  | Primitive | i16           | i16                                      | [global]
-u0:4  | Primitive | i8            | i8                                       | [global]
-u0:5  | Primitive | i128          | i128                                     | [global]
-u0:6  | Primitive | isize         | isize                                    | [global]
-u0:7  | Primitive | u32           | u32                                      | [global]
-u0:8  | Primitive | u64           | u64                                      | [global]
-u0:9  | Primitive | u16           | u16                                      | [global]
-u0:10 | Primitive | u8            | u8                                       | [global]
-u0:11 | Primitive | u128          | u128                                     | [global]
-u0:12 | Primitive | usize         | usize                                    | [global]
-u0:13 | Primitive | f32           | f32                                      | [global]
-u0:14 | Primitive | f64           | f64                                      | [global]
-u0:15 | Primitive | bool          | bool                                     | [global]
-u0:16 | Primitive | char          | char                                     | [global]
-u0:17 | Primitive | str           | str                                      | [global]
-u0:18 | Primitive | String        | String                                   | [global]
-u0:19 | Crate     | _c            | _c                                       | [global]
-u0:20 | Crate     | crate         | _c::crate                                |
-u0:21 | File      | lib           | _c::lib                                  |
-u1:22 | Crate     | crate         | _c::crate                                |
-u1:23 | File      | node          | _c::node                                 |
-u1:24 | Struct    | Node          | _c::node::Node                           | [global]
-u1:25 | Field     | id            | _c::node::Node::id                       |
-u1:26 | Field     | value         | _c::node::Node::value                    |
-u1:27 | Function  | new           | _c::node::Node::new                      | [global]
-u1:28 | Variable  | id            | _c::node::Node::new::id                  |
-u1:29 | Variable  | value         | _c::node::Node::new::value               |
-u1:30 | Function  | neighbors     | _c::node::Node::neighbors                | [global]
-u1:31 | Variable  | graph         | _c::node::Node::neighbors::graph         |
-u2:32 | Crate     | crate         | _c::crate                                |
-u2:33 | File      | graph         | _c::graph                                |
-u2:34 | Struct    | Graph         | _c::graph::Graph                         | [global]
-u2:35 | Field     | nodes         | _c::graph::Graph::nodes                  |
-u2:36 | Field     | edges         | _c::graph::Graph::edges                  |
-u2:37 | Function  | new           | _c::graph::Graph::new                    | [global]
-u2:38 | Function  | add_node      | _c::graph::Graph::add_node               | [global]
-u2:39 | Variable  | node          | _c::graph::Graph::add_node::node         |
-u2:40 | Function  | add_edge      | _c::graph::Graph::add_edge               | [global]
-u2:41 | Variable  | from          | _c::graph::Graph::add_edge::from         |
-u2:42 | Variable  | to            | _c::graph::Graph::add_edge::to           |
-u2:43 | Function  | get_node      | _c::graph::Graph::get_node               | [global]
-u2:44 | Variable  | id            | _c::graph::Graph::get_node::id           |
-u2:45 | Function  | get_neighbors | _c::graph::Graph::get_neighbors          | [global]
-u2:46 | Variable  | node_id       | _c::graph::Graph::get_neighbors::node_id |
-u2:47 | Variable  | from          | _c::graph::Graph::get_neighbors::from    |
-u2:48 | Variable  | to            | _c::graph::Graph::get_neighbors::to      |
-u3:49 | Crate     | crate         | _c::crate                                |
-u3:50 | File      | main          | _c::main                                 |
-u3:51 | Function  | main          | _c::main::main                           |
-u3:52 | Variable  | g             | _c::main::main::g                        |
-u3:53 | Variable  | neighbors     | _c::main::main::neighbors                |
+u0:1 | Primitive | i32 | i32 | [global]
+u0:2 | Primitive | i64 | i64 | [global]
+u0:3 | Primitive | i16 | i16 | [global]
+u0:4 | Primitive | i8 | i8 | [global]
+u0:5 | Primitive | i128 | i128 | [global]
+u0:6 | Primitive | isize | isize | [global]
+u0:7 | Primitive | u32 | u32 | [global]
+u0:8 | Primitive | u64 | u64 | [global]
+u0:9 | Primitive | u16 | u16 | [global]
+u0:10 | Primitive | u8 | u8 | [global]
+u0:11 | Primitive | u128 | u128 | [global]
+u0:12 | Primitive | usize | usize | [global]
+u0:13 | Primitive | f32 | f32 | [global]
+u0:14 | Primitive | f64 | f64 | [global]
+u0:15 | Primitive | bool | bool | [global]
+u0:16 | Primitive | char | char | [global]
+u0:17 | Primitive | str | str | [global]
+u0:18 | Primitive | String | String | [global]
+u0:19 | Crate | _c | _c | [global]
+u0:20 | Crate | crate | _c::crate |
+u0:21 | File | lib | _c::lib |
+u1:22 | Crate | crate | _c::crate |
+u1:23 | File | node | _c::node |
+u1:24 | Struct | Node | _c::node::Node | [global]
+u1:25 | Field | id | _c::node::Node::id |
+u1:26 | Field | value | _c::node::Node::value |
+u1:27 | Function | new | _c::node::Node::new | [global]
+u1:28 | Variable | id | _c::node::Node::new::id |
+u1:29 | Variable | value | _c::node::Node::new::value |
+u1:30 | Function | neighbors | _c::node::Node::neighbors | [global]
+u1:31 | Variable | graph | _c::node::Node::neighbors::graph |
+u2:32 | Crate | crate | _c::crate |
+u2:33 | File | graph | _c::graph |
+u2:34 | Struct | Graph | _c::graph::Graph | [global]
+u2:35 | Field | nodes | _c::graph::Graph::nodes |
+u2:36 | Field | edges | _c::graph::Graph::edges |
+u2:37 | Function | new | _c::graph::Graph::new | [global]
+u2:38 | Function | add_node | _c::graph::Graph::add_node | [global]
+u2:39 | Variable | node | _c::graph::Graph::add_node::node |
+u2:40 | Function | add_edge | _c::graph::Graph::add_edge | [global]
+u2:41 | Variable | from | _c::graph::Graph::add_edge::from |
+u2:42 | Variable | to | _c::graph::Graph::add_edge::to |
+u2:43 | Function | get_node | _c::graph::Graph::get_node | [global]
+u2:44 | Variable | id | _c::graph::Graph::get_node::id |
+u2:45 | Function | get_neighbors | _c::graph::Graph::get_neighbors | [global]
+u2:46 | Variable | node_id | _c::graph::Graph::get_neighbors::node_id |
+u2:47 | Variable | from | _c::graph::Graph::get_neighbors::from |
+u2:48 | Variable | to | _c::graph::Graph::get_neighbors::to |
+u3:49 | Crate | crate | _c::crate |
+u3:50 | File | main | _c::main |
+u3:51 | Function | main | _c::main::main | [global]
+u3:52 | Variable | g | _c::main::main::g |
+u3:53 | Variable | neighbors | _c::main::main::neighbors |
 
 --- expect:symbol-deps ---
 u0:18 <- [u1:24, u1:26, u1:27, u1:29]
@@ -1022,6 +1045,13 @@ digraph architecture {
       n8[label="Graph", full_path="$TMP/src/graph.rs:4", sym_ty="Struct", shape=box];
     }
     subgraph cluster_2 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n16[label="main", full_path="$TMP/src/main.rs:7", sym_ty="Function"];
+    }
+    subgraph cluster_3 {
       label="node";
       style="filled";
       fillcolor="#EEEEEE";
@@ -1172,7 +1202,7 @@ u0:20 | Crate | crate | _c::crate |
 u0:21 | File | lib | _c::lib |
 u1:22 | Crate | crate | _c::crate |
 u1:23 | File | main | _c::main |
-u1:24 | Function | main | _c::main::main |
+u1:24 | Function | main | _c::main::main | [global]
 u1:25 | Variable | client | _c::main::main::client |
 u2:26 | Crate | crate | _c::crate |
 u2:27 | Module | api | _c::api |
@@ -1312,6 +1342,13 @@ digraph architecture {
       color="#616161";
       n13[label="Connection", full_path="$TMP/src/internal/connection.rs:1", sym_ty="Struct", shape=box];
       n20[label="Protocol", full_path="$TMP/src/internal/protocol.rs:1", sym_ty="Enum", shape=box];
+    }
+    subgraph cluster_3 {
+      label="main";
+      style="filled";
+      fillcolor="#EEEEEE";
+      color="#616161";
+      n3[label="main", full_path="$TMP/src/main.rs:6", sym_ty="Function"];
     }
   }
   n5 -> n13 [from="struct", to="field"];

@@ -176,7 +176,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
 
         // Recurse into children
-        for &child_id in node.children() {
+        for &child_id in node.child_ids() {
             let child = self.unit.hir_node(child_id);
             self.collect_edges(child, edges, visited, unresolved);
         }
@@ -390,6 +390,8 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
             })
             .collect::<Result<Vec<UnitGraph>, DynError>>()?
     };
+
+    cc.block_arena.bb_sort_by(|block| block.id());
 
     Ok(unit_graphs)
 }

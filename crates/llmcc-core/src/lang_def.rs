@@ -473,8 +473,7 @@ macro_rules! define_lang {
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
-                    for id in node.children() {
-                        let child = unit.hir_node(*id);
+                    for child in node.children(unit) {
                         self.visit_node(unit, &child, scopes, namespace, parent);
                     }
                 }

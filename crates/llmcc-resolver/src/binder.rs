@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
-use llmcc_core::ir::{HirNode, HirScope};
+use llmcc_core::ir::HirScope;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
 use llmcc_core::{CompileCtxt, LanguageTraitImpl};
@@ -9,17 +9,10 @@ use rayon::prelude::*;
 
 use crate::ResolverOption;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RelationDirection {
-    Forward,
-    Backward,
-}
-
 #[derive(Debug)]
 pub struct BinderScopes<'a> {
     unit: CompileUnit<'a>,
     scopes: ScopeStack<'a>,
-    relation_direction: RelationDirection,
 }
 
 impl<'a> BinderScopes<'a> {
@@ -27,16 +20,12 @@ impl<'a> BinderScopes<'a> {
         let scopes = ScopeStack::new(&unit.cc.arena, &unit.cc.interner);
         scopes.push(globals);
 
-        Self {
-            unit,
-            scopes,
-            relation_direction: RelationDirection::Forward,
-        }
+        Self { unit, scopes }
     }
 
     #[inline]
     pub fn top(&self) -> &'a Scope<'a> {
-        self.scopes.iter().last().unwrap()
+        self.scopes.top().unwrap()
     }
 
     #[inline]
@@ -47,16 +36,6 @@ impl<'a> BinderScopes<'a> {
     #[inline]
     pub fn interner(&self) -> &InternPool {
         self.unit.interner()
-    }
-
-    #[inline]
-    pub fn set_forward_relation(&mut self) {
-        self.relation_direction = RelationDirection::Forward;
-    }
-
-    #[inline]
-    pub fn set_backward_relation(&mut self) {
-        self.relation_direction = RelationDirection::Backward;
     }
 
     #[inline]
@@ -79,23 +58,21 @@ impl<'a> BinderScopes<'a> {
         self.scopes.depth()
     }
 
-    /// Pushes a new scope created from a symbol onto the stack.
+    /// Pushes a scope onto the stack by looking it up from the compilation unit.
     pub fn push_scope(&mut self, id: ScopeId) {
-        // NOTE: this is the biggest difference from CollectorScopes, we would expect
-        // the scope must already exist in the CompileUnit
+        tracing::trace!("push_scope: {:?}", id);
         let scope = self.unit.get_scope(id);
         self.scopes.push(scope);
     }
 
+    /// Pushes a scope recursively with all its parent scopes.
     pub fn push_scope_recursive(&mut self, id: ScopeId) {
-        // NOTE: this is the biggest difference from CollectorScopes, we would expect
-        // the scope must already exist in the CompileUnit
+        tracing::trace!("push_scope_recursive: {:?}", id);
         let scope = self.unit.get_scope(id);
         self.scopes.push_recursive(scope);
     }
 
-    /// Pushes the scope represented by `sn`, recursing when the HIR already points
-    /// at an existing nested scope (e.g., structs/impls store their own scope nodes).
+    /// Pushes the scope represented by a HirScope node.
     pub fn push_scope_node(&mut self, sn: &'a HirScope<'a>) {
         if sn.opt_ident().is_some() {
             self.push_scope_recursive(sn.scope().id());
@@ -107,143 +84,138 @@ impl<'a> BinderScopes<'a> {
     /// Pops the current scope from the stack.
     #[inline]
     pub fn pop_scope(&mut self) {
+        tracing::trace!("pop_scope: depth {}", self.scopes.depth());
         self.scopes.pop();
     }
 
     /// Pops scopes until reaching the specified depth.
+    #[inline]
     pub fn pop_until(&mut self, depth: usize) {
+        tracing::trace!("pop_until: {} -> {}", self.scopes.depth(), depth);
         self.scopes.pop_until(depth);
     }
 
-    /// Gets the global scope.
-    ///
+    /// Gets the global scope (always at index 0).
     #[inline]
     pub fn globals(&self) -> &'a Scope<'a> {
-        self.scopes
-            .iter()
-            .first()
-            .expect("global scope should always be present")
+        self.scopes.globals()
     }
 
-    /// Find or insert symbol in the current scope.
     #[inline]
-    pub fn lookup_or_insert(
+    pub fn lookup_globals(
         &self,
         name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
+        kind_filters: Vec<SymKind>,
+    ) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!(
+            "lookup globals '{}' with filters {:?}",
+            name,
+            kind_filters.clone()
+        );
+        let options = LookupOptions::current().with_kind_filters(kind_filters);
+        let name_key = self.unit.cc.interner.intern(name);
+        self.scopes.globals().lookup_symbols(name_key, options)
     }
 
-    /// Find or insert symbol with chaining enabled for shadowing support.
     #[inline]
-    pub fn lookup_or_insert_chained(
+    pub fn lookup_global(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
+        let symbols = self.lookup_globals(name, kind_filters)?;
+        if symbols.len() > 1 {
+            tracing::warn!(
+                "multiple global symbols found for '{}', returning the last one",
+                name
+            );
+        }
+        symbols.last().copied()
+    }
+
+    /// Lookup symbols by name with options
+    #[inline]
+    pub fn lookup_symbols(
         &self,
         name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_chained(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
+        kind_filters: Vec<SymKind>,
+    ) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!(
+            "lookup symbols '{}' with filters {:?}",
+            name,
+            kind_filters.clone()
+        );
+        let options = LookupOptions::current().with_kind_filters(kind_filters);
+        self.scopes.lookup_symbols(name, options)
     }
 
-    /// Find or insert symbol in the parent scope.
-    pub fn lookup_or_insert_parent(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_parent(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
+    #[inline]
+    pub fn lookup_symbol(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
+        let symbols = self.lookup_symbols(name, kind_filters)?;
+        if symbols.len() > 1 {
+            tracing::warn!(
+                "multiple symbols found for '{}', returning the last one",
+                name
+            );
+        }
+        symbols.last().copied()
     }
 
-    /// Find or insert symbol in the global scope.
-    pub fn lookup_or_insert_global(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_global(name, node)?;
-        symbol.set_kind(kind);
-        Some(symbol)
-    }
-
-    /// Full control API for symbol lookup and insertion with custom options.
-    pub fn lookup_or_insert_with(
-        &self,
-        name: &str,
-        node: &HirNode<'a>,
-        kind: SymKind,
-        options: LookupOptions,
-    ) -> Option<&'a Symbol> {
-        let symbol = self.scopes.lookup_or_insert_with(name, node, options)?;
-        symbol.set_kind(kind);
-        Some(symbol)
-    }
-
-    pub fn lookup_symbol(&self, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_symbol(name)
-    }
-
-    /// Look up a symbol only in the global scope.
-    /// Used for crate-root paths like ::f or ::g::h.
-    pub fn lookup_global_symbol(&self, name: &str) -> Option<&'a Symbol> {
-        self.scopes.lookup_global_symbol(name)
-    }
-
-    pub fn lookup_symbol_with(
-        &self,
-        name: &str,
-        kind_filters: Option<Vec<SymKind>>,
-        unit_filters: Option<Vec<usize>>,
-        fqn_filters: Option<Vec<&str>>,
-    ) -> Option<&'a Symbol> {
-        self.scopes
-            .lookup_symbol_with(name, kind_filters, unit_filters, fqn_filters)
-    }
-
+    /// Look up a member symbol in a type's scope.
     pub fn lookup_member_symbol(
         &self,
         obj_type_symbol: &'a Symbol,
         member_name: &str,
         kind_filter: Option<SymKind>,
     ) -> Option<&'a Symbol> {
+        tracing::trace!("looking up member '{}' in type scope", member_name);
         let scope_id = obj_type_symbol.opt_scope()?;
         let scope = self.unit.get_scope(scope_id);
 
-        // We create a new ScopeStack here instead of using `self.scopes` to ensure isolation.
-        // If we used `self.scopes`, a failed member lookup would fall back to searching
-        // the current lexical scope (e.g., local variables), which is incorrect for
-        // member access (dot operator).
+        // Create isolated scope stack for member lookup to avoid falling back to lexical scopes
         let scopes = ScopeStack::new(&self.unit.cc.arena, &self.unit.cc.interner);
         scopes.push_recursive(scope);
 
-        let kind_filters = kind_filter.map(|k| {
-            if k == SymKind::Function {
-                vec![SymKind::Function, SymKind::Method]
-            } else {
-                vec![k]
-            }
-        });
+        let mut options = LookupOptions::current();
+        if let Some(filter) = kind_filter {
+            options = options.with_kind_filters(vec![filter]);
+        }
 
-        scopes.lookup_symbol_with(member_name, kind_filters, None, None)
+        scopes
+            .lookup_symbols(member_name, options)?
+            .into_iter()
+            .last()
+    }
+
+    /// Look up a qualified path (e.g., foo::Bar::baz) with optional kind filters.
+    pub fn lookup_qualified(
+        &self,
+        qualified_name: &[&str],
+        kind_filters: Option<Vec<SymKind>>,
+    ) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!(
+            "lookup qualified {:?} with kind_filters {:?}",
+            qualified_name,
+            kind_filters.clone()
+        );
+        let mut options = LookupOptions::default().with_shift_start(true);
+        if let Some(filters) = kind_filters {
+            options = options.with_kind_filters(filters)
+        }
+        let symbols = self.scopes.lookup_qualified(qualified_name, options)?;
+        Some(symbols)
     }
 }
 
-/// Bind symbols, optionally in parallel based on config.
+/// Bind symbols from all compilation units, optionally in parallel.
+///
+/// The binding phase resolves all symbol references and establishes relationships between symbols
+/// across compilation units. This happens after collection when all symbols have been discovered.
 pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     cc: &'a CompileCtxt<'a>,
     globals: &'a Scope<'a>,
     config: &ResolverOption,
 ) {
+    tracing::info!("starting symbol binding for total {} units", cc.files.len());
+
     let bind_unit = |unit_index: usize| {
+        tracing::debug!("binding symbols for unit {}", unit_index);
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
@@ -251,8 +223,12 @@ pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     };
 
     if config.sequential {
+        tracing::debug!("running symbol binding sequentially");
         (0..cc.files.len()).for_each(bind_unit);
     } else {
+        tracing::debug!("running symbol binding in parallel");
         (0..cc.files.len()).into_par_iter().for_each(bind_unit);
     }
+
+    tracing::info!("symbol binding complete");
 }

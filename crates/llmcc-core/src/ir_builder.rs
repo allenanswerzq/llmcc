@@ -9,7 +9,6 @@ use rayon::prelude::*;
 
 use crate::DynError;
 use crate::context::CompileCtxt;
-use crate::context::ParentedNode;
 use crate::ir::{
     Arena, HirBase, HirFile, HirId, HirIdent, HirInternal, HirKind, HirNode, HirScope, HirText,
 };
@@ -22,6 +21,11 @@ static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 pub fn next_hir_id() -> HirId {
     let id = HIR_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
     HirId(id)
+}
+
+/// Reset the global HIR ID counter to 0 (for testing isolation)
+pub fn reset_hir_id_counter() {
+    HIR_ID_COUNTER.store(0, Ordering::SeqCst);
 }
 
 /// Configuration for IR building behavior.
@@ -90,7 +94,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let child_ids: Vec<HirId> = children.iter().map(|n| n.id()).collect();
         let base = self.make_base(id, parent, node, kind, child_ids);
 
-        match kind {
+        let hir_node = match kind {
             HirKind::File => {
                 let path = self.file_path.clone().unwrap_or_default();
                 let hir_file = HirFile::new(base, path);
@@ -128,7 +132,10 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
                 HirNode::Ident(allocated)
             }
             _other => panic!("unsupported HIR kind for node {}", node.debug_info()),
-        }
+        };
+
+        // Allocate the HirNode wrapper in the Arena's hir_node collection
+        *self.arena.alloc(hir_node)
     }
 
     /// Collect all valid child nodes from a parse node.
@@ -259,51 +266,8 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
         cc.set_file_root_id(index, file_root_id);
     }
 
-    // Sequential phase: Build hir_map from all allocated nodes
-    build_hir_map(cc)?;
-
-    Ok(())
-}
-
-/// Rebuild the hir_map from all allocated HirNodes in the arena.
-fn build_hir_map<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> Result<(), DynError> {
-    let mut hir_map = cc.hir_map.write();
-
-    for hir_root in cc.arena.hir_root() {
-        let node = HirNode::Root(hir_root);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_root.base.id, parented);
-    }
-
-    for hir_text in cc.arena.hir_text() {
-        let node = HirNode::Text(hir_text);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_text.base.id, parented);
-    }
-
-    for hir_internal in cc.arena.hir_internal() {
-        let node = HirNode::Internal(hir_internal);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_internal.base.id, parented);
-    }
-
-    for hir_scope in cc.arena.hir_scope() {
-        let node = HirNode::Scope(hir_scope);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_scope.base.id, parented);
-    }
-
-    for hir_file in cc.arena.hir_file() {
-        let node = HirNode::File(hir_file);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_file.base.id, parented);
-    }
-
-    for hir_ident in cc.arena.hir_ident() {
-        let node = HirNode::Ident(hir_ident);
-        let parented = ParentedNode::new(node);
-        hir_map.insert(hir_ident.base.id, parented);
-    }
+    // Sequential phase: sort hir nodes by ID, so we can do O(1) lookups later
+    cc.arena.hir_node_sort_by(|node| node.id().0);
 
     Ok(())
 }

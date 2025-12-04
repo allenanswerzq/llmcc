@@ -3,8 +3,8 @@ extern crate llmcc_core;
 
 mod bind;
 mod collect;
-mod resolve;
-mod token;
+pub mod token;
+mod ty;
 mod util;
 
 pub const RUST_PRIMITIVES: &[&str] = &[

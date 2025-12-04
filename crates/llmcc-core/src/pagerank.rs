@@ -219,16 +219,8 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
     }
 
     fn collect_entries(&self) -> Vec<BlockEntry> {
-        let mut raw_entries: Vec<(BlockId, usize, Option<String>, BlockKind)> = {
-            let indexes = self.graph.cc.block_indexes.read();
-            indexes
-                .block_id_index
-                .iter()
-                .map(|(&block_id, (unit_index, name, kind))| {
-                    (block_id, *unit_index, name.clone(), *kind)
-                })
-                .collect()
-        };
+        let mut raw_entries: Vec<(BlockId, usize, Option<String>, BlockKind)> =
+            self.graph.cc.get_all_blocks();
 
         raw_entries.sort_by_key(|(block_id, ..)| block_id.as_u32());
 

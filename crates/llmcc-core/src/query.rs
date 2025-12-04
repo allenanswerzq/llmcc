@@ -381,21 +381,7 @@ impl<'tcx> ProjectQuery<'tcx> {
                     .resolve_owned(symbol.name)
                     .unwrap_or(fallback);
 
-                let fqn = *symbol.fqn.read();
-                let qualified =
-                    self.graph
-                        .cc
-                        .interner
-                        .resolve_owned(fqn)
-                        .and_then(|resolved_fqn| {
-                            if !resolved_fqn.is_empty() && resolved_fqn != base_name {
-                                Some(resolved_fqn)
-                            } else {
-                                None
-                            }
-                        });
-
-                (base_name, qualified)
+                (base_name, None)
             } else {
                 (
                     name.unwrap_or_else(|| format!("_unnamed_{}", node.block_id.0)),
