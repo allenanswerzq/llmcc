@@ -197,6 +197,16 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             .and_then(|ty_node| self.infer_no_filter(&ty_node))
     }
 
+    #[allow(dead_code)]
+    fn infer_call_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
+        // First resolve the function being called
+        let func_node = node.child_by_field(*self.ty.unit, LangRust::field_function)?;
+        let func_symbol = self.infer_no_filter(&func_node)?;
+
+        // Then get the return type from the function symbol
+        let return_type_id = func_symbol.type_of()?;
+        self.ty.unit.opt_get_symbol(return_type_id)
+    }
     fn infer_if_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
         if let Some(consequence) = node.child_by_field(*self.ty.unit, LangRust::field_consequence) {
             return self.infer_block(&consequence);
