@@ -491,7 +491,7 @@ fn build_hir_render<'tcx>(
         return Err(RenderError::max_depth_exceeded(depth, config.max_depth));
     }
 
-    let mut label = node.format_node(unit);
+    let mut label = node.format(unit);
 
     // Add identifier name info for Ident nodes
     if let crate::ir::HirNode::Ident(ident) = node {
@@ -515,7 +515,7 @@ fn build_hir_render<'tcx>(
     };
 
     let children = node
-        .children()
+        .child_ids()
         .iter()
         .map(|id| {
             let child = unit.hir_node(*id);

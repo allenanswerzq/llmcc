@@ -35,6 +35,32 @@ cargo-release:
 clippy:
     cargo clippy --all-targets --workspace -- -D warnings
 
+qtest: cargo-test
+    cargo run -p llmcc-test -- run-all
+
+# Install cargo-llvm-cov (auto-confirm prompts)
+install-coverage:
+    command -v cargo-llvm-cov > /dev/null || echo y | cargo install cargo-llvm-cov
+
+# Generate HTML coverage report for all workspace crates
+coverage-html: install-coverage
+    cargo llvm-cov --workspace --html
+
+# Generate LCOV format coverage report for all workspace crates (for CI/CD tools like Codecov)
+coverage-lcov: install-coverage
+    cargo llvm-cov --workspace --lcov --output-path {{root}}/coverage.lcov
+
+# Generate JSON format coverage report for all workspace crates
+coverage-json: install-coverage
+    cargo llvm-cov --workspace --json --output-path {{root}}/coverage.json
+
+# Full coverage report (HTML)
+coverage: coverage-html
+    echo "coverage report generated in target/llvm-cov/html"
+    echo "Open target/llvm-cov/html/index.html to view the report"
+    xdg-open target/llvm-cov/html/index.html || true
+
+
 release version:
     #!/bin/bash
     set -e

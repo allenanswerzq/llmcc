@@ -1,7 +1,6 @@
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use std::cmp::Ordering as CmpOrdering;
-use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use std::ops::Deref;
@@ -9,14 +8,15 @@ use std::time::Instant;
 use tree_sitter::Node;
 use uuid::Uuid;
 
-use crate::block::{BasicBlock, BlockArena, BlockId};
+use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
+use crate::ir_builder::reset_hir_id_counter;
 use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
-use crate::symbol::{ScopeId, SymId, Symbol};
+use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
 
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
@@ -55,6 +55,18 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.interner.resolve_owned(symbol)
     }
 
+    /// Resolve an interned symbol to string reference with "<unnamed>" as default.
+    /// Useful for display purposes where you need a string that lives for 'static or is owned.
+    pub fn resolve_name_or(&self, symbol: InternedStr, default: &str) -> String {
+        self.resolve_interned_owned(symbol)
+            .unwrap_or_else(|| default.to_string())
+    }
+
+    /// Resolve an interned symbol to string, using "<unnamed>" as default if not found.
+    pub fn resolve_name(&self, symbol: InternedStr) -> String {
+        self.resolve_name_or(symbol, "<unnamed>")
+    }
+
     pub fn file_root_id(&self) -> Option<HirId> {
         self.cc.file_root_id(self.index)
     }
@@ -85,11 +97,7 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_hir_node(self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.cc
-            .hir_map
-            .read()
-            .get(&id)
-            .map(|parented| parented.node)
+        self.cc.get_hir_node(id)
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -100,11 +108,9 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
-        self.cc
-            .block_map
-            .read()
-            .get(&id)
-            .map(|parented| parented.block.clone())
+        // Direct indexing into block arena Vec using BlockId (offset by 1 since BlockId starts at 1)
+        let index = (id.0 as usize).saturating_sub(1);
+        self.cc.block_arena.bb().get(index).map(|bb| (*bb).clone())
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -115,30 +121,22 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get the parent of a HIR node
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
-        self.cc
-            .hir_map
-            .read()
-            .get(&id)
-            .and_then(|parented| parented.parent())
+        self.opt_hir_node(id).and_then(|node| node.parent())
     }
 
     /// Get an existing scope or None if it doesn't exist
     pub fn opt_get_scope(self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from scope_map
-        self.cc.scope_map.read().get(&scope_id).copied()
+        self.cc.opt_get_scope(scope_id)
     }
 
+    /// Get a symbol by ID, delegating to CompileCtxt
     pub fn opt_get_symbol(self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.cc.symbol_map.read().get(&owner).copied()
+        self.cc.opt_get_symbol(owner)
     }
 
     /// Get an existing scope or panics if it doesn't exist
     pub fn get_scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.cc
-            .scope_map
-            .read()
-            .get(&scope_id)
-            .copied()
+        self.opt_get_scope(scope_id)
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
@@ -146,17 +144,18 @@ impl<'tcx> CompileUnit<'tcx> {
         self.cc.unresolve_symbols.write().push(symbol);
     }
 
-    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, parent: BlockId) {
-        let parented = ParentedBlock::new(parent, block.clone());
-        self.cc.block_map.write().insert(id, parented);
-
-        // Register the block in the index maps
+    pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
+        // Get block info before allocation
         let block_kind = block.kind();
         let block_name = block
             .base()
             .and_then(|base| base.opt_get_name())
             .map(|s| s.to_string());
 
+        // Allocate block into the Arena Vec using BlockId as index
+        self.cc.block_arena.alloc(block);
+
+        // Register the block in the index maps
         self.cc
             .block_indexes
             .write()
@@ -194,28 +193,6 @@ impl<'tcx> ParentedNode<'tcx> {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct ParentedBlock<'tcx> {
-    pub parent: BlockId,
-    pub block: BasicBlock<'tcx>,
-}
-
-impl<'tcx> ParentedBlock<'tcx> {
-    pub fn new(parent: BlockId, block: BasicBlock<'tcx>) -> Self {
-        Self { parent, block }
-    }
-
-    /// Get a reference to the wrapped node
-    pub fn block(&self) -> &BasicBlock<'tcx> {
-        &self.block
-    }
-
-    /// Get the parent ID
-    pub fn parent(&self) -> BlockId {
-        self.parent
-    }
-}
-
 #[derive(Debug, Clone, Default)]
 pub struct FileParseMetric {
     pub path: String,
@@ -241,18 +218,7 @@ pub struct CompileCtxt<'tcx> {
     pub parse_trees: Vec<Option<Box<dyn ParseTree>>>,
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
-    // HirId -> ParentedNode
-    pub hir_map: RwLock<HashMap<HirId, ParentedNode<'tcx>>>,
-    // ScopeId -> Scope
-    pub scope_map: RwLock<HashMap<ScopeId, &'tcx Scope<'tcx>>>,
-    // HirId -> ScopeId
-    pub owner_to_scope_id: RwLock<HashMap<HirId, ScopeId>>,
-    // SymId -> &Symbol
-    pub symbol_map: RwLock<HashMap<SymId, &'tcx Symbol>>,
-
     pub block_arena: BlockArena<'tcx>,
-    // BlockId -> ParentedBlock
-    pub block_map: RwLock<HashMap<BlockId, ParentedBlock<'tcx>>>,
     pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 
@@ -303,6 +269,11 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Create a new CompileCtxt from files
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
+        reset_hir_id_counter();
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+        reset_block_id_counter();
+
         let read_start = Instant::now();
 
         let mut files_with_index: Vec<(usize, File)> = paths
@@ -329,12 +300,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            hir_map: RwLock::new(HashMap::new()),
-            scope_map: RwLock::new(HashMap::new()),
-            owner_to_scope_id: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
@@ -348,6 +314,11 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn from_files_with_logical<L: LanguageTrait>(
         paths: &[(String, String)],
     ) -> std::io::Result<Self> {
+        reset_hir_id_counter();
+        reset_symbol_id_counter();
+        reset_scope_id_counter();
+        reset_block_id_counter();
+
         let read_start = Instant::now();
 
         let mut files_with_index: Vec<(usize, File)> = paths
@@ -376,12 +347,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             files,
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
-            hir_map: RwLock::new(HashMap::new()),
-            scope_map: RwLock::new(HashMap::new()),
-            owner_to_scope_id: RwLock::new(HashMap::new()),
-            symbol_map: RwLock::new(HashMap::new()),
             block_arena: BlockArena::default(),
-            block_map: RwLock::new(HashMap::new()),
             unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
@@ -463,10 +429,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        let scope = self.arena.alloc(Scope::new(owner));
-        self.scope_map.write().insert(scope.id(), scope);
-        self.owner_to_scope_id.write().insert(owner, scope.id());
-        scope
+        // Scope already in Arena
+        self.arena
+            .alloc(Scope::new_with(owner, None, Some(&self.interner)))
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
@@ -474,15 +439,30 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.scope_map
-            .read()
-            .get(&scope_id)
+        let index = (scope_id.0).saturating_sub(1);
+        self.arena
+            .scope()
+            .get(index)
             .copied()
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
+    pub fn opt_get_scope(&'tcx self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
+        // Direct lookup from Arena using offset, following redirects if scope was merged
+        let index = scope_id.0;
+        self.arena.scope().get(index).and_then(|scope| {
+            if let Some(target_id) = scope.get_redirect() {
+                // Follow redirect chain
+                self.opt_get_scope(target_id)
+            } else {
+                Some(scope)
+            }
+        })
+    }
+
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.symbol_map.read().get(&owner).cloned()
+        let index = (owner.0).saturating_sub(1);
+        self.arena.symbol().get(index).copied()
     }
 
     pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
@@ -492,9 +472,9 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Find the primary symbol associated with a block ID
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
-        self.symbol_map
-            .read()
-            .values()
+        self.arena
+            .symbol()
+            .iter()
             .find(|symbol| symbol.block_id() == Some(block_id))
             .copied()
     }
@@ -504,40 +484,8 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self.arena
     }
 
-    /// Allocate a new scope based on an existing one, cloning its contents.
-    ///
-    /// The existing ones are from the other arena, and we want to allocate in
-    /// this arena.
-    pub fn alloc_scope_with(&'tcx self, existing: &'tcx Scope<'tcx>) -> &'tcx Scope<'tcx> {
-        let scope_id = existing.id();
-        let scope = existing;
-
-        // Update scope_map
-        self.scope_map.write().insert(scope_id, scope);
-        scope.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        scope
-    }
-
-    /// Register a batch of scopes in the global scope map without cloning them.
-    pub fn update_scope_map<I>(&'tcx self, scopes: I)
-    where
-        I: IntoIterator<Item = &'tcx Scope<'tcx>>,
-    {
-        let mut scope_map = self.scope_map.write();
-        let mut symbol_map = self.symbol_map.write();
-        for scope in scopes {
-            scope_map.insert(scope.id(), scope);
-            scope.for_each_symbol(|sym| {
-                symbol_map.insert(sym.id(), sym);
-            });
-        }
-    }
-
-    /// Allocate a new HIR identifier node with the given ID, name and symbol
-    pub fn alloc_hir_ident(
+    /// Allocate a new file identifier node with the given ID, name and symbol
+    pub fn alloc_file_ident(
         &'tcx self,
         id: HirId,
         name: &str,
@@ -559,35 +507,19 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.arena.alloc(Scope::new(owner))
+        self.arena
+            .alloc(Scope::new_with(owner, None, Some(&self.interner)))
     }
 
     /// Merge the second scope into the first.
     ///
-    /// This combines all symbols from the second scope into the first scope,
-    /// and updates the scope_map to reference the merged result.
-    ///
-    /// # Arguments
-    /// * `first` - The target scope to merge into
-    /// * `second` - The source scope to merge from
-    ///
-    /// # Side Effects
-    /// - All symbols from `second` are merged into `first`
-    /// - The symbol_map is updated to point all merged symbols to the symbol_map
-    /// - The scope_map is updated to redirect second's scope ID to first
+    /// This combines all symbols from the second scope into the first scope.
+    /// Any future lookup of second's scope ID will redirect to first.
     pub fn merge_two_scopes(&'tcx self, first: &'tcx Scope<'tcx>, second: &'tcx Scope<'tcx>) {
         // Merge symbols from second into first
         first.merge_with(second, self.arena());
-
-        // Update all symbol map entries for symbols now in first scope
-        // We need to register the merged symbols in the global symbol_map
-        first.for_each_symbol(|sym| {
-            self.symbol_map.write().insert(sym.id(), sym);
-        });
-
-        // Remap scope references from second to first
-        // If any code had a reference to second's scope ID, it should now map to first
-        self.scope_map.write().insert(second.id(), first);
+        // Redirect second's scope ID to first's scope ID so lookups redirect
+        second.set_redirect(first.id());
     }
 
     pub fn set_file_root_id(&self, index: usize, start: HirId) {
@@ -618,11 +550,112 @@ impl<'tcx> CompileCtxt<'tcx> {
             .collect()
     }
 
-    /// Clear all maps (useful for testing)
-    #[cfg(test)]
-    pub fn clear(&self) {
-        self.hir_map.write().clear();
-        self.scope_map.write().clear();
-        self.owner_to_scope_id.write().clear();
+    // ========== HIR Map APIs ==========
+
+    /// Get a HIR node by ID from the Arena (O(1) lookup using ID as index)
+    /// HIR IDs correspond directly to positions in the Arena vector
+    pub fn get_hir_node(&self, id: HirId) -> Option<HirNode<'tcx>> {
+        self.arena.hir_node().get(id.0).map(|node_ref| **node_ref)
+    }
+
+    /// Check if a HIR node exists in the Arena (O(1) check using ID as index)
+    pub fn hir_node_exists(&self, id: HirId) -> bool {
+        let hir_nodes = self.arena.hir_node();
+        id.0 < hir_nodes.len()
+    }
+
+    /// Get the total count of HIR nodes in the Arena
+    pub fn hir_node_count(&self) -> usize {
+        self.arena.hir_node().len()
+    }
+
+    /// Get all HIR node IDs from the Arena
+    pub fn all_hir_node_ids(&self) -> Vec<HirId> {
+        self.arena.hir_node().iter().map(|node| node.id()).collect()
+    }
+
+    // ========== Block Indexes APIs ==========
+
+    /// Get all blocks by name
+    pub fn find_blocks_by_name(
+        &self,
+        name: &str,
+    ) -> Vec<(usize, crate::block::BlockKind, BlockId)> {
+        self.block_indexes.read().find_by_name(name)
+    }
+
+    /// Get all blocks by kind
+    pub fn find_blocks_by_kind(
+        &self,
+        kind: crate::block::BlockKind,
+    ) -> Vec<(usize, Option<String>, BlockId)> {
+        self.block_indexes.read().find_by_kind(kind)
+    }
+
+    /// Get blocks in a specific unit
+    pub fn find_blocks_in_unit(
+        &self,
+        unit_index: usize,
+    ) -> Vec<(Option<String>, crate::block::BlockKind, BlockId)> {
+        self.block_indexes.read().find_by_unit(unit_index)
+    }
+
+    /// Get blocks of a specific kind in a specific unit
+    pub fn find_blocks_by_kind_in_unit(
+        &self,
+        kind: crate::block::BlockKind,
+        unit_index: usize,
+    ) -> Vec<BlockId> {
+        self.block_indexes
+            .read()
+            .find_by_kind_and_unit(kind, unit_index)
+    }
+
+    /// Get block info by ID
+    pub fn get_block_info(
+        &self,
+        block_id: BlockId,
+    ) -> Option<(usize, Option<String>, crate::block::BlockKind)> {
+        self.block_indexes.read().get_block_info(block_id)
+    }
+
+    /// Get all blocks with their metadata
+    pub fn get_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
+        self.block_indexes.read().iter_all_blocks()
+    }
+
+    // ========== Symbol Map APIs ==========
+
+    /// Get all symbols from the symbol map
+    pub fn get_all_symbols(&'tcx self) -> Vec<&'tcx Symbol> {
+        self.arena.symbol().iter().copied().collect()
+    }
+
+    /// Get the count of registered symbols (excluding unresolved)
+    pub fn symbol_count(&self) -> usize {
+        self.arena.symbol().iter().count()
+    }
+
+    /// Iterate over all symbols and their IDs (excluding unresolved)
+    pub fn for_each_symbol<F>(&self, mut f: F)
+    where
+        F: FnMut(SymId, &'tcx Symbol),
+    {
+        for symbol in self.arena.symbol().iter() {
+            f(symbol.id(), symbol);
+        }
+    }
+
+    // ========== Unresolved Symbols APIs ==========
+
+    /// Get and clear all unresolved symbols
+    pub fn take_unresolved_symbols(&self) -> Vec<&'tcx Symbol> {
+        let mut unresolved = self.unresolve_symbols.write();
+        std::mem::take(&mut *unresolved)
+    }
+
+    /// Get the count of unresolved symbols without clearing
+    pub fn unresolved_symbol_count(&self) -> usize {
+        self.unresolve_symbols.read().len()
     }
 }

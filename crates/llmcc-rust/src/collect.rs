@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirId, HirIdent, HirNode, HirScope};
 use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
@@ -10,6 +10,9 @@ use std::collections::HashMap;
 use crate::LangRust;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
+
+/// Callback type for scope entry actions
+type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&HirNode<'tcx>, &mut CollectorScopes<'tcx>) + 'tcx>;
 
 #[derive(Debug)]
 pub struct CollectorVisitor<'tcx> {
@@ -23,33 +26,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
     }
 
-    fn type_name_from_node<'a>(unit: &CompileUnit<'a>, node: &HirNode<'a>) -> Option<&'a str> {
-        if let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
-            && let Some(name) = Self::type_name_from_node(unit, &type_node)
-        {
-            return Some(name);
-        }
-
-        if let Some(field_node) = node.child_by_field(*unit, LangRust::field_name) {
-            return Self::type_name_from_node(unit, &field_node);
-        }
-
-        if let Some(ident) = node.as_ident() {
-            return Some(ident.name.as_str());
-        }
-
-        if let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name) {
-            return Some(ident.name.as_str());
-        }
-
-        node.children().iter().rev().find_map(|child_id| {
-            let child = unit.hir_node(*child_id);
-            Self::type_name_from_node(unit, &child)
-        })
-    }
-
     /// Declare a symbol from a named field in the AST node
-    fn declare_symbol_from_field(
+    fn declare_symbol(
         &self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
@@ -57,7 +35,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        let ident = node.child_identifier_by_field(*unit, field_id)?;
+        let ident = node.ident_by_field(*unit, field_id)?;
+        tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
         let sym = scopes.lookup_or_insert(&ident.name, node, kind)?;
         ident.set_symbol(sym);
         Some(sym)
@@ -87,17 +66,11 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         symbols: &mut Vec<&'tcx Symbol>,
     ) {
-        // Skip non-binding identifiers
         if matches!(
             node.kind_id(),
-            LangRust::type_identifier | LangRust::primitive_type | LangRust::field_identifier
-        ) {
-            return;
-        }
-
-        // Special handling for scoped identifiers: don't collect them as variables
-        if matches!(
-            node.kind_id(),
+            // Skip non-binding identifiers
+            LangRust::type_identifier | LangRust::primitive_type | LangRust::field_identifier |
+            // Special handling for scoped identifiers: don't collect them as variables
             LangRust::scoped_identifier | LangRust::scoped_type_identifier
         ) {
             return;
@@ -112,65 +85,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 symbols.push(sym);
             }
         }
-        for child_id in node.children() {
-            let child = unit.hir_node(*child_id);
+        for child in node.children(unit) {
             Self::collect_pattern_identifiers_impl(unit, &child, scopes, kind, symbols);
-        }
-    }
-
-    fn check_visibility(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> (bool, bool) {
-        let mut is_pub = false;
-        let mut is_pub_crate = false;
-
-        for child in node.children_nodes(unit) {
-            let text = unit.hir_text(&child);
-            if text.starts_with("pub") {
-                if text == "pub" {
-                    is_pub = true;
-                } else {
-                    // All pub(...) variants: pub(crate), pub(super), pub(self), pub(in path)
-                    // are considered globally visible for indexing purposes
-                    is_pub_crate = true;
-                }
-                break;
-            }
-        }
-        (is_pub, is_pub_crate)
-    }
-
-    fn handle_global_visibility(
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        sym: &'tcx Symbol,
-    ) {
-        // Check visibility
-        let (is_pub, is_pub_crate) = Self::check_visibility(unit, node);
-        let at_global = scopes.top().map(|s| s.id()) == Some(scopes.globals().id());
-
-        if is_pub {
-            if !at_global {
-                // Use FQN for global scope to avoid name collisions
-                // (e.g., CreateTaskUseCase::new vs CompleteTaskUseCase::new)
-                scopes.globals().insert_with_fqn(sym);
-            }
-            sym.set_is_global(true);
-            return;
-        }
-
-        if is_pub_crate {
-            if !at_global {
-                scopes.globals().insert_with_fqn(sym);
-            }
-            sym.set_is_global(true);
-            return;
-        }
-
-        if let Some(scope) = scopes.top()
-            && let Some(parent_sym) = scope.opt_symbol()
-            && parent_sym.is_global()
-        {
-            scopes.globals().insert_with_fqn(sym);
         }
     }
 
@@ -185,7 +101,61 @@ impl<'tcx> CollectorVisitor<'tcx> {
         self.scope_map.get(&scope_id).copied().unwrap()
     }
 
+    /// Lookup a symbol by name, trying primary kind first, then UnresolvedType, then inserting new
+    fn lookup_or_convert(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        name: &str,
+        node: &HirNode<'tcx>,
+        kind: SymKind,
+    ) -> Option<&'tcx Symbol> {
+        tracing::trace!(
+            "looking up or converting symbol '{}' of kind {:?}",
+            name,
+            kind
+        );
+
+        // Try looking up by primary kind
+        if let Some(symbol) = scopes.lookup_symbol(name, vec![kind]) {
+            tracing::trace!(
+                "found existing symbol '{}' of kind {:?} {:?}",
+                name,
+                kind,
+                symbol,
+            );
+            return Some(symbol);
+        }
+
+        // Try unresolved type if not found
+        if let Some(symbol) = scopes.lookup_symbol(name, vec![SymKind::UnresolvedType]) {
+            tracing::trace!(
+                "found existing unresolved symbol '{}', converting to {:?}, {:?}",
+                name,
+                kind,
+                symbol,
+            );
+            return Some(symbol);
+        }
+
+        // Insert new symbol with primary kind
+        if let Some(symbol) = scopes.lookup_or_insert(name, node, kind) {
+            tracing::trace!("inserting new symbol '{}' of kind {:?}", name, kind,);
+            // create a scope for this symbol if needed
+            if symbol.opt_scope().is_none() {
+                let scope = self.alloc_scope(unit, symbol);
+                symbol.set_scope(scope.id());
+            }
+            return Some(symbol);
+        }
+
+        None
+    }
+
+    /// AST: Any scoped node (module, function, trait, impl, etc.)
+    /// Purpose: Set up scope hierarchy, link identifiers to symbols, and push/pop scopes
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(skip_all)]
     fn visit_with_scope(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -194,71 +164,79 @@ impl<'tcx> CollectorVisitor<'tcx> {
         sym: &'tcx Symbol,
         sn: &'tcx HirScope<'tcx>,
         ident: &'tcx HirIdent<'tcx>,
-        allocate_new_scope: bool,
+        on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
+        tracing::trace!(
+            "visiting with scope for symbol {}",
+            sym.format(Some(scopes.interner()))
+        );
         ident.set_symbol(sym);
         sn.set_ident(ident);
 
-        let scope = if allocate_new_scope {
+        let scope = if sym.opt_scope().is_none() {
+            tracing::trace!(
+                "allocating new scope for symbol {}",
+                sym.format(Some(scopes.interner()))
+            );
             self.alloc_scope(unit, sym)
         } else {
+            tracing::trace!(
+                "use existing scope for symbol {}",
+                sym.format(Some(scopes.interner()))
+            );
             self.get_scope(sym.scope())
         };
         sym.set_scope(scope.id());
         sn.set_scope(scope);
 
         scopes.push_scope(scope);
+        if let Some(callback) = on_scope_enter {
+            callback(node, scopes);
+        }
         self.visit_children(unit, node, scopes, scope, Some(sym));
         scopes.pop_scope();
     }
 
+    /// AST: Generic scoped-named item handler (module, function, struct, enum, trait, macro, etc.)
+    /// Purpose: Declare a named symbol with scope, lookup or insert it, and establish scope hierarchy
     #[allow(clippy::too_many_arguments)]
+    #[tracing::instrument(skip_all)]
     fn visit_scoped_named(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
         kind: SymKind,
         field_id: u16,
+        on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
-        let _ = (namespace, parent);
-
-        if let Some(sn) = node.as_scope()
-            && let Some(ident) = node.child_identifier_by_field(*unit, field_id)
-        {
-            if let Some(sym) = scopes.lookup_symbol_with(&ident.name, Some(vec![kind]), None, None)
-            {
-                let needs_scope = sym.opt_scope().is_none();
-                Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
-            } else if let Some(sym) = scopes.lookup_symbol_with(
-                &ident.name,
-                Some(vec![SymKind::UnresolvedType]),
-                None,
-                None,
-            ) {
-                sym.set_kind(kind);
-                sym.set_fqn(scopes.build_fqn(&ident.name));
-                let needs_scope = sym.opt_scope().is_none();
-                Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident, needs_scope);
-            } else if let Some(sym) = scopes.lookup_or_insert(&ident.name, node, kind) {
-                Self::handle_global_visibility(unit, node, scopes, sym);
-                self.visit_with_scope(unit, node, scopes, sym, sn, ident, true);
+        if let Some((sn, ident)) = node.scope_and_ident_by_field(*unit, field_id) {
+            tracing::trace!(
+                "visiting scoped named node with kind '{:?}' '{}'",
+                kind,
+                ident.name
+            );
+            if let Some(sym) = self.lookup_or_convert(unit, scopes, &ident.name, node, kind) {
+                self.visit_with_scope(unit, node, scopes, sym, sn, ident, on_scope_enter);
             }
+        } else {
+            tracing::warn!("scoped named node is missing scope or ident, skipping");
         }
     }
 }
 
 impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
+    /// AST: block { ... }
+    /// Purpose: Create a new lexical scope for block-scoped variables and statements
+    #[tracing::instrument(skip_all)]
     fn visit_block(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
@@ -268,12 +246,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             scopes.push_scope(scope);
             self.visit_children(unit, node, scopes, scope, parent);
             scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
         }
     }
 
+    /// AST: source_file - root node of the compilation unit
+    /// Purpose: Parse crate/module names, create file scope, set up global symbol namespace
     #[rustfmt::skip]
+    #[tracing::instrument(skip_all)]
     fn visit_source_file(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -284,55 +263,53 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
-        let mut crate_alias: Option<&Symbol> = None;
 
         // Parse crate name and set up crate scope
         if let Some(crate_name) = parse_crate_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
         {
+            tracing::trace!("insert crate symbol in globals '{}'", crate_name);
             scopes.push_scope_with(node, Some(symbol));
-
-            // Insert 'crate' alias pointing to this globals
-            if let Some(crate_sym) = scopes.lookup_or_insert("crate", node, SymKind::Crate) {
-                crate_sym.set_scope(scopes.globals().id());
-                crate_alias = Some(crate_sym);
-            }
         }
 
         if let Some(module_name) = parse_module_name(file_path)
-            && let Some(symbol) = scopes.lookup_or_insert(&module_name, node, SymKind::Module)
+            && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
         {
+            tracing::trace!("insert module symbol in globals '{}'", module_name);
             scopes.push_scope_with(node, Some(symbol));
         }
 
         let sn = node.as_scope().unwrap();
         if let Some(file_name) = parse_file_name(file_path)
-            && let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File)
+            && let Some(file_sym) = scopes.lookup_or_insert_global(&file_name, node, SymKind::File)
         {
-            let ident = unit.cc.alloc_hir_ident(next_hir_id(), &file_name, file_sym);
-            sn.set_ident(ident);
+            tracing::trace!("insert file symbol in globals '{}'", file_name);
+            let ident = unit.cc.alloc_file_ident(next_hir_id(), &file_name, file_sym);
             ident.set_symbol(file_sym);
+            sn.set_ident(ident);
 
             let scope = self.alloc_scope(unit, file_sym);
+            file_sym.set_scope(scope.id());
             sn.set_scope(scope);
 
-            file_sym.set_scope(scope.id());
             scopes.push_scope(scope);
 
-            if let Some(alias) = crate_alias {
-                alias.set_scope(scope.id());
+            if let Some(crate_sym) = scopes.lookup_or_insert_global("crate", node, SymKind::Module) {
+                tracing::trace!("insert 'crate' symbol in globals");
+                crate_sym.set_scope(scopes.globals().id());
             }
         }
 
-        for child in node.children_nodes(unit) {
-            if matches!(child.kind(), HirKind::Text | HirKind::Comment) {
-                continue;
-            }
+        for child in node.children(unit) {
             self.visit_node(unit, &child, scopes, namespace, parent);
         }
+
         scopes.pop_until(start_depth);
     }
 
+    /// AST: mod name { ... } or mod name;
+    /// Purpose: Create namespace scope for module, declare module symbol
+    #[tracing::instrument(skip_all)]
     fn visit_mod_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -352,9 +329,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Namespace,
             LangRust::field_name,
+            None,
         );
     }
 
+    /// AST: fn name(...) -> Type { ... }
+    /// Purpose: Declare function symbol, create function scope for parameters and body
+    #[tracing::instrument(skip_all)]
     fn visit_function_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -371,9 +352,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Function,
             LangRust::field_name,
+            None,
         );
     }
 
+    /// AST: extern "C" fn signature or trait method signature
+    /// Purpose: Declare function symbol for extern/trait function signatures
+    #[tracing::instrument(skip_all)]
     fn visit_function_signature_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -390,9 +375,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Function,
             LangRust::field_name,
+            None,
         );
     }
 
+    /// AST: struct Name { fields... } or struct Name(types...);
+    /// Purpose: Declare struct symbol, create struct scope for fields and methods
+    #[tracing::instrument(skip_all)]
     fn visit_struct_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -409,8 +398,16 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Struct,
             LangRust::field_name,
+            Some(Box::new(|node, scopes| {
+                let _ = scopes.lookup_or_insert("self", node, SymKind::TypeAlias);
+                let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
+            })),
         );
     }
+
+    /// AST: enum Name { variants... }
+    /// Purpose: Declare enum symbol, create enum scope for variants
+    #[tracing::instrument(skip_all)]
     fn visit_enum_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -427,9 +424,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Enum,
             LangRust::field_name,
+            None,
         );
     }
 
+    /// AST: trait Name { associated items... }
+    /// Purpose: Declare trait symbol, create trait scope for methods and associated types
+    #[tracing::instrument(skip_all)]
     fn visit_trait_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -446,9 +447,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Trait,
             LangRust::field_name,
+            None,
         );
     }
 
+    /// AST: impl [Trait for] Type { methods... }
+    /// Purpose: Create impl scope for methods
+    #[tracing::instrument(skip_all)]
     fn visit_impl_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -457,48 +462,30 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        if let Some(trait_node) = node.child_by_field(*unit, LangRust::field_trait)
-            && let Some(trait_name) = Self::type_name_from_node(unit, &trait_node)
+        if let Some(ti) = node.ident_by_field(*unit, LangRust::field_trait)
+            && let Some(symbol) =
+                self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Trait)
         {
-            if let Some(symbol) =
-                scopes.lookup_symbol_with(trait_name, Some(vec![SymKind::Trait]), None, None)
-                && let Some(trait_ident) =
-                    node.child_identifier_by_field(*unit, LangRust::field_trait)
-            {
-                trait_ident.set_symbol(symbol);
-            } else if let Some(symbol) =
-                scopes.lookup_or_insert(trait_name, node, SymKind::UnresolvedType)
-                && let Some(trait_ident) =
-                    node.child_identifier_by_field(*unit, LangRust::field_trait)
-            {
-                trait_ident.set_symbol(symbol);
-            }
+            ti.set_symbol(symbol);
         }
 
-        if let Some(sn) = node.as_scope()
-            && let Some(type_ident) = node.child_identifier_by_field(*unit, LangRust::field_type)
-            && let Some(type_node) = node.child_by_field(*unit, LangRust::field_type)
-            && let Some(type_name) = Self::type_name_from_node(unit, &type_node)
+        if let Some((sn, ti)) = node.scope_and_ident_by_field(*unit, LangRust::field_type)
+            && let Some(symbol) =
+                self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::UnresolvedType)
         {
-            if let Some(symbol) = scopes.lookup_symbol_with(
-                type_name,
-                Some(vec![SymKind::Struct, SymKind::Enum, SymKind::Primitive]),
-                None,
-                None,
-            ) {
-                type_ident.set_symbol(symbol);
-                // Primitives don't have scopes, so we need to allocate one for the impl
-                let needs_scope = symbol.opt_scope().is_none();
-                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, needs_scope);
-            } else if let Some(symbol) =
-                scopes.lookup_or_insert(type_name, node, SymKind::UnresolvedType)
-            {
-                type_ident.set_symbol(symbol);
-                self.visit_with_scope(unit, node, scopes, symbol, sn, type_ident, true);
-            }
+            tracing::trace!(
+                "visiting impl for type '{}', {:?}",
+                ti.name,
+                symbol.format(Some(scopes.interner())),
+            );
+            ti.set_symbol(symbol);
+            self.visit_with_scope(unit, node, scopes, symbol, sn, ti, None);
         }
     }
 
+    /// AST: macro_rules! name { ... }
+    /// Purpose: Declare macro symbol for later macro invocation resolution
+    #[tracing::instrument(skip_all)]
     fn visit_macro_definition(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -515,102 +502,67 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Macro,
             LangRust::field_name,
+            None,
         );
     }
 
+    /// AST: const NAME: Type = value;
+    /// Purpose: Declare const symbol and visit initializer expression for dependencies
+    #[tracing::instrument(skip_all)]
     fn visit_const_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
         if let Some(symbol) =
-            self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name)
+            self.declare_symbol(unit, node, scopes, SymKind::Const, LangRust::field_name)
         {
             self.visit_children(unit, node, scopes, namespace, Some(symbol));
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
         }
     }
 
+    /// AST: static NAME: Type = value;
+    /// Purpose: Declare static symbol and visit initializer expression for dependencies
+    #[tracing::instrument(skip_all)]
     fn visit_static_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = self.declare_symbol_from_field(
-            unit,
-            node,
-            scopes,
-            SymKind::Static,
-            LangRust::field_name,
-        ) {
+        if let Some(symbol) =
+            self.declare_symbol(unit, node, scopes, SymKind::Static, LangRust::field_name)
+        {
             self.visit_children(unit, node, scopes, namespace, Some(symbol));
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
         }
     }
 
+    /// AST: type Name = AnotherType;
+    /// Purpose: Declare type alias symbol and visit the aliased type for dependencies
+    #[tracing::instrument(skip_all)]
     fn visit_type_item(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
-    ) {
-        self.declare_symbol_from_field(
-            unit,
-            node,
-            scopes,
-            SymKind::TypeAlias,
-            LangRust::field_name,
-        );
-        self.visit_children(unit, node, scopes, namespace, parent);
-    }
-
-    fn visit_type_identifier(
-        &mut self,
-        _unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        scopes: &mut CollectorScopes<'tcx>,
-        _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        let ident = node.as_ident().unwrap();
-        if let Some(symbol) = scopes.lookup_symbol_with(
-            &ident.name,
-            Some(vec![
-                SymKind::Struct,
-                SymKind::Enum,
-                SymKind::Trait,
-                SymKind::Function,
-                SymKind::TypeAlias,
-            ]),
-            None,
-            None,
-        ) {
-            ident.set_symbol(symbol);
-            return;
-        }
-
-        if ident.name == "Self"
-            && let Some(symbol) = scopes.scopes().iter().into_iter().rev().find_map(|scope| {
-                scope.opt_symbol().and_then(|sym| {
-                    matches!(sym.kind(), SymKind::Struct | SymKind::Enum | SymKind::Trait)
-                        .then_some(sym)
-                })
-            })
+        if let Some(symbol) =
+            self.declare_symbol(unit, node, scopes, SymKind::TypeAlias, LangRust::field_name)
         {
-            ident.set_symbol(symbol);
+            self.visit_children(unit, node, scopes, namespace, Some(symbol));
         }
     }
 
+    /// AST: Generic type parameter T or K in fn<T, K>(...) or struct<T> { ... }
+    /// Purpose: Declare type parameter symbol within generic scope
+    #[tracing::instrument(skip_all)]
     fn visit_type_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -619,7 +571,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.declare_symbol_from_field(
+        let _ = self.declare_symbol(
             unit,
             node,
             scopes,
@@ -629,6 +581,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: Generic const parameter N in fn<const N: usize>(...) or struct<const N: usize> { ... }
+    /// Purpose: Declare const parameter symbol and add dependency to owner
+    #[tracing::instrument(skip_all)]
     fn visit_const_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -637,15 +592,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if let Some(sym) =
-            self.declare_symbol_from_field(unit, node, scopes, SymKind::Const, LangRust::field_name)
-            && let Some(owner) = namespace.opt_symbol()
-        {
-            owner.add_dependency(sym, None);
-        }
+        let _ = self.declare_symbol(unit, node, scopes, SymKind::Const, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: type Assoc = Type; in trait definition
+    /// Purpose: Declare associated type symbol within trait scope
+    #[tracing::instrument(skip_all)]
     fn visit_associated_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -654,16 +607,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        self.declare_symbol_from_field(
-            unit,
-            node,
-            scopes,
-            SymKind::TypeAlias,
-            LangRust::field_name,
-        );
+        let _ = self.declare_symbol(unit, node, scopes, SymKind::TypeAlias, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: where T: Trait, U: Send, ... in generic bounds
+    /// Purpose: Visit where clause bounds for type dependency tracking
+    #[tracing::instrument(skip_all)]
     fn visit_where_predicate(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -672,16 +622,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let _ = self.declare_symbol_from_field(
-            unit,
-            node,
-            scopes,
-            SymKind::Field,
-            LangRust::field_name,
-        );
+        let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: [Type; N] or [Type]
+    /// Purpose: Visit array type element and length for dependency tracking
+    #[tracing::instrument(skip_all)]
     fn visit_array_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -693,6 +640,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: (Type1, Type2, ...) tuple type
+    /// Purpose: Visit tuple element types for dependency tracking
+    #[tracing::instrument(skip_all)]
     fn visit_tuple_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -704,6 +654,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: i32, u64, f32, bool, str, etc. - primitive type keyword
+    /// Purpose: Visit primitive type children (minimal, mostly a no-op)
+    #[tracing::instrument(skip_all)]
     fn visit_primitive_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -715,6 +668,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: dyn Trait or impl Trait or other advanced type constructs
+    /// Purpose: Visit abstract type children for trait dependency tracking
     fn visit_abstract_type(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -726,6 +681,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: field_name: Type in struct body
+    /// Purpose: Declare field symbol and visit field type for dependencies
     fn visit_field_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -734,16 +691,12 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        let _ = self.declare_symbol_from_field(
-            unit,
-            node,
-            scopes,
-            SymKind::Field,
-            LangRust::field_name,
-        );
+        let _ = self.declare_symbol(unit, node, scopes, SymKind::Field, LangRust::field_name);
         self.visit_children(unit, node, scopes, namespace, parent);
     }
 
+    /// AST: Variant in enum { Variant, Variant(Type), Variant { field: Type }, ... }
+    /// Purpose: Declare enum variant symbol and link it to parent enum via type_of
     fn visit_enum_variant(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -763,27 +716,41 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::EnumVariant,
             LangRust::field_name,
+            None,
         );
 
         // Set type_of on the variant to point to the parent enum
         if let Some(enum_sym) = parent_enum
-            && let Some(ident) = node.child_identifier_by_field(*unit, LangRust::field_name)
-            && let Some(variant_sym) =
-                scopes.lookup_symbol_with(&ident.name, Some(vec![SymKind::EnumVariant]), None, None)
+            && let Some(ident) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(variant_sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::EnumVariant])
         {
             variant_sym.set_type_of(enum_sym.id);
         }
     }
 
+    /// AST: parameter in function signature param: Type or pattern, Type in closure
+    /// Purpose: Declare function/closure parameter as variable symbol
     fn visit_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
-        if let Some(symbol) = self.declare_symbol_from_field(
+        // Check if this is a 'self' parameter
+        if let Some(ident) = node.ident_by_field(*unit, LangRust::field_pattern)
+            && ident.name == "self"
+            && let Some(symbol) = scopes.lookup_symbol(&ident.name, vec![SymKind::Field])
+        {
+            // For 'self' parameters, try to resolve it as a Field in the current scope
+            ident.set_symbol(symbol);
+            self.visit_children(unit, node, scopes, namespace, Some(symbol));
+            return;
+        }
+
+        // For non-self parameters, declare as Variable
+        if let Some(symbol) = self.declare_symbol(
             unit,
             node,
             scopes,
@@ -791,11 +758,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             LangRust::field_pattern,
         ) {
             self.visit_children(unit, node, scopes, namespace, Some(symbol));
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
         }
     }
 
+    /// AST: |param1, param2| { body } - closure/anonymous function
+    /// Purpose: Create closure scope, declare closure parameters as variables
     fn visit_closure_expression(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -821,11 +788,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
             self.visit_children(unit, node, scopes, scope, parent);
             scopes.pop_scope();
-        } else {
-            self.visit_children(unit, node, scopes, namespace, parent);
         }
     }
 
+    /// AST: let pattern = value; or let pattern: Type = value; statement
+    /// Purpose: Collect pattern identifiers as variables, handle closure special case
     fn visit_let_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -878,540 +845,4 @@ pub fn collect_symbols<'tcx>(
     visit.visit_node(&unit, node, &mut scopes, unit_globals, None);
 
     unit_globals
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::token::LangRust;
-
-    use llmcc_core::context::CompileCtxt;
-    use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
-    use llmcc_core::symbol::{SymId, SymKind};
-    use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
-
-    fn with_compiled_unit<F>(sources: &[&str], check: F)
-    where
-        F: FnOnce(&CompileCtxt<'_>),
-    {
-        let bytes = sources
-            .iter()
-            .map(|src| src.as_bytes().to_vec())
-            .collect::<Vec<_>>();
-        let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
-        build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
-        let resolver_option = ResolverOption::default()
-            .with_sequential(true)
-            .with_print_ir(true);
-        let globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
-        bind_symbols_with::<LangRust>(&cc, globals, &resolver_option);
-        check(&cc);
-    }
-
-    fn find_symbol_id(
-        cc: &CompileCtxt<'_>,
-        name: &str,
-        kind: SymKind,
-    ) -> llmcc_core::symbol::SymId {
-        let name_key = cc.interner.intern(name);
-        cc.symbol_map
-            .read()
-            .iter()
-            .find(|(_, symbol)| symbol.name == name_key && symbol.kind() == kind)
-            .map(|(id, _)| *id)
-            .unwrap_or_else(|| panic!("symbol {name} with kind {:?} not found", kind))
-    }
-
-    fn dependency_names(cc: &CompileCtxt<'_>, sym_id: SymId) -> Vec<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map
-            .get(&sym_id)
-            .copied()
-            .unwrap_or_else(|| panic!("missing symbol for id {:?}", sym_id));
-        let deps = symbol.depends_ids();
-        let mut names = Vec::new();
-        for dep in deps {
-            if let Some(target) = map.get(&dep) {
-                let fqn_key = target.fqn();
-                if let Some(fqn) = cc.interner.resolve_owned(fqn_key) {
-                    names.push(fqn);
-                }
-            }
-        }
-        names.sort();
-        names
-    }
-
-    fn type_name_of(cc: &CompileCtxt<'_>, sym_id: SymId) -> Option<String> {
-        let map = cc.symbol_map.read();
-        let symbol = map.get(&sym_id).copied()?;
-        let ty_id = symbol.type_of();
-        drop(map);
-        let ty_id = ty_id?;
-        let map = cc.symbol_map.read();
-        let ty_symbol = map.get(&ty_id).copied()?;
-        cc.interner.resolve_owned(ty_symbol.name)
-    }
-
-    /// Check if a string looks like a UUID (8-4-4-4-12 hex pattern).
-    fn is_uuid_like(s: &str) -> bool {
-        let parts: Vec<&str> = s.split('-').collect();
-        if parts.len() != 5 {
-            return false;
-        }
-        let expected_lens = [8, 4, 4, 4, 12];
-        parts
-            .iter()
-            .zip(expected_lens.iter())
-            .all(|(part, &len)| part.len() == len && part.chars().all(|c| c.is_ascii_hexdigit()))
-    }
-
-    /// Check if an expected pattern matches an actual FQN.
-    /// The `_m` segment in the expected pattern is treated as a wildcard that matches any UUID.
-    fn fqn_matches_pattern(actual: &str, expected: &str) -> bool {
-        let actual_parts: Vec<&str> = actual.split("::").collect();
-        let expected_parts: Vec<&str> = expected.split("::").collect();
-
-        if actual_parts.len() != expected_parts.len() {
-            return false;
-        }
-
-        actual_parts
-            .iter()
-            .zip(expected_parts.iter())
-            .all(|(actual_part, expected_part)| {
-                if *expected_part == "_m" {
-                    // _m is a wildcard that matches any UUID
-                    is_uuid_like(actual_part)
-                } else {
-                    actual_part == expected_part
-                }
-            })
-    }
-
-    fn assert_dependencies(source: &[&str], expectations: &[(&str, SymKind, &[&str])]) {
-        with_compiled_unit(source, |cc| {
-            for (name, kind, deps) in expectations {
-                let sym_id = find_symbol_id(cc, name, *kind);
-                let actual = dependency_names(cc, sym_id);
-                let expected: Vec<String> = deps.iter().map(|s| s.to_string()).collect();
-                println!("AAA_{:?}", actual);
-                println!("EEE_{:?}", expected);
-
-                let mut missing = Vec::new();
-                for expected_dep in &expected {
-                    if !actual
-                        .iter()
-                        .any(|actual_dep| fqn_matches_pattern(actual_dep, expected_dep))
-                    {
-                        missing.push(expected_dep.clone());
-                    }
-                }
-
-                assert!(
-                    missing.is_empty(),
-                    "dependency mismatch for symbol {name}: expected suffixes {:?}, actual FQNs {:?}, missing {:?}",
-                    expected,
-                    actual,
-                    missing
-                );
-            }
-        });
-    }
-
-    fn assert_symbol_type(source: &[&str], name: &str, kind: SymKind, expected: Option<&str>) {
-        with_compiled_unit(source, |cc| {
-            let sym_id = find_symbol_id(cc, name, kind);
-            let actual = type_name_of(cc, sym_id);
-            assert_eq!(
-                actual.as_deref(),
-                expected,
-                "type mismatch for symbol {name}"
-            );
-        });
-    }
-
-    #[test]
-    fn call_expression_basic_dependency() {
-        let source = r#"
-fn callee() {}
-fn caller() {
-    callee();
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[("caller", SymKind::Function, &["_c::_m::source_0::callee"])],
-        );
-    }
-
-    #[test]
-    fn method_call_dependency_expr() {
-        let source = r#"
-struct MyStruct;
-impl MyStruct {
-    fn foo(&self) {}
-}
-
-fn run() {
-    let s = MyStruct;
-    s.foo();
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &[
-                    "_c::_m::source_0::MyStruct",
-                    "_c::_m::source_0::MyStruct::foo",
-                ],
-            )],
-        );
-    }
-
-    #[test]
-    fn method_call_dependency_chained() {
-        let source = r#"
-struct Response;
-
-struct RequestBuilder;
-
-impl RequestBuilder {
-    fn new() -> Self { RequestBuilder }
-    fn set_header(self, _: &str) -> Self { self }
-    fn send(self) -> Response { Response }
-}
-
-fn execute() -> Response {
-    RequestBuilder::new().set_header("x-header").send()
-}
-"#;
-        // Scoped function calls should only depend on the method, not the struct
-        // Response is still a dependency because it's the return type
-        assert_dependencies(
-            &[source],
-            &[(
-                "execute",
-                SymKind::Function,
-                &[
-                    "_c::_m::source_0::RequestBuilder::new",
-                    "_c::_m::source_0::RequestBuilder::set_header",
-                    "_c::_m::source_0::RequestBuilder::send",
-                    "_c::_m::source_0::Response",
-                ],
-            )],
-        );
-    }
-
-    #[test]
-    fn wrapped_call_dependency() {
-        let source = r#"
-async fn async_task() {}
-fn maybe() -> Result<(), ()> { Ok(()) }
-
-async fn entry() -> Result<(), ()> {
-    (async_task)().await;
-    (maybe)()?;
-    Ok(())
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "entry",
-                SymKind::Function,
-                &["_c::_m::source_0::async_task", "_c::_m::source_0::maybe"],
-            )],
-        );
-    }
-
-    #[test]
-    fn macro_invocation_dependency() {
-        let source = r#"
-macro_rules! ping { () => {} }
-
-fn call_macro() {
-    ping!();
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[("call_macro", SymKind::Function, &["_c::_m::source_0::ping"])],
-        );
-    }
-
-    #[test]
-    fn scoped_function_dependency() {
-        let source = r#"
-mod helpers {
-    pub fn compute() {}
-}
-
-fn run() {
-    helpers::compute();
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["_c::_m::source_0::helpers::compute"],
-            )],
-        );
-    }
-
-    #[test]
-    fn associated_function_dependency() {
-        let source = r#"
-struct Foo;
-impl Foo {
-    fn build() -> Self {
-        Foo
-    }
-}
-
-fn run() {
-    Foo::build();
-}
-"#;
-        // Scoped function calls should only depend on the method, not the struct
-        assert_dependencies(
-            &[source],
-            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::build"])],
-        );
-    }
-
-    #[test]
-    fn trait_fully_qualified_call_dependency() {
-        let source = r#"
-trait Greeter {
-    fn greet();
-}
-
-struct Foo;
-
-impl Greeter for Foo {
-    fn greet() {}
-}
-
-fn run() {
-    <Foo as Greeter>::greet();
-}
-"#;
-        // Scoped function calls should only depend on the method, not the struct
-        assert_dependencies(
-            &[source],
-            &[("run", SymKind::Function, &["_c::_m::source_0::Foo::greet"])],
-        );
-    }
-
-    #[test]
-    fn closure_symbol_kind() {
-        let source = r#"
-fn caller() {
-    let add_one = |n: i32| n + 1;
-    let mul = |a, b| a * b;
-    let product = mul(3, 4);
-    let closure_with_block = |x| {
-        let y = x + 1;
-        y * 2
-    };
-}
-"#;
-        with_compiled_unit(&[source], |cc| {
-            // Check that closures are found as Closure kind
-            let add_one_sym = find_symbol_id(cc, "add_one", SymKind::Closure);
-            assert!(add_one_sym.0 > 0, "add_one should be found as Closure");
-
-            let mul_sym = find_symbol_id(cc, "mul", SymKind::Closure);
-            assert!(mul_sym.0 > 0, "mul should be found as Closure");
-
-            let closure_with_block_sym = find_symbol_id(cc, "closure_with_block", SymKind::Closure);
-            assert!(
-                closure_with_block_sym.0 > 0,
-                "closure_with_block should be found as Closure"
-            );
-        });
-    }
-
-    #[test]
-    fn namespaced_macro_dependency() {
-        let source = r#"
-mod outer {
-    mod inner {
-        fn shout() {
-        }
-    }
-}
-
-fn run() {
-    outer::inner::shout!();
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[(
-                "run",
-                SymKind::Function,
-                &["_c::_m::source_0::outer::inner::shout"],
-            )],
-        );
-    }
-
-    #[test]
-    fn super_module_function_dependency() {
-        let source = r#"
-mod outer {
-    pub fn top() {}
-    pub mod inner {
-        pub fn run() {
-            super::top();
-        }
-    }
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[("run", SymKind::Function, &["_c::_m::source_0::outer::top"])],
-        );
-    }
-
-    #[test]
-    fn variable_type_annotation() {
-        let source = r#"
-struct Foo;
-
-fn run() {
-    let value: Foo = Foo;
-    let other = Foo;
-}
-"#;
-        assert_symbol_type(&[source], "value", SymKind::Variable, Some("Foo"));
-        assert_symbol_type(&[source], "other", SymKind::Variable, Some("Foo"));
-    }
-
-    #[test]
-    fn static_type_annotation() {
-        let source = r#"
-struct Foo;
-static GLOBAL: Foo = Foo;
-"#;
-        assert_symbol_type(&[source], "GLOBAL", SymKind::Static, Some("Foo"));
-    }
-
-    #[test]
-    fn parameter_type_annotation() {
-        let source = r#"
-struct Foo;
-
-fn consume(param: Foo) {
-    let _ = param;
-}
-"#;
-        assert_symbol_type(&[source], "param", SymKind::Variable, Some("Foo"));
-    }
-
-    #[test]
-    fn field_type_annotation() {
-        let source = r#"
-struct Bar;
-struct Bucket {
-    item: Bar,
-}
-"#;
-        assert_symbol_type(&[source], "item", SymKind::Field, Some("Bar"));
-    }
-
-    #[test]
-    fn const_and_type_alias_types() {
-        let source = r#"
-struct Foo;
-type Alias = Foo;
-const ANSWER: i32 = 42;
-"#;
-        assert_symbol_type(&[source], "Alias", SymKind::TypeAlias, Some("Foo"));
-        assert_symbol_type(&[source], "ANSWER", SymKind::Const, Some("i32"));
-    }
-
-    #[test]
-    fn struct_field_generic_dependency() {
-        let source = r#"
-struct Foo;
-struct List<T>(T);
-
-struct Container {
-    data: List<Foo>,
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[
-                (
-                    "Container",
-                    SymKind::Struct,
-                    &["_c::_m::source_0::Foo", "_c::_m::source_0::List"],
-                ),
-                (
-                    "data",
-                    SymKind::Field,
-                    &["_c::_m::source_0::Foo", "_c::_m::source_0::List"],
-                ),
-            ],
-        );
-    }
-
-    #[test]
-    fn enum_variant_dependency() {
-        let source = r#"
-struct Foo;
-enum Wrapper {
-    Item(Foo),
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[("Wrapper", SymKind::Enum, &["_c::_m::source_0::Foo"])],
-        );
-    }
-
-    #[test]
-    fn let_statement_generic_dependency() {
-        let source = r#"
-struct Foo;
-struct Bar;
-enum Result<T, E> {
-    Ok(T),
-    Err(E),
-}
-
-fn run() {
-    let value: Result<Foo, Bar> = Result::Ok(Foo);
-}
-"#;
-        assert_dependencies(
-            &[source],
-            &[
-                (
-                    "value",
-                    SymKind::Variable,
-                    &[
-                        "_c::_m::source_0::Bar",
-                        "_c::_m::source_0::Foo",
-                        "_c::_m::source_0::Result",
-                    ],
-                ),
-                (
-                    "run",
-                    SymKind::Function,
-                    &[
-                        "_c::_m::source_0::Bar",
-                        "_c::_m::source_0::Foo",
-                        "_c::_m::source_0::Result",
-                    ],
-                ),
-            ],
-        );
-    }
 }

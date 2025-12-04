@@ -5,7 +5,7 @@ use crate::ir::{HirKind, HirNode};
 
 pub trait HirVisitor<'v> {
     fn visit_children(&mut self, unit: CompileUnit<'v>, node: HirNode<'v>, parent: BlockId) {
-        let children = node.children();
+        let children = node.child_ids();
         for child_id in children {
             let child = unit.hir_node(*child_id);
             self.visit_node(unit, child, parent);
@@ -45,7 +45,7 @@ pub trait HirVisitor<'v> {
             HirKind::Undefined => self.visit_undefined(unit, node, parent),
             HirKind::Identifier => self.visit_ident(unit, node, parent),
             _ => {
-                eprintln!("Unhandled node kind: {}", node.format_node(unit));
+                eprintln!("Unhandled node kind: {}", node.format(unit));
             }
         }
     }

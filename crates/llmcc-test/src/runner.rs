@@ -30,7 +30,6 @@ struct SymbolSnapshot {
     id: u32,
     kind: String,
     name: String,
-    fqn: String,
     is_global: bool,
 }
 
@@ -249,10 +248,11 @@ fn evaluate_case(
             status = CaseStatus::Updated;
         } else {
             status = CaseStatus::Failed;
+            // Use normalized values for diff so $TMP replacement is visible
             failures.push(format_expectation_diff(
                 &expect.kind,
-                &expect.value,
-                &actual,
+                &expected_norm,
+                &actual_norm,
             ));
         }
     }
@@ -532,7 +532,6 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
             .then_with(|| a.id.cmp(&b.id))
             .then_with(|| a.kind.cmp(&b.kind))
             .then_with(|| a.name.cmp(&b.name))
-            .then_with(|| a.fqn.cmp(&b.fqn))
     });
 
     let label_width = rows
@@ -542,7 +541,6 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
         .unwrap_or(0);
     let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
     let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
-    let fqn_width = rows.iter().map(|row| row.fqn.len()).max().unwrap_or(0);
     let global_width = if rows.iter().any(|row| row.is_global) {
         "[global]".len()
     } else {
@@ -554,16 +552,14 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
         let label = format!("u{}:{}", row.unit, row.id);
         let _ = writeln!(
             buf,
-            "{:<label_width$} | {:kind_width$} | {:name_width$} | {:fqn_width$} | {:global_width$}",
+            "{:<label_width$} | {:kind_width$} | {:name_width$} | {:global_width$}",
             label,
             row.kind,
             row.name,
-            row.fqn,
             if row.is_global { "[global]" } else { "" },
             label_width = label_width,
             kind_width = kind_width,
             name_width = name_width,
-            fqn_width = fqn_width,
             global_width = global_width,
         );
     }
@@ -705,17 +701,11 @@ fn normalize_symbols(text: &str) -> String {
             let (unit, id) = parse_unit_and_id(label);
             let kind = parts.get(1).copied().unwrap_or("");
             let name = parts.get(2).copied().unwrap_or("");
-            let mut fqn = parts.get(3).copied().unwrap_or("");
-            let mut global = parts.get(4).copied().unwrap_or("");
+            let global = parts.get(3).copied().unwrap_or("");
 
-            if parts.len() == 4 && fqn.ends_with("[global]") {
-                if let Some(stripped) = fqn.strip_suffix(" [global]") {
-                    fqn = stripped.trim_end();
-                }
-                global = "[global]";
-            }
-
-            let canonical = format!("{label} | {kind} | {name} | {fqn} | {global}");
+            let canonical = format!("{label} | {kind} | {name} | {global}");
+            // Trim trailing whitespace from the row (e.g., when global is empty)
+            let canonical = canonical.trim_end().to_string();
             Some((unit, id, canonical))
         })
         .collect();
@@ -778,9 +768,32 @@ fn is_empty_relation(line: &str) -> bool {
 }
 
 fn normalize_graph(text: &str) -> String {
-    // Just return the trimmed text as-is since temp path replacement
-    // is already handled in the normalize() function
-    text.trim().to_string()
+    // Parse graph and sort edges for deterministic comparison
+    let mut lines: Vec<&str> = text.trim().lines().collect();
+
+    // Find where edges start (after closing brace of last subgraph)
+    // Edges are lines like "  n1 -> n2;" or "  n1 -> n2 [...];"
+    let edge_re = regex::Regex::new(r"^\s*n\d+\s*->\s*n\d+").unwrap();
+
+    let mut edge_start = None;
+    let mut edge_end = None;
+
+    for (i, line) in lines.iter().enumerate() {
+        if edge_re.is_match(line) {
+            if edge_start.is_none() {
+                edge_start = Some(i);
+            }
+            edge_end = Some(i);
+        }
+    }
+
+    // Sort the edges if found
+    if let (Some(start), Some(end)) = (edge_start, edge_end) {
+        let edges = &mut lines[start..=end];
+        edges.sort();
+    }
+
+    lines.join("\n")
 }
 
 fn parse_unit_and_id(token: &str) -> (usize, u32) {
@@ -1197,14 +1210,11 @@ fn render_block_graph_node(
     buf.push_str(")\n");
 }
 
-fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
-    let symbol_map = cc.symbol_map.read();
+fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
+    let symbols = cc.get_all_symbols();
     let interner = &cc.interner;
-    let mut rows = Vec::with_capacity(symbol_map.len());
-    for (_sym_id, symbol) in symbol_map.iter() {
-        let fqn_str = interner
-            .resolve_owned(*symbol.fqn.read())
-            .unwrap_or_else(|| "?".to_string());
+    let mut rows = Vec::with_capacity(symbols.len());
+    for symbol in symbols {
         let name_str = interner
             .resolve_owned(symbol.name)
             .unwrap_or_else(|| "?".to_string());
@@ -1214,21 +1224,20 @@ fn snapshot_symbols(cc: &CompileCtxt<'_>) -> Vec<SymbolSnapshot> {
             id: symbol.id().0 as u32,
             kind: format!("{:?}", symbol.kind()),
             name: name_str,
-            fqn: fqn_str,
             is_global: symbol.is_global(),
         });
     }
 
     rows
 }
-fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySnapshot> {
+fn snapshot_symbol_dependencies<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolDependencySnapshot> {
     use std::collections::HashMap;
 
-    let symbol_map = cc.symbol_map.read();
+    let symbols = cc.get_all_symbols();
     let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
 
     // Build initial cache of all symbols
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in &symbols {
         let sym_id_num = symbol.id().0 as u32;
         let label = format!(
             "u{}:{}",
@@ -1246,15 +1255,15 @@ fn snapshot_symbol_dependencies(cc: &CompileCtxt<'_>) -> Vec<SymbolDependencySna
     }
 
     // Fill in dependencies
-    for (_sym_id, symbol) in symbol_map.iter() {
+    for symbol in &symbols {
         let sym_id_num = symbol.id().0 as u32;
         let deps = symbol.depends_ids();
         for dep in deps {
-            if let Some(_target) = symbol_map.get(&dep) {
+            if let Some(target) = cc.opt_get_symbol(dep) {
                 let dep_id_num = dep.0 as u32;
                 let dep_label = format!(
                     "u{}:{}",
-                    _target.unit_index().unwrap_or_default(),
+                    target.unit_index().unwrap_or_default(),
                     dep_id_num
                 );
                 if let Some(entry) = cache.get_mut(&sym_id_num) {
@@ -1284,15 +1293,14 @@ fn render_block_reports(
     use std::collections::BTreeMap;
     use std::collections::HashMap;
 
-    let indexes = project.cc.block_indexes.read();
     let mut units: BTreeMap<usize, Vec<(BlockDescriptor, Vec<BlockDescriptor>)>> = BTreeMap::new();
 
     for unit_graph in project.units() {
         let unit_index = unit_graph.unit_index();
         let mut entries = Vec::new();
 
-        for (_name_opt, kind, block_id) in indexes.find_by_unit(unit_index) {
-            let Some(mut desc) = describe_block(block_id, &indexes) else {
+        for (_name_opt, kind, block_id) in project.cc.find_blocks_in_unit(unit_index) {
+            let Some(mut desc) = describe_block(block_id, project.cc) else {
                 continue;
             };
             desc.kind = kind.to_string();
@@ -1304,7 +1312,7 @@ fn render_block_reports(
             deps.dedup();
             let mut dep_descs: Vec<BlockDescriptor> = deps
                 .into_iter()
-                .filter_map(|id| describe_block(id, &indexes))
+                .filter_map(|id| describe_block(id, project.cc))
                 .collect();
             dep_descs.sort_by(|a, b| (a.unit, &a.name).cmp(&(b.unit, &b.name)));
             entries.push((desc, dep_descs));
@@ -1380,9 +1388,9 @@ struct BlockDescriptor {
 
 fn describe_block(
     block_id: llmcc_core::graph_builder::BlockId,
-    indexes: &llmcc_core::block_rel::BlockIndexMaps,
+    cc: &llmcc_core::context::CompileCtxt,
 ) -> Option<BlockDescriptor> {
-    let (unit, name, kind) = indexes.get_block_info(block_id)?;
+    let (unit, name, kind) = cc.get_block_info(block_id)?;
     let name = name.unwrap_or_else(|| format!("block#{block_id}"));
     Some(BlockDescriptor {
         name,

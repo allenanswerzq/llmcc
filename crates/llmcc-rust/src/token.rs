@@ -20,15 +20,14 @@ impl LanguageTraitImpl for LangRust {
         let stack = ScopeStack::new(cc.arena(), &cc.interner);
         let globals = cc.create_globals();
         stack.push(globals);
+        debug_assert!(stack.depth() == 1);
 
         for prim in crate::RUST_PRIMITIVES {
             let name = cc.interner.intern(prim);
             let symbol = cc.arena().alloc(Symbol::new(CompileCtxt::GLOBAL_SCOPE_OWNER, name));
             symbol.set_kind(SymKind::Primitive);
-            symbol.set_fqn(name);
             symbol.set_is_global(true);
             globals.insert(symbol);
-            cc.symbol_map.write().insert(symbol.id(), symbol);
         }
 
         stack
