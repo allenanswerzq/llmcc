@@ -263,7 +263,7 @@ impl Symbol {
         *self.owner.write() = owner;
     }
 
-    /// Formats the symbol
+    /// Formats the symbol with basic information
     pub fn format(&self, interner: Option<&crate::interner::InternPool>) -> String {
         let kind = format!("{:?}", self.kind());
         if let Some(interner) = interner {
@@ -275,6 +275,22 @@ impl Symbol {
         } else {
             format!("[{}:{}]", self.id.0, kind)
         }
+    }
+
+    /// Formats the symbol with dependencies
+    pub fn format_with_deps(&self, interner: Option<&crate::interner::InternPool>) -> String {
+        let mut result = self.format(interner);
+
+        let depends = self.depends.read();
+        if !depends.is_empty() {
+            let dep_strs: Vec<String> = depends
+                .iter()
+                .map(|(dep_id, dep_kind)| format!("{} ({:?})", dep_id.0, dep_kind))
+                .collect();
+            result.push_str(&format!(" -> [{}]", dep_strs.join(", ")));
+        }
+
+        result
     }
 
     /// Gets the scope ID this symbol belongs to.
@@ -464,6 +480,39 @@ impl Symbol {
             return;
         }
         drop(other_deps);
+
+        // Upgrade depends to more specific over Uses
+        let mut deps = self.depends.write();
+        if let Some((_, kind)) = deps.iter_mut().find(|(id, _)| *id == other.id) {
+            match (*kind, dep_kind) {
+                // Upgrade from general to specific
+                (DepKind::Uses, new_kind) if new_kind != DepKind::Uses => {
+                    *kind = new_kind;
+                }
+                // Keep existing specific kind, don't downgrade to Uses
+                (existing_kind, DepKind::Uses) if existing_kind != DepKind::Uses => {
+                    // Keep existing
+                }
+                // Both are non-Uses but different: warn about conflict
+                (existing_kind, _)
+                    if existing_kind != DepKind::Uses
+                        && dep_kind != DepKind::Uses
+                        && existing_kind != dep_kind =>
+                {
+                    tracing::warn!(
+                        "conflicting depends kinds for {} -> {}: existing {:?}, new {:?}",
+                        self.id,
+                        other.id,
+                        existing_kind,
+                        dep_kind
+                    );
+                }
+                // Otherwise keep existing (same kind or both Uses)
+                _ => {}
+            }
+            return;
+        }
+        drop(deps);
 
         tracing::trace!("add_depends: {} -> {} ({:?})", self.id, other.id, dep_kind);
         self.add_depends_on(other.id, dep_kind);

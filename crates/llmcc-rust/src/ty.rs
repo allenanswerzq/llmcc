@@ -84,14 +84,11 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         kind_filters: Option<Vec<SymKind>>,
     ) -> Option<&'tcx Symbol> {
         match node.kind_id() {
-            // Literals
             LangRust::integer_literal => self.primitive_type("i32"),
             LangRust::float_literal => self.primitive_type("f64"),
             LangRust::string_literal => self.primitive_type("str"),
             LangRust::boolean_literal => self.primitive_type("bool"),
             LangRust::char_literal => self.primitive_type("char"),
-
-            // Structural Inference
             LangRust::scoped_identifier => self.infer_scoped_identifier(node, None),
             LangRust::struct_expression => self.infer_struct_expression(node),
             LangRust::call_expression => self.infer_child_field(node, LangRust::field_function),

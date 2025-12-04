@@ -4,13 +4,17 @@ use llmcc_core::context::CompileCtxt;
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::symbol::{DepKind, SymKind};
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
+use tracing_subscriber::EnvFilter;
 
 #[allow(dead_code)]
 pub fn with_compiled_unit<F>(sources: &[&str], check: F)
 where
     F: for<'a> FnOnce(&'a CompileCtxt<'a>),
 {
-    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).with_test_writer().try_init();
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
+        .with_test_writer()
+        .try_init();
 
     let bytes = sources.iter().map(|src| src.as_bytes().to_vec()).collect::<Vec<_>>();
 
@@ -28,7 +32,10 @@ pub fn with_collected_unit<F>(sources: &[&str], check: F)
 where
     F: for<'a> FnOnce(&'a CompileCtxt<'a>),
 {
-    let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::TRACE).with_test_writer().try_init();
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
+        .with_test_writer()
+        .try_init();
 
     let bytes = sources.iter().map(|src| src.as_bytes().to_vec()).collect::<Vec<_>>();
 
@@ -51,8 +58,11 @@ pub fn find_symbol_id<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) ->
 }
 
 pub fn assert_depends<'a>(cc: &'a CompileCtxt<'a>, from_name: &str, from_kind: SymKind, to_name: &str, to_kind: SymKind, dep_kind: Option<DepKind>) {
-    let from_sym = cc
-        .get_all_symbols()
+    let all_symbols = cc.get_all_symbols();
+    for sym in &all_symbols {
+        tracing::debug!("Symbol: {:?}", sym.format_with_deps(Some(&cc.interner)));
+    }
+    let from_sym = all_symbols
         .iter()
         .find(|sym| {
             let name_key = cc.interner.intern(from_name);
@@ -61,8 +71,7 @@ pub fn assert_depends<'a>(cc: &'a CompileCtxt<'a>, from_name: &str, from_kind: S
         .copied()
         .unwrap_or_else(|| panic!("symbol {} with kind {:?} not found", from_name, from_kind));
 
-    let to_sym = cc
-        .get_all_symbols()
+    let to_sym = all_symbols
         .iter()
         .find(|sym| {
             let name_key = cc.interner.intern(to_name);
@@ -95,10 +104,14 @@ pub fn assert_depends<'a>(cc: &'a CompileCtxt<'a>, from_name: &str, from_kind: S
 pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
     let name_key = cc.interner.intern(name);
     let all_symbols = cc.get_all_symbols();
+    for sym in &all_symbols {
+        tracing::debug!("Symbol: {:?}", cc.interner.resolve_owned(sym.name).unwrap());
+    }
     let symbol = all_symbols
         .iter()
         .find(|sym| sym.name == name_key && sym.kind() == kind)
         .unwrap_or_else(|| panic!("symbol {} with kind {:?} not found", name, kind));
+    // prints all symbol for debugging
     assert!(symbol.id().0 > 0, "symbol should have a valid id");
 }
 

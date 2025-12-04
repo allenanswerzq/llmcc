@@ -67,9 +67,20 @@ fn test_visit_function_item() {
         assert_depends_batch(
             cc,
             vec![
+                ("source_0", SymKind::File, "Option", SymKind::Struct, Some(DepKind::Uses)),
+                ("source_0", SymKind::File, "get_value", SymKind::Function, Some(DepKind::Uses)),
+                ("source_0", SymKind::File, "User", SymKind::Struct, Some(DepKind::Uses)),
+                ("source_0", SymKind::File, "main", SymKind::Function, Some(DepKind::Uses)),
                 ("get_value", SymKind::Function, "Option", SymKind::Struct, Some(DepKind::ReturnType)),
+                ("User", SymKind::Struct, "String", SymKind::Primitive, Some(DepKind::Uses)),
+                ("User", SymKind::Struct, "new", SymKind::Function, Some(DepKind::Uses)),
+                ("User", SymKind::Struct, "foo", SymKind::Function, Some(DepKind::Uses)),
+                ("User", SymKind::Struct, "display", SymKind::Function, Some(DepKind::Uses)),
                 ("new", SymKind::Function, "User", SymKind::Struct, Some(DepKind::ReturnType)),
                 ("display", SymKind::Function, "foo", SymKind::Function, Some(DepKind::Uses)),
+                ("main", SymKind::Function, "User", SymKind::Struct, Some(DepKind::Uses)),
+                ("main", SymKind::Function, "new", SymKind::Function, Some(DepKind::Calls)),
+                ("main", SymKind::Function, "display", SymKind::Function, Some(DepKind::Calls)),
             ],
         );
     });
