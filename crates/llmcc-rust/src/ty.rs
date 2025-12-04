@@ -1,5 +1,5 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirKind, HirNode};
+use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
@@ -58,6 +58,7 @@ impl<'a, 'tcx> TyCtxt<'a, 'tcx> {
     }
 
     /// Resolves canonical type (follows aliases).
+    #[allow(dead_code)]
     pub fn resolve_type_of(unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Symbol {
         TyImpl::resolve_type_of(unit, symbol)
     }
@@ -105,7 +106,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             }
             _ => {
                 // Try to resolve as identifier first
-                let ident = node.find_ident(&self.ty.unit)?;
+                let ident = node.find_ident(self.ty.unit)?;
                 if let Some(symbol) = ident.opt_symbol() {
                     return Some(symbol);
                 }
@@ -207,7 +208,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
     }
 
     fn infer_block(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(&self.ty.unit);
+        let children = node.children(self.ty.unit);
         let last_child = children
             .iter()
             .rev()
@@ -274,6 +275,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         self.ty.infer(&child)
     }
 
+    #[allow(dead_code)]
     fn resolve_type_of(unit: &CompileUnit<'tcx>, mut current_symbol: &'tcx Symbol) -> &'tcx Symbol {
         const MAX_DEPTH: usize = 8;
         for _ in 0..MAX_DEPTH {
@@ -291,6 +293,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         current_symbol
     }
 
+    #[allow(dead_code)]
     fn collect_types(&mut self, node: &HirNode<'tcx>, collected_symbols: &mut Vec<&'tcx Symbol>) {
         if let Some(type_symbol) = self.ty.resolve_type(node)
             && !collected_symbols.iter().any(|s| s.id() == type_symbol.id())
@@ -326,6 +329,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         }
     }
 
+    #[allow(dead_code)]
     fn is_identifier_kind(kind_id: u16) -> bool {
         matches!(
             kind_id,
@@ -340,6 +344,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         matches!(node.kind(), HirKind::Text | HirKind::Comment)
     }
 
+    #[allow(dead_code)]
     fn first_significant_child(&self, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
         node.children(self.ty.unit)
             .iter()
@@ -347,6 +352,7 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
             .copied()
     }
 
+    #[allow(dead_code)]
     fn as_text_literal(&self, node: &HirNode<'tcx>) -> Option<&'tcx str> {
         node.as_text().map(|t| t.text.as_str())
     }
@@ -356,13 +362,13 @@ impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
         node: &HirNode<'tcx>,
     ) -> Option<(HirNode<'tcx>, HirNode<'tcx>, Option<BinaryOperatorOutcome>)> {
         let children = node.children(self.ty.unit);
-        let left = children.first().map(|child| *child)?;
+        let left = children.first().copied()?;
 
         let outcome = children
             .iter()
             .find_map(|child| self.lookup_binary_operator(Some(child.kind_id()), None))
             .or_else(|| {
-                let right = children.get(1).map(|child| *child)?;
+                let right = children.get(1).copied()?;
                 if left.end_byte() < right.start_byte() {
                     let text = self.ty.unit.get_text(left.end_byte(), right.start_byte());
                     self.lookup_binary_operator(None, Some(&text))

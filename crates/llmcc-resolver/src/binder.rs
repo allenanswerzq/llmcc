@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
-use llmcc_core::ir::{HirNode, HirScope};
+use llmcc_core::ir::HirScope;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
 use llmcc_core::{CompileCtxt, LanguageTraitImpl};

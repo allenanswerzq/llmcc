@@ -1,8 +1,8 @@
 use llmcc_core::context::CompileUnit;
-use llmcc_core::ir::{HirId, HirIdent, HirKind, HirNode, HirScope};
+use llmcc_core::ir::{HirId, HirIdent, HirNode, HirScope};
+use llmcc_core::next_hir_id;
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
-use llmcc_core::{next_hir_id, scope};
 use llmcc_resolver::{CollectorScopes, ResolverOption};
 
 use std::collections::HashMap;
@@ -206,8 +206,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _namespace: &'tcx Scope<'tcx>,
+        _parent: Option<&Symbol>,
         kind: SymKind,
         field_id: u16,
         on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
@@ -236,7 +236,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         unit: &CompileUnit<'tcx>,
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
-        namespace: &'tcx Scope<'tcx>,
+        _namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
         if let Some(sn) = node.as_scope() {
@@ -399,8 +399,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             SymKind::Struct,
             LangRust::field_name,
             Some(Box::new(|node, scopes| {
-                let _ = scopes.lookup_or_insert(&"self", node, SymKind::TypeAlias);
-                let _ = scopes.lookup_or_insert(&"Self", node, SymKind::TypeAlias);
+                let _ = scopes.lookup_or_insert("self", node, SymKind::TypeAlias);
+                let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
             })),
         );
     }
@@ -462,27 +462,24 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        if let Some(ti) = node.ident_by_field(*unit, LangRust::field_trait) {
-            if let Some(symbol) =
+        if let Some(ti) = node.ident_by_field(*unit, LangRust::field_trait)
+            && let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Trait)
-            {
-                ti.set_symbol(symbol);
-            }
+        {
+            ti.set_symbol(symbol);
         }
 
-        if let Some((sn, ti)) = node.scope_and_ident_by_field(*unit, LangRust::field_type) {
-            if let Some(symbol) =
+        if let Some((sn, ti)) = node.scope_and_ident_by_field(*unit, LangRust::field_type)
+            && let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::UnresolvedType)
-            {
-                tracing::trace!(
-                    "visiting impl for type '{}', {:?}",
-                    ti.name,
-                    symbol.format(Some(scopes.interner())),
-                );
-                ti.set_symbol(symbol);
-                self.visit_with_scope(unit, node, scopes, symbol, sn, ti, None);
-                return;
-            }
+        {
+            tracing::trace!(
+                "visiting impl for type '{}', {:?}",
+                ti.name,
+                symbol.format(Some(scopes.interner())),
+            );
+            ti.set_symbol(symbol);
+            self.visit_with_scope(unit, node, scopes, symbol, sn, ti, None);
         }
     }
 
@@ -518,7 +515,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::Const, LangRust::field_name)
@@ -536,7 +533,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::Static, LangRust::field_name)
@@ -554,7 +551,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
         if let Some(symbol) =
             self.declare_symbol(unit, node, scopes, SymKind::TypeAlias, LangRust::field_name)
@@ -739,18 +736,17 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         node: &HirNode<'tcx>,
         scopes: &mut CollectorScopes<'tcx>,
         namespace: &'tcx Scope<'tcx>,
-        parent: Option<&Symbol>,
+        _parent: Option<&Symbol>,
     ) {
         // Check if this is a 'self' parameter
-        if let Some(ident) = node.ident_by_field(*unit, LangRust::field_pattern) {
-            if ident.name == "self" {
-                // For 'self' parameters, try to resolve it as a Field in the current scope
-                if let Some(symbol) = scopes.lookup_symbol(&ident.name, vec![SymKind::Field]) {
-                    ident.set_symbol(symbol);
-                    self.visit_children(unit, node, scopes, namespace, Some(symbol));
-                    return;
-                }
-            }
+        if let Some(ident) = node.ident_by_field(*unit, LangRust::field_pattern)
+            && ident.name == "self"
+            && let Some(symbol) = scopes.lookup_symbol(&ident.name, vec![SymKind::Field])
+        {
+            // For 'self' parameters, try to resolve it as a Field in the current scope
+            ident.set_symbol(symbol);
+            self.visit_children(unit, node, scopes, namespace, Some(symbol));
+            return;
         }
 
         // For non-self parameters, declare as Variable

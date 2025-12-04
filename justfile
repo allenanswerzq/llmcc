@@ -42,22 +42,23 @@ qtest: cargo-test
 install-coverage:
     command -v cargo-llvm-cov > /dev/null || echo y | cargo install cargo-llvm-cov
 
-# Generate HTML coverage report
+# Generate HTML coverage report for all workspace crates
 coverage-html: install-coverage
-    cargo llvm-cov --html
+    cargo llvm-cov --workspace --html
 
-# Generate LCOV format coverage report (for CI/CD tools like Codecov)
+# Generate LCOV format coverage report for all workspace crates (for CI/CD tools like Codecov)
 coverage-lcov: install-coverage
-    cargo llvm-cov --lcov --output-path {{root}}/coverage.lcov
+    cargo llvm-cov --workspace --lcov --output-path {{root}}/coverage.lcov
 
-# Generate JSON format coverage report
+# Generate JSON format coverage report for all workspace crates
 coverage-json: install-coverage
-    cargo llvm-cov --json --output-path {{root}}/coverage.json
+    cargo llvm-cov --workspace --json --output-path {{root}}/coverage.json
 
-# Full coverage report (HTML + cleanup)
+# Full coverage report (HTML)
 coverage: coverage-html
     echo "coverage report generated in target/llvm-cov/html"
-    xdg-open target/llvm-cov/html/index.html
+    echo "Open target/llvm-cov/html/index.html to view the report"
+    xdg-open target/llvm-cov/html/index.html || true
 
 
 release version:

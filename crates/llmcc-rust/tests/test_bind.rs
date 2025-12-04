@@ -1,6 +1,6 @@
 mod common;
 
-use common::{assert_depends, assert_exists, with_compiled_unit};
+use common::{assert_depends, assert_depends_batch, assert_exists, with_compiled_unit};
 use llmcc_core::symbol::{DepKind, SymKind};
 
 #[test]
@@ -71,33 +71,31 @@ fn test_visit_function_item() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        // Test return type dependencies for standalone function
-        assert_depends(
+        assert_depends_batch(
             cc,
-            "get_value",
-            SymKind::Function,
-            "Option",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
-
-        // Test return type in impl block (explicit type instead of Self)
-        assert_depends(
-            cc,
-            "new",
-            SymKind::Function,
-            "User",
-            SymKind::Struct,
-            Some(DepKind::ReturnType),
-        );
-
-        assert_depends(
-            cc,
-            "display",
-            SymKind::Function,
-            "foo",
-            SymKind::Function,
-            Some(DepKind::Uses),
+            vec![
+                (
+                    "get_value",
+                    SymKind::Function,
+                    "Option",
+                    SymKind::Struct,
+                    Some(DepKind::ReturnType),
+                ),
+                (
+                    "new",
+                    SymKind::Function,
+                    "User",
+                    SymKind::Struct,
+                    Some(DepKind::ReturnType),
+                ),
+                (
+                    "display",
+                    SymKind::Function,
+                    "foo",
+                    SymKind::Function,
+                    Some(DepKind::Uses),
+                ),
+            ],
         );
     });
 }
@@ -129,22 +127,24 @@ fn test_visit_impl_item() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
+        assert_depends_batch(
             cc,
-            "Container",
-            SymKind::Struct,
-            "new",
-            SymKind::Function,
-            Some(DepKind::Uses),
-        );
-
-        assert_depends(
-            cc,
-            "Container",
-            SymKind::Struct,
-            "Outer",
-            SymKind::Struct,
-            Some(DepKind::Uses),
+            vec![
+                (
+                    "Container",
+                    SymKind::Struct,
+                    "new",
+                    SymKind::Function,
+                    Some(DepKind::Uses),
+                ),
+                (
+                    "Container",
+                    SymKind::Struct,
+                    "Outer",
+                    SymKind::Struct,
+                    Some(DepKind::Uses),
+                ),
+            ],
         );
     });
 }
@@ -204,43 +204,38 @@ fn test_visit_trait_item() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        // Test Display trait with method
-        assert_depends(
+        assert_depends_batch(
             cc,
-            "Display",
-            SymKind::Trait,
-            "display",
-            SymKind::Function,
-            Some(DepKind::Uses),
-        );
-
-        // Test Clone trait
-        assert_depends(
-            cc,
-            "Clone",
-            SymKind::Trait,
-            "clone",
-            SymKind::Function,
-            Some(DepKind::Uses),
-        );
-
-        // Test FromIterator trait with bound
-        assert_depends(
-            cc,
-            "FromIterator",
-            SymKind::Trait,
-            "Sized",
-            SymKind::Trait,
-            Some(DepKind::TypeBound),
-        );
-
-        assert_depends(
-            cc,
-            "FromIterator",
-            SymKind::Trait,
-            "Clone",
-            SymKind::Trait,
-            Some(DepKind::TypeBound),
+            vec![
+                (
+                    "Display",
+                    SymKind::Trait,
+                    "display",
+                    SymKind::Function,
+                    Some(DepKind::Uses),
+                ),
+                (
+                    "Clone",
+                    SymKind::Trait,
+                    "clone",
+                    SymKind::Function,
+                    Some(DepKind::Uses),
+                ),
+                (
+                    "FromIterator",
+                    SymKind::Trait,
+                    "Sized",
+                    SymKind::Trait,
+                    Some(DepKind::TypeBound),
+                ),
+                (
+                    "FromIterator",
+                    SymKind::Trait,
+                    "Clone",
+                    SymKind::Trait,
+                    Some(DepKind::TypeBound),
+                ),
+            ],
         );
     });
 }
@@ -277,13 +272,15 @@ fn test_visit_macro_invocation() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        assert_depends(
+        assert_depends_batch(
             cc,
-            "main",
-            SymKind::Function,
-            "hello",
-            SymKind::Macro,
-            Some(DepKind::Calls),
+            vec![(
+                "main",
+                SymKind::Function,
+                "hello",
+                SymKind::Macro,
+                Some(DepKind::Calls),
+            )],
         );
     });
 }
@@ -321,52 +318,48 @@ fn test_visit_type_item() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        // Test type alias with where clause
         assert_exists(cc, "PrintableData", SymKind::TypeAlias);
-        assert_depends(
-            cc,
-            "PrintableData",
-            SymKind::TypeAlias,
-            "Data",
-            SymKind::Struct,
-            Some(DepKind::Alias),
-        );
-
-        assert_depends(
-            cc,
-            "PrintableData",
-            SymKind::TypeAlias,
-            "Printable",
-            SymKind::Trait,
-            Some(DepKind::Uses),
-        );
-
-        // Test type alias with multiple where clause bounds
         assert_exists(cc, "SerializableCollection", SymKind::TypeAlias);
-        assert_depends(
-            cc,
-            "SerializableCollection",
-            SymKind::TypeAlias,
-            "Data",
-            SymKind::Struct,
-            Some(DepKind::Alias),
-        );
 
-        assert_depends(
+        assert_depends_batch(
             cc,
-            "SerializableCollection",
-            SymKind::TypeAlias,
-            "Serializable",
-            SymKind::Trait,
-            Some(DepKind::Uses),
-        );
-        assert_depends(
-            cc,
-            "SerializableCollection",
-            SymKind::TypeAlias,
-            "Printable",
-            SymKind::Trait,
-            Some(DepKind::Uses),
+            vec![
+                (
+                    "PrintableData",
+                    SymKind::TypeAlias,
+                    "Data",
+                    SymKind::Struct,
+                    Some(DepKind::Alias),
+                ),
+                (
+                    "PrintableData",
+                    SymKind::TypeAlias,
+                    "Printable",
+                    SymKind::Trait,
+                    Some(DepKind::Uses),
+                ),
+                (
+                    "SerializableCollection",
+                    SymKind::TypeAlias,
+                    "Data",
+                    SymKind::Struct,
+                    Some(DepKind::Alias),
+                ),
+                (
+                    "SerializableCollection",
+                    SymKind::TypeAlias,
+                    "Serializable",
+                    SymKind::Trait,
+                    Some(DepKind::Uses),
+                ),
+                (
+                    "SerializableCollection",
+                    SymKind::TypeAlias,
+                    "Printable",
+                    SymKind::Trait,
+                    Some(DepKind::Uses),
+                ),
+            ],
         );
     });
 }
@@ -438,138 +431,96 @@ fn test_visit_let_declaration() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        // Test explicit type annotations in setup
-        assert_depends(
+        assert_depends_batch(
             cc,
-            "setup",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            None,
-        );
-
-        assert_depends(
-            cc,
-            "setup",
-            SymKind::Function,
-            "Message",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test multiple let dependencies in another function
-        assert_depends(
-            cc,
-            "handle_request",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            None,
-        );
-
-        assert_depends(
-            cc,
-            "handle_request",
-            SymKind::Function,
-            "Request",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test nested let declarations
-        assert_depends(
-            cc,
-            "complex_flow",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            None,
-        );
-
-        assert_depends(
-            cc,
-            "complex_flow",
-            SymKind::Function,
-            "Message",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test inferred types from let statements
-        assert_depends(
-            cc,
-            "inferred_types",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            None,
-        );
-
-        assert_depends(
-            cc,
-            "inferred_types",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test reference pattern function tracks Config type
-        assert_depends(
-            cc,
-            "process_reference_pattern",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test mutable pattern function tracks Handler and Request
-        assert_depends(
-            cc,
-            "process_mutable_pattern",
-            SymKind::Function,
-            "Handler",
-            SymKind::Struct,
-            None,
-        );
-
-        assert_depends(
-            cc,
-            "process_mutable_pattern",
-            SymKind::Function,
-            "Request",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test scoped type annotations
-        assert_depends(
-            cc,
-            "process_scoped_types",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            None,
-        );
-
-        assert_depends(
-            cc,
-            "process_scoped_types",
-            SymKind::Function,
-            "Message",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test pattern with explicit type annotation
-        assert_depends(
-            cc,
-            "pattern_with_type",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            None,
+            vec![
+                ("setup", SymKind::Function, "Config", SymKind::Struct, None),
+                ("setup", SymKind::Function, "Message", SymKind::Struct, None),
+                (
+                    "handle_request",
+                    SymKind::Function,
+                    "Handler",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "handle_request",
+                    SymKind::Function,
+                    "Request",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "complex_flow",
+                    SymKind::Function,
+                    "Config",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "complex_flow",
+                    SymKind::Function,
+                    "Message",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "inferred_types",
+                    SymKind::Function,
+                    "Point",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "inferred_types",
+                    SymKind::Function,
+                    "Handler",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "process_reference_pattern",
+                    SymKind::Function,
+                    "Config",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "process_mutable_pattern",
+                    SymKind::Function,
+                    "Handler",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "process_mutable_pattern",
+                    SymKind::Function,
+                    "Request",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "process_scoped_types",
+                    SymKind::Function,
+                    "Point",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "process_scoped_types",
+                    SymKind::Function,
+                    "Message",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "pattern_with_type",
+                    SymKind::Function,
+                    "Config",
+                    SymKind::Struct,
+                    None,
+                ),
+            ],
         );
     });
 }
@@ -621,53 +572,39 @@ fn test_visit_struct_expression() {
     "#;
 
     with_compiled_unit(&[source], |cc| {
-        // Test function depends on Point from struct expression
-        assert_depends(
+        assert_depends_batch(
             cc,
-            "create_point",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test function depends on Config from struct expression
-        assert_depends(
-            cc,
-            "create_config",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test function depends on Person from struct expression
-        assert_depends(
-            cc,
-            "create_config",
-            SymKind::Function,
-            "Person",
-            SymKind::Struct,
-            None,
-        );
-
-        // Test multiple struct expressions in single function
-        assert_depends(
-            cc,
-            "process",
-            SymKind::Function,
-            "Point",
-            SymKind::Struct,
-            None,
-        );
-
-        assert_depends(
-            cc,
-            "process",
-            SymKind::Function,
-            "Config",
-            SymKind::Struct,
-            None,
+            vec![
+                (
+                    "create_point",
+                    SymKind::Function,
+                    "Point",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "create_config",
+                    SymKind::Function,
+                    "Config",
+                    SymKind::Struct,
+                    None,
+                ),
+                (
+                    "create_config",
+                    SymKind::Function,
+                    "Person",
+                    SymKind::Struct,
+                    None,
+                ),
+                ("process", SymKind::Function, "Point", SymKind::Struct, None),
+                (
+                    "process",
+                    SymKind::Function,
+                    "Config",
+                    SymKind::Struct,
+                    None,
+                ),
+            ],
         );
     });
 }

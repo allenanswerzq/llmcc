@@ -701,7 +701,7 @@ fn normalize_symbols(text: &str) -> String {
             let (unit, id) = parse_unit_and_id(label);
             let kind = parts.get(1).copied().unwrap_or("");
             let name = parts.get(2).copied().unwrap_or("");
-            let mut global = parts.get(3).copied().unwrap_or("");
+            let global = parts.get(3).copied().unwrap_or("");
 
             let canonical = format!("{label} | {kind} | {name} | {global}");
             // Trim trailing whitespace from the row (e.g., when global is empty)

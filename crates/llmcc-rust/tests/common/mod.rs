@@ -5,6 +5,7 @@ use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::symbol::{DepKind, SymKind};
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
+#[allow(dead_code)]
 pub fn with_compiled_unit<F>(sources: &[&str], check: F)
 where
     F: for<'a> FnOnce(&'a CompileCtxt<'a>),
@@ -26,10 +27,11 @@ where
         .with_sequential(true)
         .with_print_ir(true);
     let globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
-    bind_symbols_with::<LangRust>(&cc, &globals, &resolver_option);
+    bind_symbols_with::<LangRust>(&cc, globals, &resolver_option);
     check(&cc);
 }
 
+#[allow(dead_code)]
 pub fn with_collected_unit<F>(sources: &[&str], check: F)
 where
     F: for<'a> FnOnce(&'a CompileCtxt<'a>),
@@ -54,6 +56,7 @@ where
     check(&cc);
 }
 
+#[allow(dead_code)]
 pub fn find_symbol_id<'a>(
     cc: &'a CompileCtxt<'a>,
     name: &str,
@@ -83,10 +86,7 @@ pub fn assert_depends<'a>(
             sym.name == name_key && sym.kind() == from_kind
         })
         .copied()
-        .expect(&format!(
-            "symbol {} with kind {:?} not found",
-            from_name, from_kind
-        ));
+        .unwrap_or_else(|| panic!("symbol {} with kind {:?} not found", from_name, from_kind));
 
     let to_sym = cc
         .get_all_symbols()
@@ -96,12 +96,9 @@ pub fn assert_depends<'a>(
             sym.name == name_key && sym.kind() == to_kind
         })
         .copied()
-        .expect(&format!(
-            "symbol {} with kind {:?} not found",
-            to_name, to_kind
-        ));
+        .unwrap_or_else(|| panic!("symbol {} with kind {:?} not found", to_name, to_kind));
 
-    let from_id = from_sym.id();
+    let _from_id = from_sym.id();
     let to_id = to_sym.id();
 
     let has_dep = if let Some(kind) = dep_kind {
@@ -131,12 +128,25 @@ pub fn assert_depends<'a>(
     );
 }
 
+#[allow(dead_code)]
 pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
     let name_key = cc.interner.intern(name);
     let all_symbols = cc.get_all_symbols();
     let symbol = all_symbols
         .iter()
         .find(|sym| sym.name == name_key && sym.kind() == kind)
-        .expect(&format!("symbol {} with kind {:?} not found", name, kind));
+        .unwrap_or_else(|| panic!("symbol {} with kind {:?} not found", name, kind));
     assert!(symbol.id().0 > 0, "symbol should have a valid id");
+}
+
+/// Batch assertion for multiple dependencies using a vector of tuples
+/// Each tuple contains: (from_name, from_kind, to_name, to_kind, dep_kind)
+#[allow(dead_code)]
+pub fn assert_depends_batch<'a>(
+    cc: &'a CompileCtxt<'a>,
+    deps: Vec<(&str, SymKind, &str, SymKind, Option<DepKind>)>,
+) {
+    for (from_name, from_kind, to_name, to_kind, dep_kind) in deps {
+        assert_depends(cc, from_name, from_kind, to_name, to_kind, dep_kind);
+    }
 }

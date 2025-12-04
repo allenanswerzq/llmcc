@@ -142,7 +142,7 @@ impl<'hir> HirNode<'hir> {
                 return child.as_ident();
             }
             if child.is_kind(HirKind::Internal)
-                && let Some(id) = child.find_ident(&unit)
+                && let Some(id) = child.find_ident(unit)
             {
                 return Some(id);
             }
