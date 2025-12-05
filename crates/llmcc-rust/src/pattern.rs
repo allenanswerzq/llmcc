@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
-use llmcc_core::symbol::Symbol;
+use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
 
 use crate::token::LangRust;
@@ -10,7 +10,7 @@ pub fn bind_pattern_types<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     pattern: &HirNode<'tcx>,
-    pattern_type: Option<&'tcx Symbol>,
+    pattern_type: &'tcx Symbol,
 ) {
     // Check if this is an identifier
     if let Some(ident) = pattern.as_ident() {
@@ -71,15 +71,9 @@ fn assign_type_to_ident<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
-    ident_type: Option<&'tcx Symbol>,
+    ident_type: &'tcx Symbol,
 ) {
-    let default_type = ident_type.unwrap_or_else(|| {
-        // Get auto/unknown type as fallback
-        scopes.lookup_symbol(&"auto", vec![]).unwrap_or_else(|| {
-            // If no auto type found, just return unknown
-            scopes.lookup_symbol(&"_", vec![]).unwrap()
-        })
-    });
+    let default_type = ident_type;
 
     if let Some(existing_sym) = ident.opt_symbol() {
         // Symbol already exists - check if it's a const (cannot redeclare)
@@ -89,7 +83,7 @@ fn assign_type_to_ident<'tcx>(
         }
 
         // If already has a type, don't override (unless it's unresolved)
-        if existing_sym.type_of().is_some() && !existing_sym.kind().is_unresolved() {
+        if existing_sym.type_of().is_some() && existing_sym.kind().is_resolved() {
             tracing::trace!(
                 "identifier '{}' already has type, not overriding",
                 ident.name
@@ -107,15 +101,7 @@ fn assign_type_to_ident<'tcx>(
             );
         }
     } else {
-        // Create new symbol for this binding
-        let new_sym = scopes.declare_symbol(&ident.name);
-        new_sym.set_type_of(default_type.id());
-        ident.set_symbol(new_sym);
-        tracing::trace!(
-            "created new binding '{}' with type {}",
-            ident.name,
-            default_type.format(Some(unit.interner()))
-        );
+        debug_assert!(false, "identifier without symbol in pattern binding")
     }
 }
 
@@ -126,28 +112,24 @@ fn assign_type_to_tuple_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     pattern: &HirNode<'tcx>,
-    pattern_type: Option<&'tcx Symbol>,
+    pattern_type: &'tcx Symbol,
 ) {
-    if pattern_type.is_none() {
-        tracing::trace!("tuple pattern has no type information");
-        return;
-    }
-
-    let tuple_type = pattern_type.unwrap();
+    let tuple_type = pattern_type;
     let nested_types = tuple_type.nested_types();
 
     let mut element_index = 0;
     for child in pattern.children(unit) {
-        // Skip text nodes (commas, parens)
-        if child.kind_id() == LangRust::text_node {
+        if child.is_trivia() {
             continue;
         }
 
-        let element_type = nested_types
-            .and_then(|types| types.get(element_index))
-            .and_then(|type_id| unit.opt_get_symbol(*type_id));
-
-        bind_pattern_types(unit, scopes, &child, element_type);
+        if let Some(ref types) = nested_types {
+            if let Some(type_id) = types.get(element_index) {
+                if let Some(element_type) = unit.opt_get_symbol(*type_id) {
+                    bind_pattern_types(unit, scopes, &child, element_type);
+                }
+            }
+        }
         element_index += 1;
     }
 
@@ -161,10 +143,10 @@ fn assign_type_to_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     pattern: &HirNode<'tcx>,
-    _pattern_type: Option<&'tcx Symbol>,
+    _pattern_type: &'tcx Symbol,
 ) {
     // Find the struct type identifier
-    let struct_type_node = match pattern.child_by_field(*unit, LangRust::field_type) {
+    let struct_type_node = match pattern.child_by_field(unit, LangRust::field_type) {
         Some(node) => node,
         None => {
             tracing::trace!("struct pattern missing type field");
@@ -193,28 +175,30 @@ fn assign_type_to_struct_pattern<'tcx>(
         struct_symbol.format(Some(unit.interner()))
     );
 
-    // Iterate through field patterns
     for child in pattern.children(unit) {
         if child.kind_id() == LangRust::field_pattern {
-            // Get field name
-            if let Some(field_name_node) = child.child_by_field(*unit, LangRust::field_name) {
+            if let Some(field_name_node) = child.child_by_field(unit, LangRust::field_name) {
                 if let Some(field_name_ident) = field_name_node.find_ident(unit) {
-                    // Try to find matching field in struct scope
-                    if let Some(struct_scope_id) = struct_symbol.opt_scope() {
-                        let field_scope = unit.get_scope(struct_scope_id);
-                        if let Some(field_sym) = field_scope.lookup_symbol(&field_name_ident.name) {
+                    if let Some(field_name_sym) = field_name_ident.opt_symbol() {
+                        // Try to find matching field in struct scope
+                        if let Some(field_sym) = scopes.lookup_member_symbols(
+                            field_name_sym,
+                            &field_name_ident.name,
+                            Some(SymKind::type_kinds()),
+                        ) {
                             let field_type = field_sym
                                 .type_of()
                                 .and_then(|type_id| unit.opt_get_symbol(type_id));
 
-                            // Check for full pattern (field: pattern)
                             if let Some(inner_pattern) =
-                                child.child_by_field(*unit, LangRust::field_pattern)
+                                child.child_by_field(unit, LangRust::field_pattern)
+                                && let Some(field_type) = field_type
+                            // Check for full pattern (field: pattern)
                             {
-                                // Full pattern: { field: pattern }
                                 bind_pattern_types(unit, scopes, &inner_pattern, field_type);
-                            } else {
-                                // Shorthand: { field } - bind the identifier directly
+                            }
+                            // Shorthand: { field } - bind the identifier directly
+                            else if let Some(field_type) = field_type {
                                 assign_type_to_ident(unit, scopes, field_name_ident, field_type);
                             }
 
@@ -237,10 +221,10 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     pattern: &HirNode<'tcx>,
-    _pattern_type: Option<&'tcx Symbol>,
+    _pattern_type: &'tcx Symbol,
 ) {
     // Get the tuple struct type
-    let type_node = match pattern.child_by_field(*unit, LangRust::field_type) {
+    let type_node = match pattern.child_by_field(unit, LangRust::field_type) {
         Some(node) => node,
         None => return,
     };
@@ -260,15 +244,18 @@ fn assign_type_to_tuple_struct_pattern<'tcx>(
     let mut element_index = 0;
     for child in pattern.children(unit) {
         // Skip the type field and text nodes
-        if child.field_id() == LangRust::field_type || child.kind_id() == LangRust::text_node {
+        if child.field_id() == LangRust::field_type || child.is_trivia() {
             continue;
         }
 
-        let element_type = nested_types
-            .and_then(|types| types.get(element_index))
-            .and_then(|type_id| unit.opt_get_symbol(*type_id));
+        if let Some(ref types) = nested_types {
+            if let Some(type_id) = types.get(element_index) {
+                if let Some(element_type) = unit.opt_get_symbol(*type_id) {
+                    bind_pattern_types(unit, scopes, &child, element_type);
+                }
+            }
+        }
 
-        bind_pattern_types(unit, scopes, &child, element_type);
         element_index += 1;
     }
 
@@ -282,16 +269,12 @@ fn assign_type_to_or_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     pattern: &HirNode<'tcx>,
-    pattern_type: Option<&'tcx Symbol>,
+    pattern_type: &'tcx Symbol,
 ) {
     for child in pattern.children(unit) {
-        // Skip text nodes (pipes)
-        if child.kind_id() == LangRust::text_node {
-            continue;
+        if !child.is_trivia() {
+            bind_pattern_types(unit, scopes, &child, pattern_type);
         }
-
-        // Each alternative gets the same type
-        bind_pattern_types(unit, scopes, &child, pattern_type);
     }
 
     tracing::trace!("assigned type to or-pattern alternatives");
@@ -304,16 +287,31 @@ fn assign_type_to_slice_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     pattern: &HirNode<'tcx>,
-    pattern_type: Option<&'tcx Symbol>,
+    pattern_type: &'tcx Symbol,
 ) {
-    let element_type = pattern_type
-        .and_then(|slice_type| slice_type.nested_types())
-        .and_then(|types| types.first())
-        .and_then(|type_id| unit.opt_get_symbol(*type_id));
+    // Extract the element type from the slice/array type
+    let element_type = match pattern_type.nested_types() {
+        Some(types) => {
+            match types
+                .first()
+                .and_then(|type_id| unit.opt_get_symbol(*type_id))
+            {
+                Some(ty) => ty,
+                None => {
+                    tracing::trace!("slice pattern has no element type");
+                    return;
+                }
+            }
+        }
+        None => {
+            tracing::trace!("slice pattern has no nested types");
+            return;
+        }
+    };
 
     for child in pattern.children(unit) {
-        // Skip text nodes (brackets, commas)
-        if child.kind_id() == LangRust::text_node {
+        // Skip text nodes (brackets, commas, semicolons)
+        if child.is_trivia() {
             continue;
         }
 
@@ -330,30 +328,30 @@ fn assign_type_to_reference_pattern<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &mut BinderScopes<'tcx>,
     pattern: &HirNode<'tcx>,
-    pattern_type: Option<&'tcx Symbol>,
+    pattern_type: &'tcx Symbol,
 ) {
     // For reference patterns, try to get the referenced type
-    let referenced_type = pattern_type.and_then(|ref_type| {
-        // If it's a reference type, extract the inner type
-        ref_type
-            .nested_types()
-            .and_then(|types| types.first())
-            .and_then(|type_id| unit.opt_get_symbol(*type_id))
-    });
+    let inner_type = match pattern_type.nested_types() {
+        Some(types) => {
+            match types
+                .first()
+                .and_then(|type_id| unit.opt_get_symbol(*type_id))
+            {
+                Some(ty) => ty,
+                None => pattern_type,
+            }
+        }
+        None => pattern_type,
+    };
 
     // Find the inner pattern (skip &, &mut keywords)
-    if let Some(inner_pattern) = pattern.child_by_field(*unit, LangRust::field_pattern) {
-        bind_pattern_types(
-            unit,
-            scopes,
-            &inner_pattern,
-            referenced_type.or(pattern_type),
-        );
+    if let Some(inner_pattern) = pattern.child_by_field(unit, LangRust::field_pattern) {
+        bind_pattern_types(unit, scopes, &inner_pattern, inner_type);
     } else {
         // Fallback: look for any identifier in children
         for child in pattern.children(unit) {
-            if child.kind_id() != LangRust::text_node {
-                bind_pattern_types(unit, scopes, &child, referenced_type.or(pattern_type));
+            if !child.is_trivia() {
+                bind_pattern_types(unit, scopes, &child, inner_type);
             }
         }
     }

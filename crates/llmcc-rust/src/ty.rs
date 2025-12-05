@@ -124,7 +124,7 @@ fn infer_block<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     let children = node.children(unit);
-    let last_expr = children.iter().rev().find(|child| !is_trivia(child))?;
+    let last_expr = children.iter().rev().find(|child| !child.is_trivia())?;
 
     infer_type(unit, scopes, last_expr)
 }
@@ -136,7 +136,7 @@ fn infer_array_expression<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     let children = node.children(unit);
-    let first_expr = children.iter().find(|child| !is_trivia(child))?;
+    let first_expr = children.iter().find(|child| !child.is_trivia())?;
 
     let elem_type = infer_type(unit, scopes, first_expr)?;
 
@@ -156,7 +156,7 @@ fn infer_range_expression<'tcx>(
     // Try to infer element type from first expression
     let element_type = children
         .iter()
-        .find(|child| !is_trivia(child))
+        .find(|child| !child.is_trivia())
         .and_then(|expr| infer_type(unit, scopes, expr))
         .or_else(|| get_primitive_type(scopes, "i32"))?;
 
@@ -175,7 +175,7 @@ fn infer_tuple_expression<'tcx>(
     // Collect all non-trivia expressions (tuple elements)
     let mut _elem_types = Vec::new();
     for child in children {
-        if !is_trivia(&child) {
+        if !child.is_trivia() {
             if let Some(elem_type) = infer_type(unit, scopes, &child) {
                 _elem_types.push(elem_type);
             }
@@ -295,7 +295,7 @@ fn infer_binary_expression<'tcx>(
     let left_node = children.first()?;
 
     // Find the operator
-    let operator = children.iter().skip(1).find(|child| is_operator(child))?;
+    let operator = children.iter().skip(1).find(|child| child.is_operator())?;
 
     match operator.kind_id() {
         // Comparison operators return bool
@@ -351,7 +351,7 @@ fn infer_tuple_type<'tcx>(
 
     let mut _elem_types = Vec::new();
     for child in children {
-        if !is_trivia(&child) {
+        if !child.is_trivia() {
             if let Some(elem_type) = infer_type(unit, scopes, &child) {
                 _elem_types.push(elem_type);
             }
@@ -374,7 +374,7 @@ fn infer_function_type<'tcx>(
     children
         .iter()
         .rev()
-        .find(|child| !is_trivia(child))
+        .find(|child| !child.is_trivia())
         .and_then(|ret_node| infer_type(unit, scopes, ret_node))
 }
 
@@ -389,7 +389,7 @@ fn infer_reference_type<'tcx>(
     // First non-trivia child is the referenced type
     children
         .iter()
-        .find(|child| !is_trivia(child))
+        .find(|child| !child.is_trivia())
         .and_then(|ref_node| infer_type(unit, scopes, ref_node))
 }
 
@@ -404,16 +404,6 @@ fn infer_pointer_type<'tcx>(
     // First non-trivia child is the pointed-to type
     children
         .iter()
-        .find(|child| !is_trivia(child))
+        .find(|child| !child.is_trivia())
         .and_then(|ptr_node| infer_type(unit, scopes, ptr_node))
-}
-
-/// Check if node is trivia (whitespace, comment, etc.)
-fn is_trivia(node: &HirNode) -> bool {
-    matches!(node.kind(), HirKind::Text | HirKind::Comment)
-}
-
-/// Check if node is an operator
-fn is_operator(node: &HirNode) -> bool {
-    matches!(node.kind(), HirKind::Text | HirKind::Internal { .. })
 }

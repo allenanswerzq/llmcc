@@ -1,5 +1,3 @@
-use std::any::TypeId;
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirNode, HirScope};
 use llmcc_core::scope::Scope;
@@ -8,7 +6,6 @@ use llmcc_resolver::{BinderScopes, ResolverOption};
 
 use strum::IntoEnumIterator;
 
-use crate::bind;
 use crate::pattern::bind_pattern_types;
 use crate::token::AstVisitorRust;
 use crate::token::LangRust;

@@ -104,6 +104,10 @@ impl SymKind {
         !matches!(self, SymKind::UnresolvedType)
     }
 
+    pub fn is_const(&self) -> bool {
+        matches!(self, SymKind::Const | SymKind::Static)
+    }
+
     /// Checks if the symbol kind represents a type definition.
     pub fn type_kinds() -> Vec<SymKind> {
         vec![

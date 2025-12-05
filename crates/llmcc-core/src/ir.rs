@@ -301,6 +301,16 @@ impl<'hir> HirNode<'hir> {
             child.collect_idents_impl(unit, idents);
         }
     }
+
+    /// Check if node is trivia (whitespace, comment, etc.)
+    pub fn is_trivia(&self) -> bool {
+        matches!(self.kind(), HirKind::Text | HirKind::Comment)
+    }
+
+    /// Check if node is an operator
+    pub fn is_operator(&self) -> bool {
+        matches!(self.kind(), HirKind::Text | HirKind::Internal)
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
