@@ -5,6 +5,7 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
 
+use crate::infer::infer_type;
 use crate::token::LangRust;
 
 #[tracing::instrument(skip_all)]
@@ -22,6 +23,12 @@ pub fn bind_pattern_types<'tcx>(
 
     // Check the pattern kind
     match pattern.kind_id() {
+        // AST: (Type1, Type2, ...)
+        LangRust::tuple_type => {
+            if bind_tuple_type_to_pattern(unit, scopes, pattern) {
+                return;
+            }
+        }
         // AST: (pattern1, pattern2, ...)
         LangRust::tuple_pattern => {
             assign_type_to_tuple_pattern(unit, scopes, pattern, pattern_type);
@@ -71,40 +78,80 @@ pub fn bind_pattern_types<'tcx>(
 #[tracing::instrument(skip_all)]
 fn assign_type_to_ident<'tcx>(
     unit: &CompileUnit<'tcx>,
-    _scopes: &mut BinderScopes<'tcx>,
+    scopes: &mut BinderScopes<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
 ) {
     let default_type = ident_type;
 
-    if let Some(existing_sym) = ident.opt_symbol() {
-        // Symbol already exists - check if it's a const (cannot redeclare)
-        if existing_sym.kind().is_const() {
-            tracing::trace!("const '{}' cannot be redeclared", ident.name);
-            return;
+    let symbol = match ident.opt_symbol() {
+        Some(sym) => sym,
+        None => {
+            let resolved = scopes.lookup_symbol(&ident.name, vec![SymKind::Variable]);
+            if let Some(sym) = resolved {
+                ident.set_symbol(sym);
+                sym
+            } else {
+                tracing::trace!(
+                    "identifier '{}' missing symbol in pattern binding",
+                    ident.name
+                );
+                return;
+            }
         }
+    };
 
-        // If already has a type, don't override (unless it's unresolved)
-        if existing_sym.type_of().is_some() && existing_sym.kind().is_resolved() {
-            tracing::trace!(
-                "identifier '{}' already has type, not overriding",
-                ident.name
-            );
-            return;
-        }
-
-        // Update type if not already set
-        if existing_sym.type_of().is_none() {
-            existing_sym.set_type_of(default_type.id());
-            tracing::trace!(
-                "assigned type to existing '{}': {}",
-                ident.name,
-                default_type.format(Some(unit.interner()))
-            );
-        }
-    } else {
-        debug_assert!(false, "identifier without symbol in pattern binding")
+    if symbol.kind().is_const() {
+        tracing::trace!("const '{}' cannot be redeclared", ident.name);
+        return;
     }
+
+    if symbol.type_of().is_some() && symbol.kind().is_resolved() {
+        tracing::trace!(
+            "identifier '{}' already has type, not overriding",
+            ident.name
+        );
+        return;
+    }
+
+    if symbol.type_of().is_none() {
+        symbol.set_type_of(default_type.id());
+        tracing::trace!(
+            "assigned type to existing '{}': {}",
+            ident.name,
+            default_type.format(Some(unit.interner()))
+        );
+    }
+}
+
+#[tracing::instrument(skip_all)]
+fn bind_tuple_type_to_pattern<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &mut BinderScopes<'tcx>,
+    type_node: &HirNode<'tcx>,
+) -> bool {
+    let Some(pattern) = type_node.child_by_field_recursive(unit, LangRust::field_pattern) else {
+        return false;
+    };
+
+    let mut type_elems = type_node
+        .children(unit)
+        .into_iter()
+        .filter(|child| !child.is_trivia());
+
+    for child_pattern in pattern.children(unit) {
+        if child_pattern.is_trivia() {
+            continue;
+        }
+
+        if let Some(type_elem_node) = type_elems.next()
+            && let Some(elem_sym) = infer_type(unit, scopes, &type_elem_node)
+        {
+            bind_pattern_types(unit, scopes, &child_pattern, elem_sym);
+        }
+    }
+
+    true
 }
 
 /// AST: (pattern1, pattern2, pattern3)
@@ -181,34 +228,51 @@ fn assign_type_to_struct_pattern<'tcx>(
         if child.kind_id() == LangRust::field_pattern {
             if let Some(field_name_node) = child.child_by_field(unit, LangRust::field_name) {
                 if let Some(field_name_ident) = field_name_node.find_ident(unit) {
-                    if let Some(field_name_sym) = field_name_ident.opt_symbol() {
-                        // Try to find matching field in struct scope
-                        if let Some(field_sym) = scopes.lookup_member_symbols(
-                            field_name_sym,
-                            &field_name_ident.name,
-                            Some(SymKind::type_kinds()),
-                        ) {
-                            let field_type = field_sym
-                                .type_of()
-                                .and_then(|type_id| unit.opt_get_symbol(type_id));
+                    // Try to find matching field in struct scope
+                    if let Some(field_sym) = scopes.lookup_member_symbols(
+                        struct_symbol,
+                        &field_name_ident.name,
+                        Some(vec![SymKind::Field]),
+                    ) {
+                        let field_type = field_sym
+                            .type_of()
+                            .and_then(|type_id| unit.opt_get_symbol(type_id));
 
-                            if let Some(inner_pattern) =
-                                child.child_by_field(unit, LangRust::field_pattern)
-                                && let Some(field_type) = field_type
-                            // Check for full pattern (field: pattern)
+                        if let Some(inner_pattern) =
+                            child.child_by_field(unit, LangRust::field_pattern)
+                            && let Some(field_type) = field_type
+                        // Check for full pattern (field: pattern)
+                        {
+                            bind_pattern_types(unit, scopes, &inner_pattern, field_type);
+                        }
+                        // Shorthand: { field } - bind the identifier directly
+                        else if let Some(field_type) = field_type {
+                            if let Some(binding_sym) = field_name_ident.opt_symbol() {
+                                if binding_sym.kind() == SymKind::Variable {
+                                    binding_sym.set_type_of(field_type.id());
+                                } else if let Some(var_sym) = scopes
+                                    .lookup_symbol(&field_name_ident.name, vec![SymKind::Variable])
+                                {
+                                    field_name_ident.set_symbol(var_sym);
+                                    assign_type_to_ident(
+                                        unit,
+                                        scopes,
+                                        field_name_ident,
+                                        field_type,
+                                    );
+                                }
+                            } else if let Some(var_sym) = scopes
+                                .lookup_symbol(&field_name_ident.name, vec![SymKind::Variable])
                             {
-                                bind_pattern_types(unit, scopes, &inner_pattern, field_type);
-                            }
-                            // Shorthand: { field } - bind the identifier directly
-                            else if let Some(field_type) = field_type {
+                                field_name_ident.set_symbol(var_sym);
                                 assign_type_to_ident(unit, scopes, field_name_ident, field_type);
                             }
-
-                            tracing::trace!(
-                                "bound struct field '{}' to pattern",
-                                field_name_ident.name
-                            );
                         }
+
+                        tracing::trace!(
+                            "bound struct field '{}' to pattern",
+                            field_name_ident.name
+                        );
                     }
                 }
             }

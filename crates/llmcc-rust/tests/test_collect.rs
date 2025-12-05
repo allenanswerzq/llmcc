@@ -1,6 +1,6 @@
 mod common;
 
-use common::{find_symbol_id, with_compiled_unit};
+use common::{assert_collect_symbol, with_compiled_unit};
 use llmcc_core::symbol::SymKind;
 use serial_test::serial;
 use textwrap::dedent;
@@ -16,7 +16,7 @@ fn visit_mod_item_declares_namespace() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "utils", SymKind::Namespace).0 > 0);
+        assert_collect_symbol(cc, "utils", SymKind::Namespace, true);
     });
 }
 
@@ -31,7 +31,7 @@ fn visit_function_item_declares_function() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "my_function", SymKind::Function).0 > 0);
+        assert_collect_symbol(cc, "my_function", SymKind::Function, true);
     });
 }
 
@@ -47,7 +47,7 @@ fn visit_struct_item_declares_struct() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "Person", SymKind::Struct).0 > 0);
+        assert_collect_symbol(cc, "Person", SymKind::Struct, true);
     });
 }
 
@@ -64,7 +64,7 @@ fn visit_enum_item_declares_enum() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "Color", SymKind::Enum).0 > 0);
+        assert_collect_symbol(cc, "Color", SymKind::Enum, true);
     });
 }
 
@@ -79,7 +79,7 @@ fn visit_trait_item_declares_trait() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "Drawable", SymKind::Trait).0 > 0);
+        assert_collect_symbol(cc, "Drawable", SymKind::Trait, true);
     });
 }
 
@@ -92,7 +92,7 @@ fn visit_const_item_declares_const() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "MAX_SIZE", SymKind::Const).0 > 0);
+        assert_collect_symbol(cc, "MAX_SIZE", SymKind::Const, false);
     });
 }
 
@@ -105,7 +105,7 @@ fn visit_static_item_declares_static() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "GLOBAL_VAR", SymKind::Static).0 > 0);
+        assert_collect_symbol(cc, "GLOBAL_VAR", SymKind::Static, false);
     });
 }
 
@@ -118,7 +118,7 @@ fn visit_type_item_declares_type_alias() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "MyResult", SymKind::TypeAlias).0 > 0);
+        assert_collect_symbol(cc, "MyResult", SymKind::TypeAlias, false);
     });
 }
 
@@ -134,8 +134,8 @@ fn visit_field_declaration_declares_field() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "x", SymKind::Field).0 > 0);
-        assert!(find_symbol_id(cc, "y", SymKind::Field).0 > 0);
+        assert_collect_symbol(cc, "x", SymKind::Field, false);
+        assert_collect_symbol(cc, "y", SymKind::Field, false);
     });
 }
 
@@ -151,8 +151,8 @@ fn visit_enum_variant_declares_variant() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "Active", SymKind::EnumVariant).0 > 0);
-        assert!(find_symbol_id(cc, "Inactive", SymKind::EnumVariant).0 > 0);
+        assert_collect_symbol(cc, "Active", SymKind::EnumVariant, false);
+        assert_collect_symbol(cc, "Inactive", SymKind::EnumVariant, false);
     });
 }
 
@@ -167,8 +167,8 @@ fn visit_parameter_declares_parameter() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "a", SymKind::Variable).0 > 0);
-        assert!(find_symbol_id(cc, "b", SymKind::Variable).0 > 0);
+        assert_collect_symbol(cc, "a", SymKind::Variable, false);
+        assert_collect_symbol(cc, "b", SymKind::Variable, false);
     });
 }
 
@@ -184,8 +184,8 @@ fn visit_let_declaration_declares_variable() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "value", SymKind::Variable).0 > 0);
-        assert!(find_symbol_id(cc, "another", SymKind::Variable).0 > 0);
+        assert_collect_symbol(cc, "value", SymKind::Variable, false);
+        assert_collect_symbol(cc, "another", SymKind::Variable, false);
     });
 }
 
@@ -200,7 +200,8 @@ fn visit_type_parameter_declares_type_param() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "generic_function", SymKind::Function).0 > 0);
+        assert_collect_symbol(cc, "generic_function", SymKind::Function, true);
+        assert_collect_symbol(cc, "T", SymKind::TypeParameter, false);
     });
 }
 
@@ -215,7 +216,7 @@ fn visit_const_parameter_declares_const_param() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "N", SymKind::Const).0 > 0);
+        assert_collect_symbol(cc, "N", SymKind::Const, false);
     });
 }
 
@@ -231,7 +232,7 @@ fn visit_associated_type_in_trait() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "Item", SymKind::TypeAlias).0 > 0);
+        assert_collect_symbol(cc, "Item", SymKind::TypeAlias, false);
     });
 }
 
@@ -248,9 +249,9 @@ fn visit_multiple_struct_fields() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "host", SymKind::Field).0 > 0);
-        assert!(find_symbol_id(cc, "port", SymKind::Field).0 > 0);
-        assert!(find_symbol_id(cc, "timeout", SymKind::Field).0 > 0);
+        for name in ["host", "port", "timeout"] {
+            assert_collect_symbol(cc, name, SymKind::Field, false);
+        }
     });
 }
 
@@ -269,8 +270,103 @@ fn visit_impl_trait_for_type() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "MyType", SymKind::Struct).0 > 0);
-        assert!(find_symbol_id(cc, "MyTrait", SymKind::Trait).0 > 0);
+        assert_collect_symbol(cc, "MyType", SymKind::Struct, true);
+        assert_collect_symbol(cc, "MyTrait", SymKind::Trait, true);
+        assert_collect_symbol(cc, "do_something", SymKind::Function, true);
+    });
+}
+
+#[serial]
+#[test]
+fn visit_closure_expression_declares_parameters() {
+    let source = dedent(
+        "
+        struct Wrapper(i32, i32);
+
+        fn main() {
+            let closure = |Wrapper(left, right)| {
+                left + right
+            };
+
+            let _ = closure(Wrapper(1, 2));
+        }
+        ",
+    );
+
+    with_compiled_unit(&[&source], |cc| {
+        assert_collect_symbol(cc, "left", SymKind::Variable, false);
+        assert_collect_symbol(cc, "right", SymKind::Variable, false);
+    });
+}
+
+#[serial]
+#[test]
+fn visit_let_declaration_marks_closure_symbols() {
+    let source = dedent(
+        "
+        fn main() {
+            let closure = || {};
+            let value = 5;
+        }
+        ",
+    );
+
+    with_compiled_unit(&[&source], |cc| {
+        assert_collect_symbol(cc, "closure", SymKind::Closure, false);
+        assert_collect_symbol(cc, "value", SymKind::Variable, false);
+    });
+}
+
+#[serial]
+#[test]
+fn visit_let_declaration_collects_complex_patterns() {
+    let source = dedent(
+        "
+        struct Foo {
+            tuple: (i32, i32),
+            array: [i32; 3],
+            value: i32,
+        }
+
+        enum Pair {
+            Item(i32),
+            Single(i32),
+        }
+
+        fn main() {
+            let [start, .., end] = [1, 2, 3, 4];
+            let Foo { tuple: (left, right), array: [head, ..], .. } = Foo {
+                tuple: (1, 2),
+                array: [3, 4, 5],
+                value: 9,
+            };
+            let (ref inner_ref, mut inner_mut) = (&10, 20);
+            let &value = &30;
+            let ref mut opt = Some(5);
+            let Pair::Item(num) | Pair::Single(num) = Pair::Item(40);
+            let (first, (second, third)) = (1, (2, 3));
+        }
+        ",
+    );
+
+    with_compiled_unit(&[&source], |cc| {
+        for name in [
+            "start",
+            "end",
+            "left",
+            "right",
+            "head",
+            "inner_ref",
+            "inner_mut",
+            "value",
+            "opt",
+            "num",
+            "first",
+            "second",
+            "third",
+        ] {
+            assert_collect_symbol(cc, name, SymKind::Variable, false);
+        }
     });
 }
 
@@ -287,7 +383,7 @@ fn visit_macro_rules_declares_macro() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "my_macro", SymKind::Macro).0 > 0);
+        assert_collect_symbol(cc, "my_macro", SymKind::Macro, true);
     });
 }
 
@@ -303,8 +399,8 @@ fn visit_function_signature_in_trait() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "add", SymKind::Function).0 > 0);
-        assert!(find_symbol_id(cc, "subtract", SymKind::Function).0 > 0);
+        assert_collect_symbol(cc, "add", SymKind::Function, true);
+        assert_collect_symbol(cc, "subtract", SymKind::Function, true);
     });
 }
 
@@ -323,9 +419,9 @@ fn visit_self_in_different_parameter_forms() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert!(find_symbol_id(cc, "MyType", SymKind::Struct).0 > 0);
-        assert!(find_symbol_id(cc, "by_value", SymKind::Function).0 > 0);
-        assert!(find_symbol_id(cc, "by_mut_ref", SymKind::Function).0 > 0);
-        assert!(find_symbol_id(cc, "by_ref", SymKind::Function).0 > 0);
+        assert_collect_symbol(cc, "MyType", SymKind::Struct, true);
+        assert_collect_symbol(cc, "by_value", SymKind::Function, true);
+        assert_collect_symbol(cc, "by_mut_ref", SymKind::Function, true);
+        assert_collect_symbol(cc, "by_ref", SymKind::Function, true);
     });
 }

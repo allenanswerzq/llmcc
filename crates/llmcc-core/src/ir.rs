@@ -131,6 +131,32 @@ impl<'hir> HirNode<'hir> {
         self.base().unwrap().child_by_field(unit, field_id)
     }
 
+    pub fn child_by_kind(&self, unit: &CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
+        for child in self.children(unit) {
+            if child.kind_id() == kind_id {
+                return Some(child);
+            }
+        }
+        None
+    }
+
+    /// Returns the symbol referenced by the identifier within a specific child field.
+    pub fn ident_symbol_by_field(
+        &self,
+        unit: &CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<&'hir Symbol> {
+        let child = self.child_by_field(unit, field_id)?;
+        let ident = child.find_ident(unit)?;
+        ident.opt_symbol()
+    }
+
+    /// Returns the ident symbol if any
+    pub fn ident_symbol(&self, unit: &CompileUnit<'hir>) -> Option<&'hir Symbol> {
+        let ident = self.find_ident(unit)?;
+        ident.opt_symbol()
+    }
+
     /// Recursively search down the tree for a child with matching field ID.
     /// Keeps going deeper until it finds a match or reaches a leaf node.
     pub fn child_by_field_recursive(

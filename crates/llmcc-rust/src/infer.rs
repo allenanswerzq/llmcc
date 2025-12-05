@@ -1,5 +1,3 @@
-#![allow(clippy::collapsible_if)]
-
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SymKind, Symbol};
@@ -87,13 +85,15 @@ pub fn infer_type<'tcx>(
         LangRust::binary_expression => infer_binary_expression(unit, scopes, node),
 
         // Reference expression: &value
-        LangRust::reference_expression => infer_from_children(unit, scopes, node, &[]).and_then(|sym| {
-            if let Some(type_id) = sym.type_of() {
-                unit.opt_get_symbol(type_id)
-            } else {
-                Some(sym)
-            }
-        }),
+        LangRust::reference_expression => {
+            infer_from_children(unit, scopes, node, &[]).and_then(|sym| {
+                if let Some(type_id) = sym.type_of() {
+                    unit.opt_get_symbol(type_id)
+                } else {
+                    Some(sym)
+                }
+            })
+        }
 
         // Unary expression: -a, !b,
         LangRust::unary_expression => node

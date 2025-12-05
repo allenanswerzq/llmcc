@@ -35,7 +35,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         kind: SymKind,
         field_id: u16,
     ) -> Option<&'tcx Symbol> {
-        // Try to find identifier by field first, if not found try scope's identifier
+        // try to find identifier by field first, if not found try scope's identifier
         let ident = node
             .ident_by_field(unit, field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
@@ -251,6 +251,17 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             self.visit_children(unit, node, scopes, scope, parent);
             scopes.pop_scope();
         }
+    }
+
+    fn visit_match_block(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut CollectorScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_block(unit, node, scopes, namespace, parent);
     }
 
     /// AST: source_file - root node of the compilation unit
@@ -631,7 +642,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     }
 
     /// AST: [Type; N] or [Type]
-    /// Purpose: Visit array type element and length for dependency tracking
+    /// Purpose: visit array type element and length for dependency tracking
     #[tracing::instrument(skip_all)]
     fn visit_array_type(
         &mut self,
