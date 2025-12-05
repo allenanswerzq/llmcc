@@ -53,23 +53,32 @@ pub fn infer_type<'tcx>(
 
         // Scoped identifier: module::Type or foo::bar::baz
         LangRust::scoped_identifier => infer_scoped_identifier(unit, scopes, node),
+        LangRust::scoped_type_identifier => infer_scoped_identifier(unit, scopes, node),
 
         // Identifier
         LangRust::identifier => {
             let ident = node.find_ident(unit)?;
-            ident.opt_symbol().and_then(|sym| {
-                if let Some(type_id) = sym.type_of() {
-                    unit.opt_get_symbol(type_id)
-                } else {
-                    Some(sym)
-                }
-            })
+            let symbol = ident.opt_symbol()?;
+
+            if let Some(type_id) = symbol.type_of() {
+                unit.opt_get_symbol(type_id)
+            } else {
+                Some(symbol)
+            }
         }
 
         // Call expression: func(args)
         LangRust::call_expression | LangRust::field_identifier => node
             .child_by_field(unit, LangRust::field_function)
-            .and_then(|func_node| infer_type(unit, scopes, &func_node)),
+            .and_then(|func_node| infer_type(unit, scopes, &func_node))
+            .and_then(|sym| {
+                if sym.kind() == SymKind::Function {
+                    if let Some(ret_id) = sym.type_of() {
+                        return unit.opt_get_symbol(ret_id);
+                    }
+                }
+                Some(sym)
+            }),
 
         // Index expression: arr[i]
         LangRust::index_expression => infer_index_expression(unit, scopes, node),
@@ -77,10 +86,23 @@ pub fn infer_type<'tcx>(
         // Binary expression: a + b, a == b, etc.
         LangRust::binary_expression => infer_binary_expression(unit, scopes, node),
 
-        // Unary expression: -a, !b, *ptr, &ref
+        // Reference expression: &value
+        LangRust::reference_expression => infer_from_children(unit, scopes, node, &[]).and_then(|sym| {
+            if let Some(type_id) = sym.type_of() {
+                unit.opt_get_symbol(type_id)
+            } else {
+                Some(sym)
+            }
+        }),
+
+        // Unary expression: -a, !b,
         LangRust::unary_expression => node
             .child_by_field(unit, LangRust::field_argument)
-            .and_then(|arg_node| infer_type(unit, scopes, &arg_node)),
+            .and_then(|arg_node| infer_type(unit, scopes, &arg_node))
+            .or_else(|| infer_from_children(unit, scopes, node, &[])),
+
+        // Expression statements simply forward their inner expression type
+        LangRust::expression_statement => infer_from_children(unit, scopes, node, &[]),
 
         // Type cast expression: expr as Type
         LangRust::type_cast_expression => node
@@ -98,20 +120,20 @@ pub fn infer_type<'tcx>(
         LangRust::pointer_type => infer_pointer_type(unit, scopes, node),
 
         _ => {
-            // try to find identifier
             if let Some(ident) = node.find_ident(unit) {
                 return ident.opt_symbol();
             }
             // search from scopes
-            if let Some(ty) = scopes.lookup_symbol(&unit.hir_text(node), SymKind::type_kinds()) {
-                return Some(ty);
-            }
+            // if let Some(ty) = scopes.lookup_symbol(&unit.hir_text(node), SymKind::type_kinds()) {
+            //     return Some(ty);
+            // }
             None
         }
     }
 }
 
 /// Get primitive type by name
+#[tracing::instrument(skip_all)]
 fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
         .lookup_globals(name, vec![SymKind::Primitive])?
@@ -125,10 +147,30 @@ fn infer_block<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let children = node.children(unit);
-    let last_expr = children.iter().rev().find(|child| !child.is_trivia())?;
+    for child in node.children(unit).into_iter().rev() {
+        if is_syntactic_noise(unit, &child) {
+            continue;
+        }
 
-    infer_type(unit, scopes, last_expr)
+        let kind_id = child.kind_id();
+
+        if kind_id == LangRust::let_declaration {
+            continue;
+        }
+
+        if kind_id == LangRust::expression_statement {
+            if let Some(sym) = infer_from_children(unit, scopes, &child, &[]) {
+                return Some(sym);
+            }
+            continue;
+        }
+
+        if let Some(sym) = infer_type(unit, scopes, &child) {
+            return Some(sym);
+        }
+    }
+
+    None
 }
 
 /// Infer array expression type: [elem; count] or [elem1, elem2, ...]
@@ -137,14 +179,7 @@ fn infer_array_expression<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let children = node.children(unit);
-    let first_expr = children.iter().find(|child| !child.is_trivia())?;
-
-    let elem_type = infer_type(unit, scopes, first_expr)?;
-
-    // For now, return the element type.
-    // A full implementation would create a synthetic [T] type
-    Some(elem_type)
+    infer_from_children(unit, scopes, node, &[LangRust::field_length])
 }
 
 /// Infer range expression type: 1..5 -> Range<i32>
@@ -153,17 +188,7 @@ fn infer_range_expression<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let children = node.children(unit);
-
-    // Try to infer element type from first expression
-    let element_type = children
-        .iter()
-        .find(|child| !child.is_trivia())
-        .and_then(|expr| infer_type(unit, scopes, expr))
-        .or_else(|| get_primitive_type(scopes, "i32"))?;
-
-    // For now, return element type. Full implementation would create Range<T>
-    Some(element_type)
+    infer_from_children(unit, scopes, node, &[]).or_else(|| get_primitive_type(scopes, "i32"))
 }
 
 /// Infer tuple expression type: (a, b, c) -> (TypeA, TypeB, TypeC)
@@ -195,20 +220,22 @@ fn infer_struct_expression<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    // Try to get the name field (explicit struct name)
-    if let Some(name_node) = node.child_by_field(unit, LangRust::field_name) {
-        return infer_type(unit, scopes, &name_node);
-    }
+    let type_kinds = SymKind::type_kinds();
 
-    // Try to get the type field
-    if let Some(type_node) = node.child_by_field(unit, LangRust::field_type) {
-        return infer_type(unit, scopes, &type_node);
+    if let Some(name_node) = node.child_by_field(unit, LangRust::field_name) {
+        tracing::trace!("inferring struct type from name node");
+        if let Some(sym) = infer_type(unit, scopes, &name_node) {
+            if type_kinds.contains(&sym.kind()) {
+                return Some(sym);
+            }
+        }
     }
 
     None
 }
 
 /// Infer field expression type: obj.field -> FieldType
+#[tracing::instrument(skip_all)]
 fn infer_field_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
@@ -247,6 +274,7 @@ fn infer_field_expression<'tcx>(
 }
 
 /// Infer scoped identifier type: module::Type or foo::bar::baz
+#[tracing::instrument(skip_all)]
 fn infer_scoped_identifier<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
@@ -288,6 +316,7 @@ fn infer_index_expression<'tcx>(
 }
 
 /// Infer binary expression type: a + b or a == b
+#[tracing::instrument(skip_all)]
 fn infer_binary_expression<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
@@ -295,12 +324,8 @@ fn infer_binary_expression<'tcx>(
 ) -> Option<&'tcx Symbol> {
     let children = node.children(unit);
     let left_node = children.first()?;
-
-    // Find the operator
-    let operator = children.iter().skip(1).find(|child| child.is_operator())?;
-
+    let operator = node.child_by_field(unit, LangRust::field_operator)?;
     match operator.kind_id() {
-        // Comparison operators return bool
         LangRust::Text_EQEQ
         | LangRust::Text_NE
         | LangRust::Text_LT
@@ -310,7 +335,6 @@ fn infer_binary_expression<'tcx>(
         | LangRust::Text_AMPAMP
         | LangRust::Text_PIPEPIPE => get_primitive_type(scopes, "bool"),
 
-        // Arithmetic operators return left operand type
         LangRust::Text_PLUS
         | LangRust::Text_MINUS
         | LangRust::Text_STAR
@@ -408,4 +432,44 @@ fn infer_pointer_type<'tcx>(
         .iter()
         .find(|child| !child.is_trivia())
         .and_then(|ptr_node| infer_type(unit, scopes, ptr_node))
+}
+
+/// Returns true when a node only represents punctuation or whitespace.
+fn is_syntactic_noise<'tcx>(unit: &CompileUnit<'tcx>, node: &HirNode<'tcx>) -> bool {
+    if node.is_trivia() {
+        return true;
+    }
+
+    if node.child_count() > 0 {
+        return false;
+    }
+
+    unit.hir_text(node)
+        .chars()
+        .all(|ch| ch.is_whitespace() || ch.is_ascii_punctuation())
+}
+
+/// Walks the children of `node` (skipping punctuation/whitespace and optional field ids)
+/// and returns the first successfully inferred type.
+fn infer_from_children<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+    skip_fields: &[u16],
+) -> Option<&'tcx Symbol> {
+    for child in node.children(unit) {
+        if skip_fields.contains(&child.field_id()) {
+            continue;
+        }
+
+        if is_syntactic_noise(unit, &child) {
+            continue;
+        }
+
+        if let Some(sym) = infer_type(unit, scopes, &child) {
+            return Some(sym);
+        }
+    }
+
+    None
 }

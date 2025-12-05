@@ -306,11 +306,6 @@ impl<'hir> HirNode<'hir> {
     pub fn is_trivia(&self) -> bool {
         matches!(self.kind(), HirKind::Text | HirKind::Comment)
     }
-
-    /// Check if node is an operator
-    pub fn is_operator(&self) -> bool {
-        matches!(self.kind(), HirKind::Text | HirKind::Internal)
-    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]

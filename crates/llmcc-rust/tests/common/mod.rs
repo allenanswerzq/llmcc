@@ -12,43 +12,33 @@ where
     F: for<'a> FnOnce(&'a CompileCtxt<'a>),
 {
     let _ = tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
+        .with_env_filter(EnvFilter::from_default_env())
         .with_test_writer()
         .try_init();
 
-    let bytes = sources.iter().map(|src| src.as_bytes().to_vec()).collect::<Vec<_>>();
+    let bytes = sources
+        .iter()
+        .map(|src| src.as_bytes().to_vec())
+        .collect::<Vec<_>>();
 
     let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
     build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
 
-    let resolver_option = ResolverOption::default().with_sequential(true).with_print_ir(true).with_bind_func_bodies(true);
+    let resolver_option = ResolverOption::default()
+        .with_sequential(true)
+        .with_print_ir(true)
+        .with_bind_func_bodies(true);
     let globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
     bind_symbols_with::<LangRust>(&cc, globals, &resolver_option);
     check(&cc);
 }
 
 #[allow(dead_code)]
-pub fn with_collected_unit<F>(sources: &[&str], check: F)
-where
-    F: for<'a> FnOnce(&'a CompileCtxt<'a>),
-{
-    let _ = tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive(tracing::Level::DEBUG.into()))
-        .with_test_writer()
-        .try_init();
-
-    let bytes = sources.iter().map(|src| src.as_bytes().to_vec()).collect::<Vec<_>>();
-
-    let cc = CompileCtxt::from_sources::<LangRust>(&bytes);
-    build_llmcc_ir::<LangRust>(&cc, IrBuildOption::default()).unwrap();
-
-    let resolver_option = ResolverOption::default().with_sequential(true).with_print_ir(true);
-    let _globals = collect_symbols_with::<LangRust>(&cc, &resolver_option);
-    check(&cc);
-}
-
-#[allow(dead_code)]
-pub fn find_symbol_id<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) -> llmcc_core::symbol::SymId {
+pub fn find_symbol_id<'a>(
+    cc: &'a CompileCtxt<'a>,
+    name: &str,
+    kind: SymKind,
+) -> llmcc_core::symbol::SymId {
     let name_key = cc.interner.intern(name);
     cc.get_all_symbols()
         .into_iter()
@@ -70,4 +60,27 @@ pub fn assert_exists<'a>(cc: &'a CompileCtxt<'a>, name: &str, kind: SymKind) {
         .unwrap_or_else(|| panic!("symbol {} with kind {:?} not found", name, kind));
     // prints all symbol for debugging
     assert!(symbol.id().0 > 0, "symbol should have a valid id");
+}
+
+#[allow(dead_code)]
+pub fn debug_symbol_types<'a>(cc: &'a CompileCtxt<'a>) {
+    for symbol in cc.get_all_symbols() {
+        let name = cc
+            .interner
+            .resolve_owned(symbol.name)
+            .unwrap_or_else(|| "<anon>".to_string());
+        let type_label = symbol
+            .type_of()
+            .and_then(|ty_id| cc.opt_get_symbol(ty_id))
+            .and_then(|ty_sym| cc.interner.resolve_owned(ty_sym.name))
+            .unwrap_or_else(|| "<none>".to_string());
+
+        tracing::debug!(
+            id = symbol.id().0,
+            kind = ?symbol.kind(),
+            %name,
+            %type_label,
+            "symbol: "
+        );
+    }
 }

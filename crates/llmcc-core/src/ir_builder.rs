@@ -149,15 +149,6 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let mut child_nodes = Vec::new();
         for i in 0..node.child_count() {
             if let Some(child) = node.child(i) {
-                if child.is_error() || child.is_extra() || child.is_missing() || !child.is_named() {
-                    continue;
-                }
-
-                let child_kind = Language::hir_kind(child.kind_id());
-                if child_kind == HirKind::Text {
-                    continue;
-                }
-
                 let child_node = self.build_node(child.as_ref(), Some(parent_id));
                 child_nodes.push(child_node);
             }

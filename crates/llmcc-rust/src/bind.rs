@@ -123,12 +123,20 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(idnet_sym) = ident.opt_symbol()
-            && !idnet_sym.kind().is_resolved()
-            && let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKind::iter().collect())
-        {
-            ident.set_symbol(symbol);
+
+        if let Some(existing) = ident.opt_symbol() {
+            if existing.kind().is_resolved() {
+                return;
+            }
+
+            if let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKind::iter().collect()) {
+                ident.set_symbol(symbol);
+            }
             return;
+        }
+
+        if let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKind::iter().collect()) {
+            ident.set_symbol(symbol);
         }
     }
 
@@ -143,12 +151,20 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(idnet_sym) = ident.opt_symbol()
-            && !idnet_sym.kind().is_resolved()
-            && let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKind::type_kinds())
-        {
-            ident.set_symbol(symbol);
+
+        if let Some(existing) = ident.opt_symbol() {
+            if existing.kind().is_resolved() {
+                return;
+            }
+
+            if let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKind::type_kinds()) {
+                ident.set_symbol(symbol);
+            }
             return;
+        }
+
+        if let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKind::type_kinds()) {
+            ident.set_symbol(symbol);
         }
     }
 
@@ -169,7 +185,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: block { ... statements ... }
-    #[tracing::instrument(skip_all)]
     fn visit_block(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -230,17 +245,15 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         if let Some(return_type_node) = node.child_by_field(unit, LangRust::field_return_type) {
             if let Some(fn_sym) = sn.opt_symbol() {
-                if let Some(return_ident) =
-                    return_type_node.ident_by_field(unit, LangRust::field_return_type)
+                if let Some(return_ident) = return_type_node.find_ident(unit)
+                    && let Some(return_type) = return_ident.opt_symbol()
                 {
-                    if let Some(return_type) = return_ident.opt_symbol() {
-                        tracing::trace!(
-                            "binding function return type '{}' to '{}'",
-                            return_type.format(Some(unit.interner())),
-                            fn_sym.format(Some(unit.interner()))
-                        );
-                        fn_sym.set_type_of(return_type.id());
-                    }
+                    tracing::trace!(
+                        "binding function return type '{}' to '{}'",
+                        return_type.format(Some(unit.interner())),
+                        fn_sym.format(Some(unit.interner()))
+                    );
+                    fn_sym.set_type_of(return_type.id());
                 }
             }
         }
@@ -249,9 +262,25 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             let fn_name = unit.interner().resolve_owned(fn_sym.name);
             tracing::trace!("func: {}", fn_name.as_deref().unwrap_or("?"));
 
-            // Mark main function as global (entry point)
+            let is_pub = node.children(unit).iter().any(|child| {
+                if child.is_trivia() {
+                    return false;
+                }
+                if let Some(text_node) = child.as_text() {
+                    text_node.text().trim() == "pub"
+                } else {
+                    false
+                }
+            });
+
             if fn_name.as_deref() == Some("main") {
                 tracing::trace!("marking main function as global");
+                fn_sym.set_is_global(true);
+            } else if is_pub {
+                tracing::trace!(
+                    "marking pub function '{}' as global",
+                    fn_name.as_deref().unwrap_or("?")
+                );
                 fn_sym.set_is_global(true);
             }
         }
@@ -337,9 +366,16 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // Set FieldOf relationship: struct field belongs to parent struct
         if let Some(name_node) = node.ident_by_field(unit, LangRust::field_name)
             && let Some(field_sym) = name_node.opt_symbol()
-            && let Some(struct_sym) = namespace.opt_symbol()
         {
-            field_sym.set_field_of(struct_sym.id());
+            if let Some(struct_sym) = namespace.opt_symbol() {
+                field_sym.set_field_of(struct_sym.id());
+            }
+
+            if let Some(type_node) = node.child_by_field(unit, LangRust::field_type)
+                && let Some(field_type) = infer_type(unit, scopes, &type_node)
+            {
+                field_sym.set_type_of(field_type.id());
+            }
         }
     }
 
@@ -428,10 +464,6 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         self.visit_children(unit, node, scopes, namespace, parent);
 
         if let Some(ident) = node.find_ident(unit) {
-            debug_assert!(
-                ident.opt_symbol().is_none(),
-                "collect shouldn't do anything"
-            );
             if let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKind::callable_kinds()) {
                 ident.set_symbol(symbol);
             }
@@ -731,6 +763,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: let name: Type = value; or let name = value;
+    #[tracing::instrument(skip_all)]
     fn visit_let_declaration(
         &mut self,
         unit: &CompileUnit<'tcx>,
@@ -747,11 +780,18 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             if let Some(type_ident) = type_node.find_ident(unit)
                 && let Some(sym) = type_ident.opt_symbol()
             {
+                tracing::trace!(
+                    "found explicit type annotation for let declaration: {}",
+                    sym.format(Some(unit.interner()))
+                );
                 type_sym = Some(sym);
             }
         } else {
-            // infer type from assignment expression
-            type_sym = infer_type(unit, scopes, node);
+            // infer type from assignment expression if present
+            if let Some(value_node) = node.child_by_field(unit, LangRust::field_value) {
+                tracing::trace!("inferring type for let declaration from value expression");
+                type_sym = infer_type(unit, scopes, &value_node);
+            }
         }
 
         if let Some(ty_sym) = type_sym
