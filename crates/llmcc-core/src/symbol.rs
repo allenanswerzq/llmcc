@@ -120,6 +120,20 @@ impl SymKind {
             SymKind::Namespace,
         ]
     }
+
+    pub fn trait_kinds() -> Vec<SymKind> {
+        vec![SymKind::Struct, SymKind::Enum]
+    }
+
+    pub fn callable_kinds() -> Vec<SymKind> {
+        vec![
+            SymKind::Struct,
+            SymKind::Enum,
+            SymKind::Trait,
+            SymKind::Function,
+            SymKind::Const,
+        ]
+    }
 }
 
 /// Represents a named entity in source code.

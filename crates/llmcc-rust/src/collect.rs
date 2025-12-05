@@ -37,7 +37,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
     ) -> Option<&'tcx Symbol> {
         // Try to find identifier by field first, if not found try scope's identifier
         let ident = node
-            .ident_by_field(*unit, field_id)
+            .ident_by_field(unit, field_id)
             .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
 
         tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
@@ -322,7 +322,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
-        if node.child_by_field(*unit, LangRust::field_body).is_none() {
+        if node.child_by_field(unit, LangRust::field_body).is_none() {
             return;
         }
         self.visit_scoped_named(
@@ -466,7 +466,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        if let Some(ti) = node.ident_by_field(*unit, LangRust::field_trait)
+        if let Some(ti) = node.ident_by_field(unit, LangRust::field_trait)
             && let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Trait)
         {
@@ -732,7 +732,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Set type_of on the variant to point to the parent enum
         if let Some(enum_sym) = parent_enum
-            && let Some(ident) = node.ident_by_field(*unit, LangRust::field_name)
+            && let Some(ident) = node.ident_by_field(unit, LangRust::field_name)
             && let Some(variant_sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::EnumVariant])
         {
             variant_sym.set_type_of(enum_sym.id);
@@ -750,7 +750,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _parent: Option<&Symbol>,
     ) {
         // Check if this is a 'self' parameter
-        if let Some(ident) = node.ident_by_field(*unit, LangRust::field_pattern)
+        if let Some(ident) = node.ident_by_field(unit, LangRust::field_pattern)
             && ident.name == "self"
             && let Some(symbol) = scopes.lookup_symbol(&ident.name, vec![SymKind::Field])
         {
@@ -793,7 +793,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             scopes.push_scope(scope);
 
             // Collect closure parameters
-            if let Some(params) = node.child_by_field(*unit, LangRust::field_parameters) {
+            if let Some(params) = node.child_by_field(unit, LangRust::field_parameters) {
                 let _ = Self::collect_pattern_identifiers(unit, &params, scopes, SymKind::Variable);
             }
 
@@ -814,7 +814,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
     ) {
         // Check if value is a closure expression to determine symbol kind
         let is_closure = node
-            .child_by_field(*unit, LangRust::field_value)
+            .child_by_field(unit, LangRust::field_value)
             .map(|v| v.kind_id() == LangRust::closure_expression)
             .unwrap_or(false);
 
@@ -825,7 +825,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         };
 
         // Collect the pattern identifier(s) with appropriate kind
-        let let_syms = if let Some(pattern) = node.child_by_field(*unit, LangRust::field_pattern) {
+        let let_syms = if let Some(pattern) = node.child_by_field(unit, LangRust::field_pattern) {
             Self::collect_pattern_identifiers(unit, &pattern, scopes, kind)
         } else {
             vec![]

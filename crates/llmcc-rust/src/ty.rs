@@ -1,635 +1,419 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::lang_def::LanguageTrait;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
 
 use crate::token::LangRust;
 
-/// Simple type system for Rust language
-///
-/// infer_* - Determines the type of something:
-/// resolve_* - Finds what symbol/name something refers to:
-pub struct TyCtxt<'a, 'tcx> {
-    pub unit: &'a CompileUnit<'tcx>,
-    pub scopes: &'a BinderScopes<'tcx>,
-}
+/// Infer the type of any AST node
+#[tracing::instrument(skip_all)]
+pub fn infer_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    match node.kind_id() {
+        // Literal types
+        LangRust::boolean_literal => get_primitive_type(scopes, "bool"),
+        LangRust::integer_literal => get_primitive_type(scopes, "i32"),
+        LangRust::float_literal => get_primitive_type(scopes, "f64"),
+        LangRust::char_literal => get_primitive_type(scopes, "char"),
+        LangRust::string_literal => get_primitive_type(scopes, "str"),
 
-impl<'a, 'tcx> TyCtxt<'a, 'tcx> {
-    pub fn new(unit: &'a CompileUnit<'tcx>, scopes: &'a BinderScopes<'tcx>) -> Self {
-        Self { unit, scopes }
-    }
-
-    /// Infers the type with optional symbol kind filtering.
-    /// If `kind_filters` is provided, restricts lookup to those kinds (e.g., for callable resolution).
-    fn infer_filtered(
-        &mut self,
-        node: &HirNode<'tcx>,
-        kind_filters: Option<Vec<SymKind>>,
-    ) -> Option<&'tcx Symbol> {
-        TyImpl::new(self).infer_impl(node, kind_filters)
-    }
-
-    /// Infers the type of any expression node without filtering.
-    pub fn infer(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.infer_filtered(node, None)
-    }
-
-    /// Resolves an expression to its underlying callable symbol.
-    pub fn resolve_callable(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.infer_filtered(node, Some(vec![SymKind::Function, SymKind::Closure]))
-    }
-
-    /// Resolves a type node
-    pub fn resolve_type(&mut self, type_node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.infer_filtered(
-            type_node,
-            Some(vec![
-                SymKind::Struct,
-                SymKind::Enum,
-                SymKind::Trait,
-                SymKind::TypeAlias,
-                SymKind::TypeParameter,
-                SymKind::Primitive,
-                SymKind::Macro,
-                SymKind::UnresolvedType,
-            ]),
-        )
-    }
-
-    /// Resolves canonical type (follows aliases).
-    #[allow(dead_code)]
-    pub fn resolve_type_of(unit: &CompileUnit<'tcx>, symbol: &'tcx Symbol) -> &'tcx Symbol {
-        TyImpl::resolve_type_of(unit, symbol)
-    }
-}
-
-struct TyImpl<'a, 'b, 'tcx> {
-    ty: &'b mut TyCtxt<'a, 'tcx>,
-}
-
-impl<'a, 'b, 'tcx> TyImpl<'a, 'b, 'tcx> {
-    fn new(ty: &'b mut TyCtxt<'a, 'tcx>) -> Self {
-        Self { ty }
-    }
-
-    /// calling with no kind filters
-    fn infer_no_filter(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.infer_impl(node, None)
-    }
-
-    fn infer_impl(
-        &mut self,
-        node: &HirNode<'tcx>,
-        kind_filters: Option<Vec<SymKind>>,
-    ) -> Option<&'tcx Symbol> {
-        match node.kind_id() {
-            LangRust::integer_literal => self.primitive_type("i32"),
-            LangRust::float_literal => self.primitive_type("f64"),
-            LangRust::string_literal => self.primitive_type("str"),
-            LangRust::boolean_literal => self.primitive_type("bool"),
-            LangRust::char_literal => self.primitive_type("char"),
-            LangRust::scoped_identifier => self.infer_scoped_identifier(node, None),
-            LangRust::struct_expression => self.infer_struct_expression(node),
-            LangRust::call_expression => self.infer_child_field(node, LangRust::field_function),
-            LangRust::if_expression => self.infer_if_expression(node),
-            LangRust::block => self.infer_block(node),
-            LangRust::unary_expression => self.infer_child_field(node, LangRust::field_argument),
-            LangRust::binary_expression => self.infer_binary_expression(node),
-            LangRust::field_expression => self.infer_field_expression(node, kind_filters.clone()),
-            LangRust::array_expression => self.infer_array_expression(node),
-            LangRust::tuple_expression => self.infer_tuple_expression(node),
-            LangRust::unit_expression => self.infer_unit_expression(node),
-            LangRust::range_expression => self.infer_range_expression(node),
-            LangRust::array_type => self.infer_array_type(node),
-            LangRust::tuple_type => self.infer_tuple_type(node),
-            LangRust::function_type => self.infer_function_type(node),
-            LangRust::reference_type => self.infer_reference_type(node),
-            LangRust::pointer_type => self.infer_pointer_type(node),
-            LangRust::primitive_type => {
-                let prim_name = self.ty.unit.hir_text(node);
-                self.primitive_type(&prim_name)
-            }
-            _ => {
-                // Try to resolve as identifier first
-                let ident = node.find_ident(self.ty.unit)?;
-                if let Some(symbol) = ident.opt_symbol() {
-                    return Some(symbol);
-                }
-                // Fall back to lookup by name with kind filters
-                if let Some(lookup_kinds) = kind_filters {
-                    return self.ty.scopes.lookup_symbol(&ident.name, lookup_kinds);
-                }
-                None
-            }
-        }
-    }
-
-    fn primitive_type(&mut self, name: &str) -> Option<&'tcx Symbol> {
-        let symbols = self
-            .ty
-            .scopes
-            .lookup_globals(name, vec![SymKind::Primitive])?;
-        if symbols.len() > 1 {
-            tracing::warn!(
-                "multiple primitive types found for '{}', returning the last one",
-                name
-            );
-        }
-        symbols.last().copied()
-    }
-
-    /// Collects all child nodes that are identifiers.
-    pub fn collect_idents(&self, node: &HirNode<'tcx>) -> Vec<HirNode<'tcx>> {
-        let mut identifiers: Vec<HirNode<'_>> = Vec::new();
-        Self::collect_ident_recursive(self.ty.unit, node, &mut identifiers);
-        identifiers
-    }
-
-    fn infer_scoped_identifier(
-        &mut self,
-        node: &HirNode<'tcx>,
-        kind_filters: Option<Vec<SymKind>>,
-    ) -> Option<&'tcx Symbol> {
-        // Collect all identifier parts of the scoped path (e.g., foo::Bar::baz)
-        let idents = self.collect_idents(node);
-
-        if idents.is_empty() {
-            return None;
+        // Type identifiers
+        LangRust::primitive_type | LangRust::type_identifier => {
+            let ident = node.find_ident(unit)?;
+            ident.opt_symbol()
         }
 
-        // Extract names from identifiers
-        let qualified_names: Vec<&str> = idents
-            .iter()
-            .filter_map(|i| i.as_ident().map(|ident| ident.name.as_str()))
-            .collect();
+        // Block expressions
+        LangRust::block => infer_block(unit, scopes, node),
 
-        if qualified_names.is_empty() {
-            return None;
-        }
+        // Generic type with turbofish: Vec::<T>::new()
+        LangRust::generic_type_with_turbofish => node
+            .child_by_field(unit, LangRust::field_type)
+            .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
 
-        tracing::trace!(
-            "resolving scoped ident for '{:?}' '{:?}'",
-            node.id(),
-            qualified_names
-        );
+        // Array expression: [1, 2, 3] or [1; 5]
+        LangRust::array_expression => infer_array_expression(unit, scopes, node),
 
-        // Use lookup_qualified to resolve the full path
-        let symbols = self
-            .ty
-            .scopes
-            .lookup_qualified(&qualified_names, kind_filters)?;
+        // Range expression: 1..5, 1..=5, 1.., ..5, etc.
+        LangRust::range_expression => infer_range_expression(unit, scopes, node),
 
-        tracing::trace!(
-            "found {:?} symbols for scoped ident '{:?}'",
-            symbols
-                .iter()
-                .map(|s| s.format(Some(self.ty.unit.interner())))
-                .collect::<Vec<_>>(),
-            qualified_names
-        );
+        // Tuple expression: (a, b, c)
+        LangRust::tuple_expression => infer_tuple_expression(unit, scopes, node),
 
-        // Use the last matching symbol
-        let symbol = symbols.last().copied()?;
-        if symbol.kind() == SymKind::TypeAlias {
-            // Get the type of the resolved symbol
-            let type_id = symbol.type_of()?;
-            self.ty.unit.opt_get_symbol(type_id)
-        } else {
-            Some(symbol)
-        }
-    }
+        // Struct expression: Struct { field: value }
+        LangRust::struct_expression => infer_struct_expression(unit, scopes, node),
 
-    fn infer_struct_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        node.child_by_field(*self.ty.unit, LangRust::field_name)
-            .or_else(|| node.child_by_field(*self.ty.unit, LangRust::field_type))
-            .and_then(|ty_node| self.infer_no_filter(&ty_node))
-    }
+        // Field expression: obj.field or obj[index]
+        LangRust::field_expression => infer_field_expression(unit, scopes, node),
 
-    #[allow(dead_code)]
-    fn infer_call_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        // First resolve the function being called
-        let func_node = node.child_by_field(*self.ty.unit, LangRust::field_function)?;
-        let func_symbol = self.infer_no_filter(&func_node)?;
+        // Scoped identifier: module::Type or foo::bar::baz
+        LangRust::scoped_identifier => infer_scoped_identifier(unit, scopes, node),
 
-        // Then get the return type from the function symbol
-        let return_type_id = func_symbol.type_of()?;
-        self.ty.unit.opt_get_symbol(return_type_id)
-    }
-    fn infer_if_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        if let Some(consequence) = node.child_by_field(*self.ty.unit, LangRust::field_consequence) {
-            return self.infer_block(&consequence);
-        }
-        None
-    }
-
-    fn infer_block(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(self.ty.unit);
-        let last_child = children
-            .iter()
-            .rev()
-            .find(|child| !Self::is_trivia(child))?;
-
-        self.infer_no_filter(last_child)
-    }
-
-    fn infer_binary_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let (left_node, _, outcome) = self.get_binary_components(node)?;
-
-        match outcome {
-            Some(BinaryOperatorOutcome::ReturnsBool) => self.primitive_type("bool"),
-            Some(BinaryOperatorOutcome::ReturnsLeftOperand) => self.infer_no_filter(&left_node),
-            None => None,
-        }
-    }
-
-    fn infer_field_expression(
-        &mut self,
-        node: &HirNode<'tcx>,
-        kind_filters: Option<Vec<SymKind>>,
-    ) -> Option<&'tcx Symbol> {
-        let value_node = node.child_by_field(*self.ty.unit, LangRust::field_value)?;
-        let obj_type = self.ty.infer(&value_node)?;
-
-        let field_node = node.child_by_field(*self.ty.unit, LangRust::field_field)?;
-        let field_ident = field_node.as_ident()?;
-
-        // Check if field is a numeric literal (tuple indexing)
-        if field_node.kind() == HirKind::Text {
-            let field_text = self.ty.unit.hir_text(&field_node);
-            if let Ok(index) = field_text.parse::<usize>() {
-                // Tuple indexing: get element type from nested_types
-                if let Some(nested) = obj_type.nested_types() {
-                    if let Some(elem_id) = nested.get(index) {
-                        return self.ty.unit.opt_get_symbol(*elem_id);
-                    }
-                }
-                return None;
-            }
-        }
-
-        // Try to find field with kind filtering
-        let field_symbol = if let Some(ref kinds) = kind_filters {
-            // For callable resolution, look for function members
-            if kinds.contains(&SymKind::Function) {
-                self.ty.scopes.lookup_member_symbol(
-                    obj_type,
-                    &field_ident.name,
-                    Some(SymKind::Function),
-                )
-            } else {
-                None
-            }
-        } else {
-            // For type resolution, try field first, then function
-            self.ty
-                .scopes
-                .lookup_member_symbol(obj_type, &field_ident.name, Some(SymKind::Field))
-                .or_else(|| {
-                    self.ty.scopes.lookup_member_symbol(
-                        obj_type,
-                        &field_ident.name,
-                        Some(SymKind::Function),
-                    )
-                })
-        }?;
-
-        let field_type_id = field_symbol.type_of()?;
-        let field_type = self.ty.unit.opt_get_symbol(field_type_id)?;
-
-        Some(field_type)
-    }
-
-    /// Infers type of array expression: [elem; count] or [elem1, elem2, ...]
-    /// Creates a synthetic array type with the element type as nested type
-    fn infer_array_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(self.ty.unit);
-        let first_expr = children.iter().find(|child| !Self::is_trivia(child))?;
-
-        // Infer element type from first expression
-        let elem_type = self.infer_no_filter(first_expr)?;
-
-        // Create synthetic array type with element as nested type
-        self.create_synthetic_compound_type("array", vec![elem_type.id()])
-    }
-
-    /// Infers type of tuple expression: (a, b, c)
-    /// Creates a synthetic tuple type with all element types as nested types
-    fn infer_tuple_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(self.ty.unit);
-        let mut elem_types = Vec::new();
-
-        // Collect all non-trivia expressions
-        for child in children {
-            if !Self::is_trivia(&child) {
-                if let Some(elem_type) = self.infer_no_filter(&child) {
-                    elem_types.push(elem_type.id());
-                }
-            }
-        }
-
-        if elem_types.is_empty() {
-            return None;
-        }
-
-        // Create synthetic tuple type with all elements as nested types
-        self.create_synthetic_compound_type("tuple", elem_types)
-    }
-
-    /// Infers type of unit expression: ()
-    /// Returns the unit primitive type
-    fn infer_unit_expression(&mut self, _node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        self.primitive_type("()")
-    }
-
-    /// Infers type of range expression: start..end or start..=end
-    /// Creates a synthetic Range<T> type with the element type as nested type
-    /// Range expressions: 1..5, 1..=5, 1.., ..5, .., etc.
-    fn infer_range_expression(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(self.ty.unit);
-
-        // Try to infer element type from start or end expression
-        let element_type = children
-            .iter()
-            .find(|child| !Self::is_trivia(child))
-            .and_then(|expr| self.infer_no_filter(expr))
-            .unwrap_or_else(|| {
-                self.primitive_type("i32").unwrap_or_else(|| {
-                    // Fallback to i32 if we can't infer from expressions
-                    self.ty
-                        .scopes
-                        .lookup_globals("i32", vec![SymKind::Primitive])
-                        .and_then(|syms| syms.last().copied())
-                        .unwrap()
-                })
-            });
-
-        // Create synthetic Range<T> type with element type as nested type
-        self.create_synthetic_compound_type("Range", vec![element_type.id()])
-    }
-
-    /// Infers type of array type annotation: [T; N]
-    /// Creates a synthetic array type with element type as nested type
-    fn infer_array_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let elem_node = node.child_by_field(*self.ty.unit, LangRust::field_element)?;
-        let elem_type = self.infer_no_filter(&elem_node)?;
-
-        // Create synthetic array type
-        self.create_synthetic_compound_type("array", vec![elem_type.id()])
-    }
-
-    /// Infers type of tuple type annotation: (T1, T2, T3)
-    /// Creates a synthetic tuple type with all element types as nested types
-    fn infer_tuple_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(self.ty.unit);
-        let mut elem_types = Vec::new();
-
-        // Collect all type nodes
-        for child in children {
-            if !Self::is_trivia(&child) {
-                if let Some(elem_type) = self.ty.resolve_type(&child) {
-                    elem_types.push(elem_type.id());
-                }
-            }
-        }
-
-        if elem_types.is_empty() {
-            return None;
-        }
-
-        // Create synthetic tuple type
-        self.create_synthetic_compound_type("tuple", elem_types)
-    }
-
-    /// Infers type of function type annotation: fn(T1, T2) -> RetType
-    /// Creates a synthetic function type with parameter and return types as nested types
-    fn infer_function_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let mut param_types = Vec::new();
-
-        // Collect parameter types
-        let children = node.children(self.ty.unit);
-        for child in &children {
-            if !Self::is_trivia(child) {
-                if let Some(param_type) = self.ty.resolve_type(child) {
-                    param_types.push(param_type.id());
-                }
-            }
-        }
-
-        // Function type includes both parameters and return type as nested types
-        // For now, create with parameters. Return type would be handled separately
-        if param_types.is_empty() {
-            return None;
-        }
-
-        self.create_synthetic_compound_type("fn", param_types)
-    }
-
-    /// Infers type of reference type annotation: &T or &mut T
-    /// Returns the referenced type (strips the reference wrapper)
-    fn infer_reference_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(self.ty.unit);
-        // Find the first non-trivia child which should be the referenced type
-        let ref_type_node = children.iter().find(|child| !Self::is_trivia(child))?;
-
-        self.ty.resolve_type(ref_type_node)
-    }
-
-    /// Infers type of pointer type annotation: *const T or *mut T
-    /// Returns the pointed-to type (strips the pointer wrapper)
-    fn infer_pointer_type(&mut self, node: &HirNode<'tcx>) -> Option<&'tcx Symbol> {
-        let children = node.children(self.ty.unit);
-        // Find the first non-trivia child which should be the pointed-to type
-        let ptr_type_node = children.iter().find(|child| !Self::is_trivia(child))?;
-
-        self.ty.resolve_type(ptr_type_node)
-    }
-
-    /// Creates a synthetic compound type symbol with nested types.
-    /// Used for array types, tuple types, function types, etc.
-    fn create_synthetic_compound_type(
-        &mut self,
-        type_name: &str,
-        nested_ids: Vec<llmcc_core::symbol::SymId>,
-    ) -> Option<&'tcx Symbol> {
-        // For now, create a simple synthetic type symbol
-        // In a full implementation, this would use the arena to allocate a new symbol
-        // For now, we return None as a placeholder - this can be enhanced later
-        // when we have better support for synthetic symbol creation
-        let _ = (type_name, nested_ids);
-        None
-    }
-
-    fn infer_child_field(&mut self, node: &HirNode<'tcx>, field_id: u16) -> Option<&'tcx Symbol> {
-        let child = node.child_by_field(*self.ty.unit, field_id)?;
-        self.ty.infer(&child)
-    }
-
-    #[allow(dead_code)]
-    fn resolve_type_of(unit: &CompileUnit<'tcx>, mut current_symbol: &'tcx Symbol) -> &'tcx Symbol {
-        const MAX_DEPTH: usize = 8;
-        for _ in 0..MAX_DEPTH {
-            let Some(target_type_id) = current_symbol.type_of() else {
-                break;
-            };
-            let Some(next_symbol) = unit.opt_get_symbol(target_type_id) else {
-                break;
-            };
-            if next_symbol.id() == current_symbol.id() {
-                break;
-            }
-            current_symbol = next_symbol;
-        }
-        current_symbol
-    }
-
-    #[allow(dead_code)]
-    fn collect_types(&mut self, node: &HirNode<'tcx>, collected_symbols: &mut Vec<&'tcx Symbol>) {
-        if let Some(type_symbol) = self.ty.resolve_type(node)
-            && !collected_symbols.iter().any(|s| s.id() == type_symbol.id())
-        {
-            collected_symbols.push(type_symbol);
-        }
-
-        let children = node.children(self.ty.unit);
-        for child_node in children {
-            if !Self::is_trivia(&child_node) {
-                self.collect_types(&child_node, collected_symbols);
-            }
-        }
-    }
-
-    /// Collects all child nodes that are identifiers
-    fn collect_ident_recursive(
-        unit: &CompileUnit<'tcx>,
-        node: &HirNode<'tcx>,
-        identifiers: &mut Vec<HirNode<'tcx>>,
-    ) {
-        // Check if current node is an identifier kind
-        if node.kind_id() == LangRust::identifier {
-            identifiers.push(*node);
-        }
-
-        // Recursively check children
-        let children = node.children(unit);
-        for child_node in children {
-            if !Self::is_trivia(&child_node) {
-                Self::collect_ident_recursive(unit, &child_node, identifiers);
-            }
-        }
-    }
-
-    #[allow(dead_code)]
-    fn is_identifier_kind(kind_id: u16) -> bool {
-        matches!(
-            kind_id,
-            LangRust::identifier
-                | LangRust::scoped_identifier
-                | LangRust::field_identifier
-                | LangRust::type_identifier
-        )
-    }
-
-    fn is_trivia(node: &HirNode) -> bool {
-        matches!(node.kind(), HirKind::Text | HirKind::Comment)
-    }
-
-    #[allow(dead_code)]
-    fn first_significant_child(&self, node: &HirNode<'tcx>) -> Option<HirNode<'tcx>> {
-        node.children(self.ty.unit)
-            .iter()
-            .find(|child| !Self::is_trivia(child))
-            .copied()
-    }
-
-    #[allow(dead_code)]
-    fn as_text_literal(&self, node: &HirNode<'tcx>) -> Option<&'tcx str> {
-        node.as_text().map(|t| t.text.as_str())
-    }
-
-    fn get_binary_components(
-        &self,
-        node: &HirNode<'tcx>,
-    ) -> Option<(HirNode<'tcx>, HirNode<'tcx>, Option<BinaryOperatorOutcome>)> {
-        let children = node.children(self.ty.unit);
-        let left = children.first().copied()?;
-
-        let outcome = children
-            .iter()
-            .find_map(|child| self.lookup_binary_operator(Some(child.kind_id()), None))
-            .or_else(|| {
-                let right = children.get(1).copied()?;
-                if left.end_byte() < right.start_byte() {
-                    let text = self.ty.unit.get_text(left.end_byte(), right.start_byte());
-                    self.lookup_binary_operator(None, Some(&text))
+        // Identifier
+        LangRust::identifier => {
+            let ident = node.find_ident(unit)?;
+            ident.opt_symbol().and_then(|sym| {
+                if let Some(type_id) = sym.type_of() {
+                    unit.opt_get_symbol(type_id)
                 } else {
-                    None
+                    Some(sym)
                 }
-            });
-
-        Some((left, left, outcome))
-    }
-
-    fn lookup_binary_operator(
-        &self,
-        kind_id: Option<u16>,
-        text: Option<&str>,
-    ) -> Option<BinaryOperatorOutcome> {
-        BINARY_OPERATOR_TOKENS
-            .iter()
-            .find_map(|(token_id, outcome)| {
-                if let Some(k) = kind_id
-                    && *token_id == k
-                {
-                    return Some(*outcome);
-                }
-                if let Some(t) = text {
-                    let trimmed = t.trim();
-                    if !trimmed.is_empty()
-                        && let Some(token_text) = LangRust::token_str(*token_id)
-                        && token_text == trimmed
-                    {
-                        return Some(*outcome);
-                    }
-                }
-                None
             })
+        }
+
+        // Call expression: func(args)
+        LangRust::call_expression | LangRust::field_identifier => node
+            .child_by_field(unit, LangRust::field_function)
+            .and_then(|func_node| infer_type(unit, scopes, &func_node)),
+
+        // Index expression: arr[i]
+        LangRust::index_expression => infer_index_expression(unit, scopes, node),
+
+        // Binary expression: a + b, a == b, etc.
+        LangRust::binary_expression => infer_binary_expression(unit, scopes, node),
+
+        // Unary expression: -a, !b, *ptr, &ref
+        LangRust::unary_expression => node
+            .child_by_field(unit, LangRust::field_argument)
+            .and_then(|arg_node| infer_type(unit, scopes, &arg_node)),
+
+        // Type cast expression: expr as Type
+        LangRust::type_cast_expression => node
+            .child_by_field(unit, LangRust::field_type)
+            .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
+
+        // If expression: if cond { ... } else { ... }
+        LangRust::if_expression => infer_if_expression(unit, scopes, node),
+
+        // Type nodes
+        LangRust::array_type => infer_array_type(unit, scopes, node),
+        LangRust::tuple_type => infer_tuple_type(unit, scopes, node),
+        LangRust::function_type => infer_function_type(unit, scopes, node),
+        LangRust::reference_type => infer_reference_type(unit, scopes, node),
+        LangRust::pointer_type => infer_pointer_type(unit, scopes, node),
+
+        _ => {
+            // try to find identifier
+            if let Some(ident) = node.find_ident(unit) {
+                return ident.opt_symbol();
+            }
+            // search from scopes
+            if let Some(ty) = scopes.lookup_symbol(&unit.hir_text(node), SymKind::type_kinds()) {
+                return Some(ty);
+            }
+            None
+        }
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum BinaryOperatorOutcome {
-    ReturnsBool,
-    ReturnsLeftOperand,
+/// Get primitive type by name
+fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
+    scopes
+        .lookup_globals(name, vec![SymKind::Primitive])?
+        .last()
+        .copied()
 }
 
-pub const BINARY_OPERATOR_TOKENS: &[(u16, BinaryOperatorOutcome)] = &[
-    (LangRust::Text_EQEQ, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_NE, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_LT, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_GT, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_LE, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_GE, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_AMPAMP, BinaryOperatorOutcome::ReturnsBool),
-    (LangRust::Text_PIPEPIPE, BinaryOperatorOutcome::ReturnsBool),
-    (
-        LangRust::Text_PLUS,
-        BinaryOperatorOutcome::ReturnsLeftOperand,
-    ),
-    (
-        LangRust::Text_MINUS,
-        BinaryOperatorOutcome::ReturnsLeftOperand,
-    ),
-    (
-        LangRust::Text_STAR,
-        BinaryOperatorOutcome::ReturnsLeftOperand,
-    ),
-    (
-        LangRust::Text_SLASH,
-        BinaryOperatorOutcome::ReturnsLeftOperand,
-    ),
-    (
-        LangRust::Text_PERCENT,
-        BinaryOperatorOutcome::ReturnsLeftOperand,
-    ),
-];
+/// Infer block type: type of last expression in block
+fn infer_block<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+    let last_expr = children.iter().rev().find(|child| !is_trivia(child))?;
+
+    infer_type(unit, scopes, last_expr)
+}
+
+/// Infer array expression type: [elem; count] or [elem1, elem2, ...]
+fn infer_array_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+    let first_expr = children.iter().find(|child| !is_trivia(child))?;
+
+    let elem_type = infer_type(unit, scopes, first_expr)?;
+
+    // For now, return the element type.
+    // A full implementation would create a synthetic [T] type
+    Some(elem_type)
+}
+
+/// Infer range expression type: 1..5 -> Range<i32>
+fn infer_range_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+
+    // Try to infer element type from first expression
+    let element_type = children
+        .iter()
+        .find(|child| !is_trivia(child))
+        .and_then(|expr| infer_type(unit, scopes, expr))
+        .or_else(|| get_primitive_type(scopes, "i32"))?;
+
+    // For now, return element type. Full implementation would create Range<T>
+    Some(element_type)
+}
+
+/// Infer tuple expression type: (a, b, c) -> (TypeA, TypeB, TypeC)
+fn infer_tuple_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+
+    // Collect all non-trivia expressions (tuple elements)
+    let mut _elem_types = Vec::new();
+    for child in children {
+        if !is_trivia(&child) {
+            if let Some(elem_type) = infer_type(unit, scopes, &child) {
+                _elem_types.push(elem_type);
+            }
+        }
+    }
+
+    // For now, return None as we don't have synthetic type creation.
+    // Full implementation would create (T1, T2, T3) type
+    None
+}
+
+/// Infer struct expression type: Struct { ... } -> Struct
+fn infer_struct_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    // Try to get the name field (explicit struct name)
+    if let Some(name_node) = node.child_by_field(unit, LangRust::field_name) {
+        return infer_type(unit, scopes, &name_node);
+    }
+
+    // Try to get the type field
+    if let Some(type_node) = node.child_by_field(unit, LangRust::field_type) {
+        return infer_type(unit, scopes, &type_node);
+    }
+
+    None
+}
+
+/// Infer field expression type: obj.field -> FieldType
+fn infer_field_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let value_node = node.child_by_field(unit, LangRust::field_value)?;
+    let obj_type = infer_type(unit, scopes, &value_node)?;
+
+    let field_node = node.child_by_field(unit, LangRust::field_field)?;
+    let field_ident = field_node.find_ident(unit)?;
+
+    // Check if field is a numeric literal (tuple indexing)
+    if field_node.kind() == HirKind::Text {
+        let field_text = unit.hir_text(&field_node);
+        if let Ok(index) = field_text.parse::<usize>() {
+            // Tuple indexing: get element type from nested_types
+            if let Some(nested) = obj_type.nested_types() {
+                if let Some(elem_id) = nested.get(index) {
+                    return unit.opt_get_symbol(*elem_id);
+                }
+            }
+            return None;
+        }
+    }
+
+    // Look up field in object's scope
+    scopes
+        .lookup_member_symbol(obj_type, &field_ident.name, Some(SymKind::Field))
+        .and_then(|field_sym| {
+            if let Some(type_id) = field_sym.type_of() {
+                unit.opt_get_symbol(type_id)
+            } else {
+                Some(field_sym)
+            }
+        })
+}
+
+/// Infer scoped identifier type: module::Type or foo::bar::baz
+fn infer_scoped_identifier<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let idents = node.collect_idents(unit);
+
+    if idents.is_empty() {
+        return None;
+    }
+
+    let qualified_names: Vec<&str> = idents.iter().map(|i| i.name.as_str()).collect();
+
+    tracing::trace!("resolving scoped ident {:?}", qualified_names);
+
+    scopes
+        .lookup_qualified(&qualified_names, None)?
+        .last()
+        .copied()
+}
+
+/// Infer index expression type: arr[i] -> ElementType
+fn infer_index_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let value_node = node.child_by_field(unit, LangRust::field_value)?;
+    let obj_type = infer_type(unit, scopes, &value_node)?;
+
+    // For indexed access, get first nested type
+    if let Some(nested) = obj_type.nested_types() {
+        if let Some(elem_id) = nested.first() {
+            return unit.opt_get_symbol(*elem_id);
+        }
+    }
+
+    None
+}
+
+/// Infer binary expression type: a + b or a == b
+fn infer_binary_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+    let left_node = children.first()?;
+
+    // Find the operator
+    let operator = children.iter().skip(1).find(|child| is_operator(child))?;
+
+    match operator.kind_id() {
+        // Comparison operators return bool
+        LangRust::Text_EQEQ
+        | LangRust::Text_NE
+        | LangRust::Text_LT
+        | LangRust::Text_GT
+        | LangRust::Text_LE
+        | LangRust::Text_GE
+        | LangRust::Text_AMPAMP
+        | LangRust::Text_PIPEPIPE => get_primitive_type(scopes, "bool"),
+
+        // Arithmetic operators return left operand type
+        LangRust::Text_PLUS
+        | LangRust::Text_MINUS
+        | LangRust::Text_STAR
+        | LangRust::Text_SLASH
+        | LangRust::Text_PERCENT => infer_type(unit, scopes, left_node),
+
+        _ => None,
+    }
+}
+
+/// Infer if expression type: type of consequence block
+fn infer_if_expression<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    if let Some(consequence) = node.child_by_field(unit, LangRust::field_consequence) {
+        return infer_block(unit, scopes, &consequence);
+    }
+    None
+}
+
+/// Infer array type annotation: [T; N]
+fn infer_array_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let elem_node = node.child_by_field(unit, LangRust::field_element)?;
+    infer_type(unit, scopes, &elem_node)
+}
+
+/// Infer tuple type annotation: (T1, T2, T3)
+fn infer_tuple_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+
+    let mut _elem_types = Vec::new();
+    for child in children {
+        if !is_trivia(&child) {
+            if let Some(elem_type) = infer_type(unit, scopes, &child) {
+                _elem_types.push(elem_type);
+            }
+        }
+    }
+
+    // For now return None, full implementation creates (T1, T2, T3) type
+    None
+}
+
+/// Infer function type annotation: fn(T1, T2) -> RetType
+fn infer_function_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+
+    // Last non-trivia child should be the return type
+    children
+        .iter()
+        .rev()
+        .find(|child| !is_trivia(child))
+        .and_then(|ret_node| infer_type(unit, scopes, ret_node))
+}
+
+/// Infer reference type annotation: &T or &mut T
+fn infer_reference_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+
+    // First non-trivia child is the referenced type
+    children
+        .iter()
+        .find(|child| !is_trivia(child))
+        .and_then(|ref_node| infer_type(unit, scopes, ref_node))
+}
+
+/// Infer pointer type annotation: *const T or *mut T
+fn infer_pointer_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    let children = node.children(unit);
+
+    // First non-trivia child is the pointed-to type
+    children
+        .iter()
+        .find(|child| !is_trivia(child))
+        .and_then(|ptr_node| infer_type(unit, scopes, ptr_node))
+}
+
+/// Check if node is trivia (whitespace, comment, etc.)
+fn is_trivia(node: &HirNode) -> bool {
+    matches!(node.kind(), HirKind::Text | HirKind::Comment)
+}
+
+/// Check if node is an operator
+fn is_operator(node: &HirNode) -> bool {
+    matches!(node.kind(), HirKind::Text | HirKind::Internal { .. })
+}
