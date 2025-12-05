@@ -179,9 +179,9 @@ impl<'hir> HirNode<'hir> {
         field_id: u16,
     ) -> Option<&'hir HirIdent<'hir>> {
         debug_assert!(!self.is_kind(HirKind::Identifier));
-        for child in self.children(&unit) {
+        for child in self.children(unit) {
             if child.field_id() == field_id {
-                return child.find_ident(&unit);
+                return child.find_ident(unit);
             }
         }
         None
@@ -242,10 +242,10 @@ impl<'hir> HirNode<'hir> {
         idents: &mut Vec<&'hir HirIdent<'hir>>,
     ) {
         // If this node has matching field ID and is an identifier, collect it
-        if self.field_id() == field_id {
-            if let Some(ident) = self.as_ident() {
-                idents.push(ident);
-            }
+        if self.field_id() == field_id
+            && let Some(ident) = self.as_ident()
+        {
+            idents.push(ident);
         }
 
         // Recursively collect from all children

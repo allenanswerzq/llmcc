@@ -33,6 +33,7 @@ pub(crate) struct CompactNode {
     pub(crate) location: Option<String>,
     /// Fully qualified name for hierarchical grouping
     pub(crate) fqn: String,
+    #[allow(dead_code)]
     pub(crate) sym_id: Option<SymId>,
     pub(crate) sym_kind: Option<SymKind>,
     /// Whether the symbol is public (for filtering private helpers in arch-graph)

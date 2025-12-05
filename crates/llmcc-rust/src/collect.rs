@@ -216,7 +216,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
         field_id: u16,
         on_scope_enter: Option<ScopeEntryCallback<'tcx>>,
     ) {
-        if let Some((sn, ident)) = node.scope_and_ident_by_field(*unit, field_id) {
+        if let Some((sn, ident)) = node.scope_and_ident_by_field(unit, field_id) {
             tracing::trace!(
                 "visiting scoped named node with kind '{:?}' '{}'",
                 kind,
@@ -473,7 +473,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             ti.set_symbol(symbol);
         }
 
-        if let Some((sn, ti)) = node.scope_and_ident_by_field(*unit, LangRust::field_type)
+        if let Some((sn, ti)) = node.scope_and_ident_by_field(unit, LangRust::field_type)
             && let Some(symbol) =
                 self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::UnresolvedType)
         {

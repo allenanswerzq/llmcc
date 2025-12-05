@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if, clippy::needless_return)]
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirNode, HirScope};
 use llmcc_core::scope::Scope;
@@ -18,6 +20,7 @@ type ScopeEntryCallback<'tcx> =
 /// Visitor for resolving symbol bindings and establishing relationships.
 #[derive(Debug)]
 pub struct BinderVisitor<'tcx> {
+    #[allow(dead_code)]
     config: ResolverOption,
     phantom: std::marker::PhantomData<&'tcx ()>,
 }
@@ -230,12 +233,14 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 if let Some(return_ident) =
                     return_type_node.ident_by_field(unit, LangRust::field_return_type)
                 {
-                    tracing::trace!(
-                        "binding function return type '{}' to '{}'",
-                        return_type.format(Some(unit.interner())),
-                        fn_sym.format(Some(unit.interner()))
-                    );
-                    fn_sym.set_type_of(return_type.id());
+                    if let Some(return_type) = return_ident.opt_symbol() {
+                        tracing::trace!(
+                            "binding function return type '{}' to '{}'",
+                            return_type.format(Some(unit.interner())),
+                            fn_sym.format(Some(unit.interner()))
+                        );
+                        fn_sym.set_type_of(return_type.id());
+                    }
                 }
             }
         }
@@ -349,8 +354,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         let target_ident = node.ident_by_field(unit, LangRust::field_type);
-        if let Some(target_sym) = target_ident.and_then(|ident| ident.opt_symbol()) {
-            let target_node = node.child_by_field(unit, LangRust::field_type).unwrap();
+        if let Some(target_ident) = target_ident
+            && let Some(target_sym) = target_ident.opt_symbol()
+        {
             let target_resolved = scopes.lookup_symbol(&target_ident.name, SymKind::trait_kinds());
 
             if target_sym.kind() == SymKind::UnresolvedType {
@@ -708,7 +714,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(type_sym) = scopes.lookup_symbol(&type_ident.name, SymKind::type_kinds())
             && let Some(pattern) = node.child_by_field_recursive(unit, LangRust::field_pattern)
         {
-            bind_pattern_types(unit, scopes, &pattern, type_sym.id());
+            bind_pattern_types(unit, scopes, &pattern, type_sym);
         }
     }
 
@@ -751,7 +757,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(ty_sym) = type_sym
             && let Some(pattern) = node.child_by_field_recursive(unit, LangRust::field_pattern)
         {
-            bind_pattern_types(unit, scopes, &pattern, Some(ty_sym));
+            bind_pattern_types(unit, scopes, &pattern, ty_sym);
         }
     }
 

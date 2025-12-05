@@ -65,8 +65,9 @@ impl std::fmt::Display for ScopeId {
 }
 
 /// Classification of what kind of named entity a symbol represents.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, Default)]
 pub enum SymKind {
+    #[default]
     Unknown,
     UnresolvedType,
     Crate,
@@ -91,12 +92,6 @@ pub enum SymKind {
     TypeParameter,
     GenericType,
     CompositeType,
-}
-
-impl Default for SymKind {
-    fn default() -> Self {
-        SymKind::Unknown
-    }
 }
 
 impl SymKind {

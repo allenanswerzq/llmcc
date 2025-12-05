@@ -114,17 +114,19 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
             }
             HirKind::Scope => {
                 // Find the first identifier child
-                let ident = children.iter().find_map(|child| {
-                    if let HirNode::Ident(ident_node) = child {
-                        Some(*ident_node)
-                    } else {
-                        let text = self.get_text(&base);
-                        tracing::trace!("scope crate non-identifier ident '{}'", text);
-                        let hir_ident = HirIdent::new(base.clone(), text);
-                        let allocated = self.arena.alloc(hir_ident);
-                        Some(allocated)
-                    }
-                });
+                let ident = children
+                    .iter()
+                    .map(|child| {
+                        if let HirNode::Ident(ident_node) = child {
+                            *ident_node
+                        } else {
+                            let text = self.get_text(&base);
+                            tracing::trace!("scope crate non-identifier ident '{}'", text);
+                            let hir_ident = HirIdent::new(base.clone(), text);
+                            self.arena.alloc(hir_ident)
+                        }
+                    })
+                    .next();
                 let hir_scope = HirScope::new(base, ident);
                 let allocated = self.arena.alloc(hir_scope);
                 HirNode::Scope(allocated)

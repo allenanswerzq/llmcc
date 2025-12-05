@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
 use llmcc_core::symbol::{SymKind, Symbol};

@@ -191,13 +191,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     ) {
         let symbol_id = symbol.id;
 
-        // Avoid processing the same symbol twice
-        if !visited.insert(symbol_id) {
-            return;
-        }
-
+        // Avoid processing the same symbol twice - if already visited, we're done
         // Symbol dependency tracking has been removed.
         // Dependencies are now tracked at the block level via BlockRelation.
+        let _ = visited.insert(symbol_id);
     }
 
     fn build_block(

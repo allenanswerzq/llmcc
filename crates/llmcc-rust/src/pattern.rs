@@ -1,3 +1,5 @@
+#![allow(clippy::collapsible_if)]
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{SymKind, Symbol};
@@ -69,7 +71,7 @@ pub fn bind_pattern_types<'tcx>(
 #[tracing::instrument(skip_all)]
 fn assign_type_to_ident<'tcx>(
     unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
+    _scopes: &mut BinderScopes<'tcx>,
     ident: &'tcx llmcc_core::ir::HirIdent<'tcx>,
     ident_type: &'tcx Symbol,
 ) {
