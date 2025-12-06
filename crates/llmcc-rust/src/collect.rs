@@ -771,7 +771,31 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             return;
         }
 
-        // For non-self parameters, declare as Variable
+        // Get the pattern node to check if it's a complex pattern (tuple, struct, etc.)
+        if let Some(pattern) = node.child_by_field(unit, LangRust::field_pattern) {
+            // Check if this is a simple identifier pattern or a complex pattern
+            if pattern.as_ident().is_some() {
+                // Simple identifier pattern: declare as variable directly
+                if let Some(symbol) = self.declare_symbol(
+                    unit,
+                    node,
+                    scopes,
+                    SymKind::Variable,
+                    LangRust::field_pattern,
+                ) {
+                    self.visit_children(unit, node, scopes, namespace, Some(symbol));
+                    return;
+                }
+            } else {
+                // Complex pattern (tuple, struct, etc.): collect all identifiers
+                let _ =
+                    Self::collect_pattern_identifiers(unit, &pattern, scopes, SymKind::Variable);
+                self.visit_children(unit, node, scopes, namespace, None);
+                return;
+            }
+        }
+
+        // Fallback: try to declare using the old method
         if let Some(symbol) = self.declare_symbol(
             unit,
             node,

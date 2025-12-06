@@ -5,7 +5,6 @@ use llmcc_core::ir::HirNode;
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_resolver::BinderScopes;
 
-use crate::infer::infer_type;
 use crate::token::LangRust;
 
 #[tracing::instrument(skip_all)]
@@ -23,12 +22,6 @@ pub fn bind_pattern_types<'tcx>(
 
     // Check the pattern kind
     match pattern.kind_id() {
-        // AST: (Type1, Type2, ...)
-        LangRust::tuple_type => {
-            if bind_tuple_type_to_pattern(unit, scopes, pattern) {
-                return;
-            }
-        }
         // AST: (pattern1, pattern2, ...)
         LangRust::tuple_pattern => {
             assign_type_to_tuple_pattern(unit, scopes, pattern, pattern_type);
@@ -122,36 +115,6 @@ fn assign_type_to_ident<'tcx>(
             default_type.format(Some(unit.interner()))
         );
     }
-}
-
-#[tracing::instrument(skip_all)]
-fn bind_tuple_type_to_pattern<'tcx>(
-    unit: &CompileUnit<'tcx>,
-    scopes: &mut BinderScopes<'tcx>,
-    type_node: &HirNode<'tcx>,
-) -> bool {
-    let Some(pattern) = type_node.child_by_field_recursive(unit, LangRust::field_pattern) else {
-        return false;
-    };
-
-    let mut type_elems = type_node
-        .children(unit)
-        .into_iter()
-        .filter(|child| !child.is_trivia());
-
-    for child_pattern in pattern.children(unit) {
-        if child_pattern.is_trivia() {
-            continue;
-        }
-
-        if let Some(type_elem_node) = type_elems.next()
-            && let Some(elem_sym) = infer_type(unit, scopes, &type_elem_node)
-        {
-            bind_pattern_types(unit, scopes, &child_pattern, elem_sym);
-        }
-    }
-
-    true
 }
 
 /// AST: (pattern1, pattern2, pattern3)

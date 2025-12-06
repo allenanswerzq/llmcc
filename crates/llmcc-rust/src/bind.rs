@@ -711,13 +711,23 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         self.visit_children(unit, node, scopes, namespace, parent);
 
-        if let Some(type_sym) = node.ident_symbol_by_field(unit, LangRust::field_type)
+        // Handle explicit type annotation: let x: Type = value;
+        // Use infer_type to handle composite types (tuples, arrays, etc.)
+        if let Some(type_node) = node.child_by_field(unit, LangRust::field_type)
             && let Some(pattern) = node.child_by_field_recursive(unit, LangRust::field_pattern)
         {
-            bind_pattern_types(unit, scopes, &pattern, type_sym);
-            return;
+            if let Some(type_sym) = infer_type(unit, scopes, &type_node) {
+                bind_pattern_types(unit, scopes, &pattern, type_sym);
+                return;
+            }
+            // Fallback to direct ident symbol lookup for simple types
+            if let Some(type_sym) = type_node.ident_symbol(unit) {
+                bind_pattern_types(unit, scopes, &pattern, type_sym);
+                return;
+            }
         }
 
+        // Handle type inference from value: let x = value;
         if let Some(value_node) = node.child_by_field(unit, LangRust::field_value)
             && let Some(pattern) = node.child_by_field_recursive(unit, LangRust::field_pattern)
             && let Some(type_sym) = infer_type(unit, scopes, &value_node)

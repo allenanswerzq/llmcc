@@ -363,28 +363,41 @@ fn infer_array_type<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
+    // Try to get the CompositeType symbol that was created for this array type
+    if let Some(sn) = node.as_scope() {
+        if let Some(array_ident) = sn.opt_ident() {
+            if let Some(array_symbol) =
+                scopes.lookup_symbol(&array_ident.name, vec![SymKind::CompositeType])
+            {
+                return Some(array_symbol);
+            }
+        }
+    }
+
+    // Fallback: get element type
     let elem_node = node.child_by_field(unit, LangRust::field_element)?;
     infer_type(unit, scopes, &elem_node)
 }
 
 /// Infer tuple type annotation: (T1, T2, T3)
 fn infer_tuple_type<'tcx>(
-    unit: &CompileUnit<'tcx>,
+    _unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let children = node.children(unit);
-
-    let mut _elem_types = Vec::new();
-    for child in children {
-        if !child.is_trivia() {
-            if let Some(elem_type) = infer_type(unit, scopes, &child) {
-                _elem_types.push(elem_type);
+    // Try to get the CompositeType symbol that was created for this tuple type
+    if let Some(sn) = node.as_scope() {
+        if let Some(tuple_ident) = sn.opt_ident() {
+            if let Some(tuple_symbol) =
+                scopes.lookup_symbol(&tuple_ident.name, vec![SymKind::CompositeType])
+            {
+                return Some(tuple_symbol);
             }
         }
     }
 
-    // For now return None, full implementation creates (T1, T2, T3) type
+    // Fallback: collect element types but can't return a proper symbol
+    // This handles cases where the tuple type wasn't pre-collected
     None
 }
 

@@ -456,7 +456,7 @@ fn range_variants_infer_i32() {
 
 #[serial]
 #[test]
-fn composite_type_annotations_resolve_element_types() {
+fn composite_type_annotations_resolve_to_composite_types() {
     let source = dedent(
         "
         fn passthrough(x: i32) -> i32 {
@@ -473,7 +473,9 @@ fn composite_type_annotations_resolve_element_types() {
     );
 
     with_compiled_unit(&[&source], |cc| {
-        assert_infer_type(cc, "numbers", ("i32", SymKind::Primitive));
+        // Array type now resolves to the CompositeType symbol
+        assert_infer_type(cc, "numbers", ("[i32; 2]", SymKind::CompositeType));
+        // Reference, pointer, and function types still resolve to element/return types
         assert_infer_type(cc, "reference", ("i32", SymKind::Primitive));
         assert_infer_type(cc, "pointer", ("i32", SymKind::Primitive));
         assert_infer_type(cc, "function", ("i32", SymKind::Primitive));
