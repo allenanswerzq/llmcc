@@ -47,7 +47,7 @@ fn build_and_count<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> usize {
 // ============================================================================
 
 /// Test 1: Single file sequential build
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_single_file() {
     let source = br#"
@@ -72,7 +72,7 @@ fn helper() {
 }
 
 /// Test 2: Multiple files sequential build
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_multiple_files_sequential() {
     let sources = vec![
@@ -98,7 +98,7 @@ fn test_ir_build_multiple_files_sequential() {
 }
 
 /// Test 3: Many files parallel build
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_many_files_parallel() {
     const NUM_FILES: usize = 20;
@@ -115,7 +115,7 @@ fn test_ir_build_many_files_parallel() {
 }
 
 /// Test 4: Verify HIR correctness with exact node count
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_correctness() {
     let source = br#"
@@ -148,7 +148,7 @@ fn main() {
     println!("✅ Correctness test passed: {} nodes", node_count);
 }
 /// Test 5: Verify thread pool reuse across build phases
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_thread_pool_reuse() {
     const NUM_FILES: usize = 10;
@@ -164,7 +164,7 @@ fn test_ir_build_thread_pool_reuse() {
 }
 
 /// Test 6: Large scale parallel build
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_large_scale() {
     const NUM_FILES: usize = 50;
@@ -181,7 +181,7 @@ fn test_ir_build_large_scale() {
 }
 
 /// Test 7: Strict HIR tree correctness with multiple files
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_strict_correctness_multi_file() {
     let sources = vec![
@@ -224,7 +224,7 @@ fn file2_func2() { f = 6 }"#
 /// Each CompileCtxt has its own HIR ID counter that resets, so independent
 /// builds will have identical local IDs. This is expected behavior after
 /// the switch to per-context ID allocation.
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_no_id_collisions() {
     let sources1: Vec<_> = (0..10)
@@ -270,7 +270,7 @@ fn test_ir_build_no_id_collisions() {
 }
 
 /// Test 9: Verify HIR structure integrity
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_structure_integrity() {
     let source = br#"
@@ -298,7 +298,7 @@ fn helper() {
 }
 
 /// Test 10: Verify file isolation with identical content
-#[serial_test::serial]
+
 #[test]
 fn test_ir_build_file_isolation_identical_content() {
     let identical_source = br#"
@@ -333,7 +333,7 @@ fn bar() { y = 2 }
 // ============================================================================
 
 /// Benchmark: 100 files × 100 lines (10k total lines)
-#[serial_test::serial]
+
 #[test]
 fn bench_ir_build_100_files_100_lines() {
     const NUM_FILES: usize = 100;
@@ -363,7 +363,7 @@ fn bench_ir_build_100_files_100_lines() {
 }
 
 /// Benchmark: 500 files × 1000 lines (500k total lines)
-#[serial_test::serial]
+
 #[test]
 fn bench_ir_build_500_files_1000_lines() {
     const NUM_FILES: usize = 500;
@@ -406,7 +406,7 @@ fn bench_ir_build_500_files_1000_lines() {
 }
 
 /// Benchmark: 1000 files × 10k lines (production scale - ignored by default)
-#[serial_test::serial]
+
 #[test]
 #[ignore]
 fn bench_ir_build_1000_files_10k_lines() {
@@ -456,7 +456,7 @@ fn bench_ir_build_1000_files_10k_lines() {
 }
 
 /// Benchmark: Scaling analysis across different file/line distributions
-#[serial_test::serial]
+
 #[test]
 fn bench_ir_build_scaling_analysis() {
     let configs = vec![

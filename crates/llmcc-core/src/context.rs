@@ -461,8 +461,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        let index = (owner.0).saturating_sub(1);
-        self.arena.symbol().get(index).copied()
+        self.arena.symbol().get(owner.0).copied()
     }
 
     pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
