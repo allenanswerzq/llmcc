@@ -158,6 +158,32 @@ impl<'a> BinderScopes<'a> {
     }
 
     /// Look up a member symbol in a type's scope.
+    pub fn lookup_member_symbols(
+        &self,
+        obj_type_symbol: &'a Symbol,
+        member_name: &str,
+        kind_filters: Option<Vec<SymKind>>,
+    ) -> Option<&'a Symbol> {
+        if let Some(kind_filters) = kind_filters {
+            tracing::trace!(
+                "looking up member '{}' in type scope with filters {:?}",
+                member_name,
+                kind_filters.clone()
+            );
+            for filter in kind_filters.iter() {
+                tracing::trace!("  filter: {:?}", filter);
+                let sym = self.lookup_member_symbol(obj_type_symbol, member_name, Some(*filter));
+                if sym.is_some() {
+                    return sym;
+                }
+            }
+        } else {
+            tracing::trace!("looking up member '{}' in type scope", member_name);
+        }
+        None
+    }
+
+    /// Look up a member symbol in a type's scope.
     pub fn lookup_member_symbol(
         &self,
         obj_type_symbol: &'a Symbol,

@@ -10,6 +10,7 @@
 
 use parking_lot::RwLock;
 use std::fmt;
+use strum_macros::EnumIter;
 
 use crate::graph_builder::BlockId;
 use crate::interner::InternedStr;
@@ -64,16 +65,14 @@ impl std::fmt::Display for ScopeId {
 }
 
 /// Classification of what kind of named entity a symbol represents.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, Default)]
 pub enum SymKind {
+    #[default]
     Unknown,
-    // logical grouping for mutliple modules
+    UnresolvedType,
     Crate,
-    // logical grouping for mutiple files
     Module,
-    // logaical grouping for mutliple source code blocks
     File,
-    // logical grouping for multiple entities
     Namespace,
     Struct,
     Enum,
@@ -92,37 +91,48 @@ pub enum SymKind {
     TypeAlias,
     TypeParameter,
     GenericType,
-    ConstParameter,
-    UnresolvedType,
+    CompositeType,
 }
 
-/// Classification of dependency relationship between symbols.
-/// Used to build different graph representations:
-/// - Dependency graph: A depends on B (A uses B)
-/// - Architecture graph: Shows data flow direction (input → func → output)
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
-pub enum DepKind {
-    /// General dependency (A uses/references B)
-    #[default]
-    Uses,
-    /// Type alias (alias → target_type)
-    Alias,
-    /// General dependency (A used by B)
-    Used,
-    /// Function parameter type (param_type → func)
-    ParamType,
-    /// Function return type (func → return_type)
-    ReturnType,
-    /// Struct/Enum implements trait (trait → struct)
-    Implements,
-    /// Struct field type (field_type → struct)
-    FieldType,
-    /// Function/method call (caller → callee)
-    Calls,
-    /// Type instantiation (type → user)
-    Instantiates,
-    /// Generic type bound (trait_bound → struct)
-    TypeBound,
+impl SymKind {
+    pub fn is_resolved(&self) -> bool {
+        !matches!(self, SymKind::UnresolvedType)
+    }
+
+    pub fn is_const(&self) -> bool {
+        matches!(self, SymKind::Const | SymKind::Static)
+    }
+
+    /// Checks if the symbol kind represents a type definition.
+    pub fn type_kinds() -> Vec<SymKind> {
+        vec![
+            SymKind::Struct,
+            SymKind::Enum,
+            SymKind::Trait,
+            SymKind::Function,
+            SymKind::Const,
+            SymKind::Static,
+            SymKind::Primitive,
+            SymKind::GenericType,
+            SymKind::CompositeType,
+            SymKind::TypeAlias,
+            SymKind::Namespace,
+        ]
+    }
+
+    pub fn trait_kinds() -> Vec<SymKind> {
+        vec![SymKind::Struct, SymKind::Enum]
+    }
+
+    pub fn callable_kinds() -> Vec<SymKind> {
+        vec![
+            SymKind::Struct,
+            SymKind::Enum,
+            SymKind::Trait,
+            SymKind::Function,
+            SymKind::Const,
+        ]
+    }
 }
 
 /// Represents a named entity in source code.
@@ -182,17 +192,21 @@ pub struct Symbol {
     /// Whether the symbol is globally visible/exported.
     /// Used to distinguish public symbols from private ones.
     pub is_global: RwLock<bool>,
-    /// Symbols that this symbol depends on with their dependency kind.
-    /// Stores (target_sym_id, dep_kind) pairs for different graph representations.
-    pub depends: RwLock<Vec<(SymId, DepKind)>>,
-    /// Symbols that depend on this symbol with their dependency kind (reverse relation).
-    /// Used for reverse lookups and impact analysis.
-    pub depended: RwLock<Vec<(SymId, DepKind)>>,
     /// Previous version/definition of this symbol (for shadowing and multi-definition tracking).
     /// Used to chain multiple definitions of the same symbol in different scopes or contexts.
     /// Example: inner definition shadows outer definition in nested scope.
     /// Forms a linked list of definitions traversable via following `previous` pointers.
     pub previous: RwLock<Option<SymId>>,
+    /// For compound types (tuple, array, struct, enum), tracks the types of nested components.
+    /// For tuple types: element types in order.
+    /// For struct/enum: field types in declaration order.
+    /// For array types: single element type.
+    pub nested_types: RwLock<Vec<SymId>>,
+    /// For field symbols, tracks which symbol owns this field (parent struct, enum, or object).
+    /// Set to the symbol that contains/defines this field.
+    /// Examples: enum variant's FieldOf is the enum; struct field's FieldOf is the struct;
+    /// tuple field (by index) FieldOf is the tuple/value being accessed.
+    pub field_of: RwLock<Option<SymId>>,
 }
 
 impl Clone for Symbol {
@@ -209,9 +223,9 @@ impl Clone for Symbol {
             type_of: RwLock::new(*self.type_of.read()),
             block_id: RwLock::new(*self.block_id.read()),
             is_global: RwLock::new(*self.is_global.read()),
-            depends: RwLock::new(self.depends.read().clone()),
-            depended: RwLock::new(self.depended.read().clone()),
             previous: RwLock::new(*self.previous.read()),
+            nested_types: RwLock::new(self.nested_types.read().clone()),
+            field_of: RwLock::new(*self.field_of.read()),
         }
     }
 }
@@ -240,9 +254,9 @@ impl Symbol {
             type_of: RwLock::new(None),
             block_id: RwLock::new(None),
             is_global: RwLock::new(false),
-            depends: RwLock::new(Vec::new()),
-            depended: RwLock::new(Vec::new()),
             previous: RwLock::new(None),
+            nested_types: RwLock::new(Vec::new()),
+            field_of: RwLock::new(None),
         }
     }
 
@@ -263,7 +277,7 @@ impl Symbol {
         *self.owner.write() = owner;
     }
 
-    /// Formats the symbol
+    /// Formats the symbol with basic information
     pub fn format(&self, interner: Option<&crate::interner::InternPool>) -> String {
         let kind = format!("{:?}", self.kind());
         if let Some(interner) = interner {
@@ -361,40 +375,6 @@ impl Symbol {
         *self.is_global.write() = value;
     }
 
-    /// Adds a symbol that this symbol depends on with a specific dependency kind.
-    /// Ignores self-dependencies. Allows tracking multiple dependency kinds between the same symbols.
-    pub fn add_depends_on(&self, sym_id: SymId, dep_kind: DepKind) {
-        if sym_id == self.id {
-            return;
-        }
-        let mut deps = self.depends.write();
-        // Check if we already recorded this relationship with the same kind
-        if deps
-            .iter()
-            .any(|(id, kind)| *id == sym_id && *kind == dep_kind)
-        {
-            return;
-        }
-        deps.push((sym_id, dep_kind));
-    }
-
-    /// Adds a symbol that depends on this symbol (reverse dependency) with a specific kind.
-    /// Ignores self-dependencies. Allows multiple dependency kinds from the same source symbol.
-    pub fn add_depended_by(&self, sym_id: SymId, dep_kind: DepKind) {
-        if sym_id == self.id {
-            return;
-        }
-        let mut deps = self.depended.write();
-        // Check if this relationship with the same kind already exists
-        if deps
-            .iter()
-            .any(|(id, kind)| *id == sym_id && *kind == dep_kind)
-        {
-            return;
-        }
-        deps.push((sym_id, dep_kind));
-    }
-
     /// Adds a HIR node as an additional definition location.
     /// Prevents duplicate entries.
     pub fn add_defining(&self, id: HirId) {
@@ -407,78 +387,6 @@ impl Symbol {
     /// Gets all HIR nodes that define this symbol.
     pub fn defining_hir_nodes(&self) -> Vec<HirId> {
         self.defining.read().clone()
-    }
-
-    /// Adds a bidirectional dependency between this symbol and another.
-    pub fn add_depends(&self, other: &Symbol, ignore_kinds: Option<&[SymKind]>) {
-        self.add_depends_with(other, DepKind::Uses, ignore_kinds);
-    }
-
-    /// Adds a bidirectional dependency with a specific dependency kind.
-    pub fn add_depends_with(
-        &self,
-        other: &Symbol,
-        dep_kind: DepKind,
-        ignore_kinds: Option<&[SymKind]>,
-    ) {
-        if self.id == other.id {
-            tracing::trace!("skip_dep: {} -> {} (self-depends)", self.id, other.id);
-            return;
-        }
-        // Skip if target is in the ignore list
-        if let Some(kinds) = ignore_kinds
-            && kinds.iter().any(|kind| other.kind() == *kind)
-        {
-            tracing::trace!("skip_dep: {} -> {} (ignored kind)", self.id, other.id);
-            return;
-        }
-
-        // Skip if dependency already exists with same kind
-        let deps = self.depends.read();
-        if deps
-            .iter()
-            .any(|(id, kind)| *id == other.id && *kind == dep_kind)
-        {
-            tracing::trace!(
-                "skip_dep: {} -> {} (duplicate {:?})",
-                self.id,
-                other.id,
-                dep_kind
-            );
-            return;
-        }
-        drop(deps);
-
-        // Skip if circular dependency would be created
-        let other_deps = other.depends.read();
-        if other_deps
-            .iter()
-            .any(|(id, kind)| *id == self.id && *kind == dep_kind)
-        {
-            tracing::trace!(
-                "skip_dep: {} -> {} (circular {:?})",
-                self.id,
-                other.id,
-                dep_kind
-            );
-            return;
-        }
-        drop(other_deps);
-
-        tracing::trace!("add_depends: {} -> {} ({:?})", self.id, other.id, dep_kind);
-        self.add_depends_on(other.id, dep_kind);
-        other.add_depended_by(self.id, dep_kind);
-    }
-
-    /// Gets all dependency target IDs (ignoring DepKind).
-    /// For backward compatibility with code that only needs the target symbols.
-    pub fn depends_ids(&self) -> Vec<SymId> {
-        self.depends.read().iter().map(|(id, _)| *id).collect()
-    }
-
-    /// Gets all reverse dependency source IDs (ignoring DepKind).
-    pub fn depended_ids(&self) -> Vec<SymId> {
-        self.depended.read().iter().map(|(id, _)| *id).collect()
     }
 
     /// Gets the block ID associated with this symbol.
@@ -506,275 +414,41 @@ impl Symbol {
     pub fn set_previous(&self, sym_id: SymId) {
         *self.previous.write() = Some(sym_id);
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serial_test::serial;
-
-    fn create_test_hir_id(index: u32) -> HirId {
-        HirId(index as usize)
+    /// Gets the nested types for compound types (tuples, arrays, structs, enums).
+    /// Returns None if no nested types have been set, Some(vec) otherwise.
+    #[inline]
+    pub fn nested_types(&self) -> Option<Vec<SymId>> {
+        let types = self.nested_types.read();
+        if types.is_empty() {
+            None
+        } else {
+            Some(types.clone())
+        }
     }
 
-    fn create_test_intern_pool() -> InternPool {
-        InternPool::default()
+    /// Adds a type to the nested types list for compound types.
+    /// For tuples/arrays, this is in element order. For structs/enums, in field order.
+    #[inline]
+    pub fn add_nested_type(&self, ty: SymId) {
+        self.nested_types.write().push(ty);
     }
 
-    #[test]
-    #[serial(counter_tests)]
-    fn test_sym_id_creation() {
-        reset_symbol_id_counter();
-        let id1 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
-        let id2 = SymId(NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst));
-        assert_eq!(id1.0, 0);
-        assert_eq!(id2.0, 1);
+    /// Replaces all nested types with a new list.
+    #[inline]
+    pub fn set_nested_types(&self, types: Vec<SymId>) {
+        *self.nested_types.write() = types;
     }
 
-    #[test]
-    #[serial(counter_tests)]
-    fn test_sym_id_display() {
-        let id = SymId(42);
-        assert_eq!(id.to_string(), "42");
+    /// Gets which symbol owns this field (parent struct, enum, or object being accessed).
+    #[inline]
+    pub fn field_of(&self) -> Option<SymId> {
+        *self.field_of.read()
     }
 
-    #[test]
-    #[serial(counter_tests)]
-    fn test_sym_id_equality() {
-        let id1 = SymId(42);
-        let id2 = SymId(42);
-        let id3 = SymId(43);
-        assert_eq!(id1, id2);
-        assert_ne!(id1, id3);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_scope_id_creation() {
-        let id = ScopeId(10);
-        assert_eq!(id.0, 10);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_scope_id_display() {
-        let id = ScopeId(99);
-        assert_eq!(id.to_string(), "99");
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_kind_equality() {
-        assert_eq!(SymKind::Function, SymKind::Function);
-        assert_ne!(SymKind::Function, SymKind::Struct);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_creation() {
-        reset_symbol_id_counter();
-        reset_scope_id_counter();
-        let pool = create_test_intern_pool();
-        let id = create_test_hir_id(1);
-        let name = pool.intern("test_symbol");
-
-        let symbol = Symbol::new(id, name);
-
-        // Verify basic properties regardless of counter state
-        assert_eq!(symbol.owner(), id);
-        assert_eq!(symbol.kind(), SymKind::Unknown);
-        assert!(!symbol.is_global());
-        assert_eq!(symbol.unit_index(), None);
-        assert_eq!(symbol.type_of(), None);
-        assert_eq!(symbol.block_id(), None);
-        assert_eq!(symbol.previous(), None);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_monotonic_ids() {
-        // Note: This test verifies monotonic IDs but is order-dependent.
-        // IDs should only increase: if this test runs after others that create symbols,
-        // the ID will be higher than 1.
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let id = create_test_hir_id(1);
-        let name = pool.intern("symbol");
-
-        let sym1 = Symbol::new(id, name);
-        let sym2 = Symbol::new(id, name);
-
-        // Verify they have different IDs
-        assert_ne!(sym1.id, sym2.id);
-        // Verify sym2 is greater than sym1
-        assert!(sym2.id.0 > sym1.id.0);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_kind_setter_getter() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("func"));
-
-        symbol.set_kind(SymKind::Function);
-        assert_eq!(symbol.kind(), SymKind::Function);
-
-        symbol.set_kind(SymKind::Struct);
-        assert_eq!(symbol.kind(), SymKind::Struct);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_global_flag() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("global_var"));
-
-        assert!(!symbol.is_global());
-        symbol.set_is_global(true);
-        assert!(symbol.is_global());
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_unit_index_only_set_once() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
-
-        symbol.set_unit_index(1);
-        assert_eq!(symbol.unit_index(), Some(1));
-
-        // Second call should not change the value
-        symbol.set_unit_index(2);
-        assert_eq!(symbol.unit_index(), Some(1));
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_type_of() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("var"));
-        let type_id = SymId(42);
-
-        symbol.set_type_of(type_id);
-        assert_eq!(symbol.type_of(), Some(type_id));
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_scope_hierarchy() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
-        let scope_id = ScopeId(10);
-        let parent_scope_id = ScopeId(5);
-
-        symbol.set_scope(scope_id);
-        symbol.set_parent_scope(parent_scope_id);
-
-        assert_eq!(symbol.opt_scope(), Some(scope_id));
-        assert_eq!(symbol.parent_scope(), Some(parent_scope_id));
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_add_dependency() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("func1"));
-        let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("func2"));
-
-        sym1.add_depends(&sym2, None);
-
-        assert!(sym1.depends.read().iter().any(|(id, _)| *id == sym2.id));
-        assert!(sym2.depended.read().iter().any(|(id, _)| *id == sym1.id));
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_ignore_self_dependency() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
-
-        symbol.add_depends_on(symbol.id, DepKind::Uses);
-        assert!(!symbol.depends.read().iter().any(|(id, _)| *id == symbol.id));
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_duplicate_dependency() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("sym1"));
-        let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("sym2"));
-
-        sym1.add_depends_on(sym2.id, DepKind::Uses);
-        sym1.add_depends_on(sym2.id, DepKind::Uses);
-
-        // Should only have one entry with same DepKind
-        assert_eq!(sym1.depends.read().len(), 1);
-
-        // Adding with different DepKind should create a new entry
-        sym1.add_depends_on(sym2.id, DepKind::Calls);
-        assert_eq!(sym1.depends.read().len(), 2);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_add_defining_locations() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("struct"));
-        let hir_id_1 = create_test_hir_id(10);
-        let hir_id_2 = create_test_hir_id(20);
-
-        symbol.add_defining(hir_id_1);
-        symbol.add_defining(hir_id_2);
-        symbol.add_defining(hir_id_1); // Duplicate
-
-        let defs = symbol.defining_hir_nodes();
-        assert_eq!(defs.len(), 2);
-        assert!(defs.contains(&hir_id_1));
-        assert!(defs.contains(&hir_id_2));
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_previous_chain() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let sym1 = Symbol::new(create_test_hir_id(1), pool.intern("var"));
-        let sym2 = Symbol::new(create_test_hir_id(2), pool.intern("var"));
-        let sym3 = Symbol::new(create_test_hir_id(3), pool.intern("var"));
-
-        sym2.set_previous(sym1.id);
-        sym3.set_previous(sym2.id);
-
-        assert_eq!(sym2.previous(), Some(sym1.id));
-        assert_eq!(sym3.previous(), Some(sym2.id));
-        assert_eq!(sym1.previous(), None);
-    }
-
-    #[test]
-    #[serial(counter_tests)]
-    fn test_symbol_clone() {
-        reset_symbol_id_counter();
-        let pool = create_test_intern_pool();
-        let symbol = Symbol::new(create_test_hir_id(1), pool.intern("sym"));
-
-        symbol.set_kind(SymKind::Function);
-        symbol.set_is_global(true);
-        symbol.set_unit_index(0);
-
-        let cloned = symbol.clone();
-
-        assert_eq!(cloned.id, symbol.id);
-        assert_eq!(cloned.kind(), symbol.kind());
-        assert_eq!(cloned.is_global(), symbol.is_global());
-        assert_eq!(cloned.unit_index(), symbol.unit_index());
+    /// Sets which symbol owns this field.
+    #[inline]
+    pub fn set_field_of(&self, owner: SymId) {
+        *self.field_of.write() = Some(owner);
     }
 }

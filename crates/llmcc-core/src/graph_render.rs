@@ -3,9 +3,9 @@ use std::fmt::Write;
 use std::path::Path;
 
 use crate::BlockId;
-use crate::symbol::{DepKind, SymId, SymKind};
+use crate::symbol::{SymId, SymKind};
 
-/// Edge with labeled from/to DepKind for architecture graphs
+/// Edge with labeled from/to roles for architecture graphs
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct LabeledEdge {
     pub from_idx: usize,
@@ -15,24 +15,12 @@ pub(crate) struct LabeledEdge {
 }
 
 impl LabeledEdge {
-    pub fn new(from_idx: usize, to_idx: usize, kind: DepKind) -> Self {
-        let (from_kind, to_kind) = match kind {
-            DepKind::ParamType => ("input", "func"),
-            DepKind::ReturnType => ("func", "output"),
-            DepKind::Calls => ("caller", "callee"),
-            DepKind::Implements => ("trait", "impl"),
-            DepKind::FieldType => ("struct", "field"),
-            DepKind::Instantiates => ("caller", "type"),
-            DepKind::TypeBound => ("bound", "generic"),
-            DepKind::Uses => ("user", "used"),
-            DepKind::Used => ("user", "used"),
-            DepKind::Alias => ("alias", "target"),
-        };
+    pub fn new(from_idx: usize, to_idx: usize) -> Self {
         Self {
             from_idx,
             to_idx,
-            from_kind,
-            to_kind,
+            from_kind: "node",
+            to_kind: "node",
         }
     }
 }
@@ -45,6 +33,7 @@ pub(crate) struct CompactNode {
     pub(crate) location: Option<String>,
     /// Fully qualified name for hierarchical grouping
     pub(crate) fqn: String,
+    #[allow(dead_code)]
     pub(crate) sym_id: Option<SymId>,
     pub(crate) sym_kind: Option<SymKind>,
     /// Whether the symbol is public (for filtering private helpers in arch-graph)
@@ -130,7 +119,7 @@ impl<'a> GraphRenderer<'a> {
         // render_nested_dot_with_title(&pruned.nodes, &reduced_edges, component_depth, title)
     }
 
-    /// Render architecture graph with labeled edges showing DepKind
+    /// Render architecture graph with labeled edges
     pub(crate) fn render_arch(
         &self,
         edges: &BTreeSet<LabeledEdge>,
@@ -203,7 +192,7 @@ fn render_nested_dot_with_title(
     output
 }
 
-/// Render architecture graph with labeled edges showing from/to DepKind
+/// Render architecture graph with labeled edges
 fn render_arch_dot(
     nodes: &[CompactNode],
     edges: &BTreeSet<LabeledEdge>,
