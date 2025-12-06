@@ -5,7 +5,7 @@ use crate::block_rel::BlockRelationMap;
 use crate::context::CompileCtxt;
 use crate::graph_render::{CompactNode, GraphRenderer, LabeledEdge};
 use crate::pagerank::PageRanker;
-use crate::symbol::{DepKind, SymId, SymKind};
+use crate::symbol::{SymId, SymKind};
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -143,41 +143,9 @@ impl<'tcx> ProjectGraph<'tcx> {
         let cross_edges = parking_lot::Mutex::new(Vec::new());
 
         use rayon::prelude::*;
-        unique_symbols.into_par_iter().for_each(|symbol_ref| {
-            let target = symbol_ref;
-            let Some(target_block) = target.block_id() else {
-                return;
-            };
-
-            let Some(target_unit) = target.unit_index() else {
-                return;
-            };
-
-            let dependents_guard = target.depended.read();
-            if dependents_guard.is_empty() {
-                return;
-            }
-
-            let mut seen_dependents = HashSet::new();
-
-            for &(dependent_id, _dep_kind) in dependents_guard.iter() {
-                if !seen_dependents.insert(dependent_id) {
-                    continue;
-                }
-                let Some(source_symbol) = self.cc.opt_get_symbol(dependent_id) else {
-                    continue;
-                };
-                let Some(from_block) = source_symbol.block_id() else {
-                    continue;
-                };
-                let Some(from_unit) = source_symbol.unit_index() else {
-                    continue;
-                };
-
-                cross_edges
-                    .lock()
-                    .push((from_unit, target_unit, from_block, target_block));
-            }
+        unique_symbols.into_par_iter().for_each(|_symbol_ref| {
+            // Symbol dependency tracking has been removed.
+            // Cross-unit edges are now tracked via BlockRelation system.
         });
 
         let collected_edges = cross_edges.into_inner();
@@ -324,15 +292,10 @@ impl<'tcx> ProjectGraph<'tcx> {
         renderer.render_arch(&edges, self.component_depth)
     }
 
-    /// Collect edges for the architecture graph based on DepKind.
+    /// Collect edges for the architecture graph.
     ///
-    /// Edge direction in arch graph:
-    /// - ParamType: param_type -> func (input flows into function)
-    /// - ReturnType: func -> return_type (output flows from function)
-    /// - Implements: impl_struct -> trait (struct advertises trait capability)
-    /// - Calls: caller -> callee (control flow follows call sites)
-    /// - FieldType / Calls / Instantiates: from -> to (normal dependency direction)
-    /// - Uses: fallback from -> to when no more specific edge exists
+    /// Since symbols no longer track dependencies, this method collects edges
+    /// based on block relationships in the compilation graph.
     fn collect_arch_edges(
         &self,
         nodes: &[CompactNode],
@@ -341,73 +304,18 @@ impl<'tcx> ProjectGraph<'tcx> {
         let mut edges = BTreeSet::new();
 
         for node in nodes {
-            let Some(_unit_graph) = self.unit_graph(node.unit_index) else {
+            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
                 continue;
             };
             let from_idx = node_index[&node.block_id];
 
-            // Use the symbol captured during node collection when available
-            let symbol_opt = node
-                .sym_id
-                .and_then(|sym_id| self.cc.opt_get_symbol(sym_id));
+            let dependencies = unit_graph
+                .edges()
+                .get_related(node.block_id, BlockRelation::DependsOn);
 
-            if let Some(symbol) = symbol_opt {
-                // Use typed dependencies for arch graph
-                let depends = symbol.depends.read();
-                for &(dep_id, dep_kind) in depends.iter() {
-                    let Some(dep_symbol) = self.cc.opt_get_symbol(dep_id) else {
-                        continue;
-                    };
-                    let Some(dep_block_id) = dep_symbol.block_id() else {
-                        continue;
-                    };
-                    let Some(&to_idx) = node_index.get(&dep_block_id) else {
-                        continue;
-                    };
-
-                    // Determine edge direction based on DepKind
-                    // For arch-graph, prioritize specific kinds over generic Uses
-                    match dep_kind {
-                        DepKind::ParamType => {
-                            // Input: param_type -> func
-                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::ParamType));
-                        }
-                        DepKind::ReturnType => {
-                            // Output: func -> return_type
-                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::ReturnType));
-                        }
-                        DepKind::Implements => {
-                            // trait -> implementing_struct (trait flows to implementor)
-                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::Implements));
-                        }
-                        DepKind::FieldType => {
-                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::FieldType));
-                        }
-                        DepKind::Calls => {
-                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Calls));
-                        }
-                        DepKind::Instantiates => {
-                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Instantiates));
-                        }
-                        DepKind::TypeBound => {
-                            // Type bound flows into struct: trait_bound -> struct
-                            edges.insert(LabeledEdge::new(to_idx, from_idx, DepKind::TypeBound));
-                        }
-                        DepKind::Uses => {
-                            // For arch-graph, skip generic Uses dependencies
-                            // Arch-graph focuses on structural relationships:
-                            // - type flows (params, returns, fields, bounds)
-                            // - trait implementations
-                            // Uses captures too many incidental references (e.g., enum variants in expressions)
-                        }
-                        DepKind::Used => {
-                            // Skip generic Used dependencies to keep arch-graph focused on structural flows
-                        }
-                        DepKind::Alias => {
-                            // Type alias points to resolved type
-                            edges.insert(LabeledEdge::new(from_idx, to_idx, DepKind::Alias));
-                        }
-                    }
+            for dep_block_id in dependencies {
+                if let Some(&to_idx) = node_index.get(&dep_block_id) {
+                    edges.insert(LabeledEdge::new(from_idx, to_idx));
                 }
             }
         }

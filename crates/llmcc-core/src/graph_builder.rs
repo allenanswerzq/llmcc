@@ -185,59 +185,16 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     fn process_symbol(
         &self,
         symbol: &'tcx Symbol,
-        edges: &BlockRelationMap,
+        _edges: &BlockRelationMap,
         visited: &mut HashSet<SymId>,
-        unresolved: &mut HashSet<SymId>,
+        _unresolved: &mut HashSet<SymId>,
     ) {
         let symbol_id = symbol.id;
 
-        // Avoid processing the same symbol twice
-        if !visited.insert(symbol_id) {
-            return;
-        }
-
-        let Some(from_block) = symbol.block_id() else {
-            return;
-        };
-
-        let dependencies = symbol.depends_ids();
-        for dep_id in dependencies {
-            self.link_dependency(dep_id, from_block, edges, unresolved);
-        }
-    }
-
-    fn link_dependency(
-        &self,
-        dep_id: SymId,
-        from_block: BlockId,
-        edges: &BlockRelationMap,
-        unresolved: &mut HashSet<SymId>,
-    ) {
-        // If target symbol exists and has a block, add the dependency edge
-        if let Some(target_symbol) = self.unit.opt_get_symbol(dep_id) {
-            if let Some(to_block) = target_symbol.block_id() {
-                if !edges.has_relation(from_block, BlockRelation::DependsOn, to_block) {
-                    edges.add_relation(from_block, to_block);
-                }
-                let target_unit = target_symbol.unit_index();
-                if target_unit.is_some()
-                    && target_unit != Some(self.unit.index)
-                    && unresolved.insert(dep_id)
-                {
-                    self.unit.add_unresolved_symbol(target_symbol);
-                }
-                return;
-            }
-
-            // Target symbol exists but block not yet known
-            if unresolved.insert(dep_id) {
-                self.unit.add_unresolved_symbol(target_symbol);
-            }
-            return;
-        }
-
-        // Target symbol not found at all
-        unresolved.insert(dep_id);
+        // Avoid processing the same symbol twice - if already visited, we're done
+        // Symbol dependency tracking has been removed.
+        // Dependencies are now tracked at the block level via BlockRelation.
+        let _ = visited.insert(symbol_id);
     }
 
     fn build_block(

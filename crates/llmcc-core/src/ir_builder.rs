@@ -114,13 +114,19 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
             }
             HirKind::Scope => {
                 // Find the first identifier child
-                let ident = children.iter().find_map(|child| {
-                    if let HirNode::Ident(ident_node) = child {
-                        Some(*ident_node)
-                    } else {
-                        None
-                    }
-                });
+                let ident = children
+                    .iter()
+                    .map(|child| {
+                        if let HirNode::Ident(ident_node) = child {
+                            *ident_node
+                        } else {
+                            let text = self.get_text(&base);
+                            tracing::trace!("scope crate non-identifier ident '{}'", text);
+                            let hir_ident = HirIdent::new(base.clone(), text);
+                            self.arena.alloc(hir_ident)
+                        }
+                    })
+                    .next();
                 let hir_scope = HirScope::new(base, ident);
                 let allocated = self.arena.alloc(hir_scope);
                 HirNode::Scope(allocated)
@@ -143,15 +149,6 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let mut child_nodes = Vec::new();
         for i in 0..node.child_count() {
             if let Some(child) = node.child(i) {
-                if child.is_error() || child.is_extra() || child.is_missing() || !child.is_named() {
-                    continue;
-                }
-
-                let child_kind = Language::hir_kind(child.kind_id());
-                if child_kind == HirKind::Text {
-                    continue;
-                }
-
                 let child_node = self.build_node(child.as_ref(), Some(parent_id));
                 child_nodes.push(child_node);
             }

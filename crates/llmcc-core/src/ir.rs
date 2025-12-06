@@ -127,8 +127,56 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Find optional child with matching field ID
-    pub fn child_by_field(&self, unit: CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
+    pub fn child_by_field(&self, unit: &CompileUnit<'hir>, field_id: u16) -> Option<HirNode<'hir>> {
         self.base().unwrap().child_by_field(unit, field_id)
+    }
+
+    pub fn child_by_kind(&self, unit: &CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
+        for child in self.children(unit) {
+            if child.kind_id() == kind_id {
+                return Some(child);
+            }
+        }
+        None
+    }
+
+    /// Returns the symbol referenced by the identifier within a specific child field.
+    pub fn ident_symbol_by_field(
+        &self,
+        unit: &CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<&'hir Symbol> {
+        let child = self.child_by_field(unit, field_id)?;
+        let ident = child.find_ident(unit)?;
+        ident.opt_symbol()
+    }
+
+    /// Returns the ident symbol if any
+    pub fn ident_symbol(&self, unit: &CompileUnit<'hir>) -> Option<&'hir Symbol> {
+        let ident = self.find_ident(unit)?;
+        ident.opt_symbol()
+    }
+
+    /// Recursively search down the tree for a child with matching field ID.
+    /// Keeps going deeper until it finds a match or reaches a leaf node.
+    pub fn child_by_field_recursive(
+        &self,
+        unit: &CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Option<HirNode<'hir>> {
+        // First check immediate children
+        if let Some(direct_child) = self.child_by_field(unit, field_id) {
+            return Some(direct_child);
+        }
+
+        // If no direct child with this field, recurse into all children
+        for child in self.children(unit) {
+            if let Some(recursive_match) = child.child_by_field_recursive(unit, field_id) {
+                return Some(recursive_match);
+            }
+        }
+
+        None
     }
 
     /// Find the identifier for the first child node that is an identifier or interior node.
@@ -153,13 +201,13 @@ impl<'hir> HirNode<'hir> {
     /// Find identifier for the first child with a matching field ID.
     pub fn ident_by_field(
         &self,
-        unit: CompileUnit<'hir>,
+        unit: &CompileUnit<'hir>,
         field_id: u16,
     ) -> Option<&'hir HirIdent<'hir>> {
         debug_assert!(!self.is_kind(HirKind::Identifier));
-        for child in self.children(&unit) {
+        for child in self.children(unit) {
             if child.field_id() == field_id {
-                return child.find_ident(&unit);
+                return child.find_ident(unit);
             }
         }
         None
@@ -193,12 +241,43 @@ impl<'hir> HirNode<'hir> {
     #[inline]
     pub fn scope_and_ident_by_field(
         &self,
-        unit: CompileUnit<'hir>,
+        unit: &CompileUnit<'hir>,
         field_id: u16,
     ) -> Option<(&'hir HirScope<'hir>, &'hir HirIdent<'hir>)> {
         let scope = self.as_scope()?;
         let ident = self.ident_by_field(unit, field_id)?;
         Some((scope, ident))
+    }
+
+    /// Collect identifiers by field kind matching a specific field ID
+    pub fn collect_by_field_kind(
+        &self,
+        unit: &CompileUnit<'hir>,
+        field_id: u16,
+    ) -> Vec<&'hir HirIdent<'hir>> {
+        let mut idents = Vec::new();
+        self.collect_by_field_kind_impl(unit, field_id, &mut idents);
+        idents
+    }
+
+    /// Helper for recursively collecting identifiers by field kind
+    fn collect_by_field_kind_impl(
+        &self,
+        unit: &CompileUnit<'hir>,
+        field_id: u16,
+        idents: &mut Vec<&'hir HirIdent<'hir>>,
+    ) {
+        // If this node has matching field ID and is an identifier, collect it
+        if self.field_id() == field_id
+            && let Some(ident) = self.as_ident()
+        {
+            idents.push(ident);
+        }
+
+        // Recursively collect from all children
+        for child in self.children(unit) {
+            child.collect_by_field_kind_impl(unit, field_id, idents);
+        }
     }
 
     #[inline]
@@ -248,6 +327,11 @@ impl<'hir> HirNode<'hir> {
             child.collect_idents_impl(unit, idents);
         }
     }
+
+    /// Check if node is trivia (whitespace, comment, etc.)
+    pub fn is_trivia(&self) -> bool {
+        matches!(self.kind(), HirKind::Text | HirKind::Comment)
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug, Hash, Default)]
@@ -295,7 +379,7 @@ impl HirBase {
     /// Find child with matching field ID (linear search, O(n))
     pub fn child_by_field<'hir>(
         &self,
-        unit: CompileUnit<'hir>,
+        unit: &CompileUnit<'hir>,
         field_id: u16,
     ) -> Option<HirNode<'hir>> {
         self.children
@@ -330,6 +414,10 @@ impl HirText {
     /// Create new text node with given content
     pub fn new(base: HirBase, text: String) -> Self {
         Self { base, text }
+    }
+
+    pub fn text(&self) -> &str {
+        &self.text
     }
 }
 
