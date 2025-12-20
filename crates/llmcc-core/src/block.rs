@@ -18,6 +18,8 @@ declare_arena!(BlockArena {
     blk_enum: BlockEnum<'a>,
     blk_field: BlockField<'a>,
     blk_const: BlockConst<'a>,
+    blk_parameters: BlockParameters<'a>,
+    blk_return: BlockReturn<'a>,
 });
 
 #[derive(
@@ -40,6 +42,8 @@ pub enum BlockKind {
     Impl,
     Field,
     Scope,
+    Parameters,
+    Return,
 }
 
 #[derive(Debug, Clone)]
@@ -56,6 +60,8 @@ pub enum BasicBlock<'blk> {
     Impl(&'blk BlockImpl<'blk>),
     Const(&'blk BlockConst<'blk>),
     Field(&'blk BlockField<'blk>),
+    Parameters(&'blk BlockParameters<'blk>),
+    Return(&'blk BlockReturn<'blk>),
     Block,
 }
 
@@ -97,6 +103,8 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Enum(block) => Some(&block.base),
             BasicBlock::Const(block) => Some(&block.base),
             BasicBlock::Field(block) => Some(&block.base),
+            BasicBlock::Parameters(block) => Some(&block.base),
+            BasicBlock::Return(block) => Some(&block.base),
         }
     }
 
@@ -187,8 +195,46 @@ impl BlockId {
 pub enum BlockRelation {
     #[default]
     Unknown,
-    DependedBy,
-    DependsOn,
+
+    // ========== Structural Relations ==========
+    /// Parent contains child (Root→Func, Class→Method, etc.)
+    Contains,
+    /// Child is contained by parent
+    ContainedBy,
+
+    // ========== Function/Method Relations ==========
+    /// Func/Method → Parameters block
+    HasParameters,
+    /// Func/Method → Return block
+    HasReturn,
+    /// Func/Method → Func/Method it calls
+    Calls,
+    /// Func/Method is called by another Func/Method
+    CalledBy,
+
+    // ========== Type Relations ==========
+    /// Class/Enum → Field blocks
+    HasField,
+    /// Field → Class/Enum that owns it
+    FieldOf,
+    /// Impl → Type it implements for
+    ImplFor,
+    /// Type → Impl blocks for this type
+    HasImpl,
+    /// Impl/Trait → Method blocks
+    HasMethod,
+    /// Method → Impl/Trait/Class that owns it
+    MethodOf,
+    /// Type → Trait it implements
+    Implements,
+    /// Trait → Types that implement it
+    ImplementedBy,
+
+    // ========== Generic Reference ==========
+    /// Uses a type/const/function
+    Uses,
+    /// Is used by
+    UsedBy,
 }
 
 #[derive(Debug, Clone)]
@@ -242,11 +288,7 @@ pub struct BlockRoot<'blk> {
 }
 
 impl<'blk> BlockRoot<'blk> {
-    pub fn new(base: BlockBase<'blk>, file_name: Option<String>) -> Self {
-        Self { base, file_name }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -254,7 +296,7 @@ impl<'blk> BlockRoot<'blk> {
         file_name: Option<String>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Root, parent, children);
-        Self::new(base, file_name)
+        Self { base, file_name }
     }
 }
 
@@ -268,7 +310,14 @@ pub struct BlockFunc<'blk> {
 }
 
 impl<'blk> BlockFunc<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
+    pub fn new(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Func, parent, children);
+        let name = base.opt_get_name().unwrap_or("").to_string();
         Self {
             base,
             name,
@@ -277,8 +326,19 @@ impl<'blk> BlockFunc<'blk> {
             stmts: None,
         }
     }
+}
 
-    pub fn from_hir(
+#[derive(Debug, Clone)]
+pub struct BlockMethod<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+    pub parameters: Option<BlockId>,
+    pub returns: Option<BlockId>,
+    pub stmts: Option<Vec<BlockId>>,
+}
+
+impl<'blk> BlockMethod<'blk> {
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -286,30 +346,13 @@ impl<'blk> BlockFunc<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Func, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct BlockMethod<'blk> {
-    pub base: BlockBase<'blk>,
-    pub name: String,
-}
-
-impl<'blk> BlockMethod<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self { base, name }
-    }
-
-    pub fn from_hir(
-        id: BlockId,
-        node: HirNode<'blk>,
-        parent: Option<BlockId>,
-        children: Vec<BlockId>,
-    ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Method, parent, children);
-        let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
+        Self {
+            base,
+            name,
+            parameters: None,
+            returns: None,
+            stmts: None,
+        }
     }
 }
 
@@ -319,18 +362,14 @@ pub struct BlockStmt<'blk> {
 }
 
 impl<'blk> BlockStmt<'blk> {
-    pub fn new(base: BlockBase<'blk>) -> Self {
-        Self { base }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Stmt, parent, children);
-        Self::new(base)
+        Self { base }
     }
 }
 
@@ -340,18 +379,14 @@ pub struct BlockCall<'blk> {
 }
 
 impl<'blk> BlockCall<'blk> {
-    pub fn new(base: BlockBase<'blk>) -> Self {
-        Self { base }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Call, parent, children);
-        Self::new(base)
+        Self { base }
     }
 }
 
@@ -362,11 +397,7 @@ pub struct BlockClass<'blk> {
 }
 
 impl<'blk> BlockClass<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self { base, name }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -374,7 +405,7 @@ impl<'blk> BlockClass<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
+        Self { base, name }
     }
 }
 
@@ -385,11 +416,7 @@ pub struct BlockTrait<'blk> {
 }
 
 impl<'blk> BlockTrait<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self { base, name }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -397,7 +424,7 @@ impl<'blk> BlockTrait<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Trait, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
+        Self { base, name }
     }
 }
 
@@ -408,11 +435,7 @@ pub struct BlockImpl<'blk> {
 }
 
 impl<'blk> BlockImpl<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self { base, name }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -420,7 +443,7 @@ impl<'blk> BlockImpl<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Impl, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
+        Self { base, name }
     }
 }
 
@@ -432,15 +455,7 @@ pub struct BlockEnum<'blk> {
 }
 
 impl<'blk> BlockEnum<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self {
-            base,
-            name,
-            fields: Vec::new(),
-        }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -448,7 +463,11 @@ impl<'blk> BlockEnum<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Enum, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
+        Self {
+            base,
+            name,
+            fields: Vec::new(),
+        }
     }
 
     pub fn add_field(&mut self, field_id: BlockId) {
@@ -463,11 +482,7 @@ pub struct BlockConst<'blk> {
 }
 
 impl<'blk> BlockConst<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self { base, name }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -475,7 +490,7 @@ impl<'blk> BlockConst<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Const, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
+        Self { base, name }
     }
 }
 
@@ -486,11 +501,7 @@ pub struct BlockField<'blk> {
 }
 
 impl<'blk> BlockField<'blk> {
-    pub fn new(base: BlockBase<'blk>, name: String) -> Self {
-        Self { base, name }
-    }
-
-    pub fn from_hir(
+    pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
         parent: Option<BlockId>,
@@ -498,6 +509,40 @@ impl<'blk> BlockField<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Field, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self::new(base, name)
+        Self { base, name }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockParameters<'blk> {
+    pub base: BlockBase<'blk>,
+}
+
+impl<'blk> BlockParameters<'blk> {
+    pub fn new(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Parameters, parent, children);
+        Self { base }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockReturn<'blk> {
+    pub base: BlockBase<'blk>,
+}
+
+impl<'blk> BlockReturn<'blk> {
+    pub fn new(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Return, parent, children);
+        Self { base }
     }
 }

@@ -95,8 +95,8 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             };
         }
 
-        let adjacency_depends = self.build_adjacency(&entries, BlockRelation::DependsOn);
-        let adjacency_depended = self.build_adjacency(&entries, BlockRelation::DependedBy);
+        let adjacency_depends = self.build_adjacency(&entries, BlockRelation::Calls);
+        let adjacency_depended = self.build_adjacency(&entries, BlockRelation::CalledBy);
 
         // Compute PageRank for both dependency directions.
         let (depends_scores, depends_iterations, depends_converged) =

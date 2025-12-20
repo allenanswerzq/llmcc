@@ -1307,7 +1307,7 @@ fn render_block_reports(
 
             let mut deps = unit_graph
                 .edges()
-                .get_related(block_id, BlockRelation::DependsOn);
+                .get_related(block_id, BlockRelation::Calls);
             deps.sort_unstable_by_key(|id| id.as_u32());
             deps.dedup();
             let mut dep_descs: Vec<BlockDescriptor> = deps

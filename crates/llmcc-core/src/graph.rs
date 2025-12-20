@@ -185,11 +185,9 @@ impl<'tcx> ProjectGraph<'tcx> {
                 for (from_block, mut targets) in edges.drain() {
                     targets.sort_unstable_by_key(|id| id.as_u32());
                     targets.dedup();
-                    unit_graph.edges.add_relation_impls(
-                        from_block,
-                        BlockRelation::DependsOn,
-                        &targets,
-                    );
+                    unit_graph
+                        .edges
+                        .add_relation_impls(from_block, BlockRelation::Calls, &targets);
                 }
             }
         }
@@ -202,7 +200,7 @@ impl<'tcx> ProjectGraph<'tcx> {
                     targets.dedup();
                     unit_graph.edges.add_relation_impls(
                         from_block,
-                        BlockRelation::DependedBy,
+                        BlockRelation::CalledBy,
                         &targets,
                     );
                 }
@@ -311,7 +309,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             let dependencies = unit_graph
                 .edges()
-                .get_related(node.block_id, BlockRelation::DependsOn);
+                .get_related(node.block_id, BlockRelation::Calls);
 
             for dep_block_id in dependencies {
                 if let Some(&to_idx) = node_index.get(&dep_block_id) {
@@ -454,7 +452,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             let dependencies = unit_graph
                 .edges()
-                .get_related(node.block_id, BlockRelation::DependsOn);
+                .get_related(node.block_id, BlockRelation::Calls);
 
             for dep_block_id in dependencies {
                 if let Some(&to_idx) = node_index.get(&dep_block_id) {
@@ -532,10 +530,8 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         for relation in relations {
             match relation {
-                BlockRelation::DependsOn => {
-                    let dependencies = unit
-                        .edges
-                        .get_related(node.block_id, BlockRelation::DependsOn);
+                BlockRelation::Calls => {
+                    let dependencies = unit.edges.get_related(node.block_id, BlockRelation::Calls);
                     for dep_block_id in dependencies {
                         let dep_unit_index = self
                             .cc
@@ -548,12 +544,12 @@ impl<'tcx> ProjectGraph<'tcx> {
                         });
                     }
                 }
-                BlockRelation::DependedBy => {
+                BlockRelation::CalledBy => {
                     let mut seen = HashSet::new();
 
                     let dependents = unit
                         .edges
-                        .get_related(node.block_id, BlockRelation::DependedBy);
+                        .get_related(node.block_id, BlockRelation::CalledBy);
                     if !dependents.is_empty() {
                         for dep_block_id in dependents {
                             if !seen.insert(dep_block_id) {
@@ -576,7 +572,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
                     let local_dependents = unit
                         .edges
-                        .find_reverse_relations(node.block_id, BlockRelation::DependsOn);
+                        .find_reverse_relations(node.block_id, BlockRelation::Calls);
                     for dep_block_id in local_dependents {
                         if !seen.insert(dep_block_id) {
                             continue;
@@ -588,6 +584,21 @@ impl<'tcx> ProjectGraph<'tcx> {
                     }
                 }
                 BlockRelation::Unknown => {}
+                // Handle other relations generically
+                _ => {
+                    let related = unit.edges.get_related(node.block_id, relation.clone());
+                    for related_block_id in related {
+                        let related_unit_index = self
+                            .cc
+                            .get_block_info(related_block_id)
+                            .map(|(idx, _, _)| idx)
+                            .unwrap_or(node.unit_index);
+                        result.push(GraphNode {
+                            unit_index: related_unit_index,
+                            block_id: related_block_id,
+                        });
+                    }
+                }
             }
         }
 
@@ -597,7 +608,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     pub fn find_dpends_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
         let mut visited = HashSet::new();
         let mut stack = vec![node];
-        let relations = vec![BlockRelation::DependsOn];
+        let relations = vec![BlockRelation::Calls];
 
         while let Some(current) = stack.pop() {
             if visited.contains(&current) {
@@ -619,7 +630,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     pub fn find_depended_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
         let mut visited = HashSet::new();
         let mut stack = vec![node];
-        let relations = vec![BlockRelation::DependedBy];
+        let relations = vec![BlockRelation::CalledBy];
 
         while let Some(current) = stack.pop() {
             if visited.contains(&current) {
@@ -644,7 +655,7 @@ impl<'tcx> ProjectGraph<'tcx> {
     {
         let mut visited = HashSet::new();
         let mut queue = vec![start];
-        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
+        let relations = vec![BlockRelation::Calls, BlockRelation::CalledBy];
 
         while !queue.is_empty() {
             let current = queue.remove(0);
@@ -684,7 +695,7 @@ impl<'tcx> ProjectGraph<'tcx> {
         visited.insert(node);
         callback(node);
 
-        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
+        let relations = vec![BlockRelation::Calls, BlockRelation::CalledBy];
         for related in self.find_related_blocks(node, relations) {
             if !visited.contains(&related) {
                 self.traverse_dfs_impl(related, visited, callback);
@@ -708,9 +719,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             }
             visited.insert(current_block);
 
-            let dependencies = unit
-                .edges
-                .get_related(current_block, BlockRelation::DependsOn);
+            let dependencies = unit.edges.get_related(current_block, BlockRelation::Calls);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
                     let dep_unit_index = self
@@ -748,7 +757,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
             let dependencies = unit
                 .edges
-                .get_related(current_block, BlockRelation::DependedBy);
+                .get_related(current_block, BlockRelation::CalledBy);
             for dep_block_id in dependencies {
                 if dep_block_id != node.block_id {
                     let dep_unit_index = self
