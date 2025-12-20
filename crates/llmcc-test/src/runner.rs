@@ -1035,7 +1035,7 @@ where
     }
     let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph) =
         if let Some(mut project) = project_graph {
-            project.link_units();
+            project.connect_blocks();
             let dep_graph = if options.build_dep_graph {
                 Some(project.render_design_graph())
             } else {
@@ -1307,7 +1307,7 @@ fn render_block_reports(
 
             let mut deps = unit_graph
                 .edges()
-                .get_related(block_id, BlockRelation::Calls);
+                .get_related(block_id, BlockRelation::DependsOn);
             deps.sort_unstable_by_key(|id| id.as_u32());
             deps.dedup();
             let mut dep_descs: Vec<BlockDescriptor> = deps

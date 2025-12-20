@@ -70,10 +70,10 @@ pub fn infer_type<'tcx>(
             .child_by_field(unit, LangRust::field_function)
             .and_then(|func_node| infer_type(unit, scopes, &func_node))
             .and_then(|sym| {
-                if sym.kind() == SymKind::Function {
-                    if let Some(ret_id) = sym.type_of() {
-                        return unit.opt_get_symbol(ret_id);
-                    }
+                if sym.kind() == SymKind::Function
+                    && let Some(ret_id) = sym.type_of()
+                {
+                    return unit.opt_get_symbol(ret_id);
                 }
                 Some(sym)
             }),
@@ -202,10 +202,10 @@ fn infer_tuple_expression<'tcx>(
     // Collect all non-trivia expressions (tuple elements)
     let mut _elem_types = Vec::new();
     for child in children {
-        if !child.is_trivia() {
-            if let Some(elem_type) = infer_type(unit, scopes, &child) {
-                _elem_types.push(elem_type);
-            }
+        if !child.is_trivia()
+            && let Some(elem_type) = infer_type(unit, scopes, &child)
+        {
+            _elem_types.push(elem_type);
         }
     }
 
@@ -222,13 +222,12 @@ fn infer_struct_expression<'tcx>(
 ) -> Option<&'tcx Symbol> {
     let type_kinds = SymKind::type_kinds();
 
-    if let Some(name_node) = node.child_by_field(unit, LangRust::field_name) {
+    if let Some(name_node) = node.child_by_field(unit, LangRust::field_name)
+        && let Some(sym) = infer_type(unit, scopes, &name_node)
+        && type_kinds.contains(&sym.kind())
+    {
         tracing::trace!("inferring struct type from name node");
-        if let Some(sym) = infer_type(unit, scopes, &name_node) {
-            if type_kinds.contains(&sym.kind()) {
-                return Some(sym);
-            }
-        }
+        return Some(sym);
     }
 
     None
@@ -252,10 +251,10 @@ fn infer_field_expression<'tcx>(
         let field_text = unit.hir_text(&field_node);
         if let Ok(index) = field_text.parse::<usize>() {
             // Tuple indexing: get element type from nested_types
-            if let Some(nested) = obj_type.nested_types() {
-                if let Some(elem_id) = nested.get(index) {
-                    return unit.opt_get_symbol(*elem_id);
-                }
+            if let Some(nested) = obj_type.nested_types()
+                && let Some(elem_id) = nested.get(index)
+            {
+                return unit.opt_get_symbol(*elem_id);
             }
             return None;
         }
@@ -306,10 +305,10 @@ fn infer_index_expression<'tcx>(
     let obj_type = infer_type(unit, scopes, &value_node)?;
 
     // For indexed access, get first nested type
-    if let Some(nested) = obj_type.nested_types() {
-        if let Some(elem_id) = nested.first() {
-            return unit.opt_get_symbol(*elem_id);
-        }
+    if let Some(nested) = obj_type.nested_types()
+        && let Some(elem_id) = nested.first()
+    {
+        return unit.opt_get_symbol(*elem_id);
     }
 
     None
@@ -364,14 +363,12 @@ fn infer_array_type<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this array type
-    if let Some(sn) = node.as_scope() {
-        if let Some(array_ident) = sn.opt_ident() {
-            if let Some(array_symbol) =
-                scopes.lookup_symbol(&array_ident.name, vec![SymKind::CompositeType])
-            {
-                return Some(array_symbol);
-            }
-        }
+    if let Some(sn) = node.as_scope()
+        && let Some(array_ident) = sn.opt_ident()
+        && let Some(array_symbol) =
+            scopes.lookup_symbol(&array_ident.name, vec![SymKind::CompositeType])
+    {
+        return Some(array_symbol);
     }
 
     // Fallback: get element type
@@ -386,14 +383,12 @@ fn infer_tuple_type<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // Try to get the CompositeType symbol that was created for this tuple type
-    if let Some(sn) = node.as_scope() {
-        if let Some(tuple_ident) = sn.opt_ident() {
-            if let Some(tuple_symbol) =
-                scopes.lookup_symbol(&tuple_ident.name, vec![SymKind::CompositeType])
-            {
-                return Some(tuple_symbol);
-            }
-        }
+    if let Some(sn) = node.as_scope()
+        && let Some(tuple_ident) = sn.opt_ident()
+        && let Some(tuple_symbol) =
+            scopes.lookup_symbol(&tuple_ident.name, vec![SymKind::CompositeType])
+    {
+        return Some(tuple_symbol);
     }
 
     // Fallback: collect element types but can't return a proper symbol

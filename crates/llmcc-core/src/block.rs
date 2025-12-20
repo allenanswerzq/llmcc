@@ -9,7 +9,6 @@ declare_arena!(BlockArena {
     bb: BasicBlock<'a>,
     blk_root: BlockRoot<'a>,
     blk_func: BlockFunc<'a>,
-    blk_method: BlockMethod<'a>,
     blk_class: BlockClass<'a>,
     blk_trait: BlockTrait<'a>,
     blk_impl: BlockImpl<'a>,
@@ -51,7 +50,6 @@ pub enum BasicBlock<'blk> {
     Undefined,
     Root(&'blk BlockRoot<'blk>),
     Func(&'blk BlockFunc<'blk>),
-    Method(&'blk BlockMethod<'blk>),
     Stmt(&'blk BlockStmt<'blk>),
     Call(&'blk BlockCall<'blk>),
     Enum(&'blk BlockEnum<'blk>),
@@ -94,7 +92,6 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Undefined | BasicBlock::Block => None,
             BasicBlock::Root(block) => Some(&block.base),
             BasicBlock::Func(block) => Some(&block.base),
-            BasicBlock::Method(block) => Some(&block.base),
             BasicBlock::Class(block) => Some(&block.base),
             BasicBlock::Trait(block) => Some(&block.base),
             BasicBlock::Impl(block) => Some(&block.base),
@@ -141,6 +138,62 @@ impl<'blk> BasicBlock<'blk> {
     /// Check if this is a specific kind of block
     pub fn is_kind(&self, kind: BlockKind) -> bool {
         self.kind() == kind
+    }
+
+    /// Get the inner BlockFunc if this is a Func or Method block
+    pub fn as_func(&self) -> Option<&'blk BlockFunc<'blk>> {
+        match self {
+            BasicBlock::Func(f) => Some(f),
+            _ => None,
+        }
+    }
+
+    /// Get the inner BlockClass if this is a Class block
+    pub fn as_class(&self) -> Option<&'blk BlockClass<'blk>> {
+        match self {
+            BasicBlock::Class(c) => Some(c),
+            _ => None,
+        }
+    }
+
+    /// Get the inner BlockTrait if this is a Trait block
+    pub fn as_trait(&self) -> Option<&'blk BlockTrait<'blk>> {
+        match self {
+            BasicBlock::Trait(t) => Some(t),
+            _ => None,
+        }
+    }
+
+    /// Get the inner BlockImpl if this is an Impl block
+    pub fn as_impl(&self) -> Option<&'blk BlockImpl<'blk>> {
+        match self {
+            BasicBlock::Impl(i) => Some(i),
+            _ => None,
+        }
+    }
+
+    /// Get the inner BlockEnum if this is an Enum block
+    pub fn as_enum(&self) -> Option<&'blk BlockEnum<'blk>> {
+        match self {
+            BasicBlock::Enum(e) => Some(e),
+            _ => None,
+        }
+    }
+
+    /// Get the inner BlockField if this is a Field block
+    pub fn as_field(&self) -> Option<&'blk BlockField<'blk>> {
+        match self {
+            BasicBlock::Field(f) => Some(f),
+            _ => None,
+        }
+    }
+
+    /// Get the inner BlockCall if this is a Call block
+    pub fn as_call(&self) -> Option<&'blk BlockCall<'blk>> {
+        match self {
+            BasicBlock::Call(c) => Some(c),
+            _ => None,
+        }
     }
 }
 
@@ -300,59 +353,56 @@ impl<'blk> BlockRoot<'blk> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlockFunc<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
-    pub parameters: Option<BlockId>,
-    pub returns: Option<BlockId>,
-    pub stmts: Option<Vec<BlockId>>,
+    pub parameters: RwLock<Option<BlockId>>,
+    pub returns: RwLock<Option<BlockId>>,
+    pub stmts: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockFunc<'blk> {
     pub fn new(
         id: BlockId,
         node: HirNode<'blk>,
+        kind: BlockKind,
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Func, parent, children);
+        let base = BlockBase::new(id, node, kind, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
         Self {
             base,
             name,
-            parameters: None,
-            returns: None,
-            stmts: None,
+            parameters: RwLock::new(None),
+            returns: RwLock::new(None),
+            stmts: RwLock::new(Vec::new()),
         }
     }
-}
 
-#[derive(Debug, Clone)]
-pub struct BlockMethod<'blk> {
-    pub base: BlockBase<'blk>,
-    pub name: String,
-    pub parameters: Option<BlockId>,
-    pub returns: Option<BlockId>,
-    pub stmts: Option<Vec<BlockId>>,
-}
+    pub fn set_parameters(&self, params: BlockId) {
+        *self.parameters.write() = Some(params);
+    }
 
-impl<'blk> BlockMethod<'blk> {
-    pub fn new(
-        id: BlockId,
-        node: HirNode<'blk>,
-        parent: Option<BlockId>,
-        children: Vec<BlockId>,
-    ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Func, parent, children);
-        let name = base.opt_get_name().unwrap_or("").to_string();
-        Self {
-            base,
-            name,
-            parameters: None,
-            returns: None,
-            stmts: None,
-        }
+    pub fn set_returns(&self, ret: BlockId) {
+        *self.returns.write() = Some(ret);
+    }
+
+    pub fn add_stmt(&self, stmt: BlockId) {
+        self.stmts.write().push(stmt);
+    }
+
+    pub fn get_parameters(&self) -> Option<BlockId> {
+        *self.parameters.read()
+    }
+
+    pub fn get_returns(&self) -> Option<BlockId> {
+        *self.returns.read()
+    }
+
+    pub fn get_stmts(&self) -> Vec<BlockId> {
+        self.stmts.read().clone()
     }
 }
 
@@ -373,9 +423,11 @@ impl<'blk> BlockStmt<'blk> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlockCall<'blk> {
     pub base: BlockBase<'blk>,
+    pub callee: RwLock<Option<BlockId>>,
+    pub args: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockCall<'blk> {
@@ -386,14 +438,36 @@ impl<'blk> BlockCall<'blk> {
         children: Vec<BlockId>,
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Call, parent, children);
-        Self { base }
+        Self {
+            base,
+            callee: RwLock::new(None),
+            args: RwLock::new(Vec::new()),
+        }
+    }
+
+    pub fn set_callee(&self, callee_id: BlockId) {
+        *self.callee.write() = Some(callee_id);
+    }
+
+    pub fn add_arg(&self, arg_id: BlockId) {
+        self.args.write().push(arg_id);
+    }
+
+    pub fn get_callee(&self) -> Option<BlockId> {
+        *self.callee.read()
+    }
+
+    pub fn get_args(&self) -> Vec<BlockId> {
+        self.args.read().clone()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlockClass<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
+    pub fields: RwLock<Vec<BlockId>>,
+    pub methods: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockClass<'blk> {
@@ -405,14 +479,36 @@ impl<'blk> BlockClass<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Class, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self { base, name }
+        Self {
+            base,
+            name,
+            fields: RwLock::new(Vec::new()),
+            methods: RwLock::new(Vec::new()),
+        }
+    }
+
+    pub fn add_field(&self, field_id: BlockId) {
+        self.fields.write().push(field_id);
+    }
+
+    pub fn add_method(&self, method_id: BlockId) {
+        self.methods.write().push(method_id);
+    }
+
+    pub fn get_fields(&self) -> Vec<BlockId> {
+        self.fields.read().clone()
+    }
+
+    pub fn get_methods(&self) -> Vec<BlockId> {
+        self.methods.read().clone()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlockTrait<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
+    pub methods: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockTrait<'blk> {
@@ -424,14 +520,29 @@ impl<'blk> BlockTrait<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Trait, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self { base, name }
+        Self {
+            base,
+            name,
+            methods: RwLock::new(Vec::new()),
+        }
+    }
+
+    pub fn add_method(&self, method_id: BlockId) {
+        self.methods.write().push(method_id);
+    }
+
+    pub fn get_methods(&self) -> Vec<BlockId> {
+        self.methods.read().clone()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlockImpl<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
+    pub target: RwLock<Option<BlockId>>,
+    pub trait_ref: RwLock<Option<BlockId>>,
+    pub methods: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockImpl<'blk> {
@@ -443,15 +554,45 @@ impl<'blk> BlockImpl<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Impl, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self { base, name }
+        Self {
+            base,
+            name,
+            target: RwLock::new(None),
+            trait_ref: RwLock::new(None),
+            methods: RwLock::new(Vec::new()),
+        }
+    }
+
+    pub fn set_target(&self, target_id: BlockId) {
+        *self.target.write() = Some(target_id);
+    }
+
+    pub fn set_trait_ref(&self, trait_id: BlockId) {
+        *self.trait_ref.write() = Some(trait_id);
+    }
+
+    pub fn add_method(&self, method_id: BlockId) {
+        self.methods.write().push(method_id);
+    }
+
+    pub fn get_target(&self) -> Option<BlockId> {
+        *self.target.read()
+    }
+
+    pub fn get_trait_ref(&self) -> Option<BlockId> {
+        *self.trait_ref.read()
+    }
+
+    pub fn get_methods(&self) -> Vec<BlockId> {
+        self.methods.read().clone()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlockEnum<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
-    pub fields: Vec<BlockId>,
+    pub variants: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockEnum<'blk> {
@@ -466,12 +607,16 @@ impl<'blk> BlockEnum<'blk> {
         Self {
             base,
             name,
-            fields: Vec::new(),
+            variants: RwLock::new(Vec::new()),
         }
     }
 
-    pub fn add_field(&mut self, field_id: BlockId) {
-        self.fields.push(field_id);
+    pub fn add_variant(&self, variant_id: BlockId) {
+        self.variants.write().push(variant_id);
+    }
+
+    pub fn get_variants(&self) -> Vec<BlockId> {
+        self.variants.read().clone()
     }
 }
 
@@ -494,10 +639,11 @@ impl<'blk> BlockConst<'blk> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct BlockField<'blk> {
     pub base: BlockBase<'blk>,
     pub name: String,
+    pub type_ref: RwLock<Option<BlockId>>,
 }
 
 impl<'blk> BlockField<'blk> {
@@ -509,7 +655,19 @@ impl<'blk> BlockField<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Field, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self { base, name }
+        Self {
+            base,
+            name,
+            type_ref: RwLock::new(None),
+        }
+    }
+
+    pub fn set_type_ref(&self, type_id: BlockId) {
+        *self.type_ref.write() = Some(type_id);
+    }
+
+    pub fn get_type_ref(&self) -> Option<BlockId> {
+        *self.type_ref.read()
     }
 }
 

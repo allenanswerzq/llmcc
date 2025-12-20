@@ -132,12 +132,9 @@ impl<'hir> HirNode<'hir> {
     }
 
     pub fn child_by_kind(&self, unit: &CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
-        for child in self.children(unit) {
-            if child.kind_id() == kind_id {
-                return Some(child);
-            }
-        }
-        None
+        self.children(unit)
+            .into_iter()
+            .find(|&child| child.kind_id() == kind_id)
     }
 
     /// Returns the symbol referenced by the identifier within a specific child field.
@@ -331,6 +328,37 @@ impl<'hir> HirNode<'hir> {
     /// Check if node is trivia (whitespace, comment, etc.)
     pub fn is_trivia(&self) -> bool {
         matches!(self.kind(), HirKind::Text | HirKind::Comment)
+    }
+
+    /// Set the block ID on the symbol associated with this node.
+    /// Works for both HirScope (gets symbol from scope) and HirIdent (has direct symbol).
+    /// Does nothing if no symbol is associated.
+    pub fn set_block_id(&self, block_id: crate::block::BlockId) {
+        // Try HirScope first
+        if let Some(scope) = self.as_scope()
+            && let Some(symbol) = scope.opt_symbol()
+        {
+            symbol.set_block_id(block_id);
+            return;
+        }
+        // Try HirIdent
+        if let Some(ident) = self.as_ident()
+            && let Some(symbol) = ident.opt_symbol()
+        {
+            symbol.set_block_id(block_id);
+        }
+    }
+
+    /// Get the symbol associated with this node if any.
+    /// Works for both HirScope and HirIdent nodes.
+    pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
+        if let Some(scope) = self.as_scope() {
+            return scope.opt_symbol();
+        }
+        if let Some(ident) = self.as_ident() {
+            return ident.opt_symbol();
+        }
+        None
     }
 }
 

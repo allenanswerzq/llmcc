@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::block::{BlockId, BlockKind, BlockRelation};
-use crate::graph::{GraphNode, ProjectGraph};
+use crate::graph::{UnitNode, ProjectGraph};
 
 /// Configuration options for PageRank algorithm.
 #[derive(Debug, Clone)]
@@ -33,7 +33,7 @@ impl Default for PageRankConfig {
 /// Result from a PageRank computation.
 #[derive(Debug, Clone)]
 pub struct RankedBlock {
-    pub node: GraphNode,
+    pub node: UnitNode,
     /// Blended score based on the configured influence/orchestration weights.
     pub score: f64,
     /// PageRank following `DependsOn` edges – highlights foundational building blocks.
@@ -136,7 +136,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                     .unwrap_or_else(|| format!("{}:{}", entry.kind, entry.block_id.as_u32()));
 
                 RankedBlock {
-                    node: GraphNode {
+                    node: UnitNode {
                         unit_index: entry.unit_index,
                         block_id: entry.block_id,
                     },

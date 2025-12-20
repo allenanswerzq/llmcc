@@ -644,17 +644,4 @@ impl<'tcx> CompileCtxt<'tcx> {
             f(symbol.id(), symbol);
         }
     }
-
-    // ========== Unresolved Symbols APIs ==========
-
-    /// Get and clear all unresolved symbols
-    pub fn take_unresolved_symbols(&self) -> Vec<&'tcx Symbol> {
-        let mut unresolved = self.unresolve_symbols.write();
-        std::mem::take(&mut *unresolved)
-    }
-
-    /// Get the count of unresolved symbols without clearing
-    pub fn unresolved_symbol_count(&self) -> usize {
-        self.unresolve_symbols.read().len()
-    }
 }

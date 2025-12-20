@@ -624,3 +624,251 @@ fn find_connected_components(
 
     components
 }
+
+// ============================================================================
+// ProjectGraph rendering extension functions
+// ============================================================================
+
+use crate::block::BlockKind;
+use crate::block::BlockRelation;
+use crate::graph::ProjectGraph;
+use crate::pagerank::PageRanker;
+
+const INTERESTING_KINDS: [BlockKind; 4] = [
+    BlockKind::Class,
+    BlockKind::Trait,
+    BlockKind::Enum,
+    BlockKind::Func,
+];
+
+/// Render a design graph showing dependencies between blocks.
+pub fn render_design_graph(project: &ProjectGraph, component_depth: usize) -> String {
+    let top_k = project.top_k();
+    let nodes = collect_sorted_nodes(project, top_k);
+
+    if nodes.is_empty() {
+        return "digraph project {\n}\n".to_string();
+    }
+
+    let renderer = GraphRenderer::new(&nodes);
+    let node_index = renderer.build_node_index();
+    let edges = collect_edges(project, renderer.nodes(), &node_index);
+
+    renderer.render(&edges, component_depth)
+}
+
+/// Render an architecture graph showing input/output relations.
+///
+/// In an architecture graph:
+/// - Input arguments have edges pointing TO the function
+/// - Function has edges pointing TO return types (output)
+/// - Traits have edges pointing TO structs that implement them
+///
+/// This is different from the dependency graph which shows "uses" relationships.
+pub fn render_arch_graph(project: &ProjectGraph, component_depth: usize) -> String {
+    let top_k = project.top_k();
+    let all_nodes = collect_sorted_nodes(project, top_k);
+
+    // Filter nodes for arch-graph:
+    // - Keep all types (Struct, Trait, Enum) regardless of visibility
+    // - Only keep public functions (private functions are implementation details)
+    let nodes: Vec<_> = all_nodes
+        .into_iter()
+        .filter(|node| {
+            match node.sym_kind {
+                Some(SymKind::Function) => node.is_public,
+                _ => true, // Keep all other kinds (Struct, Trait, Enum, etc.)
+            }
+        })
+        .collect();
+
+    if nodes.is_empty() {
+        return "digraph architecture {\n}\n".to_string();
+    }
+
+    let renderer = GraphRenderer::new(&nodes);
+    let node_index = renderer.build_node_index();
+    let edges = collect_arch_edges(project, renderer.nodes(), &node_index);
+
+    renderer.render_arch(&edges, component_depth)
+}
+
+/// Collect edges for the architecture graph.
+fn collect_arch_edges(
+    project: &ProjectGraph,
+    nodes: &[CompactNode],
+    node_index: &HashMap<BlockId, usize>,
+) -> BTreeSet<LabeledEdge> {
+    let mut edges = BTreeSet::new();
+
+    for node in nodes {
+        let Some(unit_graph) = project.unit_graph(node.unit_index) else {
+            continue;
+        };
+        let from_idx = node_index[&node.block_id];
+
+        let dependencies = unit_graph
+            .edges()
+            .get_related(node.block_id, BlockRelation::Calls);
+
+        for dep_block_id in dependencies {
+            if let Some(&to_idx) = node_index.get(&dep_block_id) {
+                edges.insert(LabeledEdge::new(from_idx, to_idx));
+            }
+        }
+    }
+
+    edges
+}
+
+fn ranked_block_filter(
+    project: &ProjectGraph,
+    top_k: Option<usize>,
+    interesting_kinds: &[BlockKind],
+) -> Option<HashSet<BlockId>> {
+    let ranked_order = top_k.and_then(|limit| {
+        let ranker = PageRanker::new(project);
+        let mut collected = Vec::new();
+
+        for ranked in ranker.rank() {
+            if interesting_kinds.contains(&ranked.kind) {
+                collected.push(ranked.node.block_id);
+            }
+            if collected.len() >= limit {
+                break;
+            }
+        }
+
+        if collected.is_empty() {
+            None
+        } else {
+            Some(collected)
+        }
+    });
+
+    ranked_order.map(|ordered| ordered.into_iter().collect())
+}
+
+fn collect_nodes(
+    project: &ProjectGraph,
+    interesting_kinds: &[BlockKind],
+    ranked_filter: Option<&HashSet<BlockId>>,
+) -> Vec<CompactNode> {
+    let all_blocks = project.cc.get_all_blocks();
+
+    all_blocks
+        .into_iter()
+        .filter_map(|(block_id, unit_index, name_opt, kind)| {
+            if !interesting_kinds.contains(&kind) {
+                return None;
+            }
+
+            if let Some(ids) = ranked_filter
+                && !ids.contains(&block_id)
+            {
+                return None;
+            }
+
+            let unit = project.cc.compile_unit(unit_index);
+            let block = unit.bb(block_id);
+            let display_name = name_opt
+                .clone()
+                .or_else(|| {
+                    block
+                        .base()
+                        .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
+                })
+                .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
+
+            let raw_path = unit
+                .file_path()
+                .or_else(|| unit.file().path())
+                .unwrap_or("<unknown>");
+
+            // Use raw path directly - canonicalize is very expensive
+            let path = raw_path.to_string();
+
+            let file_bytes = unit.file().content();
+            let location = block
+                .opt_node()
+                .map(|node| {
+                    let line = compact_byte_to_line(file_bytes, node.start_byte());
+                    format!("{path}:{line}")
+                })
+                .or(Some(path.clone()));
+
+            let mut sym_id: Option<SymId> = None;
+            let mut sym_kind = None;
+            let mut is_public = false;
+
+            if let Some(symbol) = block
+                .opt_node()
+                .and_then(|node| node.as_scope())
+                .and_then(|scope_node| scope_node.opt_scope())
+                .and_then(|scope| scope.opt_symbol())
+            {
+                sym_id = Some(symbol.id());
+                sym_kind = Some(symbol.kind());
+                is_public = symbol.is_global();
+            }
+
+            Some(CompactNode {
+                block_id,
+                unit_index,
+                name: display_name.clone(),
+                location,
+                fqn: display_name,
+                sym_id,
+                sym_kind,
+                is_public,
+            })
+        })
+        .collect()
+}
+
+fn collect_sorted_nodes(project: &ProjectGraph, top_k: Option<usize>) -> Vec<CompactNode> {
+    let ranked_filter = if project.pagerank_enabled() {
+        ranked_block_filter(project, top_k, &INTERESTING_KINDS)
+    } else {
+        None
+    };
+    let mut nodes = collect_nodes(project, &INTERESTING_KINDS, ranked_filter.as_ref());
+    nodes.sort_by(|a, b| a.name.cmp(&b.name));
+    nodes
+}
+
+fn collect_edges(
+    project: &ProjectGraph,
+    nodes: &[CompactNode],
+    node_index: &HashMap<BlockId, usize>,
+) -> BTreeSet<(usize, usize)> {
+    let mut edges = BTreeSet::new();
+
+    for node in nodes {
+        let Some(unit_graph) = project.unit_graph(node.unit_index) else {
+            continue;
+        };
+        let from_idx = node_index[&node.block_id];
+
+        let dependencies = unit_graph
+            .edges()
+            .get_related(node.block_id, BlockRelation::Calls);
+
+        for dep_block_id in dependencies {
+            if let Some(&to_idx) = node_index.get(&dep_block_id) {
+                edges.insert((from_idx, to_idx));
+            }
+        }
+    }
+
+    edges
+}
+
+/// Compact byte offset to line number conversion
+fn compact_byte_to_line(content: &[u8], byte_offset: usize) -> usize {
+    content[..byte_offset.min(content.len())]
+        .iter()
+        .filter(|&&b| b == b'\n')
+        .count()
+        + 1
+}

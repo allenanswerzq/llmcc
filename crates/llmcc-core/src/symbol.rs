@@ -17,9 +17,6 @@ use crate::interner::InternedStr;
 use crate::ir::HirId;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-#[cfg(test)]
-use crate::interner::InternPool;
-
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
 static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(0);

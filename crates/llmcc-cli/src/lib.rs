@@ -127,7 +127,7 @@ where
     );
 
     let link_start = Instant::now();
-    pg.link_units();
+    pg.connect_blocks();
     info!("Linking units: {:.2}s", link_start.elapsed().as_secs_f64());
 
     let output = generate_outputs(opts, &mut pg);
