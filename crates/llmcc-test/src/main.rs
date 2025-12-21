@@ -37,14 +37,14 @@ enum Command {
         #[command(flatten)]
         processing: ProcessingOptions,
     },
-    /// Run the entire corpus (optionally filtered by case id)
+    /// Run the entire corpus (optionally filtered by case id or directory)
     RunAll {
         /// Only run cases whose id contains this substring
         #[arg(long)]
         filter: Option<String>,
-        /// Optional positional filter (convenience)
-        #[arg(value_name = "FILTER", required = false)]
-        case: Option<String>,
+        /// Optional directory or filter string - if a directory, run all tests in it
+        #[arg(value_name = "DIR_OR_FILTER", required = false)]
+        dir_or_filter: Option<PathBuf>,
         /// Update expectation sections with current output (bless)
         #[arg(
             long,
@@ -80,7 +80,7 @@ fn main() -> Result<()> {
         } => run_single_command(cli.root, file, update, keep_temps, graph, processing),
         Command::RunAll {
             filter,
-            case,
+            dir_or_filter,
             update,
             keep_temps,
             graph,
@@ -91,9 +91,22 @@ fn main() -> Result<()> {
                 Some(value) => (true, Some(value)),
                 None => (false, None),
             };
-            let effective_filter = filter.or(case).or(update_filter);
+
+            // Determine if dir_or_filter is a directory or a filter string
+            let (effective_root, effective_filter) = if let Some(ref path) = dir_or_filter {
+                if path.is_dir() {
+                    // It's a directory - use it as root, no filter
+                    (path.clone(), filter.or(update_filter))
+                } else {
+                    // It's a filter string
+                    (cli.root, filter.or(path.to_string_lossy().to_string().into()).or(update_filter))
+                }
+            } else {
+                (cli.root, filter.or(update_filter))
+            };
+
             run_all_command(
-                cli.root,
+                effective_root,
                 effective_filter,
                 should_update,
                 keep_temps,

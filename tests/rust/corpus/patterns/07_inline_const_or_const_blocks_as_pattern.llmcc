@@ -1,0 +1,30 @@
+===============================================================================
+Inline const or Const blocks as pattern
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+fn foo(x: i32) {
+    const CUBE: i32 = 3.pow(3);
+    match x {
+        CUBE => println!("three cubed"),
+        _ => {}
+    }
+}
+
+fn foo(x: i32) {
+    match x {
+        const { 3.pow(3) } => println!("three cubed"),
+        _ => {}
+    }
+}
+
+--- expect:symbols ---
+WRONG
+
+--- expect:block-graph ---
+WRONG
+
+--- expect:block-relations ---
+WRONG
+

@@ -1,0 +1,80 @@
+===============================================================================
+function-types
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+fn high_order1(value: i32, f: fn(i32)) -> i32 {}
+
+fn high_order2(value: i32, f: fn(i32) -> i32) -> i32 {
+    f(value)
+}
+
+fn high_order3(value: i32, f: &FnOnce(i32) -> i32) -> i32 {
+    f(value)
+}
+
+type F = for<'a, 'b> fn(x: &'a A, y: &'a mut B<'i, 't>,) -> C;
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Function | high_order1 |
+u0:22 | Variable | value |
+u0:23 | Variable | f |
+u0:24 | Function | high_order2 |
+u0:25 | Variable | value |
+u0:26 | Variable | f |
+u0:27 | Function | high_order3 |
+u0:28 | Variable | value |
+u0:29 | Variable | f |
+u0:30 | TypeAlias | F |
+u0:31 | Variable | x |
+u0:32 | Variable | y |
+
+--- expect:block-graph ---
+(root:1 lib
+  (func:2 high_order1
+    (parameters:3 value)
+    (return:4 i32)
+  )
+  (func:5 high_order2
+    (parameters:6 value)
+    (return:7 i32)
+    (call:8 f)
+  )
+  (func:9 high_order3
+    (parameters:10 value)
+    (return:11 i32)
+    (call:12 f)
+  )
+  (parameters:13 x)
+  (return:14 C)
+)
+
+--- expect:block-relations ---
+high_order1:2 (func) --has_parameters--> value:3 (parameters)
+high_order1:2 (func) --has_return--> i32:4 (return)
+high_order2:5 (func) --has_parameters--> value:6 (parameters)
+high_order2:5 (func) --has_return--> i32:7 (return)
+high_order3:9 (func) --has_parameters--> value:10 (parameters)
+high_order3:9 (func) --has_return--> i32:11 (return)

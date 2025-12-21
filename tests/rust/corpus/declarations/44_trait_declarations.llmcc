@@ -1,0 +1,54 @@
+===============================================================================
+trait-declarations
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+pub trait Item: Clone + Eq + fmt::Debug {
+    fn summarize(&self) -> Self::Summary;
+}
+
+unsafe trait Foo { }
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Trait | Item |
+u0:22 | Function | summarize |
+u0:23 | Trait | Foo |
+
+--- expect:block-graph ---
+(root:1 lib
+  (trait:2 Item
+    (func:3 summarize
+      (parameters:4 block#4)
+      (return:5 Self)
+    )
+  )
+  (trait:6 Foo)
+)
+
+--- expect:block-relations ---
+Item:2 (trait) --has_method--> summarize:3 (func)
+summarize:3 (func) --has_parameters--> block#4:4 (parameters)
+summarize:3 (func) --has_return--> Self:5 (return)
+summarize:3 (func) --method_of--> Item:2 (trait)

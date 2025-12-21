@@ -1,0 +1,66 @@
+===============================================================================
+derive-macro-helper-attributes
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+// Example from https://github.com/dtolnay/thiserror/blob/21c26903e29cb92ba1a7ff11e82ae2001646b60d/README.md
+
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("first letter must be lowercase but was {:?}", first_char(.0))]
+    WrongCase(String),
+    #[error("invalid index {idx}, expected at least {} and at most {}", .limits.lo, .limits.hi)]
+    OutOfBounds { idx: usize, limits: Limits },
+}
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Enum | Error | [global]
+u0:22 | EnumVariant | WrongCase |
+u0:23 | EnumVariant | OutOfBounds |
+u0:24 | Field | idx |
+u0:25 | Field | limits |
+
+--- expect:block-graph ---
+(root:1 lib
+  (enum:2 Error
+    (field:3 WrongCase)
+    (field:4 OutOfBounds
+      (field:5 idx)
+      (field:6 limits)
+    )
+  )
+)
+
+--- expect:block-relations ---
+Error:2 (enum) --has_field--> OutOfBounds:4 (field)
+Error:2 (enum) --has_field--> WrongCase:3 (field)
+OutOfBounds:4 (field) --field_of--> Error:2 (enum)
+OutOfBounds:4 (field) --used_by--> OutOfBounds:4 (field)
+OutOfBounds:4 (field) --uses--> OutOfBounds:4 (field)
+WrongCase:3 (field) --field_of--> Error:2 (enum)
+WrongCase:3 (field) --used_by--> WrongCase:3 (field)
+WrongCase:3 (field) --uses--> WrongCase:3 (field)

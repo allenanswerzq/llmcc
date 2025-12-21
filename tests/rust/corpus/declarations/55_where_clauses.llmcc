@@ -1,0 +1,106 @@
+===============================================================================
+where-clauses
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+fn walk<F>(&self, it: &mut F) -> bool
+    where F: FnMut(&Pat) -> bool
+{
+  return false
+}
+
+impl<'a, T: 'a + Item> Iterator for Iter<'a, T> where Self: 'a {
+}
+
+impl<T> A for B<T>
+    where C<T>: D,
+          T: 'c,
+          'c: 'b,
+{
+}
+
+impl<'a, E> Read
+where &'a E: Read,
+{
+}
+
+impl<T> A for B<T> where (T, T, T): C, {}
+
+impl<T> A for B<T>
+    where for<'a> D<T>: E<'a>,
+{
+}
+
+pub trait A<B> where B: C,
+{
+}
+
+fn foo<A>() where A: B + As<f64>, f64: As<A> {}
+
+impl<A> Default for B<A> where *mut A: C + D {}
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Function | walk |
+u0:22 | TypeParameter | F |
+u0:23 | Variable | it |
+u0:24 | Trait | Iterator |
+u0:25 | UnresolvedType | Iter |
+u0:26 | TypeParameter | T |
+u0:27 | Trait | A |
+u0:28 | UnresolvedType | B |
+u0:29 | TypeParameter | T |
+u0:30 | UnresolvedType | Read |
+u0:31 | TypeParameter | E |
+u0:32 | CompositeType | (T, T, T) |
+u0:33 | TypeParameter | B |
+u0:34 | Function | foo |
+u0:35 | TypeParameter | A |
+u0:36 | Trait | Default |
+u0:37 | TypeParameter | A |
+
+--- expect:block-graph ---
+(root:1 lib
+  (func:2 walk
+    (parameters:3 it)
+    (return:4 bool)
+    (parameters:5 Pat)
+    (return:6 bool)
+  )
+  (impl:7 Iter)
+  (impl:8 B)
+  (impl:9 Read)
+  (impl:10 B)
+  (impl:11 B)
+  (trait:12 A)
+  (func:13 foo
+    (parameters:14 block#14)
+  )
+  (impl:15 B)
+)
+
+--- expect:block-relations ---
+foo:13 (func) --has_parameters--> block#14:14 (parameters)
+walk:2 (func) --has_parameters--> Pat:5 (parameters)
+walk:2 (func) --has_return--> bool:6 (return)

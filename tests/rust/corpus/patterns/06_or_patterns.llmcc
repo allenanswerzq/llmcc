@@ -1,0 +1,80 @@
+===============================================================================
+or-patterns
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+if let A(x) | B(x) = expr {
+    do_stuff_with(x);
+}
+
+while let A(x) | B(x) = expr {
+    do_stuff_with(x);
+}
+
+let Ok(index) | Err(index) = slice.binary_search(&x);
+
+for ref a | b in c {}
+
+let Ok(x) | Err(x) = binary_search(x);
+
+for A | B | C in c {}
+
+|(Ok(x) | Err(x))| expr();
+
+let ref mut x @ (A | B | C);
+
+fn foo((1 | 2 | 3): u8) {}
+
+if let x!() | y!() = () {}
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Variable | Ok |
+u0:22 | Variable | index |
+u0:23 | Variable | Err |
+u0:24 | Variable | x |
+u0:25 | Variable | Ok |
+u0:26 | Variable | x |
+u0:27 | Variable | Err |
+u0:28 | Variable | A |
+u0:29 | Variable | B |
+u0:30 | Variable | C |
+u0:31 | Function | foo |
+
+--- expect:block-graph ---
+(root:1 lib
+  (call:2 do_stuff_with)
+  (call:3 do_stuff_with)
+  (call:4 slice)
+  (call:5 binary_search)
+  (call:6 expr)
+  (func:7 foo
+    (parameters:8 u8)
+  )
+  (call:9 x)
+  (call:10 y)
+)
+
+--- expect:block-relations ---
+foo:7 (func) --has_parameters--> u8:8 (parameters)

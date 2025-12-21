@@ -1,0 +1,93 @@
+===============================================================================
+structs
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+struct Proton;
+struct Electron {}
+struct Person {pub name: String, pub age: u32}
+struct Point {
+  x: i32,
+
+  #[attribute1]
+  y: i32,
+}
+struct Color(pub i32, i32, i32);
+struct Inches(i32);
+struct Empty(pub ());
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Struct | Proton |
+u0:22 | TypeAlias | self |
+u0:23 | TypeAlias | Self |
+u0:24 | Struct | Electron |
+u0:25 | TypeAlias | self |
+u0:26 | TypeAlias | Self |
+u0:27 | Struct | Person |
+u0:28 | TypeAlias | self |
+u0:29 | TypeAlias | Self |
+u0:30 | Field | name |
+u0:31 | Field | age |
+u0:32 | Struct | Point |
+u0:33 | TypeAlias | self |
+u0:34 | TypeAlias | Self |
+u0:35 | Field | x |
+u0:36 | Field | y |
+u0:37 | Struct | Color |
+u0:38 | TypeAlias | self |
+u0:39 | TypeAlias | Self |
+u0:40 | Struct | Inches |
+u0:41 | TypeAlias | self |
+u0:42 | TypeAlias | Self |
+u0:43 | Struct | Empty |
+u0:44 | TypeAlias | self |
+u0:45 | TypeAlias | Self |
+
+--- expect:block-graph ---
+(root:1 lib
+  (class:2 Proton)
+  (class:3 Electron)
+  (class:4 Person
+    (field:5 name)
+    (field:6 age)
+  )
+  (class:7 Point
+    (field:8 x)
+    (field:9 y)
+  )
+  (class:10 Color)
+  (class:11 Inches)
+  (class:12 Empty)
+)
+
+--- expect:block-relations ---
+Person:4 (class) --has_field--> age:6 (field)
+Person:4 (class) --has_field--> name:5 (field)
+Point:7 (class) --has_field--> x:8 (field)
+Point:7 (class) --has_field--> y:9 (field)
+age:6 (field) --field_of--> Person:4 (class)
+name:5 (field) --field_of--> Person:4 (class)
+x:8 (field) --field_of--> Point:7 (class)
+y:9 (field) --field_of--> Point:7 (class)

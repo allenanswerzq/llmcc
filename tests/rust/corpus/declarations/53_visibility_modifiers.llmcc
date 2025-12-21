@@ -1,0 +1,64 @@
+===============================================================================
+visibility-modifiers
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+pub fn a() {}
+pub(super) fn b() {}
+pub(self) fn c() {}
+pub(crate) fn c() {}
+pub(in crate::d) fn e() {}
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Function | a | [global]
+u0:22 | Function | b |
+u0:23 | Function | c |
+u0:24 | Function | e |
+
+--- expect:block-graph ---
+(root:1 lib
+  (func:2 a
+    (parameters:3 block#3)
+  )
+  (func:4 b
+    (parameters:5 block#5)
+  )
+  (func:6 c
+    (parameters:7 block#7)
+  )
+  (func:8 c
+    (parameters:9 block#9)
+  )
+  (func:10 e
+    (parameters:11 block#11)
+  )
+)
+
+--- expect:block-relations ---
+a:2 (func) --has_parameters--> block#3:3 (parameters)
+b:4 (func) --has_parameters--> block#5:5 (parameters)
+c:6 (func) --has_parameters--> block#7:7 (parameters)
+c:8 (func) --has_parameters--> block#9:9 (parameters)
+e:10 (func) --has_parameters--> block#11:11 (parameters)

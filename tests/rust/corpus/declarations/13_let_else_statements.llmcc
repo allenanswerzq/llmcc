@@ -1,0 +1,58 @@
+===============================================================================
+let-else-statements
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+let Foo::Bar {
+    texts,
+    values,
+} = foo().bar().await? else {
+    return Err(index)
+};
+
+let Some(x) = y else {
+    let None = z else {
+        foo();
+        break;
+    };
+    continue;
+};
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | lib | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Variable | texts |
+u0:22 | Variable | values |
+u0:23 | Variable | Some |
+u0:24 | Variable | x |
+u0:25 | Variable | None |
+
+--- expect:block-graph ---
+(root:1 lib
+  (call:2 foo)
+  (call:3 Err)
+  (call:4 foo)
+)
+
+--- expect:block-relations ---
+none
