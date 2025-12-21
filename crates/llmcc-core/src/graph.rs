@@ -1,8 +1,7 @@
-use std::collections::HashSet;
+use rayon::prelude::*;
 
-use crate::block::{BlockId, BlockKind, BlockRelation};
-use crate::block_rel::BlockRelationMap;
-use crate::context::CompileCtxt;
+use crate::block::{BasicBlock, BlockId, BlockRelation};
+use crate::context::{CompileCtxt, CompileUnit};
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -10,17 +9,11 @@ pub struct UnitGraph {
     unit_index: usize,
     /// Root block ID of this unit
     root: BlockId,
-    /// Edge of this graph unit
-    edges: BlockRelationMap,
 }
 
 impl UnitGraph {
-    pub fn new(unit_index: usize, root: BlockId, edges: BlockRelationMap) -> Self {
-        Self {
-            unit_index,
-            root,
-            edges,
-        }
+    pub fn new(unit_index: usize, root: BlockId) -> Self {
+        Self { unit_index, root }
     }
 
     pub fn unit_index(&self) -> usize {
@@ -30,10 +23,6 @@ impl UnitGraph {
     pub fn root(&self) -> BlockId {
         self.root
     }
-
-    pub fn edges(&self) -> &BlockRelationMap {
-        &self.edges
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -42,15 +31,14 @@ pub struct UnitNode {
     pub block_id: BlockId,
 }
 
-/// ProjectGraph represents a complete compilation project with all units and their inter-dependencies.
+/// ProjectGraph represents a complete compilation project with all units
+/// and their inter-dependencies.
 #[derive(Debug)]
 pub struct ProjectGraph<'tcx> {
-    /// Reference to the compilation context containing all symbols, HIR nodes, and blocks
+    /// Reference to the compilation context containing all symbols
     pub cc: &'tcx CompileCtxt<'tcx>,
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
-    /// Component grouping depth for graph visualization
-    component_depth: usize,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -58,373 +46,315 @@ impl<'tcx> ProjectGraph<'tcx> {
         Self {
             cc,
             units: Vec::new(),
-            component_depth: 2, // Default to top-level modules
         }
-    }
-
-    /// Set the component depth for graph visualization
-    pub fn set_component_depth(&mut self, depth: usize) {
-        self.component_depth = depth;
-    }
-
-    /// Get the component depth for graph visualization
-    pub fn component_depth(&self) -> usize {
-        self.component_depth
     }
 
     pub fn add_child(&mut self, graph: UnitGraph) {
         self.units.push(graph);
+        self.units.sort_by_key(|g| g.unit_index());
     }
 
     /// Add multiple unit graphs to the project graph.
     pub fn add_children(&mut self, graphs: Vec<UnitGraph>) {
         self.units.extend(graphs);
+        self.units.sort_by_key(|g| g.unit_index());
     }
 
-    pub fn connect_blocks(&mut self) {
-    }
-
+    /// Get the units in this project graph.
     pub fn units(&self) -> &[UnitGraph] {
         &self.units
     }
 
-    pub fn unit_graph(&self, unit_index: usize) -> Option<&UnitGraph> {
-        self.units
-            .iter()
-            .find(|unit| unit.unit_index() == unit_index)
+    /// Get a specific unit graph by index, if it exists.
+    pub fn unit_graph(&self, index: usize) -> Option<&UnitGraph> {
+        self.units.iter().find(|u| u.unit_index() == index)
     }
 
-    pub fn block_by_name(&self, name: &str) -> Option<UnitNode> {
-        let matches = self.cc.find_blocks_by_name(name);
-
-        matches.first().map(|(unit_index, _, block_id)| UnitNode {
-            unit_index: *unit_index,
-            block_id: *block_id,
-        })
+    /// Get top-k limit (currently always None - no PageRank filtering).
+    pub fn top_k(&self) -> Option<usize> {
+        None
     }
 
-    pub fn blocks_by_name(&self, name: &str) -> Vec<UnitNode> {
-        let matches = self.cc.find_blocks_by_name(name);
-
-        matches
-            .into_iter()
-            .map(|(unit_index, _, block_id)| UnitNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
+    /// Check if PageRank ranking is enabled (currently always false).
+    pub fn pagerank_enabled(&self) -> bool {
+        false
     }
 
-    pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<UnitNode> {
-        let matches = self.cc.find_blocks_by_name(name);
-
-        matches
-            .iter()
-            .find(|(u, _, _)| *u == unit_index)
-            .map(|(_, _, block_id)| UnitNode {
-                unit_index,
-                block_id: *block_id,
-            })
+    /// Connect all blocks by discovering and recording their relationships.
+    ///
+    /// This is the linking phase that runs after all unit graphs are built.
+    /// It walks each unit's block tree in pre-order DFS and populates
+    /// `cc.related_map` with all block-to-block relationships.
+    ///
+    /// Relationships discovered:
+    /// - Structural: Contains/ContainedBy (parent-child hierarchy)
+    /// - Function: HasParameters, HasReturn, Calls/CalledBy
+    /// - Type: HasField/FieldOf, HasMethod/MethodOf, ImplFor/HasImpl, Implements/ImplementedBy
+    /// - References: Uses/UsedBy (type references)
+    pub fn connect_blocks(&self) {
+        // Process each unit in parallel - they are independent
+        self.units.par_iter().for_each(|unit_graph| {
+            let unit = CompileUnit {
+                cc: self.cc,
+                index: unit_graph.unit_index(),
+            };
+            let root_block = unit.bb(unit_graph.root());
+            self.dfs_connect(&unit, &root_block, None);
+        });
     }
 
-    pub fn blocks_by_kind(&self, block_kind: BlockKind) -> Vec<UnitNode> {
-        let matches = self.cc.find_blocks_by_kind(block_kind);
+    /// Recursively connect blocks in pre-order DFS traversal.
+    fn dfs_connect(&self, unit: &CompileUnit<'tcx>, block: &BasicBlock<'tcx>, parent: Option<BlockId>) {
+        let block_id = block.id();
 
-        matches
-            .into_iter()
-            .map(|(unit_index, _, block_id)| UnitNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
+        // 1. Link structural parent/child relationship
+        if let Some(parent_id) = parent {
+            self.add_relation(parent_id, BlockRelation::Contains, block_id);
+            self.add_relation(block_id, BlockRelation::ContainedBy, parent_id);
+        }
+
+        // 2. Link kind-specific relationships
+        match block {
+            BasicBlock::Func(func) => self.link_func(unit, block_id, func),
+            BasicBlock::Class(class) => self.link_class(block_id, class),
+            BasicBlock::Impl(impl_block) => self.link_impl(unit, block_id, impl_block),
+            BasicBlock::Trait(trait_block) => self.link_trait(block_id, trait_block),
+            BasicBlock::Enum(enum_block) => self.link_enum(block_id, enum_block),
+            BasicBlock::Call(call) => self.link_call(unit, block_id, call),
+            BasicBlock::Field(field) => self.link_field(unit, block_id, field),
+            // Root, Stmt, Const, Parameters, Return - no special linking needed
+            _ => {}
+        }
+
+        // 3. Recurse into children (pre-order: process this node before children)
+        for child_id in block.children() {
+            let child = unit.bb(*child_id);
+            self.dfs_connect(unit, &child, Some(block_id));
+        }
     }
 
-    pub fn blocks_by_kind_in(&self, block_kind: BlockKind, unit_index: usize) -> Vec<UnitNode> {
-        let block_ids = self.cc.find_blocks_by_kind_in_unit(block_kind, unit_index);
-
-        block_ids
-            .into_iter()
-            .map(|block_id| UnitNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
+    /// Add a relationship to the related_map.
+    #[inline]
+    fn add_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
+        self.cc.related_map.add_relation_impl(from, relation, to);
     }
 
-    pub fn blocks_in(&self, unit_index: usize) -> Vec<UnitNode> {
-        let matches = self.cc.find_blocks_in_unit(unit_index);
-
-        matches
-            .into_iter()
-            .map(|(_, _, block_id)| UnitNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
-    }
-
-    pub fn block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
-        self.cc.get_block_info(block_id)
-    }
-
-    pub fn find_related_blocks(
+    /// Link function/method relationships.
+    fn link_func(
         &self,
-        node: UnitNode,
-        relations: Vec<BlockRelation>,
-    ) -> Vec<UnitNode> {
-        if node.unit_index >= self.units.len() {
-            return Vec::new();
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        func: &crate::block::BlockFunc<'tcx>,
+    ) {
+        // Parameters
+        if let Some(params_id) = func.get_parameters() {
+            self.add_relation(block_id, BlockRelation::HasParameters, params_id);
         }
 
-        let unit = &self.units[node.unit_index];
-        let mut result = Vec::new();
-
-        for relation in relations {
-            match relation {
-                BlockRelation::Calls => {
-                    let dependencies = unit.edges.get_related(node.block_id, BlockRelation::Calls);
-                    for dep_block_id in dependencies {
-                        let dep_unit_index = self
-                            .cc
-                            .get_block_info(dep_block_id)
-                            .map(|(idx, _, _)| idx)
-                            .unwrap_or(node.unit_index);
-                        result.push(UnitNode {
-                            unit_index: dep_unit_index,
-                            block_id: dep_block_id,
-                        });
-                    }
-                }
-                BlockRelation::CalledBy => {
-                    let mut seen = HashSet::new();
-
-                    let dependents = unit
-                        .edges
-                        .get_related(node.block_id, BlockRelation::CalledBy);
-                    if !dependents.is_empty() {
-                        for dep_block_id in dependents {
-                            if !seen.insert(dep_block_id) {
-                                continue;
-                            }
-                            if let Some((dep_unit_idx, _, _)) = self.cc.get_block_info(dep_block_id)
-                            {
-                                result.push(UnitNode {
-                                    unit_index: dep_unit_idx,
-                                    block_id: dep_block_id,
-                                });
-                            } else {
-                                result.push(UnitNode {
-                                    unit_index: node.unit_index,
-                                    block_id: dep_block_id,
-                                });
-                            }
-                        }
-                    }
-
-                    let local_dependents = unit
-                        .edges
-                        .find_reverse_relations(node.block_id, BlockRelation::Calls);
-                    for dep_block_id in local_dependents {
-                        if !seen.insert(dep_block_id) {
-                            continue;
-                        }
-                        result.push(UnitNode {
-                            unit_index: node.unit_index,
-                            block_id: dep_block_id,
-                        });
-                    }
-                }
-                BlockRelation::Unknown => {}
-                // Handle other relations generically
-                _ => {
-                    let related = unit.edges.get_related(node.block_id, relation);
-                    for related_block_id in related {
-                        let related_unit_index = self
-                            .cc
-                            .get_block_info(related_block_id)
-                            .map(|(idx, _, _)| idx)
-                            .unwrap_or(node.unit_index);
-                        result.push(UnitNode {
-                            unit_index: related_unit_index,
-                            block_id: related_block_id,
-                        });
-                    }
-                }
-            }
+        // Return type
+        if let Some(ret_id) = func.get_returns() {
+            self.add_relation(block_id, BlockRelation::HasReturn, ret_id);
         }
 
-        result
-    }
-
-    pub fn find_dpends_blocks_recursive(&self, node: UnitNode) -> HashSet<UnitNode> {
-        let mut visited = HashSet::new();
-        let mut stack = vec![node];
-        let relations = vec![BlockRelation::Calls];
-
-        while let Some(current) = stack.pop() {
-            if visited.contains(&current) {
-                continue;
-            }
-            visited.insert(current);
-
-            for related in self.find_related_blocks(current, relations.clone()) {
-                if !visited.contains(&related) {
-                    stack.push(related);
-                }
-            }
-        }
-
-        visited.remove(&node);
-        visited
-    }
-
-    pub fn find_depended_blocks_recursive(&self, node: UnitNode) -> HashSet<UnitNode> {
-        let mut visited = HashSet::new();
-        let mut stack = vec![node];
-        let relations = vec![BlockRelation::CalledBy];
-
-        while let Some(current) = stack.pop() {
-            if visited.contains(&current) {
-                continue;
-            }
-            visited.insert(current);
-
-            for related in self.find_related_blocks(current, relations.clone()) {
-                if !visited.contains(&related) {
-                    stack.push(related);
-                }
-            }
-        }
-
-        visited.remove(&node);
-        visited
-    }
-
-    pub fn traverse_bfs<F>(&self, start: UnitNode, mut callback: F)
-    where
-        F: FnMut(UnitNode),
-    {
-        let mut visited = HashSet::new();
-        let mut queue = vec![start];
-        let relations = vec![BlockRelation::Calls, BlockRelation::CalledBy];
-
-        while !queue.is_empty() {
-            let current = queue.remove(0);
-            if visited.contains(&current) {
-                continue;
-            }
-            visited.insert(current);
-            callback(current);
-
-            for related in self.find_related_blocks(current, relations.clone()) {
-                if !visited.contains(&related) {
-                    queue.push(related);
-                }
-            }
+        // Find calls within this function and link to callees
+        // Calls are handled when we visit BlockCall nodes, but we also
+        // establish the caller-callee relationship at the function level
+        for stmt_id in func.get_stmts() {
+            self.find_calls_recursive(unit, block_id, stmt_id);
         }
     }
 
-    pub fn traverse_dfs<F>(&self, start: UnitNode, mut callback: F)
-    where
-        F: FnMut(UnitNode),
-    {
-        let mut visited = HashSet::new();
-        self.traverse_dfs_impl(start, &mut visited, &mut callback);
+    /// Recursively find call blocks and link them to this function as caller.
+    fn find_calls_recursive(&self, unit: &CompileUnit<'tcx>, caller_func_id: BlockId, block_id: BlockId) {
+        let block = unit.bb(block_id);
+
+        if let BasicBlock::Call(call) = &block {
+            // Resolve the callee and link caller function -> callee function
+            if let Some(callee_id) = self.resolve_callee(unit, call) {
+                self.add_relation(caller_func_id, BlockRelation::Calls, callee_id);
+                self.add_relation(callee_id, BlockRelation::CalledBy, caller_func_id);
+            }
+        }
+
+        // Recurse into children
+        for child_id in block.children() {
+            self.find_calls_recursive(unit, caller_func_id, *child_id);
+        }
     }
 
-    fn traverse_dfs_impl<F>(
+    /// Resolve a call expression to its target function's BlockId.
+    fn resolve_callee(
         &self,
-        node: UnitNode,
-        visited: &mut HashSet<UnitNode>,
-        callback: &mut F,
-    ) where
-        F: FnMut(UnitNode),
-    {
-        if visited.contains(&node) {
-            return;
-        }
-        visited.insert(node);
-        callback(node);
+        unit: &CompileUnit<'tcx>,
+        call: &crate::block::BlockCall<'tcx>,
+    ) -> Option<BlockId> {
+        // Symbol resolution was done by bind.rs - just follow the links
+        call.base.node.ident_symbol(unit)?.block_id()
+    }
 
-        let relations = vec![BlockRelation::Calls, BlockRelation::CalledBy];
-        for related in self.find_related_blocks(node, relations) {
-            if !visited.contains(&related) {
-                self.traverse_dfs_impl(related, visited, callback);
-            }
+    /// Link struct/class relationships.
+    fn link_class(&self, block_id: BlockId, class: &crate::block::BlockClass<'tcx>) {
+        // Fields
+        for field_id in class.get_fields() {
+            self.add_relation(block_id, BlockRelation::HasField, field_id);
+            self.add_relation(field_id, BlockRelation::FieldOf, block_id);
+        }
+
+        // Methods
+        for method_id in class.get_methods() {
+            self.add_relation(block_id, BlockRelation::HasMethod, method_id);
+            self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
     }
 
-    pub fn get_block_depends(&self, node: UnitNode) -> HashSet<UnitNode> {
-        if node.unit_index >= self.units.len() {
-            return HashSet::new();
+    /// Link impl block relationships.
+    fn link_impl(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        impl_block: &crate::block::BlockImpl<'tcx>,
+    ) {
+        // Methods
+        for method_id in impl_block.get_methods() {
+            self.add_relation(block_id, BlockRelation::HasMethod, method_id);
+            self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
 
-        let unit = &self.units[node.unit_index];
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut stack = vec![node.block_id];
-
-        while let Some(current_block) = stack.pop() {
-            if visited.contains(&current_block) {
-                continue;
+        // Target type (impl SomeType { ... })
+        let target_id = if let Some(target_id) = impl_block.get_target() {
+            Some(target_id)
+        } else {
+            // Try to resolve from HirNode symbol
+            if let Some(target_id) = self.resolve_impl_target(unit, impl_block) {
+                // Store the resolved target in the impl block for future access
+                impl_block.set_target(target_id);
+                Some(target_id)
+            } else {
+                None
             }
-            visited.insert(current_block);
+        };
 
-            let dependencies = unit.edges.get_related(current_block, BlockRelation::Calls);
-            for dep_block_id in dependencies {
-                if dep_block_id != node.block_id {
-                    let dep_unit_index = self
-                        .cc
-                        .get_block_info(dep_block_id)
-                        .map(|(idx, _, _)| idx)
-                        .unwrap_or(node.unit_index);
-                    result.insert(UnitNode {
-                        unit_index: dep_unit_index,
-                        block_id: dep_block_id,
-                    });
-                    stack.push(dep_block_id);
+        if let Some(target_id) = target_id {
+            self.add_relation(block_id, BlockRelation::ImplFor, target_id);
+            self.add_relation(target_id, BlockRelation::HasImpl, block_id);
+
+            // Copy impl methods to the target struct/type
+            let target_block = unit.bb(target_id);
+            if let Some(class) = target_block.as_class() {
+                for method_id in impl_block.get_methods() {
+                    class.add_method(method_id);
                 }
             }
         }
 
-        result
+        // Trait reference (impl SomeTrait for SomeType { ... })
+        if let Some(trait_id) = impl_block.get_trait_ref() {
+            self.add_relation(block_id, BlockRelation::Implements, trait_id);
+            self.add_relation(trait_id, BlockRelation::ImplementedBy, block_id);
+        } else {
+            // Try to resolve from HirNode symbol
+            if let Some(trait_id) = self.resolve_impl_trait(unit, impl_block) {
+                self.add_relation(block_id, BlockRelation::Implements, trait_id);
+                self.add_relation(trait_id, BlockRelation::ImplementedBy, block_id);
+            }
+        }
     }
 
-    pub fn get_block_depended(&self, node: UnitNode) -> HashSet<UnitNode> {
-        if node.unit_index >= self.units.len() {
-            return HashSet::new();
-        }
-
-        let unit = &self.units[node.unit_index];
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut stack = vec![node.block_id];
-
-        while let Some(current_block) = stack.pop() {
-            if visited.contains(&current_block) {
-                continue;
-            }
-            visited.insert(current_block);
-
-            let dependencies = unit
-                .edges
-                .get_related(current_block, BlockRelation::CalledBy);
-            for dep_block_id in dependencies {
-                if dep_block_id != node.block_id {
-                    let dep_unit_index = self
-                        .cc
-                        .get_block_info(dep_block_id)
-                        .map(|(idx, _, _)| idx)
-                        .unwrap_or(node.unit_index);
-                    result.insert(UnitNode {
-                        unit_index: dep_unit_index,
-                        block_id: dep_block_id,
-                    });
-                    stack.push(dep_block_id);
+    /// Resolve the target type of an impl block.
+    fn resolve_impl_target(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        impl_block: &crate::block::BlockImpl<'tcx>,
+    ) -> Option<BlockId> {
+        // Look through children to find type identifier with a resolved symbol
+        for child in impl_block.base.node.children(unit) {
+            // Find identifier children (type identifiers)
+            if let Some(ident) = child.find_ident(unit) {
+                // Use the identifier name to look up the struct in block indexes
+                let blocks = unit.cc.find_blocks_by_name(&ident.name);
+                for (_, kind, block_id) in blocks {
+                    // Find a struct/class with this name (not impl blocks)
+                    if kind == crate::block::BlockKind::Class {
+                        return Some(block_id);
+                    }
                 }
             }
         }
-
-        result
+        None
     }
+
+    /// Resolve the trait reference of an impl block.
+    fn resolve_impl_trait(
+        &self,
+        _unit: &CompileUnit<'tcx>,
+        _impl_block: &crate::block::BlockImpl<'tcx>,
+    ) -> Option<BlockId> {
+        // Trait resolution requires looking at the impl's trait bound
+        // This would need language-specific field access (e.g., LangRust::field_trait)
+        // For now, return None - trait_ref should be set during graph building
+        None
+    }
+
+    /// Link trait relationships.
+    fn link_trait(&self, block_id: BlockId, trait_block: &crate::block::BlockTrait<'tcx>) {
+        // Methods
+        for method_id in trait_block.get_methods() {
+            self.add_relation(block_id, BlockRelation::HasMethod, method_id);
+            self.add_relation(method_id, BlockRelation::MethodOf, block_id);
+        }
+    }
+
+    /// Link enum relationships.
+    fn link_enum(&self, block_id: BlockId, enum_block: &crate::block::BlockEnum<'tcx>) {
+        // Variants are like fields
+        for variant_id in enum_block.get_variants() {
+            self.add_relation(block_id, BlockRelation::HasField, variant_id);
+            self.add_relation(variant_id, BlockRelation::FieldOf, block_id);
+        }
+    }
+
+    /// Link call site relationships.
+    fn link_call(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        call: &crate::block::BlockCall<'tcx>,
+    ) {
+        // Link call site to callee
+        if let Some(callee_id) = self.resolve_callee(unit, call) {
+            self.add_relation(block_id, BlockRelation::Calls, callee_id);
+            self.add_relation(callee_id, BlockRelation::CalledBy, block_id);
+        }
+    }
+
+    /// Link field relationships.
+    fn link_field(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        field: &crate::block::BlockField<'tcx>,
+    ) {
+        // Type reference (Uses relationship)
+        if let Some(type_id) = field.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::Uses, type_id);
+            self.add_relation(type_id, BlockRelation::UsedBy, block_id);
+        } else {
+            // Try to resolve from HirNode symbol
+            if let Some(type_id) = self.resolve_field_type(unit, field) {
+                self.add_relation(block_id, BlockRelation::Uses, type_id);
+                self.add_relation(type_id, BlockRelation::UsedBy, block_id);
+            }
+        }
+    }
+
+    /// Resolve the type of a field.
+    fn resolve_field_type(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        field: &crate::block::BlockField<'tcx>,
+    ) -> Option<BlockId> {
+        // The field's HirNode should have a type identifier we can resolve
+        field.base.node.ident_symbol(unit)?.block_id()
+    }
+
 }

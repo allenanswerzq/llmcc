@@ -27,6 +27,7 @@ pub use ir_builder::{IrBuildOption, build_llmcc_ir, next_hir_id};
 pub use lang_def::{LanguageTrait, LanguageTraitImpl};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};
-pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
+// TODO: Re-enable after ProjectGraph query methods are implemented
+// pub use query::{GraphBlockInfo, ProjectQuery, QueryResult};
 pub use symbol::{ScopeId, SymId};
 pub use tree_sitter::{Node, Parser, Point, Tree, TreeCursor};

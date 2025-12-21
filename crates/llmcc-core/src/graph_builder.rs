@@ -7,7 +7,6 @@ use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
     BlockParameters, BlockReturn, BlockRoot, BlockStmt, BlockTrait,
 };
-use crate::block_rel::BlockRelationMap;
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph::UnitGraph;
 use crate::ir::HirNode;
@@ -307,7 +306,6 @@ pub fn build_unit_graph<'tcx, L: LanguageTrait>(
     Ok(UnitGraph::new(
         unit_index,
         root_block,
-        BlockRelationMap::default(),
     ))
 }
 

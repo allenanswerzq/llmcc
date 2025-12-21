@@ -1,3 +1,7 @@
+// TODO: Re-enable after ProjectGraph query methods are implemented
+#![allow(dead_code, unused_imports)]
+
+/*
 use crate::block::{BlockKind, BlockRelation};
 use crate::graph::{UnitNode, ProjectGraph};
 
@@ -540,3 +544,4 @@ impl<'tcx> ProjectQuery<'tcx> {
         }
     }
 }
+*/

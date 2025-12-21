@@ -264,7 +264,14 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
     }
 }
 
-fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
+fn generate_outputs<'tcx>(_opts: &LlmccOptions, _pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
+    // TODO: Re-enable after ProjectGraph query methods are implemented
+    // For now, graph rendering and query functionality is disabled
+    None
+}
+
+/*
+fn generate_outputs_disabled<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
     // Check if any graph output is requested
     let wants_dep_graph = opts.design_graph || opts.dep_graph;
     let wants_arch_graph = opts.arch_graph;
@@ -317,3 +324,4 @@ fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>)
         None
     }
 }
+*/

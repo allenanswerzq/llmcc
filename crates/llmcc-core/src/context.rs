@@ -140,10 +140,6 @@ impl<'tcx> CompileUnit<'tcx> {
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
-    pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
-        self.cc.unresolve_symbols.write().push(symbol);
-    }
-
     pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
         // Get block info before allocation
         let block_kind = block.kind();
@@ -219,7 +215,6 @@ pub struct CompileCtxt<'tcx> {
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
     pub block_arena: BlockArena<'tcx>,
-    pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 
     /// Index maps for efficient block lookups by name, kind, unit, and id
@@ -301,7 +296,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
-            unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
             build_metrics: metrics,
@@ -348,7 +342,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
-            unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
             build_metrics: metrics,

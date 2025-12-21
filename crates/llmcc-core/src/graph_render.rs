@@ -632,7 +632,6 @@ fn find_connected_components(
 use crate::block::BlockKind;
 use crate::block::BlockRelation;
 use crate::graph::ProjectGraph;
-use crate::pagerank::PageRanker;
 
 const INTERESTING_KINDS: [BlockKind; 4] = [
     BlockKind::Class,
@@ -702,13 +701,13 @@ fn collect_arch_edges(
     let mut edges = BTreeSet::new();
 
     for node in nodes {
-        let Some(unit_graph) = project.unit_graph(node.unit_index) else {
+        // Skip if unit doesn't exist
+        if project.unit_graph(node.unit_index).is_none() {
             continue;
-        };
+        }
         let from_idx = node_index[&node.block_id];
 
-        let dependencies = unit_graph
-            .edges()
+        let dependencies = project.cc.related_map
             .get_related(node.block_id, BlockRelation::Calls);
 
         for dep_block_id in dependencies {
@@ -722,31 +721,13 @@ fn collect_arch_edges(
 }
 
 fn ranked_block_filter(
-    project: &ProjectGraph,
-    top_k: Option<usize>,
-    interesting_kinds: &[BlockKind],
+    _project: &ProjectGraph,
+    _top_k: Option<usize>,
+    _interesting_kinds: &[BlockKind],
 ) -> Option<HashSet<BlockId>> {
-    let ranked_order = top_k.and_then(|limit| {
-        let ranker = PageRanker::new(project);
-        let mut collected = Vec::new();
-
-        for ranked in ranker.rank() {
-            if interesting_kinds.contains(&ranked.kind) {
-                collected.push(ranked.node.block_id);
-            }
-            if collected.len() >= limit {
-                break;
-            }
-        }
-
-        if collected.is_empty() {
-            None
-        } else {
-            Some(collected)
-        }
-    });
-
-    ranked_order.map(|ordered| ordered.into_iter().collect())
+    // PageRank is not currently implemented in the new design
+    // Return None to disable ranked filtering
+    None
 }
 
 fn collect_nodes(
@@ -845,13 +826,13 @@ fn collect_edges(
     let mut edges = BTreeSet::new();
 
     for node in nodes {
-        let Some(unit_graph) = project.unit_graph(node.unit_index) else {
+        // Skip if unit doesn't exist
+        if project.unit_graph(node.unit_index).is_none() {
             continue;
-        };
+        }
         let from_idx = node_index[&node.block_id];
 
-        let dependencies = unit_graph
-            .edges()
+        let dependencies = project.cc.related_map
             .get_related(node.block_id, BlockRelation::Calls);
 
         for dep_block_id in dependencies {
