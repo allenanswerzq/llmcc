@@ -7,7 +7,7 @@ use llmcc_cli::{GraphOptions, ProcessingOptions};
 use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
-use llmcc_core::graph_builder::{BlockId, BlockRelation, GraphBuildOption, build_llmcc_graph};
+use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
@@ -31,6 +31,10 @@ struct SymbolSnapshot {
     kind: String,
     name: String,
     is_global: bool,
+    /// Type this symbol resolves to (SymId -> name)
+    type_of: Option<String>,
+    /// Block this symbol is associated with
+    block_id: Option<String>,
 }
 
 #[derive(Clone)]
@@ -45,6 +49,19 @@ struct BlockSnapshot {
     label: String,
     kind: String,
     name: String,
+}
+
+/// Snapshot of block relations from cc.related_map
+#[derive(Clone)]
+struct BlockRelationSnapshot {
+    /// Block label like "u0:5"
+    label: String,
+    /// Block kind
+    kind: String,
+    /// Block name
+    name: String,
+    /// Relations: (relation_type, target_labels)
+    relations: Vec<(String, Vec<String>)>,
 }
 
 #[derive(Debug, Clone)]
@@ -305,8 +322,18 @@ fn build_pipeline_summary(
         .expectations
         .iter()
         .any(|expect| expect.kind == "symbol-deps");
+    let needs_symbol_types = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "symbol-types");
+    let needs_block_relations = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "block-relations");
 
     if !needs_symbols
+        && !needs_symbol_types
+        && !needs_block_relations
         && !needs_dep_graph
         && !needs_arch_graph
         && !needs_block_reports
@@ -331,6 +358,8 @@ fn build_pipeline_summary(
     let options = PipelineOptions::new()
         // file_paths is empty, so discover_language_files will be used
         .with_keep_symbols(needs_symbols)
+        .with_keep_symbol_types(needs_symbol_types)
+        .with_keep_block_relations(needs_block_relations)
         .with_build_dep_graph(needs_dep_graph)
         .with_build_arch_graph(needs_arch_graph)
         .with_build_block_reports(needs_block_reports)
@@ -360,6 +389,8 @@ fn build_pipeline_summary(
 #[derive(Default)]
 struct PipelineSummary {
     symbols: Option<Vec<SymbolSnapshot>>,
+    symbol_types: Option<Vec<SymbolSnapshot>>,
+    block_relations: Option<Vec<BlockRelationSnapshot>>,
     dep_graph_dot: Option<String>,
     arch_graph_dot: Option<String>,
     block_list: Option<Vec<BlockSnapshot>>,
@@ -378,6 +409,10 @@ pub struct PipelineOptions {
     pub file_paths: Vec<String>,
     /// Whether to collect symbol information.
     pub keep_symbols: bool,
+    /// Whether to collect symbol type resolution info.
+    pub keep_symbol_types: bool,
+    /// Whether to collect block relations.
+    pub keep_block_relations: bool,
     /// Whether to build the dependency graph.
     pub build_dep_graph: bool,
     /// Whether to build the architecture graph.
@@ -438,6 +473,16 @@ impl PipelineOptions {
         self
     }
 
+    pub fn with_keep_symbol_types(mut self, keep: bool) -> Self {
+        self.keep_symbol_types = keep;
+        self
+    }
+
+    pub fn with_keep_block_relations(mut self, keep: bool) -> Self {
+        self.keep_block_relations = keep;
+        self
+    }
+
     pub fn with_parallel(mut self, parallel: bool) -> Self {
         self.parallel = parallel;
         self
@@ -467,6 +512,20 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 .as_ref()
                 .ok_or_else(|| anyhow!("case {} requested symbols but summary missing", case_id))?;
             Ok(render_symbol_snapshot(symbols))
+        }
+        "symbol-types" => {
+            let symbols = summary
+                .symbol_types
+                .as_ref()
+                .ok_or_else(|| anyhow!("case {} requested symbol-types but summary missing", case_id))?;
+            Ok(render_symbol_types_snapshot(symbols))
+        }
+        "block-relations" => {
+            let relations = summary
+                .block_relations
+                .as_ref()
+                .ok_or_else(|| anyhow!("case {} requested block-relations but summary missing", case_id))?;
+            Ok(render_block_relations_snapshot(relations))
         }
         "dep-graph" => summary.dep_graph_dot.clone().ok_or_else(|| {
             anyhow!(
@@ -563,6 +622,110 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
             global_width = global_width,
         );
     }
+    buf
+}
+
+/// Render symbol types snapshot showing type resolution.
+/// Format: label | kind | name | -> type_label (type_name)
+fn render_symbol_types_snapshot(entries: &[SymbolSnapshot]) -> String {
+    if entries.is_empty() {
+        return "none\n".to_string();
+    }
+
+    let mut rows = entries.to_vec();
+    rows.sort_by(|a, b| {
+        a.unit
+            .cmp(&b.unit)
+            .then_with(|| a.id.cmp(&b.id))
+            .then_with(|| a.kind.cmp(&b.kind))
+            .then_with(|| a.name.cmp(&b.name))
+    });
+
+    let label_width = rows
+        .iter()
+        .map(|row| format!("u{}:{}", row.unit, row.id).len())
+        .max()
+        .unwrap_or(0);
+    let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
+    let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
+
+    let mut buf = String::new();
+    for row in rows {
+        let label = format!("u{}:{}", row.unit, row.id);
+        let type_info = if let Some(type_of) = &row.type_of {
+            format!("-> {}", type_of)
+        } else {
+            String::new()
+        };
+        let block_info = if let Some(block_id) = &row.block_id {
+            format!("[{}]", block_id)
+        } else {
+            String::new()
+        };
+        let _ = writeln!(
+            buf,
+            "{:<label_width$} | {:kind_width$} | {:name_width$} | {} {}",
+            label,
+            row.kind,
+            row.name,
+            type_info,
+            block_info,
+            label_width = label_width,
+            kind_width = kind_width,
+            name_width = name_width,
+        );
+    }
+    buf
+}
+
+/// Render block relations snapshot.
+/// Uses a clean edge-based format, filtering out redundant relations.
+/// Format: name:id (kind) --relation--> name:id (kind)
+fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String {
+    if entries.is_empty() {
+        return "none\n".to_string();
+    }
+
+    // Relations to skip (they're either redundant or shown in block-graph)
+    let skip_relations = ["contains", "contained_by"];
+
+    // Collect all edges
+    let mut edges: Vec<String> = Vec::new();
+
+    for entry in entries {
+        let id = entry.label.replace("u0:", "");
+        let source = format!("{}:{} ({})", entry.name, id, entry.kind);
+
+        for (rel_type, targets) in &entry.relations {
+            // Skip redundant relations
+            if skip_relations.contains(&rel_type.as_str()) {
+                continue;
+            }
+
+            for target_label in targets {
+                // Find target entry to get its name and kind
+                let (target_name, target_kind) = entries
+                    .iter()
+                    .find(|e| e.label == *target_label)
+                    .map(|e| (e.name.as_str(), e.kind.as_str()))
+                    .unwrap_or(("?", "?"));
+                let target_id = target_label.replace("u0:", "");
+                let target = format!("{}:{} ({})", target_name, target_id, target_kind);
+
+                edges.push(format!("{} --{}--> {}", source, rel_type, target));
+            }
+        }
+    }
+
+    if edges.is_empty() {
+        return "none\n".to_string();
+    }
+
+    // Sort edges for deterministic output
+    edges.sort();
+
+    let mut buf = edges.join("\n");
+    buf.push('\n');
     buf
 }
 
@@ -675,8 +838,9 @@ fn normalize(kind: &str, text: &str, temp_dir_path: Option<&str>) -> String {
     };
 
     match kind {
-        "symbols" | "blocks" => normalize_symbols(&canonical),
+        "symbols" | "blocks" | "symbol-types" => normalize_symbols(&canonical),
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
+        "block-relations" => normalize_block_relations(&canonical),
         "dep-graph" | "arch-graph" => normalize_graph(&canonical),
         "block-graph" => normalize_block_graph(&canonical),
         _ => canonical,
@@ -737,18 +901,30 @@ fn normalize_symbol_deps(text: &str) -> String {
     rows.join("\n")
 }
 
-fn normalize_block_graph(text: &str) -> String {
+fn normalize_block_relations(text: &str) -> String {
+    // Simple line-based format now: each line is an edge like
+    // "source (id) --relation--> target (id)"
+    let mut lines: Vec<String> = text
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.is_empty())
+        .collect();
+
+    lines.sort();
+    lines.join("\n")
+}fn normalize_block_graph(text: &str) -> String {
     let trimmed = text.trim();
     if trimmed.is_empty() {
         return String::new();
     }
 
+    // Parse and re-format to ensure consistent indentation
     match parse_sexpr(trimmed) {
         Ok(exprs) => exprs
             .into_iter()
             .map(|expr| format_sexpr(&expr))
             .collect::<Vec<_>>()
-            .join("\n"),
+            .join("\n\n"),
         Err(_) => trimmed.to_string(),
     }
 }
@@ -897,11 +1073,46 @@ fn parse_expr(tokens: &[String], idx: &mut usize) -> Result<SExpr, ()> {
 }
 
 fn format_sexpr(expr: &SExpr) -> String {
+    format_sexpr_indented(expr, 0)
+}
+
+fn format_sexpr_indented(expr: &SExpr, depth: usize) -> String {
     match expr {
         SExpr::Atom(atom) => atom.clone(),
         SExpr::List(items) => {
-            let parts: Vec<String> = items.iter().map(format_sexpr).collect();
-            format!("({})", parts.join(" "))
+            if items.is_empty() {
+                return "()".to_string();
+            }
+
+            // Get the head (first atom, e.g., "root:1" or "root:1 main")
+            let head_parts: Vec<String> = items
+                .iter()
+                .take_while(|item| matches!(item, SExpr::Atom(_)))
+                .map(format_sexpr)
+                .collect();
+            let head = head_parts.join(" ");
+
+            // Get child lists
+            let children: Vec<&SExpr> = items
+                .iter()
+                .skip(head_parts.len())
+                .collect();
+
+            if children.is_empty() {
+                format!("({})", head)
+            } else {
+                let indent = "  ".repeat(depth);
+                let child_indent = "  ".repeat(depth + 1);
+                let mut buf = format!("({}\n", head);
+                for child in children {
+                    buf.push_str(&child_indent);
+                    buf.push_str(&format_sexpr_indented(child, depth + 1));
+                    buf.push('\n');
+                }
+                buf.push_str(&indent);
+                buf.push(')');
+                buf
+            }
         }
     }
 }
@@ -1009,16 +1220,8 @@ where
 
     // Bind symbols using new unified API
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
-    let mut project_graph = if options.build_dep_graph
-        || options.build_arch_graph
-        || options.build_block_reports
-        || options.build_block_graph
-    {
-        let mut graph = ProjectGraph::new(&cc);
-        graph.set_component_depth(options.component_depth);
-        if let Some(top_k) = options.pagerank_top_k {
-            graph.set_top_k(Some(top_k));
-        }
+    let mut project_graph = if options.build_block_reports || options.build_block_graph || options.keep_block_relations {
+        let graph = ProjectGraph::new(&cc);
         Some(graph)
     } else {
         None
@@ -1026,26 +1229,17 @@ where
     if let Some(project) = project_graph.as_mut() {
         let unit_graphs = build_llmcc_graph::<L>(
             &cc,
-            GraphBuildOption::new()
-                .with_sequential(sequential)
-                .with_component_depth(options.component_depth),
+            GraphBuildOption::new().with_sequential(sequential),
         )
         .unwrap();
         project.add_children(unit_graphs);
     }
-    let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph) =
-        if let Some(mut project) = project_graph {
+    let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph, block_relations) =
+        if let Some(project) = project_graph {
             project.connect_blocks();
-            let dep_graph = if options.build_dep_graph {
-                Some(project.render_design_graph())
-            } else {
-                None
-            };
-            let arch_graph = if options.build_arch_graph {
-                Some(project.render_arch_graph())
-            } else {
-                None
-            };
+            // Graph visualization is currently disabled
+            let dep_graph: Option<String> = None;
+            let arch_graph: Option<String> = None;
             let (list, deps) = if options.build_block_reports {
                 let (blocks, deps) = render_block_reports(&project);
                 (Some(blocks), Some(deps))
@@ -1057,12 +1251,23 @@ where
             } else {
                 None
             };
-            (dep_graph, arch_graph, list, deps, block_graph)
+            let block_relations = if options.keep_block_relations {
+                Some(snapshot_block_relations(&project))
+            } else {
+                None
+            };
+            (dep_graph, arch_graph, list, deps, block_graph, block_relations)
         } else {
-            (None, None, None, None, None)
+            (None, None, None, None, None, None)
         };
 
     let symbols = if options.keep_symbols {
+        Some(snapshot_symbols(&cc))
+    } else {
+        None
+    };
+
+    let symbol_types = if options.keep_symbol_types {
         Some(snapshot_symbols(&cc))
     } else {
         None
@@ -1076,6 +1281,8 @@ where
 
     Ok(PipelineSummary {
         symbols,
+        symbol_types,
+        block_relations,
         dep_graph_dot,
         arch_graph_dot,
         block_list,
@@ -1184,17 +1391,15 @@ fn render_block_graph_node(
     buf: &mut String,
 ) {
     let block = unit.bb(block_id);
-    let indent = "    ".repeat(depth);
+    let indent = "  ".repeat(depth);
     let kind = block.kind().to_string();
-    let _ = write!(buf, "{}({}:{}", indent, kind, block_id.as_u32());
 
-    if let Some(name) = block
-        .base()
-        .and_then(|base| base.opt_get_name())
-        .filter(|name| !name.is_empty())
-    {
-        let _ = write!(buf, " {}", name);
-    }
+    // Use describe_block for proper name resolution (handles fields, returns, etc.)
+    let name = describe_block(block_id, unit.cc)
+        .map(|desc| desc.name)
+        .unwrap_or_else(|| format!("block#{}", block_id.as_u32()));
+
+    let _ = write!(buf, "{}({}:{} {}", indent, kind, block_id.as_u32(), name);
 
     let children = block.children();
     if children.is_empty() {
@@ -1219,81 +1424,130 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
             .resolve_owned(symbol.name)
             .unwrap_or_else(|| "?".to_string());
 
+        // Get type_of info
+        let type_of = symbol.type_of().and_then(|sym_id| {
+            cc.opt_get_symbol(sym_id).map(|type_sym| {
+                let type_name = interner
+                    .resolve_owned(type_sym.name)
+                    .unwrap_or_else(|| "?".to_string());
+                let type_unit = type_sym.unit_index().unwrap_or_default();
+                format!("u{}:{} ({})", type_unit, sym_id.0 as u32, type_name)
+            })
+        });
+
+        // Get block_id info
+        let block_id = symbol.block_id().map(|bid| {
+            format!("u{}:{}", symbol.unit_index().unwrap_or_default(), bid.as_u32())
+        });
+
         rows.push(SymbolSnapshot {
             unit: symbol.unit_index().unwrap_or_default(),
             id: symbol.id().0 as u32,
             kind: format!("{:?}", symbol.kind()),
             name: name_str,
             is_global: symbol.is_global(),
+            type_of,
+            block_id,
         });
     }
 
     rows
 }
-fn snapshot_symbol_dependencies<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolDependencySnapshot> {
-    use std::collections::HashMap;
 
-    let symbols = cc.get_all_symbols();
-    let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
+fn snapshot_symbol_dependencies<'a>(_cc: &'a CompileCtxt<'a>) -> Vec<SymbolDependencySnapshot> {
+    // Symbol dependency tracking is currently disabled
+    // TODO: Implement via block relation traversal when needed
+    Vec::new()
+}
 
-    // Build initial cache of all symbols
-    for symbol in &symbols {
-        let sym_id_num = symbol.id().0 as u32;
-        let label = format!(
-            "u{}:{}",
-            symbol.unit_index().unwrap_or_default(),
-            sym_id_num
-        );
-        cache.insert(
-            sym_id_num,
-            SymbolDependencySnapshot {
+/// Snapshot block relations from the ProjectGraph.
+fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot> {
+    use llmcc_core::block::BlockRelation;
+    use std::collections::BTreeMap;
+
+    let cc = project.cc;
+    let related_map = &cc.related_map;
+
+    // Group relations by block
+    let mut block_map: BTreeMap<BlockId, BlockRelationSnapshot> = BTreeMap::new();
+
+    // First, collect all blocks that have relations
+    for block_id in related_map.get_connected_blocks() {
+        let Some(desc) = describe_block(block_id, cc) else {
+            continue;
+        };
+
+        let label = format!("u{}:{}", desc.unit, block_id.as_u32());
+
+        // Get all relations for this block
+        let relations = related_map.get_all_relations(block_id);
+
+        // Convert relations to grouped format
+        let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        for (relation, target_ids) in relations.iter() {
+            let rel_name = match relation {
+                BlockRelation::ImplFor => "impl_for",
+                BlockRelation::HasImpl => "has_impl",
+                BlockRelation::HasMethod => "has_method",
+                BlockRelation::MethodOf => "method_of",
+                BlockRelation::Contains => "contains",
+                BlockRelation::ContainedBy => "contained_by",
+                BlockRelation::Calls => "calls",
+                BlockRelation::CalledBy => "called_by",
+                BlockRelation::Uses => "uses",
+                BlockRelation::UsedBy => "used_by",
+                BlockRelation::HasParameters => "has_parameters",
+                BlockRelation::HasReturn => "has_return",
+                BlockRelation::HasField => "has_field",
+                BlockRelation::FieldOf => "field_of",
+                BlockRelation::Implements => "implements",
+                BlockRelation::ImplementedBy => "implemented_by",
+                BlockRelation::Unknown => "unknown",
+            };
+
+            for target_id in target_ids {
+                // Get target label
+                let target_label = if let Some(target_desc) = describe_block(*target_id, cc) {
+                    format!("u{}:{}", target_desc.unit, target_id.as_u32())
+                } else {
+                    format!("?:{}", target_id.as_u32())
+                };
+
+                grouped
+                    .entry(rel_name.to_string())
+                    .or_default()
+                    .push(target_label);
+            }
+        }
+
+        // Sort targets within each relation type
+        for targets in grouped.values_mut() {
+            targets.sort();
+        }
+
+        let relations_vec: Vec<(String, Vec<String>)> = grouped.into_iter().collect();
+
+        block_map.insert(
+            block_id,
+            BlockRelationSnapshot {
                 label,
-                depends_on: Vec::new(),
-                depended_by: Vec::new(),
+                kind: desc.kind.clone(),
+                name: desc.name.clone(),
+                relations: relations_vec,
             },
         );
     }
 
-    // Fill in dependencies
-    for symbol in &symbols {
-        let sym_id_num = symbol.id().0 as u32;
-        let deps = symbol.depends_ids();
-        for dep in deps {
-            if let Some(target) = cc.opt_get_symbol(dep) {
-                let dep_id_num = dep.0 as u32;
-                let dep_label = format!(
-                    "u{}:{}",
-                    target.unit_index().unwrap_or_default(),
-                    dep_id_num
-                );
-                if let Some(entry) = cache.get_mut(&sym_id_num) {
-                    entry.depends_on.push(dep_label.clone());
-                }
-                if let Some(target_entry) = cache.get_mut(&dep_id_num) {
-                    target_entry.depended_by.push(format!(
-                        "u{}:{}",
-                        symbol.unit_index().unwrap_or_default(),
-                        sym_id_num
-                    ));
-                }
-            }
-        }
-    }
-
-    let mut output: Vec<_> = cache.into_values().collect();
-    for entry in &mut output {
-        entry.depends_on.sort();
-        entry.depended_by.sort();
-    }
-    output
+    // Convert to vector, sorted by block id
+    block_map.into_values().collect()
 }
+
 fn render_block_reports(
     project: &ProjectGraph,
 ) -> (Vec<BlockSnapshot>, Vec<SymbolDependencySnapshot>) {
     use std::collections::BTreeMap;
-    use std::collections::HashMap;
 
-    let mut units: BTreeMap<usize, Vec<(BlockDescriptor, Vec<BlockDescriptor>)>> = BTreeMap::new();
+    let mut units: BTreeMap<usize, Vec<BlockDescriptor>> = BTreeMap::new();
 
     for unit_graph in project.units() {
         let unit_index = unit_graph.unit_index();
@@ -1304,77 +1558,31 @@ fn render_block_reports(
                 continue;
             };
             desc.kind = kind.to_string();
-
-            let mut deps = unit_graph
-                .edges()
-                .get_related(block_id, BlockRelation::DependsOn);
-            deps.sort_unstable_by_key(|id| id.as_u32());
-            deps.dedup();
-            let mut dep_descs: Vec<BlockDescriptor> = deps
-                .into_iter()
-                .filter_map(|id| describe_block(id, project.cc))
-                .collect();
-            dep_descs.sort_by(|a, b| (a.unit, &a.name).cmp(&(b.unit, &b.name)));
-            entries.push((desc, dep_descs));
+            entries.push(desc);
         }
 
-        entries.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+        entries.sort_by(|a, b| a.name.cmp(&b.name));
         if !entries.is_empty() {
             units.insert(unit_index, entries);
         }
     }
 
     let mut block_rows = Vec::new();
-    let mut dep_map: HashMap<String, SymbolDependencySnapshot> = HashMap::new();
+    // Block deps tracking is currently disabled - return empty deps
+    let deps: Vec<SymbolDependencySnapshot> = Vec::new();
 
     for (_unit, blocks) in units {
-        for (block, deps) in blocks {
+        for block in blocks {
             let label = format!("u{}:{}", block.unit, block.id.as_u32());
             block_rows.push(BlockSnapshot {
-                label: label.clone(),
+                label,
                 kind: block.kind.clone(),
                 name: block.name.clone(),
             });
-
-            {
-                let entry = dep_map
-                    .entry(label.clone())
-                    .or_insert(SymbolDependencySnapshot {
-                        label: label.clone(),
-                        depends_on: Vec::new(),
-                        depended_by: Vec::new(),
-                    });
-
-                for dep in &deps {
-                    let dep_label = format!("u{}:{}", dep.unit, dep.id.as_u32());
-                    entry.depends_on.push(dep_label.clone());
-                }
-            }
-
-            for dep in deps {
-                let dep_label = format!("u{}:{}", dep.unit, dep.id.as_u32());
-                dep_map
-                    .entry(dep_label.clone())
-                    .or_insert(SymbolDependencySnapshot {
-                        label: dep_label.clone(),
-                        depends_on: Vec::new(),
-                        depended_by: Vec::new(),
-                    })
-                    .depended_by
-                    .push(label.clone());
-            }
         }
     }
 
-    for snapshot in dep_map.values_mut() {
-        snapshot.depends_on.sort();
-        snapshot.depended_by.sort();
-    }
-
     block_rows.sort_by(|a, b| a.label.cmp(&b.label));
-    let mut deps: Vec<_> = dep_map.into_values().collect();
-    deps.sort_by(|a, b| a.label.cmp(&b.label));
-
     (block_rows, deps)
 }
 
@@ -1386,16 +1594,90 @@ struct BlockDescriptor {
     id: llmcc_core::graph_builder::BlockId,
 }
 
-fn describe_block(
+fn describe_block<'a>(
     block_id: llmcc_core::graph_builder::BlockId,
-    cc: &llmcc_core::context::CompileCtxt,
+    cc: &'a llmcc_core::context::CompileCtxt<'a>,
 ) -> Option<BlockDescriptor> {
     let (unit, name, kind) = cc.get_block_info(block_id)?;
-    let name = name.unwrap_or_else(|| format!("block#{block_id}"));
+
+    // Try to get a proper name from multiple sources:
+    // 1. From block info (indexed name)
+    // 2. From the block's specific type (e.g., BlockField.name)
+    // 3. From the block's base (HIR node)
+    // 4. From first identifier child node
+    // 5. From associated symbol
+    // 6. Fall back to block#N
+    let name = name
+        .or_else(|| {
+            // Try to get name from specific block types
+            let index = (block_id.0 as usize).saturating_sub(1);
+            cc.block_arena.bb().get(index).and_then(|bb| {
+                // Try field name
+                if let Some(field) = bb.as_field() {
+                    if !field.name.is_empty() {
+                        return Some(field.name.clone());
+                    }
+                }
+                // Try base name
+                bb.base()
+                    .and_then(|base| base.opt_get_name())
+                    .filter(|n| !n.is_empty())
+                    .map(|s| s.to_string())
+            })
+        })
+        .or_else(|| {
+            // Try to find first identifier child of the node
+            let index = (block_id.0 as usize).saturating_sub(1);
+            cc.block_arena.bb().get(index).and_then(|bb| {
+                let node = bb.base()?.node;
+                // Recursively search for first identifier in children
+                find_first_ident_name(cc, &node)
+            })
+        })
+        .or_else(|| {
+            // Try to get name from associated symbol
+            cc.find_symbol_by_block_id(block_id)
+                .and_then(|sym| cc.interner.resolve_owned(sym.name))
+        })
+        .unwrap_or_else(|| format!("block#{block_id}"));
+
     Some(BlockDescriptor {
         name,
         kind: kind.to_string(),
         unit,
         id: block_id,
     })
+}
+
+/// Recursively find the first identifier name in a node's children
+fn find_first_ident_name<'a>(
+    cc: &'a llmcc_core::context::CompileCtxt<'a>,
+    node: &llmcc_core::ir::HirNode<'a>,
+) -> Option<String> {
+    use llmcc_core::ir::HirKind;
+
+    // Check if this node itself is an identifier
+    if node.is_kind(HirKind::Identifier) {
+        if let Some(ident) = node.as_ident() {
+            return Some(ident.name.clone());
+        }
+    }
+
+    // Search through children
+    for child_id in node.child_ids() {
+        if let Some(child_node) = cc.get_hir_node(*child_id) {
+            if child_node.is_kind(HirKind::Identifier) {
+                if let Some(ident) = child_node.as_ident() {
+                    return Some(ident.name.clone());
+                }
+            }
+            // Recurse into internal nodes
+            if child_node.is_kind(HirKind::Internal) {
+                if let Some(name) = find_first_ident_name(cc, &child_node) {
+                    return Some(name);
+                }
+            }
+        }
+    }
+    None
 }

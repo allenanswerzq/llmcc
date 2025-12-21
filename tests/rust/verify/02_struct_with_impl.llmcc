@@ -1,0 +1,66 @@
+===============================================================================
+struct-with-impl
+===============================================================================
+Verify struct with impl block and method.
+Tests: symbol collection, block building, impl-to-struct linking.
+
+--- file: src/main.rs ---
+struct Foo {
+    value: i32,
+}
+
+impl Foo {
+    fn bar(&self) -> i32 {
+        self.value
+    }
+}
+
+--- expect:symbols ---
+u0:0 | Primitive | i32 | [global]
+u0:1 | Primitive | i64 | [global]
+u0:2 | Primitive | i16 | [global]
+u0:3 | Primitive | i8 | [global]
+u0:4 | Primitive | i128 | [global]
+u0:5 | Primitive | isize | [global]
+u0:6 | Primitive | u32 | [global]
+u0:7 | Primitive | u64 | [global]
+u0:8 | Primitive | u16 | [global]
+u0:9 | Primitive | u8 | [global]
+u0:10 | Primitive | u128 | [global]
+u0:11 | Primitive | usize | [global]
+u0:12 | Primitive | f32 | [global]
+u0:13 | Primitive | f64 | [global]
+u0:14 | Primitive | bool | [global]
+u0:15 | Primitive | char | [global]
+u0:16 | Primitive | str | [global]
+u0:17 | Primitive | String | [global]
+u0:18 | Crate | _c | [global]
+u0:19 | File | main | [global]
+u0:20 | Module | crate | [global]
+u0:21 | Struct | Foo |
+u0:22 | TypeAlias | self |
+u0:23 | TypeAlias | Self |
+u0:24 | Field | value |
+u0:25 | Function | bar |
+
+--- expect:blocks ---
+u0:1 | root | main |
+u0:2 | class | Foo |
+u0:3 | field | value |
+u0:4 | impl | Foo |
+u0:5 | func | bar |
+u0:6 | parameters | block#6 |
+u0:7 | return | i32 |
+
+--- expect:block-graph ---
+(root:1 main
+  (class:2 Foo
+    (field:3 value)
+  )
+  (impl:4 Foo
+    (func:5 bar
+      (parameters:6 block#6)
+      (return:7 i32)
+    )
+  )
+)
