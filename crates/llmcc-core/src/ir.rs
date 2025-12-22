@@ -195,6 +195,18 @@ impl<'hir> HirNode<'hir> {
         None
     }
 
+    /// Find the first text node's content in children (for keywords like "self").
+    pub fn find_text(&self, unit: &CompileUnit<'hir>) -> Option<&str> {
+        for child in self.children(unit) {
+            if child.is_kind(HirKind::Text) {
+                if let Some(text) = child.as_text() {
+                    return Some(text.text());
+                }
+            }
+        }
+        None
+    }
+
     /// Find identifier for the first child with a matching field ID.
     pub fn ident_by_field(
         &self,
@@ -519,7 +531,7 @@ impl<'hir> HirScope<'hir> {
     }
 
     pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
-        self.scope().opt_symbol()
+        self.opt_scope().and_then(|scope| scope.opt_symbol())
     }
 }
 

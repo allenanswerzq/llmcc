@@ -5,7 +5,7 @@ use crate::DynError;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
-    BlockParameters, BlockReturn, BlockRoot, BlockStmt, BlockTrait,
+    BlockParameter, BlockReturn, BlockRoot, BlockStmt, BlockTrait,
 };
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph::UnitGraph;
@@ -114,17 +114,34 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
-                let block = BlockField::new(id, node, parent, children);
+                let mut block = BlockField::new(id, node, parent, children);
+                // Find identifier name from children using ir.rs find_ident
+                if let Some(ident) = node.find_ident(&self.unit) {
+                    block.name = ident.name.clone();
+                }
+                // Populate type info from symbol
+                self.populate_type_info(&block.base, node);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Field(block_ref)
             }
-            BlockKind::Parameters => {
-                let block = BlockParameters::new(id, node, parent, children);
+            BlockKind::Parameter => {
+                let mut block = BlockParameter::new(id, node, parent, children);
+                // Find identifier name from children using ir.rs find_ident
+                if let Some(ident) = node.find_ident(&self.unit) {
+                    block.name = ident.name.clone();
+                } else if let Some(text) = node.find_text(&self.unit) {
+                    // Fallback: look for text nodes like "self" keyword
+                    block.name = text.to_string();
+                }
+                // Populate type info from symbol
+                self.populate_type_info(&block.base, node);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
-                BasicBlock::Parameters(block_ref)
+                BasicBlock::Parameter(block_ref)
             }
             BlockKind::Return => {
                 let block = BlockReturn::new(id, node, parent, children);
+                // Populate type info from symbol
+                self.populate_type_info(&block.base, node);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Return(block_ref)
             }
@@ -184,8 +201,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             BasicBlock::Func(func) => {
                 for &(child_id, child_kind) in children {
                     match child_kind {
-                        BlockKind::Parameters => func.set_parameters(child_id),
-                        BlockKind::Return => func.set_returns(child_id),
+                        BlockKind::Parameter => func.add_parameter(child_id),
                         BlockKind::Stmt | BlockKind::Call => func.add_stmt(child_id),
                         _ => {}
                     }
@@ -226,6 +242,54 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
+    /// Populate type info on BlockBase from the node.
+    fn populate_type_info(&self, base: &crate::block::BlockBase<'tcx>, node: HirNode<'tcx>) {
+        // Strategy 1: Look at children for identifier with type_of symbol
+        // Works for fields and parameters where the name identifier has type_of set
+        for child in node.children(&self.unit) {
+            if let Some(child_sym) = child.opt_symbol() {
+                if let Some(type_sym_id) = child_sym.type_of() {
+                    if let Some(type_sym) = self.unit.cc.opt_get_symbol(type_sym_id) {
+                        if let Some(type_name) = self.unit.cc.interner.resolve_owned(type_sym.name) {
+                            base.set_type_name(type_name);
+                        }
+                        if let Some(type_block_id) = type_sym.block_id() {
+                            base.set_type_ref(type_block_id);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Strategy 2: Node's own scope/ident - for return types where node IS the type
+        if let Some(scope) = node.as_scope() {
+            if let Some(ident) = *scope.ident.read() {
+                base.set_type_name(ident.name.clone());
+                if let Some(sym) = ident.opt_symbol() {
+                    if let Some(type_block_id) = sym.block_id() {
+                        if type_block_id != base.id {
+                            base.set_type_ref(type_block_id);
+                        }
+                    }
+                }
+                return;
+            }
+        }
+
+        // Strategy 3: Direct symbol on the node - fallback
+        if let Some(type_sym) = node.opt_symbol() {
+            if let Some(type_name) = self.unit.cc.interner.resolve_owned(type_sym.name) {
+                base.set_type_name(type_name);
+            }
+            if let Some(type_block_id) = type_sym.block_id() {
+                if type_block_id != base.id {
+                    base.set_type_ref(type_block_id);
+                }
+            }
+        }
+    }
+
     /// Get the effective block kind for a node, checking field first then node type.
     fn effective_block_kind(node: HirNode<'tcx>) -> BlockKind {
         let field_kind = Language::block_kind(node.field_id());
@@ -248,9 +312,9 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 | BlockKind::Const
                 | BlockKind::Impl
                 | BlockKind::Field
-                | BlockKind::Parameters
-                | BlockKind::Call
+                | BlockKind::Parameter
                 | BlockKind::Return
+                | BlockKind::Call
                 | BlockKind::Root
         )
     }

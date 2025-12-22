@@ -128,7 +128,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         // 3. Recurse into children (pre-order: process this node before children)
         for child_id in block.children() {
-            let child = unit.bb(*child_id);
+            let child = unit.bb(child_id);
             self.dfs_connect(unit, &child, Some(block_id));
         }
     }
@@ -146,9 +146,9 @@ impl<'tcx> ProjectGraph<'tcx> {
         block_id: BlockId,
         func: &crate::block::BlockFunc<'tcx>,
     ) {
-        // Parameters
-        if let Some(params_id) = func.get_parameters() {
-            self.add_relation(block_id, BlockRelation::HasParameters, params_id);
+        // Parameters - now individual BlockParameter blocks
+        for param_id in func.get_parameters() {
+            self.add_relation(block_id, BlockRelation::HasParameters, param_id);
         }
 
         // Return type
@@ -178,7 +178,7 @@ impl<'tcx> ProjectGraph<'tcx> {
 
         // Recurse into children
         for child_id in block.children() {
-            self.find_calls_recursive(unit, caller_func_id, *child_id);
+            self.find_calls_recursive(unit, caller_func_id, child_id);
         }
     }
 
@@ -238,11 +238,26 @@ impl<'tcx> ProjectGraph<'tcx> {
             self.add_relation(block_id, BlockRelation::ImplFor, target_id);
             self.add_relation(target_id, BlockRelation::HasImpl, block_id);
 
-            // Copy impl methods to the target struct/type
+            // Move impl methods to the target class as children
             let target_block = unit.bb(target_id);
             if let Some(class) = target_block.as_class() {
                 for method_id in impl_block.get_methods() {
                     class.add_method(method_id);
+                    // Add method as child of the class
+                    class.base.add_child(method_id);
+                    // Update method's parent to point to class
+                    let method_block = unit.bb(method_id);
+                    if let Some(base) = method_block.base() {
+                        base.set_parent(target_id);
+                    }
+                }
+            }
+
+            // Remove impl block from its parent's children (typically root)
+            if let Some(parent_id) = impl_block.base.get_parent() {
+                let parent_block = unit.bb(parent_id);
+                if let Some(base) = parent_block.base() {
+                    base.remove_child(block_id);
                 }
             }
         }
@@ -334,15 +349,15 @@ impl<'tcx> ProjectGraph<'tcx> {
         block_id: BlockId,
         field: &crate::block::BlockField<'tcx>,
     ) {
-        // Type reference (Uses relationship)
-        if let Some(type_id) = field.get_type_ref() {
-            self.add_relation(block_id, BlockRelation::Uses, type_id);
-            self.add_relation(type_id, BlockRelation::UsedBy, block_id);
+        // Type reference (TypeOf relationship)
+        if let Some(type_id) = field.base.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         } else {
             // Try to resolve from HirNode symbol
             if let Some(type_id) = self.resolve_field_type(unit, field) {
-                self.add_relation(block_id, BlockRelation::Uses, type_id);
-                self.add_relation(type_id, BlockRelation::UsedBy, block_id);
+                self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+                self.add_relation(type_id, BlockRelation::TypeFor, block_id);
             }
         }
     }

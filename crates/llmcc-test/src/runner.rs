@@ -25,6 +25,7 @@ pub use llmcc_cli::{
 };
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct SymbolSnapshot {
     unit: usize,
     id: u32,
@@ -45,6 +46,7 @@ struct SymbolDependencySnapshot {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct BlockSnapshot {
     label: String,
     kind: String,
@@ -130,7 +132,7 @@ pub fn run_cases_for_file_with_parallel(
     file: &mut CorpusFile,
     update: bool,
     keep_temps: bool,
-    parallel: bool,
+    _parallel: bool,
     print_ir: bool,
     component_depth: usize,
     pagerank_top_k: Option<usize>,
@@ -142,7 +144,7 @@ pub fn run_cases_for_file_with_parallel(
         None,
         &mut matched,
         keep_temps,
-        parallel,
+        false,
         print_ir,
         component_depth,
         pagerank_top_k,
@@ -156,14 +158,13 @@ fn run_cases_in_file(
     filter: Option<&str>,
     matched: &mut usize,
     keep_temps: bool,
-    parallel: bool,
+    _parallel: bool,
     print_ir: bool,
     component_depth: usize,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
-    let mut printed_case_header = false;
     for idx in 0..file.cases.len() {
         let run_case = {
             let case = &file.cases[idx];
@@ -180,25 +181,39 @@ fn run_cases_in_file(
 
         *matched += 1;
         let case_name = file.cases[idx].id();
-        if printed_case_header {
-            for _ in 0..3 {
-                println!();
-            }
-        }
-        println!(">>> running {case_name}");
-        printed_case_header = true;
+        print!("  {case_name} ... ");
+        // Flush to ensure the test name appears before we run
+        use std::io::Write;
+        let _ = std::io::stdout().flush();
+
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
             evaluate_case(
                 case,
                 update,
                 keep_temps,
-                parallel,
+                _parallel,
                 print_ir,
                 component_depth,
                 pagerank_top_k,
             )?
         };
+
+        // Print result immediately after test completes
+        match outcome.status {
+            CaseStatus::Passed => println!("ok"),
+            CaseStatus::Updated => println!("updated"),
+            CaseStatus::Failed => {
+                println!("FAILED");
+                if let Some(message) = &outcome.message {
+                    for line in message.lines() {
+                        println!("        {line}");
+                    }
+                }
+            }
+            CaseStatus::NoExpectations => println!("skipped (no expectations)"),
+        }
+
         if mutated {
             file.mark_dirty();
             mutated_file = true;
@@ -215,7 +230,7 @@ fn evaluate_case(
     case: &mut CorpusCase,
     update: bool,
     keep_temps: bool,
-    parallel: bool,
+    _parallel: bool,
     print_ir: bool,
     component_depth: usize,
     pagerank_top_k: Option<usize>,
@@ -238,7 +253,7 @@ fn evaluate_case(
     let summary = build_pipeline_summary(
         case,
         keep_temps,
-        parallel,
+        _parallel,
         print_ir,
         component_depth,
         pagerank_top_k,
@@ -259,8 +274,14 @@ fn evaluate_case(
         }
 
         if update {
-            // Save the normalized version with $TMP placeholder
-            expect.value = ensure_trailing_newline(actual_norm);
+            // Save the actual formatted output (with alignment/formatting preserved)
+            // We apply temp_dir replacement if needed
+            let actual_to_save = if let Some(tmp_path) = temp_dir_path {
+                actual.replace(tmp_path, "$TMP")
+            } else {
+                actual.clone()
+            };
+            expect.value = ensure_trailing_newline(actual_to_save);
             mutated = true;
             status = CaseStatus::Updated;
         } else {
@@ -387,6 +408,7 @@ fn build_pipeline_summary(
 }
 
 #[derive(Default)]
+#[allow(dead_code)]
 struct PipelineSummary {
     symbols: Option<Vec<SymbolSnapshot>>,
     symbol_types: Option<Vec<SymbolSnapshot>>,
@@ -631,6 +653,7 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
 
 /// Render symbol types snapshot showing type resolution.
 /// Format: label | kind | name | -> type_label (type_name)
+#[allow(dead_code)]
 fn render_symbol_types_snapshot(entries: &[SymbolSnapshot]) -> String {
     if entries.is_empty() {
         return "none\n".to_string();
@@ -684,7 +707,7 @@ fn render_symbol_types_snapshot(entries: &[SymbolSnapshot]) -> String {
 
 /// Render block relations snapshot.
 /// Uses a clean edge-based format, filtering out redundant relations.
-/// Format: name:id (kind) --relation--> name:id (kind)
+/// Format: name:id (kind)  --relation-->  name:id (kind)
 fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String {
     if entries.is_empty() {
         return "none\n".to_string();
@@ -693,8 +716,8 @@ fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String 
     // Relations to skip (they're either redundant or shown in block-graph)
     let skip_relations = ["contains", "contained_by"];
 
-    // Collect all edges
-    let mut edges: Vec<String> = Vec::new();
+    // Collect all edges as (source, relation, target) tuples
+    let mut edges: Vec<(String, String, String)> = Vec::new();
 
     for entry in entries {
         let id = entry.label.replace("u0:", "");
@@ -716,7 +739,7 @@ fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String 
                 let target_id = target_label.replace("u0:", "");
                 let target = format!("{}:{} ({})", target_name, target_id, target_kind);
 
-                edges.push(format!("{} --{}--> {}", source, rel_type, target));
+                edges.push((source.clone(), rel_type.clone(), target));
             }
         }
     }
@@ -728,13 +751,28 @@ fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String 
     // Sort edges for deterministic output
     edges.sort();
 
-    let mut buf = edges.join("\n");
-    buf.push('\n');
+    // Calculate column widths for alignment
+    let source_width = edges.iter().map(|(s, _, _)| s.len()).max().unwrap_or(0);
+    let rel_width = edges.iter().map(|(_, r, _)| r.len()).max().unwrap_or(0);
+
+    let mut buf = String::new();
+    for (source, rel, target) in &edges {
+        let _ = writeln!(
+            buf,
+            "{:<source_width$}  --{:^rel_width$}-->  {}",
+            source,
+            rel,
+            target,
+            source_width = source_width,
+            rel_width = rel_width,
+        );
+    }
     buf
 }
 
 use std::cmp::Ordering;
 
+#[allow(dead_code)]
 fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
     if entries.is_empty() {
         return "none\n".to_string();
@@ -763,6 +801,7 @@ fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
     buf
 }
 
+#[allow(dead_code)]
 fn compare_block_snapshots(a: &BlockSnapshot, b: &BlockSnapshot) -> Ordering {
     match (parse_block_label(&a.label), parse_block_label(&b.label)) {
         (Some(ka), Some(kb)) => ka
@@ -779,6 +818,7 @@ fn compare_block_snapshots(a: &BlockSnapshot, b: &BlockSnapshot) -> Ordering {
     }
 }
 
+#[allow(dead_code)]
 fn parse_block_label(label: &str) -> Option<(usize, usize)> {
     let mut parts = label.split(':');
     let unit_part = parts.next()?.strip_prefix('u')?;
@@ -1396,23 +1436,27 @@ fn render_block_graph_node(
 ) {
     let block = unit.bb(block_id);
     let indent = "  ".repeat(depth);
-    let kind = block.kind().to_string();
 
-    // Use describe_block for proper name resolution (handles fields, returns, etc.)
-    let name = describe_block(block_id, unit.cc)
-        .map(|desc| desc.name)
-        .unwrap_or_else(|| format!("block#{}", block_id.as_u32()));
+    // Use the block's format methods for consistent output
+    let label = block.format_block(unit);
+    let suffix = block.format_suffix();
 
-    let _ = write!(buf, "{}({}:{} {}", indent, kind, block_id.as_u32(), name);
+    let _ = write!(buf, "{}({}", indent, label);
 
     let children = block.children();
     if children.is_empty() {
-        buf.push_str(")\n");
+        buf.push(')');
+        // Add suffix after closing paren (e.g., "@type i32")
+        if let Some(suffix) = suffix {
+            buf.push(' ');
+            buf.push_str(&suffix);
+        }
+        buf.push('\n');
         return;
     }
 
     buf.push('\n');
-    for &child_id in children {
+    for child_id in children {
         render_block_graph_node(child_id, unit, depth + 1, buf);
     }
     buf.push_str(&indent);
@@ -1466,7 +1510,6 @@ fn snapshot_symbol_dependencies<'a>(_cc: &'a CompileCtxt<'a>) -> Vec<SymbolDepen
 
 /// Snapshot block relations from the ProjectGraph.
 fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot> {
-    use llmcc_core::block::BlockRelation;
     use std::collections::BTreeMap;
 
     let cc = project.cc;
@@ -1489,25 +1532,7 @@ fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot
         // Convert relations to grouped format
         let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
         for (relation, target_ids) in relations.iter() {
-            let rel_name = match relation {
-                BlockRelation::ImplFor => "impl_for",
-                BlockRelation::HasImpl => "has_impl",
-                BlockRelation::HasMethod => "has_method",
-                BlockRelation::MethodOf => "method_of",
-                BlockRelation::Contains => "contains",
-                BlockRelation::ContainedBy => "contained_by",
-                BlockRelation::Calls => "calls",
-                BlockRelation::CalledBy => "called_by",
-                BlockRelation::Uses => "uses",
-                BlockRelation::UsedBy => "used_by",
-                BlockRelation::HasParameters => "has_parameters",
-                BlockRelation::HasReturn => "has_return",
-                BlockRelation::HasField => "has_field",
-                BlockRelation::FieldOf => "field_of",
-                BlockRelation::Implements => "implements",
-                BlockRelation::ImplementedBy => "implemented_by",
-                BlockRelation::Unknown => "unknown",
-            };
+            let rel_name = relation.to_string();
 
             for target_id in target_ids {
                 // Get target label
@@ -1518,7 +1543,7 @@ fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot
                 };
 
                 grouped
-                    .entry(rel_name.to_string())
+                    .entry(rel_name.clone())
                     .or_default()
                     .push(target_label);
             }

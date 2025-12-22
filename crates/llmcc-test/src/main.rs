@@ -138,7 +138,8 @@ fn run_all_command(
         },
     )?;
 
-    let summary = print_outcomes(&outcomes);
+    // Results are already printed inline by the runner
+    let summary = count_outcomes(&outcomes);
 
     if update {
         corpus.write_updates()?;
@@ -206,7 +207,8 @@ fn run_single_command(
         graph.component_depth,
         graph.pagerank_top_k,
     )?;
-    let summary = print_outcomes(&outcomes);
+    // Results are already printed inline by the runner
+    let summary = count_outcomes(&outcomes);
 
     if update {
         corpus.write_updates()?;
@@ -256,31 +258,14 @@ struct OutcomeSummary {
     skipped: usize,
 }
 
-fn print_outcomes(outcomes: &[CaseOutcome]) -> OutcomeSummary {
+fn count_outcomes(outcomes: &[CaseOutcome]) -> OutcomeSummary {
     let mut summary = OutcomeSummary::default();
     for outcome in outcomes {
         match outcome.status {
-            CaseStatus::Passed => {
-                summary.passed += 1;
-                println!("[PASS] {}", outcome.id);
-            }
-            CaseStatus::Updated => {
-                summary.updated += 1;
-                println!("[UPD ] {}", outcome.id);
-            }
-            CaseStatus::Failed => {
-                summary.failed += 1;
-                println!("[FAIL] {}", outcome.id);
-                if let Some(message) = &outcome.message {
-                    for line in message.lines() {
-                        println!("        {line}");
-                    }
-                }
-            }
-            CaseStatus::NoExpectations => {
-                summary.skipped += 1;
-                println!("[SKIP] {} (no expectations)", outcome.id);
-            }
+            CaseStatus::Passed => summary.passed += 1,
+            CaseStatus::Updated => summary.updated += 1,
+            CaseStatus::Failed => summary.failed += 1,
+            CaseStatus::NoExpectations => summary.skipped += 1,
         }
     }
     summary

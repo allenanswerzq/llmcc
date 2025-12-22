@@ -90,7 +90,7 @@ fn render_node(block_id: BlockId, unit: CompileUnit<'_>, depth: usize, buf: &mut
     }
 
     buf.push('\n');
-    for &child_id in children {
+    for child_id in children {
         render_node(child_id, unit, depth + 1, buf);
     }
     buf.push_str(&indent);

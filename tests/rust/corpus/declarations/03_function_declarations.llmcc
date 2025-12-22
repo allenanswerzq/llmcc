@@ -1,45 +1,107 @@
 ===============================================================================
-Function declarations
+function-declarations-basic
 ===============================================================================
-Auto-generated from tree-sitter corpus.
+
 
 --- file: src/lib.rs ---
-fn main() {}
 
-fn add(x: i32, y: i32) -> i32 {
+struct Foo;
+
+struct ComplexType<T> {
+    y: Foo,
+};
+
+
+fn add(x: i32, t: ComplexType<T>) -> i32 {
     return x + y;
 }
 
-fn takes_slice(slice: &str) {
-    println!("Got: {}", slice);
-}
-
-fn foo() -> [u32; 2] {
-    return [1, 2];
-}
-
-fn foo() -> (u32, u16) {
-    return (1, 2);
-}
-
-fn foo() {
-    return
-}
-
-fn foo(x: impl FnOnce() -> result::Result<T, E>) {}
-
-fn foo(#[attr] x: i32, #[attr] x: i64) {}
-
-fn accumulate(self) -> Machine<{State::Accumulate}> {}
-
-fn foo(bar: impl for<'a> Baz<Quux<'a>>) {}
-
---- expect:symbols ---
-WRONG
-
 --- expect:block-graph ---
-WRONG
+(root:1 lib
+  (class:2 Foo)
+  (class:3 ComplexType
+    (field:4 y @type:2 Foo)
+  )
+  (func:5 add
+    (parameter:6 x @type i32)
+    (parameter:7 t @type:3 ComplexType)
+    (return:8 @type i32)
+  )
+)
+
 
 --- expect:block-relations ---
-WRONG
+ComplexType:3 (class)  --  has_field   -->  y:4 (field)
+Foo:2 (class)          --   type_for   -->  y:4 (field)
+add:5 (func)           --has_parameters-->  t:7 (parameter)
+add:5 (func)           --has_parameters-->  x:6 (parameter)
+y:4 (field)            --   field_of   -->  ComplexType:3 (class)
+y:4 (field)            --   type_of    -->  Foo:2 (class)
 
+
+===============================================================================
+function-declarations-with-stmt
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+struct Foo;
+struct Bar {
+    a: i32,
+}
+impl Bar {
+    fn new(a: i32) -> Self {
+        Self { a }
+    }
+
+    fn get_a(&self) -> i32 {
+        self.a
+    }
+
+    fn nothing() {
+    }
+}
+
+struct ComplexType<T> {
+    y: Foo,
+};
+
+
+fn add(x: i32, t: ComplexType<T>) -> i32 {
+    if x > 0 {
+        println!("{}", x);
+    } else {
+        let b = Bar::new(x);
+        println!("{}", b.get_a());
+    }
+    return x + y;
+}
+
+--- expect:block-graph ---
+(root:1 lib
+  (class:2 Foo)
+  (class:3 Bar
+    (field:4 a @type i32)
+    (func:6 new
+      (parameter:7 a @type i32)
+      (return:8 @type Self)
+    )
+    (func:9 get_a
+      (parameter:10 self)
+      (return:11 @type i32)
+    )
+    (func:12 nothing)
+  )
+  (class:13 ComplexType
+    (field:14 y @type:2 Foo)
+  )
+  (func:15 add
+    (parameter:16 x @type:11 i32)
+    (parameter:17 t @type:13 ComplexType)
+    (return:18 @type i32)
+    (call:19)
+    (call:20)
+    (call:21)
+  )
+)
