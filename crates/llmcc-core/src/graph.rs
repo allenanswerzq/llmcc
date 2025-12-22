@@ -159,8 +159,8 @@ impl<'tcx> ProjectGraph<'tcx> {
         // Find calls within this function and link to callees
         // Calls are handled when we visit BlockCall nodes, but we also
         // establish the caller-callee relationship at the function level
-        for stmt_id in func.get_stmts() {
-            self.find_calls_recursive(unit, block_id, stmt_id);
+        for call_id in func.get_calls() {
+            self.find_calls_recursive(unit, block_id, call_id);
         }
     }
 

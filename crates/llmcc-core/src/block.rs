@@ -12,7 +12,6 @@ declare_arena!(BlockArena {
     blk_class: BlockClass<'a>,
     blk_trait: BlockTrait<'a>,
     blk_impl: BlockImpl<'a>,
-    blk_stmt: BlockStmt<'a>,
     blk_call: BlockCall<'a>,
     blk_enum: BlockEnum<'a>,
     blk_field: BlockField<'a>,
@@ -32,7 +31,6 @@ pub enum BlockKind {
     Func,
     Method,
     Closure,
-    Stmt,
     Call,
     Class,
     Trait,
@@ -50,7 +48,6 @@ pub enum BasicBlock<'blk> {
     Undefined,
     Root(&'blk BlockRoot<'blk>),
     Func(&'blk BlockFunc<'blk>),
-    Stmt(&'blk BlockStmt<'blk>),
     Call(&'blk BlockCall<'blk>),
     Enum(&'blk BlockEnum<'blk>),
     Class(&'blk BlockClass<'blk>),
@@ -142,7 +139,6 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Class(block) => Some(&block.base),
             BasicBlock::Trait(block) => Some(&block.base),
             BasicBlock::Impl(block) => Some(&block.base),
-            BasicBlock::Stmt(block) => Some(&block.base),
             BasicBlock::Call(block) => Some(&block.base),
             BasicBlock::Enum(block) => Some(&block.base),
             BasicBlock::Const(block) => Some(&block.base),
@@ -445,7 +441,7 @@ pub struct BlockFunc<'blk> {
     pub name: String,
     pub parameters: RwLock<Vec<BlockId>>,
     pub returns: RwLock<Option<BlockId>>,
-    pub stmts: RwLock<Vec<BlockId>>,
+    pub calls: RwLock<Vec<BlockId>>,
 }
 
 impl<'blk> BlockFunc<'blk> {
@@ -463,7 +459,7 @@ impl<'blk> BlockFunc<'blk> {
             name,
             parameters: RwLock::new(Vec::new()),
             returns: RwLock::new(None),
-            stmts: RwLock::new(Vec::new()),
+            calls: RwLock::new(Vec::new()),
         }
     }
 
@@ -479,33 +475,16 @@ impl<'blk> BlockFunc<'blk> {
         *self.returns.write() = Some(ret);
     }
 
-    pub fn add_stmt(&self, stmt: BlockId) {
-        self.stmts.write().push(stmt);
+    pub fn add_call(&self, call: BlockId) {
+        self.calls.write().push(call);
     }
 
     pub fn get_returns(&self) -> Option<BlockId> {
         *self.returns.read()
     }
 
-    pub fn get_stmts(&self) -> Vec<BlockId> {
-        self.stmts.read().clone()
-    }
-}
-
-#[derive(Debug)]
-pub struct BlockStmt<'blk> {
-    pub base: BlockBase<'blk>,
-}
-
-impl<'blk> BlockStmt<'blk> {
-    pub fn new(
-        id: BlockId,
-        node: HirNode<'blk>,
-        parent: Option<BlockId>,
-        children: Vec<BlockId>,
-    ) -> Self {
-        let base = BlockBase::new(id, node, BlockKind::Stmt, parent, children);
-        Self { base }
+    pub fn get_calls(&self) -> Vec<BlockId> {
+        self.calls.read().clone()
     }
 }
 

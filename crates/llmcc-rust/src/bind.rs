@@ -687,6 +687,32 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
+    // AST: fn method(&self) or fn method(&mut self) or fn method(self)
+    // The self parameter has implicit type of Self, which was bound to the struct during impl visit
+    fn visit_self_param(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        // Look up the "self" TypeAlias symbol which was defined in the impl scope
+        // and has type_of pointing to the struct
+        if let Some(self_sym) = scopes.lookup_symbol("self", vec![SymKind::TypeAlias]) {
+            // Find the "self" identifier child and set its symbol
+            for child in node.children(unit) {
+                if let Some(ident) = child.as_ident() {
+                    if ident.name == "self" {
+                        ident.set_symbol(self_sym);
+                    }
+                }
+            }
+        }
+    }
+
     // AST: path::to::type or module::item
     fn visit_scoped_type_identifier(
         &mut self,

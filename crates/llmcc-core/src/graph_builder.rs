@@ -5,7 +5,7 @@ use crate::DynError;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
-    BlockParameter, BlockReturn, BlockRoot, BlockStmt, BlockTrait,
+    BlockParameter, BlockReturn, BlockRoot, BlockTrait,
 };
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph::UnitGraph;
@@ -87,11 +87,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block = BlockTrait::new(id, node, parent, children);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Trait(block_ref)
-            }
-            BlockKind::Stmt => {
-                let stmt = BlockStmt::new(id, node, parent, children);
-                let block_ref = self.unit.cc.block_arena.alloc(stmt);
-                BasicBlock::Stmt(block_ref)
             }
             BlockKind::Call => {
                 let stmt = BlockCall::new(id, node, parent, children);
@@ -202,7 +197,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 for &(child_id, child_kind) in children {
                     match child_kind {
                         BlockKind::Parameter => func.add_parameter(child_id),
-                        BlockKind::Stmt | BlockKind::Call => func.add_stmt(child_id),
+                        BlockKind::Call => func.add_call(child_id),
                         _ => {}
                     }
                 }
@@ -267,6 +262,16 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             if let Some(ident) = *scope.ident.read() {
                 base.set_type_name(ident.name.clone());
                 if let Some(sym) = ident.opt_symbol() {
+                    // First try type_of (for Self/self which point to the struct)
+                    if let Some(type_sym_id) = sym.type_of() {
+                        if let Some(type_sym) = self.unit.cc.opt_get_symbol(type_sym_id) {
+                            if let Some(type_block_id) = type_sym.block_id() {
+                                base.set_type_ref(type_block_id);
+                                return;
+                            }
+                        }
+                    }
+                    // Otherwise use direct block_id
                     if let Some(type_block_id) = sym.block_id() {
                         if type_block_id != base.id {
                             base.set_type_ref(type_block_id);
@@ -282,6 +287,16 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             if let Some(type_name) = self.unit.cc.interner.resolve_owned(type_sym.name) {
                 base.set_type_name(type_name);
             }
+            // First try type_of (for Self/self which point to the struct)
+            if let Some(type_of_id) = type_sym.type_of() {
+                if let Some(type_of_sym) = self.unit.cc.opt_get_symbol(type_of_id) {
+                    if let Some(type_block_id) = type_of_sym.block_id() {
+                        base.set_type_ref(type_block_id);
+                        return;
+                    }
+                }
+            }
+            // Otherwise use direct block_id
             if let Some(type_block_id) = type_sym.block_id() {
                 if type_block_id != base.id {
                     base.set_type_ref(type_block_id);
