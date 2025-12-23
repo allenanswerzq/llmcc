@@ -81,16 +81,6 @@ impl<'tcx> ProjectGraph<'tcx> {
     }
 
     /// Connect all blocks by discovering and recording their relationships.
-    ///
-    /// This is the linking phase that runs after all unit graphs are built.
-    /// It walks each unit's block tree in pre-order DFS and populates
-    /// `cc.related_map` with all block-to-block relationships.
-    ///
-    /// Relationships discovered:
-    /// - Structural: Contains/ContainedBy (parent-child hierarchy)
-    /// - Function: HasParameters, HasReturn, Calls/CalledBy
-    /// - Type: HasField/FieldOf, HasMethod/MethodOf, ImplFor/HasImpl, Implements/ImplementedBy
-    /// - References: Uses/UsedBy (type references)
     pub fn connect_blocks(&self) {
         // Process each unit in parallel - they are independent
         self.units.par_iter().for_each(|unit_graph| {
@@ -156,29 +146,73 @@ impl<'tcx> ProjectGraph<'tcx> {
             self.add_relation(block_id, BlockRelation::HasReturn, ret_id);
         }
 
-        // Find calls within this function and link to callees
-        // Calls are handled when we visit BlockCall nodes, but we also
-        // establish the caller-callee relationship at the function level
-        for call_id in func.get_calls() {
-            self.find_calls_recursive(unit, block_id, call_id);
+        // Find calls within this function's children and link to callees
+        // Also populate type_deps and func_deps
+        for child_id in func.base.get_children() {
+            self.find_calls_recursive(unit, block_id, func, child_id);
         }
     }
 
     /// Recursively find call blocks and link them to this function as caller.
-    fn find_calls_recursive(&self, unit: &CompileUnit<'tcx>, caller_func_id: BlockId, block_id: BlockId) {
+    /// Also populates func_deps (free functions) and type_deps (static method receivers).
+    fn find_calls_recursive(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        caller_func_id: BlockId,
+        caller_func: &crate::block::BlockFunc<'tcx>,
+        block_id: BlockId,
+    ) {
         let block = unit.bb(block_id);
 
         if let BasicBlock::Call(call) = &block {
-            // Resolve the callee and link caller function -> callee function
-            if let Some(callee_id) = self.resolve_callee(unit, call) {
-                self.add_relation(caller_func_id, BlockRelation::Calls, callee_id);
-                self.add_relation(callee_id, BlockRelation::CalledBy, caller_func_id);
+            // Get the callee symbol to check its kind
+            if let Some(callee_sym) = call.base.node.ident_symbol(unit) {
+                let callee_kind = callee_sym.kind();
+
+                match callee_kind {
+                    crate::symbol::SymKind::Function => {
+                        // Free function call → add to func_deps
+                        if let Some(callee_block_id) = callee_sym.block_id() {
+                            caller_func.add_func_dep(callee_block_id);
+                            // Also establish caller-callee relation
+                            self.add_relation(caller_func_id, BlockRelation::Calls, callee_block_id);
+                            self.add_relation(callee_block_id, BlockRelation::CalledBy, caller_func_id);
+                        }
+                    }
+                    crate::symbol::SymKind::Method => {
+                        // Method call → check if it has a type receiver (Foo::method)
+                        // The type is tracked via type_of on the callee symbol
+                        if let Some(type_sym_id) = callee_sym.type_of() {
+                            if let Some(type_sym) = self.cc.opt_get_symbol(type_sym_id) {
+                                if let Some(type_block_id) = type_sym.block_id() {
+                                    caller_func.add_type_dep(type_block_id);
+                                }
+                            }
+                        }
+                        // Establish caller-callee relation for methods too
+                        if let Some(callee_block_id) = callee_sym.block_id() {
+                            self.add_relation(caller_func_id, BlockRelation::Calls, callee_block_id);
+                            self.add_relation(callee_block_id, BlockRelation::CalledBy, caller_func_id);
+                        }
+                    }
+                    _ => {
+                        // Other kinds (e.g., Struct for associated functions like Foo::new)
+                        // Add type to type_deps
+                        if let Some(callee_block_id) = callee_sym.block_id() {
+                            if callee_kind == crate::symbol::SymKind::Struct
+                                || callee_kind == crate::symbol::SymKind::Enum
+                            {
+                                caller_func.add_type_dep(callee_block_id);
+                            }
+                        }
+                    }
+                }
             }
         }
 
         // Recurse into children
         for child_id in block.children() {
-            self.find_calls_recursive(unit, caller_func_id, child_id);
+            self.find_calls_recursive(unit, caller_func_id, caller_func, child_id);
         }
     }
 

@@ -668,6 +668,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     }
 
     // AST: fn foo(param: Type, ...)
+    #[tracing::instrument(skip_all)]
     fn visit_parameter(
         &mut self,
         unit: &CompileUnit<'tcx>,

@@ -54,7 +54,7 @@ fn test_connect_blocks_contains_relationship() {
         let root = get_block(cc, graphs[0].root());
 
         // Find the outer function
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Func {
                 // The outer function should contain inner function
@@ -95,7 +95,7 @@ fn test_connect_blocks_has_field() {
         assert_eq!(graphs.len(), 1);
 
         let root = get_block(cc, graphs[0].root());
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Class {
                 // Check HasField relations
@@ -138,7 +138,7 @@ fn test_connect_blocks_has_method() {
         assert_eq!(graphs.len(), 1);
 
         let root = get_block(cc, graphs[0].root());
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Impl {
                 // Check HasMethod relations
@@ -180,7 +180,7 @@ fn test_connect_blocks_function_parameters() {
         let root = get_block(cc, graphs[0].root());
         let mut found_func = false;
 
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Func {
                 found_func = true;
@@ -220,7 +220,7 @@ fn test_connect_blocks_trait_methods() {
         assert_eq!(graphs.len(), 1);
 
         let root = get_block(cc, graphs[0].root());
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Trait {
                 // Check HasMethod relations
@@ -262,7 +262,7 @@ fn test_connect_blocks_enum_variants() {
         assert_eq!(graphs.len(), 1);
 
         let root = get_block(cc, graphs[0].root());
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Enum {
                 // Variants should be linked as HasField
@@ -311,7 +311,7 @@ fn test_connect_blocks_impl_for_struct() {
         let mut struct_id = None;
         let mut impl_id = None;
 
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             match child.kind() {
                 BlockKind::Class => struct_id = Some(child_id),
@@ -400,7 +400,7 @@ fn test_connect_blocks_nested_structs() {
         let root = get_block(cc, graphs[0].root());
         let mut struct_count = 0;
 
-        for &child_id in root.children() {
+        for child_id in root.children() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Class {
                 struct_count += 1;

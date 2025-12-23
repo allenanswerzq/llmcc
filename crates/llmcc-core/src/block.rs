@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::atomic::{AtomicU32, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
@@ -62,62 +63,31 @@ pub enum BasicBlock<'blk> {
 
 impl<'blk> BasicBlock<'blk> {
     /// Format the block label (content inside the parentheses)
-    /// Includes @type info inline for parameters, fields, and return types
-    pub fn format_block(&self, _unit: CompileUnit<'blk>) -> String {
-        let block_id = self.block_id();
-        let kind = self.kind();
-        let name = self
-            .base()
-            .and_then(|base| base.opt_get_name())
-            .unwrap_or("");
-
-        // Include file_name for Root blocks
-        if let BasicBlock::Root(root) = self
-            && let Some(file_name) = &root.file_name
-        {
-            return format!("{}:{} {} ({})", kind, block_id, name, file_name);
+    /// Delegates to each block type's format method
+    pub fn format_block(&self, unit: CompileUnit<'blk>) -> String {
+        match self {
+            BasicBlock::Root(root) => root.format(),
+            BasicBlock::Func(func) => func.format(unit),
+            BasicBlock::Class(class) => class.format(),
+            BasicBlock::Trait(trait_blk) => trait_blk.format(),
+            BasicBlock::Impl(impl_blk) => impl_blk.format(),
+            BasicBlock::Call(call) => call.format(),
+            BasicBlock::Enum(enum_blk) => enum_blk.format(),
+            BasicBlock::Const(const_blk) => const_blk.format(),
+            BasicBlock::Field(field) => field.format(),
+            BasicBlock::Parameter(param) => param.format(),
+            BasicBlock::Return(ret) => ret.format(),
+            BasicBlock::Undefined | BasicBlock::Block => "undefined".to_string(),
         }
+    }
 
-        // For Return blocks: "return:N @type TYPE" or "return:N @type:REF TYPE"
-        if let BasicBlock::Return(ret) = self {
-            let type_name = ret.base.get_type_name();
-            if !type_name.is_empty() {
-                if let Some(type_id) = ret.base.get_type_ref() {
-                    return format!("{}:{} @type:{} {}", kind, block_id, type_id, type_name);
-                } else {
-                    return format!("{}:{} @type {}", kind, block_id, type_name);
-                }
-            }
-            return format!("{}:{}", kind, block_id);
+    /// Format extra entries for dependencies (rendered as pseudo-children)
+    /// Only applicable to Func blocks, returns empty for others
+    pub fn format_deps(&self, unit: CompileUnit<'blk>) -> Vec<String> {
+        match self {
+            BasicBlock::Func(func) => func.format_deps(unit),
+            _ => Vec::new(),
         }
-
-        // For Parameter blocks: "parameter:N name @type TYPE"
-        if let BasicBlock::Parameter(param) = self {
-            let type_name = param.base.get_type_name();
-            if !type_name.is_empty() {
-                if let Some(type_id) = param.base.get_type_ref() {
-                    return format!("{}:{} {} @type:{} {}", kind, block_id, param.name, type_id, type_name);
-                } else {
-                    return format!("{}:{} {} @type {}", kind, block_id, param.name, type_name);
-                }
-            }
-            return format!("{}:{} {}", kind, block_id, param.name);
-        }
-
-        // For Field blocks: "field:N name @type TYPE"
-        if let BasicBlock::Field(field) = self {
-            let type_name = field.base.get_type_name();
-            if !type_name.is_empty() {
-                if let Some(type_id) = field.base.get_type_ref() {
-                    return format!("{}:{} {} @type:{} {}", kind, block_id, field.name, type_id, type_name);
-                } else {
-                    return format!("{}:{} {} @type {}", kind, block_id, field.name, type_name);
-                }
-            }
-            return format!("{}:{} {}", kind, block_id, field.name);
-        }
-
-        format!("{}:{} {}", kind, block_id, name)
     }
 
     /// Format the suffix to appear after the closing parenthesis
@@ -433,6 +403,15 @@ impl<'blk> BlockRoot<'blk> {
         let base = BlockBase::new(id, node, BlockKind::Root, parent, children);
         Self { base, file_name }
     }
+
+    pub fn format(&self) -> String {
+        let name = self.base.opt_get_name().unwrap_or("");
+        if let Some(file_name) = &self.file_name {
+            format!("{}:{} {} ({})", self.base.kind, self.base.id, name, file_name)
+        } else {
+            format!("{}:{} {}", self.base.kind, self.base.id, name)
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -441,7 +420,11 @@ pub struct BlockFunc<'blk> {
     pub name: String,
     pub parameters: RwLock<Vec<BlockId>>,
     pub returns: RwLock<Option<BlockId>>,
-    pub calls: RwLock<Vec<BlockId>>,
+    /// Types used inside function body (excludes parameter/return types)
+    /// Examples: local variable types, static method receivers (Foo::method)
+    pub type_deps: RwLock<HashSet<BlockId>>,
+    /// Functions/methods called by this function
+    pub func_deps: RwLock<HashSet<BlockId>>,
 }
 
 impl<'blk> BlockFunc<'blk> {
@@ -459,7 +442,8 @@ impl<'blk> BlockFunc<'blk> {
             name,
             parameters: RwLock::new(Vec::new()),
             returns: RwLock::new(None),
-            calls: RwLock::new(Vec::new()),
+            type_deps: RwLock::new(HashSet::new()),
+            func_deps: RwLock::new(HashSet::new()),
         }
     }
 
@@ -475,16 +459,66 @@ impl<'blk> BlockFunc<'blk> {
         *self.returns.write() = Some(ret);
     }
 
-    pub fn add_call(&self, call: BlockId) {
-        self.calls.write().push(call);
-    }
-
     pub fn get_returns(&self) -> Option<BlockId> {
         *self.returns.read()
     }
 
-    pub fn get_calls(&self) -> Vec<BlockId> {
-        self.calls.read().clone()
+    pub fn add_type_dep(&self, type_id: BlockId) {
+        self.type_deps.write().insert(type_id);
+    }
+
+    pub fn get_type_deps(&self) -> HashSet<BlockId> {
+        self.type_deps.read().clone()
+    }
+
+    pub fn add_func_dep(&self, func_id: BlockId) {
+        self.func_deps.write().insert(func_id);
+    }
+
+    pub fn get_func_deps(&self) -> HashSet<BlockId> {
+        self.func_deps.read().clone()
+    }
+
+    pub fn format(&self, _unit: CompileUnit<'blk>) -> String {
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+    }
+
+    /// Format dependency entries as pseudo-children (to be rendered after real children)
+    /// Returns lines like "@tdep:3 Bar" and "@fdep:5 process"
+    pub fn format_deps(&self, unit: CompileUnit<'blk>) -> Vec<String> {
+        let mut deps = Vec::new();
+
+        // Add type_deps
+        let type_deps = self.get_type_deps();
+        if !type_deps.is_empty() {
+            let mut sorted: Vec<_> = type_deps.iter().collect();
+            sorted.sort();
+            for dep_id in sorted {
+                let dep_block = unit.bb(*dep_id);
+                let dep_name = dep_block
+                    .base()
+                    .and_then(|b| b.opt_get_name())
+                    .unwrap_or("");
+                deps.push(format!("@tdep:{} {}", dep_id, dep_name));
+            }
+        }
+
+        // Add func_deps
+        let func_deps = self.get_func_deps();
+        if !func_deps.is_empty() {
+            let mut sorted: Vec<_> = func_deps.iter().collect();
+            sorted.sort();
+            for dep_id in sorted {
+                let dep_block = unit.bb(*dep_id);
+                let dep_name = dep_block
+                    .base()
+                    .and_then(|b| b.opt_get_name())
+                    .unwrap_or("");
+                deps.push(format!("@fdep:{} {}", dep_id, dep_name));
+            }
+        }
+
+        deps
     }
 }
 
@@ -524,6 +558,10 @@ impl<'blk> BlockCall<'blk> {
 
     pub fn get_args(&self) -> Vec<BlockId> {
         self.args.read().clone()
+    }
+
+    pub fn format(&self) -> String {
+        format!("{}:{}", self.base.kind, self.base.id)
     }
 }
 
@@ -567,6 +605,10 @@ impl<'blk> BlockClass<'blk> {
     pub fn get_methods(&self) -> Vec<BlockId> {
         self.methods.read().clone()
     }
+
+    pub fn format(&self) -> String {
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+    }
 }
 
 #[derive(Debug)]
@@ -598,6 +640,10 @@ impl<'blk> BlockTrait<'blk> {
 
     pub fn get_methods(&self) -> Vec<BlockId> {
         self.methods.read().clone()
+    }
+
+    pub fn format(&self) -> String {
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }
 
@@ -651,6 +697,10 @@ impl<'blk> BlockImpl<'blk> {
     pub fn get_methods(&self) -> Vec<BlockId> {
         self.methods.read().clone()
     }
+
+    pub fn format(&self) -> String {
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+    }
 }
 
 #[derive(Debug)]
@@ -683,6 +733,10 @@ impl<'blk> BlockEnum<'blk> {
     pub fn get_variants(&self) -> Vec<BlockId> {
         self.variants.read().clone()
     }
+
+    pub fn format(&self) -> String {
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+    }
 }
 
 #[derive(Debug)]
@@ -701,6 +755,10 @@ impl<'blk> BlockConst<'blk> {
         let base = BlockBase::new(id, node, BlockKind::Const, parent, children);
         let name = base.opt_get_name().unwrap_or("").to_string();
         Self { base, name }
+    }
+
+    pub fn format(&self) -> String {
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }
 
@@ -730,6 +788,18 @@ impl<'blk> BlockField<'blk> {
             })
             .unwrap_or_default();
         Self { base, name }
+    }
+
+    pub fn format(&self) -> String {
+        let type_name = self.base.get_type_name();
+        if !type_name.is_empty() {
+            if let Some(type_id) = self.base.get_type_ref() {
+                return format!("{}:{} {} @type:{} {}", self.base.kind, self.base.id, self.name, type_id, type_name);
+            } else {
+                return format!("{}:{} {} @type {}", self.base.kind, self.base.id, self.name, type_name);
+            }
+        }
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }
 
@@ -763,6 +833,18 @@ impl<'blk> BlockParameter<'blk> {
             .unwrap_or_default();
         Self { base, name }
     }
+
+    pub fn format(&self) -> String {
+        let type_name = self.base.get_type_name();
+        if !type_name.is_empty() {
+            if let Some(type_id) = self.base.get_type_ref() {
+                return format!("{}:{} {} @type:{} {}", self.base.kind, self.base.id, self.name, type_id, type_name);
+            } else {
+                return format!("{}:{} {} @type {}", self.base.kind, self.base.id, self.name, type_name);
+            }
+        }
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
+    }
 }
 
 /// Represents a function/method return type as its own block
@@ -780,5 +862,17 @@ impl<'blk> BlockReturn<'blk> {
     ) -> Self {
         let base = BlockBase::new(id, node, BlockKind::Return, parent, children);
         Self { base }
+    }
+
+    pub fn format(&self) -> String {
+        let type_name = self.base.get_type_name();
+        if !type_name.is_empty() {
+            if let Some(type_id) = self.base.get_type_ref() {
+                return format!("{}:{} @type:{} {}", self.base.kind, self.base.id, type_id, type_name);
+            } else {
+                return format!("{}:{} @type {}", self.base.kind, self.base.id, type_name);
+            }
+        }
+        format!("{}:{}", self.base.kind, self.base.id)
     }
 }

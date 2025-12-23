@@ -1440,11 +1440,12 @@ fn render_block_graph_node(
     // Use the block's format methods for consistent output
     let label = block.format_block(unit);
     let suffix = block.format_suffix();
+    let deps = block.format_deps(unit);
 
     let _ = write!(buf, "{}({}", indent, label);
 
     let children = block.children();
-    if children.is_empty() {
+    if children.is_empty() && deps.is_empty() {
         buf.push(')');
         // Add suffix after closing paren (e.g., "@type i32")
         if let Some(suffix) = suffix {
@@ -1457,7 +1458,16 @@ fn render_block_graph_node(
 
     buf.push('\n');
     for child_id in children {
+        // Skip Call blocks - they are now represented by @fdep/@tdep entries
+        if unit.bb(child_id).kind() == llmcc_core::block::BlockKind::Call {
+            continue;
+        }
         render_block_graph_node(child_id, unit, depth + 1, buf);
+    }
+    // Render deps as pseudo-children (after real children)
+    let child_indent = "  ".repeat(depth + 1);
+    for dep in deps {
+        let _ = writeln!(buf, "{}({})", child_indent, dep);
     }
     buf.push_str(&indent);
     buf.push_str(")\n");

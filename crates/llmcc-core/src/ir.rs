@@ -344,20 +344,27 @@ impl<'hir> HirNode<'hir> {
 
     /// Set the block ID on the symbol associated with this node.
     /// Works for both HirScope (gets symbol from scope) and HirIdent (has direct symbol).
-    /// Does nothing if no symbol is associated.
+    /// Does nothing if no symbol is associated or if the symbol is a primitive (shared globally).
     pub fn set_block_id(&self, block_id: crate::block::BlockId) {
+        use crate::symbol::SymKind;
         // Try HirScope first
         if let Some(scope) = self.as_scope()
             && let Some(symbol) = scope.opt_symbol()
         {
-            symbol.set_block_id(block_id);
+            // Don't set block_id on primitives - they are shared globally
+            if symbol.kind() != SymKind::Primitive {
+                symbol.set_block_id(block_id);
+            }
             return;
         }
         // Try HirIdent
         if let Some(ident) = self.as_ident()
             && let Some(symbol) = ident.opt_symbol()
         {
-            symbol.set_block_id(block_id);
+            // Don't set block_id on primitives - they are shared globally
+            if symbol.kind() != SymKind::Primitive {
+                symbol.set_block_id(block_id);
+            }
         }
     }
 

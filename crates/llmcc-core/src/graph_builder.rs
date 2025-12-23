@@ -65,7 +65,12 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> BasicBlock<'tcx> {
-        node.set_block_id(id);
+        // Set block_id on the node's symbol, but NOT for impl blocks
+        // because impl blocks reference an existing type symbol (e.g., `impl Bar`)
+        // and setting block_id would overwrite the struct's block_id
+        if kind != BlockKind::Impl {
+            node.set_block_id(id);
+        }
         match kind {
             BlockKind::Root => {
                 let file_name = node.as_file().map(|file| file.file_path.clone());
@@ -197,7 +202,6 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 for &(child_id, child_kind) in children {
                     match child_kind {
                         BlockKind::Parameter => func.add_parameter(child_id),
-                        BlockKind::Call => func.add_call(child_id),
                         _ => {}
                     }
                 }
@@ -300,6 +304,20 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             if let Some(type_block_id) = type_sym.block_id() {
                 if type_block_id != base.id {
                     base.set_type_ref(type_block_id);
+                }
+            }
+            return;
+        }
+
+        // Strategy 4: Find identifier in children (for generic types like Machine<T>)
+        // This handles return types that are complex types without a direct symbol
+        if let Some(ident) = node.find_ident(&self.unit) {
+            base.set_type_name(ident.name.clone());
+            if let Some(sym) = ident.opt_symbol() {
+                if let Some(type_block_id) = sym.block_id() {
+                    if type_block_id != base.id {
+                        base.set_type_ref(type_block_id);
+                    }
                 }
             }
         }

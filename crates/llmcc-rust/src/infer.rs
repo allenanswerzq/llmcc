@@ -118,6 +118,8 @@ pub fn infer_type<'tcx>(
         LangRust::function_type => infer_function_type(unit, scopes, node),
         LangRust::reference_type => infer_reference_type(unit, scopes, node),
         LangRust::pointer_type => infer_pointer_type(unit, scopes, node),
+        // impl Trait - get the trait from the "trait" field
+        LangRust::abstract_type => infer_abstract_type(unit, scopes, node),
 
         _ => {
             if let Some(ident) = node.find_ident(unit) {
@@ -396,20 +398,21 @@ fn infer_tuple_type<'tcx>(
     None
 }
 
-/// Infer function type annotation: fn(T1, T2) -> RetType
+/// Infer function type annotation: fn(T1, T2) -> RetType or FnOnce() -> RetType
 fn infer_function_type<'tcx>(
     unit: &CompileUnit<'tcx>,
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let children = node.children(unit);
+    // For function_type, check if there's a trait field (e.g., FnOnce() -> T)
+    // If so, return the trait. Otherwise return the return type.
+    if let Some(trait_node) = node.child_by_field(unit, LangRust::field_trait) {
+        return infer_type(unit, scopes, &trait_node);
+    }
 
-    // Last non-trivia child should be the return type
-    children
-        .iter()
-        .rev()
-        .find(|child| !child.is_trivia())
-        .and_then(|ret_node| infer_type(unit, scopes, ret_node))
+    // No trait field, fall back to return type (for fn(T) -> U syntax)
+    node.child_by_field(unit, LangRust::field_return_type)
+        .and_then(|ret_node| infer_type(unit, scopes, &ret_node))
 }
 
 /// Infer reference type annotation: &T or &mut T
@@ -418,13 +421,10 @@ fn infer_reference_type<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let children = node.children(unit);
-
-    // First non-trivia child is the referenced type
-    children
-        .iter()
-        .find(|child| !child.is_trivia())
-        .and_then(|ref_node| infer_type(unit, scopes, ref_node))
+    // The reference_type has structure: & [mutable_specifier] type
+    // We need to get the inner type via the "type" field
+    node.child_by_field(unit, LangRust::field_type)
+        .and_then(|type_node| infer_type(unit, scopes, &type_node))
 }
 
 /// Infer pointer type annotation: *const T or *mut T
@@ -433,13 +433,22 @@ fn infer_pointer_type<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let children = node.children(unit);
+    // The pointer_type has structure: * [const|mut] type
+    // We need to get the inner type via the "type" field
+    node.child_by_field(unit, LangRust::field_type)
+        .and_then(|type_node| infer_type(unit, scopes, &type_node))
+}
 
-    // First non-trivia child is the pointed-to type
-    children
-        .iter()
-        .find(|child| !child.is_trivia())
-        .and_then(|ptr_node| infer_type(unit, scopes, ptr_node))
+/// Infer abstract type (impl Trait): impl Trait or impl for<'a> Trait
+fn infer_abstract_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    // The abstract_type has structure: impl [for<'a>] Trait
+    // We need to get the trait from the "trait" field
+    node.child_by_field(unit, LangRust::field_trait)
+        .and_then(|trait_node| infer_type(unit, scopes, &trait_node))
 }
 
 /// Returns true when a node only represents punctuation or whitespace.
