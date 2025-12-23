@@ -64,17 +64,10 @@ u0:31 | Function | foo |
 
 --- expect:block-graph ---
 (root:1 lib
-  (call:2 do_stuff_with)
-  (call:3 do_stuff_with)
-  (call:4 slice)
-  (call:5 binary_search)
-  (call:6 expr)
   (func:7 foo
-    (parameters:8 u8)
+    (parameter:8 u8 @type u8)
   )
-  (call:9 x)
-  (call:10 y)
 )
 
 --- expect:block-relations ---
-foo:7 (func) --has_parameters--> u8:8 (parameters)
+foo:7 (func)  --has_parameters-->  u8:8 (parameter)

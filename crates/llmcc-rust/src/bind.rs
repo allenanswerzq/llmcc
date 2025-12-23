@@ -176,6 +176,36 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
+    // AST: type parameter T or T: Trait in generics
+    // Sets type_of on the type parameter to point to its first trait bound
+    #[tracing::instrument(skip_all)]
+    fn visit_type_parameter(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        self.visit_children(unit, node, scopes, namespace, parent);
+
+        // Get the type parameter symbol
+        if let Some(type_param_sym) = node.ident_symbol_by_field(unit, LangRust::field_name) {
+            // Look for trait bounds (T: Trait)
+            if let Some(bounds_node) = node.child_by_field(unit, LangRust::field_bounds) {
+                // trait_bounds contains the trait types - get the first one
+                if let Some(first_bound) = infer_type(unit, scopes, &bounds_node) {
+                    type_param_sym.set_type_of(first_bound.id());
+                    tracing::trace!(
+                        "type parameter '{}' has bound '{}'",
+                        type_param_sym.format(Some(unit.interner())),
+                        first_bound.format(Some(unit.interner())),
+                    );
+                }
+            }
+        }
+    }
+
     // AST: block { ... statements ... }
     fn visit_block(
         &mut self,
@@ -384,8 +414,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             }
 
             if let Some(trait_node) = node.child_by_field(unit, LangRust::field_trait)
+                && let Some(trait_ident) = trait_node.find_ident(unit)
                 && let Some(trait_sym) =
-                    scopes.lookup_symbol(&trait_node.as_ident().unwrap().name, vec![SymKind::Trait])
+                    scopes.lookup_symbol(&trait_ident.name, vec![SymKind::Trait])
                 && let Some(target_resolved) = target_resolved
                 && let Some(target_scope) = target_resolved.opt_scope()
                 && let Some(trait_scope) = trait_sym.opt_scope()

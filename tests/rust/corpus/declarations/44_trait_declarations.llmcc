@@ -40,15 +40,14 @@ u0:23 | Trait | Foo |
 (root:1 lib
   (trait:2 Item
     (func:3 summarize
-      (parameters:4 block#4)
-      (return:5 Self)
+      (parameter:4 self @type &self)
+      (return:5 @type Self)
     )
   )
   (trait:6 Foo)
 )
 
 --- expect:block-relations ---
-Item:2 (trait) --has_method--> summarize:3 (func)
-summarize:3 (func) --has_parameters--> block#4:4 (parameters)
-summarize:3 (func) --has_return--> Self:5 (return)
-summarize:3 (func) --method_of--> Item:2 (trait)
+Item:2 (trait)      --  has_method  -->  summarize:3 (func)
+summarize:3 (func)  --has_parameters-->  &self:4 (parameter)
+summarize:3 (func)  --  method_of   -->  Item:2 (trait)

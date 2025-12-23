@@ -114,6 +114,7 @@ impl SymKind {
             SymKind::CompositeType,
             SymKind::TypeAlias,
             SymKind::Namespace,
+            SymKind::TypeParameter,
         ]
     }
 

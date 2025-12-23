@@ -40,13 +40,13 @@ u0:25 | Field | b |
 --- expect:block-graph ---
 (root:1 lib
   (class:2 A
-    (field:3 a)
-    (field:4 b)
+    (field:3 a @type default)
+    (field:4 b @type union)
   )
 )
 
 --- expect:block-relations ---
-A:2 (class) --has_field--> a:3 (field)
-A:2 (class) --has_field--> b:4 (field)
-a:3 (field) --field_of--> A:2 (class)
-b:4 (field) --field_of--> A:2 (class)
+A:2 (class)  --has_field-->  a:3 (field)
+A:2 (class)  --has_field-->  b:4 (field)
+a:3 (field)  --field_of -->  A:2 (class)
+b:4 (field)  --field_of -->  A:2 (class)

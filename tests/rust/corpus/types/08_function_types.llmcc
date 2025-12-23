@@ -54,27 +54,29 @@ u0:32 | Variable | y |
 --- expect:block-graph ---
 (root:1 lib
   (func:2 high_order1
-    (parameters:3 value)
-    (return:4 i32)
+    (parameter:3 value @type i32)
+    (parameter:4 f @type i32)
+    (return:5 @type i32)
   )
-  (func:5 high_order2
-    (parameters:6 value)
-    (return:7 i32)
-    (call:8 f)
+  (func:6 high_order2
+    (parameter:7 value @type i32)
+    (parameter:8 f @type i32)
+    (return:9 @type i32)
   )
-  (func:9 high_order3
-    (parameters:10 value)
-    (return:11 i32)
-    (call:12 f)
+  (func:11 high_order3
+    (parameter:12 value @type i32)
+    (parameter:13 f @type FnOnce)
+    (return:14 @type i32)
   )
-  (parameters:13 x)
-  (return:14 C)
+  (parameter:16 x @type a)
+  (parameter:17 y @type a)
+  (return:18 @type C)
 )
 
 --- expect:block-relations ---
-high_order1:2 (func) --has_parameters--> value:3 (parameters)
-high_order1:2 (func) --has_return--> i32:4 (return)
-high_order2:5 (func) --has_parameters--> value:6 (parameters)
-high_order2:5 (func) --has_return--> i32:7 (return)
-high_order3:9 (func) --has_parameters--> value:10 (parameters)
-high_order3:9 (func) --has_return--> i32:11 (return)
+high_order1:2 (func)   --has_parameters-->  f:4 (parameter)
+high_order1:2 (func)   --has_parameters-->  value:3 (parameter)
+high_order2:6 (func)   --has_parameters-->  f:8 (parameter)
+high_order2:6 (func)   --has_parameters-->  value:7 (parameter)
+high_order3:11 (func)  --has_parameters-->  f:13 (parameter)
+high_order3:11 (func)  --has_parameters-->  value:12 (parameter)

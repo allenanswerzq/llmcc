@@ -65,12 +65,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> BasicBlock<'tcx> {
-        // Set block_id on the node's symbol, but NOT for impl blocks
-        // because impl blocks reference an existing type symbol (e.g., `impl Bar`)
-        // and setting block_id would overwrite the struct's block_id
-        if kind != BlockKind::Impl {
-            node.set_block_id(id);
-        }
+        // NOTE: block_id is set on the node's symbol in build_block() BEFORE visiting children
+        // This allows children to resolve their parent's type (e.g., enum variants -> enum)
         match kind {
             BlockKind::Root => {
                 let file_name = node.as_file().map(|file| file.file_path.clone());
@@ -170,6 +166,13 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
         if self.root.is_none() {
             self.root = Some(id);
+        }
+
+        // Set block_id on the node's symbol BEFORE visiting children
+        // This allows children to resolve their parent's type (e.g., enum variants -> enum)
+        // Don't set for impl blocks - they reference existing type symbols
+        if block_kind != BlockKind::Impl {
+            node.set_block_id(id);
         }
 
         let children_with_kinds = if recursive {
@@ -301,10 +304,22 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             if let Some(child_sym) = child.opt_symbol() {
                 if let Some(type_sym_id) = child_sym.type_of() {
                     if let Some(type_sym) = self.unit.cc.opt_get_symbol(type_sym_id) {
-                        if let Some(type_name) = self.unit.cc.interner.resolve_owned(type_sym.name) {
-                            base.set_type_name(type_name);
+                        // If type_sym is a TypeParameter with a trait bound (type_of),
+                        // use the bound type instead for relationship graphs
+                        let effective_type = if type_sym.kind() == crate::symbol::SymKind::TypeParameter {
+                            if let Some(bound_id) = type_sym.type_of() {
+                                self.unit.cc.opt_get_symbol(bound_id).unwrap_or(type_sym)
+                            } else {
+                                type_sym
+                            }
+                        } else {
+                            type_sym
+                        };
+
+                        if let Some(name) = self.unit.cc.interner.resolve_owned(effective_type.name) {
+                            base.set_type_name(name);
                         }
-                        if let Some(type_block_id) = type_sym.block_id() {
+                        if let Some(type_block_id) = effective_type.block_id() {
                             base.set_type_ref(type_block_id);
                         }
                         return;
@@ -361,8 +376,26 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             return;
         }
 
-        // Strategy 4: Find identifier in children (for generic types like Machine<T>)
-        // This handles return types that are complex types without a direct symbol
+        // Strategy 4: Look at the "type" field for field declarations
+        // This handles cases where the type annotation is a complex type without a resolved symbol
+        // (e.g., `Vec<T>` where Vec isn't defined in this file)
+        if let Some(type_child) = node.child_by_field(&self.unit, Language::type_field()) {
+            // Try to get identifier from the type annotation
+            if let Some(ident) = type_child.find_ident(&self.unit) {
+                base.set_type_name(ident.name.clone());
+                if let Some(sym) = ident.opt_symbol() {
+                    if let Some(type_block_id) = sym.block_id() {
+                        if type_block_id != base.id {
+                            base.set_type_ref(type_block_id);
+                        }
+                    }
+                }
+                return;
+            }
+        }
+
+        // Strategy 5: Find identifier in children (for return types that are complex types)
+        // This is a last resort fallback
         if let Some(ident) = node.find_ident(&self.unit) {
             base.set_type_name(ident.name.clone());
             if let Some(sym) = ident.opt_symbol() {

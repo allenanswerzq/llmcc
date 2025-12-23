@@ -37,14 +37,13 @@ u0:22 | Function | f |
 --- expect:block-graph ---
 (root:1 lib
   (trait:2 A
-    (call:3 private_decl)
     (func:4 f
-      (parameters:5 block#5)
+      (parameter:5 self @type &self)
     )
   )
 )
 
 --- expect:block-relations ---
-A:2 (trait) --has_method--> f:4 (func)
-f:4 (func) --has_parameters--> block#5:5 (parameters)
-f:4 (func) --method_of--> A:2 (trait)
+A:2 (trait)  --  has_method  -->  f:4 (func)
+f:4 (func)   --has_parameters-->  &self:5 (parameter)
+f:4 (func)   --  method_of   -->  A:2 (trait)

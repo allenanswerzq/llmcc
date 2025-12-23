@@ -41,14 +41,15 @@ u0:25 | Variable | rhs |
 (root:1 lib
   (trait:2 Add
     (func:3 add
-      (parameters:4 rhs)
-      (return:5 Self)
+      (parameter:4 self @type self)
+      (parameter:5 rhs @type RHS)
+      (return:6 @type Self)
     )
   )
 )
 
 --- expect:block-relations ---
-Add:2 (trait) --has_method--> add:3 (func)
-add:3 (func) --has_parameters--> rhs:4 (parameters)
-add:3 (func) --has_return--> Self:5 (return)
-add:3 (func) --method_of--> Add:2 (trait)
+Add:2 (trait)  --  has_method  -->  add:3 (func)
+add:3 (func)   --has_parameters-->  rhs:5 (parameter)
+add:3 (func)   --has_parameters-->  self:4 (parameter)
+add:3 (func)   --  method_of   -->  Add:2 (trait)

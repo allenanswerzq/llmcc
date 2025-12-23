@@ -9,46 +9,10 @@ pub enum c_style_enum {
     val2 = 2
 }
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | Enum | c_style_enum | [global]
-u0:22 | EnumVariant | val1 |
-u0:23 | EnumVariant | val2 |
-
 --- expect:block-graph ---
 (root:1 lib
   (enum:2 c_style_enum
-    (field:3 val1)
-    (field:4 val2)
+    (field:3 val1 @type:2 c_style_enum)
+    (field:4 val2 @type:2 c_style_enum)
   )
 )
-
---- expect:block-relations ---
-c_style_enum:2 (enum) --has_field--> val1:3 (field)
-c_style_enum:2 (enum) --has_field--> val2:4 (field)
-val1:3 (field) --field_of--> c_style_enum:2 (enum)
-val1:3 (field) --used_by--> val1:3 (field)
-val1:3 (field) --uses--> val1:3 (field)
-val2:4 (field) --field_of--> c_style_enum:2 (enum)
-val2:4 (field) --used_by--> val2:4 (field)
-val2:4 (field) --uses--> val2:4 (field)

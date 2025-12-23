@@ -23,6 +23,22 @@ pub fn infer_type<'tcx>(
         // Type identifiers
         LangRust::primitive_type | LangRust::type_identifier => {
             let ident = node.find_ident(unit)?;
+            // First try existing symbol on the identifier
+            if let Some(sym) = ident.opt_symbol() {
+                // If it's a concrete type (Struct/Enum/Trait), use it directly
+                if is_defined_type(sym) {
+                    return Some(sym);
+                }
+                // If it's UnresolvedType, try to resolve it via scope lookup
+                if sym.kind() != SymKind::UnresolvedType {
+                    return Some(sym);
+                }
+            }
+            // Try to look up by name in scopes (for unresolved types)
+            if let Some(sym) = scopes.lookup_symbol(&ident.name, SymKind::type_kinds()) {
+                return Some(sym);
+            }
+            // Fall back to original symbol if lookup failed
             ident.opt_symbol()
         }
 
@@ -33,6 +49,9 @@ pub fn infer_type<'tcx>(
         LangRust::generic_type_with_turbofish => node
             .child_by_field(unit, LangRust::field_type)
             .and_then(|ty_node| infer_type(unit, scopes, &ty_node)),
+
+        // Generic type: Vec<T>, Option<String>, etc.
+        LangRust::generic_type => infer_generic_type(unit, scopes, node),
 
         // Array expression: [1, 2, 3] or [1; 5]
         LangRust::array_expression => infer_array_expression(unit, scopes, node),
@@ -122,6 +141,8 @@ pub fn infer_type<'tcx>(
         LangRust::abstract_type => infer_abstract_type(unit, scopes, node),
         // Bounded type: 'a + Clone, T: Clone + Debug
         LangRust::bounded_type => infer_bounded_type(unit, scopes, node),
+        // Trait bounds: Into<T> + Clone - returns first non-lifetime type
+        LangRust::trait_bounds => infer_trait_bounds(unit, scopes, node),
 
         _ => {
             if let Some(ident) = node.find_ident(unit) {
@@ -417,6 +438,56 @@ fn infer_function_type<'tcx>(
         .and_then(|ret_node| infer_type(unit, scopes, &ret_node))
 }
 
+/// Check if a symbol represents a "defined type" in the current crate.
+/// A defined type is Struct, Enum, or Trait (not UnresolvedType, TypeParameter, etc.)
+fn is_defined_type(sym: &Symbol) -> bool {
+    matches!(
+        sym.kind(),
+        SymKind::Struct | SymKind::Enum | SymKind::Trait
+    )
+}
+
+/// Infer generic type: Vec<T>, Option<String>, HashMap<K, V>, etc.
+///
+/// Strategy: From outer to inner, return the first defined type.
+/// - For `Vec<Tree>` where Vec is not defined → returns Tree
+/// - For `MyStruct<T>` where MyStruct is defined → returns MyStruct
+/// - For `Into<Text>` where Into is defined (trait) → returns Into
+fn infer_generic_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    // The generic_type has structure: type<type_arguments>
+    let type_node = node.child_by_field(unit, LangRust::field_type)?;
+    let outer_type = infer_type(unit, scopes, &type_node)?;
+
+    // If outer type is a defined type (Struct/Enum/Trait), use it
+    if is_defined_type(outer_type) {
+        return Some(outer_type);
+    }
+
+    // Outer type is not defined (e.g., Vec, Option from std, or TypeParameter).
+    // For relationship graphs, we care about contained defined types.
+    // Recursively search type arguments for first defined type.
+    if let Some(type_args) = node.child_by_field(unit, LangRust::field_type_arguments) {
+        for child in type_args.children(unit) {
+            if child.is_trivia() || child.kind_id() == LangRust::lifetime {
+                continue;
+            }
+            if let Some(inner_type) = infer_type(unit, scopes, &child) {
+                // Use inner type if it's a defined type
+                if is_defined_type(inner_type) {
+                    return Some(inner_type);
+                }
+            }
+        }
+    }
+
+    // Return outer type even if not defined (for unresolved cases)
+    Some(outer_type)
+}
+
 /// Infer reference type annotation: &T or &mut T
 fn infer_reference_type<'tcx>(
     unit: &CompileUnit<'tcx>,
@@ -448,9 +519,9 @@ fn infer_abstract_type<'tcx>(
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
     // The abstract_type has structure: impl [for<'a>] Trait
-    // We need to get the trait from the "trait" field
-    node.child_by_field(unit, LangRust::field_trait)
-        .and_then(|trait_node| infer_type(unit, scopes, &trait_node))
+    // Get the trait from the "trait" field and let infer_type handle generics
+    let trait_node = node.child_by_field(unit, LangRust::field_trait)?;
+    infer_type(unit, scopes, &trait_node)
 }
 
 /// Infer bounded type: 'a + Clone, T: Clone + Debug
@@ -471,6 +542,26 @@ fn infer_bounded_type<'tcx>(
             continue;
         }
         // Try to infer type from this child
+        if let Some(sym) = infer_type(unit, scopes, &child) {
+            return Some(sym);
+        }
+    }
+    None
+}
+
+/// Infer trait bounds: Into<T> + Clone - returns first non-lifetime type
+fn infer_trait_bounds<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    // trait_bounds contains type children - get the first non-lifetime one
+    for child in node.children(unit) {
+        // Skip lifetimes and punctuation
+        if child.kind_id() == LangRust::lifetime || child.is_trivia() {
+            continue;
+        }
+        // Let infer_type handle all type kinds including generic_type
         if let Some(sym) = infer_type(unit, scopes, &child) {
             return Some(sym);
         }

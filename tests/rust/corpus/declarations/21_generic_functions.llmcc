@@ -1,19 +1,34 @@
 ===============================================================================
-Generic functions
+generic-functions
 ===============================================================================
 Auto-generated from tree-sitter corpus.
 
 --- file: src/lib.rs ---
+pub struct Text {}
+trait Into<T> {}
+struct Range<T> {}
+
+struct Foo {}
+
+impl Foo {
 pub fn splice<T: Into<Text>>(&mut self, old_range: Range<usize>, new_text: T) {
 }
 pub fn uninit_array<const LEN: usize>() -> [Self; LEN] {}
-
---- expect:symbols ---
-WRONG
+}
 
 --- expect:block-graph ---
-WRONG
-
---- expect:block-relations ---
-WRONG
-
+(root:1 lib
+  (class:2 Text)
+  (trait:3 Into)
+  (class:4 Range)
+  (class:5 Foo
+    (func:7 splice
+      (parameter:8 self @type:5 Foo)
+      (parameter:9 old_range @type:4 Range)
+      (parameter:10 new_text @type:3 Into)
+    )
+    (func:11 uninit_array
+      (return:12 @type:5 Foo)
+    )
+  )
+)

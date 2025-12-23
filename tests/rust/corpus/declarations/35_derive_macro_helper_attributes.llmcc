@@ -47,20 +47,22 @@ u0:25 | Field | limits |
 --- expect:block-graph ---
 (root:1 lib
   (enum:2 Error
-    (field:3 WrongCase)
-    (field:4 OutOfBounds
-      (field:5 idx)
-      (field:6 limits)
+    (field:3 WrongCase @type:2 Error
+      (field:4 0 @type String)
+    )
+    (field:5 OutOfBounds @type:2 Error
+      (field:6 idx @type usize)
+      (field:7 limits @type Limits)
     )
   )
 )
 
 --- expect:block-relations ---
-Error:2 (enum) --has_field--> OutOfBounds:4 (field)
-Error:2 (enum) --has_field--> WrongCase:3 (field)
-OutOfBounds:4 (field) --field_of--> Error:2 (enum)
-OutOfBounds:4 (field) --used_by--> OutOfBounds:4 (field)
-OutOfBounds:4 (field) --uses--> OutOfBounds:4 (field)
-WrongCase:3 (field) --field_of--> Error:2 (enum)
-WrongCase:3 (field) --used_by--> WrongCase:3 (field)
-WrongCase:3 (field) --uses--> WrongCase:3 (field)
+Error:2 (enum)         --has_field-->  OutOfBounds:5 (field)
+Error:2 (enum)         --has_field-->  WrongCase:3 (field)
+Error:2 (enum)         --type_for -->  OutOfBounds:5 (field)
+Error:2 (enum)         --type_for -->  WrongCase:3 (field)
+OutOfBounds:5 (field)  --field_of -->  Error:2 (enum)
+OutOfBounds:5 (field)  -- type_of -->  Error:2 (enum)
+WrongCase:3 (field)    --field_of -->  Error:2 (enum)
+WrongCase:3 (field)    -- type_of -->  Error:2 (enum)

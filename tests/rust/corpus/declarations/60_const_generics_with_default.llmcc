@@ -37,8 +37,11 @@ u0:26 | CompositeType | [T; N] |
 
 --- expect:block-graph ---
 (root:1 lib
-  (class:2 Loaf)
+  (class:2 Loaf
+    (field:3 0 @type [T; N])
+  )
 )
 
 --- expect:block-relations ---
-none
+Loaf:2 (class)    --has_field-->  [T; N]:3 (field)
+[T; N]:3 (field)  --field_of -->  Loaf:2 (class)

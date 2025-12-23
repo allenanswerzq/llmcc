@@ -40,15 +40,11 @@ u0:22 | Function | bar |
 (root:1 lib
   (impl:2 Foo
     (func:3 bar
-      (parameters:4 block#4)
-      (return:5 i32)
-      (call:6 default)
+      (return:4 @type i32)
     )
   )
 )
 
 --- expect:block-relations ---
-Foo:2 (impl) --has_method--> bar:3 (func)
-bar:3 (func) --has_parameters--> block#4:4 (parameters)
-bar:3 (func) --has_return--> i32:5 (return)
-bar:3 (func) --method_of--> Foo:2 (impl)
+Foo:2 (impl)  --has_method-->  bar:3 (func)
+bar:3 (func)  --method_of -->  Foo:2 (impl)

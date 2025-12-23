@@ -9,6 +9,8 @@ pub enum Option<T> {
     Some(T),
 }
 
+pub struct Tree<T> {}
+
 pub enum Node<T: Item> {
     Internal {
         children: Vec<Tree<T>>,
@@ -24,16 +26,19 @@ pub enum Node<T: Item> {
 --- expect:block-graph ---
 (root:1 lib
   (enum:2 Option
-    (field:3 None @type Option)
-    (field:4 Some @type Option)
-  )
-  (enum:5 Node
-    (field:6 Internal @type Node
-      (field:7 children @type children)
-      (field:8 height @type u16)
+    (field:3 None @type:2 Option)
+    (field:4 Some @type:2 Option
+      (field:5 0 @type T)
     )
-    (field:9 Leaf @type Node
-      (field:10 value @type value)
+  )
+  (class:6 Tree)
+  (enum:7 Node
+    (field:8 Internal @type:7 Node
+      (field:9 children @type Vec)
+      (field:10 height @type u16)
+    )
+    (field:11 Leaf @type:7 Node
+      (field:12 value @type T)
     )
   )
 )

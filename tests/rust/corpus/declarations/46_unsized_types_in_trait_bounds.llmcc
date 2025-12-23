@@ -42,9 +42,11 @@ u0:26 | CompositeType | (impl LayoutCalculator + ?Sized) |
 (root:1 lib
   (trait:2 Foo)
   (func:3 univariant
-    (parameters:4 this)
+    (parameter:4 this @type Sized)
+    (parameter:5 that @type (impl LayoutCalculator + ?Sized))
   )
 )
 
 --- expect:block-relations ---
-univariant:3 (func) --has_parameters--> this:4 (parameters)
+univariant:3 (func)  --has_parameters-->  that:5 (parameter)
+univariant:3 (func)  --has_parameters-->  this:4 (parameter)

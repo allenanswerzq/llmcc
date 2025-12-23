@@ -1,5 +1,5 @@
 ===============================================================================
-Trait impls
+trait-impls
 ===============================================================================
 Auto-generated from tree-sitter corpus.
 
@@ -12,11 +12,45 @@ impl ConvertTo<i64> for i32 {
 }
 
 --- expect:symbols ---
-WRONG
+u0:0  | Primitive      | i32       | [global]
+u0:1  | Primitive      | i64       | [global]
+u0:2  | Primitive      | i16       | [global]
+u0:3  | Primitive      | i8        | [global]
+u0:4  | Primitive      | i128      | [global]
+u0:5  | Primitive      | isize     | [global]
+u0:6  | Primitive      | u32       | [global]
+u0:7  | Primitive      | u64       | [global]
+u0:8  | Primitive      | u16       | [global]
+u0:9  | Primitive      | u8        | [global]
+u0:10 | Primitive      | u128      | [global]
+u0:11 | Primitive      | usize     | [global]
+u0:12 | Primitive      | f32       | [global]
+u0:13 | Primitive      | f64       | [global]
+u0:14 | Primitive      | bool      | [global]
+u0:15 | Primitive      | char      | [global]
+u0:16 | Primitive      | str       | [global]
+u0:17 | Primitive      | String    | [global]
+u0:18 | Crate          | _c        | [global]
+u0:19 | File           | lib       | [global]
+u0:20 | Module         | crate     | [global]
+u0:21 | Trait          | iter      |         
+u0:22 | UnresolvedType | Self      |         
+u0:23 | Trait          | ConvertTo |         
+u0:24 | UnresolvedType | i32       |         
+u0:25 | Function       | convert   |         
 
 --- expect:block-graph ---
-WRONG
+(root:1 lib
+  (impl:2 Self)
+  (impl:3 i32
+    (func:4 convert
+      (parameter:5 self @type &self)
+      (return:6 @type i64)
+    )
+  )
+)
 
 --- expect:block-relations ---
-WRONG
-
+convert:4 (func)  --has_parameters-->  &self:5 (parameter)
+convert:4 (func)  --  method_of   -->  i32:3 (impl)
+i32:3 (impl)      --  has_method  -->  convert:4 (func)

@@ -83,10 +83,10 @@ u0:37 | TypeParameter | A |
 --- expect:block-graph ---
 (root:1 lib
   (func:2 walk
-    (parameters:3 it)
-    (return:4 bool)
-    (parameters:5 Pat)
-    (return:6 bool)
+    (parameter:3 self @type &self)
+    (parameter:4 it @type F)
+    (return:5 @type bool)
+    (return:6 @type bool)
   )
   (impl:7 Iter)
   (impl:8 B)
@@ -94,13 +94,10 @@ u0:37 | TypeParameter | A |
   (impl:10 B)
   (impl:11 B)
   (trait:12 A)
-  (func:13 foo
-    (parameters:14 block#14)
-  )
-  (impl:15 B)
+  (func:13 foo)
+  (impl:14 B)
 )
 
 --- expect:block-relations ---
-foo:13 (func) --has_parameters--> block#14:14 (parameters)
-walk:2 (func) --has_parameters--> Pat:5 (parameters)
-walk:2 (func) --has_return--> bool:6 (return)
+walk:2 (func)  --has_parameters-->  &self:3 (parameter)
+walk:2 (func)  --has_parameters-->  it:4 (parameter)
