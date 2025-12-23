@@ -120,6 +120,8 @@ pub fn infer_type<'tcx>(
         LangRust::pointer_type => infer_pointer_type(unit, scopes, node),
         // impl Trait - get the trait from the "trait" field
         LangRust::abstract_type => infer_abstract_type(unit, scopes, node),
+        // Bounded type: 'a + Clone, T: Clone + Debug
+        LangRust::bounded_type => infer_bounded_type(unit, scopes, node),
 
         _ => {
             if let Some(ident) = node.find_ident(unit) {
@@ -449,6 +451,31 @@ fn infer_abstract_type<'tcx>(
     // We need to get the trait from the "trait" field
     node.child_by_field(unit, LangRust::field_trait)
         .and_then(|trait_node| infer_type(unit, scopes, &trait_node))
+}
+
+/// Infer bounded type: 'a + Clone, T: Clone + Debug
+/// Returns the first non-lifetime type found
+fn infer_bounded_type<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    node: &HirNode<'tcx>,
+) -> Option<&'tcx Symbol> {
+    // bounded_type contains multiple bounds separated by +
+    // We want to find the actual trait type, skipping lifetimes
+    for child in node.children(unit) {
+        // Skip lifetimes and punctuation
+        if child.kind_id() == LangRust::lifetime {
+            continue;
+        }
+        if child.is_trivia() {
+            continue;
+        }
+        // Try to infer type from this child
+        if let Some(sym) = infer_type(unit, scopes, &child) {
+            return Some(sym);
+        }
+    }
+    None
 }
 
 /// Returns true when a node only represents punctuation or whitespace.

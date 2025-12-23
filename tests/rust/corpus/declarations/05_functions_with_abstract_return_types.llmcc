@@ -1,5 +1,5 @@
 ===============================================================================
-functions-with-abstract-return-types
+functions-with-abstract-return-types-basic
 ===============================================================================
 Auto-generated from tree-sitter corpus.
 
@@ -7,40 +7,36 @@ Auto-generated from tree-sitter corpus.
 fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
 }
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | Function | triples |
-u0:22 | Variable | a |
-u0:23 | CompositeType | (usize) |
-
 --- expect:block-graph ---
 (root:1 lib
   (func:2 triples
-    (parameters:3 a)
-    (return:4 Iterator)
+    (parameter:3 a @type a)
+    (return:4 @type Iterator)
   )
 )
 
---- expect:block-relations ---
-triples:2 (func) --has_parameters--> a:3 (parameters)
-triples:2 (func) --has_return--> Iterator:4 (return)
+
+===============================================================================
+functions-with-abstract-return-types-with-definition
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+trait B {}
+
+trait Iterator {
+    type Item;
+}
+
+fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
+}
+
+--- expect:block-graph ---
+(root:1 lib
+  (trait:2 B)
+  (trait:3 Iterator)
+  (func:4 triples
+    (parameter:5 a @type:2 B)
+    (return:6 @type:3 Iterator)
+  )
+)

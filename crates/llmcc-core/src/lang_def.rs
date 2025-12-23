@@ -268,6 +268,19 @@ pub trait LanguageTrait {
     /// Map a token kind ID to its corresponding block kind.
     fn block_kind(kind_id: u16) -> BlockKind;
 
+    /// Map a token kind ID to its corresponding block kind with parent context.
+    /// This allows languages to create blocks based on the parent node's kind.
+    /// For example, types inside tuple struct definitions become Field blocks.
+    /// Default implementation ignores parent and delegates to block_kind.
+    fn block_kind_with_parent(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
+        let field_kind = Self::block_kind(field_id);
+        if field_kind != BlockKind::Undefined {
+            field_kind
+        } else {
+            Self::block_kind(kind_id)
+        }
+    }
+
     /// Get the string representation of a token ID.
     fn token_str(kind_id: u16) -> Option<&'static str>;
 
@@ -309,6 +322,19 @@ pub trait LanguageTraitImpl: LanguageTrait {
 
     /// Supported file extensions for this language.
     fn supported_extensions_impl() -> &'static [&'static str];
+
+    /// Language-specific block kind with parent context.
+    /// Override this to handle context-dependent block creation.
+    /// Default implementation delegates to the trait's default.
+    fn block_kind_with_parent_impl(kind_id: u16, field_id: u16, _parent_kind_id: u16) -> BlockKind {
+        // Default: use the trait's default implementation
+        let field_kind = Self::block_kind(field_id);
+        if field_kind != BlockKind::Undefined {
+            field_kind
+        } else {
+            Self::block_kind(kind_id)
+        }
+    }
 
     fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         ScopeStack::new(cc.arena(), &cc.interner)
@@ -412,6 +438,11 @@ macro_rules! define_lang {
                         )*
                         _ => $crate::graph_builder::BlockKind::Undefined,
                     }
+                }
+
+                /// Get the Block kind for a given token ID with parent context
+                fn block_kind_with_parent(kind_id: u16, field_id: u16, parent_kind_id: u16) -> $crate::graph_builder::BlockKind {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::block_kind_with_parent_impl(kind_id, field_id, parent_kind_id)
                 }
 
                 /// Get the string representation of a token ID

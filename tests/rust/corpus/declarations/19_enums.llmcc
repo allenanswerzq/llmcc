@@ -21,71 +21,19 @@ pub enum Node<T: Item> {
     }
 }
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | Enum | Option | [global]
-u0:22 | TypeParameter | T |
-u0:23 | EnumVariant | None |
-u0:24 | EnumVariant | Some |
-u0:25 | Enum | Node | [global]
-u0:26 | TypeParameter | T |
-u0:27 | EnumVariant | Internal |
-u0:28 | Field | children |
-u0:29 | Field | height |
-u0:30 | EnumVariant | Leaf |
-u0:31 | Field | value |
-
 --- expect:block-graph ---
 (root:1 lib
   (enum:2 Option
-    (field:3 None)
-    (field:4 Some)
+    (field:3 None @type Option)
+    (field:4 Some @type Option)
   )
   (enum:5 Node
-    (field:6 Internal
-      (field:7 children)
-      (field:8 height)
+    (field:6 Internal @type Node
+      (field:7 children @type children)
+      (field:8 height @type u16)
     )
-    (field:9 Leaf
-      (field:10 value)
+    (field:9 Leaf @type Node
+      (field:10 value @type value)
     )
   )
 )
-
---- expect:block-relations ---
-Internal:6 (field) --field_of--> Node:5 (enum)
-Internal:6 (field) --used_by--> Internal:6 (field)
-Internal:6 (field) --uses--> Internal:6 (field)
-Leaf:9 (field) --field_of--> Node:5 (enum)
-Leaf:9 (field) --used_by--> Leaf:9 (field)
-Leaf:9 (field) --uses--> Leaf:9 (field)
-Node:5 (enum) --has_field--> Internal:6 (field)
-Node:5 (enum) --has_field--> Leaf:9 (field)
-None:3 (field) --field_of--> Option:2 (enum)
-None:3 (field) --used_by--> None:3 (field)
-None:3 (field) --uses--> None:3 (field)
-Option:2 (enum) --has_field--> None:3 (field)
-Option:2 (enum) --has_field--> Some:4 (field)
-Some:4 (field) --field_of--> Option:2 (enum)
-Some:4 (field) --used_by--> Some:4 (field)
-Some:4 (field) --uses--> Some:4 (field)

@@ -190,6 +190,58 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
+    /// Build a block with a pre-determined kind (used for context-dependent block creation)
+    /// For tuple struct fields, the index is used as the field name.
+    fn build_block_with_kind_and_index(
+        &mut self,
+        _unit: CompileUnit<'tcx>,
+        node: HirNode<'tcx>,
+        parent: BlockId,
+        block_kind: BlockKind,
+        index: usize,
+    ) {
+        let id = self.next_id();
+
+        if self.root.is_none() {
+            self.root = Some(id);
+        }
+
+        // For context-dependent blocks (like tuple struct fields), don't recurse
+        let child_ids = Vec::new();
+
+        // Create the block - for tuple struct fields, use index as name
+        let block = if block_kind == BlockKind::Field {
+            self.create_tuple_field_block(id, node, Some(parent), child_ids, index)
+        } else {
+            self.create_block(id, node, block_kind, Some(parent), child_ids)
+        };
+
+        self.unit.insert_block(id, block, parent);
+
+        if let Some(children) = self.children_stack.last_mut() {
+            children.push((id, block_kind));
+        }
+    }
+
+    /// Create a field block for tuple struct with index as name
+    fn create_tuple_field_block(
+        &self,
+        id: BlockId,
+        node: HirNode<'tcx>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+        index: usize,
+    ) -> BasicBlock<'tcx> {
+        // NOTE: Don't call set_block_id here - the node is a type_identifier that's
+        // bound to the struct symbol, and we don't want to overwrite the struct's block_id
+        let mut block = BlockField::new(id, node, parent, children);
+        block.name = index.to_string();
+        // Populate type info from the type node itself
+        self.populate_type_info(&block.base, node);
+        let block_ref = self.unit.cc.block_arena.alloc(block);
+        BasicBlock::Field(block_ref)
+    }
+
     /// Populate block-specific fields
     fn populate_block_fields(
         &self,
@@ -354,6 +406,29 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 }
 
 impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Language> {
+    fn visit_children(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
+        let parent_kind_id = node.kind_id();
+        let children = node.child_ids();
+        let mut tuple_field_index = 0usize;
+        for child_id in children {
+            let child = unit.hir_node(*child_id);
+            // Check for context-dependent blocks (like tuple struct fields)
+            // Only intercept if the parent context changes the block kind
+            let base_kind = Self::effective_block_kind(child);
+            let context_kind = Language::block_kind_with_parent(child.kind_id(), child.field_id(), parent_kind_id);
+
+            if context_kind != base_kind && Self::is_block_kind(context_kind) {
+                // Parent context creates a block that wouldn't exist otherwise
+                // For tuple struct fields, pass the index as the name
+                self.build_block_with_kind_and_index(unit, child, parent, context_kind, tuple_field_index);
+                tuple_field_index += 1;
+            } else {
+                // Normal path - let visit_node handle it
+                self.visit_node(unit, child, parent);
+            }
+        }
+    }
+
     fn visit_file(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
         self.children_stack.push(Vec::new());
         self.build_block(unit, node, parent, true);
