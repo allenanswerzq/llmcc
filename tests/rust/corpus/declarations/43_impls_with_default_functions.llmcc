@@ -4,6 +4,8 @@ impls-with-default-functions
 Auto-generated from tree-sitter corpus.
 
 --- file: src/lib.rs ---
+struct Foo;
+
 impl Foo {
   const default fn bar() -> i32 {
     // Make 'default' still works as an identifier
@@ -11,40 +13,11 @@ impl Foo {
   }
 }
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | UnresolvedType | Foo |
-u0:22 | Function | bar |
-
 --- expect:block-graph ---
 (root:1 lib
-  (impl:2 Foo
-    (func:3 bar
-      (return:4 @type i32)
+  (class:2 Foo
+    (func:4 bar
+      (return:5 @type i32)
     )
   )
 )
-
---- expect:block-relations ---
-Foo:2 (impl)  --has_method-->  bar:3 (func)
-bar:3 (func)  --method_of -->  Foo:2 (impl)

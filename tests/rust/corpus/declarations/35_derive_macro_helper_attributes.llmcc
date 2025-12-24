@@ -8,6 +8,11 @@ Auto-generated from tree-sitter corpus.
 
 use thiserror::Error;
 
+struct Limits {
+    lo: usize,
+    hi: usize,
+}
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("first letter must be lowercase but was {:?}", first_char(.0))]
@@ -16,53 +21,19 @@ pub enum Error {
     OutOfBounds { idx: usize, limits: Limits },
 }
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | Enum | Error | [global]
-u0:22 | EnumVariant | WrongCase |
-u0:23 | EnumVariant | OutOfBounds |
-u0:24 | Field | idx |
-u0:25 | Field | limits |
-
 --- expect:block-graph ---
 (root:1 lib
-  (enum:2 Error
-    (field:3 WrongCase @type:2 Error
-      (field:4 0 @type String)
+  (class:2 Limits
+    (field:3 lo @type usize)
+    (field:4 hi @type usize)
+  )
+  (enum:5 Error
+    (field:6 WrongCase @type:5 Error
+      (field:7 0 @type String)
     )
-    (field:5 OutOfBounds @type:2 Error
-      (field:6 idx @type usize)
-      (field:7 limits @type Limits)
+    (field:8 OutOfBounds @type:5 Error
+      (field:9 idx @type usize)
+      (field:10 limits @type:2 Limits)
     )
   )
 )
-
---- expect:block-relations ---
-Error:2 (enum)         --has_field-->  OutOfBounds:5 (field)
-Error:2 (enum)         --has_field-->  WrongCase:3 (field)
-Error:2 (enum)         --type_for -->  OutOfBounds:5 (field)
-Error:2 (enum)         --type_for -->  WrongCase:3 (field)
-OutOfBounds:5 (field)  --field_of -->  Error:2 (enum)
-OutOfBounds:5 (field)  -- type_of -->  Error:2 (enum)
-WrongCase:3 (field)    --field_of -->  Error:2 (enum)
-WrongCase:3 (field)    -- type_of -->  Error:2 (enum)

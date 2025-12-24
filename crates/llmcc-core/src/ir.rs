@@ -348,14 +348,24 @@ impl<'hir> HirNode<'hir> {
     pub fn set_block_id(&self, block_id: crate::block::BlockId) {
         use crate::symbol::SymKind;
         // Try HirScope first
-        if let Some(scope) = self.as_scope()
-            && let Some(symbol) = scope.opt_symbol()
-        {
-            // Don't set block_id on primitives - they are shared globally
-            if symbol.kind() != SymKind::Primitive {
-                symbol.set_block_id(block_id);
+        if let Some(scope) = self.as_scope() {
+            // First try scope's symbol
+            if let Some(symbol) = scope.opt_symbol() {
+                // Don't set block_id on primitives - they are shared globally
+                if symbol.kind() != SymKind::Primitive {
+                    symbol.set_block_id(block_id);
+                }
+                return;
             }
-            return;
+            // If no scope symbol, try the scope's ident (for type aliases, etc.)
+            if let Some(ident) = scope.opt_ident()
+                && let Some(symbol) = ident.opt_symbol()
+            {
+                if symbol.kind() != SymKind::Primitive {
+                    symbol.set_block_id(block_id);
+                }
+                return;
+            }
         }
         // Try HirIdent
         if let Some(ident) = self.as_ident()

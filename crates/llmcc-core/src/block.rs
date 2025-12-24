@@ -19,6 +19,7 @@ declare_arena!(BlockArena {
     blk_const: BlockConst<'a>,
     blk_parameter: BlockParameter<'a>,
     blk_return: BlockReturn<'a>,
+    blk_alias: BlockAlias<'a>,
 });
 
 #[derive(
@@ -42,6 +43,7 @@ pub enum BlockKind {
     Scope,
     Parameter,
     Return,
+    Alias,
 }
 
 #[derive(Debug, Clone)]
@@ -58,6 +60,7 @@ pub enum BasicBlock<'blk> {
     Field(&'blk BlockField<'blk>),
     Parameter(&'blk BlockParameter<'blk>),
     Return(&'blk BlockReturn<'blk>),
+    Alias(&'blk BlockAlias<'blk>),
     Block,
 }
 
@@ -77,6 +80,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Field(field) => field.format(),
             BasicBlock::Parameter(param) => param.format(),
             BasicBlock::Return(ret) => ret.format(),
+            BasicBlock::Alias(alias) => alias.format(),
             BasicBlock::Undefined | BasicBlock::Block => "undefined".to_string(),
         }
     }
@@ -115,6 +119,7 @@ impl<'blk> BasicBlock<'blk> {
             BasicBlock::Field(block) => Some(&block.base),
             BasicBlock::Parameter(block) => Some(&block.base),
             BasicBlock::Return(block) => Some(&block.base),
+            BasicBlock::Alias(block) => Some(&block.base),
         }
     }
 
@@ -758,6 +763,20 @@ impl<'blk> BlockConst<'blk> {
     }
 
     pub fn format(&self) -> String {
+        let type_name = self.base.get_type_name();
+        if !type_name.is_empty() {
+            if let Some(type_id) = self.base.get_type_ref() {
+                return format!(
+                    "{}:{} {} @type:{} {}",
+                    self.base.kind, self.base.id, self.name, type_id, type_name
+                );
+            } else {
+                return format!(
+                    "{}:{} {} @type {}",
+                    self.base.kind, self.base.id, self.name, type_name
+                );
+            }
+        }
         format!("{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }
@@ -874,5 +893,28 @@ impl<'blk> BlockReturn<'blk> {
             }
         }
         format!("{}:{}", self.base.kind, self.base.id)
+    }
+}
+
+#[derive(Debug)]
+pub struct BlockAlias<'blk> {
+    pub base: BlockBase<'blk>,
+    pub name: String,
+}
+
+impl<'blk> BlockAlias<'blk> {
+    pub fn new(
+        id: BlockId,
+        node: HirNode<'blk>,
+        parent: Option<BlockId>,
+        children: Vec<BlockId>,
+    ) -> Self {
+        let base = BlockBase::new(id, node, BlockKind::Alias, parent, children);
+        let name = base.opt_get_name().unwrap_or("").to_string();
+        Self { base, name }
+    }
+
+    pub fn format(&self) -> String {
+        format!("{}:{} {}", self.base.kind, self.base.id, self.name)
     }
 }

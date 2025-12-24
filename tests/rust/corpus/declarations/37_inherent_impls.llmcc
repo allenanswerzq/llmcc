@@ -4,6 +4,8 @@ inherent-impls
 Auto-generated from tree-sitter corpus.
 
 --- file: src/lib.rs ---
+struct Person;
+
 impl Person {
   const leg_count : u32 = 2;
 
@@ -15,66 +17,21 @@ impl Person {
 
 impl Machine<{State::Init}> {}
 
---- expect:symbols ---
-u0:0  | Primitive      | i32       | [global]
-u0:1  | Primitive      | i64       | [global]
-u0:2  | Primitive      | i16       | [global]
-u0:3  | Primitive      | i8        | [global]
-u0:4  | Primitive      | i128      | [global]
-u0:5  | Primitive      | isize     | [global]
-u0:6  | Primitive      | u32       | [global]
-u0:7  | Primitive      | u64       | [global]
-u0:8  | Primitive      | u16       | [global]
-u0:9  | Primitive      | u8        | [global]
-u0:10 | Primitive      | u128      | [global]
-u0:11 | Primitive      | usize     | [global]
-u0:12 | Primitive      | f32       | [global]
-u0:13 | Primitive      | f64       | [global]
-u0:14 | Primitive      | bool      | [global]
-u0:15 | Primitive      | char      | [global]
-u0:16 | Primitive      | str       | [global]
-u0:17 | Primitive      | String    | [global]
-u0:18 | Crate          | _c        | [global]
-u0:19 | File           | lib       | [global]
-u0:20 | Module         | crate     | [global]
-u0:21 | UnresolvedType | Person    |         
-u0:22 | Const          | leg_count |         
-u0:23 | Function       | walk      |         
-u0:24 | Function       | walk_mut  |         
-u0:25 | Function       | talk      |         
-u0:26 | Function       | talk_mut  |         
-u0:27 | UnresolvedType | Machine   |         
-
 --- expect:block-graph ---
 (root:1 lib
-  (impl:2 Person
-    (const:3 const leg_count : u32 = 2;)
-    (func:4 walk
-      (parameter:5 self @type self)
+  (class:2 Person
+    (func:5 walk
+      (parameter:6 self @type:2 Person)
     )
-    (func:6 walk_mut
-      (parameter:7 self @type mut self)
+    (func:7 walk_mut
+      (parameter:8 self @type:2 Person)
     )
-    (func:8 talk
-      (parameter:9 self @type & self)
+    (func:9 talk
+      (parameter:10 self @type:2 Person)
     )
-    (func:10 talk_mut
-      (parameter:11 a @type &'a mut self)
+    (func:11 talk_mut
+      (parameter:12 a @type:2 Person)
     )
   )
-  (impl:12 Machine)
+  (impl:13 Machine)
 )
-
---- expect:block-relations ---
-Person:2 (impl)     --  has_method  -->  talk:8 (func)
-Person:2 (impl)     --  has_method  -->  talk_mut:10 (func)
-Person:2 (impl)     --  has_method  -->  walk:4 (func)
-Person:2 (impl)     --  has_method  -->  walk_mut:6 (func)
-talk:8 (func)       --has_parameters-->  & self:9 (parameter)
-talk:8 (func)       --  method_of   -->  Person:2 (impl)
-talk_mut:10 (func)  --has_parameters-->  &'a mut self:11 (parameter)
-talk_mut:10 (func)  --  method_of   -->  Person:2 (impl)
-walk:4 (func)       --has_parameters-->  self:5 (parameter)
-walk:4 (func)       --  method_of   -->  Person:2 (impl)
-walk_mut:6 (func)   --has_parameters-->  mut self:7 (parameter)
-walk_mut:6 (func)   --  method_of   -->  Person:2 (impl)

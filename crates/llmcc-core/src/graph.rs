@@ -112,7 +112,9 @@ impl<'tcx> ProjectGraph<'tcx> {
             BasicBlock::Enum(enum_block) => self.link_enum(block_id, enum_block),
             BasicBlock::Call(call) => self.link_call(unit, block_id, call),
             BasicBlock::Field(field) => self.link_field(unit, block_id, field),
-            // Root, Stmt, Const, Parameters, Return - no special linking needed
+            BasicBlock::Return(ret) => self.link_return(block_id, ret),
+            BasicBlock::Parameter(param) => self.link_parameter(block_id, param),
+            // Root, Stmt, Const, Alias - no special linking needed
             _ => {}
         }
 
@@ -373,6 +375,32 @@ impl<'tcx> ProjectGraph<'tcx> {
         if let Some(callee_id) = self.resolve_callee(unit, call) {
             self.add_relation(block_id, BlockRelation::Calls, callee_id);
             self.add_relation(callee_id, BlockRelation::CalledBy, block_id);
+        }
+    }
+
+    /// Link return type relationships.
+    fn link_return(
+        &self,
+        block_id: BlockId,
+        ret: &crate::block::BlockReturn<'tcx>,
+    ) {
+        // Type reference (TypeOf relationship)
+        if let Some(type_id) = ret.base.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+        }
+    }
+
+    /// Link parameter type relationships.
+    fn link_parameter(
+        &self,
+        block_id: BlockId,
+        param: &crate::block::BlockParameter<'tcx>,
+    ) {
+        // Type reference (TypeOf relationship)
+        if let Some(type_id) = param.base.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         }
     }
 

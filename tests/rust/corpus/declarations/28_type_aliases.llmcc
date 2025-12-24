@@ -8,38 +8,17 @@ type Inch = u64;
 type Name<T> = Vec<T>;
 type LazyResolve = impl (FnOnce() -> Capture) + Send + Sync + UnwindSafe;
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | TypeAlias | Inch |
-u0:22 | TypeAlias | Name |
-u0:23 | TypeParameter | T |
-u0:24 | TypeAlias | LazyResolve |
-u0:25 | CompositeType | (FnOnce() -> Capture) |
+fn foo(f: LazyResolve) -> Name<Inch> {
+    Vec::new()
+}
 
 --- expect:block-graph ---
 (root:1 lib
-  (return:2 @type Capture)
+  (alias:2 Inch)
+  (alias:3 Name)
+  (alias:4 LazyResolve)
+  (func:5 foo
+    (parameter:6 f @type:4 LazyResolve)
+    (return:7 @type:3 Name)
+  )
 )
-
---- expect:block-relations ---
-none

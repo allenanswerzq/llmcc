@@ -43,6 +43,12 @@ impl<'tcx> CollectorVisitor<'tcx> {
         tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
         let sym = scopes.lookup_or_insert(&ident.name, node, kind)?;
         ident.set_symbol(sym);
+
+        // Also set the ident on the scope so set_block_id can find it
+        if let Some(sn) = node.as_scope() {
+            sn.set_ident(ident);
+        }
+
         Some(sym)
     }
 
@@ -462,7 +468,10 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Trait,
             LangRust::field_name,
-            None,
+            Some(Box::new(|node, scopes| {
+                let _ = scopes.lookup_or_insert("self", node, SymKind::TypeAlias);
+                let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
+            })),
         );
     }
 

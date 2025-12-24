@@ -176,8 +176,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
     }
 
-    // AST: type parameter T or T: Trait in generics
-    // Sets type_of on the type parameter to point to its first trait bound
+    // AST: type parameter T or T: Trait or T=Default in generics
+    // Sets type_of on the type parameter to point to its first trait bound or default type
     #[tracing::instrument(skip_all)]
     fn visit_type_parameter(
         &mut self,
@@ -191,7 +191,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         // Get the type parameter symbol
         if let Some(type_param_sym) = node.ident_symbol_by_field(unit, LangRust::field_name) {
-            // Look for trait bounds (T: Trait)
+            // Priority 1: Look for trait bounds (T: Trait)
             if let Some(bounds_node) = node.child_by_field(unit, LangRust::field_bounds) {
                 // trait_bounds contains the trait types - get the first one
                 if let Some(first_bound) = infer_type(unit, scopes, &bounds_node) {
@@ -200,6 +200,18 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                         "type parameter '{}' has bound '{}'",
                         type_param_sym.format(Some(unit.interner())),
                         first_bound.format(Some(unit.interner())),
+                    );
+                    return;
+                }
+            }
+            // Priority 2: Look for default type (RHS=Self)
+            if let Some(default_node) = node.child_by_field(unit, LangRust::field_default_type) {
+                if let Some(default_type) = infer_type(unit, scopes, &default_node) {
+                    type_param_sym.set_type_of(default_type.id());
+                    tracing::trace!(
+                        "type parameter '{}' has default '{}'",
+                        type_param_sym.format(Some(unit.interner())),
+                        default_type.format(Some(unit.interner())),
                     );
                 }
             }
@@ -329,6 +341,46 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                         // assign scope
                         if let Some(struct_scope) = struct_sym.opt_scope() {
                             self_sym.set_scope(struct_scope);
+                        }
+                    }
+                }
+            })),
+        );
+    }
+
+    // AST: trait Name { methods... }
+    // Purpose: Bind Self/self to the trait for methods inside the trait
+    #[tracing::instrument(skip_all)]
+    fn visit_trait_item(
+        &mut self,
+        unit: &CompileUnit<'tcx>,
+        node: &HirNode<'tcx>,
+        scopes: &mut BinderScopes<'tcx>,
+        namespace: &'tcx Scope<'tcx>,
+        parent: Option<&Symbol>,
+    ) {
+        let sn = node.as_scope().unwrap();
+        self.visit_scoped_named(
+            unit,
+            node,
+            sn,
+            scopes,
+            namespace,
+            parent,
+            Some(Box::new(|unit, sn, scopes| {
+                for key in ["Self", "self"] {
+                    if let Some(self_sym) = scopes.lookup_symbol(key, vec![SymKind::TypeAlias])
+                        && let Some(trait_sym) = sn.opt_symbol()
+                    {
+                        tracing::trace!(
+                            "binding '{}' to trait type '{}'",
+                            key,
+                            trait_sym.format(Some(unit.interner())),
+                        );
+                        self_sym.set_type_of(trait_sym.id());
+                        // assign scope
+                        if let Some(trait_scope) = trait_sym.opt_scope() {
+                            self_sym.set_scope(trait_scope);
                         }
                     }
                 }

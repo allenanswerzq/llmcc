@@ -4,49 +4,20 @@ unsized-types-in-trait-bounds
 Auto-generated from tree-sitter corpus.
 
 --- file: src/lib.rs ---
+trait Sized;
+trait LayoutCalculator {}
+
 trait Foo<T: ?Sized> {
 }
 
 fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | Trait | Foo |
-u0:22 | TypeParameter | T |
-u0:23 | Function | univariant |
-u0:24 | Variable | this |
-u0:25 | Variable | that |
-u0:26 | CompositeType | (impl LayoutCalculator + ?Sized) |
-
 --- expect:block-graph ---
 (root:1 lib
-  (trait:2 Foo)
-  (func:3 univariant
-    (parameter:4 this @type Sized)
-    (parameter:5 that @type (impl LayoutCalculator + ?Sized))
+  (trait:2 LayoutCalculator)
+  (trait:3 Foo)
+  (func:4 univariant
+    (parameter:5 this @type Sized)
+    (parameter:6 that @type (impl LayoutCalculator + ?Sized))
   )
 )
-
---- expect:block-relations ---
-univariant:3 (func)  --has_parameters-->  that:5 (parameter)
-univariant:3 (func)  --has_parameters-->  this:4 (parameter)

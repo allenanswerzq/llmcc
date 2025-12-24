@@ -439,11 +439,11 @@ fn infer_function_type<'tcx>(
 }
 
 /// Check if a symbol represents a "defined type" in the current crate.
-/// A defined type is Struct, Enum, or Trait (not UnresolvedType, TypeParameter, etc.)
+/// A defined type is Struct, Enum, Trait, or TypeAlias (not UnresolvedType, TypeParameter, etc.)
 fn is_defined_type(sym: &Symbol) -> bool {
     matches!(
         sym.kind(),
-        SymKind::Struct | SymKind::Enum | SymKind::Trait
+        SymKind::Struct | SymKind::Enum | SymKind::Trait | SymKind::TypeAlias
     )
 }
 

@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use crate::DynError;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
-    BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
+    BlockAlias, BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
     BlockParameter, BlockReturn, BlockRoot, BlockTrait,
 };
 use crate::context::{CompileCtxt, CompileUnit};
@@ -100,7 +100,13 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {
-                let stmt = BlockConst::new(id, node, parent, children);
+                let mut stmt = BlockConst::new(id, node, parent, children);
+                // Find identifier name from children
+                if let Some(ident) = node.find_ident(&self.unit) {
+                    stmt.name = ident.name.clone();
+                }
+                // Populate type info from symbol
+                self.populate_type_info(&stmt.base, node);
                 let block_ref = self.unit.cc.block_arena.alloc(stmt);
                 BasicBlock::Const(block_ref)
             }
@@ -141,6 +147,15 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Return(block_ref)
             }
+            BlockKind::Alias => {
+                let mut block = BlockAlias::new(id, node, parent, children);
+                // Find identifier name from children
+                if let Some(ident) = node.find_ident(&self.unit) {
+                    block.name = ident.name.clone();
+                }
+                let block_ref = self.unit.cc.block_arena.alloc(block);
+                BasicBlock::Alias(block_ref)
+            }
             _ => {
                 panic!("unknown block kind: {}", kind)
             }
@@ -171,7 +186,8 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // Set block_id on the node's symbol BEFORE visiting children
         // This allows children to resolve their parent's type (e.g., enum variants -> enum)
         // Don't set for impl blocks - they reference existing type symbols
-        if block_kind != BlockKind::Impl {
+        // Don't set for return blocks - the return type node's symbol belongs to the type definition
+        if block_kind != BlockKind::Impl && block_kind != BlockKind::Return {
             node.set_block_id(id);
         }
 
@@ -257,6 +273,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 for &(child_id, child_kind) in children {
                     match child_kind {
                         BlockKind::Parameter => func.add_parameter(child_id),
+                        BlockKind::Return => func.set_returns(child_id),
                         _ => {}
                     }
                 }
@@ -296,114 +313,122 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
     }
 
+    /// Resolve a symbol by following `type_of` chains to find a concrete type with a block.
+    ///
+    /// This handles language-agnostic type indirection patterns:
+    /// - **Type Parameters**: Generic/template parameters (Rust `T`, Java `T`, C++ `typename T`)
+    /// - **Type Aliases**: Type synonyms (Rust `type`, C `typedef`, TypeScript type alias)
+    ///
+    /// Returns the first symbol in the chain that has a `block_id`, allowing the block
+    /// graph to reference the actual definition rather than intermediate aliases.
+    fn resolve_to_block_type(&self, sym: &'tcx crate::symbol::Symbol) -> &'tcx crate::symbol::Symbol {
+        let mut current = sym;
+        // Follow type_of chains until we find something with a block
+        // or can't follow further (max 10 iterations to prevent infinite loops)
+        for _ in 0..10 {
+            // If current has a block, return it
+            if current.block_id().is_some() {
+                return current;
+            }
+            // Only follow type_of for indirect type references
+            match current.kind() {
+                crate::symbol::SymKind::TypeParameter | crate::symbol::SymKind::TypeAlias => {
+                    if let Some(type_of_id) = current.type_of() {
+                        if let Some(resolved) = self.unit.cc.opt_get_symbol(type_of_id) {
+                            current = resolved;
+                            continue;
+                        }
+                    }
+                    return current;
+                }
+                _ => return current,
+            }
+        }
+        current
+    }
+
+    /// Set type info on BlockBase from a symbol.
+    ///
+    /// Follows `type_of` chains to find concrete types with blocks, then sets
+    /// both the display name and block reference on the target block.
+    fn set_type_from_symbol(&self, base: &crate::block::BlockBase<'tcx>, sym: &'tcx crate::symbol::Symbol) -> bool {
+        let display_sym = self.resolve_to_block_type(sym);
+
+        if let Some(name) = self.unit.cc.interner.resolve_owned(display_sym.name) {
+            base.set_type_name(name);
+        }
+        if let Some(block_id) = display_sym.block_id() {
+            if block_id != base.id {
+                base.set_type_ref(block_id);
+            }
+        }
+        true
+    }
+
     /// Populate type info on BlockBase from the node.
+    ///
+    /// Extracts type information by finding the resolved type symbol from the node's
+    /// structure. The binding phase has already resolved type references to symbols;
+    /// this method finds and uses that resolved information.
+    ///
+    /// Two main patterns are handled:
+    /// 1. **Value declarations** (params, fields, consts): The identifier has `type_of`
+    ///    pointing to its type symbol.
+    /// 2. **Type references** (return types): The node contains a type identifier
+    ///    that IS the resolved type symbol.
     fn populate_type_info(&self, base: &crate::block::BlockBase<'tcx>, node: HirNode<'tcx>) {
-        // Strategy 1: Look at children for identifier with type_of symbol
-        // Works for fields and parameters where the name identifier has type_of set
+        // Pattern 1: Scoped paths (e.g., Self::Summary, pkg::Type)
+        // The "name" field contains the semantically significant final component
+        if let Some(name_child) = node.child_by_field(&self.unit, Language::name_field()) {
+            if let Some(ident) = name_child.find_ident(&self.unit)
+                && let Some(sym) = ident.opt_symbol()
+            {
+                self.set_type_from_symbol(base, sym);
+                return;
+            }
+        }
+
+        // Pattern 2: Value declarations with type annotations (x: Type, var x Type)
+        // The identifier's symbol has type_of pointing to the type symbol
         for child in node.children(&self.unit) {
             if let Some(child_sym) = child.opt_symbol() {
-                if let Some(type_sym_id) = child_sym.type_of() {
-                    if let Some(type_sym) = self.unit.cc.opt_get_symbol(type_sym_id) {
-                        // If type_sym is a TypeParameter with a trait bound (type_of),
-                        // use the bound type instead for relationship graphs
-                        let effective_type = if type_sym.kind() == crate::symbol::SymKind::TypeParameter {
-                            if let Some(bound_id) = type_sym.type_of() {
-                                self.unit.cc.opt_get_symbol(bound_id).unwrap_or(type_sym)
-                            } else {
-                                type_sym
-                            }
-                        } else {
-                            type_sym
-                        };
-
-                        if let Some(name) = self.unit.cc.interner.resolve_owned(effective_type.name) {
-                            base.set_type_name(name);
-                        }
-                        if let Some(type_block_id) = effective_type.block_id() {
-                            base.set_type_ref(type_block_id);
-                        }
+                if let Some(type_of_id) = child_sym.type_of() {
+                    if let Some(type_sym) = self.unit.cc.opt_get_symbol(type_of_id) {
+                        self.set_type_from_symbol(base, type_sym);
                         return;
                     }
                 }
             }
         }
 
-        // Strategy 2: Node's own scope/ident - for return types where node IS the type
+        // Pattern 3: Explicit type field (: Type suffix in field declarations)
+        if let Some(type_child) = node.child_by_field(&self.unit, Language::type_field()) {
+            if let Some(ident) = type_child.find_ident(&self.unit)
+                && let Some(sym) = ident.opt_symbol()
+            {
+                self.set_type_from_symbol(base, sym);
+                return;
+            }
+        }
+
+        // Pattern 4: Node's own identifier (for scope nodes with attached ident)
         if let Some(scope) = node.as_scope() {
             if let Some(ident) = *scope.ident.read() {
-                base.set_type_name(ident.name.clone());
                 if let Some(sym) = ident.opt_symbol() {
-                    // First try type_of (for Self/self which point to the struct)
-                    if let Some(type_sym_id) = sym.type_of() {
-                        if let Some(type_sym) = self.unit.cc.opt_get_symbol(type_sym_id) {
-                            if let Some(type_block_id) = type_sym.block_id() {
-                                base.set_type_ref(type_block_id);
-                                return;
-                            }
-                        }
-                    }
-                    // Otherwise use direct block_id
-                    if let Some(type_block_id) = sym.block_id() {
-                        if type_block_id != base.id {
-                            base.set_type_ref(type_block_id);
-                        }
-                    }
+                    self.set_type_from_symbol(base, sym);
+                    return;
                 }
-                return;
             }
         }
 
-        // Strategy 3: Direct symbol on the node - fallback
-        if let Some(type_sym) = node.opt_symbol() {
-            if let Some(type_name) = self.unit.cc.interner.resolve_owned(type_sym.name) {
-                base.set_type_name(type_name);
-            }
-            // First try type_of (for Self/self which point to the struct)
-            if let Some(type_of_id) = type_sym.type_of() {
-                if let Some(type_of_sym) = self.unit.cc.opt_get_symbol(type_of_id) {
-                    if let Some(type_block_id) = type_of_sym.block_id() {
-                        base.set_type_ref(type_block_id);
-                        return;
-                    }
-                }
-            }
-            // Otherwise use direct block_id
-            if let Some(type_block_id) = type_sym.block_id() {
-                if type_block_id != base.id {
-                    base.set_type_ref(type_block_id);
-                }
-            }
-            return;
-        }
-
-        // Strategy 4: Look at the "type" field for field declarations
-        // This handles cases where the type annotation is a complex type without a resolved symbol
-        // (e.g., `Vec<T>` where Vec isn't defined in this file)
-        if let Some(type_child) = node.child_by_field(&self.unit, Language::type_field()) {
-            // Try to get identifier from the type annotation
-            if let Some(ident) = type_child.find_ident(&self.unit) {
-                base.set_type_name(ident.name.clone());
-                if let Some(sym) = ident.opt_symbol() {
-                    if let Some(type_block_id) = sym.block_id() {
-                        if type_block_id != base.id {
-                            base.set_type_ref(type_block_id);
-                        }
-                    }
-                }
-                return;
-            }
-        }
-
-        // Strategy 5: Find identifier in children (for return types that are complex types)
-        // This is a last resort fallback
+        // Pattern 5: Type reference (the node contains the type itself)
+        // Find any type identifier - its symbol IS the type
         if let Some(ident) = node.find_ident(&self.unit) {
-            base.set_type_name(ident.name.clone());
             if let Some(sym) = ident.opt_symbol() {
-                if let Some(type_block_id) = sym.block_id() {
-                    if type_block_id != base.id {
-                        base.set_type_ref(type_block_id);
-                    }
-                }
+                self.set_type_from_symbol(base, sym);
+            } else {
+                // Unresolved type - just set the name for display
+                base.set_type_name(ident.name.clone());
             }
         }
     }
@@ -434,6 +459,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 | BlockKind::Return
                 | BlockKind::Call
                 | BlockKind::Root
+                | BlockKind::Alias
         )
     }
 }
@@ -455,6 +481,10 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
                 // For tuple struct fields, pass the index as the name
                 self.build_block_with_kind_and_index(unit, child, parent, context_kind, tuple_field_index);
                 tuple_field_index += 1;
+            } else if context_kind == BlockKind::Undefined && Self::is_block_kind(base_kind) {
+                // Parent context suppresses block creation (e.g., return_type inside function_type)
+                // Just visit children without creating a block
+                self.visit_children(unit, child, parent);
             } else {
                 // Normal path - let visit_node handle it
                 self.visit_node(unit, child, parent);
