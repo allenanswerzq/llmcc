@@ -1,0 +1,65 @@
+===============================================================================
+dyn-trait
+===============================================================================
+Field with dyn Trait type.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod handler;
+mod dispatcher;
+
+--- file: sample/src/handler.rs ---
+pub trait Handler {
+    fn handle(&self);
+}
+
+--- file: sample/src/dispatcher.rs ---
+use crate::handler::Handler;
+
+pub struct Dispatcher {
+    pub handler: Box<dyn Handler>,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 handler ($TMP/sample/src/handler.rs)
+  (trait:3 Handler
+    (method:4 handle
+      (parameter:5 self @type:3 Handler)
+    )
+  )
+)
+
+(root:6 dispatcher ($TMP/sample/src/dispatcher.rs)
+  (class:7 Dispatcher
+    (field:8 handler @type:3 Handler)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_dispatcher_rs {
+        label="dispatcher.rs";
+        n7[label="Dispatcher", full_path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_handler_rs {
+        label="handler.rs";
+        n3[label="Handler", full_path="$TMP/sample/src/handler.rs:1", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n7 [from="field_type", to="struct"];
+}

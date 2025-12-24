@@ -12,10 +12,12 @@ fn capture<T>(&self) -> impl Iterator<Item = usize> + use<'_, T> {
 }
 
 --- expect:block-graph ---
-(root:1 lib
-  (trait:2 Iterator)
-  (func:3 capture
-    (parameter:4 self @type &self)
-    (return:5 @type:2 Iterator)
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 Iterator
+    (alias:3 Item)
+  )
+  (func:4 capture
+    (parameter:5 self)
+    (return:6 @type:2 Iterator)
   )
 )

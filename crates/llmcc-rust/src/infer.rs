@@ -26,7 +26,7 @@ pub fn infer_type<'tcx>(
             // First try existing symbol on the identifier
             if let Some(sym) = ident.opt_symbol() {
                 // If it's a concrete type (Struct/Enum/Trait), use it directly
-                if is_defined_type(sym) {
+                if sym.kind().is_defined_type() {
                     return Some(sym);
                 }
                 // If it's UnresolvedType, try to resolve it via scope lookup
@@ -433,18 +433,28 @@ fn infer_function_type<'tcx>(
         return infer_type(unit, scopes, &trait_node);
     }
 
-    // No trait field, fall back to return type (for fn(T) -> U syntax)
-    node.child_by_field(unit, LangRust::field_return_type)
-        .and_then(|ret_node| infer_type(unit, scopes, &ret_node))
-}
+    // Try return type first (for fn(T) -> U syntax)
+    if let Some(ret_node) = node.child_by_field(unit, LangRust::field_return_type) {
+        if let Some(ret_sym) = infer_type(unit, scopes, &ret_node) {
+            return Some(ret_sym);
+        }
+    }
 
-/// Check if a symbol represents a "defined type" in the current crate.
-/// A defined type is Struct, Enum, Trait, or TypeAlias (not UnresolvedType, TypeParameter, etc.)
-fn is_defined_type(sym: &Symbol) -> bool {
-    matches!(
-        sym.kind(),
-        SymKind::Struct | SymKind::Enum | SymKind::Trait | SymKind::TypeAlias
-    )
+    // No return type, try to extract type from parameters (for fn(T) without return)
+    // Look for the "parameters" field which contains the parameter types
+    if let Some(params_node) = node.child_by_field(unit, LangRust::field_parameters) {
+        for child in params_node.children(unit) {
+            if child.is_trivia() {
+                continue;
+            }
+            // Each child might be a type directly
+            if let Some(param_type) = infer_type(unit, scopes, &child) {
+                return Some(param_type);
+            }
+        }
+    }
+
+    None
 }
 
 /// Infer generic type: Vec<T>, Option<String>, HashMap<K, V>, etc.
@@ -460,11 +470,13 @@ fn infer_generic_type<'tcx>(
 ) -> Option<&'tcx Symbol> {
     // The generic_type has structure: type<type_arguments>
     let type_node = node.child_by_field(unit, LangRust::field_type)?;
-    let outer_type = infer_type(unit, scopes, &type_node)?;
+    let outer_type = infer_type(unit, scopes, &type_node);
 
     // If outer type is a defined type (Struct/Enum/Trait), use it
-    if is_defined_type(outer_type) {
-        return Some(outer_type);
+    if let Some(outer) = outer_type {
+        if outer.kind().is_defined_type() {
+            return Some(outer);
+        }
     }
 
     // Outer type is not defined (e.g., Vec, Option from std, or TypeParameter).
@@ -477,7 +489,7 @@ fn infer_generic_type<'tcx>(
             }
             if let Some(inner_type) = infer_type(unit, scopes, &child) {
                 // Use inner type if it's a defined type
-                if is_defined_type(inner_type) {
+                if inner_type.kind().is_defined_type() {
                     return Some(inner_type);
                 }
             }
@@ -485,7 +497,7 @@ fn infer_generic_type<'tcx>(
     }
 
     // Return outer type even if not defined (for unresolved cases)
-    Some(outer_type)
+    outer_type
 }
 
 /// Infer reference type annotation: &T or &mut T

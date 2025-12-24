@@ -7,8 +7,7 @@ use crate::graph::{UnitNode, ProjectGraph};
 
 /// Query API for semantic code questions built on top of ProjectGraph:
 /// - given a function name, find all related code
-/// - given a struct name, find all related code
-/// - given a module/folder, find related modules
+/// - given a struct name, find all related code /// - given a module/folder, find related modules
 /// - given a file name, extract important structures (functions, types, etc.)
 ///
 /// Output format: plain text suitable for LLM ingestion

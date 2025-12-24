@@ -1,0 +1,146 @@
+===============================================================================
+multiple-generic-params
+===============================================================================
+Tests for types with multiple generic parameters like Result<T, E>, HashMap<K, V>, etc.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod services;
+
+--- file: sample/src/types.rs ---
+pub struct User {
+    pub id: u64,
+}
+
+pub struct Error {
+    pub code: i32,
+    pub message: String,
+}
+
+pub struct Config {
+    pub key: String,
+}
+
+--- file: sample/src/services.rs ---
+use std::collections::HashMap;
+use crate::types::{User, Error, Config};
+
+// Result with two user types
+pub fn get_user() -> Result<User, Error> {
+    todo!()
+}
+
+// HashMap with two user types
+pub struct UserConfigMap {
+    pub configs: HashMap<User, Config>,
+}
+
+// Custom generic struct with multiple params
+pub struct Pair<A, B> {
+    pub first: A,
+    pub second: B,
+}
+
+// Using custom generic with user types
+pub struct UserErrorPair {
+    pub pair: Pair<User, Error>,
+}
+
+// Triple generic params
+pub struct Triple<A, B, C> {
+    pub a: A,
+    pub b: B,
+    pub c: C,
+}
+
+// Using triple generic
+pub struct AllThree {
+    pub data: Triple<User, Error, Config>,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 User
+    (field:4 id @type u64)
+  )
+  (class:5 Error
+    (field:6 code @type i32)
+    (field:7 message @type String)
+  )
+  (class:8 Config
+    (field:9 key @type String)
+  )
+)
+
+(root:10 services ($TMP/sample/src/services.rs)
+  (func:11 get_user
+    (return:12)
+    (@tdep:3 User)
+    (@tdep:5 Error)
+  )
+  (class:14 UserConfigMap
+    (field:15 configs @type:3 User)
+  )
+  (class:16 Pair
+    (field:17 first @type A)
+    (field:18 second @type B)
+  )
+  (class:19 UserErrorPair
+    (field:20 pair @type:16 Pair)
+  )
+  (class:21 Triple
+    (field:22 a @type A)
+    (field:23 b @type B)
+    (field:24 c @type C)
+  )
+  (class:25 AllThree
+    (field:26 data @type:21 Triple)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_services_rs {
+        label="services.rs";
+        n14[label="UserConfigMap", full_path="$TMP/sample/src/services.rs:10", sym_ty="Struct", shape=box];
+        n16[label="Pair", full_path="$TMP/sample/src/services.rs:15", sym_ty="Struct", shape=box];
+        n19[label="UserErrorPair", full_path="$TMP/sample/src/services.rs:21", sym_ty="Struct", shape=box];
+        n21[label="Triple", full_path="$TMP/sample/src/services.rs:26", sym_ty="Struct", shape=box];
+        n25[label="AllThree", full_path="$TMP/sample/src/services.rs:33", sym_ty="Struct", shape=box];
+        n11[label="get_user", full_path="$TMP/sample/src/services.rs:5", sym_ty="Function"];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n8[label="Config", full_path="$TMP/sample/src/types.rs:10", sym_ty="Struct", shape=box];
+        n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n11 -> n3 [from="func", to="type_dep"];
+  n11 -> n5 [from="func", to="type_dep"];
+  n16 -> n19 [from="field_type", to="struct"];
+  n21 -> n25 [from="field_type", to="struct"];
+  n3 -> n14 [from="type_dep", to="struct"];
+  n8 -> n14 [from="type_dep", to="struct"];
+  n3 -> n16 [from="type_arg", to="generic"];
+  n3 -> n21 [from="type_arg", to="generic"];
+  n5 -> n16 [from="type_arg", to="generic"];
+  n5 -> n21 [from="type_arg", to="generic"];
+  n8 -> n21 [from="type_arg", to="generic"];
+}

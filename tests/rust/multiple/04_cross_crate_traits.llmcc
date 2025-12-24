@@ -1,0 +1,157 @@
+===============================================================================
+cross-crate-traits
+===============================================================================
+Traits defined in one crate, implemented in another.
+
+--- file: Cargo.toml ---
+[workspace]
+members = ["traits", "impl"]
+
+--- file: traits/Cargo.toml ---
+[package]
+name = "traits"
+version = "0.1.0"
+
+--- file: traits/src/lib.rs ---
+pub mod core;
+
+--- file: traits/src/core.rs ---
+pub struct Request {
+    pub path: String,
+}
+
+pub struct Response {
+    pub status: u16,
+    pub body: String,
+}
+
+pub trait Handler {
+    fn handle(&self, req: Request) -> Response;
+}
+
+pub trait Middleware {
+    fn before(&self, req: Request) -> Request;
+    fn after(&self, res: Response) -> Response;
+}
+
+--- file: impl/Cargo.toml ---
+[package]
+name = "impl"
+version = "0.1.0"
+
+[dependencies]
+traits = { path = "../traits" }
+
+--- file: impl/src/lib.rs ---
+pub mod handlers;
+
+--- file: impl/src/handlers.rs ---
+use traits::core::{Request, Response, Handler, Middleware};
+
+pub struct EchoHandler;
+
+impl Handler for EchoHandler {
+    fn handle(&self, req: Request) -> Response {
+        Response { status: 200, body: req.path }
+    }
+}
+
+pub struct LogMiddleware;
+
+impl Middleware for LogMiddleware {
+    fn before(&self, req: Request) -> Request {
+        req
+    }
+    fn after(&self, res: Response) -> Response {
+        res
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/traits/src/lib.rs))
+
+(root:2 core ($TMP/traits/src/core.rs)
+  (class:3 Request
+    (field:4 path @type String)
+  )
+  (class:5 Response
+    (field:6 status @type u16)
+    (field:7 body @type String)
+  )
+  (trait:8 Handler
+    (method:9 handle
+      (parameter:10 self @type:8 Handler)
+      (parameter:11 req @type:3 Request)
+      (return:12 @type:5 Response)
+    )
+  )
+  (trait:13 Middleware
+    (method:14 before
+      (parameter:15 self @type:13 Middleware)
+      (parameter:16 req @type:3 Request)
+      (return:17 @type:3 Request)
+    )
+    (method:18 after
+      (parameter:19 self @type:13 Middleware)
+      (parameter:20 res @type:5 Response)
+      (return:21 @type:5 Response)
+    )
+  )
+)
+
+(root:22 lib ($TMP/impl/src/lib.rs))
+
+(root:23 handlers ($TMP/impl/src/handlers.rs)
+  (class:24 EchoHandler)
+  (impl:25 EchoHandler @type:24 @trait:8
+    (method:26 handle
+      (parameter:27 self @type:24 EchoHandler)
+      (parameter:28 req @type:3 Request)
+      (return:29 @type:5 Response)
+    )
+  )
+  (class:30 LogMiddleware)
+  (impl:31 LogMiddleware @type:30 @trait:13
+    (method:32 before
+      (parameter:33 self @type:30 LogMiddleware)
+      (parameter:34 req @type:3 Request)
+      (return:35 @type:3 Request)
+    )
+    (method:36 after
+      (parameter:37 self @type:30 LogMiddleware)
+      (parameter:38 res @type:5 Response)
+      (return:39 @type:5 Response)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_impl {
+      label="impl";
+      subgraph cluster_handlers_rs {
+        label="handlers.rs";
+        n30[label="LogMiddleware", full_path="$TMP/impl/src/handlers.rs:11", sym_ty="Struct", shape=box];
+        n24[label="EchoHandler", full_path="$TMP/impl/src/handlers.rs:3", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_traits {
+      label="traits";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n8[label="Handler", full_path="$TMP/traits/src/core.rs:10", sym_ty="Trait", shape=box];
+        n13[label="Middleware", full_path="$TMP/traits/src/core.rs:14", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  n8 -> n24 [from="trait", to="impl"];
+  n13 -> n30 [from="trait", to="impl"];
+}

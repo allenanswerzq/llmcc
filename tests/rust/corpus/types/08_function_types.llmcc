@@ -16,43 +16,8 @@ fn high_order3(value: i32, f: &FnOnce(i32) -> i32) -> i32 {
 
 type F = for<'a, 'b> fn(x: &'a A, y: &'a mut B<'i, 't>,) -> C;
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | Function | high_order1 |
-u0:22 | Variable | value |
-u0:23 | Variable | f |
-u0:24 | Function | high_order2 |
-u0:25 | Variable | value |
-u0:26 | Variable | f |
-u0:27 | Function | high_order3 |
-u0:28 | Variable | value |
-u0:29 | Variable | f |
-u0:30 | TypeAlias | F |
-u0:31 | Variable | x |
-u0:32 | Variable | y |
-
 --- expect:block-graph ---
-(root:1 lib
+(root:1 lib ($TMP/src/lib.rs)
   (func:2 high_order1
     (parameter:3 value @type i32)
     (parameter:4 f @type i32)
@@ -65,17 +30,11 @@ u0:32 | Variable | y |
   )
   (func:11 high_order3
     (parameter:12 value @type i32)
-    (parameter:13 f @type FnOnce)
+    (parameter:13 f @type f)
     (return:14 @type i32)
   )
-  (parameter:16 x @type a)
-  (parameter:17 y @type a)
+  (alias:16 F
+    (parameter:17 x @type x)
+    (parameter:18 y @type y)
+  )
 )
-
---- expect:block-relations ---
-high_order1:2 (func)   --has_parameters-->  f:4 (parameter)
-high_order1:2 (func)   --has_parameters-->  value:3 (parameter)
-high_order2:6 (func)   --has_parameters-->  f:8 (parameter)
-high_order2:6 (func)   --has_parameters-->  value:7 (parameter)
-high_order3:11 (func)  --has_parameters-->  f:13 (parameter)
-high_order3:11 (func)  --has_parameters-->  value:12 (parameter)

@@ -60,9 +60,25 @@ pub fn parse_module_name(file_path: &str) -> Option<String> {
 }
 
 /// Return the file name (without the `.rs` extension) for a Rust source path.
+/// Also strips numeric prefixes like "001_" that may be added for ordering.
 pub fn parse_file_name(file_path: &str) -> Option<String> {
-    Path::new(file_path)
+    let file_stem = Path::new(file_path)
         .file_stem()
-        .and_then(|name| name.to_str())
-        .map(|name| name.to_string())
+        .and_then(|name| name.to_str())?;
+    
+    // Strip numeric prefix (e.g., "001_lib" -> "lib", "002_models" -> "models")
+    Some(strip_numeric_prefix(file_stem))
+}
+
+/// Strip numeric prefix from a name (e.g., "001_lib" -> "lib").
+/// Returns the original string if no prefix is found.
+fn strip_numeric_prefix(name: &str) -> String {
+    // Check for pattern: digits followed by underscore
+    if let Some(pos) = name.find('_') {
+        let prefix = &name[..pos];
+        if prefix.chars().all(|c| c.is_ascii_digit()) && !prefix.is_empty() {
+            return name[pos + 1..].to_string();
+        }
+    }
+    name.to_string()
 }

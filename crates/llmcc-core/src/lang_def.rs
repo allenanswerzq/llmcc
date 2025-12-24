@@ -293,6 +293,10 @@ pub trait LanguageTrait {
     /// Get the field ID that represents the "type" of a construct.
     fn type_field() -> u16;
 
+    /// Get the field ID that represents the "trait" in impl blocks.
+    /// Used for `impl Trait for Type { }` to identify the trait being implemented.
+    fn trait_field() -> u16;
+
     /// Get the list of file extensions this language supports.
     fn supported_extensions() -> &'static [&'static str];
 
@@ -466,6 +470,10 @@ macro_rules! define_lang {
 
                 fn type_field() -> u16 {
                     Self::field_type
+                }
+
+                fn trait_field() -> u16 {
+                    Self::field_trait
                 }
             }
 

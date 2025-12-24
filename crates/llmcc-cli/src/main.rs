@@ -1,11 +1,10 @@
 use anyhow::Result;
-use anyhow::anyhow;
 use clap::ArgGroup;
 use clap::Parser;
 
 use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
-// use llmcc_python::LangPython;
+use llmcc_core::graph_render::ComponentDepth;
 use llmcc_rust::LangRust;
 
 #[derive(Parser, Debug)]
@@ -42,7 +41,7 @@ pub struct Cli {
     #[arg(long, value_name = "LANG", default_value = "rust")]
     lang: String,
 
-    /// Print intermediate representation (IR), internal debugging output
+    /// Print intermediate representation (IR)
     #[arg(long, default_value_t = false)]
     print_ir: bool,
 
@@ -50,59 +49,15 @@ pub struct Cli {
     #[arg(long, default_value_t = false)]
     print_block: bool,
 
-    /// Render a scoped design graph for the provided files or directories (alias for --dep-graph)
-    #[arg(
-        long = "design-graph",
-        default_value_t = false,
-        conflicts_with_all = ["depends", "dependents", "query", "arch_graph"]
-    )]
-    design_graph: bool,
-
-    /// Render a dependency graph showing what each block depends on
-    #[arg(
-        long = "dep-graph",
-        default_value_t = false,
-        conflicts_with_all = ["depends", "dependents", "query", "arch_graph"]
-    )]
-    dep_graph: bool,
-
-    /// Render an architecture graph showing input/output flow (params→func→return, trait→impl)
-    #[arg(
-        long = "arch-graph",
-        default_value_t = false,
-        conflicts_with_all = ["depends", "dependents", "query", "design_graph", "dep_graph"]
-    )]
-    arch_graph: bool,
-
-    /// Summarize query output with file path and line range instead of full code blocks
+    /// Render a DOT graph for visualization
     #[arg(long, default_value_t = false)]
-    summary: bool,
+    graph: bool,
 
-    /// Use page rank algorithm to filter the most important nodes in the high graph
-    #[arg(long, default_value_t = false)]
-    pagerank: bool,
+    /// Component grouping depth for graph visualization (0=flat, 1=crate, 2=module, 3=file)
+    #[arg(long = "depth", default_value = "3")]
+    component_depth: usize,
 
-    /// Top k nodes to select using PageRank algorithm
-    #[arg(long, value_name = "K", requires = "pagerank")]
-    top_k: Option<usize>,
-
-    /// Name of the symbol/function to query
-    #[arg(long, value_name = "NAME")]
-    query: Option<String>,
-
-    /// Search recursively for transitive dependencies (default: direct dependencies only)
-    #[arg(long, default_value_t = false)]
-    recursive: bool,
-
-    /// Return blocks that the queried symbol depends on
-    #[arg(long, default_value_t = false, conflicts_with = "dependents")]
-    depends: bool,
-
-    /// Return blocks that depend on the queried symbol
-    #[arg(long, default_value_t = false, conflicts_with = "depends")]
-    dependents: bool,
-
-    /// Output file path (writes to file instead of stdout, faster for large graphs)
+    /// Output file path (writes to file instead of stdout)
     #[arg(short = 'o', long = "output", value_name = "FILE")]
     output: Option<String>,
 }
@@ -116,37 +71,18 @@ pub fn run(args: Cli) -> Result<()> {
             .init();
     }
 
-    if args.query.is_none() && (args.depends || args.dependents) {
-        tracing::warn!("Warning: --depends/--dependents flags are ignored without --query");
-    }
-
-    if args.pagerank && !(args.design_graph || args.dep_graph || args.arch_graph) {
-        return Err(anyhow!(
-            "--pagerank requires --design-graph, --dep-graph, or --arch-graph"
-        ));
-    }
-
     let opts = LlmccOptions {
         files: args.files,
         dirs: args.dirs,
         output: args.output.clone(),
         print_ir: args.print_ir,
         print_block: args.print_block,
-        design_graph: args.design_graph,
-        dep_graph: args.dep_graph,
-        arch_graph: args.arch_graph,
-        pagerank: args.pagerank,
-        top_k: args.top_k,
-        query: args.query,
-        depends: args.depends,
-        dependents: args.dependents,
-        recursive: args.recursive,
-        summary: args.summary,
+        graph: args.graph,
+        component_depth: ComponentDepth::from_number(args.component_depth),
     };
 
     let result = match args.lang.as_str() {
         "rust" => run_main::<LangRust>(&opts),
-        // "python" => run_main::<LangPython>(&opts),
         _ => Err(format!("Unknown language: {}", args.lang).into()),
     };
 

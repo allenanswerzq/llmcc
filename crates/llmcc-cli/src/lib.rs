@@ -10,6 +10,7 @@ use rayon::ThreadPoolBuilder;
 use tracing::info;
 
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
+use llmcc_core::graph_render::{ComponentDepth, render_graph};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
@@ -61,16 +62,8 @@ pub struct LlmccOptions {
     pub output: Option<String>,
     pub print_ir: bool,
     pub print_block: bool,
-    pub design_graph: bool,
-    pub dep_graph: bool,
-    pub arch_graph: bool,
-    pub pagerank: bool,
-    pub top_k: Option<usize>,
-    pub query: Option<String>,
-    pub depends: bool,
-    pub dependents: bool,
-    pub recursive: bool,
-    pub summary: bool,
+    pub graph: bool,
+    pub component_depth: ComponentDepth,
 }
 
 pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
@@ -114,12 +107,6 @@ where
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
 
     let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;
-    for unit_graph in &unit_graphs {
-        let unit = cc.compile_unit(unit_graph.unit_index());
-        if opts.print_block {
-            let _ = print_llmcc_graph(unit_graph.root(), unit);
-        }
-    }
     pg.add_children(unit_graphs);
     info!(
         "Graph building: {:.2}s",
@@ -130,25 +117,22 @@ where
     pg.connect_blocks();
     info!("Linking units: {:.2}s", link_start.elapsed().as_secs_f64());
 
-    let output = generate_outputs(opts, &mut pg);
+    // Print blocks after connect_blocks so that all resolved references are shown
+    if opts.print_block {
+        for unit_graph in pg.units() {
+            let unit = cc.compile_unit(unit_graph.unit_index());
+            let _ = print_llmcc_graph(unit_graph.root(), unit);
+        }
+    }
+
+    let output = generate_outputs(opts, &pg);
     info!("Total time: {:.2}s", total_start.elapsed().as_secs_f64());
 
     Ok(output)
 }
 
-fn validate_options(opts: &LlmccOptions) -> Result<(), DynError> {
-    if !opts.files.is_empty() && !opts.dirs.is_empty() {
-        return Err("Specify either --file or --dir, not both".into());
-    }
-
-    if opts.pagerank && !(opts.design_graph || opts.dep_graph || opts.arch_graph) {
-        return Err("--pagerank requires --design-graph, --dep-graph, or --arch-graph".into());
-    }
-
-    if opts.depends && opts.dependents {
-        return Err("--depends and --dependents are mutually exclusive".into());
-    }
-
+fn validate_options(_opts: &LlmccOptions) -> Result<(), DynError> {
+    // Validation simplified - files/dirs conflict handled by clap
     Ok(())
 }
 
@@ -264,64 +248,16 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
     }
 }
 
-fn generate_outputs<'tcx>(_opts: &LlmccOptions, _pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
-    // TODO: Re-enable after ProjectGraph query methods are implemented
-    // For now, graph rendering and query functionality is disabled
-    None
-}
-
-/*
-fn generate_outputs_disabled<'tcx>(opts: &LlmccOptions, pg: &'tcx mut ProjectGraph<'tcx>) -> Option<String> {
-    // Check if any graph output is requested
-    let wants_dep_graph = opts.design_graph || opts.dep_graph;
-    let wants_arch_graph = opts.arch_graph;
-
-    if wants_dep_graph || wants_arch_graph {
-        if opts.pagerank {
-            let limit = Some(opts.top_k.unwrap_or(80));
-            pg.set_top_k(limit);
-        }
-
+fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx ProjectGraph<'tcx>) -> Option<String> {
+    if opts.graph {
         let render_start = Instant::now();
-        let result = if wants_arch_graph {
-            pg.render_arch_graph()
-        } else {
-            pg.render_design_graph()
-        };
-
-        if opts.pagerank {
-            info!(
-                "PageRank & graph rendering: {:.2}s",
-                render_start.elapsed().as_secs_f64()
-            );
-        } else {
-            info!(
-                "Graph rendering: {:.2}s",
-                render_start.elapsed().as_secs_f64()
-            );
-        }
+        let result = render_graph(pg, opts.component_depth);
+        info!(
+            "Graph rendering: {:.2}s",
+            render_start.elapsed().as_secs_f64()
+        );
         Some(result)
-    } else if let Some(name) = opts.query.as_ref() {
-        let query = ProjectQuery::new(&*pg);
-        let query_result = if opts.dependents {
-            if opts.recursive {
-                query.find_depended_recursive(name)
-            } else {
-                query.find_depended(name)
-            }
-        } else if opts.recursive {
-            query.find_depends_recursive(name)
-        } else {
-            query.find_depends(name)
-        };
-        let formatted = if opts.summary {
-            query_result.format_summary()
-        } else {
-            query_result.format_for_llm()
-        };
-        Some(formatted)
     } else {
         None
     }
 }
-*/

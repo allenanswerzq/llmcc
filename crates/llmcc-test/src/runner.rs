@@ -8,6 +8,7 @@ use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
+use llmcc_core::graph_render::{ComponentDepth, render_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
@@ -105,7 +106,7 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.keep_temps,
             config.processing.parallel,
             config.processing.print_ir,
-            config.graph.component_depth,
+            config.graph.component_depth(),
             config.graph.pagerank_top_k,
         )?);
     }
@@ -125,7 +126,7 @@ pub fn run_cases_for_file(
     update: bool,
     keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
-    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, 2, None)
+    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, ComponentDepth::File, None)
 }
 
 pub fn run_cases_for_file_with_parallel(
@@ -134,7 +135,7 @@ pub fn run_cases_for_file_with_parallel(
     keep_temps: bool,
     _parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
@@ -160,7 +161,7 @@ fn run_cases_in_file(
     keep_temps: bool,
     _parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
@@ -232,7 +233,7 @@ fn evaluate_case(
     keep_temps: bool,
     _parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
@@ -277,7 +278,15 @@ fn evaluate_case(
             // Save the actual formatted output (with alignment/formatting preserved)
             // We apply temp_dir replacement if needed
             let actual_to_save = if let Some(tmp_path) = temp_dir_path {
-                actual.replace(tmp_path, "$TMP")
+                let mut result = actual.replace(tmp_path, "$TMP");
+                // Also replace just the directory name (for relative paths in graph output)
+                if let Some(dir_name) = std::path::Path::new(tmp_path)
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                {
+                    result = result.replace(dir_name, "$TMP");
+                }
+                result
             } else {
                 actual.clone()
             };
@@ -316,7 +325,7 @@ fn build_pipeline_summary(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<PipelineSummary> {
     let needs_symbols = case
@@ -425,7 +434,7 @@ struct PipelineSummary {
 }
 
 /// Options for configuring the pipeline collection process.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct PipelineOptions {
     /// File paths to process (in declaration order).
     pub file_paths: Vec<String>,
@@ -449,10 +458,30 @@ pub struct PipelineOptions {
     pub parallel: bool,
     /// Whether to print IR during symbol resolution.
     pub print_ir: bool,
-    /// Component grouping depth for graph visualization (default: 2).
-    pub component_depth: usize,
+    /// Component grouping depth for graph visualization.
+    pub component_depth: ComponentDepth,
     /// Number of top PageRank nodes to include (None = all nodes).
     pub pagerank_top_k: Option<usize>,
+}
+
+impl Default for PipelineOptions {
+    fn default() -> Self {
+        Self {
+            file_paths: Vec::new(),
+            keep_symbols: false,
+            keep_symbol_types: false,
+            keep_block_relations: false,
+            build_dep_graph: false,
+            build_arch_graph: false,
+            build_block_reports: false,
+            build_block_graph: false,
+            keep_symbol_deps: false,
+            parallel: false,
+            print_ir: false,
+            component_depth: ComponentDepth::File,
+            pagerank_top_k: None,
+        }
+    }
 }
 
 impl PipelineOptions {
@@ -515,7 +544,7 @@ impl PipelineOptions {
         self
     }
 
-    pub fn with_component_depth(mut self, depth: usize) -> Self {
+    pub fn with_component_depth(mut self, depth: ComponentDepth) -> Self {
         self.component_depth = depth;
         self
     }
@@ -876,7 +905,16 @@ fn normalize(kind: &str, text: &str, temp_dir_path: Option<&str>) -> String {
     // Replace temp directory path with $TMP placeholder (for actual output)
     // or replace $TMP with temp directory path (for expected value)
     let canonical = if let Some(tmp_path) = temp_dir_path {
-        canonical.replace(tmp_path, "$TMP")
+        // Replace the full path first
+        let mut result = canonical.replace(tmp_path, "$TMP");
+        // Also replace just the directory name (for relative paths in graph output)
+        if let Some(dir_name) = std::path::Path::new(tmp_path)
+            .file_name()
+            .and_then(|s| s.to_str())
+        {
+            result = result.replace(dir_name, "$TMP");
+        }
+        result
     } else {
         canonical
     };
@@ -989,7 +1027,12 @@ fn is_empty_relation(line: &str) -> bool {
 
 fn normalize_graph(text: &str) -> String {
     // Parse graph and sort edges for deterministic comparison
-    let mut lines: Vec<&str> = text.trim().lines().collect();
+    // Filter out empty lines for flexible whitespace comparison
+    let mut lines: Vec<&str> = text
+        .trim()
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
 
     // Find where edges start (after closing brace of last subgraph)
     // Edges are lines like "  n1 -> n2;" or "  n1 -> n2 [...];"
@@ -1182,21 +1225,25 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     let root_path = temp_dir.path().to_path_buf();
 
     for (idx, file) in case.files.iter().enumerate() {
-        // Add numeric prefix to filename to preserve declaration order after WalkDir + sort
         let original_path = Path::new(&file.path);
-        let prefixed_filename = format!(
-            "{:03}_{}",
-            idx,
+        let file_name_str = original_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy();
+
+        // Don't add prefix to Cargo.toml - it needs to be findable by parse_crate_name
+        let final_path = if file_name_str == "Cargo.toml" {
+            original_path.to_path_buf()
+        } else {
+            // Add numeric prefix to filename to preserve declaration order after WalkDir + sort
+            let prefixed_filename = format!("{:03}_{}", idx, file_name_str);
             original_path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-        );
-        let prefixed_path = original_path
-            .parent()
-            .map(|p| p.join(&prefixed_filename))
-            .unwrap_or_else(|| PathBuf::from(&prefixed_filename));
-        let abs_path = root_path.join(&prefixed_path);
+                .parent()
+                .map(|p| p.join(&prefixed_filename))
+                .unwrap_or_else(|| PathBuf::from(&prefixed_filename))
+        };
+
+        let abs_path = root_path.join(&final_path);
         if let Some(parent) = abs_path.parent() {
             fs::create_dir_all(parent)
                 .with_context(|| format!("failed to create {}", parent.display()))?;
@@ -1264,7 +1311,11 @@ where
 
     // Bind symbols using new unified API
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
-    let mut project_graph = if options.build_block_reports || options.build_block_graph || options.keep_block_relations {
+    let mut project_graph = if options.build_block_reports
+        || options.build_block_graph
+        || options.keep_block_relations
+        || options.build_arch_graph
+    {
         let graph = ProjectGraph::new(&cc);
         Some(graph)
     } else {
@@ -1281,9 +1332,13 @@ where
     let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph, block_relations) =
         if let Some(project) = project_graph {
             project.connect_blocks();
-            // Graph visualization is currently disabled
-            let dep_graph: Option<String> = None;
-            let arch_graph: Option<String> = None;
+            // Graph visualization
+            let dep_graph: Option<String> = None; // TODO: implement dep_graph rendering
+            let arch_graph: Option<String> = if options.build_arch_graph {
+                Some(render_graph(&project, options.component_depth))
+            } else {
+                None
+            };
             let (list, deps) = if options.build_block_reports {
                 let (blocks, deps) = render_block_reports(&project);
                 (Some(blocks), Some(deps))
@@ -1364,8 +1419,16 @@ fn discover_language_files<L: LanguageTraitImpl>(
         files.push(entry.path().to_string_lossy().to_string());
     }
 
-    // Always sort to ensure deterministic ordering based on prefixed filenames
-    files.sort();
+    // Sort by numeric prefix in filename to preserve declaration order
+    // e.g., "002_lib.rs" should come before "005_lib.rs" regardless of directory
+    files.sort_by(|a, b| {
+        let get_prefix = |path: &str| -> Option<usize> {
+            let filename = Path::new(path).file_name()?.to_str()?;
+            let prefix_end = filename.find('_')?;
+            filename[..prefix_end].parse::<usize>().ok()
+        };
+        get_prefix(a).cmp(&get_prefix(b))
+    });
 
     // Return both physical path (with prefix) and logical path (without prefix)
     let files: Vec<(String, String)> = files

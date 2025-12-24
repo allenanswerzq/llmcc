@@ -106,15 +106,17 @@ impl<'tcx> ProjectGraph<'tcx> {
         // 2. Link kind-specific relationships
         match block {
             BasicBlock::Func(func) => self.link_func(unit, block_id, func),
-            BasicBlock::Class(class) => self.link_class(block_id, class),
+            BasicBlock::Class(class) => self.link_class(unit, block_id, class),
             BasicBlock::Impl(impl_block) => self.link_impl(unit, block_id, impl_block),
-            BasicBlock::Trait(trait_block) => self.link_trait(block_id, trait_block),
-            BasicBlock::Enum(enum_block) => self.link_enum(block_id, enum_block),
+            BasicBlock::Trait(trait_block) => self.link_trait(unit, block_id, trait_block),
+            BasicBlock::Enum(enum_block) => self.link_enum(unit, block_id, enum_block),
             BasicBlock::Call(call) => self.link_call(unit, block_id, call),
             BasicBlock::Field(field) => self.link_field(unit, block_id, field),
-            BasicBlock::Return(ret) => self.link_return(block_id, ret),
-            BasicBlock::Parameter(param) => self.link_parameter(block_id, param),
-            // Root, Stmt, Const, Alias - no special linking needed
+            BasicBlock::Return(ret) => self.link_return(unit, block_id, ret),
+            BasicBlock::Parameter(param) => self.link_parameter(unit, block_id, param),
+            BasicBlock::Const(const_block) => self.link_const(unit, block_id, const_block),
+            BasicBlock::Alias(alias) => self.link_alias(unit, block_id, alias),
+            // Root - no special linking needed
             _ => {}
         }
 
@@ -148,10 +150,43 @@ impl<'tcx> ProjectGraph<'tcx> {
             self.add_relation(block_id, BlockRelation::HasReturn, ret_id);
         }
 
+        // Populate type_deps from function symbol's nested_types (generic return type args)
+        // e.g., for `fn get_user() -> Result<User, Error>`, nested_types contains User and Error
+        if let Some(func_sym) = func.base.symbol {
+            if let Some(nested_types) = func_sym.nested_types() {
+                for type_id in nested_types {
+                    // Follow type_of chain to get actual type symbol
+                    let type_sym = unit.opt_get_symbol(type_id)
+                        .and_then(|sym| {
+                            sym.type_of()
+                                .and_then(|id| unit.opt_get_symbol(id))
+                                .or(Some(sym))
+                        });
+                    if let Some(type_sym) = type_sym {
+                        if let Some(type_block_id) = type_sym.block_id() {
+                            func.add_type_dep(type_block_id);
+                        }
+                    }
+                }
+            }
+        }
+
         // Find calls within this function's children and link to callees
         // Also populate type_deps and func_deps
         for child_id in func.base.get_children() {
             self.find_calls_recursive(unit, block_id, func, child_id);
+        }
+
+        // Add Uses/UsedBy edges for type dependencies
+        for type_id in func.get_type_deps() {
+            self.add_relation(block_id, BlockRelation::Uses, type_id);
+            self.add_relation(type_id, BlockRelation::UsedBy, block_id);
+        }
+
+        // Add Calls/CalledBy edges for type dependencies
+        for type_id in func.get_func_deps() {
+            self.add_relation(block_id, BlockRelation::Calls, type_id);
+            self.add_relation(type_id, BlockRelation::CalledBy, block_id);
         }
     }
 
@@ -218,18 +253,8 @@ impl<'tcx> ProjectGraph<'tcx> {
         }
     }
 
-    /// Resolve a call expression to its target function's BlockId.
-    fn resolve_callee(
-        &self,
-        unit: &CompileUnit<'tcx>,
-        call: &crate::block::BlockCall<'tcx>,
-    ) -> Option<BlockId> {
-        // Symbol resolution was done by bind.rs - just follow the links
-        call.base.node.ident_symbol(unit)?.block_id()
-    }
-
     /// Link struct/class relationships.
-    fn link_class(&self, block_id: BlockId, class: &crate::block::BlockClass<'tcx>) {
+    fn link_class(&self, _unit: &CompileUnit<'tcx>, block_id: BlockId, class: &crate::block::BlockClass<'tcx>) {
         // Fields
         for field_id in class.get_fields() {
             self.add_relation(block_id, BlockRelation::HasField, field_id);
@@ -241,6 +266,8 @@ impl<'tcx> ProjectGraph<'tcx> {
             self.add_relation(block_id, BlockRelation::HasMethod, method_id);
             self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
+        // Note: Field type argument edges (e.g., User -> Triple for `data: Triple<User>`)
+        // are created during graph_render edge collection from field.symbol.nested_types
     }
 
     /// Link impl block relationships.
@@ -256,182 +283,259 @@ impl<'tcx> ProjectGraph<'tcx> {
             self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
 
-        // Target type (impl SomeType { ... })
-        let target_id = if let Some(target_id) = impl_block.get_target() {
-            Some(target_id)
-        } else {
-            // Try to resolve from HirNode symbol
-            if let Some(target_id) = self.resolve_impl_target(unit, impl_block) {
-                // Store the resolved target in the impl block for future access
-                impl_block.set_target(target_id);
-                Some(target_id)
-            } else {
-                None
-            }
-        };
-
+        // Target type - resolve from symbol if block_id wasn't available during building
+        let target_id = impl_block.get_target().or_else(|| {
+            impl_block.target_sym.and_then(|sym| sym.block_id())
+        });
         if let Some(target_id) = target_id {
+            impl_block.set_target(target_id);
             self.add_relation(block_id, BlockRelation::ImplFor, target_id);
             self.add_relation(target_id, BlockRelation::HasImpl, block_id);
 
-            // Move impl methods to the target class as children
-            let target_block = unit.bb(target_id);
-            if let Some(class) = target_block.as_class() {
-                for method_id in impl_block.get_methods() {
-                    class.add_method(method_id);
-                    // Add method as child of the class
-                    class.base.add_child(method_id);
-                    // Update method's parent to point to class
-                    let method_block = unit.bb(method_id);
-                    if let Some(base) = method_block.base() {
-                        base.set_parent(target_id);
+            // Populate type_deps from the target symbol's nested_types
+            // These were set during binding from impl's trait type arguments (e.g., User from `impl Repository<User>`)
+            // Note: target_sym may be a local symbol with type_of pointing to actual struct, so we get
+            // nested_types from target_sym but add type_deps to the actual target block
+            if let Some(target_sym) = impl_block.target_sym {
+                if let Some(nested_types) = target_sym.nested_types() {
+                    let target_block = unit.bb(target_id);
+                    if let Some(base) = target_block.base() {
+                        for type_id in nested_types {
+                            // Follow type_of chain to get actual type symbol
+                            let type_sym = unit.opt_get_symbol(type_id)
+                                .and_then(|sym| {
+                                    sym.type_of()
+                                        .and_then(|id| unit.opt_get_symbol(id))
+                                        .or(Some(sym))
+                                });
+                            if let Some(type_sym) = type_sym {
+                                if let Some(type_block_id) = type_sym.block_id() {
+                                    base.type_deps.write().insert(type_block_id);
+                                }
+                            }
+                        }
                     }
-                }
-            }
-
-            // Remove impl block from its parent's children (typically root)
-            if let Some(parent_id) = impl_block.base.get_parent() {
-                let parent_block = unit.bb(parent_id);
-                if let Some(base) = parent_block.base() {
-                    base.remove_child(block_id);
                 }
             }
         }
 
-        // Trait reference (impl SomeTrait for SomeType { ... })
-        if let Some(trait_id) = impl_block.get_trait_ref() {
+        // Trait reference - resolve from symbol if block_id wasn't available during building
+        let trait_id = impl_block.get_trait_ref().or_else(|| {
+            impl_block.trait_sym.and_then(|sym| sym.block_id())
+        });
+        if let Some(trait_id) = trait_id {
+            impl_block.set_trait_ref(trait_id);
             self.add_relation(block_id, BlockRelation::Implements, trait_id);
             self.add_relation(trait_id, BlockRelation::ImplementedBy, block_id);
-        } else {
-            // Try to resolve from HirNode symbol
-            if let Some(trait_id) = self.resolve_impl_trait(unit, impl_block) {
-                self.add_relation(block_id, BlockRelation::Implements, trait_id);
-                self.add_relation(trait_id, BlockRelation::ImplementedBy, block_id);
-            }
         }
-    }
-
-    /// Resolve the target type of an impl block.
-    fn resolve_impl_target(
-        &self,
-        unit: &CompileUnit<'tcx>,
-        impl_block: &crate::block::BlockImpl<'tcx>,
-    ) -> Option<BlockId> {
-        // Look through children to find type identifier with a resolved symbol
-        for child in impl_block.base.node.children(unit) {
-            // Find identifier children (type identifiers)
-            if let Some(ident) = child.find_ident(unit) {
-                // Use the identifier name to look up the struct in block indexes
-                let blocks = unit.cc.find_blocks_by_name(&ident.name);
-                for (_, kind, block_id) in blocks {
-                    // Find a struct/class with this name (not impl blocks)
-                    if kind == crate::block::BlockKind::Class {
-                        return Some(block_id);
-                    }
-                }
-            }
-        }
-        None
-    }
-
-    /// Resolve the trait reference of an impl block.
-    fn resolve_impl_trait(
-        &self,
-        _unit: &CompileUnit<'tcx>,
-        _impl_block: &crate::block::BlockImpl<'tcx>,
-    ) -> Option<BlockId> {
-        // Trait resolution requires looking at the impl's trait bound
-        // This would need language-specific field access (e.g., LangRust::field_trait)
-        // For now, return None - trait_ref should be set during graph building
-        None
     }
 
     /// Link trait relationships.
-    fn link_trait(&self, block_id: BlockId, trait_block: &crate::block::BlockTrait<'tcx>) {
+    fn link_trait(&self, unit: &CompileUnit<'tcx>, block_id: BlockId, trait_block: &crate::block::BlockTrait<'tcx>) {
         // Methods
         for method_id in trait_block.get_methods() {
             self.add_relation(block_id, BlockRelation::HasMethod, method_id);
             self.add_relation(method_id, BlockRelation::MethodOf, block_id);
         }
+
+        // Type parameter bounds: for `trait Foo<T: Bar>`, create edge Bar -> Foo
+        // Bar (bound) is used by Foo (this trait)
+        if let Some(trait_sym) = trait_block.base.symbol {
+            if let Some(scope_id) = trait_sym.opt_scope() {
+                let scope = unit.get_scope(scope_id);
+                // Look for type parameters in the trait's scope
+                scope.for_each_symbol(|sym| {
+                    if sym.kind() == crate::symbol::SymKind::TypeParameter {
+                        // Get the bound trait from type_of
+                        if let Some(bound_id) = sym.type_of() {
+                            if let Some(bound_sym) = unit.opt_get_symbol(bound_id) {
+                                if let Some(bound_block_id) = bound_sym.block_id() {
+                                    // Create edge: bound --UsedBy--> this_trait
+                                    // This means: bound is used by this_trait (as a type parameter constraint)
+                                    self.add_relation(bound_block_id, BlockRelation::UsedBy, block_id);
+                                    self.add_relation(block_id, BlockRelation::Uses, bound_block_id);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
     }
 
     /// Link enum relationships.
-    fn link_enum(&self, block_id: BlockId, enum_block: &crate::block::BlockEnum<'tcx>) {
+    fn link_enum(&self, _unit: &CompileUnit<'tcx>, block_id: BlockId, enum_block: &crate::block::BlockEnum<'tcx>) {
         // Variants are like fields
         for variant_id in enum_block.get_variants() {
             self.add_relation(block_id, BlockRelation::HasField, variant_id);
             self.add_relation(variant_id, BlockRelation::FieldOf, block_id);
         }
+        // Note: Variant type argument edges are created during graph_render edge collection
     }
 
     /// Link call site relationships.
     fn link_call(
         &self,
-        unit: &CompileUnit<'tcx>,
+        _unit: &CompileUnit<'tcx>,
         block_id: BlockId,
         call: &crate::block::BlockCall<'tcx>,
     ) {
         // Link call site to callee
-        if let Some(callee_id) = self.resolve_callee(unit, call) {
+        // Already set by graph_builder when creating BlockCall
+        if let Some(callee_id) = call.get_callee() {
             self.add_relation(block_id, BlockRelation::Calls, callee_id);
             self.add_relation(callee_id, BlockRelation::CalledBy, block_id);
         }
     }
 
     /// Link return type relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
     fn link_return(
         &self,
+        unit: &CompileUnit<'tcx>,
         block_id: BlockId,
         ret: &crate::block::BlockReturn<'tcx>,
     ) {
-        // Type reference (TypeOf relationship)
-        if let Some(type_id) = ret.base.get_type_ref() {
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = ret.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+            return;
+        }
+
+        // Fallback: resolve via symbol (handles cross-file references)
+        let type_id = self.resolve_type_ref(unit, &ret.base);
+
+        if let Some(type_id) = type_id {
+            // Update the block's type_ref so rendering shows the correct reference
+            ret.set_type_ref(type_id);
             self.add_relation(block_id, BlockRelation::TypeOf, type_id);
             self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         }
     }
 
     /// Link parameter type relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
     fn link_parameter(
         &self,
+        unit: &CompileUnit<'tcx>,
         block_id: BlockId,
         param: &crate::block::BlockParameter<'tcx>,
     ) {
-        // Type reference (TypeOf relationship)
-        if let Some(type_id) = param.base.get_type_ref() {
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = param.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+            return;
+        }
+
+        // Fallback: resolve via symbol (handles cross-file references)
+        let type_id = self.resolve_type_ref(unit, &param.base);
+
+        if let Some(type_id) = type_id {
+            // Update the block's type_ref so rendering shows the correct reference
+            param.set_type_ref(type_id);
             self.add_relation(block_id, BlockRelation::TypeOf, type_id);
             self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         }
     }
 
     /// Link field relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
     fn link_field(
         &self,
         unit: &CompileUnit<'tcx>,
         block_id: BlockId,
         field: &crate::block::BlockField<'tcx>,
     ) {
-        // Type reference (TypeOf relationship)
-        if let Some(type_id) = field.base.get_type_ref() {
+        // Link type reference
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = field.get_type_ref() {
             self.add_relation(block_id, BlockRelation::TypeOf, type_id);
             self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         } else {
-            // Try to resolve from HirNode symbol
-            if let Some(type_id) = self.resolve_field_type(unit, field) {
+            // Fallback: resolve via symbol (handles cross-file references)
+            let type_id = self.resolve_type_ref(unit, &field.base);
+
+            if let Some(type_id) = type_id {
+                // Update the block's type_ref so rendering shows the correct reference
+                field.set_type_ref(type_id);
                 self.add_relation(block_id, BlockRelation::TypeOf, type_id);
                 self.add_relation(type_id, BlockRelation::TypeFor, block_id);
             }
         }
+
+        // Link nested fields (for enum variants with struct-like fields)
+        for child_id in field.base.get_children() {
+            self.add_relation(block_id, BlockRelation::HasField, child_id);
+            self.add_relation(child_id, BlockRelation::FieldOf, block_id);
+        }
     }
 
-    /// Resolve the type of a field.
-    fn resolve_field_type(
+    /// Link const relationships (type annotation).
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
+    fn link_const(
         &self,
         unit: &CompileUnit<'tcx>,
-        field: &crate::block::BlockField<'tcx>,
-    ) -> Option<BlockId> {
-        // The field's HirNode should have a type identifier we can resolve
-        field.base.node.ident_symbol(unit)?.block_id()
+        block_id: BlockId,
+        const_block: &crate::block::BlockConst<'tcx>,
+    ) {
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = const_block.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+            return;
+        }
+
+        // Fallback: resolve via symbol (handles cross-file references)
+        let type_id = self.resolve_type_ref(unit, &const_block.base);
+
+        if let Some(type_id) = type_id {
+            // Update the block's type_ref so rendering shows the correct reference
+            const_block.set_type_ref(type_id);
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+        }
     }
 
+    /// Link type alias relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
+    fn link_alias(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        alias: &crate::block::BlockAlias<'tcx>,
+    )
+    {
+        // Try symbol.type_of() chain first (cross-file safe)
+        let type_id = self.resolve_type_ref(unit, &alias.base);
+
+        if let Some(type_id) = type_id {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+        }
+    }
+
+    /// Resolve type reference from a block's symbol.type_of() chain.
+    /// This is cross-file safe since binding already resolved the types.
+    fn resolve_type_ref(
+        &self,
+        _unit: &CompileUnit<'tcx>,
+        base: &crate::block::BlockBase<'tcx>,
+    ) -> Option<BlockId> {
+        // Use symbol.type_of() chain (cross-file safe)
+        if let Some(sym) = base.symbol() {
+            if let Some(type_of_id) = sym.type_of() {
+                if let Some(type_sym) = self.cc.opt_get_symbol(type_of_id) {
+                    return type_sym.block_id();
+                }
+            }
+            // If symbol IS the type (no type_of), use its own block_id
+            // Type kinds include: Struct, Enum, Trait, TypeAlias, Primitive, etc.
+            if crate::symbol::SymKind::type_kinds().contains(&sym.kind()) {
+                return sym.block_id();
+            }
+        }
+        None
+    }
 }

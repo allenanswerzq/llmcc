@@ -272,7 +272,7 @@ fn visit_impl_trait_for_type() {
     with_compiled_unit(&[&source], |cc| {
         assert_collect_symbol(cc, "MyType", SymKind::Struct, true);
         assert_collect_symbol(cc, "MyTrait", SymKind::Trait, true);
-        assert_collect_symbol(cc, "do_something", SymKind::Function, true);
+        assert_collect_symbol(cc, "do_something", SymKind::Method, true);
     });
 }
 
@@ -399,8 +399,8 @@ fn visit_function_signature_in_trait() {
         ",
     );
     with_compiled_unit(&[&source], |cc| {
-        assert_collect_symbol(cc, "add", SymKind::Function, true);
-        assert_collect_symbol(cc, "subtract", SymKind::Function, true);
+        assert_collect_symbol(cc, "add", SymKind::Method, true);
+        assert_collect_symbol(cc, "subtract", SymKind::Method, true);
     });
 }
 
@@ -420,8 +420,8 @@ fn visit_self_in_different_parameter_forms() {
     );
     with_compiled_unit(&[&source], |cc| {
         assert_collect_symbol(cc, "MyType", SymKind::Struct, true);
-        assert_collect_symbol(cc, "by_value", SymKind::Function, true);
-        assert_collect_symbol(cc, "by_mut_ref", SymKind::Function, true);
-        assert_collect_symbol(cc, "by_ref", SymKind::Function, true);
+        assert_collect_symbol(cc, "by_value", SymKind::Method, true);
+        assert_collect_symbol(cc, "by_mut_ref", SymKind::Method, true);
+        assert_collect_symbol(cc, "by_ref", SymKind::Method, true);
     });
 }

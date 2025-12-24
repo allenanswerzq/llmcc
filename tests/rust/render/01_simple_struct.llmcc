@@ -1,0 +1,38 @@
+===============================================================================
+simple-struct
+===============================================================================
+Test that a simple struct appears in the architecture graph.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+
+--- file: sample/src/lib.rs ---
+
+struct Foo;
+
+pub struct User {
+    pub name: Foo,
+    pub age: i32,
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="Foo", full_path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
+        n3[label="User", full_path="$TMP/sample/src/lib.rs:4", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n2 -> n3 [from="field_type", to="struct"];
+}

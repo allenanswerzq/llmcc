@@ -18,18 +18,20 @@ impl Person {
 impl Machine<{State::Init}> {}
 
 --- expect:block-graph ---
-(root:1 lib
-  (class:2 Person
-    (func:5 walk
+(root:1 lib ($TMP/src/lib.rs)
+  (class:2 Person)
+  (impl:3 Person @type:2
+    (const:4 leg_count @type u32)
+    (method:5 walk
       (parameter:6 self @type:2 Person)
     )
-    (func:7 walk_mut
+    (method:7 walk_mut
       (parameter:8 self @type:2 Person)
     )
-    (func:9 talk
+    (method:9 talk
       (parameter:10 self @type:2 Person)
     )
-    (func:11 talk_mut
+    (method:11 talk_mut
       (parameter:12 a @type:2 Person)
     )
   )

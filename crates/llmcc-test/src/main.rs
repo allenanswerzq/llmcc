@@ -204,7 +204,7 @@ fn run_single_command(
         keep_temps,
         processing.parallel,
         processing.print_ir,
-        graph.component_depth,
+        graph.component_depth(),
         graph.pagerank_top_k,
     )?;
     // Results are already printed inline by the runner

@@ -1,0 +1,157 @@
+===============================================================================
+mixed-event-system
+===============================================================================
+Event-driven system with enum variants, trait objects, and callbacks.
+Combines: enums, traits, Box<dyn Trait>, cross-file, multiple structs.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod events;
+mod handlers;
+mod dispatcher;
+
+--- file: sample/src/events.rs ---
+pub enum Event {
+    Click { x: i32, y: i32 },
+    KeyPress { code: u32 },
+    Resize { width: u32, height: u32 },
+}
+
+pub trait EventHandler {
+    fn handle(&self, event: &Event);
+}
+
+--- file: sample/src/handlers.rs ---
+use crate::events::{Event, EventHandler};
+
+pub struct ClickHandler {
+    pub name: String,
+}
+
+pub struct KeyHandler {
+    pub buffer: String,
+}
+
+impl EventHandler for ClickHandler {
+    fn handle(&self, event: &Event) {}
+}
+
+impl EventHandler for KeyHandler {
+    fn handle(&self, event: &Event) {}
+}
+
+--- file: sample/src/dispatcher.rs ---
+use crate::events::{Event, EventHandler};
+
+pub struct EventDispatcher {
+    pub handlers: Vec<Box<dyn EventHandler>>,
+}
+
+impl EventDispatcher {
+    pub fn dispatch(&self, event: Event) {
+        for handler in &self.handlers {
+            handler.handle(&event);
+        }
+    }
+
+    pub fn add_handler(&mut self, handler: Box<dyn EventHandler>) {
+        self.handlers.push(handler);
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 events ($TMP/sample/src/events.rs)
+  (enum:3 Event
+    (field:4 Click @type:3 Click
+      (field:5 x @type i32)
+      (field:6 y @type i32)
+    )
+    (field:7 KeyPress @type:3 KeyPress
+      (field:8 code @type u32)
+    )
+    (field:9 Resize @type:3 Resize
+      (field:10 width @type u32)
+      (field:11 height @type u32)
+    )
+  )
+  (trait:12 EventHandler
+    (method:13 handle
+      (parameter:14 self @type:12 EventHandler)
+      (parameter:15 event @type:3 Event)
+    )
+  )
+)
+
+(root:16 handlers ($TMP/sample/src/handlers.rs)
+  (class:17 ClickHandler
+    (field:18 name @type String)
+  )
+  (class:19 KeyHandler
+    (field:20 buffer @type String)
+  )
+  (impl:21 ClickHandler @type:17 @trait:12
+    (method:22 handle
+      (parameter:23 self @type:17 ClickHandler)
+      (parameter:24 event @type:3 Event)
+    )
+  )
+  (impl:25 KeyHandler @type:19 @trait:12
+    (method:26 handle
+      (parameter:27 self @type:19 KeyHandler)
+      (parameter:28 event @type:3 Event)
+    )
+  )
+)
+
+(root:29 dispatcher ($TMP/sample/src/dispatcher.rs)
+  (class:30 EventDispatcher
+    (field:31 handlers @type:12 EventHandler)
+  )
+  (impl:32 EventDispatcher @type:30
+    (method:33 dispatch
+      (parameter:34 self @type:30 EventDispatcher)
+      (parameter:35 event @type:3 Event)
+    )
+    (method:37 add_handler
+      (parameter:38 self @type:30 EventDispatcher)
+      (parameter:39 handler @type:12 EventHandler)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_dispatcher_rs {
+        label="dispatcher.rs";
+        n30[label="EventDispatcher", full_path="$TMP/sample/src/dispatcher.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_events_rs {
+        label="events.rs";
+        n12[label="EventHandler", full_path="$TMP/sample/src/events.rs:7", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_handlers_rs {
+        label="handlers.rs";
+        n17[label="ClickHandler", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Struct", shape=box];
+        n19[label="KeyHandler", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n12 -> n17 [from="trait", to="impl"];
+  n12 -> n19 [from="trait", to="impl"];
+  n12 -> n30 [from="field_type", to="struct"];
+}

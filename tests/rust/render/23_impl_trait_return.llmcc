@@ -1,0 +1,87 @@
+===============================================================================
+impl-trait-return
+===============================================================================
+Function returns impl Trait.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod iterator;
+mod factory;
+
+--- file: sample/src/iterator.rs ---
+pub trait Iterator {
+    fn next(&self) -> Option<i32>;
+}
+
+--- file: sample/src/factory.rs ---
+use crate::iterator::Iterator;
+
+pub struct Counter {
+    count: i32,
+}
+
+impl Iterator for Counter {
+    fn next(&self) -> Option<i32> {
+        Some(self.count)
+    }
+}
+
+pub fn make_counter() -> impl Iterator {
+    Counter { count: 0 }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 iterator ($TMP/sample/src/iterator.rs)
+  (trait:3 Iterator
+    (method:4 next
+      (parameter:5 self @type:3 Iterator)
+      (return:6)
+    )
+  )
+)
+
+(root:7 factory ($TMP/sample/src/factory.rs)
+  (class:8 Counter
+    (field:9 count @type i32)
+  )
+  (impl:10 Counter @type:8 @trait:3
+    (method:11 next
+      (parameter:12 self @type:8 Counter)
+      (return:13)
+    )
+  )
+  (func:15 make_counter
+    (return:16 @type:3 Iterator)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_factory_rs {
+        label="factory.rs";
+        n15[label="make_counter", full_path="$TMP/sample/src/factory.rs:13", sym_ty="Function"];
+        n8[label="Counter", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_iterator_rs {
+        label="iterator.rs";
+        n3[label="Iterator", full_path="$TMP/sample/src/iterator.rs:1", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n8 [from="trait", to="impl"];
+  n15 -> n3 [from="func", to="output"];
+}

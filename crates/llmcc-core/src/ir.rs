@@ -208,6 +208,8 @@ impl<'hir> HirNode<'hir> {
     }
 
     /// Find identifier for the first child with a matching field ID.
+    /// For scoped types like `crate::module::Type`, returns `Type` (the direct type_identifier child).
+    /// For generic types like `Repository<User>`, recurses into the type child to get `Repository`.
     pub fn ident_by_field(
         &self,
         unit: &CompileUnit<'hir>,
@@ -216,7 +218,29 @@ impl<'hir> HirNode<'hir> {
         debug_assert!(!self.is_kind(HirKind::Identifier));
         for child in self.children(unit) {
             if child.field_id() == field_id {
-                return child.find_ident(unit);
+                return Self::find_type_ident(&child, unit);
+            }
+        }
+        None
+    }
+
+    /// Find the type identifier from a node, handling scoped and generic types correctly.
+    /// Looks for direct identifier children first, then recurses into the first internal child.
+    fn find_type_ident(node: &HirNode<'hir>, unit: &CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
+        if node.is_kind(HirKind::Identifier) {
+            return node.as_ident();
+        }
+        // First pass: look for direct identifier children
+        for child in node.children(unit) {
+            if child.is_kind(HirKind::Identifier) {
+                return child.as_ident();
+            }
+        }
+        // Second pass: recurse into the FIRST internal child only (e.g., generic_type → type child)
+        // This avoids recursing into type_arguments which would give wrong results
+        for child in node.children(unit) {
+            if child.is_kind(HirKind::Internal) {
+                return Self::find_type_ident(&child, unit);
             }
         }
         None

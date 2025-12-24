@@ -8,10 +8,10 @@ fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
 }
 
 --- expect:block-graph ---
-(root:1 lib
+(root:1 lib ($TMP/src/lib.rs)
   (func:2 triples
-    (parameter:3 a @type B)
-    (return:4 @type Iterator)
+    (parameter:3 a @type a)
+    (return:4)
   )
 )
 
@@ -32,11 +32,13 @@ fn triples(a: impl B) -> impl Iterator<Item=(usize)> {
 }
 
 --- expect:block-graph ---
-(root:1 lib
+(root:1 lib ($TMP/src/lib.rs)
   (trait:2 B)
-  (trait:3 Iterator)
-  (func:4 triples
-    (parameter:5 a @type:2 B)
-    (return:6 @type:3 Iterator)
+  (trait:3 Iterator
+    (alias:4 Item)
+  )
+  (func:5 triples
+    (parameter:6 a @type:2 B)
+    (return:7 @type:3 Iterator)
   )
 )

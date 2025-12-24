@@ -17,7 +17,7 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
 }
 
 --- expect:block-graph ---
-(root:1 lib
+(root:1 lib ($TMP/src/lib.rs)
   (class:2 Foo)
   (class:3 ComplexType
     (field:4 y @type:2 Foo)
@@ -73,19 +73,21 @@ fn add(x: i32, t: ComplexType<T>) -> i32 {
 }
 
 --- expect:block-graph ---
-(root:1 lib
+(root:1 lib ($TMP/src/lib.rs)
   (class:2 Foo)
   (class:3 Bar
     (field:4 a @type i32)
-    (func:6 new
+  )
+  (impl:5 Bar @type:3
+    (method:6 new
       (parameter:7 a @type i32)
-      (return:8 @type:3 Self)
+      (return:8 @type:3 Bar)
     )
-    (func:9 get_a
+    (method:9 get_a
       (parameter:10 self @type:3 Bar)
       (return:11 @type i32)
     )
-    (func:12 nothing)
+    (method:12 nothing)
   )
   (class:13 ComplexType
     (field:14 y @type:2 Foo)
@@ -150,7 +152,7 @@ trait Baz<T> {}
 fn takes_hrtb(bar: impl for<'a> Baz<Quux<'a>>) {}
 
 --- expect:block-graph ---
-(root:1 lib
+(root:1 lib ($TMP/src/lib.rs)
   (func:2 main)
   (func:3 add
     (parameter:4 x @type i32)
@@ -161,31 +163,33 @@ fn takes_hrtb(bar: impl for<'a> Baz<Quux<'a>>) {}
     (parameter:8 slice @type str)
   )
   (func:10 returns_array
-    (return:11 @type [u32; 2])
+    (return:11 @type u32)
   )
   (func:12 returns_tuple
-    (return:13 @type (u32, u16))
+    (return:13 @type u32)
   )
   (func:14 returns_unit)
-  (trait:15 FnOnce)
-  (class:16 Result)
-  (func:17 takes_impl_fn
-    (parameter:18 x @type:15 FnOnce)
+  (trait:15 FnOnce
+    (alias:16 Output)
   )
-  (func:19 takes_attrs
-    (parameter:20 x @type i32)
-    (parameter:21 y @type i64)
+  (class:17 Result)
+  (func:18 takes_impl_fn
+    (parameter:19 x @type:15 FnOnce)
   )
-  (class:22 Machine)
-  (func:23 accumulate
-    (parameter:24 self @type self)
-    (return:25 @type:22 Machine)
+  (func:20 takes_attrs
+    (parameter:21 x @type i32)
+    (parameter:22 y @type i64)
   )
-  (class:26 Quux
-    (field:27 data @type str)
+  (class:23 Machine)
+  (func:24 accumulate
+    (parameter:25 self)
+    (return:26 @type:23 Machine)
   )
-  (trait:28 Baz)
-  (func:29 takes_hrtb
-    (parameter:30 bar @type:28 Baz)
+  (class:27 Quux
+    (field:28 data @type str)
+  )
+  (trait:29 Baz)
+  (func:30 takes_hrtb
+    (parameter:31 bar @type:29 Baz)
   )
 )

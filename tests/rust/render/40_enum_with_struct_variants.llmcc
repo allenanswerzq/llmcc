@@ -1,0 +1,109 @@
+===============================================================================
+enum-with-struct-variants
+===============================================================================
+Test enums with struct-like variants containing user-defined types.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod events;
+
+--- file: sample/src/types.rs ---
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+pub struct Order {
+    pub id: u64,
+    pub amount: f64,
+}
+
+pub struct Error {
+    pub code: i32,
+    pub message: String,
+}
+
+--- file: sample/src/events.rs ---
+use crate::types::{User, Order, Error};
+
+pub enum Event {
+    UserCreated {
+        user: User,
+        timestamp: u64,
+    },
+    OrderPlaced {
+        order: Order,
+        user: User,
+    },
+    Failed {
+        error: Error,
+    },
+    Empty,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 User
+    (field:4 id @type u64)
+    (field:5 name @type String)
+  )
+  (class:6 Order
+    (field:7 id @type u64)
+    (field:8 amount @type f64)
+  )
+  (class:9 Error
+    (field:10 code @type i32)
+    (field:11 message @type String)
+  )
+)
+
+(root:12 events ($TMP/sample/src/events.rs)
+  (enum:13 Event
+    (field:14 UserCreated @type:13 UserCreated
+      (field:15 user @type:3 User)
+      (field:16 timestamp @type u64)
+    )
+    (field:17 OrderPlaced @type:13 OrderPlaced
+      (field:18 order @type:6 Order)
+      (field:19 user @type:3 User)
+    )
+    (field:20 Failed @type:13 Failed
+      (field:21 error @type:9 Error)
+    )
+    (field:22 Empty @type:13 Empty)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_events_rs {
+        label="events.rs";
+        n13[label="Event", full_path="$TMP/sample/src/events.rs:3", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n9[label="Error", full_path="$TMP/sample/src/types.rs:11", sym_ty="Struct", shape=box];
+        n6[label="Order", full_path="$TMP/sample/src/types.rs:6", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n13 [from="field_type", to="enum"];
+  n6 -> n13 [from="field_type", to="enum"];
+  n9 -> n13 [from="field_type", to="enum"];
+}

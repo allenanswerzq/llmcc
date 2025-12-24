@@ -1,0 +1,95 @@
+===============================================================================
+enum-as-field-type
+===============================================================================
+Test enums used as field types in structs.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod models;
+
+--- file: sample/src/types.rs ---
+pub enum Status {
+    Active,
+    Inactive,
+    Pending,
+}
+
+pub enum Priority {
+    Low,
+    Medium,
+    High,
+}
+
+--- file: sample/src/models.rs ---
+use crate::types::{Status, Priority};
+
+pub struct Task {
+    pub name: String,
+    pub status: Status,
+    pub priority: Priority,
+}
+
+pub struct Project {
+    pub title: String,
+    pub status: Status,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (enum:3 Status
+    (field:4 Active @type:3 Active)
+    (field:5 Inactive @type:3 Inactive)
+    (field:6 Pending @type:3 Pending)
+  )
+  (enum:7 Priority
+    (field:8 Low @type:7 Low)
+    (field:9 Medium @type:7 Medium)
+    (field:10 High @type:7 High)
+  )
+)
+
+(root:11 models ($TMP/sample/src/models.rs)
+  (class:12 Task
+    (field:13 name @type String)
+    (field:14 status @type:3 Status)
+    (field:15 priority @type:7 Priority)
+  )
+  (class:16 Project
+    (field:17 title @type String)
+    (field:18 status @type:3 Status)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_models_rs {
+        label="models.rs";
+        n12[label="Task", full_path="$TMP/sample/src/models.rs:3", sym_ty="Struct", shape=box];
+        n16[label="Project", full_path="$TMP/sample/src/models.rs:9", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="Status", full_path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
+        n7[label="Priority", full_path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n12 [from="field_type", to="struct"];
+  n3 -> n16 [from="field_type", to="struct"];
+  n7 -> n12 [from="field_type", to="struct"];
+}

@@ -5,7 +5,7 @@ use crate::DynError;
 pub use crate::block::{BasicBlock, BlockId, BlockKind, BlockRelation};
 use crate::block::{
     BlockAlias, BlockCall, BlockClass, BlockConst, BlockEnum, BlockField, BlockFunc, BlockImpl,
-    BlockParameter, BlockReturn, BlockRoot, BlockTrait,
+    BlockModule, BlockParameter, BlockReturn, BlockRoot, BlockTrait,
 };
 use crate::context::{CompileCtxt, CompileUnit};
 use crate::graph::UnitGraph;
@@ -38,6 +38,8 @@ struct GraphBuilder<'tcx, Language> {
     root: Option<BlockId>,
     /// Stack of children being collected. Each entry is (BlockId, BlockKind) pairs.
     children_stack: Vec<Vec<(BlockId, BlockKind)>>,
+    /// Stack of parent kinds - tracks what kind of block we're currently inside
+    parent_kind_stack: Vec<BlockKind>,
     _config: GraphBuildConfig,
     _marker: PhantomData<Language>,
 }
@@ -48,6 +50,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             unit,
             root: None,
             children_stack: Vec::new(),
+            parent_kind_stack: Vec::new(),
             _config: config,
             _marker: PhantomData,
         }
@@ -55,6 +58,85 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
     fn next_id(&self) -> BlockId {
         self.unit.reserve_block_id()
+    }
+
+    /// Resolve type info from a symbol, following the type_of chain.
+    /// Returns (type_name, type_block_id) tuple.
+    fn resolve_type_info(&self, symbol: Option<&'tcx crate::symbol::Symbol>) -> (String, Option<BlockId>) {
+        let sym = match symbol {
+            Some(s) => s,
+            None => return (String::new(), None),
+        };
+
+        // Special case: EnumVariant symbols should use their own name, not follow type_of
+        // This preserves the variant name (e.g., "None", "Some") rather than the parent enum
+        if sym.kind() == crate::symbol::SymKind::EnumVariant {
+            let type_name = self.unit.resolve_interned_owned(sym.name).unwrap_or_default();
+            // No block_id for enum variants - they don't define a type
+            return (type_name, None);
+        }
+
+        // First try type_of (for symbols that point to a type)
+        if let Some(type_sym_id) = sym.type_of() {
+            if let Some(type_sym) = self.unit.opt_get_symbol(type_sym_id) {
+                // Check if type_sym is a TypeParameter with a bound - use the bound type
+                let effective_type = if type_sym.kind() == crate::symbol::SymKind::TypeParameter {
+                    if let Some(bound_id) = type_sym.type_of() {
+                        self.unit.opt_get_symbol(bound_id).unwrap_or(type_sym)
+                    } else {
+                        type_sym
+                    }
+                } else {
+                    type_sym
+                };
+
+                let type_name = self.unit.resolve_interned_owned(effective_type.name).unwrap_or_default();
+                let type_block_id = effective_type.block_id();
+                return (type_name, type_block_id);
+            }
+        }
+
+        // Fallback: use the symbol directly (for cases where symbol IS the type)
+        let type_name = self.unit.resolve_interned_owned(sym.name).unwrap_or_default();
+        let type_block_id = sym.block_id();
+        (type_name, type_block_id)
+    }
+
+    /// Extract the defining symbol from a HIR node.
+    /// For scoped nodes (class, func, etc.): gets symbol from scope
+    /// For identifier nodes: gets the resolved symbol
+    /// Returns None for nodes without an associated symbol
+    fn extract_symbol(&self, node: HirNode<'tcx>, kind: BlockKind) -> Option<&'tcx crate::symbol::Symbol> {
+        // Impl blocks reference existing type symbols, not their own
+        // Don't extract symbol for impl - it will be set via relation linking
+        if kind == BlockKind::Impl {
+            return None;
+        }
+
+        // Try scope first (for class/func/enum etc.)
+        if let Some(scope) = node.as_scope() {
+            if let Some(sym) = scope.opt_symbol() {
+                return Some(sym);
+            }
+        }
+
+        // Try identifier (for fields, parameters, etc.)
+        if let Some(ident) = node.find_ident(&self.unit) {
+            if let Some(sym) = ident.opt_symbol() {
+                return Some(sym);
+            }
+        }
+
+        // Try children's identifiers (for self_parameter where the identifier is a child)
+        for child in node.children(&self.unit) {
+            if let Some(ident) = child.as_ident() {
+                if let Some(sym) = ident.opt_symbol() {
+                    return Some(sym);
+                }
+            }
+        }
+
+        None
     }
 
     fn create_block(
@@ -65,69 +147,131 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         parent: Option<BlockId>,
         children: Vec<BlockId>,
     ) -> BasicBlock<'tcx> {
+        // Extract symbol for this block (if applicable)
+        let symbol = self.extract_symbol(node, kind);
+
         // NOTE: block_id is set on the node's symbol in build_block() BEFORE visiting children
         // This allows children to resolve their parent's type (e.g., enum variants -> enum)
         match kind {
             BlockKind::Root => {
-                let file_name = node.as_file().map(|file| file.file_path.clone());
-                let block = BlockRoot::new(id, node, parent, children, file_name);
+                // Get file path from HirFile node or from compile unit
+                let file_name = node.as_file()
+                    .map(|file| file.file_path.clone())
+                    .or_else(|| self.unit.file_path().map(|s| s.to_string()));
+                let block = BlockRoot::new_with_symbol(id, node, parent, children, file_name, symbol);
+
+                // Populate crate_name and module_path from scope chain
+                if let Some(scope_node) = node.as_scope()
+                    && let Some(scope) = scope_node.opt_scope()
+                {
+                    use crate::symbol::SymKind;
+
+                    if let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate) {
+                        if let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name) {
+                            block.set_crate_name(name);
+                        }
+                    }
+                    if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module) {
+                        if let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name) {
+                            block.set_module_path(name);
+                        }
+                    }
+                }
+
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Root(block_ref)
             }
             BlockKind::Func | BlockKind::Method => {
-                let block = BlockFunc::new(id, node, kind, parent, children);
+                let block = BlockFunc::new_with_symbol(id, node, kind, parent, children, symbol);
+                if kind == BlockKind::Method {
+                    block.set_is_method(true);
+                }
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Func(block_ref)
             }
             BlockKind::Class => {
-                let block = BlockClass::new(id, node, parent, children);
+                let block = BlockClass::new_with_symbol(id, node, parent, children, symbol);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Class(block_ref)
             }
             BlockKind::Trait => {
-                let block = BlockTrait::new(id, node, parent, children);
+                let block = BlockTrait::new_with_symbol(id, node, parent, children, symbol);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Trait(block_ref)
             }
             BlockKind::Call => {
-                let stmt = BlockCall::new(id, node, parent, children);
+                // For call blocks, symbol is the callee (if resolved)
+                let stmt = BlockCall::new_with_symbol(id, node, parent, children, symbol);
+                // Set callee from resolved symbol
+                if let Some(callee_sym) = node.ident_symbol(&self.unit) {
+                    if let Some(callee_block_id) = callee_sym.block_id() {
+                        stmt.set_callee(callee_block_id);
+                    }
+                }
                 let block_ref = self.unit.cc.block_arena.alloc(stmt);
                 BasicBlock::Call(block_ref)
             }
             BlockKind::Enum => {
-                let enum_ty = BlockEnum::new(id, node, parent, children);
+                let enum_ty = BlockEnum::new_with_symbol(id, node, parent, children, symbol);
                 let block_ref = self.unit.cc.block_arena.alloc(enum_ty);
                 BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {
-                let mut stmt = BlockConst::new(id, node, parent, children);
+                let mut stmt = BlockConst::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children
                 if let Some(ident) = node.find_ident(&self.unit) {
                     stmt.name = ident.name.clone();
                 }
-                // Populate type info from symbol
-                self.populate_type_info(&stmt.base, node);
+                // Resolve and set type info
+                let (type_name, type_ref) = self.resolve_type_info(symbol);
+                stmt.set_type_info(type_name, type_ref);
                 let block_ref = self.unit.cc.block_arena.alloc(stmt);
                 BasicBlock::Const(block_ref)
             }
             BlockKind::Impl => {
-                let block = BlockImpl::new(id, node, parent, children);
+                // Impl blocks: resolve target and trait references using field-based access
+                let mut block = BlockImpl::new(id, node, parent, children);
+
+                // Get target type from the "type" field (e.g., `impl Foo` or `impl Trait for Foo`)
+                if let Some(target_ident) = node.ident_by_field(&self.unit, Language::type_field()) {
+                    if let Some(sym) = target_ident.opt_symbol() {
+                        // Follow type_of chain to get the actual type symbol for block_id
+                        let resolved = sym.type_of()
+                            .and_then(|id| self.unit.opt_get_symbol(id))
+                            .unwrap_or(sym);
+                        // Store original sym (which has nested_types from impl type args) not resolved
+                        block.set_target_info(resolved.block_id(), Some(sym));
+                    }
+                }
+
+                // Get trait from the "trait" field (e.g., `impl Trait for Foo`)
+                if let Some(trait_ident) = node.ident_by_field(&self.unit, Language::trait_field()) {
+                    if let Some(sym) = trait_ident.opt_symbol() {
+                        // Follow type_of chain to get the actual trait symbol
+                        let resolved = sym.type_of()
+                            .and_then(|id| self.unit.opt_get_symbol(id))
+                            .unwrap_or(sym);
+                        block.set_trait_info(resolved.block_id(), Some(resolved));
+                    }
+                }
+
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
-                let mut block = BlockField::new(id, node, parent, children);
+                let mut block = BlockField::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children using ir.rs find_ident
                 if let Some(ident) = node.find_ident(&self.unit) {
                     block.name = ident.name.clone();
                 }
-                // Populate type info from symbol
-                self.populate_type_info(&block.base, node);
+                // Resolve and set type info
+                let (type_name, type_ref) = self.resolve_type_info(symbol);
+                block.set_type_info(type_name, type_ref);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Field(block_ref)
             }
             BlockKind::Parameter => {
-                let mut block = BlockParameter::new(id, node, parent, children);
+                let mut block = BlockParameter::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children using ir.rs find_ident
                 if let Some(ident) = node.find_ident(&self.unit) {
                     block.name = ident.name.clone();
@@ -135,26 +279,38 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     // Fallback: look for text nodes like "self" keyword
                     block.name = text.to_string();
                 }
-                // Populate type info from symbol
-                self.populate_type_info(&block.base, node);
+                let (type_name, type_ref) = self.resolve_type_info(symbol);
+                block.set_type_info(type_name, type_ref);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Parameter(block_ref)
             }
             BlockKind::Return => {
-                let block = BlockReturn::new(id, node, parent, children);
-                // Populate type info from symbol
-                self.populate_type_info(&block.base, node);
+                // Return blocks: symbol should already have type_of set during binding
+                let mut block = BlockReturn::new_with_symbol(id, node, parent, children, symbol);
+                let (type_name, type_ref) = self.resolve_type_info(symbol);
+                block.set_type_info(type_name, type_ref);
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Return(block_ref)
             }
             BlockKind::Alias => {
-                let mut block = BlockAlias::new(id, node, parent, children);
+                let mut block = BlockAlias::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children
                 if let Some(ident) = node.find_ident(&self.unit) {
                     block.name = ident.name.clone();
                 }
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Alias(block_ref)
+            }
+            BlockKind::Module => {
+                // Get module name from identifier
+                let name = node.find_ident(&self.unit)
+                    .map(|ident| ident.name.clone())
+                    .unwrap_or_default();
+                // Inline modules have children (the module body), file modules don't
+                let is_inline = !children.is_empty();
+                let block = BlockModule::new_with_symbol(id, node, parent, children, name, is_inline, symbol);
+                let block_ref = self.unit.cc.block_arena.alloc(block);
+                BasicBlock::Module(block_ref)
             }
             _ => {
                 panic!("unknown block kind: {}", kind)
@@ -172,12 +328,31 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         let id = self.next_id();
         // Try field-based block_kind first, then fall back to node-based
         let field_kind = Language::block_kind(node.field_id());
-        let block_kind = if field_kind != BlockKind::Undefined {
+        let mut block_kind = if field_kind != BlockKind::Undefined {
             field_kind
         } else {
             Language::block_kind(node.kind_id())
         };
         assert_ne!(block_kind, BlockKind::Undefined);
+
+        // Override Func -> Method if:
+        // 1. Symbol kind is Method (set during collection phase), OR
+        // 2. Parent block is an Impl (handles field/method name collision case)
+        if block_kind == BlockKind::Func {
+            let is_method_by_symbol = node
+                .opt_symbol()
+                .is_some_and(|sym| sym.kind() == crate::symbol::SymKind::Method);
+
+            // Check if parent is an impl block using parent_kind_stack
+            let is_in_impl = self
+                .parent_kind_stack
+                .last()
+                .is_some_and(|&k| k == BlockKind::Impl);
+
+            if is_method_by_symbol || is_in_impl {
+                block_kind = BlockKind::Method;
+            }
+        }
 
         if self.root.is_none() {
             self.root = Some(id);
@@ -193,7 +368,9 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
         let children_with_kinds = if recursive {
             self.children_stack.push(Vec::new());
+            self.parent_kind_stack.push(block_kind);
             self.visit_children(self.unit, node, id);
+            self.parent_kind_stack.pop();
             self.children_stack.pop().unwrap()
         } else {
             Vec::new()
@@ -253,10 +430,38 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     ) -> BasicBlock<'tcx> {
         // NOTE: Don't call set_block_id here - the node is a type_identifier that's
         // bound to the struct symbol, and we don't want to overwrite the struct's block_id
-        let mut block = BlockField::new(id, node, parent, children);
+
+        // For tuple fields, the node is the type itself. Find the type symbol.
+        // Strategy 1: Use find_ident to get the identifier and its symbol
+        let mut type_symbol = node.find_ident(&self.unit).and_then(|ident| ident.opt_symbol());
+
+        // Strategy 2: Look at children for symbol
+        if type_symbol.is_none() {
+            for child in node.children(&self.unit) {
+                if let Some(sym) = child.opt_symbol() {
+                    type_symbol = Some(sym);
+                    break;
+                }
+            }
+        }
+        // Strategy 3: Node's own scope/ident
+        if type_symbol.is_none() {
+            if let Some(scope) = node.as_scope() {
+                if let Some(ident) = *scope.ident.read() {
+                    type_symbol = ident.opt_symbol();
+                }
+            }
+        }
+        // Strategy 4: Node's own symbol
+        if type_symbol.is_none() {
+            type_symbol = node.opt_symbol();
+        }
+
+        let mut block = BlockField::new_with_symbol(id, node, parent, children, type_symbol);
         block.name = index.to_string();
-        // Populate type info from the type node itself
-        self.populate_type_info(&block.base, node);
+        // Resolve and set type info
+        let (type_name, type_ref) = self.resolve_type_info(type_symbol);
+        block.set_type_info(type_name, type_ref);
         let block_ref = self.unit.cc.block_arena.alloc(block);
         BasicBlock::Field(block_ref)
     }
@@ -308,128 +513,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                         impl_block.add_method(child_id);
                     }
                 }
+                // Note: target and trait_ref are resolved in connect_blocks (graph.rs)
+                // where all blocks are built and cross-file references work
             }
             _ => {}
-        }
-    }
-
-    /// Resolve a symbol by following `type_of` chains to find a concrete type with a block.
-    ///
-    /// This handles language-agnostic type indirection patterns:
-    /// - **Type Parameters**: Generic/template parameters (Rust `T`, Java `T`, C++ `typename T`)
-    /// - **Type Aliases**: Type synonyms (Rust `type`, C `typedef`, TypeScript type alias)
-    ///
-    /// Returns the first symbol in the chain that has a `block_id`, allowing the block
-    /// graph to reference the actual definition rather than intermediate aliases.
-    fn resolve_to_block_type(&self, sym: &'tcx crate::symbol::Symbol) -> &'tcx crate::symbol::Symbol {
-        let mut current = sym;
-        // Follow type_of chains until we find something with a block
-        // or can't follow further (max 10 iterations to prevent infinite loops)
-        for _ in 0..10 {
-            // If current has a block, return it
-            if current.block_id().is_some() {
-                return current;
-            }
-            // Only follow type_of for indirect type references
-            match current.kind() {
-                crate::symbol::SymKind::TypeParameter | crate::symbol::SymKind::TypeAlias => {
-                    if let Some(type_of_id) = current.type_of() {
-                        if let Some(resolved) = self.unit.cc.opt_get_symbol(type_of_id) {
-                            current = resolved;
-                            continue;
-                        }
-                    }
-                    return current;
-                }
-                _ => return current,
-            }
-        }
-        current
-    }
-
-    /// Set type info on BlockBase from a symbol.
-    ///
-    /// Follows `type_of` chains to find concrete types with blocks, then sets
-    /// both the display name and block reference on the target block.
-    fn set_type_from_symbol(&self, base: &crate::block::BlockBase<'tcx>, sym: &'tcx crate::symbol::Symbol) -> bool {
-        let display_sym = self.resolve_to_block_type(sym);
-
-        if let Some(name) = self.unit.cc.interner.resolve_owned(display_sym.name) {
-            base.set_type_name(name);
-        }
-        if let Some(block_id) = display_sym.block_id() {
-            if block_id != base.id {
-                base.set_type_ref(block_id);
-            }
-        }
-        true
-    }
-
-    /// Populate type info on BlockBase from the node.
-    ///
-    /// Extracts type information by finding the resolved type symbol from the node's
-    /// structure. The binding phase has already resolved type references to symbols;
-    /// this method finds and uses that resolved information.
-    ///
-    /// Two main patterns are handled:
-    /// 1. **Value declarations** (params, fields, consts): The identifier has `type_of`
-    ///    pointing to its type symbol.
-    /// 2. **Type references** (return types): The node contains a type identifier
-    ///    that IS the resolved type symbol.
-    fn populate_type_info(&self, base: &crate::block::BlockBase<'tcx>, node: HirNode<'tcx>) {
-        // Pattern 1: Scoped paths (e.g., Self::Summary, pkg::Type)
-        // The "name" field contains the semantically significant final component
-        if let Some(name_child) = node.child_by_field(&self.unit, Language::name_field()) {
-            if let Some(ident) = name_child.find_ident(&self.unit)
-                && let Some(sym) = ident.opt_symbol()
-            {
-                self.set_type_from_symbol(base, sym);
-                return;
-            }
-        }
-
-        // Pattern 2: Value declarations with type annotations (x: Type, var x Type)
-        // The identifier's symbol has type_of pointing to the type symbol
-        for child in node.children(&self.unit) {
-            if let Some(child_sym) = child.opt_symbol() {
-                if let Some(type_of_id) = child_sym.type_of() {
-                    if let Some(type_sym) = self.unit.cc.opt_get_symbol(type_of_id) {
-                        self.set_type_from_symbol(base, type_sym);
-                        return;
-                    }
-                }
-            }
-        }
-
-        // Pattern 3: Explicit type field (: Type suffix in field declarations)
-        if let Some(type_child) = node.child_by_field(&self.unit, Language::type_field()) {
-            if let Some(ident) = type_child.find_ident(&self.unit)
-                && let Some(sym) = ident.opt_symbol()
-            {
-                self.set_type_from_symbol(base, sym);
-                return;
-            }
-        }
-
-        // Pattern 4: Node's own identifier (for scope nodes with attached ident)
-        if let Some(scope) = node.as_scope() {
-            if let Some(ident) = *scope.ident.read() {
-                if let Some(sym) = ident.opt_symbol() {
-                    self.set_type_from_symbol(base, sym);
-                    return;
-                }
-            }
-        }
-
-        // Pattern 5: Type reference (the node contains the type itself)
-        // Find any type identifier - its symbol IS the type
-        if let Some(ident) = node.find_ident(&self.unit) {
-            if let Some(sym) = ident.opt_symbol() {
-                self.set_type_from_symbol(base, sym);
-            } else {
-                // Unresolved type - just set the name for display
-                base.set_type_name(ident.name.clone());
-            }
         }
     }
 

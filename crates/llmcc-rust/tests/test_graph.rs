@@ -455,8 +455,7 @@ fn test_type_alias_block() {
                     let sub = get_block(cc, sub_id);
                     eprintln!("DEBUG func child: {:?} kind={:?}", sub_id, sub.kind());
                     if let BasicBlock::Return(ret) = &sub {
-                        eprintln!("DEBUG return type_name: {:?} type_ref: {:?}",
-                            ret.base.get_type_name(), ret.base.get_type_ref());
+                        eprintln!("DEBUG return symbol: {:?}", ret.base.symbol().map(|s| s.id()));
                     }
                 }
                 // Check if the return type references the alias via TypeOf

@@ -9,44 +9,10 @@ struct A {
   b: union::C,
 }
 
---- expect:symbols ---
-u0:0 | Primitive | i32 | [global]
-u0:1 | Primitive | i64 | [global]
-u0:2 | Primitive | i16 | [global]
-u0:3 | Primitive | i8 | [global]
-u0:4 | Primitive | i128 | [global]
-u0:5 | Primitive | isize | [global]
-u0:6 | Primitive | u32 | [global]
-u0:7 | Primitive | u64 | [global]
-u0:8 | Primitive | u16 | [global]
-u0:9 | Primitive | u8 | [global]
-u0:10 | Primitive | u128 | [global]
-u0:11 | Primitive | usize | [global]
-u0:12 | Primitive | f32 | [global]
-u0:13 | Primitive | f64 | [global]
-u0:14 | Primitive | bool | [global]
-u0:15 | Primitive | char | [global]
-u0:16 | Primitive | str | [global]
-u0:17 | Primitive | String | [global]
-u0:18 | Crate | _c | [global]
-u0:19 | File | lib | [global]
-u0:20 | Module | crate | [global]
-u0:21 | Struct | A |
-u0:22 | TypeAlias | self |
-u0:23 | TypeAlias | Self |
-u0:24 | Field | a |
-u0:25 | Field | b |
-
 --- expect:block-graph ---
-(root:1 lib
+(root:1 lib ($TMP/src/lib.rs)
   (class:2 A
-    (field:3 a @type default)
-    (field:4 b @type union)
+    (field:3 a @type a)
+    (field:4 b @type b)
   )
 )
-
---- expect:block-relations ---
-A:2 (class)  --has_field-->  a:3 (field)
-A:2 (class)  --has_field-->  b:4 (field)
-a:3 (field)  --field_of -->  A:2 (class)
-b:4 (field)  --field_of -->  A:2 (class)

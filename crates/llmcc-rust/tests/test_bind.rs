@@ -187,7 +187,7 @@ fn test_visit_function_signature_item() {
         assert_bind_symbol(
             cc,
             "calculate",
-            BindExpect::new(SymKind::Function)
+            BindExpect::new(SymKind::Method)
                 .expect_scope()
                 .with_type_of("i32"),
         );
@@ -349,11 +349,11 @@ fn test_visit_impl_item() {
             "Widget",
             BindExpect::new(SymKind::Struct).expect_scope(),
         );
-        assert_bind_symbol(cc, "new", BindExpect::new(SymKind::Function).expect_scope());
+        assert_bind_symbol(cc, "new", BindExpect::new(SymKind::Method).expect_scope());
         assert_bind_symbol(
             cc,
             "get_size",
-            BindExpect::new(SymKind::Function)
+            BindExpect::new(SymKind::Method)
                 .expect_scope()
                 .with_type_of("i32"),
         );
@@ -392,7 +392,7 @@ fn test_visit_impl_item_with_trait() {
         assert_bind_symbol(
             cc,
             "print",
-            BindExpect::new(SymKind::Function).expect_scope(),
+            BindExpect::new(SymKind::Method).expect_scope(),
         );
     });
 }
@@ -1045,5 +1045,52 @@ fn test_visit_match_block() {
     with_compiled_unit(&[&source], |cc| {
         assert_bind_symbol(cc, "zero", BindExpect::new(SymKind::Variable));
         assert_bind_symbol(cc, "result", BindExpect::new(SymKind::Variable));
+    });
+}
+
+#[serial]
+#[test]
+fn test_field_scoped_type_inline_module() {
+    // Tests: field with scoped type from inline module (types::Item)
+    // This verifies binding correctly resolves module::Type for field types
+    let source = dedent(
+        "
+        mod types {
+            pub struct Item {
+                pub id: u32,
+            }
+        }
+
+        pub struct Container {
+            pub item: types::Item,
+        }
+        ",
+    );
+
+    with_compiled_unit(&[&source], |cc| {
+        // Verify Item struct exists
+        assert_bind_symbol(
+            cc,
+            "Item",
+            BindExpect::new(SymKind::Struct)
+                .expect_scope()
+                .with_is_global(true),
+        );
+
+        // Verify Container struct exists
+        assert_bind_symbol(
+            cc,
+            "Container",
+            BindExpect::new(SymKind::Struct)
+                .expect_scope()
+                .with_is_global(true),
+        );
+
+        // Verify 'item' field has type_of pointing to Item
+        assert_bind_symbol(
+            cc,
+            "item",
+            BindExpect::new(SymKind::Field).with_type_of("Item"),
+        );
     });
 }

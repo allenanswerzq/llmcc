@@ -54,14 +54,12 @@ impl<'tcx> BinderVisitor<'tcx> {
         );
         let depth = scopes.scope_depth();
 
-        if let Some(vis_modifier) = node.child_by_kind(unit, LangRust::visibility_modifier)
+        // Any visibility modifier (pub, pub(crate), pub(super), etc.) makes the symbol global
+        if let Some(_vis_modifier) = node.child_by_kind(unit, LangRust::visibility_modifier)
             && let Some(sym) = sn.opt_symbol()
-            && let Some(text) = vis_modifier.as_text()
         {
-            if text.text.trim() == "pub" {
-                sym.set_is_global(true);
-                scopes.globals().insert(sym);
-            }
+            sym.set_is_global(true);
+            scopes.globals().insert(sym);
         }
 
         let child_parent = sn.opt_symbol().or(parent);
@@ -290,6 +288,11 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             fn_sym.set_type_of(return_type.id());
         }
 
+        // Extract nested types from generic return types (e.g., Result<User, Error>)
+        if let Some(return_type_node) = node.child_by_field(unit, LangRust::field_return_type) {
+            extract_nested_types(unit, scopes, &return_type_node, fn_sym);
+        }
+
         if unit.resolve_name(fn_sym.name) == "main" {
             fn_sym.set_is_global(true);
             scopes.globals().insert(fn_sym);
@@ -412,6 +415,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 if let Some(struct_sym) = namespace.opt_symbol() {
                     struct_sym.add_nested_type(field_type.id());
                 }
+                // Extract nested types from generic field types to the FIELD symbol
+                // e.g., for `data: Triple<User, Error>`, add User/Error to field's nested_types
+                // This allows edges: User -> Triple, Error -> Triple (not User -> AllThree)
+                extract_nested_types(unit, scopes, &type_node, field_sym);
             }
         }
     }
@@ -430,7 +437,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         if let Some(target_ident) = target_ident
             && let Some(target_sym) = target_ident.opt_symbol()
         {
-            let target_resolved = scopes.lookup_symbol(&target_ident.name, SymKind::trait_kinds());
+            // Look up the impl target type (struct or enum that the trait is implemented for)
+            let target_resolved = scopes.lookup_symbol(&target_ident.name, SymKind::impl_target_kinds());
 
             if target_sym.kind() == SymKind::UnresolvedType {
                 // Resolve the type for the impl type now
@@ -467,20 +475,52 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
             if let Some(trait_node) = node.child_by_field(unit, LangRust::field_trait)
                 && let Some(trait_ident) = trait_node.find_ident(unit)
-                && let Some(trait_sym) =
-                    scopes.lookup_symbol(&trait_ident.name, vec![SymKind::Trait])
-                && let Some(target_resolved) = target_resolved
-                && let Some(target_scope) = target_resolved.opt_scope()
-                && let Some(trait_scope) = trait_sym.opt_scope()
             {
-                let target_scope = unit.get_scope(target_scope);
-                let trait_scope = unit.get_scope(trait_scope);
-                tracing::trace!(
-                    "adding impl realtion: target '{}' implements trait '{}'",
-                    target_resolved.format(Some(unit.interner())),
-                    trait_sym.format(Some(unit.interner())),
-                );
-                target_scope.add_parent(trait_scope);
+                // Only look for Trait kind - don't use type_kinds() which includes TypeParameter
+                // If not found here, keep the existing symbol (UnresolvedType from collection)
+                // and let graph phase handle cross-file resolution
+                let trait_sym = scopes.lookup_symbol(&trait_ident.name, vec![SymKind::Trait]);
+
+                if let Some(trait_sym) = trait_sym {
+                    // Update the trait identifier's symbol to point to the resolved trait
+                    trait_ident.set_symbol(trait_sym);
+
+                    // Build parent scope relationship if target is resolved
+                    if let Some(target_resolved) = target_resolved
+                        && let Some(target_scope) = target_resolved.opt_scope()
+                        && let Some(trait_scope) = trait_sym.opt_scope()
+                    {
+                        let target_scope = unit.get_scope(target_scope);
+                        let trait_scope = unit.get_scope(trait_scope);
+                        tracing::trace!(
+                            "adding impl realtion: target '{}' implements trait '{}'",
+                            target_resolved.format(Some(unit.interner())),
+                            trait_sym.format(Some(unit.interner())),
+                        );
+                        target_scope.add_parent(trait_scope);
+                    }
+                }
+
+                // Extract type arguments from trait reference (e.g., User from `impl Repository<User>`)
+                // and store them on the target symbol's nested_types for graph edge building
+                // Use target_sym (always available) rather than target_resolved (may be None for cross-file)
+                if let Some(type_args) = trait_node.child_by_field(unit, LangRust::field_type_arguments) {
+                    for child in type_args.children(unit) {
+                        if child.is_trivia() || child.kind_id() == LangRust::lifetime {
+                            continue;
+                        }
+                        if let Some(type_arg_sym) = infer_type(unit, scopes, &child) {
+                            if type_arg_sym.kind().is_defined_type() {
+                                target_sym.add_nested_type(type_arg_sym.id());
+                                tracing::trace!(
+                                    "impl type arg: {} -> {}",
+                                    type_arg_sym.format(Some(unit.interner())),
+                                    target_sym.format(Some(unit.interner())),
+                                );
+                            }
+                        }
+                    }
+                }
             }
 
             let sn = node.as_scope().unwrap();
@@ -914,6 +954,48 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         parent: Option<&Symbol>,
     ) {
         self.visit_block(unit, node, scopes, namespace, parent);
+    }
+}
+
+/// Recursively extract all nested type arguments from a type node.
+/// For `Result<User, Error>`, this yields [User, Error].
+/// For `Vec<Vec<User>>`, this yields [Vec<User>, User] (outer Vec then inner).
+fn extract_nested_types<'tcx>(
+    unit: &CompileUnit<'tcx>,
+    scopes: &BinderScopes<'tcx>,
+    type_node: &HirNode<'tcx>,
+    target_sym: &Symbol,
+) {
+    // Check if this is a generic type node
+    if type_node.kind_id() == LangRust::generic_type {
+        // Get the type_arguments child
+        if let Some(type_args) = type_node.child_by_field(unit, LangRust::field_type_arguments) {
+            for child in type_args.children(unit) {
+                if child.is_trivia() || child.kind_id() == LangRust::lifetime {
+                    continue;
+                }
+                // Infer the type of each type argument
+                if let Some(type_arg_sym) = infer_type(unit, scopes, &child) {
+                    target_sym.add_nested_type(type_arg_sym.id());
+                }
+                // Recursively extract from nested generics
+                extract_nested_types(unit, scopes, &child, target_sym);
+            }
+        }
+    }
+    // Handle scoped type identifiers (e.g., std::result::Result<T, E>)
+    else if type_node.kind_id() == LangRust::scoped_type_identifier {
+        if let Some(type_args) = type_node.child_by_field(unit, LangRust::field_type_arguments) {
+            for child in type_args.children(unit) {
+                if child.is_trivia() || child.kind_id() == LangRust::lifetime {
+                    continue;
+                }
+                if let Some(type_arg_sym) = infer_type(unit, scopes, &child) {
+                    target_sym.add_nested_type(type_arg_sym.id());
+                }
+                extract_nested_types(unit, scopes, &child, target_sym);
+            }
+        }
     }
 }
 

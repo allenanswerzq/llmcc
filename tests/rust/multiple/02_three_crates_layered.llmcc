@@ -1,0 +1,239 @@
+===============================================================================
+three-crates-layered
+===============================================================================
+Three-layer architecture: domain -> service -> api.
+
+--- file: Cargo.toml ---
+[workspace]
+members = ["domain", "service", "api"]
+
+--- file: domain/Cargo.toml ---
+[package]
+name = "domain"
+version = "0.1.0"
+
+--- file: domain/src/lib.rs ---
+pub mod models;
+
+--- file: domain/src/models.rs ---
+pub struct User {
+    pub id: u64,
+    pub email: String,
+}
+
+pub struct Order {
+    pub id: u64,
+    pub user_id: u64,
+    pub amount: f64,
+}
+
+pub enum OrderStatus {
+    Pending,
+    Confirmed,
+    Shipped,
+    Delivered,
+}
+
+--- file: service/Cargo.toml ---
+[package]
+name = "service"
+version = "0.1.0"
+
+[dependencies]
+domain = { path = "../domain" }
+
+--- file: service/src/lib.rs ---
+pub mod user_service;
+pub mod order_service;
+
+--- file: service/src/user_service.rs ---
+use domain::models::User;
+
+pub trait UserRepository {
+    fn find_by_id(&self, id: u64) -> Option<User>;
+    fn save(&self, user: User) -> User;
+}
+
+pub fn get_user(id: u64) -> Option<User> {
+    None
+}
+
+--- file: service/src/order_service.rs ---
+use domain::models::{Order, OrderStatus};
+
+pub trait OrderRepository {
+    fn find_by_id(&self, id: u64) -> Option<Order>;
+    fn update_status(&self, id: u64, status: OrderStatus);
+}
+
+pub fn process_order(order: Order) -> OrderStatus {
+    OrderStatus::Confirmed
+}
+
+--- file: api/Cargo.toml ---
+[package]
+name = "api"
+version = "0.1.0"
+
+[dependencies]
+domain = { path = "../domain" }
+service = { path = "../service" }
+
+--- file: api/src/lib.rs ---
+pub mod handlers;
+
+--- file: api/src/handlers.rs ---
+use domain::models::{User, Order};
+use service::user_service::get_user;
+use service::order_service::process_order;
+
+pub struct ApiResponse {
+    pub success: bool,
+    pub data: Option<User>,
+}
+
+pub fn handle_get_user(id: u64) -> ApiResponse {
+    let user = get_user(id);
+    ApiResponse { success: user.is_some(), data: user }
+}
+
+pub fn handle_order(order: Order) -> bool {
+    let _ = process_order(order);
+    true
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/domain/src/lib.rs))
+
+(root:2 models ($TMP/domain/src/models.rs)
+  (class:3 User
+    (field:4 id @type u64)
+    (field:5 email @type String)
+  )
+  (class:6 Order
+    (field:7 id @type u64)
+    (field:8 user_id @type u64)
+    (field:9 amount @type f64)
+  )
+  (enum:10 OrderStatus
+    (field:11 Pending @type:10 Pending)
+    (field:12 Confirmed @type:10 Confirmed)
+    (field:13 Shipped @type:10 Shipped)
+    (field:14 Delivered @type:10 Delivered)
+  )
+)
+
+(root:15 lib ($TMP/service/src/lib.rs))
+
+(root:16 user_service ($TMP/service/src/user_service.rs)
+  (trait:17 UserRepository
+    (method:18 find_by_id
+      (parameter:19 self @type:17 UserRepository)
+      (parameter:20 id @type u64)
+      (return:21)
+      (@tdep:3 User)
+    )
+    (method:22 save
+      (parameter:23 self @type:17 UserRepository)
+      (parameter:24 user @type:3 User)
+      (return:25 @type:3 User)
+    )
+  )
+  (func:26 get_user
+    (parameter:27 id @type u64)
+    (return:28)
+    (@tdep:3 User)
+  )
+)
+
+(root:29 order_service ($TMP/service/src/order_service.rs)
+  (trait:30 OrderRepository
+    (method:31 find_by_id
+      (parameter:32 self @type:30 OrderRepository)
+      (parameter:33 id @type u64)
+      (return:34)
+      (@tdep:6 Order)
+    )
+    (method:35 update_status
+      (parameter:36 self @type:30 OrderRepository)
+      (parameter:37 id @type u64)
+      (parameter:38 status @type:10 OrderStatus)
+    )
+  )
+  (func:39 process_order
+    (parameter:40 order @type:6 Order)
+    (return:41 @type:10 OrderStatus)
+  )
+)
+
+(root:42 lib ($TMP/api/src/lib.rs))
+
+(root:43 handlers ($TMP/api/src/handlers.rs)
+  (class:44 ApiResponse
+    (field:45 success @type bool)
+    (field:46 data @type:3 User)
+  )
+  (func:47 handle_get_user
+    (parameter:48 id @type u64)
+    (return:49 @type:44 ApiResponse)
+    (@fdep:26 get_user)
+  )
+  (func:52 handle_order
+    (parameter:53 order @type:6 Order)
+    (return:54 @type bool)
+    (@fdep:39 process_order)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_api {
+      label="api";
+      subgraph cluster_handlers_rs {
+        label="handlers.rs";
+        n47[label="handle_get_user", full_path="$TMP/api/src/handlers.rs:10", sym_ty="Function"];
+        n52[label="handle_order", full_path="$TMP/api/src/handlers.rs:15", sym_ty="Function"];
+        n44[label="ApiResponse", full_path="$TMP/api/src/handlers.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_domain {
+      label="domain";
+      subgraph cluster_models_rs {
+        label="models.rs";
+        n3[label="User", full_path="$TMP/domain/src/models.rs:1", sym_ty="Struct", shape=box];
+        n10[label="OrderStatus", full_path="$TMP/domain/src/models.rs:12", sym_ty="Enum", shape=box];
+        n6[label="Order", full_path="$TMP/domain/src/models.rs:6", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_service {
+      label="service";
+      subgraph cluster_order_service_rs {
+        label="order_service.rs";
+        n39[label="process_order", full_path="$TMP/service/src/order_service.rs:8", sym_ty="Function"];
+      }
+
+      subgraph cluster_user_service_rs {
+        label="user_service.rs";
+        n26[label="get_user", full_path="$TMP/service/src/user_service.rs:8", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  n3 -> n44 [from="type_dep", to="struct"];
+  n6 -> n39 [from="input", to="func"];
+  n6 -> n52 [from="input", to="func"];
+  n26 -> n3 [from="func", to="type_dep"];
+  n39 -> n10 [from="func", to="output"];
+  n47 -> n26 [from="caller", to="callee"];
+  n47 -> n44 [from="func", to="output"];
+  n52 -> n39 [from="caller", to="callee"];
+}

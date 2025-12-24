@@ -11,6 +11,17 @@ use crate::LangRust;
 use crate::token::AstVisitorRust;
 use crate::util::{parse_crate_name, parse_file_name, parse_module_name};
 
+/// Check if a function is in a method context (parent is a type: Struct, Enum, Trait, or UnresolvedType).
+/// This is used to distinguish between free functions and methods inside impl blocks.
+fn is_method_context(parent: Option<&Symbol>) -> bool {
+    parent.is_some_and(|p| {
+        matches!(
+            p.kind(),
+            SymKind::Struct | SymKind::Enum | SymKind::Trait | SymKind::UnresolvedType
+        )
+    })
+}
+
 /// Callback type for scope entry actions
 type ScopeEntryCallback<'tcx> = Box<dyn FnOnce(&HirNode<'tcx>, &mut CollectorScopes<'tcx>) + 'tcx>;
 
@@ -137,7 +148,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             return Some(symbol);
         }
 
-        // Try unresolved type if not found
+        // Try unresolved type if not found - convert to target kind
         if let Some(symbol) = scopes.lookup_symbol(name, vec![SymKind::UnresolvedType]) {
             tracing::trace!(
                 "found existing unresolved symbol '{}', converting to {:?}, {:?}",
@@ -145,6 +156,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 kind,
                 symbol,
             );
+            // Actually convert the UnresolvedType to the target kind
+            symbol.set_kind(kind);
             return Some(symbol);
         }
 
@@ -285,12 +298,17 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
 
+        // Track crate and module scopes for parent relationships
+        let mut crate_scope: Option<&'tcx Scope<'tcx>> = None;
+        let mut module_scope: Option<&'tcx Scope<'tcx>> = None;
+
         // Parse crate name and set up crate scope
         if let Some(crate_name) = parse_crate_name(file_path)
             && let Some(symbol) = scopes.lookup_or_insert_global(&crate_name, node, SymKind::Crate)
         {
             tracing::trace!("insert crate symbol in globals '{}'", crate_name);
             scopes.push_scope_with(node, Some(symbol));
+            crate_scope = scopes.top();
         }
 
         if let Some(module_name) = parse_module_name(file_path)
@@ -298,6 +316,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         {
             tracing::trace!("insert module symbol in globals '{}'", module_name);
             scopes.push_scope_with(node, Some(symbol));
+            module_scope = scopes.top();
         }
 
         let sn = node.as_scope().unwrap();
@@ -313,11 +332,30 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             file_sym.set_scope(scope.id());
             sn.set_scope(scope);
 
+            // Add crate and module scopes as parents for hierarchy traversal
+            if let Some(crate_s) = crate_scope {
+                scope.add_parent(crate_s);
+            }
+            if let Some(module_s) = module_scope {
+                scope.add_parent(module_s);
+            }
+
             scopes.push_scope(scope);
 
             if let Some(crate_sym) = scopes.lookup_or_insert_global("crate", node, SymKind::Module) {
                 tracing::trace!("insert 'crate' symbol in globals");
-                crate_sym.set_scope(scopes.globals().id());
+                // Use the shared globals scope (first on stack), not the unit's local globals
+                crate_sym.set_scope(scopes.scopes().globals().id());
+            }
+
+            // For top-level files (not lib.rs or main.rs), create a module symbol
+            // in the crate scope that links to this file's scope.
+            // This enables paths like `crate::models::Config` to resolve.
+            if file_name != "lib" && file_name != "main" && module_scope.is_none() {
+                if let Some(mod_sym) = scopes.lookup_or_insert_global(&file_name, node, SymKind::Module) {
+                    tracing::trace!("link file '{}' as module in crate scope", file_name);
+                    mod_sym.set_scope(scope.id());
+                }
             }
         }
 
@@ -342,6 +380,19 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if node.child_by_field(unit, LangRust::field_body).is_none() {
             return;
         }
+
+        // Use the current top of the stack (actual parent scope for super::)
+        let parent_scope_id = scopes.top().map(|s| s.id()).unwrap_or(namespace.id());
+
+        // Callback to insert `super` symbol pointing to parent module scope
+        let on_scope_enter: ScopeEntryCallback<'tcx> = Box::new(move |node, scopes| {
+            // Insert `super` symbol in current (module) scope, pointing to parent scope
+            if let Some(super_sym) = scopes.lookup_or_insert("super", node, SymKind::Module) {
+                super_sym.set_scope(parent_scope_id);
+                tracing::trace!("inserted 'super' symbol pointing to scope {:?}", parent_scope_id);
+            }
+        });
+
         self.visit_scoped_named(
             unit,
             node,
@@ -350,7 +401,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             parent,
             SymKind::Namespace,
             LangRust::field_name,
-            None,
+            Some(on_scope_enter),
         );
     }
 
@@ -365,13 +416,19 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        // Determine if this is a method (inside impl) or a free function
+        let kind = if is_method_context(parent) {
+            SymKind::Method
+        } else {
+            SymKind::Function
+        };
         self.visit_scoped_named(
             unit,
             node,
             scopes,
             namespace,
             parent,
-            SymKind::Function,
+            kind,
             LangRust::field_name,
             None,
         );
@@ -388,13 +445,19 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         namespace: &'tcx Scope<'tcx>,
         parent: Option<&Symbol>,
     ) {
+        // Trait method signatures are also methods
+        let kind = if is_method_context(parent) {
+            SymKind::Method
+        } else {
+            SymKind::Function
+        };
         self.visit_scoped_named(
             unit,
             node,
             scopes,
             namespace,
             parent,
-            SymKind::Function,
+            kind,
             LangRust::field_name,
             None,
         );
@@ -486,11 +549,17 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         _namespace: &'tcx Scope<'tcx>,
         _parent: Option<&Symbol>,
     ) {
-        if let Some(ti) = node.ident_by_field(unit, LangRust::field_trait)
-            && let Some(symbol) =
-                self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::Trait)
-        {
-            ti.set_symbol(symbol);
+        // For impl trait references, first try Trait, then UnresolvedType for cross-file resolution
+        if let Some(ti) = node.ident_by_field(unit, LangRust::field_trait) {
+            // First try looking up as Trait (in-file case)
+            let symbol = scopes.lookup_symbol(&ti.name, vec![SymKind::Trait])
+                // Then try looking up as UnresolvedType (existing placeholder)
+                .or_else(|| scopes.lookup_symbol(&ti.name, vec![SymKind::UnresolvedType]))
+                // Finally create UnresolvedType placeholder for cross-file resolution during binding
+                .or_else(|| scopes.lookup_or_insert(&ti.name, node, SymKind::UnresolvedType));
+            if let Some(symbol) = symbol {
+                ti.set_symbol(symbol);
+            }
         }
 
         if let Some((sn, ti)) = node.scope_and_ident_by_field(unit, LangRust::field_type)

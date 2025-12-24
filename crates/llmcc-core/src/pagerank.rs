@@ -254,12 +254,11 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         }
 
         for (idx, entry) in entries.iter().enumerate() {
-            let Some(unit_graph) = self.graph.unit_graph(entry.unit_index) else {
-                continue;
-            };
-
-            let mut targets = unit_graph
-                .edges()
+            // Use the global related_map from CompileCtxt
+            let mut targets = self
+                .graph
+                .cc
+                .related_map
                 .get_related(entry.block_id, relation)
                 .into_iter()
                 .filter_map(|dep_id| index_by_block.get(&dep_id).copied())

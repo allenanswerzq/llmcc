@@ -85,6 +85,24 @@ impl<'tcx> Scope<'tcx> {
         *self.symbol.read()
     }
 
+    /// Find a parent scope with a symbol of the given kind.
+    /// Walks up the parent chain (BFS) looking for a scope whose symbol matches.
+    pub fn find_parent_by_kind(&self, kind: crate::symbol::SymKind) -> Option<&'tcx Symbol> {
+        use std::collections::VecDeque;
+        let mut queue = VecDeque::new();
+        queue.extend(self.parents());
+
+        while let Some(parent) = queue.pop_front() {
+            if let Some(sym) = parent.opt_symbol() {
+                if sym.kind() == kind {
+                    return Some(sym);
+                }
+            }
+            queue.extend(parent.parents());
+        }
+        None
+    }
+
     #[inline]
     pub fn id(&self) -> ScopeId {
         self.id
@@ -362,7 +380,13 @@ impl<'tcx> ScopeStack<'tcx> {
             stack.last().copied()?
         };
 
-        let symbols = scope.lookup_symbols(name_key, LookupOptions::default());
+        // Pass through kind_filters to lookup to support kind-specific lookup/insert
+        let lookup_options = if options.kind_filters.is_some() {
+            LookupOptions::default().with_kind_filters(options.kind_filters.clone().unwrap())
+        } else {
+            LookupOptions::default()
+        };
+        let symbols = scope.lookup_symbols(name_key, lookup_options);
         if let Some(mut symbols) = symbols {
             debug_assert!(!symbols.is_empty());
 

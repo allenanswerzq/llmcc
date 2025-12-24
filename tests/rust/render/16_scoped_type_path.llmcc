@@ -1,0 +1,57 @@
+===============================================================================
+scoped-type-path
+===============================================================================
+Field uses fully scoped path type (module::Type).
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+
+pub struct Container {
+    pub item: types::Item,
+}
+
+--- file: sample/src/types.rs ---
+pub struct Item {
+    pub id: u32,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Container
+    (field:3 item @type:5 Item)
+  )
+)
+
+(root:4 types ($TMP/sample/src/types.rs)
+  (class:5 Item
+    (field:6 id @type u32)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="Container", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n5[label="Item", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n5 -> n2 [from="field_type", to="struct"];
+}
