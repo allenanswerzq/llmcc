@@ -251,6 +251,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
 }
 
 impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
+    // Note: Test items (#[test] functions, #[cfg(test)] modules) are already filtered out
+    // at the HIR building stage in ir_builder.rs, so they won't appear in the HIR tree.
+
     /// AST: block { ... }
     /// Purpose: Create a new lexical scope for block-scoped variables and statements
     #[tracing::instrument(skip_all)]
@@ -359,9 +362,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             }
         }
 
-        for child in node.children(unit) {
-            self.visit_node(unit, &child, scopes, namespace, parent);
-        }
+        // Use visit_children which handles test filtering automatically
+        self.visit_children(unit, node, scopes, namespace, parent);
 
         scopes.pop_until(start_depth);
     }

@@ -577,12 +577,16 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
     fn visit_children(&mut self, unit: CompileUnit<'tcx>, node: HirNode<'tcx>, parent: BlockId) {
         let parent_kind_id = node.kind_id();
         let children = node.child_ids();
+        let children_vec: Vec<_> = children.iter().map(|id| unit.hir_node(*id)).collect();
         let mut tuple_field_index = 0usize;
-        for child_id in children {
-            let child = unit.hir_node(*child_id);
+
+        // Note: Test items (#[test] functions, #[cfg(test)] modules) are already filtered out
+        // at the HIR building stage in ir_builder.rs, so they won't appear in children_vec.
+
+        for child in children_vec.iter() {
             // Check for context-dependent blocks (like tuple struct fields)
             // Only intercept if the parent context changes the block kind
-            let base_kind = Self::effective_block_kind(child);
+            let base_kind = Self::effective_block_kind(*child);
             let context_kind =
                 Language::block_kind_with_parent(child.kind_id(), child.field_id(), parent_kind_id);
 
@@ -591,7 +595,7 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
                 // For tuple struct fields, pass the index as the name
                 self.build_block_with_kind_and_index(
                     unit,
-                    child,
+                    *child,
                     parent,
                     context_kind,
                     tuple_field_index,
@@ -600,10 +604,10 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             } else if context_kind == BlockKind::Undefined && Self::is_block_kind(base_kind) {
                 // Parent context suppresses block creation (e.g., return_type inside function_type)
                 // Just visit children without creating a block
-                self.visit_children(unit, child, parent);
+                self.visit_children(unit, *child, parent);
             } else {
                 // Normal path - let visit_node handle it
-                self.visit_node(unit, child, parent);
+                self.visit_node(unit, *child, parent);
             }
         }
     }

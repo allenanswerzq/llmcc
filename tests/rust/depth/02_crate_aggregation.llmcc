@@ -1,0 +1,54 @@
+===============================================================================
+crate-aggregation
+===============================================================================
+Test that depth 1 (Crate) aggregates nodes into crate-level components.
+Uses a multi-crate setup to show inter-crate dependencies.
+
+--- file: core/Cargo.toml ---
+[package]
+name = "core"
+
+--- file: core/src/lib.rs ---
+pub struct Entity {
+    pub id: u64,
+}
+
+pub trait Repository {
+    fn save(&self, entity: &Entity);
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+core = { path = "../core" }
+
+--- file: app/src/lib.rs ---
+use core::{Entity, Repository};
+
+pub struct SqlRepository;
+
+impl Repository for SqlRepository {
+    fn save(&self, entity: &Entity) {
+        // save to database
+    }
+}
+
+pub fn create_entity() -> Entity {
+    Entity { id: 1 }
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  rankdir=LR;
+  node [shape=box];
+
+  label="Crate Dependencies";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_core[label="core"];
+
+  crate_app -> crate_core;
+}

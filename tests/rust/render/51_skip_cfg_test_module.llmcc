@@ -1,0 +1,67 @@
+===============================================================================
+skip-cfg-test-module
+===============================================================================
+Modules with #[cfg(test)] attribute should be entirely excluded from the architecture graph.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+pub struct User {
+    pub id: u32,
+}
+
+pub fn get_user(id: u32) -> User {
+    User { id }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TestHelper {
+        counter: u32,
+    }
+
+    fn setup() -> TestHelper {
+        TestHelper { counter: 0 }
+    }
+
+    #[test]
+    fn test_get_user() {
+        let user = get_user(1);
+        assert_eq!(user.id, 1);
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 User
+    (field:3 id @type u32)
+  )
+  (func:4 get_user
+    (parameter:5 id @type u32)
+    (return:6 @type:2 User)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="User", full_path="$TMP/sample/src/lib.rs:1", sym_ty="Struct", shape=box];
+        n4[label="get_user", full_path="$TMP/sample/src/lib.rs:5", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  n4 -> n2 [from="func", to="output"];
+}

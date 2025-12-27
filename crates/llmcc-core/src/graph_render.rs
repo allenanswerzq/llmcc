@@ -17,20 +17,24 @@ use crate::symbol::SymKind;
 
 /// Component grouping depth for architecture graph visualization.
 ///
-/// The architecture graph contains four hierarchical levels:
-/// 1. Workspace - contains multiple projects (not yet implemented)
-/// 2. Project - contains multiple crates
-/// 3. Crate - contains multiple modules
-/// 4. Module - contains multiple files
+/// Controls the level of abstraction in the architecture graph:
+/// - Lower depths show high-level relationships (project/crate dependencies)
+/// - Higher depths show detailed relationships (individual types and functions)
+///
+/// Hierarchy levels:
+/// - Depth 0 (Project): Show project-level nodes with edges between projects
+/// - Depth 1 (Crate): Show crate-level nodes with edges between crates
+/// - Depth 2 (Module): Show module-level nodes with edges between modules
+/// - Depth 3 (File): Show individual nodes (structs, functions) grouped by file
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ComponentDepth {
-    /// No grouping - flat graph without clusters
-    Flat,
-    /// Group by crate only
+    /// Project level - aggregate all nodes per project, show project dependencies
+    Project,
+    /// Crate level - aggregate all nodes per crate, show crate dependencies
     Crate,
-    /// Group by crate and module
+    /// Module level - aggregate all nodes per module, show module dependencies
     Module,
-    /// Group by crate, module, and file (default)
+    /// File level - show individual nodes (structs, functions) with file clustering (default)
     #[default]
     File,
 }
@@ -39,7 +43,7 @@ impl ComponentDepth {
     /// Convert from numeric depth (for CLI compatibility)
     pub fn from_number(n: usize) -> Self {
         match n {
-            0 => Self::Flat,
+            0 => Self::Project,
             1 => Self::Crate,
             2 => Self::Module,
             _ => Self::File,
@@ -49,25 +53,20 @@ impl ComponentDepth {
     /// Convert to numeric depth
     pub fn as_number(&self) -> usize {
         match self {
-            Self::Flat => 0,
+            Self::Project => 0,
             Self::Crate => 1,
             Self::Module => 2,
             Self::File => 3,
         }
     }
 
-    /// Check if crate level is included
-    pub fn includes_crate(&self) -> bool {
-        !matches!(self, Self::Flat)
+    /// Check if this is an aggregated view (not showing individual nodes)
+    pub fn is_aggregated(&self) -> bool {
+        !matches!(self, Self::File)
     }
 
-    /// Check if module level is included
-    pub fn includes_module(&self) -> bool {
-        matches!(self, Self::Module | Self::File)
-    }
-
-    /// Check if file level is included
-    pub fn includes_file(&self) -> bool {
+    /// Check if showing individual file-level detail
+    pub fn shows_file_detail(&self) -> bool {
         matches!(self, Self::File)
     }
 }
@@ -157,21 +156,25 @@ pub struct RenderOptions {
 
 /// Render the project graph to DOT format for visualization.
 ///
-/// - `depth`: Component grouping depth for clustering
+/// - `depth`: Component abstraction level
+///   - Project (0): Show project-level dependencies
+///   - Crate (1): Show crate-level dependencies
+///   - Module (2): Show module-level dependencies
+///   - File (3): Show individual nodes with file clustering
 pub fn render_graph(project: &ProjectGraph, depth: ComponentDepth) -> String {
     render_graph_with_options(project, depth, &RenderOptions::default())
 }
 
 /// Render the project graph to DOT format with custom options.
 ///
-/// - `depth`: Component grouping depth for clustering
-/// - `options`: Rendering options
+/// For aggregated views (depth < File), nodes are aggregated into components
+/// and edges show dependencies between those components.
 pub fn render_graph_with_options(
     project: &ProjectGraph,
     depth: ComponentDepth,
     options: &RenderOptions,
 ) -> String {
-    let mut nodes = collect_nodes(project);
+    let nodes = collect_nodes(project);
 
     if nodes.is_empty() {
         return "digraph G {\n}\n".to_string();
@@ -180,20 +183,27 @@ pub fn render_graph_with_options(
     let node_set: HashSet<BlockId> = nodes.iter().map(|n| n.block_id).collect();
     let edges = collect_edges(project, &node_set);
 
+    // For aggregated views, aggregate nodes and edges
+    if depth.is_aggregated() {
+        return render_aggregated_graph(&nodes, &edges, depth);
+    }
+
+    // For file-level detail, use existing clustered rendering
+    let mut filtered_nodes = nodes;
+
     // Filter out orphan nodes (nodes without edges) unless explicitly requested
     if !options.show_orphan_nodes {
         let connected_nodes: HashSet<BlockId> =
             edges.iter().flat_map(|e| [e.from_id, e.to_id]).collect();
-        nodes.retain(|n| connected_nodes.contains(&n.block_id));
+        filtered_nodes.retain(|n| connected_nodes.contains(&n.block_id));
     }
 
-    if nodes.is_empty() {
+    if filtered_nodes.is_empty() {
         return "digraph G {\n}\n".to_string();
     }
 
-    let tree = build_component_tree(&nodes, depth);
-
-    render_dot(&nodes, &edges, &tree)
+    let tree = build_component_tree(&filtered_nodes, depth);
+    render_dot(&filtered_nodes, &edges, &tree)
 }
 
 // ============================================================================
@@ -657,36 +667,222 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
 }
 
 // ============================================================================
-// DOT Rendering
+// Aggregated Graph Rendering
+// ============================================================================
+
+/// An aggregated component node (represents a crate, module, or project).
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct AggregatedNode {
+    /// Unique identifier for this component
+    id: String,
+    /// Display label
+    label: String,
+    /// Component type: "project", "crate", or "module"
+    component_type: &'static str,
+    /// Number of nodes aggregated into this component
+    node_count: usize,
+}
+/// Get the component key for a node at a given depth level.
+/// Returns (component_id, component_label, component_type).
+fn get_component_key(node: &RenderNode, depth: ComponentDepth) -> (String, String, &'static str) {
+    match depth {
+        ComponentDepth::Project => {
+            // All nodes belong to the same project
+            ("project".to_string(), "project".to_string(), "project")
+        }
+        ComponentDepth::Crate => {
+            let crate_name = node.crate_name.clone().unwrap_or_else(|| "unknown".to_string());
+            let id = format!("crate_{}", sanitize_id(&crate_name));
+            (id, crate_name, "crate")
+        }
+        ComponentDepth::Module => {
+            let crate_name = node.crate_name.clone().unwrap_or_else(|| "unknown".to_string());
+            let module_path = node.module_path.clone();
+
+            // If there's a module path, use crate::module format
+            // Otherwise, use crate::file format (file acts as implicit module)
+            let (label, id) = if let Some(ref module) = module_path {
+                let label = format!("{}::{}", crate_name, module);
+                let id = format!("mod_{}_{}", sanitize_id(&crate_name), sanitize_id(module));
+                (label, id)
+            } else {
+                // Use file name as implicit module
+                let file_name = node.file_name.clone()
+                    .map(|f| {
+                        std::path::Path::new(&f)
+                            .file_stem()
+                            .and_then(|s| s.to_str())
+                            .unwrap_or(&f)
+                            .to_string()
+                    })
+                    .unwrap_or_else(|| "unknown".to_string());
+                let label = format!("{}::{}", crate_name, file_name);
+                let id = format!("mod_{}_{}", sanitize_id(&crate_name), sanitize_id(&file_name));
+                (label, id)
+            };
+            (id, label, "module")
+        }
+        ComponentDepth::File => {
+            // This shouldn't be called for File depth, but handle it gracefully
+            let name = node.name.clone();
+            let id = format!("node_{}", node.block_id.as_u32());
+            (id, name, "node")
+        }
+    }
+}
+
+/// Sanitize a string for use as a DOT node ID.
+fn sanitize_id(s: &str) -> String {
+    s.chars()
+        .map(|c| if c.is_alphanumeric() { c } else { '_' })
+        .collect()
+}
+
+/// Render an aggregated graph where nodes represent components (crates/modules/projects)
+/// and edges represent dependencies between those components.
+fn render_aggregated_graph(
+    nodes: &[RenderNode],
+    edges: &BTreeSet<RenderEdge>,
+    depth: ComponentDepth,
+) -> String {
+    // Build mapping from BlockId to component key
+    let mut block_to_component: std::collections::HashMap<BlockId, String> =
+        std::collections::HashMap::new();
+    let mut component_nodes: BTreeMap<String, AggregatedNode> = BTreeMap::new();
+
+    for node in nodes {
+        let (id, label, component_type) = get_component_key(node, depth);
+        block_to_component.insert(node.block_id, id.clone());
+
+        component_nodes
+            .entry(id.clone())
+            .and_modify(|n| n.node_count += 1)
+            .or_insert(AggregatedNode {
+                id,
+                label,
+                component_type,
+                node_count: 1,
+            });
+    }
+
+    // Aggregate edges between components using dependency semantics.
+    // For dependency graphs, we want "A depends on B" shown as A → B.
+    // Some edge types need to be flipped to show proper dependency direction:
+    // - "field_type → struct" should become "struct → field_type" (struct depends on type)
+    // - "input → func" should become "func → input" (func depends on param type)
+    // - "func → output" stays as-is (func depends on return type) - wait, this is already correct
+    // - "caller → callee" stays as-is (caller depends on callee)
+    let mut component_edges: BTreeMap<(String, String), usize> = BTreeMap::new();
+
+    for edge in edges {
+        let from_component = block_to_component.get(&edge.from_id);
+        let to_component = block_to_component.get(&edge.to_id);
+
+        if let (Some(from), Some(to)) = (from_component, to_component) {
+            // Skip self-edges (edges within the same component)
+            if from == to {
+                continue;
+            }
+
+            // Flip edges to show dependency direction (dependent → dependency)
+            let (dep_from, dep_to) = match (edge.from_label, edge.to_label) {
+                // Type used as field → struct becomes struct → type
+                ("field_type", "struct") => (to.clone(), from.clone()),
+                // Type used as parameter → func becomes func → type
+                ("input", "func") => (to.clone(), from.clone()),
+                // Trait → impl becomes impl → trait (impl depends on trait)
+                ("trait", "impl") => (to.clone(), from.clone()),
+                // All other edges keep their direction
+                _ => (from.clone(), to.clone()),
+            };
+
+            *component_edges.entry((dep_from, dep_to)).or_insert(0) += 1;
+        }
+    }
+
+    // Filter to only show components that have edges
+    let connected_components: HashSet<String> = component_edges
+        .keys()
+        .flat_map(|(from, to)| [from.clone(), to.clone()])
+        .collect();
+
+    let filtered_nodes: Vec<_> = component_nodes
+        .values()
+        .filter(|n| connected_components.contains(&n.id))
+        .collect();
+
+    // Render to DOT format
+    let mut output = String::with_capacity(filtered_nodes.len() * 100 + component_edges.len() * 50);
+
+    output.push_str("digraph architecture {\n");
+    output.push_str("  rankdir=LR;\n");
+    output.push_str("  node [shape=box];\n\n");
+
+    // Add title based on depth
+    let title = match depth {
+        ComponentDepth::Project => "project graph",
+        ComponentDepth::Crate => "crate graph",
+        ComponentDepth::Module => "module graph",
+        ComponentDepth::File => "architecture graph",
+    };
+    output.push_str(&format!("  label=\"{}\";\n", title));
+    output.push_str("  labelloc=t;\n\n");
+
+    // Render nodes
+    for node in &filtered_nodes {
+        let _ = writeln!(
+            output,
+            "  {}[label=\"{}\"];",
+            node.id, node.label
+        );
+    }
+
+    output.push('\n');
+
+    // Render edges with weight as penwidth
+    for ((from, to), _weight) in &component_edges {
+        // Skip if either end is not in filtered nodes
+        if !connected_components.contains(from) || !connected_components.contains(to) {
+            continue;
+        }
+
+        // Scale penwidth based on weight (min 1, max 5)
+        // let penwidth = ((*weight as f64).log2() + 1.0).min(5.0).max(1.0);
+
+        let _ = writeln!(output, "  {} -> {};", from, to);
+    }
+
+    output.push_str("}\n");
+    output
+}
+
+// ============================================================================
+// DOT Rendering (File-level detail)
 // ============================================================================
 
 /// Build a ComponentTree from nodes based on crate/module/file hierarchy.
 ///
-/// Hierarchy: crate → module → file → nodes
+/// This is used for File-level depth where we show individual nodes
+/// clustered by crate → module → file.
+///
 /// Each path element is (name, level_type) where level_type is "crate", "module", or "file".
-fn build_component_tree(nodes: &[RenderNode], depth: ComponentDepth) -> ComponentTree {
+fn build_component_tree(nodes: &[RenderNode], _depth: ComponentDepth) -> ComponentTree {
     let mut tree = ComponentTree::default();
     for (idx, node) in nodes.iter().enumerate() {
         let mut path: Vec<(String, &'static str)> = Vec::new();
 
         // Add crate level
-        if depth.includes_crate()
-            && let Some(ref crate_name) = node.crate_name
-        {
+        if let Some(ref crate_name) = node.crate_name {
             path.push((crate_name.clone(), "crate"));
         }
 
         // Add module level (if there's an explicit module path)
-        if depth.includes_module()
-            && let Some(ref module) = node.module_path
-        {
+        if let Some(ref module) = node.module_path {
             path.push((module.clone(), "module"));
         }
 
         // Add file level
-        if depth.includes_file()
-            && let Some(ref file) = node.file_name
-        {
+        if let Some(ref file) = node.file_name {
             // Extract just the filename from full path
             let file_name = std::path::Path::new(file)
                 .file_name()
