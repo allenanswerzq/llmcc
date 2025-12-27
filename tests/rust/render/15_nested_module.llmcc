@@ -1,0 +1,35 @@
+===============================================================================
+nested-module
+===============================================================================
+Nested inline module declarations.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod outer {
+    pub struct Outer {
+        pub value: i32,
+    }
+    
+    mod inner {
+        pub struct Inner {
+            pub data: String,
+        }
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Outer
+    (field:3 value @type i32)
+  )
+  (class:4 Inner
+    (field:5 data @type String)
+  )
+)
+
+--- expect:arch-graph ---
+digraph G {
+}

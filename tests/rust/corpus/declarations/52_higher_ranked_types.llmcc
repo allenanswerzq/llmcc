@@ -1,0 +1,16 @@
+===============================================================================
+higher-ranked-types
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+trait T: for<'a> AddAssign<&'a usize> {
+}
+
+type FnObject<'b> = dyn for<'a> FnLike<&'a isize, &'a isize> + 'b;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 T)
+  (alias:3 FnObject)
+)

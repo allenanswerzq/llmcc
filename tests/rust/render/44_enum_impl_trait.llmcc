@@ -1,0 +1,114 @@
+===============================================================================
+enum-impl-trait
+===============================================================================
+Test enums implementing traits.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+
+--- file: sample/src/types.rs ---
+pub trait Displayable {
+    fn display(&self) -> String;
+}
+
+pub trait Processable {
+    fn process(&self);
+}
+
+pub enum Status {
+    Active,
+    Inactive,
+    Pending,
+}
+
+pub enum Priority {
+    Low,
+    High,
+}
+
+impl Displayable for Status {
+    fn display(&self) -> String {
+        String::new()
+    }
+}
+
+impl Processable for Status {
+    fn process(&self) {}
+}
+
+impl Displayable for Priority {
+    fn display(&self) -> String {
+        String::new()
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (trait:3 Displayable
+    (method:4 display
+      (parameter:5 self @type:3 Displayable)
+      (return:6 @type String)
+    )
+  )
+  (trait:7 Processable
+    (method:8 process
+      (parameter:9 self @type:7 Processable)
+    )
+  )
+  (enum:10 Status
+    (field:11 Active @type:10 Active)
+    (field:12 Inactive @type:10 Inactive)
+    (field:13 Pending @type:10 Pending)
+  )
+  (enum:14 Priority
+    (field:15 Low @type:14 Low)
+    (field:16 High @type:14 High)
+  )
+  (impl:17 Status @type:10 @trait:3
+    (method:18 display
+      (parameter:19 self @type:3 Displayable)
+      (return:20 @type String)
+    )
+  )
+  (impl:22 Status @type:10 @trait:7
+    (method:23 process
+      (parameter:24 self @type:3 Displayable)
+    )
+  )
+  (impl:25 Priority @type:14 @trait:3
+    (method:26 display
+      (parameter:27 self @type:3 Displayable)
+      (return:28 @type String)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="Displayable", full_path="$TMP/sample/src/types.rs:1", sym_ty="Trait", shape=box];
+        n14[label="Priority", full_path="$TMP/sample/src/types.rs:15", sym_ty="Enum", shape=box];
+        n7[label="Processable", full_path="$TMP/sample/src/types.rs:5", sym_ty="Trait", shape=box];
+        n10[label="Status", full_path="$TMP/sample/src/types.rs:9", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n10 [from="trait", to="impl"];
+  n3 -> n14 [from="trait", to="impl"];
+  n7 -> n10 [from="trait", to="impl"];
+}

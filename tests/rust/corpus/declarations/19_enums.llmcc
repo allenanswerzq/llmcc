@@ -1,0 +1,44 @@
+===============================================================================
+enums
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+pub enum Option<T> {
+    None,
+    Some(T),
+}
+
+pub struct Tree<T> {}
+
+pub enum Node<T: Item> {
+    Internal {
+        children: Vec<Tree<T>>,
+        height: u16
+    },
+    #[attribute1]
+    #[attribute2]
+    Leaf {
+        value: T
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (enum:2 Option
+    (field:3 None @type:2 None)
+    (field:4 Some @type:2 Some
+      (field:5 0 @type T)
+    )
+  )
+  (class:6 Tree)
+  (enum:7 Node
+    (field:8 Internal @type:7 Internal
+      (field:9 children @type:6 Tree)
+      (field:10 height @type u16)
+    )
+    (field:11 Leaf @type:7 Leaf
+      (field:12 value @type T)
+    )
+  )
+)

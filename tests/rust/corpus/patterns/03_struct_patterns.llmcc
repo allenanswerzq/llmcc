@@ -1,0 +1,18 @@
+===============================================================================
+struct-patterns
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+match x {
+  Person{name, age} if age < 5 => ("toddler", name),
+  Person{name: adult_name, age: _} => ("adult", adult_name),
+}
+
+match y {
+  Bar::T1(_, Some::<isize>(x)) => println!("{x}"),
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+)

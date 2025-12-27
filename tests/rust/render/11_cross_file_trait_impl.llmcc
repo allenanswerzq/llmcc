@@ -1,0 +1,78 @@
+===============================================================================
+cross-file-trait-impl
+===============================================================================
+Struct in one file implements trait from another file.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod traits;
+mod impls;
+
+--- file: sample/src/traits.rs ---
+pub trait Render {
+    fn render(&self) -> String;
+}
+
+--- file: sample/src/impls.rs ---
+use crate::traits::Render;
+
+pub struct Html {
+    pub content: String,
+}
+
+impl Render for Html {
+    fn render(&self) -> String {
+        format!("<p>{}</p>", self.content)
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 traits ($TMP/sample/src/traits.rs)
+  (trait:3 Render
+    (method:4 render
+      (parameter:5 self @type:3 Render)
+      (return:6 @type String)
+    )
+  )
+)
+
+(root:7 impls ($TMP/sample/src/impls.rs)
+  (class:8 Html
+    (field:9 content @type String)
+  )
+  (impl:10 Html @type:8 @trait:3
+    (method:11 render
+      (parameter:12 self @type:8 Html)
+      (return:13 @type String)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_impls_rs {
+        label="impls.rs";
+        n8[label="Html", full_path="$TMP/sample/src/impls.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_traits_rs {
+        label="traits.rs";
+        n3[label="Render", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n8 [from="trait", to="impl"];
+}

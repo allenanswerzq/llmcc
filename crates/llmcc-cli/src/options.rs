@@ -4,17 +4,18 @@
 //! (llmcc and llmcc-test) to ensure consistent behavior and reduce code duplication.
 
 use clap::Args;
+use llmcc_core::graph_render::ComponentDepth;
 
 /// Common options for graph building and visualization.
 #[derive(Args, Debug, Clone, Default)]
 pub struct GraphOptions {
     /// Component grouping depth for graph visualization.
-    /// - 0: No grouping (flat graph, no clusters)
-    /// - 1: Crate level only
-    /// - 2: Top-level modules (data, service, api)
-    /// - 3+: Deeper sub-modules
-    #[arg(long = "component-depth", default_value = "2")]
-    pub component_depth: usize,
+    /// - 0/flat: No grouping (flat graph, no clusters)
+    /// - 1/crate: Crate level only
+    /// - 2/module: Module level
+    /// - 3/file: File level (default)
+    #[arg(long = "component-depth", default_value = "3")]
+    component_depth_num: usize,
 
     /// Number of top PageRank nodes to include (enables pagerank filtering).
     /// When set, only the top K most important nodes are shown.
@@ -25,6 +26,13 @@ pub struct GraphOptions {
     /// Architecture graph shows: param_type -> func -> return_type
     #[arg(long = "arch-graph")]
     pub architecture_graph: bool,
+}
+
+impl GraphOptions {
+    /// Get the component depth as an enum
+    pub fn component_depth(&self) -> ComponentDepth {
+        ComponentDepth::from_number(self.component_depth_num)
+    }
 }
 
 /// Common options for controlling processing behavior.
@@ -62,8 +70,8 @@ impl GraphOptions {
         Self::default()
     }
 
-    pub fn with_component_depth(mut self, depth: usize) -> Self {
-        self.component_depth = depth;
+    pub fn with_component_depth(mut self, depth: ComponentDepth) -> Self {
+        self.component_depth_num = depth.as_number();
         self
     }
 

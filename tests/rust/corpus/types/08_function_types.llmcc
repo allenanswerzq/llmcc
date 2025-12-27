@@ -1,0 +1,40 @@
+===============================================================================
+function-types
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+fn high_order1(value: i32, f: fn(i32)) -> i32 {}
+
+fn high_order2(value: i32, f: fn(i32) -> i32) -> i32 {
+    f(value)
+}
+
+fn high_order3(value: i32, f: &FnOnce(i32) -> i32) -> i32 {
+    f(value)
+}
+
+type F = for<'a, 'b> fn(x: &'a A, y: &'a mut B<'i, 't>,) -> C;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 high_order1
+    (parameter:3 value @type i32)
+    (parameter:4 f @type i32)
+    (return:5 @type i32)
+  )
+  (func:6 high_order2
+    (parameter:7 value @type i32)
+    (parameter:8 f @type i32)
+    (return:9 @type i32)
+  )
+  (func:11 high_order3
+    (parameter:12 value @type i32)
+    (parameter:13 f @type f)
+    (return:14 @type i32)
+  )
+  (alias:16 F
+    (parameter:17 x @type x)
+    (parameter:18 y @type y)
+  )
+)

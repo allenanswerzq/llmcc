@@ -169,9 +169,10 @@ impl<'a> CollectorScopes<'a> {
         node: &HirNode<'a>,
         kind: SymKind,
     ) -> Option<&'a Symbol> {
-        let symbols = self
-            .scopes
-            .lookup_or_insert(name, node.id(), LookupOptions::global())?;
+        // Use kind filter to avoid collisions between symbols of different kinds
+        // e.g., crate "auth" and file "auth" should be separate symbols
+        let options = LookupOptions::global().with_kind_filters(vec![kind]);
+        let symbols = self.scopes.lookup_or_insert(name, node.id(), options)?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
         symbol.set_is_global(true);

@@ -1,7 +1,6 @@
 mod common;
 
-use common::{find_symbol_id, with_compiled_unit};
-use llmcc_core::symbol::SymKind;
+use common::with_compiled_unit;
 use serial_test::serial;
 use std::path::Path;
 use textwrap::dedent;
@@ -222,7 +221,7 @@ fn test_crate_name_extraction_from_compilation_context() {
     );
 
     with_compiled_unit(&[&source], |cc| {
-        assert!(cc.files.len() > 0);
+        assert!(!cc.files.is_empty());
     });
 }
 
@@ -240,7 +239,7 @@ fn test_file_path_parsing_in_compilation_unit() {
     );
 
     with_compiled_unit(&[&source], |cc| {
-        assert!(cc.files.len() > 0);
+        assert!(!cc.files.is_empty());
     });
 }
 
@@ -322,6 +321,6 @@ fn test_module_hierarchy_detection() {
 
     for (path, _expected_depth) in test_cases {
         let components: Vec<_> = Path::new(path).components().collect();
-        assert!(components.len() > 0);
+        assert!(!components.is_empty());
     }
 }

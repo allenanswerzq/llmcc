@@ -1,0 +1,125 @@
+===============================================================================
+nested-generic-types
+===============================================================================
+Tests for nested generic types like Vec<Vec<T>>, HashMap<K, Vec<V>>, etc.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod containers;
+
+--- file: sample/src/types.rs ---
+pub struct Vec<T> {}
+
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+pub struct Order {
+    pub id: u64,
+    pub amount: f64,
+}
+
+--- file: sample/src/containers.rs ---
+use std::collections::HashMap;
+use crate::types::{User, Order};
+
+// Nested Vec<Vec<T>>
+pub struct Matrix {
+    pub rows: Vec<Vec<i32>>,
+}
+
+// Nested with user type: Vec<Vec<User>>
+pub struct UserGrid {
+    pub users: Vec<Vec<User>>,
+}
+
+// HashMap with Vec value: HashMap<K, Vec<V>>
+pub struct UserOrders {
+    pub orders: HashMap<User, Vec<Order>>,
+}
+
+// Triple nested: Vec<Vec<Vec<T>>>
+pub struct Cube {
+    pub data: Vec<Vec<Vec<f64>>>,
+}
+
+// Mixed nested: HashMap<String, Vec<Vec<User>>>
+pub struct GroupedUserGrids {
+    pub grids: HashMap<String, Vec<Vec<User>>>,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 Vec)
+  (class:4 User
+    (field:5 id @type u64)
+    (field:6 name @type String)
+  )
+  (class:7 Order
+    (field:8 id @type u64)
+    (field:9 amount @type f64)
+  )
+)
+
+(root:10 containers ($TMP/sample/src/containers.rs)
+  (class:11 Matrix
+    (field:12 rows @type:3 Vec)
+  )
+  (class:13 UserGrid
+    (field:14 users @type:3 Vec)
+  )
+  (class:15 UserOrders
+    (field:16 orders @type:4 User)
+  )
+  (class:17 Cube
+    (field:18 data @type:3 Vec)
+  )
+  (class:19 GroupedUserGrids
+    (field:20 grids @type:3 Vec)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_containers_rs {
+        label="containers.rs";
+        n13[label="UserGrid", full_path="$TMP/sample/src/containers.rs:10", sym_ty="Struct", shape=box];
+        n15[label="UserOrders", full_path="$TMP/sample/src/containers.rs:15", sym_ty="Struct", shape=box];
+        n17[label="Cube", full_path="$TMP/sample/src/containers.rs:20", sym_ty="Struct", shape=box];
+        n19[label="GroupedUserGrids", full_path="$TMP/sample/src/containers.rs:25", sym_ty="Struct", shape=box];
+        n11[label="Matrix", full_path="$TMP/sample/src/containers.rs:5", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="Vec", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n4[label="User", full_path="$TMP/sample/src/types.rs:3", sym_ty="Struct", shape=box];
+        n7[label="Order", full_path="$TMP/sample/src/types.rs:8", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n11 [from="type_dep", to="struct"];
+  n3 -> n13 [from="type_dep", to="struct"];
+  n3 -> n15 [from="type_dep", to="struct"];
+  n3 -> n17 [from="type_dep", to="struct"];
+  n3 -> n19 [from="type_dep", to="struct"];
+  n4 -> n13 [from="type_dep", to="struct"];
+  n4 -> n15 [from="type_dep", to="struct"];
+  n4 -> n19 [from="type_dep", to="struct"];
+  n7 -> n15 [from="type_dep", to="struct"];
+}

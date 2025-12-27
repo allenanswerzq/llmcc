@@ -1,0 +1,17 @@
+===============================================================================
+impl-with-lifetimes-first
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+trait Clone {}
+
+fn foo<'a>(x: impl 'a + Clone) {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 Clone)
+  (func:3 foo
+    (parameter:4 x @type:2 Clone)
+  )
+)

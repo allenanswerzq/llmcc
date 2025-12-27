@@ -1,0 +1,27 @@
+===============================================================================
+extern-function-declarations
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+extern "C" fn foo() {}
+extern "C" fn printf(
+    *const c_char,
+    ...,
+) {}
+
+pub unsafe extern "C" fn c_variadic_no_use(fmt: *const i8, mut ap: ...) -> i32 {
+    // CHECK: call void @llvm.va_start
+    vprintf(fmt, ap.as_va_list())
+    // CHECK: call void @llvm.va_end
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 foo)
+  (func:3 printf)
+  (func:4 c_variadic_no_use
+    (parameter:5 fmt @type i8)
+    (return:6 @type i32)
+  )
+)

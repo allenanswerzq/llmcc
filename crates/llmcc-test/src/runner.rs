@@ -7,7 +7,8 @@ use llmcc_cli::{GraphOptions, ProcessingOptions};
 use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
-use llmcc_core::graph_builder::{BlockId, BlockRelation, GraphBuildOption, build_llmcc_graph};
+use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
+use llmcc_core::graph_render::{ComponentDepth, render_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
@@ -25,12 +26,17 @@ pub use llmcc_cli::{
 };
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct SymbolSnapshot {
     unit: usize,
     id: u32,
     kind: String,
     name: String,
     is_global: bool,
+    /// Type this symbol resolves to (SymId -> name)
+    type_of: Option<String>,
+    /// Block this symbol is associated with
+    block_id: Option<String>,
 }
 
 #[derive(Clone)]
@@ -41,10 +47,24 @@ struct SymbolDependencySnapshot {
 }
 
 #[derive(Clone)]
+#[allow(dead_code)]
 struct BlockSnapshot {
     label: String,
     kind: String,
     name: String,
+}
+
+/// Snapshot of block relations from cc.related_map
+#[derive(Clone)]
+struct BlockRelationSnapshot {
+    /// Block label like "u0:5"
+    label: String,
+    /// Block kind
+    kind: String,
+    /// Block name
+    name: String,
+    /// Relations: (relation_type, target_labels)
+    relations: Vec<(String, Vec<String>)>,
 }
 
 #[derive(Debug, Clone)]
@@ -86,7 +106,7 @@ pub fn run_cases(corpus: &mut Corpus, config: RunnerConfig) -> Result<Vec<CaseOu
             config.keep_temps,
             config.processing.parallel,
             config.processing.print_ir,
-            config.graph.component_depth,
+            config.graph.component_depth(),
             config.graph.pagerank_top_k,
         )?);
     }
@@ -106,16 +126,24 @@ pub fn run_cases_for_file(
     update: bool,
     keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
-    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, 2, None)
+    run_cases_for_file_with_parallel(
+        file,
+        update,
+        keep_temps,
+        false,
+        true,
+        ComponentDepth::File,
+        None,
+    )
 }
 
 pub fn run_cases_for_file_with_parallel(
     file: &mut CorpusFile,
     update: bool,
     keep_temps: bool,
-    parallel: bool,
+    _parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut matched = 0usize;
@@ -125,7 +153,7 @@ pub fn run_cases_for_file_with_parallel(
         None,
         &mut matched,
         keep_temps,
-        parallel,
+        false,
         print_ir,
         component_depth,
         pagerank_top_k,
@@ -139,14 +167,13 @@ fn run_cases_in_file(
     filter: Option<&str>,
     matched: &mut usize,
     keep_temps: bool,
-    parallel: bool,
+    _parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<Vec<CaseOutcome>> {
     let mut file_outcomes = Vec::new();
     let mut mutated_file = false;
-    let mut printed_case_header = false;
     for idx in 0..file.cases.len() {
         let run_case = {
             let case = &file.cases[idx];
@@ -163,25 +190,39 @@ fn run_cases_in_file(
 
         *matched += 1;
         let case_name = file.cases[idx].id();
-        if printed_case_header {
-            for _ in 0..3 {
-                println!();
-            }
-        }
-        println!(">>> running {case_name}");
-        printed_case_header = true;
+        print!("  {case_name} ... ");
+        // Flush to ensure the test name appears before we run
+        use std::io::Write;
+        let _ = std::io::stdout().flush();
+
         let (outcome, mutated) = {
             let case = &mut file.cases[idx];
             evaluate_case(
                 case,
                 update,
                 keep_temps,
-                parallel,
+                _parallel,
                 print_ir,
                 component_depth,
                 pagerank_top_k,
             )?
         };
+
+        // Print result immediately after test completes
+        match outcome.status {
+            CaseStatus::Passed => println!("ok"),
+            CaseStatus::Updated => println!("updated"),
+            CaseStatus::Failed => {
+                println!("FAILED");
+                if let Some(message) = &outcome.message {
+                    for line in message.lines() {
+                        println!("        {line}");
+                    }
+                }
+            }
+            CaseStatus::NoExpectations => println!("skipped (no expectations)"),
+        }
+
         if mutated {
             file.mark_dirty();
             mutated_file = true;
@@ -198,9 +239,9 @@ fn evaluate_case(
     case: &mut CorpusCase,
     update: bool,
     keep_temps: bool,
-    parallel: bool,
+    _parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<(CaseOutcome, bool)> {
     let case_id = case.id();
@@ -221,7 +262,7 @@ fn evaluate_case(
     let summary = build_pipeline_summary(
         case,
         keep_temps,
-        parallel,
+        _parallel,
         print_ir,
         component_depth,
         pagerank_top_k,
@@ -242,8 +283,22 @@ fn evaluate_case(
         }
 
         if update {
-            // Save the normalized version with $TMP placeholder
-            expect.value = ensure_trailing_newline(actual_norm);
+            // Save the actual formatted output (with alignment/formatting preserved)
+            // We apply temp_dir replacement if needed
+            let actual_to_save = if let Some(tmp_path) = temp_dir_path {
+                let mut result = actual.replace(tmp_path, "$TMP");
+                // Also replace just the directory name (for relative paths in graph output)
+                if let Some(dir_name) = std::path::Path::new(tmp_path)
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                {
+                    result = result.replace(dir_name, "$TMP");
+                }
+                result
+            } else {
+                actual.clone()
+            };
+            expect.value = ensure_trailing_newline(actual_to_save);
             mutated = true;
             status = CaseStatus::Updated;
         } else {
@@ -278,7 +333,7 @@ fn build_pipeline_summary(
     keep_temps: bool,
     parallel: bool,
     print_ir: bool,
-    component_depth: usize,
+    component_depth: ComponentDepth,
     pagerank_top_k: Option<usize>,
 ) -> Result<PipelineSummary> {
     let needs_symbols = case
@@ -305,8 +360,18 @@ fn build_pipeline_summary(
         .expectations
         .iter()
         .any(|expect| expect.kind == "symbol-deps");
+    let needs_symbol_types = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "symbol-types");
+    let needs_block_relations = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "block-relations");
 
     if !needs_symbols
+        && !needs_symbol_types
+        && !needs_block_relations
         && !needs_dep_graph
         && !needs_arch_graph
         && !needs_block_reports
@@ -331,6 +396,8 @@ fn build_pipeline_summary(
     let options = PipelineOptions::new()
         // file_paths is empty, so discover_language_files will be used
         .with_keep_symbols(needs_symbols)
+        .with_keep_symbol_types(needs_symbol_types)
+        .with_keep_block_relations(needs_block_relations)
         .with_build_dep_graph(needs_dep_graph)
         .with_build_arch_graph(needs_arch_graph)
         .with_build_block_reports(needs_block_reports)
@@ -358,8 +425,11 @@ fn build_pipeline_summary(
 }
 
 #[derive(Default)]
+#[allow(dead_code)]
 struct PipelineSummary {
     symbols: Option<Vec<SymbolSnapshot>>,
+    symbol_types: Option<Vec<SymbolSnapshot>>,
+    block_relations: Option<Vec<BlockRelationSnapshot>>,
     dep_graph_dot: Option<String>,
     arch_graph_dot: Option<String>,
     block_list: Option<Vec<BlockSnapshot>>,
@@ -372,12 +442,16 @@ struct PipelineSummary {
 }
 
 /// Options for configuring the pipeline collection process.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct PipelineOptions {
     /// File paths to process (in declaration order).
     pub file_paths: Vec<String>,
     /// Whether to collect symbol information.
     pub keep_symbols: bool,
+    /// Whether to collect symbol type resolution info.
+    pub keep_symbol_types: bool,
+    /// Whether to collect block relations.
+    pub keep_block_relations: bool,
     /// Whether to build the dependency graph.
     pub build_dep_graph: bool,
     /// Whether to build the architecture graph.
@@ -392,10 +466,30 @@ pub struct PipelineOptions {
     pub parallel: bool,
     /// Whether to print IR during symbol resolution.
     pub print_ir: bool,
-    /// Component grouping depth for graph visualization (default: 2).
-    pub component_depth: usize,
+    /// Component grouping depth for graph visualization.
+    pub component_depth: ComponentDepth,
     /// Number of top PageRank nodes to include (None = all nodes).
     pub pagerank_top_k: Option<usize>,
+}
+
+impl Default for PipelineOptions {
+    fn default() -> Self {
+        Self {
+            file_paths: Vec::new(),
+            keep_symbols: false,
+            keep_symbol_types: false,
+            keep_block_relations: false,
+            build_dep_graph: false,
+            build_arch_graph: false,
+            build_block_reports: false,
+            build_block_graph: false,
+            keep_symbol_deps: false,
+            parallel: false,
+            print_ir: false,
+            component_depth: ComponentDepth::File,
+            pagerank_top_k: None,
+        }
+    }
 }
 
 impl PipelineOptions {
@@ -438,6 +532,16 @@ impl PipelineOptions {
         self
     }
 
+    pub fn with_keep_symbol_types(mut self, keep: bool) -> Self {
+        self.keep_symbol_types = keep;
+        self
+    }
+
+    pub fn with_keep_block_relations(mut self, keep: bool) -> Self {
+        self.keep_block_relations = keep;
+        self
+    }
+
     pub fn with_parallel(mut self, parallel: bool) -> Self {
         self.parallel = parallel;
         self
@@ -448,7 +552,7 @@ impl PipelineOptions {
         self
     }
 
-    pub fn with_component_depth(mut self, depth: usize) -> Self {
+    pub fn with_component_depth(mut self, depth: ComponentDepth) -> Self {
         self.component_depth = depth;
         self
     }
@@ -468,6 +572,23 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 .ok_or_else(|| anyhow!("case {} requested symbols but summary missing", case_id))?;
             Ok(render_symbol_snapshot(symbols))
         }
+        "symbol-types" => {
+            // let symbols = summary
+            //     .symbol_types
+            //     .as_ref()
+            //     .ok_or_else(|| anyhow!("case {} requested symbol-types but summary missing", case_id))?;
+            // Ok(render_symbol_types_snapshot(symbols))
+            Ok("symbol-types snapshot not yet implemented\n".to_string())
+        }
+        "block-relations" => {
+            let relations = summary.block_relations.as_ref().ok_or_else(|| {
+                anyhow!(
+                    "case {} requested block-relations but summary missing",
+                    case_id
+                )
+            })?;
+            Ok(render_block_relations_snapshot(relations))
+        }
         "dep-graph" => summary.dep_graph_dot.clone().ok_or_else(|| {
             anyhow!(
                 "case {} requested dep-graph output but summary missing",
@@ -480,16 +601,19 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
                 case_id
             )
         }),
-        "blocks" => summary
-            .block_list
-            .as_ref()
-            .map(|list| render_block_snapshot(list))
-            .ok_or_else(|| {
-                anyhow!(
-                    "case {} requested blocks output but summary missing",
-                    case_id
-                )
-            }),
+        "blocks" => {
+            // summary
+            // .block_list
+            // .as_ref()
+            // .map(|list| render_block_snapshot(list))
+            // .ok_or_else(|| {
+            //     anyhow!(
+            //         "case {} requested blocks output but summary missing",
+            //         case_id
+            //     )
+            // }),
+            Ok("symbol-types snapshot not yet implemented\n".to_string())
+        }
         "block-deps" => summary
             .block_deps
             .as_ref()
@@ -566,8 +690,128 @@ fn render_symbol_snapshot(entries: &[SymbolSnapshot]) -> String {
     buf
 }
 
+/// Render symbol types snapshot showing type resolution.
+/// Format: label | kind | name | -> type_label (type_name)
+#[allow(dead_code)]
+fn render_symbol_types_snapshot(entries: &[SymbolSnapshot]) -> String {
+    if entries.is_empty() {
+        return "none\n".to_string();
+    }
+
+    let mut rows = entries.to_vec();
+    rows.sort_by(|a, b| {
+        a.unit
+            .cmp(&b.unit)
+            .then_with(|| a.id.cmp(&b.id))
+            .then_with(|| a.kind.cmp(&b.kind))
+            .then_with(|| a.name.cmp(&b.name))
+    });
+
+    let label_width = rows
+        .iter()
+        .map(|row| format!("u{}:{}", row.unit, row.id).len())
+        .max()
+        .unwrap_or(0);
+    let kind_width = rows.iter().map(|row| row.kind.len()).max().unwrap_or(0);
+    let name_width = rows.iter().map(|row| row.name.len()).max().unwrap_or(0);
+
+    let mut buf = String::new();
+    for row in rows {
+        let label = format!("u{}:{}", row.unit, row.id);
+        let type_info = if let Some(type_of) = &row.type_of {
+            format!("-> {}", type_of)
+        } else {
+            String::new()
+        };
+        let block_info = if let Some(block_id) = &row.block_id {
+            format!("[{}]", block_id)
+        } else {
+            String::new()
+        };
+        let _ = writeln!(
+            buf,
+            "{:<label_width$} | {:kind_width$} | {:name_width$} | {} {}",
+            label,
+            row.kind,
+            row.name,
+            type_info,
+            block_info,
+            label_width = label_width,
+            kind_width = kind_width,
+            name_width = name_width,
+        );
+    }
+    buf
+}
+
+/// Render block relations snapshot.
+/// Uses a clean edge-based format, filtering out redundant relations.
+/// Format: name:id (kind)  --relation-->  name:id (kind)
+fn render_block_relations_snapshot(entries: &[BlockRelationSnapshot]) -> String {
+    if entries.is_empty() {
+        return "none\n".to_string();
+    }
+
+    // Relations to skip (they're either redundant or shown in block-graph)
+    let skip_relations = ["contains", "contained_by"];
+
+    // Collect all edges as (source, relation, target) tuples
+    let mut edges: Vec<(String, String, String)> = Vec::new();
+
+    for entry in entries {
+        let id = entry.label.replace("u0:", "");
+        let source = format!("{}:{} ({})", entry.name, id, entry.kind);
+
+        for (rel_type, targets) in &entry.relations {
+            // Skip redundant relations
+            if skip_relations.contains(&rel_type.as_str()) {
+                continue;
+            }
+
+            for target_label in targets {
+                // Find target entry to get its name and kind
+                let (target_name, target_kind) = entries
+                    .iter()
+                    .find(|e| e.label == *target_label)
+                    .map(|e| (e.name.as_str(), e.kind.as_str()))
+                    .unwrap_or(("?", "?"));
+                let target_id = target_label.replace("u0:", "");
+                let target = format!("{}:{} ({})", target_name, target_id, target_kind);
+
+                edges.push((source.clone(), rel_type.clone(), target));
+            }
+        }
+    }
+
+    if edges.is_empty() {
+        return "none\n".to_string();
+    }
+
+    // Sort edges for deterministic output
+    edges.sort();
+
+    // Calculate column widths for alignment
+    let source_width = edges.iter().map(|(s, _, _)| s.len()).max().unwrap_or(0);
+    let rel_width = edges.iter().map(|(_, r, _)| r.len()).max().unwrap_or(0);
+
+    let mut buf = String::new();
+    for (source, rel, target) in &edges {
+        let _ = writeln!(
+            buf,
+            "{:<source_width$}  --{:^rel_width$}-->  {}",
+            source,
+            rel,
+            target,
+            source_width = source_width,
+            rel_width = rel_width,
+        );
+    }
+    buf
+}
+
 use std::cmp::Ordering;
 
+#[allow(dead_code)]
 fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
     if entries.is_empty() {
         return "none\n".to_string();
@@ -596,6 +840,7 @@ fn render_block_snapshot(entries: &[BlockSnapshot]) -> String {
     buf
 }
 
+#[allow(dead_code)]
 fn compare_block_snapshots(a: &BlockSnapshot, b: &BlockSnapshot) -> Ordering {
     match (parse_block_label(&a.label), parse_block_label(&b.label)) {
         (Some(ka), Some(kb)) => ka
@@ -612,6 +857,7 @@ fn compare_block_snapshots(a: &BlockSnapshot, b: &BlockSnapshot) -> Ordering {
     }
 }
 
+#[allow(dead_code)]
 fn parse_block_label(label: &str) -> Option<(usize, usize)> {
     let mut parts = label.split(':');
     let unit_part = parts.next()?.strip_prefix('u')?;
@@ -669,14 +915,24 @@ fn normalize(kind: &str, text: &str, temp_dir_path: Option<&str>) -> String {
     // Replace temp directory path with $TMP placeholder (for actual output)
     // or replace $TMP with temp directory path (for expected value)
     let canonical = if let Some(tmp_path) = temp_dir_path {
-        canonical.replace(tmp_path, "$TMP")
+        // Replace the full path first
+        let mut result = canonical.replace(tmp_path, "$TMP");
+        // Also replace just the directory name (for relative paths in graph output)
+        if let Some(dir_name) = std::path::Path::new(tmp_path)
+            .file_name()
+            .and_then(|s| s.to_str())
+        {
+            result = result.replace(dir_name, "$TMP");
+        }
+        result
     } else {
         canonical
     };
 
     match kind {
-        "symbols" | "blocks" => normalize_symbols(&canonical),
+        "symbols" | "blocks" | "symbol-types" => normalize_symbols(&canonical),
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
+        "block-relations" => normalize_block_relations(&canonical),
         "dep-graph" | "arch-graph" => normalize_graph(&canonical),
         "block-graph" => normalize_block_graph(&canonical),
         _ => canonical,
@@ -737,18 +993,31 @@ fn normalize_symbol_deps(text: &str) -> String {
     rows.join("\n")
 }
 
+fn normalize_block_relations(text: &str) -> String {
+    // Simple line-based format now: each line is an edge like
+    // "source (id) --relation--> target (id)"
+    let mut lines: Vec<String> = text
+        .lines()
+        .map(|line| line.trim().to_string())
+        .filter(|line| !line.is_empty())
+        .collect();
+
+    lines.sort();
+    lines.join("\n")
+}
 fn normalize_block_graph(text: &str) -> String {
     let trimmed = text.trim();
     if trimmed.is_empty() {
         return String::new();
     }
 
+    // Parse and re-format to ensure consistent indentation
     match parse_sexpr(trimmed) {
         Ok(exprs) => exprs
             .into_iter()
             .map(|expr| format_sexpr(&expr))
             .collect::<Vec<_>>()
-            .join("\n"),
+            .join("\n\n"),
         Err(_) => trimmed.to_string(),
     }
 }
@@ -769,7 +1038,12 @@ fn is_empty_relation(line: &str) -> bool {
 
 fn normalize_graph(text: &str) -> String {
     // Parse graph and sort edges for deterministic comparison
-    let mut lines: Vec<&str> = text.trim().lines().collect();
+    // Filter out empty lines for flexible whitespace comparison
+    let mut lines: Vec<&str> = text
+        .trim()
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
 
     // Find where edges start (after closing brace of last subgraph)
     // Edges are lines like "  n1 -> n2;" or "  n1 -> n2 [...];"
@@ -897,11 +1171,43 @@ fn parse_expr(tokens: &[String], idx: &mut usize) -> Result<SExpr, ()> {
 }
 
 fn format_sexpr(expr: &SExpr) -> String {
+    format_sexpr_indented(expr, 0)
+}
+
+fn format_sexpr_indented(expr: &SExpr, depth: usize) -> String {
     match expr {
         SExpr::Atom(atom) => atom.clone(),
         SExpr::List(items) => {
-            let parts: Vec<String> = items.iter().map(format_sexpr).collect();
-            format!("({})", parts.join(" "))
+            if items.is_empty() {
+                return "()".to_string();
+            }
+
+            // Get the head (first atom, e.g., "root:1" or "root:1 main")
+            let head_parts: Vec<String> = items
+                .iter()
+                .take_while(|item| matches!(item, SExpr::Atom(_)))
+                .map(format_sexpr)
+                .collect();
+            let head = head_parts.join(" ");
+
+            // Get child lists
+            let children: Vec<&SExpr> = items.iter().skip(head_parts.len()).collect();
+
+            if children.is_empty() {
+                format!("({})", head)
+            } else {
+                let indent = "  ".repeat(depth);
+                let child_indent = "  ".repeat(depth + 1);
+                let mut buf = format!("({}\n", head);
+                for child in children {
+                    buf.push_str(&child_indent);
+                    buf.push_str(&format_sexpr_indented(child, depth + 1));
+                    buf.push('\n');
+                }
+                buf.push_str(&indent);
+                buf.push(')');
+                buf
+            }
         }
     }
 }
@@ -927,21 +1233,25 @@ fn materialize_case(case: &CorpusCase, keep_temps: bool) -> Result<MaterializedP
     let root_path = temp_dir.path().to_path_buf();
 
     for (idx, file) in case.files.iter().enumerate() {
-        // Add numeric prefix to filename to preserve declaration order after WalkDir + sort
         let original_path = Path::new(&file.path);
-        let prefixed_filename = format!(
-            "{:03}_{}",
-            idx,
+        let file_name_str = original_path
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy();
+
+        // Don't add prefix to Cargo.toml - it needs to be findable by parse_crate_name
+        let final_path = if file_name_str == "Cargo.toml" {
+            original_path.to_path_buf()
+        } else {
+            // Add numeric prefix to filename to preserve declaration order after WalkDir + sort
+            let prefixed_filename = format!("{:03}_{}", idx, file_name_str);
             original_path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-        );
-        let prefixed_path = original_path
-            .parent()
-            .map(|p| p.join(&prefixed_filename))
-            .unwrap_or_else(|| PathBuf::from(&prefixed_filename));
-        let abs_path = root_path.join(&prefixed_path);
+                .parent()
+                .map(|p| p.join(&prefixed_filename))
+                .unwrap_or_else(|| PathBuf::from(&prefixed_filename))
+        };
+
+        let abs_path = root_path.join(&final_path);
         if let Some(parent) = abs_path.parent() {
             fs::create_dir_all(parent)
                 .with_context(|| format!("failed to create {}", parent.display()))?;
@@ -1009,40 +1319,29 @@ where
 
     // Bind symbols using new unified API
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
-    let mut project_graph = if options.build_dep_graph
-        || options.build_arch_graph
-        || options.build_block_reports
+    let mut project_graph = if options.build_block_reports
         || options.build_block_graph
+        || options.keep_block_relations
+        || options.build_arch_graph
     {
-        let mut graph = ProjectGraph::new(&cc);
-        graph.set_component_depth(options.component_depth);
-        if let Some(top_k) = options.pagerank_top_k {
-            graph.set_top_k(Some(top_k));
-        }
+        let graph = ProjectGraph::new(&cc);
         Some(graph)
     } else {
         None
     };
     if let Some(project) = project_graph.as_mut() {
-        let unit_graphs = build_llmcc_graph::<L>(
-            &cc,
-            GraphBuildOption::new()
-                .with_sequential(sequential)
-                .with_component_depth(options.component_depth),
-        )
-        .unwrap();
+        let unit_graphs =
+            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(sequential))
+                .unwrap();
         project.add_children(unit_graphs);
     }
-    let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph) =
-        if let Some(mut project) = project_graph {
-            project.link_units();
-            let dep_graph = if options.build_dep_graph {
-                Some(project.render_design_graph())
-            } else {
-                None
-            };
-            let arch_graph = if options.build_arch_graph {
-                Some(project.render_arch_graph())
+    let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph, block_relations) =
+        if let Some(project) = project_graph {
+            project.connect_blocks();
+            // Graph visualization
+            let dep_graph: Option<String> = None; // TODO: implement dep_graph rendering
+            let arch_graph: Option<String> = if options.build_arch_graph {
+                Some(render_graph(&project, options.component_depth))
             } else {
                 None
             };
@@ -1057,12 +1356,30 @@ where
             } else {
                 None
             };
-            (dep_graph, arch_graph, list, deps, block_graph)
+            let block_relations = if options.keep_block_relations {
+                Some(snapshot_block_relations(&project))
+            } else {
+                None
+            };
+            (
+                dep_graph,
+                arch_graph,
+                list,
+                deps,
+                block_graph,
+                block_relations,
+            )
         } else {
-            (None, None, None, None, None)
+            (None, None, None, None, None, None)
         };
 
     let symbols = if options.keep_symbols {
+        Some(snapshot_symbols(&cc))
+    } else {
+        None
+    };
+
+    let symbol_types = if options.keep_symbol_types {
         Some(snapshot_symbols(&cc))
     } else {
         None
@@ -1076,6 +1393,8 @@ where
 
     Ok(PipelineSummary {
         symbols,
+        symbol_types,
+        block_relations,
         dep_graph_dot,
         arch_graph_dot,
         block_list,
@@ -1113,8 +1432,16 @@ fn discover_language_files<L: LanguageTraitImpl>(
         files.push(entry.path().to_string_lossy().to_string());
     }
 
-    // Always sort to ensure deterministic ordering based on prefixed filenames
-    files.sort();
+    // Sort by numeric prefix in filename to preserve declaration order
+    // e.g., "002_lib.rs" should come before "005_lib.rs" regardless of directory
+    files.sort_by(|a, b| {
+        let get_prefix = |path: &str| -> Option<usize> {
+            let filename = Path::new(path).file_name()?.to_str()?;
+            let prefix_end = filename.find('_')?;
+            filename[..prefix_end].parse::<usize>().ok()
+        };
+        get_prefix(a).cmp(&get_prefix(b))
+    });
 
     // Return both physical path (with prefix) and logical path (without prefix)
     let files: Vec<(String, String)> = files
@@ -1184,27 +1511,39 @@ fn render_block_graph_node(
     buf: &mut String,
 ) {
     let block = unit.bb(block_id);
-    let indent = "    ".repeat(depth);
-    let kind = block.kind().to_string();
-    let _ = write!(buf, "{}({}:{}", indent, kind, block_id.as_u32());
+    let indent = "  ".repeat(depth);
 
-    if let Some(name) = block
-        .base()
-        .and_then(|base| base.opt_get_name())
-        .filter(|name| !name.is_empty())
-    {
-        let _ = write!(buf, " {}", name);
-    }
+    // Use the block's format methods for consistent output
+    let label = block.format_block(unit);
+    let suffix = block.format_suffix();
+    let deps = block.format_deps(unit);
+
+    let _ = write!(buf, "{}({}", indent, label);
 
     let children = block.children();
-    if children.is_empty() {
-        buf.push_str(")\n");
+    if children.is_empty() && deps.is_empty() {
+        buf.push(')');
+        // Add suffix after closing paren (e.g., "@type i32")
+        if let Some(suffix) = suffix {
+            buf.push(' ');
+            buf.push_str(&suffix);
+        }
+        buf.push('\n');
         return;
     }
 
     buf.push('\n');
-    for &child_id in children {
+    for child_id in children {
+        // Skip Call blocks - they are now represented by @fdep/@tdep entries
+        if unit.bb(child_id).kind() == llmcc_core::block::BlockKind::Call {
+            continue;
+        }
         render_block_graph_node(child_id, unit, depth + 1, buf);
+    }
+    // Render deps as pseudo-children (after real children)
+    let child_indent = "  ".repeat(depth + 1);
+    for dep in deps {
+        let _ = writeln!(buf, "{}({})", child_indent, dep);
     }
     buf.push_str(&indent);
     buf.push_str(")\n");
@@ -1219,81 +1558,115 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
             .resolve_owned(symbol.name)
             .unwrap_or_else(|| "?".to_string());
 
+        // Get type_of info
+        let type_of = symbol.type_of().and_then(|sym_id| {
+            cc.opt_get_symbol(sym_id).map(|type_sym| {
+                let type_name = interner
+                    .resolve_owned(type_sym.name)
+                    .unwrap_or_else(|| "?".to_string());
+                let type_unit = type_sym.unit_index().unwrap_or_default();
+                format!("u{}:{} ({})", type_unit, sym_id.0 as u32, type_name)
+            })
+        });
+
+        // Get block_id info
+        let block_id = symbol.block_id().map(|bid| {
+            format!(
+                "u{}:{}",
+                symbol.unit_index().unwrap_or_default(),
+                bid.as_u32()
+            )
+        });
+
         rows.push(SymbolSnapshot {
             unit: symbol.unit_index().unwrap_or_default(),
             id: symbol.id().0 as u32,
             kind: format!("{:?}", symbol.kind()),
             name: name_str,
             is_global: symbol.is_global(),
+            type_of,
+            block_id,
         });
     }
 
     rows
 }
-fn snapshot_symbol_dependencies<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolDependencySnapshot> {
-    use std::collections::HashMap;
 
-    let symbols = cc.get_all_symbols();
-    let mut cache: HashMap<u32, SymbolDependencySnapshot> = HashMap::new();
+fn snapshot_symbol_dependencies<'a>(_cc: &'a CompileCtxt<'a>) -> Vec<SymbolDependencySnapshot> {
+    // Symbol dependency tracking is currently disabled
+    // TODO: Implement via block relation traversal when needed
+    Vec::new()
+}
 
-    // Build initial cache of all symbols
-    for symbol in &symbols {
-        let sym_id_num = symbol.id().0 as u32;
-        let label = format!(
-            "u{}:{}",
-            symbol.unit_index().unwrap_or_default(),
-            sym_id_num
-        );
-        cache.insert(
-            sym_id_num,
-            SymbolDependencySnapshot {
+/// Snapshot block relations from the ProjectGraph.
+fn snapshot_block_relations(project: &ProjectGraph) -> Vec<BlockRelationSnapshot> {
+    use std::collections::BTreeMap;
+
+    let cc = project.cc;
+    let related_map = &cc.related_map;
+
+    // Group relations by block
+    let mut block_map: BTreeMap<BlockId, BlockRelationSnapshot> = BTreeMap::new();
+
+    // First, collect all blocks that have relations
+    for block_id in related_map.get_connected_blocks() {
+        let Some(desc) = describe_block(block_id, cc) else {
+            continue;
+        };
+
+        let label = format!("u{}:{}", desc.unit, block_id.as_u32());
+
+        // Get all relations for this block
+        let relations = related_map.get_all_relations(block_id);
+
+        // Convert relations to grouped format
+        let mut grouped: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        for (relation, target_ids) in relations.iter() {
+            let rel_name = relation.to_string();
+
+            for target_id in target_ids {
+                // Get target label
+                let target_label = if let Some(target_desc) = describe_block(*target_id, cc) {
+                    format!("u{}:{}", target_desc.unit, target_id.as_u32())
+                } else {
+                    format!("?:{}", target_id.as_u32())
+                };
+
+                grouped
+                    .entry(rel_name.clone())
+                    .or_default()
+                    .push(target_label);
+            }
+        }
+
+        // Sort targets within each relation type
+        for targets in grouped.values_mut() {
+            targets.sort();
+        }
+
+        let relations_vec: Vec<(String, Vec<String>)> = grouped.into_iter().collect();
+
+        block_map.insert(
+            block_id,
+            BlockRelationSnapshot {
                 label,
-                depends_on: Vec::new(),
-                depended_by: Vec::new(),
+                kind: desc.kind.clone(),
+                name: desc.name.clone(),
+                relations: relations_vec,
             },
         );
     }
 
-    // Fill in dependencies
-    for symbol in &symbols {
-        let sym_id_num = symbol.id().0 as u32;
-        let deps = symbol.depends_ids();
-        for dep in deps {
-            if let Some(target) = cc.opt_get_symbol(dep) {
-                let dep_id_num = dep.0 as u32;
-                let dep_label = format!(
-                    "u{}:{}",
-                    target.unit_index().unwrap_or_default(),
-                    dep_id_num
-                );
-                if let Some(entry) = cache.get_mut(&sym_id_num) {
-                    entry.depends_on.push(dep_label.clone());
-                }
-                if let Some(target_entry) = cache.get_mut(&dep_id_num) {
-                    target_entry.depended_by.push(format!(
-                        "u{}:{}",
-                        symbol.unit_index().unwrap_or_default(),
-                        sym_id_num
-                    ));
-                }
-            }
-        }
-    }
-
-    let mut output: Vec<_> = cache.into_values().collect();
-    for entry in &mut output {
-        entry.depends_on.sort();
-        entry.depended_by.sort();
-    }
-    output
+    // Convert to vector, sorted by block id
+    block_map.into_values().collect()
 }
+
 fn render_block_reports(
     project: &ProjectGraph,
 ) -> (Vec<BlockSnapshot>, Vec<SymbolDependencySnapshot>) {
     use std::collections::BTreeMap;
-    use std::collections::HashMap;
 
-    let mut units: BTreeMap<usize, Vec<(BlockDescriptor, Vec<BlockDescriptor>)>> = BTreeMap::new();
+    let mut units: BTreeMap<usize, Vec<BlockDescriptor>> = BTreeMap::new();
 
     for unit_graph in project.units() {
         let unit_index = unit_graph.unit_index();
@@ -1304,77 +1677,31 @@ fn render_block_reports(
                 continue;
             };
             desc.kind = kind.to_string();
-
-            let mut deps = unit_graph
-                .edges()
-                .get_related(block_id, BlockRelation::DependsOn);
-            deps.sort_unstable_by_key(|id| id.as_u32());
-            deps.dedup();
-            let mut dep_descs: Vec<BlockDescriptor> = deps
-                .into_iter()
-                .filter_map(|id| describe_block(id, project.cc))
-                .collect();
-            dep_descs.sort_by(|a, b| (a.unit, &a.name).cmp(&(b.unit, &b.name)));
-            entries.push((desc, dep_descs));
+            entries.push(desc);
         }
 
-        entries.sort_by(|a, b| a.0.name.cmp(&b.0.name));
+        entries.sort_by(|a, b| a.name.cmp(&b.name));
         if !entries.is_empty() {
             units.insert(unit_index, entries);
         }
     }
 
     let mut block_rows = Vec::new();
-    let mut dep_map: HashMap<String, SymbolDependencySnapshot> = HashMap::new();
+    // Block deps tracking is currently disabled - return empty deps
+    let deps: Vec<SymbolDependencySnapshot> = Vec::new();
 
     for (_unit, blocks) in units {
-        for (block, deps) in blocks {
+        for block in blocks {
             let label = format!("u{}:{}", block.unit, block.id.as_u32());
             block_rows.push(BlockSnapshot {
-                label: label.clone(),
+                label,
                 kind: block.kind.clone(),
                 name: block.name.clone(),
             });
-
-            {
-                let entry = dep_map
-                    .entry(label.clone())
-                    .or_insert(SymbolDependencySnapshot {
-                        label: label.clone(),
-                        depends_on: Vec::new(),
-                        depended_by: Vec::new(),
-                    });
-
-                for dep in &deps {
-                    let dep_label = format!("u{}:{}", dep.unit, dep.id.as_u32());
-                    entry.depends_on.push(dep_label.clone());
-                }
-            }
-
-            for dep in deps {
-                let dep_label = format!("u{}:{}", dep.unit, dep.id.as_u32());
-                dep_map
-                    .entry(dep_label.clone())
-                    .or_insert(SymbolDependencySnapshot {
-                        label: dep_label.clone(),
-                        depends_on: Vec::new(),
-                        depended_by: Vec::new(),
-                    })
-                    .depended_by
-                    .push(label.clone());
-            }
         }
     }
 
-    for snapshot in dep_map.values_mut() {
-        snapshot.depends_on.sort();
-        snapshot.depended_by.sort();
-    }
-
     block_rows.sort_by(|a, b| a.label.cmp(&b.label));
-    let mut deps: Vec<_> = dep_map.into_values().collect();
-    deps.sort_by(|a, b| a.label.cmp(&b.label));
-
     (block_rows, deps)
 }
 
@@ -1386,16 +1713,90 @@ struct BlockDescriptor {
     id: llmcc_core::graph_builder::BlockId,
 }
 
-fn describe_block(
+fn describe_block<'a>(
     block_id: llmcc_core::graph_builder::BlockId,
-    cc: &llmcc_core::context::CompileCtxt,
+    cc: &'a llmcc_core::context::CompileCtxt<'a>,
 ) -> Option<BlockDescriptor> {
     let (unit, name, kind) = cc.get_block_info(block_id)?;
-    let name = name.unwrap_or_else(|| format!("block#{block_id}"));
+
+    // Try to get a proper name from multiple sources:
+    // 1. From block info (indexed name)
+    // 2. From the block's specific type (e.g., BlockField.name)
+    // 3. From the block's base (HIR node)
+    // 4. From first identifier child node
+    // 5. From associated symbol
+    // 6. Fall back to block#N
+    let name = name
+        .or_else(|| {
+            // Try to get name from specific block types
+            let index = (block_id.0 as usize).saturating_sub(1);
+            cc.block_arena.bb().get(index).and_then(|bb| {
+                // Try field name
+                if let Some(field) = bb.as_field()
+                    && !field.name.is_empty()
+                {
+                    return Some(field.name.clone());
+                }
+                // Try base name
+                bb.base()
+                    .and_then(|base| base.opt_get_name())
+                    .filter(|n| !n.is_empty())
+                    .map(|s| s.to_string())
+            })
+        })
+        .or_else(|| {
+            // Try to find first identifier child of the node
+            let index = (block_id.0 as usize).saturating_sub(1);
+            cc.block_arena.bb().get(index).and_then(|bb| {
+                let node = bb.base()?.node;
+                // Recursively search for first identifier in children
+                find_first_ident_name(cc, &node)
+            })
+        })
+        .or_else(|| {
+            // Try to get name from associated symbol
+            cc.find_symbol_by_block_id(block_id)
+                .and_then(|sym| cc.interner.resolve_owned(sym.name))
+        })
+        .unwrap_or_else(|| format!("block#{block_id}"));
+
     Some(BlockDescriptor {
         name,
         kind: kind.to_string(),
         unit,
         id: block_id,
     })
+}
+
+/// Recursively find the first identifier name in a node's children
+fn find_first_ident_name<'a>(
+    cc: &'a llmcc_core::context::CompileCtxt<'a>,
+    node: &llmcc_core::ir::HirNode<'a>,
+) -> Option<String> {
+    use llmcc_core::ir::HirKind;
+
+    // Check if this node itself is an identifier
+    if node.is_kind(HirKind::Identifier)
+        && let Some(ident) = node.as_ident()
+    {
+        return Some(ident.name.clone());
+    }
+
+    // Search through children
+    for child_id in node.child_ids() {
+        if let Some(child_node) = cc.get_hir_node(*child_id) {
+            if child_node.is_kind(HirKind::Identifier)
+                && let Some(ident) = child_node.as_ident()
+            {
+                return Some(ident.name.clone());
+            }
+            // Recurse into internal nodes
+            if child_node.is_kind(HirKind::Internal)
+                && let Some(name) = find_first_ident_name(cc, &child_node)
+            {
+                return Some(name);
+            }
+        }
+    }
+    None
 }

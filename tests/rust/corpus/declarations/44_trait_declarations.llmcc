@@ -1,0 +1,25 @@
+===============================================================================
+trait-declarations
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+pub trait Item: Clone + Eq + fmt::Debug {
+    type Summary;
+
+    fn summarize(&self) -> Self::Summary;
+}
+
+unsafe trait Foo { }
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 Item
+    (alias:3 Summary)
+    (method:4 summarize
+      (parameter:5 self @type:2 Item)
+      (return:6 @type:2 Item)
+    )
+  )
+  (trait:7 Foo)
+)

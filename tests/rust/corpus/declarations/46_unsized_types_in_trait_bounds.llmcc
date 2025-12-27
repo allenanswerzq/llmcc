@@ -1,0 +1,24 @@
+===============================================================================
+unsized-types-in-trait-bounds
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+trait Sized {}
+trait LayoutCalculator {}
+
+trait Foo<T: ?Sized> {
+}
+
+fn univariant(this: &impl ?Sized, that: &(impl LayoutCalculator + ?Sized)) {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 Sized)
+  (trait:3 LayoutCalculator)
+  (trait:4 Foo)
+  (func:5 univariant
+    (parameter:6 this @type:2 Sized)
+    (parameter:7 that @type (impl LayoutCalculator + ?Sized))
+  )
+)

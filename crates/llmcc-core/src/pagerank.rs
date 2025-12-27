@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::block::{BlockId, BlockKind, BlockRelation};
-use crate::graph::{GraphNode, ProjectGraph};
+use crate::graph::{UnitNode, ProjectGraph};
 
 /// Configuration options for PageRank algorithm.
 #[derive(Debug, Clone)]
@@ -33,7 +33,7 @@ impl Default for PageRankConfig {
 /// Result from a PageRank computation.
 #[derive(Debug, Clone)]
 pub struct RankedBlock {
-    pub node: GraphNode,
+    pub node: UnitNode,
     /// Blended score based on the configured influence/orchestration weights.
     pub score: f64,
     /// PageRank following `DependsOn` edges – highlights foundational building blocks.
@@ -95,8 +95,8 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             };
         }
 
-        let adjacency_depends = self.build_adjacency(&entries, BlockRelation::DependsOn);
-        let adjacency_depended = self.build_adjacency(&entries, BlockRelation::DependedBy);
+        let adjacency_depends = self.build_adjacency(&entries, BlockRelation::Calls);
+        let adjacency_depended = self.build_adjacency(&entries, BlockRelation::CalledBy);
 
         // Compute PageRank for both dependency directions.
         let (depends_scores, depends_iterations, depends_converged) =
@@ -136,7 +136,7 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                     .unwrap_or_else(|| format!("{}:{}", entry.kind, entry.block_id.as_u32()));
 
                 RankedBlock {
-                    node: GraphNode {
+                    node: UnitNode {
                         unit_index: entry.unit_index,
                         block_id: entry.block_id,
                     },
@@ -254,12 +254,11 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         }
 
         for (idx, entry) in entries.iter().enumerate() {
-            let Some(unit_graph) = self.graph.unit_graph(entry.unit_index) else {
-                continue;
-            };
-
-            let mut targets = unit_graph
-                .edges()
+            // Use the global related_map from CompileCtxt
+            let mut targets = self
+                .graph
+                .cc
+                .related_map
                 .get_related(entry.block_id, relation)
                 .into_iter()
                 .filter_map(|dep_id| index_by_block.get(&dep_id).copied())

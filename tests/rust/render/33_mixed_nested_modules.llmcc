@@ -1,0 +1,147 @@
+===============================================================================
+mixed-nested-modules
+===============================================================================
+Deep module nesting with pub use re-exports and scoped paths.
+Combines: nested modules, pub use, crate::, super::, scoped paths.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+pub mod core;
+pub mod api;
+
+pub use api::client::HttpClient;
+pub use core::types::Result;
+
+--- file: sample/src/core/mod.rs ---
+pub mod types;
+pub mod error;
+
+--- file: sample/src/core/types.rs ---
+use super::error::Error;
+
+pub type Result<T> = std::result::Result<T, Error>;
+
+pub struct Request {
+    pub url: String,
+    pub method: String,
+}
+
+pub struct Response {
+    pub status: u16,
+    pub body: String,
+}
+
+--- file: sample/src/core/error.rs ---
+pub struct Error {
+    pub code: i32,
+    pub message: String,
+}
+
+--- file: sample/src/api/mod.rs ---
+pub mod client;
+
+--- file: sample/src/api/client.rs ---
+use crate::core::types::{Request, Response};
+use crate::core::error::Error;
+
+pub trait Transport {
+    fn send(&self, req: Request) -> Response;
+}
+
+pub struct HttpClient {
+    pub base_url: String,
+}
+
+// TOOD: do we need to have edge with Request -> Transport, then
+// Transport -> Response?
+impl Transport for HttpClient {
+    fn send(&self, req: Request) -> Response {
+        Response {
+            status: 200,
+            body: String::new(),
+        }
+    }
+}
+
+pub fn create_client(url: String) -> HttpClient {
+    HttpClient { base_url: url }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 mod ($TMP/sample/src/core/mod.rs))
+
+(root:3 types ($TMP/sample/src/core/types.rs)
+  (alias:4 Result)
+  (class:5 Request
+    (field:6 url @type String)
+    (field:7 method @type String)
+  )
+  (class:8 Response
+    (field:9 status @type u16)
+    (field:10 body @type String)
+  )
+)
+
+(root:11 error ($TMP/sample/src/core/error.rs)
+  (class:12 Error
+    (field:13 code @type i32)
+    (field:14 message @type String)
+  )
+)
+
+(root:15 mod ($TMP/sample/src/api/mod.rs))
+
+(root:16 client ($TMP/sample/src/api/client.rs)
+  (trait:17 Transport
+    (method:18 send
+      (parameter:19 self @type:17 Transport)
+      (parameter:20 req @type:5 Request)
+      (return:21 @type:8 Response)
+    )
+  )
+  (class:22 HttpClient
+    (field:23 base_url @type String)
+  )
+  (impl:24 HttpClient @type:22 @trait:17
+    (method:25 send
+      (parameter:26 self @type:22 HttpClient)
+      (parameter:27 req @type:5 Request)
+      (return:28 @type:8 Response)
+    )
+  )
+  (func:30 create_client
+    (parameter:31 url @type String)
+    (return:32 @type:22 HttpClient)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_api {
+        label="api";
+        subgraph cluster_client_rs {
+          label="client.rs";
+          n30[label="create_client", full_path="$TMP/sample/src/api/client.rs:23", sym_ty="Function"];
+          n17[label="Transport", full_path="$TMP/sample/src/api/client.rs:4", sym_ty="Trait", shape=box];
+          n22[label="HttpClient", full_path="$TMP/sample/src/api/client.rs:8", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+  }
+
+  n17 -> n22 [from="trait", to="impl"];
+  n30 -> n22 [from="func", to="output"];
+}

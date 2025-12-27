@@ -98,6 +98,7 @@ pub struct BindExpect<'a> {
     pub nested_types: Option<Vec<&'a str>>,
 }
 
+#[allow(dead_code)]
 impl<'a> BindExpect<'a> {
     pub fn new(kind: SymKind) -> Self {
         Self {

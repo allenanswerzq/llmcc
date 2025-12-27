@@ -1,0 +1,19 @@
+===============================================================================
+macro-invocations-inside-trait-declarations
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+pub trait A: B + C + D {
+    private_decl!{}
+    fn f(&self);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 A
+    (method:4 f
+      (parameter:5 self @type:2 A)
+    )
+  )
+)

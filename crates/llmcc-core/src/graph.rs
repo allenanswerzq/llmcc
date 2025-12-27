@@ -1,11 +1,7 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use rayon::prelude::*;
 
-use crate::block::{BlockId, BlockKind, BlockRelation};
-use crate::block_rel::BlockRelationMap;
-use crate::context::CompileCtxt;
-use crate::graph_render::{CompactNode, GraphRenderer, LabeledEdge};
-use crate::pagerank::PageRanker;
-use crate::symbol::{SymId, SymKind};
+use crate::block::{BasicBlock, BlockId, BlockRelation};
+use crate::context::{CompileCtxt, CompileUnit};
 
 #[derive(Debug, Clone)]
 pub struct UnitGraph {
@@ -13,17 +9,11 @@ pub struct UnitGraph {
     unit_index: usize,
     /// Root block ID of this unit
     root: BlockId,
-    /// Edge of this graph unit
-    edges: BlockRelationMap,
 }
 
 impl UnitGraph {
-    pub fn new(unit_index: usize, root: BlockId, edges: BlockRelationMap) -> Self {
-        Self {
-            unit_index,
-            root,
-            edges,
-        }
+    pub fn new(unit_index: usize, root: BlockId) -> Self {
+        Self { unit_index, root }
     }
 
     pub fn unit_index(&self) -> usize {
@@ -33,54 +23,22 @@ impl UnitGraph {
     pub fn root(&self) -> BlockId {
         self.root
     }
-
-    pub fn edges(&self) -> &BlockRelationMap {
-        &self.edges
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct GraphNode {
+pub struct UnitNode {
     pub unit_index: usize,
     pub block_id: BlockId,
 }
 
-const INTERESTING_KINDS: [BlockKind; 4] = [
-    BlockKind::Class,
-    BlockKind::Trait,
-    BlockKind::Enum,
-    BlockKind::Func,
-];
-
-/// ProjectGraph represents a complete compilation project with all units and their inter-dependencies.
-///
-/// # Overview
-/// ProjectGraph maintains a collection of per-unit compilation graphs (UnitGraph) and facilitates
-/// cross-unit dependency resolution. It provides efficient multi-dimensional indexing for block
-/// lookups by name, kind, unit, and ID, enabling quick context retrieval for LLM consumption.
-///
-/// # Architecture
-/// The graph consists of:
-/// - **UnitGraphs**: One per compilation unit (file), containing blocks and intra-unit relations
-/// - **Block Indexes**: Multi-dimensional indexes via BlockIndexMaps for O(1) to O(log n) lookups
-/// - **Cross-unit Links**: Dependencies tracked between blocks across different units
-///
-/// # Primary Use Cases
-/// 1. **Symbol Resolution**: Find blocks by name across the entire project
-/// 2. **Context Gathering**: Collect all related blocks for code analysis
-/// 3. **LLM Serialization**: Export graph as text or JSON for LLM model consumption
-/// 4. **Dependency Analysis**: Traverse dependency graphs to understand block relationships
-///
+/// ProjectGraph represents a complete compilation project with all units
+/// and their inter-dependencies.
 #[derive(Debug)]
 pub struct ProjectGraph<'tcx> {
-    /// Reference to the compilation context containing all symbols, HIR nodes, and blocks
+    /// Reference to the compilation context containing all symbols
     pub cc: &'tcx CompileCtxt<'tcx>,
     /// Per-unit graphs containing blocks and intra-unit relations
     units: Vec<UnitGraph>,
-    top_k: Option<usize>,
-    pagerank_enabled: bool,
-    /// Component grouping depth from FQN for graph visualization
-    component_depth: usize,
 }
 
 impl<'tcx> ProjectGraph<'tcx> {
@@ -88,688 +46,526 @@ impl<'tcx> ProjectGraph<'tcx> {
         Self {
             cc,
             units: Vec::new(),
-            top_k: None,
-            pagerank_enabled: false,
-            component_depth: 2, // Default to top-level modules
         }
-    }
-
-    /// Set the component depth for graph visualization
-    pub fn set_component_depth(&mut self, depth: usize) {
-        self.component_depth = depth;
     }
 
     pub fn add_child(&mut self, graph: UnitGraph) {
         self.units.push(graph);
+        self.units.sort_by_key(|g| g.unit_index());
     }
 
     /// Add multiple unit graphs to the project graph.
     pub fn add_children(&mut self, graphs: Vec<UnitGraph>) {
         self.units.extend(graphs);
+        self.units.sort_by_key(|g| g.unit_index());
     }
 
-    /// Configure the number of PageRank-filtered nodes retained when rendering compact graphs.
-    pub fn set_top_k(&mut self, limit: Option<usize>) {
-        self.top_k = match limit {
-            Some(0) => None,
-            other => other,
-        };
-        self.pagerank_enabled = self.top_k.is_some();
-    }
-
-    pub fn link_units(&mut self) {
-        if self.units.is_empty() {
-            return;
-        }
-
-        let unresolved_symbols = self.cc.take_unresolved_symbols();
-
-        if unresolved_symbols.is_empty() {
-            return;
-        }
-
-        let mut unique_symbols = Vec::new();
-        let mut seen_targets = HashSet::new();
-        for symbol_ref in unresolved_symbols {
-            if seen_targets.insert(symbol_ref.id) {
-                unique_symbols.push(symbol_ref);
-            }
-        }
-
-        if unique_symbols.is_empty() {
-            return;
-        }
-
-        let cross_edges = parking_lot::Mutex::new(Vec::new());
-
-        use rayon::prelude::*;
-        unique_symbols.into_par_iter().for_each(|_symbol_ref| {
-            // Symbol dependency tracking has been removed.
-            // Cross-unit edges are now tracked via BlockRelation system.
-        });
-
-        let collected_edges = cross_edges.into_inner();
-        if collected_edges.is_empty() {
-            return;
-        }
-
-        let unit_positions: HashMap<usize, usize> = self
-            .units
-            .iter()
-            .enumerate()
-            .map(|(pos, unit)| (unit.unit_index(), pos))
-            .collect();
-
-        let mut depends_map: HashMap<usize, HashMap<BlockId, Vec<BlockId>>> = HashMap::new();
-        let mut depended_map: HashMap<usize, HashMap<BlockId, Vec<BlockId>>> = HashMap::new();
-
-        for (from_unit, target_unit, from_block, target_block) in collected_edges {
-            depends_map
-                .entry(from_unit)
-                .or_default()
-                .entry(from_block)
-                .or_default()
-                .push(target_block);
-
-            depended_map
-                .entry(target_unit)
-                .or_default()
-                .entry(target_block)
-                .or_default()
-                .push(from_block);
-        }
-
-        for (unit_idx, mut edges) in depends_map {
-            if let Some(&pos) = unit_positions.get(&unit_idx) {
-                let unit_graph = &self.units[pos];
-                for (from_block, mut targets) in edges.drain() {
-                    targets.sort_unstable_by_key(|id| id.as_u32());
-                    targets.dedup();
-                    unit_graph.edges.add_relation_impls(
-                        from_block,
-                        BlockRelation::DependsOn,
-                        &targets,
-                    );
-                }
-            }
-        }
-
-        for (unit_idx, mut edges) in depended_map {
-            if let Some(&pos) = unit_positions.get(&unit_idx) {
-                let unit_graph = &self.units[pos];
-                for (from_block, mut targets) in edges.drain() {
-                    targets.sort_unstable_by_key(|id| id.as_u32());
-                    targets.dedup();
-                    unit_graph.edges.add_relation_impls(
-                        from_block,
-                        BlockRelation::DependedBy,
-                        &targets,
-                    );
-                }
-            }
-        }
-    }
-
+    /// Get the units in this project graph.
     pub fn units(&self) -> &[UnitGraph] {
         &self.units
     }
 
-    pub fn unit_graph(&self, unit_index: usize) -> Option<&UnitGraph> {
-        self.units
-            .iter()
-            .find(|unit| unit.unit_index() == unit_index)
+    /// Get a specific unit graph by index, if it exists.
+    pub fn unit_graph(&self, index: usize) -> Option<&UnitGraph> {
+        self.units.iter().find(|u| u.unit_index() == index)
     }
 
-    pub fn block_by_name(&self, name: &str) -> Option<GraphNode> {
-        let matches = self.cc.find_blocks_by_name(name);
-
-        matches.first().map(|(unit_index, _, block_id)| GraphNode {
-            unit_index: *unit_index,
-            block_id: *block_id,
-        })
+    /// Get top-k limit (currently always None - no PageRank filtering).
+    pub fn top_k(&self) -> Option<usize> {
+        None
     }
 
-    pub fn blocks_by_name(&self, name: &str) -> Vec<GraphNode> {
-        let matches = self.cc.find_blocks_by_name(name);
-
-        matches
-            .into_iter()
-            .map(|(unit_index, _, block_id)| GraphNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
+    /// Check if PageRank ranking is enabled (currently always false).
+    pub fn pagerank_enabled(&self) -> bool {
+        false
     }
 
-    pub fn render_design_graph(&self) -> String {
-        let top_k = self.top_k;
-        let nodes = self.collect_sorted_nodes(top_k);
-
-        if nodes.is_empty() {
-            return "digraph project {\n}\n".to_string();
-        }
-
-        let renderer = GraphRenderer::new(&nodes);
-        let node_index = renderer.build_node_index();
-        let edges = self.collect_edges(renderer.nodes(), &node_index);
-
-        renderer.render(&edges, self.component_depth)
-    }
-
-    /// Render an architecture graph showing input/output relations.
-    ///
-    /// In an architecture graph:
-    /// - Input arguments have edges pointing TO the function
-    /// - Function has edges pointing TO return types (output)
-    /// - Traits have edges pointing TO structs that implement them
-    ///
-    /// This is different from the dependency graph which shows "uses" relationships.
-    pub fn render_arch_graph(&self) -> String {
-        let top_k = self.top_k;
-        let all_nodes = self.collect_sorted_nodes(top_k);
-
-        // Filter nodes for arch-graph:
-        // - Keep all types (Struct, Trait, Enum) regardless of visibility
-        // - Only keep public functions (private functions are implementation details)
-        let nodes: Vec<_> = all_nodes
-            .into_iter()
-            .filter(|node| {
-                match node.sym_kind {
-                    Some(SymKind::Function) => node.is_public,
-                    _ => true, // Keep all other kinds (Struct, Trait, Enum, etc.)
-                }
-            })
-            .collect();
-
-        if nodes.is_empty() {
-            return "digraph architecture {\n}\n".to_string();
-        }
-
-        let renderer = GraphRenderer::new(&nodes);
-        let node_index = renderer.build_node_index();
-        let edges = self.collect_arch_edges(renderer.nodes(), &node_index);
-
-        renderer.render_arch(&edges, self.component_depth)
-    }
-
-    /// Collect edges for the architecture graph.
-    ///
-    /// Since symbols no longer track dependencies, this method collects edges
-    /// based on block relationships in the compilation graph.
-    fn collect_arch_edges(
-        &self,
-        nodes: &[CompactNode],
-        node_index: &HashMap<BlockId, usize>,
-    ) -> BTreeSet<LabeledEdge> {
-        let mut edges = BTreeSet::new();
-
-        for node in nodes {
-            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
-                continue;
+    /// Connect all blocks by discovering and recording their relationships.
+    pub fn connect_blocks(&self) {
+        // Process each unit in parallel - they are independent
+        self.units.par_iter().for_each(|unit_graph| {
+            let unit = CompileUnit {
+                cc: self.cc,
+                index: unit_graph.unit_index(),
             };
-            let from_idx = node_index[&node.block_id];
-
-            let dependencies = unit_graph
-                .edges()
-                .get_related(node.block_id, BlockRelation::DependsOn);
-
-            for dep_block_id in dependencies {
-                if let Some(&to_idx) = node_index.get(&dep_block_id) {
-                    edges.insert(LabeledEdge::new(from_idx, to_idx));
-                }
-            }
-        }
-
-        edges
-    }
-
-    fn ranked_block_filter(
-        &self,
-        top_k: Option<usize>,
-        interesting_kinds: &[BlockKind],
-    ) -> Option<HashSet<BlockId>> {
-        let ranked_order = top_k.and_then(|limit| {
-            let ranker = PageRanker::new(self);
-            let mut collected = Vec::new();
-
-            for ranked in ranker.rank() {
-                if interesting_kinds.contains(&ranked.kind) {
-                    collected.push(ranked.node.block_id);
-                }
-                if collected.len() >= limit {
-                    break;
-                }
-            }
-
-            if collected.is_empty() {
-                None
-            } else {
-                Some(collected)
-            }
+            let root_block = unit.bb(unit_graph.root());
+            self.dfs_connect(&unit, &root_block, None);
         });
-
-        ranked_order.map(|ordered| ordered.into_iter().collect())
     }
 
-    fn collect_nodes(
+    /// Recursively connect blocks in pre-order DFS traversal.
+    fn dfs_connect(
         &self,
-        interesting_kinds: &[BlockKind],
-        ranked_filter: Option<&HashSet<BlockId>>,
-    ) -> Vec<CompactNode> {
-        let all_blocks = self.cc.get_all_blocks();
+        unit: &CompileUnit<'tcx>,
+        block: &BasicBlock<'tcx>,
+        parent: Option<BlockId>,
+    ) {
+        let block_id = block.id();
 
-        all_blocks
-            .into_iter()
-            .filter_map(|(block_id, unit_index, name_opt, kind)| {
-                if !interesting_kinds.contains(&kind) {
-                    return None;
-                }
+        // 1. Link structural parent/child relationship
+        if let Some(parent_id) = parent {
+            self.add_relation(parent_id, BlockRelation::Contains, block_id);
+            self.add_relation(block_id, BlockRelation::ContainedBy, parent_id);
+        }
 
-                if let Some(ids) = ranked_filter
-                    && !ids.contains(&block_id)
-                {
-                    return None;
-                }
+        // 2. Link kind-specific relationships
+        match block {
+            BasicBlock::Func(func) => self.link_func(unit, block_id, func),
+            BasicBlock::Class(class) => self.link_class(unit, block_id, class),
+            BasicBlock::Impl(impl_block) => self.link_impl(unit, block_id, impl_block),
+            BasicBlock::Trait(trait_block) => self.link_trait(unit, block_id, trait_block),
+            BasicBlock::Enum(enum_block) => self.link_enum(unit, block_id, enum_block),
+            BasicBlock::Call(call) => self.link_call(unit, block_id, call),
+            BasicBlock::Field(field) => self.link_field(unit, block_id, field),
+            BasicBlock::Return(ret) => self.link_return(unit, block_id, ret),
+            BasicBlock::Parameter(param) => self.link_parameter(unit, block_id, param),
+            BasicBlock::Const(const_block) => self.link_const(unit, block_id, const_block),
+            BasicBlock::Alias(alias) => self.link_alias(unit, block_id, alias),
+            // Root - no special linking needed
+            _ => {}
+        }
 
-                let unit = self.cc.compile_unit(unit_index);
-                let block = unit.bb(block_id);
-                let display_name = name_opt
-                    .clone()
-                    .or_else(|| {
-                        block
-                            .base()
-                            .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
-                    })
-                    .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
-
-                let raw_path = unit
-                    .file_path()
-                    .or_else(|| unit.file().path())
-                    .unwrap_or("<unknown>");
-
-                // Use raw path directly - canonicalize is very expensive
-                let path = raw_path.to_string();
-
-                let file_bytes = unit.file().content();
-                let location = block
-                    .opt_node()
-                    .map(|node| {
-                        let line = compact_byte_to_line(file_bytes, node.start_byte());
-                        format!("{path}:{line}")
-                    })
-                    .or(Some(path.clone()));
-
-                let mut sym_id: Option<SymId> = None;
-                let mut sym_kind = None;
-                let mut is_public = false;
-
-                if let Some(symbol) = block
-                    .opt_node()
-                    .and_then(|node| node.as_scope())
-                    .and_then(|scope_node| scope_node.opt_scope())
-                    .and_then(|scope| scope.opt_symbol())
-                {
-                    sym_id = Some(symbol.id());
-                    sym_kind = Some(symbol.kind());
-                    is_public = symbol.is_global();
-                }
-
-                Some(CompactNode {
-                    block_id,
-                    unit_index,
-                    name: display_name.clone(),
-                    location,
-                    fqn: display_name,
-                    sym_id,
-                    sym_kind,
-                    is_public,
-                })
-            })
-            .collect()
+        // 3. Recurse into children (pre-order: process this node before children)
+        for child_id in block.children() {
+            let child = unit.bb(child_id);
+            self.dfs_connect(unit, &child, Some(block_id));
+        }
     }
 
-    fn collect_sorted_nodes(&self, top_k: Option<usize>) -> Vec<CompactNode> {
-        let ranked_filter = if self.pagerank_enabled {
-            self.ranked_block_filter(top_k, &INTERESTING_KINDS)
-        } else {
-            None
-        };
-        let mut nodes = self.collect_nodes(&INTERESTING_KINDS, ranked_filter.as_ref());
-        nodes.sort_by(|a, b| a.name.cmp(&b.name));
-        nodes
+    /// Add a relationship to the related_map.
+    #[inline]
+    fn add_relation(&self, from: BlockId, relation: BlockRelation, to: BlockId) {
+        self.cc.related_map.add_relation_impl(from, relation, to);
     }
 
-    fn collect_edges(
+    /// Link function/method relationships.
+    fn link_func(
         &self,
-        nodes: &[CompactNode],
-        node_index: &HashMap<BlockId, usize>,
-    ) -> BTreeSet<(usize, usize)> {
-        let mut edges = BTreeSet::new();
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        func: &crate::block::BlockFunc<'tcx>,
+    ) {
+        // Parameters - now individual BlockParameter blocks
+        for param_id in func.get_parameters() {
+            self.add_relation(block_id, BlockRelation::HasParameters, param_id);
+        }
 
-        for node in nodes {
-            let Some(unit_graph) = self.unit_graph(node.unit_index) else {
-                continue;
-            };
-            let from_idx = node_index[&node.block_id];
+        // Return type
+        if let Some(ret_id) = func.get_returns() {
+            self.add_relation(block_id, BlockRelation::HasReturn, ret_id);
+        }
 
-            let dependencies = unit_graph
-                .edges()
-                .get_related(node.block_id, BlockRelation::DependsOn);
-
-            for dep_block_id in dependencies {
-                if let Some(&to_idx) = node_index.get(&dep_block_id) {
-                    edges.insert((from_idx, to_idx));
+        // Populate type_deps from function symbol's nested_types (generic return type args)
+        // e.g., for `fn get_user() -> Result<User, Error>`, nested_types contains User and Error
+        if let Some(func_sym) = func.base.symbol
+            && let Some(nested_types) = func_sym.nested_types()
+        {
+            for type_id in nested_types {
+                // Follow type_of chain to get actual type symbol
+                let type_sym = unit.opt_get_symbol(type_id).and_then(|sym| {
+                    sym.type_of()
+                        .and_then(|id| unit.opt_get_symbol(id))
+                        .or(Some(sym))
+                });
+                if let Some(type_sym) = type_sym
+                    && let Some(type_block_id) = type_sym.block_id()
+                {
+                    func.add_type_dep(type_block_id);
                 }
             }
         }
 
-        edges
-    }
-
-    pub fn block_by_name_in(&self, unit_index: usize, name: &str) -> Option<GraphNode> {
-        let matches = self.cc.find_blocks_by_name(name);
-
-        matches
-            .iter()
-            .find(|(u, _, _)| *u == unit_index)
-            .map(|(_, _, block_id)| GraphNode {
-                unit_index,
-                block_id: *block_id,
-            })
-    }
-
-    pub fn blocks_by_kind(&self, block_kind: BlockKind) -> Vec<GraphNode> {
-        let matches = self.cc.find_blocks_by_kind(block_kind);
-
-        matches
-            .into_iter()
-            .map(|(unit_index, _, block_id)| GraphNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
-    }
-
-    pub fn blocks_by_kind_in(&self, block_kind: BlockKind, unit_index: usize) -> Vec<GraphNode> {
-        let block_ids = self.cc.find_blocks_by_kind_in_unit(block_kind, unit_index);
-
-        block_ids
-            .into_iter()
-            .map(|block_id| GraphNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
-    }
-
-    pub fn blocks_in(&self, unit_index: usize) -> Vec<GraphNode> {
-        let matches = self.cc.find_blocks_in_unit(unit_index);
-
-        matches
-            .into_iter()
-            .map(|(_, _, block_id)| GraphNode {
-                unit_index,
-                block_id,
-            })
-            .collect()
-    }
-
-    pub fn block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
-        self.cc.get_block_info(block_id)
-    }
-
-    pub fn find_related_blocks(
-        &self,
-        node: GraphNode,
-        relations: Vec<BlockRelation>,
-    ) -> Vec<GraphNode> {
-        if node.unit_index >= self.units.len() {
-            return Vec::new();
+        // Find calls within this function's children and link to callees
+        // Also populate type_deps and func_deps
+        for child_id in func.base.get_children() {
+            self.find_calls_recursive(unit, block_id, func, child_id);
         }
 
-        let unit = &self.units[node.unit_index];
-        let mut result = Vec::new();
+        // Add Uses/UsedBy edges for type dependencies
+        for type_id in func.get_type_deps() {
+            self.add_relation(block_id, BlockRelation::Uses, type_id);
+            self.add_relation(type_id, BlockRelation::UsedBy, block_id);
+        }
 
-        for relation in relations {
-            match relation {
-                BlockRelation::DependsOn => {
-                    let dependencies = unit
-                        .edges
-                        .get_related(node.block_id, BlockRelation::DependsOn);
-                    for dep_block_id in dependencies {
-                        let dep_unit_index = self
-                            .cc
-                            .get_block_info(dep_block_id)
-                            .map(|(idx, _, _)| idx)
-                            .unwrap_or(node.unit_index);
-                        result.push(GraphNode {
-                            unit_index: dep_unit_index,
-                            block_id: dep_block_id,
-                        });
-                    }
-                }
-                BlockRelation::DependedBy => {
-                    let mut seen = HashSet::new();
+        // Add Calls/CalledBy edges for type dependencies
+        for type_id in func.get_func_deps() {
+            self.add_relation(block_id, BlockRelation::Calls, type_id);
+            self.add_relation(type_id, BlockRelation::CalledBy, block_id);
+        }
+    }
 
-                    let dependents = unit
-                        .edges
-                        .get_related(node.block_id, BlockRelation::DependedBy);
-                    if !dependents.is_empty() {
-                        for dep_block_id in dependents {
-                            if !seen.insert(dep_block_id) {
-                                continue;
-                            }
-                            if let Some((dep_unit_idx, _, _)) = self.cc.get_block_info(dep_block_id)
-                            {
-                                result.push(GraphNode {
-                                    unit_index: dep_unit_idx,
-                                    block_id: dep_block_id,
-                                });
-                            } else {
-                                result.push(GraphNode {
-                                    unit_index: node.unit_index,
-                                    block_id: dep_block_id,
-                                });
-                            }
+    /// Recursively find call blocks and link them to this function as caller.
+    /// Also populates func_deps (free functions) and type_deps (static method receivers).
+    fn find_calls_recursive(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        caller_func_id: BlockId,
+        caller_func: &crate::block::BlockFunc<'tcx>,
+        block_id: BlockId,
+    ) {
+        let block = unit.bb(block_id);
+
+        if let BasicBlock::Call(call) = &block {
+            // Get the callee symbol to check its kind
+            if let Some(callee_sym) = call.base.node.ident_symbol(unit) {
+                let callee_kind = callee_sym.kind();
+
+                match callee_kind {
+                    crate::symbol::SymKind::Function => {
+                        // Free function call → add to func_deps
+                        if let Some(callee_block_id) = callee_sym.block_id() {
+                            caller_func.add_func_dep(callee_block_id);
+                            // Also establish caller-callee relation
+                            self.add_relation(
+                                caller_func_id,
+                                BlockRelation::Calls,
+                                callee_block_id,
+                            );
+                            self.add_relation(
+                                callee_block_id,
+                                BlockRelation::CalledBy,
+                                caller_func_id,
+                            );
                         }
                     }
-
-                    let local_dependents = unit
-                        .edges
-                        .find_reverse_relations(node.block_id, BlockRelation::DependsOn);
-                    for dep_block_id in local_dependents {
-                        if !seen.insert(dep_block_id) {
-                            continue;
+                    crate::symbol::SymKind::Method => {
+                        // Method call → check if it has a type receiver (Foo::method)
+                        // The type is tracked via type_of on the callee symbol
+                        if let Some(type_sym_id) = callee_sym.type_of()
+                            && let Some(type_sym) = self.cc.opt_get_symbol(type_sym_id)
+                            && let Some(type_block_id) = type_sym.block_id()
+                        {
+                            caller_func.add_type_dep(type_block_id);
                         }
-                        result.push(GraphNode {
-                            unit_index: node.unit_index,
-                            block_id: dep_block_id,
-                        });
+                        // Establish caller-callee relation for methods too
+                        if let Some(callee_block_id) = callee_sym.block_id() {
+                            self.add_relation(
+                                caller_func_id,
+                                BlockRelation::Calls,
+                                callee_block_id,
+                            );
+                            self.add_relation(
+                                callee_block_id,
+                                BlockRelation::CalledBy,
+                                caller_func_id,
+                            );
+                        }
+                    }
+                    _ => {
+                        // Other kinds (e.g., Struct for associated functions like Foo::new)
+                        // Add type to type_deps
+                        if let Some(callee_block_id) = callee_sym.block_id()
+                            && (callee_kind == crate::symbol::SymKind::Struct
+                                || callee_kind == crate::symbol::SymKind::Enum)
+                        {
+                            caller_func.add_type_dep(callee_block_id);
+                        }
                     }
                 }
-                BlockRelation::Unknown => {}
             }
         }
 
-        result
-    }
-
-    pub fn find_dpends_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
-        let mut visited = HashSet::new();
-        let mut stack = vec![node];
-        let relations = vec![BlockRelation::DependsOn];
-
-        while let Some(current) = stack.pop() {
-            if visited.contains(&current) {
-                continue;
-            }
-            visited.insert(current);
-
-            for related in self.find_related_blocks(current, relations.clone()) {
-                if !visited.contains(&related) {
-                    stack.push(related);
-                }
-            }
-        }
-
-        visited.remove(&node);
-        visited
-    }
-
-    pub fn find_depended_blocks_recursive(&self, node: GraphNode) -> HashSet<GraphNode> {
-        let mut visited = HashSet::new();
-        let mut stack = vec![node];
-        let relations = vec![BlockRelation::DependedBy];
-
-        while let Some(current) = stack.pop() {
-            if visited.contains(&current) {
-                continue;
-            }
-            visited.insert(current);
-
-            for related in self.find_related_blocks(current, relations.clone()) {
-                if !visited.contains(&related) {
-                    stack.push(related);
-                }
-            }
-        }
-
-        visited.remove(&node);
-        visited
-    }
-
-    pub fn traverse_bfs<F>(&self, start: GraphNode, mut callback: F)
-    where
-        F: FnMut(GraphNode),
-    {
-        let mut visited = HashSet::new();
-        let mut queue = vec![start];
-        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
-
-        while !queue.is_empty() {
-            let current = queue.remove(0);
-            if visited.contains(&current) {
-                continue;
-            }
-            visited.insert(current);
-            callback(current);
-
-            for related in self.find_related_blocks(current, relations.clone()) {
-                if !visited.contains(&related) {
-                    queue.push(related);
-                }
-            }
+        // Recurse into children
+        for child_id in block.children() {
+            self.find_calls_recursive(unit, caller_func_id, caller_func, child_id);
         }
     }
 
-    pub fn traverse_dfs<F>(&self, start: GraphNode, mut callback: F)
-    where
-        F: FnMut(GraphNode),
-    {
-        let mut visited = HashSet::new();
-        self.traverse_dfs_impl(start, &mut visited, &mut callback);
-    }
-
-    fn traverse_dfs_impl<F>(
+    /// Link struct/class relationships.
+    fn link_class(
         &self,
-        node: GraphNode,
-        visited: &mut HashSet<GraphNode>,
-        callback: &mut F,
-    ) where
-        F: FnMut(GraphNode),
-    {
-        if visited.contains(&node) {
+        _unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        class: &crate::block::BlockClass<'tcx>,
+    ) {
+        // Fields
+        for field_id in class.get_fields() {
+            self.add_relation(block_id, BlockRelation::HasField, field_id);
+            self.add_relation(field_id, BlockRelation::FieldOf, block_id);
+        }
+
+        // Methods
+        for method_id in class.get_methods() {
+            self.add_relation(block_id, BlockRelation::HasMethod, method_id);
+            self.add_relation(method_id, BlockRelation::MethodOf, block_id);
+        }
+        // Note: Field type argument edges (e.g., User -> Triple for `data: Triple<User>`)
+        // are created during graph_render edge collection from field.symbol.nested_types
+    }
+
+    /// Link impl block relationships.
+    fn link_impl(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        impl_block: &crate::block::BlockImpl<'tcx>,
+    ) {
+        // Methods
+        for method_id in impl_block.get_methods() {
+            self.add_relation(block_id, BlockRelation::HasMethod, method_id);
+            self.add_relation(method_id, BlockRelation::MethodOf, block_id);
+        }
+
+        // Target type - resolve from symbol if block_id wasn't available during building
+        let target_id = impl_block
+            .get_target()
+            .or_else(|| impl_block.target_sym.and_then(|sym| sym.block_id()));
+        if let Some(target_id) = target_id {
+            impl_block.set_target(target_id);
+            self.add_relation(block_id, BlockRelation::ImplFor, target_id);
+            self.add_relation(target_id, BlockRelation::HasImpl, block_id);
+
+            // Populate type_deps from the target symbol's nested_types
+            // These were set during binding from impl's trait type arguments (e.g., User from `impl Repository<User>`)
+            // Note: target_sym may be a local symbol with type_of pointing to actual struct, so we get
+            // nested_types from target_sym but add type_deps to the actual target block
+            if let Some(target_sym) = impl_block.target_sym
+                && let Some(nested_types) = target_sym.nested_types()
+            {
+                let target_block = unit.bb(target_id);
+                if let Some(base) = target_block.base() {
+                    for type_id in nested_types {
+                        // Follow type_of chain to get actual type symbol
+                        let type_sym = unit.opt_get_symbol(type_id).and_then(|sym| {
+                            sym.type_of()
+                                .and_then(|id| unit.opt_get_symbol(id))
+                                .or(Some(sym))
+                        });
+                        if let Some(type_sym) = type_sym
+                            && let Some(type_block_id) = type_sym.block_id()
+                        {
+                            base.type_deps.write().insert(type_block_id);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Trait reference - resolve from symbol if block_id wasn't available during building
+        let trait_id = impl_block
+            .get_trait_ref()
+            .or_else(|| impl_block.trait_sym.and_then(|sym| sym.block_id()));
+        if let Some(trait_id) = trait_id {
+            impl_block.set_trait_ref(trait_id);
+            self.add_relation(block_id, BlockRelation::Implements, trait_id);
+            self.add_relation(trait_id, BlockRelation::ImplementedBy, block_id);
+        }
+    }
+
+    /// Link trait relationships.
+    fn link_trait(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        trait_block: &crate::block::BlockTrait<'tcx>,
+    ) {
+        // Methods
+        for method_id in trait_block.get_methods() {
+            self.add_relation(block_id, BlockRelation::HasMethod, method_id);
+            self.add_relation(method_id, BlockRelation::MethodOf, block_id);
+        }
+
+        // Type parameter bounds: for `trait Foo<T: Bar>`, create edge Bar -> Foo
+        // Bar (bound) is used by Foo (this trait)
+        if let Some(trait_sym) = trait_block.base.symbol
+            && let Some(scope_id) = trait_sym.opt_scope()
+        {
+            let scope = unit.get_scope(scope_id);
+            // Look for type parameters in the trait's scope
+            scope.for_each_symbol(|sym| {
+                if sym.kind() == crate::symbol::SymKind::TypeParameter {
+                    // Get the bound trait from type_of
+                    if let Some(bound_id) = sym.type_of()
+                        && let Some(bound_sym) = unit.opt_get_symbol(bound_id)
+                        && let Some(bound_block_id) = bound_sym.block_id()
+                    {
+                        // Create edge: bound --UsedBy--> this_trait
+                        // This means: bound is used by this_trait (as a type parameter constraint)
+                        self.add_relation(bound_block_id, BlockRelation::UsedBy, block_id);
+                        self.add_relation(block_id, BlockRelation::Uses, bound_block_id);
+                    }
+                }
+            });
+        }
+    }
+
+    /// Link enum relationships.
+    fn link_enum(
+        &self,
+        _unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        enum_block: &crate::block::BlockEnum<'tcx>,
+    ) {
+        // Variants are like fields
+        for variant_id in enum_block.get_variants() {
+            self.add_relation(block_id, BlockRelation::HasField, variant_id);
+            self.add_relation(variant_id, BlockRelation::FieldOf, block_id);
+        }
+        // Note: Variant type argument edges are created during graph_render edge collection
+    }
+
+    /// Link call site relationships.
+    fn link_call(
+        &self,
+        _unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        call: &crate::block::BlockCall<'tcx>,
+    ) {
+        // Link call site to callee
+        // Already set by graph_builder when creating BlockCall
+        if let Some(callee_id) = call.get_callee() {
+            self.add_relation(block_id, BlockRelation::Calls, callee_id);
+            self.add_relation(callee_id, BlockRelation::CalledBy, block_id);
+        }
+    }
+
+    /// Link return type relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
+    fn link_return(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        ret: &crate::block::BlockReturn<'tcx>,
+    ) {
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = ret.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
             return;
         }
-        visited.insert(node);
-        callback(node);
 
-        let relations = vec![BlockRelation::DependsOn, BlockRelation::DependedBy];
-        for related in self.find_related_blocks(node, relations) {
-            if !visited.contains(&related) {
-                self.traverse_dfs_impl(related, visited, callback);
-            }
+        // Fallback: resolve via symbol (handles cross-file references)
+        let type_id = self.resolve_type_ref(unit, &ret.base);
+
+        if let Some(type_id) = type_id {
+            // Update the block's type_ref so rendering shows the correct reference
+            ret.set_type_ref(type_id);
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         }
     }
 
-    pub fn get_block_depends(&self, node: GraphNode) -> HashSet<GraphNode> {
-        if node.unit_index >= self.units.len() {
-            return HashSet::new();
+    /// Link parameter type relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
+    fn link_parameter(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        param: &crate::block::BlockParameter<'tcx>,
+    ) {
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = param.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+            return;
         }
 
-        let unit = &self.units[node.unit_index];
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut stack = vec![node.block_id];
+        // Fallback: resolve via symbol (handles cross-file references)
+        let type_id = self.resolve_type_ref(unit, &param.base);
 
-        while let Some(current_block) = stack.pop() {
-            if visited.contains(&current_block) {
-                continue;
-            }
-            visited.insert(current_block);
-
-            let dependencies = unit
-                .edges
-                .get_related(current_block, BlockRelation::DependsOn);
-            for dep_block_id in dependencies {
-                if dep_block_id != node.block_id {
-                    let dep_unit_index = self
-                        .cc
-                        .get_block_info(dep_block_id)
-                        .map(|(idx, _, _)| idx)
-                        .unwrap_or(node.unit_index);
-                    result.insert(GraphNode {
-                        unit_index: dep_unit_index,
-                        block_id: dep_block_id,
-                    });
-                    stack.push(dep_block_id);
-                }
-            }
+        if let Some(type_id) = type_id {
+            // Update the block's type_ref so rendering shows the correct reference
+            param.set_type_ref(type_id);
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
         }
-
-        result
     }
 
-    pub fn get_block_depended(&self, node: GraphNode) -> HashSet<GraphNode> {
-        if node.unit_index >= self.units.len() {
-            return HashSet::new();
-        }
+    /// Link field relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
+    fn link_field(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        field: &crate::block::BlockField<'tcx>,
+    ) {
+        // Link type reference
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = field.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+        } else {
+            // Fallback: resolve via symbol (handles cross-file references)
+            let type_id = self.resolve_type_ref(unit, &field.base);
 
-        let unit = &self.units[node.unit_index];
-        let mut result = HashSet::new();
-        let mut visited = HashSet::new();
-        let mut stack = vec![node.block_id];
-
-        while let Some(current_block) = stack.pop() {
-            if visited.contains(&current_block) {
-                continue;
-            }
-            visited.insert(current_block);
-
-            let dependencies = unit
-                .edges
-                .get_related(current_block, BlockRelation::DependedBy);
-            for dep_block_id in dependencies {
-                if dep_block_id != node.block_id {
-                    let dep_unit_index = self
-                        .cc
-                        .get_block_info(dep_block_id)
-                        .map(|(idx, _, _)| idx)
-                        .unwrap_or(node.unit_index);
-                    result.insert(GraphNode {
-                        unit_index: dep_unit_index,
-                        block_id: dep_block_id,
-                    });
-                    stack.push(dep_block_id);
-                }
+            if let Some(type_id) = type_id {
+                // Update the block's type_ref so rendering shows the correct reference
+                field.set_type_ref(type_id);
+                self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+                self.add_relation(type_id, BlockRelation::TypeFor, block_id);
             }
         }
 
-        result
+        // Link nested fields (for enum variants with struct-like fields)
+        for child_id in field.base.get_children() {
+            self.add_relation(block_id, BlockRelation::HasField, child_id);
+            self.add_relation(child_id, BlockRelation::FieldOf, block_id);
+        }
     }
-}
 
-fn compact_byte_to_line(content: &[u8], byte_pos: usize) -> usize {
-    let clamped = byte_pos.min(content.len());
-    content[..clamped].iter().filter(|&&ch| ch == b'\n').count() + 1
+    /// Link const relationships (type annotation).
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
+    fn link_const(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        const_block: &crate::block::BlockConst<'tcx>,
+    ) {
+        // First try the block's type_ref directly (set during block building)
+        if let Some(type_id) = const_block.get_type_ref() {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+            return;
+        }
+
+        // Fallback: resolve via symbol (handles cross-file references)
+        let type_id = self.resolve_type_ref(unit, &const_block.base);
+
+        if let Some(type_id) = type_id {
+            // Update the block's type_ref so rendering shows the correct reference
+            const_block.set_type_ref(type_id);
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+        }
+    }
+
+    /// Link type alias relationships.
+    /// Uses symbol.type_of() chain for cross-file safe lookup.
+    fn link_alias(
+        &self,
+        unit: &CompileUnit<'tcx>,
+        block_id: BlockId,
+        alias: &crate::block::BlockAlias<'tcx>,
+    ) {
+        // Try symbol.type_of() chain first (cross-file safe)
+        let type_id = self.resolve_type_ref(unit, &alias.base);
+
+        if let Some(type_id) = type_id {
+            self.add_relation(block_id, BlockRelation::TypeOf, type_id);
+            self.add_relation(type_id, BlockRelation::TypeFor, block_id);
+        }
+    }
+
+    /// Resolve type reference from a block's symbol.type_of() chain.
+    /// This is cross-file safe since binding already resolved the types.
+    fn resolve_type_ref(
+        &self,
+        _unit: &CompileUnit<'tcx>,
+        base: &crate::block::BlockBase<'tcx>,
+    ) -> Option<BlockId> {
+        // Use symbol.type_of() chain (cross-file safe)
+        if let Some(sym) = base.symbol() {
+            if let Some(type_of_id) = sym.type_of()
+                && let Some(type_sym) = self.cc.opt_get_symbol(type_of_id)
+            {
+                return type_sym.block_id();
+            }
+            // If symbol IS the type (no type_of), use its own block_id
+            // Type kinds include: Struct, Enum, Trait, TypeAlias, Primitive, etc.
+            if crate::symbol::SymKind::type_kinds().contains(&sym.kind()) {
+                return sym.block_id();
+            }
+        }
+        None
+    }
 }

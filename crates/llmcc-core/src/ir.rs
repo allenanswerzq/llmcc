@@ -132,12 +132,9 @@ impl<'hir> HirNode<'hir> {
     }
 
     pub fn child_by_kind(&self, unit: &CompileUnit<'hir>, kind_id: u16) -> Option<HirNode<'hir>> {
-        for child in self.children(unit) {
-            if child.kind_id() == kind_id {
-                return Some(child);
-            }
-        }
-        None
+        self.children(unit)
+            .into_iter()
+            .find(|&child| child.kind_id() == kind_id)
     }
 
     /// Returns the symbol referenced by the identifier within a specific child field.
@@ -198,7 +195,21 @@ impl<'hir> HirNode<'hir> {
         None
     }
 
+    /// Find the first text node's content in children (for keywords like "self").
+    pub fn find_text(&self, unit: &CompileUnit<'hir>) -> Option<&str> {
+        for child in self.children(unit) {
+            if child.is_kind(HirKind::Text)
+                && let Some(text) = child.as_text()
+            {
+                return Some(text.text());
+            }
+        }
+        None
+    }
+
     /// Find identifier for the first child with a matching field ID.
+    /// For scoped types like `crate::module::Type`, returns `Type` (the direct type_identifier child).
+    /// For generic types like `Repository<User>`, recurses into the type child to get `Repository`.
     pub fn ident_by_field(
         &self,
         unit: &CompileUnit<'hir>,
@@ -207,7 +218,32 @@ impl<'hir> HirNode<'hir> {
         debug_assert!(!self.is_kind(HirKind::Identifier));
         for child in self.children(unit) {
             if child.field_id() == field_id {
-                return child.find_ident(unit);
+                return Self::find_type_ident(&child, unit);
+            }
+        }
+        None
+    }
+
+    /// Find the type identifier from a node, handling scoped and generic types correctly.
+    /// Looks for direct identifier children first, then recurses into the first internal child.
+    fn find_type_ident(
+        node: &HirNode<'hir>,
+        unit: &CompileUnit<'hir>,
+    ) -> Option<&'hir HirIdent<'hir>> {
+        if node.is_kind(HirKind::Identifier) {
+            return node.as_ident();
+        }
+        // First pass: look for direct identifier children
+        for child in node.children(unit) {
+            if child.is_kind(HirKind::Identifier) {
+                return child.as_ident();
+            }
+        }
+        // Second pass: recurse into the FIRST internal child only (e.g., generic_type → type child)
+        // This avoids recursing into type_arguments which would give wrong results
+        for child in node.children(unit) {
+            if child.is_kind(HirKind::Internal) {
+                return Self::find_type_ident(&child, unit);
             }
         }
         None
@@ -331,6 +367,54 @@ impl<'hir> HirNode<'hir> {
     /// Check if node is trivia (whitespace, comment, etc.)
     pub fn is_trivia(&self) -> bool {
         matches!(self.kind(), HirKind::Text | HirKind::Comment)
+    }
+
+    /// Set the block ID on the symbol associated with this node.
+    /// Works for both HirScope (gets symbol from scope) and HirIdent (has direct symbol).
+    /// Does nothing if no symbol is associated or if the symbol is a primitive (shared globally).
+    pub fn set_block_id(&self, block_id: crate::block::BlockId) {
+        use crate::symbol::SymKind;
+        // Try HirScope first
+        if let Some(scope) = self.as_scope() {
+            // First try scope's symbol
+            if let Some(symbol) = scope.opt_symbol() {
+                // Don't set block_id on primitives - they are shared globally
+                if symbol.kind() != SymKind::Primitive {
+                    symbol.set_block_id(block_id);
+                }
+                return;
+            }
+            // If no scope symbol, try the scope's ident (for type aliases, etc.)
+            if let Some(ident) = scope.opt_ident()
+                && let Some(symbol) = ident.opt_symbol()
+            {
+                if symbol.kind() != SymKind::Primitive {
+                    symbol.set_block_id(block_id);
+                }
+                return;
+            }
+        }
+        // Try HirIdent
+        if let Some(ident) = self.as_ident()
+            && let Some(symbol) = ident.opt_symbol()
+        {
+            // Don't set block_id on primitives - they are shared globally
+            if symbol.kind() != SymKind::Primitive {
+                symbol.set_block_id(block_id);
+            }
+        }
+    }
+
+    /// Get the symbol associated with this node if any.
+    /// Works for both HirScope and HirIdent nodes.
+    pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
+        if let Some(scope) = self.as_scope() {
+            return scope.opt_symbol();
+        }
+        if let Some(ident) = self.as_ident() {
+            return ident.opt_symbol();
+        }
+        None
     }
 }
 
@@ -491,7 +575,7 @@ impl<'hir> HirScope<'hir> {
     }
 
     pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
-        self.scope().opt_symbol()
+        self.opt_scope().and_then(|scope| scope.opt_symbol())
     }
 }
 

@@ -1,0 +1,20 @@
+===============================================================================
+generic-structs
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+struct A<B> {}
+struct C<'a, 'b> {}
+struct C<'a,> {}
+struct D<const SIZE: usize> {}
+struct E<#[attr] T> {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (class:2 A)
+  (class:3 C)
+  (class:4 C)
+  (class:5 D)
+  (class:6 E)
+)

@@ -1,0 +1,23 @@
+===============================================================================
+trait-impls
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+impl<'a> iter::Iterator for Self::Iter<'a> {
+}
+
+impl ConvertTo<i64> for i32 {
+    fn convert(&self) -> i64 { *self as i64 }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (impl:2 Self)
+  (impl:3 i32
+    (method:4 convert
+      (parameter:5 self)
+      (return:6 @type i64)
+    )
+  )
+)

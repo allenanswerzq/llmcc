@@ -1,0 +1,18 @@
+===============================================================================
+function-parameter-names-that-match-built-in-type-names
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+fn foo(str: *const c_char) {}
+fn bar(bool: bool) {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 foo
+    (parameter:3 str @type str)
+  )
+  (func:4 bar
+    (parameter:5 bool @type bool)
+  )
+)

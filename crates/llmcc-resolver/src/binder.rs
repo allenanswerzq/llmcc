@@ -190,8 +190,35 @@ impl<'a> BinderScopes<'a> {
         member_name: &str,
         kind_filter: Option<SymKind>,
     ) -> Option<&'a Symbol> {
-        tracing::trace!("looking up member '{}' in type scope", member_name);
-        let scope_id = obj_type_symbol.opt_scope()?;
+        tracing::trace!(
+            "lookup_member_symbol: '{}' in {:?} (kind={:?})",
+            member_name,
+            obj_type_symbol.name,
+            obj_type_symbol.kind()
+        );
+
+        // For TypeAlias (like Self), follow type_of to get the actual type
+        let effective_symbol = if obj_type_symbol.kind() == SymKind::TypeAlias {
+            if let Some(type_of_id) = obj_type_symbol.type_of() {
+                let resolved = self
+                    .unit
+                    .cc
+                    .opt_get_symbol(type_of_id)
+                    .unwrap_or(obj_type_symbol);
+                tracing::trace!(
+                    "  -> followed type_of to {:?} (kind={:?})",
+                    resolved.name,
+                    resolved.kind()
+                );
+                resolved
+            } else {
+                obj_type_symbol
+            }
+        } else {
+            obj_type_symbol
+        };
+
+        let scope_id = effective_symbol.opt_scope()?;
         let scope = self.unit.get_scope(scope_id);
 
         // Create isolated scope stack for member lookup to avoid falling back to lexical scopes

@@ -1,0 +1,32 @@
+===============================================================================
+generic-associated-types
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+pub trait Database {
+    type F<'a, D>: Future<Output = D> + 'a;
+}
+
+impl Database for Foo {
+    type F<'a, D> = DatabaseFuture<'a, D>;
+}
+
+fn use_database1<D: Database<F<'a, TD> = F>>() {}
+
+fn use_database2<D>()
+where
+    D: Database<F<'a, TD> = F>,
+{}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 Database
+    (alias:3 F)
+  )
+  (impl:4 Foo @trait:2
+    (alias:5 F)
+  )
+  (func:6 use_database1)
+  (func:7 use_database2)
+)

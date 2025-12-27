@@ -17,9 +17,6 @@ use crate::interner::InternedStr;
 use crate::ir::HirId;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-#[cfg(test)]
-use crate::interner::InternPool;
-
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
 static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(0);
@@ -103,7 +100,19 @@ impl SymKind {
         matches!(self, SymKind::Const | SymKind::Static)
     }
 
-    /// Checks if the symbol kind represents a type definition.
+    /// Checks if the symbol kind represents a user-defined type (struct, enum, trait, type alias).
+    /// These are types that are explicitly defined in user code, not primitives or generics.
+    /// Checks if the symbol kind represents a user-defined type.
+    /// These are types that appear in type annotations and can have impl blocks.
+    pub fn is_defined_type(&self) -> bool {
+        matches!(
+            self,
+            SymKind::Struct | SymKind::Enum | SymKind::Trait | SymKind::TypeAlias
+        )
+    }
+
+    /// Returns kinds that can be looked up as types in type annotations.
+    /// Used for resolving type references in function signatures, fields, etc.
     pub fn type_kinds() -> Vec<SymKind> {
         vec![
             SymKind::Struct,
@@ -117,13 +126,17 @@ impl SymKind {
             SymKind::CompositeType,
             SymKind::TypeAlias,
             SymKind::Namespace,
+            SymKind::TypeParameter,
         ]
     }
 
-    pub fn trait_kinds() -> Vec<SymKind> {
+    /// Returns kinds that can be targets of impl blocks (impl X for Target).
+    /// In Rust, you can impl traits for structs and enums.
+    pub fn impl_target_kinds() -> Vec<SymKind> {
         vec![SymKind::Struct, SymKind::Enum]
     }
 
+    /// Returns kinds that can be called like functions.
     pub fn callable_kinds() -> Vec<SymKind> {
         vec![
             SymKind::Struct,

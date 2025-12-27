@@ -1,0 +1,128 @@
+===============================================================================
+enum-with-generic-variants
+===============================================================================
+Test enums with generic type parameters in variants.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod containers;
+
+--- file: sample/src/types.rs ---
+pub struct User {
+    pub id: u64,
+}
+
+pub struct Error {
+    pub code: i32,
+}
+
+pub struct Config {
+    pub key: String,
+}
+
+--- file: sample/src/containers.rs ---
+use crate::types::{User, Error, Config};
+
+pub enum Option<T> {
+    Some(T),
+    None,
+}
+
+pub enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+// Concrete uses of generic enums
+pub struct UserOption {
+    pub user: Option<User>,
+}
+
+pub struct UserResult {
+    pub result: Result<User, Error>,
+}
+
+pub struct ConfigResult {
+    pub config: Result<Config, Error>,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 User
+    (field:4 id @type u64)
+  )
+  (class:5 Error
+    (field:6 code @type i32)
+  )
+  (class:7 Config
+    (field:8 key @type String)
+  )
+)
+
+(root:9 containers ($TMP/sample/src/containers.rs)
+  (enum:10 Option
+    (field:11 Some @type:10 Some
+      (field:12 0 @type T)
+    )
+    (field:13 None @type:10 None)
+  )
+  (enum:14 Result
+    (field:15 Ok @type:14 Ok
+      (field:16 0 @type T)
+    )
+    (field:17 Err @type:14 Err
+      (field:18 0 @type E)
+    )
+  )
+  (class:19 UserOption
+    (field:20 user @type:10 Option)
+  )
+  (class:21 UserResult
+    (field:22 result @type:14 Result)
+  )
+  (class:23 ConfigResult
+    (field:24 config @type:14 Result)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_containers_rs {
+        label="containers.rs";
+        n19[label="UserOption", full_path="$TMP/sample/src/containers.rs:14", sym_ty="Struct", shape=box];
+        n21[label="UserResult", full_path="$TMP/sample/src/containers.rs:18", sym_ty="Struct", shape=box];
+        n23[label="ConfigResult", full_path="$TMP/sample/src/containers.rs:22", sym_ty="Struct", shape=box];
+        n10[label="Option", full_path="$TMP/sample/src/containers.rs:3", sym_ty="Enum", shape=box];
+        n14[label="Result", full_path="$TMP/sample/src/containers.rs:8", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+        n7[label="Config", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n10 [from="type_arg", to="generic"];
+  n3 -> n14 [from="type_arg", to="generic"];
+  n5 -> n14 [from="type_arg", to="generic"];
+  n7 -> n14 [from="type_arg", to="generic"];
+  n10 -> n19 [from="field_type", to="struct"];
+  n14 -> n21 [from="field_type", to="struct"];
+  n14 -> n23 [from="field_type", to="struct"];
+}

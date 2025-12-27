@@ -1,0 +1,224 @@
+===============================================================================
+shared-types-crate
+===============================================================================
+Multiple crates sharing a common types crate.
+
+--- file: Cargo.toml ---
+[workspace]
+members = ["types", "auth", "store"]
+
+--- file: types/Cargo.toml ---
+[package]
+name = "types"
+version = "0.1.0"
+
+--- file: types/src/lib.rs ---
+pub mod common;
+
+--- file: types/src/common.rs ---
+pub struct UserId(pub u64);
+
+pub struct Email(pub String);
+
+pub struct User {
+    pub id: UserId,
+    pub email: Email,
+}
+
+pub enum AuthError {
+    InvalidCredentials,
+    Expired,
+    Forbidden,
+}
+
+pub enum StoreError {
+    NotFound,
+    Conflict,
+    Internal,
+}
+
+--- file: auth/Cargo.toml ---
+[package]
+name = "auth"
+version = "0.1.0"
+
+[dependencies]
+types = { path = "../types" }
+
+--- file: auth/src/lib.rs ---
+pub mod auth;
+
+--- file: auth/src/auth.rs ---
+use types::common::{User, UserId, AuthError};
+
+pub struct Session {
+    pub user: User,
+    pub token: String,
+}
+
+pub fn authenticate(user_id: UserId, password: String) -> Result<Session, AuthError> {
+    Err(AuthError::InvalidCredentials)
+}
+
+pub fn validate_session(session: Session) -> Result<User, AuthError> {
+    Ok(session.user)
+}
+
+--- file: store/Cargo.toml ---
+[package]
+name = "store"
+version = "0.1.0"
+
+[dependencies]
+types = { path = "../types" }
+
+--- file: store/src/lib.rs ---
+pub mod repository;
+
+--- file: store/src/repository.rs ---
+use types::common::{User, UserId, StoreError};
+
+pub trait UserStore {
+    fn get(&self, id: UserId) -> Result<User, StoreError>;
+    fn save(&self, user: User) -> Result<User, StoreError>;
+    fn delete(&self, id: UserId) -> Result<(), StoreError>;
+}
+
+pub fn find_user(id: UserId) -> Result<User, StoreError> {
+    Err(StoreError::NotFound)
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/types/src/lib.rs))
+
+(root:2 common ($TMP/types/src/common.rs)
+  (class:3 UserId
+    (field:4 0 @type u64)
+  )
+  (class:5 Email
+    (field:6 0 @type String)
+  )
+  (class:7 User
+    (field:8 id @type:3 UserId)
+    (field:9 email @type:5 Email)
+  )
+  (enum:10 AuthError
+    (field:11 InvalidCredentials @type:10 InvalidCredentials)
+    (field:12 Expired @type:10 Expired)
+    (field:13 Forbidden @type:10 Forbidden)
+  )
+  (enum:14 StoreError
+    (field:15 NotFound @type:14 NotFound)
+    (field:16 Conflict @type:14 Conflict)
+    (field:17 Internal @type:14 Internal)
+  )
+)
+
+(root:18 lib ($TMP/auth/src/lib.rs))
+
+(root:19 auth ($TMP/auth/src/auth.rs)
+  (class:20 Session
+    (field:21 user @type:7 User)
+    (field:22 token @type String)
+  )
+  (func:23 authenticate
+    (parameter:24 user_id @type:3 UserId)
+    (parameter:25 password @type String)
+    (return:26)
+    (@tdep:10 AuthError)
+    (@tdep:20 Session)
+  )
+  (func:28 validate_session
+    (parameter:29 session @type:20 Session)
+    (return:30)
+    (@tdep:7 User)
+    (@tdep:10 AuthError)
+  )
+)
+
+(root:32 lib ($TMP/store/src/lib.rs))
+
+(root:33 repository ($TMP/store/src/repository.rs)
+  (trait:34 UserStore
+    (method:35 get
+      (parameter:36 self @type:34 UserStore)
+      (parameter:37 id @type:3 UserId)
+      (return:38)
+      (@tdep:7 User)
+      (@tdep:14 StoreError)
+    )
+    (method:39 save
+      (parameter:40 self @type:34 UserStore)
+      (parameter:41 user @type:7 User)
+      (return:42)
+      (@tdep:7 User)
+      (@tdep:14 StoreError)
+    )
+    (method:43 delete
+      (parameter:44 self @type:34 UserStore)
+      (parameter:45 id @type:3 UserId)
+      (return:46)
+      (@tdep:14 StoreError)
+    )
+  )
+  (func:47 find_user
+    (parameter:48 id @type:3 UserId)
+    (return:49)
+    (@tdep:7 User)
+    (@tdep:14 StoreError)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_auth {
+      label="auth";
+      subgraph cluster_auth_rs {
+        label="auth.rs";
+        n28[label="validate_session", full_path="$TMP/auth/src/auth.rs:12", sym_ty="Function"];
+        n20[label="Session", full_path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
+        n23[label="authenticate", full_path="$TMP/auth/src/auth.rs:8", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_store {
+      label="store";
+      subgraph cluster_repository_rs {
+        label="repository.rs";
+        n47[label="find_user", full_path="$TMP/store/src/repository.rs:9", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_types {
+      label="types";
+      subgraph cluster_common_rs {
+        label="common.rs";
+        n3[label="UserId", full_path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
+        n10[label="AuthError", full_path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
+        n14[label="StoreError", full_path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
+        n5[label="Email", full_path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
+        n7[label="User", full_path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n7 [from="field_type", to="struct"];
+  n3 -> n23 [from="input", to="func"];
+  n3 -> n47 [from="input", to="func"];
+  n5 -> n7 [from="field_type", to="struct"];
+  n7 -> n20 [from="field_type", to="struct"];
+  n20 -> n28 [from="input", to="func"];
+  n23 -> n10 [from="func", to="type_dep"];
+  n23 -> n20 [from="func", to="type_dep"];
+  n28 -> n7 [from="func", to="type_dep"];
+  n28 -> n10 [from="func", to="type_dep"];
+  n47 -> n7 [from="func", to="type_dep"];
+  n47 -> n14 [from="func", to="type_dep"];
+}

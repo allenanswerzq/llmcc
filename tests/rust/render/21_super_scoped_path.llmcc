@@ -1,0 +1,49 @@
+===============================================================================
+super-scoped-path
+===============================================================================
+Uses super:: prefix for parent module paths.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+pub struct Base {
+    pub id: u32,
+}
+
+mod inner {
+    pub struct Child {
+        pub base: super::Base,
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Base
+    (field:3 id @type u32)
+  )
+  (class:4 Child
+    (field:5 base @type:2 Base)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="Base", full_path="$TMP/sample/src/lib.rs:1", sym_ty="Struct", shape=box];
+        n4[label="Child", full_path="$TMP/sample/src/lib.rs:6", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n2 -> n4 [from="field_type", to="struct"];
+}

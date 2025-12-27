@@ -1,0 +1,123 @@
+===============================================================================
+enum-state-machine
+===============================================================================
+Test enums used as a state machine pattern with transitions.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod state;
+
+--- file: sample/src/types.rs ---
+pub struct Order {
+    pub id: u64,
+}
+
+pub struct Payment {
+    pub amount: f64,
+}
+
+pub struct Shipment {
+    pub tracking: String,
+}
+
+pub struct Cancellation {
+    pub reason: String,
+}
+
+--- file: sample/src/state.rs ---
+use crate::types::{Order, Payment, Shipment, Cancellation};
+
+pub enum OrderState {
+    Created { order: Order },
+    Paid { order: Order, payment: Payment },
+    Shipped { order: Order, shipment: Shipment },
+    Delivered { order: Order, shipment: Shipment },
+    Cancelled { order: Order, cancellation: Cancellation },
+}
+
+pub fn transition(state: OrderState) -> OrderState {
+    state
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 Order
+    (field:4 id @type u64)
+  )
+  (class:5 Payment
+    (field:6 amount @type f64)
+  )
+  (class:7 Shipment
+    (field:8 tracking @type String)
+  )
+  (class:9 Cancellation
+    (field:10 reason @type String)
+  )
+)
+
+(root:11 state ($TMP/sample/src/state.rs)
+  (enum:12 OrderState
+    (field:13 Created @type:12 Created
+      (field:14 order @type:3 Order)
+    )
+    (field:15 Paid @type:12 Paid
+      (field:16 order @type:3 Order)
+      (field:17 payment @type:5 Payment)
+    )
+    (field:18 Shipped @type:12 Shipped
+      (field:19 order @type:3 Order)
+      (field:20 shipment @type:7 Shipment)
+    )
+    (field:21 Delivered @type:12 Delivered
+      (field:22 order @type:3 Order)
+      (field:23 shipment @type:7 Shipment)
+    )
+    (field:24 Cancelled @type:12 Cancelled
+      (field:25 order @type:3 Order)
+      (field:26 cancellation @type:9 Cancellation)
+    )
+  )
+  (func:27 transition
+    (parameter:28 state @type:12 OrderState)
+    (return:29 @type:12 OrderState)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_state_rs {
+        label="state.rs";
+        n27[label="transition", full_path="$TMP/sample/src/state.rs:11", sym_ty="Function"];
+        n12[label="OrderState", full_path="$TMP/sample/src/state.rs:3", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="Order", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n9[label="Cancellation", full_path="$TMP/sample/src/types.rs:13", sym_ty="Struct", shape=box];
+        n5[label="Payment", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+        n7[label="Shipment", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n12 [from="field_type", to="enum"];
+  n5 -> n12 [from="field_type", to="enum"];
+  n7 -> n12 [from="field_type", to="enum"];
+  n9 -> n12 [from="field_type", to="enum"];
+  n12 -> n27 [from="input", to="func"];
+  n27 -> n12 [from="func", to="output"];
+}

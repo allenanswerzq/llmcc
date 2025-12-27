@@ -1,0 +1,63 @@
+===============================================================================
+cross-file-func-return
+===============================================================================
+Function in one file returns struct from another file.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod factory;
+
+--- file: sample/src/types.rs ---
+pub struct Config {
+    pub name: String,
+}
+
+--- file: sample/src/factory.rs ---
+use crate::types::Config;
+
+pub fn create_config() -> Config {
+    Config { name: "default".to_string() }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 Config
+    (field:4 name @type String)
+  )
+)
+
+(root:5 factory ($TMP/sample/src/factory.rs)
+  (func:6 create_config
+    (return:7 @type:3 Config)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_factory_rs {
+        label="factory.rs";
+        n6[label="create_config", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Function"];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="Config", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n6 -> n3 [from="func", to="output"];
+}

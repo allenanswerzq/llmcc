@@ -37,14 +37,14 @@ enum Command {
         #[command(flatten)]
         processing: ProcessingOptions,
     },
-    /// Run the entire corpus (optionally filtered by case id)
+    /// Run the entire corpus (optionally filtered by case id or directory)
     RunAll {
         /// Only run cases whose id contains this substring
         #[arg(long)]
         filter: Option<String>,
-        /// Optional positional filter (convenience)
-        #[arg(value_name = "FILTER", required = false)]
-        case: Option<String>,
+        /// Optional directory or filter string - if a directory, run all tests in it
+        #[arg(value_name = "DIR_OR_FILTER", required = false)]
+        dir_or_filter: Option<PathBuf>,
         /// Update expectation sections with current output (bless)
         #[arg(
             long,
@@ -80,7 +80,7 @@ fn main() -> Result<()> {
         } => run_single_command(cli.root, file, update, keep_temps, graph, processing),
         Command::RunAll {
             filter,
-            case,
+            dir_or_filter,
             update,
             keep_temps,
             graph,
@@ -91,9 +91,27 @@ fn main() -> Result<()> {
                 Some(value) => (true, Some(value)),
                 None => (false, None),
             };
-            let effective_filter = filter.or(case).or(update_filter);
+
+            // Determine if dir_or_filter is a directory or a filter string
+            let (effective_root, effective_filter) = if let Some(ref path) = dir_or_filter {
+                if path.is_dir() {
+                    // It's a directory - use it as root, no filter
+                    (path.clone(), filter.or(update_filter))
+                } else {
+                    // It's a filter string
+                    (
+                        cli.root,
+                        filter
+                            .or(path.to_string_lossy().to_string().into())
+                            .or(update_filter),
+                    )
+                }
+            } else {
+                (cli.root, filter.or(update_filter))
+            };
+
             run_all_command(
-                cli.root,
+                effective_root,
                 effective_filter,
                 should_update,
                 keep_temps,
@@ -125,7 +143,8 @@ fn run_all_command(
         },
     )?;
 
-    let summary = print_outcomes(&outcomes);
+    // Results are already printed inline by the runner
+    let summary = count_outcomes(&outcomes);
 
     if update {
         corpus.write_updates()?;
@@ -190,10 +209,11 @@ fn run_single_command(
         keep_temps,
         processing.parallel,
         processing.print_ir,
-        graph.component_depth,
+        graph.component_depth(),
         graph.pagerank_top_k,
     )?;
-    let summary = print_outcomes(&outcomes);
+    // Results are already printed inline by the runner
+    let summary = count_outcomes(&outcomes);
 
     if update {
         corpus.write_updates()?;
@@ -243,31 +263,14 @@ struct OutcomeSummary {
     skipped: usize,
 }
 
-fn print_outcomes(outcomes: &[CaseOutcome]) -> OutcomeSummary {
+fn count_outcomes(outcomes: &[CaseOutcome]) -> OutcomeSummary {
     let mut summary = OutcomeSummary::default();
     for outcome in outcomes {
         match outcome.status {
-            CaseStatus::Passed => {
-                summary.passed += 1;
-                println!("[PASS] {}", outcome.id);
-            }
-            CaseStatus::Updated => {
-                summary.updated += 1;
-                println!("[UPD ] {}", outcome.id);
-            }
-            CaseStatus::Failed => {
-                summary.failed += 1;
-                println!("[FAIL] {}", outcome.id);
-                if let Some(message) = &outcome.message {
-                    for line in message.lines() {
-                        println!("        {line}");
-                    }
-                }
-            }
-            CaseStatus::NoExpectations => {
-                summary.skipped += 1;
-                println!("[SKIP] {} (no expectations)", outcome.id);
-            }
+            CaseStatus::Passed => summary.passed += 1,
+            CaseStatus::Updated => summary.updated += 1,
+            CaseStatus::Failed => summary.failed += 1,
+            CaseStatus::NoExpectations => summary.skipped += 1,
         }
     }
     summary

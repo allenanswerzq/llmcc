@@ -1,0 +1,112 @@
+===============================================================================
+enum-in-function-signatures
+===============================================================================
+Test enums used in function parameters and return types.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod handlers;
+
+--- file: sample/src/types.rs ---
+pub struct User {
+    pub id: u64,
+}
+
+pub enum Status {
+    Active,
+    Inactive,
+}
+
+pub enum Response {
+    Success(User),
+    Error(String),
+}
+
+--- file: sample/src/handlers.rs ---
+use crate::types::{User, Status, Response};
+
+pub fn get_user_status(user: User) -> Status {
+    Status::Active
+}
+
+pub fn process_status(status: Status) -> Response {
+    Response::Success(User { id: 1 })
+}
+
+pub fn handle_response(response: Response) -> bool {
+    true
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 User
+    (field:4 id @type u64)
+  )
+  (enum:5 Status
+    (field:6 Active @type:5 Active)
+    (field:7 Inactive @type:5 Inactive)
+  )
+  (enum:8 Response
+    (field:9 Success @type:8 Success
+      (field:10 0 @type:3 User)
+    )
+    (field:11 Error @type:8 Error
+      (field:12 0 @type String)
+    )
+  )
+)
+
+(root:13 handlers ($TMP/sample/src/handlers.rs)
+  (func:14 get_user_status
+    (parameter:15 user @type:3 User)
+    (return:16 @type:5 Status)
+  )
+  (func:17 process_status
+    (parameter:18 status @type:5 Status)
+    (return:19 @type:8 Response)
+    (@tdep:8 Response)
+  )
+  (func:21 handle_response
+    (parameter:22 response @type:8 Response)
+    (return:23 @type bool)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_handlers_rs {
+        label="handlers.rs";
+        n21[label="handle_response", full_path="$TMP/sample/src/handlers.rs:11", sym_ty="Function"];
+        n14[label="get_user_status", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Function"];
+        n17[label="process_status", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Function"];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n8[label="Response", full_path="$TMP/sample/src/types.rs:10", sym_ty="Enum", shape=box];
+        n5[label="Status", full_path="$TMP/sample/src/types.rs:5", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n8 [from="field_type", to="enum"];
+  n3 -> n14 [from="input", to="func"];
+  n5 -> n17 [from="input", to="func"];
+  n8 -> n21 [from="input", to="func"];
+  n14 -> n5 [from="func", to="output"];
+  n17 -> n8 [from="func", to="output"];
+}

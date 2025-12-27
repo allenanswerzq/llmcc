@@ -1,0 +1,24 @@
+===============================================================================
+impls-with-default-functions
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+struct Foo;
+
+impl Foo {
+  const default fn bar() -> i32 {
+    // Make 'default' still works as an identifier
+    default.bar();
+  }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (class:2 Foo)
+  (impl:3 Foo @type:2
+    (method:4 bar
+      (return:5 @type i32)
+    )
+  )
+)
