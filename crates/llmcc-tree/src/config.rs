@@ -99,18 +99,21 @@ pub struct FieldTokenConfig {
     pub field_name: String,
     #[serde(default)]
     pub hir_kind: Option<String>,
+    #[serde(default)]
+    pub block_kind: Option<String>,
 }
 
 impl FieldTokenConfig {
     pub fn to_token(&self, language: Language, config: &TokenConfig) -> Result<TokenEntry> {
         let id = resolve_field_id(language, &self.field_name)?;
         let hir_kind = self.hir_kind.as_deref().unwrap_or(&config.default_hir_kind);
+        let block_kind = self.block_kind.as_deref().map(format_block);
         Ok(TokenEntry {
             name: self.name.clone(),
             kind_id: id,
             repr: self.field_name.clone(),
             hir_kind: format_hir(hir_kind),
-            block_kind: None,
+            block_kind,
         })
     }
 }

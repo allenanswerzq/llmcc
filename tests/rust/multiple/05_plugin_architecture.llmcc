@@ -1,0 +1,290 @@
+===============================================================================
+plugin-architecture
+===============================================================================
+Plugin architecture with core providing interfaces and plugins implementing them.
+
+--- file: Cargo.toml ---
+[workspace]
+members = ["core", "plugin-a", "plugin-b", "runtime"]
+
+--- file: core/Cargo.toml ---
+[package]
+name = "core"
+version = "0.1.0"
+
+--- file: core/src/lib.rs ---
+pub mod plugin;
+
+--- file: core/src/plugin.rs ---
+pub struct Context {
+    pub name: String,
+}
+
+pub struct Event {
+    pub kind: String,
+    pub data: String,
+}
+
+pub trait Plugin {
+    fn name(&self) -> String;
+    fn init(&mut self, ctx: Context);
+    fn handle(&self, event: Event) -> Event;
+}
+
+--- file: plugin-a/Cargo.toml ---
+[package]
+name = "plugin-a"
+version = "0.1.0"
+
+[dependencies]
+core = { path = "../core" }
+
+--- file: plugin-a/src/lib.rs ---
+use core::plugin::{Plugin, Context, Event};
+
+pub struct PluginA {
+    name: String,
+}
+
+impl PluginA {
+    pub fn new() -> Self {
+        Self { name: String::new() }
+    }
+}
+
+impl Plugin for PluginA {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+    fn init(&mut self, ctx: Context) {
+        self.name = ctx.name;
+    }
+    fn handle(&self, event: Event) -> Event {
+        event
+    }
+}
+
+--- file: plugin-b/Cargo.toml ---
+[package]
+name = "plugin-b"
+version = "0.1.0"
+
+[dependencies]
+core = { path = "../core" }
+
+--- file: plugin-b/src/lib.rs ---
+use core::plugin::{Plugin, Context, Event};
+
+pub struct PluginB {
+    initialized: bool,
+}
+
+impl PluginB {
+    pub fn new() -> Self {
+        Self { initialized: false }
+    }
+}
+
+impl Plugin for PluginB {
+    fn name(&self) -> String {
+        String::from("plugin-b")
+    }
+    fn init(&mut self, _ctx: Context) {
+        self.initialized = true;
+    }
+    fn handle(&self, event: Event) -> Event {
+        Event { kind: event.kind, data: String::from("processed") }
+    }
+}
+
+--- file: runtime/Cargo.toml ---
+[package]
+name = "runtime"
+version = "0.1.0"
+
+[dependencies]
+core = { path = "../core" }
+plugin-a = { path = "../plugin-a" }
+plugin-b = { path = "../plugin-b" }
+
+--- file: runtime/src/lib.rs ---
+use core::plugin::{Context, Event};
+use plugin_a::PluginA;
+use plugin_b::PluginB;
+
+pub struct Runtime {
+    pub plugin_a: PluginA,
+    pub plugin_b: PluginB,
+}
+
+impl Runtime {
+    pub fn new() -> Self {
+        Self {
+            plugin_a: PluginA::new(),
+            plugin_b: PluginB::new(),
+        }
+    }
+
+    pub fn dispatch(&self, event: Event) -> Event {
+        event
+    }
+}
+
+pub fn create_context(name: String) -> Context {
+    Context { name }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/core/src/lib.rs))
+
+(root:2 plugin ($TMP/core/src/plugin.rs)
+  (class:3 Context
+    (field:4 name @type String)
+  )
+  (class:5 Event
+    (field:6 kind @type String)
+    (field:7 data @type String)
+  )
+  (trait:8 Plugin
+    (method:9 name
+      (parameter:10 self @type:8 Plugin)
+      (return:11 @type String)
+    )
+    (method:12 init
+      (parameter:13 self @type:8 Plugin)
+      (parameter:14 ctx @type:3 Context)
+    )
+    (method:15 handle
+      (parameter:16 self @type:8 Plugin)
+      (parameter:17 event @type:5 Event)
+      (return:18 @type:5 Event)
+    )
+  )
+)
+
+(root:19 lib ($TMP/plugin-a/src/lib.rs)
+  (class:20 PluginA
+    (field:21 name @type String)
+  )
+  (impl:22 PluginA @type:20
+    (method:23 new
+      (return:24 @type:20 PluginA)
+    )
+  )
+  (impl:26 PluginA @type:20 @trait:8
+    (method:27 name
+      (parameter:28 self @type:20 PluginA)
+      (return:29 @type String)
+    )
+    (method:31 init
+      (parameter:32 self @type:20 PluginA)
+      (parameter:33 ctx @type:3 Context)
+    )
+    (method:34 handle
+      (parameter:35 self @type:20 PluginA)
+      (parameter:36 event @type:5 Event)
+      (return:37 @type:5 Event)
+    )
+  )
+)
+
+(root:38 lib ($TMP/plugin-b/src/lib.rs)
+  (class:39 PluginB
+    (field:40 initialized @type bool)
+  )
+  (impl:41 PluginB @type:39
+    (method:42 new
+      (return:43 @type:39 PluginB)
+    )
+  )
+  (impl:44 PluginB @type:39 @trait:8
+    (method:45 name
+      (parameter:46 self @type:39 PluginB)
+      (return:47 @type String)
+    )
+    (method:49 init
+      (parameter:50 self @type:39 PluginB)
+      (parameter:51 _ctx @type:3 Context)
+    )
+    (method:52 handle
+      (parameter:53 self @type:39 PluginB)
+      (parameter:54 event @type:5 Event)
+      (return:55 @type:5 Event)
+    )
+  )
+)
+
+(root:57 lib ($TMP/runtime/src/lib.rs)
+  (class:58 Runtime
+    (field:59 plugin_a @type:20 PluginA)
+    (field:60 plugin_b @type:39 PluginB)
+  )
+  (impl:61 Runtime @type:58
+    (method:62 new
+      (return:63 @type:58 Runtime)
+      (@tdep:20 PluginA)
+      (@tdep:39 PluginB)
+    )
+    (method:66 dispatch
+      (parameter:67 self @type:58 Runtime)
+      (parameter:68 event @type:5 Event)
+      (return:69 @type:5 Event)
+    )
+  )
+  (func:70 create_context
+    (parameter:71 name @type String)
+    (return:72 @type:3 Context)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_core {
+      label="core";
+      subgraph cluster_plugin_rs {
+        label="plugin.rs";
+        n3[label="Context", full_path="$TMP/core/src/plugin.rs:1", sym_ty="Struct", shape=box];
+        n8[label="Plugin", full_path="$TMP/core/src/plugin.rs:10", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_plugin_a {
+      label="plugin-a";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n20[label="PluginA", full_path="$TMP/plugin-a/src/lib.rs:3", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_plugin_b {
+      label="plugin-b";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n39[label="PluginB", full_path="$TMP/plugin-b/src/lib.rs:3", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_runtime {
+      label="runtime";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n70[label="create_context", full_path="$TMP/runtime/src/lib.rs:23", sym_ty="Function"];
+        n58[label="Runtime", full_path="$TMP/runtime/src/lib.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n8 -> n20 [from="trait", to="impl"];
+  n8 -> n39 [from="trait", to="impl"];
+  n20 -> n58 [from="field_type", to="struct"];
+  n39 -> n58 [from="field_type", to="struct"];
+  n70 -> n3 [from="func", to="output"];
+}

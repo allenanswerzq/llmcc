@@ -3,6 +3,10 @@ set shell := ["/bin/bash", "-c"]
 
 root := justfile_directory()
 
+
+test-all *ARGS:
+    cargo run -p llmcc-test -- run-all {{ARGS}}
+
 uv-sync:
     PIP_NO_BINARY="mypy" uv sync --extra dev
 

@@ -1,0 +1,84 @@
+===============================================================================
+cross-file-multi-import
+===============================================================================
+Struct imports multiple types from different files.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod user;
+mod role;
+mod auth;
+
+--- file: sample/src/user.rs ---
+pub struct User {
+    pub id: u32,
+}
+
+--- file: sample/src/role.rs ---
+pub struct Role {
+    pub level: u32,
+}
+
+--- file: sample/src/auth.rs ---
+use crate::user::User;
+use crate::role::Role;
+
+pub struct Session {
+    pub user: User,
+    pub role: Role,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 user ($TMP/sample/src/user.rs)
+  (class:3 User
+    (field:4 id @type u32)
+  )
+)
+
+(root:5 role ($TMP/sample/src/role.rs)
+  (class:6 Role
+    (field:7 level @type u32)
+  )
+)
+
+(root:8 auth ($TMP/sample/src/auth.rs)
+  (class:9 Session
+    (field:10 user @type:3 User)
+    (field:11 role @type:6 Role)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_auth_rs {
+        label="auth.rs";
+        n9[label="Session", full_path="$TMP/sample/src/auth.rs:4", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_role_rs {
+        label="role.rs";
+        n6[label="Role", full_path="$TMP/sample/src/role.rs:1", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_user_rs {
+        label="user.rs";
+        n3[label="User", full_path="$TMP/sample/src/user.rs:1", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n9 [from="field_type", to="struct"];
+  n6 -> n9 [from="field_type", to="struct"];
+}

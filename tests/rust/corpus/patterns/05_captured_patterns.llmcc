@@ -1,0 +1,26 @@
+===============================================================================
+captured-patterns
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+match x {
+  a @ A(_) | b @ B(..) => a,
+  a @ 1 ... 5 => a,
+  Some(1 ... 5) => a,
+  a @ b...c => a,
+  a @ b..=c => a,
+  d.. => a,
+  ..d => d,
+  a @ ..=5 => a
+}
+
+match name {
+  | "IPV6_FLOWINFO"
+  | "IPV6_FLOWLABEL_MGR"
+  | "IPV6_FLOWINFO_SEND" => true,
+  _ => false,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs))

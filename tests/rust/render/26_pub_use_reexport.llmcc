@@ -1,0 +1,65 @@
+===============================================================================
+pub-use-reexport
+===============================================================================
+Re-exported type via pub use.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod internal;
+pub use internal::Secret;
+
+mod consumer;
+
+--- file: sample/src/internal.rs ---
+pub struct Secret {
+    pub key: String,
+}
+
+--- file: sample/src/consumer.rs ---
+use crate::Secret;
+
+pub struct Consumer {
+    pub secret: Secret,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 internal ($TMP/sample/src/internal.rs)
+  (class:3 Secret
+    (field:4 key @type String)
+  )
+)
+
+(root:5 consumer ($TMP/sample/src/consumer.rs)
+  (class:6 Consumer
+    (field:7 secret @type:3 Secret)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_consumer_rs {
+        label="consumer.rs";
+        n6[label="Consumer", full_path="$TMP/sample/src/consumer.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_internal_rs {
+        label="internal.rs";
+        n3[label="Secret", full_path="$TMP/sample/src/internal.rs:1", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n6 [from="field_type", to="struct"];
+}

@@ -1,0 +1,53 @@
+===============================================================================
+methods-excluded
+===============================================================================
+Test that methods (functions inside impl blocks) are excluded from the
+architecture graph - only free functions should appear.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+
+pub struct Counter {
+    value: i32,
+}
+
+impl Counter {
+    pub fn new() -> Self {
+        Self { value: 0 }
+    }
+
+    pub fn increment(&mut self) {
+        self.value += 1;
+    }
+
+    pub fn get(&self) -> i32 {
+        self.value
+    }
+}
+
+pub fn create_counter() -> Counter {
+    Counter::new()
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="Counter", full_path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
+        n12[label="create_counter", full_path="$TMP/sample/src/lib.rs:20", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  n12 -> n2 [from="func", to="output"];
+}

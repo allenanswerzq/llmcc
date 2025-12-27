@@ -1,0 +1,22 @@
+===============================================================================
+trait-declarations-with-optional-type-parameters
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+trait Add<RHS=Self> {
+    type Output;
+    fn add(self, rhs: RHS) -> Self::Output;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (trait:2 Add
+    (alias:3 Output)
+    (method:4 add
+      (parameter:5 self @type:2 Add)
+      (parameter:6 rhs @type Self)
+      (return:7 @type:2 Add)
+    )
+  )
+)

@@ -306,6 +306,8 @@ struct RenderNode {
     snippet: Option<String>,
     children: Vec<RenderNode>,
     node_id: Option<String>,
+    /// Suffix to add after the closing parenthesis (e.g., "@type i32")
+    suffix: Option<String>,
 }
 
 impl RenderNode {
@@ -322,7 +324,13 @@ impl RenderNode {
             snippet,
             children,
             node_id,
+            suffix: None,
         }
+    }
+
+    fn with_suffix(mut self, suffix: Option<String>) -> Self {
+        self.suffix = suffix;
+        self
     }
 }
 
@@ -539,6 +547,7 @@ fn build_block_render<'tcx>(
     }
 
     let label = block.format_block(unit);
+    let suffix = block.format_suffix();
 
     let line_info = if config.include_line_info {
         block.opt_node().map(|node| {
@@ -569,7 +578,7 @@ fn build_block_render<'tcx>(
         })
         .collect::<RenderResult<Vec<_>>>()?;
 
-    Ok(RenderNode::new(label, line_info, snippet, children, None))
+    Ok(RenderNode::new(label, line_info, snippet, children, None).with_suffix(suffix))
 }
 
 /// Render node tree to string based on configuration
@@ -618,23 +627,36 @@ fn render_node_tree(
         line.push_str(&format!(" {}", line_info));
     }
 
-    // Align snippet to column and add inline with pipes
-    if let Some(snippet) = &node.snippet {
-        // Pad to column width for alignment
-        let padding = config.snippet_col_width.saturating_sub(line.len());
-        if padding > 0 {
-            line.push_str(&" ".repeat(padding));
-        } else {
-            line.push(' ');
-        }
-        line.push_str(&format!("|{}|", snippet));
-    }
-
     // Handle children
     if node.children.is_empty() {
         line.push(')');
+        // Add suffix after closing paren (e.g., "@type i32")
+        if let Some(suffix) = &node.suffix {
+            line.push_str(&format!(" {}", suffix));
+        }
+        // Align snippet to column and add inline with pipes
+        if let Some(snippet) = &node.snippet {
+            // Pad to column width for alignment
+            let padding = config.snippet_col_width.saturating_sub(line.len());
+            if padding > 0 {
+                line.push_str(&" ".repeat(padding));
+            } else {
+                line.push(' ');
+            }
+            line.push_str(&format!("|{}|", snippet));
+        }
         out.push(line);
     } else {
+        // Align snippet to column and add inline with pipes (for nodes with children)
+        if let Some(snippet) = &node.snippet {
+            let padding = config.snippet_col_width.saturating_sub(line.len());
+            if padding > 0 {
+                line.push_str(&" ".repeat(padding));
+            } else {
+                line.push(' ');
+            }
+            line.push_str(&format!("|{}|", snippet));
+        }
         out.push(line);
         for child in &node.children {
             render_node_tree(child, depth + 1, out, config)?;

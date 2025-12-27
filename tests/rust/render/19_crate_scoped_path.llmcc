@@ -1,0 +1,61 @@
+===============================================================================
+crate-scoped-path
+===============================================================================
+Uses crate:: prefix for type resolution.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod models;
+mod services;
+
+--- file: sample/src/models.rs ---
+pub struct Config {
+    pub debug: bool,
+}
+
+--- file: sample/src/services.rs ---
+pub struct App {
+    pub config: crate::models::Config,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 models ($TMP/sample/src/models.rs)
+  (class:3 Config
+    (field:4 debug @type bool)
+  )
+)
+
+(root:5 services ($TMP/sample/src/services.rs)
+  (class:6 App
+    (field:7 config @type:3 Config)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_models_rs {
+        label="models.rs";
+        n3[label="Config", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_services_rs {
+        label="services.rs";
+        n6[label="App", full_path="$TMP/sample/src/services.rs:1", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n6 [from="field_type", to="struct"];
+}

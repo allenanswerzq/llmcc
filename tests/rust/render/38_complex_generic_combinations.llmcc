@@ -1,0 +1,140 @@
+===============================================================================
+complex-generic-combinations
+===============================================================================
+Tests for complex generic type combinations: Option<Result<T, E>>, Vec<HashMap<K, V>>, etc.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod complex;
+
+--- file: sample/src/types.rs ---
+pub struct User {
+    pub id: u64,
+}
+
+pub struct Error {
+    pub message: String,
+}
+
+pub struct Session {
+    pub token: String,
+}
+
+--- file: sample/src/complex.rs ---
+use std::collections::HashMap;
+use crate::types::{User, Error, Session};
+
+// Option<Result<T, E>>
+pub struct MaybeResult {
+    pub value: Option<Result<User, Error>>,
+}
+
+// Vec<Option<T>>
+pub struct OptionalUsers {
+    pub users: Vec<Option<User>>,
+}
+
+// HashMap<K, Option<V>>
+pub struct UserSessionMap {
+    pub sessions: HashMap<User, Option<Session>>,
+}
+
+// Result<Vec<T>, E>
+pub fn fetch_users() -> Result<Vec<User>, Error> {
+    todo!()
+}
+
+// Option<Vec<HashMap<K, V>>>
+pub struct ComplexNested {
+    pub data: Option<Vec<HashMap<User, Session>>>,
+}
+
+// Function returning nested generics
+pub fn get_user_sessions() -> Option<HashMap<User, Vec<Session>>> {
+    todo!()
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 User
+    (field:4 id @type u64)
+  )
+  (class:5 Error
+    (field:6 message @type String)
+  )
+  (class:7 Session
+    (field:8 token @type String)
+  )
+)
+
+(root:9 complex ($TMP/sample/src/complex.rs)
+  (class:10 MaybeResult
+    (field:11 value @type:3 User)
+  )
+  (class:12 OptionalUsers
+    (field:13 users @type:3 User)
+  )
+  (class:14 UserSessionMap
+    (field:15 sessions @type:3 User)
+  )
+  (func:16 fetch_users
+    (return:17)
+    (@tdep:3 User)
+    (@tdep:5 Error)
+  )
+  (class:19 ComplexNested
+    (field:20 data @type:3 User)
+  )
+  (func:21 get_user_sessions
+    (return:22)
+    (@tdep:3 User)
+    (@tdep:7 Session)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_complex_rs {
+        label="complex.rs";
+        n12[label="OptionalUsers", full_path="$TMP/sample/src/complex.rs:10", sym_ty="Struct", shape=box];
+        n14[label="UserSessionMap", full_path="$TMP/sample/src/complex.rs:15", sym_ty="Struct", shape=box];
+        n16[label="fetch_users", full_path="$TMP/sample/src/complex.rs:20", sym_ty="Function"];
+        n19[label="ComplexNested", full_path="$TMP/sample/src/complex.rs:25", sym_ty="Struct", shape=box];
+        n21[label="get_user_sessions", full_path="$TMP/sample/src/complex.rs:30", sym_ty="Function"];
+        n10[label="MaybeResult", full_path="$TMP/sample/src/complex.rs:5", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+        n7[label="Session", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n16 -> n3 [from="func", to="type_dep"];
+  n16 -> n5 [from="func", to="type_dep"];
+  n21 -> n3 [from="func", to="type_dep"];
+  n21 -> n7 [from="func", to="type_dep"];
+  n3 -> n10 [from="type_dep", to="struct"];
+  n3 -> n12 [from="type_dep", to="struct"];
+  n3 -> n14 [from="type_dep", to="struct"];
+  n3 -> n19 [from="type_dep", to="struct"];
+  n5 -> n10 [from="type_dep", to="struct"];
+  n7 -> n14 [from="type_dep", to="struct"];
+  n7 -> n19 [from="type_dep", to="struct"];
+}

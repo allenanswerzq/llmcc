@@ -1,0 +1,54 @@
+===============================================================================
+type-param-bound
+===============================================================================
+Trait with type parameter that has a trait bound.
+Edge should be created from bound trait to the constrained trait.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+pub trait State {
+    fn name(&self) -> &'static str;
+}
+
+pub trait Transition<To: State> {
+    fn transition(self) -> To;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (trait:2 State
+    (method:3 name
+      (parameter:4 self @type:2 State)
+      (return:5 @type str)
+    )
+  )
+  (trait:6 Transition
+    (method:7 transition
+      (parameter:8 self @type:6 Transition)
+      (return:9 @type:2 State)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="State", full_path="$TMP/sample/src/lib.rs:1", sym_ty="Trait", shape=box];
+        n6[label="Transition", full_path="$TMP/sample/src/lib.rs:5", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  n2 -> n6 [from="bound", to="generic"];
+}

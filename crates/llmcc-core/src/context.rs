@@ -119,6 +119,15 @@ impl<'tcx> CompileUnit<'tcx> {
             .unwrap_or_else(|| panic!("basic block not found: {}", id))
     }
 
+    /// Get the Root block for this compile unit (file).
+    /// Returns the first BlockKind::Root block belonging to this unit.
+    pub fn root_block(self) -> Option<BasicBlock<'tcx>> {
+        let root_blocks = self
+            .cc
+            .find_blocks_by_kind_in_unit(crate::block::BlockKind::Root, self.index);
+        root_blocks.first().and_then(|&id| self.opt_bb(id))
+    }
+
     /// Get the parent of a HIR node
     pub fn parent_node(self, id: HirId) -> Option<HirId> {
         self.opt_hir_node(id).and_then(|node| node.parent())
@@ -138,10 +147,6 @@ impl<'tcx> CompileUnit<'tcx> {
     pub fn get_scope(self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
         self.opt_get_scope(scope_id)
             .expect("ScopeId not mapped to Scope in CompileCtxt")
-    }
-
-    pub fn add_unresolved_symbol(&self, symbol: &'tcx Symbol) {
-        self.cc.unresolve_symbols.write().push(symbol);
     }
 
     pub fn insert_block(&self, id: BlockId, block: BasicBlock<'tcx>, _parent: BlockId) {
@@ -219,7 +224,6 @@ pub struct CompileCtxt<'tcx> {
     pub hir_root_ids: RwLock<Vec<Option<HirId>>>,
 
     pub block_arena: BlockArena<'tcx>,
-    pub unresolve_symbols: RwLock<Vec<&'tcx Symbol>>,
     pub related_map: BlockRelationMap,
 
     /// Index maps for efficient block lookups by name, kind, unit, and id
@@ -301,7 +305,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
-            unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
             build_metrics: metrics,
@@ -348,7 +351,6 @@ impl<'tcx> CompileCtxt<'tcx> {
             parse_trees,
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
-            unresolve_symbols: RwLock::new(Vec::new()),
             related_map: BlockRelationMap::default(),
             block_indexes: RwLock::new(BlockIndexMaps::new()),
             build_metrics: metrics,
@@ -643,18 +645,5 @@ impl<'tcx> CompileCtxt<'tcx> {
         for symbol in self.arena.symbol().iter() {
             f(symbol.id(), symbol);
         }
-    }
-
-    // ========== Unresolved Symbols APIs ==========
-
-    /// Get and clear all unresolved symbols
-    pub fn take_unresolved_symbols(&self) -> Vec<&'tcx Symbol> {
-        let mut unresolved = self.unresolve_symbols.write();
-        std::mem::take(&mut *unresolved)
-    }
-
-    /// Get the count of unresolved symbols without clearing
-    pub fn unresolved_symbol_count(&self) -> usize {
-        self.unresolve_symbols.read().len()
     }
 }

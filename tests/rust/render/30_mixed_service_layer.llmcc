@@ -1,0 +1,196 @@
+===============================================================================
+mixed-service-layer
+===============================================================================
+Complex service layer pattern with traits, generics, impls, and cross-file deps.
+Combines: traits, impl blocks, generics, cross-file references, multiple impls.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod repository;
+mod service;
+mod models;
+mod impl_repos;
+
+--- file: sample/src/models.rs ---
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+pub struct Order {
+    pub id: u64,
+    pub user_id: u64,
+    pub total: f64,
+}
+
+--- file: sample/src/repository.rs ---
+pub trait Repository<T> {
+    fn find(&self, id: u64) -> Option<T>;
+    fn save(&self, item: T) -> bool;
+}
+
+--- file: sample/src/impl_repos.rs ---
+use crate::repository::Repository;
+use crate::models::{User, Order};
+
+pub struct UserRepo {
+    pub connection: String,
+}
+
+pub struct OrderRepo {
+    pub connection: String,
+}
+
+impl Repository<User> for UserRepo {
+    fn find(&self, id: u64) -> Option<User> {
+        None
+    }
+    fn save(&self, item: User) -> bool {
+        true
+    }
+}
+
+impl Repository<Order> for OrderRepo {
+    fn find(&self, id: u64) -> Option<Order> {
+        None
+    }
+    fn save(&self, item: Order) -> bool {
+        true
+    }
+}
+
+--- file: sample/src/service.rs ---
+use crate::repository::Repository;
+use crate::models::User;
+
+pub struct UserService<R: Repository<User>> {
+    pub repo: R,
+}
+
+impl<R: Repository<User>> UserService<R> {
+    pub fn get_user(&self, id: u64) -> Option<User> {
+        self.repo.find(id)
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 models ($TMP/sample/src/models.rs)
+  (class:3 User
+    (field:4 id @type u64)
+    (field:5 name @type String)
+  )
+  (class:6 Order
+    (field:7 id @type u64)
+    (field:8 user_id @type u64)
+    (field:9 total @type f64)
+  )
+)
+
+(root:10 repository ($TMP/sample/src/repository.rs)
+  (trait:11 Repository
+    (method:12 find
+      (parameter:13 self @type:11 Repository)
+      (parameter:14 id @type u64)
+      (return:15)
+    )
+    (method:16 save
+      (parameter:17 self @type:11 Repository)
+      (parameter:18 item @type T)
+      (return:19 @type bool)
+    )
+  )
+)
+
+(root:20 impl_repos ($TMP/sample/src/impl_repos.rs)
+  (class:21 UserRepo
+    (field:22 connection @type String)
+  )
+  (class:23 OrderRepo
+    (field:24 connection @type String)
+  )
+  (impl:25 UserRepo @type:21 @trait:11
+    (method:26 find
+      (parameter:27 self @type:21 UserRepo)
+      (parameter:28 id @type u64)
+      (return:29)
+      (@tdep:3 User)
+    )
+    (method:30 save
+      (parameter:31 self @type:21 UserRepo)
+      (parameter:32 item @type:3 User)
+      (return:33 @type bool)
+    )
+  )
+  (impl:34 OrderRepo @type:23 @trait:11
+    (method:35 find
+      (parameter:36 self @type:23 OrderRepo)
+      (parameter:37 id @type u64)
+      (return:38)
+      (@tdep:6 Order)
+    )
+    (method:39 save
+      (parameter:40 self @type:23 OrderRepo)
+      (parameter:41 item @type:6 Order)
+      (return:42 @type bool)
+    )
+  )
+)
+
+(root:43 service ($TMP/sample/src/service.rs)
+  (class:44 UserService
+    (field:45 repo @type:11 Repository)
+  )
+  (impl:46 UserService @type:44
+    (method:47 get_user
+      (parameter:48 self @type:44 UserService)
+      (parameter:49 id @type u64)
+      (return:50)
+      (@tdep:3 User)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_impl_repos_rs {
+        label="impl_repos.rs";
+        n21[label="UserRepo", full_path="$TMP/sample/src/impl_repos.rs:4", sym_ty="Struct", shape=box];
+        n23[label="OrderRepo", full_path="$TMP/sample/src/impl_repos.rs:8", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_models_rs {
+        label="models.rs";
+        n3[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+        n6[label="Order", full_path="$TMP/sample/src/models.rs:6", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_repository_rs {
+        label="repository.rs";
+        n11[label="Repository", full_path="$TMP/sample/src/repository.rs:1", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_service_rs {
+        label="service.rs";
+        n44[label="UserService", full_path="$TMP/sample/src/service.rs:4", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n11 -> n21 [from="trait", to="impl"];
+  n11 -> n23 [from="trait", to="impl"];
+  n11 -> n44 [from="field_type", to="struct"];
+  n3 -> n21 [from="type_arg", to="impl"];
+  n6 -> n23 [from="type_arg", to="impl"];
+}

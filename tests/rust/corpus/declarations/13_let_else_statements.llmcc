@@ -1,0 +1,28 @@
+===============================================================================
+let-else-statements
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+fn outside() {
+let Foo::Bar {
+    texts,
+    values,
+} = foo().bar().await? else {
+    return Err(index)
+};
+
+let Some(x) = y else {
+    let None = z else {
+        foo();
+        break;
+    };
+    continue;
+};
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 outside
+  )
+)

@@ -1,0 +1,20 @@
+===============================================================================
+visibility-modifiers
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+pub fn a() {}
+pub(super) fn b() {}
+pub(self) fn c() {}
+pub(crate) fn f() {}
+pub(in crate::d) fn e() {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 a)
+  (func:3 b)
+  (func:4 c)
+  (func:5 f)
+  (func:6 e)
+)

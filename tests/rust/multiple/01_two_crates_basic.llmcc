@@ -1,0 +1,110 @@
+===============================================================================
+two-crates-basic
+===============================================================================
+Basic test with two crates where one depends on the other.
+
+--- file: Cargo.toml ---
+[workspace]
+members = ["common", "app"]
+
+--- file: common/Cargo.toml ---
+[package]
+name = "common"
+version = "0.1.0"
+
+--- file: common/src/lib.rs ---
+pub mod types;
+
+--- file: common/src/types.rs ---
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+pub struct Error {
+    pub code: i32,
+    pub message: String,
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+version = "0.1.0"
+
+[dependencies]
+common = { path = "../common" }
+
+--- file: app/src/lib.rs ---
+pub mod service;
+
+--- file: app/src/service.rs ---
+use common::types::{User, Error};
+
+pub fn get_user(id: u64) -> Result<User, Error> {
+    Ok(User { id, name: String::new() })
+}
+
+pub fn create_user(name: String) -> User {
+    User { id: 1, name }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/common/src/lib.rs))
+
+(root:2 types ($TMP/common/src/types.rs)
+  (class:3 User
+    (field:4 id @type u64)
+    (field:5 name @type String)
+  )
+  (class:6 Error
+    (field:7 code @type i32)
+    (field:8 message @type String)
+  )
+)
+
+(root:9 lib ($TMP/app/src/lib.rs))
+
+(root:10 service ($TMP/app/src/service.rs)
+  (func:11 get_user
+    (parameter:12 id @type u64)
+    (return:13)
+    (@tdep:3 User)
+    (@tdep:6 Error)
+  )
+  (func:15 create_user
+    (parameter:16 name @type String)
+    (return:17 @type:3 User)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_app {
+      label="app";
+      subgraph cluster_service_rs {
+        label="service.rs";
+        n11[label="get_user", full_path="$TMP/app/src/service.rs:3", sym_ty="Function"];
+        n15[label="create_user", full_path="$TMP/app/src/service.rs:7", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_common {
+      label="common";
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="User", full_path="$TMP/common/src/types.rs:1", sym_ty="Struct", shape=box];
+        n6[label="Error", full_path="$TMP/common/src/types.rs:6", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n11 -> n3 [from="func", to="type_dep"];
+  n11 -> n6 [from="func", to="type_dep"];
+  n15 -> n3 [from="func", to="output"];
+}

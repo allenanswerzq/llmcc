@@ -1,0 +1,39 @@
+===============================================================================
+inherent-impls
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+struct Person;
+
+impl Person {
+  const leg_count : u32 = 2;
+
+  fn walk(self) {}
+  fn walk_mut(mut self) {}
+  fn talk(& self) {}
+  fn talk_mut(&'a mut self) {}
+}
+
+impl Machine<{State::Init}> {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (class:2 Person)
+  (impl:3 Person @type:2
+    (const:4 leg_count @type u32)
+    (method:5 walk
+      (parameter:6 self @type:2 Person)
+    )
+    (method:7 walk_mut
+      (parameter:8 self @type:2 Person)
+    )
+    (method:9 talk
+      (parameter:10 self @type:2 Person)
+    )
+    (method:11 talk_mut
+      (parameter:12 a @type:2 Person)
+    )
+  )
+  (impl:13 Machine)
+)

@@ -1,0 +1,77 @@
+===============================================================================
+public-function
+===============================================================================
+Test that public free functions appear in the architecture graph,
+but private functions do not.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+
+struct Input;
+enum Output {}
+struct Foo;
+impl Foo {
+    fn new() -> Foo {}
+}
+
+pub fn process_data(input: Input) -> Output {
+    let f = Foo::new();
+    helper(input)
+}
+
+fn helper(s: Input) -> Output {
+    Output
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Input)
+  (enum:3 Output)
+  (class:4 Foo)
+  (impl:5 Foo @type:4
+    (method:6 new
+      (return:7 @type:4 Foo)
+    )
+  )
+  (func:8 process_data
+    (parameter:9 input @type:2 Input)
+    (return:10 @type:3 Output)
+    (@tdep:4 Foo)
+    (@fdep:13 helper)
+  )
+  (func:13 helper
+    (parameter:14 s @type:2 Input)
+    (return:15 @type:3 Output)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n13[label="helper", full_path="$TMP/sample/src/lib.rs:14", sym_ty="Function"];
+        n2[label="Input", full_path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
+        n3[label="Output", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Enum", shape=box];
+        n4[label="Foo", full_path="$TMP/sample/src/lib.rs:4", sym_ty="Struct", shape=box];
+        n8[label="process_data", full_path="$TMP/sample/src/lib.rs:9", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  n2 -> n8 [from="input", to="func"];
+  n2 -> n13 [from="input", to="func"];
+  n8 -> n3 [from="func", to="output"];
+  n8 -> n4 [from="func", to="type_dep"];
+  n8 -> n13 [from="caller", to="callee"];
+  n13 -> n3 [from="func", to="output"];
+}

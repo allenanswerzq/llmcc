@@ -1,231 +1,737 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+//! Graph rendering module for producing DOT format output.
+//!
+//! This module transforms a `ProjectGraph` into DOT format for visualization.
+//! Nodes are grouped hierarchically by crate/module/file into nested subgraph clusters.
+
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt::Write;
-use std::path::Path;
 
 use crate::BlockId;
-use crate::symbol::{SymId, SymKind};
+use crate::block::{BlockKind, BlockRelation};
+use crate::graph::ProjectGraph;
+use crate::symbol::SymKind;
 
-/// Edge with labeled from/to roles for architecture graphs
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct LabeledEdge {
-    pub from_idx: usize,
-    pub to_idx: usize,
-    pub from_kind: &'static str,
-    pub to_kind: &'static str,
+// ============================================================================
+// Types
+// ============================================================================
+
+/// Component grouping depth for architecture graph visualization.
+///
+/// The architecture graph contains four hierarchical levels:
+/// 1. Workspace - contains multiple projects (not yet implemented)
+/// 2. Project - contains multiple crates
+/// 3. Crate - contains multiple modules
+/// 4. Module - contains multiple files
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ComponentDepth {
+    /// No grouping - flat graph without clusters
+    Flat,
+    /// Group by crate only
+    Crate,
+    /// Group by crate and module
+    Module,
+    /// Group by crate, module, and file (default)
+    #[default]
+    File,
 }
 
-impl LabeledEdge {
-    pub fn new(from_idx: usize, to_idx: usize) -> Self {
-        Self {
-            from_idx,
-            to_idx,
-            from_kind: "node",
-            to_kind: "node",
+impl ComponentDepth {
+    /// Convert from numeric depth (for CLI compatibility)
+    pub fn from_number(n: usize) -> Self {
+        match n {
+            0 => Self::Flat,
+            1 => Self::Crate,
+            2 => Self::Module,
+            _ => Self::File,
         }
+    }
+
+    /// Convert to numeric depth
+    pub fn as_number(&self) -> usize {
+        match self {
+            Self::Flat => 0,
+            Self::Crate => 1,
+            Self::Module => 2,
+            Self::File => 3,
+        }
+    }
+
+    /// Check if crate level is included
+    pub fn includes_crate(&self) -> bool {
+        !matches!(self, Self::Flat)
+    }
+
+    /// Check if module level is included
+    pub fn includes_module(&self) -> bool {
+        matches!(self, Self::Module | Self::File)
+    }
+
+    /// Check if file level is included
+    pub fn includes_file(&self) -> bool {
+        matches!(self, Self::File)
     }
 }
 
+/// Node representation for rendering.
 #[derive(Clone)]
-pub(crate) struct CompactNode {
-    pub(crate) block_id: BlockId,
-    pub(crate) unit_index: usize,
-    pub(crate) name: String,
-    pub(crate) location: Option<String>,
-    /// Fully qualified name for hierarchical grouping
-    pub(crate) fqn: String,
-    #[allow(dead_code)]
-    pub(crate) sym_id: Option<SymId>,
-    pub(crate) sym_kind: Option<SymKind>,
-    /// Whether the symbol is public (for filtering private helpers in arch-graph)
-    pub(crate) is_public: bool,
+pub struct RenderNode {
+    pub block_id: BlockId,
+    /// Display name (e.g., "User", "process")
+    pub name: String,
+    /// File location (e.g., "src/model/user.rs:42")
+    pub location: Option<String>,
+    /// Crate name from Cargo.toml (e.g., "sample")
+    pub crate_name: Option<String>,
+    /// Module path (e.g., "utils::helpers")
+    pub module_path: Option<String>,
+    /// File name (e.g., "lib.rs")
+    pub file_name: Option<String>,
+    /// Symbol kind (Struct, Trait, Enum, Function, Method)
+    pub sym_kind: Option<SymKind>,
 }
 
-impl CompactNode {
-    /// Extract component path from FQN at given depth
-    /// FQN: "_c::data::entity::User"
-    /// depth=1 → ["_c"]
-    /// depth=2 → ["_c", "data"]
-    /// depth=3 → ["_c", "data", "entity"]
-    pub(crate) fn component_path(&self, depth: usize) -> Vec<String> {
-        if depth == 0 {
-            return vec![];
-        }
-        let parts: Vec<&str> = self.fqn.split("::").collect();
-        // Take up to `depth` parts, excluding the symbol name itself
-        let module_parts = if parts.len() > 1 {
-            &parts[..parts.len() - 1]
-        } else {
-            &parts[..]
-        };
-        module_parts
-            .iter()
-            .take(depth)
-            .map(|s| s.to_string())
-            .collect()
-    }
+/// Edge with semantic labels.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RenderEdge {
+    pub from_id: BlockId,
+    pub to_id: BlockId,
+    /// Semantic role of source (e.g., "caller", "struct")
+    pub from_label: &'static str,
+    /// Semantic role of target (e.g., "callee", "field")
+    pub to_label: &'static str,
 }
 
-pub(crate) struct GraphRenderer<'a> {
-    nodes: &'a [CompactNode],
-}
-
-impl<'a> GraphRenderer<'a> {
-    pub(crate) fn new(nodes: &'a [CompactNode]) -> Self {
-        Self { nodes }
-    }
-
-    pub(crate) fn nodes(&self) -> &'a [CompactNode] {
-        self.nodes
-    }
-
-    pub(crate) fn build_node_index(&self) -> HashMap<BlockId, usize> {
-        let mut node_index = HashMap::with_capacity(self.nodes.len());
-        for (idx, node) in self.nodes.iter().enumerate() {
-            node_index.insert(node.block_id, idx);
-        }
-        node_index
-    }
-
-    pub(crate) fn render(
-        &self,
-        edges: &BTreeSet<(usize, usize)>,
-        component_depth: usize,
-    ) -> String {
-        self.render_with_title(edges, component_depth, "project")
-    }
-
-    pub(crate) fn render_with_title(
-        &self,
-        edges: &BTreeSet<(usize, usize)>,
-        component_depth: usize,
-        title: &str,
-    ) -> String {
-        if self.nodes.is_empty() {
-            return format!("digraph {} {{\n}}\n", title);
-        }
-
-        if self.nodes.is_empty() {
-            return format!("digraph {} {{\n}}\n", title);
-        }
-
-        render_nested_dot_with_title(self.nodes, edges, component_depth, title)
-
-        // TODO:
-        // let pruned = prune_compact_components(self.nodes, edges);
-        // if self.nodes.is_empty() {
-        //     return format!("digraph {} {{\n}}\n", title);
-        // }
-        // let reduced_edges = reduce_transitive_edges(&pruned.nodes, &pruned.edges);
-        // render_nested_dot_with_title(&pruned.nodes, &reduced_edges, component_depth, title)
-    }
-
-    /// Render architecture graph with labeled edges
-    pub(crate) fn render_arch(
-        &self,
-        edges: &BTreeSet<LabeledEdge>,
-        component_depth: usize,
-    ) -> String {
-        if self.nodes.is_empty() {
-            return "digraph architecture {\n}\n".to_string();
-        }
-        render_arch_dot(self.nodes, edges, component_depth)
-    }
-}
-
-/// A tree structure for organizing nodes by their component paths
+/// Hierarchical tree for organizing nodes by component path.
 #[derive(Default)]
 struct ComponentTree {
-    /// Direct child nodes at this level
+    /// Direct child nodes at this level (indices into nodes array)
     node_indices: Vec<usize>,
-    /// Child component subtrees
-    children: BTreeMap<String, ComponentTree>,
+    /// Child component subtrees (name -> (level_type, subtree))
+    /// level_type: "crate", "module", or "file"
+    children: BTreeMap<String, (String, ComponentTree)>,
 }
 
 impl ComponentTree {
-    fn insert(&mut self, path: &[String], node_idx: usize) {
+    /// Insert a node at the given path.
+    /// `path` is a list of (name, level_type) pairs.
+    fn insert(&mut self, path: &[(String, &'static str)], node_idx: usize) {
         if path.is_empty() {
             self.node_indices.push(node_idx);
         } else {
-            let child = self.children.entry(path[0].clone()).or_default();
-            child.insert(&path[1..], node_idx);
+            let (name, level_type) = &path[0];
+            let child = self
+                .children
+                .entry(name.clone())
+                .or_insert_with(|| (level_type.to_string(), ComponentTree::default()));
+            child.1.insert(&path[1..], node_idx);
         }
     }
 }
 
-fn render_nested_dot_with_title(
-    nodes: &[CompactNode],
-    edges: &BTreeSet<(usize, usize)>,
-    component_depth: usize,
-    title: &str,
-) -> String {
-    // Pre-allocate output buffer based on expected size
-    // Rough estimate: 100 bytes per node + 50 bytes per edge + base overhead
-    let estimated_size = nodes.len() * 100 + edges.len() * 50 + 200;
-    let mut output = String::with_capacity(estimated_size);
+// ============================================================================
+// Public API
+// ============================================================================
 
-    // Build component tree from node paths derived from FQN
-    let mut tree = ComponentTree::default();
-    for (idx, node) in nodes.iter().enumerate() {
-        let path = node.component_path(component_depth);
-        tree.insert(&path, idx);
-    }
+/// Block kinds to include in architecture graph:
+/// - Types (Class, Trait, Enum) - the building blocks
+/// - Free functions (Func) - entry points and pipelines
+/// - Constants that define behavior
+///
+/// NOTE: Methods are EXCLUDED - they are implementation details of types.
+/// NOTE: Fields are EXCLUDED - we only show type composition edges (A contains B).
+const ARCHITECTURE_KINDS: [BlockKind; 4] = [
+    BlockKind::Class,
+    BlockKind::Trait,
+    BlockKind::Enum,
+    BlockKind::Func,
+    // BlockKind::Const,
+];
 
-    let _ = writeln!(output, "digraph {} {{", title);
-    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n\n");
-
-    let mut counter = 0usize;
-
-    // Render the tree recursively, starting at depth 0
-    render_component_tree(&mut output, &tree, nodes, &mut counter, 1, 0);
-
-    // Render edges
-    for &(from, to) in edges {
-        let _ = writeln!(
-            output,
-            "  n{} -> n{};",
-            nodes[from].block_id.as_u32(),
-            nodes[to].block_id.as_u32()
-        );
-    }
-
-    output.push_str("}\n");
-    output
+/// Options for graph rendering.
+#[derive(Debug, Clone, Default)]
+pub struct RenderOptions {
+    /// If true, show all nodes even those without edges.
+    /// If false (default), only show nodes that have at least one edge.
+    pub show_orphan_nodes: bool,
 }
 
-/// Render architecture graph with labeled edges
-fn render_arch_dot(
-    nodes: &[CompactNode],
-    edges: &BTreeSet<LabeledEdge>,
-    component_depth: usize,
+/// Render the project graph to DOT format for visualization.
+///
+/// - `depth`: Component grouping depth for clustering
+pub fn render_graph(project: &ProjectGraph, depth: ComponentDepth) -> String {
+    render_graph_with_options(project, depth, &RenderOptions::default())
+}
+
+/// Render the project graph to DOT format with custom options.
+///
+/// - `depth`: Component grouping depth for clustering
+/// - `options`: Rendering options
+pub fn render_graph_with_options(
+    project: &ProjectGraph,
+    depth: ComponentDepth,
+    options: &RenderOptions,
 ) -> String {
-    // Pre-allocate output buffer based on expected size
+    let mut nodes = collect_nodes(project);
+
+    if nodes.is_empty() {
+        return "digraph G {\n}\n".to_string();
+    }
+
+    let node_set: HashSet<BlockId> = nodes.iter().map(|n| n.block_id).collect();
+    let edges = collect_edges(project, &node_set);
+
+    // Filter out orphan nodes (nodes without edges) unless explicitly requested
+    if !options.show_orphan_nodes {
+        let connected_nodes: HashSet<BlockId> =
+            edges.iter().flat_map(|e| [e.from_id, e.to_id]).collect();
+        nodes.retain(|n| connected_nodes.contains(&n.block_id));
+    }
+
+    if nodes.is_empty() {
+        return "digraph G {\n}\n".to_string();
+    }
+
+    let tree = build_component_tree(&nodes, depth);
+
+    render_dot(&nodes, &edges, &tree)
+}
+
+// ============================================================================
+// Node & Edge Collection
+// ============================================================================
+
+/// Collect nodes for architecture graph.
+/// Includes: Types (Struct, Trait, Enum) and PUBLIC free functions.
+/// Excludes: Methods and private/internal functions.
+fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
+    let all_blocks = project.cc.get_all_blocks();
+
+    let mut nodes: Vec<RenderNode> = all_blocks
+        .into_iter()
+        .filter_map(|(block_id, unit_index, name_opt, kind)| {
+            // Skip kinds not in architecture view
+            if !ARCHITECTURE_KINDS.contains(&kind) {
+                return None;
+            }
+
+            let unit = project.cc.compile_unit(unit_index);
+            let block = unit.bb(block_id);
+
+            let display_name = name_opt
+                .clone()
+                .or_else(|| {
+                    block
+                        .base()
+                        .and_then(|base| base.opt_get_name().map(|s| s.to_string()))
+                })
+                .unwrap_or_else(|| format!("{}:{}", kind, block_id.as_u32()));
+
+            // Skip methods - they are implementation details, not architectural
+            // Check BlockFunc::is_method() which is set during graph building
+            if let Some(func_block) = block.as_func()
+                && func_block.is_method()
+            {
+                return None;
+            }
+
+            // Get symbol info for visibility check
+            let symbol_opt = block
+                .opt_node()
+                .and_then(|node| node.as_scope())
+                .and_then(|scope_node| scope_node.opt_scope())
+                .and_then(|scope| scope.opt_symbol());
+
+            let sym_kind = symbol_opt.map(|s| s.kind());
+
+            let raw_path = unit
+                .file_path()
+                .or_else(|| unit.file().path())
+                .unwrap_or("<unknown>");
+
+            let file_bytes = unit.file().content();
+            let location = block
+                .opt_node()
+                .map(|node| {
+                    let line = byte_to_line(file_bytes, node.start_byte());
+                    format!("{raw_path}:{line}")
+                })
+                .or(Some(raw_path.to_string()));
+
+            // Get crate_name and module_path from BlockRoot of this unit
+            let (crate_name, module_path, file_name) = unit
+                .root_block()
+                .and_then(|root| root.as_root())
+                .map(|root| {
+                    let crate_name = root.get_crate_name();
+                    let module_path = root.get_module_path();
+                    let file_name = root.file_name.clone();
+                    (crate_name, module_path, file_name)
+                })
+                .unwrap_or((None, None, None));
+
+            Some(RenderNode {
+                block_id,
+                name: display_name.clone(),
+                location,
+                crate_name,
+                module_path,
+                file_name,
+                sym_kind,
+            })
+        })
+        .collect();
+
+    // Sort by name for deterministic output
+    nodes.sort_by(|a, b| a.name.cmp(&b.name));
+    nodes
+}
+
+/// Collect edges from related_map for nodes in the graph.
+/// Produces rich edge types:
+/// - struct → field: Type composition
+/// - caller → callee: Function calls
+/// - input → func: Parameter types
+/// - func → output: Return types
+/// - trait → impl: Trait implementations
+/// - bound → generic: Trait bounds on generics
+fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSet<RenderEdge> {
+    let mut edges = BTreeSet::new();
+
+    // Helper to get block kind
+    let get_kind = |id: BlockId| -> Option<BlockKind> {
+        let index = (id.as_u32() as usize).saturating_sub(1);
+        project.cc.block_arena.bb().get(index).map(|b| b.kind())
+    };
+
+    // Helper to recursively collect type references from fields (including nested variant fields)
+    fn collect_field_types(project: &ProjectGraph, field_id: BlockId, types: &mut Vec<BlockId>) {
+        // Get direct TypeOf relations
+        let field_types = project
+            .cc
+            .related_map
+            .get_related(field_id, BlockRelation::TypeOf);
+        types.extend(field_types);
+
+        // Recursively check nested fields (for enum variants with struct-like fields)
+        let nested_fields = project
+            .cc
+            .related_map
+            .get_related(field_id, BlockRelation::HasField);
+        for nested_field_id in nested_fields {
+            collect_field_types(project, nested_field_id, types);
+        }
+    }
+
+    for &block_id in node_set {
+        let block_kind = get_kind(block_id);
+
+        // 1. Field type → Struct/Enum (field_type is used by struct/enum)
+        // Recursively looks at nested fields (e.g., enum variants with struct-like fields)
+        let fields = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasField);
+        for field_id in fields {
+            let mut field_types = Vec::new();
+            collect_field_types(project, field_id, &mut field_types);
+            for type_id in field_types {
+                if node_set.contains(&type_id) && block_id != type_id {
+                    // Use actual block kind for to_label
+                    let to_label = match block_kind {
+                        Some(BlockKind::Enum) => "enum",
+                        _ => "struct",
+                    };
+                    edges.insert(RenderEdge {
+                        from_id: type_id,
+                        to_id: block_id,
+                        from_label: "field_type",
+                        to_label,
+                    });
+                }
+            }
+
+            // 1b. Field type arguments → Field's generic type
+            // For `data: Triple<User, Error>`, creates edges: User → Triple, Error → Triple
+            // Only creates edges when the field's type is in node_set (a defined generic struct)
+            let field_index = (field_id.as_u32() as usize).saturating_sub(1);
+            let bb = project.cc.block_arena.bb();
+            let Some(field_block) = bb.get(field_index) else {
+                continue;
+            };
+            let Some(field) = field_block.as_field() else {
+                continue;
+            };
+            let Some(field_type_id) = field.get_type_ref() else {
+                continue;
+            };
+            // Skip if field's type is the containing struct/enum itself
+            // This happens for enum variants where type_ref points to the enum
+            if field_type_id == block_id {
+                continue;
+            }
+            // Only create type_arg edges if field's type is in node_set
+            if !node_set.contains(&field_type_id) {
+                continue;
+            }
+            // Check that the field type is a Class/Enum (not a simple type)
+            let field_type_kind = get_kind(field_type_id);
+            if field_type_kind != Some(BlockKind::Class) && field_type_kind != Some(BlockKind::Enum)
+            {
+                continue;
+            }
+            // Get the field's nested_types (e.g., User, Error)
+            let Some(field_sym) = field.base.symbol else {
+                continue;
+            };
+            let Some(nested_types) = field_sym.nested_types() else {
+                continue;
+            };
+            // Check if field_type_id is itself one of the nested types
+            // This happens when outer generic (e.g., HashMap) isn't defined, and type_ref
+            // falls back to the first resolved type arg. In this case, create type_dep edges
+            // from ALL nested types to the containing struct (not type_arg -> generic).
+            let field_type_is_nested = nested_types.iter().any(|&nested_id| {
+                project
+                    .cc
+                    .opt_get_symbol(nested_id)
+                    .and_then(|sym| {
+                        sym.type_of()
+                            .and_then(|id| project.cc.opt_get_symbol(id))
+                            .or(Some(sym))
+                    })
+                    .and_then(|sym| sym.block_id())
+                    == Some(field_type_id)
+            });
+            if field_type_is_nested {
+                // Outer generic not defined - remove field_type edge and add type_dep edges
+                // Remove the field_type edge that was created in step 1
+                let to_label = match block_kind {
+                    Some(BlockKind::Enum) => "enum",
+                    _ => "struct",
+                };
+                edges.remove(&RenderEdge {
+                    from_id: field_type_id,
+                    to_id: block_id,
+                    from_label: "field_type",
+                    to_label,
+                });
+
+                // Create type_dep edges for all nested types
+                for nested_type_id in nested_types {
+                    let Some(nested_sym) = project.cc.opt_get_symbol(nested_type_id) else {
+                        continue;
+                    };
+                    let actual_sym = nested_sym
+                        .type_of()
+                        .and_then(|id| project.cc.opt_get_symbol(id))
+                        .unwrap_or(nested_sym);
+                    let Some(nested_block_id) = actual_sym.block_id() else {
+                        continue;
+                    };
+                    if !node_set.contains(&nested_block_id) || nested_block_id == block_id {
+                        continue;
+                    }
+                    let nested_kind = get_kind(nested_block_id);
+                    if nested_kind != Some(BlockKind::Class) && nested_kind != Some(BlockKind::Enum)
+                    {
+                        continue;
+                    }
+                    edges.insert(RenderEdge {
+                        from_id: nested_block_id,
+                        to_id: block_id,
+                        from_label: "type_dep",
+                        to_label,
+                    });
+                }
+                continue;
+            }
+            for nested_type_id in nested_types {
+                // Resolve the nested type to its block
+                let Some(nested_sym) = project.cc.opt_get_symbol(nested_type_id) else {
+                    continue;
+                };
+                // Follow type_of chain
+                let actual_sym = nested_sym
+                    .type_of()
+                    .and_then(|id| project.cc.opt_get_symbol(id))
+                    .unwrap_or(nested_sym);
+                let Some(nested_block_id) = actual_sym.block_id() else {
+                    continue;
+                };
+                // Skip if same as field type or containing struct
+                if !node_set.contains(&nested_block_id)
+                    || nested_block_id == field_type_id
+                    || nested_block_id == block_id
+                {
+                    continue;
+                }
+                edges.insert(RenderEdge {
+                    from_id: nested_block_id,
+                    to_id: field_type_id,
+                    from_label: "type_arg",
+                    to_label: "generic",
+                });
+            }
+        }
+
+        // 2. Function calls (caller → callee)
+        let callees = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::Calls);
+        for callee_id in callees {
+            if node_set.contains(&callee_id) && block_id != callee_id {
+                edges.insert(RenderEdge {
+                    from_id: block_id,
+                    to_id: callee_id,
+                    from_label: "caller",
+                    to_label: "callee",
+                });
+            }
+        }
+
+        // 3. Function parameters (input → func)
+        // Walk: Func → HasParameters → Param → TypeOf → Type
+        let params = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasParameters);
+        for param_id in params {
+            let param_types = project
+                .cc
+                .related_map
+                .get_related(param_id, BlockRelation::TypeOf);
+            for type_id in param_types {
+                if node_set.contains(&type_id) && block_id != type_id {
+                    edges.insert(RenderEdge {
+                        from_id: type_id,
+                        to_id: block_id,
+                        from_label: "input",
+                        to_label: "func",
+                    });
+                }
+            }
+        }
+
+        // 4. Function return types (func → output)
+        // Walk: Func → HasReturn → Return → TypeOf → Type
+        let returns = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasReturn);
+        for ret_id in returns {
+            let ret_types = project
+                .cc
+                .related_map
+                .get_related(ret_id, BlockRelation::TypeOf);
+            for type_id in ret_types {
+                if node_set.contains(&type_id) && block_id != type_id {
+                    edges.insert(RenderEdge {
+                        from_id: block_id,
+                        to_id: type_id,
+                        from_label: "func",
+                        to_label: "output",
+                    });
+                }
+            }
+        }
+
+        // 5. Trait implementations (trait → impl)
+        // Walk: Type → HasImpl → Impl → Implements → Trait
+        let impl_blocks = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasImpl);
+        for impl_id in impl_blocks {
+            let implements = project
+                .cc
+                .related_map
+                .get_related(impl_id, BlockRelation::Implements);
+            for trait_id in implements {
+                if node_set.contains(&trait_id) && block_id != trait_id {
+                    edges.insert(RenderEdge {
+                        from_id: trait_id,
+                        to_id: block_id,
+                        from_label: "trait",
+                        to_label: "impl",
+                    });
+                }
+            }
+        }
+
+        // 6. Trait bounds on generics (bound → generic)
+        // This would require tracking generic bounds - approximate via Uses
+        if block_kind == Some(BlockKind::Trait) {
+            // Find what uses this trait (could be as a bound)
+            let used_by = project
+                .cc
+                .related_map
+                .get_related(block_id, BlockRelation::UsedBy);
+            for user_id in used_by {
+                if node_set.contains(&user_id) && block_id != user_id {
+                    let user_kind = get_kind(user_id);
+                    // If the user is a function, struct, or trait, it might be using as a bound
+                    if user_kind == Some(BlockKind::Func)
+                        || user_kind == Some(BlockKind::Class)
+                        || user_kind == Some(BlockKind::Trait)
+                    {
+                        edges.insert(RenderEdge {
+                            from_id: block_id,
+                            to_id: user_id,
+                            from_label: "bound",
+                            to_label: "generic",
+                        });
+                    }
+                }
+            }
+        }
+
+        // 7. Type dependencies (func → type) - from function body usage like Foo::new()
+        // Skip if there's already an edge to the same target (e.g., output or input edge)
+        if block_kind == Some(BlockKind::Func) {
+            let uses = project
+                .cc
+                .related_map
+                .get_related(block_id, BlockRelation::Uses);
+            for type_id in uses {
+                if node_set.contains(&type_id) && block_id != type_id {
+                    let type_kind = get_kind(type_id);
+                    // Only add edges to types (Class, Enum, Trait), not to other functions
+                    if type_kind == Some(BlockKind::Class)
+                        || type_kind == Some(BlockKind::Enum)
+                        || type_kind == Some(BlockKind::Trait)
+                    {
+                        // Check if there's already an edge from this func to this type
+                        let has_existing_edge = edges
+                            .iter()
+                            .any(|e| e.from_id == block_id && e.to_id == type_id);
+                        if !has_existing_edge {
+                            edges.insert(RenderEdge {
+                                from_id: block_id,
+                                to_id: type_id,
+                                from_label: "func",
+                                to_label: "type_dep",
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // 8. Impl type arguments (type_arg → impl_target)
+        // From `impl Trait<TypeArg> for Target`, create edge TypeArg → Target
+        // Uses block.base.type_deps populated during link_impl from symbol's nested_types
+        if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
+            let index = (block_id.as_u32() as usize).saturating_sub(1);
+            if let Some(block) = project.cc.block_arena.bb().get(index)
+                && let Some(base) = block.base()
+            {
+                let type_deps = base.type_deps.read();
+                for &type_arg_id in type_deps.iter() {
+                    if node_set.contains(&type_arg_id) && block_id != type_arg_id {
+                        let type_arg_kind = get_kind(type_arg_id);
+                        // Only add edges from types (Class, Enum)
+                        if type_arg_kind == Some(BlockKind::Class)
+                            || type_arg_kind == Some(BlockKind::Enum)
+                        {
+                            // Check if there's already an edge from type_arg to this block
+                            let has_existing_edge = edges
+                                .iter()
+                                .any(|e| e.from_id == type_arg_id && e.to_id == block_id);
+                            if !has_existing_edge {
+                                edges.insert(RenderEdge {
+                                    from_id: type_arg_id,
+                                    to_id: block_id,
+                                    from_label: "type_arg",
+                                    to_label: "impl",
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    edges
+}
+
+// ============================================================================
+// DOT Rendering
+// ============================================================================
+
+/// Build a ComponentTree from nodes based on crate/module/file hierarchy.
+///
+/// Hierarchy: crate → module → file → nodes
+/// Each path element is (name, level_type) where level_type is "crate", "module", or "file".
+fn build_component_tree(nodes: &[RenderNode], depth: ComponentDepth) -> ComponentTree {
+    let mut tree = ComponentTree::default();
+    for (idx, node) in nodes.iter().enumerate() {
+        let mut path: Vec<(String, &'static str)> = Vec::new();
+
+        // Add crate level
+        if depth.includes_crate()
+            && let Some(ref crate_name) = node.crate_name
+        {
+            path.push((crate_name.clone(), "crate"));
+        }
+
+        // Add module level (if there's an explicit module path)
+        if depth.includes_module()
+            && let Some(ref module) = node.module_path
+        {
+            path.push((module.clone(), "module"));
+        }
+
+        // Add file level
+        if depth.includes_file()
+            && let Some(ref file) = node.file_name
+        {
+            // Extract just the filename from full path
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or(file);
+            path.push((file_name.to_string(), "file"));
+        }
+
+        tree.insert(&path, idx);
+    }
+    tree
+}
+
+/// Render the graph to DOT format.
+///
+/// Hierarchy levels:
+/// - Level 0: Project (wrapper for all crates)
+/// - Level 1: Crate (from Cargo.toml name)
+/// - Level 2: Module (from mod.rs structure)
+/// - Level 3: File (source file)
+fn render_dot(nodes: &[RenderNode], edges: &BTreeSet<RenderEdge>, tree: &ComponentTree) -> String {
+    // Pre-allocate output buffer
     let estimated_size = nodes.len() * 150 + edges.len() * 80 + 200;
     let mut output = String::with_capacity(estimated_size);
 
-    // Build component tree from node paths derived from FQN
-    let mut tree = ComponentTree::default();
-    for (idx, node) in nodes.iter().enumerate() {
-        let path = node.component_path(component_depth);
-        tree.insert(&path, idx);
-    }
-
     output.push_str("digraph architecture {\n");
-    output.push_str("  graph [fontname=\"Helvetica Bold\", fontsize=12];\n\n");
 
-    let mut counter = 0usize;
+    // Wrap everything in a Project cluster
+    output.push_str("  subgraph cluster_project {\n");
+    output.push_str("    label=\"project\";\n\n");
 
-    // Render the tree recursively with sym_ty attribute
-    render_arch_component_tree(&mut output, &tree, nodes, &mut counter, 1, 0);
+    // Render nodes grouped in clusters (crate → module → file)
+    render_tree_recursive(&mut output, tree, nodes, 2);
 
-    // Render labeled edges with from/to attributes
+    output.push_str("  }\n\n");
+
+    // Render edges with labels (outside clusters)
     for edge in edges {
         let _ = writeln!(
             output,
             "  n{} -> n{} [from=\"{}\", to=\"{}\"];",
-            nodes[edge.from_idx].block_id.as_u32(),
-            nodes[edge.to_idx].block_id.as_u32(),
-            edge.from_kind,
-            edge.to_kind
+            edge.from_id.as_u32(),
+            edge.to_id.as_u32(),
+            edge.from_label,
+            edge.to_label
         );
     }
 
@@ -233,170 +739,35 @@ fn render_arch_dot(
     output
 }
 
-fn render_arch_component_tree(
+/// Recursively render the component tree as nested subgraph clusters.
+///
+/// Uses the stored level_type ("crate", "module", "file") for cluster naming.
+fn render_tree_recursive(
     output: &mut String,
     tree: &ComponentTree,
-    nodes: &[CompactNode],
-    counter: &mut usize,
+    nodes: &[RenderNode],
     indent_level: usize,
-    depth: usize,
 ) {
-    let (fill_color, border_color) = get_depth_colors(depth);
-
     // Render child subtrees (nested subgraphs)
-    for (component_name, subtree) in &tree.children {
-        let cluster_id = *counter;
-        *counter += 1;
+    for (component_name, (level_type, subtree)) in &tree.children {
+        // Use meaningful cluster names based on level type
+        let cluster_id = match level_type.as_str() {
+            "crate" => component_name.replace('-', "_"),
+            "module" => component_name.replace('-', "_"),
+            "file" => component_name.replace('.', "_"),
+            _ => component_name.clone(),
+        };
 
-        // Write subgraph header
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
+        write_indent(output, indent_level);
         let _ = writeln!(output, "subgraph cluster_{} {{", cluster_id);
 
-        // Write label
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
+        write_indent(output, indent_level);
         let _ = writeln!(output, "  label=\"{}\";", escape_dot_label(component_name));
 
-        if depth != 0 {
-            for _ in 0..indent_level {
-                output.push_str("  ");
-            }
-            output.push_str("  style=\"filled\";\n");
+        render_tree_recursive(output, subtree, nodes, indent_level + 1);
 
-            for _ in 0..indent_level {
-                output.push_str("  ");
-            }
-            let _ = writeln!(output, "  fillcolor=\"{}\";", fill_color);
-
-            for _ in 0..indent_level {
-                output.push_str("  ");
-            }
-            let _ = writeln!(output, "  color=\"{}\";", border_color);
-        }
-
-        // Recursively render children with increased depth
-        render_arch_component_tree(output, subtree, nodes, counter, indent_level + 1, depth + 1);
-
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
-        output.push_str("}\n");
-    }
-
-    // Render nodes at this level with sym_ty attribute
-    let mut sorted_indices = tree.node_indices.clone();
-    sorted_indices.sort_by(|&a, &b| {
-        let node_a = &nodes[a];
-        let node_b = &nodes[b];
-
-        node_a
-            .location
-            .as_ref()
-            .cmp(&node_b.location.as_ref())
-            .then_with(|| node_a.name.cmp(&node_b.name))
-            .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
-    });
-
-    for idx in sorted_indices {
-        let node = &nodes[idx];
-
-        // Write indent
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
-
-        // Build node line directly
-        let _ = write!(
-            output,
-            "n{}[label=\"{}\"",
-            node.block_id.as_u32(),
-            escape_dot_label(&node.name)
-        );
-
-        if let Some(location) = &node.location {
-            let (_display, full) = summarize_location(location);
-            let _ = write!(output, ", full_path=\"{}\"", escape_dot_attr(&full));
-        }
-
-        if let Some(sym_kind) = &node.sym_kind {
-            let _ = write!(output, ", sym_ty=\"{:?}\"", sym_kind);
-            // Use box shape for type-like symbols (Struct, Trait, Enum)
-            if matches!(sym_kind, SymKind::Struct | SymKind::Enum | SymKind::Trait) {
-                output.push_str(", shape=box");
-            }
-        }
-
-        output.push_str("];\n");
-    }
-}
-
-/// Color palette for different nesting depths
-/// Returns (fill_color, border_color) for the subgraph
-fn get_depth_colors(depth: usize) -> (&'static str, &'static str) {
-    match depth % 5 {
-        0 => ("#F5F5F5", "#757575"), // Light grey / Dark grey
-        1 => ("#EEEEEE", "#616161"), // Lighter grey / Medium grey
-        2 => ("#E0E0E0", "#424242"), // Medium grey / Darker grey
-        3 => ("#FAFAFA", "#9E9E9E"), // Near white / Grey
-        4 => ("#F0F0F0", "#808080"), // Soft grey / Neutral grey
-        _ => ("#F5F5F5", "#9E9E9E"), // Light grey (fallback)
-    }
-}
-
-fn render_component_tree(
-    output: &mut String,
-    tree: &ComponentTree,
-    nodes: &[CompactNode],
-    counter: &mut usize,
-    indent_level: usize,
-    depth: usize,
-) {
-    let (fill_color, border_color) = get_depth_colors(depth);
-
-    // Render child subtrees (nested subgraphs)
-    for (component_name, subtree) in &tree.children {
-        let cluster_id = *counter;
-        *counter += 1;
-
-        // Write subgraph header
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
-        let _ = writeln!(output, "subgraph cluster_{} {{", cluster_id);
-
-        // Write label
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
-        let _ = writeln!(output, "  label=\"{}\";", escape_dot_label(component_name));
-
-        if depth != 0 {
-            for _ in 0..indent_level {
-                output.push_str("  ");
-            }
-            output.push_str("  style=\"filled\";\n");
-
-            for _ in 0..indent_level {
-                output.push_str("  ");
-            }
-            let _ = writeln!(output, "  fillcolor=\"{}\";", fill_color);
-
-            for _ in 0..indent_level {
-                output.push_str("  ");
-            }
-            let _ = writeln!(output, "  color=\"{}\";", border_color);
-        }
-
-        // Recursively render children with increased depth
-        render_component_tree(output, subtree, nodes, counter, indent_level + 1, depth + 1);
-
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
-        output.push_str("}\n");
+        write_indent(output, indent_level);
+        output.push_str("}\n\n");
     }
 
     // Render nodes at this level
@@ -404,7 +775,6 @@ fn render_component_tree(
     sorted_indices.sort_by(|&a, &b| {
         let node_a = &nodes[a];
         let node_b = &nodes[b];
-
         node_a
             .location
             .as_ref()
@@ -416,12 +786,9 @@ fn render_component_tree(
     for idx in sorted_indices {
         let node = &nodes[idx];
 
-        // Write indent
-        for _ in 0..indent_level {
-            output.push_str("  ");
-        }
+        write_indent(output, indent_level);
 
-        // Build node line directly
+        // Build node line
         let _ = write!(
             output,
             "n{}[label=\"{}\"",
@@ -430,14 +797,36 @@ fn render_component_tree(
         );
 
         if let Some(location) = &node.location {
-            let (_display, full) = summarize_location(location);
-            let _ = write!(output, ", full_path=\"{}\"", escape_dot_attr(&full));
+            let full_path = summarize_location(location);
+            let _ = write!(output, ", full_path=\"{}\"", escape_dot_label(&full_path));
+        }
+
+        if let Some(sym_kind) = &node.sym_kind {
+            let _ = write!(output, ", sym_ty=\"{:?}\"", sym_kind);
+            let shape = shape_for_kind(Some(*sym_kind));
+            if shape != "ellipse" {
+                let _ = write!(output, ", shape={}", shape);
+            }
         }
 
         output.push_str("];\n");
     }
 }
 
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/// Map SymKind to DOT shape.
+fn shape_for_kind(kind: Option<SymKind>) -> &'static str {
+    match kind {
+        Some(SymKind::Struct | SymKind::Enum | SymKind::Trait) => "box",
+        Some(SymKind::Field) => "plaintext",
+        _ => "ellipse",
+    }
+}
+
+/// Escape special characters for DOT labels.
 fn escape_dot_label(input: &str) -> String {
     input
         .replace('\\', "\\\\")
@@ -445,182 +834,24 @@ fn escape_dot_label(input: &str) -> String {
         .replace('\n', "\\n")
 }
 
-fn escape_dot_attr(input: &str) -> String {
-    input.replace('\\', "\\\\").replace('"', "\\\"")
+/// Convert byte offset to line number.
+fn byte_to_line(content: &[u8], byte_offset: usize) -> usize {
+    content[..byte_offset.min(content.len())]
+        .iter()
+        .filter(|&&b| b == b'\n')
+        .count()
+        + 1
 }
 
-fn summarize_location(location: &str) -> (String, String) {
-    let (path_part, line_part) = location
-        .rsplit_once(':')
-        .map(|(path, line)| (path, Some(line)))
-        .unwrap_or((location, None));
-
-    let path = Path::new(path_part);
-    let components: Vec<_> = path
-        .components()
-        .filter_map(|comp| comp.as_os_str().to_str())
-        .collect();
-
-    let mut shortened = if let Some(idx) = components.iter().rposition(|comp| *comp == "src") {
-        let start = idx.saturating_sub(1);
-        components[start..].join("/")
-    } else {
-        components[components.len().saturating_sub(3)..].join("/")
-    };
-    if shortened.is_empty() {
-        shortened = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or(path_part)
-            .to_string();
-    }
-
-    let display = if let Some(line) = line_part {
-        format!("{shortened}:{line}")
-    } else {
-        shortened
-    };
-
-    (display, location.to_string())
+/// Return the file path location for display.
+/// Keep the full path so that test normalization can replace temp directories with $TMP.
+fn summarize_location(location: &str) -> String {
+    location.to_string()
 }
 
-#[allow(dead_code)]
-fn reduce_transitive_edges(
-    nodes: &[CompactNode],
-    edges: &BTreeSet<(usize, usize)>,
-) -> BTreeSet<(usize, usize)> {
-    // Temporarily skip transitive reduction to avoid dropping edges like
-    // main -> render. TODO: reinstate smarter reduction once edge retention
-    // rules are clarified.
-    if nodes.is_empty() {
-        BTreeSet::new()
-    } else {
-        edges.clone()
+/// Write indentation to output.
+fn write_indent(output: &mut String, level: usize) {
+    for _ in 0..level {
+        output.push_str("  ");
     }
-}
-
-#[allow(dead_code)]
-struct PrunedGraph {
-    nodes: Vec<CompactNode>,
-    edges: BTreeSet<(usize, usize)>,
-}
-
-#[allow(dead_code)]
-fn prune_compact_components(
-    nodes: &[CompactNode],
-    edges: &BTreeSet<(usize, usize)>,
-) -> PrunedGraph {
-    if nodes.is_empty() {
-        return PrunedGraph {
-            nodes: Vec::new(),
-            edges: BTreeSet::new(),
-        };
-    }
-
-    let components = find_connected_components(nodes.len(), edges);
-    if components.is_empty() {
-        return PrunedGraph {
-            nodes: nodes.to_vec(),
-            edges: edges.clone(),
-        };
-    }
-
-    let mut retained_indices = HashSet::new();
-    for component in components {
-        if component.len() == 1 {
-            let idx = component[0];
-            let has_edges = edges.iter().any(|&(from, to)| from == idx || to == idx);
-            if !has_edges {
-                continue;
-            }
-        }
-        retained_indices.extend(component);
-    }
-
-    if retained_indices.is_empty() {
-        return PrunedGraph {
-            nodes: Vec::new(),
-            edges: BTreeSet::new(),
-        };
-    }
-
-    let mut retained_nodes = Vec::with_capacity(retained_indices.len());
-    let mut old_to_new = HashMap::new();
-
-    let mut ordered_indices: Vec<usize> = retained_indices.into_iter().collect();
-    ordered_indices.sort_unstable_by(|a, b| {
-        let node_a = &nodes[*a];
-        let node_b = &nodes[*b];
-        node_a
-            .unit_index
-            .cmp(&node_b.unit_index)
-            .then_with(|| node_a.location.as_ref().cmp(&node_b.location.as_ref()))
-            .then_with(|| node_a.name.cmp(&node_b.name))
-            .then_with(|| node_a.block_id.as_u32().cmp(&node_b.block_id.as_u32()))
-    });
-
-    for (new_idx, old_idx) in ordered_indices.iter().enumerate() {
-        retained_nodes.push(nodes[*old_idx].clone());
-        old_to_new.insert(*old_idx, new_idx);
-    }
-
-    let mut retained_edges = BTreeSet::new();
-    for &(from, to) in edges {
-        if let (Some(&new_from), Some(&new_to)) = (old_to_new.get(&from), old_to_new.get(&to)) {
-            retained_edges.insert((new_from, new_to));
-        }
-    }
-
-    PrunedGraph {
-        nodes: retained_nodes,
-        edges: retained_edges,
-    }
-}
-
-#[allow(dead_code)]
-fn find_connected_components(
-    node_count: usize,
-    edges: &BTreeSet<(usize, usize)>,
-) -> Vec<Vec<usize>> {
-    if node_count == 0 {
-        return Vec::new();
-    }
-
-    let mut graph: HashMap<usize, Vec<usize>> = HashMap::new();
-    for &(from, to) in edges.iter() {
-        graph.entry(from).or_default().push(to);
-        graph.entry(to).or_default().push(from);
-    }
-
-    let mut visited = HashSet::new();
-    let mut components = Vec::new();
-
-    for node in 0..node_count {
-        if visited.contains(&node) {
-            continue;
-        }
-
-        let mut component = Vec::new();
-        let mut stack = vec![node];
-
-        while let Some(current) = stack.pop() {
-            if !visited.insert(current) {
-                continue;
-            }
-
-            component.push(current);
-
-            if let Some(neighbors) = graph.get(&current) {
-                for &neighbor in neighbors {
-                    if !visited.contains(&neighbor) {
-                        stack.push(neighbor);
-                    }
-                }
-            }
-        }
-
-        components.push(component);
-    }
-
-    components
 }

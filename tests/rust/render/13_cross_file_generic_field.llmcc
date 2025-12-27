@@ -1,0 +1,48 @@
+===============================================================================
+cross-file-generic-field
+===============================================================================
+Struct field uses Vec<T> where T is from another file.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod item;
+mod collection;
+
+--- file: sample/src/item.rs ---
+pub struct Task {
+    pub name: String,
+}
+
+--- file: sample/src/collection.rs ---
+use crate::item::Task;
+
+pub struct TaskList {
+    pub tasks: Vec<Task>,
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_collection_rs {
+        label="collection.rs";
+        n6[label="TaskList", full_path="$TMP/sample/src/collection.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_item_rs {
+        label="item.rs";
+        n3[label="Task", full_path="$TMP/sample/src/item.rs:1", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n6 [from="type_dep", to="struct"];
+}

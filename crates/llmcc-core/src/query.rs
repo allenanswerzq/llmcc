@@ -1,10 +1,13 @@
+// TODO: Re-enable after ProjectGraph query methods are implemented
+#![allow(dead_code, unused_imports)]
+
+/*
 use crate::block::{BlockKind, BlockRelation};
-use crate::graph::{GraphNode, ProjectGraph};
+use crate::graph::{UnitNode, ProjectGraph};
 
 /// Query API for semantic code questions built on top of ProjectGraph:
 /// - given a function name, find all related code
-/// - given a struct name, find all related code
-/// - given a module/folder, find related modules
+/// - given a struct name, find all related code /// - given a module/folder, find related modules
 /// - given a file name, extract important structures (functions, types, etc.)
 ///
 /// Output format: plain text suitable for LLM ingestion
@@ -16,7 +19,7 @@ pub struct GraphBlockInfo {
     pub kind: String,
     pub file_path: Option<String>,
     pub source_code: Option<String>,
-    pub node: GraphNode,
+    pub node: UnitNode,
     pub unit_index: usize,
     pub start_line: usize,
     pub end_line: usize,
@@ -243,7 +246,7 @@ impl<'tcx> ProjectQuery<'tcx> {
             // Find all blocks this one depends on
             let depends_blocks = self
                 .graph
-                .find_related_blocks(primary_node, vec![BlockRelation::DependsOn]);
+                .find_related_blocks(primary_node, vec![BlockRelation::Calls]);
             for depends_node in depends_blocks {
                 if let Some(depends_info) = self.node_to_block_info(depends_node) {
                     result.depends.push(depends_info);
@@ -267,7 +270,7 @@ impl<'tcx> ProjectQuery<'tcx> {
             // Find all blocks that depend on this one
             let depended_blocks = self
                 .graph
-                .find_related_blocks(primary_node, vec![BlockRelation::DependedBy]);
+                .find_related_blocks(primary_node, vec![BlockRelation::CalledBy]);
             for depended_node in depended_blocks {
                 if let Some(depended_info) = self.node_to_block_info(depended_node) {
                     result.depended.push(depended_info);
@@ -364,8 +367,8 @@ impl<'tcx> ProjectQuery<'tcx> {
         result
     }
 
-    /// Helper: convert a GraphNode to block info
-    fn node_to_block_info(&self, node: GraphNode) -> Option<GraphBlockInfo> {
+    /// Helper: convert a UnitNode to block info
+    fn node_to_block_info(&self, node: UnitNode) -> Option<GraphBlockInfo> {
         let (unit_index, name, kind) = self.graph.block_info(node.block_id)?;
 
         // Try to get the fully qualified name from the symbol if available
@@ -417,7 +420,7 @@ impl<'tcx> ProjectQuery<'tcx> {
     }
 
     /// Calculate line numbers from byte offsets
-    fn get_line_numbers(&self, node: GraphNode, unit_index: usize) -> (usize, usize) {
+    fn get_line_numbers(&self, node: UnitNode, unit_index: usize) -> (usize, usize) {
         let file = match self.graph.cc.files.get(unit_index) {
             Some(f) => f,
             None => return (0, 0),
@@ -457,7 +460,7 @@ impl<'tcx> ProjectQuery<'tcx> {
     }
 
     /// Extract the source code for a given block
-    fn get_block_source_code(&self, node: GraphNode, unit_index: usize) -> Option<String> {
+    fn get_block_source_code(&self, node: UnitNode, unit_index: usize) -> Option<String> {
         let file = self.graph.cc.files.get(unit_index)?;
         let unit = self.graph.cc.compile_unit(unit_index);
 
@@ -540,3 +543,4 @@ impl<'tcx> ProjectQuery<'tcx> {
         }
     }
 }
+*/

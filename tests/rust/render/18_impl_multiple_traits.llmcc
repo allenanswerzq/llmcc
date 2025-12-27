@@ -1,0 +1,94 @@
+===============================================================================
+impl-multiple-traits
+===============================================================================
+Struct implements multiple traits.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod traits;
+mod entity;
+
+--- file: sample/src/traits.rs ---
+pub trait Drawable {
+    fn draw(&self);
+}
+
+pub trait Clickable {
+    fn click(&self);
+}
+
+--- file: sample/src/entity.rs ---
+use crate::traits::{Drawable, Clickable};
+
+pub struct Button {
+    pub label: String,
+}
+
+impl Drawable for Button {
+    fn draw(&self) {}
+}
+
+impl Clickable for Button {
+    fn click(&self) {}
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 traits ($TMP/sample/src/traits.rs)
+  (trait:3 Drawable
+    (method:4 draw
+      (parameter:5 self @type:3 Drawable)
+    )
+  )
+  (trait:6 Clickable
+    (method:7 click
+      (parameter:8 self @type:6 Clickable)
+    )
+  )
+)
+
+(root:9 entity ($TMP/sample/src/entity.rs)
+  (class:10 Button
+    (field:11 label @type String)
+  )
+  (impl:12 Button @type:10 @trait:3
+    (method:13 draw
+      (parameter:14 self @type:10 Button)
+    )
+  )
+  (impl:15 Button @type:10 @trait:6
+    (method:16 click
+      (parameter:17 self @type:10 Button)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_entity_rs {
+        label="entity.rs";
+        n10[label="Button", full_path="$TMP/sample/src/entity.rs:3", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_traits_rs {
+        label="traits.rs";
+        n3[label="Drawable", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
+        n6[label="Clickable", full_path="$TMP/sample/src/traits.rs:5", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n10 [from="trait", to="impl"];
+  n6 -> n10 [from="trait", to="impl"];
+}

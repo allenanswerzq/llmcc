@@ -1,7 +1,7 @@
 use llmcc_core::LanguageTraitImpl;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::lang_def::{ParseTree, TreeSitterParseTree};
+use llmcc_core::lang_def::{LanguageTrait, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::{CompileCtxt, CompileUnit};
@@ -15,6 +15,28 @@ use tree_sitter_rust;
 include!(concat!(env!("OUT_DIR"), "/rust_tokens.rs"));
 
 impl LanguageTraitImpl for LangRust {
+    /// Block kind with parent context - handles tuple struct fields
+    fn block_kind_with_parent_impl(kind_id: u16, field_id: u16, parent_kind_id: u16) -> BlockKind {
+        // Tuple struct fields: types inside ordered_field_declaration_list with field "type"
+        if parent_kind_id == LangRust::ordered_field_declaration_list
+            && field_id == LangRust::field_type
+        {
+            return BlockKind::Field;
+        }
+        // Don't create return blocks inside function_type (type annotations, not function definitions)
+        // e.g., `type F = impl FnOnce() -> T;` should not create a return block for T
+        if parent_kind_id == LangRust::function_type && field_id == LangRust::field_return_type {
+            return BlockKind::Undefined;
+        }
+        // Default behavior: check field kind first, then node kind
+        let field_kind = <Self as LanguageTrait>::block_kind(field_id);
+        if field_kind != BlockKind::Undefined {
+            field_kind
+        } else {
+            <Self as LanguageTrait>::block_kind(kind_id)
+        }
+    }
+
     #[rustfmt::skip]
     fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         let stack = ScopeStack::new(cc.arena(), &cc.interner);

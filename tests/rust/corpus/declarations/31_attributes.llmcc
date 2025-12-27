@@ -1,0 +1,29 @@
+===============================================================================
+attributes
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+#[test]
+fn test_foo() {}
+
+#[derive(Debug)]
+struct Baz;
+
+#[derive(Debug, Eq,)]
+struct Foo;
+
+#[cfg(target_os = "macos")]
+mod macos_only {}
+
+#![allow(clippy::useless_transmute)]
+
+#[clippy::cyclomatic_complexity = "100"]
+
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 test_foo)
+  (class:3 Baz)
+  (class:4 Foo)
+)

@@ -1,0 +1,16 @@
+===============================================================================
+trait-objects
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+type a = Box<Something + 'a>;
+type b = Rc<dyn Something>;
+type c = A<&dyn Fn(&B) -> C>;
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (alias:2 a)
+  (alias:3 b)
+  (alias:4 c)
+)

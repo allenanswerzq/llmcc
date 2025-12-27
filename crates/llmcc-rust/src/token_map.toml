@@ -170,13 +170,22 @@ ts_name = "ordered_field_declaration_list"
 
 [[nodes]]
 ts_name = "parameter"
+block_kind = "Parameter"
+
+[[nodes]]
+ts_name = "self_parameter"
+name = "self_param"
+block_kind = "Parameter"
+hir_kind = "Scope"
 
 [[nodes]]
 ts_name = "self"
-name = "self_param"
+name = "self_keyword"
+hir_kind = "Identifier"
 
 [[nodes]]
 ts_name = "parameters"
+# Container node, not a block itself - individual parameters are blocks
 
 [[nodes]]
 ts_name = "let_declaration"
@@ -202,7 +211,7 @@ block_kind = "Root"
 [[nodes]]
 ts_name = "mod_item"
 hir_kind = "Scope"
-block_kind = "Scope"
+block_kind = "Module"
 
 [[nodes]]
 ts_name = "struct_item"
@@ -219,9 +228,13 @@ ts_name = "enum_variant_list"
 
 [[nodes]]
 ts_name = "associated_type"
+hir_kind = "Scope"
+block_kind = "Alias"
 
 [[nodes]]
 ts_name = "type_item"
+hir_kind = "Scope"
+block_kind = "Alias"
 
 [[nodes]]
 ts_name = "array_type"
@@ -233,6 +246,15 @@ hir_kind = "Scope"
 
 [[nodes]]
 ts_name = "abstract_type"
+
+[[nodes]]
+ts_name = "bounded_type"
+
+[[nodes]]
+ts_name = "trait_bounds"
+
+[[nodes]]
+ts_name = "lifetime"
 
 [[nodes]]
 ts_name = "function_type"
@@ -295,6 +317,7 @@ ts_name = "where_predicate"
 [[nodes]]
 ts_name = "enum_variant"
 hir_kind = "Scope"
+block_kind = "Field"
 
 [[nodes]]
 ts_name = "impl_item"
@@ -453,6 +476,7 @@ field_name = "pattern"
 [[fields]]
 name = "field_return_type"
 field_name = "return_type"
+block_kind = "Return"
 
 [[fields]]
 name = "field_parameters"

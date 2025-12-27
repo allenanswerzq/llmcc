@@ -1,0 +1,71 @@
+===============================================================================
+enum-variants
+===============================================================================
+Test that enums appear in the architecture graph.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+
+struct Input {
+    data: Vec<u8>,
+}
+
+pub enum Status {
+    Pending,
+    Active,
+    InputItem {
+        data: Vec<Input>,
+        foo: i32,
+    },
+}
+
+pub enum Result<T, E> {
+    Ok(T),
+    Err(E),
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Input
+    (field:3 data @type data)
+  )
+  (enum:4 Status
+    (field:5 Pending @type:4 Pending)
+    (field:6 Active @type:4 Active)
+    (field:7 InputItem @type:4 InputItem
+      (field:8 data @type:2 Input)
+      (field:9 foo @type i32)
+    )
+  )
+  (enum:10 Result
+    (field:11 Ok @type:10 Ok
+      (field:12 0 @type T)
+    )
+    (field:13 Err @type:10 Err
+      (field:14 0 @type E)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="Input", full_path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
+        n4[label="Status", full_path="$TMP/sample/src/lib.rs:6", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  n2 -> n4 [from="field_type", to="enum"];
+}

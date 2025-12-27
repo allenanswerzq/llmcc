@@ -1,0 +1,63 @@
+===============================================================================
+cross-file-func-param
+===============================================================================
+Function in one file takes struct from another file as parameter.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod handler;
+
+--- file: sample/src/types.rs ---
+pub struct Request {
+    pub body: String,
+}
+
+--- file: sample/src/handler.rs ---
+use crate::types::Request;
+
+pub fn handle(req: Request) {
+    println!("{}", req.body);
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 Request
+    (field:4 body @type String)
+  )
+)
+
+(root:5 handler ($TMP/sample/src/handler.rs)
+  (func:6 handle
+    (parameter:7 req @type:3 Request)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_handler_rs {
+        label="handler.rs";
+        n6[label="handle", full_path="$TMP/sample/src/handler.rs:3", sym_ty="Function"];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="Request", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n6 [from="input", to="func"];
+}

@@ -1,0 +1,100 @@
+===============================================================================
+enum-with-tuple-variants
+===============================================================================
+Test enums with tuple-like variants containing user-defined types.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod results;
+
+--- file: sample/src/types.rs ---
+pub struct Data {
+    pub value: i32,
+}
+
+pub struct ErrorInfo {
+    pub code: i32,
+}
+
+--- file: sample/src/results.rs ---
+use crate::types::{Data, ErrorInfo};
+
+pub enum Result {
+    Ok(Data),
+    Err(ErrorInfo),
+}
+
+pub enum MultiResult {
+    Success(Data, Data),
+    Partial(Data, ErrorInfo),
+    Failure(ErrorInfo),
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 Data
+    (field:4 value @type i32)
+  )
+  (class:5 ErrorInfo
+    (field:6 code @type i32)
+  )
+)
+
+(root:7 results ($TMP/sample/src/results.rs)
+  (enum:8 Result
+    (field:9 Ok @type:8 Ok
+      (field:10 0 @type:3 Data)
+    )
+    (field:11 Err @type:8 Err
+      (field:12 0 @type:5 ErrorInfo)
+    )
+  )
+  (enum:13 MultiResult
+    (field:14 Success @type:13 Success
+      (field:15 0 @type:3 Data)
+      (field:16 1 @type:3 Data)
+    )
+    (field:17 Partial @type:13 Partial
+      (field:18 0 @type:3 Data)
+      (field:19 1 @type:5 ErrorInfo)
+    )
+    (field:20 Failure @type:13 Failure
+      (field:21 0 @type:5 ErrorInfo)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_results_rs {
+        label="results.rs";
+        n8[label="Result", full_path="$TMP/sample/src/results.rs:3", sym_ty="Enum", shape=box];
+        n13[label="MultiResult", full_path="$TMP/sample/src/results.rs:8", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="Data", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+        n5[label="ErrorInfo", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n8 [from="field_type", to="enum"];
+  n3 -> n13 [from="field_type", to="enum"];
+  n5 -> n8 [from="field_type", to="enum"];
+  n5 -> n13 [from="field_type", to="enum"];
+}

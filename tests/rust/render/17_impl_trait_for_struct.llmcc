@@ -1,0 +1,76 @@
+===============================================================================
+impl-trait-for-struct-one
+===============================================================================
+Struct implements trait from another file.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod animal;
+mod dog;
+
+--- file: sample/src/animal.rs ---
+pub trait Animal {
+    fn speak(&self);
+}
+
+--- file: sample/src/dog.rs ---
+use crate::animal::Animal;
+
+pub struct Dog {
+    pub name: String,
+}
+
+impl Animal for Dog {
+    fn speak(&self) {
+        println!("Woof!");
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 animal ($TMP/sample/src/animal.rs)
+  (trait:3 Animal
+    (method:4 speak
+      (parameter:5 self @type:3 Animal)
+    )
+  )
+)
+
+(root:6 dog ($TMP/sample/src/dog.rs)
+  (class:7 Dog
+    (field:8 name @type String)
+  )
+  (impl:9 Dog @type:7 @trait:3
+    (method:10 speak
+      (parameter:11 self @type:7 Dog)
+    )
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_animal_rs {
+        label="animal.rs";
+        n3[label="Animal", full_path="$TMP/sample/src/animal.rs:1", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_dog_rs {
+        label="dog.rs";
+        n7[label="Dog", full_path="$TMP/sample/src/dog.rs:3", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n7 [from="trait", to="impl"];
+}

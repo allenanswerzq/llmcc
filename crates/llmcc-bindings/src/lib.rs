@@ -1,6 +1,7 @@
 #![allow(clippy::useless_conversion)]
 #![allow(unsafe_op_in_unsafe_fn)]
 use llmcc_cli::{LlmccOptions, run_main};
+use llmcc_core::graph_render::ComponentDepth;
 // use llmcc_python::LangPython;  // TODO: will be added back in the future
 use llmcc_rust::LangRust;
 use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
@@ -23,36 +24,29 @@ fn llmcc_bindings(m: &Bound<'_, PyModule>) -> PyResult<()> {
     dirs=None,
     print_ir=false,
     print_block=false,
-    print_design_graph=false,
-    pagerank=false,
-    top_k=None,
-    query=None,
-    recursive=false,
-    depends=false,
-    dependents=false,
-    summary=false
+    graph=false,
+    component_depth="crate"
 ))]
-#[allow(clippy::too_many_arguments)]
 fn run_llmcc(
     lang: &str,
     files: Option<Vec<String>>,
     dirs: Option<Vec<String>>,
     print_ir: bool,
     print_block: bool,
-    print_design_graph: bool,
-    pagerank: bool,
-    top_k: Option<usize>,
-    query: Option<String>,
-    recursive: bool,
-    depends: bool,
-    dependents: bool,
-    summary: bool,
+    graph: bool,
+    component_depth: &str,
 ) -> Result<Option<String>, PyErr> {
-    if depends && dependents {
-        return Err(PyValueError::new_err(
-            "'depends' and 'dependents' are mutually exclusive",
-        ));
-    }
+    let depth = match component_depth {
+        "crate" => ComponentDepth::Crate,
+        "module" => ComponentDepth::Module,
+        "file" => ComponentDepth::File,
+        other => {
+            return Err(PyValueError::new_err(format!(
+                "Unknown component_depth: {}. Use 'crate', 'module', or 'file'",
+                other
+            )));
+        }
+    };
 
     let opts = LlmccOptions {
         files: files.unwrap_or_default(),
@@ -60,16 +54,8 @@ fn run_llmcc(
         output: None,
         print_ir,
         print_block,
-        design_graph: print_design_graph,
-        arch_graph: false,
-        dep_graph: false,
-        pagerank,
-        top_k,
-        query,
-        depends,
-        dependents,
-        recursive,
-        summary,
+        graph,
+        component_depth: depth,
     };
 
     let result = match lang {

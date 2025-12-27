@@ -1,0 +1,43 @@
+===============================================================================
+structs
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+struct Proton;
+struct Electron {}
+struct Person {pub name: String, pub age: Proton}
+struct Point {
+  x: i32,
+
+  #[attribute1]
+  y: i32,
+}
+struct Color(pub i32, Proton, i32);
+struct Inches(Proton);
+struct Empty(pub ());
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (class:2 Proton)
+  (class:3 Electron)
+  (class:4 Person
+    (field:5 name @type String)
+    (field:6 age @type:2 Proton)
+  )
+  (class:7 Point
+    (field:8 x @type i32)
+    (field:9 y @type i32)
+  )
+  (class:10 Color
+    (field:11 0 @type i32)
+    (field:12 1 @type:2 Proton)
+    (field:13 2 @type i32)
+  )
+  (class:14 Inches
+    (field:15 0 @type:2 Proton)
+  )
+  (class:16 Empty
+    (field:17 0)
+  )
+)

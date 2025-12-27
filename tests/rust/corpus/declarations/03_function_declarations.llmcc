@@ -1,0 +1,195 @@
+===============================================================================
+function-declarations-basic
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+struct Foo;
+
+struct ComplexType<T> {
+    y: Foo,
+};
+
+
+fn add(x: i32, t: ComplexType<T>) -> i32 {
+    return x + y;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (class:2 Foo)
+  (class:3 ComplexType
+    (field:4 y @type:2 Foo)
+  )
+  (func:5 add
+    (parameter:6 x @type i32)
+    (parameter:7 t @type:3 ComplexType)
+    (return:8 @type i32)
+  )
+)
+
+
+===============================================================================
+function-declarations-with-stmt
+===============================================================================
+
+
+--- file: src/lib.rs ---
+
+struct Foo;
+struct Bar {
+    a: i32,
+}
+impl Bar {
+    fn new(a: i32) -> Self {
+        Self { a }
+    }
+
+    fn get_a(&self) -> i32 {
+        self.a
+    }
+
+    fn nothing() {
+    }
+}
+
+struct ComplexType<T> {
+    y: Foo,
+};
+
+
+fn free() {}
+
+fn add(x: i32, t: ComplexType<T>) -> i32 {
+    if x > 0 {
+        println!("{}", x);
+    } else {
+        let b = Bar::new(x);
+        println!("{}", b.get_a());
+    }
+    free();
+    return x + y;
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (class:2 Foo)
+  (class:3 Bar
+    (field:4 a @type i32)
+  )
+  (impl:5 Bar @type:3
+    (method:6 new
+      (parameter:7 a @type i32)
+      (return:8 @type:3 Bar)
+    )
+    (method:9 get_a
+      (parameter:10 self @type:3 Bar)
+      (return:11 @type i32)
+    )
+    (method:12 nothing)
+  )
+  (class:13 ComplexType
+    (field:14 y @type:2 Foo)
+  )
+  (func:15 free)
+  (func:16 add
+    (parameter:17 x @type i32)
+    (parameter:18 t @type:13 ComplexType)
+    (return:19 @type i32)
+    (@tdep:3 Bar)
+    (@fdep:15 free)
+  )
+)
+
+
+===============================================================================
+function-declarations
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+fn main() {}
+
+fn add(x: i32, y: i32) -> i32 {
+    return x + y;
+}
+
+fn takes_slice(slice: &str) {
+    println!("Got: {}", slice);
+}
+
+fn returns_array() -> [u32; 2] {
+    return [1, 2];
+}
+
+fn returns_tuple() -> (u32, u16) {
+    return (1, 2);
+}
+
+fn returns_unit() {
+    return
+}
+
+pub trait FnOnce<Args> {
+    type Output;
+}
+
+pub struct Result<T, E> {}
+
+fn takes_impl_fn(x: impl FnOnce() -> Result<T, E>) {}
+
+fn takes_attrs(#[attr] x: i32, #[attr] y: i64) {}
+
+pub struct Machine<const STATE: State> {}
+
+fn accumulate(self) -> Machine<{State::Accumulate}> {}
+
+struct Quux<'a> {
+    data: &'a str,
+}
+trait Baz<T> {}
+fn takes_hrtb(bar: impl for<'a> Baz<Quux<'a>>) {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 main)
+  (func:3 add
+    (parameter:4 x @type i32)
+    (parameter:5 y @type i32)
+    (return:6 @type i32)
+  )
+  (func:7 takes_slice
+    (parameter:8 slice @type str)
+  )
+  (func:10 returns_array
+    (return:11 @type u32)
+  )
+  (func:12 returns_tuple
+    (return:13 @type u32)
+  )
+  (func:14 returns_unit)
+  (trait:15 FnOnce
+    (alias:16 Output)
+  )
+  (class:17 Result)
+  (func:18 takes_impl_fn
+    (parameter:19 x @type:15 FnOnce)
+  )
+  (func:20 takes_attrs
+    (parameter:21 x @type i32)
+    (parameter:22 y @type i64)
+  )
+  (class:23 Machine)
+  (func:24 accumulate
+    (parameter:25 self)
+    (return:26 @type:23 Machine)
+  )
+  (class:27 Quux
+    (field:28 data @type str)
+  )
+  (trait:29 Baz)
+  (func:30 takes_hrtb
+    (parameter:31 bar @type:29 Baz)
+  )
+)

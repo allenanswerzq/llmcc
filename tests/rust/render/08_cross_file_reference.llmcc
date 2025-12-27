@@ -1,0 +1,78 @@
+===============================================================================
+cross-file-reference
+===============================================================================
+Test that types defined in different files within the same crate create edges.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod types;
+mod services;
+
+pub use types::User;
+pub use services::UserService;
+
+--- file: sample/src/types.rs ---
+
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+--- file: sample/src/services.rs ---
+use crate::types::User;
+
+pub struct UserService {
+    pub current_user: User,
+}
+
+pub fn get_user() -> User {
+    User { id: 1, name: "Alice".to_string() }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs))
+
+(root:2 types ($TMP/sample/src/types.rs)
+  (class:3 User
+    (field:4 id @type u64)
+    (field:5 name @type String)
+  )
+)
+
+(root:6 services ($TMP/sample/src/services.rs)
+  (class:7 UserService
+    (field:8 current_user @type:3 User)
+  )
+  (func:9 get_user
+    (return:10 @type:3 User)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_services_rs {
+        label="services.rs";
+        n7[label="UserService", full_path="$TMP/sample/src/services.rs:3", sym_ty="Struct", shape=box];
+        n9[label="get_user", full_path="$TMP/sample/src/services.rs:7", sym_ty="Function"];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n3[label="User", full_path="$TMP/sample/src/types.rs:2", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n3 -> n7 [from="field_type", to="struct"];
+  n9 -> n3 [from="func", to="output"];
+}

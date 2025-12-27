@@ -1,0 +1,36 @@
+===============================================================================
+or-patterns
+===============================================================================
+Auto-generated from tree-sitter corpus.
+
+--- file: src/lib.rs ---
+if let A(x) | B(x) = expr {
+    do_stuff_with(x);
+}
+
+while let A(x) | B(x) = expr {
+    do_stuff_with(x);
+}
+
+let Ok(index) | Err(index) = slice.binary_search(&x);
+
+for ref a | b in c {}
+
+let Ok(x) | Err(x) = binary_search(x);
+
+for A | B | C in c {}
+
+|(Ok(x) | Err(x))| expr();
+
+let ref mut x @ (A | B | C);
+
+fn foo((1 | 2 | 3): u8) {}
+
+if let x!() | y!() = () {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:7 foo
+    (parameter:8 u8 @type u8)
+  )
+)
