@@ -99,7 +99,12 @@ fn main() -> Result<()> {
                     (path.clone(), filter.or(update_filter))
                 } else {
                     // It's a filter string
-                    (cli.root, filter.or(path.to_string_lossy().to_string().into()).or(update_filter))
+                    (
+                        cli.root,
+                        filter
+                            .or(path.to_string_lossy().to_string().into())
+                            .or(update_filter),
+                    )
                 }
             } else {
                 (cli.root, filter.or(update_filter))

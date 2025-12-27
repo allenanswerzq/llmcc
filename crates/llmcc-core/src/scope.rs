@@ -93,10 +93,10 @@ impl<'tcx> Scope<'tcx> {
         queue.extend(self.parents());
 
         while let Some(parent) = queue.pop_front() {
-            if let Some(sym) = parent.opt_symbol() {
-                if sym.kind() == kind {
-                    return Some(sym);
-                }
+            if let Some(sym) = parent.opt_symbol()
+                && sym.kind() == kind
+            {
+                return Some(sym);
             }
             queue.extend(parent.parents());
         }

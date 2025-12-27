@@ -62,7 +62,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
     /// Resolve type info from a symbol, following the type_of chain.
     /// Returns (type_name, type_block_id) tuple.
-    fn resolve_type_info(&self, symbol: Option<&'tcx crate::symbol::Symbol>) -> (String, Option<BlockId>) {
+    fn resolve_type_info(
+        &self,
+        symbol: Option<&'tcx crate::symbol::Symbol>,
+    ) -> (String, Option<BlockId>) {
         let sym = match symbol {
             Some(s) => s,
             None => return (String::new(), None),
@@ -71,33 +74,40 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // Special case: EnumVariant symbols should use their own name, not follow type_of
         // This preserves the variant name (e.g., "None", "Some") rather than the parent enum
         if sym.kind() == crate::symbol::SymKind::EnumVariant {
-            let type_name = self.unit.resolve_interned_owned(sym.name).unwrap_or_default();
+            let type_name = self
+                .unit
+                .resolve_interned_owned(sym.name)
+                .unwrap_or_default();
             // No block_id for enum variants - they don't define a type
             return (type_name, None);
         }
 
         // First try type_of (for symbols that point to a type)
-        if let Some(type_sym_id) = sym.type_of() {
-            if let Some(type_sym) = self.unit.opt_get_symbol(type_sym_id) {
-                // Check if type_sym is a TypeParameter with a bound - use the bound type
-                let effective_type = if type_sym.kind() == crate::symbol::SymKind::TypeParameter {
-                    if let Some(bound_id) = type_sym.type_of() {
-                        self.unit.opt_get_symbol(bound_id).unwrap_or(type_sym)
-                    } else {
-                        type_sym
-                    }
-                } else {
-                    type_sym
-                };
+        if let Some(type_sym_id) = sym.type_of()
+            && let Some(type_sym) = self.unit.opt_get_symbol(type_sym_id)
+        {
+            // Check if type_sym is a TypeParameter with a bound - use the bound type
+            let effective_type = if type_sym.kind() == crate::symbol::SymKind::TypeParameter
+                && let Some(bound_id) = type_sym.type_of()
+            {
+                self.unit.opt_get_symbol(bound_id).unwrap_or(type_sym)
+            } else {
+                type_sym
+            };
 
-                let type_name = self.unit.resolve_interned_owned(effective_type.name).unwrap_or_default();
-                let type_block_id = effective_type.block_id();
-                return (type_name, type_block_id);
-            }
+            let type_name = self
+                .unit
+                .resolve_interned_owned(effective_type.name)
+                .unwrap_or_default();
+            let type_block_id = effective_type.block_id();
+            return (type_name, type_block_id);
         }
 
         // Fallback: use the symbol directly (for cases where symbol IS the type)
-        let type_name = self.unit.resolve_interned_owned(sym.name).unwrap_or_default();
+        let type_name = self
+            .unit
+            .resolve_interned_owned(sym.name)
+            .unwrap_or_default();
         let type_block_id = sym.block_id();
         (type_name, type_block_id)
     }
@@ -106,7 +116,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
     /// For scoped nodes (class, func, etc.): gets symbol from scope
     /// For identifier nodes: gets the resolved symbol
     /// Returns None for nodes without an associated symbol
-    fn extract_symbol(&self, node: HirNode<'tcx>, kind: BlockKind) -> Option<&'tcx crate::symbol::Symbol> {
+    fn extract_symbol(
+        &self,
+        node: HirNode<'tcx>,
+        kind: BlockKind,
+    ) -> Option<&'tcx crate::symbol::Symbol> {
         // Impl blocks reference existing type symbols, not their own
         // Don't extract symbol for impl - it will be set via relation linking
         if kind == BlockKind::Impl {
@@ -114,25 +128,25 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         }
 
         // Try scope first (for class/func/enum etc.)
-        if let Some(scope) = node.as_scope() {
-            if let Some(sym) = scope.opt_symbol() {
-                return Some(sym);
-            }
+        if let Some(scope) = node.as_scope()
+            && let Some(sym) = scope.opt_symbol()
+        {
+            return Some(sym);
         }
 
         // Try identifier (for fields, parameters, etc.)
-        if let Some(ident) = node.find_ident(&self.unit) {
-            if let Some(sym) = ident.opt_symbol() {
-                return Some(sym);
-            }
+        if let Some(ident) = node.find_ident(&self.unit)
+            && let Some(sym) = ident.opt_symbol()
+        {
+            return Some(sym);
         }
 
         // Try children's identifiers (for self_parameter where the identifier is a child)
         for child in node.children(&self.unit) {
-            if let Some(ident) = child.as_ident() {
-                if let Some(sym) = ident.opt_symbol() {
-                    return Some(sym);
-                }
+            if let Some(ident) = child.as_ident()
+                && let Some(sym) = ident.opt_symbol()
+            {
+                return Some(sym);
             }
         }
 
@@ -155,10 +169,12 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         match kind {
             BlockKind::Root => {
                 // Get file path from HirFile node or from compile unit
-                let file_name = node.as_file()
+                let file_name = node
+                    .as_file()
                     .map(|file| file.file_path.clone())
                     .or_else(|| self.unit.file_path().map(|s| s.to_string()));
-                let block = BlockRoot::new_with_symbol(id, node, parent, children, file_name, symbol);
+                let block =
+                    BlockRoot::new_with_symbol(id, node, parent, children, file_name, symbol);
 
                 // Populate crate_name and module_path from scope chain
                 if let Some(scope_node) = node.as_scope()
@@ -166,15 +182,15 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 {
                     use crate::symbol::SymKind;
 
-                    if let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate) {
-                        if let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name) {
-                            block.set_crate_name(name);
-                        }
+                    if let Some(crate_sym) = scope.find_parent_by_kind(SymKind::Crate)
+                        && let Some(name) = self.unit.cc.interner.resolve_owned(crate_sym.name)
+                    {
+                        block.set_crate_name(name);
                     }
-                    if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module) {
-                        if let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name) {
-                            block.set_module_path(name);
-                        }
+                    if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
+                        && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
+                    {
+                        block.set_module_path(name);
                     }
                 }
 
@@ -203,10 +219,10 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // For call blocks, symbol is the callee (if resolved)
                 let stmt = BlockCall::new_with_symbol(id, node, parent, children, symbol);
                 // Set callee from resolved symbol
-                if let Some(callee_sym) = node.ident_symbol(&self.unit) {
-                    if let Some(callee_block_id) = callee_sym.block_id() {
-                        stmt.set_callee(callee_block_id);
-                    }
+                if let Some(callee_sym) = node.ident_symbol(&self.unit)
+                    && let Some(callee_block_id) = callee_sym.block_id()
+                {
+                    stmt.set_callee(callee_block_id);
                 }
                 let block_ref = self.unit.cc.block_arena.alloc(stmt);
                 BasicBlock::Call(block_ref)
@@ -233,26 +249,28 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockImpl::new(id, node, parent, children);
 
                 // Get target type from the "type" field (e.g., `impl Foo` or `impl Trait for Foo`)
-                if let Some(target_ident) = node.ident_by_field(&self.unit, Language::type_field()) {
-                    if let Some(sym) = target_ident.opt_symbol() {
-                        // Follow type_of chain to get the actual type symbol for block_id
-                        let resolved = sym.type_of()
-                            .and_then(|id| self.unit.opt_get_symbol(id))
-                            .unwrap_or(sym);
-                        // Store original sym (which has nested_types from impl type args) not resolved
-                        block.set_target_info(resolved.block_id(), Some(sym));
-                    }
+                if let Some(target_ident) = node.ident_by_field(&self.unit, Language::type_field())
+                    && let Some(sym) = target_ident.opt_symbol()
+                {
+                    // Follow type_of chain to get the actual type symbol for block_id
+                    let resolved = sym
+                        .type_of()
+                        .and_then(|id| self.unit.opt_get_symbol(id))
+                        .unwrap_or(sym);
+                    // Store original sym (which has nested_types from impl type args) not resolved
+                    block.set_target_info(resolved.block_id(), Some(sym));
                 }
 
                 // Get trait from the "trait" field (e.g., `impl Trait for Foo`)
-                if let Some(trait_ident) = node.ident_by_field(&self.unit, Language::trait_field()) {
-                    if let Some(sym) = trait_ident.opt_symbol() {
-                        // Follow type_of chain to get the actual trait symbol
-                        let resolved = sym.type_of()
-                            .and_then(|id| self.unit.opt_get_symbol(id))
-                            .unwrap_or(sym);
-                        block.set_trait_info(resolved.block_id(), Some(resolved));
-                    }
+                if let Some(trait_ident) = node.ident_by_field(&self.unit, Language::trait_field())
+                    && let Some(sym) = trait_ident.opt_symbol()
+                {
+                    // Follow type_of chain to get the actual trait symbol
+                    let resolved = sym
+                        .type_of()
+                        .and_then(|id| self.unit.opt_get_symbol(id))
+                        .unwrap_or(sym);
+                    block.set_trait_info(resolved.block_id(), Some(resolved));
                 }
 
                 let block_ref = self.unit.cc.block_arena.alloc(block);
@@ -303,12 +321,15 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             }
             BlockKind::Module => {
                 // Get module name from identifier
-                let name = node.find_ident(&self.unit)
+                let name = node
+                    .find_ident(&self.unit)
                     .map(|ident| ident.name.clone())
                     .unwrap_or_default();
                 // Inline modules have children (the module body), file modules don't
                 let is_inline = !children.is_empty();
-                let block = BlockModule::new_with_symbol(id, node, parent, children, name, is_inline, symbol);
+                let block = BlockModule::new_with_symbol(
+                    id, node, parent, children, name, is_inline, symbol,
+                );
                 let block_ref = self.unit.cc.block_arena.alloc(block);
                 BasicBlock::Module(block_ref)
             }
@@ -433,7 +454,9 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
 
         // For tuple fields, the node is the type itself. Find the type symbol.
         // Strategy 1: Use find_ident to get the identifier and its symbol
-        let mut type_symbol = node.find_ident(&self.unit).and_then(|ident| ident.opt_symbol());
+        let mut type_symbol = node
+            .find_ident(&self.unit)
+            .and_then(|ident| ident.opt_symbol());
 
         // Strategy 2: Look at children for symbol
         if type_symbol.is_none() {
@@ -445,12 +468,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             }
         }
         // Strategy 3: Node's own scope/ident
-        if type_symbol.is_none() {
-            if let Some(scope) = node.as_scope() {
-                if let Some(ident) = *scope.ident.read() {
-                    type_symbol = ident.opt_symbol();
-                }
-            }
+        if type_symbol.is_none()
+            && let Some(scope) = node.as_scope()
+            && let Some(ident) = *scope.ident.read()
+        {
+            type_symbol = ident.opt_symbol();
         }
         // Strategy 4: Node's own symbol
         if type_symbol.is_none() {
@@ -561,12 +583,19 @@ impl<'tcx, Language: LanguageTrait> HirVisitor<'tcx> for GraphBuilder<'tcx, Lang
             // Check for context-dependent blocks (like tuple struct fields)
             // Only intercept if the parent context changes the block kind
             let base_kind = Self::effective_block_kind(child);
-            let context_kind = Language::block_kind_with_parent(child.kind_id(), child.field_id(), parent_kind_id);
+            let context_kind =
+                Language::block_kind_with_parent(child.kind_id(), child.field_id(), parent_kind_id);
 
             if context_kind != base_kind && Self::is_block_kind(context_kind) {
                 // Parent context creates a block that wouldn't exist otherwise
                 // For tuple struct fields, pass the index as the name
-                self.build_block_with_kind_and_index(unit, child, parent, context_kind, tuple_field_index);
+                self.build_block_with_kind_and_index(
+                    unit,
+                    child,
+                    parent,
+                    context_kind,
+                    tuple_field_index,
+                );
                 tuple_field_index += 1;
             } else if context_kind == BlockKind::Undefined && Self::is_block_kind(base_kind) {
                 // Parent context suppresses block creation (e.g., return_type inside function_type)
@@ -622,13 +651,8 @@ pub fn build_unit_graph<'tcx, L: LanguageTrait>(
     let root_node = unit.hir_node(root_hir);
     builder.visit_node(unit, root_node, BlockId::ROOT_PARENT);
 
-    let root_block = builder
-        .root
-        .ok_or("graph builder produced no root block")?;
-    Ok(UnitGraph::new(
-        unit_index,
-        root_block,
-    ))
+    let root_block = builder.root.ok_or("graph builder produced no root block")?;
+    Ok(UnitGraph::new(unit_index, root_block))
 }
 
 /// Build unit graphs for all compilation units in parallel.

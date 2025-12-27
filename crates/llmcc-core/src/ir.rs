@@ -198,10 +198,10 @@ impl<'hir> HirNode<'hir> {
     /// Find the first text node's content in children (for keywords like "self").
     pub fn find_text(&self, unit: &CompileUnit<'hir>) -> Option<&str> {
         for child in self.children(unit) {
-            if child.is_kind(HirKind::Text) {
-                if let Some(text) = child.as_text() {
-                    return Some(text.text());
-                }
+            if child.is_kind(HirKind::Text)
+                && let Some(text) = child.as_text()
+            {
+                return Some(text.text());
             }
         }
         None
@@ -226,7 +226,10 @@ impl<'hir> HirNode<'hir> {
 
     /// Find the type identifier from a node, handling scoped and generic types correctly.
     /// Looks for direct identifier children first, then recurses into the first internal child.
-    fn find_type_ident(node: &HirNode<'hir>, unit: &CompileUnit<'hir>) -> Option<&'hir HirIdent<'hir>> {
+    fn find_type_ident(
+        node: &HirNode<'hir>,
+        unit: &CompileUnit<'hir>,
+    ) -> Option<&'hir HirIdent<'hir>> {
         if node.is_kind(HirKind::Identifier) {
             return node.as_ident();
         }

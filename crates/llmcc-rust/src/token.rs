@@ -25,9 +25,7 @@ impl LanguageTraitImpl for LangRust {
         }
         // Don't create return blocks inside function_type (type annotations, not function definitions)
         // e.g., `type F = impl FnOnce() -> T;` should not create a return block for T
-        if parent_kind_id == LangRust::function_type
-            && field_id == LangRust::field_return_type
-        {
+        if parent_kind_id == LangRust::function_type && field_id == LangRust::field_return_type {
             return BlockKind::Undefined;
         }
         // Default behavior: check field kind first, then node kind

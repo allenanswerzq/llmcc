@@ -497,7 +497,10 @@ impl<'blk> BlockRoot<'blk> {
     pub fn format(&self) -> String {
         let name = self.base.opt_get_name().unwrap_or("");
         if let Some(file_name) = &self.file_name {
-            format!("{}:{} {} ({})", self.base.kind, self.base.id, name, file_name)
+            format!(
+                "{}:{} {} ({})",
+                self.base.kind, self.base.id, name, file_name
+            )
         } else {
             format!("{}:{} {}", self.base.kind, self.base.id, name)
         }
@@ -545,7 +548,10 @@ impl<'blk> BlockModule<'blk> {
 
     pub fn format(&self) -> String {
         let inline_marker = if self.is_inline { " (inline)" } else { "" };
-        format!("{}:{} {}{}", self.base.kind, self.base.id, self.name, inline_marker)
+        format!(
+            "{}:{} {}{}",
+            self.base.kind, self.base.id, self.name, inline_marker
+        )
     }
 }
 
@@ -1002,7 +1008,12 @@ impl<'blk> BlockConst<'blk> {
     ) -> Self {
         let base = BlockBase::with_symbol(id, node, BlockKind::Const, parent, children, symbol);
         let name = base.opt_get_name().unwrap_or("").to_string();
-        Self { base, name, type_name: String::new(), type_ref: RwLock::new(None) }
+        Self {
+            base,
+            name,
+            type_name: String::new(),
+            type_ref: RwLock::new(None),
+        }
     }
 
     /// Set type info for this const block (used during block building)
@@ -1024,9 +1035,15 @@ impl<'blk> BlockConst<'blk> {
     pub fn format(&self) -> String {
         if !self.type_name.is_empty() {
             if let Some(type_id) = *self.type_ref.read() {
-                return format!("{}:{} {} @type:{} {}", self.base.kind, self.base.id, self.name, type_id, self.type_name);
+                return format!(
+                    "{}:{} {} @type:{} {}",
+                    self.base.kind, self.base.id, self.name, type_id, self.type_name
+                );
             } else {
-                return format!("{}:{} {} @type {}", self.base.kind, self.base.id, self.name, self.type_name);
+                return format!(
+                    "{}:{} {} @type {}",
+                    self.base.kind, self.base.id, self.name, self.type_name
+                );
             }
         }
         format!("{}:{} {}", self.base.kind, self.base.id, self.name)
@@ -1072,7 +1089,12 @@ impl<'blk> BlockField<'blk> {
                     .map(|ident| ident.name.clone())
             })
             .unwrap_or_default();
-        Self { base, name, type_name: String::new(), type_ref: RwLock::new(None) }
+        Self {
+            base,
+            name,
+            type_name: String::new(),
+            type_ref: RwLock::new(None),
+        }
     }
 
     /// Set type info for this field block (used during block building)
@@ -1094,9 +1116,15 @@ impl<'blk> BlockField<'blk> {
     pub fn format(&self) -> String {
         if !self.type_name.is_empty() {
             if let Some(type_id) = *self.type_ref.read() {
-                return format!("{}:{} {} @type:{} {}", self.base.kind, self.base.id, self.name, type_id, self.type_name);
+                return format!(
+                    "{}:{} {} @type:{} {}",
+                    self.base.kind, self.base.id, self.name, type_id, self.type_name
+                );
             } else {
-                return format!("{}:{} {} @type {}", self.base.kind, self.base.id, self.name, self.type_name);
+                return format!(
+                    "{}:{} {} @type {}",
+                    self.base.kind, self.base.id, self.name, self.type_name
+                );
             }
         }
         format!("{}:{} {}", self.base.kind, self.base.id, self.name)
@@ -1145,7 +1173,12 @@ impl<'blk> BlockParameter<'blk> {
                     .map(|ident| ident.name.clone())
             })
             .unwrap_or_default();
-        Self { base, name, type_name: String::new(), type_ref: RwLock::new(None) }
+        Self {
+            base,
+            name,
+            type_name: String::new(),
+            type_ref: RwLock::new(None),
+        }
     }
 
     /// Set type info for this parameter block (used during block building)
@@ -1167,9 +1200,15 @@ impl<'blk> BlockParameter<'blk> {
     pub fn format(&self) -> String {
         if !self.type_name.is_empty() {
             if let Some(type_id) = *self.type_ref.read() {
-                return format!("{}:{} {} @type:{} {}", self.base.kind, self.base.id, self.name, type_id, self.type_name);
+                return format!(
+                    "{}:{} {} @type:{} {}",
+                    self.base.kind, self.base.id, self.name, type_id, self.type_name
+                );
             } else {
-                return format!("{}:{} {} @type {}", self.base.kind, self.base.id, self.name, self.type_name);
+                return format!(
+                    "{}:{} {} @type {}",
+                    self.base.kind, self.base.id, self.name, self.type_name
+                );
             }
         }
         format!("{}:{} {}", self.base.kind, self.base.id, self.name)
@@ -1204,7 +1243,11 @@ impl<'blk> BlockReturn<'blk> {
         symbol: Option<&'blk Symbol>,
     ) -> Self {
         let base = BlockBase::with_symbol(id, node, BlockKind::Return, parent, children, symbol);
-        Self { base, type_name: String::new(), type_ref: RwLock::new(None) }
+        Self {
+            base,
+            type_name: String::new(),
+            type_ref: RwLock::new(None),
+        }
     }
 
     /// Set type info for this return block (used during block building)
@@ -1226,9 +1269,15 @@ impl<'blk> BlockReturn<'blk> {
     pub fn format(&self) -> String {
         if !self.type_name.is_empty() {
             if let Some(type_id) = *self.type_ref.read() {
-                return format!("{}:{} @type:{} {}", self.base.kind, self.base.id, type_id, self.type_name);
+                return format!(
+                    "{}:{} @type:{} {}",
+                    self.base.kind, self.base.id, type_id, self.type_name
+                );
             } else {
-                return format!("{}:{} @type {}", self.base.kind, self.base.id, self.type_name);
+                return format!(
+                    "{}:{} @type {}",
+                    self.base.kind, self.base.id, self.type_name
+                );
             }
         }
         format!("{}:{}", self.base.kind, self.base.id)

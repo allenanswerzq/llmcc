@@ -20,7 +20,7 @@ pub mod visit;
 pub type DynError = Box<dyn std::error::Error + Send + Sync>;
 
 pub use context::{CompileCtxt, CompileUnit};
-pub use graph::{UnitNode, ProjectGraph, UnitGraph};
+pub use graph::{ProjectGraph, UnitGraph, UnitNode};
 pub use graph_builder::{BlockId, BlockRelation, GraphBuildConfig, build_llmcc_graph};
 pub use ir::HirId;
 pub use ir_builder::{IrBuildOption, build_llmcc_ir, next_hir_id};

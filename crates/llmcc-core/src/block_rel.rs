@@ -37,14 +37,14 @@ impl BlockRelationMap {
     ) -> bool {
         let mut removed = false;
         if let Some(mut block_relations) = self.relations.get_mut(&from) {
-            if let Some(targets) = block_relations.get_mut(&relation) {
-                if let Some(pos) = targets.iter().position(|&x| x == to) {
-                    targets.remove(pos);
-                    removed = true;
-                    // Clean up empty vectors
-                    if targets.is_empty() {
-                        block_relations.remove(&relation);
-                    }
+            if let Some(targets) = block_relations.get_mut(&relation)
+                && let Some(pos) = targets.iter().position(|&x| x == to)
+            {
+                targets.remove(pos);
+                removed = true;
+                // Clean up empty vectors
+                if targets.is_empty() {
+                    block_relations.remove(&relation);
                 }
             }
             // Clean up empty maps
@@ -161,10 +161,10 @@ impl BlockRelationMap {
         for entry in self.relations.iter() {
             let from_block = *entry.key();
             let block_relations = entry.value();
-            if let Some(targets) = block_relations.get(&relation) {
-                if targets.contains(&to) {
-                    result.push(from_block);
-                }
+            if let Some(targets) = block_relations.get(&relation)
+                && targets.contains(&to)
+            {
+                result.push(from_block);
             }
         }
         result

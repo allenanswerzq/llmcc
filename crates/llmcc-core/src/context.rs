@@ -122,7 +122,9 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get the Root block for this compile unit (file).
     /// Returns the first BlockKind::Root block belonging to this unit.
     pub fn root_block(self) -> Option<BasicBlock<'tcx>> {
-        let root_blocks = self.cc.find_blocks_by_kind_in_unit(crate::block::BlockKind::Root, self.index);
+        let root_blocks = self
+            .cc
+            .find_blocks_by_kind_in_unit(crate::block::BlockKind::Root, self.index);
         root_blocks.first().and_then(|&id| self.opt_bb(id))
     }
 

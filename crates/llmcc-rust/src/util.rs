@@ -65,7 +65,7 @@ pub fn parse_file_name(file_path: &str) -> Option<String> {
     let file_stem = Path::new(file_path)
         .file_stem()
         .and_then(|name| name.to_str())?;
-    
+
     // Strip numeric prefix (e.g., "001_lib" -> "lib", "002_models" -> "models")
     Some(strip_numeric_prefix(file_stem))
 }

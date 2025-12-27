@@ -58,12 +58,19 @@ fn test_connect_blocks_contains_relationship() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Func {
                 // The outer function should contain inner function
-                let contained = cc.related_map.get_related(child_id, BlockRelation::Contains);
-                assert!(!contained.is_empty(), "outer func should have Contains edges");
+                let contained = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::Contains);
+                assert!(
+                    !contained.is_empty(),
+                    "outer func should have Contains edges"
+                );
 
                 // Check ContainedBy for children
                 for &inner_id in &contained {
-                    let parents = cc.related_map.get_related(inner_id, BlockRelation::ContainedBy);
+                    let parents = cc
+                        .related_map
+                        .get_related(inner_id, BlockRelation::ContainedBy);
                     assert!(
                         parents.contains(&child_id),
                         "inner block should have ContainedBy edge to parent"
@@ -99,8 +106,14 @@ fn test_connect_blocks_has_field() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Class {
                 // Check HasField relations
-                let fields = cc.related_map.get_related(child_id, BlockRelation::HasField);
-                assert_eq!(fields.len(), 2, "Struct should have HasField edges to 2 fields");
+                let fields = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasField);
+                assert_eq!(
+                    fields.len(),
+                    2,
+                    "Struct should have HasField edges to 2 fields"
+                );
 
                 // Check reverse FieldOf relations
                 for &field_id in &fields {
@@ -142,12 +155,20 @@ fn test_connect_blocks_has_method() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Impl {
                 // Check HasMethod relations
-                let methods = cc.related_map.get_related(child_id, BlockRelation::HasMethod);
-                assert_eq!(methods.len(), 2, "Impl should have HasMethod edges to 2 methods");
+                let methods = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasMethod);
+                assert_eq!(
+                    methods.len(),
+                    2,
+                    "Impl should have HasMethod edges to 2 methods"
+                );
 
                 // Check reverse MethodOf relations
                 for &method_id in &methods {
-                    let owners = cc.related_map.get_related(method_id, BlockRelation::MethodOf);
+                    let owners = cc
+                        .related_map
+                        .get_related(method_id, BlockRelation::MethodOf);
                     assert!(
                         owners.contains(&child_id),
                         "Method should have MethodOf edge to impl"
@@ -186,12 +207,22 @@ fn test_connect_blocks_function_parameters() {
                 found_func = true;
 
                 // Check HasParameters relation
-                let params = cc.related_map.get_related(child_id, BlockRelation::HasParameters);
-                assert!(!params.is_empty(), "Function should have HasParameters edge");
+                let params = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasParameters);
+                assert!(
+                    !params.is_empty(),
+                    "Function should have HasParameters edge"
+                );
 
                 // Check HasReturn relation
-                let returns = cc.related_map.get_related(child_id, BlockRelation::HasReturn);
-                assert!(!returns.is_empty(), "Function with return type should have HasReturn edge");
+                let returns = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasReturn);
+                assert!(
+                    !returns.is_empty(),
+                    "Function with return type should have HasReturn edge"
+                );
             }
         }
 
@@ -224,12 +255,20 @@ fn test_connect_blocks_trait_methods() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Trait {
                 // Check HasMethod relations
-                let methods = cc.related_map.get_related(child_id, BlockRelation::HasMethod);
-                assert_eq!(methods.len(), 2, "Trait should have HasMethod edges to 2 methods");
+                let methods = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasMethod);
+                assert_eq!(
+                    methods.len(),
+                    2,
+                    "Trait should have HasMethod edges to 2 methods"
+                );
 
                 // Check reverse MethodOf relations
                 for &method_id in &methods {
-                    let owners = cc.related_map.get_related(method_id, BlockRelation::MethodOf);
+                    let owners = cc
+                        .related_map
+                        .get_related(method_id, BlockRelation::MethodOf);
                     assert!(
                         owners.contains(&child_id),
                         "Method should have MethodOf edge to trait"
@@ -266,12 +305,20 @@ fn test_connect_blocks_enum_variants() {
             let child = get_block(cc, child_id);
             if child.kind() == BlockKind::Enum {
                 // Variants should be linked as HasField
-                let variants = cc.related_map.get_related(child_id, BlockRelation::HasField);
-                assert_eq!(variants.len(), 3, "Enum should have HasField edges to 3 variants");
+                let variants = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasField);
+                assert_eq!(
+                    variants.len(),
+                    3,
+                    "Enum should have HasField edges to 3 variants"
+                );
 
                 // Check reverse FieldOf relations
                 for &variant_id in &variants {
-                    let owners = cc.related_map.get_related(variant_id, BlockRelation::FieldOf);
+                    let owners = cc
+                        .related_map
+                        .get_related(variant_id, BlockRelation::FieldOf);
                     assert!(
                         owners.contains(&child_id),
                         "Variant should have FieldOf edge to enum"
@@ -368,8 +415,14 @@ fn test_connect_blocks_multiple_units() {
         // Each unit should have its own root and children
         for graph in graphs {
             let root = get_block(cc, graph.root());
-            assert!(root.kind() == BlockKind::Root, "Each unit should have a Root block");
-            assert!(!root.children().is_empty(), "Each unit should have at least one child");
+            assert!(
+                root.kind() == BlockKind::Root,
+                "Each unit should have a Root block"
+            );
+            assert!(
+                !root.children().is_empty(),
+                "Each unit should have at least one child"
+            );
         }
     });
 }
@@ -406,7 +459,9 @@ fn test_connect_blocks_nested_structs() {
                 struct_count += 1;
 
                 // Each struct should have HasField relationships
-                let fields = cc.related_map.get_related(child_id, BlockRelation::HasField);
+                let fields = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasField);
                 assert!(!fields.is_empty(), "Struct should have at least one field");
             }
         }
@@ -455,11 +510,16 @@ fn test_type_alias_block() {
                     let sub = get_block(cc, sub_id);
                     eprintln!("DEBUG func child: {:?} kind={:?}", sub_id, sub.kind());
                     if let BasicBlock::Return(ret) = &sub {
-                        eprintln!("DEBUG return symbol: {:?}", ret.base.symbol().map(|s| s.id()));
+                        eprintln!(
+                            "DEBUG return symbol: {:?}",
+                            ret.base.symbol().map(|s| s.id())
+                        );
                     }
                 }
                 // Check if the return type references the alias via TypeOf
-                let has_return = cc.related_map.get_related(child_id, BlockRelation::HasReturn);
+                let has_return = cc
+                    .related_map
+                    .get_related(child_id, BlockRelation::HasReturn);
                 eprintln!("DEBUG use_alias has_return: {:?}", has_return);
                 for ret_id in has_return {
                     let type_of = cc.related_map.get_related(ret_id, BlockRelation::TypeOf);

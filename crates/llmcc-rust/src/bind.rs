@@ -438,7 +438,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(target_sym) = target_ident.opt_symbol()
         {
             // Look up the impl target type (struct or enum that the trait is implemented for)
-            let target_resolved = scopes.lookup_symbol(&target_ident.name, SymKind::impl_target_kinds());
+            let target_resolved =
+                scopes.lookup_symbol(&target_ident.name, SymKind::impl_target_kinds());
 
             if target_sym.kind() == SymKind::UnresolvedType {
                 // Resolve the type for the impl type now
@@ -504,7 +505,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 // Extract type arguments from trait reference (e.g., User from `impl Repository<User>`)
                 // and store them on the target symbol's nested_types for graph edge building
                 // Use target_sym (always available) rather than target_resolved (may be None for cross-file)
-                if let Some(type_args) = trait_node.child_by_field(unit, LangRust::field_type_arguments) {
+                if let Some(type_args) =
+                    trait_node.child_by_field(unit, LangRust::field_type_arguments)
+                {
                     for child in type_args.children(unit) {
                         if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                             continue;

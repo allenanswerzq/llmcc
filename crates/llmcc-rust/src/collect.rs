@@ -351,11 +351,11 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // For top-level files (not lib.rs or main.rs), create a module symbol
             // in the crate scope that links to this file's scope.
             // This enables paths like `crate::models::Config` to resolve.
-            if file_name != "lib" && file_name != "main" && module_scope.is_none() {
-                if let Some(mod_sym) = scopes.lookup_or_insert_global(&file_name, node, SymKind::Module) {
-                    tracing::trace!("link file '{}' as module in crate scope", file_name);
-                    mod_sym.set_scope(scope.id());
-                }
+            if file_name != "lib" && file_name != "main" && module_scope.is_none()
+                && let Some(mod_sym) = scopes.lookup_or_insert_global(&file_name, node, SymKind::Module)
+            {
+                tracing::trace!("link file '{}' as module in crate scope", file_name);
+                mod_sym.set_scope(scope.id());
             }
         }
 
@@ -389,7 +389,10 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // Insert `super` symbol in current (module) scope, pointing to parent scope
             if let Some(super_sym) = scopes.lookup_or_insert("super", node, SymKind::Module) {
                 super_sym.set_scope(parent_scope_id);
-                tracing::trace!("inserted 'super' symbol pointing to scope {:?}", parent_scope_id);
+                tracing::trace!(
+                    "inserted 'super' symbol pointing to scope {:?}",
+                    parent_scope_id
+                );
             }
         });
 
@@ -552,7 +555,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // For impl trait references, first try Trait, then UnresolvedType for cross-file resolution
         if let Some(ti) = node.ident_by_field(unit, LangRust::field_trait) {
             // First try looking up as Trait (in-file case)
-            let symbol = scopes.lookup_symbol(&ti.name, vec![SymKind::Trait])
+            let symbol = scopes
+                .lookup_symbol(&ti.name, vec![SymKind::Trait])
                 // Then try looking up as UnresolvedType (existing placeholder)
                 .or_else(|| scopes.lookup_symbol(&ti.name, vec![SymKind::UnresolvedType]))
                 // Finally create UnresolvedType placeholder for cross-file resolution during binding

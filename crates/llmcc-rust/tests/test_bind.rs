@@ -389,11 +389,7 @@ fn test_visit_impl_item_with_trait() {
             "Message",
             BindExpect::new(SymKind::Struct).expect_scope(),
         );
-        assert_bind_symbol(
-            cc,
-            "print",
-            BindExpect::new(SymKind::Method).expect_scope(),
-        );
+        assert_bind_symbol(cc, "print", BindExpect::new(SymKind::Method).expect_scope());
     });
 }
 

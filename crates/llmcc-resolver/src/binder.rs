@@ -200,7 +200,11 @@ impl<'a> BinderScopes<'a> {
         // For TypeAlias (like Self), follow type_of to get the actual type
         let effective_symbol = if obj_type_symbol.kind() == SymKind::TypeAlias {
             if let Some(type_of_id) = obj_type_symbol.type_of() {
-                let resolved = self.unit.cc.opt_get_symbol(type_of_id).unwrap_or(obj_type_symbol);
+                let resolved = self
+                    .unit
+                    .cc
+                    .opt_get_symbol(type_of_id)
+                    .unwrap_or(obj_type_symbol);
                 tracing::trace!(
                     "  -> followed type_of to {:?} (kind={:?})",
                     resolved.name,

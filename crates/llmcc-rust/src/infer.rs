@@ -434,10 +434,10 @@ fn infer_function_type<'tcx>(
     }
 
     // Try return type first (for fn(T) -> U syntax)
-    if let Some(ret_node) = node.child_by_field(unit, LangRust::field_return_type) {
-        if let Some(ret_sym) = infer_type(unit, scopes, &ret_node) {
-            return Some(ret_sym);
-        }
+    if let Some(ret_node) = node.child_by_field(unit, LangRust::field_return_type)
+        && let Some(ret_sym) = infer_type(unit, scopes, &ret_node)
+    {
+        return Some(ret_sym);
     }
 
     // No return type, try to extract type from parameters (for fn(T) without return)
@@ -473,10 +473,10 @@ fn infer_generic_type<'tcx>(
     let outer_type = infer_type(unit, scopes, &type_node);
 
     // If outer type is a defined type (Struct/Enum/Trait), use it
-    if let Some(outer) = outer_type {
-        if outer.kind().is_defined_type() {
-            return Some(outer);
-        }
+    if let Some(outer) = outer_type
+        && outer.kind().is_defined_type()
+    {
+        return Some(outer);
     }
 
     // Outer type is not defined (e.g., Vec, Option from std, or TypeParameter).

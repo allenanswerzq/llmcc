@@ -126,7 +126,15 @@ pub fn run_cases_for_file(
     update: bool,
     keep_temps: bool,
 ) -> Result<Vec<CaseOutcome>> {
-    run_cases_for_file_with_parallel(file, update, keep_temps, false, true, ComponentDepth::File, None)
+    run_cases_for_file_with_parallel(
+        file,
+        update,
+        keep_temps,
+        false,
+        true,
+        ComponentDepth::File,
+        None,
+    )
 }
 
 pub fn run_cases_for_file_with_parallel(
@@ -573,10 +581,12 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
             Ok("symbol-types snapshot not yet implemented\n".to_string())
         }
         "block-relations" => {
-            let relations = summary
-                .block_relations
-                .as_ref()
-                .ok_or_else(|| anyhow!("case {} requested block-relations but summary missing", case_id))?;
+            let relations = summary.block_relations.as_ref().ok_or_else(|| {
+                anyhow!(
+                    "case {} requested block-relations but summary missing",
+                    case_id
+                )
+            })?;
             Ok(render_block_relations_snapshot(relations))
         }
         "dep-graph" => summary.dep_graph_dot.clone().ok_or_else(|| {
@@ -994,7 +1004,8 @@ fn normalize_block_relations(text: &str) -> String {
 
     lines.sort();
     lines.join("\n")
-}fn normalize_block_graph(text: &str) -> String {
+}
+fn normalize_block_graph(text: &str) -> String {
     let trimmed = text.trim();
     if trimmed.is_empty() {
         return String::new();
@@ -1180,10 +1191,7 @@ fn format_sexpr_indented(expr: &SExpr, depth: usize) -> String {
             let head = head_parts.join(" ");
 
             // Get child lists
-            let children: Vec<&SExpr> = items
-                .iter()
-                .skip(head_parts.len())
-                .collect();
+            let children: Vec<&SExpr> = items.iter().skip(head_parts.len()).collect();
 
             if children.is_empty() {
                 format!("({})", head)
@@ -1322,11 +1330,9 @@ where
         None
     };
     if let Some(project) = project_graph.as_mut() {
-        let unit_graphs = build_llmcc_graph::<L>(
-            &cc,
-            GraphBuildOption::new().with_sequential(sequential),
-        )
-        .unwrap();
+        let unit_graphs =
+            build_llmcc_graph::<L>(&cc, GraphBuildOption::new().with_sequential(sequential))
+                .unwrap();
         project.add_children(unit_graphs);
     }
     let (dep_graph_dot, arch_graph_dot, block_list, block_deps, block_graph, block_relations) =
@@ -1355,7 +1361,14 @@ where
             } else {
                 None
             };
-            (dep_graph, arch_graph, list, deps, block_graph, block_relations)
+            (
+                dep_graph,
+                arch_graph,
+                list,
+                deps,
+                block_graph,
+                block_relations,
+            )
         } else {
             (None, None, None, None, None, None)
         };
@@ -1558,7 +1571,11 @@ fn snapshot_symbols<'a>(cc: &'a CompileCtxt<'a>) -> Vec<SymbolSnapshot> {
 
         // Get block_id info
         let block_id = symbol.block_id().map(|bid| {
-            format!("u{}:{}", symbol.unit_index().unwrap_or_default(), bid.as_u32())
+            format!(
+                "u{}:{}",
+                symbol.unit_index().unwrap_or_default(),
+                bid.as_u32()
+            )
         });
 
         rows.push(SymbolSnapshot {
@@ -1715,10 +1732,10 @@ fn describe_block<'a>(
             let index = (block_id.0 as usize).saturating_sub(1);
             cc.block_arena.bb().get(index).and_then(|bb| {
                 // Try field name
-                if let Some(field) = bb.as_field() {
-                    if !field.name.is_empty() {
-                        return Some(field.name.clone());
-                    }
+                if let Some(field) = bb.as_field()
+                    && !field.name.is_empty()
+                {
+                    return Some(field.name.clone());
                 }
                 // Try base name
                 bb.base()
@@ -1759,25 +1776,25 @@ fn find_first_ident_name<'a>(
     use llmcc_core::ir::HirKind;
 
     // Check if this node itself is an identifier
-    if node.is_kind(HirKind::Identifier) {
-        if let Some(ident) = node.as_ident() {
-            return Some(ident.name.clone());
-        }
+    if node.is_kind(HirKind::Identifier)
+        && let Some(ident) = node.as_ident()
+    {
+        return Some(ident.name.clone());
     }
 
     // Search through children
     for child_id in node.child_ids() {
         if let Some(child_node) = cc.get_hir_node(*child_id) {
-            if child_node.is_kind(HirKind::Identifier) {
-                if let Some(ident) = child_node.as_ident() {
-                    return Some(ident.name.clone());
-                }
+            if child_node.is_kind(HirKind::Identifier)
+                && let Some(ident) = child_node.as_ident()
+            {
+                return Some(ident.name.clone());
             }
             // Recurse into internal nodes
-            if child_node.is_kind(HirKind::Internal) {
-                if let Some(name) = find_first_ident_name(cc, &child_node) {
-                    return Some(name);
-                }
+            if child_node.is_kind(HirKind::Internal)
+                && let Some(name) = find_first_ident_name(cc, &child_node)
+            {
+                return Some(name);
             }
         }
     }

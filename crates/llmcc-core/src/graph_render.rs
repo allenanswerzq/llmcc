@@ -6,10 +6,10 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt::Write;
 
+use crate::BlockId;
 use crate::block::{BlockKind, BlockRelation};
 use crate::graph::ProjectGraph;
 use crate::symbol::SymKind;
-use crate::BlockId;
 
 // ============================================================================
 // Types
@@ -71,7 +71,6 @@ impl ComponentDepth {
         matches!(self, Self::File)
     }
 }
-
 
 /// Node representation for rendering.
 #[derive(Clone)]
@@ -183,10 +182,8 @@ pub fn render_graph_with_options(
 
     // Filter out orphan nodes (nodes without edges) unless explicitly requested
     if !options.show_orphan_nodes {
-        let connected_nodes: HashSet<BlockId> = edges
-            .iter()
-            .flat_map(|e| [e.from_id, e.to_id])
-            .collect();
+        let connected_nodes: HashSet<BlockId> =
+            edges.iter().flat_map(|e| [e.from_id, e.to_id]).collect();
         nodes.retain(|n| connected_nodes.contains(&n.block_id));
     }
 
@@ -231,10 +228,10 @@ fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 
             // Skip methods - they are implementation details, not architectural
             // Check BlockFunc::is_method() which is set during graph building
-            if let Some(func_block) = block.as_func() {
-                if func_block.is_method() {
-                    return None;
-                }
+            if let Some(func_block) = block.as_func()
+                && func_block.is_method()
+            {
+                return None;
             }
 
             // Get symbol info for visibility check
@@ -261,7 +258,8 @@ fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
                 .or(Some(raw_path.to_string()));
 
             // Get crate_name and module_path from BlockRoot of this unit
-            let (crate_name, module_path, file_name) = unit.root_block()
+            let (crate_name, module_path, file_name) = unit
+                .root_block()
                 .and_then(|root| root.as_root())
                 .map(|root| {
                     let crate_name = root.get_crate_name();
@@ -306,17 +304,19 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
     };
 
     // Helper to recursively collect type references from fields (including nested variant fields)
-    fn collect_field_types(
-        project: &ProjectGraph,
-        field_id: BlockId,
-        types: &mut Vec<BlockId>,
-    ) {
+    fn collect_field_types(project: &ProjectGraph, field_id: BlockId, types: &mut Vec<BlockId>) {
         // Get direct TypeOf relations
-        let field_types = project.cc.related_map.get_related(field_id, BlockRelation::TypeOf);
+        let field_types = project
+            .cc
+            .related_map
+            .get_related(field_id, BlockRelation::TypeOf);
         types.extend(field_types);
 
         // Recursively check nested fields (for enum variants with struct-like fields)
-        let nested_fields = project.cc.related_map.get_related(field_id, BlockRelation::HasField);
+        let nested_fields = project
+            .cc
+            .related_map
+            .get_related(field_id, BlockRelation::HasField);
         for nested_field_id in nested_fields {
             collect_field_types(project, nested_field_id, types);
         }
@@ -327,7 +327,10 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
 
         // 1. Field type → Struct/Enum (field_type is used by struct/enum)
         // Recursively looks at nested fields (e.g., enum variants with struct-like fields)
-        let fields = project.cc.related_map.get_related(block_id, BlockRelation::HasField);
+        let fields = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasField);
         for field_id in fields {
             let mut field_types = Vec::new();
             collect_field_types(project, field_id, &mut field_types);
@@ -388,8 +391,14 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
             // falls back to the first resolved type arg. In this case, create type_dep edges
             // from ALL nested types to the containing struct (not type_arg -> generic).
             let field_type_is_nested = nested_types.iter().any(|&nested_id| {
-                project.cc.opt_get_symbol(nested_id)
-                    .and_then(|sym| sym.type_of().and_then(|id| project.cc.opt_get_symbol(id)).or(Some(sym)))
+                project
+                    .cc
+                    .opt_get_symbol(nested_id)
+                    .and_then(|sym| {
+                        sym.type_of()
+                            .and_then(|id| project.cc.opt_get_symbol(id))
+                            .or(Some(sym))
+                    })
                     .and_then(|sym| sym.block_id())
                     == Some(field_type_id)
             });
@@ -423,7 +432,8 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
                         continue;
                     }
                     let nested_kind = get_kind(nested_block_id);
-                    if nested_kind != Some(BlockKind::Class) && nested_kind != Some(BlockKind::Enum) {
+                    if nested_kind != Some(BlockKind::Class) && nested_kind != Some(BlockKind::Enum)
+                    {
                         continue;
                     }
                     edges.insert(RenderEdge {
@@ -465,7 +475,10 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
         }
 
         // 2. Function calls (caller → callee)
-        let callees = project.cc.related_map.get_related(block_id, BlockRelation::Calls);
+        let callees = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::Calls);
         for callee_id in callees {
             if node_set.contains(&callee_id) && block_id != callee_id {
                 edges.insert(RenderEdge {
@@ -479,9 +492,15 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
 
         // 3. Function parameters (input → func)
         // Walk: Func → HasParameters → Param → TypeOf → Type
-        let params = project.cc.related_map.get_related(block_id, BlockRelation::HasParameters);
+        let params = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasParameters);
         for param_id in params {
-            let param_types = project.cc.related_map.get_related(param_id, BlockRelation::TypeOf);
+            let param_types = project
+                .cc
+                .related_map
+                .get_related(param_id, BlockRelation::TypeOf);
             for type_id in param_types {
                 if node_set.contains(&type_id) && block_id != type_id {
                     edges.insert(RenderEdge {
@@ -496,9 +515,15 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
 
         // 4. Function return types (func → output)
         // Walk: Func → HasReturn → Return → TypeOf → Type
-        let returns = project.cc.related_map.get_related(block_id, BlockRelation::HasReturn);
+        let returns = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasReturn);
         for ret_id in returns {
-            let ret_types = project.cc.related_map.get_related(ret_id, BlockRelation::TypeOf);
+            let ret_types = project
+                .cc
+                .related_map
+                .get_related(ret_id, BlockRelation::TypeOf);
             for type_id in ret_types {
                 if node_set.contains(&type_id) && block_id != type_id {
                     edges.insert(RenderEdge {
@@ -513,9 +538,15 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
 
         // 5. Trait implementations (trait → impl)
         // Walk: Type → HasImpl → Impl → Implements → Trait
-        let impl_blocks = project.cc.related_map.get_related(block_id, BlockRelation::HasImpl);
+        let impl_blocks = project
+            .cc
+            .related_map
+            .get_related(block_id, BlockRelation::HasImpl);
         for impl_id in impl_blocks {
-            let implements = project.cc.related_map.get_related(impl_id, BlockRelation::Implements);
+            let implements = project
+                .cc
+                .related_map
+                .get_related(impl_id, BlockRelation::Implements);
             for trait_id in implements {
                 if node_set.contains(&trait_id) && block_id != trait_id {
                     edges.insert(RenderEdge {
@@ -532,7 +563,10 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
         // This would require tracking generic bounds - approximate via Uses
         if block_kind == Some(BlockKind::Trait) {
             // Find what uses this trait (could be as a bound)
-            let used_by = project.cc.related_map.get_related(block_id, BlockRelation::UsedBy);
+            let used_by = project
+                .cc
+                .related_map
+                .get_related(block_id, BlockRelation::UsedBy);
             for user_id in used_by {
                 if node_set.contains(&user_id) && block_id != user_id {
                     let user_kind = get_kind(user_id);
@@ -555,7 +589,10 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
         // 7. Type dependencies (func → type) - from function body usage like Foo::new()
         // Skip if there's already an edge to the same target (e.g., output or input edge)
         if block_kind == Some(BlockKind::Func) {
-            let uses = project.cc.related_map.get_related(block_id, BlockRelation::Uses);
+            let uses = project
+                .cc
+                .related_map
+                .get_related(block_id, BlockRelation::Uses);
             for type_id in uses {
                 if node_set.contains(&type_id) && block_id != type_id {
                     let type_kind = get_kind(type_id);
@@ -565,9 +602,9 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
                         || type_kind == Some(BlockKind::Trait)
                     {
                         // Check if there's already an edge from this func to this type
-                        let has_existing_edge = edges.iter().any(|e| {
-                            e.from_id == block_id && e.to_id == type_id
-                        });
+                        let has_existing_edge = edges
+                            .iter()
+                            .any(|e| e.from_id == block_id && e.to_id == type_id);
                         if !has_existing_edge {
                             edges.insert(RenderEdge {
                                 from_id: block_id,
@@ -586,28 +623,28 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
         // Uses block.base.type_deps populated during link_impl from symbol's nested_types
         if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
             let index = (block_id.as_u32() as usize).saturating_sub(1);
-            if let Some(block) = project.cc.block_arena.bb().get(index) {
-                if let Some(base) = block.base() {
-                    let type_deps = base.type_deps.read();
-                    for &type_arg_id in type_deps.iter() {
-                        if node_set.contains(&type_arg_id) && block_id != type_arg_id {
-                            let type_arg_kind = get_kind(type_arg_id);
-                            // Only add edges from types (Class, Enum)
-                            if type_arg_kind == Some(BlockKind::Class)
-                                || type_arg_kind == Some(BlockKind::Enum)
-                            {
-                                // Check if there's already an edge from type_arg to this block
-                                let has_existing_edge = edges.iter().any(|e| {
-                                    e.from_id == type_arg_id && e.to_id == block_id
+            if let Some(block) = project.cc.block_arena.bb().get(index)
+                && let Some(base) = block.base()
+            {
+                let type_deps = base.type_deps.read();
+                for &type_arg_id in type_deps.iter() {
+                    if node_set.contains(&type_arg_id) && block_id != type_arg_id {
+                        let type_arg_kind = get_kind(type_arg_id);
+                        // Only add edges from types (Class, Enum)
+                        if type_arg_kind == Some(BlockKind::Class)
+                            || type_arg_kind == Some(BlockKind::Enum)
+                        {
+                            // Check if there's already an edge from type_arg to this block
+                            let has_existing_edge = edges
+                                .iter()
+                                .any(|e| e.from_id == type_arg_id && e.to_id == block_id);
+                            if !has_existing_edge {
+                                edges.insert(RenderEdge {
+                                    from_id: type_arg_id,
+                                    to_id: block_id,
+                                    from_label: "type_arg",
+                                    to_label: "impl",
                                 });
-                                if !has_existing_edge {
-                                    edges.insert(RenderEdge {
-                                        from_id: type_arg_id,
-                                        to_id: block_id,
-                                        from_label: "type_arg",
-                                        to_label: "impl",
-                                    });
-                                }
                             }
                         }
                     }
@@ -633,29 +670,29 @@ fn build_component_tree(nodes: &[RenderNode], depth: ComponentDepth) -> Componen
         let mut path: Vec<(String, &'static str)> = Vec::new();
 
         // Add crate level
-        if depth.includes_crate() {
-            if let Some(ref crate_name) = node.crate_name {
-                path.push((crate_name.clone(), "crate"));
-            }
+        if depth.includes_crate()
+            && let Some(ref crate_name) = node.crate_name
+        {
+            path.push((crate_name.clone(), "crate"));
         }
 
         // Add module level (if there's an explicit module path)
-        if depth.includes_module() {
-            if let Some(ref module) = node.module_path {
-                path.push((module.clone(), "module"));
-            }
+        if depth.includes_module()
+            && let Some(ref module) = node.module_path
+        {
+            path.push((module.clone(), "module"));
         }
 
         // Add file level
-        if depth.includes_file() {
-            if let Some(ref file) = node.file_name {
-                // Extract just the filename from full path
-                let file_name = std::path::Path::new(file)
-                    .file_name()
-                    .and_then(|s| s.to_str())
-                    .unwrap_or(file);
-                path.push((file_name.to_string(), "file"));
-            }
+        if depth.includes_file()
+            && let Some(ref file) = node.file_name
+        {
+            // Extract just the filename from full path
+            let file_name = std::path::Path::new(file)
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or(file);
+            path.push((file_name.to_string(), "file"));
         }
 
         tree.insert(&path, idx);
@@ -715,8 +752,8 @@ fn render_tree_recursive(
     for (component_name, (level_type, subtree)) in &tree.children {
         // Use meaningful cluster names based on level type
         let cluster_id = match level_type.as_str() {
-            "crate" => format!("{}", component_name.replace('-', "_")),
-            "module" => format!("{}", component_name.replace('-', "_")),
+            "crate" => component_name.replace('-', "_"),
+            "module" => component_name.replace('-', "_"),
             "file" => component_name.replace('.', "_"),
             _ => component_name.clone(),
         };
