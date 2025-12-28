@@ -1,0 +1,153 @@
+===============================================================================
+cross-file-function-call-basic
+===============================================================================
+Test that function calls across files are resolved correctly.
+
+--- file: src/lib.rs ---
+mod utils;
+
+use utils::helper;
+
+fn main() {
+    helper();
+}
+
+--- file: src/utils.rs ---
+pub fn helper() {
+    println!("helper called");
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 main
+    (@fdep:5 helper)
+  )
+)
+
+(root:4 utils ($TMP/src/utils.rs)
+  (func:5 helper
+  )
+)
+
+
+===============================================================================
+cross-file-function-call-with-args
+===============================================================================
+Test function calls with arguments across files.
+
+--- file: src/lib.rs ---
+mod math;
+
+use math::add;
+
+fn compute() -> i32 {
+    add(1, 2)
+}
+
+--- file: src/math.rs ---
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 compute
+    (return:3 @type i32)
+    (@fdep:6 add)
+  )
+)
+
+(root:5 math ($TMP/src/math.rs)
+  (func:6 add
+    (parameter:7 a @type i32)
+    (parameter:8 b @type i32)
+    (return:9 @type i32)
+  )
+)
+
+
+===============================================================================
+cross-file-type-usage
+===============================================================================
+Test that types from other files are resolved correctly.
+
+--- file: src/lib.rs ---
+mod types;
+
+use types::Point;
+
+fn make_point() -> Point {
+    Point { x: 0, y: 0 }
+}
+
+--- file: src/types.rs ---
+pub struct Point {
+    pub x: i32,
+    pub y: i32,
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 make_point
+    (return:3 @type:5 Point)
+  )
+)
+
+(root:4 types ($TMP/src/types.rs)
+  (class:5 Point
+    (field:6 x @type i32)
+    (field:7 y @type i32)
+  )
+)
+
+
+===============================================================================
+cross-file-method-call
+===============================================================================
+Test that method calls on types from other files are resolved.
+
+--- file: src/lib.rs ---
+mod models;
+
+use models::Counter;
+
+fn use_counter() {
+    let c = Counter::new();
+    c.increment();
+}
+
+--- file: src/models.rs ---
+pub struct Counter {
+    value: i32,
+}
+
+impl Counter {
+    pub fn new() -> Self {
+        Counter { value: 0 }
+    }
+
+    pub fn increment(&mut self) {
+        self.value += 1;
+    }
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.rs)
+  (func:2 use_counter
+    (@tdep:6 Counter)
+  )
+)
+
+(root:5 models ($TMP/src/models.rs)
+  (class:6 Counter
+    (field:7 value @type i32)
+  )
+  (impl:8 Counter @type:6
+    (method:9 new
+      (return:10 @type:6 Counter)
+    )
+    (method:11 increment
+      (parameter:12 self @type:6 Counter)
+    )
+  )
+)

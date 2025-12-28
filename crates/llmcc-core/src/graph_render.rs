@@ -853,7 +853,7 @@ fn render_aggregated_graph(
     output.push('\n');
 
     // Render edges with weight as penwidth
-    for ((from, to), _weight) in &component_edges {
+    for (from, to) in component_edges.keys() {
         // Skip if either end is not in filtered nodes
         if !connected_components.contains(from) || !connected_components.contains(to) {
             continue;

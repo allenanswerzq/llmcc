@@ -209,11 +209,12 @@ impl<'tcx> ProjectGraph<'tcx> {
             // Get the callee symbol to check its kind
             if let Some(callee_sym) = call.base.node.ident_symbol(unit) {
                 let callee_kind = callee_sym.kind();
+                let callee_block_id_opt = callee_sym.block_id();
 
                 match callee_kind {
                     crate::symbol::SymKind::Function => {
                         // Free function call → add to func_deps
-                        if let Some(callee_block_id) = callee_sym.block_id() {
+                        if let Some(callee_block_id) = callee_block_id_opt {
                             caller_func.add_func_dep(callee_block_id);
                             // Also establish caller-callee relation
                             self.add_relation(

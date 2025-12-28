@@ -431,11 +431,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         parent: Option<&Symbol>,
     ) {
         // Determine if this is a method (inside impl) or a free function
-        let kind = if is_method_context(parent) {
+        let is_method = is_method_context(parent);
+        let kind = if is_method {
             SymKind::Method
         } else {
             SymKind::Function
         };
+
         self.visit_scoped_named(
             unit,
             node,
@@ -446,6 +448,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             LangRust::field_name,
             None,
         );
+
+        // For free functions, also add a reference in unit_globals for cross-crate resolution
+        // This happens after visit_scoped_named so the symbol already exists with its scope
+        if !is_method
+            && let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![kind])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: extern "C" fn signature or trait method signature
@@ -501,6 +512,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
             })),
         );
+
+        // Also add struct to unit_globals for cross-crate type resolution
+        if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::Struct])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: enum Name { variants... }
@@ -524,6 +542,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             LangRust::field_name,
             None,
         );
+
+        // Also add enum to unit_globals for cross-crate type resolution
+        if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::Enum])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: trait Name { associated items... }
@@ -550,6 +575,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
             })),
         );
+
+        // Also add trait to unit_globals for cross-crate type resolution
+        if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::Trait])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: impl [Trait for] Type { methods... }
