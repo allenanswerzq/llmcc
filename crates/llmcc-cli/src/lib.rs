@@ -104,9 +104,14 @@ where
 
     let mut pg = ProjectGraph::new(&cc);
 
-    let graph_build_start = Instant::now();
+    let bind_start = Instant::now();
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
+    info!(
+        "Symbol binding: {:.2}s",
+        bind_start.elapsed().as_secs_f64()
+    );
 
+    let graph_build_start = Instant::now();
     let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;
     pg.add_children(unit_graphs);
     info!(

@@ -40,7 +40,7 @@ declare -A PROJECTS=(
     ["serde"]="./repos/serde"
     ["clap"]="./repos/clap"
     ["axum"]="./repos/axum"
-    # From GitHub
+    ["ruff"]="./repos/ruff"
     ["codex"]="./repos/codex"
     ["llmcc"]="./repos/llmcc"
     # Database & data infrastructure

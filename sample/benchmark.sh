@@ -49,8 +49,8 @@ Generated on: DATE_PLACEHOLDER
 
 ## Timing Breakdown (depth=3)
 
-| Project | Files | Parse | IR Build | Symbols | Graph Build | Linking | Total |
-|---------|-------|-------|----------|---------|-------------|---------|-------|
+| Project | Files | Parse | IR Build | Symbols | Binding | Graph | Link | Total |
+|---------|-------|-------|----------|---------|---------|-------|------|-------|
 EOF
 # Replace placeholder with actual date
 sed -i "s/DATE_PLACEHOLDER/$(date '+%Y-%m-%d %H:%M:%S')/" "$BENCHMARK_FILE"
@@ -116,7 +116,7 @@ extract_timing() {
     local log_file=$2
 
     if [ ! -f "$log_file" ]; then
-        echo "| $name | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+        echo "| $name | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
         return
     fi
 
@@ -127,6 +127,7 @@ extract_timing() {
     local parse=$(echo "$log_content" | grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
     local ir=$(echo "$log_content" | grep -oP 'IR building: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
     local symbols=$(echo "$log_content" | grep -oP 'Symbol collection: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
+    local binding=$(echo "$log_content" | grep -oP 'Symbol binding: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
     local graph=$(echo "$log_content" | grep -oP 'Graph building: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
     local link=$(echo "$log_content" | grep -oP 'Linking units: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
     local total=$(echo "$log_content" | grep -oP 'Total time: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
@@ -136,37 +137,20 @@ extract_timing() {
     [ -z "$parse" ] && parse="-"
     [ -z "$ir" ] && ir="-"
     [ -z "$symbols" ] && symbols="-"
+    [ -z "$binding" ] && binding="-"
     [ -z "$graph" ] && graph="-"
     [ -z "$link" ] && link="-"
     [ -z "$total" ] && total="-"
 
-    echo "| $name | $files | $parse | $ir | $symbols | $graph | $link | $total |" >> "$BENCHMARK_FILE"
+    echo "| $name | $files | $parse | $ir | $symbols | $binding | $graph | $link | $total |" >> "$BENCHMARK_FILE"
 }
-
-# Process each project
-for name in "${!PROJECTS[@]}"; do
-    src_dir="${PROJECTS[$name]}"
-
-    # Skip if source doesn't exist
-    if [ ! -d "$src_dir" ]; then
-        echo "=== Skipping $name (source not found: $src_dir) ==="
-        echo "| $name | (not found) | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
-        continue
-    fi
-
-    echo ""
-    echo "=== Benchmarking $name ==="
-
-    run_benchmark "$name" "$src_dir"
-    extract_timing "$name" "$BENCHMARK_DIR/${name}_depth3.log"
-done
 
 # PageRank benchmark section
 echo "" >> "$BENCHMARK_FILE"
 echo "## PageRank Timing (depth=3, top-$TOP_K)" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
-echo "| Project | Files | Parse | IR Build | Symbols | Graph Build | Linking | Total |" >> "$BENCHMARK_FILE"
-echo "|---------|-------|-------|----------|---------|-------------|---------|-------|" >> "$BENCHMARK_FILE"
+echo "| Project | Files | Parse | IR Build | Symbols | Binding | Graph | Link | Total |" >> "$BENCHMARK_FILE"
+echo "|---------|-------|-------|----------|---------|---------|-------|------|-------|" >> "$BENCHMARK_FILE"
 
 for name in "${!PROJECTS[@]}"; do
     src_dir="${PROJECTS[$name]}"
