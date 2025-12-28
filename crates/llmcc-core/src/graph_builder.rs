@@ -173,10 +173,18 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     .as_file()
                     .map(|file| file.file_path.clone())
                     .or_else(|| self.unit.file_path().map(|s| s.to_string()));
-                let block =
-                    BlockRoot::new_with_symbol(id, node, parent, children, file_name, symbol);
+                let block = BlockRoot::new_with_symbol(
+                    id,
+                    node,
+                    parent,
+                    children,
+                    file_name.clone(),
+                    symbol,
+                );
 
                 // Populate crate_name and module_path from scope chain
+                // Populate crate_name and module_path from scope chain.
+                // The binding phase sets up proper parent scopes with Module/Crate symbols.
                 if let Some(scope_node) = node.as_scope()
                     && let Some(scope) = scope_node.opt_scope()
                 {
@@ -187,6 +195,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     {
                         block.set_crate_name(name);
                     }
+
                     if let Some(module_sym) = scope.find_parent_by_kind(SymKind::Module)
                         && let Some(name) = self.unit.cc.interner.resolve_owned(module_sym.name)
                     {

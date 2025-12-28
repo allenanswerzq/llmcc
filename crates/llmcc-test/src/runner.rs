@@ -999,7 +999,8 @@ fn normalize(kind: &str, text: &str, temp_dir_path: Option<&str>) -> String {
         "symbols" | "blocks" | "symbol-types" => normalize_symbols(&canonical),
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
         "block-relations" => normalize_block_relations(&canonical),
-        "dep-graph" | "arch-graph" | "arch-graph-depth-0" | "arch-graph-depth-1" | "arch-graph-depth-2" => normalize_graph(&canonical),
+        "dep-graph" | "arch-graph" | "arch-graph-depth-0" | "arch-graph-depth-1"
+        | "arch-graph-depth-2" => normalize_graph(&canonical),
         "block-graph" => normalize_block_graph(&canonical),
         _ => canonical,
     }
@@ -1412,60 +1413,60 @@ where
         block_graph,
         block_relations,
     ) = if let Some(project) = project_graph {
-            project.connect_blocks();
-            // Graph visualization
-            let dep_graph: Option<String> = None; // TODO: implement dep_graph rendering
-            let arch_graph: Option<String> = if options.build_arch_graph {
-                Some(render_graph(&project, options.component_depth))
-            } else {
-                None
-            };
-            // Depth-specific arch graphs
-            let arch_graph_d0: Option<String> = if options.build_arch_graph_depth_0 {
-                Some(render_graph(&project, ComponentDepth::Project))
-            } else {
-                None
-            };
-            let arch_graph_d1: Option<String> = if options.build_arch_graph_depth_1 {
-                Some(render_graph(&project, ComponentDepth::Crate))
-            } else {
-                None
-            };
-            let arch_graph_d2: Option<String> = if options.build_arch_graph_depth_2 {
-                Some(render_graph(&project, ComponentDepth::Module))
-            } else {
-                None
-            };
-            let (list, deps) = if options.build_block_reports {
-                let (blocks, deps) = render_block_reports(&project);
-                (Some(blocks), Some(deps))
-            } else {
-                (None, None)
-            };
-            let block_graph = if options.build_block_graph {
-                Some(render_block_graph(&project))
-            } else {
-                None
-            };
-            let block_relations = if options.keep_block_relations {
-                Some(snapshot_block_relations(&project))
-            } else {
-                None
-            };
-            (
-                dep_graph,
-                arch_graph,
-                arch_graph_d0,
-                arch_graph_d1,
-                arch_graph_d2,
-                list,
-                deps,
-                block_graph,
-                block_relations,
-            )
+        project.connect_blocks();
+        // Graph visualization
+        let dep_graph: Option<String> = None; // TODO: implement dep_graph rendering
+        let arch_graph: Option<String> = if options.build_arch_graph {
+            Some(render_graph(&project, options.component_depth))
         } else {
-            (None, None, None, None, None, None, None, None, None)
+            None
         };
+        // Depth-specific arch graphs
+        let arch_graph_d0: Option<String> = if options.build_arch_graph_depth_0 {
+            Some(render_graph(&project, ComponentDepth::Project))
+        } else {
+            None
+        };
+        let arch_graph_d1: Option<String> = if options.build_arch_graph_depth_1 {
+            Some(render_graph(&project, ComponentDepth::Crate))
+        } else {
+            None
+        };
+        let arch_graph_d2: Option<String> = if options.build_arch_graph_depth_2 {
+            Some(render_graph(&project, ComponentDepth::Module))
+        } else {
+            None
+        };
+        let (list, deps) = if options.build_block_reports {
+            let (blocks, deps) = render_block_reports(&project);
+            (Some(blocks), Some(deps))
+        } else {
+            (None, None)
+        };
+        let block_graph = if options.build_block_graph {
+            Some(render_block_graph(&project))
+        } else {
+            None
+        };
+        let block_relations = if options.keep_block_relations {
+            Some(snapshot_block_relations(&project))
+        } else {
+            None
+        };
+        (
+            dep_graph,
+            arch_graph,
+            arch_graph_d0,
+            arch_graph_d1,
+            arch_graph_d2,
+            list,
+            deps,
+            block_graph,
+            block_relations,
+        )
+    } else {
+        (None, None, None, None, None, None, None, None, None)
+    };
 
     let symbols = if options.keep_symbols {
         Some(snapshot_symbols(&cc))

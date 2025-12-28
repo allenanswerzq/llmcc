@@ -148,7 +148,25 @@ impl<'a> BinderScopes<'a> {
     #[inline]
     pub fn lookup_symbol(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
+        let current_unit = self.unit.index;
+        tracing::trace!(
+            "lookup_symbol '{}' found {} symbols (current_unit={}): {:?}",
+            name,
+            symbols.len(),
+            current_unit,
+            symbols
+                .iter()
+                .map(|s| (s.id(), s.unit_index()))
+                .collect::<Vec<_>>()
+        );
         if symbols.len() > 1 {
+            // Prefer symbols from the current unit to avoid cross-crate false matches
+            if let Some(local_sym) = symbols
+                .iter()
+                .find(|s| s.unit_index() == Some(current_unit))
+            {
+                return Some(*local_sym);
+            }
             tracing::warn!(
                 "multiple symbols found for '{}', returning the last one",
                 name

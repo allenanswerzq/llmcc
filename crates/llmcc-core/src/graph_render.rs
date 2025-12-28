@@ -691,12 +691,18 @@ fn get_component_key(node: &RenderNode, depth: ComponentDepth) -> (String, Strin
             ("project".to_string(), "project".to_string(), "project")
         }
         ComponentDepth::Crate => {
-            let crate_name = node.crate_name.clone().unwrap_or_else(|| "unknown".to_string());
+            let crate_name = node
+                .crate_name
+                .clone()
+                .unwrap_or_else(|| "unknown".to_string());
             let id = format!("crate_{}", sanitize_id(&crate_name));
             (id, crate_name, "crate")
         }
         ComponentDepth::Module => {
-            let crate_name = node.crate_name.clone().unwrap_or_else(|| "unknown".to_string());
+            let crate_name = node
+                .crate_name
+                .clone()
+                .unwrap_or_else(|| "unknown".to_string());
             let module_path = node.module_path.clone();
 
             // If there's a module path, use crate::module format
@@ -707,7 +713,9 @@ fn get_component_key(node: &RenderNode, depth: ComponentDepth) -> (String, Strin
                 (label, id)
             } else {
                 // Use file name as implicit module
-                let file_name = node.file_name.clone()
+                let file_name = node
+                    .file_name
+                    .clone()
                     .map(|f| {
                         std::path::Path::new(&f)
                             .file_stem()
@@ -717,7 +725,11 @@ fn get_component_key(node: &RenderNode, depth: ComponentDepth) -> (String, Strin
                     })
                     .unwrap_or_else(|| "unknown".to_string());
                 let label = format!("{}::{}", crate_name, file_name);
-                let id = format!("mod_{}_{}", sanitize_id(&crate_name), sanitize_id(&file_name));
+                let id = format!(
+                    "mod_{}_{}",
+                    sanitize_id(&crate_name),
+                    sanitize_id(&file_name)
+                );
                 (label, id)
             };
             (id, label, "module")
@@ -785,14 +797,19 @@ fn render_aggregated_graph(
             }
 
             // Flip edges to show dependency direction (dependent → dependency)
+            // For architecture graphs, we want edges to mean "A depends on B" (A → B)
             let (dep_from, dep_to) = match (edge.from_label, edge.to_label) {
-                // Type used as field → struct becomes struct → type
-                ("field_type", "struct") => (to.clone(), from.clone()),
+                // Type used as field → struct/enum becomes struct/enum → type
+                ("field_type", "struct") | ("field_type", "enum") => (to.clone(), from.clone()),
+                // Type dependency → struct becomes struct → type
+                ("type_dep", "struct") => (to.clone(), from.clone()),
                 // Type used as parameter → func becomes func → type
                 ("input", "func") => (to.clone(), from.clone()),
                 // Trait → impl becomes impl → trait (impl depends on trait)
                 ("trait", "impl") => (to.clone(), from.clone()),
-                // All other edges keep their direction
+                // Type arg → impl becomes impl → type_arg (impl depends on type arg)
+                ("type_arg", "impl") => (to.clone(), from.clone()),
+                // All other edges keep their direction (caller→callee, func→output, func→type_dep)
                 _ => (from.clone(), to.clone()),
             };
 
@@ -830,11 +847,7 @@ fn render_aggregated_graph(
 
     // Render nodes
     for node in &filtered_nodes {
-        let _ = writeln!(
-            output,
-            "  {}[label=\"{}\"];",
-            node.id, node.label
-        );
+        let _ = writeln!(output, "  {}[label=\"{}\"];", node.id, node.label);
     }
 
     output.push('\n');
