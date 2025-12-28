@@ -151,10 +151,7 @@ fn run_all_command(
     }
 
     print_summary(&summary);
-
-    if summary.failed > 0 {
-        println!("{} case(s) failed", summary.failed);
-    }
+    print_failed_tests(&outcomes);
 
     Ok(())
 }
@@ -220,10 +217,7 @@ fn run_single_command(
     }
 
     print_summary(&summary);
-
-    if summary.failed > 0 {
-        println!("{} case(s) failed", summary.failed);
-    }
+    print_failed_tests(&outcomes);
 
     Ok(())
 }
@@ -281,4 +275,18 @@ fn print_summary(summary: &OutcomeSummary) {
         "\nSummary: {} passed, {} updated, {} failed, {} skipped",
         summary.passed, summary.updated, summary.failed, summary.skipped
     );
+}
+
+fn print_failed_tests(outcomes: &[CaseOutcome]) {
+    let failed: Vec<_> = outcomes
+        .iter()
+        .filter(|o| o.status == CaseStatus::Failed)
+        .collect();
+
+    if !failed.is_empty() {
+        println!("\nFailed tests:");
+        for outcome in failed {
+            println!("  - {}", outcome.id);
+        }
+    }
 }

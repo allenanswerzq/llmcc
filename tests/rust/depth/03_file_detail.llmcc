@@ -1,0 +1,45 @@
+===============================================================================
+file-detail
+===============================================================================
+Test that depth 3 (File) shows individual nodes with clustering.
+This is the default detailed view.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod utils;
+
+pub struct Config {
+    pub name: String,
+}
+
+pub fn init(config: &Config) {
+    utils::log(&config.name);
+}
+
+--- file: sample/src/utils.rs ---
+pub fn log(msg: &str) {
+    println!("{}", msg);
+}
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="Config", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Struct", shape=box];
+        n4[label="init", full_path="$TMP/sample/src/lib.rs:7", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  n2 -> n4 [from="input", to="func"];
+}

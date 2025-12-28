@@ -1,0 +1,77 @@
+===============================================================================
+multi-module-complex
+===============================================================================
+Test module-level aggregation with multiple modules and complex dependencies.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod models;
+mod repository;
+mod services;
+mod handlers;
+
+pub use handlers::handle_request;
+
+--- file: sample/src/models.rs ---
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+pub struct Order {
+    pub id: u64,
+    pub user_id: u64,
+}
+
+--- file: sample/src/repository.rs ---
+use crate::models::{User, Order};
+
+pub trait UserRepo {
+    fn find(&self, id: u64) -> Option<User>;
+}
+
+pub trait OrderRepo {
+    fn find_by_user(&self, user_id: u64) -> Vec<Order>;
+}
+
+--- file: sample/src/services.rs ---
+use crate::models::{User, Order};
+use crate::repository::{UserRepo, OrderRepo};
+
+pub struct UserService<R: UserRepo> {
+    repo: R,
+}
+
+pub struct OrderService<R: OrderRepo> {
+    repo: R,
+}
+
+--- file: sample/src/handlers.rs ---
+use crate::models::User;
+use crate::services::UserService;
+use crate::repository::UserRepo;
+
+pub fn handle_request<R: UserRepo>(service: &UserService<R>) -> Option<User> {
+    None
+}
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  rankdir=LR;
+  node [shape=box];
+
+  label="module graph";
+  labelloc=t;
+
+  mod_sample_handlers[label="sample::handlers"];
+  mod_sample_models[label="sample::models"];
+  mod_sample_repository[label="sample::repository"];
+  mod_sample_services[label="sample::services"];
+
+  mod_sample_handlers -> mod_sample_models;
+  mod_sample_handlers -> mod_sample_services;
+  mod_sample_services -> mod_sample_repository;
+}

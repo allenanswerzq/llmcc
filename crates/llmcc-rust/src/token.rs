@@ -1,7 +1,7 @@
 use llmcc_core::LanguageTraitImpl;
 use llmcc_core::graph_builder::BlockKind;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::lang_def::{LanguageTrait, ParseTree, TreeSitterParseTree};
+use llmcc_core::lang_def::{LanguageTrait, ParseNode, ParseTree, TreeSitterParseTree};
 use llmcc_core::scope::{Scope, ScopeStack};
 use llmcc_core::symbol::{SymKind, Symbol};
 use llmcc_core::{CompileCtxt, CompileUnit};
@@ -69,6 +69,33 @@ impl LanguageTraitImpl for LangRust {
 
     fn supported_extensions_impl() -> &'static [&'static str] {
         &["rs"]
+    }
+
+    /// Check if the given parse node is a Rust test attribute.
+    /// Detects: #[test], #[cfg(test)], #[tokio::test], #[async_std::test], etc.
+    fn is_test_attribute_impl(node: &dyn ParseNode, source: &[u8]) -> bool {
+        // First check if this is an attribute_item or inner_attribute_item
+        let kind_id = node.kind_id();
+        if kind_id != LangRust::attribute_item && kind_id != LangRust::inner_attribute_item {
+            return false;
+        }
+
+        // Extract the text of the attribute
+        let start = node.start_byte();
+        let end = node.end_byte();
+        if end <= start || end > source.len() {
+            return false;
+        }
+
+        let attr_text = match std::str::from_utf8(&source[start..end]) {
+            Ok(text) => text,
+            Err(_) => return false,
+        };
+
+        // Check for test-related attributes
+        attr_text.contains("#[test]")
+            || attr_text.contains("#[cfg(test)]")
+            || attr_text.contains("::test]") // catches #[tokio::test], #[async_std::test], etc.
     }
 
     fn collect_symbols_impl<'tcx, C>(

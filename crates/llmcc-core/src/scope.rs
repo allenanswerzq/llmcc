@@ -60,6 +60,13 @@ impl<'tcx> Scope<'tcx> {
         let other_symbols = other.symbols.read().clone();
         let mut self_symbols = self.symbols.write();
 
+        tracing::trace!(
+            "merge: from scope {:?} to {:?}, {} symbol entries",
+            other.id(),
+            self.id(),
+            other_symbols.len()
+        );
+
         for (name_key, symbol_vec) in other_symbols {
             self_symbols.entry(name_key).or_default().extend(symbol_vec);
         }
@@ -327,10 +334,20 @@ impl<'tcx> ScopeStack<'tcx> {
         let stack = self.stack.read();
         tracing::trace!("stack: {:#?}", stack);
 
-        let symbols = stack
-            .iter()
-            .rev()
-            .find_map(|scope| scope.lookup_symbols(name_key, options.clone()));
+        let symbols = stack.iter().rev().find_map(|scope| {
+            let result = scope.lookup_symbols(name_key, options.clone());
+            if let Some(ref syms) = result {
+                tracing::trace!(
+                    "found '{}' in scope {:?}, symbols: {:?}",
+                    name,
+                    scope.id(),
+                    syms.iter()
+                        .map(|s| (s.id(), s.unit_index()))
+                        .collect::<Vec<_>>()
+                );
+            }
+            result
+        });
         tracing::trace!(
             "lookup_symbols: '{}' found {:?} in scope stack",
             name,

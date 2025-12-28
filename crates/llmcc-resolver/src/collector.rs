@@ -12,9 +12,8 @@ use crate::ResolverOption;
 
 /// Core symbol collector for a single compilation unit
 pub struct CollectorScopes<'a> {
-    arena: &'a Arena<'a>,
+    cc: &'a CompileCtxt<'a>,
     unit_index: usize,
-    interner: &'a InternPool,
     scopes: ScopeStack<'a>,
     globals: &'a Scope<'a>,
 }
@@ -29,9 +28,8 @@ impl<'a> CollectorScopes<'a> {
     ) -> Self {
         scopes.push(globals);
         Self {
-            arena: &cc.arena,
+            cc,
             unit_index,
-            interner: &cc.interner,
             scopes,
             globals,
         }
@@ -45,8 +43,8 @@ impl<'a> CollectorScopes<'a> {
 
     /// Get the arena
     #[inline]
-    pub fn arena(&self) -> &Arena<'a> {
-        self.arena
+    pub fn arena(&self) -> &'a Arena<'a> {
+        &self.cc.arena
     }
 
     /// Get current scope stack depth
@@ -69,16 +67,34 @@ impl<'a> CollectorScopes<'a> {
         self.scopes.push_recursive(scope);
     }
 
-    /// Create and push a new scope with optional associated symbol
+    /// Create and push a new scope with optional associated symbol.
+    /// If the symbol already has a scope, use that scope instead of creating a new one.
     #[inline]
     pub fn push_scope_with(&mut self, node: &HirNode<'a>, symbol: Option<&'a Symbol>) {
+        // Check if symbol already has a scope (from previous unit processing)
+        if let Some(symbol) = symbol
+            && let Some(existing_scope_id) = symbol.opt_scope()
+        {
+            // Reuse the existing scope
+            if let Some(existing_scope) = self.cc.opt_get_scope(existing_scope_id) {
+                tracing::trace!(
+                    "reusing existing scope {:?} for symbol {}",
+                    existing_scope_id,
+                    symbol.format(Some(self.interner())),
+                );
+                self.push_scope(existing_scope);
+                return;
+            }
+        }
+
+        // Create new scope
         let scope = self
-            .arena
-            .alloc(Scope::new_with(node.id(), symbol, Some(self.interner)));
+            .arena()
+            .alloc(Scope::new_with(node.id(), symbol, Some(self.interner())));
         if let Some(symbol) = symbol {
             tracing::trace!(
                 "set symbol scope {} to {:?}",
-                symbol.format(Some(self.interner)),
+                symbol.format(Some(self.interner())),
                 scope.id(),
             );
             symbol.set_scope(scope.id());
@@ -110,7 +126,7 @@ impl<'a> CollectorScopes<'a> {
     /// Get shared string interner
     #[inline]
     pub fn interner(&self) -> &'a InternPool {
-        self.interner
+        &self.cc.interner
     }
 
     /// Get global (module-level) scope
@@ -226,9 +242,13 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     let scope_stack_clone = scope_stack.clone();
 
     let collect_unit = move |i: usize| {
-        tracing::debug!("collecting symbols for unit {}", i);
-        let unit_scope_stack = scope_stack_clone.clone();
         let unit = cc.compile_unit(i);
+        tracing::debug!(
+            "collecting symbols for unit {} ({})",
+            i,
+            unit.file_path().unwrap_or("unknown")
+        );
+        let unit_scope_stack = scope_stack_clone.clone();
         let node = unit.hir_node(unit.file_root_id().unwrap());
         let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
 

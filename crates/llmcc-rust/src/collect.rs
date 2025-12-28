@@ -251,6 +251,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
 }
 
 impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx> {
+    // Note: Test items (#[test] functions, #[cfg(test)] modules) are already filtered out
+    // at the HIR building stage in ir_builder.rs, so they won't appear in the HIR tree.
+
     /// AST: block { ... }
     /// Purpose: Create a new lexical scope for block-scoped variables and statements
     #[tracing::instrument(skip_all)]
@@ -298,9 +301,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         let file_path = unit.file_path().expect("no file path found to compile");
         let start_depth = scopes.scope_depth();
 
-        // Track crate and module scopes for parent relationships
+        // Track crate scope for parent relationships
         let mut crate_scope: Option<&'tcx Scope<'tcx>> = None;
-        let mut module_scope: Option<&'tcx Scope<'tcx>> = None;
 
         // Parse crate name and set up crate scope
         if let Some(crate_name) = parse_crate_name(file_path)
@@ -311,19 +313,29 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             crate_scope = scopes.top();
         }
 
+        // For files in subdirectories (like utils/helper.rs), create a module scope
+        // for proper hierarchy traversal. The module scope has a Module symbol.
+        let mut module_wrapper_scope: Option<&'tcx Scope<'tcx>> = None;
         if let Some(module_name) = parse_module_name(file_path)
-            && let Some(symbol) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
+            && let Some(module_sym) = scopes.lookup_or_insert_global(&module_name, node, SymKind::Module)
         {
             tracing::trace!("insert module symbol in globals '{}'", module_name);
-            scopes.push_scope_with(node, Some(symbol));
-            module_scope = scopes.top();
+            // Create a wrapper scope with the module symbol for hierarchy traversal.
+            // This scope is separate from the module symbol's resolution scope.
+            let mod_scope = self.alloc_scope(unit, module_sym);
+            if let Some(crate_s) = crate_scope {
+                mod_scope.add_parent(crate_s);
+            }
+            module_wrapper_scope = Some(mod_scope);
+            // Note: We don't change module_sym.set_scope() - that stays pointing to
+            // the file scope for path resolution (e.g., `::helper` resolves in utils.rs scope)
         }
 
         let sn = node.as_scope().unwrap();
         if let Some(file_name) = parse_file_name(file_path)
-            && let Some(file_sym) = scopes.lookup_or_insert_global(&file_name, node, SymKind::File)
+            && let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File)
         {
-            tracing::trace!("insert file symbol in globals '{}'", file_name);
+            tracing::trace!("insert file symbol '{}' in current scope", file_name);
             let ident = unit.cc.alloc_file_ident(next_hir_id(), &file_name, file_sym);
             ident.set_symbol(file_sym);
             sn.set_ident(ident);
@@ -336,7 +348,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             if let Some(crate_s) = crate_scope {
                 scope.add_parent(crate_s);
             }
-            if let Some(module_s) = module_scope {
+            if let Some(module_s) = module_wrapper_scope {
                 scope.add_parent(module_s);
             }
 
@@ -351,7 +363,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             // For top-level files (not lib.rs or main.rs), create a module symbol
             // in the crate scope that links to this file's scope.
             // This enables paths like `crate::models::Config` to resolve.
-            if file_name != "lib" && file_name != "main" && module_scope.is_none()
+            if file_name != "lib" && file_name != "main" && module_wrapper_scope.is_none()
                 && let Some(mod_sym) = scopes.lookup_or_insert_global(&file_name, node, SymKind::Module)
             {
                 tracing::trace!("link file '{}' as module in crate scope", file_name);
@@ -359,9 +371,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             }
         }
 
-        for child in node.children(unit) {
-            self.visit_node(unit, &child, scopes, namespace, parent);
-        }
+        // Use visit_children which handles test filtering automatically
+        self.visit_children(unit, node, scopes, namespace, parent);
 
         scopes.pop_until(start_depth);
     }
@@ -420,11 +431,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         parent: Option<&Symbol>,
     ) {
         // Determine if this is a method (inside impl) or a free function
-        let kind = if is_method_context(parent) {
+        let is_method = is_method_context(parent);
+        let kind = if is_method {
             SymKind::Method
         } else {
             SymKind::Function
         };
+
         self.visit_scoped_named(
             unit,
             node,
@@ -435,6 +448,15 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             LangRust::field_name,
             None,
         );
+
+        // For free functions, also add a reference in unit_globals for cross-crate resolution
+        // This happens after visit_scoped_named so the symbol already exists with its scope
+        if !is_method
+            && let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![kind])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: extern "C" fn signature or trait method signature
@@ -490,6 +512,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
             })),
         );
+
+        // Also add struct to unit_globals for cross-crate type resolution
+        if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::Struct])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: enum Name { variants... }
@@ -513,6 +542,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             LangRust::field_name,
             None,
         );
+
+        // Also add enum to unit_globals for cross-crate type resolution
+        if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::Enum])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: trait Name { associated items... }
@@ -539,6 +575,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
                 let _ = scopes.lookup_or_insert("Self", node, SymKind::TypeAlias);
             })),
         );
+
+        // Also add trait to unit_globals for cross-crate type resolution
+        if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
+            && let Some(sym) = scopes.lookup_symbol(&ident.name, vec![SymKind::Trait])
+        {
+            scopes.globals().insert(sym);
+        }
     }
 
     /// AST: impl [Trait for] Type { methods... }

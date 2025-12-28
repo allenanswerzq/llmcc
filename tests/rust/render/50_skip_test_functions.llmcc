@@ -1,0 +1,58 @@
+===============================================================================
+skip-test-functions
+===============================================================================
+Test functions with #[test] attribute should be excluded from the architecture graph.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+pub struct Config {
+    pub name: String,
+}
+
+pub fn init(config: Config) {
+    println!("{}", config.name);
+}
+
+#[test]
+fn test_init() {
+    let c = Config { name: "test".to_string() };
+    init(c);
+}
+
+#[cfg(test)]
+fn helper_for_tests() {
+    // This should be excluded
+}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/sample/src/lib.rs)
+  (class:2 Config
+    (field:3 name @type String)
+  )
+  (func:4 init
+    (parameter:5 config @type:2 Config)
+  )
+)
+
+--- expect:arch-graph ---
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_sample {
+      label="sample";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n2[label="Config", full_path="$TMP/sample/src/lib.rs:1", sym_ty="Struct", shape=box];
+        n4[label="init", full_path="$TMP/sample/src/lib.rs:5", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  n2 -> n4 [from="input", to="func"];
+}
