@@ -250,7 +250,7 @@ static BLOCK_ID_COUNTER: AtomicU32 = AtomicU32::new(1);
 
 /// Reset global BlockId counter (primarily for deterministic tests)
 pub fn reset_block_id_counter() {
-    BLOCK_ID_COUNTER.store(1, Ordering::SeqCst);
+    BLOCK_ID_COUNTER.store(1, Ordering::Relaxed);
 }
 
 impl std::fmt::Display for BlockId {

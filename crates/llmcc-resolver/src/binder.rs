@@ -2,7 +2,7 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirScope;
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{ScopeId, SymKind, Symbol};
+use llmcc_core::symbol::{ScopeId, SymKind, SymKindSet, Symbol};
 use llmcc_core::{CompileCtxt, LanguageTraitImpl};
 
 use rayon::prelude::*;
@@ -105,20 +105,20 @@ impl<'a> BinderScopes<'a> {
     pub fn lookup_globals(
         &self,
         name: &str,
-        kind_filters: Vec<SymKind>,
+        kind_filters: SymKindSet,
     ) -> Option<Vec<&'a Symbol>> {
         tracing::trace!(
             "lookup globals '{}' with filters {:?}",
             name,
-            kind_filters.clone()
+            kind_filters
         );
-        let options = LookupOptions::current().with_kind_filters(kind_filters);
+        let options = LookupOptions::current().with_kind_set(kind_filters);
         let name_key = self.unit.cc.interner.intern(name);
         self.scopes.globals().lookup_symbols(name_key, options)
     }
 
     #[inline]
-    pub fn lookup_global(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
+    pub fn lookup_global(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_globals(name, kind_filters)?;
         if symbols.len() > 1 {
             tracing::warn!(
@@ -134,19 +134,19 @@ impl<'a> BinderScopes<'a> {
     pub fn lookup_symbols(
         &self,
         name: &str,
-        kind_filters: Vec<SymKind>,
+        kind_filters: SymKindSet,
     ) -> Option<Vec<&'a Symbol>> {
         tracing::trace!(
             "lookup symbols '{}' with filters {:?}",
             name,
-            kind_filters.clone()
+            kind_filters
         );
-        let options = LookupOptions::current().with_kind_filters(kind_filters);
+        let options = LookupOptions::current().with_kind_set(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }
 
     #[inline]
-    pub fn lookup_symbol(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
+    pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
         let current_unit = self.unit.index;
         tracing::trace!(
@@ -180,19 +180,29 @@ impl<'a> BinderScopes<'a> {
         &self,
         obj_type_symbol: &'a Symbol,
         member_name: &str,
-        kind_filters: Option<Vec<SymKind>>,
+        kind_filters: SymKindSet,
     ) -> Option<&'a Symbol> {
-        if let Some(kind_filters) = kind_filters {
+        if !kind_filters.is_empty() {
             tracing::trace!(
                 "looking up member '{}' in type scope with filters {:?}",
                 member_name,
-                kind_filters.clone()
+                kind_filters
             );
-            for filter in kind_filters.iter() {
-                tracing::trace!("  filter: {:?}", filter);
-                let sym = self.lookup_member_symbol(obj_type_symbol, member_name, Some(*filter));
-                if sym.is_some() {
-                    return sym;
+            // Try each kind individually for priority ordering
+            for kind in [
+                SymKind::Method,
+                SymKind::Function,
+                SymKind::Field,
+                SymKind::Variable,
+                SymKind::Const,
+                SymKind::Static,
+            ] {
+                if kind_filters.contains(kind) {
+                    tracing::trace!("  filter: {:?}", kind);
+                    let sym = self.lookup_member_symbol(obj_type_symbol, member_name, Some(kind));
+                    if sym.is_some() {
+                        return sym;
+                    }
                 }
             }
         } else {
@@ -243,10 +253,11 @@ impl<'a> BinderScopes<'a> {
         let scopes = ScopeStack::new(&self.unit.cc.arena, &self.unit.cc.interner);
         scopes.push_recursive(scope);
 
-        let mut options = LookupOptions::current();
-        if let Some(filter) = kind_filter {
-            options = options.with_kind_filters(vec![filter]);
-        }
+        let options = if let Some(filter) = kind_filter {
+            LookupOptions::current().with_kind_set(SymKindSet::from_kind(filter))
+        } else {
+            LookupOptions::current()
+        };
 
         scopes
             .lookup_symbols(member_name, options)?
@@ -258,16 +269,16 @@ impl<'a> BinderScopes<'a> {
     pub fn lookup_qualified(
         &self,
         qualified_name: &[&str],
-        kind_filters: Option<Vec<SymKind>>,
+        kind_filters: SymKindSet,
     ) -> Option<Vec<&'a Symbol>> {
         tracing::trace!(
             "lookup qualified {:?} with kind_filters {:?}",
             qualified_name,
-            kind_filters.clone()
+            kind_filters
         );
         let mut options = LookupOptions::default().with_shift_start(true);
-        if let Some(filters) = kind_filters {
-            options = options.with_kind_filters(filters)
+        if !kind_filters.is_empty() {
+            options = options.with_kind_set(kind_filters)
         }
         let symbols = self.scopes.lookup_qualified(qualified_name, options)?;
         Some(symbols)

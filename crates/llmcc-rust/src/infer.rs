@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{SymKind, SymKindSet, Symbol, SYM_KIND_TYPES};
 use llmcc_resolver::BinderScopes;
 
 use crate::token::LangRust;
@@ -35,7 +35,7 @@ pub fn infer_type<'tcx>(
                 }
             }
             // Try to look up by name in scopes (for unresolved types)
-            if let Some(sym) = scopes.lookup_symbol(&ident.name, SymKind::type_kinds()) {
+            if let Some(sym) = scopes.lookup_symbol(&ident.name, SYM_KIND_TYPES) {
                 return Some(sym);
             }
             // Fall back to original symbol if lookup failed
@@ -161,7 +161,7 @@ pub fn infer_type<'tcx>(
 #[tracing::instrument(skip_all)]
 fn get_primitive_type<'tcx>(scopes: &BinderScopes<'tcx>, name: &str) -> Option<&'tcx Symbol> {
     scopes
-        .lookup_globals(name, vec![SymKind::Primitive])?
+        .lookup_globals(name, SymKindSet::from_kind(SymKind::Primitive))?
         .last()
         .copied()
 }
@@ -245,11 +245,9 @@ fn infer_struct_expression<'tcx>(
     scopes: &BinderScopes<'tcx>,
     node: &HirNode<'tcx>,
 ) -> Option<&'tcx Symbol> {
-    let type_kinds = SymKind::type_kinds();
-
     if let Some(name_node) = node.child_by_field(unit, LangRust::field_name)
         && let Some(sym) = infer_type(unit, scopes, &name_node)
-        && type_kinds.contains(&sym.kind())
+        && SYM_KIND_TYPES.contains(sym.kind())
     {
         tracing::trace!("inferring struct type from name node");
         return Some(sym);
@@ -315,7 +313,7 @@ fn infer_scoped_identifier<'tcx>(
     tracing::trace!("resolving scoped ident {:?}", qualified_names);
 
     scopes
-        .lookup_qualified(&qualified_names, None)?
+        .lookup_qualified(&qualified_names, SymKindSet::empty())?
         .last()
         .copied()
 }
@@ -391,7 +389,7 @@ fn infer_array_type<'tcx>(
     if let Some(sn) = node.as_scope()
         && let Some(array_ident) = sn.opt_ident()
         && let Some(array_symbol) =
-            scopes.lookup_symbol(&array_ident.name, vec![SymKind::CompositeType])
+            scopes.lookup_symbol(&array_ident.name, SymKindSet::from_kind(SymKind::CompositeType))
     {
         return Some(array_symbol);
     }
@@ -411,7 +409,7 @@ fn infer_tuple_type<'tcx>(
     if let Some(sn) = node.as_scope()
         && let Some(tuple_ident) = sn.opt_ident()
         && let Some(tuple_symbol) =
-            scopes.lookup_symbol(&tuple_ident.name, vec![SymKind::CompositeType])
+            scopes.lookup_symbol(&tuple_ident.name, SymKindSet::from_kind(SymKind::CompositeType))
     {
         return Some(tuple_symbol);
     }

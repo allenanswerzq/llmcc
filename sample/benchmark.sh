@@ -26,11 +26,12 @@ declare -A PROJECTS=(
     ["serde"]="./repos/serde"
     ["clap"]="./repos/clap"
     ["axum"]="./repos/axum"
-    # From GitHub
+    ["ruff"]="./repos/ruff"
     ["codex"]="./repos/codex"
     ["llmcc"]="./repos/llmcc"
     # Database & data infrastructure
     ["lancedb"]="./repos/lancedb"
+    ["lance"]="./repos/lance"
     ["opendal"]="./repos/opendal"
     ["risingwave"]="./repos/risingwave"
     ["databend"]="./repos/databend"
@@ -46,11 +47,6 @@ cat > "$BENCHMARK_FILE" << 'EOF'
 # LLMCC Benchmark Results
 
 Generated on: DATE_PLACEHOLDER
-
-## Timing Breakdown (depth=3)
-
-| Project | Files | Parse | IR Build | Symbols | Binding | Graph | Link | Total |
-|---------|-------|-------|----------|---------|---------|-------|------|-------|
 EOF
 # Replace placeholder with actual date
 sed -i "s/DATE_PLACEHOLDER/$(date '+%Y-%m-%d %H:%M:%S')/" "$BENCHMARK_FILE"
@@ -92,6 +88,24 @@ run_benchmark_pagerank() {
     grep -E "(Parsing total|Total time)" "$log_file" | tail -2 || true
 }
 
+# Count lines of code in a directory (Rust files only)
+count_loc() {
+    local src_dir=$1
+
+    if [ ! -d "$src_dir" ]; then
+        echo "0"
+        return
+    fi
+
+    # Count non-empty, non-comment lines in .rs files
+    find "$src_dir" -name '*.rs' -type f -print0 2>/dev/null | \
+        xargs -0 cat 2>/dev/null | \
+        grep -v '^\s*$' | \
+        grep -v '^\s*//' | \
+        wc -l | \
+        tr -d ' '
+}
+
 # Count nodes and edges in a DOT file
 count_graph_stats() {
     local dot_file=$1
@@ -115,9 +129,19 @@ extract_timing() {
     local name=$1
     local log_file=$2
 
+    local src_dir=$3
+
     if [ ! -f "$log_file" ]; then
-        echo "| $name | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+        echo "| $name | - | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
         return
+    fi
+
+    # Count lines of code and format as K (e.g., 92K)
+    local loc_raw=$(count_loc "$src_dir")
+    if [ "$loc_raw" -ge 1000 ]; then
+        loc=$(echo "scale=0; ($loc_raw + 500) / 1000" | bc)K
+    else
+        loc="$loc_raw"
     fi
 
     # Join lines and extract timing (log output may have embedded newlines)
@@ -134,6 +158,7 @@ extract_timing() {
 
     # Handle empty values
     [ -z "$files" ] && files="-"
+    [ -z "$loc" ] && loc="-"
     [ -z "$parse" ] && parse="-"
     [ -z "$ir" ] && ir="-"
     [ -z "$symbols" ] && symbols="-"
@@ -142,29 +167,33 @@ extract_timing() {
     [ -z "$link" ] && link="-"
     [ -z "$total" ] && total="-"
 
-    echo "| $name | $files | $parse | $ir | $symbols | $binding | $graph | $link | $total |" >> "$BENCHMARK_FILE"
+    echo "| $name | $files | $loc | $parse | $ir | $symbols | $binding | $graph | $link | $total |" >> "$BENCHMARK_FILE"
 }
 
 # PageRank benchmark section
 echo "" >> "$BENCHMARK_FILE"
 echo "## PageRank Timing (depth=3, top-$TOP_K)" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
-echo "| Project | Files | Parse | IR Build | Symbols | Binding | Graph | Link | Total |" >> "$BENCHMARK_FILE"
-echo "|---------|-------|-------|----------|---------|---------|-------|------|-------|" >> "$BENCHMARK_FILE"
+echo "| Project | Files | LoC | Parse | IR Build | Symbols | Binding | Graph | Link | Total |" >> "$BENCHMARK_FILE"
+echo "|---------|-------|-----|-------|----------|---------|---------|-------|------|-------|" >> "$BENCHMARK_FILE"
 
 for name in "${!PROJECTS[@]}"; do
     src_dir="${PROJECTS[$name]}"
 
     if [ ! -d "$src_dir" ]; then
-        echo "| $name | (not found) | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+        echo "| $name | (not found) | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
         continue
     fi
 
     echo ""
-    echo "=== Benchmarking $name (PageRank) ==="
+    echo "=== Benchmarking $name ==="
 
+    # Run full graph benchmark (for reduction stats)
+    run_benchmark "$name" "$src_dir"
+
+    # Run PageRank filtered benchmark
     run_benchmark_pagerank "$name" "$src_dir"
-    extract_timing "$name" "$BENCHMARK_DIR/${name}_pagerank_depth3.log"
+    extract_timing "$name" "$BENCHMARK_DIR/${name}_pagerank_depth3.log" "$src_dir"
 done
 
 # Calculate summary statistics

@@ -2,11 +2,9 @@ pub mod options;
 
 use std::collections::HashSet;
 use std::io;
-use std::sync::Once;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
-use rayon::ThreadPoolBuilder;
 use tracing::info;
 
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
@@ -34,28 +32,6 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
-#[allow(dead_code)]
-static RAYON_INIT: Once = Once::new();
-
-#[allow(dead_code)]
-fn init_rayon_pool() {
-    RAYON_INIT.call_once(|| {
-        let available = std::thread::available_parallelism()
-            .map(|v| v.get())
-            .unwrap_or(1);
-        let target = available.clamp(1, 12);
-        if let Err(err) = ThreadPoolBuilder::new()
-            .num_threads(target)
-            .thread_name(|index| format!("llmcc-worker-{index}"))
-            .build_global()
-        {
-            tracing::debug!(?err, "Rayon global pool already initialized");
-        } else {
-            tracing::debug!(threads = target, "Initialized Rayon global thread pool");
-        }
-    });
-}
-
 pub struct LlmccOptions {
     pub files: Vec<String>,
     pub dirs: Vec<String>,
@@ -72,8 +48,6 @@ where
     L: LanguageTraitImpl,
 {
     let total_start = Instant::now();
-
-    // init_rayon_pool();
 
     validate_options(opts)?;
 
@@ -106,10 +80,7 @@ where
 
     let bind_start = Instant::now();
     bind_symbols_with::<L>(&cc, globals, &resolver_option);
-    info!(
-        "Symbol binding: {:.2}s",
-        bind_start.elapsed().as_secs_f64()
-    );
+    info!("Symbol binding: {:.2}s", bind_start.elapsed().as_secs_f64());
 
     let graph_build_start = Instant::now();
     let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;

@@ -6,7 +6,7 @@ use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId};
-use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
+use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, SymKindSet, Symbol};
 
 /// Represents a single level in the scope hierarchy.
 pub struct Scope<'tcx> {
@@ -43,7 +43,7 @@ impl<'tcx> Scope<'tcx> {
         interner: Option<&'tcx InternPool>,
     ) -> Self {
         Self {
-            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::SeqCst)),
+            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
             symbols: RwLock::new(HashMap::new()),
             owner,
             symbol: RwLock::new(symbol),
@@ -169,13 +169,14 @@ impl<'tcx> Scope<'tcx> {
         let filtered: Vec<&'tcx Symbol> = symbols
             .iter()
             .filter(|symbol| {
-                if let Some(kinds) = &options.kind_filters
-                    && !kinds.iter().any(|kind| symbol.kind() == *kind)
+                // O(1) bitset check instead of O(n) iteration
+                if !options.kind_filters.is_empty()
+                    && !options.kind_filters.contains(symbol.kind())
                 {
                     return false;
                 }
-                if let Some(units) = &options.unit_filters
-                    && !units.iter().any(|unit| symbol.unit_index() == Some(*unit))
+                if let Some(unit) = options.unit_filters
+                    && symbol.unit_index() != Some(unit)
                 {
                     return false;
                 }
@@ -398,8 +399,8 @@ impl<'tcx> ScopeStack<'tcx> {
         };
 
         // Pass through kind_filters to lookup to support kind-specific lookup/insert
-        let lookup_options = if options.kind_filters.is_some() {
-            LookupOptions::default().with_kind_filters(options.kind_filters.clone().unwrap())
+        let lookup_options = if !options.kind_filters.is_empty() {
+            LookupOptions::default().with_kind_set(options.kind_filters)
         } else {
             LookupOptions::default()
         };
@@ -553,15 +554,15 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct LookupOptions {
     pub global: bool,
     pub parent: bool,
     pub chained: bool,
     pub force: bool,
     pub shift_start: bool,
-    pub kind_filters: Option<Vec<SymKind>>,
-    pub unit_filters: Option<Vec<usize>>,
+    pub kind_filters: SymKindSet,
+    pub unit_filters: Option<usize>,
 }
 
 impl LookupOptions {
@@ -622,13 +623,13 @@ impl LookupOptions {
         self
     }
 
-    pub fn with_kind_filters(mut self, kind_filters: Vec<SymKind>) -> Self {
-        self.kind_filters = Some(kind_filters);
+    pub fn with_kind_set(mut self, kind_set: SymKindSet) -> Self {
+        self.kind_filters = kind_set;
         self
     }
 
-    pub fn with_unit_filters(mut self, unit_filters: Vec<usize>) -> Self {
-        self.unit_filters = Some(unit_filters);
+    pub fn with_unit_filter(mut self, unit: usize) -> Self {
+        self.unit_filters = Some(unit);
         self
     }
 }

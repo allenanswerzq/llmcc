@@ -18,14 +18,15 @@ use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
 static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 /// Reserve a new globally-unique HIR ID.
+#[inline]
 pub fn next_hir_id() -> HirId {
-    let id = HIR_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
+    let id = HIR_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
     HirId(id)
 }
 
 /// Reset the global HIR ID counter to 0 (for testing isolation)
 pub fn reset_hir_id_counter() {
-    HIR_ID_COUNTER.store(0, Ordering::SeqCst);
+    HIR_ID_COUNTER.store(0, Ordering::Relaxed);
 }
 
 /// Configuration for IR building behavior.

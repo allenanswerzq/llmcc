@@ -4,7 +4,7 @@ use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
 
 use rayon::prelude::*;
 
@@ -187,7 +187,7 @@ impl<'a> CollectorScopes<'a> {
     ) -> Option<&'a Symbol> {
         // Use kind filter to avoid collisions between symbols of different kinds
         // e.g., crate "auth" and file "auth" should be separate symbols
-        let options = LookupOptions::global().with_kind_filters(vec![kind]);
+        let options = LookupOptions::global().with_kind_set(SymKindSet::from_kind(kind));
         let symbols = self.scopes.lookup_or_insert(name, node.id(), options)?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
@@ -200,19 +200,19 @@ impl<'a> CollectorScopes<'a> {
     pub fn lookup_symbols(
         &self,
         name: &str,
-        kind_filters: Vec<SymKind>,
+        kind_filters: SymKindSet,
     ) -> Option<Vec<&'a Symbol>> {
         tracing::trace!(
             "lookup symbols '{}' with filters {:?}",
             name,
-            kind_filters.clone()
+            kind_filters
         );
-        let options = LookupOptions::current().with_kind_filters(kind_filters);
+        let options = LookupOptions::current().with_kind_set(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }
 
     #[inline]
-    pub fn lookup_symbol(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
+    pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
         if symbols.len() > 1 {
             tracing::warn!(
