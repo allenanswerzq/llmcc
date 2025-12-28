@@ -10,7 +10,7 @@ use rayon::ThreadPoolBuilder;
 use tracing::info;
 
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
-use llmcc_core::graph_render::{ComponentDepth, render_graph};
+use llmcc_core::graph_render::{ComponentDepth, render_graph_with_pagerank};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
@@ -64,6 +64,7 @@ pub struct LlmccOptions {
     pub print_block: bool,
     pub graph: bool,
     pub component_depth: ComponentDepth,
+    pub pagerank_top_k: Option<usize>,
 }
 
 pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
@@ -251,7 +252,7 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
 fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx ProjectGraph<'tcx>) -> Option<String> {
     if opts.graph {
         let render_start = Instant::now();
-        let result = render_graph(pg, opts.component_depth);
+        let result = render_graph_with_pagerank(pg, opts.component_depth, opts.pagerank_top_k);
         info!(
             "Graph rendering: {:.2}s",
             render_start.elapsed().as_secs_f64()

@@ -1,0 +1,1208 @@
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_databend_common_ast {
+      label="databend-common-ast";
+      subgraph cluster_ast {
+        label="ast";
+        subgraph cluster_common_rs {
+          label="common.rs";
+          n17072[label="write_dot_separated_list", full_path="./repos/databend/src/query/ast/src/ast/common.rs:210", sym_ty="Function"];
+          n17178[label="write_comma_separated_list", full_path="./repos/databend/src/query/ast/src/ast/common.rs:224", sym_ty="Function"];
+          n15141[label="Identifier", full_path="./repos/databend/src/query/ast/src/ast/common.rs:29", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_expr_rs {
+          label="expr.rs";
+          n25825[label="TypeName", full_path="./repos/databend/src/query/ast/src/ast/expr.rs:1176", sym_ty="Enum", shape=box];
+          n18205[label="Expr", full_path="./repos/databend/src/query/ast/src/ast/expr.rs:46", sym_ty="Enum", shape=box];
+        }
+
+        subgraph cluster_query_rs {
+          label="query.rs";
+          n32218[label="Query", full_path="./repos/databend/src/query/ast/src/ast/query.rs:40", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_format {
+        label="format";
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n31731[label="FormatTreeNode", full_path="./repos/databend/src/query/ast/src/ast/format/mod.rs:21", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_parser {
+        label="parser";
+        subgraph cluster_common_rs {
+          label="common.rs";
+          n36545[label="ident", full_path="./repos/databend/src/query/ast/src/parser/common.rs:100", sym_ty="Function"];
+        }
+
+        subgraph cluster_expr_rs {
+          label="expr.rs";
+          n45334[label="expr", full_path="./repos/databend/src/query/ast/src/parser/expr.rs:45", sym_ty="Function"];
+          n45439[label="values", full_path="./repos/databend/src/query/ast/src/parser/expr.rs:49", sym_ty="Function"];
+        }
+
+        subgraph cluster_input_rs {
+          label="input.rs";
+          n57163[label="Input", full_path="./repos/databend/src/query/ast/src/parser/input.rs:28", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_query_rs {
+          label="query.rs";
+          n60222[label="query", full_path="./repos/databend/src/query/ast/src/parser/query.rs:39", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_span_rs {
+        label="span.rs";
+        n42261[label="Range", full_path="./repos/databend/src/query/ast/src/span.rs:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_statements {
+        label="statements";
+        subgraph cluster_statement_rs {
+          label="statement.rs";
+          n26355[label="Statement", full_path="./repos/databend/src/query/ast/src/ast/statements/statement.rs:48", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_base {
+      label="databend-common-base";
+      subgraph cluster_base {
+        label="base";
+        subgraph cluster_ordered_float_rs {
+          label="ordered_float.rs";
+          n410[label="OrderedFloat", full_path="./repos/databend/src/common/base/src/base/ordered_float.rs:107", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_hints {
+        label="hints";
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n31790[label="assume", full_path="./repos/databend/src/common/base/src/hints/mod.rs:16", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_memory {
+        label="memory";
+        subgraph cluster_mem_stat_rs {
+          label="mem_stat.rs";
+          n20038[label="MemStat", full_path="./repos/databend/src/common/base/src/runtime/memory/mem_stat.rs:66", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_metrics {
+        label="metrics";
+        subgraph cluster_counter_rs {
+          label="counter.rs";
+          n25285[label="Counter", full_path="./repos/databend/src/common/base/src/runtime/metrics/counter.rs:30", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_family_rs {
+          label="family.rs";
+          n26217[label="Family", full_path="./repos/databend/src/common/base/src/runtime/metrics/family.rs:53", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_gauge_rs {
+          label="gauge.rs";
+          n31510[label="Gauge", full_path="./repos/databend/src/common/base/src/runtime/metrics/gauge.rs:27", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_obfuscator_rs {
+        label="obfuscator.rs";
+        n10037[label="Histogram", full_path="./repos/databend/src/common/base/src/obfuscator.rs:46", sym_ty="Trait", shape=box];
+        n10177[label="Table", full_path="./repos/databend/src/common/base/src/obfuscator.rs:52", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_profile {
+        label="profile";
+        subgraph cluster_profiles_rs {
+          label="profiles.rs";
+          n41143[label="get_statistics_desc", full_path="./repos/databend/src/common/base/src/runtime/profile/profiles.rs:144", sym_ty="Function"];
+          n40081[label="ProfileStatisticsName", full_path="./repos/databend/src/common/base/src/runtime/profile/profiles.rs:27", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+      subgraph cluster_runtime {
+        label="runtime";
+        subgraph cluster_catch_unwind_rs {
+          label="catch_unwind.rs";
+          n13712[label="drop_guard", full_path="./repos/databend/src/common/base/src/runtime/catch_unwind.rs:26", sym_ty="Function"];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_catalog {
+      label="databend-common-catalog";
+      subgraph cluster_catalog {
+        label="catalog";
+        subgraph cluster_interface_rs {
+          label="interface.rs";
+          n43714[label="Catalog", full_path="./repos/databend/src/query/catalog/src/catalog/interface.rs:142", sym_ty="Trait", shape=box];
+        }
+
+      }
+
+      subgraph cluster_datasource {
+        label="datasource";
+        subgraph cluster_datasource_plan_rs {
+          label="datasource_plan.rs";
+          n53158[label="DataSourcePlan", full_path="./repos/databend/src/query/catalog/src/plan/datasource/datasource_plan.rs:29", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_plan {
+        label="plan";
+        subgraph cluster_pushdown_rs {
+          label="pushdown.rs";
+          n52734[label="PushDownInfo", full_path="./repos/databend/src/query/catalog/src/plan/pushdown.rs:155", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_table_rs {
+        label="table.rs";
+        n60594[label="Table", full_path="./repos/databend/src/query/catalog/src/table.rs:64", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_table_args_rs {
+        label="table_args.rs";
+        n67207[label="TableArgs", full_path="./repos/databend/src/query/catalog/src/table_args.rs:24", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_table_context_rs {
+        label="table_context.rs";
+        n69615[label="TableContext", full_path="./repos/databend/src/query/catalog/src/table_context.rs:144", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_column {
+      label="databend-common-column";
+      subgraph cluster_binary {
+        label="binary";
+        subgraph cluster_builder_rs {
+          label="builder.rs";
+          n13831[label="BinaryColumnBuilder", full_path="./repos/databend/src/common/column/src/binary/builder.rs:25", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n17400[label="BinaryColumn", full_path="./repos/databend/src/common/column/src/binary/mod.rs:37", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_binview {
+        label="binview";
+        subgraph cluster_builder_rs {
+          label="builder.rs";
+          n18881[label="BinaryViewColumnBuilder", full_path="./repos/databend/src/common/column/src/binview/builder.rs:34", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_bitmap {
+        label="bitmap";
+        subgraph cluster_immutable_rs {
+          label="immutable.rs";
+          n36509[label="Bitmap", full_path="./repos/databend/src/common/column/src/bitmap/immutable.rs:78", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mutable_rs {
+          label="mutable.rs";
+          n41701[label="MutableBitmap", full_path="./repos/databend/src/common/column/src/bitmap/mutable.rs:73", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_buffer {
+        label="buffer";
+        subgraph cluster_immutable_rs {
+          label="immutable.rs";
+          n54391[label="Buffer", full_path="./repos/databend/src/common/column/src/buffer/immutable.rs:62", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n58675[label="Bytes", full_path="./repos/databend/src/common/column/src/buffer/mod.rs:34", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_types {
+        label="types";
+        subgraph cluster_native_rs {
+          label="native.rs";
+          n2751[label="months_days_micros", full_path="./repos/databend/src/common/column/src/types/native.rs:283", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_config {
+      label="databend-common-config";
+      subgraph cluster_inner_rs {
+        label="inner.rs";
+        n22992[label="InnerConfig", full_path="./repos/databend/src/query/config/src/inner.rs:48", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_datavalues {
+      label="databend-common-datavalues";
+      subgraph cluster_data_field_rs {
+        label="data_field.rs";
+        n32090[label="DataField", full_path="./repos/databend/src/query/datavalues/src/data_field.rs:22", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_data_schema_rs {
+        label="data_schema.rs";
+        n33282[label="DataSchema", full_path="./repos/databend/src/query/datavalues/src/data_schema.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types {
+        label="types";
+        subgraph cluster_data_type_rs {
+          label="data_type.rs";
+          n34409[label="DataTypeImpl", full_path="./repos/databend/src/query/datavalues/src/types/data_type.rs:35", sym_ty="Enum", shape=box];
+          n35064[label="DataType", full_path="./repos/databend/src/query/datavalues/src/types/data_type.rs:61", sym_ty="Trait", shape=box];
+        }
+
+        subgraph cluster_type_string_rs {
+          label="type_string.rs";
+          n39680[label="StringType", full_path="./repos/databend/src/query/datavalues/src/types/type_string.rs:20", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_exception {
+      label="databend-common-exception";
+      subgraph cluster_exception_rs {
+        label="exception.rs";
+        n27011[label="ErrorCode", full_path="./repos/databend/src/common/exception/src/exception.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_expression {
+      label="databend-common-expression";
+      subgraph cluster_aggregate {
+        label="aggregate";
+        subgraph cluster_aggregate_function_state_rs {
+          label="aggregate_function_state.rs";
+          n43878[label="StateSerdeItem", full_path="./repos/databend/src/query/expression/src/aggregate/aggregate_function_state.rs:165", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+      subgraph cluster_block_rs {
+        label="block.rs";
+        n70273[label="DataBlock", full_path="./repos/databend/src/query/expression/src/block.rs:49", sym_ty="Struct", shape=box];
+        n70336[label="BlockEntry", full_path="./repos/databend/src/query/expression/src/block.rs:56", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_constant_folder_rs {
+        label="constant_folder.rs";
+        n78793[label="ConstantFolder", full_path="./repos/databend/src/query/expression/src/constant_folder.rs:47", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_evaluator_rs {
+        label="evaluator.rs";
+        n94934[label="Evaluator", full_path="./repos/databend/src/query/expression/src/evaluator.rs:101", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_expression_rs {
+        label="expression.rs";
+        n106786[label="ColumnIndex", full_path="./repos/databend/src/query/expression/src/expression.rs:33", sym_ty="Trait", shape=box];
+        n109777[label="RemoteExpr", full_path="./repos/databend/src/query/expression/src/expression.rs:495", sym_ty="Enum", shape=box];
+        n107485[label="Expr", full_path="./repos/databend/src/query/expression/src/expression.rs:97", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_function_rs {
+        label="function.rs";
+        n118834[label="FunctionContext", full_path="./repos/databend/src/query/expression/src/function.rs:160", sym_ty="Struct", shape=box];
+        n119174[label="EvalContext", full_path="./repos/databend/src/query/expression/src/function.rs:197", sym_ty="Struct", shape=box];
+        n119435[label="FunctionRegistry", full_path="./repos/databend/src/query/expression/src/function.rs:230", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_projected_block_rs {
+        label="projected_block.rs";
+        n98037[label="ProjectedBlock", full_path="./repos/databend/src/query/expression/src/projected_block.rs:23", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_property_rs {
+        label="property.rs";
+        n99762[label="Domain", full_path="./repos/databend/src/query/expression/src/property.rs:120", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_schema_rs {
+        label="schema.rs";
+        n117767[label="TableSchema", full_path="./repos/databend/src/query/expression/src/schema.rs:298", sym_ty="Struct", shape=box];
+        n117895[label="TableField", full_path="./repos/databend/src/query/expression/src/schema.rs:307", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_types {
+        label="types";
+        subgraph cluster_decimal_rs {
+          label="decimal.rs";
+          n151872[label="i256", full_path="./repos/databend/src/query/expression/src/types/decimal.rs:2709", sym_ty="Struct", shape=box];
+          n133132[label="Decimal", full_path="./repos/databend/src/query/expression/src/types/decimal.rs:573", sym_ty="Trait", shape=box];
+        }
+
+        subgraph cluster_number_rs {
+          label="number.rs";
+          n145014[label="NumberScalar", full_path="./repos/databend/src/query/expression/src/types/number.rs:234", sym_ty="Enum", shape=box];
+          n145377[label="NumberColumn", full_path="./repos/databend/src/query/expression/src/types/number.rs:248", sym_ty="Enum", shape=box];
+          n146631[label="SimpleDomain", full_path="./repos/databend/src/query/expression/src/types/number.rs:304", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_string_rs {
+          label="string.rs";
+          n152860[label="StringColumnBuilder", full_path="./repos/databend/src/query/expression/src/types/string.rs:240", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        n19426[label="DataType", full_path="./repos/databend/src/query/expression/src/types.rs:114", sym_ty="Enum", shape=box];
+        n23142[label="AccessType", full_path="./repos/databend/src/query/expression/src/types.rs:573", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_utils {
+        label="utils";
+        subgraph cluster_block_thresholds_rs {
+          label="block_thresholds.rs";
+          n50062[label="BlockThresholds", full_path="./repos/databend/src/query/expression/src/utils/block_thresholds.rs:21", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_values_rs {
+        label="values.rs";
+        n92343[label="Value", full_path="./repos/databend/src/query/expression/src/values.rs:117", sym_ty="Enum", shape=box];
+        n92375[label="Scalar", full_path="./repos/databend/src/query/expression/src/values.rs:136", sym_ty="Enum", shape=box];
+        n93157[label="ScalarRef", full_path="./repos/databend/src/query/expression/src/values.rs:161", sym_ty="Enum", shape=box];
+        n93693[label="Column", full_path="./repos/databend/src/query/expression/src/values.rs:188", sym_ty="Enum", shape=box];
+        n95243[label="ColumnBuilder", full_path="./repos/databend/src/query/expression/src/values.rs:260", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_functions {
+      label="databend-common-functions";
+      subgraph cluster_scalars {
+        label="scalars";
+        subgraph cluster_comparison_rs {
+          label="comparison.rs";
+          n72331[label="register", full_path="./repos/databend/src/query/functions/src/scalars/comparison.rs:76", sym_ty="Function"];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_io {
+      label="databend-common-io";
+      subgraph cluster_wkb_rs {
+        label="wkb.rs";
+        n42320[label="read_wkb_header", full_path="./repos/databend/src/common/io/src/wkb.rs:28", sym_ty="Function"];
+        n42506[label="WkbInfo", full_path="./repos/databend/src/common/io/src/wkb.rs:76", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_meta_api {
+      label="databend-common-meta-api";
+      subgraph cluster_kv_app_error_rs {
+        label="kv_app_error.rs";
+        n72435[label="KVAppError", full_path="./repos/databend/src/meta/api/src/kv_app_error.rs:48", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_meta_app {
+      label="databend-common-meta-app";
+      subgraph cluster_principal {
+        label="principal";
+        subgraph cluster_user_grant_rs {
+          label="user_grant.rs";
+          n50821[label="GrantObject", full_path="./repos/databend/src/meta/app/src/principal/user_grant.rs:54", sym_ty="Enum", shape=box];
+        }
+
+        subgraph cluster_user_info_rs {
+          label="user_info.rs";
+          n54791[label="UserInfo", full_path="./repos/databend/src/meta/app/src/principal/user_info.rs:36", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_schema {
+        label="schema";
+        subgraph cluster_index_rs {
+          label="index.rs";
+          n80295[label="IndexType", full_path="./repos/databend/src/meta/app/src/schema/index.rs:40", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+      subgraph cluster_table {
+        label="table";
+        subgraph cluster_ident_rs {
+          label="ident.rs";
+          n87034[label="TableIdent", full_path="./repos/databend/src/meta/app/src/schema/table/ident.rs:27", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n88856[label="TableMeta", full_path="./repos/databend/src/meta/app/src/schema/table/mod.rs:151", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_tenant {
+        label="tenant";
+        subgraph cluster_tenant_rs {
+          label="tenant.rs";
+          n101458[label="Tenant", full_path="./repos/databend/src/meta/app/src/tenant/tenant.rs:28", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_tenant_key {
+        label="tenant_key";
+        subgraph cluster_ident_rs {
+          label="ident.rs";
+          n104555[label="TIdent", full_path="./repos/databend/src/meta/app/src/tenant_key/ident.rs:31", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_meta_app_storage {
+      label="databend-common-meta-app-storage";
+      subgraph cluster_storage_params_rs {
+        label="storage_params.rs";
+        n108049[label="StorageParams", full_path="./repos/databend/src/meta/app-storage/src/storage_params.rs:31", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_meta_client {
+      label="databend-common-meta-client";
+      subgraph cluster_required_rs {
+        label="required.rs";
+        n136402[label="std", full_path="./repos/databend/src/meta/client/src/required.rs:99", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_databend_common_meta_types {
+      label="databend-common-meta-types";
+      subgraph cluster_errors {
+        label="errors";
+        subgraph cluster_meta_errors_rs {
+          label="meta_errors.rs";
+          n13876[label="MetaError", full_path="./repos/databend/src/meta/types/src/errors/meta_errors.rs:31", sym_ty="Enum", shape=box];
+        }
+
+        subgraph cluster_meta_network_errors_rs {
+          label="meta_network_errors.rs";
+          n15216[label="MetaNetworkError", full_path="./repos/databend/src/meta/types/src/errors/meta_network_errors.rs:29", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_native {
+      label="databend-common-native";
+      subgraph cluster_util {
+        label="util";
+        subgraph cluster_bit_util_rs {
+          label="bit_util.rs";
+          n2828[label="encode_bool", full_path="./repos/databend/src/common/native/src/util/bit_util.rs:51", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_write {
+        label="write";
+        subgraph cluster_serialize_rs {
+          label="serialize.rs";
+          n9368[label="write_nest_info", full_path="./repos/databend/src/common/native/src/write/serialize.rs:203", sym_ty="Function"];
+          n8118[label="write", full_path="./repos/databend/src/common/native/src/write/serialize.rs:43", sym_ty="Function"];
+          n8331[label="WriteVisitor", full_path="./repos/databend/src/common/native/src/write/serialize.rs:57", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_pipeline {
+      label="databend-common-pipeline";
+      subgraph cluster_core {
+        label="core";
+        subgraph cluster_pipeline_rs {
+          label="pipeline.rs";
+          n107758[label="Pipeline", full_path="./repos/databend/src/query/pipeline/src/core/pipeline.rs:102", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_port_rs {
+          label="port.rs";
+          n113672[label="InputPort", full_path="./repos/databend/src/query/pipeline/src/core/port.rs:129", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_profile_rs {
+          label="profile.rs";
+          n36298[label="PlanProfile", full_path="./repos/databend/src/query/pipeline/src/core/profile.rs:72", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_pipeline_transforms {
+      label="databend-common-pipeline-transforms";
+      subgraph cluster_sorts {
+        label="sorts";
+        subgraph cluster_sort_route_rs {
+          label="sort_route.rs";
+          n110963[label="Input", full_path="./repos/databend/src/query/pipeline/transforms/src/processors/transforms/sorts/sort_route.rs:39", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_traits {
+        label="traits";
+        subgraph cluster_spill_rs {
+          label="spill.rs";
+          n49430[label="Location", full_path="./repos/databend/src/query/pipeline/transforms/src/processors/traits/spill.rs:20", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_proto_conv {
+      label="databend-common-proto-conv";
+      subgraph cluster_from_to_protobuf_rs {
+        label="from_to_protobuf.rs";
+        n145221[label="FromToProto", full_path="./repos/databend/src/meta/proto-conv/src/from_to_protobuf.rs:19", sym_ty="Trait", shape=box];
+        n145581[label="Incompatible", full_path="./repos/databend/src/meta/proto-conv/src/from_to_protobuf.rs:48", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_util_rs {
+        label="util.rs";
+        n84565[label="reader_check_msg", full_path="./repos/databend/src/meta/proto-conv/src/util.rs:214", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_databend_common_settings {
+      label="databend-common-settings";
+      subgraph cluster_settings_rs {
+        label="settings.rs";
+        n170891[label="Settings", full_path="./repos/databend/src/query/settings/src/settings.rs:70", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_sql {
+      label="databend-common-sql";
+      subgraph cluster_binder {
+        label="binder";
+        subgraph cluster_bind_context_rs {
+          label="bind_context.rs";
+          n219482[label="BindContext", full_path="./repos/databend/src/query/sql/src/planner/binder/bind_context.rs:112", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_binder_rs {
+          label="binder.rs";
+          n212295[label="Binder", full_path="./repos/databend/src/query/sql/src/planner/binder/binder.rs:88", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_executor {
+        label="executor";
+        subgraph cluster_format_rs {
+          label="format.rs";
+          n193914[label="to_format_tree", full_path="./repos/databend/src/query/sql/src/executor/format.rs:384", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_expr {
+        label="expr";
+        subgraph cluster_s_expr_rs {
+          label="s_expr.rs";
+          n231720[label="SExpr", full_path="./repos/databend/src/query/sql/src/planner/optimizer/ir/expr/s_expr.rs:47", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_format {
+        label="format";
+        subgraph cluster_display_rel_operator_rs {
+          label="display_rel_operator.rs";
+          n245112[label="to_format_tree", full_path="./repos/databend/src/query/sql/src/planner/format/display_rel_operator.rs:49", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_plans {
+        label="plans";
+        subgraph cluster_insert_multi_table_rs {
+          label="insert_multi_table.rs";
+          n152693[label="Into", full_path="./repos/databend/src/query/sql/src/planner/plans/insert_multi_table.rs:44", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_operator_rs {
+          label="operator.rs";
+          n162164[label="Operator", full_path="./repos/databend/src/query/sql/src/planner/plans/operator.rs:59", sym_ty="Trait", shape=box];
+        }
+
+        subgraph cluster_plan_rs {
+          label="plan.rs";
+          n165760[label="Plan", full_path="./repos/databend/src/query/sql/src/planner/plans/plan.rs:190", sym_ty="Enum", shape=box];
+        }
+
+        subgraph cluster_scalar_expr_rs {
+          label="scalar_expr.rs";
+          n176715[label="ScalarExpr", full_path="./repos/databend/src/query/sql/src/planner/plans/scalar_expr.rs:62", sym_ty="Enum", shape=box];
+          n185989[label="LambdaFunc", full_path="./repos/databend/src/query/sql/src/planner/plans/scalar_expr.rs:987", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_property {
+        label="property";
+        subgraph cluster_builder_rs {
+          label="builder.rs";
+          n239538[label="RelExpr", full_path="./repos/databend/src/query/sql/src/planner/optimizer/ir/property/builder.rs:33", sym_ty="Enum", shape=box];
+        }
+
+        subgraph cluster_property_rs {
+          label="property.rs";
+          n242561[label="RequiredProperty", full_path="./repos/databend/src/query/sql/src/planner/optimizer/ir/property/property.rs:25", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_rule {
+        label="rule";
+        subgraph cluster_rule_rs {
+          label="rule.rs";
+          n105310[label="RuleID", full_path="./repos/databend/src/query/sql/src/planner/optimizer/optimizers/rule/rule.rs:96", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+      subgraph cluster_semantic {
+        label="semantic";
+        subgraph cluster_name_resolution_rs {
+          label="name_resolution.rs";
+          n211595[label="normalize_identifier", full_path="./repos/databend/src/query/sql/src/planner/semantic/name_resolution.rs:85", sym_ty="Function"];
+        }
+
+        subgraph cluster_type_check_rs {
+          label="type_check.rs";
+          n212485[label="TypeChecker", full_path="./repos/databend/src/query/sql/src/planner/semantic/type_check.rs:227", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_common_storage {
+      label="databend-common-storage";
+      subgraph cluster_operator_rs {
+        label="operator.rs";
+        n26259[label="DataOperator", full_path="./repos/databend/src/common/storage/src/operator.rs:554", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_statistics_rs {
+        label="statistics.rs";
+        n35212[label="Datum", full_path="./repos/databend/src/common/storage/src/statistics.rs:27", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_storages_fuse {
+      label="databend-common-storages-fuse";
+      subgraph cluster_block {
+        label="block";
+        subgraph cluster_block_reader_rs {
+          label="block_reader.rs";
+          n202670[label="BlockReader", full_path="./repos/databend/src/query/storages/fuse/src/io/read/block/block_reader.rs:42", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_fuse_table_rs {
+        label="fuse_table.rs";
+        n186969[label="FuseTable", full_path="./repos/databend/src/query/storages/fuse/src/fuse_table.rs:142", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_common_storages_iceberg {
+      label="databend-common-storages-iceberg";
+      subgraph cluster_catalog_rs {
+        label="catalog.rs";
+        n228282[label="IcebergMutableCatalog", full_path="./repos/databend/src/query/storages/iceberg/src/catalog.rs:147", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_databend_functions_scalar_datetime {
+      label="databend-functions-scalar-datetime";
+      subgraph cluster_datetime_rs {
+        label="datetime.rs";
+        n93888[label="register", full_path="./repos/databend/src/query/functions/src/scalars/timestamp/src/datetime.rs:89", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_databend_meta {
+      label="databend-meta";
+      subgraph cluster_meta_node {
+        label="meta_node";
+        subgraph cluster_meta_node_rs {
+          label="meta_node.rs";
+          n127234[label="MetaNode", full_path="./repos/databend/src/meta/service/src/meta_node/meta_node.rs:133", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_meta_binaries {
+      label="databend-meta-binaries";
+      subgraph cluster_meta {
+        label="meta";
+        subgraph cluster_entry_rs {
+          label="entry.rs";
+          n115365[label="entry", full_path="./repos/databend/src/meta/binaries/meta/entry.rs:61", sym_ty="Function"];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_query {
+      label="databend-query";
+      subgraph cluster_catalog {
+        label="catalog";
+        subgraph cluster_search_tables_rs {
+          label="search_tables.rs";
+          n136235[label="TableInfo", full_path="./repos/databend/src/query/service/src/servers/http/v1/catalog/search_tables.rs:41", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_default {
+        label="default";
+        subgraph cluster_database_catalog_rs {
+          label="database_catalog.rs";
+          n65491[label="DatabaseCatalog", full_path="./repos/databend/src/query/service/src/catalogs/default/database_catalog.rs:138", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_immutable_catalog_rs {
+          label="immutable_catalog.rs";
+          n73711[label="ImmutableCatalog", full_path="./repos/databend/src/query/service/src/catalogs/default/immutable_catalog.rs:118", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mutable_catalog_rs {
+          label="mutable_catalog.rs";
+          n78975[label="MutableCatalog", full_path="./repos/databend/src/query/service/src/catalogs/default/mutable_catalog.rs:163", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_session_catalog_rs {
+          label="session_catalog.rs";
+          n86243[label="SessionCatalog", full_path="./repos/databend/src/query/service/src/catalogs/default/session_catalog.rs:129", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_exchange {
+        label="exchange";
+        subgraph cluster_exchange_transform_shuffle_rs {
+          label="exchange_transform_shuffle.rs";
+          n96377[label="Display", full_path="./repos/databend/src/query/service/src/servers/flight/v1/exchange/exchange_transform_shuffle.rs:242", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_format {
+        label="format";
+        subgraph cluster_common_rs {
+          label="common.rs";
+          n103961[label="FormatContext", full_path="./repos/databend/src/query/service/src/physical_plans/format/common.rs:32", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_iceberg {
+        label="iceberg";
+        subgraph cluster_iceberg_catalog_rs {
+          label="iceberg_catalog.rs";
+          n94125[label="IcebergCatalog", full_path="./repos/databend/src/query/service/src/catalogs/iceberg/iceberg_catalog.rs:134", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_physical_plans {
+        label="physical_plans";
+        subgraph cluster_physical_plan_rs {
+          label="physical_plan.rs";
+          n176730[label="PhysicalPlan", full_path="./repos/databend/src/query/service/src/physical_plans/physical_plan.rs:272", sym_ty="Struct", shape=box];
+          n174455[label="IPhysicalPlan", full_path="./repos/databend/src/query/service/src/physical_plans/physical_plan.rs:74", sym_ty="Trait", shape=box];
+        }
+
+      }
+
+      subgraph cluster_pipelines {
+        label="pipelines";
+        subgraph cluster_pipeline_build_res_rs {
+          label="pipeline_build_res.rs";
+          n239503[label="PipelineBuildResult", full_path="./repos/databend/src/query/service/src/pipelines/pipeline_build_res.rs:36", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_pipeline_builder_rs {
+          label="pipeline_builder.rs";
+          n238628[label="PipelineBuilder", full_path="./repos/databend/src/query/service/src/pipelines/pipeline_builder.rs:44", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_sessions {
+        label="sessions";
+        subgraph cluster_query_ctx_rs {
+          label="query_ctx.rs";
+          n168103[label="QueryContext", full_path="./repos/databend/src/query/service/src/sessions/query_ctx.rs:172", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_query_ctx_shared_rs {
+          label="query_ctx_shared.rs";
+          n189002[label="QueryContextShared", full_path="./repos/databend/src/query/service/src/sessions/query_ctx_shared.rs:91", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_session_rs {
+          label="session.rs";
+          n202704[label="Session", full_path="./repos/databend/src/query/service/src/sessions/session.rs:58", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_session_ctx_rs {
+          label="session_ctx.rs";
+          n206767[label="SessionContext", full_path="./repos/databend/src/query/service/src/sessions/session_ctx.rs:40", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_test_kits {
+        label="test_kits";
+        subgraph cluster_fixture_rs {
+          label="fixture.rs";
+          n161237[label="TestFixture", full_path="./repos/databend/src/query/service/src/test_kits/fixture.rs:94", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_storages_common_index {
+      label="databend-storages-common-index";
+      subgraph cluster_quantization {
+        label="quantization";
+        subgraph cluster_encoded_vectors_u8_rs {
+          label="encoded_vectors_u8.rs";
+          n197429[label="Metadata", full_path="./repos/databend/src/query/storages/common/index/src/hnsw_index/quantization/encoded_vectors_u8.rs:46", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_databend_storages_common_table_meta {
+      label="databend-storages-common-table-meta";
+      subgraph cluster_frozen {
+        label="frozen";
+        subgraph cluster_block_meta_rs {
+          label="block_meta.rs";
+          n195578[label="BlockMeta", full_path="./repos/databend/src/query/storages/common/table_meta/src/meta/v3/frozen/block_meta.rs:27", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_table_schema_rs {
+          label="table_schema.rs";
+          n197614[label="TableSchema", full_path="./repos/databend/src/query/storages/common/table_meta/src/meta/v3/frozen/table_schema.rs:22", sym_ty="Struct", shape=box];
+          n197740[label="TableField", full_path="./repos/databend/src/query/storages/common/table_meta/src/meta/v3/frozen/table_schema.rs:35", sym_ty="Struct", shape=box];
+          n197831[label="TableDataType", full_path="./repos/databend/src/query/storages/common/table_meta/src/meta/v3/frozen/table_schema.rs:44", sym_ty="Enum", shape=box];
+          n198372[label="DecimalSize", full_path="./repos/databend/src/query/storages/common/table_meta/src/meta/v3/frozen/table_schema.rs:86", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_meta {
+        label="meta";
+        subgraph cluster_utils_rs {
+          label="utils.rs";
+          n183868[label="TableMetaTimestamps", full_path="./repos/databend/src/query/storages/common/table_meta/src/meta/utils.rs:82", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_v2 {
+        label="v2";
+        subgraph cluster_snapshot_rs {
+          label="snapshot.rs";
+          n191419[label="TableSnapshot", full_path="./repos/databend/src/query/storages/common/table_meta/src/meta/v2/snapshot.rs:34", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+  }
+
+  n410 -> n35212 [from="field_type", to="enum"];
+  n410 -> n145014 [from="field_type", to="enum"];
+  n2751 -> n92375 [from="field_type", to="enum"];
+  n2751 -> n93157 [from="field_type", to="enum"];
+  n2828 -> n136402 [from="func", to="output"];
+  n8118 -> n8331 [from="func", to="type_dep"];
+  n8118 -> n9368 [from="caller", to="callee"];
+  n9368 -> n2828 [from="caller", to="callee"];
+  n10037 -> n10177 [from="bound", to="generic"];
+  n13712 -> n136402 [from="caller", to="callee"];
+  n13831 -> n95243 [from="field_type", to="enum"];
+  n13876 -> n72435 [from="field_type", to="enum"];
+  n15141 -> n25825 [from="field_type", to="enum"];
+  n15141 -> n26355 [from="field_type", to="enum"];
+  n15141 -> n211595 [from="input", to="func"];
+  n15216 -> n13876 [from="field_type", to="enum"];
+  n15216 -> n72435 [from="type_arg", to="impl"];
+  n17072 -> n136402 [from="func", to="output"];
+  n17178 -> n136402 [from="func", to="output"];
+  n17400 -> n93693 [from="field_type", to="enum"];
+  n18205 -> n32218 [from="type_dep", to="struct"];
+  n18881 -> n152860 [from="type_arg", to="impl"];
+  n20038 -> n189002 [from="type_dep", to="struct"];
+  n22992 -> n161237 [from="field_type", to="struct"];
+  n23142 -> n92343 [from="field_type", to="enum"];
+  n25285 -> n26217 [from="type_arg", to="generic"];
+  n25825 -> n18205 [from="field_type", to="enum"];
+  n26259 -> n189002 [from="field_type", to="struct"];
+  n27011 -> n189002 [from="type_dep", to="struct"];
+  n31510 -> n26217 [from="type_arg", to="generic"];
+  n31790 -> n136402 [from="caller", to="callee"];
+  n32090 -> n33282 [from="type_dep", to="struct"];
+  n32090 -> n238628 [from="type_dep", to="struct"];
+  n32218 -> n18205 [from="field_type", to="enum"];
+  n34409 -> n32090 [from="field_type", to="struct"];
+  n35064 -> n39680 [from="trait", to="impl"];
+  n35064 -> n43878 [from="field_type", to="enum"];
+  n35064 -> n70336 [from="field_type", to="enum"];
+  n35064 -> n109777 [from="field_type", to="enum"];
+  n35064 -> n176715 [from="field_type", to="enum"];
+  n35064 -> n185989 [from="field_type", to="struct"];
+  n36298 -> n103961 [from="type_dep", to="struct"];
+  n36298 -> n189002 [from="type_dep", to="struct"];
+  n36298 -> n193914 [from="input", to="func"];
+  n36509 -> n8331 [from="type_dep", to="struct"];
+  n36509 -> n93693 [from="field_type", to="enum"];
+  n36509 -> n119174 [from="type_dep", to="struct"];
+  n36545 -> n15141 [from="func", to="type_dep"];
+  n41143 -> n40081 [from="func", to="type_dep"];
+  n41701 -> n36509 [from="type_arg", to="impl"];
+  n41701 -> n95243 [from="field_type", to="enum"];
+  n42320 -> n42506 [from="func", to="type_dep"];
+  n43714 -> n65491 [from="trait", to="impl"];
+  n43714 -> n73711 [from="trait", to="impl"];
+  n43714 -> n78975 [from="trait", to="impl"];
+  n43714 -> n86243 [from="trait", to="impl"];
+  n43714 -> n94125 [from="trait", to="impl"];
+  n43714 -> n228282 [from="trait", to="impl"];
+  n45334 -> n18205 [from="func", to="type_dep"];
+  n45439 -> n18205 [from="func", to="type_dep"];
+  n49430 -> n168103 [from="type_dep", to="struct"];
+  n49430 -> n189002 [from="type_dep", to="struct"];
+  n49430 -> n191419 [from="type_dep", to="struct"];
+  n49430 -> n195578 [from="type_dep", to="struct"];
+  n50062 -> n168103 [from="type_dep", to="struct"];
+  n52734 -> n53158 [from="type_dep", to="struct"];
+  n54391 -> n17400 [from="field_type", to="struct"];
+  n54391 -> n17400 [from="type_arg", to="generic"];
+  n54391 -> n18881 [from="type_dep", to="struct"];
+  n54391 -> n93693 [from="field_type", to="enum"];
+  n54391 -> n145377 [from="field_type", to="enum"];
+  n54791 -> n206767 [from="type_dep", to="struct"];
+  n57163 -> n60222 [from="input", to="func"];
+  n58675 -> n36509 [from="type_dep", to="struct"];
+  n58675 -> n54391 [from="type_arg", to="generic"];
+  n58675 -> n54391 [from="type_dep", to="struct"];
+  n60222 -> n32218 [from="func", to="type_dep"];
+  n60594 -> n186969 [from="trait", to="impl"];
+  n67207 -> n53158 [from="type_dep", to="struct"];
+  n69615 -> n168103 [from="trait", to="impl"];
+  n69615 -> n202670 [from="field_type", to="struct"];
+  n69615 -> n212295 [from="field_type", to="struct"];
+  n69615 -> n212485 [from="field_type", to="struct"];
+  n70273 -> n94934 [from="field_type", to="struct"];
+  n70273 -> n107485 [from="type_arg", to="generic"];
+  n70273 -> n189002 [from="type_dep", to="struct"];
+  n70336 -> n70273 [from="type_dep", to="struct"];
+  n70336 -> n98037 [from="type_arg", to="impl"];
+  n72435 -> n27011 [from="type_arg", to="impl"];
+  n73711 -> n65491 [from="type_dep", to="struct"];
+  n73711 -> n94125 [from="type_dep", to="struct"];
+  n78975 -> n86243 [from="field_type", to="struct"];
+  n80295 -> n33282 [from="type_arg", to="impl"];
+  n80295 -> n103961 [from="type_dep", to="struct"];
+  n80295 -> n176715 [from="type_arg", to="impl"];
+  n80295 -> n185989 [from="type_arg", to="impl"];
+  n80295 -> n189002 [from="type_dep", to="struct"];
+  n80295 -> n197429 [from="type_arg", to="impl"];
+  n80295 -> n219482 [from="type_dep", to="struct"];
+  n80295 -> n231720 [from="type_dep", to="struct"];
+  n84565 -> n145581 [from="func", to="type_dep"];
+  n86243 -> n65491 [from="type_dep", to="struct"];
+  n92343 -> n70336 [from="type_arg", to="impl"];
+  n92375 -> n53158 [from="field_type", to="struct"];
+  n92375 -> n67207 [from="field_type", to="struct"];
+  n92375 -> n109777 [from="field_type", to="enum"];
+  n92375 -> n202670 [from="field_type", to="struct"];
+  n92375 -> n206767 [from="field_type", to="struct"];
+  n93693 -> n8118 [from="input", to="func"];
+  n93693 -> n70336 [from="field_type", to="enum"];
+  n93693 -> n92375 [from="field_type", to="enum"];
+  n93693 -> n93157 [from="field_type", to="enum"];
+  n96377 -> n2751 [from="trait", to="impl"];
+  n96377 -> n15141 [from="trait", to="impl"];
+  n96377 -> n18205 [from="trait", to="impl"];
+  n96377 -> n19426 [from="trait", to="impl"];
+  n96377 -> n25825 [from="trait", to="impl"];
+  n96377 -> n26355 [from="trait", to="impl"];
+  n96377 -> n27011 [from="trait", to="impl"];
+  n96377 -> n31731 [from="type_arg", to="impl"];
+  n96377 -> n32090 [from="trait", to="impl"];
+  n96377 -> n32218 [from="trait", to="impl"];
+  n96377 -> n35212 [from="trait", to="impl"];
+  n96377 -> n40081 [from="trait", to="impl"];
+  n96377 -> n42261 [from="trait", to="impl"];
+  n96377 -> n80295 [from="trait", to="impl"];
+  n96377 -> n87034 [from="trait", to="impl"];
+  n96377 -> n88856 [from="trait", to="impl"];
+  n96377 -> n105310 [from="trait", to="impl"];
+  n96377 -> n108049 [from="trait", to="impl"];
+  n96377 -> n151872 [from="trait", to="impl"];
+  n96377 -> n165760 [from="trait", to="impl"];
+  n96377 -> n242561 [from="trait", to="impl"];
+  n99762 -> n78793 [from="field_type", to="struct"];
+  n101458 -> n78975 [from="field_type", to="struct"];
+  n101458 -> n104555 [from="field_type", to="struct"];
+  n101458 -> n170891 [from="field_type", to="struct"];
+  n101458 -> n206767 [from="type_dep", to="struct"];
+  n106786 -> n109777 [from="field_type", to="enum"];
+  n106786 -> n185989 [from="trait", to="impl"];
+  n107758 -> n238628 [from="type_dep", to="struct"];
+  n107758 -> n239503 [from="type_dep", to="struct"];
+  n108049 -> n26259 [from="type_dep", to="struct"];
+  n108049 -> n88856 [from="type_dep", to="struct"];
+  n109777 -> n185989 [from="type_dep", to="struct"];
+  n110963 -> n36545 [from="input", to="func"];
+  n110963 -> n45334 [from="input", to="func"];
+  n110963 -> n45439 [from="input", to="func"];
+  n113672 -> n110963 [from="type_dep", to="struct"];
+  n115365 -> n127234 [from="func", to="type_dep"];
+  n117895 -> n117767 [from="type_dep", to="struct"];
+  n118834 -> n78793 [from="field_type", to="struct"];
+  n118834 -> n94934 [from="field_type", to="struct"];
+  n118834 -> n119174 [from="field_type", to="struct"];
+  n118834 -> n212485 [from="field_type", to="struct"];
+  n118834 -> n238628 [from="field_type", to="struct"];
+  n119435 -> n72331 [from="input", to="func"];
+  n119435 -> n78793 [from="field_type", to="struct"];
+  n119435 -> n93888 [from="input", to="func"];
+  n119435 -> n94934 [from="field_type", to="struct"];
+  n133132 -> n151872 [from="trait", to="impl"];
+  n136235 -> n186969 [from="field_type", to="struct"];
+  n136402 -> n50821 [from="trait", to="impl"];
+  n145014 -> n92375 [from="field_type", to="enum"];
+  n145014 -> n93157 [from="field_type", to="enum"];
+  n145221 -> n50821 [from="trait", to="impl"];
+  n145221 -> n54791 [from="trait", to="impl"];
+  n145221 -> n108049 [from="trait", to="impl"];
+  n145377 -> n93693 [from="field_type", to="enum"];
+  n146631 -> n99762 [from="field_type", to="enum"];
+  n152860 -> n95243 [from="field_type", to="enum"];
+  n162164 -> n26259 [from="field_type", to="struct"];
+  n162164 -> n186969 [from="field_type", to="struct"];
+  n162164 -> n202670 [from="field_type", to="struct"];
+  n168103 -> n161237 [from="type_dep", to="struct"];
+  n168103 -> n238628 [from="type_dep", to="struct"];
+  n170891 -> n168103 [from="type_dep", to="struct"];
+  n170891 -> n189002 [from="type_dep", to="struct"];
+  n170891 -> n206767 [from="type_dep", to="struct"];
+  n174455 -> n176730 [from="field_type", to="struct"];
+  n176715 -> n152693 [from="type_dep", to="struct"];
+  n176715 -> n185989 [from="type_dep", to="struct"];
+  n176730 -> n193914 [from="input", to="func"];
+  n183868 -> n189002 [from="type_dep", to="struct"];
+  n185989 -> n53158 [from="type_arg", to="impl"];
+  n185989 -> n67207 [from="type_arg", to="impl"];
+  n185989 -> n70336 [from="field_type", to="enum"];
+  n185989 -> n92375 [from="type_arg", to="generic"];
+  n185989 -> n176715 [from="field_type", to="enum"];
+  n185989 -> n197429 [from="type_arg", to="impl"];
+  n185989 -> n202670 [from="type_arg", to="impl"];
+  n185989 -> n206767 [from="type_arg", to="impl"];
+  n185989 -> n219482 [from="type_arg", to="impl"];
+  n189002 -> n168103 [from="type_dep", to="struct"];
+  n189002 -> n206767 [from="type_dep", to="struct"];
+  n193914 -> n31731 [from="func", to="type_dep"];
+  n197429 -> n103961 [from="field_type", to="struct"];
+  n197429 -> n193914 [from="input", to="func"];
+  n197614 -> n88856 [from="type_dep", to="struct"];
+  n197614 -> n191419 [from="field_type", to="struct"];
+  n197740 -> n197614 [from="type_dep", to="struct"];
+  n197831 -> n197740 [from="field_type", to="struct"];
+  n198372 -> n19426 [from="field_type", to="enum"];
+  n202704 -> n161237 [from="type_dep", to="struct"];
+  n202704 -> n189002 [from="type_dep", to="struct"];
+  n206767 -> n202704 [from="type_dep", to="struct"];
+  n211595 -> n15141 [from="func", to="output"];
+  n211595 -> n36545 [from="caller", to="callee"];
+  n219482 -> n165760 [from="field_type", to="enum"];
+  n219482 -> n212485 [from="field_type", to="struct"];
+  n228282 -> n94125 [from="type_dep", to="struct"];
+  n231720 -> n165760 [from="field_type", to="enum"];
+  n231720 -> n239538 [from="field_type", to="enum"];
+  n245112 -> n31731 [from="func", to="output"];
+}

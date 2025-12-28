@@ -24,6 +24,9 @@ verify-wheel:
 
 test: run-py cargo-format cargo-test cargo-clippy cargo-release
 
+fmt:
+    cargo fmt
+
 cargo-format:
     cargo fmt
 

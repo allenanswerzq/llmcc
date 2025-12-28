@@ -9,6 +9,7 @@ use std::fmt::Write;
 use crate::BlockId;
 use crate::block::{BlockKind, BlockRelation};
 use crate::graph::ProjectGraph;
+use crate::pagerank::PageRanker;
 use crate::symbol::SymKind;
 
 // ============================================================================
@@ -152,6 +153,8 @@ pub struct RenderOptions {
     /// If true, show all nodes even those without edges.
     /// If false (default), only show nodes that have at least one edge.
     pub show_orphan_nodes: bool,
+    /// If set, filter to only top K nodes by PageRank score.
+    pub pagerank_top_k: Option<usize>,
 }
 
 /// Render the project graph to DOT format for visualization.
@@ -163,6 +166,21 @@ pub struct RenderOptions {
 ///   - File (3): Show individual nodes with file clustering
 pub fn render_graph(project: &ProjectGraph, depth: ComponentDepth) -> String {
     render_graph_with_options(project, depth, &RenderOptions::default())
+}
+
+/// Render the project graph with optional PageRank filtering.
+///
+/// - `pagerank_top_k`: If Some(k), only show the top k nodes by PageRank score
+pub fn render_graph_with_pagerank(
+    project: &ProjectGraph,
+    depth: ComponentDepth,
+    pagerank_top_k: Option<usize>,
+) -> String {
+    let options = RenderOptions {
+        show_orphan_nodes: false,
+        pagerank_top_k,
+    };
+    render_graph_with_options(project, depth, &options)
 }
 
 /// Render the project graph to DOT format with custom options.
@@ -185,16 +203,49 @@ pub fn render_graph_with_options(
 
     // For aggregated views, aggregate nodes and edges
     if depth.is_aggregated() {
-        return render_aggregated_graph(&nodes, &edges, depth);
+        return render_aggregated_graph(&nodes, &edges, depth, project, options.pagerank_top_k);
     }
 
     // For file-level detail, use existing clustered rendering
     let mut filtered_nodes = nodes;
 
+    // Apply PageRank filtering if requested
+    // Note: PageRanker ranks ALL blocks, but we only render ARCHITECTURE_KINDS.
+    // So we get all ranked blocks and filter to those in our node set, then take top_k.
+    if let Some(top_k) = options.pagerank_top_k {
+        let ranker = PageRanker::new(project);
+        let all_ranked = ranker.rank();
+
+        // Get block IDs in our architecture node set
+        let node_ids: HashSet<BlockId> = filtered_nodes.iter().map(|n| n.block_id).collect();
+
+        // Filter ranked blocks to only architecture nodes, then take top_k
+        let top_architecture_ids: HashSet<BlockId> = all_ranked
+            .blocks
+            .into_iter()
+            .filter(|r| node_ids.contains(&r.node.block_id))
+            .take(top_k)
+            .map(|r| r.node.block_id)
+            .collect();
+
+        filtered_nodes.retain(|n| top_architecture_ids.contains(&n.block_id));
+    }
+
+    // Get set of filtered node IDs for edge filtering
+    let filtered_node_ids: HashSet<BlockId> = filtered_nodes.iter().map(|n| n.block_id).collect();
+
+    // Filter edges to only those between filtered nodes
+    let filtered_edges: BTreeSet<RenderEdge> = edges
+        .into_iter()
+        .filter(|e| filtered_node_ids.contains(&e.from_id) && filtered_node_ids.contains(&e.to_id))
+        .collect();
+
     // Filter out orphan nodes (nodes without edges) unless explicitly requested
     if !options.show_orphan_nodes {
-        let connected_nodes: HashSet<BlockId> =
-            edges.iter().flat_map(|e| [e.from_id, e.to_id]).collect();
+        let connected_nodes: HashSet<BlockId> = filtered_edges
+            .iter()
+            .flat_map(|e| [e.from_id, e.to_id])
+            .collect();
         filtered_nodes.retain(|n| connected_nodes.contains(&n.block_id));
     }
 
@@ -203,7 +254,7 @@ pub fn render_graph_with_options(
     }
 
     let tree = build_component_tree(&filtered_nodes, depth);
-    render_dot(&filtered_nodes, &edges, &tree)
+    render_dot(&filtered_nodes, &filtered_edges, &tree)
 }
 
 // ============================================================================
@@ -756,8 +807,11 @@ fn render_aggregated_graph(
     nodes: &[RenderNode],
     edges: &BTreeSet<RenderEdge>,
     depth: ComponentDepth,
+    project: &ProjectGraph,
+    pagerank_top_k: Option<usize>,
 ) -> String {
-    // Build mapping from BlockId to component key
+    // Build mapping from BlockId to component key for ALL nodes
+    // This ensures all edges can be resolved to their components
     let mut block_to_component: std::collections::HashMap<BlockId, String> =
         std::collections::HashMap::new();
     let mut component_nodes: BTreeMap<String, AggregatedNode> = BTreeMap::new();
@@ -776,6 +830,16 @@ fn render_aggregated_graph(
                 node_count: 1,
             });
     }
+
+    // If PageRank filtering is requested, identify which components contain top-K nodes
+    let pagerank_components: Option<HashSet<String>> = pagerank_top_k.map(|top_k| {
+        let ranker = PageRanker::new(project);
+        let ranked = ranker.top_k(top_k);
+        ranked
+            .iter()
+            .filter_map(|r| block_to_component.get(&r.node.block_id).cloned())
+            .collect()
+    });
 
     // Aggregate edges between components using dependency semantics.
     // For dependency graphs, we want "A depends on B" shown as A → B.
@@ -817,19 +881,45 @@ fn render_aggregated_graph(
         }
     }
 
-    // Filter to only show components that have edges
-    let connected_components: HashSet<String> = component_edges
+    // Determine which components to show:
+    // - If PageRank filtering: show components that contain top-K nodes AND have edges
+    // - Otherwise: show components that have edges
+    let components_with_edges: HashSet<String> = component_edges
         .keys()
         .flat_map(|(from, to)| [from.clone(), to.clone()])
         .collect();
 
+    let components_to_show: HashSet<String> = if let Some(ref pr_components) = pagerank_components {
+        // Show components containing top-K PageRank nodes, but only if they have edges
+        pr_components
+            .intersection(&components_with_edges)
+            .cloned()
+            .collect()
+    } else {
+        // Show all components that have edges
+        components_with_edges
+    };
+
+    // Filter edges to only those between shown components
+    let filtered_edges: Vec<(&String, &String)> = component_edges
+        .keys()
+        .filter(|(from, to)| components_to_show.contains(from) && components_to_show.contains(to))
+        .map(|(from, to)| (from, to))
+        .collect();
+
+    // Only show nodes that actually have edges in the filtered set
+    let nodes_with_filtered_edges: HashSet<&String> = filtered_edges
+        .iter()
+        .flat_map(|(from, to)| [*from, *to])
+        .collect();
+
     let filtered_nodes: Vec<_> = component_nodes
         .values()
-        .filter(|n| connected_components.contains(&n.id))
+        .filter(|n| nodes_with_filtered_edges.contains(&n.id))
         .collect();
 
     // Render to DOT format
-    let mut output = String::with_capacity(filtered_nodes.len() * 100 + component_edges.len() * 50);
+    let mut output = String::with_capacity(filtered_nodes.len() * 100 + filtered_edges.len() * 50);
 
     output.push_str("digraph architecture {\n");
     output.push_str("  rankdir=LR;\n");
@@ -852,16 +942,8 @@ fn render_aggregated_graph(
 
     output.push('\n');
 
-    // Render edges with weight as penwidth
-    for (from, to) in component_edges.keys() {
-        // Skip if either end is not in filtered nodes
-        if !connected_components.contains(from) || !connected_components.contains(to) {
-            continue;
-        }
-
-        // Scale penwidth based on weight (min 1, max 5)
-        // let penwidth = ((*weight as f64).log2() + 1.0).min(5.0).max(1.0);
-
+    // Render edges
+    for (from, to) in &filtered_edges {
         let _ = writeln!(output, "  {} -> {};", from, to);
     }
 
@@ -959,12 +1041,12 @@ fn render_tree_recursive(
 ) {
     // Render child subtrees (nested subgraphs)
     for (component_name, (level_type, subtree)) in &tree.children {
-        // Use meaningful cluster names based on level type
+        // Sanitize cluster ID: replace non-alphanumeric chars with underscore
         let cluster_id = match level_type.as_str() {
-            "crate" => component_name.replace('-', "_"),
-            "module" => component_name.replace('-', "_"),
-            "file" => component_name.replace('.', "_"),
-            _ => component_name.clone(),
+            "crate" => sanitize_dot_id(component_name),
+            "module" => sanitize_dot_id(component_name),
+            "file" => sanitize_dot_id(component_name),
+            _ => sanitize_dot_id(component_name),
         };
 
         write_indent(output, indent_level);
@@ -1033,6 +1115,15 @@ fn shape_for_kind(kind: Option<SymKind>) -> &'static str {
         Some(SymKind::Field) => "plaintext",
         _ => "ellipse",
     }
+}
+
+/// Sanitize a string to be a valid DOT identifier.
+/// Replaces any non-alphanumeric character with underscore.
+fn sanitize_dot_id(input: &str) -> String {
+    input
+        .chars()
+        .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+        .collect()
 }
 
 /// Escape special characters for DOT labels.

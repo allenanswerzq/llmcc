@@ -1,0 +1,1024 @@
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_llmcc_bindings {
+      label="llmcc-bindings";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n8[label="run_llmcc", full_path="./repos/llmcc/crates/llmcc-bindings/src/lib.rs:30", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_llmcc_cli {
+      label="llmcc-cli";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n113[label="validate_options", full_path="./repos/llmcc/crates/llmcc-cli/src/lib.rs:134", sym_ty="Function"];
+        n124[label="discover_requested_files", full_path="./repos/llmcc/crates/llmcc-cli/src/lib.rs:139", sym_ty="Function"];
+        n407[label="log_parse_metrics", full_path="./repos/llmcc/crates/llmcc-cli/src/lib.rs:230", sym_ty="Function"];
+        n481[label="generate_outputs", full_path="./repos/llmcc/crates/llmcc-cli/src/lib.rs:251", sym_ty="Function"];
+        n32[label="LlmccOptions", full_path="./repos/llmcc/crates/llmcc-cli/src/lib.rs:59", sym_ty="Struct", shape=box];
+        n41[label="run_main", full_path="./repos/llmcc/crates/llmcc-cli/src/lib.rs:69", sym_ty="Function"];
+      }
+
+      subgraph cluster_main_rs {
+        label="main.rs";
+        n296[label="main", full_path="./repos/llmcc/crates/llmcc-cli/src/main.rs:100", sym_ty="Function"];
+        n45[label="Cli", full_path="./repos/llmcc/crates/llmcc-cli/src/main.rs:17", sym_ty="Struct", shape=box];
+        n155[label="run", full_path="./repos/llmcc/crates/llmcc-cli/src/main.rs:65", sym_ty="Function"];
+      }
+
+      subgraph cluster_options_rs {
+        label="options.rs";
+        n60[label="GraphOptions", full_path="./repos/llmcc/crates/llmcc-cli/src/options.rs:11", sym_ty="Struct", shape=box];
+        n78[label="ProcessingOptions", full_path="./repos/llmcc/crates/llmcc-cli/src/options.rs:40", sym_ty="Struct", shape=box];
+        n91[label="CommonTestOptions", full_path="./repos/llmcc/crates/llmcc-cli/src/options.rs:52", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_llmcc_core {
+      label="llmcc-core";
+      subgraph cluster_block_rs {
+        label="block.rs";
+        n7536[label="BlockField", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:1054", sym_ty="Struct", shape=box];
+        n7617[label="BlockParameter", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:1136", sym_ty="Struct", shape=box];
+        n7702[label="BlockReturn", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:1220", sym_ty="Struct", shape=box];
+        n7783[label="BlockAlias", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:1288", sym_ty="Struct", shape=box];
+        n2528[label="BlockId", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:246", sym_ty="Struct", shape=box];
+        n2578[label="reset_block_id_counter", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:252", sym_ty="Function"];
+        n3001[label="BlockRelation", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:293", sym_ty="Enum", shape=box];
+        n233[label="BlockKind", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:31", sym_ty="Enum", shape=box];
+        n3338[label="BlockBase", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:343", sym_ty="Struct", shape=box];
+        n4566[label="BlockRoot", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:444", sym_ty="Struct", shape=box];
+        n5319[label="BlockModule", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:512", sym_ty="Struct", shape=box];
+        n304[label="BasicBlock", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:53", sym_ty="Enum", shape=box];
+        n5604[label="BlockFunc", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:559", sym_ty="Struct", shape=box];
+        n6672[label="BlockCall", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:689", sym_ty="Struct", shape=box];
+        n7062[label="BlockClass", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:742", sym_ty="Struct", shape=box];
+        n7210[label="BlockTrait", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:798", sym_ty="Struct", shape=box];
+        n7277[label="BlockImpl", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:844", sym_ty="Struct", shape=box];
+        n7399[label="BlockEnum", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:937", sym_ty="Struct", shape=box];
+        n7454[label="BlockConst", full_path="./repos/llmcc/crates/llmcc-core/src/block.rs:983", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_block_rel_rs {
+        label="block_rel.rs";
+        n2277[label="RelationBuilder", full_path="./repos/llmcc/crates/llmcc-core/src/block_rel.rs:213", sym_ty="Struct", shape=box];
+        n2871[label="RelationStats", full_path="./repos/llmcc/crates/llmcc-core/src/block_rel.rs:273", sym_ty="Struct", shape=box];
+        n3792[label="BlockIndexMaps", full_path="./repos/llmcc/crates/llmcc-core/src/block_rel.rs:381", sym_ty="Struct", shape=box];
+        n142[label="BlockRelationMap", full_path="./repos/llmcc/crates/llmcc-core/src/block_rel.rs:8", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_context_rs {
+        label="context.rs";
+        n4200[label="ParentedNode", full_path="./repos/llmcc/crates/llmcc-core/src/context.rs:181", sym_ty="Struct", shape=box];
+        n4474[label="FileParseMetric", full_path="./repos/llmcc/crates/llmcc-core/src/context.rs:202", sym_ty="Struct", shape=box];
+        n4580[label="BuildMetrics", full_path="./repos/llmcc/crates/llmcc-core/src/context.rs:208", sym_ty="Struct", shape=box];
+        n4646[label="CompileCtxt", full_path="./repos/llmcc/crates/llmcc-core/src/context.rs:218", sym_ty="Struct", shape=box];
+        n2596[label="CompileUnit", full_path="./repos/llmcc/crates/llmcc-core/src/context.rs:22", sym_ty="Struct", shape=box];
+        n5573[label="ParseRecord", full_path="./repos/llmcc/crates/llmcc-core/src/context.rs:363", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_file_rs {
+        label="file.rs";
+        n2363[label="FileId", full_path="./repos/llmcc/crates/llmcc-core/src/file.rs:7", sym_ty="Struct", shape=box];
+        n2983[label="File", full_path="./repos/llmcc/crates/llmcc-core/src/file.rs:91", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_graph_rs {
+        label="graph.rs";
+        n2954[label="UnitNode", full_path="./repos/llmcc/crates/llmcc-core/src/graph.rs:29", sym_ty="Struct", shape=box];
+        n3004[label="ProjectGraph", full_path="./repos/llmcc/crates/llmcc-core/src/graph.rs:37", sym_ty="Struct", shape=box];
+        n2838[label="UnitGraph", full_path="./repos/llmcc/crates/llmcc-core/src/graph.rs:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_graph_builder_rs {
+        label="graph_builder.rs";
+        n3497[label="GraphBuildConfig", full_path="./repos/llmcc/crates/llmcc-core/src/graph_builder.rs:17", sym_ty="Struct", shape=box];
+        n3524[label="GraphBuildOption", full_path="./repos/llmcc/crates/llmcc-core/src/graph_builder.rs:20", sym_ty="Struct", shape=box];
+        n3649[label="GraphBuilder", full_path="./repos/llmcc/crates/llmcc-core/src/graph_builder.rs:36", sym_ty="Struct", shape=box];
+        n7075[label="build_unit_graph", full_path="./repos/llmcc/crates/llmcc-core/src/graph_builder.rs:657", sym_ty="Function"];
+        n7145[label="build_llmcc_graph", full_path="./repos/llmcc/crates/llmcc-core/src/graph_builder.rs:672", sym_ty="Function"];
+      }
+
+      subgraph cluster_graph_render_rs {
+        label="graph_render.rs";
+        n5095[label="shape_for_kind", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:1030", sym_ty="Function"];
+        n694[label="ComponentTree", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:105", sym_ty="Struct", shape=box];
+        n5339[label="summarize_location", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:1057", sym_ty="Function"];
+        n5364[label="write_indent", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:1062", sym_ty="Function"];
+        n865[label="RenderOptions", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:151", sym_ty="Struct", shape=box];
+        n892[label="render_graph", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:164", sym_ty="Function"];
+        n920[label="render_graph_with_options", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:172", sym_ty="Function"];
+        n1265[label="collect_nodes", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:216", sym_ty="Function"];
+        n137[label="ComponentDepth", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:30", sym_ty="Enum", shape=box];
+        n1368[label="collect_edges", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:307", sym_ty="Function"];
+        n1464[label="collect_field_types", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:317", sym_ty="Function"];
+        n3164[label="get_component_key", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:687", sym_ty="Function"];
+        n3598[label="render_aggregated_graph", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:755", sym_ty="Function"];
+        n377[label="RenderNode", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:76", sym_ty="Struct", shape=box];
+        n4603[label="build_component_tree", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:882", sym_ty="Function"];
+        n4721[label="render_dot", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:919", sym_ty="Function"];
+        n534[label="RenderEdge", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:94", sym_ty="Struct", shape=box];
+        n4923[label="render_tree_recursive", full_path="./repos/llmcc/crates/llmcc-core/src/graph_render.rs:954", sym_ty="Function"];
+      }
+
+      subgraph cluster_interner_rs {
+        label="interner.rs";
+        n235[label="InternPoolInner", full_path="./repos/llmcc/crates/llmcc-core/src/interner.rs:13", sym_ty="Struct", shape=box];
+        n601[label="InternPool", full_path="./repos/llmcc/crates/llmcc-core/src/interner.rs:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ir_rs {
+        label="ir.rs";
+        n193[label="HirKind", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:25", sym_ty="Enum", shape=box];
+        n283[label="HirNode", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:38", sym_ty="Enum", shape=box];
+        n4307[label="HirId", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:424", sym_ty="Struct", shape=box];
+        n4660[label="HirBase", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:451", sym_ty="Struct", shape=box];
+        n4858[label="HirRoot", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:478", sym_ty="Struct", shape=box];
+        n5017[label="HirText", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:492", sym_ty="Struct", shape=box];
+        n5086[label="HirInternal", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:510", sym_ty="Struct", shape=box];
+        n5173[label="HirScope", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:524", sym_ty="Struct", shape=box];
+        n5974[label="HirIdent", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:595", sym_ty="Struct", shape=box];
+        n6324[label="HirFile", full_path="./repos/llmcc/crates/llmcc-core/src/ir.rs:627", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ir_builder_rs {
+        label="ir_builder.rs";
+        n1430[label="next_hir_id", full_path="./repos/llmcc/crates/llmcc-core/src/ir_builder.rs:21", sym_ty="Function"];
+        n2800[label="build_llmcc_ir_inner", full_path="./repos/llmcc/crates/llmcc-core/src/ir_builder.rs:219", sym_ty="Function"];
+        n2896[label="BuildResult", full_path="./repos/llmcc/crates/llmcc-core/src/ir_builder.rs:235", sym_ty="Struct", shape=box];
+        n2909[label="build_llmcc_ir", full_path="./repos/llmcc/crates/llmcc-core/src/ir_builder.rs:243", sym_ty="Function"];
+        n1470[label="IrBuildOption", full_path="./repos/llmcc/crates/llmcc-core/src/ir_builder.rs:36", sym_ty="Struct", shape=box];
+        n1583[label="HirBuilder", full_path="./repos/llmcc/crates/llmcc-core/src/ir_builder.rs:56", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lang_def_rs {
+        label="lang_def.rs";
+        n2094[label="ParseTree", full_path="./repos/llmcc/crates/llmcc-core/src/lang_def.rs:14", sym_ty="Trait", shape=box];
+        n3735[label="TreeSitterParseNode", full_path="./repos/llmcc/crates/llmcc-core/src/lang_def.rs:158", sym_ty="Struct", shape=box];
+        n2206[label="TreeSitterParseTree", full_path="./repos/llmcc/crates/llmcc-core/src/lang_def.rs:29", sym_ty="Struct", shape=box];
+        n2421[label="ParseNode", full_path="./repos/llmcc/crates/llmcc-core/src/lang_def.rs:54", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_pagerank_rs {
+        label="pagerank.rs";
+        n2194[label="BlockEntry", full_path="./repos/llmcc/crates/llmcc-core/src/pagerank.rs:277", sym_ty="Struct", shape=box];
+        n522[label="RankedBlock", full_path="./repos/llmcc/crates/llmcc-core/src/pagerank.rs:35", sym_ty="Struct", shape=box];
+        n787[label="RankingResult", full_path="./repos/llmcc/crates/llmcc-core/src/pagerank.rs:50", sym_ty="Struct", shape=box];
+        n1018[label="PageRanker", full_path="./repos/llmcc/crates/llmcc-core/src/pagerank.rs:67", sym_ty="Struct", shape=box];
+        n310[label="PageRankConfig", full_path="./repos/llmcc/crates/llmcc-core/src/pagerank.rs:8", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_printer_rs {
+        label="printer.rs";
+        n2330[label="PrintFormat", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:11", sym_ty="Enum", shape=box];
+        n4486[label="RenderNode", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:303", sym_ty="Struct", shape=box];
+        n4708[label="render_llmcc_ir", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:342", sym_ty="Function"];
+        n4741[label="render_llmcc_ir_with_config", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:347", sym_ty="Function"];
+        n5071[label="print_llmcc_ir", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:387", sym_ty="Function"];
+        n5154[label="print_llmcc_ir_with_config", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:392", sym_ty="Function"];
+        n5200[label="render_llmcc_graph_with_config", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:404", sym_ty="Function"];
+        n5350[label="print_llmcc_graph", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:417", sym_ty="Function"];
+        n5461[label="print_llmcc_graph_with_config", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:422", sym_ty="Function"];
+        n5502[label="build_ast_render", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:437", sym_ty="Function"];
+        n5527[label="build_ast_render_with", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:447", sym_ty="Function"];
+        n5751[label="build_hir_render", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:491", sym_ty="Function"];
+        n5925[label="build_block_render", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:538", sym_ty="Function"];
+        n6171[label="render_lines", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:585", sym_ty="Function"];
+        n6271[label="render_node_with_format", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:592", sym_ty="Function"];
+        n6416[label="render_node_tree", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:606", sym_ty="Function"];
+        n6739[label="render_node_compact", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:671", sym_ty="Function"];
+        n2826[label="PrintConfig", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:69", sym_ty="Struct", shape=box];
+        n6822[label="render_node_flat", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:697", sym_ty="Function"];
+        n6880[label="snippet_from_ctx", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:724", sym_ty="Function"];
+        n6976[label="get_line_from_byte", full_path="./repos/llmcc/crates/llmcc-core/src/printer.rs:737", sym_ty="Function"];
+      }
+
+      subgraph cluster_scope_rs {
+        label="scope.rs";
+        n785[label="Scope", full_path="./repos/llmcc/crates/llmcc-core/src/scope.rs:12", sym_ty="Struct", shape=box];
+        n2623[label="ScopeStack", full_path="./repos/llmcc/crates/llmcc-core/src/scope.rs:240", sym_ty="Struct", shape=box];
+        n5582[label="LookupOptions", full_path="./repos/llmcc/crates/llmcc-core/src/scope.rs:557", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_symbol_rs {
+        label="symbol.rs";
+        n3849[label="Symbol", full_path="./repos/llmcc/crates/llmcc-core/src/symbol.rs:173", sym_ty="Struct", shape=box];
+        n2832[label="reset_symbol_id_counter", full_path="./repos/llmcc/crates/llmcc-core/src/symbol.rs:27", sym_ty="Function"];
+        n2968[label="SymId", full_path="./repos/llmcc/crates/llmcc-core/src/symbol.rs:45", sym_ty="Struct", shape=box];
+        n3051[label="ScopeId", full_path="./repos/llmcc/crates/llmcc-core/src/symbol.rs:56", sym_ty="Struct", shape=box];
+        n3139[label="SymKind", full_path="./repos/llmcc/crates/llmcc-core/src/symbol.rs:66", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_visit_rs {
+        label="visit.rs";
+        n66[label="HirVisitor", full_path="./repos/llmcc/crates/llmcc-core/src/visit.rs:6", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_llmcc_resolver {
+      label="llmcc-resolver";
+      subgraph cluster_binder_rs {
+        label="binder.rs";
+        n146[label="BinderScopes", full_path="./repos/llmcc/crates/llmcc-resolver/src/binder.rs:13", sym_ty="Struct", shape=box];
+        n2438[label="bind_symbols_with", full_path="./repos/llmcc/crates/llmcc-resolver/src/binder.rs:281", sym_ty="Function"];
+      }
+
+      subgraph cluster_collector_rs {
+        label="collector.rs";
+        n206[label="CollectorScopes", full_path="./repos/llmcc/crates/llmcc-resolver/src/collector.rs:14", sym_ty="Struct", shape=box];
+        n2029[label="collect_symbols_with", full_path="./repos/llmcc/crates/llmcc-resolver/src/collector.rs:232", sym_ty="Function"];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n972[label="ResolverOption", full_path="./repos/llmcc/crates/llmcc-resolver/src/lib.rs:8", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_llmcc_rust {
+      label="llmcc-rust";
+      subgraph cluster_bind_rs {
+        label="bind.rs";
+        n7050[label="bind_symbols", full_path="./repos/llmcc/crates/llmcc-rust/src/bind.rs:1008", sym_ty="Function"];
+        n159[label="BinderVisitor", full_path="./repos/llmcc/crates/llmcc-rust/src/bind.rs:22", sym_ty="Struct", shape=box];
+        n6923[label="extract_nested_types", full_path="./repos/llmcc/crates/llmcc-rust/src/bind.rs:969", sym_ty="Function"];
+      }
+
+      subgraph cluster_collect_rs {
+        label="collect.rs";
+        n7188[label="collect_symbols", full_path="./repos/llmcc/crates/llmcc-rust/src/collect.rs:1004", sym_ty="Function"];
+        n1424[label="is_method_context", full_path="./repos/llmcc/crates/llmcc-rust/src/collect.rs:16", sym_ty="Function"];
+        n1586[label="CollectorVisitor", full_path="./repos/llmcc/crates/llmcc-rust/src/collect.rs:29", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_infer_rs {
+        label="infer.rs";
+        n2655[label="infer_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:10", sym_ty="Function"];
+        n3568[label="get_primitive_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:162", sym_ty="Function"];
+        n3632[label="infer_block", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:170", sym_ty="Function"];
+        n4075[label="infer_array_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:202", sym_ty="Function"];
+        n4155[label="infer_range_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:211", sym_ty="Function"];
+        n4337[label="infer_tuple_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:220", sym_ty="Function"];
+        n4432[label="infer_struct_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:243", sym_ty="Function"];
+        n4742[label="infer_field_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:263", sym_ty="Function"];
+        n4973[label="infer_scoped_identifier", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:302", sym_ty="Function"];
+        n5137[label="infer_index_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:324", sym_ty="Function"];
+        n5240[label="infer_binary_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:344", sym_ty="Function"];
+        n5400[label="infer_if_expression", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:373", sym_ty="Function"];
+        n5455[label="infer_array_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:385", sym_ty="Function"];
+        n5564[label="infer_tuple_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:405", sym_ty="Function"];
+        n5691[label="infer_function_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:425", sym_ty="Function"];
+        n5940[label="infer_generic_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:466", sym_ty="Function"];
+        n6076[label="infer_reference_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:504", sym_ty="Function"];
+        n6104[label="infer_pointer_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:516", sym_ty="Function"];
+        n6252[label="infer_abstract_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:528", sym_ty="Function"];
+        n6369[label="infer_bounded_type", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:541", sym_ty="Function"];
+        n6492[label="infer_trait_bounds", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:565", sym_ty="Function"];
+        n6555[label="is_syntactic_noise", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:585", sym_ty="Function"];
+        n6600[label="infer_from_children", full_path="./repos/llmcc/crates/llmcc-rust/src/infer.rs:601", sym_ty="Function"];
+      }
+
+      subgraph cluster_pattern_rs {
+        label="pattern.rs";
+        n229[label="bind_pattern_types", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:11", sym_ty="Function"];
+        n889[label="assign_type_to_tuple_pattern", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:123", sym_ty="Function"];
+        n1114[label="assign_type_to_struct_pattern", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:154", sym_ty="Function"];
+        n1567[label="assign_type_to_tuple_struct_pattern", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:249", sym_ty="Function"];
+        n1951[label="assign_type_to_or_pattern", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:297", sym_ty="Function"];
+        n2100[label="assign_type_to_slice_pattern", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:315", sym_ty="Function"];
+        n2358[label="assign_type_to_reference_pattern", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:356", sym_ty="Function"];
+        n633[label="assign_type_to_ident", full_path="./repos/llmcc/crates/llmcc-rust/src/pattern.rs:72", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_llmcc_test {
+      label="llmcc-test";
+      subgraph cluster_corpus_rs {
+        label="corpus.rs";
+        n1633[label="CorpusFile", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:107", sym_ty="Struct", shape=box];
+        n2016[label="CorpusCase", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:146", sym_ty="Struct", shape=box];
+        n3251[label="TestFile", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:236", sym_ty="Struct", shape=box];
+        n3297[label="CorpusCaseExpectation", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:242", sym_ty="Struct", shape=box];
+        n3309[label="parse_corpus_file", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:247", sym_ty="Function"];
+        n1104[label="Corpus", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:39", sym_ty="Struct", shape=box];
+        n4339[label="parse_case_header", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:418", sym_ty="Function"];
+        n4462[label="is_banner_line", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:431", sym_ty="Function"];
+        n4592[label="SectionHeader", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:440", sym_ty="Enum", shape=box];
+        n4634[label="parse_section_header", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:445", sym_ty="Function"];
+        n4736[label="finalize_section", full_path="./repos/llmcc/crates/llmcc-test/src/corpus.rs:466", sym_ty="Function"];
+      }
+
+      subgraph cluster_main_rs {
+        label="main.rs";
+        n3777[label="run_all_command", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:126", sym_ty="Function"];
+        n3106[label="Cli", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:13", sym_ty="Struct", shape=box];
+        n3877[label="run_single_command", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:159", sym_ty="Function"];
+        n4119[label="list_command", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:225", sym_ty="Function"];
+        n3142[label="Command", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:23", sym_ty="Enum", shape=box];
+        n4188[label="OutcomeSummary", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:253", sym_ty="Struct", shape=box];
+        n4231[label="count_outcomes", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:260", sym_ty="Function"];
+        n4348[label="print_summary", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:273", sym_ty="Function"];
+        n4352[label="print_failed_tests", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:280", sym_ty="Function"];
+        n3575[label="main", full_path="./repos/llmcc/crates/llmcc-test/src/main.rs:71", sym_ty="Function"];
+      }
+
+      subgraph cluster_runner_rs {
+        label="runner.rs";
+        n7596[label="normalize_symbols", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1009", sym_ty="Function"];
+        n7609[label="normalize_symbol_deps", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1048", sym_ty="Function"];
+        n7620[label="normalize_block_relations", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1063", sym_ty="Function"];
+        n7634[label="normalize_block_graph", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1075", sym_ty="Function"];
+        n7667[label="normalize_graph", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1106", sym_ty="Function"];
+        n7712[label="ensure_trailing_newline", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1151", sym_ty="Function"];
+        n7724[label="SExpr", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1159", sym_ty="Enum", shape=box];
+        n7730[label="parse_sexpr", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1164", sym_ty="Function"];
+        n7747[label="tokenize", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1174", sym_ty="Function"];
+        n7803[label="parse_expr", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1217", sym_ty="Function"];
+        n5188[label="run_cases_for_file", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:124", sym_ty="Function"];
+        n7833[label="format_sexpr", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1240", sym_ty="Function"];
+        n7837[label="format_sexpr_indented", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1244", sym_ty="Function"];
+        n7857[label="MaterializedProject", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1282", sym_ty="Struct", shape=box];
+        n7868[label="materialize_case", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1298", sym_ty="Function"];
+        n7887[label="collect_pipeline", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1350", sym_ty="Function"];
+        n5233[label="run_cases_for_file_with_parallel", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:140", sym_ty="Function"];
+        n7920[label="discover_language_files", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1506", sym_ty="Function"];
+        n7947[label="render_block_graph", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1580", sym_ty="Function"];
+        n7963[label="render_block_graph_node", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1605", sym_ty="Function"];
+        n5361[label="run_cases_in_file", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:164", sym_ty="Function"];
+        n7988[label="snapshot_symbols", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1650", sym_ty="Function"];
+        n7997[label="snapshot_symbol_dependencies", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1693", sym_ty="Function"];
+        n8001[label="snapshot_block_relations", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1700", sym_ty="Function"];
+        n8021[label="render_block_reports", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1762", sym_ty="Function"];
+        n8040[label="BlockDescriptor", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1807", sym_ty="Struct", shape=box];
+        n8045[label="describe_block", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:1814", sym_ty="Function"];
+        n5723[label="evaluate_case", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:238", sym_ty="Function"];
+        n4450[label="SymbolSnapshot", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:30", sym_ty="Struct", shape=box];
+        n6152[label="build_pipeline_summary", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:331", sym_ty="Function"];
+        n4628[label="SymbolDependencySnapshot", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:43", sym_ty="Struct", shape=box];
+        n6571[label="PipelineSummary", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:449", sym_ty="Struct", shape=box];
+        n6729[label="PipelineOptions", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:470", sym_ty="Struct", shape=box];
+        n4691[label="BlockSnapshot", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:51", sym_ty="Struct", shape=box];
+        n4759[label="BlockRelationSnapshot", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:59", sym_ty="Struct", shape=box];
+        n7250[label="render_expectation", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:614", sym_ty="Function"];
+        n4800[label="RunnerConfig", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:71", sym_ty="Struct", shape=box];
+        n4886[label="CaseStatus", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:82", sym_ty="Enum", shape=box];
+        n4934[label="CaseOutcome", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:90", sym_ty="Struct", shape=box];
+        n7461[label="compare_block_snapshots", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:910", sym_ty="Function"];
+        n7486[label="parse_block_label", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:927", sym_ty="Function"];
+        n5080[label="run_cases", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:96", sym_ty="Function"];
+        n7559[label="normalize", full_path="./repos/llmcc/crates/llmcc-test/src/runner.rs:975", sym_ty="Function"];
+      }
+
+      subgraph cluster_snapshot {
+        label="snapshot";
+        subgraph cluster_block_graph_rs {
+          label="block_graph.rs";
+          n4747[label="BlockGraphSnapshot", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:10", sym_ty="Struct", shape=box];
+          n5349[label="SExpr", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:103", sym_ty="Enum", shape=box];
+          n5406[label="parse_sexpr", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:108", sym_ty="Function"];
+          n5494[label="tokenize", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:118", sym_ty="Function"];
+          n5927[label="parse_expr", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:162", sym_ty="Function"];
+          n6174[label="format_sexpr", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:185", sym_ty="Function"];
+          n5230[label="render_node", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:72", sym_ty="Function"];
+        }
+
+        subgraph cluster_block_relations_rs {
+          label="block_relations.rs";
+          n141[label="BlockRelationsSnapshot", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_relations.rs:13", sym_ty="Struct", shape=box];
+          n150[label="RelationEntry", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/block_relations.rs:18", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n1617[label="Snapshot", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/mod.rs:15", sym_ty="Trait", shape=box];
+        }
+
+        subgraph cluster_symbols_rs {
+          label="symbols.rs";
+          n1919[label="SymbolEntry", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/symbols.rs:13", sym_ty="Struct", shape=box];
+          n1899[label="SymbolsSnapshot", full_path="./repos/llmcc/crates/llmcc-test/src/snapshot/symbols.rs:8", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_llmcc_tree {
+      label="llmcc-tree";
+      subgraph cluster_config_rs {
+        label="config.rs";
+        n367[label="TokenConfig", full_path="./repos/llmcc/crates/llmcc-tree/src/config.rs:12", sym_ty="Struct", shape=box];
+        n607[label="TextTokenConfig", full_path="./repos/llmcc/crates/llmcc-tree/src/config.rs:39", sym_ty="Struct", shape=box];
+        n930[label="NodeTokenConfig", full_path="./repos/llmcc/crates/llmcc-tree/src/config.rs:61", sym_ty="Struct", shape=box];
+        n1248[label="FieldTokenConfig", full_path="./repos/llmcc/crates/llmcc-tree/src/config.rs:97", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n604[label="TokenEntry", full_path="./repos/llmcc/crates/llmcc-tree/src/lib.rs:14", sym_ty="Struct", shape=box];
+        n667[label="TokenSet", full_path="./repos/llmcc/crates/llmcc-tree/src/lib.rs:23", sym_ty="Struct", shape=box];
+        n958[label="render_entry", full_path="./repos/llmcc/crates/llmcc-tree/src/lib.rs:67", sym_ty="Function"];
+        n990[label="generate_tokens", full_path="./repos/llmcc/crates/llmcc-tree/src/lib.rs:84", sym_ty="Function"];
+        n1093[label="generate", full_path="./repos/llmcc/crates/llmcc-tree/src/lib.rs:96", sym_ty="Function"];
+      }
+
+      subgraph cluster_node_types_rs {
+        label="node_types.rs";
+        n1774[label="NodeTypes", full_path="./repos/llmcc/crates/llmcc-tree/src/node_types.rs:9", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n8 -> n41 [from="caller", to="callee"];
+  n32 -> n41 [from="input", to="func"];
+  n32 -> n113 [from="input", to="func"];
+  n32 -> n124 [from="input", to="func"];
+  n32 -> n481 [from="input", to="func"];
+  n41 -> n113 [from="caller", to="callee"];
+  n41 -> n124 [from="caller", to="callee"];
+  n41 -> n407 [from="caller", to="callee"];
+  n41 -> n481 [from="caller", to="callee"];
+  n41 -> n972 [from="func", to="type_dep"];
+  n41 -> n2029 [from="caller", to="callee"];
+  n41 -> n2438 [from="caller", to="callee"];
+  n41 -> n2909 [from="caller", to="callee"];
+  n41 -> n3004 [from="func", to="type_dep"];
+  n41 -> n4646 [from="func", to="type_dep"];
+  n41 -> n5350 [from="caller", to="callee"];
+  n41 -> n7145 [from="caller", to="callee"];
+  n45 -> n155 [from="input", to="func"];
+  n60 -> n91 [from="field_type", to="struct"];
+  n60 -> n3142 [from="field_type", to="enum"];
+  n60 -> n3777 [from="input", to="func"];
+  n60 -> n3877 [from="input", to="func"];
+  n60 -> n4800 [from="field_type", to="struct"];
+  n66 -> n3649 [from="trait", to="impl"];
+  n78 -> n91 [from="field_type", to="struct"];
+  n78 -> n3142 [from="field_type", to="enum"];
+  n78 -> n3777 [from="input", to="func"];
+  n78 -> n3877 [from="input", to="func"];
+  n78 -> n4800 [from="field_type", to="struct"];
+  n137 -> n32 [from="field_type", to="struct"];
+  n137 -> n892 [from="input", to="func"];
+  n137 -> n920 [from="input", to="func"];
+  n137 -> n3164 [from="input", to="func"];
+  n137 -> n3598 [from="input", to="func"];
+  n137 -> n4603 [from="input", to="func"];
+  n137 -> n5233 [from="input", to="func"];
+  n137 -> n5361 [from="input", to="func"];
+  n137 -> n5723 [from="input", to="func"];
+  n137 -> n6152 [from="input", to="func"];
+  n137 -> n6729 [from="field_type", to="struct"];
+  n142 -> n2277 [from="field_type", to="struct"];
+  n142 -> n4646 [from="field_type", to="struct"];
+  n146 -> n159 [from="type_arg", to="impl"];
+  n146 -> n229 [from="input", to="func"];
+  n146 -> n633 [from="input", to="func"];
+  n146 -> n889 [from="input", to="func"];
+  n146 -> n1114 [from="input", to="func"];
+  n146 -> n1567 [from="input", to="func"];
+  n146 -> n1951 [from="input", to="func"];
+  n146 -> n2100 [from="input", to="func"];
+  n146 -> n2358 [from="input", to="func"];
+  n146 -> n2655 [from="input", to="func"];
+  n146 -> n3568 [from="input", to="func"];
+  n146 -> n3632 [from="input", to="func"];
+  n146 -> n4075 [from="input", to="func"];
+  n146 -> n4155 [from="input", to="func"];
+  n146 -> n4337 [from="input", to="func"];
+  n146 -> n4432 [from="input", to="func"];
+  n146 -> n4742 [from="input", to="func"];
+  n146 -> n4973 [from="input", to="func"];
+  n146 -> n5137 [from="input", to="func"];
+  n146 -> n5240 [from="input", to="func"];
+  n146 -> n5400 [from="input", to="func"];
+  n146 -> n5455 [from="input", to="func"];
+  n146 -> n5564 [from="input", to="func"];
+  n146 -> n5691 [from="input", to="func"];
+  n146 -> n5940 [from="input", to="func"];
+  n146 -> n6076 [from="input", to="func"];
+  n146 -> n6104 [from="input", to="func"];
+  n146 -> n6252 [from="input", to="func"];
+  n146 -> n6369 [from="input", to="func"];
+  n146 -> n6492 [from="input", to="func"];
+  n146 -> n6600 [from="input", to="func"];
+  n146 -> n6923 [from="input", to="func"];
+  n150 -> n141 [from="type_dep", to="struct"];
+  n155 -> n41 [from="caller", to="callee"];
+  n155 -> n137 [from="func", to="type_dep"];
+  n193 -> n4660 [from="field_type", to="struct"];
+  n206 -> n1586 [from="type_arg", to="impl"];
+  n229 -> n633 [from="caller", to="callee"];
+  n229 -> n889 [from="caller", to="callee"];
+  n229 -> n1114 [from="caller", to="callee"];
+  n229 -> n1567 [from="caller", to="callee"];
+  n229 -> n1951 [from="caller", to="callee"];
+  n229 -> n2100 [from="caller", to="callee"];
+  n229 -> n2358 [from="caller", to="callee"];
+  n233 -> n522 [from="field_type", to="struct"];
+  n233 -> n2194 [from="field_type", to="struct"];
+  n233 -> n3338 [from="field_type", to="struct"];
+  n233 -> n3649 [from="type_dep", to="struct"];
+  n233 -> n3792 [from="type_dep", to="struct"];
+  n235 -> n601 [from="type_dep", to="struct"];
+  n283 -> n229 [from="input", to="func"];
+  n283 -> n889 [from="input", to="func"];
+  n283 -> n1114 [from="input", to="func"];
+  n283 -> n1567 [from="input", to="func"];
+  n283 -> n1951 [from="input", to="func"];
+  n283 -> n2100 [from="input", to="func"];
+  n283 -> n2358 [from="input", to="func"];
+  n283 -> n2655 [from="input", to="func"];
+  n283 -> n3338 [from="field_type", to="struct"];
+  n283 -> n3632 [from="input", to="func"];
+  n283 -> n4075 [from="input", to="func"];
+  n283 -> n4155 [from="input", to="func"];
+  n283 -> n4200 [from="field_type", to="struct"];
+  n283 -> n4337 [from="input", to="func"];
+  n283 -> n4432 [from="input", to="func"];
+  n283 -> n4742 [from="input", to="func"];
+  n283 -> n4973 [from="input", to="func"];
+  n283 -> n5137 [from="input", to="func"];
+  n283 -> n5240 [from="input", to="func"];
+  n283 -> n5400 [from="input", to="func"];
+  n283 -> n5455 [from="input", to="func"];
+  n283 -> n5564 [from="input", to="func"];
+  n283 -> n5691 [from="input", to="func"];
+  n283 -> n5751 [from="input", to="func"];
+  n283 -> n5940 [from="input", to="func"];
+  n283 -> n6076 [from="input", to="func"];
+  n283 -> n6104 [from="input", to="func"];
+  n283 -> n6252 [from="input", to="func"];
+  n283 -> n6369 [from="input", to="func"];
+  n283 -> n6492 [from="input", to="func"];
+  n283 -> n6555 [from="input", to="func"];
+  n283 -> n6600 [from="input", to="func"];
+  n283 -> n6923 [from="input", to="func"];
+  n283 -> n7050 [from="input", to="func"];
+  n283 -> n7188 [from="input", to="func"];
+  n296 -> n45 [from="func", to="type_dep"];
+  n296 -> n155 [from="caller", to="callee"];
+  n304 -> n5925 [from="input", to="func"];
+  n310 -> n1018 [from="field_type", to="struct"];
+  n367 -> n1093 [from="input", to="func"];
+  n377 -> n3164 [from="input", to="func"];
+  n481 -> n892 [from="caller", to="callee"];
+  n522 -> n787 [from="type_dep", to="struct"];
+  n534 -> n3598 [from="input", to="func"];
+  n534 -> n4721 [from="input", to="func"];
+  n601 -> n785 [from="type_dep", to="struct"];
+  n601 -> n2623 [from="field_type", to="struct"];
+  n601 -> n4646 [from="field_type", to="struct"];
+  n604 -> n667 [from="type_dep", to="struct"];
+  n604 -> n958 [from="input", to="func"];
+  n607 -> n367 [from="type_dep", to="struct"];
+  n694 -> n4721 [from="input", to="func"];
+  n694 -> n4923 [from="input", to="func"];
+  n785 -> n206 [from="field_type", to="struct"];
+  n785 -> n1586 [from="type_dep", to="struct"];
+  n785 -> n2438 [from="input", to="func"];
+  n785 -> n2623 [from="type_dep", to="struct"];
+  n785 -> n5173 [from="type_dep", to="struct"];
+  n785 -> n7050 [from="input", to="func"];
+  n865 -> n920 [from="input", to="func"];
+  n889 -> n229 [from="caller", to="callee"];
+  n892 -> n920 [from="caller", to="callee"];
+  n920 -> n1265 [from="caller", to="callee"];
+  n920 -> n1368 [from="caller", to="callee"];
+  n920 -> n3598 [from="caller", to="callee"];
+  n920 -> n4603 [from="caller", to="callee"];
+  n920 -> n4721 [from="caller", to="callee"];
+  n930 -> n367 [from="type_dep", to="struct"];
+  n972 -> n159 [from="field_type", to="struct"];
+  n972 -> n2029 [from="input", to="func"];
+  n972 -> n2438 [from="input", to="func"];
+  n972 -> n7050 [from="input", to="func"];
+  n972 -> n7188 [from="input", to="func"];
+  n990 -> n367 [from="func", to="type_dep"];
+  n990 -> n1093 [from="caller", to="callee"];
+  n990 -> n1774 [from="func", to="type_dep"];
+  n1093 -> n667 [from="func", to="type_dep"];
+  n1104 -> n5080 [from="input", to="func"];
+  n1114 -> n229 [from="caller", to="callee"];
+  n1114 -> n633 [from="caller", to="callee"];
+  n1248 -> n367 [from="type_dep", to="struct"];
+  n1265 -> n377 [from="func", to="type_dep"];
+  n1368 -> n534 [from="func", to="type_dep"];
+  n1368 -> n1464 [from="caller", to="callee"];
+  n1368 -> n4307 [from="func", to="type_dep"];
+  n1430 -> n4307 [from="func", to="output"];
+  n1470 -> n2800 [from="input", to="func"];
+  n1470 -> n2909 [from="input", to="func"];
+  n1567 -> n229 [from="caller", to="callee"];
+  n1617 -> n141 [from="trait", to="impl"];
+  n1617 -> n1899 [from="trait", to="impl"];
+  n1617 -> n4747 [from="trait", to="impl"];
+  n1633 -> n1104 [from="type_dep", to="struct"];
+  n1633 -> n5188 [from="input", to="func"];
+  n1633 -> n5233 [from="input", to="func"];
+  n1633 -> n5361 [from="input", to="func"];
+  n1774 -> n1093 [from="input", to="func"];
+  n1919 -> n1899 [from="type_dep", to="struct"];
+  n1951 -> n229 [from="caller", to="callee"];
+  n2016 -> n1633 [from="type_dep", to="struct"];
+  n2016 -> n4736 [from="input", to="func"];
+  n2016 -> n5723 [from="input", to="func"];
+  n2016 -> n6152 [from="input", to="func"];
+  n2016 -> n7868 [from="input", to="func"];
+  n2029 -> n5071 [from="caller", to="callee"];
+  n2094 -> n2206 [from="trait", to="impl"];
+  n2094 -> n2800 [from="input", to="func"];
+  n2094 -> n4646 [from="field_type", to="struct"];
+  n2094 -> n5573 [from="field_type", to="struct"];
+  n2100 -> n229 [from="caller", to="callee"];
+  n2330 -> n2826 [from="field_type", to="struct"];
+  n2358 -> n229 [from="caller", to="callee"];
+  n2363 -> n2983 [from="field_type", to="struct"];
+  n2421 -> n3735 [from="trait", to="impl"];
+  n2528 -> n142 [from="type_dep", to="struct"];
+  n2528 -> n377 [from="field_type", to="struct"];
+  n2528 -> n534 [from="field_type", to="struct"];
+  n2528 -> n1368 [from="input", to="func"];
+  n2528 -> n1464 [from="input", to="func"];
+  n2528 -> n2194 [from="field_type", to="struct"];
+  n2528 -> n2277 [from="field_type", to="struct"];
+  n2528 -> n2838 [from="field_type", to="struct"];
+  n2528 -> n2954 [from="field_type", to="struct"];
+  n2528 -> n3338 [from="type_dep", to="struct"];
+  n2528 -> n3649 [from="type_dep", to="struct"];
+  n2528 -> n3792 [from="type_dep", to="struct"];
+  n2528 -> n3849 [from="type_dep", to="struct"];
+  n2528 -> n5200 [from="input", to="func"];
+  n2528 -> n5230 [from="input", to="func"];
+  n2528 -> n5350 [from="input", to="func"];
+  n2528 -> n5461 [from="input", to="func"];
+  n2528 -> n5604 [from="type_dep", to="struct"];
+  n2528 -> n6672 [from="type_dep", to="struct"];
+  n2528 -> n7062 [from="type_dep", to="struct"];
+  n2528 -> n7210 [from="type_dep", to="struct"];
+  n2528 -> n7277 [from="type_dep", to="struct"];
+  n2528 -> n7399 [from="type_dep", to="struct"];
+  n2528 -> n7454 [from="type_dep", to="struct"];
+  n2528 -> n7536 [from="type_dep", to="struct"];
+  n2528 -> n7617 [from="type_dep", to="struct"];
+  n2528 -> n7702 [from="type_dep", to="struct"];
+  n2528 -> n7963 [from="input", to="func"];
+  n2596 -> n146 [from="field_type", to="struct"];
+  n2596 -> n229 [from="input", to="func"];
+  n2596 -> n633 [from="input", to="func"];
+  n2596 -> n889 [from="input", to="func"];
+  n2596 -> n1114 [from="input", to="func"];
+  n2596 -> n1567 [from="input", to="func"];
+  n2596 -> n1951 [from="input", to="func"];
+  n2596 -> n2100 [from="input", to="func"];
+  n2596 -> n2358 [from="input", to="func"];
+  n2596 -> n2655 [from="input", to="func"];
+  n2596 -> n3632 [from="input", to="func"];
+  n2596 -> n3649 [from="field_type", to="struct"];
+  n2596 -> n4075 [from="input", to="func"];
+  n2596 -> n4155 [from="input", to="func"];
+  n2596 -> n4337 [from="input", to="func"];
+  n2596 -> n4432 [from="input", to="func"];
+  n2596 -> n4708 [from="input", to="func"];
+  n2596 -> n4741 [from="input", to="func"];
+  n2596 -> n4742 [from="input", to="func"];
+  n2596 -> n4973 [from="input", to="func"];
+  n2596 -> n5071 [from="input", to="func"];
+  n2596 -> n5137 [from="input", to="func"];
+  n2596 -> n5154 [from="input", to="func"];
+  n2596 -> n5200 [from="input", to="func"];
+  n2596 -> n5230 [from="input", to="func"];
+  n2596 -> n5240 [from="input", to="func"];
+  n2596 -> n5350 [from="input", to="func"];
+  n2596 -> n5400 [from="input", to="func"];
+  n2596 -> n5455 [from="input", to="func"];
+  n2596 -> n5461 [from="input", to="func"];
+  n2596 -> n5502 [from="input", to="func"];
+  n2596 -> n5527 [from="input", to="func"];
+  n2596 -> n5564 [from="input", to="func"];
+  n2596 -> n5691 [from="input", to="func"];
+  n2596 -> n5751 [from="input", to="func"];
+  n2596 -> n5925 [from="input", to="func"];
+  n2596 -> n5940 [from="input", to="func"];
+  n2596 -> n6076 [from="input", to="func"];
+  n2596 -> n6104 [from="input", to="func"];
+  n2596 -> n6252 [from="input", to="func"];
+  n2596 -> n6369 [from="input", to="func"];
+  n2596 -> n6492 [from="input", to="func"];
+  n2596 -> n6555 [from="input", to="func"];
+  n2596 -> n6600 [from="input", to="func"];
+  n2596 -> n6880 [from="input", to="func"];
+  n2596 -> n6923 [from="input", to="func"];
+  n2596 -> n6976 [from="input", to="func"];
+  n2596 -> n7050 [from="input", to="func"];
+  n2596 -> n7075 [from="input", to="func"];
+  n2596 -> n7188 [from="input", to="func"];
+  n2596 -> n7963 [from="input", to="func"];
+  n2623 -> n146 [from="field_type", to="struct"];
+  n2623 -> n206 [from="field_type", to="struct"];
+  n2623 -> n7188 [from="input", to="func"];
+  n2655 -> n3568 [from="caller", to="callee"];
+  n2655 -> n3632 [from="caller", to="callee"];
+  n2655 -> n3849 [from="func", to="type_dep"];
+  n2655 -> n4075 [from="caller", to="callee"];
+  n2655 -> n4155 [from="caller", to="callee"];
+  n2655 -> n4337 [from="caller", to="callee"];
+  n2655 -> n4432 [from="caller", to="callee"];
+  n2655 -> n4742 [from="caller", to="callee"];
+  n2655 -> n4973 [from="caller", to="callee"];
+  n2655 -> n5137 [from="caller", to="callee"];
+  n2655 -> n5240 [from="caller", to="callee"];
+  n2655 -> n5400 [from="caller", to="callee"];
+  n2655 -> n5455 [from="caller", to="callee"];
+  n2655 -> n5564 [from="caller", to="callee"];
+  n2655 -> n5691 [from="caller", to="callee"];
+  n2655 -> n5940 [from="caller", to="callee"];
+  n2655 -> n6076 [from="caller", to="callee"];
+  n2655 -> n6104 [from="caller", to="callee"];
+  n2655 -> n6252 [from="caller", to="callee"];
+  n2655 -> n6369 [from="caller", to="callee"];
+  n2655 -> n6492 [from="caller", to="callee"];
+  n2655 -> n6600 [from="caller", to="callee"];
+  n2800 -> n1583 [from="func", to="type_dep"];
+  n2800 -> n4307 [from="func", to="type_dep"];
+  n2826 -> n4741 [from="input", to="func"];
+  n2826 -> n5154 [from="input", to="func"];
+  n2826 -> n5200 [from="input", to="func"];
+  n2826 -> n5461 [from="input", to="func"];
+  n2826 -> n5502 [from="input", to="func"];
+  n2826 -> n5527 [from="input", to="func"];
+  n2826 -> n5751 [from="input", to="func"];
+  n2826 -> n5925 [from="input", to="func"];
+  n2826 -> n6171 [from="input", to="func"];
+  n2826 -> n6271 [from="input", to="func"];
+  n2826 -> n6416 [from="input", to="func"];
+  n2826 -> n6739 [from="input", to="func"];
+  n2826 -> n6822 [from="input", to="func"];
+  n2826 -> n6880 [from="input", to="func"];
+  n2838 -> n3004 [from="type_dep", to="struct"];
+  n2909 -> n2800 [from="caller", to="callee"];
+  n2954 -> n522 [from="field_type", to="struct"];
+  n2968 -> n3849 [from="type_dep", to="struct"];
+  n2983 -> n4646 [from="type_dep", to="struct"];
+  n3001 -> n142 [from="type_dep", to="struct"];
+  n3001 -> n2871 [from="type_dep", to="struct"];
+  n3004 -> n481 [from="input", to="func"];
+  n3004 -> n892 [from="input", to="func"];
+  n3004 -> n920 [from="input", to="func"];
+  n3004 -> n1018 [from="field_type", to="struct"];
+  n3004 -> n1265 [from="input", to="func"];
+  n3004 -> n1368 [from="input", to="func"];
+  n3004 -> n1464 [from="input", to="func"];
+  n3004 -> n7947 [from="input", to="func"];
+  n3004 -> n8001 [from="input", to="func"];
+  n3004 -> n8021 [from="input", to="func"];
+  n3051 -> n785 [from="type_dep", to="struct"];
+  n3051 -> n1586 [from="type_dep", to="struct"];
+  n3051 -> n3849 [from="type_dep", to="struct"];
+  n3139 -> n377 [from="type_dep", to="struct"];
+  n3139 -> n3849 [from="type_dep", to="struct"];
+  n3139 -> n5095 [from="input", to="func"];
+  n3139 -> n5582 [from="type_dep", to="struct"];
+  n3142 -> n3106 [from="field_type", to="struct"];
+  n3251 -> n2016 [from="type_dep", to="struct"];
+  n3297 -> n2016 [from="type_dep", to="struct"];
+  n3309 -> n2016 [from="func", to="type_dep"];
+  n3309 -> n4339 [from="caller", to="callee"];
+  n3309 -> n4462 [from="caller", to="callee"];
+  n3309 -> n4634 [from="caller", to="callee"];
+  n3309 -> n4736 [from="caller", to="callee"];
+  n3338 -> n4566 [from="field_type", to="struct"];
+  n3338 -> n5319 [from="field_type", to="struct"];
+  n3338 -> n5604 [from="field_type", to="struct"];
+  n3338 -> n6672 [from="field_type", to="struct"];
+  n3338 -> n7062 [from="field_type", to="struct"];
+  n3338 -> n7210 [from="field_type", to="struct"];
+  n3338 -> n7277 [from="field_type", to="struct"];
+  n3338 -> n7399 [from="field_type", to="struct"];
+  n3338 -> n7454 [from="field_type", to="struct"];
+  n3338 -> n7536 [from="field_type", to="struct"];
+  n3338 -> n7617 [from="field_type", to="struct"];
+  n3338 -> n7702 [from="field_type", to="struct"];
+  n3338 -> n7783 [from="field_type", to="struct"];
+  n3497 -> n3649 [from="field_type", to="struct"];
+  n3497 -> n7075 [from="input", to="func"];
+  n3524 -> n7145 [from="input", to="func"];
+  n3568 -> n3849 [from="func", to="type_dep"];
+  n3575 -> n3106 [from="func", to="type_dep"];
+  n3575 -> n3777 [from="caller", to="callee"];
+  n3575 -> n3877 [from="caller", to="callee"];
+  n3575 -> n4119 [from="caller", to="callee"];
+  n3598 -> n3164 [from="caller", to="callee"];
+  n3632 -> n2655 [from="caller", to="callee"];
+  n3632 -> n3849 [from="func", to="type_dep"];
+  n3632 -> n6555 [from="caller", to="callee"];
+  n3632 -> n6600 [from="caller", to="callee"];
+  n3777 -> n1104 [from="func", to="type_dep"];
+  n3777 -> n4231 [from="caller", to="callee"];
+  n3777 -> n4348 [from="caller", to="callee"];
+  n3777 -> n4352 [from="caller", to="callee"];
+  n3777 -> n5080 [from="caller", to="callee"];
+  n3792 -> n4646 [from="type_dep", to="struct"];
+  n3849 -> n229 [from="input", to="func"];
+  n3849 -> n633 [from="input", to="func"];
+  n3849 -> n785 [from="type_dep", to="struct"];
+  n3849 -> n889 [from="input", to="func"];
+  n3849 -> n1114 [from="input", to="func"];
+  n3849 -> n1424 [from="input", to="func"];
+  n3849 -> n1567 [from="input", to="func"];
+  n3849 -> n1951 [from="input", to="func"];
+  n3849 -> n2100 [from="input", to="func"];
+  n3849 -> n2358 [from="input", to="func"];
+  n3849 -> n3338 [from="type_dep", to="struct"];
+  n3849 -> n5974 [from="type_dep", to="struct"];
+  n3849 -> n6923 [from="input", to="func"];
+  n3849 -> n7277 [from="type_dep", to="struct"];
+  n3877 -> n1104 [from="func", to="type_dep"];
+  n3877 -> n4231 [from="caller", to="callee"];
+  n3877 -> n4348 [from="caller", to="callee"];
+  n3877 -> n4352 [from="caller", to="callee"];
+  n3877 -> n5233 [from="caller", to="callee"];
+  n4075 -> n3849 [from="func", to="type_dep"];
+  n4075 -> n6600 [from="caller", to="callee"];
+  n4119 -> n1104 [from="func", to="type_dep"];
+  n4155 -> n3849 [from="func", to="type_dep"];
+  n4155 -> n6600 [from="caller", to="callee"];
+  n4188 -> n4348 [from="input", to="func"];
+  n4231 -> n4188 [from="func", to="output"];
+  n4307 -> n785 [from="field_type", to="struct"];
+  n4307 -> n2896 [from="field_type", to="struct"];
+  n4307 -> n3849 [from="type_dep", to="struct"];
+  n4307 -> n4646 [from="type_dep", to="struct"];
+  n4307 -> n4660 [from="type_dep", to="struct"];
+  n4307 -> n4708 [from="input", to="func"];
+  n4307 -> n4741 [from="input", to="func"];
+  n4337 -> n2655 [from="caller", to="callee"];
+  n4337 -> n3849 [from="func", to="type_dep"];
+  n4432 -> n2655 [from="caller", to="callee"];
+  n4432 -> n3139 [from="func", to="type_dep"];
+  n4432 -> n3849 [from="func", to="type_dep"];
+  n4450 -> n6571 [from="type_dep", to="struct"];
+  n4474 -> n4580 [from="type_dep", to="struct"];
+  n4486 -> n6171 [from="input", to="func"];
+  n4486 -> n6271 [from="input", to="func"];
+  n4486 -> n6416 [from="input", to="func"];
+  n4486 -> n6739 [from="input", to="func"];
+  n4486 -> n6822 [from="input", to="func"];
+  n4580 -> n4646 [from="field_type", to="struct"];
+  n4592 -> n4736 [from="input", to="func"];
+  n4603 -> n694 [from="func", to="output"];
+  n4628 -> n6571 [from="type_dep", to="struct"];
+  n4634 -> n4592 [from="func", to="type_dep"];
+  n4646 -> n206 [from="field_type", to="struct"];
+  n4646 -> n2029 [from="input", to="func"];
+  n4646 -> n2438 [from="input", to="func"];
+  n4646 -> n2596 [from="field_type", to="struct"];
+  n4646 -> n2909 [from="input", to="func"];
+  n4646 -> n3004 [from="field_type", to="struct"];
+  n4646 -> n7145 [from="input", to="func"];
+  n4646 -> n7988 [from="input", to="func"];
+  n4646 -> n7997 [from="input", to="func"];
+  n4660 -> n4858 [from="field_type", to="struct"];
+  n4660 -> n5017 [from="field_type", to="struct"];
+  n4660 -> n5086 [from="field_type", to="struct"];
+  n4660 -> n5173 [from="field_type", to="struct"];
+  n4660 -> n5974 [from="field_type", to="struct"];
+  n4660 -> n6324 [from="field_type", to="struct"];
+  n4691 -> n6571 [from="type_dep", to="struct"];
+  n4691 -> n7461 [from="input", to="func"];
+  n4708 -> n4741 [from="caller", to="callee"];
+  n4721 -> n4923 [from="caller", to="callee"];
+  n4741 -> n4486 [from="func", to="type_dep"];
+  n4741 -> n5502 [from="caller", to="callee"];
+  n4741 -> n5751 [from="caller", to="callee"];
+  n4741 -> n6171 [from="caller", to="callee"];
+  n4742 -> n2655 [from="caller", to="callee"];
+  n4742 -> n3849 [from="func", to="type_dep"];
+  n4759 -> n6571 [from="type_dep", to="struct"];
+  n4800 -> n5080 [from="input", to="func"];
+  n4858 -> n283 [from="field_type", to="enum"];
+  n4886 -> n4934 [from="field_type", to="struct"];
+  n4923 -> n5095 [from="caller", to="callee"];
+  n4923 -> n5339 [from="caller", to="callee"];
+  n4923 -> n5364 [from="caller", to="callee"];
+  n4973 -> n3849 [from="func", to="type_dep"];
+  n5017 -> n283 [from="field_type", to="enum"];
+  n5071 -> n5154 [from="caller", to="callee"];
+  n5080 -> n4934 [from="func", to="type_dep"];
+  n5086 -> n283 [from="field_type", to="enum"];
+  n5137 -> n2655 [from="caller", to="callee"];
+  n5137 -> n3849 [from="func", to="type_dep"];
+  n5154 -> n4741 [from="caller", to="callee"];
+  n5188 -> n4934 [from="func", to="type_dep"];
+  n5188 -> n5233 [from="caller", to="callee"];
+  n5200 -> n5925 [from="caller", to="callee"];
+  n5200 -> n6171 [from="caller", to="callee"];
+  n5233 -> n4934 [from="func", to="type_dep"];
+  n5233 -> n5361 [from="caller", to="callee"];
+  n5240 -> n2655 [from="caller", to="callee"];
+  n5240 -> n3568 [from="caller", to="callee"];
+  n5240 -> n3849 [from="func", to="type_dep"];
+  n5349 -> n6174 [from="input", to="func"];
+  n5350 -> n5461 [from="caller", to="callee"];
+  n5361 -> n4934 [from="func", to="type_dep"];
+  n5361 -> n5723 [from="caller", to="callee"];
+  n5400 -> n3632 [from="caller", to="callee"];
+  n5400 -> n3849 [from="func", to="type_dep"];
+  n5406 -> n5349 [from="func", to="type_dep"];
+  n5406 -> n5494 [from="caller", to="callee"];
+  n5455 -> n2655 [from="caller", to="callee"];
+  n5455 -> n3849 [from="func", to="type_dep"];
+  n5461 -> n5200 [from="caller", to="callee"];
+  n5502 -> n4486 [from="func", to="type_dep"];
+  n5502 -> n5527 [from="caller", to="callee"];
+  n5527 -> n4486 [from="func", to="type_dep"];
+  n5527 -> n6880 [from="caller", to="callee"];
+  n5564 -> n3849 [from="func", to="type_dep"];
+  n5691 -> n2655 [from="caller", to="callee"];
+  n5691 -> n3849 [from="func", to="type_dep"];
+  n5723 -> n2578 [from="caller", to="callee"];
+  n5723 -> n2832 [from="caller", to="callee"];
+  n5723 -> n6152 [from="caller", to="callee"];
+  n5723 -> n7250 [from="caller", to="callee"];
+  n5723 -> n7559 [from="caller", to="callee"];
+  n5723 -> n7712 [from="caller", to="callee"];
+  n5751 -> n4486 [from="func", to="type_dep"];
+  n5751 -> n6880 [from="caller", to="callee"];
+  n5925 -> n4486 [from="func", to="type_dep"];
+  n5927 -> n5349 [from="func", to="type_dep"];
+  n5940 -> n2655 [from="caller", to="callee"];
+  n5940 -> n3849 [from="func", to="type_dep"];
+  n5974 -> n5173 [from="type_dep", to="struct"];
+  n6076 -> n3849 [from="func", to="type_dep"];
+  n6104 -> n3849 [from="func", to="type_dep"];
+  n6152 -> n6571 [from="func", to="type_dep"];
+  n6152 -> n6729 [from="func", to="type_dep"];
+  n6152 -> n7868 [from="caller", to="callee"];
+  n6152 -> n7887 [from="caller", to="callee"];
+  n6171 -> n6271 [from="caller", to="callee"];
+  n6252 -> n2655 [from="caller", to="callee"];
+  n6252 -> n3849 [from="func", to="type_dep"];
+  n6271 -> n6416 [from="caller", to="callee"];
+  n6271 -> n6739 [from="caller", to="callee"];
+  n6271 -> n6822 [from="caller", to="callee"];
+  n6324 -> n283 [from="field_type", to="enum"];
+  n6369 -> n2655 [from="caller", to="callee"];
+  n6369 -> n3849 [from="func", to="type_dep"];
+  n6492 -> n2655 [from="caller", to="callee"];
+  n6492 -> n3849 [from="func", to="type_dep"];
+  n6571 -> n7250 [from="input", to="func"];
+  n6600 -> n2655 [from="caller", to="callee"];
+  n6600 -> n3849 [from="func", to="type_dep"];
+  n6600 -> n6555 [from="caller", to="callee"];
+  n6729 -> n7887 [from="input", to="func"];
+  n6923 -> n2655 [from="caller", to="callee"];
+  n7050 -> n146 [from="func", to="type_dep"];
+  n7050 -> n159 [from="func", to="type_dep"];
+  n7075 -> n2838 [from="func", to="type_dep"];
+  n7075 -> n3649 [from="func", to="type_dep"];
+  n7145 -> n2838 [from="func", to="type_dep"];
+  n7188 -> n206 [from="func", to="type_dep"];
+  n7188 -> n1586 [from="func", to="type_dep"];
+  n7461 -> n7486 [from="caller", to="callee"];
+  n7559 -> n7596 [from="caller", to="callee"];
+  n7559 -> n7609 [from="caller", to="callee"];
+  n7559 -> n7620 [from="caller", to="callee"];
+  n7559 -> n7634 [from="caller", to="callee"];
+  n7559 -> n7667 [from="caller", to="callee"];
+  n7634 -> n7730 [from="caller", to="callee"];
+  n7724 -> n7833 [from="input", to="func"];
+  n7724 -> n7837 [from="input", to="func"];
+  n7730 -> n7724 [from="func", to="type_dep"];
+  n7730 -> n7747 [from="caller", to="callee"];
+  n7803 -> n7724 [from="func", to="type_dep"];
+  n7833 -> n7837 [from="caller", to="callee"];
+  n7868 -> n7857 [from="func", to="type_dep"];
+  n7887 -> n972 [from="func", to="type_dep"];
+  n7887 -> n1470 [from="func", to="type_dep"];
+  n7887 -> n2029 [from="caller", to="callee"];
+  n7887 -> n2438 [from="caller", to="callee"];
+  n7887 -> n2909 [from="caller", to="callee"];
+  n7887 -> n3004 [from="func", to="type_dep"];
+  n7887 -> n4646 [from="func", to="type_dep"];
+  n7887 -> n6571 [from="func", to="type_dep"];
+  n7887 -> n7145 [from="caller", to="callee"];
+  n7887 -> n7920 [from="caller", to="callee"];
+  n7887 -> n8021 [from="caller", to="callee"];
+  n7947 -> n7963 [from="caller", to="callee"];
+  n7988 -> n4450 [from="func", to="type_dep"];
+  n7997 -> n4628 [from="func", to="type_dep"];
+  n8001 -> n4759 [from="func", to="type_dep"];
+  n8001 -> n8045 [from="caller", to="callee"];
+  n8021 -> n8045 [from="caller", to="callee"];
+  n8045 -> n8040 [from="func", to="type_dep"];
+}

@@ -118,8 +118,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
         scope
     }
 
-    fn get_scope(&self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        self.scope_map.get(&scope_id).copied().unwrap()
+    fn get_scope(&self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
+        self.scope_map.get(&scope_id).copied()
     }
 
     /// Lookup a symbol by name, trying primary kind first, then UnresolvedType, then inserting new
@@ -207,7 +207,16 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 "use existing scope for symbol {}",
                 sym.format(Some(scopes.interner()))
             );
-            self.get_scope(sym.scope())
+            match self.get_scope(sym.scope()) {
+                Some(s) => s,
+                None => {
+                    tracing::warn!(
+                        "scope not found for symbol {}, allocating new",
+                        sym.format(Some(scopes.interner()))
+                    );
+                    self.alloc_scope(unit, sym)
+                }
+            }
         };
         sym.set_scope(scope.id());
         sn.set_scope(scope);
