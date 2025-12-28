@@ -1,0 +1,51 @@
+===============================================================================
+module-aggregation
+===============================================================================
+Test that depth 2 (Module) aggregates nodes into module-level components.
+
+--- file: sample/Cargo.toml ---
+[package]
+name = "sample"
+
+--- file: sample/src/lib.rs ---
+mod models;
+mod services;
+
+pub use models::User;
+pub use services::UserService;
+
+--- file: sample/src/models.rs ---
+pub struct User {
+    pub id: u64,
+    pub name: String,
+}
+
+pub struct Profile {
+    pub bio: String,
+}
+
+--- file: sample/src/services.rs ---
+use crate::models::{User, Profile};
+
+pub struct UserService {
+    pub user: User,
+    pub profile: Profile,
+}
+
+pub fn create_user() -> User {
+    User { id: 1, name: "Alice".to_string() }
+}
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  rankdir=LR;
+  node [shape=box];
+
+  label="module graph";
+  labelloc=t;
+
+  mod_sample_models[label="sample::models"];
+  mod_sample_services[label="sample::services"];
+
+  mod_sample_services -> mod_sample_models;
+}

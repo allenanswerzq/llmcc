@@ -73,6 +73,9 @@ impl<'tcx> BinderVisitor<'tcx> {
 }
 
 impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
+    // Note: Test items (#[test] functions, #[cfg(test)] modules) are already filtered out
+    // at the HIR building stage in ir_builder.rs, so they won't appear in the HIR tree.
+
     fn visit_source_file(
         &mut self,
         unit: &CompileUnit<'tcx>,

@@ -145,10 +145,27 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
     }
 
     /// Collect all valid child nodes from a parse node.
+    /// Filters out test code (items with #[test] or #[cfg(test)] attributes).
     fn collect_children(&self, node: &dyn ParseNode, parent_id: HirId) -> Vec<HirNode<'unit>> {
         let mut child_nodes = Vec::new();
+        let mut skip_next = false;
+
         for i in 0..node.child_count() {
             if let Some(child) = node.child(i) {
+                // Check if this is a test attribute that should cause the next item to be skipped
+                if Language::is_test_attribute(child.as_ref(), self.file_bytes) {
+                    skip_next = true;
+                    // Still add the attribute node itself (it will be orphaned but harmless)
+                    // Actually, skip the attribute too for cleaner HIR
+                    continue;
+                }
+
+                // Skip items that follow test attributes
+                if skip_next {
+                    skip_next = false;
+                    continue;
+                }
+
                 let child_node = self.build_node(child.as_ref(), Some(parent_id));
                 child_nodes.push(child_node);
             }

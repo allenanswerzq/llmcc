@@ -2,6 +2,10 @@ use std::fs;
 use std::path::Path;
 use toml::Table;
 
+// Note: Test attribute filtering is now done at the HIR building stage
+// in ir_builder.rs via LanguageTrait::is_test_attribute(), implemented
+// in token.rs for the Rust language.
+
 /// Parse the crate name from Cargo.toml by walking up the directory tree.
 pub fn parse_crate_name(file_path: &str) -> Option<String> {
     let mut dir = Path::new(file_path).parent();

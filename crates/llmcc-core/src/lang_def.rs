@@ -281,6 +281,15 @@ pub trait LanguageTrait {
         }
     }
 
+    /// Check if a parse node is a test-related attribute that should cause the next item to be skipped.
+    /// This is used to filter out test functions and modules from the HIR at build time.
+    /// Takes the parse node and source bytes to extract and check the attribute text.
+    /// Default implementation returns false (no filtering).
+    fn is_test_attribute(node: &dyn ParseNode, source: &[u8]) -> bool {
+        let _ = (node, source);
+        false
+    }
+
     /// Get the string representation of a token ID.
     fn token_str(kind_id: u16) -> Option<&'static str>;
 
@@ -342,6 +351,14 @@ pub trait LanguageTraitImpl: LanguageTrait {
 
     fn collect_init_impl<'tcx>(cc: &'tcx CompileCtxt<'tcx>) -> ScopeStack<'tcx> {
         ScopeStack::new(cc.arena(), &cc.interner)
+    }
+
+    /// Check if a parse node is a test attribute that should cause the next item to be skipped.
+    /// Override this for language-specific test attribute detection.
+    /// Default implementation returns false.
+    fn is_test_attribute_impl(node: &dyn ParseNode, source: &[u8]) -> bool {
+        let _ = (node, source);
+        false
     }
 
     fn collect_symbols_impl<'tcx, C>(
@@ -447,6 +464,11 @@ macro_rules! define_lang {
                 /// Get the Block kind for a given token ID with parent context
                 fn block_kind_with_parent(kind_id: u16, field_id: u16, parent_kind_id: u16) -> $crate::graph_builder::BlockKind {
                     <Self as $crate::lang_def::LanguageTraitImpl>::block_kind_with_parent_impl(kind_id, field_id, parent_kind_id)
+                }
+
+                /// Check if a parse node is a test attribute that should cause the next item to be skipped
+                fn is_test_attribute(node: &dyn $crate::lang_def::ParseNode, source: &[u8]) -> bool {
+                    <Self as $crate::lang_def::LanguageTraitImpl>::is_test_attribute_impl(node, source)
                 }
 
                 /// Get the string representation of a token ID
