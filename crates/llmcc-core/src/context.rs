@@ -174,10 +174,7 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
         // Use DashMap-based lookup by ID
-        self.cc
-            .block_arena
-            .get_bb(id.0 as usize)
-            .cloned()
+        self.cc.block_arena.get_bb(id.0 as usize).cloned()
     }
 
     /// Get a HIR node by ID, panicking if not found

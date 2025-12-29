@@ -462,10 +462,7 @@ impl<'tcx> ScopeStack<'tcx> {
             );
         }
 
-        if current_scope
-            .lookup_symbols(name_key, options)
-            .is_none()
-        {
+        if current_scope.lookup_symbols(name_key, options).is_none() {
             tracing::trace!(
                 "lookup_qualified: starting scope {:?} does not contain '{}' options: {:?}, stack {:#?}",
                 current_scope.id(),
