@@ -563,7 +563,7 @@ impl<'tcx> ProjectGraph<'tcx> {
             }
             // If symbol IS the type (no type_of), use its own block_id
             // Type kinds include: Struct, Enum, Trait, TypeAlias, Primitive, etc.
-            if crate::symbol::SymKind::type_kinds().contains(&sym.kind()) {
+            if crate::symbol::SYM_KIND_TYPES.contains(sym.kind()) {
                 return sym.block_id();
             }
         }

@@ -1,10 +1,13 @@
 //! Symbol collection for parallel per-unit symbol table building.
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
+
 use llmcc_core::LanguageTrait;
 use llmcc_core::context::CompileCtxt;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::{Arena, HirNode};
 use llmcc_core::scope::{LookupOptions, Scope, ScopeStack};
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
 
 use rayon::prelude::*;
 
@@ -87,10 +90,10 @@ impl<'a> CollectorScopes<'a> {
             }
         }
 
-        // Create new scope
-        let scope = self
-            .arena()
-            .alloc(Scope::new_with(node.id(), symbol, Some(self.interner())));
+        // Create new scope with its own ID, then alloc with that ID
+        let scope_val = Scope::new_with(node.id(), symbol, Some(self.interner()));
+        let scope_id = scope_val.id().0;
+        let scope = self.arena().alloc_with_id(scope_id, scope_val);
         if let Some(symbol) = symbol {
             tracing::trace!(
                 "set symbol scope {} to {:?}",
@@ -187,7 +190,7 @@ impl<'a> CollectorScopes<'a> {
     ) -> Option<&'a Symbol> {
         // Use kind filter to avoid collisions between symbols of different kinds
         // e.g., crate "auth" and file "auth" should be separate symbols
-        let options = LookupOptions::global().with_kind_filters(vec![kind]);
+        let options = LookupOptions::global().with_kind_set(SymKindSet::from_kind(kind));
         let symbols = self.scopes.lookup_or_insert(name, node.id(), options)?;
         let symbol = symbols.last().copied()?;
         self.init_symbol(symbol, name, node, kind);
@@ -197,22 +200,14 @@ impl<'a> CollectorScopes<'a> {
 
     /// Lookup symbols by name with options
     #[inline]
-    pub fn lookup_symbols(
-        &self,
-        name: &str,
-        kind_filters: Vec<SymKind>,
-    ) -> Option<Vec<&'a Symbol>> {
-        tracing::trace!(
-            "lookup symbols '{}' with filters {:?}",
-            name,
-            kind_filters.clone()
-        );
-        let options = LookupOptions::current().with_kind_filters(kind_filters);
+    pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!("lookup symbols '{}' with filters {:?}", name, kind_filters);
+        let options = LookupOptions::current().with_kind_set(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }
 
     #[inline]
-    pub fn lookup_symbol(&self, name: &str, kind_filters: Vec<SymKind>) -> Option<&'a Symbol> {
+    pub fn lookup_symbol(&self, name: &str, kind_filters: SymKindSet) -> Option<&'a Symbol> {
         let symbols = self.lookup_symbols(name, kind_filters)?;
         if symbols.len() > 1 {
             tracing::warn!(
@@ -233,24 +228,38 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     cc: &'a CompileCtxt<'a>,
     config: &ResolverOption,
 ) -> &'a Scope<'a> {
+    let total_start = Instant::now();
+
     tracing::info!(
         "starting symbol collection for totaol {} units",
         cc.files.len()
     );
 
+    let init_start = Instant::now();
     let scope_stack = L::collect_init(cc);
     let scope_stack_clone = scope_stack.clone();
+    let init_time = init_start.elapsed();
 
-    let collect_unit = move |i: usize| {
+    // Atomic counters for parallel timing
+    let clone_time_ns = AtomicU64::new(0);
+    let visit_time_ns = AtomicU64::new(0);
+
+    let collect_unit = |i: usize| {
+        let clone_start = Instant::now();
+        let unit_scope_stack = scope_stack_clone.clone();
+        clone_time_ns.fetch_add(clone_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
         let unit = cc.compile_unit(i);
         tracing::debug!(
             "collecting symbols for unit {} ({})",
             i,
             unit.file_path().unwrap_or("unknown")
         );
-        let unit_scope_stack = scope_stack_clone.clone();
+
+        let visit_start = Instant::now();
         let node = unit.hir_node(unit.file_root_id().unwrap());
         let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, config);
+        visit_time_ns.fetch_add(visit_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
 
         if config.print_ir {
             use llmcc_core::printer::print_llmcc_ir;
@@ -261,6 +270,7 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         unit_globals
     };
 
+    let parallel_start = Instant::now();
     let unit_globals_vec = if config.sequential {
         tracing::debug!("running symbol collection sequentially");
         (0..cc.files.len()).map(collect_unit).collect::<Vec<_>>()
@@ -271,13 +281,13 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
             .map(collect_unit)
             .collect::<Vec<_>>()
     };
+    let parallel_time = parallel_start.elapsed();
 
     let globals = scope_stack.globals();
 
-    tracing::debug!("sorting scopes and symbols");
-    cc.arena.scope_sort_by(|scope| scope.id());
-    cc.arena.symbol_sort_by(|symbol| symbol.id());
+    // No sorting needed: DashMap provides O(1) lookup by ID
 
+    let merge_start = Instant::now();
     tracing::debug!(
         "merging {} unit scopes into global scope",
         unit_globals_vec.len()
@@ -286,6 +296,21 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
         tracing::trace!("merging unit {} global scope", i);
         cc.merge_two_scopes(globals, unit_globals);
     }
+    let merge_time = merge_start.elapsed();
+
+    let total_time = total_start.elapsed();
+    let clone_ms = clone_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+    let visit_ms = visit_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+
+    tracing::info!(
+        "collection breakdown: init={:.2}ms, parallel={:.2}ms (clone={:.2}ms, visit={:.2}ms), merge={:.2}ms, total={:.2}ms",
+        init_time.as_secs_f64() * 1000.0,
+        parallel_time.as_secs_f64() * 1000.0,
+        clone_ms,
+        visit_ms,
+        merge_time.as_secs_f64() * 1000.0,
+        total_time.as_secs_f64() * 1000.0,
+    );
 
     tracing::info!("symbol collection complete");
     globals

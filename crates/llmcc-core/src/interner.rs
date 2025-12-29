@@ -23,6 +23,7 @@ impl InternPoolInner {
     }
 
     /// Intern the provided string slice and return its symbol.
+    #[inline]
     pub fn intern<S>(&self, value: S) -> InternedStr
     where
         S: AsRef<str>,

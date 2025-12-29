@@ -534,7 +534,9 @@ macro_rules! define_lang {
                     namespace: &'a $crate::scope::Scope<'a>,
                     parent: Option<&$crate::symbol::Symbol>,
                 ) {
-                    for child in node.children(unit) {
+                    // Iterate directly over child IDs to avoid Vec/SmallVec allocation
+                    for &child_id in node.child_ids() {
+                        let child = unit.hir_node(child_id);
                         self.visit_node(unit, &child, scopes, namespace, parent);
                     }
                 }

@@ -1826,9 +1826,8 @@ fn describe_block<'a>(
     // 6. Fall back to block#N
     let name = name
         .or_else(|| {
-            // Try to get name from specific block types
-            let index = (block_id.0 as usize).saturating_sub(1);
-            cc.block_arena.bb().get(index).and_then(|bb| {
+            // Try to get name from specific block types using DashMap lookup
+            cc.block_arena.get_bb(block_id.0 as usize).and_then(|bb| {
                 // Try field name
                 if let Some(field) = bb.as_field()
                     && !field.name.is_empty()
@@ -1844,8 +1843,7 @@ fn describe_block<'a>(
         })
         .or_else(|| {
             // Try to find first identifier child of the node
-            let index = (block_id.0 as usize).saturating_sub(1);
-            cc.block_arena.bb().get(index).and_then(|bb| {
+            cc.block_arena.get_bb(block_id.0 as usize).and_then(|bb| {
                 let node = bb.base()?.node;
                 // Recursively search for first identifier in children
                 find_first_ident_name(cc, &node)

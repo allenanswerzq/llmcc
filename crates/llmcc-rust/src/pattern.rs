@@ -2,7 +2,7 @@
 
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::HirNode;
-use llmcc_core::symbol::{SymKind, Symbol};
+use llmcc_core::symbol::{SymKind, SymKindSet, Symbol};
 use llmcc_resolver::BinderScopes;
 
 use crate::token::LangRust;
@@ -80,7 +80,8 @@ fn assign_type_to_ident<'tcx>(
     let symbol = match ident.opt_symbol() {
         Some(sym) => sym,
         None => {
-            let resolved = scopes.lookup_symbol(&ident.name, vec![SymKind::Variable]);
+            let resolved =
+                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Variable));
             if let Some(sym) = resolved {
                 ident.set_symbol(sym);
                 sym
@@ -195,7 +196,7 @@ fn assign_type_to_struct_pattern<'tcx>(
                     if let Some(field_sym) = scopes.lookup_member_symbols(
                         struct_symbol,
                         &field_name_ident.name,
-                        Some(vec![SymKind::Field]),
+                        SymKindSet::from_kind(SymKind::Field),
                     ) {
                         let field_type = field_sym
                             .type_of()
@@ -213,9 +214,10 @@ fn assign_type_to_struct_pattern<'tcx>(
                             if let Some(binding_sym) = field_name_ident.opt_symbol() {
                                 if binding_sym.kind() == SymKind::Variable {
                                     binding_sym.set_type_of(field_type.id());
-                                } else if let Some(var_sym) = scopes
-                                    .lookup_symbol(&field_name_ident.name, vec![SymKind::Variable])
-                                {
+                                } else if let Some(var_sym) = scopes.lookup_symbol(
+                                    &field_name_ident.name,
+                                    SymKindSet::from_kind(SymKind::Variable),
+                                ) {
                                     field_name_ident.set_symbol(var_sym);
                                     assign_type_to_ident(
                                         unit,
@@ -224,9 +226,10 @@ fn assign_type_to_struct_pattern<'tcx>(
                                         field_type,
                                     );
                                 }
-                            } else if let Some(var_sym) = scopes
-                                .lookup_symbol(&field_name_ident.name, vec![SymKind::Variable])
-                            {
+                            } else if let Some(var_sym) = scopes.lookup_symbol(
+                                &field_name_ident.name,
+                                SymKindSet::from_kind(SymKind::Variable),
+                            ) {
                                 field_name_ident.set_symbol(var_sym);
                                 assign_type_to_ident(unit, scopes, field_name_ident, field_type);
                             }

@@ -1,19 +1,21 @@
 //! Scope management and symbol lookup for the code graph.
+use dashmap::DashMap;
 use parking_lot::RwLock;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fmt;
 use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId};
-use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, Symbol};
+use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKindSet, Symbol};
 
 /// Represents a single level in the scope hierarchy.
 pub struct Scope<'tcx> {
     /// Unique monotonic scope ID.
     id: ScopeId,
     /// Map of interned symbol names to vectors of symbols (allows for overloading/shadowing within same scope).
-    symbols: RwLock<HashMap<InternedStr, Vec<&'tcx Symbol>>>,
+    /// Using DashMap for better concurrent read/write performance.
+    symbols: DashMap<InternedStr, Vec<&'tcx Symbol>>,
     /// The HIR node that owns/introduces this scope.
     owner: HirId,
     /// The symbol that introduced this scope (e.g., function symbol).
@@ -43,8 +45,8 @@ impl<'tcx> Scope<'tcx> {
         interner: Option<&'tcx InternPool>,
     ) -> Self {
         Self {
-            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::SeqCst)),
-            symbols: RwLock::new(HashMap::new()),
+            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
+            symbols: DashMap::new(),
             owner,
             symbol: RwLock::new(symbol),
             parents: RwLock::new(Vec::new()),
@@ -57,18 +59,17 @@ impl<'tcx> Scope<'tcx> {
     /// Merge existing scope into this scope.
     #[inline]
     pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {
-        let other_symbols = other.symbols.read().clone();
-        let mut self_symbols = self.symbols.write();
-
         tracing::trace!(
             "merge: from scope {:?} to {:?}, {} symbol entries",
             other.id(),
             self.id(),
-            other_symbols.len()
+            other.symbols.len()
         );
 
-        for (name_key, symbol_vec) in other_symbols {
-            self_symbols.entry(name_key).or_default().extend(symbol_vec);
+        for entry in other.symbols.iter() {
+            let name_key = *entry.key();
+            let symbol_vec = entry.value().clone();
+            self.symbols.entry(name_key).or_default().extend(symbol_vec);
         }
     }
 
@@ -136,13 +137,12 @@ impl<'tcx> Scope<'tcx> {
     where
         F: FnMut(&'tcx Symbol),
     {
-        let symbols = self.symbols.read();
-        // Sort keys for deterministic iteration order
-        let mut keys: Vec<_> = symbols.keys().copied().collect();
+        // Collect keys for deterministic iteration order
+        let mut keys: Vec<_> = self.symbols.iter().map(|e| *e.key()).collect();
         keys.sort();
         for key in keys {
-            if let Some(symbol_vec) = symbols.get(&key) {
-                for symbol in symbol_vec {
+            if let Some(symbol_vec) = self.symbols.get(&key) {
+                for symbol in symbol_vec.iter() {
                     visit(symbol);
                 }
             }
@@ -151,11 +151,7 @@ impl<'tcx> Scope<'tcx> {
 
     /// Inserts a symbol into this scope.
     pub fn insert(&self, symbol: &'tcx Symbol) -> SymId {
-        self.symbols
-            .write()
-            .entry(symbol.name)
-            .or_default()
-            .push(symbol);
+        self.symbols.entry(symbol.name).or_default().push(symbol);
         symbol.id
     }
 
@@ -164,18 +160,18 @@ impl<'tcx> Scope<'tcx> {
         name: InternedStr,
         options: LookupOptions,
     ) -> Option<Vec<&'tcx Symbol>> {
-        let symbols = self.symbols.read().get(&name).cloned()?;
+        let symbols = self.symbols.get(&name)?.clone();
 
         let filtered: Vec<&'tcx Symbol> = symbols
             .iter()
             .filter(|symbol| {
-                if let Some(kinds) = &options.kind_filters
-                    && !kinds.iter().any(|kind| symbol.kind() == *kind)
+                // O(1) bitset check instead of O(n) iteration
+                if !options.kind_filters.is_empty() && !options.kind_filters.contains(symbol.kind())
                 {
                     return false;
                 }
-                if let Some(units) = &options.unit_filters
-                    && !units.iter().any(|unit| symbol.unit_index() == Some(*unit))
+                if let Some(unit) = options.unit_filters
+                    && symbol.unit_index() != Some(unit)
                 {
                     return false;
                 }
@@ -335,7 +331,7 @@ impl<'tcx> ScopeStack<'tcx> {
         tracing::trace!("stack: {:#?}", stack);
 
         let symbols = stack.iter().rev().find_map(|scope| {
-            let result = scope.lookup_symbols(name_key, options.clone());
+            let result = scope.lookup_symbols(name_key, options);
             if let Some(ref syms) = result {
                 tracing::trace!(
                     "found '{}' in scope {:?}, symbols: {:?}",
@@ -398,8 +394,8 @@ impl<'tcx> ScopeStack<'tcx> {
         };
 
         // Pass through kind_filters to lookup to support kind-specific lookup/insert
-        let lookup_options = if options.kind_filters.is_some() {
-            LookupOptions::default().with_kind_filters(options.kind_filters.clone().unwrap())
+        let lookup_options = if !options.kind_filters.is_empty() {
+            LookupOptions::default().with_kind_set(options.kind_filters)
         } else {
             LookupOptions::default()
         };
@@ -413,7 +409,8 @@ impl<'tcx> ScopeStack<'tcx> {
                 let symbol = symbols.last().copied().unwrap();
                 let new_symbol = Symbol::new(node, name_key);
                 new_symbol.set_previous(symbol.id);
-                let allocated = self.arena.alloc(new_symbol);
+                let sym_id = new_symbol.id().0;
+                let allocated = self.arena.alloc_with_id(sym_id, new_symbol);
                 scope.insert(allocated);
                 symbols.push(allocated);
                 Some(symbols)
@@ -425,7 +422,8 @@ impl<'tcx> ScopeStack<'tcx> {
             tracing::trace!("create new symbol '{}' in scope {:?}", name, scope.id());
             // not found, create new symbol
             let new_symbol = Symbol::new(node, name_key);
-            let allocated = self.arena.alloc(new_symbol);
+            let sym_id = new_symbol.id().0;
+            let allocated = self.arena.alloc_with_id(sym_id, new_symbol);
             scope.insert(allocated);
             Some(vec![allocated])
         }
@@ -452,7 +450,7 @@ impl<'tcx> ScopeStack<'tcx> {
         let mut current_scope = *stack.first()?;
         if options.shift_start {
             for i in 0..stack.len() {
-                if stack[i].lookup_symbols(name_key, options.clone()).is_some() {
+                if stack[i].lookup_symbols(name_key, options).is_some() {
                     current_scope = stack[i];
                     break;
                 }
@@ -464,10 +462,7 @@ impl<'tcx> ScopeStack<'tcx> {
             );
         }
 
-        if current_scope
-            .lookup_symbols(name_key, options.clone())
-            .is_none()
-        {
+        if current_scope.lookup_symbols(name_key, options).is_none() {
             tracing::trace!(
                 "lookup_qualified: starting scope {:?} does not contain '{}' options: {:?}, stack {:#?}",
                 current_scope.id(),
@@ -501,7 +496,7 @@ impl<'tcx> ScopeStack<'tcx> {
         );
         let part = qualified_name[index];
         let name_key = self.interner.intern(part);
-        let symbols = scope.lookup_symbols(name_key, options.clone())?;
+        let symbols = scope.lookup_symbols(name_key, *options)?;
         tracing::trace!(
             "lookup_qualified_recursive: found {:?} symbols for '{}' in scope {:?}",
             symbols
@@ -521,11 +516,8 @@ impl<'tcx> ScopeStack<'tcx> {
         let mut results = Vec::new();
         for symbol in symbols {
             if let Some(symbol_scope_id) = symbol.opt_scope() {
-                // ScopeId.0 is 0-indexed (directly usable for arena indexing)
-                let scope_index = symbol_scope_id.0;
-                let scopes_slice = self.arena.scope();
-                if scope_index < scopes_slice.len() {
-                    let next_scope = &scopes_slice[scope_index];
+                // Get scope from DashMap by ID (O(1) lookup)
+                if let Some(next_scope) = self.arena.get_scope(symbol_scope_id.0) {
                     debug_assert!(next_scope.id() == symbol_scope_id);
                     tracing::trace!(
                         "lookup_qualified_recursive: descending into scope {:?} for symbol '{}'",
@@ -553,15 +545,15 @@ impl<'tcx> ScopeStack<'tcx> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct LookupOptions {
     pub global: bool,
     pub parent: bool,
     pub chained: bool,
     pub force: bool,
     pub shift_start: bool,
-    pub kind_filters: Option<Vec<SymKind>>,
-    pub unit_filters: Option<Vec<usize>>,
+    pub kind_filters: SymKindSet,
+    pub unit_filters: Option<usize>,
 }
 
 impl LookupOptions {
@@ -622,13 +614,13 @@ impl LookupOptions {
         self
     }
 
-    pub fn with_kind_filters(mut self, kind_filters: Vec<SymKind>) -> Self {
-        self.kind_filters = Some(kind_filters);
+    pub fn with_kind_set(mut self, kind_set: SymKindSet) -> Self {
+        self.kind_filters = kind_set;
         self
     }
 
-    pub fn with_unit_filters(mut self, unit_filters: Vec<usize>) -> Self {
-        self.unit_filters = Some(unit_filters);
+    pub fn with_unit_filter(mut self, unit: usize) -> Self {
+        self.unit_filters = Some(unit);
         self
     }
 }
