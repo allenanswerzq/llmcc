@@ -361,10 +361,15 @@ fn build_pipeline_summary(
         .expectations
         .iter()
         .any(|expect| expect.kind == "arch-graph-depth-2");
+    let needs_arch_graph_depth_3 = case
+        .expectations
+        .iter()
+        .any(|expect| expect.kind == "arch-graph-depth-3");
     let needs_any_arch_graph = needs_arch_graph
         || needs_arch_graph_depth_0
         || needs_arch_graph_depth_1
-        || needs_arch_graph_depth_2;
+        || needs_arch_graph_depth_2
+        || needs_arch_graph_depth_3;
     let needs_block_reports = case
         .expectations
         .iter()
@@ -420,6 +425,7 @@ fn build_pipeline_summary(
         .with_build_arch_graph_depth_0(needs_arch_graph_depth_0)
         .with_build_arch_graph_depth_1(needs_arch_graph_depth_1)
         .with_build_arch_graph_depth_2(needs_arch_graph_depth_2)
+        .with_build_arch_graph_depth_3(needs_arch_graph_depth_3)
         .with_build_block_reports(needs_block_reports)
         .with_build_block_graph(needs_block_graph)
         .with_keep_symbol_deps(needs_symbol_deps)
@@ -452,10 +458,11 @@ struct PipelineSummary {
     block_relations: Option<Vec<BlockRelationSnapshot>>,
     dep_graph_dot: Option<String>,
     arch_graph_dot: Option<String>,
-    /// Depth-specific arch graphs (Project, Crate, Module levels)
+    /// Depth-specific arch graphs (Project, Crate, Module, File levels)
     arch_graph_depth_0: Option<String>,
     arch_graph_depth_1: Option<String>,
     arch_graph_depth_2: Option<String>,
+    arch_graph_depth_3: Option<String>,
     block_list: Option<Vec<BlockSnapshot>>,
     block_deps: Option<Vec<SymbolDependencySnapshot>>,
     symbol_deps: Option<Vec<SymbolDependencySnapshot>>,
@@ -486,6 +493,8 @@ pub struct PipelineOptions {
     pub build_arch_graph_depth_1: bool,
     /// Whether to build depth-2 (Module) arch graph.
     pub build_arch_graph_depth_2: bool,
+    /// Whether to build depth-3 (File) arch graph.
+    pub build_arch_graph_depth_3: bool,
     /// Whether to build block reports (blocks and block-deps).
     pub build_block_reports: bool,
     /// Whether to build the block graph.
@@ -514,6 +523,7 @@ impl Default for PipelineOptions {
             build_arch_graph_depth_0: false,
             build_arch_graph_depth_1: false,
             build_arch_graph_depth_2: false,
+            build_arch_graph_depth_3: false,
             build_block_reports: false,
             build_block_graph: false,
             keep_symbol_deps: false,
@@ -562,6 +572,11 @@ impl PipelineOptions {
 
     pub fn with_build_arch_graph_depth_2(mut self, build: bool) -> Self {
         self.build_arch_graph_depth_2 = build;
+        self
+    }
+
+    pub fn with_build_arch_graph_depth_3(mut self, build: bool) -> Self {
+        self.build_arch_graph_depth_3 = build;
         self
     }
 
@@ -664,6 +679,12 @@ fn render_expectation(kind: &str, summary: &PipelineSummary, case_id: &str) -> R
         "arch-graph-depth-2" => summary.arch_graph_depth_2.clone().ok_or_else(|| {
             anyhow!(
                 "case {} requested arch-graph-depth-2 output but summary missing",
+                case_id
+            )
+        }),
+        "arch-graph-depth-3" => summary.arch_graph_depth_3.clone().ok_or_else(|| {
+            anyhow!(
+                "case {} requested arch-graph-depth-3 output but summary missing",
                 case_id
             )
         }),
@@ -1000,7 +1021,7 @@ fn normalize(kind: &str, text: &str, temp_dir_path: Option<&str>) -> String {
         "symbol-deps" | "block-deps" => normalize_symbol_deps(&canonical),
         "block-relations" => normalize_block_relations(&canonical),
         "dep-graph" | "arch-graph" | "arch-graph-depth-0" | "arch-graph-depth-1"
-        | "arch-graph-depth-2" => normalize_graph(&canonical),
+        | "arch-graph-depth-2" | "arch-graph-depth-3" => normalize_graph(&canonical),
         "block-graph" => normalize_block_graph(&canonical),
         _ => canonical,
     }
@@ -1408,6 +1429,7 @@ where
         arch_graph_depth_0,
         arch_graph_depth_1,
         arch_graph_depth_2,
+        arch_graph_depth_3,
         block_list,
         block_deps,
         block_graph,
@@ -1437,6 +1459,11 @@ where
         } else {
             None
         };
+        let arch_graph_d3: Option<String> = if options.build_arch_graph_depth_3 {
+            Some(render_graph(&project, ComponentDepth::File))
+        } else {
+            None
+        };
         let (list, deps) = if options.build_block_reports {
             let (blocks, deps) = render_block_reports(&project);
             (Some(blocks), Some(deps))
@@ -1459,13 +1486,14 @@ where
             arch_graph_d0,
             arch_graph_d1,
             arch_graph_d2,
+            arch_graph_d3,
             list,
             deps,
             block_graph,
             block_relations,
         )
     } else {
-        (None, None, None, None, None, None, None, None, None)
+        (None, None, None, None, None, None, None, None, None, None)
     };
 
     let symbols = if options.keep_symbols {
@@ -1495,6 +1523,7 @@ where
         arch_graph_depth_0,
         arch_graph_depth_1,
         arch_graph_depth_2,
+        arch_graph_depth_3,
         block_list,
         block_deps,
         symbol_deps,

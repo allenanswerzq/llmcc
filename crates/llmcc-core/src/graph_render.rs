@@ -801,6 +801,62 @@ fn sanitize_id(s: &str) -> String {
         .collect()
 }
 
+/// Compute transitive reduction of a directed acyclic graph.
+/// Removes edges (u, v) where there exists an alternative path from u to v.
+/// This simplifies the graph while preserving reachability.
+#[allow(dead_code)]
+fn transitive_reduction(edges: &[(String, String)]) -> HashSet<(String, String)> {
+    use std::collections::VecDeque;
+
+    // Build adjacency list
+    let mut adj: std::collections::HashMap<&str, Vec<&str>> = std::collections::HashMap::new();
+    for (from, to) in edges {
+        adj.entry(from.as_str()).or_default().push(to.as_str());
+    }
+
+    // For each edge (u, v), check if there's a path from u to v not using that direct edge
+    let mut result: HashSet<(String, String)> = HashSet::new();
+
+    for (from, to) in edges {
+        // BFS from 'from' to 'to', but don't use the direct edge
+        let mut visited: HashSet<&str> = HashSet::new();
+        let mut queue: VecDeque<&str> = VecDeque::new();
+
+        // Start from all neighbors of 'from' except 'to'
+        if let Some(neighbors) = adj.get(from.as_str()) {
+            for &neighbor in neighbors {
+                if neighbor != to.as_str() {
+                    queue.push_back(neighbor);
+                    visited.insert(neighbor);
+                }
+            }
+        }
+
+        let mut has_alternative_path = false;
+        while let Some(current) = queue.pop_front() {
+            if current == to.as_str() {
+                has_alternative_path = true;
+                break;
+            }
+            if let Some(neighbors) = adj.get(current) {
+                for &neighbor in neighbors {
+                    if !visited.contains(neighbor) {
+                        visited.insert(neighbor);
+                        queue.push_back(neighbor);
+                    }
+                }
+            }
+        }
+
+        // Keep edge only if there's no alternative path
+        if !has_alternative_path {
+            result.insert((from.clone(), to.clone()));
+        }
+    }
+
+    result
+}
+
 /// Render an aggregated graph where nodes represent components (crates/modules/projects)
 /// and edges represent dependencies between those components.
 fn render_aggregated_graph(
@@ -831,23 +887,53 @@ fn render_aggregated_graph(
             });
     }
 
-    // If PageRank filtering is requested, identify which components contain top-K nodes
-    let pagerank_components: Option<HashSet<String>> = pagerank_top_k.map(|top_k| {
+    // If PageRank filtering is requested, compute component-level PageRank scores
+    // by aggregating the PageRank scores of all blocks within each component.
+    // Then select top-K components based on their aggregated score.
+    let pagerank_components: Option<HashSet<String>> = if let Some(top_k) = pagerank_top_k {
         let ranker = PageRanker::new(project);
-        let ranked = ranker.top_k(top_k);
-        ranked
-            .iter()
-            .filter_map(|r| block_to_component.get(&r.node.block_id).cloned())
-            .collect()
-    });
+        let scores = ranker.scores();
 
-    // Aggregate edges between components using dependency semantics.
-    // For dependency graphs, we want "A depends on B" shown as A → B.
-    // Some edge types need to be flipped to show proper dependency direction:
-    // - "field_type → struct" should become "struct → field_type" (struct depends on type)
-    // - "input → func" should become "func → input" (func depends on param type)
-    // - "func → output" stays as-is (func depends on return type) - wait, this is already correct
-    // - "caller → callee" stays as-is (caller depends on callee)
+        // Aggregate scores by component
+        let mut component_scores: std::collections::HashMap<String, f64> =
+            std::collections::HashMap::new();
+        for (block_id, score) in &scores {
+            if let Some(component) = block_to_component.get(block_id) {
+                *component_scores.entry(component.clone()).or_insert(0.0) += score;
+            }
+        }
+
+        // Sort components by aggregated PageRank score and take top-K
+        let mut sorted_components: Vec<_> = component_scores.into_iter().collect();
+        sorted_components
+            .sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        let top_components: HashSet<String> = sorted_components
+            .into_iter()
+            .take(top_k)
+            .map(|(component, _score)| component)
+            .collect();
+
+        Some(top_components)
+    } else {
+        None
+    };
+
+    // Aggregate edges between components with correct dependency direction.
+    // We want edges to show: "A depends on B" as A → B
+    //
+    // Edge types and their correct crate-level direction:
+    // | Raw Edge          | Meaning                    | Crate Edge Direction    |
+    // |-------------------|----------------------------|-------------------------|
+    // | type→struct       | struct has field of type   | struct_crate→type_crate |
+    // | type→func (input) | func has param of type     | func_crate→type_crate   |
+    // | func→type (output)| func returns type          | func_crate→type_crate   |
+    // | caller→callee     | caller calls callee        | caller_crate→callee_crate|
+    // | trait→impl        | impl implements trait      | impl_crate→trait_crate  |
+    // | type_arg→generic  | generic uses type arg      | generic_crate→type_crate|
+    //
+    // So: flip direction for (field_type→struct), (input→func), (trait→impl), (type_arg→*)
+    // Keep direction for (caller→callee), (func→output), (type_dep→*)
     let mut component_edges: BTreeMap<(String, String), usize> = BTreeMap::new();
 
     for edge in edges {
@@ -860,20 +946,27 @@ fn render_aggregated_graph(
                 continue;
             }
 
-            // Flip edges to show dependency direction (dependent → dependency)
-            // For architecture graphs, we want edges to mean "A depends on B" (A → B)
+            // Determine correct dependency direction based on edge type
             let (dep_from, dep_to) = match (edge.from_label, edge.to_label) {
-                // Type used as field → struct/enum becomes struct/enum → type
-                ("field_type", "struct") | ("field_type", "enum") => (to.clone(), from.clone()),
-                // Type dependency → struct becomes struct → type
-                ("type_dep", "struct") => (to.clone(), from.clone()),
-                // Type used as parameter → func becomes func → type
-                ("input", "func") => (to.clone(), from.clone()),
-                // Trait → impl becomes impl → trait (impl depends on trait)
-                ("trait", "impl") => (to.clone(), from.clone()),
-                // Type arg → impl becomes impl → type_arg (impl depends on type arg)
-                ("type_arg", "impl") => (to.clone(), from.clone()),
-                // All other edges keep their direction (caller→callee, func→output, func→type_dep)
+                // These edges need flipping: to_component depends on from_component
+                // type→struct: struct uses type as field
+                // type→func (input): func uses type as param
+                // trait→impl: impl implements trait
+                // type_arg→generic: generic uses type as arg
+                // type_dep→struct: struct uses type as type dependency
+                ("field_type", _)
+                | ("input", _)
+                | ("trait", _)
+                | ("type_arg", _)
+                | ("type_dep", _) => (to.clone(), from.clone()),
+                // These edges keep direction: from_component depends on to_component
+                // caller→callee: caller uses callee
+                // func→output: func uses type as return
+                // func→type_dep: func uses type as dependency
+                ("caller", "callee") | ("func", "output") | ("func", "type_dep") => {
+                    (from.clone(), to.clone())
+                }
+                // Default: keep raw direction
                 _ => (from.clone(), to.clone()),
             };
 
@@ -882,15 +975,15 @@ fn render_aggregated_graph(
     }
 
     // Determine which components to show:
-    // - If PageRank filtering: show components that contain top-K nodes AND have edges
-    // - Otherwise: show components that have edges
+    // - If PageRank filtering: show top-K components by aggregated PageRank score
+    // - Otherwise: show all components that have edges
     let components_with_edges: HashSet<String> = component_edges
         .keys()
         .flat_map(|(from, to)| [from.clone(), to.clone()])
         .collect();
 
     let components_to_show: HashSet<String> = if let Some(ref pr_components) = pagerank_components {
-        // Show components containing top-K PageRank nodes, but only if they have edges
+        // Show top-K PageRank components, but only if they have edges
         pr_components
             .intersection(&components_with_edges)
             .cloned()
@@ -901,16 +994,16 @@ fn render_aggregated_graph(
     };
 
     // Filter edges to only those between shown components
-    let filtered_edges: Vec<(&String, &String)> = component_edges
+    let filtered_edges: Vec<(String, String)> = component_edges
         .keys()
         .filter(|(from, to)| components_to_show.contains(from) && components_to_show.contains(to))
-        .map(|(from, to)| (from, to))
+        .map(|(from, to)| (from.clone(), to.clone()))
         .collect();
 
     // Only show nodes that actually have edges in the filtered set
     let nodes_with_filtered_edges: HashSet<&String> = filtered_edges
         .iter()
-        .flat_map(|(from, to)| [*from, *to])
+        .flat_map(|(from, to)| [from, to])
         .collect();
 
     let filtered_nodes: Vec<_> = component_nodes
@@ -922,7 +1015,7 @@ fn render_aggregated_graph(
     let mut output = String::with_capacity(filtered_nodes.len() * 100 + filtered_edges.len() * 50);
 
     output.push_str("digraph architecture {\n");
-    output.push_str("  rankdir=LR;\n");
+    // output.push_str("  rankdir=LR;\n");
     output.push_str("  node [shape=box];\n\n");
 
     // Add title based on depth

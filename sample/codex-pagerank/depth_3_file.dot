@@ -1,0 +1,980 @@
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_codex_api {
+      label="codex-api";
+      subgraph cluster_common_rs {
+        label="common.rs";
+        n184[label="ResponseEvent", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/codex-api/src/common.rs:41", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_rate_limits_rs {
+        label="rate_limits.rs";
+        n5318[label="parse_rate_limit", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/codex-api/src/rate_limits.rs:19", sym_ty="Function"];
+      }
+
+      subgraph cluster_requests {
+        label="requests";
+        subgraph cluster_responses_rs {
+          label="responses.rs";
+          n6810[label="ResponsesRequestBuilder", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/codex-api/src/requests/responses.rs:21", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_sse {
+        label="sse";
+        subgraph cluster_responses_rs {
+          label="responses.rs";
+          n1683[label="process_sse", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/codex-api/src/sse/responses.rs:131", sym_ty="Function"];
+          n1237[label="spawn_response_stream", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/codex-api/src/sse/responses.rs:48", sym_ty="Function"];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_codex_app_server {
+      label="codex-app-server";
+      subgraph cluster_bespoke_event_handling_rs {
+        label="bespoke_event_handling.rs";
+        n23605[label="apply_bespoke_event_handling", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server/src/bespoke_event_handling.rs:81", sym_ty="Function"];
+      }
+
+      subgraph cluster_codex_message_processor_rs {
+        label="codex_message_processor.rs";
+        n11138[label="CodexMessageProcessor", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server/src/codex_message_processor.rs:212", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_outgoing_message_rs {
+        label="outgoing_message.rs";
+        n25410[label="OutgoingMessageSender", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server/src/outgoing_message.rs:23", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_app_server_protocol {
+      label="codex-app-server-protocol";
+      subgraph cluster_export_rs {
+        label="export.rs";
+        n17479[label="generate_json", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/export.rs:142", sym_ty="Function"];
+        n19889[label="annotate_schema", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/export.rs:458", sym_ty="Function"];
+        n20003[label="annotate_object", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/export.rs:470", sym_ty="Function"];
+        n16928[label="generate_types", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/export.rs:59", sym_ty="Function"];
+        n17103[label="generate_ts", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/export.rs:82", sym_ty="Function"];
+        n17167[label="generate_ts_with_options", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/export.rs:86", sym_ty="Function"];
+      }
+
+      subgraph cluster_jsonrpc_lite_rs {
+        label="jsonrpc_lite.rs";
+        n27602[label="RequestId", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/jsonrpc_lite.rs:13", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_protocol {
+        label="protocol";
+        subgraph cluster_v2_rs {
+          label="v2.rs";
+          n32824[label="SkillMetadata", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/protocol/v2.rs:1105", sym_ty="Struct", shape=box];
+          n25692[label="AskForApproval", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/protocol/v2.rs:137", sym_ty="Enum", shape=box];
+          n26713[label="Config", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/protocol/v2.rs:336", sym_ty="Struct", shape=box];
+          n27779[label="SandboxPolicy", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/protocol/v2.rs:502", sym_ty="Enum", shape=box];
+          n28717[label="SessionSource", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/app-server-protocol/src/protocol/v2.rs:634", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_codex_apply_patch {
+      label="codex-apply-patch";
+      subgraph cluster_invocation_rs {
+        label="invocation.rs";
+        n24451[label="maybe_parse_apply_patch_verified", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/apply-patch/src/invocation.rs:132", sym_ty="Function"];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n21366[label="apply_patch", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/apply-patch/src/lib.rs:174", sym_ty="Function"];
+      }
+
+      subgraph cluster_parser_rs {
+        label="parser.rs";
+        n24243[label="parse_patch", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/apply-patch/src/parser.rs:106", sym_ty="Function"];
+        n24357[label="parse_patch_text", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/apply-patch/src/parser.rs:154", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_codex_backend_openapi_models {
+      label="codex-backend-openapi-models";
+      subgraph cluster_models {
+        label="models";
+        subgraph cluster_rate_limit_status_payload_rs {
+          label="rate_limit_status_payload.rs";
+          n1395[label="PlanType", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/codex-backend-openapi-models/src/models/rate_limit_status_payload.rs:46", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_codex_cli {
+      label="codex-cli";
+      subgraph cluster_debug_sandbox_rs {
+        label="debug_sandbox.rs";
+        n4035[label="run_command_under_sandbox", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cli/src/debug_sandbox.rs:103", sym_ty="Function"];
+      }
+
+      subgraph cluster_main_rs {
+        label="main.rs";
+        n3145[label="cli_main", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cli/src/main.rs:436", sym_ty="Function"];
+      }
+
+      subgraph cluster_mcp_cmd_rs {
+        label="mcp_cmd.rs";
+        n891[label="run_add", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cli/src/mcp_cmd.rs:181", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_codex_cloud_tasks {
+      label="codex-cloud-tasks";
+      subgraph cluster_app_rs {
+        label="app.rs";
+        n34057[label="App", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cloud-tasks/src/app.rs:47", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n29859[label="run_main", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cloud-tasks/src/lib.rs:644", sym_ty="Function"];
+      }
+
+      subgraph cluster_ui_rs {
+        label="ui.rs";
+        n33850[label="draw", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/cloud-tasks/src/ui.rs:28", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_codex_common {
+      label="codex-common";
+      subgraph cluster_approval_presets_rs {
+        label="approval_presets.rs";
+        n19935[label="ApprovalPreset", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/common/src/approval_presets.rs:6", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_config_override_rs {
+        label="config_override.rs";
+        n18353[label="CliConfigOverrides", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/common/src/config_override.rs:19", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_core {
+      label="codex-core";
+      subgraph cluster_auth {
+        label="auth";
+        subgraph cluster_storage_rs {
+          label="storage.rs";
+          n2538[label="create_auth_storage", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/auth/storage.rs:258", sym_ty="Function"];
+          n98[label="AuthCredentialsStoreMode", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/auth/storage.rs:26", sym_ty="Enum", shape=box];
+          n330[label="AuthStorageBackend", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/auth/storage.rs:62", sym_ty="Trait", shape=box];
+        }
+
+      }
+
+      subgraph cluster_auth_rs {
+        label="auth.rs";
+        n52155[label="AuthManager", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/auth.rs:1064", sym_ty="Struct", shape=box];
+        n48496[label="CodexAuth", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/auth.rs:43", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_client_rs {
+        label="client.rs";
+        n12731[label="ModelClient", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/client.rs:57", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_codex_rs {
+        label="codex.rs";
+        n48237[label="run_task", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/codex.rs:2205", sym_ty="Function"];
+        n48967[label="run_turn", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/codex.rs:2365", sym_ty="Function"];
+        n36567[label="Session", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/codex.rs:339", sym_ty="Struct", shape=box];
+        n36793[label="TurnContext", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/codex.rs:353", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_codex_conversation_rs {
+        label="codex_conversation.rs";
+        n35762[label="CodexConversation", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/codex_conversation.rs:8", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_command_safety {
+        label="command_safety";
+        subgraph cluster_is_safe_command_rs {
+          label="is_safe_command.rs";
+          n32066[label="is_known_safe_command", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/command_safety/is_safe_command.rs:4", sym_ty="Function"];
+        }
+
+        subgraph cluster_windows_safe_commands_rs {
+          label="windows_safe_commands.rs";
+          n29847[label="is_safe_command_windows", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/command_safety/windows_safe_commands.rs:12", sym_ty="Function"];
+          n29941[label="try_parse_powershell_command_sequence", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/command_safety/windows_safe_commands.rs:25", sym_ty="Function"];
+          n29997[label="parse_powershell_invocation", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/command_safety/windows_safe_commands.rs:35", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_compact_rs {
+        label="compact.rs";
+        n7089[label="run_compact_task_inner", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/compact.rs:64", sym_ty="Function"];
+      }
+
+      subgraph cluster_config {
+        label="config";
+        subgraph cluster_constraint_rs {
+          label="constraint.rs";
+          n31576[label="Constrained", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/config/constraint.rs:41", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_edit_rs {
+          label="edit.rs";
+          n39753[label="ConfigEditsBuilder", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/config/edit.rs:571", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n24350[label="Config", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/config/mod.rs:96", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_config_loader {
+        label="config_loader";
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n9326[label="load_config_layers_state", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/config_loader/mod.rs:73", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_context_manager {
+        label="context_manager";
+        subgraph cluster_history_rs {
+          label="history.rs";
+          n5596[label="ContextManager", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/context_manager/history.rs:18", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_conversation_manager_rs {
+        label="conversation_manager.rs";
+        n10527[label="ConversationManager", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/conversation_manager.rs:43", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_error_rs {
+        label="error.rs";
+        n8820[label="CodexErr", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/error.rs:60", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_exec_rs {
+        label="exec.rs";
+        n38363[label="SandboxType", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/exec.rs:110", sym_ty="Enum", shape=box];
+        n40759[label="exec", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/exec.rs:520", sym_ty="Function"];
+      }
+
+      subgraph cluster_features_rs {
+        label="features.rs";
+        n13662[label="Features", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/features.rs:128", sym_ty="Struct", shape=box];
+        n13109[label="Feature", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/features.rs:59", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_function_tool_rs {
+        label="function_tool.rs";
+        n47683[label="FunctionCallError", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/function_tool.rs:4", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_handlers {
+        label="handlers";
+        subgraph cluster_read_file_rs {
+          label="read_file.rs";
+          n4810[label="read_block", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/tools/handlers/read_file.rs:238", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_model_provider_info_rs {
+        label="model_provider_info.rs";
+        n16025[label="ModelProviderInfo", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/model_provider_info.rs:52", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_models_manager {
+        label="models_manager";
+        subgraph cluster_manager_rs {
+          label="manager.rs";
+          n45756[label="ModelsManager", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/models_manager/manager.rs:38", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_model_family_rs {
+          label="model_family.rs";
+          n41542[label="ModelFamily", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/models_manager/model_family.rs:23", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_parse_command_rs {
+        label="parse_command.rs";
+        n15309[label="shlex_join", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/parse_command.rs:10", sym_ty="Function"];
+        n18248[label="parse_shell_lc_commands", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/parse_command.rs:1266", sym_ty="Function"];
+        n15436[label="parse_command", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/parse_command.rs:30", sym_ty="Function"];
+        n15626[label="parse_command_impl", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/parse_command.rs:950", sym_ty="Function"];
+      }
+
+      subgraph cluster_rollout {
+        label="rollout";
+        subgraph cluster_list_rs {
+          label="list.rs";
+          n21635[label="get_conversations", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/rollout/list.rs:105", sym_ty="Function"];
+          n21812[label="traverse_directories_for_paths", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/rollout/list.rs:145", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_shell_rs {
+        label="shell.rs";
+        n54348[label="Shell", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/shell.rs:18", sym_ty="Struct", shape=box];
+        n55499[label="get_shell", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/shell.rs:214", sym_ty="Function"];
+      }
+
+      subgraph cluster_shell_snapshot_rs {
+        label="shell_snapshot.rs";
+        n23172[label="write_shell_snapshot", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/shell_snapshot.rs:61", sym_ty="Function"];
+      }
+
+      subgraph cluster_skills {
+        label="skills";
+        subgraph cluster_loader_rs {
+          label="loader.rs";
+          n20098[label="discover_skills_under_root", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/skills/loader.rs:173", sym_ty="Function"];
+          n19538[label="load_skills_from_roots", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/skills/loader.rs:77", sym_ty="Function"];
+        }
+
+      }
+
+      subgraph cluster_terminal_rs {
+        label="terminal.rs";
+        n42157[label="TerminalInfo", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/terminal.rs:10", sym_ty="Struct", shape=box];
+        n42228[label="TerminalName", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/terminal.rs:25", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_truncate_rs {
+        label="truncate.rs";
+        n38730[label="truncate_text", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/truncate.rs:107", sym_ty="Function"];
+        n39315[label="truncate_with_byte_estimate", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/truncate.rs:205", sym_ty="Function"];
+      }
+
+      subgraph cluster_unified_exec {
+        label="unified_exec";
+        subgraph cluster_session_rs {
+          label="session.rs";
+          n30564[label="UnifiedExecSession", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/core/src/unified_exec/session.rs:77", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_codex_exec {
+      label="codex-exec";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n9823[label="run_main", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/exec/src/lib.rs:70", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_codex_execpolicy_legacy {
+      label="codex-execpolicy-legacy";
+      subgraph cluster_arg_matcher_rs {
+        label="arg_matcher.rs";
+        n52979[label="ArgMatcher", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/execpolicy-legacy/src/arg_matcher.rs:20", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_error_rs {
+        label="error.rs";
+        n50986[label="Error", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/execpolicy-legacy/src/error.rs:15", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_git {
+      label="codex-git";
+      subgraph cluster_errors_rs {
+        label="errors.rs";
+        n31518[label="GitToolingError", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git/src/errors.rs:10", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_ghost_commits_rs {
+        label="ghost_commits.rs";
+        n37714[label="create_ghost_commit", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git/src/ghost_commits.rs:255", sym_ty="Function"];
+        n37851[label="create_ghost_commit_with_report", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git/src/ghost_commits.rs:302", sym_ty="Function"];
+        n38394[label="restore_ghost_commit", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git/src/ghost_commits.rs:427", sym_ty="Function"];
+        n38464[label="restore_ghost_commit_with_options", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git/src/ghost_commits.rs:432", sym_ty="Function"];
+        n39081[label="capture_status_snapshot", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git/src/ghost_commits.rs:514", sym_ty="Function"];
+      }
+
+      subgraph cluster_operations_rs {
+        label="operations.rs";
+        n31111[label="run_git", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/git/src/operations.rs:185", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_codex_mcp_server {
+      label="codex-mcp-server";
+      subgraph cluster_message_processor_rs {
+        label="message_processor.rs";
+        n32160[label="MessageProcessor", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/mcp-server/src/message_processor.rs:39", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_otel {
+      label="codex-otel";
+      subgraph cluster_otel_manager_rs {
+        label="otel_manager.rs";
+        n6208[label="OtelManager", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/otel/src/otel_manager.rs:52", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_protocol {
+      label="codex-protocol";
+      subgraph cluster_conversation_id_rs {
+        label="conversation_id.rs";
+        n14446[label="ConversationId", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/conversation_id.rs:13", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_models_rs {
+        label="models.rs";
+        n18420[label="ResponseItem", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/models.rs:67", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_openai_models_rs {
+        label="openai_models.rs";
+        n16557[label="ReasoningEffort", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/openai_models.rs:31", sym_ty="Enum", shape=box];
+        n16753[label="ModelPreset", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/openai_models.rs:61", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_parse_command_rs {
+        label="parse_command.rs";
+        n487[label="ParsedCommand", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/parse_command.rs:9", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_protocol_rs {
+        label="protocol.rs";
+        n13318[label="ReviewDecision", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:1814", sym_ty="Enum", shape=box];
+        n13431[label="FileChange", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:1842", sym_ty="Enum", shape=box];
+        n2495[label="AskForApproval", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:248", sym_ty="Enum", shape=box];
+        n2637[label="SandboxPolicy", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:293", sym_ty="Enum", shape=box];
+        n3773[label="Event", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:517", sym_ty="Struct", shape=box];
+        n3836[label="EventMsg", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:530", sym_ty="Enum", shape=box];
+        n1702[label="Op", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:68", sym_ty="Enum", shape=box];
+        n6098[label="TokenUsage", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:848", sym_ty="Struct", shape=box];
+        n6219[label="TokenUsageInfo", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/protocol/src/protocol.rs:862", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_rmcp_client {
+      label="codex-rmcp-client";
+      subgraph cluster_oauth_rs {
+        label="oauth.rs";
+        n7526[label="save_oauth_tokens", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/rmcp-client/src/oauth.rs:169", sym_ty="Function"];
+        n6939[label="OAuthCredentialsStoreMode", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/rmcp-client/src/oauth.rs:68", sym_ty="Enum", shape=box];
+        n7103[label="load_oauth_tokens", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/rmcp-client/src/oauth.rs:93", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_codex_tui {
+      label="codex-tui";
+      subgraph cluster_app_rs {
+        label="app.rs";
+        n45747[label="App", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/app.rs:288", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_app_event_rs {
+        label="app_event.rs";
+        n6365[label="AppEvent", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/app_event.rs:20", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_app_event_sender_rs {
+        label="app_event_sender.rs";
+        n21410[label="AppEventSender", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/app_event_sender.rs:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_bottom_pane {
+        label="bottom_pane";
+        subgraph cluster_chat_composer_rs {
+          label="chat_composer.rs";
+          n21448[label="ChatComposer", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/bottom_pane/chat_composer.rs:95", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n10203[label="BottomPane", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/bottom_pane/mod.rs:65", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_paste_burst_rs {
+          label="paste_burst.rs";
+          n12018[label="PasteBurst", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/bottom_pane/paste_burst.rs:11", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_textarea_rs {
+          label="textarea.rs";
+          n41486[label="TextArea", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/bottom_pane/textarea.rs:30", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_chatwidget_rs {
+        label="chatwidget.rs";
+        n32951[label="ChatWidget", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/chatwidget.rs:313", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_custom_terminal_rs {
+        label="custom_terminal.rs";
+        n1026[label="Terminal", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/custom_terminal.rs:104", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_exec_cell {
+        label="exec_cell";
+        subgraph cluster_model_rs {
+          label="model.rs";
+          n32732[label="ExecCell", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/exec_cell/model.rs:29", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_history_cell_rs {
+        label="history_cell.rs";
+        n22446[label="HistoryCell", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/history_cell.rs:66", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n36029[label="run_main", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/lib.rs:104", sym_ty="Function"];
+        n37176[label="run_ratatui_app", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/lib.rs:342", sym_ty="Function"];
+      }
+
+      subgraph cluster_render {
+        label="render";
+        subgraph cluster_renderable_rs {
+          label="renderable.rs";
+          n38484[label="Renderable", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/render/renderable.rs:13", sym_ty="Trait", shape=box];
+          n40646[label="ColumnRenderable", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/render/renderable.rs:141", sym_ty="Struct", shape=box];
+          n38607[label="RenderableItem", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/render/renderable.rs:21", sym_ty="Enum", shape=box];
+        }
+
+      }
+
+      subgraph cluster_resume_picker_rs {
+        label="resume_picker.rs";
+        n5111[label="PickerState", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/resume_picker.rs:175", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_tui {
+        label="tui";
+        subgraph cluster_frame_requester_rs {
+          label="frame_requester.rs";
+          n21591[label="FrameRequester", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/tui/frame_requester.rs:31", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_tui_rs {
+        label="tui.rs";
+        n14277[label="Tui", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui/src/tui.rs:235", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_tui2 {
+      label="codex-tui2";
+      subgraph cluster_app_rs {
+        label="app.rs";
+        n44228[label="App", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/app.rs:316", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_app_event_rs {
+        label="app_event.rs";
+        n38763[label="AppEvent", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/app_event.rs:19", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_app_event_sender_rs {
+        label="app_event_sender.rs";
+        n39003[label="AppEventSender", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/app_event_sender.rs:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_bottom_pane {
+        label="bottom_pane";
+        subgraph cluster_chat_composer_rs {
+          label="chat_composer.rs";
+          n56532[label="ChatComposer", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/bottom_pane/chat_composer.rs:97", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n51117[label="BottomPane", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/bottom_pane/mod.rs:60", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_textarea_rs {
+          label="textarea.rs";
+          n48928[label="TextArea", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/bottom_pane/textarea.rs:30", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_chatwidget_rs {
+        label="chatwidget.rs";
+        n58738[label="ChatWidget", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/chatwidget.rs:281", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_history_cell_rs {
+        label="history_cell.rs";
+        n49177[label="HistoryCell", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/history_cell.rs:102", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_key_hint_rs {
+        label="key_hint.rs";
+        n55340[label="KeyBinding", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/key_hint.rs:19", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n37437[label="run_main", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/lib.rs:109", sym_ty="Function"];
+        n38638[label="run_ratatui_app", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/lib.rs:355", sym_ty="Function"];
+      }
+
+      subgraph cluster_resume_picker_rs {
+        label="resume_picker.rs";
+        n41057[label="PickerState", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/resume_picker.rs:175", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_transcript_copy_rs {
+        label="transcript_copy.rs";
+        n48318[label="selection_to_copy_text", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/transcript_copy.rs:107", sym_ty="Function"];
+        n48223[label="selection_to_copy_text_for_cells", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/transcript_copy.rs:62", sym_ty="Function"];
+      }
+
+      subgraph cluster_transcript_multi_click_rs {
+        label="transcript_multi_click.rs";
+        n48474[label="selection_for_click", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/transcript_multi_click.rs:277", sym_ty="Function"];
+      }
+
+      subgraph cluster_transcript_selection_rs {
+        label="transcript_selection.rs";
+        n51634[label="TranscriptSelectionPoint", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/transcript_selection.rs:54", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_tui {
+        label="tui";
+        subgraph cluster_frame_requester_rs {
+          label="frame_requester.rs";
+          n51970[label="FrameRequester", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/tui2/src/tui/frame_requester.rs:31", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_codex_utils_absolute_path {
+      label="codex-utils-absolute-path";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n28184[label="AbsolutePathBuf", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/utils/absolute-path/src/lib.rs:21", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_codex_windows_sandbox {
+      label="codex-windows-sandbox";
+      subgraph cluster_elevated_impl_rs {
+        label="elevated_impl.rs";
+        n7677[label="run_windows_sandbox_capture", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/elevated_impl.rs:211", sym_ty="Function"];
+      }
+
+      subgraph cluster_identity_rs {
+        label="identity.rs";
+        n26394[label="require_logon_sandbox_creds", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/identity.rs:113", sym_ty="Function"];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n21533[label="run_windows_sandbox_capture", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/lib.rs:175", sym_ty="Function"];
+      }
+
+      subgraph cluster_setup_main_win_rs {
+        label="setup_main_win.rs";
+        n21208[label="log_line", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/setup_main_win.rs:140", sym_ty="Function"];
+        n23861[label="main", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/setup_main_win.rs:659", sym_ty="Function"];
+        n24049[label="real_main", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/setup_main_win.rs:680", sym_ty="Function"];
+        n24293[label="run_setup", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/setup_main_win.rs:710", sym_ty="Function"];
+      }
+
+      subgraph cluster_winutil_rs {
+        label="winutil.rs";
+        n73[label="to_wide", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/windows-sandbox-rs/src/winutil.rs:11", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_mcp_types {
+      label="mcp-types";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n14860[label="RequestId", full_path="/home/yibai/llmcc/sample/repos/codex/codex-rs/mcp-types/src/lib.rs:1118", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  n98 -> n2538 [from="input", to="func"];
+  n98 -> n24350 [from="field_type", to="struct"];
+  n98 -> n52155 [from="field_type", to="struct"];
+  n184 -> n1683 [from="input", to="func"];
+  n330 -> n2538 [from="bound", to="generic"];
+  n330 -> n48496 [from="field_type", to="struct"];
+  n891 -> n26713 [from="func", to="type_dep"];
+  n891 -> n39753 [from="func", to="type_dep"];
+  n1026 -> n29859 [from="input", to="func"];
+  n1237 -> n5318 [from="caller", to="callee"];
+  n1395 -> n32951 [from="type_dep", to="struct"];
+  n1395 -> n58738 [from="type_dep", to="struct"];
+  n1683 -> n184 [from="func", to="type_dep"];
+  n1702 -> n6365 [from="field_type", to="enum"];
+  n1702 -> n32951 [from="type_dep", to="struct"];
+  n1702 -> n38763 [from="field_type", to="enum"];
+  n1702 -> n58738 [from="type_dep", to="struct"];
+  n2495 -> n1702 [from="field_type", to="enum"];
+  n2495 -> n19935 [from="field_type", to="struct"];
+  n2495 -> n31576 [from="type_arg", to="generic"];
+  n2495 -> n36793 [from="field_type", to="struct"];
+  n2495 -> n38763 [from="field_type", to="enum"];
+  n2538 -> n330 [from="func", to="type_dep"];
+  n2637 -> n1702 [from="field_type", to="enum"];
+  n2637 -> n19935 [from="field_type", to="struct"];
+  n2637 -> n26394 [from="input", to="func"];
+  n2637 -> n31576 [from="type_arg", to="generic"];
+  n2637 -> n36793 [from="field_type", to="struct"];
+  n2637 -> n38763 [from="field_type", to="enum"];
+  n2637 -> n40759 [from="input", to="func"];
+  n3145 -> n26713 [from="func", to="type_dep"];
+  n3773 -> n6365 [from="field_type", to="enum"];
+  n3773 -> n23605 [from="input", to="func"];
+  n3773 -> n36567 [from="type_dep", to="struct"];
+  n3773 -> n38763 [from="field_type", to="enum"];
+  n3836 -> n3773 [from="field_type", to="struct"];
+  n4035 -> n26713 [from="func", to="type_dep"];
+  n4810 -> n47683 [from="func", to="type_dep"];
+  n6098 -> n184 [from="field_type", to="enum"];
+  n6098 -> n6219 [from="field_type", to="struct"];
+  n6208 -> n12731 [from="field_type", to="struct"];
+  n6219 -> n5596 [from="type_dep", to="struct"];
+  n6219 -> n32951 [from="type_dep", to="struct"];
+  n6219 -> n58738 [from="type_dep", to="struct"];
+  n6365 -> n39003 [from="type_dep", to="struct"];
+  n6939 -> n7103 [from="input", to="func"];
+  n6939 -> n7526 [from="input", to="func"];
+  n6939 -> n24350 [from="field_type", to="struct"];
+  n7089 -> n3836 [from="func", to="type_dep"];
+  n7677 -> n73 [from="caller", to="callee"];
+  n7677 -> n26394 [from="caller", to="callee"];
+  n9326 -> n28184 [from="func", to="type_dep"];
+  n9823 -> n10527 [from="func", to="type_dep"];
+  n9823 -> n24350 [from="func", to="type_dep"];
+  n9823 -> n28184 [from="func", to="type_dep"];
+  n9823 -> n52155 [from="func", to="type_dep"];
+  n10527 -> n11138 [from="type_dep", to="struct"];
+  n10527 -> n32160 [from="type_dep", to="struct"];
+  n10527 -> n44228 [from="type_dep", to="struct"];
+  n10527 -> n45747 [from="type_dep", to="struct"];
+  n12018 -> n56532 [from="field_type", to="struct"];
+  n12731 -> n36793 [from="field_type", to="struct"];
+  n13109 -> n13662 [from="type_arg", to="impl"];
+  n13318 -> n1702 [from="field_type", to="enum"];
+  n13662 -> n24350 [from="field_type", to="struct"];
+  n13662 -> n36567 [from="field_type", to="struct"];
+  n14446 -> n8820 [from="field_type", to="enum"];
+  n14446 -> n10527 [from="type_dep", to="struct"];
+  n14446 -> n12731 [from="field_type", to="struct"];
+  n14446 -> n23605 [from="input", to="func"];
+  n14446 -> n32160 [from="type_dep", to="struct"];
+  n14446 -> n32951 [from="type_dep", to="struct"];
+  n14446 -> n36567 [from="field_type", to="struct"];
+  n14446 -> n58738 [from="type_dep", to="struct"];
+  n14860 -> n25410 [from="type_dep", to="struct"];
+  n14860 -> n32160 [from="type_dep", to="struct"];
+  n15436 -> n487 [from="func", to="type_dep"];
+  n15436 -> n15626 [from="caller", to="callee"];
+  n15626 -> n487 [from="func", to="type_dep"];
+  n15626 -> n18248 [from="caller", to="callee"];
+  n16025 -> n12731 [from="field_type", to="struct"];
+  n16025 -> n24350 [from="type_dep", to="struct"];
+  n16025 -> n45756 [from="field_type", to="struct"];
+  n16557 -> n6365 [from="field_type", to="enum"];
+  n16557 -> n16753 [from="field_type", to="struct"];
+  n16557 -> n24350 [from="type_dep", to="struct"];
+  n16557 -> n26713 [from="type_dep", to="struct"];
+  n16557 -> n38763 [from="field_type", to="enum"];
+  n16557 -> n41542 [from="type_dep", to="struct"];
+  n16753 -> n6365 [from="field_type", to="enum"];
+  n16753 -> n38763 [from="field_type", to="enum"];
+  n16753 -> n45756 [from="type_dep", to="struct"];
+  n16928 -> n17103 [from="caller", to="callee"];
+  n16928 -> n17479 [from="caller", to="callee"];
+  n17103 -> n17167 [from="caller", to="callee"];
+  n18248 -> n487 [from="func", to="type_dep"];
+  n18353 -> n891 [from="input", to="func"];
+  n18353 -> n4035 [from="input", to="func"];
+  n18420 -> n184 [from="field_type", to="enum"];
+  n18420 -> n5596 [from="type_dep", to="struct"];
+  n18420 -> n48967 [from="input", to="func"];
+  n19538 -> n20098 [from="caller", to="callee"];
+  n19889 -> n20003 [from="caller", to="callee"];
+  n19935 -> n6365 [from="field_type", to="enum"];
+  n19935 -> n38763 [from="field_type", to="enum"];
+  n20003 -> n19889 [from="caller", to="callee"];
+  n21366 -> n24243 [from="caller", to="callee"];
+  n21410 -> n10203 [from="field_type", to="struct"];
+  n21410 -> n21448 [from="field_type", to="struct"];
+  n21448 -> n51117 [from="field_type", to="struct"];
+  n21533 -> n73 [from="caller", to="callee"];
+  n21591 -> n10203 [from="field_type", to="struct"];
+  n21591 -> n14277 [from="field_type", to="struct"];
+  n21591 -> n32951 [from="field_type", to="struct"];
+  n21591 -> n41057 [from="field_type", to="struct"];
+  n21591 -> n51117 [from="field_type", to="struct"];
+  n21635 -> n21812 [from="caller", to="callee"];
+  n22446 -> n32732 [from="trait", to="impl"];
+  n22446 -> n32951 [from="field_type", to="struct"];
+  n22446 -> n44228 [from="field_type", to="struct"];
+  n22446 -> n45747 [from="field_type", to="struct"];
+  n23172 -> n55499 [from="caller", to="callee"];
+  n23605 -> n15309 [from="caller", to="callee"];
+  n23861 -> n24049 [from="caller", to="callee"];
+  n24049 -> n21208 [from="caller", to="callee"];
+  n24049 -> n24293 [from="caller", to="callee"];
+  n24243 -> n24357 [from="caller", to="callee"];
+  n24350 -> n11138 [from="type_dep", to="struct"];
+  n24350 -> n38638 [from="input", to="func"];
+  n24350 -> n44228 [from="field_type", to="struct"];
+  n24451 -> n24243 [from="caller", to="callee"];
+  n25410 -> n11138 [from="type_dep", to="struct"];
+  n25410 -> n23605 [from="input", to="func"];
+  n25410 -> n32160 [from="type_dep", to="struct"];
+  n25692 -> n6365 [from="field_type", to="enum"];
+  n25692 -> n26713 [from="type_dep", to="struct"];
+  n26713 -> n12731 [from="type_dep", to="struct"];
+  n26713 -> n32951 [from="field_type", to="struct"];
+  n26713 -> n37176 [from="input", to="func"];
+  n26713 -> n45747 [from="field_type", to="struct"];
+  n26713 -> n58738 [from="field_type", to="struct"];
+  n27602 -> n1702 [from="field_type", to="enum"];
+  n27779 -> n6365 [from="field_type", to="enum"];
+  n28184 -> n2637 [from="field_type", to="enum"];
+  n28184 -> n9326 [from="input", to="func"];
+  n28184 -> n27779 [from="field_type", to="enum"];
+  n28717 -> n6810 [from="type_arg", to="impl"];
+  n28717 -> n10527 [from="field_type", to="struct"];
+  n28717 -> n12731 [from="field_type", to="struct"];
+  n29847 -> n29941 [from="caller", to="callee"];
+  n29859 -> n1026 [from="func", to="type_dep"];
+  n29941 -> n29997 [from="caller", to="callee"];
+  n31111 -> n31518 [from="func", to="type_dep"];
+  n31576 -> n24350 [from="field_type", to="struct"];
+  n32066 -> n29847 [from="caller", to="callee"];
+  n32824 -> n21448 [from="type_dep", to="struct"];
+  n32824 -> n56532 [from="type_dep", to="struct"];
+  n34057 -> n33850 [from="input", to="func"];
+  n35762 -> n10527 [from="type_dep", to="struct"];
+  n35762 -> n23605 [from="input", to="func"];
+  n36029 -> n28184 [from="func", to="type_dep"];
+  n36029 -> n37176 [from="caller", to="callee"];
+  n36567 -> n7089 [from="input", to="func"];
+  n36567 -> n48237 [from="input", to="func"];
+  n36567 -> n48967 [from="input", to="func"];
+  n36793 -> n7089 [from="input", to="func"];
+  n36793 -> n48237 [from="input", to="func"];
+  n36793 -> n48967 [from="input", to="func"];
+  n37176 -> n45747 [from="func", to="type_dep"];
+  n37176 -> n52155 [from="func", to="type_dep"];
+  n37437 -> n28184 [from="func", to="type_dep"];
+  n37437 -> n38638 [from="caller", to="callee"];
+  n37714 -> n31518 [from="func", to="type_dep"];
+  n37714 -> n37851 [from="caller", to="callee"];
+  n37851 -> n31518 [from="func", to="type_dep"];
+  n37851 -> n39081 [from="caller", to="callee"];
+  n38363 -> n30564 [from="field_type", to="struct"];
+  n38363 -> n40759 [from="input", to="func"];
+  n38394 -> n31518 [from="func", to="type_dep"];
+  n38394 -> n38464 [from="caller", to="callee"];
+  n38464 -> n31518 [from="func", to="type_dep"];
+  n38484 -> n10203 [from="trait", to="impl"];
+  n38484 -> n13431 [from="trait", to="impl"];
+  n38484 -> n21448 [from="trait", to="impl"];
+  n38484 -> n32951 [from="trait", to="impl"];
+  n38484 -> n38607 [from="trait", to="impl"];
+  n38484 -> n40646 [from="trait", to="impl"];
+  n38484 -> n51117 [from="trait", to="impl"];
+  n38484 -> n56532 [from="trait", to="impl"];
+  n38484 -> n58738 [from="trait", to="impl"];
+  n38607 -> n40646 [from="type_dep", to="struct"];
+  n38638 -> n34057 [from="func", to="type_dep"];
+  n38638 -> n52155 [from="func", to="type_dep"];
+  n38730 -> n39315 [from="caller", to="callee"];
+  n39003 -> n32951 [from="field_type", to="struct"];
+  n39003 -> n44228 [from="field_type", to="struct"];
+  n39003 -> n45747 [from="field_type", to="struct"];
+  n39003 -> n51117 [from="field_type", to="struct"];
+  n39003 -> n56532 [from="field_type", to="struct"];
+  n39003 -> n58738 [from="field_type", to="struct"];
+  n39081 -> n31518 [from="func", to="type_dep"];
+  n41486 -> n21448 [from="field_type", to="struct"];
+  n41542 -> n12731 [from="field_type", to="struct"];
+  n41542 -> n32951 [from="field_type", to="struct"];
+  n41542 -> n58738 [from="field_type", to="struct"];
+  n42228 -> n42157 [from="field_type", to="struct"];
+  n45747 -> n29859 [from="input", to="func"];
+  n45756 -> n10527 [from="type_dep", to="struct"];
+  n45756 -> n32951 [from="type_dep", to="struct"];
+  n45756 -> n58738 [from="type_dep", to="struct"];
+  n48223 -> n48318 [from="caller", to="callee"];
+  n48237 -> n3836 [from="func", to="type_dep"];
+  n48237 -> n48967 [from="caller", to="callee"];
+  n48474 -> n51634 [from="func", to="type_dep"];
+  n48928 -> n56532 [from="field_type", to="struct"];
+  n49177 -> n58738 [from="field_type", to="struct"];
+  n50986 -> n8820 [from="field_type", to="enum"];
+  n51117 -> n32951 [from="field_type", to="struct"];
+  n51117 -> n58738 [from="field_type", to="struct"];
+  n51634 -> n48318 [from="input", to="func"];
+  n51634 -> n48474 [from="input", to="func"];
+  n51970 -> n5111 [from="field_type", to="struct"];
+  n51970 -> n58738 [from="field_type", to="struct"];
+  n52155 -> n10527 [from="type_dep", to="struct"];
+  n52155 -> n11138 [from="type_dep", to="struct"];
+  n52155 -> n12731 [from="type_dep", to="struct"];
+  n52155 -> n32951 [from="type_dep", to="struct"];
+  n52155 -> n44228 [from="type_dep", to="struct"];
+  n52155 -> n45747 [from="type_dep", to="struct"];
+  n52155 -> n45756 [from="type_dep", to="struct"];
+  n52155 -> n58738 [from="type_dep", to="struct"];
+  n52979 -> n50986 [from="field_type", to="enum"];
+  n55340 -> n56532 [from="field_type", to="struct"];
+  n55499 -> n54348 [from="func", to="type_dep"];
+  n56532 -> n10203 [from="field_type", to="struct"];
+  n58738 -> n44228 [from="field_type", to="struct"];
+  n58738 -> n45747 [from="field_type", to="struct"];
+}

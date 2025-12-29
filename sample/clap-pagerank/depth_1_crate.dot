@@ -1,0 +1,27 @@
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_clap[label="clap"];
+  crate_clap_builder[label="clap_builder"];
+  crate_clap_complete[label="clap_complete"];
+  crate_clap_complete_nushell[label="clap_complete_nushell"];
+  crate_clap_derive[label="clap_derive"];
+  crate_clap_lex[label="clap_lex"];
+  crate_clap_mangen[label="clap_mangen"];
+
+  crate_clap -> crate_clap_builder;
+  crate_clap_builder -> crate_clap_complete;
+  crate_clap_builder -> crate_clap_derive;
+  crate_clap_builder -> crate_clap_lex;
+  crate_clap_complete -> crate_clap_builder;
+  crate_clap_complete -> crate_clap_derive;
+  crate_clap_complete_nushell -> crate_clap_builder;
+  crate_clap_complete_nushell -> crate_clap_complete;
+  crate_clap_derive -> crate_clap_builder;
+  crate_clap_derive -> crate_clap_complete;
+  crate_clap_lex -> crate_clap_builder;
+  crate_clap_mangen -> crate_clap_builder;
+}

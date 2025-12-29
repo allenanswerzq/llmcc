@@ -1,0 +1,43 @@
+===============================================================================
+edge-type-arg
+===============================================================================
+Test that type_arg edges create correct dependency direction.
+When generic G<T> uses type argument T, G's crate depends on T's crate.
+At crate level: crate_app -> crate_types (app depends on types)
+
+--- file: types/Cargo.toml ---
+[package]
+name = "types"
+
+--- file: types/src/lib.rs ---
+pub struct Item {
+    pub value: u32,
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+types = { path = "../types" }
+
+--- file: app/src/lib.rs ---
+use types::Item;
+
+/// Container uses Item as type argument in Vec
+pub struct Container {
+    pub items: Vec<Item>,
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_types[label="types"];
+
+  crate_app -> crate_types;
+}

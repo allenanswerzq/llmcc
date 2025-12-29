@@ -9,7 +9,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 LLMCC="${LLMCC:-$PROJECT_ROOT/target/release/llmcc}"
-TOP_K=200
+
+# Depth-specific PageRank top-K values (nodes)
+# Smaller K for aggregated levels to keep graphs readable
+TOP_K_CRATE="${TOP_K_CRATE:-15}"      # depth 1: top 15 crates
+TOP_K_MODULE="${TOP_K_MODULE:-30}"    # depth 2: top 30 modules
+TOP_K_FILE="${TOP_K_FILE:-200}"       # depth 3: top 200 nodes
 
 # SVG generation settings
 SKIP_SVG="${SKIP_SVG:-false}"
@@ -25,7 +30,7 @@ fi
 
 echo "=== LLMCC Graph Generation ==="
 echo "Binary: $LLMCC"
-echo "PageRank top-k: $TOP_K"
+echo "PageRank top-k: crate=$TOP_K_CRATE, module=$TOP_K_MODULE, file=$TOP_K_FILE"
 echo "Skip SVG: $SKIP_SVG"
 echo "SVG size threshold: ${SVG_SIZE_THRESHOLD} bytes"
 echo "SVG timeout: ${SVG_TIMEOUT}s"
@@ -68,15 +73,26 @@ generate_graphs() {
     local name=$1
     local src_dir=$2
     local output_dir=$3
-    local pagerank_flag=$4
+    local use_pagerank=$4  # "true" or ""
 
     mkdir -p "$output_dir"
 
     for depth in 0 1 2 3; do
         local depth_name="${DEPTH_NAMES[$depth]}"
         local dot_file="$output_dir/${depth_name}.dot"
+        local pagerank_flag=""
 
-        echo "  Generating $depth_name..."
+        # Use depth-specific top-K for PageRank filtered graphs
+        if [ "$use_pagerank" = "true" ]; then
+            case $depth in
+                1) pagerank_flag="--pagerank-top-k $TOP_K_CRATE" ;;
+                2) pagerank_flag="--pagerank-top-k $TOP_K_MODULE" ;;
+                3) pagerank_flag="--pagerank-top-k $TOP_K_FILE" ;;
+                *) pagerank_flag="" ;;  # depth 0 (project) - no filtering
+            esac
+        fi
+
+        echo "  Generating $depth_name... $pagerank_flag"
         $LLMCC -d "$src_dir" --graph --depth $depth $pagerank_flag -o "$dot_file" 2>&1
     done
 
@@ -125,13 +141,13 @@ for name in "${!PROJECTS[@]}"; do
     echo ""
     echo "=== Processing $name ==="
 
-    # Full graphs
+    # Full graphs (no PageRank filtering)
     echo "  [Full graphs]"
     generate_graphs "$name" "$src_dir" "$SCRIPT_DIR/$name" ""
 
-    # PageRank filtered
-    echo "  [PageRank top-$TOP_K]"
-    generate_graphs "$name" "$src_dir" "$SCRIPT_DIR/${name}-pagerank" "--pagerank-top-k $TOP_K"
+    # PageRank filtered (depth-specific top-K)
+    echo "  [PageRank filtered]"
+    generate_graphs "$name" "$src_dir" "$SCRIPT_DIR/${name}-pagerank" "true"
 done
 
 echo ""

@@ -1,0 +1,95 @@
+===============================================================================
+edge-combined-no-cycle
+===============================================================================
+Test that combining all edge types still produces correct unidirectional
+dependency at crate level. This is a comprehensive test that uses all edge
+types and verifies no false reverse edges are created.
+The dependency chain is: app -> service -> types
+NO reverse edges should exist.
+
+--- file: types/Cargo.toml ---
+[package]
+name = "types"
+
+--- file: types/src/lib.rs ---
+pub struct Request {
+    pub id: u64,
+}
+
+pub struct Response {
+    pub data: String,
+}
+
+pub trait Processor {
+    fn process(&self, req: &Request) -> Response;
+}
+
+pub fn validate(req: &Request) -> bool {
+    req.id > 0
+}
+
+--- file: service/Cargo.toml ---
+[package]
+name = "service"
+
+[dependencies]
+types = { path = "../types" }
+
+--- file: service/src/lib.rs ---
+use types::{Request, Response, Processor, validate};
+
+/// Service struct has field of types::Request
+pub struct Service {
+    pub last_request: Option<Request>,
+}
+
+/// Service implements types::Processor trait
+impl Processor for Service {
+    fn process(&self, req: &Request) -> Response {
+        if validate(req) {
+            Response { data: "ok".to_string() }
+        } else {
+            Response { data: "error".to_string() }
+        }
+    }
+}
+
+/// Function takes types::Request as input
+pub fn handle_request(req: &Request) -> Response {
+    Response { data: format!("handled {}", req.id) }
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+service = { path = "../service" }
+types = { path = "../types" }
+
+--- file: app/src/lib.rs ---
+use service::{Service, handle_request};
+use types::{Request, Processor};
+
+/// App function calls service functions
+pub fn run() {
+    let req = Request { id: 1 };
+    let svc = Service { last_request: None };
+    let _ = svc.process(&req);
+    let _ = handle_request(&req);
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_service[label="service"];
+  crate_types[label="types"];
+
+  crate_app -> crate_service;
+  crate_service -> crate_types;
+}

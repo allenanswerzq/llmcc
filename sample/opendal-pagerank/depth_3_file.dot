@@ -1,0 +1,992 @@
+digraph architecture {
+  subgraph cluster_project {
+    label="project";
+
+    subgraph cluster_object_store_opendal {
+      label="object_store_opendal";
+      subgraph cluster_store_rs {
+        label="store.rs";
+        n42527[label="OpendalStore", full_path="/home/yibai/llmcc/sample/repos/opendal/integrations/object_store/src/store.rs:98", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_odev {
+      label="odev";
+      subgraph cluster_main_rs {
+        label="main.rs";
+        n36094[label="manifest_dir", full_path="/home/yibai/llmcc/sample/repos/opendal/dev/src/main.rs:25", sym_ty="Function"];
+        n36113[label="workspace_dir", full_path="/home/yibai/llmcc/sample/repos/opendal/dev/src/main.rs:31", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_opendal_c {
+      label="opendal-c";
+      subgraph cluster_error_rs {
+        label="error.rs";
+        n222[label="opendal_code", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/error.rs:27", sym_ty="Enum", shape=box];
+        n596[label="opendal_error", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/c/src/error.rs:96", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_core {
+      label="opendal-core";
+      subgraph cluster_blocking {
+        label="blocking";
+        subgraph cluster_operator_rs {
+          label="operator.rs";
+          n44017[label="Operator", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/blocking/operator.rs:124", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_context {
+        label="context";
+        subgraph cluster_read_rs {
+          label="read.rs";
+          n18366[label="ReadContext", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/context/read.rs:27", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_http_util {
+        label="http_util";
+        subgraph cluster_bytes_content_range_rs {
+          label="bytes_content_range.rs";
+          n14292[label="BytesContentRange", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/bytes_content_range.rs:50", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_bytes_range_rs {
+          label="bytes_range.rs";
+          n13365[label="BytesRange", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/bytes_range.rs:42", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_client_rs {
+          label="client.rs";
+          n15286[label="HttpClient", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/client.rs:61", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_error_rs {
+          label="error.rs";
+          n5577[label="with_error_response_context", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/error.rs:55", sym_ty="Function"];
+        }
+
+        subgraph cluster_header_rs {
+          label="header.rs";
+          n6242[label="parse_etag", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/header.rs:102", sym_ty="Function"];
+          n6399[label="parse_header_to_str", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/header.rs:118", sym_ty="Function"];
+          n6567[label="parse_into_metadata", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/header.rs:154", sym_ty="Function"];
+        }
+
+        subgraph cluster_multipart_rs {
+          label="multipart.rs";
+          n10647[label="MixedPart", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/multipart.rs:254", sym_ty="Struct", shape=box];
+          n12422[label="RelatedPart", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/http_util/multipart.rs:527", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_layers {
+        label="layers";
+        subgraph cluster_complete_rs {
+          label="complete.rs";
+          n4035[label="CompleteAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/complete.rs:45", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_error_context_rs {
+          label="error_context.rs";
+          n10824[label="ErrorContextWrapper", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/error_context.rs:190", sym_ty="Struct", shape=box];
+          n9594[label="ErrorContextAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/error_context.rs:55", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_http_client_rs {
+          label="http_client.rs";
+          n6766[label="HttpClientAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/http_client.rs:115", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_simulate_rs {
+          label="simulate.rs";
+          n12198[label="SimulateAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/layers/simulate.rs:98", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_oio {
+        label="oio";
+        subgraph cluster_entry_rs {
+          label="entry.rs";
+          n3578[label="Entry", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/oio/entry.rs:29", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_operator {
+        label="operator";
+        subgraph cluster_info_rs {
+          label="info.rs";
+          n96[label="OperatorInfo", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/info.rs:25", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_operator_rs {
+          label="operator.rs";
+          n10523[label="Operator", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/operator.rs:146", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_uri_rs {
+          label="uri.rs";
+          n1589[label="IntoOperatorUri", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/uri.rs:165", sym_ty="Trait", shape=box];
+          n391[label="OperatorUri", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/operator/uri.rs:28", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_raw {
+        label="raw";
+        subgraph cluster_accessor_rs {
+          label="accessor.rs";
+          n22251[label="AccessDyn", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:264", sym_ty="Trait", shape=box];
+          n20936[label="Access", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:60", sym_ty="Trait", shape=box];
+          n25639[label="AccessorInfo", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/accessor.rs:615", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_futures_util_rs {
+          label="futures_util.rs";
+          n316[label="ConcurrentTasks", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/futures_util.rs:111", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_layer_rs {
+          label="layer.rs";
+          n27655[label="LayeredAccess", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/layer.rs:109", sym_ty="Trait", shape=box];
+          n27618[label="Layer", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/layer.rs:98", sym_ty="Trait", shape=box];
+        }
+
+        subgraph cluster_ops_rs {
+          label="ops.rs";
+          n16081[label="OpList", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:104", sym_ty="Struct", shape=box];
+          n17926[label="OpRead", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:307", sym_ty="Struct", shape=box];
+          n19079[label="OpReader", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:433", sym_ty="Struct", shape=box];
+          n19985[label="OpStat", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:558", sym_ty="Struct", shape=box];
+          n20822[label="OpWrite", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/ops.rs:682", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_rps_rs {
+          label="rps.rs";
+          n19732[label="RpStat", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/rps.rs:158", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_time_rs {
+          label="time.rs";
+          n22629[label="Timestamp", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/raw/time.rs:34", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+      subgraph cluster_types {
+        label="types";
+        subgraph cluster_buffer_rs {
+          label="buffer.rs";
+          n12047[label="Buffer", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/buffer.rs:118", sym_ty="Struct", shape=box];
+        }
+
+        subgraph cluster_builder_rs {
+          label="builder.rs";
+          n11375[label="Builder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/builder.rs:52", sym_ty="Trait", shape=box];
+        }
+
+        subgraph cluster_error_rs {
+          label="error.rs";
+          n41769[label="Error", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/error.rs:223", sym_ty="Struct", shape=box];
+          n41188[label="ErrorKind", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/error.rs:51", sym_ty="Enum", shape=box];
+        }
+
+        subgraph cluster_metadata_rs {
+          label="metadata.rs";
+          n437[label="Metadata", full_path="/home/yibai/llmcc/sample/repos/opendal/core/core/src/types/metadata.rs:48", sym_ty="Struct", shape=box];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_opendal_hs {
+      label="opendal-hs";
+      subgraph cluster_result_rs {
+        label="result.rs";
+        n31032[label="FFIResult", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src/result.rs:26", sym_ty="Struct", shape=box];
+        n31115[label="FFIErrorCode", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/haskell/src/result.rs:34", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_java {
+      label="opendal-java";
+      subgraph cluster_executor_rs {
+        label="executor.rs";
+        n41429[label="executor_or_default", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src/executor.rs:197", sym_ty="Function"];
+        n40625[label="Executor", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/java/src/executor.rs:62", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_layer_fastrace {
+      label="opendal-layer-fastrace";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n21603[label="FastraceAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/fastrace/src/lib.rs:127", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_layer_logging {
+      label="opendal-layer-logging";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n11204[label="LoggingAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/logging/src/lib.rs:239", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_layer_observe_metrics_common {
+      label="opendal-layer-observe-metrics-common";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n15357[label="MetricLabels", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/observe-metrics-common/src/lib.rs:208", sym_ty="Struct", shape=box];
+        n17509[label="MetricsAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/observe-metrics-common/src/lib.rs:597", sym_ty="Struct", shape=box];
+        n19237[label="MetricsWrapper", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/observe-metrics-common/src/lib.rs:868", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_layer_oteltrace {
+      label="opendal-layer-oteltrace";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n27842[label="OtelTraceAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/oteltrace/src/lib.rs:77", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_layer_retry {
+      label="opendal-layer-retry";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n31958[label="RetryLayer", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/retry/src/lib.rs:118", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_layer_tail_cut {
+      label="opendal-layer-tail-cut";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n37221[label="TailCutAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/tail-cut/src/lib.rs:303", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_layer_timeout {
+      label="opendal-layer-timeout";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n26713[label="TimeoutAccessor", full_path="/home/yibai/llmcc/sample/repos/opendal/core/layers/timeout/src/lib.rs:177", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_lua {
+      label="opendal-lua";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n44768[label="opendal", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/lua/src/lib.rs:230", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_opendal_nodejs {
+      label="opendal-nodejs";
+      subgraph cluster_capability_rs {
+        label="capability.rs";
+        n22232[label="Capability", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/capability.rs:29", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n15189[label="Entry", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/lib.rs:801", sym_ty="Struct", shape=box];
+        n15577[label="Metadata", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/nodejs/src/lib.rs:840", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_ocaml {
+      label="opendal-ocaml";
+      subgraph cluster_lib_rs {
+        label="lib.rs";
+        n20[label="map_res_error", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/lib.rs:42", sym_ty="Function"];
+      }
+
+      subgraph cluster_operator {
+        label="operator";
+        subgraph cluster_mod_rs {
+          label="mod.rs";
+          n2058[label="operator", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/ocaml/src/operator/mod.rs:33", sym_ty="Function"];
+        }
+
+      }
+
+    }
+
+    subgraph cluster_opendal_python {
+      label="opendal-python";
+      subgraph cluster_metadata_rs {
+        label="metadata.rs";
+        n12434[label="Metadata", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/metadata.rs:88", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_operator_rs {
+        label="operator.rs";
+        n4618[label="Operator", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/operator.rs:61", sym_ty="Struct", shape=box];
+        n7879[label="AsyncOperator", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/operator.rs:715", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_options_rs {
+        label="options.rs";
+        n15213[label="ListOptions", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/options.rs:122", sym_ty="Struct", shape=box];
+        n14678[label="WriteOptions", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/python/src/options.rs:53", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_ruby {
+      label="opendal-ruby";
+      subgraph cluster_metadata_rs {
+        label="metadata.rs";
+        n876[label="Metadata", full_path="/home/yibai/llmcc/sample/repos/opendal/bindings/ruby/src/metadata.rs:35", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_aliyun_drive {
+      label="opendal-service-aliyun-drive";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n20475[label="AliyunDriveBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src/backend.rs:40", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n23701[label="AliyunDriveCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/aliyun-drive/src/core.rs:62", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_alluxio {
+      label="opendal-service-alluxio";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n39319[label="AlluxioCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/alluxio/src/core.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_azblob {
+      label="opendal-service-azblob";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n20295[label="AzblobBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/backend.rs:64", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n24656[label="AzblobCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/core.rs:64", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_writer_rs {
+        label="writer.rs";
+        n31950[label="AzblobWriter", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/azblob/src/writer.rs:33", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_azdls {
+      label="opendal-service-azdls";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n11596[label="AzdlsBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/backend.rs:62", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n14409[label="AzdlsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/azdls/src/core.rs:44", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_azfile {
+      label="opendal-service-azfile";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n7162[label="AzfileBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src/backend.rs:59", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n10215[label="AzfileCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/azfile/src/core.rs:47", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_b2 {
+      label="opendal-service-b2";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n28300[label="B2Builder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src/backend.rs:44", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n31473[label="B2Core", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/b2/src/core.rs:47", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_cloudflare_kv {
+      label="opendal-service-cloudflare-kv";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n12068[label="CloudflareKvBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src/backend.rs:37", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n15526[label="CloudflareKvCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/cloudflare-kv/src/core.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_compfs {
+      label="opendal-service-compfs";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n10515[label="CompfsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/compfs/src/core.rs:66", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_cos {
+      label="opendal-service-cos";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n8461[label="CosBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src/backend.rs:48", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n11539[label="CosCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/cos/src/core.rs:50", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_d1 {
+      label="opendal-service-d1";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n41576[label="D1Builder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/d1/src/backend.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_dbfs {
+      label="opendal-service-dbfs";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n34981[label="DbfsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/dbfs/src/core.rs:33", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_dropbox {
+      label="opendal-service-dropbox";
+      subgraph cluster_builder_rs {
+        label="builder.rs";
+        n28460[label="DropboxBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src/builder.rs:34", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n22902[label="DropboxCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/dropbox/src/core.rs:37", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_etcd {
+      label="opendal-service-etcd";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n32979[label="EtcdBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/etcd/src/backend.rs:38", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_fs {
+      label="opendal-service-fs";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n26589[label="FsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/fs/src/core.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_gcs {
+      label="opendal-service-gcs";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n24002[label="GcsBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src/backend.rs:49", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n27509[label="GcsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/gcs/src/core.rs:59", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_gdrive {
+      label="opendal-service-gdrive";
+      subgraph cluster_builder_rs {
+        label="builder.rs";
+        n43091[label="GdriveBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src/builder.rs:36", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n38894[label="GdriveCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/gdrive/src/core.rs:35", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_github {
+      label="opendal-service-github";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n28998[label="GithubCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/github/src/core.rs:38", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_hdfs {
+      label="opendal-service-hdfs";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n13648[label="HdfsBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/hdfs/src/backend.rs:35", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_http {
+      label="opendal-service-http";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n20768[label="HttpBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/http/src/backend.rs:35", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_huggingface {
+      label="opendal-service-huggingface";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n18781[label="HuggingfaceBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/huggingface/src/backend.rs:37", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_ipmfs {
+      label="opendal-service-ipmfs";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n31572[label="IpmfsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/ipmfs/src/core.rs:28", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_koofr {
+      label="opendal-service-koofr";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n2707[label="KoofrCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/koofr/src/core.rs:39", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_lakefs {
+      label="opendal-service-lakefs";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n4595[label="LakefsBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src/backend.rs:39", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n6927[label="LakefsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/lakefs/src/core.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_memcached {
+      label="opendal-service-memcached";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n41999[label="MemcachedBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src/backend.rs:32", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_binary_rs {
+        label="binary.rs";
+        n44317[label="Response", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/memcached/src/binary.rs:92", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_moka {
+      label="opendal-service-moka";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n16859[label="MokaBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/moka/src/backend.rs:40", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_mongodb {
+      label="opendal-service-mongodb";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n42091[label="MongodbBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/mongodb/src/backend.rs:32", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_monoiofs {
+      label="opendal-service-monoiofs";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n38187[label="MonoiofsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/monoiofs/src/core.rs:40", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_obs {
+      label="opendal-service-obs";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n23623[label="ObsBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src/backend.rs:45", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n25990[label="ObsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/obs/src/core.rs:44", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_onedrive {
+      label="opendal-service-onedrive";
+      subgraph cluster_builder_rs {
+        label="builder.rs";
+        n18612[label="OnedriveBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src/builder.rs:35", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n11291[label="OneDriveCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/onedrive/src/core.rs:36", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_oss {
+      label="opendal-service-oss";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n2816[label="OssBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src/backend.rs:47", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n8034[label="OssCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/oss/src/core.rs:63", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_pcloud {
+      label="opendal-service-pcloud";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n7170[label="PcloudCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/pcloud/src/core.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_redis {
+      label="opendal-service-redis";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n25187[label="RedisBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/redis/src/backend.rs:44", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_s3 {
+      label="opendal-service-s3";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n27805[label="S3Builder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/backend.rs:82", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n34073[label="S3Core", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/core.rs:85", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_writer_rs {
+        label="writer.rs";
+        n32648[label="S3Writer", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/s3/src/writer.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_seafile {
+      label="opendal-service-seafile";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n37812[label="SeafileBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src/backend.rs:43", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n39514[label="SeafileCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/seafile/src/core.rs:36", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_sftp {
+      label="opendal-service-sftp";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n35711[label="SftpBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/sftp/src/backend.rs:52", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_sqlite {
+      label="opendal-service-sqlite";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n7133[label="SqliteBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/sqlite/src/backend.rs:35", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_surrealdb {
+      label="opendal-service-surrealdb";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n32554[label="SurrealdbBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/surrealdb/src/backend.rs:33", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_swift {
+      label="opendal-service-swift";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n36885[label="SwiftCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/swift/src/core.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_upyun {
+      label="opendal-service-upyun";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n4321[label="UpyunCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/upyun/src/core.rs:57", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_vercel_blob {
+      label="opendal-service-vercel-blob";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n11002[label="VercelBlobCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/vercel-blob/src/core.rs:58", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_webdav {
+      label="opendal-service-webdav";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n31389[label="WebdavBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src/backend.rs:40", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n34191[label="WebdavCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/webdav/src/core.rs:86", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_webhdfs {
+      label="opendal-service-webhdfs";
+      subgraph cluster_backend_rs {
+        label="backend.rs";
+        n16064[label="WebhdfsBuilder", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src/backend.rs:47", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n18714[label="WebhdfsCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/webhdfs/src/core.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_opendal_service_yandex_disk {
+      label="opendal-service-yandex-disk";
+      subgraph cluster_core_rs {
+        label="core.rs";
+        n23348[label="YandexDiskCore", full_path="/home/yibai/llmcc/sample/repos/opendal/core/services/yandex-disk/src/core.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  n96 -> n42527 [from="type_dep", to="struct"];
+  n222 -> n596 [from="field_type", to="struct"];
+  n876 -> n3578 [from="field_type", to="struct"];
+  n1589 -> n391 [from="trait", to="impl"];
+  n2058 -> n20 [from="caller", to="callee"];
+  n2058 -> n4618 [from="func", to="type_dep"];
+  n4618 -> n42527 [from="field_type", to="struct"];
+  n5577 -> n41769 [from="func", to="output"];
+  n6242 -> n6399 [from="caller", to="callee"];
+  n6567 -> n6242 [from="caller", to="callee"];
+  n6567 -> n15577 [from="func", to="type_dep"];
+  n7879 -> n44017 [from="field_type", to="struct"];
+  n10523 -> n7879 [from="type_arg", to="impl"];
+  n11375 -> n2816 [from="trait", to="impl"];
+  n11375 -> n4595 [from="trait", to="impl"];
+  n11375 -> n7133 [from="trait", to="impl"];
+  n11375 -> n7162 [from="trait", to="impl"];
+  n11375 -> n8461 [from="trait", to="impl"];
+  n11375 -> n11596 [from="trait", to="impl"];
+  n11375 -> n12068 [from="trait", to="impl"];
+  n11375 -> n13648 [from="trait", to="impl"];
+  n11375 -> n16064 [from="trait", to="impl"];
+  n11375 -> n16859 [from="trait", to="impl"];
+  n11375 -> n18612 [from="trait", to="impl"];
+  n11375 -> n18781 [from="trait", to="impl"];
+  n11375 -> n20295 [from="trait", to="impl"];
+  n11375 -> n20475 [from="trait", to="impl"];
+  n11375 -> n20768 [from="trait", to="impl"];
+  n11375 -> n23623 [from="trait", to="impl"];
+  n11375 -> n24002 [from="trait", to="impl"];
+  n11375 -> n25187 [from="trait", to="impl"];
+  n11375 -> n27805 [from="trait", to="impl"];
+  n11375 -> n28300 [from="trait", to="impl"];
+  n11375 -> n28460 [from="trait", to="impl"];
+  n11375 -> n31389 [from="trait", to="impl"];
+  n11375 -> n32554 [from="trait", to="impl"];
+  n11375 -> n32979 [from="trait", to="impl"];
+  n11375 -> n35711 [from="trait", to="impl"];
+  n11375 -> n37812 [from="trait", to="impl"];
+  n11375 -> n41576 [from="trait", to="impl"];
+  n11375 -> n41999 [from="trait", to="impl"];
+  n11375 -> n42091 [from="trait", to="impl"];
+  n11375 -> n43091 [from="trait", to="impl"];
+  n12047 -> n316 [from="type_arg", to="generic"];
+  n12047 -> n2707 [from="type_dep", to="struct"];
+  n12047 -> n4321 [from="type_dep", to="struct"];
+  n12047 -> n10647 [from="type_arg", to="impl"];
+  n12047 -> n12422 [from="type_arg", to="impl"];
+  n12434 -> n19732 [from="field_type", to="struct"];
+  n13365 -> n10824 [from="field_type", to="struct"];
+  n13365 -> n17926 [from="field_type", to="struct"];
+  n14292 -> n437 [from="type_dep", to="struct"];
+  n14678 -> n20822 [from="type_arg", to="impl"];
+  n15213 -> n16081 [from="type_arg", to="impl"];
+  n15286 -> n34981 [from="field_type", to="struct"];
+  n15357 -> n19237 [from="field_type", to="struct"];
+  n17926 -> n18366 [from="field_type", to="struct"];
+  n19079 -> n18366 [from="field_type", to="struct"];
+  n20822 -> n31950 [from="field_type", to="struct"];
+  n20822 -> n32648 [from="field_type", to="struct"];
+  n20936 -> n12198 [from="type_arg", to="generic"];
+  n20936 -> n22251 [from="trait", to="impl"];
+  n20936 -> n27618 [from="bound", to="generic"];
+  n20936 -> n27655 [from="trait", to="impl"];
+  n22629 -> n437 [from="type_dep", to="struct"];
+  n22629 -> n17926 [from="type_dep", to="struct"];
+  n22629 -> n19985 [from="type_dep", to="struct"];
+  n24656 -> n31950 [from="type_dep", to="struct"];
+  n25639 -> n2707 [from="type_dep", to="struct"];
+  n25639 -> n4035 [from="type_dep", to="struct"];
+  n25639 -> n4321 [from="type_dep", to="struct"];
+  n25639 -> n6927 [from="type_dep", to="struct"];
+  n25639 -> n7170 [from="type_dep", to="struct"];
+  n25639 -> n8034 [from="type_dep", to="struct"];
+  n25639 -> n9594 [from="type_dep", to="struct"];
+  n25639 -> n10215 [from="type_dep", to="struct"];
+  n25639 -> n10515 [from="type_dep", to="struct"];
+  n25639 -> n11002 [from="type_dep", to="struct"];
+  n25639 -> n11204 [from="type_dep", to="struct"];
+  n25639 -> n11291 [from="type_dep", to="struct"];
+  n25639 -> n11539 [from="type_dep", to="struct"];
+  n25639 -> n12198 [from="type_dep", to="struct"];
+  n25639 -> n14409 [from="type_dep", to="struct"];
+  n25639 -> n15526 [from="type_dep", to="struct"];
+  n25639 -> n17509 [from="type_dep", to="struct"];
+  n25639 -> n18714 [from="type_dep", to="struct"];
+  n25639 -> n22902 [from="type_dep", to="struct"];
+  n25639 -> n23348 [from="type_dep", to="struct"];
+  n25639 -> n23701 [from="type_dep", to="struct"];
+  n25639 -> n24656 [from="type_dep", to="struct"];
+  n25639 -> n25990 [from="type_dep", to="struct"];
+  n25639 -> n26589 [from="type_dep", to="struct"];
+  n25639 -> n27509 [from="type_dep", to="struct"];
+  n25639 -> n28998 [from="type_dep", to="struct"];
+  n25639 -> n31473 [from="type_dep", to="struct"];
+  n25639 -> n31572 [from="type_dep", to="struct"];
+  n25639 -> n34073 [from="type_dep", to="struct"];
+  n25639 -> n34191 [from="type_dep", to="struct"];
+  n25639 -> n36885 [from="type_dep", to="struct"];
+  n25639 -> n38187 [from="type_dep", to="struct"];
+  n25639 -> n38894 [from="type_dep", to="struct"];
+  n25639 -> n39319 [from="type_dep", to="struct"];
+  n25639 -> n39514 [from="type_dep", to="struct"];
+  n27618 -> n31958 [from="trait", to="impl"];
+  n27655 -> n4035 [from="trait", to="impl"];
+  n27655 -> n6766 [from="trait", to="impl"];
+  n27655 -> n9594 [from="trait", to="impl"];
+  n27655 -> n11204 [from="trait", to="impl"];
+  n27655 -> n12198 [from="trait", to="impl"];
+  n27655 -> n17509 [from="trait", to="impl"];
+  n27655 -> n21603 [from="trait", to="impl"];
+  n27655 -> n26713 [from="trait", to="impl"];
+  n27655 -> n27842 [from="trait", to="impl"];
+  n27655 -> n37221 [from="trait", to="impl"];
+  n31115 -> n31032 [from="field_type", to="struct"];
+  n34073 -> n32648 [from="type_dep", to="struct"];
+  n36113 -> n36094 [from="caller", to="callee"];
+  n40625 -> n41429 [from="input", to="func"];
+  n41188 -> n15357 [from="type_dep", to="struct"];
+  n41188 -> n41769 [from="field_type", to="struct"];
+  n41429 -> n40625 [from="func", to="type_dep"];
+  n41769 -> n5577 [from="input", to="func"];
+  n44317 -> n2707 [from="type_dep", to="struct"];
+  n44317 -> n4321 [from="type_dep", to="struct"];
+  n44768 -> n2058 [from="caller", to="callee"];
+  n44768 -> n15189 [from="field_type", to="struct"];
+  n44768 -> n15577 [from="field_type", to="struct"];
+  n44768 -> n22232 [from="field_type", to="struct"];
+}

@@ -1,0 +1,49 @@
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_globset[label="globset"];
+  crate_grep_cli[label="grep-cli"];
+  crate_grep_matcher[label="grep-matcher"];
+  crate_grep_pcre2[label="grep-pcre2"];
+  crate_grep_printer[label="grep-printer"];
+  crate_grep_regex[label="grep-regex"];
+  crate_grep_searcher[label="grep-searcher"];
+  crate_ignore[label="ignore"];
+  crate_ripgrep[label="ripgrep"];
+
+  crate_globset -> crate_grep_matcher;
+  crate_globset -> crate_ripgrep;
+  crate_grep_cli -> crate_globset;
+  crate_grep_cli -> crate_grep_pcre2;
+  crate_grep_cli -> crate_grep_printer;
+  crate_grep_cli -> crate_ignore;
+  crate_grep_cli -> crate_ripgrep;
+  crate_grep_matcher -> crate_globset;
+  crate_grep_matcher -> crate_ripgrep;
+  crate_grep_pcre2 -> crate_grep_matcher;
+  crate_grep_printer -> crate_grep_cli;
+  crate_grep_printer -> crate_grep_matcher;
+  crate_grep_printer -> crate_grep_pcre2;
+  crate_grep_printer -> crate_grep_searcher;
+  crate_grep_printer -> crate_ignore;
+  crate_grep_printer -> crate_ripgrep;
+  crate_grep_regex -> crate_globset;
+  crate_grep_regex -> crate_grep_matcher;
+  crate_grep_regex -> crate_grep_pcre2;
+  crate_grep_regex -> crate_grep_searcher;
+  crate_grep_searcher -> crate_globset;
+  crate_grep_searcher -> crate_grep_cli;
+  crate_grep_searcher -> crate_grep_matcher;
+  crate_grep_searcher -> crate_grep_printer;
+  crate_grep_searcher -> crate_grep_regex;
+  crate_ignore -> crate_globset;
+  crate_ignore -> crate_grep_cli;
+  crate_ignore -> crate_ripgrep;
+  crate_ripgrep -> crate_grep_cli;
+  crate_ripgrep -> crate_grep_pcre2;
+  crate_ripgrep -> crate_grep_printer;
+  crate_ripgrep -> crate_ignore;
+}
