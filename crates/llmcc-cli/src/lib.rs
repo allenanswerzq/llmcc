@@ -2,20 +2,21 @@ pub mod options;
 
 use std::collections::HashSet;
 use std::io;
-use std::sync::Once;
 use std::time::Instant;
 
 use ignore::WalkBuilder;
-use rayon::ThreadPoolBuilder;
 use tracing::info;
 
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
-use llmcc_core::graph_render::{ComponentDepth, render_graph};
+use llmcc_core::graph_render::{ComponentDepth, render_graph_with_pagerank};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
 pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
+
+#[cfg(feature = "profile")]
+use std::fs::File;
 
 fn should_skip_dir(name: &str) -> bool {
     matches!(
@@ -34,26 +35,34 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
-#[allow(dead_code)]
-static RAYON_INIT: Once = Once::new();
+/// Generate a flamegraph from CPU profiling data
+#[cfg(feature = "profile")]
+pub fn profile_phase<F, R>(name: &str, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    use pprof::ProfilerGuard;
 
-#[allow(dead_code)]
-fn init_rayon_pool() {
-    RAYON_INIT.call_once(|| {
-        let available = std::thread::available_parallelism()
-            .map(|v| v.get())
-            .unwrap_or(1);
-        let target = available.clamp(1, 12);
-        if let Err(err) = ThreadPoolBuilder::new()
-            .num_threads(target)
-            .thread_name(|index| format!("llmcc-worker-{index}"))
-            .build_global()
-        {
-            tracing::debug!(?err, "Rayon global pool already initialized");
-        } else {
-            tracing::debug!(threads = target, "Initialized Rayon global thread pool");
-        }
-    });
+    // Use 1000Hz for higher resolution
+    let guard = ProfilerGuard::new(1000).expect("Failed to start profiler");
+    let result = f();
+
+    if let Ok(report) = guard.report().build() {
+        let filename = format!("{}.svg", name);
+        let file = File::create(&filename).expect("Failed to create flamegraph file");
+        report.flamegraph(file).expect("Failed to write flamegraph");
+        info!("Flamegraph saved to {}", filename);
+    }
+
+    result
+}
+
+#[cfg(not(feature = "profile"))]
+pub fn profile_phase<F, R>(_name: &str, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    f()
 }
 
 pub struct LlmccOptions {
@@ -64,6 +73,7 @@ pub struct LlmccOptions {
     pub print_block: bool,
     pub graph: bool,
     pub component_depth: ComponentDepth,
+    pub pagerank_top_k: Option<usize>,
 }
 
 pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
@@ -72,15 +82,13 @@ where
 {
     let total_start = Instant::now();
 
-    // init_rayon_pool();
-
     validate_options(opts)?;
 
     let requested_files = discover_requested_files::<L>(opts)?;
 
     let parse_start = Instant::now();
     info!("Parsing total {} files", requested_files.len());
-    let cc = CompileCtxt::from_files::<L>(&requested_files)?;
+    let cc = profile_phase("parsing", || CompileCtxt::from_files::<L>(&requested_files))?;
     info!(
         "Parsing & tree-sitter: {:.2}s",
         parse_start.elapsed().as_secs_f64()
@@ -88,7 +96,9 @@ where
     log_parse_metrics(&cc.build_metrics);
 
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc, IrBuildOption::default())?;
+    profile_phase("ir_build", || {
+        build_llmcc_ir::<L>(&cc, IrBuildOption::default())
+    })?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let symbols_start = Instant::now();
@@ -103,9 +113,13 @@ where
 
     let mut pg = ProjectGraph::new(&cc);
 
-    let graph_build_start = Instant::now();
-    bind_symbols_with::<L>(&cc, globals, &resolver_option);
+    let bind_start = Instant::now();
+    profile_phase("binding", || {
+        bind_symbols_with::<L>(&cc, globals, &resolver_option);
+    });
+    info!("Symbol binding: {:.2}s", bind_start.elapsed().as_secs_f64());
 
+    let graph_build_start = Instant::now();
     let unit_graphs = build_llmcc_graph::<L>(&cc, GraphBuildOption::new())?;
     pg.add_children(unit_graphs);
     info!(
@@ -251,7 +265,7 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
 fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx ProjectGraph<'tcx>) -> Option<String> {
     if opts.graph {
         let render_start = Instant::now();
-        let result = render_graph(pg, opts.component_depth);
+        let result = render_graph_with_pagerank(pg, opts.component_depth, opts.pagerank_top_k);
         info!(
             "Graph rendering: {:.2}s",
             render_start.elapsed().as_secs_f64()

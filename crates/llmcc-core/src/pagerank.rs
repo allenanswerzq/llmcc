@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::block::{BlockId, BlockKind, BlockRelation};
-use crate::graph::{UnitNode, ProjectGraph};
+use crate::graph::{ProjectGraph, UnitNode};
 
 /// Configuration options for PageRank algorithm.
 #[derive(Debug, Clone)]
@@ -84,6 +84,16 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
     }
 
     /// Compute PageRank and return results sorted by score (highest first).
+    ///
+    /// Uses a unified graph built from multiple edge types:
+    /// - **Influence edges** (A→B means B is foundational to A):
+    ///   - Calls: function calls another function
+    ///   - TypeOf: field/param/return uses a type
+    ///   - Implements: type implements a trait
+    /// - **Orchestration edges** (A→B means A orchestrates/uses B):
+    ///   - CalledBy: function is called by another
+    ///   - TypeFor: type is used by field/param/return
+    ///   - ImplementedBy: trait is implemented by types
     pub fn rank(&self) -> RankingResult {
         let entries = self.collect_entries();
 
@@ -95,14 +105,31 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             };
         }
 
-        let adjacency_depends = self.build_adjacency(&entries, BlockRelation::Calls);
-        let adjacency_depended = self.build_adjacency(&entries, BlockRelation::CalledBy);
+        // Build unified adjacency graphs from multiple edge types
+        let adjacency_influence = self.build_unified_adjacency(
+            &entries,
+            &[
+                BlockRelation::Calls,      // func → func it calls
+                BlockRelation::TypeOf,     // field/param → type definition
+                BlockRelation::Implements, // type → trait it implements
+                BlockRelation::Uses,       // generic usage
+            ],
+        );
+        let adjacency_orchestration = self.build_unified_adjacency(
+            &entries,
+            &[
+                BlockRelation::CalledBy,      // func ← func that calls it
+                BlockRelation::TypeFor,       // type ← field/param that uses it
+                BlockRelation::ImplementedBy, // trait ← types that implement it
+                BlockRelation::UsedBy,        // generic usage
+            ],
+        );
 
-        // Compute PageRank for both dependency directions.
-        let (depends_scores, depends_iterations, depends_converged) =
-            self.compute_pagerank(&adjacency_depends);
-        let (depended_scores, depended_iterations, depended_converged) =
-            self.compute_pagerank(&adjacency_depended);
+        // Compute PageRank for both directions
+        let (influence_scores, influence_iters, influence_converged) =
+            self.compute_pagerank(&adjacency_influence);
+        let (orchestration_scores, orchestration_iters, orchestration_converged) =
+            self.compute_pagerank(&adjacency_orchestration);
 
         let total_weight = self.config.influence_weight + self.config.orchestration_weight;
         let (influence_weight, orchestration_weight) = if total_weight <= f64::EPSILON {
@@ -114,16 +141,16 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             )
         };
 
-        let blended_scores: Vec<f64> = depends_scores
+        let blended_scores: Vec<f64> = influence_scores
             .iter()
-            .zip(&depended_scores)
+            .zip(&orchestration_scores)
             .map(|(influence, orchestration)| {
                 influence * influence_weight + orchestration * orchestration_weight
             })
             .collect();
 
-        let iterations = depends_iterations.max(depended_iterations);
-        let converged = depends_converged && depended_converged;
+        let iterations = influence_iters.max(orchestration_iters);
+        let converged = influence_converged && orchestration_converged;
 
         // Build ranked results
         let mut ranked: Vec<RankedBlock> = entries
@@ -141,8 +168,8 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
                         block_id: entry.block_id,
                     },
                     score: blended_scores[idx],
-                    influence_score: depends_scores[idx],
-                    orchestration_score: depended_scores[idx],
+                    influence_score: influence_scores[idx],
+                    orchestration_score: orchestration_scores[idx],
                     name: display_name,
                     kind: entry.kind,
                     file_path: entry.file_path,
@@ -245,7 +272,12 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
             .collect()
     }
 
-    fn build_adjacency(&self, entries: &[BlockEntry], relation: BlockRelation) -> Vec<Vec<usize>> {
+    /// Build unified adjacency from multiple relation types.
+    fn build_unified_adjacency(
+        &self,
+        entries: &[BlockEntry],
+        relations: &[BlockRelation],
+    ) -> Vec<Vec<usize>> {
         let mut adjacency: Vec<Vec<usize>> = vec![Vec::new(); entries.len()];
         let mut index_by_block: HashMap<BlockId, usize> = HashMap::new();
 
@@ -254,25 +286,32 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         }
 
         for (idx, entry) in entries.iter().enumerate() {
-            // Use the global related_map from CompileCtxt
-            let mut targets = self
-                .graph
-                .cc
-                .related_map
-                .get_related(entry.block_id, relation)
+            let mut all_targets = Vec::new();
+
+            for &relation in relations {
+                let targets = self
+                    .graph
+                    .cc
+                    .related_map
+                    .get_related(entry.block_id, relation);
+                all_targets.extend(targets);
+            }
+
+            let mut filtered: Vec<usize> = all_targets
                 .into_iter()
                 .filter_map(|dep_id| index_by_block.get(&dep_id).copied())
                 .filter(|target_idx| *target_idx != idx)
-                .collect::<Vec<_>>();
+                .collect();
 
-            targets.sort_unstable();
-            targets.dedup();
-            adjacency[idx] = targets;
+            filtered.sort_unstable();
+            filtered.dedup();
+            adjacency[idx] = filtered;
         }
 
         adjacency
     }
 }
+
 #[derive(Debug, Clone)]
 struct BlockEntry {
     block_id: BlockId,

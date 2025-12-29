@@ -203,7 +203,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     }
                 }
 
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Root(block_ref)
             }
             BlockKind::Func | BlockKind::Method => {
@@ -211,17 +211,17 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 if kind == BlockKind::Method {
                     block.set_is_method(true);
                 }
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Func(block_ref)
             }
             BlockKind::Class => {
                 let block = BlockClass::new_with_symbol(id, node, parent, children, symbol);
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Class(block_ref)
             }
             BlockKind::Trait => {
                 let block = BlockTrait::new_with_symbol(id, node, parent, children, symbol);
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Trait(block_ref)
             }
             BlockKind::Call => {
@@ -233,12 +233,16 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 {
                     stmt.set_callee(callee_block_id);
                 }
-                let block_ref = self.unit.cc.block_arena.alloc(stmt);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, stmt);
                 BasicBlock::Call(block_ref)
             }
             BlockKind::Enum => {
                 let enum_ty = BlockEnum::new_with_symbol(id, node, parent, children, symbol);
-                let block_ref = self.unit.cc.block_arena.alloc(enum_ty);
+                let block_ref = self
+                    .unit
+                    .cc
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, enum_ty);
                 BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {
@@ -250,7 +254,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // Resolve and set type info
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 stmt.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc(stmt);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, stmt);
                 BasicBlock::Const(block_ref)
             }
             BlockKind::Impl => {
@@ -282,7 +286,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                     block.set_trait_info(resolved.block_id(), Some(resolved));
                 }
 
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Impl(block_ref)
             }
             BlockKind::Field => {
@@ -294,7 +298,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // Resolve and set type info
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Field(block_ref)
             }
             BlockKind::Parameter => {
@@ -308,7 +312,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 }
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Parameter(block_ref)
             }
             BlockKind::Return => {
@@ -316,7 +320,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockReturn::new_with_symbol(id, node, parent, children, symbol);
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
                 block.set_type_info(type_name, type_ref);
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Return(block_ref)
             }
             BlockKind::Alias => {
@@ -325,7 +329,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 if let Some(ident) = node.find_ident(&self.unit) {
                     block.name = ident.name.clone();
                 }
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Alias(block_ref)
             }
             BlockKind::Module => {
@@ -339,7 +343,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let block = BlockModule::new_with_symbol(
                     id, node, parent, children, name, is_inline, symbol,
                 );
-                let block_ref = self.unit.cc.block_arena.alloc(block);
+                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Module(block_ref)
             }
             _ => {
@@ -493,7 +497,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
         // Resolve and set type info
         let (type_name, type_ref) = self.resolve_type_info(type_symbol);
         block.set_type_info(type_name, type_ref);
-        let block_ref = self.unit.cc.block_arena.alloc(block);
+        let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
         BasicBlock::Field(block_ref)
     }
 
@@ -690,8 +694,7 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
             .collect::<Result<Vec<_>, DynError>>()?
     };
 
-    // Sort blocks by ID for consistent lookup
-    cc.block_arena.bb_sort_by(|block| block.id());
+    // No sorting needed: DashMap provides O(1) lookup by ID
 
     Ok(unit_graphs)
 }

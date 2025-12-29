@@ -25,7 +25,7 @@ static NEXT_SYMBOL_ID: AtomicUsize = AtomicUsize::new(0);
 /// Use this only during testing or when resetting the entire symbol table.
 #[inline]
 pub fn reset_symbol_id_counter() {
-    NEXT_SYMBOL_ID.store(0, Ordering::SeqCst);
+    NEXT_SYMBOL_ID.store(0, Ordering::Relaxed);
 }
 
 /// Global atomic counter for assigning unique scope IDs.
@@ -36,7 +36,7 @@ pub(crate) static NEXT_SCOPE_ID: AtomicUsize = AtomicUsize::new(0);
 /// Use this only during testing or when resetting the entire scope table.
 #[inline]
 pub fn reset_scope_id_counter() {
-    NEXT_SCOPE_ID.store(0, Ordering::SeqCst);
+    NEXT_SCOPE_ID.store(0, Ordering::Relaxed);
 }
 
 /// Unique identifier for symbols within a compilation unit.
@@ -63,33 +63,109 @@ impl std::fmt::Display for ScopeId {
 
 /// Classification of what kind of named entity a symbol represents.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, EnumIter, Default)]
+#[repr(u8)]
 pub enum SymKind {
     #[default]
-    Unknown,
-    UnresolvedType,
-    Crate,
-    Module,
-    File,
-    Namespace,
-    Struct,
-    Enum,
-    Function,
-    Method,
-    Closure,
-    Macro,
-    Variable,
-    Field,
-    Const,
-    Static,
-    Trait,
-    Impl,
-    EnumVariant,
-    Primitive,
-    TypeAlias,
-    TypeParameter,
-    GenericType,
-    CompositeType,
+    Unknown = 0,
+    UnresolvedType = 1,
+    Crate = 2,
+    Module = 3,
+    File = 4,
+    Namespace = 5,
+    Struct = 6,
+    Enum = 7,
+    Function = 8,
+    Method = 9,
+    Closure = 10,
+    Macro = 11,
+    Variable = 12,
+    Field = 13,
+    Const = 14,
+    Static = 15,
+    Trait = 16,
+    Impl = 17,
+    EnumVariant = 18,
+    Primitive = 19,
+    TypeAlias = 20,
+    TypeParameter = 21,
+    GenericType = 22,
+    CompositeType = 23,
 }
+
+/// A bitset representing a set of SymKind values for efficient O(1) containment checks.
+/// Uses a u32 internally since we have < 32 SymKind variants.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SymKindSet(u32);
+
+impl SymKindSet {
+    /// Create an empty set.
+    #[inline]
+    pub const fn empty() -> Self {
+        Self(0)
+    }
+
+    /// Create a set containing all kinds.
+    #[inline]
+    pub const fn all() -> Self {
+        // Set bits 0-23 (all current SymKind values)
+        Self(0x00FFFFFF)
+    }
+
+    /// Create a set from a single kind.
+    #[inline]
+    pub const fn from_kind(kind: SymKind) -> Self {
+        Self(1 << (kind as u32))
+    }
+
+    /// Create a set from multiple kinds using const builder pattern.
+    #[inline]
+    pub const fn with(self, kind: SymKind) -> Self {
+        Self(self.0 | (1 << (kind as u32)))
+    }
+
+    /// Check if the set contains a kind (O(1) operation).
+    #[inline]
+    pub const fn contains(&self, kind: SymKind) -> bool {
+        (self.0 & (1 << (kind as u32))) != 0
+    }
+
+    /// Check if the set is empty.
+    #[inline]
+    pub const fn is_empty(&self) -> bool {
+        self.0 == 0
+    }
+}
+
+/// Pre-computed constant for all symbol kinds (used when no filtering needed).
+pub const SYM_KIND_ALL: SymKindSet = SymKindSet::all();
+
+/// Pre-computed constant for type kinds (used in type resolution).
+pub const SYM_KIND_TYPES: SymKindSet = SymKindSet::empty()
+    .with(SymKind::Struct)
+    .with(SymKind::Enum)
+    .with(SymKind::Trait)
+    .with(SymKind::Function)
+    .with(SymKind::Const)
+    .with(SymKind::Static)
+    .with(SymKind::Primitive)
+    .with(SymKind::GenericType)
+    .with(SymKind::CompositeType)
+    .with(SymKind::TypeAlias)
+    .with(SymKind::Namespace)
+    .with(SymKind::TypeParameter);
+
+/// Pre-computed constant for impl target kinds.
+pub const SYM_KIND_IMPL_TARGETS: SymKindSet = SymKindSet::empty()
+    .with(SymKind::Struct)
+    .with(SymKind::Enum);
+
+/// Pre-computed constant for callable kinds.
+pub const SYM_KIND_CALLABLE: SymKindSet = SymKindSet::empty()
+    .with(SymKind::Struct)
+    .with(SymKind::Enum)
+    .with(SymKind::Trait)
+    .with(SymKind::Function)
+    .with(SymKind::Const);
 
 impl SymKind {
     pub fn is_resolved(&self) -> bool {
@@ -113,6 +189,7 @@ impl SymKind {
 
     /// Returns kinds that can be looked up as types in type annotations.
     /// Used for resolving type references in function signatures, fields, etc.
+    #[deprecated(note = "Use SYM_KIND_TYPES constant instead")]
     pub fn type_kinds() -> Vec<SymKind> {
         vec![
             SymKind::Struct,
@@ -132,11 +209,13 @@ impl SymKind {
 
     /// Returns kinds that can be targets of impl blocks (impl X for Target).
     /// In Rust, you can impl traits for structs and enums.
+    #[deprecated(note = "Use SYM_KIND_IMPL_TARGETS constant instead")]
     pub fn impl_target_kinds() -> Vec<SymKind> {
         vec![SymKind::Struct, SymKind::Enum]
     }
 
     /// Returns kinds that can be called like functions.
+    #[deprecated(note = "Use SYM_KIND_CALLABLE constant instead")]
     pub fn callable_kinds() -> Vec<SymKind> {
         vec![
             SymKind::Struct,
@@ -252,7 +331,7 @@ impl fmt::Debug for Symbol {
 impl Symbol {
     /// Creates a new symbol with the given HIR node owner and interned name.
     pub fn new(owner: HirId, name_key: InternedStr) -> Self {
-        let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::SeqCst);
+        let id = NEXT_SYMBOL_ID.fetch_add(1, Ordering::Relaxed);
         let sym_id = SymId(id);
 
         Self {

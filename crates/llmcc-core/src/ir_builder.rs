@@ -3,7 +3,8 @@
 //! Uses per-unit arenas for parallel building, then merges results into global context.
 //! This avoids locks during parallel builds and ensures deterministic ID allocation.
 use std::marker::PhantomData;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::time::Instant;
 
 use rayon::prelude::*;
 
@@ -17,15 +18,27 @@ use crate::lang_def::{LanguageTrait, ParseNode, ParseTree};
 /// Global atomic counter for HIR ID allocation (used during parallel builds).
 static HIR_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
 
+// Timing counters for IR building
+static IR_BUILD_CPU_TIME_NS: AtomicU64 = AtomicU64::new(0);
+
+pub fn reset_ir_build_counters() {
+    IR_BUILD_CPU_TIME_NS.store(0, Ordering::Relaxed);
+}
+
+pub fn get_ir_build_cpu_time_ms() -> f64 {
+    IR_BUILD_CPU_TIME_NS.load(Ordering::Relaxed) as f64 / 1_000_000.0
+}
+
 /// Reserve a new globally-unique HIR ID.
+#[inline]
 pub fn next_hir_id() -> HirId {
-    let id = HIR_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
+    let id = HIR_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
     HirId(id)
 }
 
 /// Reset the global HIR ID counter to 0 (for testing isolation)
 pub fn reset_hir_id_counter() {
-    HIR_ID_COUNTER.store(0, Ordering::SeqCst);
+    HIR_ID_COUNTER.store(0, Ordering::Relaxed);
 }
 
 /// Configuration for IR building behavior.
@@ -140,8 +153,8 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
             _other => panic!("unsupported HIR kind for node {}", node.debug_info()),
         };
 
-        // Allocate the HirNode wrapper in the Arena's hir_node collection
-        *self.arena.alloc(hir_node)
+        // Allocate the HirNode wrapper with its ID for O(1) lookup
+        *self.arena.alloc_with_id(id.0, hir_node)
     }
 
     /// Collect all valid child nodes from a parse node.
@@ -244,7 +257,12 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
     cc: &'tcx CompileCtxt<'tcx>,
     config: IrBuildOption,
 ) -> Result<(), DynError> {
+    let total_start = Instant::now();
+    reset_ir_build_counters();
+
     let build_one = |index: usize| -> Result<BuildResult, DynError> {
+        let build_start = Instant::now();
+
         let file_path = cc.file_path(index).map(|p| p.to_string());
         let file_bytes = cc.files[index].content();
 
@@ -255,21 +273,25 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
         let file_root_id =
             build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, config)?;
 
+        IR_BUILD_CPU_TIME_NS.fetch_add(build_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
         Ok(BuildResult {
             index,
             file_root_id,
         })
     };
 
+    let parallel_start = Instant::now();
     let results: Vec<Result<BuildResult, DynError>> = if config.sequential {
         (0..cc.files.len()).map(build_one).collect()
     } else {
         (0..cc.files.len()).into_par_iter().map(build_one).collect()
     };
+    let parallel_time = parallel_start.elapsed();
 
-    // Collect and sort results
-    let mut results: Vec<BuildResult> = results.into_iter().collect::<Result<Vec<_>, _>>()?;
-    results.sort_by_key(|result| result.index);
+    let collect_start = Instant::now();
+    // Collect results (no sorting needed - DashMap provides O(1) lookup by ID)
+    let results: Vec<BuildResult> = results.into_iter().collect::<Result<Vec<_>, _>>()?;
 
     // Register all file start IDs
     for BuildResult {
@@ -280,8 +302,19 @@ pub fn build_llmcc_ir<'tcx, L: LanguageTrait>(
         cc.set_file_root_id(index, file_root_id);
     }
 
-    // Sequential phase: sort hir nodes by ID, so we can do O(1) lookups later
-    cc.arena.hir_node_sort_by(|node| node.id().0);
+    // No sort needed: DashMap already provides O(1) lookup by ID
+    let collect_time = collect_start.elapsed();
+
+    let total_time = total_start.elapsed();
+    let build_cpu_ms = get_ir_build_cpu_time_ms();
+
+    tracing::info!(
+        "ir_build breakdown: parallel={:.2}ms (build_cpu={:.2}ms), collect={:.2}ms, total={:.2}ms",
+        parallel_time.as_secs_f64() * 1000.0,
+        build_cpu_ms,
+        collect_time.as_secs_f64() * 1000.0,
+        total_time.as_secs_f64() * 1000.0,
+    );
 
     Ok(())
 }

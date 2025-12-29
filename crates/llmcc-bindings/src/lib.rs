@@ -56,6 +56,7 @@ fn run_llmcc(
         print_block,
         graph,
         component_depth: depth,
+        pagerank_top_k: None,
     };
 
     let result = match lang {

@@ -2,6 +2,10 @@ use anyhow::Result;
 use clap::ArgGroup;
 use clap::Parser;
 
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
 use llmcc_core::graph_render::ComponentDepth;
@@ -57,6 +61,10 @@ pub struct Cli {
     #[arg(long = "depth", default_value = "3")]
     component_depth: usize,
 
+    /// Show only top K nodes by PageRank score
+    #[arg(long = "pagerank-top-k")]
+    pagerank_top_k: Option<usize>,
+
     /// Output file path (writes to file instead of stdout)
     #[arg(short = 'o', long = "output", value_name = "FILE")]
     output: Option<String>,
@@ -79,6 +87,7 @@ pub fn run(args: Cli) -> Result<()> {
         print_block: args.print_block,
         graph: args.graph,
         component_depth: ComponentDepth::from_number(args.component_depth),
+        pagerank_top_k: args.pagerank_top_k,
     };
 
     let result = match args.lang.as_str() {

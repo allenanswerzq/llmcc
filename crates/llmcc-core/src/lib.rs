@@ -11,6 +11,7 @@ pub mod ir;
 pub mod ir_builder;
 #[macro_use]
 pub mod lang_def;
+pub mod pagerank;
 pub mod printer;
 pub mod query;
 pub mod scope;

@@ -1,3 +1,5 @@
+use parking_lot::RwLock;
+use smallvec::SmallVec;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
@@ -7,6 +9,7 @@ use crate::scope::Scope;
 use crate::symbol::Symbol;
 
 // Declare the arena with all HIR types
+// Using DashMap-based arena for concurrent O(1) lookup
 declare_arena!(Arena {
     hir_node: HirNode<'a>,
     hir_file: HirFile,
@@ -89,9 +92,9 @@ impl<'hir> HirNode<'hir> {
         self.base().map_or(&[], |base| &base.children)
     }
 
-    /// Get children nodes of this node
-    pub fn children(&self, unit: &CompileUnit<'hir>) -> Vec<HirNode<'hir>> {
-        self.base().map_or(Vec::new(), |base| {
+    /// Get children nodes of this node - uses SmallVec to avoid heap allocation for small child counts
+    pub fn children(&self, unit: &CompileUnit<'hir>) -> SmallVec<[HirNode<'hir>; 8]> {
+        self.base().map_or(SmallVec::new(), |base| {
             base.children.iter().map(|id| unit.hir_node(*id)).collect()
         })
     }

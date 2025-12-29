@@ -46,7 +46,9 @@ impl LanguageTraitImpl for LangRust {
 
         for prim in crate::RUST_PRIMITIVES {
             let name = cc.interner.intern(prim);
-            let symbol = cc.arena().alloc(Symbol::new(CompileCtxt::GLOBAL_SCOPE_OWNER, name));
+            let symbol_val = Symbol::new(CompileCtxt::GLOBAL_SCOPE_OWNER, name);
+            let sym_id = symbol_val.id().0;
+            let symbol = cc.arena().alloc_with_id(sym_id, symbol_val);
             symbol.set_kind(SymKind::Primitive);
             symbol.set_is_global(true);
             globals.insert(symbol);
@@ -56,15 +58,23 @@ impl LanguageTraitImpl for LangRust {
     }
 
     fn parse_impl(text: impl AsRef<[u8]>) -> Option<Box<dyn ParseTree>> {
-        let mut parser = tree_sitter::Parser::new();
-        parser
-            .set_language(&tree_sitter_rust::LANGUAGE.into())
-            .ok()?;
+        use std::cell::RefCell;
 
-        let bytes = text.as_ref();
-        let tree = parser.parse(bytes, None)?;
+        // Thread-local parser reuse to avoid contention from Parser::new()
+        thread_local! {
+            static PARSER: RefCell<tree_sitter::Parser> = {
+                let mut parser = tree_sitter::Parser::new();
+                parser.set_language(&tree_sitter_rust::LANGUAGE.into()).unwrap();
+                RefCell::new(parser)
+            };
+        }
 
-        Some(Box::new(TreeSitterParseTree { tree }))
+        PARSER.with(|parser| {
+            let mut parser = parser.borrow_mut();
+            let bytes = text.as_ref();
+            let tree = parser.parse(bytes, None)?;
+            Some(Box::new(TreeSitterParseTree { tree }) as Box<dyn ParseTree>)
+        })
     }
 
     fn supported_extensions_impl() -> &'static [&'static str] {
