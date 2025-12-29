@@ -4,12 +4,15 @@
 # For graph generation, use generate_all.sh instead
 
 set -e
-cd "$(dirname "$0")"
 
-LLMCC="${LLMCC:-../target/release/llmcc}"
+# Get absolute path to script directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+LLMCC="${LLMCC:-$PROJECT_ROOT/target/release/llmcc}"
 TOP_K=200
-BENCHMARK_FILE="benchmark_results.md"
-BENCHMARK_DIR="./benchmark_logs"
+BENCHMARK_FILE="$SCRIPT_DIR/benchmark_results.md"
+BENCHMARK_DIR="$SCRIPT_DIR/benchmark_logs"
 
 # Check llmcc exists
 if [ ! -x "$LLMCC" ]; then
@@ -21,22 +24,22 @@ fi
 # Projects to benchmark: name -> source directory
 declare -A PROJECTS=(
     # Core ecosystem
-    ["ripgrep"]="./repos/ripgrep"
-    ["tokio"]="./repos/tokio"
-    ["serde"]="./repos/serde"
-    ["clap"]="./repos/clap"
-    ["axum"]="./repos/axum"
-    ["ruff"]="./repos/ruff"
-    ["codex"]="./repos/codex"
-    ["llmcc"]="./repos/llmcc"
+    ["ripgrep"]="$SCRIPT_DIR/repos/ripgrep"
+    ["tokio"]="$SCRIPT_DIR/repos/tokio"
+    ["serde"]="$SCRIPT_DIR/repos/serde"
+    ["clap"]="$SCRIPT_DIR/repos/clap"
+    ["axum"]="$SCRIPT_DIR/repos/axum"
+    ["ruff"]="$SCRIPT_DIR/repos/ruff"
+    ["codex"]="$SCRIPT_DIR/repos/codex"
+    ["llmcc"]="$SCRIPT_DIR/repos/llmcc"
     # Database & data infrastructure
-    ["lancedb"]="./repos/lancedb"
-    ["lance"]="./repos/lance"
-    ["opendal"]="./repos/opendal"
-    ["risingwave"]="./repos/risingwave"
-    ["databend"]="./repos/databend"
-    ["datafusion"]="./repos/datafusion"
-    ["qdrant"]="./repos/qdrant"
+    ["lancedb"]="$SCRIPT_DIR/repos/lancedb"
+    ["lance"]="$SCRIPT_DIR/repos/lance"
+    ["opendal"]="$SCRIPT_DIR/repos/opendal"
+    ["risingwave"]="$SCRIPT_DIR/repos/risingwave"
+    ["databend"]="$SCRIPT_DIR/repos/databend"
+    ["datafusion"]="$SCRIPT_DIR/repos/datafusion"
+    ["qdrant"]="$SCRIPT_DIR/repos/qdrant"
 )
 
 # Create benchmark logs directory
@@ -177,7 +180,24 @@ echo "" >> "$BENCHMARK_FILE"
 echo "| Project | Files | LoC | Parse | IR Build | Symbols | Binding | Graph | Link | Total |" >> "$BENCHMARK_FILE"
 echo "|---------|-------|-----|-------|----------|---------|---------|-------|------|-------|" >> "$BENCHMARK_FILE"
 
+# Build array of (loc, name) pairs and sort by LOC descending
+declare -a PROJECT_LOC_PAIRS=()
 for name in "${!PROJECTS[@]}"; do
+    src_dir="${PROJECTS[$name]}"
+    if [ -d "$src_dir" ]; then
+        loc_raw=$(count_loc "$src_dir")
+    else
+        loc_raw=0
+    fi
+    PROJECT_LOC_PAIRS+=("$loc_raw:$name")
+done
+
+# Sort by LOC descending (numeric sort on first field)
+IFS=$'\n' SORTED_PROJECTS=($(printf '%s\n' "${PROJECT_LOC_PAIRS[@]}" | sort -t: -k1 -nr))
+unset IFS
+
+for entry in "${SORTED_PROJECTS[@]}"; do
+    name="${entry#*:}"  # Extract name after ':'
     src_dir="${PROJECTS[$name]}"
 
     if [ ! -d "$src_dir" ]; then
@@ -238,7 +258,9 @@ echo "" >> "$BENCHMARK_FILE"
 echo "| Project | Full Nodes | Full Edges | PR Nodes | PR Edges | Node Reduction | Edge Reduction |" >> "$BENCHMARK_FILE"
 echo "|---------|------------|------------|----------|----------|----------------|----------------|" >> "$BENCHMARK_FILE"
 
-for name in "${!PROJECTS[@]}"; do
+# Use same sorted order as timing table
+for entry in "${SORTED_PROJECTS[@]}"; do
+    name="${entry#*:}"  # Extract name after ':'
     full_dot="$BENCHMARK_DIR/${name}_depth3.dot"
     pr_dot="$BENCHMARK_DIR/${name}_pagerank_depth3.dot"
 

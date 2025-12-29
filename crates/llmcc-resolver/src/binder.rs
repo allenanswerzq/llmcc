@@ -105,16 +105,8 @@ impl<'a> BinderScopes<'a> {
     }
 
     #[inline]
-    pub fn lookup_globals(
-        &self,
-        name: &str,
-        kind_filters: SymKindSet,
-    ) -> Option<Vec<&'a Symbol>> {
-        tracing::trace!(
-            "lookup globals '{}' with filters {:?}",
-            name,
-            kind_filters
-        );
+    pub fn lookup_globals(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!("lookup globals '{}' with filters {:?}", name, kind_filters);
         let options = LookupOptions::current().with_kind_set(kind_filters);
         let name_key = self.unit.cc.interner.intern(name);
         self.scopes.globals().lookup_symbols(name_key, options)
@@ -134,16 +126,8 @@ impl<'a> BinderScopes<'a> {
 
     /// Lookup symbols by name with options
     #[inline]
-    pub fn lookup_symbols(
-        &self,
-        name: &str,
-        kind_filters: SymKindSet,
-    ) -> Option<Vec<&'a Symbol>> {
-        tracing::trace!(
-            "lookup symbols '{}' with filters {:?}",
-            name,
-            kind_filters
-        );
+    pub fn lookup_symbols(&self, name: &str, kind_filters: SymKindSet) -> Option<Vec<&'a Symbol>> {
+        tracing::trace!("lookup symbols '{}' with filters {:?}", name, kind_filters);
         let options = LookupOptions::current().with_kind_set(kind_filters);
         self.scopes.lookup_symbols(name, options)
     }

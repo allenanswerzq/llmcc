@@ -150,7 +150,9 @@ impl<'tcx> CollectorVisitor<'tcx> {
         }
 
         // Try unresolved type if not found - convert to target kind
-        if let Some(symbol) = scopes.lookup_symbol(name, SymKindSet::from_kind(SymKind::UnresolvedType)) {
+        if let Some(symbol) =
+            scopes.lookup_symbol(name, SymKindSet::from_kind(SymKind::UnresolvedType))
+        {
             tracing::trace!(
                 "found existing unresolved symbol '{}', converting to {:?}, {:?}",
                 name,
@@ -525,7 +527,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Also add struct to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
-            && let Some(sym) = scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Struct))
+            && let Some(sym) =
+                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Struct))
         {
             scopes.globals().insert(sym);
         }
@@ -555,7 +558,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Also add enum to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
-            && let Some(sym) = scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Enum))
+            && let Some(sym) =
+                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Enum))
         {
             scopes.globals().insert(sym);
         }
@@ -588,7 +592,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         // Also add trait to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
-            && let Some(sym) = scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Trait))
+            && let Some(sym) =
+                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Trait))
         {
             scopes.globals().insert(sym);
         }
@@ -611,7 +616,9 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             let symbol = scopes
                 .lookup_symbol(&ti.name, SymKindSet::from_kind(SymKind::Trait))
                 // Then try looking up as UnresolvedType (existing placeholder)
-                .or_else(|| scopes.lookup_symbol(&ti.name, SymKindSet::from_kind(SymKind::UnresolvedType)))
+                .or_else(|| {
+                    scopes.lookup_symbol(&ti.name, SymKindSet::from_kind(SymKind::UnresolvedType))
+                })
                 // Finally create UnresolvedType placeholder for cross-file resolution during binding
                 .or_else(|| scopes.lookup_or_insert(&ti.name, node, SymKind::UnresolvedType));
             if let Some(symbol) = symbol {
@@ -879,7 +886,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Set type_of on the variant to point to the parent enum
         if let Some(enum_sym) = parent_enum
             && let Some(ident) = node.ident_by_field(unit, LangRust::field_name)
-            && let Some(variant_sym) = scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::EnumVariant))
+            && let Some(variant_sym) =
+                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::EnumVariant))
         {
             variant_sym.set_type_of(enum_sym.id);
         }
@@ -898,7 +906,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Check if this is a 'self' parameter
         if let Some(ident) = node.ident_by_field(unit, LangRust::field_pattern)
             && ident.name == "self"
-            && let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Field))
+            && let Some(symbol) =
+                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Field))
         {
             // For 'self' parameters, try to resolve it as a Field in the current scope
             ident.set_symbol(symbol);

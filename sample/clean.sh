@@ -1,9 +1,13 @@
 #!/bin/bash
 # Clean up generated files in sample folder
 # Keeps: repos/, scripts (*.sh), and benchmark_results.md
+# Can be run from anywhere
 
 set -e
-cd "$(dirname "$0")"
+
+# Get absolute path to script directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
 
 echo "=== Cleaning sample directory ==="
 
@@ -25,9 +29,9 @@ done
 # Remove benchmark logs if requested
 if [ "$1" = "--all" ]; then
     echo "Removing: benchmark_logs/"
-    rm -rf benchmark_logs/
+    rm -rf "$SCRIPT_DIR/benchmark_logs/"
     echo "Removing: benchmark_results.md"
-    rm -f benchmark_results.md
+    rm -f "$SCRIPT_DIR/benchmark_results.md"
 fi
 
 echo ""

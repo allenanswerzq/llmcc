@@ -1,6 +1,6 @@
 use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirKind, HirNode};
-use llmcc_core::symbol::{SymKind, SymKindSet, Symbol, SYM_KIND_TYPES};
+use llmcc_core::symbol::{SYM_KIND_TYPES, SymKind, SymKindSet, Symbol};
 use llmcc_resolver::BinderScopes;
 
 use crate::token::LangRust;
@@ -388,8 +388,10 @@ fn infer_array_type<'tcx>(
     // Try to get the CompositeType symbol that was created for this array type
     if let Some(sn) = node.as_scope()
         && let Some(array_ident) = sn.opt_ident()
-        && let Some(array_symbol) =
-            scopes.lookup_symbol(&array_ident.name, SymKindSet::from_kind(SymKind::CompositeType))
+        && let Some(array_symbol) = scopes.lookup_symbol(
+            &array_ident.name,
+            SymKindSet::from_kind(SymKind::CompositeType),
+        )
     {
         return Some(array_symbol);
     }
@@ -408,8 +410,10 @@ fn infer_tuple_type<'tcx>(
     // Try to get the CompositeType symbol that was created for this tuple type
     if let Some(sn) = node.as_scope()
         && let Some(tuple_ident) = sn.opt_ident()
-        && let Some(tuple_symbol) =
-            scopes.lookup_symbol(&tuple_ident.name, SymKindSet::from_kind(SymKind::CompositeType))
+        && let Some(tuple_symbol) = scopes.lookup_symbol(
+            &tuple_ident.name,
+            SymKindSet::from_kind(SymKind::CompositeType),
+        )
     {
         return Some(tuple_symbol);
     }

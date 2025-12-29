@@ -238,7 +238,11 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
             }
             BlockKind::Enum => {
                 let enum_ty = BlockEnum::new_with_symbol(id, node, parent, children, symbol);
-                let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, enum_ty);
+                let block_ref = self
+                    .unit
+                    .cc
+                    .block_arena
+                    .alloc_with_id(id.0 as usize, enum_ty);
                 BasicBlock::Enum(block_ref)
             }
             BlockKind::Const => {

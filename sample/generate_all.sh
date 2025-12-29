@@ -3,9 +3,12 @@
 # For performance benchmarks, use benchmark.sh instead
 
 set -e
-cd "$(dirname "$0")"
 
-LLMCC="${LLMCC:-../target/release/llmcc}"
+# Get absolute path to script directory
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+LLMCC="${LLMCC:-$PROJECT_ROOT/target/release/llmcc}"
 TOP_K=200
 
 # SVG generation settings
@@ -30,27 +33,27 @@ echo ""
 
 # Ensure repos are fetched
 echo "=== Fetching repositories ==="
-./repos/fetch.sh
+"$SCRIPT_DIR/fetch.sh"
 
 # Projects to process: name -> source directory
 declare -A PROJECTS=(
     # Core ecosystem
-    ["ripgrep"]="./repos/ripgrep"
-    ["tokio"]="./repos/tokio"
-    ["serde"]="./repos/serde"
-    ["clap"]="./repos/clap"
-    ["axum"]="./repos/axum"
-    ["ruff"]="./repos/ruff"
-    ["codex"]="./repos/codex"
-    ["llmcc"]="./repos/llmcc"
+    ["ripgrep"]="$SCRIPT_DIR/repos/ripgrep"
+    ["tokio"]="$SCRIPT_DIR/repos/tokio"
+    ["serde"]="$SCRIPT_DIR/repos/serde"
+    ["clap"]="$SCRIPT_DIR/repos/clap"
+    ["axum"]="$SCRIPT_DIR/repos/axum"
+    ["ruff"]="$SCRIPT_DIR/repos/ruff"
+    ["codex"]="$SCRIPT_DIR/repos/codex"
+    ["llmcc"]="$SCRIPT_DIR/repos/llmcc"
     # Database & data infrastructure
-    ["lancedb"]="./repos/lancedb"
-    ["lance"]="./repos/lance"
-    ["opendal"]="./repos/opendal"
-    ["risingwave"]="./repos/risingwave"
-    ["databend"]="./repos/databend"
-    ["datafusion"]="./repos/datafusion"
-    ["qdrant"]="./repos/qdrant"
+    ["lancedb"]="$SCRIPT_DIR/repos/lancedb"
+    ["lance"]="$SCRIPT_DIR/repos/lance"
+    ["opendal"]="$SCRIPT_DIR/repos/opendal"
+    ["risingwave"]="$SCRIPT_DIR/repos/risingwave"
+    ["databend"]="$SCRIPT_DIR/repos/databend"
+    ["datafusion"]="$SCRIPT_DIR/repos/datafusion"
+    ["qdrant"]="$SCRIPT_DIR/repos/qdrant"
 )
 
 # Depth level names
@@ -124,22 +127,22 @@ for name in "${!PROJECTS[@]}"; do
 
     # Full graphs
     echo "  [Full graphs]"
-    generate_graphs "$name" "$src_dir" "./$name" ""
+    generate_graphs "$name" "$src_dir" "$SCRIPT_DIR/$name" ""
 
     # PageRank filtered
     echo "  [PageRank top-$TOP_K]"
-    generate_graphs "$name" "$src_dir" "./${name}-pagerank" "--pagerank-top-k $TOP_K"
+    generate_graphs "$name" "$src_dir" "$SCRIPT_DIR/${name}-pagerank" "--pagerank-top-k $TOP_K"
 done
 
 echo ""
 echo "=== Summary ==="
 for name in "${!PROJECTS[@]}"; do
-    if [ -d "./$name" ]; then
-        full_nodes=$(grep -cE '^\s+n[0-9]+\[label=' "./$name/depth_3_file.dot" 2>/dev/null || echo "N/A")
-        pr_nodes=$(grep -cE '^\s+n[0-9]+\[label=' "./${name}-pagerank/depth_3_file.dot" 2>/dev/null || echo "N/A")
+    if [ -d "$SCRIPT_DIR/$name" ]; then
+        full_nodes=$(grep -cE '^\s+n[0-9]+\[label=' "$SCRIPT_DIR/$name/depth_3_file.dot" 2>/dev/null || echo "N/A")
+        pr_nodes=$(grep -cE '^\s+n[0-9]+\[label=' "$SCRIPT_DIR/${name}-pagerank/depth_3_file.dot" 2>/dev/null || echo "N/A")
         echo "$name: $full_nodes nodes (full) -> $pr_nodes nodes (pagerank)"
     fi
 done
 
 echo ""
-echo "Done! Run ./benchmark.sh for performance benchmarks."
+echo "Done! Run $SCRIPT_DIR/benchmark.sh for performance benchmarks."

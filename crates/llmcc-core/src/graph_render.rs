@@ -360,7 +360,11 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
 
     // Helper to get block kind using DashMap-based lookup
     let get_kind = |id: BlockId| -> Option<BlockKind> {
-        project.cc.block_arena.get_bb(id.as_u32() as usize).map(|b| b.kind())
+        project
+            .cc
+            .block_arena
+            .get_bb(id.as_u32() as usize)
+            .map(|b| b.kind())
     };
 
     // Helper to recursively collect type references from fields (including nested variant fields)
@@ -413,7 +417,8 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
             // 1b. Field type arguments → Field's generic type
             // For `data: Triple<User, Error>`, creates edges: User → Triple, Error → Triple
             // Only creates edges when the field's type is in node_set (a defined generic struct)
-            let Some(field_block) = project.cc.block_arena.get_bb(field_id.as_u32() as usize) else {
+            let Some(field_block) = project.cc.block_arena.get_bb(field_id.as_u32() as usize)
+            else {
                 continue;
             };
             let Some(field) = field_block.as_field() else {
@@ -679,30 +684,29 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
         // 8. Impl type arguments (type_arg → impl_target)
         // From `impl Trait<TypeArg> for Target`, create edge TypeArg → Target
         // Uses block.base.type_deps populated during link_impl from symbol's nested_types
-        if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
-            if let Some(block) = project.cc.block_arena.get_bb(block_id.as_u32() as usize)
-                && let Some(base) = block.base()
-            {
-                let type_deps = base.type_deps.read();
-                for &type_arg_id in type_deps.iter() {
-                    if node_set.contains(&type_arg_id) && block_id != type_arg_id {
-                        let type_arg_kind = get_kind(type_arg_id);
-                        // Only add edges from types (Class, Enum)
-                        if type_arg_kind == Some(BlockKind::Class)
-                            || type_arg_kind == Some(BlockKind::Enum)
-                        {
-                            // Check if there's already an edge from type_arg to this block
-                            let has_existing_edge = edges
-                                .iter()
-                                .any(|e| e.from_id == type_arg_id && e.to_id == block_id);
-                            if !has_existing_edge {
-                                edges.insert(RenderEdge {
-                                    from_id: type_arg_id,
-                                    to_id: block_id,
-                                    from_label: "type_arg",
-                                    to_label: "impl",
-                                });
-                            }
+        if (block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum))
+            && let Some(block) = project.cc.block_arena.get_bb(block_id.as_u32() as usize)
+            && let Some(base) = block.base()
+        {
+            let type_deps = base.type_deps.read();
+            for &type_arg_id in type_deps.iter() {
+                if node_set.contains(&type_arg_id) && block_id != type_arg_id {
+                    let type_arg_kind = get_kind(type_arg_id);
+                    // Only add edges from types (Class, Enum)
+                    if type_arg_kind == Some(BlockKind::Class)
+                        || type_arg_kind == Some(BlockKind::Enum)
+                    {
+                        // Check if there's already an edge from type_arg to this block
+                        let has_existing_edge = edges
+                            .iter()
+                            .any(|e| e.from_id == type_arg_id && e.to_id == block_id);
+                        if !has_existing_edge {
+                            edges.insert(RenderEdge {
+                                from_id: type_arg_id,
+                                to_id: block_id,
+                                from_label: "type_arg",
+                                to_label: "impl",
+                            });
                         }
                     }
                 }

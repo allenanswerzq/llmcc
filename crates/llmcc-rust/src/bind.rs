@@ -4,8 +4,8 @@ use llmcc_core::context::CompileUnit;
 use llmcc_core::ir::{HirNode, HirScope};
 use llmcc_core::scope::Scope;
 use llmcc_core::symbol::{
-    SymKind, SymKindSet, Symbol, SYM_KIND_ALL, SYM_KIND_CALLABLE, SYM_KIND_IMPL_TARGETS,
-    SYM_KIND_TYPES,
+    SYM_KIND_ALL, SYM_KIND_CALLABLE, SYM_KIND_IMPL_TARGETS, SYM_KIND_TYPES, SymKind, SymKindSet,
+    Symbol,
 };
 use llmcc_resolver::{BinderScopes, ResolverOption};
 
@@ -90,7 +90,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         tracing::trace!("binding source_file: {}", file_path);
         if let Some(crate_name) = parse_crate_name(file_path)
-            && let Some(symbol) = scopes.lookup_symbol(&crate_name, SymKindSet::from_kind(SymKind::Crate))
+            && let Some(symbol) =
+                scopes.lookup_symbol(&crate_name, SymKindSet::from_kind(SymKind::Crate))
             && let Some(scope_id) = symbol.opt_scope()
         {
             tracing::trace!("pushing crate scope {:?}", scope_id);
@@ -98,7 +99,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
 
         if let Some(module_name) = parse_module_name(file_path)
-            && let Some(symbol) = scopes.lookup_symbol(&module_name, SymKindSet::from_kind(SymKind::Module))
+            && let Some(symbol) =
+                scopes.lookup_symbol(&module_name, SymKindSet::from_kind(SymKind::Module))
             && let Some(scope_id) = symbol.opt_scope()
         {
             tracing::trace!("pushing module scope {:?}", scope_id);
@@ -106,7 +108,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         }
 
         if let Some(file_name) = parse_file_name(file_path)
-            && let Some(file_sym) = scopes.lookup_symbol(&file_name, SymKindSet::from_kind(SymKind::File))
+            && let Some(file_sym) =
+                scopes.lookup_symbol(&file_name, SymKindSet::from_kind(SymKind::File))
             && let Some(scope_id) = file_sym.opt_scope()
         {
             tracing::trace!("pushing file scope {} {:?}", file_path, scope_id);
@@ -173,7 +176,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         _parent: Option<&Symbol>,
     ) {
         let ident = node.as_ident().unwrap();
-        if let Some(symbol) = scopes.lookup_global(&ident.name, SymKindSet::from_kind(SymKind::Primitive)) {
+        if let Some(symbol) =
+            scopes.lookup_global(&ident.name, SymKindSet::from_kind(SymKind::Primitive))
+        {
             ident.set_symbol(symbol);
         }
     }
@@ -336,7 +341,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             parent,
             Some(Box::new(|unit, sn, scopes| {
                 for key in ["Self", "self"] {
-                    if let Some(self_sym) = scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
+                    if let Some(self_sym) =
+                        scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
                         && let Some(struct_sym) = sn.opt_symbol()
                     {
                         tracing::trace!(
@@ -376,7 +382,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             parent,
             Some(Box::new(|unit, sn, scopes| {
                 for key in ["Self", "self"] {
-                    if let Some(self_sym) = scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
+                    if let Some(self_sym) =
+                        scopes.lookup_symbol(key, SymKindSet::from_kind(SymKind::TypeAlias))
                         && let Some(trait_sym) = sn.opt_symbol()
                     {
                         tracing::trace!(
@@ -442,8 +449,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(target_sym) = target_ident.opt_symbol()
         {
             // Look up the impl target type (struct or enum that the trait is implemented for)
-            let target_resolved =
-                scopes.lookup_symbol(&target_ident.name, SYM_KIND_IMPL_TARGETS);
+            let target_resolved = scopes.lookup_symbol(&target_ident.name, SYM_KIND_IMPL_TARGETS);
 
             if target_sym.kind() == SymKind::UnresolvedType {
                 // Resolve the type for the impl type now
@@ -484,7 +490,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 // Only look for Trait kind - don't use SYM_KIND_TYPES which includes TypeParameter
                 // If not found here, keep the existing symbol (UnresolvedType from collection)
                 // and let graph phase handle cross-file resolution
-                let trait_sym = scopes.lookup_symbol(&trait_ident.name, SymKindSet::from_kind(SymKind::Trait));
+                let trait_sym =
+                    scopes.lookup_symbol(&trait_ident.name, SymKindSet::from_kind(SymKind::Trait));
 
                 if let Some(trait_sym) = trait_sym {
                     // Update the trait identifier's symbol to point to the resolved trait
@@ -669,7 +676,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         self.visit_children(unit, node, scopes, namespace, parent);
 
         if let Some(ident) = sn.opt_ident()
-            && let Some(symbol) = scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::CompositeType))
+            && let Some(symbol) =
+                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::CompositeType))
             && symbol.nested_types().is_none()
         {
             if let Some(array_type_sym) = node.ident_symbol_by_field(unit, LangRust::field_element)
@@ -692,8 +700,10 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         self.visit_children(unit, node, scopes, namespace, parent);
 
         if let Some(tuple_ident) = sn.opt_ident()
-            && let Some(tuple_symbol) =
-                scopes.lookup_symbol(&tuple_ident.name, SymKindSet::from_kind(SymKind::CompositeType))
+            && let Some(tuple_symbol) = scopes.lookup_symbol(
+                &tuple_ident.name,
+                SymKindSet::from_kind(SymKind::CompositeType),
+            )
             && tuple_symbol.nested_types().is_none()
         {
             for type_ident in node.collect_idents(unit) {
@@ -833,7 +843,9 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         // Look up the "self" TypeAlias symbol which was defined in the impl scope
         // and has type_of pointing to the struct
-        if let Some(self_sym) = scopes.lookup_symbol("self", SymKindSet::from_kind(SymKind::TypeAlias)) {
+        if let Some(self_sym) =
+            scopes.lookup_symbol("self", SymKindSet::from_kind(SymKind::TypeAlias))
+        {
             // Find the "self" identifier child and set its symbol
             for &child_id in node.child_ids() {
                 let child = unit.hir_node(child_id);

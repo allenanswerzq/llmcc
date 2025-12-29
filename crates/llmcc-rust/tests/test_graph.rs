@@ -28,7 +28,10 @@ fn get_block<'a>(
     cc: &'a llmcc_core::context::CompileCtxt<'a>,
     id: llmcc_core::block::BlockId,
 ) -> llmcc_core::block::BasicBlock<'a> {
-    cc.block_arena.get_bb(id.0 as usize).expect("block not found").clone()
+    cc.block_arena
+        .get_bb(id.0 as usize)
+        .expect("block not found")
+        .clone()
 }
 
 // ============================================================================

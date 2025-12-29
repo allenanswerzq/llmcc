@@ -48,7 +48,7 @@ macro_rules! declare_arena {
                 Self {
                     herd: bumpalo_herd::Herd::new(),
                     // Use 256 shards to reduce contention at high thread counts
-                    $( $field: dashmap::DashMap::with_shard_amount(256), )*
+                    $( $field: dashmap::DashMap::new(), )*
                 }
             }
 
@@ -85,7 +85,7 @@ macro_rules! declare_arena {
             /// Allocate a value in the thread-local bump allocator.
             /// Uses thread_local to cache the Member per thread, avoiding mutex contention.
             #[inline]
-            pub fn alloc_in_herd<'a, T>(&'a self, value: T) -> &'a T {
+            pub fn alloc_in_herd<T>(&self, value: T) -> &T {
                 // PERFORMANCE CRITICAL: bumpalo_herd::Herd::get() contains a mutex.
                 // Calling it millions of times causes severe lock contention at high thread counts.
                 // We use thread_local to cache the Member per-thread.
@@ -123,6 +123,7 @@ macro_rules! declare_arena {
                     /// SAFETY: The pointer was allocated from the bump arena
                     /// and is valid for the arena's lifetime.
                     #[inline]
+                    #[allow(clippy::needless_lifetimes)]
                     pub fn [<get_ $field>]<'a>(&'a self, id: usize) -> Option<&'a $ty> {
                         self.$field.get(&id).map(|r| {
                             // SAFETY: Pointer is valid for 'a lifetime

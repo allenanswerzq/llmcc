@@ -53,12 +53,14 @@ unsafe impl Sync for ScopePtr {}
 impl ScopePtr {
     pub fn new<'a>(ptr: *const Scope<'a>) -> Self {
         // Erase lifetime - the pointer is valid for the arena's lifetime
-        Self(ptr as *const Scope<'static>)
+        // SAFETY: We're casting to erase the lifetime, which is intentional
+        Self(ptr.cast())
     }
 
     /// Get the raw pointer with the original lifetime
     pub fn as_ptr<'a>(&self) -> *const Scope<'a> {
-        self.0 as *const Scope<'a>
+        // SAFETY: Restoring the original lifetime
+        self.0.cast()
     }
 }
 
@@ -71,11 +73,13 @@ unsafe impl Sync for HirNodePtr {}
 
 impl HirNodePtr {
     pub fn new<'a>(ptr: *const HirNode<'a>) -> Self {
-        Self(ptr as *const HirNode<'static>)
+        // SAFETY: We're casting to erase the lifetime, which is intentional
+        Self(ptr.cast())
     }
 
     pub fn as_ptr<'a>(&self) -> *const HirNode<'a> {
-        self.0 as *const HirNode<'a>
+        // SAFETY: Restoring the original lifetime
+        self.0.cast()
     }
 }
 
@@ -170,7 +174,10 @@ impl<'tcx> CompileUnit<'tcx> {
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
         // Use DashMap-based lookup by ID
-        self.cc.block_arena.get_bb(id.0 as usize).map(|bb| bb.clone())
+        self.cc
+            .block_arena
+            .get_bb(id.0 as usize)
+            .cloned()
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -611,7 +618,7 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Get a HIR node by ID from the Arena's DashMap (O(1) concurrent lookup)
     pub fn get_hir_node(&'tcx self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.arena.get_hir_node(id.0).map(|node_ref| *node_ref)
+        self.arena.get_hir_node(id.0).copied()
     }
 
     /// Check if a HIR node exists in the Arena (O(1) check)
