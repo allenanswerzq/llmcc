@@ -512,7 +512,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 if let Some(type_args) =
                     trait_node.child_by_field(unit, LangRust::field_type_arguments)
                 {
-                    for child in type_args.children(unit) {
+                    for &child_id in type_args.child_ids() {
+                        let child = unit.hir_node(child_id);
                         if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                             continue;
                         }
@@ -834,7 +835,8 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // and has type_of pointing to the struct
         if let Some(self_sym) = scopes.lookup_symbol("self", SymKindSet::from_kind(SymKind::TypeAlias)) {
             // Find the "self" identifier child and set its symbol
-            for child in node.children(unit) {
+            for &child_id in node.child_ids() {
+                let child = unit.hir_node(child_id);
                 if let Some(ident) = child.as_ident() {
                     if ident.name == "self" {
                         ident.set_symbol(self_sym);
@@ -977,7 +979,8 @@ fn extract_nested_types<'tcx>(
     if type_node.kind_id() == LangRust::generic_type {
         // Get the type_arguments child
         if let Some(type_args) = type_node.child_by_field(unit, LangRust::field_type_arguments) {
-            for child in type_args.children(unit) {
+            for &child_id in type_args.child_ids() {
+                let child = unit.hir_node(child_id);
                 if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                     continue;
                 }
@@ -993,7 +996,8 @@ fn extract_nested_types<'tcx>(
     // Handle scoped type identifiers (e.g., std::result::Result<T, E>)
     else if type_node.kind_id() == LangRust::scoped_type_identifier {
         if let Some(type_args) = type_node.child_by_field(unit, LangRust::field_type_arguments) {
-            for child in type_args.children(unit) {
+            for &child_id in type_args.child_ids() {
+                let child = unit.hir_node(child_id);
                 if child.is_trivia() || child.kind_id() == LangRust::lifetime {
                     continue;
                 }

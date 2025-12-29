@@ -28,8 +28,7 @@ fn get_block<'a>(
     cc: &'a llmcc_core::context::CompileCtxt<'a>,
     id: llmcc_core::block::BlockId,
 ) -> llmcc_core::block::BasicBlock<'a> {
-    let index = (id.0 as usize).saturating_sub(1);
-    (*cc.block_arena.bb().get(index).expect("block not found")).clone()
+    cc.block_arena.get_bb(id.0 as usize).expect("block not found").clone()
 }
 
 // ============================================================================
@@ -482,11 +481,9 @@ fn test_type_alias_block() {
     );
 
     with_project_graph(&[&source], |cc, pg| {
-        // Dump all blocks first
-        for i in 0..10 {
-            if let Some(blk) = cc.block_arena.bb().get(i) {
-                eprintln!("DEBUG block[{}]: kind={:?}", i, blk.kind());
-            }
+        // Dump all blocks first using DashMap iter
+        for (i, blk) in cc.block_arena.iter_bb().take(10).enumerate() {
+            eprintln!("DEBUG block[{}]: kind={:?}", i, blk.kind());
         }
 
         // Find alias blocks

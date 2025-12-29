@@ -358,10 +358,9 @@ fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSet<RenderEdge> {
     let mut edges = BTreeSet::new();
 
-    // Helper to get block kind
+    // Helper to get block kind using DashMap-based lookup
     let get_kind = |id: BlockId| -> Option<BlockKind> {
-        let index = (id.as_u32() as usize).saturating_sub(1);
-        project.cc.block_arena.bb().get(index).map(|b| b.kind())
+        project.cc.block_arena.get_bb(id.as_u32() as usize).map(|b| b.kind())
     };
 
     // Helper to recursively collect type references from fields (including nested variant fields)
@@ -414,9 +413,7 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
             // 1b. Field type arguments → Field's generic type
             // For `data: Triple<User, Error>`, creates edges: User → Triple, Error → Triple
             // Only creates edges when the field's type is in node_set (a defined generic struct)
-            let field_index = (field_id.as_u32() as usize).saturating_sub(1);
-            let bb = project.cc.block_arena.bb();
-            let Some(field_block) = bb.get(field_index) else {
+            let Some(field_block) = project.cc.block_arena.get_bb(field_id.as_u32() as usize) else {
                 continue;
             };
             let Some(field) = field_block.as_field() else {
@@ -683,8 +680,7 @@ fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSe
         // From `impl Trait<TypeArg> for Target`, create edge TypeArg → Target
         // Uses block.base.type_deps populated during link_impl from symbol's nested_types
         if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
-            let index = (block_id.as_u32() as usize).saturating_sub(1);
-            if let Some(block) = project.cc.block_arena.bb().get(index)
+            if let Some(block) = project.cc.block_arena.get_bb(block_id.as_u32() as usize)
                 && let Some(base) = block.base()
             {
                 let type_deps = base.type_deps.read();

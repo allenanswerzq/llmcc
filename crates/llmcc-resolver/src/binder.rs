@@ -1,3 +1,6 @@
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
+
 use llmcc_core::context::CompileUnit;
 use llmcc_core::interner::InternPool;
 use llmcc_core::ir::HirScope;
@@ -294,16 +297,26 @@ pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
     globals: &'a Scope<'a>,
     config: &ResolverOption,
 ) {
+    let total_start = Instant::now();
+
     tracing::info!("starting symbol binding for total {} units", cc.files.len());
 
+    // Atomic counter for parallel CPU time
+    let bind_cpu_time_ns = AtomicU64::new(0);
+
     let bind_unit = |unit_index: usize| {
+        let bind_start = Instant::now();
+
         tracing::debug!("binding symbols for unit {}", unit_index);
         let unit = cc.compile_unit(unit_index);
         let id = unit.file_root_id().unwrap();
         let node = unit.hir_node(id);
         L::bind_symbols(unit, node, globals, config);
+
+        bind_cpu_time_ns.fetch_add(bind_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
     };
 
+    let parallel_start = Instant::now();
     if config.sequential {
         tracing::debug!("running symbol binding sequentially");
         (0..cc.files.len()).for_each(bind_unit);
@@ -311,6 +324,17 @@ pub fn bind_symbols_with<'a, L: LanguageTraitImpl>(
         tracing::debug!("running symbol binding in parallel");
         (0..cc.files.len()).into_par_iter().for_each(bind_unit);
     }
+    let parallel_time = parallel_start.elapsed();
+
+    let total_time = total_start.elapsed();
+    let bind_cpu_ms = bind_cpu_time_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+
+    tracing::info!(
+        "binding breakdown: parallel={:.2}ms (bind_cpu={:.2}ms), total={:.2}ms",
+        parallel_time.as_secs_f64() * 1000.0,
+        bind_cpu_ms,
+        total_time.as_secs_f64() * 1000.0,
+    );
 
     tracing::info!("symbol binding complete");
 }

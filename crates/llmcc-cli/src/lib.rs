@@ -15,6 +15,9 @@ use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
 pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
 
+#[cfg(feature = "profile")]
+use std::fs::File;
+
 fn should_skip_dir(name: &str) -> bool {
     matches!(
         name,
@@ -30,6 +33,36 @@ fn should_skip_dir(name: &str) -> bool {
             | "benchmark"
             | "benchmarks"
     )
+}
+
+/// Generate a flamegraph from CPU profiling data
+#[cfg(feature = "profile")]
+pub fn profile_phase<F, R>(name: &str, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    use pprof::ProfilerGuard;
+
+    // Use 1000Hz for higher resolution
+    let guard = ProfilerGuard::new(1000).expect("Failed to start profiler");
+    let result = f();
+
+    if let Ok(report) = guard.report().build() {
+        let filename = format!("{}.svg", name);
+        let file = File::create(&filename).expect("Failed to create flamegraph file");
+        report.flamegraph(file).expect("Failed to write flamegraph");
+        info!("Flamegraph saved to {}", filename);
+    }
+
+    result
+}
+
+#[cfg(not(feature = "profile"))]
+pub fn profile_phase<F, R>(_name: &str, f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    f()
 }
 
 pub struct LlmccOptions {
@@ -55,7 +88,9 @@ where
 
     let parse_start = Instant::now();
     info!("Parsing total {} files", requested_files.len());
-    let cc = CompileCtxt::from_files::<L>(&requested_files)?;
+    let cc = profile_phase("parsing", || {
+        CompileCtxt::from_files::<L>(&requested_files)
+    })?;
     info!(
         "Parsing & tree-sitter: {:.2}s",
         parse_start.elapsed().as_secs_f64()
@@ -63,7 +98,9 @@ where
     log_parse_metrics(&cc.build_metrics);
 
     let ir_start = Instant::now();
-    build_llmcc_ir::<L>(&cc, IrBuildOption::default())?;
+    profile_phase("ir_build", || {
+        build_llmcc_ir::<L>(&cc, IrBuildOption::default())
+    })?;
     info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
 
     let symbols_start = Instant::now();
@@ -79,7 +116,9 @@ where
     let mut pg = ProjectGraph::new(&cc);
 
     let bind_start = Instant::now();
-    bind_symbols_with::<L>(&cc, globals, &resolver_option);
+    profile_phase("binding", || {
+        bind_symbols_with::<L>(&cc, globals, &resolver_option);
+    });
     info!("Symbol binding: {:.2}s", bind_start.elapsed().as_secs_f64());
 
     let graph_build_start = Instant::now();

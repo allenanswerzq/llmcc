@@ -106,7 +106,8 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 symbols.push(sym);
             }
         }
-        for child in node.children(unit) {
+        for &child_id in node.child_ids() {
+            let child = unit.hir_node(child_id);
             Self::collect_pattern_identifiers_impl(unit, &child, scopes, kind, symbols);
         }
     }
@@ -1018,7 +1019,9 @@ pub fn collect_symbols<'tcx>(
 ) -> &'tcx Scope<'tcx> {
     let cc = unit.cc;
     let arena = cc.arena();
-    let unit_globals = arena.alloc(Scope::new(HirId(unit.index)));
+    let unit_globals_val = Scope::new(HirId(unit.index));
+    let scope_id = unit_globals_val.id().0;
+    let unit_globals = arena.alloc_with_id(scope_id, unit_globals_val);
     let mut scopes = CollectorScopes::new(cc, unit.index, scope_stack, unit_globals);
 
     let mut visit = CollectorVisitor::new();

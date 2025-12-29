@@ -2,6 +2,10 @@ use anyhow::Result;
 use clap::ArgGroup;
 use clap::Parser;
 
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
 use llmcc_core::graph_render::ComponentDepth;

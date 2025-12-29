@@ -6,7 +6,7 @@ use std::sync::atomic::Ordering;
 
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirId};
-use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKind, SymKindSet, Symbol};
+use crate::symbol::{NEXT_SCOPE_ID, ScopeId, SymId, SymKindSet, Symbol};
 
 /// Represents a single level in the scope hierarchy.
 pub struct Scope<'tcx> {
@@ -414,7 +414,8 @@ impl<'tcx> ScopeStack<'tcx> {
                 let symbol = symbols.last().copied().unwrap();
                 let new_symbol = Symbol::new(node, name_key);
                 new_symbol.set_previous(symbol.id);
-                let allocated = self.arena.alloc(new_symbol);
+                let sym_id = new_symbol.id().0;
+                let allocated = self.arena.alloc_with_id(sym_id, new_symbol);
                 scope.insert(allocated);
                 symbols.push(allocated);
                 Some(symbols)
@@ -426,7 +427,8 @@ impl<'tcx> ScopeStack<'tcx> {
             tracing::trace!("create new symbol '{}' in scope {:?}", name, scope.id());
             // not found, create new symbol
             let new_symbol = Symbol::new(node, name_key);
-            let allocated = self.arena.alloc(new_symbol);
+            let sym_id = new_symbol.id().0;
+            let allocated = self.arena.alloc_with_id(sym_id, new_symbol);
             scope.insert(allocated);
             Some(vec![allocated])
         }
@@ -522,11 +524,8 @@ impl<'tcx> ScopeStack<'tcx> {
         let mut results = Vec::new();
         for symbol in symbols {
             if let Some(symbol_scope_id) = symbol.opt_scope() {
-                // ScopeId.0 is 0-indexed (directly usable for arena indexing)
-                let scope_index = symbol_scope_id.0;
-                let scopes_slice = self.arena.scope();
-                if scope_index < scopes_slice.len() {
-                    let next_scope = &scopes_slice[scope_index];
+                // Get scope from DashMap by ID (O(1) lookup)
+                if let Some(next_scope) = self.arena.get_scope(symbol_scope_id.0) {
                     debug_assert!(next_scope.id() == symbol_scope_id);
                     tracing::trace!(
                         "lookup_qualified_recursive: descending into scope {:?} for symbol '{}'",

@@ -18,6 +18,67 @@ use crate::lang_def::{LanguageTrait, ParseTree};
 use crate::scope::Scope;
 use crate::symbol::{ScopeId, SymId, Symbol, reset_scope_id_counter, reset_symbol_id_counter};
 
+/// Thread-safe wrapper for raw Symbol pointer.
+/// SAFETY: The Symbol is allocated in a bump arena that outlives all usage,
+/// and Symbols are immutable after creation (interior mutability via atomics).
+#[derive(Clone, Copy)]
+pub struct SymbolPtr(*const Symbol);
+
+// SAFETY: Symbol is allocated in a thread-local bump arena, but the backing memory
+// is stable for the lifetime of the arena. Symbol fields use AtomicCell/AtomicUsize
+// for interior mutability, making them safe to access from multiple threads.
+unsafe impl Send for SymbolPtr {}
+unsafe impl Sync for SymbolPtr {}
+
+impl SymbolPtr {
+    pub fn new(ptr: *const Symbol) -> Self {
+        Self(ptr)
+    }
+
+    pub fn as_ptr(&self) -> *const Symbol {
+        self.0
+    }
+}
+
+/// Thread-safe wrapper for raw Scope pointer.
+#[derive(Clone, Copy)]
+pub struct ScopePtr(*const Scope<'static>);
+
+// SAFETY: Scope is allocated in a thread-local bump arena, but the backing memory
+// is stable for the lifetime of the arena. Scope fields use RwLock/DashMap
+// for interior mutability, making them safe to access from multiple threads.
+unsafe impl Send for ScopePtr {}
+unsafe impl Sync for ScopePtr {}
+
+impl ScopePtr {
+    pub fn new<'a>(ptr: *const Scope<'a>) -> Self {
+        // Erase lifetime - the pointer is valid for the arena's lifetime
+        Self(ptr as *const Scope<'static>)
+    }
+
+    /// Get the raw pointer with the original lifetime
+    pub fn as_ptr<'a>(&self) -> *const Scope<'a> {
+        self.0 as *const Scope<'a>
+    }
+}
+
+/// Thread-safe wrapper for raw HirNode pointer.
+#[derive(Clone, Copy)]
+pub struct HirNodePtr(*const HirNode<'static>);
+
+unsafe impl Send for HirNodePtr {}
+unsafe impl Sync for HirNodePtr {}
+
+impl HirNodePtr {
+    pub fn new<'a>(ptr: *const HirNode<'a>) -> Self {
+        Self(ptr as *const HirNode<'static>)
+    }
+
+    pub fn as_ptr<'a>(&self) -> *const HirNode<'a> {
+        self.0 as *const HirNode<'a>
+    }
+}
+
 #[derive(Debug, Copy, Clone)]
 pub struct CompileUnit<'tcx> {
     pub cc: &'tcx CompileCtxt<'tcx>,
@@ -108,9 +169,8 @@ impl<'tcx> CompileUnit<'tcx> {
 
     /// Get a HIR node by ID, returning None if not found
     pub fn opt_bb(self, id: BlockId) -> Option<BasicBlock<'tcx>> {
-        // Direct indexing into block arena Vec using BlockId (offset by 1 since BlockId starts at 1)
-        let index = (id.0 as usize).saturating_sub(1);
-        self.cc.block_arena.bb().get(index).map(|bb| (*bb).clone())
+        // Use DashMap-based lookup by ID
+        self.cc.block_arena.get_bb(id.0 as usize).map(|bb| bb.clone())
     }
 
     /// Get a HIR node by ID, panicking if not found
@@ -157,8 +217,8 @@ impl<'tcx> CompileUnit<'tcx> {
             .and_then(|base| base.opt_get_name())
             .map(|s| s.to_string());
 
-        // Allocate block into the Arena Vec using BlockId as index
-        self.cc.block_arena.alloc(block);
+        // Allocate block into the Arena's DashMap using BlockId as key
+        self.cc.block_arena.alloc_with_id(id.0 as usize, block);
 
         // Register the block in the index maps
         self.cc
@@ -431,9 +491,10 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn create_unit_globals(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        // Scope already in Arena
-        self.arena
-            .alloc(Scope::new_with(owner, None, Some(&self.interner)))
+        // Create scope (it generates its own ID) then alloc with that ID
+        let scope = Scope::new_with(owner, None, Some(&self.interner));
+        let id = scope.id().0;
+        self.arena.alloc_with_id(id, scope)
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
@@ -441,18 +502,14 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
-        let index = (scope_id.0).saturating_sub(1);
         self.arena
-            .scope()
-            .get(index)
-            .copied()
+            .get_scope(scope_id.0)
             .expect("ScopeId not mapped to Scope in CompileCtxt")
     }
 
     pub fn opt_get_scope(&'tcx self, scope_id: ScopeId) -> Option<&'tcx Scope<'tcx>> {
-        // Direct lookup from Arena using offset, following redirects if scope was merged
-        let index = scope_id.0;
-        self.arena.scope().get(index).and_then(|scope| {
+        // Direct lookup from Arena's DashMap using ID, following redirects if scope was merged
+        self.arena.get_scope(scope_id.0).and_then(|scope| {
             if let Some(target_id) = scope.get_redirect() {
                 // Follow redirect chain
                 self.opt_get_scope(target_id)
@@ -463,7 +520,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn opt_get_symbol(&'tcx self, owner: SymId) -> Option<&'tcx Symbol> {
-        self.arena.symbol().get(owner.0).copied()
+        self.arena.get_symbol(owner.0)
     }
 
     pub fn get_symbol(&'tcx self, owner: SymId) -> &'tcx Symbol {
@@ -474,10 +531,8 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Find the primary symbol associated with a block ID
     pub fn find_symbol_by_block_id(&'tcx self, block_id: BlockId) -> Option<&'tcx Symbol> {
         self.arena
-            .symbol()
-            .iter()
+            .iter_symbol()
             .find(|symbol| symbol.block_id() == Some(block_id))
-            .copied()
     }
 
     /// Access the arena for allocations
@@ -508,8 +563,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn alloc_scope(&'tcx self, owner: HirId) -> &'tcx Scope<'tcx> {
-        self.arena
-            .alloc(Scope::new_with(owner, None, Some(&self.interner)))
+        let scope = Scope::new_with(owner, None, Some(&self.interner));
+        let id = scope.id().0;
+        self.arena.alloc_with_id(id, scope)
     }
 
     /// Merge the second scope into the first.
@@ -553,26 +609,24 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     // ========== HIR Map APIs ==========
 
-    /// Get a HIR node by ID from the Arena (O(1) lookup using ID as index)
-    /// HIR IDs correspond directly to positions in the Arena vector
-    pub fn get_hir_node(&self, id: HirId) -> Option<HirNode<'tcx>> {
-        self.arena.hir_node().get(id.0).map(|node_ref| **node_ref)
+    /// Get a HIR node by ID from the Arena's DashMap (O(1) concurrent lookup)
+    pub fn get_hir_node(&'tcx self, id: HirId) -> Option<HirNode<'tcx>> {
+        self.arena.get_hir_node(id.0).map(|node_ref| *node_ref)
     }
 
-    /// Check if a HIR node exists in the Arena (O(1) check using ID as index)
+    /// Check if a HIR node exists in the Arena (O(1) check)
     pub fn hir_node_exists(&self, id: HirId) -> bool {
-        let hir_nodes = self.arena.hir_node();
-        id.0 < hir_nodes.len()
+        self.arena.hir_node.contains_key(&id.0)
     }
 
     /// Get the total count of HIR nodes in the Arena
     pub fn hir_node_count(&self) -> usize {
-        self.arena.hir_node().len()
+        self.arena.len_hir_node()
     }
 
     /// Get all HIR node IDs from the Arena
-    pub fn all_hir_node_ids(&self) -> Vec<HirId> {
-        self.arena.hir_node().iter().map(|node| node.id()).collect()
+    pub fn all_hir_node_ids(&'tcx self) -> Vec<HirId> {
+        self.arena.iter_hir_node().map(|node| node.id()).collect()
     }
 
     // ========== Block Indexes APIs ==========
@@ -629,20 +683,20 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     /// Get all symbols from the symbol map
     pub fn get_all_symbols(&'tcx self) -> Vec<&'tcx Symbol> {
-        self.arena.symbol().iter().copied().collect()
+        self.arena.iter_symbol().collect()
     }
 
     /// Get the count of registered symbols (excluding unresolved)
     pub fn symbol_count(&self) -> usize {
-        self.arena.symbol().iter().count()
+        self.arena.len_symbol()
     }
 
     /// Iterate over all symbols and their IDs (excluding unresolved)
-    pub fn for_each_symbol<F>(&self, mut f: F)
+    pub fn for_each_symbol<F>(&'tcx self, mut f: F)
     where
         F: FnMut(SymId, &'tcx Symbol),
     {
-        for symbol in self.arena.symbol().iter() {
+        for symbol in self.arena.iter_symbol() {
             f(symbol.id(), symbol);
         }
     }
