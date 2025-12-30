@@ -9,7 +9,6 @@ digraph architecture {
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
   edge [color="#666666", arrowsize=0.7];
 
-  label="crate graph";
   labelloc=t;
   fontsize=16;
   fontname="Helvetica Bold";
@@ -44,8 +43,8 @@ digraph architecture {
   crate_risingwave_batch_executors -> crate_risingwave_common;
   crate_risingwave_batch_executors -> crate_risingwave_connector;
   crate_risingwave_batch_executors -> crate_risingwave_expr;
+  crate_risingwave_batch_executors -> crate_risingwave_meta_model_migration;
   crate_risingwave_batch_executors -> crate_risingwave_sqlparser;
-  crate_risingwave_batch_executors -> crate_risingwave_stream;
   crate_risingwave_common -> crate_risingwave_connector;
   crate_risingwave_common -> crate_risingwave_expr_impl;
   crate_risingwave_common -> crate_risingwave_frontend;
@@ -60,7 +59,6 @@ digraph architecture {
   crate_risingwave_connector -> crate_risingwave_object_store;
   crate_risingwave_connector -> crate_risingwave_sqlparser;
   crate_risingwave_connector -> crate_risingwave_storage;
-  crate_risingwave_connector -> crate_risingwave_stream;
   crate_risingwave_ctl -> crate_risingwave_expr_impl;
   crate_risingwave_ctl -> crate_risingwave_frontend;
   crate_risingwave_ctl -> crate_risingwave_hummock_sdk;
@@ -75,7 +73,6 @@ digraph architecture {
   crate_risingwave_expr_impl -> crate_risingwave_stream;
   crate_risingwave_expr_macro -> crate_risingwave_sqlparser;
   crate_risingwave_frontend -> crate_pgwire;
-  crate_risingwave_frontend -> crate_risingwave_batch_executors;
   crate_risingwave_frontend -> crate_risingwave_expr_macro;
   crate_risingwave_frontend -> crate_risingwave_meta;
   crate_risingwave_frontend -> crate_risingwave_meta_model;
@@ -90,6 +87,7 @@ digraph architecture {
   crate_risingwave_hummock_test -> crate_risingwave_meta;
   crate_risingwave_hummock_test -> crate_risingwave_storage;
   crate_risingwave_hummock_trace -> crate_risingwave_storage;
+  crate_risingwave_hummock_trace -> crate_risingwave_stream;
   crate_risingwave_jni_core -> crate_risingwave_common;
   crate_risingwave_meta -> crate_risingwave_common;
   crate_risingwave_meta -> crate_risingwave_expr_impl;

@@ -1152,6 +1152,7 @@ fn normalize_graph(text: &str) -> String {
                 || trimmed.starts_with("style=")
                 || trimmed.starts_with("color=")
                 || trimmed.starts_with("bgcolor=")
+                || trimmed.starts_with("label=\"")
             {
                 return false;
             }

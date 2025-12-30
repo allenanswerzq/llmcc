@@ -17,7 +17,7 @@ People (and coding agents) need to understand systems from different dimensions.
 
 ## Walkthrough: Codex (midterm size multi-crate rust project)
 
-This repo includes a ready-made example under [sample](sample).
+This repo includes a ready-made example under [sample](sample). Download and open them in browser for the best viewing experience.
 
 ### Depth 1: crate graph
 

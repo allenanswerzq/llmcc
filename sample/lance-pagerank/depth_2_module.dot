@@ -9,7 +9,6 @@ digraph architecture {
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
   edge [color="#666666", arrowsize=0.7];
 
-  label="module graph";
   labelloc=t;
   fontsize=16;
   fontname="Helvetica Bold";
@@ -181,8 +180,10 @@ digraph architecture {
   mod_lance_exec -> mod_lance_index_vector;
   mod_lance_exec -> mod_lance_io_scheduler;
   mod_lance_exec -> mod_lance_table_format;
+  mod_lance_exec -> mod_pylance_dataset;
   mod_lance_file_previous -> mod_lance_core_datatypes;
   mod_lance_file_writer -> mod_lance_core_datatypes;
+  mod_lance_file_writer -> mod_lance_encoding_encoder;
   mod_lance_index -> mod_lance_core_utils;
   mod_lance_index -> mod_lance_index_scalar;
   mod_lance_index -> mod_lance_index_vector;
@@ -202,6 +203,7 @@ digraph architecture {
   mod_lance_table_io -> mod_lance_io_object_store;
   mod_lance_table_io -> mod_lance_table_format;
   mod_lance_vector -> mod_lance_core_datatypes;
+  mod_lance_vector -> mod_lance_dataset;
   mod_lance_vector -> mod_lance_index_pq;
   mod_lance_vector -> mod_lance_index_vector;
   mod_lance_vector -> mod_pylance_dataset;

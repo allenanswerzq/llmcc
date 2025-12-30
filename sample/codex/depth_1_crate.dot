@@ -9,7 +9,6 @@ digraph architecture {
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
   edge [color="#666666", arrowsize=0.7];
 
-  label="crate graph";
   labelloc=t;
   fontsize=16;
   fontname="Helvetica Bold";
@@ -17,7 +16,6 @@ digraph architecture {
   crate_codex_api[label="codex-api"];
   crate_codex_app_server[label="codex-app-server"];
   crate_codex_app_server_protocol[label="codex-app-server-protocol"];
-  crate_codex_apply_patch[label="codex-apply-patch"];
   crate_codex_chatgpt[label="codex-chatgpt"];
   crate_codex_cli[label="codex-cli"];
   crate_codex_client[label="codex-client"];
@@ -25,6 +23,7 @@ digraph architecture {
   crate_codex_cloud_tasks_client[label="codex-cloud-tasks-client"];
   crate_codex_common[label="codex-common"];
   crate_codex_core[label="codex-core"];
+  crate_codex_exec[label="codex-exec"];
   crate_codex_execpolicy[label="codex-execpolicy"];
   crate_codex_execpolicy_legacy[label="codex-execpolicy-legacy"];
   crate_codex_git[label="codex-git"];
@@ -38,12 +37,13 @@ digraph architecture {
   crate_codex_windows_sandbox[label="codex-windows-sandbox"];
   crate_mcp_types[label="mcp-types"];
 
-  crate_codex_api -> crate_codex_app_server_protocol;
   crate_codex_api -> crate_codex_client;
   crate_codex_api -> crate_codex_protocol;
   crate_codex_app_server -> crate_codex_app_server_protocol;
   crate_codex_app_server -> crate_codex_core;
+  crate_codex_app_server -> crate_codex_mcp_server;
   crate_codex_app_server -> crate_codex_protocol;
+  crate_codex_app_server -> crate_mcp_types;
   crate_codex_app_server_protocol -> crate_codex_protocol;
   crate_codex_chatgpt -> crate_codex_core;
   crate_codex_cli -> crate_codex_app_server_protocol;
@@ -51,10 +51,10 @@ digraph architecture {
   crate_codex_cli -> crate_codex_core;
   crate_codex_cli -> crate_codex_rmcp_client;
   crate_codex_cloud_tasks -> crate_codex_cloud_tasks_client;
+  crate_codex_cloud_tasks -> crate_codex_tui;
   crate_codex_cloud_tasks -> crate_codex_tui2;
   crate_codex_core -> crate_codex_app_server_protocol;
-  crate_codex_core -> crate_codex_apply_patch;
-  crate_codex_core -> crate_codex_execpolicy;
+  crate_codex_core -> crate_codex_client;
   crate_codex_core -> crate_codex_execpolicy_legacy;
   crate_codex_core -> crate_codex_git;
   crate_codex_core -> crate_codex_otel;
@@ -63,8 +63,8 @@ digraph architecture {
   crate_codex_core -> crate_codex_tui2;
   crate_codex_core -> crate_codex_utils_absolute_path;
   crate_codex_core -> crate_mcp_types;
+  crate_codex_exec -> crate_codex_protocol;
   crate_codex_execpolicy_legacy -> crate_codex_execpolicy;
-  crate_codex_mcp_server -> crate_codex_app_server_protocol;
   crate_codex_mcp_server -> crate_codex_core;
   crate_codex_mcp_server -> crate_codex_protocol;
   crate_codex_mcp_server -> crate_mcp_types;
@@ -72,10 +72,11 @@ digraph architecture {
   crate_codex_rmcp_client -> crate_mcp_types;
   crate_codex_tui -> crate_codex_app_server_protocol;
   crate_codex_tui -> crate_codex_common;
+  crate_codex_tui -> crate_codex_core;
+  crate_codex_tui -> crate_codex_exec;
   crate_codex_tui -> crate_codex_execpolicy_legacy;
-  crate_codex_tui -> crate_codex_protocol;
   crate_codex_tui -> crate_codex_tui2;
   crate_codex_tui2 -> crate_codex_common;
-  crate_codex_tui2 -> crate_mcp_types;
+  crate_codex_tui2 -> crate_codex_exec;
   crate_codex_windows_sandbox -> crate_codex_protocol;
 }
