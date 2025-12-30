@@ -93,30 +93,51 @@ pub struct ConfigResult {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_containers_rs {
-        label="containers.rs";
-        n19[label="UserOption", full_path="$TMP/sample/src/containers.rs:14", sym_ty="Struct", shape=box];
-        n21[label="UserResult", full_path="$TMP/sample/src/containers.rs:18", sym_ty="Struct", shape=box];
-        n23[label="ConfigResult", full_path="$TMP/sample/src/containers.rs:22", sym_ty="Struct", shape=box];
-        n10[label="Option", full_path="$TMP/sample/src/containers.rs:3", sym_ty="Enum", shape=box];
-        n14[label="Result", full_path="$TMP/sample/src/containers.rs:8", sym_ty="Enum", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-        n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
-        n7[label="Config", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_containers_rs {
+      label="containers.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n19[label="UserOption", full_path="$TMP/sample/src/containers.rs:14", sym_ty="Struct", shape=box];
+      n21[label="UserResult", full_path="$TMP/sample/src/containers.rs:18", sym_ty="Struct", shape=box];
+      n23[label="ConfigResult", full_path="$TMP/sample/src/containers.rs:22", sym_ty="Struct", shape=box];
+      n10[label="Option", full_path="$TMP/sample/src/containers.rs:3", sym_ty="Enum", shape=box];
+      n14[label="Result", full_path="$TMP/sample/src/containers.rs:8", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+      n7[label="Config", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n10 [from="type_arg", to="generic"];
   n3 -> n14 [from="type_arg", to="generic"];

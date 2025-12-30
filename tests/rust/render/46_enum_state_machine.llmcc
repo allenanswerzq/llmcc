@@ -91,33 +91,53 @@ pub fn transition(state: OrderState) -> OrderState {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_state_rs {
-        label="state.rs";
-        n27[label="transition", full_path="$TMP/sample/src/state.rs:11", sym_ty="Function"];
-        n12[label="OrderState", full_path="$TMP/sample/src/state.rs:3", sym_ty="Enum", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="Order", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-        n9[label="Cancellation", full_path="$TMP/sample/src/types.rs:13", sym_ty="Struct", shape=box];
-        n5[label="Payment", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
-        n7[label="Shipment", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_state_rs {
+      label="state.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n27[label="transition", full_path="$TMP/sample/src/state.rs:11", sym_ty="Function"];
+      n12[label="OrderState", full_path="$TMP/sample/src/state.rs:3", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Order", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n9[label="Cancellation", full_path="$TMP/sample/src/types.rs:13", sym_ty="Struct", shape=box];
+      n5[label="Payment", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
+      n7[label="Shipment", full_path="$TMP/sample/src/types.rs:9", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n12 [from="field_type", to="enum"];
   n5 -> n12 [from="field_type", to="enum"];
   n7 -> n12 [from="field_type", to="enum"];
   n9 -> n12 [from="field_type", to="enum"];
-  n12 -> n27 [from="input", to="func"];
-  n27 -> n12 [from="func", to="output"];
+  n12 -> n27 [from="input", to="func", dir=both];
 }

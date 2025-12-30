@@ -176,3 +176,28 @@ pub struct AggregatedNode {
     /// Crate name (for clustering modules by crate)
     pub crate_name: Option<String>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_component_depth_conversion() {
+        assert_eq!(ComponentDepth::from_number(0), ComponentDepth::Project);
+        assert_eq!(ComponentDepth::from_number(1), ComponentDepth::Crate);
+        assert_eq!(ComponentDepth::from_number(2), ComponentDepth::Module);
+        assert_eq!(ComponentDepth::from_number(3), ComponentDepth::File);
+        assert_eq!(ComponentDepth::from_number(99), ComponentDepth::File);
+    }
+
+    #[test]
+    fn test_component_depth_properties() {
+        assert!(ComponentDepth::Project.is_aggregated());
+        assert!(ComponentDepth::Crate.is_aggregated());
+        assert!(ComponentDepth::Module.is_aggregated());
+        assert!(!ComponentDepth::File.is_aggregated());
+
+        assert!(!ComponentDepth::Project.shows_file_detail());
+        assert!(ComponentDepth::File.shows_file_detail());
+    }
+}

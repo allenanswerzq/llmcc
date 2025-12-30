@@ -40,24 +40,45 @@ pub struct Box {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_container_rs {
-        label="container.rs";
-        n6[label="Box", full_path="$TMP/sample/src/container.rs:3", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_model_rs {
-        label="model.rs";
-        n3[label="Item", full_path="$TMP/sample/src/model.rs:1", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_container_rs {
+      label="container.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6[label="Box", full_path="$TMP/sample/src/container.rs:3", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_model_rs {
+      label="model.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Item", full_path="$TMP/sample/src/model.rs:1", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n6 [from="field_type", to="struct"];
 }

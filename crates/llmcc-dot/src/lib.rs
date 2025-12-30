@@ -5,27 +5,24 @@
 //!
 //! # Module Structure
 //!
-//! - [`types`]: Core types (ComponentDepth, RenderNode, RenderEdge, etc.)
 //! - [`dot`]: DOT format utilities and helpers
-//! - [`collect`]: Node and edge collection from ProjectGraph
 //! - [`aggregate`]: Aggregated graph rendering (crate/module/project level)
 //! - [`detail`]: File-level detail rendering with clustering
 
 mod aggregate;
-mod collect;
 mod detail;
 mod dot;
-mod types;
 
 use std::collections::{BTreeSet, HashSet};
 
+use llmcc_collect::{collect_edges, collect_nodes};
 use llmcc_core::BlockId;
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::pagerank::PageRanker;
 
-// Re-export public types
+// Re-export public types from llmcc-collect
 pub use dot::DotBuilder;
-pub use types::{ComponentDepth, RenderEdge, RenderNode, RenderOptions};
+pub use llmcc_collect::{ComponentDepth, RenderEdge, RenderNode, RenderOptions};
 
 // ============================================================================
 // Public API
@@ -68,14 +65,14 @@ pub fn render_graph_with_options(
     depth: ComponentDepth,
     options: &RenderOptions,
 ) -> String {
-    let nodes = collect::collect_nodes(project);
+    let nodes = collect_nodes(project);
 
     if nodes.is_empty() {
         return "digraph G {\n}\n".to_string();
     }
 
     let node_set: HashSet<BlockId> = nodes.iter().map(|n| n.block_id).collect();
-    let edges = collect::collect_edges(project, &node_set);
+    let edges = collect_edges(project, &node_set);
 
     // For aggregated views, use aggregated rendering
     if depth.is_aggregated() {
@@ -138,38 +135,4 @@ fn render_file_level(
 
     let tree = detail::build_component_tree(&filtered_nodes, ComponentDepth::File);
     detail::render_dot(&filtered_nodes, &filtered_edges, &tree)
-}
-
-// ============================================================================
-// Tests
-// ============================================================================
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_component_depth_conversion() {
-        assert_eq!(ComponentDepth::from_number(0), ComponentDepth::Project);
-        assert_eq!(ComponentDepth::from_number(1), ComponentDepth::Crate);
-        assert_eq!(ComponentDepth::from_number(2), ComponentDepth::Module);
-        assert_eq!(ComponentDepth::from_number(3), ComponentDepth::File);
-        assert_eq!(ComponentDepth::from_number(99), ComponentDepth::File);
-
-        assert_eq!(ComponentDepth::Project.as_number(), 0);
-        assert_eq!(ComponentDepth::Crate.as_number(), 1);
-        assert_eq!(ComponentDepth::Module.as_number(), 2);
-        assert_eq!(ComponentDepth::File.as_number(), 3);
-    }
-
-    #[test]
-    fn test_component_depth_properties() {
-        assert!(ComponentDepth::Project.is_aggregated());
-        assert!(ComponentDepth::Crate.is_aggregated());
-        assert!(ComponentDepth::Module.is_aggregated());
-        assert!(!ComponentDepth::File.is_aggregated());
-
-        assert!(!ComponentDepth::Project.shows_file_detail());
-        assert!(ComponentDepth::File.shows_file_detail());
-    }
 }

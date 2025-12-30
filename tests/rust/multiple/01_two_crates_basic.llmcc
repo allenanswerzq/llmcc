@@ -79,30 +79,55 @@ pub fn create_user(name: String) -> User {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_app {
-      label="app";
-      subgraph cluster_service_rs {
-        label="service.rs";
-        n11[label="get_user", full_path="$TMP/app/src/service.rs:3", sym_ty="Function"];
-        n15[label="create_user", full_path="$TMP/app/src/service.rs:7", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-    }
+  label="architecture graph";
+  labelloc=t;
 
-    subgraph cluster_common {
-      label="common";
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="User", full_path="$TMP/common/src/types.rs:1", sym_ty="Struct", shape=box];
-        n6[label="Error", full_path="$TMP/common/src/types.rs:6", sym_ty="Struct", shape=box];
-      }
+  subgraph cluster_app {
+    label="app";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
+    subgraph cluster_service_rs {
+      label="service.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11[label="get_user", full_path="$TMP/app/src/service.rs:3", sym_ty="Function"];
+      n15[label="create_user", full_path="$TMP/app/src/service.rs:7", sym_ty="Function"];
     }
 
   }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/common/src/types.rs:1", sym_ty="Struct", shape=box];
+      n6[label="Error", full_path="$TMP/common/src/types.rs:6", sym_ty="Struct", shape=box];
+    }
+
+  }
+
 
   n11 -> n3 [from="func", to="type_dep"];
   n11 -> n6 [from="func", to="type_dep"];

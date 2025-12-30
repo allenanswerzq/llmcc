@@ -6,8 +6,16 @@ use llmcc_core::BlockId;
 use llmcc_core::block::{BlockKind, BlockRelation};
 use llmcc_core::graph::ProjectGraph;
 
-use super::dot::byte_to_line;
-use super::types::{ARCHITECTURE_KINDS, RenderEdge, RenderNode};
+use crate::types::{ARCHITECTURE_KINDS, RenderEdge, RenderNode};
+
+/// Convert byte offset to line number (1-indexed).
+fn byte_to_line(content: &[u8], byte_offset: usize) -> usize {
+    content[..byte_offset.min(content.len())]
+        .iter()
+        .filter(|&&b| b == b'\n')
+        .count()
+        + 1
+}
 
 /// Collect nodes for architecture graph.
 ///
