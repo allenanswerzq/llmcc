@@ -8,9 +8,9 @@ use ignore::WalkBuilder;
 use tracing::info;
 
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
-use llmcc_core::graph_render::{ComponentDepth, render_graph_with_pagerank};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
+use llmcc_dot::{ComponentDepth, render_graph_with_pagerank};
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
 pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};

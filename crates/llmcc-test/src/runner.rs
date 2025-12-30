@@ -8,10 +8,10 @@ use llmcc_core::ProjectGraph;
 use llmcc_core::block::reset_block_id_counter;
 use llmcc_core::context::{CompileCtxt, CompileUnit};
 use llmcc_core::graph_builder::{BlockId, GraphBuildOption, build_llmcc_graph};
-use llmcc_core::graph_render::{ComponentDepth, render_graph};
 use llmcc_core::ir_builder::{IrBuildOption, build_llmcc_ir};
 use llmcc_core::lang_def::LanguageTraitImpl;
 use llmcc_core::symbol::reset_symbol_id_counter;
+use llmcc_dot::{ComponentDepth, render_graph};
 
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 use llmcc_rust::LangRust;

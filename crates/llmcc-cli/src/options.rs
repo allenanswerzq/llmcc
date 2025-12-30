@@ -4,7 +4,7 @@
 //! (llmcc and llmcc-test) to ensure consistent behavior and reduce code duplication.
 
 use clap::Args;
-use llmcc_core::graph_render::ComponentDepth;
+use llmcc_dot::ComponentDepth;
 
 /// Common options for graph building and visualization.
 #[derive(Args, Debug, Clone, Default)]

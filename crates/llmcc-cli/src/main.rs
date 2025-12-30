@@ -8,7 +8,7 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
-use llmcc_core::graph_render::ComponentDepth;
+use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
 
 #[derive(Parser, Debug)]
