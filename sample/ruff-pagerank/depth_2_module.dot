@@ -59,7 +59,6 @@ digraph architecture {
     mod_ruff_linter_ast[label="ast"];
     mod_ruff_linter_isort[label="isort"];
     mod_ruff_linter_logical_lines[label="logical_lines"];
-    mod_ruff_linter_noqa[label="noqa"];
     mod_ruff_linter_preview[label="preview"];
     mod_ruff_linter_rules[label="rules"];
     mod_ruff_linter_settings[label="settings"];
@@ -124,7 +123,6 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_ruff_python_semantic_analyze[label="analyze"];
-    mod_ruff_python_semantic_model[label="model"];
   }
 
   subgraph cluster_ruff_server {
@@ -200,6 +198,7 @@ digraph architecture {
     mod_ty_python_semantic_place[label="place"];
     mod_ty_python_semantic_property_tests[label="property_tests"];
     mod_ty_python_semantic_semantic_index[label="semantic_index"];
+    mod_ty_python_semantic_semantic_model[label="semantic_model"];
     mod_ty_python_semantic_types[label="types"];
   }
 
@@ -220,6 +219,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
+    mod_ty_test_db[label="db"];
     mod_ty_test_lib[label="lib"];
   }
 
@@ -236,6 +236,7 @@ digraph architecture {
 
   mod_ruff_commands -> mod_ruff_formatter_lib;
   mod_ruff_commands -> mod_ruff_linter_settings;
+  mod_ruff_commands -> mod_ruff_python_formatter_comments;
   mod_ruff_db_diagnostic -> mod_ruff_text_size_size;
   mod_ruff_db_diagnostic -> mod_ty_test_lib;
   mod_ruff_db_diagnostic -> mod_ty_wasm_lib;
@@ -245,26 +246,21 @@ digraph architecture {
   mod_ruff_formatter_builders -> mod_ruff_linter_rules;
   mod_ruff_formatter_builders -> mod_ty_python_semantic_call;
   mod_ruff_formatter_format_element -> mod_ruff_formatter_lib;
+  mod_ruff_formatter_lib -> mod_ruff_text_size_range;
   mod_ruff_formatter_lib -> mod_ty_test_lib;
-  mod_ruff_formatter_lib -> mod_ty_wasm_lib;
   mod_ruff_formatter_printer -> mod_ruff_formatter_format_element;
   mod_ruff_linter_analyze -> mod_ruff_linter_ast;
   mod_ruff_linter_analyze -> mod_ruff_python_ast_generated;
   mod_ruff_linter_analyze -> mod_ty_python_semantic_types;
   mod_ruff_linter_ast -> mod_ruff_linter_settings;
-  mod_ruff_linter_ast -> mod_ty_python_semantic_semantic_index;
   mod_ruff_linter_isort -> mod_ruff_python_ast_generated;
   mod_ruff_linter_isort -> mod_ty_test_lib;
   mod_ruff_linter_logical_lines -> mod_ruff_formatter_builders;
   mod_ruff_linter_logical_lines -> mod_ruff_linter_ast;
   mod_ruff_linter_logical_lines -> mod_ruff_linter_violation;
+  mod_ruff_linter_logical_lines -> mod_ruff_text_size_range;
   mod_ruff_linter_logical_lines -> mod_ruff_text_size_size;
   mod_ruff_linter_logical_lines -> mod_ty_python_semantic_semantic_index;
-  mod_ruff_linter_logical_lines -> mod_ty_wasm_lib;
-  mod_ruff_linter_noqa -> mod_ruff_db_diagnostic;
-  mod_ruff_linter_noqa -> mod_ruff_text_size_range;
-  mod_ruff_linter_noqa -> mod_ruff_text_size_size;
-  mod_ruff_linter_noqa -> mod_ty_test_lib;
   mod_ruff_linter_preview -> mod_ruff_linter_settings;
   mod_ruff_linter_rules -> mod_ruff_linter_ast;
   mod_ruff_linter_rules -> mod_ruff_linter_preview;
@@ -275,15 +271,16 @@ digraph architecture {
   mod_ruff_linter_rules -> mod_ruff_python_ast_helpers;
   mod_ruff_linter_rules -> mod_ruff_python_ast_nodes;
   mod_ruff_linter_rules -> mod_ruff_python_ast_visitor;
+  mod_ruff_linter_rules -> mod_ruff_python_formatter_expression;
   mod_ruff_linter_rules -> mod_ruff_python_literal_float;
   mod_ruff_linter_rules -> mod_ruff_python_literal_format;
   mod_ruff_linter_rules -> mod_ruff_python_semantic_analyze;
-  mod_ruff_linter_rules -> mod_ruff_python_semantic_model;
   mod_ruff_linter_rules -> mod_ruff_text_size_range;
   mod_ruff_linter_rules -> mod_ruff_text_size_size;
   mod_ruff_linter_rules -> mod_ruff_workspace_options;
   mod_ruff_linter_rules -> mod_ty_python_semantic_call;
   mod_ruff_linter_rules -> mod_ty_python_semantic_semantic_index;
+  mod_ruff_linter_rules -> mod_ty_python_semantic_semantic_model;
   mod_ruff_linter_rules -> mod_ty_python_semantic_types;
   mod_ruff_linter_rules -> mod_ty_test_lib;
   mod_ruff_linter_rules -> mod_ty_wasm_lib;
@@ -296,24 +293,24 @@ digraph architecture {
   mod_ruff_python_ast_visitor -> mod_ruff_python_ast_generated;
   mod_ruff_python_ast_visitor -> mod_ruff_python_ast_nodes;
   mod_ruff_python_ast_visitor -> mod_ty_python_semantic_types;
-  mod_ruff_python_formatter_comments -> mod_ruff_commands;
   mod_ruff_python_formatter_comments -> mod_ruff_formatter_lib;
   mod_ruff_python_formatter_comments -> mod_ruff_linter_analyze;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_generated;
+  mod_ruff_python_formatter_comments -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_comments -> mod_ruff_python_ast_visitor;
-  mod_ruff_python_formatter_comments -> mod_ty_python_semantic_types;
-  mod_ruff_python_formatter_comments -> mod_ty_wasm_lib;
+  mod_ruff_python_formatter_comments -> mod_ruff_text_size_range;
   mod_ruff_python_formatter_expression -> mod_ruff_commands;
   mod_ruff_python_formatter_expression -> mod_ruff_formatter_builders;
   mod_ruff_python_formatter_expression -> mod_ruff_formatter_lib;
+  mod_ruff_python_formatter_expression -> mod_ruff_python_ast_comparable;
   mod_ruff_python_formatter_expression -> mod_ruff_python_ast_generated;
   mod_ruff_python_formatter_expression -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_expression -> mod_ty_python_semantic_call;
   mod_ruff_python_formatter_other -> mod_ruff_formatter_lib;
   mod_ruff_python_formatter_other -> mod_ruff_python_ast_generated;
   mod_ruff_python_formatter_other -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_formatter_other -> mod_ruff_text_size_range;
   mod_ruff_python_formatter_other -> mod_ty_python_semantic_types;
-  mod_ruff_python_formatter_other -> mod_ty_wasm_lib;
   mod_ruff_python_formatter_statement -> mod_ruff_commands;
   mod_ruff_python_formatter_statement -> mod_ruff_formatter_builders;
   mod_ruff_python_formatter_statement -> mod_ruff_formatter_lib;
@@ -321,33 +318,34 @@ digraph architecture {
   mod_ruff_python_formatter_statement -> mod_ruff_python_ast_nodes;
   mod_ruff_python_formatter_statement -> mod_ruff_python_formatter_comments;
   mod_ruff_python_formatter_statement -> mod_ruff_text_size_range;
-  mod_ruff_python_formatter_statement -> mod_ty_python_semantic_call;
   mod_ruff_python_formatter_string -> mod_ruff_formatter_builders;
   mod_ruff_python_formatter_string -> mod_ruff_formatter_lib;
-  mod_ruff_python_formatter_string -> mod_ruff_linter_rules;
   mod_ruff_python_formatter_string -> mod_ruff_python_ast_nodes;
+  mod_ruff_python_formatter_string -> mod_ruff_text_size_range;
   mod_ruff_python_formatter_string -> mod_ruff_text_size_size;
-  mod_ruff_python_formatter_string -> mod_ty_wasm_lib;
   mod_ruff_python_literal_format -> mod_ruff_formatter_builders;
   mod_ruff_python_parser_parser -> mod_ruff_python_ast_generated;
   mod_ruff_python_parser_parser -> mod_ruff_python_ast_nodes;
-  mod_ruff_python_parser_parser -> mod_ty_wasm_lib;
+  mod_ruff_python_parser_parser -> mod_ruff_text_size_range;
   mod_ruff_python_semantic_analyze -> mod_ruff_linter_analyze;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_comparable;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_generated;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_helpers;
   mod_ruff_python_semantic_analyze -> mod_ruff_python_ast_nodes;
-  mod_ruff_python_semantic_analyze -> mod_ruff_python_semantic_model;
+  mod_ruff_python_semantic_analyze -> mod_ty_python_semantic_call;
+  mod_ruff_python_semantic_analyze -> mod_ty_python_semantic_semantic_model;
   mod_ruff_server_session -> mod_ty_server_session;
   mod_ty_ide_completion -> mod_ruff_db_system;
   mod_ty_ide_completion -> mod_ruff_linter_rules;
   mod_ty_ide_completion -> mod_ruff_workspace_options;
+  mod_ty_ide_completion -> mod_ty_test_db;
   mod_ty_module_resolver_resolve -> mod_ruff_db_system;
   mod_ty_module_resolver_resolve -> mod_ruff_linter_analyze;
-  mod_ty_module_resolver_resolve -> mod_ruff_linter_rules;
+  mod_ty_module_resolver_resolve -> mod_ruff_python_formatter_db;
   mod_ty_module_resolver_resolve -> mod_ruff_workspace_options;
-  mod_ty_project_metadata -> mod_ruff_db_diagnostic;
+  mod_ty_module_resolver_resolve -> mod_ty_python_semantic_semantic_index;
   mod_ty_project_metadata -> mod_ruff_db_system;
+  mod_ty_project_metadata -> mod_ty_test_db;
   mod_ty_project_metadata -> mod_ty_test_lib;
   mod_ty_python_semantic_call -> mod_ty_python_semantic_types;
   mod_ty_python_semantic_call -> mod_ty_test_lib;
@@ -361,19 +359,24 @@ digraph architecture {
   mod_ty_python_semantic_place -> mod_ty_python_semantic_types;
   mod_ty_python_semantic_property_tests -> mod_ty_python_semantic_types;
   mod_ty_python_semantic_semantic_index -> mod_ruff_db_system;
+  mod_ty_python_semantic_semantic_index -> mod_ruff_python_ast_comparable;
   mod_ty_python_semantic_semantic_index -> mod_ruff_python_ast_visitor;
-  mod_ty_python_semantic_semantic_index -> mod_ruff_python_formatter_db;
+  mod_ty_python_semantic_semantic_index -> mod_ruff_workspace_options;
   mod_ty_python_semantic_semantic_index -> mod_ty_python_semantic_types;
+  mod_ty_python_semantic_semantic_index -> mod_ty_test_db;
   mod_ty_python_semantic_semantic_index -> mod_ty_test_lib;
   mod_ty_python_semantic_types -> mod_ruff_db_diagnostic;
   mod_ty_python_semantic_types -> mod_ruff_db_system;
   mod_ty_python_semantic_types -> mod_ruff_python_ast_generated;
-  mod_ty_python_semantic_types -> mod_ruff_python_ast_helpers;
   mod_ty_python_semantic_types -> mod_ruff_python_ast_nodes;
   mod_ty_python_semantic_types -> mod_ruff_python_formatter_db;
+  mod_ty_python_semantic_types -> mod_ruff_text_size_range;
+  mod_ty_python_semantic_types -> mod_ruff_workspace_options;
   mod_ty_python_semantic_types -> mod_ty_module_resolver_resolve;
+  mod_ty_python_semantic_types -> mod_ty_test_db;
   mod_ty_python_semantic_types -> mod_ty_test_lib;
-  mod_ty_python_semantic_types -> mod_ty_wasm_lib;
   mod_ty_server_session -> mod_ruff_db_system;
+  mod_ty_test_db -> mod_ruff_db_system;
+  mod_ty_test_lib -> mod_ty_test_db;
   mod_ty_wasm_lib -> mod_ruff_db_system;
 }

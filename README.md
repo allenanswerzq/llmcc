@@ -37,10 +37,10 @@ This repo includes a ready-made example under [sample](sample).
 	<img src="sample/codex-pagerank/depth_3_file.svg" alt="Codex file and symbol graph (depth 3)" style="max-width: 100%; height: auto;" />
 </p>
 
-If you open those SVGs, you’ll see the same system from different “altitudes”, which is exactly what you want when:
+If you open those .dot/.svg files, you’ll see the same system from different “altitudes”, which is exactly what you want when:
 - orienting yourself in an unfamiliar repo
 - deciding *where* to make a change
-- generating a focused context pack for an LLM (instead of flooding it)
+- generating a focused context pack for an coding agents
 
 
 ## Performance

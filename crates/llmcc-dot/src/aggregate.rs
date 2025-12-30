@@ -3,12 +3,12 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fmt::Write;
 
+use llmcc_collect::{AggregatedNode, ComponentDepth, RenderEdge, RenderNode, RenderOptions};
 use llmcc_core::BlockId;
 use llmcc_core::graph::ProjectGraph;
 use llmcc_core::pagerank::PageRanker;
 
-use super::dot::sanitize_id;
-use super::types::{AggregatedNode, ComponentDepth, RenderEdge, RenderNode, RenderOptions};
+use crate::dot::sanitize_id;
 
 /// Get the component key for a node at a given depth level.
 ///

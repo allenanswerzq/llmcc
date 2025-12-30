@@ -3,9 +3,10 @@
 use std::collections::{BTreeSet, HashSet};
 use std::fmt::Write;
 
-use super::dot::{escape_label, sanitize_id, shape_for_kind, write_indent};
-use super::types::{ComponentDepth, ComponentTree, RenderEdge, RenderNode};
+use llmcc_collect::{ComponentDepth, ComponentTree, RenderEdge, RenderNode};
 use llmcc_core::BlockId;
+
+use crate::dot::{escape_label, sanitize_id, shape_for_kind, write_indent};
 
 /// Build a ComponentTree from nodes based on crate/module/file hierarchy.
 ///
