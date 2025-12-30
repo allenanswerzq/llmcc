@@ -1,0 +1,24 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  label="crate graph";
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_lancedb[label="lancedb"];
+  crate_lancedb_nodejs[label="lancedb-nodejs"];
+  crate_lancedb_python[label="lancedb-python"];
+
+  crate_lancedb -> crate_lancedb_nodejs;
+  crate_lancedb -> crate_lancedb_python;
+  crate_lancedb_nodejs -> crate_lancedb_python;
+}

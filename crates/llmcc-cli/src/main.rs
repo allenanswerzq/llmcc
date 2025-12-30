@@ -8,13 +8,13 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
 use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
-use llmcc_core::graph_render::ComponentDepth;
+use llmcc_dot::ComponentDepth;
 use llmcc_rust::LangRust;
 
 #[derive(Parser, Debug)]
 #[command(
     name = "llmcc",
-    about = "llmcc: llm context compiler",
+    about = "llmcc: zoom in, zoom out, understand everything",
     version,
     group = ArgGroup::new("inputs").required(true).args(["files", "dirs"])
 )]
@@ -65,6 +65,14 @@ pub struct Cli {
     #[arg(long = "pagerank-top-k")]
     pagerank_top_k: Option<usize>,
 
+    /// Cluster modules by their parent crate (for module-level graphs)
+    #[arg(long = "cluster-by-crate")]
+    cluster_by_crate: bool,
+
+    /// Use shortened labels (module name only, without crate prefix)
+    #[arg(long = "short-labels")]
+    short_labels: bool,
+
     /// Output file path (writes to file instead of stdout)
     #[arg(short = 'o', long = "output", value_name = "FILE")]
     output: Option<String>,
@@ -88,6 +96,8 @@ pub fn run(args: Cli) -> Result<()> {
         graph: args.graph,
         component_depth: ComponentDepth::from_number(args.component_depth),
         pagerank_top_k: args.pagerank_top_k,
+        cluster_by_crate: args.cluster_by_crate,
+        short_labels: args.short_labels,
     };
 
     let result = match args.lang.as_str() {

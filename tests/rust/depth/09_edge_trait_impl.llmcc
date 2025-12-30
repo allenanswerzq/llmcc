@@ -1,0 +1,46 @@
+===============================================================================
+edge-trait-impl
+===============================================================================
+Test that trait->impl edges create correct dependency direction.
+When struct S implements trait T, S's crate depends on T's crate.
+At crate level: crate_app -> crate_traits (app depends on traits)
+
+--- file: traits/Cargo.toml ---
+[package]
+name = "traits"
+
+--- file: traits/src/lib.rs ---
+pub trait Processor {
+    fn process(&self);
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+traits = { path = "../traits" }
+
+--- file: app/src/lib.rs ---
+use traits::Processor;
+
+pub struct MyProcessor;
+
+impl Processor for MyProcessor {
+    fn process(&self) {
+        // implementation
+    }
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_traits[label="traits"];
+
+  crate_app -> crate_traits;
+}

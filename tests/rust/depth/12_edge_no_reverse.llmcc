@@ -1,0 +1,62 @@
+===============================================================================
+edge-no-reverse-dependency
+===============================================================================
+Test that there are NO reverse edges at crate level.
+When app depends on types, there should NOT be types -> app edge.
+This guards against false bidirectional edges in crate graphs.
+
+--- file: types/Cargo.toml ---
+[package]
+name = "types"
+
+--- file: types/src/lib.rs ---
+/// Types crate has no dependency on app
+pub struct Data {
+    pub value: u32,
+}
+
+pub trait Handler {
+    fn handle(&self, data: &Data);
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+types = { path = "../types" }
+
+--- file: app/src/lib.rs ---
+use types::{Data, Handler};
+
+/// App uses types from types crate
+pub struct DataProcessor {
+    pub data: Data,
+}
+
+/// App implements trait from types crate
+pub struct MyHandler;
+
+impl Handler for MyHandler {
+    fn handle(&self, data: &Data) {
+        let _ = data.value;
+    }
+}
+
+/// App calls function that takes types parameter
+pub fn process(data: &Data) -> u32 {
+    data.value
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_types[label="types"];
+
+  crate_app -> crate_types;
+}

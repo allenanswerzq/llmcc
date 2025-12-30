@@ -1,0 +1,1360 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_serde {
+    label="serde";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_private {
+      label="private";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_de_rs {
+        label="de.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4999[label="ContentDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1041", sym_ty="Struct", shape=box];
+        n5136[label="visit_content_seq", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1092", sym_ty="Function"];
+        n5161[label="visit_content_map", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1103", sym_ty="Function"];
+        n924[label="CowBytesVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:143", sym_ty="Struct", shape=box];
+        n5894[label="SeqDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1504", sym_ty="Struct", shape=box];
+        n6004[label="ExpectedInSeq", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1587", sym_ty="Struct", shape=box];
+        n6025[label="MapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1600", sym_ty="Struct", shape=box];
+        n6742[label="PairDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1769", sym_ty="Struct", shape=box];
+        n6869[label="PairVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1821", sym_ty="Struct", shape=box];
+        n6946[label="ExpectedInMap", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1854", sym_ty="Struct", shape=box];
+        n7007[label="EnumDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1867", sym_ty="Struct", shape=box];
+        n7060[label="VariantDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1910", sym_ty="Struct", shape=box];
+        n7206[label="ContentRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1992", sym_ty="Struct", shape=box];
+        n7422[label="visit_content_seq_ref", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2043", sym_ty="Function"];
+        n7462[label="visit_content_map_ref", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2057", sym_ty="Function"];
+        n1520[label="content_as_str", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:222", sym_ty="Function"];
+        n1594[label="content_clone", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:232", sym_ty="Function"];
+        n37[label="missing_field", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:24", sym_ty="Function"];
+        n8303[label="SeqRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2462", sym_ty="Struct", shape=box];
+        n8434[label="MapRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2546", sym_ty="Struct", shape=box];
+        n2079[label="content_unexpected", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:264", sym_ty="Function"];
+        n8746[label="PairRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2715", sym_ty="Struct", shape=box];
+        n8801[label="PairRefVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2767", sym_ty="Struct", shape=box];
+        n8854[label="EnumRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2804", sym_ty="Struct", shape=box];
+        n8891[label="VariantRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2834", sym_ty="Struct", shape=box];
+        n85[label="MissingFieldDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:29", sym_ty="Struct", shape=box];
+        n2278[label="ContentVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:290", sym_ty="Struct", shape=box];
+        n9007[label="InternallyTaggedUnitVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2956", sym_ty="Struct", shape=box];
+        n9067[label="UntaggedUnitVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3002", sym_ty="Struct", shape=box];
+        n9112[label="IdentifierDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3057", sym_ty="Trait", shape=box];
+        n9121[label="Borrowed", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3063", sym_ty="Struct", shape=box];
+        n9138[label="StrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3077", sym_ty="Struct", shape=box];
+        n9165[label="BorrowedStrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3103", sym_ty="Struct", shape=box];
+        n9239[label="FlatMapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3184", sym_ty="Struct", shape=box];
+        n9367[label="FlatMapAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3344", sym_ty="Struct", shape=box];
+        n9403[label="FlatStructAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3388", sym_ty="Struct", shape=box];
+        n9437[label="flat_map_take_entry", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3430", sym_ty="Function"];
+        n9443[label="AdjacentlyTaggedEnumVariantSeed", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3449", sym_ty="Struct", shape=box];
+        n9447[label="AdjacentlyTaggedEnumVariantVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3455", sym_ty="Struct", shape=box];
+        n3285[label="TagOrContent", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:517", sym_ty="Enum", shape=box];
+        n3319[label="TagOrContentVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:524", sym_ty="Struct", shape=box];
+        n395[label="CowStrVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:69", sym_ty="Struct", shape=box];
+        n4485[label="TaggedContentVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:816", sym_ty="Struct", shape=box];
+        n4680[label="TagOrContentFieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:898", sym_ty="Struct", shape=box];
+        n4870[label="TagContentOtherFieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:977", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ser_rs {
+        label="ser.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7953[label="FlatMapSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:1003", sym_ty="Struct", shape=box];
+        n8514[label="FlatMapSerializeTupleVariantAsMapValue", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:1263", sym_ty="Struct", shape=box];
+        n8668[label="AdjacentlyTaggedEnumVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:1354", sym_ty="Struct", shape=box];
+        n5439[label="SerializeTupleVariantAsMapValue", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:344", sym_ty="Struct", shape=box];
+        n115[label="TaggedSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:38", sym_ty="Struct", shape=box];
+        n6423[label="Content", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:426", sym_ty="Enum", shape=box];
+        n7069[label="ContentSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:552", sym_ty="Struct", shape=box];
+        n7649[label="SerializeSeq", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:769", sym_ty="Struct", shape=box];
+        n7701[label="SerializeTuple", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:796", sym_ty="Struct", shape=box];
+        n7742[label="SerializeTupleStruct", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:823", sym_ty="Struct", shape=box];
+        n7777[label="SerializeTupleVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:851", sym_ty="Struct", shape=box];
+        n7826[label="SerializeMap", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:886", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_serde {
+      label="serde";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_build_rs {
+        label="build.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3[label="main", full_path="/home/yibai/llmcc/sample/repos/serde/serde/build.rs:19", sym_ty="Function"];
+        n33[label="rustc_minor_version", full_path="/home/yibai/llmcc/sample/repos/serde/serde/build.rs:60", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_serde_core {
+    label="serde_core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_de {
+      label="de";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ignored_any_rs {
+        label="ignored_any.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2898[label="IgnoredAny", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/ignored_any.rs:111", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_impls_rs {
+        label="impls.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7338[label="VecVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1143", sym_ty="Struct", shape=box];
+        n7479[label="VecInPlaceVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1182", sym_ty="Struct", shape=box];
+        n7581[label="ArrayVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1228", sym_ty="Struct", shape=box];
+        n3692[label="UnitVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:14", sym_ty="Struct", shape=box];
+        n8022[label="PathVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1785", sym_ty="Struct", shape=box];
+        n8107[label="PathBufVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1824", sym_ty="Struct", shape=box];
+        n8214[label="OsStringVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1898", sym_ty="Struct", shape=box];
+        n8426[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2138", sym_ty="Enum", shape=box];
+        n8433[label="FieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2148", sym_ty="Struct", shape=box];
+        n8509[label="DurationVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2198", sym_ty="Struct", shape=box];
+        n8612[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2277", sym_ty="Enum", shape=box];
+        n8626[label="FieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2287", sym_ty="Struct", shape=box];
+        n8707[label="DurationVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2337", sym_ty="Struct", shape=box];
+        n8807[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2475", sym_ty="Enum", shape=box];
+        n8819[label="FieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2485", sym_ty="Struct", shape=box];
+        n8857[label="RangeVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2524", sym_ty="Struct", shape=box];
+        n8922[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2634", sym_ty="Enum", shape=box];
+        n8929[label="FieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2643", sym_ty="Struct", shape=box];
+        n8965[label="RangeFromVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2680", sym_ty="Struct", shape=box];
+        n9021[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2773", sym_ty="Enum", shape=box];
+        n9029[label="FieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2782", sym_ty="Struct", shape=box];
+        n9068[label="RangeToVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2819", sym_ty="Struct", shape=box];
+        n9131[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2881", sym_ty="Enum", shape=box];
+        n9146[label="FieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2893", sym_ty="Struct", shape=box];
+        n9207[label="BoundVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2948", sym_ty="Struct", shape=box];
+        n9252[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2995", sym_ty="Enum", shape=box];
+        n9260[label="FieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:3006", sym_ty="Struct", shape=box];
+        n9325[label="ResultVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:3058", sym_ty="Struct", shape=box];
+        n9388[label="FromStrVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:3140", sym_ty="Struct", shape=box];
+        n3846[label="BoolVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:53", sym_ty="Struct", shape=box];
+        n4547[label="CharVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:537", sym_ty="Struct", shape=box];
+        n5288[label="StringVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:580", sym_ty="Struct", shape=box];
+        n5297[label="StringInPlaceVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:582", sym_ty="Struct", shape=box];
+        n6345[label="StrVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:706", sym_ty="Struct", shape=box];
+        n6489[label="BytesVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:741", sym_ty="Struct", shape=box];
+        n6621[label="CStringVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:777", sym_ty="Struct", shape=box];
+        n6825[label="OptionVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:870", sym_ty="Struct", shape=box];
+        n6934[label="PhantomDataVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:938", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5185[label="Visitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1317", sym_ty="Trait", shape=box];
+        n5907[label="SeqAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1749", sym_ty="Trait", shape=box];
+        n6124[label="MapAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1837", sym_ty="Trait", shape=box];
+        n6674[label="VariantAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:2088", sym_ty="Trait", shape=box];
+        n6932[label="IntoDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:2316", sym_ty="Trait", shape=box];
+        n3671[label="Unexpected", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:338", sym_ty="Enum", shape=box];
+        n4155[label="Expected", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:484", sym_ty="Trait", shape=box];
+        n4252[label="Deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:554", sym_ty="Trait", shape=box];
+        n4343[label="DeserializeSeed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:803", sym_ty="Trait", shape=box];
+        n4505[label="Deserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:945", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_value_rs {
+        label="value.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5621[label="SeqDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1003", sym_ty="Struct", shape=box];
+        n5804[label="ExpectedInSeq", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1108", sym_ty="Struct", shape=box];
+        n5925[label="SeqAccessDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1182", sym_ty="Struct", shape=box];
+        n5976[label="MapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1227", sym_ty="Struct", shape=box];
+        n4174[label="UnitDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:137", sym_ty="Struct", shape=box];
+        n6989[label="ExpectedInMap", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1562", sym_ty="Struct", shape=box];
+        n7182[label="MapAccessDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1611", sym_ty="Struct", shape=box];
+        n7359[label="EnumAccessDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1687", sym_ty="Struct", shape=box];
+        n7583[label="MapAsEnum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1796", sym_ty="Struct", shape=box];
+        n7592[label="map_as_enum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1800", sym_ty="Function"];
+        n7683[label="SeedTupleVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1840", sym_ty="Struct", shape=box];
+        n7710[label="SeedStructVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1859", sym_ty="Struct", shape=box];
+        n4278[label="NeverDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:201", sym_ty="Struct", shape=box];
+        n4367[label="U32Deserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:345", sym_ty="Struct", shape=box];
+        n4554[label="StrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:445", sym_ty="Struct", shape=box];
+        n4764[label="BorrowedStrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:546", sym_ty="Struct", shape=box];
+        n5013[label="StringDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:637", sym_ty="Struct", shape=box];
+        n5195[label="CowStrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:754", sym_ty="Struct", shape=box];
+        n5432[label="BytesDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:872", sym_ty="Struct", shape=box];
+        n5545[label="BorrowedBytesDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:942", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_private {
+      label="private";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_content_rs {
+        label="content.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2926[label="Content", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/private/content.rs:10", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_seed_rs {
+        label="seed.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2870[label="InPlaceSeed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/private/seed.rs:6", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_size_hint_rs {
+        label="size_hint.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2661[label="helper", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/private/size_hint.rs:25", sym_ty="Function"];
+        n2598[label="from_bounds", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/private/size_hint.rs:4", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_ser {
+      label="ser";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_impossible_rs {
+        label="impossible.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3558[label="Impossible", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/impossible.rs:60", sym_ty="Struct", shape=box];
+        n3574[label="Void", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/impossible.rs:66", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7021[label="SerializeSeq", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1518", sym_ty="Trait", shape=box];
+        n7071[label="SerializeTuple", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1624", sym_ty="Trait", shape=box];
+        n7114[label="SerializeTupleStruct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1675", sym_ty="Trait", shape=box];
+        n7151[label="SerializeTupleVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1739", sym_ty="Trait", shape=box];
+        n7187[label="SerializeMap", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1811", sym_ty="Trait", shape=box];
+        n7276[label="SerializeStruct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1907", sym_ty="Trait", shape=box];
+        n7362[label="SerializeStructVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1977", sym_ty="Trait", shape=box];
+        n243[label="Serialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:234", sym_ty="Trait", shape=box];
+        n356[label="Serializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:355", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_serde_core {
+      label="serde_core";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_build_rs {
+        label="build.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1393[label="rustc_minor_version", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/build.rs:104", sym_ty="Function"];
+        n946[label="main", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/build.rs:18", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_std_error_rs {
+      label="std_error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2786[label="Error", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/std_error.rs:43", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_serde_derive {
+    label="serde_derive";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_bound_rs {
+      label="bound.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3693[label="with_self_bound", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/bound.rs:312", sym_ty="Function"];
+      n3989[label="type_of_item", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/bound.rs:372", sym_ty="Function"];
+      n154[label="with_where_predicates_from_fields", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/bound.rs:41", sym_ty="Function"];
+      n247[label="with_where_predicates_from_variants", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/bound.rs:57", sym_ty="Function"];
+      n993[label="with_bound", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/bound.rs:91", sym_ty="Function"];
+    }
+
+    subgraph cluster_de {
+      label="de";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_enum__rs {
+        label="enum_.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n53[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_.rs:15", sym_ty="Function"];
+        n205[label="deserialize_homogeneous_enum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_.rs:39", sym_ty="Function"];
+        n336[label="prepare_enum_variant_enum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_.rs:56", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_adjacently_rs {
+        label="enum_adjacently.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n93[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_adjacently.rs:19", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_externally_rs {
+        label="enum_externally.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2799[label="deserialize_externally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:118", sym_ty="Function"];
+        n3328[label="wrap_deserialize_variant_with", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:163", sym_ty="Function"];
+        n3362[label="deserialize_externally_tagged_newtype_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:177", sym_ty="Function"];
+        n204[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:23", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_internally_rs {
+        label="enum_internally.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1046[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_internally.rs:21", sym_ty="Function"];
+        n1197[label="deserialize_internally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_internally.rs:67", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_untagged_rs {
+        label="enum_untagged.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1097[label="deserialize_newtype_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_untagged.rs:113", sym_ty="Function"];
+        n805[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_untagged.rs:22", sym_ty="Function"];
+        n913[label="deserialize_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_untagged.rs:62", sym_ty="Function"];
+      }
+
+      subgraph cluster_identifier_rs {
+        label="identifier.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n895[label="deserialize_generated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/identifier.rs:125", sym_ty="Function"];
+        n488[label="deserialize_custom", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/identifier.rs:14", sym_ty="Function"];
+        n1020[label="deserialize_identifier", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/identifier.rs:185", sym_ty="Function"];
+      }
+
+      subgraph cluster_struct__rs {
+        label="struct_.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n465[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:17", sym_ty="Function"];
+        n922[label="deserialize_map", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:199", sym_ty="Function"];
+        n1266[label="deserialize_in_place", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:423", sym_ty="Function"];
+        n1459[label="deserialize_map_in_place", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:513", sym_ty="Function"];
+        n1743[label="deserialize_field_identifier", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:673", sym_ty="Function"];
+      }
+
+      subgraph cluster_tuple_rs {
+        label="tuple.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n122[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/tuple.rs:13", sym_ty="Function"];
+        n489[label="deserialize_newtype_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/tuple.rs:135", sym_ty="Function"];
+        n739[label="deserialize_in_place", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/tuple.rs:186", sym_ty="Function"];
+      }
+
+      subgraph cluster_unit_rs {
+        label="unit.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n597[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/unit.rs:8", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_de_rs {
+      label="de.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n702[label="precondition_no_de_lifetime", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:102", sym_ty="Function"];
+      n746[label="Parameters", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:116", sym_ty="Struct", shape=box];
+      n1179[label="build_generics", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:192", sym_ty="Function"];
+      n1394[label="needs_deserialize_bound", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:236", sym_ty="Function"];
+      n1465[label="requires_default", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:249", sym_ty="Function"];
+      n305[label="expand_derive_deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:25", sym_ty="Function"];
+      n1507[label="BorrowedLifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:257", sym_ty="Enum", shape=box];
+      n1690[label="borrowed_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:292", sym_ty="Function"];
+      n2814[label="deserialize_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:306", sym_ty="Function"];
+      n3012[label="deserialize_in_place_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:333", sym_ty="Function"];
+      n3184[label="deserialize_in_place_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:378", sym_ty="Function"];
+      n3189[label="deserialize_transparent", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:383", sym_ty="Function"];
+      n3273[label="deserialize_from", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:426", sym_ty="Function"];
+      n3290[label="deserialize_try_from", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:435", sym_ty="Function"];
+      n3309[label="TupleForm", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:443", sym_ty="Enum", shape=box];
+      n3347[label="deserialize_seq", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:451", sym_ty="Function"];
+      n3485[label="deserialize_seq_in_place", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:555", sym_ty="Function"];
+      n3536[label="StructForm", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:643", sym_ty="Enum", shape=box];
+      n3560[label="FieldWithAliases", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:653", sym_ty="Struct", shape=box];
+      n3589[label="wrap_deserialize_with", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:664", sym_ty="Function"];
+      n3660[label="wrap_deserialize_field_with", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:710", sym_ty="Function"];
+      n4012[label="unwrap_to_variant_closure", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:719", sym_ty="Function"];
+      n4371[label="expr_is_missing", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:766", sym_ty="Function"];
+      n4462[label="expr_is_missing_seq", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:808", sym_ty="Function"];
+      n538[label="precondition", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:84", sym_ty="Function"];
+      n4516[label="effective_style", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:841", sym_ty="Function"];
+      n4532[label="has_flatten", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:850", sym_ty="Function"];
+      n4549[label="DeImplGenerics", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:856", sym_ty="Struct", shape=box];
+      n4562[label="InPlaceImplGenerics", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:858", sym_ty="Struct", shape=box];
+      n596[label="precondition_sized", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:89", sym_ty="Function"];
+      n4732[label="DeTypeGenerics", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:916", sym_ty="Struct", shape=box];
+      n4748[label="InPlaceTypeGenerics", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:918", sym_ty="Struct", shape=box];
+      n4755[label="de_type_generics_to_tokens", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:920", sym_ty="Function"];
+      n4872[label="place_lifetime", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:969", sym_ty="Function"];
+    }
+
+    subgraph cluster_deprecated_rs {
+      label="deprecated.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1575[label="should_allow_deprecated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/deprecated.rs:18", sym_ty="Function"];
+      n1672[label="contains_deprecated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/deprecated.rs:35", sym_ty="Function"];
+      n1548[label="allow_deprecated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/deprecated.rs:4", sym_ty="Function"];
+    }
+
+    subgraph cluster_fragment_rs {
+      label="fragment.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1871[label="Expr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:27", sym_ty="Struct", shape=box];
+      n2034[label="Stmts", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:40", sym_ty="Struct", shape=box];
+      n1806[label="Fragment", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:5", sym_ty="Enum", shape=box];
+      n2125[label="Match", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:52", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_internals {
+      label="internals";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ast_rs {
+        label="ast.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n175[label="Container", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:10", sym_ty="Struct", shape=box];
+        n861[label="enum_from_ast", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:133", sym_ty="Function"];
+        n1034[label="struct_from_ast", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:174", sym_ty="Function"];
+        n1236[label="fields_from_ast", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:198", sym_ty="Function"];
+        n296[label="Data", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:26", sym_ty="Enum", shape=box];
+        n374[label="Variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:32", sym_ty="Struct", shape=box];
+        n412[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:41", sym_ty="Struct", shape=box];
+        n452[label="Style", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:49", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_attr_rs {
+        label="attr.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6057[label="get_ser_and_de", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1341", sym_ty="Function"];
+        n1786[label="RenameAllRules", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:138", sym_ty="Struct", shape=box];
+        n6116[label="get_renames", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1386", sym_ty="Function"];
+        n6123[label="get_multiple_renames", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1395", sym_ty="Function"];
+        n6130[label="get_where_predicates", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1403", sym_ty="Function"];
+        n6139[label="get_lit_str", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1411", sym_ty="Function"];
+        n6152[label="get_lit_str2", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1419", sym_ty="Function"];
+        n6192[label="parse_lit_into_path", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1455", sym_ty="Function"];
+        n6204[label="parse_lit_into_expr_path", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1476", sym_ty="Function"];
+        n6237[label="parse_lit_into_where", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1497", sym_ty="Function"];
+        n6303[label="parse_lit_into_ty", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1518", sym_ty="Function"];
+        n6343[label="parse_lit_into_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1541", sym_ty="Function"];
+        n1899[label="Container", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:155", sym_ty="Struct", shape=box];
+        n6409[label="is_implicitly_borrowed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1579", sym_ty="Function"];
+        n6428[label="is_implicitly_borrowed_reference", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1583", sym_ty="Function"];
+        n6454[label="is_cow", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1609", sym_ty="Function"];
+        n6547[label="is_option", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1633", sym_ty="Function"];
+        n6613[label="is_reference", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1677", sym_ty="Function"];
+        n6643[label="is_str", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1684", sym_ty="Function"];
+        n6654[label="is_slice_u8", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1688", sym_ty="Function"];
+        n6673[label="is_primitive_type", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1695", sym_ty="Function"];
+        n6701[label="is_primitive_path", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1702", sym_ty="Function"];
+        n6734[label="borrowable_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1716", sym_ty="Function"];
+        n6784[label="collect_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1732", sym_ty="Function"];
+        n1985[label="TagType", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:178", sym_ty="Enum", shape=box];
+        n7001[label="collect_lifetimes_from_tokens", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1799", sym_ty="Function"];
+        n2086[label="Identifier", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:211", sym_ty="Enum", shape=box];
+        n780[label="Attr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:24", sym_ty="Struct", shape=box];
+        n3176[label="decide_tag", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:622", sym_ty="Function"];
+        n3436[label="decide_identifier", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:683", sym_ty="Function"];
+        n3571[label="Variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:728", sym_ty="Struct", shape=box];
+        n3614[label="BorrowAttribute", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:742", sym_ty="Struct", shape=box];
+        n1259[label="BoolAttr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:77", sym_ty="Struct", shape=box];
+        n1490[label="VecAttr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:93", sym_ty="Struct", shape=box];
+        n4934[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:978", sym_ty="Struct", shape=box];
+        n5015[label="Default", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:995", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_case_rs {
+        label="case.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1568[label="RenameRule", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/case.rs:9", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_check_rs {
+        label="check.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2357[label="check_flatten", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:100", sym_ty="Function"];
+        n2405[label="check_flatten_field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:117", sym_ty="Function"];
+        n2457[label="check_identifier", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:144", sym_ty="Function"];
+        n2692[label="check_variant_skip_attrs", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:226", sym_ty="Function"];
+        n2066[label="check_default_on_tuple", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:27", sym_ty="Function"];
+        n4201[label="check_internal_tag_field_name_conflict", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:300", sym_ty="Function"];
+        n4463[label="check_adjacent_tag_conflict", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:352", sym_ty="Function"];
+        n4494[label="check_transparent", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:370", sym_ty="Function"];
+        n5302[label="member_message", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:448", sym_ty="Function"];
+        n5335[label="allow_transparent", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:455", sym_ty="Function"];
+        n5396[label="check_from_and_try_from", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:470", sym_ty="Function"];
+        n2205[label="check_remote_generic", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:66", sym_ty="Function"];
+        n2269[label="check_getter", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:78", sym_ty="Function"];
+        n1945[label="check", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:8", sym_ty="Function"];
+      }
+
+      subgraph cluster_ctxt_rs {
+        label="ctxt.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n188[label="Ctxt", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ctxt.rs:12", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n550[label="Derive", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/mod.rs:18", sym_ty="Enum", shape=box];
+        n577[label="ungroup", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/mod.rs:23", sym_ty="Function"];
+      }
+
+      subgraph cluster_name_rs {
+        label="name.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2000[label="Name", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/name.rs:60", sym_ty="Struct", shape=box];
+        n1649[label="MultiName", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/name.rs:9", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_receiver_rs {
+        label="receiver.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2286[label="replace_receiver", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/receiver.rs:10", sym_ty="Function"];
+        n2399[label="ReplaceReceiver", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/receiver.rs:21", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_symbol_rs {
+        label="symbol.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1357[label="Symbol", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/symbol.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_pretend_rs {
+      label="pretend.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2053[label="pretend_fields_used_enum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:113", sym_ty="Function"];
+      n2263[label="pretend_variants_used", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:150", sym_ty="Function"];
+      n1595[label="pretend_used", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:23", sym_ty="Function"];
+      n1688[label="pretend_fields_used", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:65", sym_ty="Function"];
+      n1758[label="pretend_fields_used_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:79", sym_ty="Function"];
+      n1912[label="pretend_fields_used_struct_packed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:94", sym_ty="Function"];
+    }
+
+    subgraph cluster_ser_rs {
+      label="ser.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3517[label="serialize_tuple_struct_visitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1056", sym_ty="Function"];
+      n3538[label="serialize_struct_visitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1104", sym_ty="Function"];
+      n3567[label="wrap_serialize_field_with", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1170", sym_ty="Function"];
+      n3591[label="wrap_serialize_variant_with", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1179", sym_ty="Function"];
+      n417[label="expand_derive_serialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:12", sym_ty="Function"];
+      n3648[label="wrap_serialize_with", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1206", sym_ty="Function"];
+      n3769[label="mut_if", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1270", sym_ty="Function"];
+      n3787[label="get_member", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1278", sym_ty="Function"];
+      n3902[label="effective_style", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1307", sym_ty="Function"];
+      n3936[label="StructTrait", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1314", sym_ty="Enum", shape=box];
+      n885[label="build_generics", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:134", sym_ty="Function"];
+      n4048[label="TupleTrait", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:1348", sym_ty="Enum", shape=box];
+      n1093[label="needs_serialize_bound", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:159", sym_ty="Function"];
+      n1124[label="serialize_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:170", sym_ty="Function"];
+      n1315[label="serialize_transparent", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:190", sym_ty="Function"];
+      n1417[label="serialize_into", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:213", sym_ty="Function"];
+      n1451[label="serialize_unit_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:222", sym_ty="Function"];
+      n1479[label="serialize_newtype_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:230", sym_ty="Function"];
+      n1606[label="serialize_tuple_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:256", sym_ty="Function"];
+      n1701[label="serialize_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:295", sym_ty="Function"];
+      n1808[label="serialize_struct_tag_field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:314", sym_ty="Function"];
+      n1896[label="serialize_struct_as_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:327", sym_ty="Function"];
+      n2006[label="serialize_struct_as_map", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:368", sym_ty="Function"];
+      n2131[label="serialize_enum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:394", sym_ty="Function"];
+      n2238[label="serialize_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:420", sym_ty="Function"];
+      n2401[label="serialize_externally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:502", sym_ty="Function"];
+      n2553[label="serialize_internally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:575", sym_ty="Function"];
+      n2711[label="serialize_adjacently_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:641", sym_ty="Function"];
+      n543[label="precondition", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:65", sym_ty="Function"];
+      n2952[label="serialize_untagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:765", sym_ty="Function"];
+      n622[label="Parameters", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:77", sym_ty="Struct", shape=box];
+      n3120[label="TupleVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:804", sym_ty="Enum", shape=box];
+      n3173[label="serialize_tuple_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:813", sym_ty="Function"];
+      n3286[label="StructVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:872", sym_ty="Enum", shape=box];
+      n3336[label="serialize_struct_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:884", sym_ty="Function"];
+      n3428[label="serialize_struct_variant_with_flatten", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:968", sym_ty="Function"];
+    }
+
+    subgraph cluster_this_rs {
+      label="this.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n202[label="this_value", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/this.rs:18", sym_ty="Function"];
+      n151[label="this_type", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/this.rs:4", sym_ty="Function"];
+    }
+
+  }
+
+
+  n3 -> n33;
+  n37 -> n85;
+  n53 -> n205;
+  n53 -> n1806;
+  n53 -> n1871;
+  n93 -> n1806;
+  n122 -> n1806;
+  n122 -> n2034;
+  n175 -> n151;
+  n175 -> n154;
+  n175 -> n202;
+  n175 -> n247;
+  n175 -> n543;
+  n175 -> n885;
+  n175 -> n993;
+  n175 -> n1124;
+  n175 -> n1315;
+  n188 -> n538;
+  n188 -> n543;
+  n188 -> n596;
+  n188 -> n702;
+  n188 -> n780;
+  n188 -> n780;
+  n188 -> n861;
+  n188 -> n1034;
+  n188 -> n1236;
+  n188 -> n1490;
+  n188 -> n1945;
+  n188 -> n2066;
+  n188 -> n2205;
+  n188 -> n2269;
+  n188 -> n2357;
+  n188 -> n2405;
+  n188 -> n2457;
+  n188 -> n2692;
+  n188 -> n3176;
+  n188 -> n3436;
+  n188 -> n4201;
+  n188 -> n4463;
+  n188 -> n4494;
+  n188 -> n5396;
+  n188 -> n6057;
+  n188 -> n6116;
+  n188 -> n6123;
+  n188 -> n6130;
+  n188 -> n6139;
+  n188 -> n6152;
+  n188 -> n6192;
+  n188 -> n6204;
+  n188 -> n6237;
+  n188 -> n6303;
+  n188 -> n6343;
+  n188 -> n6734;
+  n204 -> n1806;
+  n205 -> n1806;
+  n243 -> n6423;
+  n243 -> n8668;
+  n296 -> n175;
+  n305 -> n188;
+  n305 -> n538;
+  n305 -> n746;
+  n305 -> n1548;
+  n305 -> n1899;
+  n305 -> n2034;
+  n305 -> n2286;
+  n305 -> n3184;
+  n336 -> n2034;
+  n356 -> n115;
+  n356 -> n7069;
+  n356 -> n7953;
+  n374 -> n913;
+  n374 -> n1197;
+  n374 -> n2238;
+  n374 -> n2401;
+  n374 -> n2553;
+  n374 -> n2711;
+  n374 -> n2799;
+  n374 -> n2952;
+  n374 -> n3328;
+  n412 -> n374;
+  n412 -> n489;
+  n412 -> n1097;
+  n412 -> n1479;
+  n412 -> n2405;
+  n412 -> n3362;
+  n412 -> n3787;
+  n412 -> n4371;
+  n412 -> n5335;
+  n417 -> n175;
+  n417 -> n188;
+  n417 -> n543;
+  n417 -> n622;
+  n417 -> n1548;
+  n417 -> n2034;
+  n417 -> n2286;
+  n452 -> n296;
+  n452 -> n374;
+  n452 -> n2405;
+  n465 -> n1743;
+  n465 -> n1806;
+  n465 -> n2034;
+  n465 -> n4532;
+  n488 -> n1806;
+  n488 -> n2034;
+  n538 -> n596;
+  n538 -> n702;
+  n550 -> n1945;
+  n550 -> n4494;
+  n550 -> n5335;
+  n596 -> n577;
+  n597 -> n1806;
+  n622 -> n1124;
+  n622 -> n1315;
+  n622 -> n1417;
+  n622 -> n1479;
+  n622 -> n1606;
+  n622 -> n1701;
+  n622 -> n1896;
+  n622 -> n2006;
+  n622 -> n2131;
+  n622 -> n2238;
+  n622 -> n2401;
+  n622 -> n2553;
+  n622 -> n2711;
+  n622 -> n2952;
+  n622 -> n3173;
+  n622 -> n3336;
+  n622 -> n3428;
+  n622 -> n3517;
+  n622 -> n3538;
+  n622 -> n3567;
+  n622 -> n3591;
+  n622 -> n3648;
+  n622 -> n3787;
+  n702 -> n1690;
+  n739 -> n1806;
+  n739 -> n2034;
+  n739 -> n4872;
+  n746 -> n53;
+  n746 -> n93;
+  n746 -> n122;
+  n746 -> n204;
+  n746 -> n205;
+  n746 -> n465;
+  n746 -> n488;
+  n746 -> n489;
+  n746 -> n597;
+  n746 -> n739;
+  n746 -> n805;
+  n746 -> n913;
+  n746 -> n922;
+  n746 -> n1046;
+  n746 -> n1097;
+  n746 -> n1197;
+  n746 -> n1266;
+  n746 -> n1459;
+  n746 -> n2799;
+  n746 -> n2814;
+  n746 -> n3012;
+  n746 -> n3184;
+  n746 -> n3189;
+  n746 -> n3328;
+  n746 -> n3347;
+  n746 -> n3362;
+  n746 -> n3485;
+  n746 -> n3589;
+  n746 -> n3660;
+  n746 -> n4012;
+  n746 -> n4549;
+  n746 -> n4562;
+  n746 -> n4732;
+  n746 -> n4748;
+  n780 -> n1259;
+  n780 -> n3176;
+  n805 -> n1806;
+  n861 -> n374;
+  n895 -> n1806;
+  n895 -> n2034;
+  n913 -> n1097;
+  n913 -> n1806;
+  n913 -> n4012;
+  n913 -> n4516;
+  n922 -> n1806;
+  n946 -> n1393;
+  n993 -> n577;
+  n1020 -> n1806;
+  n1034 -> n452;
+  n1034 -> n1236;
+  n1046 -> n1806;
+  n1097 -> n1806;
+  n1124 -> n1315;
+  n1124 -> n1417;
+  n1124 -> n1451;
+  n1124 -> n1479;
+  n1124 -> n1606;
+  n1124 -> n1701;
+  n1124 -> n1806;
+  n1124 -> n2131;
+  n1197 -> n1806;
+  n1197 -> n4012;
+  n1197 -> n4516;
+  n1236 -> n412;
+  n1259 -> n3176;
+  n1259 -> n3436;
+  n1266 -> n1743;
+  n1266 -> n1806;
+  n1266 -> n2034;
+  n1266 -> n4532;
+  n1266 -> n4872;
+  n1315 -> n1806;
+  n1357 -> n780;
+  n1357 -> n780;
+  n1357 -> n1490;
+  n1357 -> n6057;
+  n1357 -> n6116;
+  n1357 -> n6139;
+  n1357 -> n6152;
+  n1357 -> n6192;
+  n1357 -> n6204;
+  n1357 -> n6237;
+  n1357 -> n6303;
+  n1417 -> n1806;
+  n1451 -> n1806;
+  n1459 -> n1806;
+  n1479 -> n1806;
+  n1479 -> n3567;
+  n1479 -> n3787;
+  n1507 -> n746;
+  n1507 -> n746;
+  n1507 -> n1179;
+  n1507 -> n4755;
+  n1548 -> n1575;
+  n1568 -> n1786;
+  n1575 -> n1672;
+  n1594 -> n2926;
+  n1595 -> n1688;
+  n1595 -> n2263;
+  n1606 -> n1806;
+  n1606 -> n3517;
+  n1606 -> n3769;
+  n1649 -> n1899;
+  n1649 -> n3571;
+  n1649 -> n4934;
+  n1688 -> n1758;
+  n1688 -> n1912;
+  n1688 -> n2053;
+  n1690 -> n1507;
+  n1701 -> n1806;
+  n1701 -> n1896;
+  n1701 -> n2006;
+  n1743 -> n2034;
+  n1786 -> n1899;
+  n1786 -> n3571;
+  n1806 -> n1871;
+  n1806 -> n2034;
+  n1806 -> n2125;
+  n1896 -> n1806;
+  n1896 -> n1808;
+  n1896 -> n3538;
+  n1896 -> n3769;
+  n1899 -> n53;
+  n1899 -> n93;
+  n1899 -> n122;
+  n1899 -> n175;
+  n1899 -> n204;
+  n1899 -> n205;
+  n1899 -> n465;
+  n1899 -> n488;
+  n1899 -> n538;
+  n1899 -> n596;
+  n1899 -> n597;
+  n1899 -> n702;
+  n1899 -> n739;
+  n1899 -> n805;
+  n1899 -> n913;
+  n1899 -> n922;
+  n1899 -> n1046;
+  n1899 -> n1179;
+  n1899 -> n1197;
+  n1899 -> n1266;
+  n1899 -> n1451;
+  n1899 -> n1459;
+  n1899 -> n1479;
+  n1899 -> n1595;
+  n1899 -> n1606;
+  n1899 -> n1688;
+  n1899 -> n1690;
+  n1899 -> n1701;
+  n1899 -> n1743;
+  n1899 -> n1758;
+  n1899 -> n1808;
+  n1899 -> n1896;
+  n1899 -> n1912;
+  n1899 -> n1945;
+  n1899 -> n2006;
+  n1899 -> n2053;
+  n1899 -> n2066;
+  n1899 -> n2131;
+  n1899 -> n2205;
+  n1899 -> n2238;
+  n1899 -> n2263;
+  n1899 -> n2269;
+  n1899 -> n2357;
+  n1899 -> n2401;
+  n1899 -> n2457;
+  n1899 -> n2553;
+  n1899 -> n2692;
+  n1899 -> n2711;
+  n1899 -> n2799;
+  n1899 -> n2814;
+  n1899 -> n2952;
+  n1899 -> n3012;
+  n1899 -> n3184;
+  n1899 -> n3189;
+  n1899 -> n3347;
+  n1899 -> n3362;
+  n1899 -> n3485;
+  n1899 -> n3693;
+  n1899 -> n3989;
+  n1899 -> n4201;
+  n1899 -> n4371;
+  n1899 -> n4462;
+  n1899 -> n4463;
+  n1899 -> n4494;
+  n1899 -> n5396;
+  n1945 -> n2066;
+  n1945 -> n2205;
+  n1945 -> n2269;
+  n1945 -> n2357;
+  n1945 -> n2457;
+  n1945 -> n2692;
+  n1945 -> n4201;
+  n1945 -> n4463;
+  n1945 -> n4494;
+  n1945 -> n5396;
+  n1985 -> n1899;
+  n2000 -> n1649;
+  n2000 -> n3120;
+  n2000 -> n3286;
+  n2000 -> n3336;
+  n2000 -> n3428;
+  n2000 -> n3560;
+  n2000 -> n6734;
+  n2006 -> n1806;
+  n2006 -> n1808;
+  n2006 -> n3538;
+  n2006 -> n3769;
+  n2079 -> n3671;
+  n2086 -> n1899;
+  n2131 -> n1806;
+  n2238 -> n2125;
+  n2286 -> n2399;
+  n2357 -> n2405;
+  n2401 -> n1806;
+  n2401 -> n3173;
+  n2401 -> n3336;
+  n2401 -> n3567;
+  n2401 -> n3591;
+  n2401 -> n3902;
+  n2553 -> n1806;
+  n2553 -> n3336;
+  n2553 -> n3567;
+  n2553 -> n3591;
+  n2553 -> n3902;
+  n2598 -> n2661;
+  n2692 -> n5302;
+  n2711 -> n1806;
+  n2711 -> n2034;
+  n2786 -> n6932;
+  n2786 -> n9112;
+  n2799 -> n1806;
+  n2799 -> n3328;
+  n2799 -> n3362;
+  n2814 -> n1806;
+  n2814 -> n3189;
+  n2814 -> n3273;
+  n2814 -> n3290;
+  n2926 -> n1520;
+  n2926 -> n1594;
+  n2926 -> n2079;
+  n2926 -> n2278;
+  n2952 -> n1806;
+  n2952 -> n3173;
+  n2952 -> n3336;
+  n2952 -> n3567;
+  n2952 -> n3591;
+  n2952 -> n3902;
+  n3012 -> n2034;
+  n3120 -> n3173;
+  n3173 -> n1806;
+  n3173 -> n3517;
+  n3173 -> n3769;
+  n3176 -> n1985;
+  n3184 -> n2034;
+  n3189 -> n1806;
+  n3273 -> n1806;
+  n3285 -> n3319;
+  n3286 -> n3336;
+  n3286 -> n3428;
+  n3290 -> n1806;
+  n3309 -> n122;
+  n3328 -> n3589;
+  n3328 -> n4012;
+  n3336 -> n1806;
+  n3336 -> n3428;
+  n3336 -> n3538;
+  n3336 -> n3769;
+  n3347 -> n1806;
+  n3362 -> n1806;
+  n3362 -> n1871;
+  n3362 -> n3660;
+  n3428 -> n1806;
+  n3428 -> n3538;
+  n3428 -> n3769;
+  n3436 -> n2086;
+  n3485 -> n1806;
+  n3536 -> n465;
+  n3567 -> n3648;
+  n3571 -> n247;
+  n3571 -> n374;
+  n3571 -> n1034;
+  n3571 -> n1093;
+  n3571 -> n1236;
+  n3571 -> n1394;
+  n3571 -> n1465;
+  n3571 -> n3591;
+  n3571 -> n3902;
+  n3571 -> n4012;
+  n3571 -> n4516;
+  n3574 -> n3558;
+  n3591 -> n3648;
+  n3614 -> n3571;
+  n3660 -> n3589;
+  n3902 -> n452;
+  n3936 -> n1808;
+  n3936 -> n3538;
+  n4048 -> n3517;
+  n4155 -> n5804;
+  n4155 -> n6004;
+  n4155 -> n6946;
+  n4155 -> n6989;
+  n4252 -> n2898;
+  n4252 -> n8426;
+  n4252 -> n8612;
+  n4252 -> n8807;
+  n4252 -> n8922;
+  n4252 -> n9021;
+  n4252 -> n9131;
+  n4252 -> n9252;
+  n4343 -> n2278;
+  n4343 -> n2870;
+  n4343 -> n3319;
+  n4343 -> n4680;
+  n4343 -> n4870;
+  n4343 -> n7683;
+  n4343 -> n7710;
+  n4343 -> n9443;
+  n4371 -> n1806;
+  n4494 -> n5335;
+  n4505 -> n85;
+  n4505 -> n4999;
+  n4505 -> n5432;
+  n4505 -> n5545;
+  n4505 -> n5894;
+  n4505 -> n6025;
+  n4505 -> n6742;
+  n4505 -> n7206;
+  n4505 -> n8303;
+  n4505 -> n8434;
+  n4505 -> n8746;
+  n4505 -> n9138;
+  n4505 -> n9165;
+  n4505 -> n9239;
+  n4516 -> n452;
+  n4934 -> n154;
+  n4934 -> n412;
+  n4934 -> n1093;
+  n4934 -> n1394;
+  n4934 -> n1465;
+  n4934 -> n4462;
+  n5015 -> n861;
+  n5015 -> n1034;
+  n5015 -> n1236;
+  n5015 -> n1899;
+  n5015 -> n4934;
+  n5136 -> n5894;
+  n5161 -> n6025;
+  n5185 -> n395;
+  n5185 -> n924;
+  n5185 -> n2278;
+  n5185 -> n2898;
+  n5185 -> n3319;
+  n5185 -> n3692;
+  n5185 -> n3846;
+  n5185 -> n4485;
+  n5185 -> n4547;
+  n5185 -> n4680;
+  n5185 -> n4870;
+  n5185 -> n5288;
+  n5185 -> n5297;
+  n5185 -> n6345;
+  n5185 -> n6489;
+  n5185 -> n6621;
+  n5185 -> n6825;
+  n5185 -> n6934;
+  n5185 -> n7338;
+  n5185 -> n7479;
+  n5185 -> n7581;
+  n5185 -> n8022;
+  n5185 -> n8107;
+  n5185 -> n8214;
+  n5185 -> n8433;
+  n5185 -> n8509;
+  n5185 -> n8626;
+  n5185 -> n8707;
+  n5185 -> n8819;
+  n5185 -> n8857;
+  n5185 -> n8929;
+  n5185 -> n8965;
+  n5185 -> n9007;
+  n5185 -> n9029;
+  n5185 -> n9067;
+  n5185 -> n9068;
+  n5185 -> n9146;
+  n5185 -> n9207;
+  n5185 -> n9260;
+  n5185 -> n9325;
+  n5185 -> n9388;
+  n5185 -> n9447;
+  n5335 -> n577;
+  n5907 -> n5894;
+  n5907 -> n6025;
+  n5907 -> n6869;
+  n5907 -> n8303;
+  n5907 -> n8434;
+  n5907 -> n8801;
+  n6057 -> n1490;
+  n6116 -> n6057;
+  n6123 -> n6057;
+  n6124 -> n6025;
+  n6124 -> n8434;
+  n6124 -> n9367;
+  n6124 -> n9403;
+  n6130 -> n6057;
+  n6139 -> n6152;
+  n6192 -> n6139;
+  n6204 -> n6139;
+  n6237 -> n6152;
+  n6303 -> n6139;
+  n6343 -> n6139;
+  n6409 -> n6428;
+  n6409 -> n6547;
+  n6423 -> n3285;
+  n6423 -> n4999;
+  n6423 -> n5136;
+  n6423 -> n5439;
+  n6423 -> n6025;
+  n6423 -> n6742;
+  n6423 -> n7007;
+  n6423 -> n7060;
+  n6423 -> n7206;
+  n6423 -> n7649;
+  n6423 -> n7701;
+  n6423 -> n7742;
+  n6423 -> n7777;
+  n6423 -> n7826;
+  n6423 -> n8434;
+  n6423 -> n8514;
+  n6423 -> n8854;
+  n6423 -> n8891;
+  n6423 -> n9367;
+  n6423 -> n9403;
+  n6428 -> n6613;
+  n6454 -> n577;
+  n6547 -> n577;
+  n6613 -> n577;
+  n6643 -> n6673;
+  n6654 -> n577;
+  n6654 -> n6673;
+  n6673 -> n577;
+  n6673 -> n6701;
+  n6674 -> n7583;
+  n6734 -> n6784;
+  n6784 -> n7001;
+  n6932 -> n4174;
+  n6932 -> n4278;
+  n6932 -> n4367;
+  n6932 -> n4554;
+  n6932 -> n4764;
+  n6932 -> n5013;
+  n6932 -> n5195;
+  n6932 -> n5432;
+  n6932 -> n5545;
+  n6932 -> n5621;
+  n6932 -> n5925;
+  n6932 -> n5976;
+  n6932 -> n7182;
+  n6932 -> n7359;
+  n7021 -> n3558;
+  n7071 -> n3558;
+  n7114 -> n3558;
+  n7151 -> n3558;
+  n7187 -> n3558;
+  n7276 -> n3558;
+  n7362 -> n3558;
+  n7422 -> n8303;
+  n7462 -> n8434;
+  n7592 -> n7583;
+  n9112 -> n9121;
+  n9252 -> n8426;
+  n9252 -> n8612;
+  n9252 -> n8807;
+  n9252 -> n8922;
+  n9252 -> n9021;
+  n9252 -> n9131;
+  n9437 -> n1520;
+}

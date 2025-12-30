@@ -1,0 +1,2118 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_api {
+    label="api";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_grpc {
+      label="grpc";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_qdrant_rs {
+        label="qdrant.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n85193[label="PeerId", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:13264", sym_ty="Struct", shape=box];
+        n38226[label="Filter", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:136", sym_ty="Struct", shape=box];
+        n38383[label="Condition", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:169", sym_ty="Struct", shape=box];
+        n51209[label="Distance", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:2142", sym_ty="Enum", shape=box];
+        n38807[label="FieldCondition", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:240", sym_ty="Struct", shape=box];
+        n39913[label="Range", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:333", sym_ty="Struct", shape=box];
+        n69316[label="DenseVector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:4807", sym_ty="Struct", shape=box];
+        n69333[label="SparseVector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:4814", sym_ty="Struct", shape=box];
+        n69683[label="ShardKeySelector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:4863", sym_ty="Struct", shape=box];
+        n69705[label="UpsertPoints", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:4874", sym_ty="Struct", shape=box];
+        n73499[label="Value", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:5562", sym_ty="Enum", shape=box];
+        n41301[label="MultiVectorConfig", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:564", sym_ty="Struct", shape=box];
+        n83095[label="Points", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:8329", sym_ty="Trait", shape=box];
+        n43568[label="QuantizationConfig", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:968", sym_ty="Struct", shape=box];
+        n83830[label="UpsertPointsInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/grpc/qdrant.rs:9990", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_rest {
+      label="rest";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_models_rs {
+        label="models.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n37132[label="ApiStatus", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest/models.rs:36", sym_ty="Enum", shape=box];
+        n37288[label="Usage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest/models.rs:58", sym_ty="Struct", shape=box];
+        n37645[label="InferenceUsage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest/models.rs:95", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_schema_rs {
+        label="schema.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n55395[label="PointInsertOperations", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest/schema.rs:1432", sym_ty="Enum", shape=box];
+        n47787[label="ShardKeySelector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest/schema.rs:411", sym_ty="Enum", shape=box];
+        n48215[label="ScoredPoint", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/api/src/rest/schema.rs:444", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_collection {
+    label="collection";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_collection {
+      label="collection";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n79728[label="Collection", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/collection/mod.rs:62", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n24691[label="CollectionConfigInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/config.rs:220", sym_ty="Struct", shape=box];
+      n24060[label="CollectionParams", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/config.rs:88", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_generalizer {
+      label="generalizer";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n57089[label="Generalizer", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/generalizer/mod.rs:14", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_hash_ring_rs {
+      label="hash_ring.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n50482[label="HashRingRouter", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/hash_ring.rs:18", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_local_shard {
+      label="local_shard";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n58006[label="LocalShard", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/local_shard/mod.rs:100", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_operations {
+      label="operations";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_shard_selector_internal_rs {
+        label="shard_selector_internal.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n70697[label="ShardSelectorInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/shard_selector_internal.rs:7", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n73354[label="UpdateResult", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/types.rs:392", sym_ty="Struct", shape=box];
+        n73485[label="ScrollRequestInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/types.rs:420", sym_ty="Struct", shape=box];
+        n74603[label="PointRequestInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/types.rs:548", sym_ty="Struct", shape=box];
+        n76219[label="CountRequestInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/types.rs:875", sym_ty="Struct", shape=box];
+        n76268[label="CollectionError", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/types.rs:898", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_replica_set {
+      label="replica_set";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3286[label="ShardReplicaSet", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/replica_set/mod.rs:93", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_shard_holder {
+      label="shard_holder";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n66949[label="ShardHolder", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/shard_holder/mod.rs:61", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_shards {
+      label="shards";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_channel_service_rs {
+        label="channel_service.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n31514[label="ChannelService", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/channel_service.rs:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_forward_proxy_shard_rs {
+        label="forward_proxy_shard.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n42968[label="ForwardProxyShard", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/forward_proxy_shard.rs:50", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_remote_shard_rs {
+        label="remote_shard.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n67767[label="RemoteShard", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/remote_shard.rs:81", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_resharding_rs {
+        label="resharding.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n67371[label="ReshardKey", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/resharding.rs:74", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_transfer {
+      label="transfer";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_driver_rs {
+        label="driver.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n22517[label="transfer_shard", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/transfer/driver.rs:35", sym_ty="Function"];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n26503[label="ShardTransferConsensus", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/transfer/mod.rs:186", sym_ty="Trait", shape=box];
+        n25353[label="ShardTransfer", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/shards/transfer/mod.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_universal_query {
+      label="universal_query";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_collection_query_rs {
+        label="collection_query.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n63056[label="Query", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/universal_query/collection_query.rs:90", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_verification {
+      label="verification";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n75516[label="StrictModeVerification", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/collection/src/operations/verification/mod.rs:38", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_budget_rs {
+      label="budget.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n45019[label="ResourceBudget", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/budget.rs:26", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_counter {
+      label="counter";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_counter_cell_rs {
+        label="counter_cell.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n47051[label="CounterCell", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter/counter_cell.rs:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_hardware_accumulator_rs {
+        label="hardware_accumulator.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n49205[label="HwMeasurementAcc", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter/hardware_accumulator.rs:102", sym_ty="Struct", shape=box];
+        n48521[label="HwSharedDrain", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter/hardware_accumulator.rs:11", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_hardware_counter_rs {
+        label="hardware_counter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n44388[label="HardwareCounterCell", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/counter/hardware_counter.rs:11", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_fixed_length_priority_queue_rs {
+      label="fixed_length_priority_queue.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n38057[label="FixedLengthPriorityQueue", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/fixed_length_priority_queue.rs:20", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_save_on_disk_rs {
+      label="save_on_disk.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n50233[label="SaveOnDisk", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/save_on_disk.rs:17", sym_ty="Struct", shape=box];
+      n50266[label="Error", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/save_on_disk.rs:25", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_stable_hash_rs {
+      label="stable_hash.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n40383[label="StableHash", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/stable_hash.rs:14", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n48107[label="ScoredPointOffset", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/common/src/types.rs:14", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_gridstore {
+    label="gridstore";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_fixtures_rs {
+      label="fixtures.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9101[label="Payload", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/gridstore/src/fixtures.rs:11", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_gridstore_rs {
+      label="gridstore.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11119[label="Gridstore", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/gridstore/src/gridstore.rs:31", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_memory {
+    label="memory";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_fadvise_rs {
+      label="fadvise.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4816[label="fadvise", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/memory/src/fadvise.rs:11", sym_ty="Function"];
+      n4844[label="clear_disk_cache", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/memory/src/fadvise.rs:20", sym_ty="Function"];
+    }
+
+    subgraph cluster_mmap_type_rs {
+      label="mmap_type.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9261[label="MmapSlice", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/common/memory/src/mmap_type.rs:223", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_qdrant {
+    label="qdrant";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_actix {
+      label="actix";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_helpers_rs {
+        label="helpers.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n59298[label="process_response_error", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/helpers.rs:119", sym_ty="Function"];
+        n58778[label="get_request_hardware_counter", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/helpers.rs:16", sym_ty="Function"];
+        n59778[label="log_service_error", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/helpers.rs:192", sym_ty="Function"];
+        n59848[label="HttpError", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/helpers.rs:204", sym_ty="Struct", shape=box];
+        n59044[label="process_response_with_inference_usage", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/helpers.rs:52", sym_ty="Function"];
+        n59121[label="process_response", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/helpers.rs:80", sym_ty="Function"];
+        n59147[label="process_response_error_with_inference_usage", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/helpers.rs:91", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_api {
+      label="api";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_points_api_rs {
+        label="points_api.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n74701[label="PointsService", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/tonic/api/points_api.rs:35", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_points_internal_api_rs {
+        label="points_internal_api.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n65666[label="PointsInternalService", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/tonic/api/points_internal_api.rs:44", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_query_common_rs {
+        label="query_common.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n57952[label="convert_shard_selector_for_read", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/tonic/api/query_common.rs:43", sym_ty="Function"];
+        n61671[label="query", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/tonic/api/query_common.rs:776", sym_ty="Function"];
+      }
+
+      subgraph cluster_service_api_rs {
+        label="service_api.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n54731[label="metrics", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/actix/api/service_api.rs:87", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_common {
+      label="common";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_strict_mode_rs {
+        label="strict_mode.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51097[label="CheckedTocProvider", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/common/strict_mode.rs:13", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_update_rs {
+        label="update.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n78979[label="InternalUpdateParams", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/common/update.rs:65", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_inference {
+      label="inference";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_params_rs {
+        label="params.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n64964[label="InferenceParams", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/common/inference/params.rs:4", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_main_rs {
+      label="main.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n76695[label="main", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/main.rs:141", sym_ty="Function"];
+    }
+
+    subgraph cluster_settings_rs {
+      label="settings.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n63269[label="ServiceConfig", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/settings.rs:24", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tonic {
+      label="tonic";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_auth_rs {
+        label="auth.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n75713[label="extract_access", full_path="/home/yibai/llmcc/sample/repos/qdrant/src/tonic/auth.rs:111", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_qdrant_edge_py {
+    label="qdrant-edge-py";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_filter {
+      label="filter";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_condition_rs {
+        label="condition.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21920[label="PyCondition", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/filter/condition.rs:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n24830[label="PyFilter", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/filter/mod.rs:28", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_formula {
+      label="formula";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_expression_interface_rs {
+        label="expression_interface.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3672[label="Boxed", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/formula/expression_interface.rs:156", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_repr_rs {
+      label="repr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n25043[label="Repr", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/repr.rs:7", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_search_rs {
+      label="search.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n22114[label="PySearchParams", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/search.rs:106", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_types {
+      label="types";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_json_path_rs {
+        label="json_path.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18456[label="PyJsonPath", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/json_path.rs:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_point_id_rs {
+        label="point_id.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n14393[label="PyPointId", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/point_id.rs:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_vector_internal_rs {
+        label="vector_internal.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8420[label="PyNamedVectorInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/edge/python/src/types/vector_internal.rs:92", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_quantization {
+    label="quantization";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_encoded_vectors_binary_rs {
+      label="encoded_vectors_binary.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9889[label="EncodedVectorsBin", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/quantization/src/encoded_vectors_binary.rs:23", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_encoded_vectors_pq_rs {
+      label="encoded_vectors_pq.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n17707[label="EncodedVectorsPQ", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/quantization/src/encoded_vectors_pq.rs:31", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_encoded_vectors_u8_rs {
+      label="encoded_vectors_u8.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n27220[label="EncodedVectorsU8", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/quantization/src/encoded_vectors_u8.rs:30", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_segment {
+    label="segment";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_bool_index {
+      label="bool_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mutable_bool_index_rs {
+        label="mutable_bool_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7581[label="MutableBoolIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/bool_index/mutable_bool_index.rs:25", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_common {
+      label="common";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n16686[label="check_vector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common/mod.rs:48", sym_ty="Function"];
+      }
+
+      subgraph cluster_operation_error_rs {
+        label="operation_error.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21523[label="OperationError", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common/operation_error.rs:21", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_operation_time_statistics_rs {
+        label="operation_time_statistics.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7419[label="OperationDurationsAggregator", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common/operation_time_statistics.rs:76", sym_ty="Struct", shape=box];
+        n7554[label="ScopeDurationMeasurer", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common/operation_time_statistics.rs:95", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_rocksdb_buffered_delete_wrapper_rs {
+        label="rocksdb_buffered_delete_wrapper.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18083[label="DatabaseColumnScheduledDeleteWrapper", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common/rocksdb_buffered_delete_wrapper.rs:21", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_rocksdb_wrapper_rs {
+        label="rocksdb_wrapper.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12474[label="DatabaseColumnWrapper", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common/rocksdb_wrapper.rs:26", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_data_types {
+      label="data_types";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_facets_rs {
+        label="facets.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n43157[label="FacetParams", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/facets.rs:13", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_named_vectors_rs {
+        label="named_vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n39548[label="CowMultiVector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/named_vectors.rs:18", sym_ty="Enum", shape=box];
+        n39649[label="CowVector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/named_vectors.rs:40", sym_ty="Enum", shape=box];
+        n39789[label="NamedVectors", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/named_vectors.rs:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_primitive_rs {
+        label="primitive.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n34816[label="PrimitiveVectorElement", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/primitive.rs:13", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_query_context_rs {
+        label="query_context.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n37060[label="VectorQueryContext", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/query_context.rs:179", sym_ty="Struct", shape=box];
+        n35954[label="QueryContext", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/query_context.rs:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_vectors_rs {
+        label="vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n49174[label="TypedMultiDenseVector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/vectors.rs:267", sym_ty="Struct", shape=box];
+        n47636[label="VectorInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/vectors.rs:28", sym_ty="Enum", shape=box];
+        n50349[label="TypedMultiDenseVectorRef", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/vectors.rs:417", sym_ty="Struct", shape=box];
+        n54748[label="QueryVector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/vectors.rs:820", sym_ty="Enum", shape=box];
+        n48028[label="VectorRef", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/data_types/vectors.rs:95", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_dense {
+      label="dense";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_memmap_dense_vector_storage_rs {
+        label="memmap_dense_vector_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n72757[label="MemmapDenseVectorStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/dense/memmap_dense_vector_storage.rs:36", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_entry {
+      label="entry";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_entry_point_rs {
+        label="entry_point.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n60063[label="SegmentEntry", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/entry/entry_point.rs:31", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_field_index {
+      label="field_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_field_index_base_rs {
+        label="field_index_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18125[label="FieldIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/field_index_base.rs:131", sym_ty="Enum", shape=box];
+        n17571[label="PayloadFieldIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/field_index_base.rs:39", sym_ty="Trait", shape=box];
+        n22776[label="FieldIndexBuilderTrait", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/field_index_base.rs:537", sym_ty="Trait", shape=box];
+        n22985[label="FieldIndexBuilder", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/field_index_base.rs:566", sym_ty="Enum", shape=box];
+        n17771[label="ValueIndexer", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/field_index_base.rs:78", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_histogram_rs {
+        label="histogram.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n25501[label="Point", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/histogram.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_flags {
+      label="flags";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_bitvec_flags_rs {
+        label="bitvec_flags.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n27635[label="BitvecFlags", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/common/flags/bitvec_flags.rs:20", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_gpu_vector_storage {
+      label="gpu_vector_storage";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_tests_rs {
+        label="tests.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n16711[label="create_vector_storage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/hnsw_index/gpu/gpu_vector_storage/tests.rs:523", sym_ty="Function"];
+        n18647[label="test_gpu_vector_storage_impl", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/hnsw_index/gpu/gpu_vector_storage/tests.rs:720", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_hnsw_index {
+      label="hnsw_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_links_container_rs {
+        label="links_container.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n41062[label="Item", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/hnsw_index/links_container.rs:230", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_point_scorer_rs {
+        label="point_scorer.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n35883[label="FilteredScorer", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/hnsw_index/point_scorer.rs:52", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_id_tracker {
+      label="id_tracker";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_id_tracker_base_rs {
+        label="id_tracker_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4498[label="IdTracker", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker/id_tracker_base.rs:34", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_immutable_id_tracker_rs {
+        label="immutable_id_tracker.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n9480[label="ImmutableIdTracker", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker/immutable_id_tracker.rs:58", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_in_memory_id_tracker_rs {
+        label="in_memory_id_tracker.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n30722[label="InMemoryIdTracker", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker/in_memory_id_tracker.rs:18", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mutable_id_tracker_rs {
+        label="mutable_id_tracker.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n25364[label="MutableIdTracker", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker/mutable_id_tracker.rs:99", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_simple_id_tracker_rs {
+        label="simple_id_tracker.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n32533[label="SimpleIdTracker", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/id_tracker/simple_id_tracker.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_index {
+      label="index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_struct_payload_index_rs {
+        label="struct_payload_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n66866[label="StructPayloadIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/struct_payload_index.rs:81", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_inverted_index {
+      label="inverted_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_immutable_inverted_index_rs {
+        label="immutable_inverted_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n15100[label="ImmutableInvertedIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/full_text_index/inverted_index/immutable_inverted_index.rs:26", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n10107[label="InvertedIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/full_text_index/inverted_index/mod.rs:166", sym_ty="Trait", shape=box];
+        n8826[label="TokenSet", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/full_text_index/inverted_index/mod.rs:29", sym_ty="Struct", shape=box];
+        n9558[label="Document", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/full_text_index/inverted_index/mod.rs:96", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mutable_inverted_index_rs {
+        label="mutable_inverted_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12105[label="MutableInvertedIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/full_text_index/inverted_index/mutable_inverted_index.rs:13", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_json_path {
+      label="json_path";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3423[label="JsonPath", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/json_path/mod.rs:19", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_map_index {
+      label="map_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n30465[label="MapIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/map_index/mod.rs:98", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_mmap_inverted_index {
+      label="mmap_inverted_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n19719[label="MmapInvertedIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/full_text_index/inverted_index/mmap_inverted_index/mod.rs:39", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_multi_dense {
+      label="multi_dense";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_appendable_mmap_multi_dense_vector_storage_rs {
+        label="appendable_mmap_multi_dense_vector_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n67497[label="AppendableMmapMultiDenseVectorStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/multi_dense/appendable_mmap_multi_dense_vector_storage.rs:39", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_simple_multi_dense_vector_storage_rs {
+        label="simple_multi_dense_vector_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n73917[label="SimpleMultiDenseVectorStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/multi_dense/simple_multi_dense_vector_storage.rs:40", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_volatile_multi_dense_vector_storage_rs {
+        label="volatile_multi_dense_vector_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n71336[label="VolatileMultiDenseVectorStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/multi_dense/volatile_multi_dense_vector_storage.rs:32", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_null_index {
+      label="null_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mutable_null_index_rs {
+        label="mutable_null_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n16340[label="MutableNullIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/null_index/mutable_null_index.rs:25", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_numeric_index {
+      label="numeric_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mmap_numeric_index_rs {
+        label="mmap_numeric_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51813[label="MmapNumericIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/numeric_index/mmap_numeric_index.rs:29", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n60926[label="NumericIndexInner", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/numeric_index/mod.rs:168", sym_ty="Enum", shape=box];
+        n65118[label="NumericIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/numeric_index/mod.rs:506", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mutable_numeric_index_rs {
+        label="mutable_numeric_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n47839[label="MutableNumericIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/field_index/numeric_index/mutable_numeric_index.rs:43", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_payload_storage {
+      label="payload_storage";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_payload_storage_base_rs {
+        label="payload_storage_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n24448[label="PayloadStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/payload_storage/payload_storage_base.rs:13", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_payload_storage_enum_rs {
+        label="payload_storage_enum.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n34205[label="PayloadStorageEnum", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/payload_storage/payload_storage_enum.rs:21", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_query_checker_rs {
+        label="query_checker.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n32897[label="check_payload", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/payload_storage/query_checker.rs:115", sym_ty="Function"];
+        n32445[label="check_filter", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/payload_storage/query_checker.rs:34", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_quantized {
+      label="quantized";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_quantized_multivector_storage_rs {
+        label="quantized_multivector_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n15093[label="QuantizedMultivectorStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/quantized/quantized_multivector_storage.rs:269", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_quantized_vectors_rs {
+        label="quantized_vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n19114[label="QuantizedVectorStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/quantized/quantized_vectors.rs:128", sym_ty="Enum", shape=box];
+        n20147[label="QuantizedVectors", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/quantized/quantized_vectors.rs:181", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_query_optimization {
+      label="query_optimization";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_condition_converter_rs {
+        label="condition_converter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n58617[label="field_condition_index", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/query_optimization/condition_converter.rs:200", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_rescore_formula {
+      label="rescore_formula";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_parsed_formula_rs {
+        label="parsed_formula.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n60517[label="ParsedExpression", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/query_optimization/rescore_formula/parsed_formula.rs:55", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_segment {
+      label="segment";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n19265[label="Segment", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment/mod.rs:64", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_segment_constructor {
+      label="segment_constructor";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_segment_constructor_base_rs {
+        label="segment_constructor_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n25674[label="open_vector_storage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment_constructor/segment_constructor_base.rs:102", sym_ty="Function"];
+        n28625[label="load_segment", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment_constructor/segment_constructor_base.rs:691", sym_ty="Function"];
+        n29707[label="migrate_all_rocksdb_dense_vector_storages", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/segment_constructor/segment_constructor_base.rs:974", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_spaces {
+      label="spaces";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_metric_rs {
+        label="metric.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n61469[label="Metric", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/spaces/metric.rs:8", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_sparse_index {
+      label="sparse_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_sparse_vector_index_rs {
+        label="sparse_vector_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n49142[label="SparseVectorIndex", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/index/sparse_index/sparse_vector_index.rs:45", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n46819[label="SegmentConfig", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:1361", sym_ty="Struct", shape=box];
+      n47615[label="VectorStorageDatatype", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:1523", sym_ty="Enum", shape=box];
+      n39547[label="ExtendedPointId", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:158", sym_ty="Enum", shape=box];
+      n50290[label="Payload", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:1884", sym_ty="Struct", shape=box];
+      n40342[label="Distance", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:292", sym_ty="Enum", shape=box];
+      n58907[label="Condition", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:3210", sym_ty="Enum", shape=box];
+      n60085[label="WithPayloadInterface", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:3335", sym_ty="Enum", shape=box];
+      n60295[label="WithVector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:3361", sym_ty="Enum", shape=box];
+      n62208[label="WithPayload", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:3544", sym_ty="Struct", shape=box];
+      n62370[label="Filter", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:3565", sym_ty="Struct", shape=box];
+      n40886[label="ScoredPoint", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:359", sym_ty="Struct", shape=box];
+      n64023[label="ShardKey", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:4997", sym_ty="Enum", shape=box];
+      n42117[label="SearchParams", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:566", sym_ty="Struct", shape=box];
+      n42402[label="HnswConfig", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/types.rs:637", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_vector_storage {
+      label="vector_storage";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_chunked_mmap_vectors_rs {
+        label="chunked_mmap_vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n42289[label="Status", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/chunked_mmap_vectors.rs:31", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_chunked_vectors_rs {
+        label="chunked_vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n40447[label="ChunkedVectors", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/chunked_vectors.rs:10", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_raw_scorer_rs {
+        label="raw_scorer.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4367[label="RawScorer", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/raw_scorer.rs:33", sym_ty="Trait", shape=box];
+        n4701[label="new_raw_scorer", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/raw_scorer.rs:54", sym_ty="Function"];
+      }
+
+      subgraph cluster_vector_storage_base_rs {
+        label="vector_storage_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n47751[label="VectorStorageEnum", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/vector_storage_base.rs:217", sym_ty="Enum", shape=box];
+        n46326[label="VectorStorage", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/segment/src/vector_storage/vector_storage_base.rs:63", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_shard {
+    label="shard";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_locked_segment_rs {
+      label="locked_segment.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1885[label="LockedSegment", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/locked_segment.rs:18", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_mmr {
+      label="mmr";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3486[label="mmr_from_points_with_vector", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query/mmr/mod.rs:40", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_operations {
+      label="operations";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n33058[label="ClockTag", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations/mod.rs:128", sym_ty="Struct", shape=box];
+        n32278[label="CollectionUpdateOperations", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations/mod.rs:18", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_point_ops_rs {
+        label="point_ops.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n29144[label="VectorStructPersisted", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations/point_ops.rs:591", sym_ty="Enum", shape=box];
+        n30635[label="VectorPersisted", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/operations/point_ops.rs:767", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_proxy_segment {
+      label="proxy_segment";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n17521[label="ProxySegment", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/proxy_segment/mod.rs:24", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_query {
+      label="query";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_formula_rs {
+        label="formula.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11910[label="ExpressionInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query/formula.rs:54", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6251[label="ScoringQuery", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query/mod.rs:115", sym_ty="Enum", shape=box];
+        n5758[label="ShardQueryRequest", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query/mod.rs:39", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_query_enum_rs {
+        label="query_enum.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8948[label="QueryEnum", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/query/query_enum.rs:10", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_retrieve {
+      label="retrieve";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_record_internal_rs {
+        label="record_internal.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n17070[label="RecordInternal", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/retrieve/record_internal.rs:11", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_segment_holder {
+      label="segment_holder";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7050[label="SegmentHolder", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/segment_holder/mod.rs:54", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_update_rs {
+      label="update.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3112[label="process_payload_operation", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/shard/src/update.rs:94", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_storage {
+    label="storage";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_consensus {
+      label="consensus";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_persistent_rs {
+        label="persistent.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n10891[label="Persistent", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/consensus/persistent.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_content_manager {
+      label="content_manager";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_collection_verification_rs {
+        label="collection_verification.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11715[label="check_strict_mode", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/collection_verification.rs:65", sym_ty="Function"];
+      }
+
+      subgraph cluster_consensus_manager_rs {
+        label="consensus_manager.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n10513[label="ConsensusStateRef", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/consensus_manager.rs:1079", sym_ty="Struct", shape=box];
+        n4370[label="ConsensusManager", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/consensus_manager.rs:77", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_errors_rs {
+        label="errors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n103[label="StorageError", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/errors.rs:15", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3563[label="ConsensusOperations", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/mod.rs:40", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_dispatcher_rs {
+      label="dispatcher.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n40704[label="Dispatcher", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/dispatcher.rs:25", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_rbac {
+      label="rbac";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n42442[label="Access", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/rbac/mod.rs:15", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_toc {
+      label="toc";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1151[label="TableOfContent", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/toc/mod.rs:60", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_request_hw_counter_rs {
+        label="request_hw_counter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n37[label="RequestHwCounter", full_path="/home/yibai/llmcc/sample/repos/qdrant/lib/storage/src/content_manager/toc/request_hw_counter.rs:15", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+
+  n37 -> n61671;
+  n103 -> n4370;
+  n103 -> n42289;
+  n103 -> n59044;
+  n103 -> n59121;
+  n103 -> n59147;
+  n103 -> n59298;
+  n103 -> n59778;
+  n103 -> n59848;
+  n1151 -> n40704;
+  n1151 -> n65666;
+  n1885 -> n7050;
+  n1885 -> n17521;
+  n3286 -> n66949;
+  n3423 -> n11910;
+  n3423 -> n18456;
+  n3423 -> n43157;
+  n3423 -> n60517;
+  n3486 -> n40886;
+  n3563 -> n4370;
+  n4367 -> n4701;
+  n4367 -> n35883;
+  n4498 -> n9480;
+  n4498 -> n25364;
+  n4498 -> n30722;
+  n4498 -> n32533;
+  n4701 -> n4367;
+  n4844 -> n4816;
+  n6251 -> n5758;
+  n6251 -> n5758;
+  n7050 -> n3112;
+  n7419 -> n7554;
+  n7419 -> n67767;
+  n8826 -> n12105;
+  n8948 -> n6251;
+  n9101 -> n11119;
+  n9558 -> n12105;
+  n9889 -> n19114;
+  n10107 -> n12105;
+  n10107 -> n15100;
+  n10107 -> n19719;
+  n10107 -> n49142;
+  n10513 -> n40704;
+  n10891 -> n4370;
+  n11715 -> n103;
+  n12105 -> n15100;
+  n12474 -> n18083;
+  n12474 -> n73917;
+  n15093 -> n19114;
+  n16340 -> n18125;
+  n16711 -> n47751;
+  n17521 -> n1885;
+  n17571 -> n7581;
+  n17571 -> n16340;
+  n17571 -> n30465;
+  n17571 -> n60926;
+  n17707 -> n19114;
+  n17771 -> n7581;
+  n17771 -> n30465;
+  n17771 -> n65118;
+  n18125 -> n58617;
+  n18647 -> n16711;
+  n18647 -> n44388;
+  n18647 -> n54748;
+  n19114 -> n20147;
+  n19265 -> n1885;
+  n19265 -> n29707;
+  n19719 -> n15100;
+  n21523 -> n76268;
+  n22517 -> n67767;
+  n22776 -> n22985;
+  n24060 -> n24691;
+  n24448 -> n34205;
+  n24691 -> n3286;
+  n24691 -> n58006;
+  n24691 -> n79728;
+  n25043 -> n3672;
+  n25043 -> n8420;
+  n25043 -> n14393;
+  n25043 -> n18456;
+  n25043 -> n21920;
+  n25353 -> n22517;
+  n25353 -> n50233;
+  n25501 -> n9261;
+  n25674 -> n47751;
+  n26503 -> n22517;
+  n27220 -> n19114;
+  n27635 -> n67497;
+  n28625 -> n19265;
+  n28625 -> n29707;
+  n29707 -> n19265;
+  n30465 -> n18125;
+  n31514 -> n1151;
+  n31514 -> n3286;
+  n31514 -> n22517;
+  n31514 -> n67767;
+  n31514 -> n79728;
+  n32897 -> n32445;
+  n33058 -> n73354;
+  n33058 -> n78979;
+  n34205 -> n19265;
+  n34205 -> n66866;
+  n34816 -> n40447;
+  n34816 -> n49174;
+  n34816 -> n61469;
+  n37645 -> n37288;
+  n37645 -> n59044;
+  n37645 -> n59147;
+  n38226 -> n5758;
+  n38226 -> n5758;
+  n38226 -> n24830;
+  n38226 -> n25353;
+  n38226 -> n32445;
+  n38226 -> n32897;
+  n38226 -> n42968;
+  n38226 -> n43157;
+  n38226 -> n69705;
+  n38383 -> n21920;
+  n38383 -> n32897;
+  n38383 -> n38226;
+  n38383 -> n38226;
+  n38807 -> n58617;
+  n39547 -> n40886;
+  n39547 -> n40886;
+  n39548 -> n39649;
+  n39789 -> n17070;
+  n39913 -> n38807;
+  n39913 -> n38807;
+  n40342 -> n3486;
+  n40342 -> n67497;
+  n40342 -> n71336;
+  n40342 -> n72757;
+  n40342 -> n73917;
+  n40383 -> n39547;
+  n40447 -> n71336;
+  n40447 -> n73917;
+  n40704 -> n11715;
+  n40704 -> n58778;
+  n40704 -> n74701;
+  n41062 -> n3486;
+  n41301 -> n15093;
+  n41301 -> n67497;
+  n41301 -> n71336;
+  n42117 -> n5758;
+  n42117 -> n5758;
+  n42117 -> n22114;
+  n42402 -> n24691;
+  n42442 -> n11715;
+  n42442 -> n61671;
+  n43568 -> n18647;
+  n43568 -> n24691;
+  n44388 -> n3112;
+  n44388 -> n4701;
+  n44388 -> n32897;
+  n44388 -> n37060;
+  n45019 -> n1151;
+  n45019 -> n3286;
+  n45019 -> n79728;
+  n46326 -> n47751;
+  n46326 -> n67497;
+  n46326 -> n71336;
+  n46326 -> n72757;
+  n46326 -> n73917;
+  n46819 -> n16686;
+  n46819 -> n17521;
+  n46819 -> n19265;
+  n47051 -> n44388;
+  n47051 -> n44388;
+  n47615 -> n20147;
+  n47636 -> n8420;
+  n47636 -> n30635;
+  n47636 -> n39649;
+  n47636 -> n48028;
+  n47636 -> n49174;
+  n47636 -> n54748;
+  n47751 -> n4701;
+  n47751 -> n32897;
+  n47751 -> n49142;
+  n47751 -> n66866;
+  n47787 -> n3286;
+  n47787 -> n70697;
+  n47839 -> n60926;
+  n48028 -> n39649;
+  n48028 -> n50349;
+  n48028 -> n54748;
+  n48107 -> n38057;
+  n48215 -> n38057;
+  n48521 -> n1151;
+  n48521 -> n49205;
+  n49174 -> n39548;
+  n49174 -> n50349;
+  n49205 -> n37;
+  n49205 -> n3486;
+  n49205 -> n35954;
+  n49205 -> n44388;
+  n49205 -> n44388;
+  n49205 -> n58617;
+  n50233 -> n3286;
+  n50233 -> n58006;
+  n50233 -> n66949;
+  n50233 -> n79728;
+  n50266 -> n76268;
+  n50290 -> n17070;
+  n50290 -> n17070;
+  n50290 -> n24691;
+  n50290 -> n40886;
+  n50290 -> n40886;
+  n50290 -> n48215;
+  n50290 -> n48215;
+  n50349 -> n39548;
+  n50349 -> n48028;
+  n50482 -> n42968;
+  n50482 -> n66949;
+  n51097 -> n61671;
+  n51209 -> n16711;
+  n51209 -> n18647;
+  n51209 -> n20147;
+  n51813 -> n60926;
+  n54731 -> n59298;
+  n54748 -> n4701;
+  n54748 -> n16686;
+  n57089 -> n5758;
+  n57089 -> n6251;
+  n57089 -> n8948;
+  n57089 -> n9101;
+  n57089 -> n29144;
+  n57089 -> n30635;
+  n57089 -> n32278;
+  n57089 -> n47636;
+  n57952 -> n42289;
+  n57952 -> n70697;
+  n58006 -> n42968;
+  n58778 -> n37;
+  n58907 -> n38383;
+  n58907 -> n62370;
+  n59044 -> n59147;
+  n59121 -> n59044;
+  n59147 -> n37132;
+  n59147 -> n59778;
+  n59147 -> n59848;
+  n59298 -> n59147;
+  n60063 -> n17521;
+  n60085 -> n5758;
+  n60085 -> n5758;
+  n60085 -> n62208;
+  n60085 -> n73485;
+  n60085 -> n74603;
+  n60295 -> n5758;
+  n60295 -> n5758;
+  n60295 -> n73485;
+  n60295 -> n74603;
+  n60926 -> n65118;
+  n60926 -> n65118;
+  n61671 -> n37288;
+  n61671 -> n42289;
+  n61671 -> n57952;
+  n62370 -> n38226;
+  n62370 -> n58907;
+  n62370 -> n73485;
+  n62370 -> n76219;
+  n63056 -> n54731;
+  n63269 -> n54731;
+  n63269 -> n65666;
+  n63269 -> n74701;
+  n64023 -> n17070;
+  n64023 -> n17070;
+  n64023 -> n40886;
+  n64023 -> n40886;
+  n64023 -> n47787;
+  n64023 -> n48215;
+  n64023 -> n48215;
+  n64023 -> n66949;
+  n64023 -> n67371;
+  n64023 -> n70697;
+  n64964 -> n61671;
+  n65118 -> n18125;
+  n66866 -> n19265;
+  n66866 -> n49142;
+  n67767 -> n3286;
+  n67767 -> n42968;
+  n69316 -> n8948;
+  n69316 -> n29144;
+  n69316 -> n29144;
+  n69316 -> n30635;
+  n69316 -> n39649;
+  n69316 -> n47636;
+  n69333 -> n39649;
+  n69333 -> n47636;
+  n69333 -> n47636;
+  n69333 -> n48028;
+  n69333 -> n54748;
+  n69683 -> n69705;
+  n69705 -> n83830;
+  n71336 -> n47751;
+  n73499 -> n50290;
+  n73917 -> n47751;
+  n75516 -> n11715;
+  n75516 -> n42117;
+  n75516 -> n43157;
+  n75516 -> n55395;
+  n75516 -> n73485;
+  n75516 -> n74603;
+  n75516 -> n76219;
+  n75713 -> n42442;
+  n76268 -> n103;
+  n76268 -> n103;
+  n76268 -> n59848;
+  n76695 -> n1151;
+  n76695 -> n4370;
+  n76695 -> n10891;
+  n76695 -> n31514;
+  n76695 -> n40704;
+  n76695 -> n45019;
+  n83095 -> n74701;
+  n85193 -> n1151;
+  n85193 -> n3563;
+  n85193 -> n10891;
+  n85193 -> n10891;
+  n85193 -> n25353;
+  n85193 -> n31514;
+  n85193 -> n33058;
+  n85193 -> n67371;
+  n85193 -> n67767;
+  n85193 -> n76268;
+  n85193 -> n79728;
+}

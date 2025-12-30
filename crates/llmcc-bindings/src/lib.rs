@@ -1,7 +1,7 @@
 #![allow(clippy::useless_conversion)]
 #![allow(unsafe_op_in_unsafe_fn)]
 use llmcc_cli::{LlmccOptions, run_main};
-use llmcc_core::graph_render::ComponentDepth;
+use llmcc_dot::ComponentDepth;
 // use llmcc_python::LangPython;  // TODO: will be added back in the future
 use llmcc_rust::LangRust;
 use pyo3::{exceptions::PyValueError, prelude::*, wrap_pyfunction};
@@ -57,6 +57,8 @@ fn run_llmcc(
         graph,
         component_depth: depth,
         pagerank_top_k: None,
+        cluster_by_crate: false,
+        short_labels: false,
     };
 
     let result = match lang {

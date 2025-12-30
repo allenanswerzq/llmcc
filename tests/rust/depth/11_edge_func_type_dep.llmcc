@@ -1,0 +1,51 @@
+===============================================================================
+edge-func-type-dep
+===============================================================================
+Test that func->type_dep edges create correct dependency direction.
+When function F has a type dependency on T (e.g., creates/uses T internally),
+F's crate depends on T's crate.
+At crate level: crate_app -> crate_types (app depends on types)
+
+--- file: types/Cargo.toml ---
+[package]
+name = "types"
+
+--- file: types/src/lib.rs ---
+pub struct Config {
+    pub value: u32,
+}
+
+impl Config {
+    pub fn new() -> Self {
+        Config { value: 0 }
+    }
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+types = { path = "../types" }
+
+--- file: app/src/lib.rs ---
+use types::Config;
+
+/// Function creates and uses Config internally
+pub fn initialize() {
+    let config = Config::new();
+    let _ = config.value;
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_types[label="types"];
+
+  crate_app -> crate_types;
+}

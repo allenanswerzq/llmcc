@@ -195,6 +195,16 @@ impl<'graph, 'tcx> PageRanker<'graph, 'tcx> {
         self.rank().blocks.into_iter().take(k).collect()
     }
 
+    /// Get all PageRank scores as a HashMap from BlockId to score.
+    /// Useful for aggregating scores by component (crate/module/file).
+    pub fn scores(&self) -> HashMap<BlockId, f64> {
+        self.rank()
+            .blocks
+            .into_iter()
+            .map(|rb| (rb.node.block_id, rb.score))
+            .collect()
+    }
+
     fn compute_pagerank(&self, adjacency: &[Vec<usize>]) -> (Vec<f64>, usize, bool) {
         let n = adjacency.len();
         let mut ranks = vec![1.0 / n as f64; n];

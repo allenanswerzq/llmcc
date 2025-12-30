@@ -1,0 +1,43 @@
+===============================================================================
+edge-caller-callee
+===============================================================================
+Test that caller->callee edges create correct dependency direction.
+When function A calls function B, A's crate depends on B's crate.
+At crate level: crate_app -> crate_utils (app depends on utils)
+
+--- file: utils/Cargo.toml ---
+[package]
+name = "utils"
+
+--- file: utils/src/lib.rs ---
+pub fn helper() -> u32 {
+    42
+}
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+utils = { path = "../utils" }
+
+--- file: app/src/lib.rs ---
+use utils::helper;
+
+/// Function calls helper from utils crate
+pub fn main_logic() -> u32 {
+    helper() + 1
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_utils[label="utils"];
+
+  crate_app -> crate_utils;
+}

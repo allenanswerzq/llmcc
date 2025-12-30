@@ -1,0 +1,857 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_llmcc_bindings {
+    label="llmcc-bindings";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n901[label="run_llmcc", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-bindings/src/lib.rs:30", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_llmcc_cli {
+    label="llmcc-cli";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1254[label="generate_outputs", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-cli/src/lib.rs:251", sym_ty="Function"];
+      n228[label="run_main", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-cli/src/lib.rs:69", sym_ty="Function"];
+    }
+
+    subgraph cluster_main_rs {
+      label="main.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n518[label="main", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-cli/src/main.rs:100", sym_ty="Function"];
+      n315[label="run", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-cli/src/main.rs:65", sym_ty="Function"];
+    }
+
+    subgraph cluster_options_rs {
+      label="options.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="GraphOptions", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-cli/src/options.rs:11", sym_ty="Struct", shape=box];
+      n12[label="ProcessingOptions", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-cli/src/options.rs:40", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_llmcc_core {
+    label="llmcc-core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_block_rs {
+      label="block.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7683[label="BlockField", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:1054", sym_ty="Struct", shape=box];
+      n7769[label="BlockParameter", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:1136", sym_ty="Struct", shape=box];
+      n7842[label="BlockReturn", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:1220", sym_ty="Struct", shape=box];
+      n2695[label="BlockId", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:246", sym_ty="Struct", shape=box];
+      n3346[label="BlockRelation", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:293", sym_ty="Enum", shape=box];
+      n149[label="BlockKind", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:31", sym_ty="Enum", shape=box];
+      n3551[label="BlockBase", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:343", sym_ty="Struct", shape=box];
+      n4641[label="BlockRoot", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:444", sym_ty="Struct", shape=box];
+      n5784[label="BlockFunc", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:559", sym_ty="Struct", shape=box];
+      n6613[label="BlockCall", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:689", sym_ty="Struct", shape=box];
+      n6867[label="BlockClass", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:742", sym_ty="Struct", shape=box];
+      n7106[label="BlockTrait", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:798", sym_ty="Struct", shape=box];
+      n7241[label="BlockImpl", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:844", sym_ty="Struct", shape=box];
+      n7463[label="BlockEnum", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:937", sym_ty="Struct", shape=box];
+      n7567[label="BlockConst", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block.rs:983", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_block_rel_rs {
+      label="block_rel.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2372[label="RelationBuilder", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block_rel.rs:213", sym_ty="Struct", shape=box];
+      n4210[label="BlockIndexMaps", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block_rel.rs:381", sym_ty="Struct", shape=box];
+      n93[label="BlockRelationMap", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/block_rel.rs:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_context_rs {
+      label="context.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5507[label="CompileCtxt", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/context.rs:218", sym_ty="Struct", shape=box];
+      n3299[label="CompileUnit", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/context.rs:22", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_file_rs {
+      label="file.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n777[label="FileId", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/file.rs:7", sym_ty="Struct", shape=box];
+      n1583[label="File", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/file.rs:91", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_graph_rs {
+      label="graph.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1774[label="ProjectGraph", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph.rs:37", sym_ty="Struct", shape=box];
+      n1562[label="UnitGraph", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph.rs:7", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_graph_builder_rs {
+      label="graph_builder.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3053[label="GraphBuilder", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_builder.rs:36", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_graph_render_rs {
+      label="graph_render.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1900[label="ComponentTree", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:105", sym_ty="Struct", shape=box];
+      n2224[label="render_graph", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:164", sym_ty="Function"];
+      n2257[label="render_graph_with_options", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:172", sym_ty="Function"];
+      n1507[label="ComponentDepth", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:30", sym_ty="Enum", shape=box];
+      n2539[label="collect_edges", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:307", sym_ty="Function"];
+      n4583[label="get_component_key", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:687", sym_ty="Function"];
+      n4932[label="render_aggregated_graph", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:755", sym_ty="Function"];
+      n5839[label="render_dot", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:919", sym_ty="Function"];
+      n5979[label="render_tree_recursive", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/graph_render.rs:954", sym_ty="Function"];
+    }
+
+    subgraph cluster_interner_rs {
+      label="interner.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n576[label="InternPoolInner", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/interner.rs:13", sym_ty="Struct", shape=box];
+      n1038[label="InternPool", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/interner.rs:67", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ir_rs {
+      label="ir.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4802[label="HirKind", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir.rs:25", sym_ty="Enum", shape=box];
+      n4913[label="HirNode", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir.rs:38", sym_ty="Enum", shape=box];
+      n7180[label="HirId", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir.rs:424", sym_ty="Struct", shape=box];
+      n7254[label="HirBase", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir.rs:451", sym_ty="Struct", shape=box];
+      n7418[label="HirScope", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir.rs:524", sym_ty="Struct", shape=box];
+      n7577[label="HirIdent", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir.rs:595", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ir_builder_rs {
+      label="ir_builder.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3735[label="build_llmcc_ir", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir_builder.rs:243", sym_ty="Function"];
+      n2196[label="IrBuildOption", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/ir_builder.rs:36", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lang_def_rs {
+      label="lang_def.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2225[label="ParseTree", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/lang_def.rs:14", sym_ty="Trait", shape=box];
+      n3666[label="TreeSitterParseNode", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/lang_def.rs:158", sym_ty="Struct", shape=box];
+      n2491[label="ParseNode", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/lang_def.rs:54", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_pagerank_rs {
+      label="pagerank.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1677[label="PageRanker", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/pagerank.rs:67", sym_ty="Struct", shape=box];
+      n1210[label="PageRankConfig", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/pagerank.rs:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_printer_rs {
+      label="printer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2792[label="PrintFormat", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:11", sym_ty="Enum", shape=box];
+      n4596[label="RenderNode", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:303", sym_ty="Struct", shape=box];
+      n4824[label="render_llmcc_ir", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:342", sym_ty="Function"];
+      n4872[label="render_llmcc_ir_with_config", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:347", sym_ty="Function"];
+      n5046[label="print_llmcc_ir", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:387", sym_ty="Function"];
+      n5068[label="print_llmcc_ir_with_config", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:392", sym_ty="Function"];
+      n5242[label="render_llmcc_graph_with_config", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:404", sym_ty="Function"];
+      n5311[label="print_llmcc_graph", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:417", sym_ty="Function"];
+      n5332[label="print_llmcc_graph_with_config", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:422", sym_ty="Function"];
+      n5421[label="build_ast_render", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:437", sym_ty="Function"];
+      n5467[label="build_ast_render_with", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:447", sym_ty="Function"];
+      n5683[label="build_hir_render", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:491", sym_ty="Function"];
+      n5975[label="render_lines", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:585", sym_ty="Function"];
+      n6033[label="render_node_with_format", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:592", sym_ty="Function"];
+      n3108[label="PrintConfig", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/printer.rs:69", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_scope_rs {
+      label="scope.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4156[label="Scope", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/scope.rs:12", sym_ty="Struct", shape=box];
+      n5737[label="ScopeStack", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/scope.rs:240", sym_ty="Struct", shape=box];
+      n7184[label="LookupOptions", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/scope.rs:557", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_symbol_rs {
+      label="symbol.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1671[label="Symbol", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/symbol.rs:173", sym_ty="Struct", shape=box];
+      n775[label="SymId", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/symbol.rs:45", sym_ty="Struct", shape=box];
+      n876[label="ScopeId", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/symbol.rs:56", sym_ty="Struct", shape=box];
+      n1002[label="SymKind", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/symbol.rs:66", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_visit_rs {
+      label="visit.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n84[label="HirVisitor", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-core/src/visit.rs:6", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_llmcc_resolver {
+    label="llmcc-resolver";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_binder_rs {
+      label="binder.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n146[label="BinderScopes", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-resolver/src/binder.rs:13", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_collector_rs {
+      label="collector.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n18[label="CollectorScopes", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-resolver/src/collector.rs:14", sym_ty="Struct", shape=box];
+      n1499[label="collect_symbols_with", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-resolver/src/collector.rs:232", sym_ty="Function"];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n59[label="ResolverOption", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-resolver/src/lib.rs:8", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_llmcc_rust {
+    label="llmcc-rust";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_bind_rs {
+      label="bind.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n29[label="BinderVisitor", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/bind.rs:22", sym_ty="Struct", shape=box];
+      n6676[label="extract_nested_types", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/bind.rs:969", sym_ty="Function"];
+    }
+
+    subgraph cluster_collect_rs {
+      label="collect.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n296[label="CollectorVisitor", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/collect.rs:29", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_infer_rs {
+      label="infer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1144[label="infer_type", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:10", sym_ty="Function"];
+      n2292[label="infer_block", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:170", sym_ty="Function"];
+      n2546[label="infer_array_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:202", sym_ty="Function"];
+      n2624[label="infer_range_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:211", sym_ty="Function"];
+      n2738[label="infer_tuple_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:220", sym_ty="Function"];
+      n3022[label="infer_struct_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:243", sym_ty="Function"];
+      n3134[label="infer_field_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:263", sym_ty="Function"];
+      n3485[label="infer_index_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:324", sym_ty="Function"];
+      n3586[label="infer_binary_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:344", sym_ty="Function"];
+      n3883[label="infer_if_expression", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:373", sym_ty="Function"];
+      n3970[label="infer_array_type", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:385", sym_ty="Function"];
+      n4296[label="infer_function_type", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:425", sym_ty="Function"];
+      n4510[label="infer_generic_type", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:466", sym_ty="Function"];
+      n4847[label="infer_abstract_type", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:528", sym_ty="Function"];
+      n4935[label="infer_bounded_type", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:541", sym_ty="Function"];
+      n5098[label="infer_trait_bounds", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:565", sym_ty="Function"];
+      n5285[label="is_syntactic_noise", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:585", sym_ty="Function"];
+      n5348[label="infer_from_children", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/infer.rs:601", sym_ty="Function"];
+    }
+
+    subgraph cluster_pattern_rs {
+      label="pattern.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n103[label="bind_pattern_types", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:11", sym_ty="Function"];
+      n735[label="assign_type_to_tuple_pattern", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:123", sym_ty="Function"];
+      n879[label="assign_type_to_struct_pattern", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:154", sym_ty="Function"];
+      n1614[label="assign_type_to_tuple_struct_pattern", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:249", sym_ty="Function"];
+      n1943[label="assign_type_to_or_pattern", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:297", sym_ty="Function"];
+      n2007[label="assign_type_to_slice_pattern", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:315", sym_ty="Function"];
+      n2153[label="assign_type_to_reference_pattern", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:356", sym_ty="Function"];
+      n541[label="assign_type_to_ident", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-rust/src/pattern.rs:72", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_llmcc_test {
+    label="llmcc-test";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_corpus_rs {
+      label="corpus.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1968[label="CorpusFile", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/corpus.rs:107", sym_ty="Struct", shape=box];
+      n2449[label="CorpusCase", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/corpus.rs:146", sym_ty="Struct", shape=box];
+      n3632[label="parse_corpus_file", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/corpus.rs:247", sym_ty="Function"];
+      n1573[label="Corpus", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/corpus.rs:39", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_main_rs {
+      label="main.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2231[label="run_all_command", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/main.rs:126", sym_ty="Function"];
+      n2389[label="run_single_command", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/main.rs:159", sym_ty="Function"];
+      n2041[label="main", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/main.rs:71", sym_ty="Function"];
+    }
+
+    subgraph cluster_runner_rs {
+      label="runner.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7323[label="normalize_block_graph", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1075", sym_ty="Function"];
+      n7482[label="SExpr", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1159", sym_ty="Enum", shape=box];
+      n7498[label="parse_sexpr", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1164", sym_ty="Function"];
+      n3310[label="run_cases_for_file", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:124", sym_ty="Function"];
+      n7662[label="format_sexpr", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1240", sym_ty="Function"];
+      n7778[label="collect_pipeline", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1350", sym_ty="Function"];
+      n3484[label="run_cases_for_file_with_parallel", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:140", sym_ty="Function"];
+      n3593[label="run_cases_in_file", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:164", sym_ty="Function"];
+      n8001[label="snapshot_block_relations", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1700", sym_ty="Function"];
+      n8021[label="render_block_reports", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1762", sym_ty="Function"];
+      n8045[label="describe_block", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:1814", sym_ty="Function"];
+      n3932[label="evaluate_case", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:238", sym_ty="Function"];
+      n4366[label="build_pipeline_summary", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:331", sym_ty="Function"];
+      n5088[label="PipelineOptions", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:470", sym_ty="Struct", shape=box];
+      n7165[label="normalize", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/runner.rs:975", sym_ty="Function"];
+    }
+
+    subgraph cluster_snapshot {
+      label="snapshot";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_block_graph_rs {
+        label="block_graph.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1408[label="SExpr", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:103", sym_ty="Enum", shape=box];
+        n1451[label="parse_sexpr", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-test/src/snapshot/block_graph.rs:108", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_llmcc_tree {
+    label="llmcc-tree";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n154[label="TokenConfig", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-tree/src/config.rs:12", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n79[label="TokenEntry", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-tree/src/lib.rs:14", sym_ty="Struct", shape=box];
+      n193[label="TokenSet", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-tree/src/lib.rs:23", sym_ty="Struct", shape=box];
+      n785[label="generate_tokens", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-tree/src/lib.rs:84", sym_ty="Function"];
+    }
+
+    subgraph cluster_node_types_rs {
+      label="node_types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n87[label="NodeTypes", full_path="/home/yibai/llmcc/sample/repos/llmcc/crates/llmcc-tree/src/node_types.rs:9", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n2 -> n2231;
+  n2 -> n2389;
+  n12 -> n2231;
+  n12 -> n2389;
+  n18 -> n296;
+  n59 -> n29;
+  n59 -> n1499;
+  n79 -> n193;
+  n84 -> n3053;
+  n93 -> n2372;
+  n93 -> n5507;
+  n103 -> n541;
+  n103 -> n735;
+  n103 -> n879;
+  n103 -> n1614;
+  n103 -> n1943;
+  n103 -> n2007;
+  n103 -> n2153;
+  n146 -> n29;
+  n146 -> n103;
+  n146 -> n541;
+  n146 -> n735;
+  n146 -> n879;
+  n146 -> n1144;
+  n146 -> n1614;
+  n146 -> n1943;
+  n146 -> n2007;
+  n146 -> n2153;
+  n146 -> n2292;
+  n146 -> n2546;
+  n146 -> n2624;
+  n146 -> n2738;
+  n146 -> n3022;
+  n146 -> n3134;
+  n146 -> n3485;
+  n146 -> n3586;
+  n146 -> n3883;
+  n146 -> n3970;
+  n146 -> n4296;
+  n146 -> n4510;
+  n146 -> n4847;
+  n146 -> n4935;
+  n146 -> n5098;
+  n146 -> n5348;
+  n146 -> n6676;
+  n149 -> n3053;
+  n149 -> n3551;
+  n149 -> n4210;
+  n228 -> n59;
+  n228 -> n1254;
+  n228 -> n1499;
+  n228 -> n1774;
+  n228 -> n3735;
+  n228 -> n5311;
+  n228 -> n5507;
+  n315 -> n228;
+  n315 -> n1507;
+  n518 -> n315;
+  n576 -> n1038;
+  n735 -> n103;
+  n775 -> n1671;
+  n777 -> n1583;
+  n785 -> n87;
+  n785 -> n154;
+  n876 -> n296;
+  n876 -> n1671;
+  n876 -> n4156;
+  n879 -> n103;
+  n879 -> n541;
+  n901 -> n228;
+  n1002 -> n1671;
+  n1002 -> n7184;
+  n1038 -> n4156;
+  n1038 -> n5507;
+  n1038 -> n5737;
+  n1144 -> n1671;
+  n1144 -> n2292;
+  n1144 -> n2546;
+  n1144 -> n2624;
+  n1144 -> n2738;
+  n1144 -> n3022;
+  n1144 -> n3134;
+  n1144 -> n3485;
+  n1144 -> n3586;
+  n1144 -> n3883;
+  n1144 -> n3970;
+  n1144 -> n4296;
+  n1144 -> n4510;
+  n1144 -> n4847;
+  n1144 -> n4935;
+  n1144 -> n5098;
+  n1144 -> n5348;
+  n1210 -> n1677;
+  n1254 -> n2224;
+  n1451 -> n1408;
+  n1499 -> n5046;
+  n1507 -> n2224;
+  n1507 -> n2257;
+  n1507 -> n3484;
+  n1507 -> n3593;
+  n1507 -> n3932;
+  n1507 -> n4366;
+  n1507 -> n4583;
+  n1507 -> n4932;
+  n1507 -> n5088;
+  n1562 -> n1774;
+  n1583 -> n5507;
+  n1614 -> n103;
+  n1671 -> n103;
+  n1671 -> n541;
+  n1671 -> n735;
+  n1671 -> n879;
+  n1671 -> n1614;
+  n1671 -> n1943;
+  n1671 -> n2007;
+  n1671 -> n2153;
+  n1671 -> n3551;
+  n1671 -> n4156;
+  n1671 -> n6676;
+  n1671 -> n7241;
+  n1671 -> n7577;
+  n1774 -> n1254;
+  n1774 -> n1677;
+  n1774 -> n2224;
+  n1774 -> n2257;
+  n1774 -> n2539;
+  n1774 -> n8001;
+  n1774 -> n8021;
+  n1900 -> n5839;
+  n1900 -> n5979;
+  n1943 -> n103;
+  n1968 -> n1573;
+  n1968 -> n3310;
+  n1968 -> n3484;
+  n1968 -> n3593;
+  n2007 -> n103;
+  n2041 -> n2231;
+  n2041 -> n2389;
+  n2153 -> n103;
+  n2196 -> n3735;
+  n2224 -> n2257;
+  n2225 -> n5507;
+  n2231 -> n1573;
+  n2257 -> n2539;
+  n2257 -> n4932;
+  n2257 -> n5839;
+  n2292 -> n1144;
+  n2292 -> n1671;
+  n2292 -> n5285;
+  n2292 -> n5348;
+  n2389 -> n1573;
+  n2389 -> n3484;
+  n2449 -> n1968;
+  n2449 -> n3932;
+  n2449 -> n4366;
+  n2491 -> n3666;
+  n2539 -> n7180;
+  n2546 -> n1671;
+  n2546 -> n5348;
+  n2624 -> n1671;
+  n2624 -> n5348;
+  n2695 -> n93;
+  n2695 -> n1562;
+  n2695 -> n1671;
+  n2695 -> n2372;
+  n2695 -> n2539;
+  n2695 -> n3053;
+  n2695 -> n3551;
+  n2695 -> n4210;
+  n2695 -> n5242;
+  n2695 -> n5311;
+  n2695 -> n5332;
+  n2695 -> n5784;
+  n2695 -> n6613;
+  n2695 -> n6867;
+  n2695 -> n7106;
+  n2695 -> n7241;
+  n2695 -> n7463;
+  n2695 -> n7567;
+  n2695 -> n7683;
+  n2695 -> n7769;
+  n2695 -> n7842;
+  n2738 -> n1144;
+  n2738 -> n1671;
+  n2792 -> n3108;
+  n3022 -> n1002;
+  n3022 -> n1144;
+  n3022 -> n1671;
+  n3108 -> n4872;
+  n3108 -> n5068;
+  n3108 -> n5242;
+  n3108 -> n5332;
+  n3108 -> n5421;
+  n3108 -> n5467;
+  n3108 -> n5683;
+  n3108 -> n5975;
+  n3108 -> n6033;
+  n3134 -> n1144;
+  n3134 -> n1671;
+  n3299 -> n103;
+  n3299 -> n146;
+  n3299 -> n541;
+  n3299 -> n735;
+  n3299 -> n879;
+  n3299 -> n1144;
+  n3299 -> n1614;
+  n3299 -> n1943;
+  n3299 -> n2007;
+  n3299 -> n2153;
+  n3299 -> n2292;
+  n3299 -> n2546;
+  n3299 -> n2624;
+  n3299 -> n2738;
+  n3299 -> n3022;
+  n3299 -> n3053;
+  n3299 -> n3134;
+  n3299 -> n3485;
+  n3299 -> n3586;
+  n3299 -> n3883;
+  n3299 -> n3970;
+  n3299 -> n4296;
+  n3299 -> n4510;
+  n3299 -> n4824;
+  n3299 -> n4847;
+  n3299 -> n4872;
+  n3299 -> n4935;
+  n3299 -> n5046;
+  n3299 -> n5068;
+  n3299 -> n5098;
+  n3299 -> n5242;
+  n3299 -> n5285;
+  n3299 -> n5311;
+  n3299 -> n5332;
+  n3299 -> n5348;
+  n3299 -> n5421;
+  n3299 -> n5467;
+  n3299 -> n5683;
+  n3299 -> n6676;
+  n3310 -> n3484;
+  n3346 -> n93;
+  n3484 -> n3593;
+  n3485 -> n1144;
+  n3485 -> n1671;
+  n3551 -> n4641;
+  n3551 -> n5784;
+  n3551 -> n6613;
+  n3551 -> n6867;
+  n3551 -> n7106;
+  n3551 -> n7241;
+  n3551 -> n7463;
+  n3551 -> n7567;
+  n3551 -> n7683;
+  n3551 -> n7769;
+  n3551 -> n7842;
+  n3586 -> n1144;
+  n3586 -> n1671;
+  n3593 -> n3932;
+  n3632 -> n2449;
+  n3883 -> n1671;
+  n3883 -> n2292;
+  n3932 -> n4366;
+  n3932 -> n7165;
+  n3970 -> n1144;
+  n3970 -> n1671;
+  n4156 -> n18;
+  n4156 -> n296;
+  n4156 -> n5737;
+  n4156 -> n7418;
+  n4210 -> n5507;
+  n4296 -> n1144;
+  n4296 -> n1671;
+  n4366 -> n5088;
+  n4366 -> n7778;
+  n4510 -> n1144;
+  n4510 -> n1671;
+  n4596 -> n5975;
+  n4596 -> n6033;
+  n4802 -> n7254;
+  n4824 -> n4872;
+  n4847 -> n1144;
+  n4847 -> n1671;
+  n4872 -> n4596;
+  n4872 -> n5421;
+  n4872 -> n5683;
+  n4872 -> n5975;
+  n4913 -> n103;
+  n4913 -> n735;
+  n4913 -> n879;
+  n4913 -> n1144;
+  n4913 -> n1614;
+  n4913 -> n1943;
+  n4913 -> n2007;
+  n4913 -> n2153;
+  n4913 -> n2292;
+  n4913 -> n2546;
+  n4913 -> n2624;
+  n4913 -> n2738;
+  n4913 -> n3022;
+  n4913 -> n3134;
+  n4913 -> n3485;
+  n4913 -> n3551;
+  n4913 -> n3586;
+  n4913 -> n3883;
+  n4913 -> n3970;
+  n4913 -> n4296;
+  n4913 -> n4510;
+  n4913 -> n4847;
+  n4913 -> n4935;
+  n4913 -> n5098;
+  n4913 -> n5285;
+  n4913 -> n5348;
+  n4913 -> n5683;
+  n4913 -> n6676;
+  n4932 -> n4583;
+  n4935 -> n1144;
+  n4935 -> n1671;
+  n5046 -> n5068;
+  n5068 -> n4872;
+  n5088 -> n7778;
+  n5098 -> n1144;
+  n5098 -> n1671;
+  n5242 -> n5975;
+  n5311 -> n5332;
+  n5332 -> n5242;
+  n5348 -> n1144;
+  n5348 -> n1671;
+  n5348 -> n5285;
+  n5421 -> n4596;
+  n5421 -> n5467;
+  n5467 -> n4596;
+  n5507 -> n18;
+  n5507 -> n1499;
+  n5507 -> n1774;
+  n5507 -> n3299;
+  n5507 -> n3735;
+  n5683 -> n4596;
+  n5737 -> n18;
+  n5737 -> n146;
+  n5839 -> n5979;
+  n5975 -> n6033;
+  n6676 -> n1144;
+  n7165 -> n7323;
+  n7180 -> n1671;
+  n7180 -> n4156;
+  n7180 -> n4824;
+  n7180 -> n4872;
+  n7180 -> n5507;
+  n7180 -> n7254;
+  n7254 -> n7418;
+  n7254 -> n7577;
+  n7323 -> n7498;
+  n7482 -> n7662;
+  n7498 -> n7482;
+  n7577 -> n7418;
+  n7778 -> n59;
+  n7778 -> n1499;
+  n7778 -> n1774;
+  n7778 -> n2196;
+  n7778 -> n3735;
+  n7778 -> n5507;
+  n7778 -> n8021;
+  n8001 -> n8045;
+  n8021 -> n4802;
+  n8021 -> n8045;
+}
