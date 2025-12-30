@@ -89,6 +89,10 @@ pub struct RenderOptions {
     pub show_orphan_nodes: bool,
     /// If set, filter to only top K nodes by PageRank score.
     pub pagerank_top_k: Option<usize>,
+    /// If true, cluster modules by their parent crate in module-level graphs.
+    pub cluster_by_crate: bool,
+    /// If true, use shortened labels (just module name instead of crate::module).
+    pub short_labels: bool,
 }
 
 // ============================================================================
@@ -169,4 +173,6 @@ pub struct AggregatedNode {
     pub component_type: &'static str,
     /// Number of nodes aggregated into this component
     pub node_count: usize,
+    /// Crate name (for clustering modules by crate)
+    pub crate_name: Option<String>,
 }

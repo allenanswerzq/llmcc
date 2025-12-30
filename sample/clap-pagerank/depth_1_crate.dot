@@ -1,8 +1,18 @@
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
 
   label="crate graph";
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
   crate_clap[label="clap"];
   crate_clap_builder[label="clap_builder"];
@@ -13,11 +23,11 @@ digraph architecture {
   crate_clap_mangen[label="clap_mangen"];
 
   crate_clap -> crate_clap_builder;
-  crate_clap_builder -> crate_clap_complete [dir=both];
-  crate_clap_builder -> crate_clap_derive [dir=both];
-  crate_clap_builder -> crate_clap_lex [dir=both];
-  crate_clap_builder -> crate_clap_mangen [dir=both];
-  crate_clap_complete -> crate_clap_derive [dir=both];
+  crate_clap_builder -> crate_clap_complete;
+  crate_clap_builder -> crate_clap_derive;
+  crate_clap_builder -> crate_clap_lex;
+  crate_clap_complete -> crate_clap_derive;
   crate_clap_complete_nushell -> crate_clap_builder;
   crate_clap_complete_nushell -> crate_clap_complete;
+  crate_clap_mangen -> crate_clap_builder;
 }

@@ -1,8 +1,18 @@
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
 
   label="crate graph";
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
   crate_api[label="api"];
   crate_collection[label="collection"];
@@ -13,16 +23,16 @@ digraph architecture {
   crate_shard[label="shard"];
   crate_storage[label="storage"];
 
-  crate_api -> crate_segment [dir=both];
-  crate_collection -> crate_common [dir=both];
-  crate_collection -> crate_segment [dir=both];
-  crate_collection -> crate_shard [dir=both];
+  crate_api -> crate_segment;
+  crate_collection -> crate_common;
+  crate_collection -> crate_segment;
+  crate_collection -> crate_shard;
   crate_qdrant -> crate_api;
   crate_qdrant -> crate_common;
-  crate_qdrant -> crate_segment [dir=both];
-  crate_qdrant -> crate_shard [dir=both];
+  crate_qdrant -> crate_segment;
+  crate_qdrant -> crate_shard;
   crate_qdrant -> crate_storage;
-  crate_qdrant_edge_py -> crate_segment [dir=both];
+  crate_qdrant_edge_py -> crate_segment;
   crate_qdrant_edge_py -> crate_shard;
   crate_shard -> crate_api;
   crate_shard -> crate_common;

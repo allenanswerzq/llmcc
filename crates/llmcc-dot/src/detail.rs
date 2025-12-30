@@ -47,24 +47,35 @@ pub fn render_dot(
 
     output.push_str("digraph architecture {\n");
 
-    // Wrap everything in a Project cluster
-    output.push_str("  subgraph cluster_project {\n");
-    output.push_str("    label=\"project\";\n\n");
+    // Graph layout attributes for cleaner visualization
+    output.push_str("  // Layout settings\n");
+    output.push_str("  rankdir=TB;\n");
+    output.push_str("  ranksep=0.6;\n");
+    output.push_str("  nodesep=0.3;\n");
+    output.push_str("  splines=ortho;\n");
+    output.push_str("  compound=true;\n");
+    output.push('\n');
+
+    // Node and edge styling
+    output.push_str("  node [shape=box, style=rounded];\n");
+    output.push_str("  edge [arrowsize=0.7];\n\n");
+
+    // Add title
+    output.push_str("  label=\"architecture graph\";\n");
+    output.push_str("  labelloc=t;\n\n");
 
     // Render nodes grouped in clusters
-    render_tree_recursive(&mut output, tree, nodes, 2);
+    render_tree_recursive(&mut output, tree, nodes, 1);
 
-    output.push_str("  }\n\n");
+    output.push('\n');
 
     // Render edges
     for edge in edges {
         let _ = writeln!(
             output,
-            "  n{} -> n{} [from=\"{}\", to=\"{}\"];",
+            "  n{} -> n{};",
             edge.from_id.as_u32(),
             edge.to_id.as_u32(),
-            edge.from_label,
-            edge.to_label
         );
     }
 
@@ -81,16 +92,36 @@ fn render_tree_recursive(
 ) {
     // Render child subtrees
     for (component_name, (level_type, subtree)) in &tree.children {
-        let cluster_id = match level_type.as_str() {
-            "crate" | "module" | "file" => sanitize_id(component_name),
-            _ => sanitize_id(component_name),
-        };
+        let cluster_id = sanitize_id(component_name);
 
         write_indent(output, indent_level);
         let _ = writeln!(output, "subgraph cluster_{} {{", cluster_id);
 
-        write_indent(output, indent_level);
-        let _ = writeln!(output, "  label=\"{}\";", escape_label(component_name));
+        write_indent(output, indent_level + 1);
+        let _ = writeln!(output, "label=\"{}\";", escape_label(component_name));
+
+        // Style based on level type
+        write_indent(output, indent_level + 1);
+        output.push_str("style=rounded;\n");
+        write_indent(output, indent_level + 1);
+        match level_type.as_str() {
+            "crate" => {
+                output.push_str("color=\"#888888\";\n");
+                write_indent(output, indent_level + 1);
+                output.push_str("bgcolor=\"#f0f0f0\";\n");
+            }
+            "module" => {
+                output.push_str("color=\"#999999\";\n");
+                write_indent(output, indent_level + 1);
+                output.push_str("bgcolor=\"#f5f5f5\";\n");
+            }
+            _ => {
+                output.push_str("color=\"#aaaaaa\";\n");
+                write_indent(output, indent_level + 1);
+                output.push_str("bgcolor=\"#fafafa\";\n");
+            }
+        }
+        output.push('\n');
 
         render_tree_recursive(output, subtree, nodes, indent_level + 1);
 

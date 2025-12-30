@@ -1,8 +1,18 @@
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
 
   label="crate graph";
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
   crate_globset[label="globset"];
   crate_grep_cli[label="grep-cli"];
@@ -13,10 +23,11 @@ digraph architecture {
   crate_ignore[label="ignore"];
   crate_ripgrep[label="ripgrep"];
 
-  crate_grep_cli -> crate_ripgrep [dir=both];
-  crate_grep_printer -> crate_grep_searcher [dir=both];
+  crate_grep_cli -> crate_ripgrep;
+  crate_grep_printer -> crate_grep_searcher;
   crate_grep_regex -> crate_grep_matcher;
   crate_grep_searcher -> crate_grep_matcher;
   crate_ignore -> crate_globset;
-  crate_ignore -> crate_ripgrep [dir=both];
+  crate_ignore -> crate_grep_cli;
+  crate_ignore -> crate_ripgrep;
 }

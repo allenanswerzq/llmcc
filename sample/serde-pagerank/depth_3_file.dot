@@ -1,479 +1,624 @@
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_serde {
-      label="serde";
-      subgraph cluster_private {
-        label="private";
-        subgraph cluster_de_rs {
-          label="de.rs";
-          n6537[label="ContentDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1041", sym_ty="Struct", shape=box];
-          n6703[label="visit_content_seq", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1092", sym_ty="Function"];
-          n6734[label="visit_content_map", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1103", sym_ty="Function"];
-          n1461[label="CowBytesVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:143", sym_ty="Struct", shape=box];
-          n7711[label="SeqDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1504", sym_ty="Struct", shape=box];
-          n7855[label="MapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1600", sym_ty="Struct", shape=box];
-          n8347[label="VariantDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1910", sym_ty="Struct", shape=box];
-          n8419[label="ContentRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1992", sym_ty="Struct", shape=box];
-          n8492[label="visit_content_seq_ref", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2043", sym_ty="Function"];
-          n8508[label="visit_content_map_ref", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2057", sym_ty="Function"];
-          n8903[label="SeqRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2462", sym_ty="Struct", shape=box];
-          n8975[label="MapRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2546", sym_ty="Struct", shape=box];
-          n9179[label="VariantRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2834", sym_ty="Struct", shape=box];
-          n334[label="MissingFieldDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:29", sym_ty="Struct", shape=box];
-          n2746[label="ContentVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:290", sym_ty="Struct", shape=box];
-          n9328[label="FlatMapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3184", sym_ty="Struct", shape=box];
-          n4588[label="TagOrContent", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:517", sym_ty="Enum", shape=box];
-          n4628[label="TagOrContentVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:524", sym_ty="Struct", shape=box];
-          n682[label="CowStrVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:69", sym_ty="Struct", shape=box];
-          n6071[label="TagOrContentFieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:898", sym_ty="Struct", shape=box];
-          n6318[label="TagContentOtherFieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:977", sym_ty="Struct", shape=box];
-        }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-        subgraph cluster_ser_rs {
-          label="ser.rs";
-          n6655[label="FlatMapSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:1003", sym_ty="Struct", shape=box];
-          n3289[label="SerializeTupleVariantAsMapValue", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:344", sym_ty="Struct", shape=box];
-          n63[label="TaggedSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:38", sym_ty="Struct", shape=box];
-          n3853[label="Content", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:426", sym_ty="Enum", shape=box];
-          n4925[label="ContentSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:552", sym_ty="Struct", shape=box];
-        }
+  label="architecture graph";
+  labelloc=t;
 
-      }
+  subgraph cluster_serde {
+    label="serde";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
-    }
-
-    subgraph cluster_serde_core {
-      label="serde_core";
-      subgraph cluster_de {
-        label="de";
-        subgraph cluster_ignored_any_rs {
-          label="ignored_any.rs";
-          n1192[label="IgnoredAny", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/ignored_any.rs:111", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_impls_rs {
-          label="impls.rs";
-          n7350[label="PathBufVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1824", sym_ty="Struct", shape=box];
-          n8901[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2995", sym_ty="Enum", shape=box];
-          n3610[label="StringVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:580", sym_ty="Struct", shape=box];
-          n3627[label="StringInPlaceVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:582", sym_ty="Struct", shape=box];
-          n4961[label="CStringVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:777", sym_ty="Struct", shape=box];
-          n5464[label="OptionVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:870", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n5192[label="Visitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1317", sym_ty="Trait", shape=box];
-          n6242[label="SeqAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1749", sym_ty="Trait", shape=box];
-          n6397[label="MapAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1837", sym_ty="Trait", shape=box];
-          n6893[label="VariantAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:2088", sym_ty="Trait", shape=box];
-          n7178[label="IntoDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:2316", sym_ty="Trait", shape=box];
-          n3419[label="Deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:554", sym_ty="Trait", shape=box];
-          n3668[label="DeserializeSeed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:803", sym_ty="Trait", shape=box];
-          n3822[label="Deserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:945", sym_ty="Trait", shape=box];
-        }
-
-        subgraph cluster_value_rs {
-          label="value.rs";
-          n6689[label="SeqDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1003", sym_ty="Struct", shape=box];
-          n7164[label="MapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1227", sym_ty="Struct", shape=box];
-          n3243[label="UnitDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:137", sym_ty="Struct", shape=box];
-          n7949[label="MapAccessDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1611", sym_ty="Struct", shape=box];
-          n8194[label="MapAsEnum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1796", sym_ty="Struct", shape=box];
-          n4049[label="U32Deserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:345", sym_ty="Struct", shape=box];
-          n4582[label="StrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:445", sym_ty="Struct", shape=box];
-          n5120[label="BorrowedStrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:546", sym_ty="Struct", shape=box];
-          n5604[label="StringDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:637", sym_ty="Struct", shape=box];
-          n6034[label="CowStrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:754", sym_ty="Struct", shape=box];
-          n6369[label="BytesDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:872", sym_ty="Struct", shape=box];
-          n6570[label="BorrowedBytesDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:942", sym_ty="Struct", shape=box];
-        }
-
-      }
-
-      subgraph cluster_ser {
-        label="ser";
-        subgraph cluster_impossible_rs {
-          label="impossible.rs";
-          n1629[label="Impossible", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/impossible.rs:60", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n4104[label="SerializeMap", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1811", sym_ty="Trait", shape=box];
-          n4292[label="SerializeStruct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1907", sym_ty="Trait", shape=box];
-          n4474[label="SerializeStructVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1977", sym_ty="Trait", shape=box];
-          n265[label="Serialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:234", sym_ty="Trait", shape=box];
-          n378[label="Serializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:355", sym_ty="Trait", shape=box];
-        }
-
-      }
-
-    }
-
-    subgraph cluster_serde_derive {
-      label="serde_derive";
-      subgraph cluster_de {
-        label="de";
-        subgraph cluster_enum__rs {
-          label="enum_.rs";
-          n84[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_.rs:15", sym_ty="Function"];
-        }
-
-        subgraph cluster_enum_externally_rs {
-          label="enum_externally.rs";
-          n360[label="deserialize_externally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:118", sym_ty="Function"];
-          n614[label="deserialize_externally_tagged_newtype_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:177", sym_ty="Function"];
-        }
-
-        subgraph cluster_enum_internally_rs {
-          label="enum_internally.rs";
-          n1642[label="deserialize_internally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_internally.rs:67", sym_ty="Function"];
-        }
-
-        subgraph cluster_enum_untagged_rs {
-          label="enum_untagged.rs";
-          n376[label="deserialize_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_untagged.rs:62", sym_ty="Function"];
-        }
-
-        subgraph cluster_struct__rs {
-          label="struct_.rs";
-          n502[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:17", sym_ty="Function"];
-          n1602[label="deserialize_in_place", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:423", sym_ty="Function"];
-        }
-
-      }
+    subgraph cluster_private {
+      label="private";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
 
       subgraph cluster_de_rs {
         label="de.rs";
-        n634[label="Parameters", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:116", sym_ty="Struct", shape=box];
-        n77[label="expand_derive_deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:25", sym_ty="Function"];
-        n1536[label="BorrowedLifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:257", sym_ty="Enum", shape=box];
-        n1758[label="borrowed_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:292", sym_ty="Function"];
-        n1895[label="deserialize_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:306", sym_ty="Function"];
-        n3558[label="StructForm", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:643", sym_ty="Enum", shape=box];
-        n306[label="precondition", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:84", sym_ty="Function"];
-      }
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
 
-      subgraph cluster_deprecated_rs {
-        label="deprecated.rs";
-        n423[label="should_allow_deprecated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/deprecated.rs:18", sym_ty="Function"];
-        n399[label="allow_deprecated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/deprecated.rs:4", sym_ty="Function"];
-      }
-
-      subgraph cluster_fragment_rs {
-        label="fragment.rs";
-        n1003[label="Stmts", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:40", sym_ty="Struct", shape=box];
-        n554[label="Fragment", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:5", sym_ty="Enum", shape=box];
-      }
-
-      subgraph cluster_internals {
-        label="internals";
-        subgraph cluster_ast_rs {
-          label="ast.rs";
-          n74[label="Container", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:10", sym_ty="Struct", shape=box];
-          n987[label="struct_from_ast", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:174", sym_ty="Function"];
-          n138[label="Data", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:26", sym_ty="Enum", shape=box];
-          n205[label="Variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:32", sym_ty="Struct", shape=box];
-          n277[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:41", sym_ty="Struct", shape=box];
-          n413[label="Style", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:49", sym_ty="Enum", shape=box];
-        }
-
-        subgraph cluster_attr_rs {
-          label="attr.rs";
-          n5977[label="get_ser_and_de", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1341", sym_ty="Function"];
-          n1411[label="RenameAllRules", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:138", sym_ty="Struct", shape=box];
-          n6123[label="get_lit_str", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1411", sym_ty="Function"];
-          n6138[label="get_lit_str2", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1419", sym_ty="Function"];
-          n1637[label="Container", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:155", sym_ty="Struct", shape=box];
-          n6510[label="is_implicitly_borrowed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1579", sym_ty="Function"];
-          n6531[label="is_implicitly_borrowed_reference", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1583", sym_ty="Function"];
-          n6733[label="is_str", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1684", sym_ty="Function"];
-          n6748[label="is_slice_u8", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1688", sym_ty="Function"];
-          n6777[label="is_primitive_type", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1695", sym_ty="Function"];
-          n6903[label="collect_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1732", sym_ty="Function"];
-          n1875[label="TagType", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:178", sym_ty="Enum", shape=box];
-          n7090[label="collect_lifetimes_from_tokens", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1799", sym_ty="Function"];
-          n1957[label="Identifier", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:211", sym_ty="Enum", shape=box];
-          n155[label="Attr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:24", sym_ty="Struct", shape=box];
-          n4118[label="Variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:728", sym_ty="Struct", shape=box];
-          n731[label="BoolAttr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:77", sym_ty="Struct", shape=box];
-          n892[label="VecAttr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:93", sym_ty="Struct", shape=box];
-          n4901[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:978", sym_ty="Struct", shape=box];
-          n4945[label="Default", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:995", sym_ty="Enum", shape=box];
-        }
-
-        subgraph cluster_case_rs {
-          label="case.rs";
-          n2116[label="RenameRule", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/case.rs:9", sym_ty="Enum", shape=box];
-        }
-
-        subgraph cluster_check_rs {
-          label="check.rs";
-          n3280[label="check_flatten", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:100", sym_ty="Function"];
-          n3661[label="check_variant_skip_attrs", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:226", sym_ty="Function"];
-          n3989[label="check_transparent", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:370", sym_ty="Function"];
-          n2578[label="check", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:8", sym_ty="Function"];
-        }
-
-        subgraph cluster_ctxt_rs {
-          label="ctxt.rs";
-          n98[label="Ctxt", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ctxt.rs:12", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n441[label="Derive", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/mod.rs:18", sym_ty="Enum", shape=box];
-          n473[label="ungroup", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/mod.rs:23", sym_ty="Function"];
-        }
-
-        subgraph cluster_name_rs {
-          label="name.rs";
-          n1039[label="Name", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/name.rs:60", sym_ty="Struct", shape=box];
-          n594[label="MultiName", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/name.rs:9", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_symbol_rs {
-          label="symbol.rs";
-          n1342[label="Symbol", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/symbol.rs:5", sym_ty="Struct", shape=box];
-        }
-
-      }
-
-      subgraph cluster_pretend_rs {
-        label="pretend.rs";
-        n296[label="pretend_used", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:23", sym_ty="Function"];
-        n397[label="pretend_fields_used", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:65", sym_ty="Function"];
+        n7147[label="ContentDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1041", sym_ty="Struct", shape=box];
+        n7348[label="visit_content_seq", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1092", sym_ty="Function"];
+        n7391[label="visit_content_map", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1103", sym_ty="Function"];
+        n943[label="CowBytesVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:143", sym_ty="Struct", shape=box];
+        n8217[label="SeqDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1504", sym_ty="Struct", shape=box];
+        n8296[label="MapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1600", sym_ty="Struct", shape=box];
+        n8608[label="VariantDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1910", sym_ty="Struct", shape=box];
+        n8674[label="ContentRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:1992", sym_ty="Struct", shape=box];
+        n8739[label="visit_content_seq_ref", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2043", sym_ty="Function"];
+        n8751[label="visit_content_map_ref", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2057", sym_ty="Function"];
+        n8985[label="SeqRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2462", sym_ty="Struct", shape=box];
+        n9024[label="MapRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2546", sym_ty="Struct", shape=box];
+        n9179[label="VariantRefDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:2834", sym_ty="Struct", shape=box];
+        n34[label="MissingFieldDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:29", sym_ty="Struct", shape=box];
+        n2480[label="ContentVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:290", sym_ty="Struct", shape=box];
+        n9328[label="FlatMapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:3184", sym_ty="Struct", shape=box];
+        n4326[label="TagOrContent", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:517", sym_ty="Enum", shape=box];
+        n4378[label="TagOrContentVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:524", sym_ty="Struct", shape=box];
+        n272[label="CowStrVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:69", sym_ty="Struct", shape=box];
+        n6007[label="TagOrContentFieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:898", sym_ty="Struct", shape=box];
+        n6202[label="TagContentOtherFieldVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/de.rs:977", sym_ty="Struct", shape=box];
       }
 
       subgraph cluster_ser_rs {
         label="ser.rs";
-        n199[label="expand_derive_serialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:12", sym_ty="Function"];
-        n1190[label="serialize_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:170", sym_ty="Function"];
-        n1803[label="serialize_newtype_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:230", sym_ty="Function"];
-        n2194[label="serialize_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:295", sym_ty="Function"];
-        n3454[label="serialize_externally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:502", sym_ty="Function"];
-        n3763[label="serialize_internally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:575", sym_ty="Function"];
-        n4304[label="serialize_untagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:765", sym_ty="Function"];
-        n552[label="Parameters", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:77", sym_ty="Struct", shape=box];
-        n4688[label="StructVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:872", sym_ty="Enum", shape=box];
-        n4789[label="serialize_struct_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:884", sym_ty="Function"];
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6709[label="FlatMapSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:1003", sym_ty="Struct", shape=box];
+        n3875[label="SerializeTupleVariantAsMapValue", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:344", sym_ty="Struct", shape=box];
+        n243[label="TaggedSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:38", sym_ty="Struct", shape=box];
+        n4404[label="Content", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:426", sym_ty="Enum", shape=box];
+        n5303[label="ContentSerializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde/src/private/ser.rs:552", sym_ty="Struct", shape=box];
       }
 
     }
 
   }
 
-  n74 -> n296 [from="input", to="func"];
-  n74 -> n306 [from="input", to="func"];
-  n74 -> n397 [from="input", to="func"];
-  n74 -> n1190 [from="input", to="func"];
-  n74 -> n1758 [from="input", to="func"];
-  n74 -> n1895 [from="input", to="func"];
-  n77 -> n74 [from="func", to="type_dep"];
-  n77 -> n98 [from="func", to="type_dep"];
-  n77 -> n306 [from="caller", to="callee"];
-  n77 -> n399 [from="caller", to="callee"];
-  n77 -> n634 [from="func", to="type_dep"];
-  n77 -> n1003 [from="func", to="type_dep"];
-  n84 -> n554 [from="func", to="output"];
-  n98 -> n155 [from="field_type", to="struct"];
-  n98 -> n155 [from="type_arg", to="generic"];
-  n98 -> n306 [from="input", to="func"];
-  n98 -> n892 [from="field_type", to="struct"];
-  n98 -> n987 [from="input", to="func"];
-  n98 -> n2578 [from="input", to="func"];
-  n98 -> n3280 [from="input", to="func"];
-  n98 -> n3661 [from="input", to="func"];
-  n98 -> n3989 [from="input", to="func"];
-  n98 -> n5977 [from="input", to="func"];
-  n98 -> n6123 [from="input", to="func"];
-  n98 -> n6138 [from="input", to="func"];
-  n138 -> n74 [from="field_type", to="struct"];
-  n155 -> n731 [from="field_type", to="struct"];
-  n199 -> n74 [from="func", to="type_dep"];
-  n199 -> n98 [from="func", to="type_dep"];
-  n199 -> n399 [from="caller", to="callee"];
-  n199 -> n552 [from="func", to="type_dep"];
-  n199 -> n1003 [from="func", to="type_dep"];
-  n205 -> n360 [from="input", to="func"];
-  n205 -> n376 [from="input", to="func"];
-  n205 -> n1642 [from="input", to="func"];
-  n205 -> n3454 [from="input", to="func"];
-  n205 -> n3763 [from="input", to="func"];
-  n205 -> n4304 [from="input", to="func"];
-  n265 -> n3853 [from="trait", to="impl"];
-  n277 -> n205 [from="type_dep", to="struct"];
-  n277 -> n614 [from="input", to="func"];
-  n277 -> n1803 [from="input", to="func"];
-  n296 -> n397 [from="caller", to="callee"];
-  n360 -> n554 [from="func", to="output"];
-  n360 -> n614 [from="caller", to="callee"];
-  n376 -> n554 [from="func", to="output"];
-  n378 -> n63 [from="trait", to="impl"];
-  n378 -> n4925 [from="trait", to="impl"];
-  n378 -> n6655 [from="trait", to="impl"];
-  n399 -> n423 [from="caller", to="callee"];
-  n413 -> n138 [from="field_type", to="enum"];
-  n413 -> n205 [from="field_type", to="struct"];
-  n441 -> n2578 [from="input", to="func"];
-  n441 -> n3989 [from="input", to="func"];
-  n502 -> n554 [from="func", to="output"];
-  n502 -> n1003 [from="func", to="type_dep"];
-  n552 -> n1190 [from="input", to="func"];
-  n552 -> n1803 [from="input", to="func"];
-  n552 -> n2194 [from="input", to="func"];
-  n552 -> n3454 [from="input", to="func"];
-  n552 -> n3763 [from="input", to="func"];
-  n552 -> n4304 [from="input", to="func"];
-  n552 -> n4789 [from="input", to="func"];
-  n554 -> n1003 [from="field_type", to="struct"];
-  n594 -> n1637 [from="field_type", to="struct"];
-  n594 -> n4118 [from="field_type", to="struct"];
-  n594 -> n4901 [from="field_type", to="struct"];
-  n614 -> n554 [from="func", to="output"];
-  n634 -> n84 [from="input", to="func"];
-  n634 -> n360 [from="input", to="func"];
-  n634 -> n376 [from="input", to="func"];
-  n634 -> n502 [from="input", to="func"];
-  n634 -> n614 [from="input", to="func"];
-  n634 -> n1602 [from="input", to="func"];
-  n634 -> n1642 [from="input", to="func"];
-  n634 -> n1895 [from="input", to="func"];
-  n987 -> n413 [from="func", to="output"];
-  n1039 -> n594 [from="type_dep", to="struct"];
-  n1039 -> n4688 [from="field_type", to="enum"];
-  n1039 -> n4789 [from="input", to="func"];
-  n1190 -> n554 [from="func", to="output"];
-  n1190 -> n1803 [from="caller", to="callee"];
-  n1190 -> n2194 [from="caller", to="callee"];
-  n1342 -> n155 [from="field_type", to="struct"];
-  n1342 -> n155 [from="type_arg", to="generic"];
-  n1342 -> n892 [from="field_type", to="struct"];
-  n1342 -> n5977 [from="input", to="func"];
-  n1342 -> n6123 [from="input", to="func"];
-  n1342 -> n6138 [from="input", to="func"];
-  n1411 -> n1637 [from="field_type", to="struct"];
-  n1411 -> n4118 [from="field_type", to="struct"];
-  n1536 -> n634 [from="field_type", to="struct"];
-  n1536 -> n634 [from="type_arg", to="generic"];
-  n1602 -> n554 [from="func", to="type_dep"];
-  n1602 -> n1003 [from="func", to="type_dep"];
-  n1637 -> n74 [from="field_type", to="struct"];
-  n1637 -> n84 [from="input", to="func"];
-  n1637 -> n360 [from="input", to="func"];
-  n1637 -> n376 [from="input", to="func"];
-  n1637 -> n502 [from="input", to="func"];
-  n1637 -> n614 [from="input", to="func"];
-  n1637 -> n1602 [from="input", to="func"];
-  n1637 -> n1642 [from="input", to="func"];
-  n1637 -> n1803 [from="input", to="func"];
-  n1637 -> n2194 [from="input", to="func"];
-  n1637 -> n2578 [from="input", to="func"];
-  n1637 -> n3280 [from="input", to="func"];
-  n1637 -> n3454 [from="input", to="func"];
-  n1637 -> n3661 [from="input", to="func"];
-  n1637 -> n3763 [from="input", to="func"];
-  n1637 -> n3989 [from="input", to="func"];
-  n1637 -> n4304 [from="input", to="func"];
-  n1642 -> n554 [from="func", to="output"];
-  n1758 -> n1536 [from="func", to="output"];
-  n1803 -> n554 [from="func", to="output"];
-  n1875 -> n1637 [from="field_type", to="struct"];
-  n1895 -> n554 [from="func", to="output"];
-  n1957 -> n1637 [from="field_type", to="struct"];
-  n2116 -> n1411 [from="field_type", to="struct"];
-  n2194 -> n554 [from="func", to="output"];
-  n2578 -> n3280 [from="caller", to="callee"];
-  n2578 -> n3661 [from="caller", to="callee"];
-  n2578 -> n3989 [from="caller", to="callee"];
-  n3419 -> n1192 [from="trait", to="impl"];
-  n3419 -> n8901 [from="trait", to="impl"];
-  n3454 -> n554 [from="func", to="output"];
-  n3454 -> n4789 [from="caller", to="callee"];
-  n3558 -> n502 [from="input", to="func"];
-  n3668 -> n2746 [from="trait", to="impl"];
-  n3668 -> n4628 [from="trait", to="impl"];
-  n3668 -> n6071 [from="trait", to="impl"];
-  n3668 -> n6318 [from="trait", to="impl"];
-  n3763 -> n554 [from="func", to="output"];
-  n3763 -> n4789 [from="caller", to="callee"];
-  n3822 -> n334 [from="trait", to="impl"];
-  n3822 -> n6369 [from="trait", to="impl"];
-  n3822 -> n6537 [from="trait", to="impl"];
-  n3822 -> n6570 [from="trait", to="impl"];
-  n3822 -> n7711 [from="trait", to="impl"];
-  n3822 -> n7855 [from="trait", to="impl"];
-  n3822 -> n8419 [from="trait", to="impl"];
-  n3822 -> n8903 [from="trait", to="impl"];
-  n3822 -> n8975 [from="trait", to="impl"];
-  n3822 -> n9328 [from="trait", to="impl"];
-  n3853 -> n2746 [from="type_dep", to="struct"];
-  n3853 -> n3289 [from="type_dep", to="struct"];
-  n3853 -> n4588 [from="field_type", to="enum"];
-  n3853 -> n6537 [from="field_type", to="struct"];
-  n3853 -> n6703 [from="input", to="func"];
-  n3853 -> n7855 [from="type_dep", to="struct"];
-  n3853 -> n8347 [from="type_dep", to="struct"];
-  n3853 -> n8419 [from="field_type", to="struct"];
-  n3853 -> n8975 [from="type_dep", to="struct"];
-  n3853 -> n9179 [from="type_dep", to="struct"];
-  n4104 -> n1629 [from="trait", to="impl"];
-  n4118 -> n205 [from="field_type", to="struct"];
-  n4118 -> n987 [from="input", to="func"];
-  n4292 -> n1629 [from="trait", to="impl"];
-  n4304 -> n554 [from="func", to="output"];
-  n4304 -> n4789 [from="caller", to="callee"];
-  n4474 -> n1629 [from="trait", to="impl"];
-  n4588 -> n4628 [from="type_dep", to="struct"];
-  n4688 -> n4789 [from="input", to="func"];
-  n4789 -> n554 [from="func", to="output"];
-  n4901 -> n277 [from="field_type", to="struct"];
-  n4945 -> n987 [from="input", to="func"];
-  n4945 -> n1637 [from="field_type", to="struct"];
-  n4945 -> n4901 [from="field_type", to="struct"];
-  n5192 -> n682 [from="trait", to="impl"];
-  n5192 -> n1192 [from="trait", to="impl"];
-  n5192 -> n1461 [from="trait", to="impl"];
-  n5192 -> n2746 [from="trait", to="impl"];
-  n5192 -> n3610 [from="trait", to="impl"];
-  n5192 -> n3627 [from="trait", to="impl"];
-  n5192 -> n4628 [from="trait", to="impl"];
-  n5192 -> n4961 [from="trait", to="impl"];
-  n5192 -> n5464 [from="trait", to="impl"];
-  n5192 -> n6071 [from="trait", to="impl"];
-  n5192 -> n6318 [from="trait", to="impl"];
-  n5192 -> n7350 [from="trait", to="impl"];
-  n5977 -> n892 [from="func", to="type_dep"];
-  n6123 -> n6138 [from="caller", to="callee"];
-  n6242 -> n7711 [from="trait", to="impl"];
-  n6242 -> n7855 [from="trait", to="impl"];
-  n6242 -> n8903 [from="trait", to="impl"];
-  n6242 -> n8975 [from="trait", to="impl"];
-  n6397 -> n7855 [from="trait", to="impl"];
-  n6397 -> n8975 [from="trait", to="impl"];
-  n6510 -> n6531 [from="caller", to="callee"];
-  n6703 -> n7711 [from="func", to="type_dep"];
-  n6733 -> n6777 [from="caller", to="callee"];
-  n6734 -> n7855 [from="func", to="type_dep"];
-  n6748 -> n473 [from="caller", to="callee"];
-  n6748 -> n6777 [from="caller", to="callee"];
-  n6777 -> n473 [from="caller", to="callee"];
-  n6893 -> n8194 [from="trait", to="impl"];
-  n6903 -> n7090 [from="caller", to="callee"];
-  n7178 -> n3243 [from="trait", to="impl"];
-  n7178 -> n4049 [from="trait", to="impl"];
-  n7178 -> n4582 [from="trait", to="impl"];
-  n7178 -> n5120 [from="trait", to="impl"];
-  n7178 -> n5604 [from="trait", to="impl"];
-  n7178 -> n6034 [from="trait", to="impl"];
-  n7178 -> n6369 [from="trait", to="impl"];
-  n7178 -> n6570 [from="trait", to="impl"];
-  n7178 -> n6689 [from="trait", to="impl"];
-  n7178 -> n7164 [from="trait", to="impl"];
-  n7178 -> n7949 [from="trait", to="impl"];
-  n8492 -> n8903 [from="func", to="type_dep"];
-  n8508 -> n8975 [from="func", to="type_dep"];
+  subgraph cluster_serde_core {
+    label="serde_core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_de {
+      label="de";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ignored_any_rs {
+        label="ignored_any.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n75[label="IgnoredAny", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/ignored_any.rs:111", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_impls_rs {
+        label="impls.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6427[label="PathBufVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:1824", sym_ty="Struct", shape=box];
+        n8580[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:2995", sym_ty="Enum", shape=box];
+        n1429[label="StringVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:580", sym_ty="Struct", shape=box];
+        n1445[label="StringInPlaceVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:582", sym_ty="Struct", shape=box];
+        n3442[label="CStringVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:777", sym_ty="Struct", shape=box];
+        n4049[label="OptionVisitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/impls.rs:870", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4501[label="Visitor", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1317", sym_ty="Trait", shape=box];
+        n5756[label="SeqAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1749", sym_ty="Trait", shape=box];
+        n5971[label="MapAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:1837", sym_ty="Trait", shape=box];
+        n6471[label="VariantAccess", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:2088", sym_ty="Trait", shape=box];
+        n6672[label="IntoDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:2316", sym_ty="Trait", shape=box];
+        n1414[label="Deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:554", sym_ty="Trait", shape=box];
+        n1723[label="DeserializeSeed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:803", sym_ty="Trait", shape=box];
+        n1997[label="Deserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/mod.rs:945", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_value_rs {
+        label="value.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6203[label="SeqDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1003", sym_ty="Struct", shape=box];
+        n6741[label="MapDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1227", sym_ty="Struct", shape=box];
+        n2063[label="UnitDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:137", sym_ty="Struct", shape=box];
+        n7679[label="MapAccessDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1611", sym_ty="Struct", shape=box];
+        n8016[label="MapAsEnum", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:1796", sym_ty="Struct", shape=box];
+        n3275[label="U32Deserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:345", sym_ty="Struct", shape=box];
+        n3790[label="StrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:445", sym_ty="Struct", shape=box];
+        n4389[label="BorrowedStrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:546", sym_ty="Struct", shape=box];
+        n4936[label="StringDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:637", sym_ty="Struct", shape=box];
+        n5308[label="CowStrDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:754", sym_ty="Struct", shape=box];
+        n5828[label="BytesDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:872", sym_ty="Struct", shape=box];
+        n6019[label="BorrowedBytesDeserializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/de/value.rs:942", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_ser {
+      label="ser";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_impossible_rs {
+        label="impossible.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n69[label="Impossible", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/impossible.rs:60", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3722[label="SerializeMap", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1811", sym_ty="Trait", shape=box];
+        n4126[label="SerializeStruct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1907", sym_ty="Trait", shape=box];
+        n4330[label="SerializeStructVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:1977", sym_ty="Trait", shape=box];
+        n163[label="Serialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:234", sym_ty="Trait", shape=box];
+        n260[label="Serializer", full_path="/home/yibai/llmcc/sample/repos/serde/serde_core/src/ser/mod.rs:355", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_serde_derive {
+    label="serde_derive";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_de {
+      label="de";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_enum__rs {
+        label="enum_.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n57[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_.rs:15", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_externally_rs {
+        label="enum_externally.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n886[label="deserialize_externally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:118", sym_ty="Function"];
+        n1304[label="deserialize_externally_tagged_newtype_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_externally.rs:177", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_internally_rs {
+        label="enum_internally.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1992[label="deserialize_internally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_internally.rs:67", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_untagged_rs {
+        label="enum_untagged.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1362[label="deserialize_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/enum_untagged.rs:62", sym_ty="Function"];
+      }
+
+      subgraph cluster_struct__rs {
+        label="struct_.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n561[label="deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:17", sym_ty="Function"];
+        n1958[label="deserialize_in_place", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de/struct_.rs:423", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_de_rs {
+      label="de.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1192[label="Parameters", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:116", sym_ty="Struct", shape=box];
+      n500[label="expand_derive_deserialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:25", sym_ty="Function"];
+      n2131[label="BorrowedLifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:257", sym_ty="Enum", shape=box];
+      n2376[label="borrowed_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:292", sym_ty="Function"];
+      n2497[label="deserialize_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:306", sym_ty="Function"];
+      n3928[label="StructForm", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:643", sym_ty="Enum", shape=box];
+      n871[label="precondition", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/de.rs:84", sym_ty="Function"];
+    }
+
+    subgraph cluster_deprecated_rs {
+      label="deprecated.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2472[label="should_allow_deprecated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/deprecated.rs:18", sym_ty="Function"];
+      n2437[label="allow_deprecated", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/deprecated.rs:4", sym_ty="Function"];
+    }
+
+    subgraph cluster_fragment_rs {
+      label="fragment.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3054[label="Stmts", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:40", sym_ty="Struct", shape=box];
+      n2764[label="Fragment", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/fragment.rs:5", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_internals {
+      label="internals";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ast_rs {
+        label="ast.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1791[label="Container", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:10", sym_ty="Struct", shape=box];
+        n2847[label="struct_from_ast", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:174", sym_ty="Function"];
+        n1930[label="Data", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:26", sym_ty="Enum", shape=box];
+        n2079[label="Variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:32", sym_ty="Struct", shape=box];
+        n2124[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:41", sym_ty="Struct", shape=box];
+        n2210[label="Style", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ast.rs:49", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_attr_rs {
+        label="attr.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6993[label="get_ser_and_de", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1341", sym_ty="Function"];
+        n4283[label="RenameAllRules", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:138", sym_ty="Struct", shape=box];
+        n7184[label="get_lit_str", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1411", sym_ty="Function"];
+        n7203[label="get_lit_str2", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1419", sym_ty="Function"];
+        n4349[label="Container", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:155", sym_ty="Struct", shape=box];
+        n7469[label="is_implicitly_borrowed", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1579", sym_ty="Function"];
+        n7481[label="is_implicitly_borrowed_reference", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1583", sym_ty="Function"];
+        n7644[label="is_str", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1684", sym_ty="Function"];
+        n7655[label="is_slice_u8", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1688", sym_ty="Function"];
+        n7682[label="is_primitive_type", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1695", sym_ty="Function"];
+        n7790[label="collect_lifetimes", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1732", sym_ty="Function"];
+        n4544[label="TagType", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:178", sym_ty="Enum", shape=box];
+        n7896[label="collect_lifetimes_from_tokens", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:1799", sym_ty="Function"];
+        n4659[label="Identifier", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:211", sym_ty="Enum", shape=box];
+        n2991[label="Attr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:24", sym_ty="Struct", shape=box];
+        n5938[label="Variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:728", sym_ty="Struct", shape=box];
+        n3599[label="BoolAttr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:77", sym_ty="Struct", shape=box];
+        n3912[label="VecAttr", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:93", sym_ty="Struct", shape=box];
+        n6309[label="Field", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:978", sym_ty="Struct", shape=box];
+        n6356[label="Default", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/attr.rs:995", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_case_rs {
+        label="case.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2164[label="RenameRule", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/case.rs:9", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_check_rs {
+        label="check.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3942[label="check_flatten", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:100", sym_ty="Function"];
+        n4352[label="check_variant_skip_attrs", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:226", sym_ty="Function"];
+        n4743[label="check_transparent", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:370", sym_ty="Function"];
+        n3239[label="check", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/check.rs:8", sym_ty="Function"];
+      }
+
+      subgraph cluster_ctxt_rs {
+        label="ctxt.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2363[label="Ctxt", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/ctxt.rs:12", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2899[label="Derive", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/mod.rs:18", sym_ty="Enum", shape=box];
+        n2923[label="ungroup", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/mod.rs:23", sym_ty="Function"];
+      }
+
+      subgraph cluster_name_rs {
+        label="name.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3600[label="Name", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/name.rs:60", sym_ty="Struct", shape=box];
+        n3154[label="MultiName", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/name.rs:9", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_symbol_rs {
+        label="symbol.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2453[label="Symbol", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/internals/symbol.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_pretend_rs {
+      label="pretend.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1911[label="pretend_used", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:23", sym_ty="Function"];
+      n1935[label="pretend_fields_used", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/pretend.rs:65", sym_ty="Function"];
+    }
+
+    subgraph cluster_ser_rs {
+      label="ser.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n532[label="expand_derive_serialize", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:12", sym_ty="Function"];
+      n1353[label="serialize_body", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:170", sym_ty="Function"];
+      n1863[label="serialize_newtype_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:230", sym_ty="Function"];
+      n2189[label="serialize_struct", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:295", sym_ty="Function"];
+      n3352[label="serialize_externally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:502", sym_ty="Function"];
+      n3646[label="serialize_internally_tagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:575", sym_ty="Function"];
+      n4159[label="serialize_untagged_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:765", sym_ty="Function"];
+      n786[label="Parameters", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:77", sym_ty="Struct", shape=box];
+      n4490[label="StructVariant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:872", sym_ty="Enum", shape=box];
+      n4529[label="serialize_struct_variant", full_path="/home/yibai/llmcc/sample/repos/serde/serde_derive/src/ser.rs:884", sym_ty="Function"];
+    }
+
+  }
+
+
+  n57 -> n2764;
+  n163 -> n4404;
+  n260 -> n243;
+  n260 -> n5303;
+  n260 -> n6709;
+  n500 -> n871;
+  n500 -> n1192;
+  n500 -> n1791;
+  n500 -> n2363;
+  n500 -> n2437;
+  n500 -> n3054;
+  n532 -> n786;
+  n532 -> n1791;
+  n532 -> n2363;
+  n532 -> n2437;
+  n532 -> n3054;
+  n561 -> n2764;
+  n561 -> n3054;
+  n786 -> n1353;
+  n786 -> n1863;
+  n786 -> n2189;
+  n786 -> n3352;
+  n786 -> n3646;
+  n786 -> n4159;
+  n786 -> n4529;
+  n886 -> n1304;
+  n886 -> n2764;
+  n1192 -> n57;
+  n1192 -> n561;
+  n1192 -> n886;
+  n1192 -> n1304;
+  n1192 -> n1362;
+  n1192 -> n1958;
+  n1192 -> n1992;
+  n1192 -> n2497;
+  n1304 -> n2764;
+  n1353 -> n1863;
+  n1353 -> n2189;
+  n1353 -> n2764;
+  n1362 -> n2764;
+  n1414 -> n75;
+  n1414 -> n8580;
+  n1723 -> n2480;
+  n1723 -> n4378;
+  n1723 -> n6007;
+  n1723 -> n6202;
+  n1791 -> n1353;
+  n1791 -> n1911;
+  n1791 -> n1935;
+  n1791 -> n3239;
+  n1791 -> n3942;
+  n1791 -> n4352;
+  n1791 -> n4743;
+  n1863 -> n2764;
+  n1911 -> n1935;
+  n1930 -> n1791;
+  n1958 -> n2764;
+  n1958 -> n3054;
+  n1992 -> n2764;
+  n1997 -> n34;
+  n1997 -> n5828;
+  n1997 -> n6019;
+  n1997 -> n7147;
+  n1997 -> n8217;
+  n1997 -> n8296;
+  n1997 -> n8674;
+  n1997 -> n8985;
+  n1997 -> n9024;
+  n1997 -> n9328;
+  n2079 -> n886;
+  n2079 -> n1362;
+  n2079 -> n1992;
+  n2079 -> n3352;
+  n2079 -> n3646;
+  n2079 -> n4159;
+  n2124 -> n1304;
+  n2124 -> n1863;
+  n2124 -> n2079;
+  n2131 -> n1192;
+  n2131 -> n1192;
+  n2164 -> n4283;
+  n2189 -> n2764;
+  n2210 -> n1930;
+  n2210 -> n2079;
+  n2363 -> n871;
+  n2363 -> n2847;
+  n2363 -> n2991;
+  n2363 -> n2991;
+  n2363 -> n3239;
+  n2363 -> n3912;
+  n2363 -> n3942;
+  n2363 -> n4352;
+  n2363 -> n4743;
+  n2363 -> n6993;
+  n2363 -> n7184;
+  n2363 -> n7203;
+  n2376 -> n2131;
+  n2437 -> n2472;
+  n2453 -> n2991;
+  n2453 -> n2991;
+  n2453 -> n3912;
+  n2453 -> n6993;
+  n2453 -> n7184;
+  n2453 -> n7203;
+  n2497 -> n2764;
+  n2764 -> n3054;
+  n2847 -> n2210;
+  n2899 -> n3239;
+  n2899 -> n4743;
+  n2991 -> n3599;
+  n3154 -> n4349;
+  n3154 -> n5938;
+  n3154 -> n6309;
+  n3239 -> n3942;
+  n3239 -> n4352;
+  n3239 -> n4743;
+  n3352 -> n2764;
+  n3352 -> n4529;
+  n3600 -> n3154;
+  n3600 -> n4490;
+  n3600 -> n4529;
+  n3646 -> n2764;
+  n3646 -> n4529;
+  n3722 -> n69;
+  n3928 -> n561;
+  n4126 -> n69;
+  n4159 -> n2764;
+  n4159 -> n4529;
+  n4283 -> n4349;
+  n4283 -> n5938;
+  n4326 -> n4378;
+  n4330 -> n69;
+  n4349 -> n57;
+  n4349 -> n561;
+  n4349 -> n871;
+  n4349 -> n886;
+  n4349 -> n1304;
+  n4349 -> n1362;
+  n4349 -> n1791;
+  n4349 -> n1863;
+  n4349 -> n1958;
+  n4349 -> n1992;
+  n4349 -> n2189;
+  n4349 -> n2376;
+  n4349 -> n2497;
+  n4349 -> n3352;
+  n4349 -> n3646;
+  n4349 -> n4159;
+  n4404 -> n2480;
+  n4404 -> n3875;
+  n4404 -> n4326;
+  n4404 -> n7147;
+  n4404 -> n7348;
+  n4404 -> n8296;
+  n4404 -> n8608;
+  n4404 -> n8674;
+  n4404 -> n9024;
+  n4404 -> n9179;
+  n4490 -> n4529;
+  n4501 -> n75;
+  n4501 -> n272;
+  n4501 -> n943;
+  n4501 -> n1429;
+  n4501 -> n1445;
+  n4501 -> n2480;
+  n4501 -> n3442;
+  n4501 -> n4049;
+  n4501 -> n4378;
+  n4501 -> n6007;
+  n4501 -> n6202;
+  n4501 -> n6427;
+  n4529 -> n2764;
+  n4544 -> n4349;
+  n4659 -> n4349;
+  n5756 -> n8217;
+  n5756 -> n8296;
+  n5756 -> n8985;
+  n5756 -> n9024;
+  n5938 -> n2079;
+  n5938 -> n2847;
+  n5971 -> n8296;
+  n5971 -> n9024;
+  n6309 -> n2124;
+  n6356 -> n2847;
+  n6356 -> n4349;
+  n6356 -> n6309;
+  n6471 -> n8016;
+  n6672 -> n2063;
+  n6672 -> n3275;
+  n6672 -> n3790;
+  n6672 -> n4389;
+  n6672 -> n4936;
+  n6672 -> n5308;
+  n6672 -> n5828;
+  n6672 -> n6019;
+  n6672 -> n6203;
+  n6672 -> n6741;
+  n6672 -> n7679;
+  n6993 -> n3912;
+  n7184 -> n7203;
+  n7348 -> n8217;
+  n7391 -> n8296;
+  n7469 -> n7481;
+  n7644 -> n7682;
+  n7655 -> n2923;
+  n7655 -> n7682;
+  n7682 -> n2923;
+  n7790 -> n7896;
+  n8739 -> n8985;
+  n8751 -> n9024;
 }

@@ -53,6 +53,8 @@ pub fn render_graph_with_pagerank(
     let options = RenderOptions {
         show_orphan_nodes: false,
         pagerank_top_k,
+        cluster_by_crate: false,
+        short_labels: false,
     };
     render_graph_with_options(project, depth, &options)
 }
@@ -77,13 +79,7 @@ pub fn render_graph_with_options(
 
     // For aggregated views, use aggregated rendering
     if depth.is_aggregated() {
-        return aggregate::render_aggregated_graph(
-            &nodes,
-            &edges,
-            depth,
-            project,
-            options.pagerank_top_k,
-        );
+        return aggregate::render_aggregated_graph(&nodes, &edges, depth, project, options);
     }
 
     // For file-level detail, use clustered rendering

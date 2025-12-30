@@ -1,51 +1,169 @@
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
 
   label="module graph";
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
-  mod_lance_core_datatypes[label="lance-core::datatypes"];
-  mod_lance_core_utils[label="lance-core::utils"];
-  mod_lance_datagen_generator[label="lance-datagen::generator"];
-  mod_lance_dataset[label="lance::dataset"];
-  mod_lance_encoding_data[label="lance-encoding::data"];
-  mod_lance_encoding_decoder[label="lance-encoding::decoder"];
-  mod_lance_encoding_encoder[label="lance-encoding::encoder"];
-  mod_lance_encoding_logical[label="lance-encoding::logical"];
-  mod_lance_encoding_physical[label="lance-encoding::physical"];
-  mod_lance_encoding_testing[label="lance-encoding::testing"];
-  mod_lance_exec[label="lance::exec"];
-  mod_lance_file_previous[label="lance-file::previous"];
-  mod_lance_file_writer[label="lance-file::writer"];
-  mod_lance_index[label="lance::index"];
-  mod_lance_index_inverted[label="lance-index::inverted"];
-  mod_lance_index_pq[label="lance-index::pq"];
-  mod_lance_index_scalar[label="lance-index::scalar"];
-  mod_lance_index_vector[label="lance-index::vector"];
-  mod_lance_io_object_store[label="lance-io::object_store"];
-  mod_lance_io_scheduler[label="lance-io::scheduler"];
-  mod_lance_jni_blocking_dataset[label="lance-jni::blocking_dataset"];
-  mod_lance_jni_namespace[label="lance-jni::namespace"];
-  mod_lance_linalg_distance[label="lance-linalg::distance"];
-  mod_lance_namespace_impls_rest_adapter[label="lance-namespace-impls::rest_adapter"];
-  mod_lance_table_format[label="lance-table::format"];
-  mod_lance_table_io[label="lance-table::io"];
-  mod_lance_table_rowids[label="lance-table::rowids"];
-  mod_lance_vector[label="lance::vector"];
-  mod_lance_write[label="lance::write"];
-  mod_pylance_dataset[label="pylance::dataset"];
+  subgraph cluster_lance {
+    label="lance";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_dataset[label="dataset"];
+    mod_lance_exec[label="exec"];
+    mod_lance_index[label="index"];
+    mod_lance_vector[label="vector"];
+    mod_lance_write[label="write"];
+  }
+
+  subgraph cluster_lance_core {
+    label="lance-core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_core_datatypes[label="datatypes"];
+    mod_lance_core_utils[label="utils"];
+  }
+
+  subgraph cluster_lance_datagen {
+    label="lance-datagen";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_datagen_generator[label="generator"];
+  }
+
+  subgraph cluster_lance_encoding {
+    label="lance-encoding";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_encoding_data[label="data"];
+    mod_lance_encoding_decoder[label="decoder"];
+    mod_lance_encoding_encoder[label="encoder"];
+    mod_lance_encoding_logical[label="logical"];
+    mod_lance_encoding_physical[label="physical"];
+    mod_lance_encoding_testing[label="testing"];
+  }
+
+  subgraph cluster_lance_file {
+    label="lance-file";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_file_previous[label="previous"];
+    mod_lance_file_writer[label="writer"];
+  }
+
+  subgraph cluster_lance_index {
+    label="lance-index";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_index_inverted[label="inverted"];
+    mod_lance_index_pq[label="pq"];
+    mod_lance_index_scalar[label="scalar"];
+    mod_lance_index_vector[label="vector"];
+  }
+
+  subgraph cluster_lance_io {
+    label="lance-io";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_io_object_store[label="object_store"];
+    mod_lance_io_scheduler[label="scheduler"];
+  }
+
+  subgraph cluster_lance_jni {
+    label="lance-jni";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_jni_blocking_dataset[label="blocking_dataset"];
+    mod_lance_jni_namespace[label="namespace"];
+  }
+
+  subgraph cluster_lance_linalg {
+    label="lance-linalg";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_linalg_distance[label="distance"];
+  }
+
+  subgraph cluster_lance_namespace_impls {
+    label="lance-namespace-impls";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_namespace_impls_rest_adapter[label="rest_adapter"];
+  }
+
+  subgraph cluster_lance_table {
+    label="lance-table";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_lance_table_format[label="format"];
+    mod_lance_table_io[label="io"];
+    mod_lance_table_rowids[label="rowids"];
+  }
+
+  subgraph cluster_pylance {
+    label="pylance";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_pylance_dataset[label="dataset"];
+  }
+
 
   mod_lance_datagen_generator -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_utils;
-  mod_lance_dataset -> mod_lance_index_scalar [dir=both];
+  mod_lance_dataset -> mod_lance_index_scalar;
   mod_lance_dataset -> mod_lance_io_object_store;
-  mod_lance_dataset -> mod_lance_table_format [dir=both];
-  mod_lance_dataset -> mod_lance_table_io [dir=both];
+  mod_lance_dataset -> mod_lance_table_format;
+  mod_lance_dataset -> mod_lance_table_io;
   mod_lance_dataset -> mod_lance_table_rowids;
-  mod_lance_dataset -> mod_pylance_dataset [dir=both];
+  mod_lance_dataset -> mod_pylance_dataset;
   mod_lance_encoding_decoder -> mod_lance_core_datatypes;
-  mod_lance_encoding_decoder -> mod_lance_encoding_logical [dir=both];
+  mod_lance_encoding_decoder -> mod_lance_encoding_logical;
   mod_lance_encoding_encoder -> mod_lance_core_datatypes;
   mod_lance_encoding_logical -> mod_lance_core_datatypes;
   mod_lance_encoding_logical -> mod_lance_encoding_data;
@@ -63,16 +181,14 @@ digraph architecture {
   mod_lance_exec -> mod_lance_index_vector;
   mod_lance_exec -> mod_lance_io_scheduler;
   mod_lance_exec -> mod_lance_table_format;
-  mod_lance_exec -> mod_pylance_dataset;
   mod_lance_file_previous -> mod_lance_core_datatypes;
   mod_lance_file_writer -> mod_lance_core_datatypes;
   mod_lance_index -> mod_lance_core_utils;
-  mod_lance_index -> mod_lance_index_scalar [dir=both];
-  mod_lance_index -> mod_lance_index_vector [dir=both];
+  mod_lance_index -> mod_lance_index_scalar;
+  mod_lance_index -> mod_lance_index_vector;
   mod_lance_index -> mod_lance_table_format;
-  mod_lance_index -> mod_lance_vector [dir=both];
-  mod_lance_index -> mod_pylance_dataset [dir=both];
-  mod_lance_index_inverted -> mod_lance_index_scalar [dir=both];
+  mod_lance_index -> mod_lance_vector;
+  mod_lance_index_inverted -> mod_lance_index_scalar;
   mod_lance_index_pq -> mod_lance_index_vector;
   mod_lance_index_scalar -> mod_lance_core_datatypes;
   mod_lance_index_scalar -> mod_lance_core_utils;
@@ -85,13 +201,12 @@ digraph architecture {
   mod_lance_table_io -> mod_lance_io_object_store;
   mod_lance_table_io -> mod_lance_table_format;
   mod_lance_vector -> mod_lance_core_datatypes;
+  mod_lance_vector -> mod_lance_dataset;
   mod_lance_vector -> mod_lance_index_pq;
   mod_lance_vector -> mod_lance_index_vector;
-  mod_lance_vector -> mod_pylance_dataset;
   mod_lance_write -> mod_lance_core_datatypes;
   mod_lance_write -> mod_lance_core_utils;
   mod_lance_write -> mod_lance_io_object_store;
   mod_lance_write -> mod_lance_table_format;
   mod_lance_write -> mod_lance_table_io;
-  mod_lance_write -> mod_pylance_dataset;
 }

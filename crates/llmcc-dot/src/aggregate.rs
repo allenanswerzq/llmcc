@@ -8,24 +8,42 @@ use llmcc_core::graph::ProjectGraph;
 use llmcc_core::pagerank::PageRanker;
 
 use super::dot::sanitize_id;
-use super::types::{AggregatedNode, ComponentDepth, RenderEdge, RenderNode};
+use super::types::{AggregatedNode, ComponentDepth, RenderEdge, RenderNode, RenderOptions};
 
 /// Get the component key for a node at a given depth level.
 ///
 /// Returns (component_id, component_label, component_type).
+#[allow(dead_code)]
 pub fn get_component_key(
     node: &RenderNode,
     depth: ComponentDepth,
 ) -> (String, String, &'static str) {
+    let (id, label, comp_type, _crate) = get_component_key_with_crate(node, depth, false);
+    (id, label, comp_type)
+}
+
+/// Get the component key for a node with optional short labels.
+///
+/// Returns (component_id, component_label, component_type, crate_name).
+fn get_component_key_with_crate(
+    node: &RenderNode,
+    depth: ComponentDepth,
+    short_labels: bool,
+) -> (String, String, &'static str, Option<String>) {
     match depth {
-        ComponentDepth::Project => ("project".to_string(), "project".to_string(), "project"),
+        ComponentDepth::Project => (
+            "project".to_string(),
+            "project".to_string(),
+            "project",
+            None,
+        ),
         ComponentDepth::Crate => {
             let crate_name = node
                 .crate_name
                 .clone()
                 .unwrap_or_else(|| "unknown".to_string());
             let id = format!("crate_{}", sanitize_id(&crate_name));
-            (id, crate_name, "crate")
+            (id, crate_name.clone(), "crate", Some(crate_name))
         }
         ComponentDepth::Module => {
             let crate_name = node
@@ -34,10 +52,11 @@ pub fn get_component_key(
                 .unwrap_or_else(|| "unknown".to_string());
             let module_path = node.module_path.clone();
 
-            let (label, id) = if let Some(ref module) = module_path {
-                let label = format!("{}::{}", crate_name, module);
+            let (label, id, short) = if let Some(ref module) = module_path {
+                let full_label = format!("{}::{}", crate_name, module);
+                let short_label = module.clone();
                 let id = format!("mod_{}_{}", sanitize_id(&crate_name), sanitize_id(module));
-                (label, id)
+                (full_label, id, short_label)
             } else {
                 let file_name = node
                     .file_name
@@ -50,20 +69,22 @@ pub fn get_component_key(
                             .to_string()
                     })
                     .unwrap_or_else(|| "unknown".to_string());
-                let label = format!("{}::{}", crate_name, file_name);
+                let full_label = format!("{}::{}", crate_name, file_name);
+                let short_label = file_name.clone();
                 let id = format!(
                     "mod_{}_{}",
                     sanitize_id(&crate_name),
                     sanitize_id(&file_name)
                 );
-                (label, id)
+                (full_label, id, short_label)
             };
-            (id, label, "module")
+            let display_label = if short_labels { short } else { label };
+            (id, display_label, "module", Some(crate_name))
         }
         ComponentDepth::File => {
             let name = node.name.clone();
             let id = format!("node_{}", node.block_id.as_u32());
-            (id, name, "node")
+            (id, name, "node", node.crate_name.clone())
         }
     }
 }
@@ -75,14 +96,15 @@ pub fn render_aggregated_graph(
     edges: &BTreeSet<RenderEdge>,
     depth: ComponentDepth,
     project: &ProjectGraph,
-    pagerank_top_k: Option<usize>,
+    options: &RenderOptions,
 ) -> String {
     // Build mapping from BlockId to component key
-    let (block_to_component, component_nodes) = build_component_mapping(nodes, depth);
+    let (block_to_component, component_nodes) =
+        build_component_mapping(nodes, depth, options.short_labels);
 
     // Apply PageRank filtering if requested
     let pagerank_components =
-        compute_pagerank_components(project, &block_to_component, pagerank_top_k);
+        compute_pagerank_components(project, &block_to_component, options.pagerank_top_k);
 
     // Aggregate edges between components
     let mut component_edges = aggregate_edges(edges, &block_to_component);
@@ -111,6 +133,7 @@ pub fn render_aggregated_graph(
         &filtered_nodes,
         &filtered_edges,
         &bidirectional_pairs,
+        options.cluster_by_crate && depth == ComponentDepth::Module,
     )
 }
 
@@ -121,6 +144,7 @@ pub fn render_aggregated_graph(
 fn build_component_mapping(
     nodes: &[RenderNode],
     depth: ComponentDepth,
+    short_labels: bool,
 ) -> (
     std::collections::HashMap<BlockId, String>,
     BTreeMap<String, AggregatedNode>,
@@ -129,7 +153,8 @@ fn build_component_mapping(
     let mut component_nodes = BTreeMap::new();
 
     for node in nodes {
-        let (id, label, component_type) = get_component_key(node, depth);
+        let (id, label, component_type, crate_name) =
+            get_component_key_with_crate(node, depth, short_labels);
         block_to_component.insert(node.block_id, id.clone());
 
         component_nodes
@@ -140,6 +165,7 @@ fn build_component_mapping(
                 label,
                 component_type,
                 node_count: 1,
+                crate_name,
             });
     }
 
@@ -320,11 +346,24 @@ fn render_to_dot(
     nodes: &[&AggregatedNode],
     edges: &[(String, String)],
     bidirectional_pairs: &HashSet<(String, String)>,
+    cluster_by_crate: bool,
 ) -> String {
     let mut output = String::with_capacity(nodes.len() * 100 + edges.len() * 50);
 
     output.push_str("digraph architecture {\n");
-    output.push_str("  node [shape=box];\n\n");
+
+    // Graph layout attributes for cleaner visualization
+    output.push_str("  // Layout settings\n");
+    output.push_str("  rankdir=TB;\n"); // Top to bottom layout
+    output.push_str("  ranksep=0.8;\n"); // Increase vertical spacing
+    output.push_str("  nodesep=0.4;\n"); // Increase horizontal spacing
+    output.push_str("  splines=ortho;\n"); // Use orthogonal edges for cleaner lines
+    output.push_str("  concentrate=true;\n"); // Merge edges with same endpoints
+    output.push('\n');
+
+    // Node styling
+    output.push_str("  node [shape=box, style=\"rounded,filled\", fillcolor=\"#f0f0f0\", fontname=\"Helvetica\"];\n");
+    output.push_str("  edge [color=\"#666666\", arrowsize=0.7];\n\n");
 
     // Add title
     let title = match depth {
@@ -334,11 +373,18 @@ fn render_to_dot(
         ComponentDepth::File => "architecture graph",
     };
     output.push_str(&format!("  label=\"{}\";\n", title));
-    output.push_str("  labelloc=t;\n\n");
+    output.push_str("  labelloc=t;\n");
+    output.push_str("  fontsize=16;\n");
+    output.push_str("  fontname=\"Helvetica Bold\";\n\n");
 
-    // Render nodes
-    for node in nodes {
-        let _ = writeln!(output, "  {}[label=\"{}\"];", node.id, node.label);
+    // Cluster modules by crate if enabled
+    if cluster_by_crate && depth == ComponentDepth::Module {
+        render_clustered_nodes(&mut output, nodes);
+    } else {
+        // Render nodes without clustering
+        for node in nodes {
+            let _ = writeln!(output, "  {}[label=\"{}\"];", node.id, node.label);
+        }
     }
 
     output.push('\n');
@@ -346,7 +392,8 @@ fn render_to_dot(
     // Render edges
     for (from, to) in edges {
         if bidirectional_pairs.contains(&(from.clone(), to.clone())) {
-            let _ = writeln!(output, "  {} -> {} [dir=both];", from, to);
+            // let _ = writeln!(output, "  {} -> {} [dir=both, style=bold];", from, to);
+            let _ = writeln!(output, "  {} -> {};", from, to);
         } else {
             let _ = writeln!(output, "  {} -> {};", from, to);
         }
@@ -354,4 +401,36 @@ fn render_to_dot(
 
     output.push_str("}\n");
     output
+}
+
+/// Render nodes clustered by crate
+fn render_clustered_nodes(output: &mut String, nodes: &[&AggregatedNode]) {
+    use std::collections::BTreeMap;
+
+    // Group nodes by crate
+    let mut crate_groups: BTreeMap<String, Vec<&AggregatedNode>> = BTreeMap::new();
+    for node in nodes {
+        let crate_name = node
+            .crate_name
+            .clone()
+            .unwrap_or_else(|| "unknown".to_string());
+        crate_groups.entry(crate_name).or_default().push(node);
+    }
+
+    // Render each crate as a subgraph cluster
+    for (crate_name, crate_nodes) in &crate_groups {
+        let cluster_id = sanitize_id(crate_name);
+        let _ = writeln!(output, "  subgraph cluster_{} {{", cluster_id);
+        let _ = writeln!(output, "    label=\"{}\";", crate_name);
+        output.push_str("    style=rounded;\n");
+        output.push_str("    color=\"#888888\";\n");
+        output.push_str("    bgcolor=\"#f0f0f0\";\n");
+        output.push_str("    fontname=\"Helvetica Bold\";\n\n");
+
+        for node in crate_nodes {
+            let _ = writeln!(output, "    {}[label=\"{}\"];", node.id, node.label);
+        }
+
+        output.push_str("  }\n\n");
+    }
 }

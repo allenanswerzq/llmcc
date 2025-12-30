@@ -149,8 +149,14 @@ generate_graphs() {
             fi
         fi
 
-        echo "  Generating $depth_name... $pagerank_flag"
-        $LLMCC -d "$src_dir" --graph --depth $depth $pagerank_flag -o "$dot_file" 2>&1
+        # For large projects at module level (depth 2), add clustering and short labels
+        local layout_flags=""
+        if [ "$depth" -eq 2 ] && [ "$loc" -gt 50000 ]; then
+            layout_flags="--cluster-by-crate --short-labels"
+        fi
+
+        echo "  Generating $depth_name... $pagerank_flag $layout_flags"
+        $LLMCC -d "$src_dir" --graph --depth $depth $pagerank_flag $layout_flags -o "$dot_file" 2>&1
     done
 
     # Skip SVG generation entirely if SKIP_SVG=true

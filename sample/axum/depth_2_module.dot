@@ -1,8 +1,18 @@
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
 
   label="module graph";
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
   mod_axum_boxed[label="axum::boxed"];
   mod_axum_core_error[label="axum-core::error"];
@@ -24,7 +34,7 @@ digraph architecture {
   mod_axum_routing[label="axum::routing"];
   mod_axum_util[label="axum::util"];
 
-  mod_axum_boxed -> mod_axum_routing [dir=both];
+  mod_axum_boxed -> mod_axum_routing;
   mod_axum_extra_cookie -> mod_axum_core_extract;
   mod_axum_extra_cookie -> mod_axum_core_response;
   mod_axum_extra_extract -> mod_axum_core_extract;

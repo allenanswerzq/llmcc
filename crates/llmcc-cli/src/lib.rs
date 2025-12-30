@@ -10,7 +10,7 @@ use tracing::info;
 use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
-use llmcc_dot::{ComponentDepth, render_graph_with_pagerank};
+use llmcc_dot::{ComponentDepth, RenderOptions, render_graph_with_options};
 use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
 
 pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
@@ -74,6 +74,8 @@ pub struct LlmccOptions {
     pub graph: bool,
     pub component_depth: ComponentDepth,
     pub pagerank_top_k: Option<usize>,
+    pub cluster_by_crate: bool,
+    pub short_labels: bool,
 }
 
 pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
@@ -265,7 +267,13 @@ fn log_parse_metrics(metrics: &llmcc_core::context::BuildMetrics) {
 fn generate_outputs<'tcx>(opts: &LlmccOptions, pg: &'tcx ProjectGraph<'tcx>) -> Option<String> {
     if opts.graph {
         let render_start = Instant::now();
-        let result = render_graph_with_pagerank(pg, opts.component_depth, opts.pagerank_top_k);
+        let render_options = RenderOptions {
+            show_orphan_nodes: false,
+            pagerank_top_k: opts.pagerank_top_k,
+            cluster_by_crate: opts.cluster_by_crate,
+            short_labels: opts.short_labels,
+        };
+        let result = render_graph_with_options(pg, opts.component_depth, &render_options);
         info!(
             "Graph rendering: {:.2}s",
             render_start.elapsed().as_secs_f64()

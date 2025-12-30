@@ -57,6 +57,8 @@ fn run_llmcc(
         graph,
         component_depth: depth,
         pagerank_top_k: None,
+        cluster_by_crate: false,
+        short_labels: false,
     };
 
     let result = match lang {

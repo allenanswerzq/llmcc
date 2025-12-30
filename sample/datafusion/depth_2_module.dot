@@ -1,313 +1,642 @@
 digraph architecture {
-  node [shape=box];
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
 
   label="module graph";
   labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
 
-  mod_datafusion_bin[label="datafusion::bin"];
-  mod_datafusion_catalog_async[label="datafusion-catalog::async"];
-  mod_datafusion_catalog_catalog[label="datafusion-catalog::catalog"];
-  mod_datafusion_catalog_default_table_source[label="datafusion-catalog::default_table_source"];
-  mod_datafusion_catalog_dynamic_file[label="datafusion-catalog::dynamic_file"];
-  mod_datafusion_catalog_information_schema[label="datafusion-catalog::information_schema"];
-  mod_datafusion_catalog_listing_helpers[label="datafusion-catalog-listing::helpers"];
-  mod_datafusion_catalog_listing_table[label="datafusion-catalog-listing::table"];
-  mod_datafusion_catalog_memory[label="datafusion-catalog::memory"];
-  mod_datafusion_catalog_table[label="datafusion-catalog::table"];
-  mod_datafusion_cli_catalog[label="datafusion-cli::catalog"];
-  mod_datafusion_cli_cli_context[label="datafusion-cli::cli_context"];
-  mod_datafusion_cli_exec[label="datafusion-cli::exec"];
-  mod_datafusion_cli_object_storage[label="datafusion-cli::object_storage"];
-  mod_datafusion_cli_print_options[label="datafusion-cli::print_options"];
-  mod_datafusion_common_alias[label="datafusion-common::alias"];
-  mod_datafusion_common_cast[label="datafusion-common::cast"];
-  mod_datafusion_common_column[label="datafusion-common::column"];
-  mod_datafusion_common_config[label="datafusion-common::config"];
-  mod_datafusion_common_cse[label="datafusion-common::cse"];
-  mod_datafusion_common_dfschema[label="datafusion-common::dfschema"];
-  mod_datafusion_common_diagnostic[label="datafusion-common::diagnostic"];
-  mod_datafusion_common_encryption[label="datafusion-common::encryption"];
-  mod_datafusion_common_error[label="datafusion-common::error"];
-  mod_datafusion_common_file_options[label="datafusion-common::file_options"];
-  mod_datafusion_common_functional_dependencies[label="datafusion-common::functional_dependencies"];
-  mod_datafusion_common_join_type[label="datafusion-common::join_type"];
-  mod_datafusion_common_metadata[label="datafusion-common::metadata"];
-  mod_datafusion_common_runtime_common[label="datafusion-common-runtime::common"];
-  mod_datafusion_common_scalar[label="datafusion-common::scalar"];
-  mod_datafusion_common_spans[label="datafusion-common::spans"];
-  mod_datafusion_common_table_reference[label="datafusion-common::table_reference"];
-  mod_datafusion_common_tree_node[label="datafusion-common::tree_node"];
-  mod_datafusion_common_types[label="datafusion-common::types"];
-  mod_datafusion_common_unnest[label="datafusion-common::unnest"];
-  mod_datafusion_common_utils[label="datafusion-common::utils"];
-  mod_datafusion_context[label="datafusion::context"];
-  mod_datafusion_dataframe[label="datafusion::dataframe"];
-  mod_datafusion_datasource[label="datafusion::datasource"];
-  mod_datafusion_datasource_arrow_source[label="datafusion-datasource-arrow::source"];
-  mod_datafusion_datasource_avro_avro_to_arrow[label="datafusion-datasource-avro::avro_to_arrow"];
-  mod_datafusion_datasource_csv_file_format[label="datafusion-datasource-csv::file_format"];
-  mod_datafusion_datasource_file_compression_type[label="datafusion-datasource::file_compression_type"];
-  mod_datafusion_datasource_file_scan_config[label="datafusion-datasource::file_scan_config"];
-  mod_datafusion_datasource_file_stream[label="datafusion-datasource::file_stream"];
-  mod_datafusion_datasource_json_file_format[label="datafusion-datasource-json::file_format"];
-  mod_datafusion_datasource_mod[label="datafusion-datasource::mod"];
-  mod_datafusion_datasource_parquet_file_format[label="datafusion-datasource-parquet::file_format"];
-  mod_datafusion_datasource_parquet_metadata[label="datafusion-datasource-parquet::metadata"];
-  mod_datafusion_datasource_parquet_metrics[label="datafusion-datasource-parquet::metrics"];
-  mod_datafusion_datasource_parquet_opener[label="datafusion-datasource-parquet::opener"];
-  mod_datafusion_datasource_parquet_reader[label="datafusion-datasource-parquet::reader"];
-  mod_datafusion_datasource_parquet_row_filter[label="datafusion-datasource-parquet::row_filter"];
-  mod_datafusion_datasource_projection[label="datafusion-datasource::projection"];
-  mod_datafusion_datasource_sink[label="datafusion-datasource::sink"];
-  mod_datafusion_datasource_statistics[label="datafusion-datasource::statistics"];
-  mod_datafusion_datasource_url[label="datafusion-datasource::url"];
-  mod_datafusion_datasource_write[label="datafusion-datasource::write"];
-  mod_datafusion_execution[label="datafusion::execution"];
-  mod_datafusion_execution_cache[label="datafusion-execution::cache"];
-  mod_datafusion_execution_disk_manager[label="datafusion-execution::disk_manager"];
-  mod_datafusion_execution_memory_pool[label="datafusion-execution::memory_pool"];
-  mod_datafusion_execution_metrics[label="datafusion-execution::metrics"];
-  mod_datafusion_execution_runtime_env[label="datafusion-execution::runtime_env"];
-  mod_datafusion_execution_stream[label="datafusion-execution::stream"];
-  mod_datafusion_execution_task[label="datafusion-execution::task"];
-  mod_datafusion_expr_arguments[label="datafusion-expr::arguments"];
-  mod_datafusion_expr_common_accumulator[label="datafusion-expr-common::accumulator"];
-  mod_datafusion_expr_common_casts[label="datafusion-expr-common::casts"];
-  mod_datafusion_expr_common_columnar_value[label="datafusion-expr-common::columnar_value"];
-  mod_datafusion_expr_common_interval_arithmetic[label="datafusion-expr-common::interval_arithmetic"];
-  mod_datafusion_expr_common_operator[label="datafusion-expr-common::operator"];
-  mod_datafusion_expr_common_signature[label="datafusion-expr-common::signature"];
-  mod_datafusion_expr_common_sort_properties[label="datafusion-expr-common::sort_properties"];
-  mod_datafusion_expr_common_statistics[label="datafusion-expr-common::statistics"];
-  mod_datafusion_expr_common_type_coercion[label="datafusion-expr-common::type_coercion"];
-  mod_datafusion_expr_execution_props[label="datafusion-expr::execution_props"];
-  mod_datafusion_expr_expr[label="datafusion-expr::expr"];
-  mod_datafusion_expr_expr_fn[label="datafusion-expr::expr_fn"];
-  mod_datafusion_expr_expr_rewriter[label="datafusion-expr::expr_rewriter"];
-  mod_datafusion_expr_literal[label="datafusion-expr::literal"];
-  mod_datafusion_expr_logical_plan[label="datafusion-expr::logical_plan"];
-  mod_datafusion_expr_planner[label="datafusion-expr::planner"];
-  mod_datafusion_expr_ptr_eq[label="datafusion-expr::ptr_eq"];
-  mod_datafusion_expr_registry[label="datafusion-expr::registry"];
-  mod_datafusion_expr_select_expr[label="datafusion-expr::select_expr"];
-  mod_datafusion_expr_simplify[label="datafusion-expr::simplify"];
-  mod_datafusion_expr_table_source[label="datafusion-expr::table_source"];
-  mod_datafusion_expr_type_coercion[label="datafusion-expr::type_coercion"];
-  mod_datafusion_expr_udaf[label="datafusion-expr::udaf"];
-  mod_datafusion_expr_udf[label="datafusion-expr::udf"];
-  mod_datafusion_expr_udwf[label="datafusion-expr::udwf"];
-  mod_datafusion_expr_utils[label="datafusion-expr::utils"];
-  mod_datafusion_expr_window_frame[label="datafusion-expr::window_frame"];
-  mod_datafusion_expr_window_state[label="datafusion-expr::window_state"];
-  mod_datafusion_ffi_arrow_wrappers[label="datafusion-ffi::arrow_wrappers"];
-  mod_datafusion_ffi_catalog_provider[label="datafusion-ffi::catalog_provider"];
-  mod_datafusion_ffi_catalog_provider_list[label="datafusion-ffi::catalog_provider_list"];
-  mod_datafusion_ffi_execution[label="datafusion-ffi::execution"];
-  mod_datafusion_ffi_execution_plan[label="datafusion-ffi::execution_plan"];
-  mod_datafusion_ffi_expr[label="datafusion-ffi::expr"];
-  mod_datafusion_ffi_physical_expr[label="datafusion-ffi::physical_expr"];
-  mod_datafusion_ffi_plan_properties[label="datafusion-ffi::plan_properties"];
-  mod_datafusion_ffi_proto[label="datafusion-ffi::proto"];
-  mod_datafusion_ffi_record_batch_stream[label="datafusion-ffi::record_batch_stream"];
-  mod_datafusion_ffi_schema_provider[label="datafusion-ffi::schema_provider"];
-  mod_datafusion_ffi_session[label="datafusion-ffi::session"];
-  mod_datafusion_ffi_table_provider[label="datafusion-ffi::table_provider"];
-  mod_datafusion_ffi_table_source[label="datafusion-ffi::table_source"];
-  mod_datafusion_ffi_udaf[label="datafusion-ffi::udaf"];
-  mod_datafusion_ffi_udf[label="datafusion-ffi::udf"];
-  mod_datafusion_ffi_udtf[label="datafusion-ffi::udtf"];
-  mod_datafusion_ffi_udwf[label="datafusion-ffi::udwf"];
-  mod_datafusion_ffi_util[label="datafusion-ffi::util"];
-  mod_datafusion_file_format[label="datafusion::file_format"];
-  mod_datafusion_functions_aggregate_approx_distinct[label="datafusion-functions-aggregate::approx_distinct"];
-  mod_datafusion_functions_aggregate_approx_percentile_cont[label="datafusion-functions-aggregate::approx_percentile_cont"];
-  mod_datafusion_functions_aggregate_array_agg[label="datafusion-functions-aggregate::array_agg"];
-  mod_datafusion_functions_aggregate_average[label="datafusion-functions-aggregate::average"];
-  mod_datafusion_functions_aggregate_bit_and_or_xor[label="datafusion-functions-aggregate::bit_and_or_xor"];
-  mod_datafusion_functions_aggregate_common_count_distinct[label="datafusion-functions-aggregate-common::count_distinct"];
-  mod_datafusion_functions_aggregate_common_min_max[label="datafusion-functions-aggregate-common::min_max"];
-  mod_datafusion_functions_aggregate_count[label="datafusion-functions-aggregate::count"];
-  mod_datafusion_functions_aggregate_first_last[label="datafusion-functions-aggregate::first_last"];
-  mod_datafusion_functions_aggregate_hyperloglog[label="datafusion-functions-aggregate::hyperloglog"];
-  mod_datafusion_functions_aggregate_min_max[label="datafusion-functions-aggregate::min_max"];
-  mod_datafusion_functions_aggregate_nth_value[label="datafusion-functions-aggregate::nth_value"];
-  mod_datafusion_functions_aggregate_percentile_cont[label="datafusion-functions-aggregate::percentile_cont"];
-  mod_datafusion_functions_aggregate_string_agg[label="datafusion-functions-aggregate::string_agg"];
-  mod_datafusion_functions_aggregate_sum[label="datafusion-functions-aggregate::sum"];
-  mod_datafusion_functions_core[label="datafusion-functions::core"];
-  mod_datafusion_functions_crypto[label="datafusion-functions::crypto"];
-  mod_datafusion_functions_datetime[label="datafusion-functions::datetime"];
-  mod_datafusion_functions_encoding[label="datafusion-functions::encoding"];
-  mod_datafusion_functions_math[label="datafusion-functions::math"];
-  mod_datafusion_functions_nested_array_has[label="datafusion-functions-nested::array_has"];
-  mod_datafusion_functions_nested_cardinality[label="datafusion-functions-nested::cardinality"];
-  mod_datafusion_functions_nested_concat[label="datafusion-functions-nested::concat"];
-  mod_datafusion_functions_nested_dimension[label="datafusion-functions-nested::dimension"];
-  mod_datafusion_functions_nested_distance[label="datafusion-functions-nested::distance"];
-  mod_datafusion_functions_nested_extract[label="datafusion-functions-nested::extract"];
-  mod_datafusion_functions_nested_map[label="datafusion-functions-nested::map"];
-  mod_datafusion_functions_nested_position[label="datafusion-functions-nested::position"];
-  mod_datafusion_functions_nested_range[label="datafusion-functions-nested::range"];
-  mod_datafusion_functions_nested_remove[label="datafusion-functions-nested::remove"];
-  mod_datafusion_functions_nested_repeat[label="datafusion-functions-nested::repeat"];
-  mod_datafusion_functions_nested_replace[label="datafusion-functions-nested::replace"];
-  mod_datafusion_functions_nested_resize[label="datafusion-functions-nested::resize"];
-  mod_datafusion_functions_nested_reverse[label="datafusion-functions-nested::reverse"];
-  mod_datafusion_functions_nested_set_ops[label="datafusion-functions-nested::set_ops"];
-  mod_datafusion_functions_nested_sort[label="datafusion-functions-nested::sort"];
-  mod_datafusion_functions_nested_string[label="datafusion-functions-nested::string"];
-  mod_datafusion_functions_nested_utils[label="datafusion-functions-nested::utils"];
-  mod_datafusion_functions_regex[label="datafusion-functions::regex"];
-  mod_datafusion_functions_string[label="datafusion-functions::string"];
-  mod_datafusion_functions_table_generate_series[label="datafusion-functions-table::generate_series"];
-  mod_datafusion_functions_unicode[label="datafusion-functions::unicode"];
-  mod_datafusion_functions_utils[label="datafusion-functions::utils"];
-  mod_datafusion_functions_window_lead_lag[label="datafusion-functions-window::lead_lag"];
-  mod_datafusion_optimizer_analyzer[label="datafusion-optimizer::analyzer"];
-  mod_datafusion_optimizer_common_subexpr_eliminate[label="datafusion-optimizer::common_subexpr_eliminate"];
-  mod_datafusion_optimizer_decorrelate[label="datafusion-optimizer::decorrelate"];
-  mod_datafusion_optimizer_decorrelate_lateral_join[label="datafusion-optimizer::decorrelate_lateral_join"];
-  mod_datafusion_optimizer_decorrelate_predicate_subquery[label="datafusion-optimizer::decorrelate_predicate_subquery"];
-  mod_datafusion_optimizer_eliminate_cross_join[label="datafusion-optimizer::eliminate_cross_join"];
-  mod_datafusion_optimizer_extract_equijoin_predicate[label="datafusion-optimizer::extract_equijoin_predicate"];
-  mod_datafusion_optimizer_join_key_set[label="datafusion-optimizer::join_key_set"];
-  mod_datafusion_optimizer_optimize_projections[label="datafusion-optimizer::optimize_projections"];
-  mod_datafusion_optimizer_optimize_unions[label="datafusion-optimizer::optimize_unions"];
-  mod_datafusion_optimizer_optimizer[label="datafusion-optimizer::optimizer"];
-  mod_datafusion_optimizer_propagate_empty_relation[label="datafusion-optimizer::propagate_empty_relation"];
-  mod_datafusion_optimizer_push_down_filter[label="datafusion-optimizer::push_down_filter"];
-  mod_datafusion_optimizer_push_down_limit[label="datafusion-optimizer::push_down_limit"];
-  mod_datafusion_optimizer_scalar_subquery_to_join[label="datafusion-optimizer::scalar_subquery_to_join"];
-  mod_datafusion_optimizer_simplify_expressions[label="datafusion-optimizer::simplify_expressions"];
-  mod_datafusion_optimizer_utils[label="datafusion-optimizer::utils"];
-  mod_datafusion_physical_expr_aggregate[label="datafusion-physical-expr::aggregate"];
-  mod_datafusion_physical_expr_binary[label="datafusion-physical-expr::binary"];
-  mod_datafusion_physical_expr_common_datum[label="datafusion-physical-expr-common::datum"];
-  mod_datafusion_physical_expr_common_physical_expr[label="datafusion-physical-expr-common::physical_expr"];
-  mod_datafusion_physical_expr_common_sort_expr[label="datafusion-physical-expr-common::sort_expr"];
-  mod_datafusion_physical_expr_equivalence[label="datafusion-physical-expr::equivalence"];
-  mod_datafusion_physical_expr_expressions[label="datafusion-physical-expr::expressions"];
-  mod_datafusion_physical_expr_intervals[label="datafusion-physical-expr::intervals"];
-  mod_datafusion_physical_expr_physical_expr[label="datafusion-physical-expr::physical_expr"];
-  mod_datafusion_physical_expr_planner[label="datafusion-physical-expr::planner"];
-  mod_datafusion_physical_expr_projection[label="datafusion-physical-expr::projection"];
-  mod_datafusion_physical_expr_properties[label="datafusion-physical-expr::properties"];
-  mod_datafusion_physical_expr_scalar_function[label="datafusion-physical-expr::scalar_function"];
-  mod_datafusion_physical_expr_simplifier[label="datafusion-physical-expr::simplifier"];
-  mod_datafusion_physical_expr_utils[label="datafusion-physical-expr::utils"];
-  mod_datafusion_physical_expr_window[label="datafusion-physical-expr::window"];
-  mod_datafusion_physical_optimizer_enforce_distribution[label="datafusion-physical-optimizer::enforce_distribution"];
-  mod_datafusion_physical_optimizer_enforce_sorting[label="datafusion-physical-optimizer::enforce_sorting"];
-  mod_datafusion_physical_optimizer_filter_pushdown[label="datafusion-physical-optimizer::filter_pushdown"];
-  mod_datafusion_physical_optimizer_join_selection[label="datafusion-physical-optimizer::join_selection"];
-  mod_datafusion_physical_optimizer_limit_pushdown[label="datafusion-physical-optimizer::limit_pushdown"];
-  mod_datafusion_physical_optimizer_limit_pushdown_past_window[label="datafusion-physical-optimizer::limit_pushdown_past_window"];
-  mod_datafusion_physical_optimizer_optimizer[label="datafusion-physical-optimizer::optimizer"];
-  mod_datafusion_physical_optimizer_output_requirements[label="datafusion-physical-optimizer::output_requirements"];
-  mod_datafusion_physical_optimizer_projection_pushdown[label="datafusion-physical-optimizer::projection_pushdown"];
-  mod_datafusion_physical_optimizer_sanity_checker[label="datafusion-physical-optimizer::sanity_checker"];
-  mod_datafusion_physical_optimizer_utils[label="datafusion-physical-optimizer::utils"];
-  mod_datafusion_physical_plan_aggregates[label="datafusion-physical-plan::aggregates"];
-  mod_datafusion_physical_plan_analyze[label="datafusion-physical-plan::analyze"];
-  mod_datafusion_physical_plan_async_func[label="datafusion-physical-plan::async_func"];
-  mod_datafusion_physical_plan_coalesce_batches[label="datafusion-physical-plan::coalesce_batches"];
-  mod_datafusion_physical_plan_coalesce_partitions[label="datafusion-physical-plan::coalesce_partitions"];
-  mod_datafusion_physical_plan_common[label="datafusion-physical-plan::common"];
-  mod_datafusion_physical_plan_coop[label="datafusion-physical-plan::coop"];
-  mod_datafusion_physical_plan_display[label="datafusion-physical-plan::display"];
-  mod_datafusion_physical_plan_execution_plan[label="datafusion-physical-plan::execution_plan"];
-  mod_datafusion_physical_plan_filter[label="datafusion-physical-plan::filter"];
-  mod_datafusion_physical_plan_filter_pushdown[label="datafusion-physical-plan::filter_pushdown"];
-  mod_datafusion_physical_plan_group_values[label="datafusion-physical-plan::group_values"];
-  mod_datafusion_physical_plan_hash_join[label="datafusion-physical-plan::hash_join"];
-  mod_datafusion_physical_plan_joins[label="datafusion-physical-plan::joins"];
-  mod_datafusion_physical_plan_limit[label="datafusion-physical-plan::limit"];
-  mod_datafusion_physical_plan_multi_group_by[label="datafusion-physical-plan::multi_group_by"];
-  mod_datafusion_physical_plan_piecewise_merge_join[label="datafusion-physical-plan::piecewise_merge_join"];
-  mod_datafusion_physical_plan_projection[label="datafusion-physical-plan::projection"];
-  mod_datafusion_physical_plan_recursive_query[label="datafusion-physical-plan::recursive_query"];
-  mod_datafusion_physical_plan_render_tree[label="datafusion-physical-plan::render_tree"];
-  mod_datafusion_physical_plan_repartition[label="datafusion-physical-plan::repartition"];
-  mod_datafusion_physical_plan_single_group_by[label="datafusion-physical-plan::single_group_by"];
-  mod_datafusion_physical_plan_sort_merge_join[label="datafusion-physical-plan::sort_merge_join"];
-  mod_datafusion_physical_plan_sorts[label="datafusion-physical-plan::sorts"];
-  mod_datafusion_physical_plan_spill[label="datafusion-physical-plan::spill"];
-  mod_datafusion_physical_plan_streaming[label="datafusion-physical-plan::streaming"];
-  mod_datafusion_physical_plan_test[label="datafusion-physical-plan::test"];
-  mod_datafusion_physical_plan_tree_node[label="datafusion-physical-plan::tree_node"];
-  mod_datafusion_physical_plan_union[label="datafusion-physical-plan::union"];
-  mod_datafusion_physical_plan_unnest[label="datafusion-physical-plan::unnest"];
-  mod_datafusion_physical_plan_windows[label="datafusion-physical-plan::windows"];
-  mod_datafusion_physical_plan_work_table[label="datafusion-physical-plan::work_table"];
-  mod_datafusion_physical_planner[label="datafusion::physical_planner"];
-  mod_datafusion_proto_bytes[label="datafusion-proto::bytes"];
-  mod_datafusion_proto_common_from_proto[label="datafusion-proto-common::from_proto"];
-  mod_datafusion_proto_common_generated[label="datafusion-proto-common::generated"];
-  mod_datafusion_proto_common_to_proto[label="datafusion-proto-common::to_proto"];
-  mod_datafusion_proto_generated[label="datafusion-proto::generated"];
-  mod_datafusion_proto_logical_plan[label="datafusion-proto::logical_plan"];
-  mod_datafusion_proto_physical_plan[label="datafusion-proto::physical_plan"];
-  mod_datafusion_pruning_pruning_predicate[label="datafusion-pruning::pruning_predicate"];
-  mod_datafusion_spark_aggregate[label="datafusion-spark::aggregate"];
-  mod_datafusion_spark_array[label="datafusion-spark::array"];
-  mod_datafusion_spark_bitwise[label="datafusion-spark::bitwise"];
-  mod_datafusion_spark_datetime[label="datafusion-spark::datetime"];
-  mod_datafusion_spark_function[label="datafusion-spark::function"];
-  mod_datafusion_spark_hash[label="datafusion-spark::hash"];
-  mod_datafusion_spark_map[label="datafusion-spark::map"];
-  mod_datafusion_spark_math[label="datafusion-spark::math"];
-  mod_datafusion_spark_string[label="datafusion-spark::string"];
-  mod_datafusion_spark_url[label="datafusion-spark::url"];
-  mod_datafusion_sql_expr[label="datafusion-sql::expr"];
-  mod_datafusion_sql_parser[label="datafusion-sql::parser"];
-  mod_datafusion_sql_relation[label="datafusion-sql::relation"];
-  mod_datafusion_sql_unparser[label="datafusion-sql::unparser"];
-  mod_datafusion_sql_utils[label="datafusion-sql::utils"];
-  mod_datafusion_sqllogictest_bin[label="datafusion-sqllogictest::bin"];
-  mod_datafusion_sqllogictest_engines[label="datafusion-sqllogictest::engines"];
-  mod_datafusion_sqllogictest_filters[label="datafusion-sqllogictest::filters"];
-  mod_datafusion_sqllogictest_postgres_engine[label="datafusion-sqllogictest::postgres_engine"];
-  mod_datafusion_sqllogictest_regenerate[label="datafusion-sqllogictest::regenerate"];
-  mod_datafusion_sqllogictest_test_context[label="datafusion-sqllogictest::test_context"];
-  mod_datafusion_substrait_consumer[label="datafusion-substrait::consumer"];
-  mod_datafusion_substrait_expr[label="datafusion-substrait::expr"];
-  mod_datafusion_substrait_physical_plan[label="datafusion-substrait::physical_plan"];
-  mod_datafusion_substrait_producer[label="datafusion-substrait::producer"];
-  mod_datafusion_substrait_rel[label="datafusion-substrait::rel"];
-  mod_datafusion_test_util[label="datafusion::test_util"];
-  mod_test_utils_data_gen[label="test-utils::data_gen"];
+  subgraph cluster_datafusion {
+    label="datafusion";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_bin[label="bin"];
+    mod_datafusion_context[label="context"];
+    mod_datafusion_dataframe[label="dataframe"];
+    mod_datafusion_datasource[label="datasource"];
+    mod_datafusion_execution[label="execution"];
+    mod_datafusion_file_format[label="file_format"];
+    mod_datafusion_physical_planner[label="physical_planner"];
+    mod_datafusion_test_util[label="test_util"];
+  }
+
+  subgraph cluster_datafusion_catalog {
+    label="datafusion-catalog";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_catalog_async[label="async"];
+    mod_datafusion_catalog_catalog[label="catalog"];
+    mod_datafusion_catalog_default_table_source[label="default_table_source"];
+    mod_datafusion_catalog_dynamic_file[label="dynamic_file"];
+    mod_datafusion_catalog_information_schema[label="information_schema"];
+    mod_datafusion_catalog_memory[label="memory"];
+    mod_datafusion_catalog_table[label="table"];
+  }
+
+  subgraph cluster_datafusion_catalog_listing {
+    label="datafusion-catalog-listing";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_catalog_listing_helpers[label="helpers"];
+  }
+
+  subgraph cluster_datafusion_cli {
+    label="datafusion-cli";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_cli_catalog[label="catalog"];
+    mod_datafusion_cli_cli_context[label="cli_context"];
+    mod_datafusion_cli_exec[label="exec"];
+    mod_datafusion_cli_functions[label="functions"];
+    mod_datafusion_cli_object_storage[label="object_storage"];
+    mod_datafusion_cli_print_options[label="print_options"];
+  }
+
+  subgraph cluster_datafusion_common {
+    label="datafusion-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_common_alias[label="alias"];
+    mod_datafusion_common_cast[label="cast"];
+    mod_datafusion_common_column[label="column"];
+    mod_datafusion_common_config[label="config"];
+    mod_datafusion_common_cse[label="cse"];
+    mod_datafusion_common_dfschema[label="dfschema"];
+    mod_datafusion_common_diagnostic[label="diagnostic"];
+    mod_datafusion_common_encryption[label="encryption"];
+    mod_datafusion_common_error[label="error"];
+    mod_datafusion_common_file_options[label="file_options"];
+    mod_datafusion_common_functional_dependencies[label="functional_dependencies"];
+    mod_datafusion_common_join_type[label="join_type"];
+    mod_datafusion_common_metadata[label="metadata"];
+    mod_datafusion_common_scalar[label="scalar"];
+    mod_datafusion_common_spans[label="spans"];
+    mod_datafusion_common_stats[label="stats"];
+    mod_datafusion_common_tree_node[label="tree_node"];
+    mod_datafusion_common_types[label="types"];
+    mod_datafusion_common_unnest[label="unnest"];
+    mod_datafusion_common_utils[label="utils"];
+  }
+
+  subgraph cluster_datafusion_common_runtime {
+    label="datafusion-common-runtime";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_common_runtime_common[label="common"];
+  }
+
+  subgraph cluster_datafusion_datasource {
+    label="datafusion-datasource";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_datasource_file_compression_type[label="file_compression_type"];
+    mod_datafusion_datasource_file_groups[label="file_groups"];
+    mod_datafusion_datasource_file_scan_config[label="file_scan_config"];
+    mod_datafusion_datasource_file_stream[label="file_stream"];
+    mod_datafusion_datasource_mod[label="mod"];
+    mod_datafusion_datasource_projection[label="projection"];
+    mod_datafusion_datasource_sink[label="sink"];
+    mod_datafusion_datasource_statistics[label="statistics"];
+    mod_datafusion_datasource_url[label="url"];
+    mod_datafusion_datasource_write[label="write"];
+  }
+
+  subgraph cluster_datafusion_datasource_arrow {
+    label="datafusion-datasource-arrow";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_datasource_arrow_source[label="source"];
+  }
+
+  subgraph cluster_datafusion_datasource_avro {
+    label="datafusion-datasource-avro";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_datasource_avro_avro_to_arrow[label="avro_to_arrow"];
+  }
+
+  subgraph cluster_datafusion_datasource_csv {
+    label="datafusion-datasource-csv";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_datasource_csv_file_format[label="file_format"];
+  }
+
+  subgraph cluster_datafusion_datasource_json {
+    label="datafusion-datasource-json";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_datasource_json_file_format[label="file_format"];
+  }
+
+  subgraph cluster_datafusion_datasource_parquet {
+    label="datafusion-datasource-parquet";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_datasource_parquet_file_format[label="file_format"];
+    mod_datafusion_datasource_parquet_metadata[label="metadata"];
+    mod_datafusion_datasource_parquet_metrics[label="metrics"];
+    mod_datafusion_datasource_parquet_opener[label="opener"];
+    mod_datafusion_datasource_parquet_reader[label="reader"];
+    mod_datafusion_datasource_parquet_row_filter[label="row_filter"];
+  }
+
+  subgraph cluster_datafusion_execution {
+    label="datafusion-execution";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_execution_cache[label="cache"];
+    mod_datafusion_execution_disk_manager[label="disk_manager"];
+    mod_datafusion_execution_memory_pool[label="memory_pool"];
+    mod_datafusion_execution_metrics[label="metrics"];
+    mod_datafusion_execution_runtime_env[label="runtime_env"];
+    mod_datafusion_execution_stream[label="stream"];
+    mod_datafusion_execution_task[label="task"];
+  }
+
+  subgraph cluster_datafusion_expr {
+    label="datafusion-expr";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_expr_arguments[label="arguments"];
+    mod_datafusion_expr_execution_props[label="execution_props"];
+    mod_datafusion_expr_expr[label="expr"];
+    mod_datafusion_expr_expr_fn[label="expr_fn"];
+    mod_datafusion_expr_expr_rewriter[label="expr_rewriter"];
+    mod_datafusion_expr_literal[label="literal"];
+    mod_datafusion_expr_logical_plan[label="logical_plan"];
+    mod_datafusion_expr_planner[label="planner"];
+    mod_datafusion_expr_ptr_eq[label="ptr_eq"];
+    mod_datafusion_expr_registry[label="registry"];
+    mod_datafusion_expr_select_expr[label="select_expr"];
+    mod_datafusion_expr_simplify[label="simplify"];
+    mod_datafusion_expr_table_source[label="table_source"];
+    mod_datafusion_expr_type_coercion[label="type_coercion"];
+    mod_datafusion_expr_udaf[label="udaf"];
+    mod_datafusion_expr_udf[label="udf"];
+    mod_datafusion_expr_udwf[label="udwf"];
+    mod_datafusion_expr_utils[label="utils"];
+    mod_datafusion_expr_window_frame[label="window_frame"];
+    mod_datafusion_expr_window_state[label="window_state"];
+  }
+
+  subgraph cluster_datafusion_expr_common {
+    label="datafusion-expr-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_expr_common_accumulator[label="accumulator"];
+    mod_datafusion_expr_common_casts[label="casts"];
+    mod_datafusion_expr_common_columnar_value[label="columnar_value"];
+    mod_datafusion_expr_common_groups_accumulator[label="groups_accumulator"];
+    mod_datafusion_expr_common_interval_arithmetic[label="interval_arithmetic"];
+    mod_datafusion_expr_common_operator[label="operator"];
+    mod_datafusion_expr_common_signature[label="signature"];
+    mod_datafusion_expr_common_sort_properties[label="sort_properties"];
+    mod_datafusion_expr_common_statistics[label="statistics"];
+    mod_datafusion_expr_common_type_coercion[label="type_coercion"];
+  }
+
+  subgraph cluster_datafusion_ffi {
+    label="datafusion-ffi";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_ffi_arrow_wrappers[label="arrow_wrappers"];
+    mod_datafusion_ffi_catalog_provider[label="catalog_provider"];
+    mod_datafusion_ffi_catalog_provider_list[label="catalog_provider_list"];
+    mod_datafusion_ffi_execution[label="execution"];
+    mod_datafusion_ffi_execution_plan[label="execution_plan"];
+    mod_datafusion_ffi_expr[label="expr"];
+    mod_datafusion_ffi_physical_expr[label="physical_expr"];
+    mod_datafusion_ffi_plan_properties[label="plan_properties"];
+    mod_datafusion_ffi_proto[label="proto"];
+    mod_datafusion_ffi_record_batch_stream[label="record_batch_stream"];
+    mod_datafusion_ffi_schema_provider[label="schema_provider"];
+    mod_datafusion_ffi_session[label="session"];
+    mod_datafusion_ffi_table_provider[label="table_provider"];
+    mod_datafusion_ffi_table_source[label="table_source"];
+    mod_datafusion_ffi_udaf[label="udaf"];
+    mod_datafusion_ffi_udf[label="udf"];
+    mod_datafusion_ffi_udtf[label="udtf"];
+    mod_datafusion_ffi_udwf[label="udwf"];
+    mod_datafusion_ffi_util[label="util"];
+  }
+
+  subgraph cluster_datafusion_functions {
+    label="datafusion-functions";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_functions_core[label="core"];
+    mod_datafusion_functions_crypto[label="crypto"];
+    mod_datafusion_functions_datetime[label="datetime"];
+    mod_datafusion_functions_encoding[label="encoding"];
+    mod_datafusion_functions_math[label="math"];
+    mod_datafusion_functions_regex[label="regex"];
+    mod_datafusion_functions_string[label="string"];
+    mod_datafusion_functions_unicode[label="unicode"];
+    mod_datafusion_functions_utils[label="utils"];
+  }
+
+  subgraph cluster_datafusion_functions_aggregate {
+    label="datafusion-functions-aggregate";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_functions_aggregate_approx_distinct[label="approx_distinct"];
+    mod_datafusion_functions_aggregate_array_agg[label="array_agg"];
+    mod_datafusion_functions_aggregate_average[label="average"];
+    mod_datafusion_functions_aggregate_bit_and_or_xor[label="bit_and_or_xor"];
+    mod_datafusion_functions_aggregate_count[label="count"];
+    mod_datafusion_functions_aggregate_first_last[label="first_last"];
+    mod_datafusion_functions_aggregate_hyperloglog[label="hyperloglog"];
+    mod_datafusion_functions_aggregate_min_max[label="min_max"];
+    mod_datafusion_functions_aggregate_nth_value[label="nth_value"];
+    mod_datafusion_functions_aggregate_percentile_cont[label="percentile_cont"];
+    mod_datafusion_functions_aggregate_string_agg[label="string_agg"];
+    mod_datafusion_functions_aggregate_sum[label="sum"];
+  }
+
+  subgraph cluster_datafusion_functions_aggregate_common {
+    label="datafusion-functions-aggregate-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_functions_aggregate_common_count_distinct[label="count_distinct"];
+    mod_datafusion_functions_aggregate_common_min_max[label="min_max"];
+  }
+
+  subgraph cluster_datafusion_functions_nested {
+    label="datafusion-functions-nested";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_functions_nested_array_has[label="array_has"];
+    mod_datafusion_functions_nested_cardinality[label="cardinality"];
+    mod_datafusion_functions_nested_concat[label="concat"];
+    mod_datafusion_functions_nested_dimension[label="dimension"];
+    mod_datafusion_functions_nested_distance[label="distance"];
+    mod_datafusion_functions_nested_extract[label="extract"];
+    mod_datafusion_functions_nested_make_array[label="make_array"];
+    mod_datafusion_functions_nested_map[label="map"];
+    mod_datafusion_functions_nested_position[label="position"];
+    mod_datafusion_functions_nested_range[label="range"];
+    mod_datafusion_functions_nested_remove[label="remove"];
+    mod_datafusion_functions_nested_repeat[label="repeat"];
+    mod_datafusion_functions_nested_replace[label="replace"];
+    mod_datafusion_functions_nested_resize[label="resize"];
+    mod_datafusion_functions_nested_reverse[label="reverse"];
+    mod_datafusion_functions_nested_set_ops[label="set_ops"];
+    mod_datafusion_functions_nested_sort[label="sort"];
+    mod_datafusion_functions_nested_string[label="string"];
+    mod_datafusion_functions_nested_utils[label="utils"];
+  }
+
+  subgraph cluster_datafusion_functions_table {
+    label="datafusion-functions-table";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_functions_table_generate_series[label="generate_series"];
+  }
+
+  subgraph cluster_datafusion_functions_window {
+    label="datafusion-functions-window";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_functions_window_lead_lag[label="lead_lag"];
+  }
+
+  subgraph cluster_datafusion_optimizer {
+    label="datafusion-optimizer";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_optimizer_analyzer[label="analyzer"];
+    mod_datafusion_optimizer_common_subexpr_eliminate[label="common_subexpr_eliminate"];
+    mod_datafusion_optimizer_decorrelate[label="decorrelate"];
+    mod_datafusion_optimizer_decorrelate_lateral_join[label="decorrelate_lateral_join"];
+    mod_datafusion_optimizer_decorrelate_predicate_subquery[label="decorrelate_predicate_subquery"];
+    mod_datafusion_optimizer_eliminate_cross_join[label="eliminate_cross_join"];
+    mod_datafusion_optimizer_eliminate_outer_join[label="eliminate_outer_join"];
+    mod_datafusion_optimizer_extract_equijoin_predicate[label="extract_equijoin_predicate"];
+    mod_datafusion_optimizer_join_key_set[label="join_key_set"];
+    mod_datafusion_optimizer_optimize_projections[label="optimize_projections"];
+    mod_datafusion_optimizer_optimize_unions[label="optimize_unions"];
+    mod_datafusion_optimizer_optimizer[label="optimizer"];
+    mod_datafusion_optimizer_propagate_empty_relation[label="propagate_empty_relation"];
+    mod_datafusion_optimizer_push_down_filter[label="push_down_filter"];
+    mod_datafusion_optimizer_push_down_limit[label="push_down_limit"];
+    mod_datafusion_optimizer_scalar_subquery_to_join[label="scalar_subquery_to_join"];
+    mod_datafusion_optimizer_simplify_expressions[label="simplify_expressions"];
+    mod_datafusion_optimizer_utils[label="utils"];
+  }
+
+  subgraph cluster_datafusion_physical_expr {
+    label="datafusion-physical-expr";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_physical_expr_aggregate[label="aggregate"];
+    mod_datafusion_physical_expr_binary[label="binary"];
+    mod_datafusion_physical_expr_equivalence[label="equivalence"];
+    mod_datafusion_physical_expr_expressions[label="expressions"];
+    mod_datafusion_physical_expr_intervals[label="intervals"];
+    mod_datafusion_physical_expr_partitioning[label="partitioning"];
+    mod_datafusion_physical_expr_physical_expr[label="physical_expr"];
+    mod_datafusion_physical_expr_planner[label="planner"];
+    mod_datafusion_physical_expr_projection[label="projection"];
+    mod_datafusion_physical_expr_properties[label="properties"];
+    mod_datafusion_physical_expr_scalar_function[label="scalar_function"];
+    mod_datafusion_physical_expr_simplifier[label="simplifier"];
+    mod_datafusion_physical_expr_utils[label="utils"];
+    mod_datafusion_physical_expr_window[label="window"];
+  }
+
+  subgraph cluster_datafusion_physical_expr_common {
+    label="datafusion-physical-expr-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_physical_expr_common_datum[label="datum"];
+    mod_datafusion_physical_expr_common_physical_expr[label="physical_expr"];
+    mod_datafusion_physical_expr_common_sort_expr[label="sort_expr"];
+  }
+
+  subgraph cluster_datafusion_physical_optimizer {
+    label="datafusion-physical-optimizer";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_physical_optimizer_enforce_distribution[label="enforce_distribution"];
+    mod_datafusion_physical_optimizer_enforce_sorting[label="enforce_sorting"];
+    mod_datafusion_physical_optimizer_filter_pushdown[label="filter_pushdown"];
+    mod_datafusion_physical_optimizer_join_selection[label="join_selection"];
+    mod_datafusion_physical_optimizer_limit_pushdown[label="limit_pushdown"];
+    mod_datafusion_physical_optimizer_limit_pushdown_past_window[label="limit_pushdown_past_window"];
+    mod_datafusion_physical_optimizer_optimizer[label="optimizer"];
+    mod_datafusion_physical_optimizer_output_requirements[label="output_requirements"];
+    mod_datafusion_physical_optimizer_projection_pushdown[label="projection_pushdown"];
+    mod_datafusion_physical_optimizer_sanity_checker[label="sanity_checker"];
+    mod_datafusion_physical_optimizer_utils[label="utils"];
+  }
+
+  subgraph cluster_datafusion_physical_plan {
+    label="datafusion-physical-plan";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_physical_plan_aggregates[label="aggregates"];
+    mod_datafusion_physical_plan_analyze[label="analyze"];
+    mod_datafusion_physical_plan_async_func[label="async_func"];
+    mod_datafusion_physical_plan_coalesce_batches[label="coalesce_batches"];
+    mod_datafusion_physical_plan_coalesce_partitions[label="coalesce_partitions"];
+    mod_datafusion_physical_plan_common[label="common"];
+    mod_datafusion_physical_plan_coop[label="coop"];
+    mod_datafusion_physical_plan_display[label="display"];
+    mod_datafusion_physical_plan_execution_plan[label="execution_plan"];
+    mod_datafusion_physical_plan_filter[label="filter"];
+    mod_datafusion_physical_plan_filter_pushdown[label="filter_pushdown"];
+    mod_datafusion_physical_plan_group_values[label="group_values"];
+    mod_datafusion_physical_plan_hash_join[label="hash_join"];
+    mod_datafusion_physical_plan_joins[label="joins"];
+    mod_datafusion_physical_plan_limit[label="limit"];
+    mod_datafusion_physical_plan_multi_group_by[label="multi_group_by"];
+    mod_datafusion_physical_plan_piecewise_merge_join[label="piecewise_merge_join"];
+    mod_datafusion_physical_plan_projection[label="projection"];
+    mod_datafusion_physical_plan_recursive_query[label="recursive_query"];
+    mod_datafusion_physical_plan_render_tree[label="render_tree"];
+    mod_datafusion_physical_plan_repartition[label="repartition"];
+    mod_datafusion_physical_plan_single_group_by[label="single_group_by"];
+    mod_datafusion_physical_plan_sort_merge_join[label="sort_merge_join"];
+    mod_datafusion_physical_plan_sorts[label="sorts"];
+    mod_datafusion_physical_plan_spill[label="spill"];
+    mod_datafusion_physical_plan_streaming[label="streaming"];
+    mod_datafusion_physical_plan_test[label="test"];
+    mod_datafusion_physical_plan_tree_node[label="tree_node"];
+    mod_datafusion_physical_plan_union[label="union"];
+    mod_datafusion_physical_plan_unnest[label="unnest"];
+    mod_datafusion_physical_plan_windows[label="windows"];
+    mod_datafusion_physical_plan_work_table[label="work_table"];
+  }
+
+  subgraph cluster_datafusion_proto {
+    label="datafusion-proto";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_proto_bytes[label="bytes"];
+    mod_datafusion_proto_generated[label="generated"];
+    mod_datafusion_proto_logical_plan[label="logical_plan"];
+    mod_datafusion_proto_physical_plan[label="physical_plan"];
+  }
+
+  subgraph cluster_datafusion_proto_common {
+    label="datafusion-proto-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_proto_common_from_proto[label="from_proto"];
+    mod_datafusion_proto_common_generated[label="generated"];
+    mod_datafusion_proto_common_to_proto[label="to_proto"];
+  }
+
+  subgraph cluster_datafusion_pruning {
+    label="datafusion-pruning";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_pruning_pruning_predicate[label="pruning_predicate"];
+  }
+
+  subgraph cluster_datafusion_spark {
+    label="datafusion-spark";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_spark_aggregate[label="aggregate"];
+    mod_datafusion_spark_array[label="array"];
+    mod_datafusion_spark_bitwise[label="bitwise"];
+    mod_datafusion_spark_datetime[label="datetime"];
+    mod_datafusion_spark_function[label="function"];
+    mod_datafusion_spark_hash[label="hash"];
+    mod_datafusion_spark_map[label="map"];
+    mod_datafusion_spark_math[label="math"];
+    mod_datafusion_spark_string[label="string"];
+    mod_datafusion_spark_url[label="url"];
+  }
+
+  subgraph cluster_datafusion_sql {
+    label="datafusion-sql";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_sql_expr[label="expr"];
+    mod_datafusion_sql_parser[label="parser"];
+    mod_datafusion_sql_relation[label="relation"];
+    mod_datafusion_sql_unparser[label="unparser"];
+    mod_datafusion_sql_utils[label="utils"];
+  }
+
+  subgraph cluster_datafusion_sqllogictest {
+    label="datafusion-sqllogictest";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_sqllogictest_bin[label="bin"];
+    mod_datafusion_sqllogictest_engines[label="engines"];
+    mod_datafusion_sqllogictest_filters[label="filters"];
+    mod_datafusion_sqllogictest_postgres_engine[label="postgres_engine"];
+    mod_datafusion_sqllogictest_regenerate[label="regenerate"];
+    mod_datafusion_sqllogictest_test_context[label="test_context"];
+  }
+
+  subgraph cluster_datafusion_substrait {
+    label="datafusion-substrait";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_datafusion_substrait_consumer[label="consumer"];
+    mod_datafusion_substrait_expr[label="expr"];
+    mod_datafusion_substrait_physical_plan[label="physical_plan"];
+    mod_datafusion_substrait_producer[label="producer"];
+    mod_datafusion_substrait_rel[label="rel"];
+  }
+
+  subgraph cluster_test_utils {
+    label="test-utils";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_test_utils_data_gen[label="data_gen"];
+  }
+
 
   mod_datafusion_bin -> mod_datafusion_execution;
   mod_datafusion_catalog_async -> mod_datafusion_catalog_catalog;
-  mod_datafusion_catalog_default_table_source -> mod_datafusion_catalog_table [dir=both];
-  mod_datafusion_catalog_default_table_source -> mod_datafusion_expr_table_source [dir=both];
+  mod_datafusion_catalog_default_table_source -> mod_datafusion_catalog_table;
+  mod_datafusion_catalog_default_table_source -> mod_datafusion_expr_table_source;
   mod_datafusion_catalog_dynamic_file -> mod_datafusion_catalog_catalog;
   mod_datafusion_catalog_information_schema -> mod_datafusion_physical_plan_streaming;
+  mod_datafusion_catalog_listing_helpers -> mod_datafusion_datasource_mod;
   mod_datafusion_catalog_listing_helpers -> mod_datafusion_datasource_url;
-  mod_datafusion_catalog_listing_helpers -> mod_datafusion_proto_generated;
-  mod_datafusion_catalog_listing_table -> mod_datafusion_proto_generated;
   mod_datafusion_catalog_memory -> mod_datafusion_catalog_catalog;
   mod_datafusion_cli_catalog -> mod_datafusion_catalog_catalog;
   mod_datafusion_cli_catalog -> mod_datafusion_execution;
   mod_datafusion_cli_exec -> mod_datafusion_cli_cli_context;
   mod_datafusion_cli_exec -> mod_datafusion_cli_print_options;
-  mod_datafusion_cli_exec -> mod_datafusion_sql_parser;
+  mod_datafusion_cli_exec -> mod_datafusion_expr_logical_plan;
+  mod_datafusion_cli_functions -> mod_datafusion_catalog_table;
   mod_datafusion_cli_object_storage -> mod_datafusion_common_config;
-  mod_datafusion_common_config -> mod_datafusion_proto_generated [dir=both];
+  mod_datafusion_common_config -> mod_datafusion_proto_generated;
   mod_datafusion_common_diagnostic -> mod_datafusion_common_spans;
-  mod_datafusion_common_file_options -> mod_datafusion_proto_common_generated;
+  mod_datafusion_common_file_options -> mod_datafusion_proto_generated;
   mod_datafusion_common_types -> mod_datafusion_proto_generated;
   mod_datafusion_common_utils -> mod_datafusion_expr_expr;
+  mod_datafusion_dataframe -> mod_datafusion_expr_logical_plan;
   mod_datafusion_datasource -> mod_datafusion_catalog_table;
   mod_datafusion_datasource_arrow_source -> mod_datafusion_datasource_file_stream;
+  mod_datafusion_datasource_avro_avro_to_arrow -> mod_datafusion_expr_expr;
   mod_datafusion_datasource_avro_avro_to_arrow -> mod_datafusion_proto_common_generated;
   mod_datafusion_datasource_avro_avro_to_arrow -> mod_datafusion_proto_generated;
-  mod_datafusion_datasource_csv_file_format -> mod_datafusion_proto_common_generated;
+  mod_datafusion_datasource_csv_file_format -> mod_datafusion_proto_generated;
   mod_datafusion_datasource_file_scan_config -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_datasource_file_scan_config -> mod_datafusion_proto_generated;
-  mod_datafusion_datasource_file_stream -> mod_datafusion_execution_metrics;
   mod_datafusion_datasource_json_file_format -> mod_datafusion_proto_generated;
-  mod_datafusion_datasource_mod -> mod_datafusion_proto_generated;
   mod_datafusion_datasource_parquet_file_format -> mod_datafusion_common_encryption;
   mod_datafusion_datasource_parquet_file_format -> mod_datafusion_common_runtime_common;
   mod_datafusion_datasource_parquet_file_format -> mod_datafusion_datasource_parquet_metadata;
@@ -315,6 +644,7 @@ digraph architecture {
   mod_datafusion_datasource_parquet_file_format -> mod_datafusion_proto_generated;
   mod_datafusion_datasource_parquet_metadata -> mod_datafusion_proto_generated;
   mod_datafusion_datasource_parquet_metrics -> mod_datafusion_execution_metrics;
+  mod_datafusion_datasource_parquet_opener -> mod_datafusion_common_stats;
   mod_datafusion_datasource_parquet_opener -> mod_datafusion_execution_metrics;
   mod_datafusion_datasource_parquet_opener -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_datasource_parquet_reader -> mod_datafusion_execution_cache;
@@ -322,7 +652,8 @@ digraph architecture {
   mod_datafusion_datasource_parquet_row_filter -> mod_datafusion_proto_generated;
   mod_datafusion_datasource_projection -> mod_datafusion_physical_expr_projection;
   mod_datafusion_datasource_sink -> mod_datafusion_physical_plan_execution_plan;
-  mod_datafusion_datasource_statistics -> mod_datafusion_proto_generated;
+  mod_datafusion_datasource_statistics -> mod_datafusion_datasource_file_groups;
+  mod_datafusion_datasource_statistics -> mod_datafusion_proto_common_generated;
   mod_datafusion_datasource_write -> mod_datafusion_common_cast;
   mod_datafusion_datasource_write -> mod_datafusion_common_runtime_common;
   mod_datafusion_datasource_write -> mod_datafusion_datasource_file_compression_type;
@@ -338,9 +669,9 @@ digraph architecture {
   mod_datafusion_execution_metrics -> mod_datafusion_functions_aggregate_count;
   mod_datafusion_execution_runtime_env -> mod_datafusion_execution_disk_manager;
   mod_datafusion_expr_arguments -> mod_datafusion_expr_expr;
-  mod_datafusion_expr_common_casts -> mod_datafusion_common_scalar;
   mod_datafusion_expr_common_casts -> mod_datafusion_expr_expr;
   mod_datafusion_expr_common_casts -> mod_datafusion_proto_common_generated;
+  mod_datafusion_expr_common_interval_arithmetic -> mod_datafusion_common_scalar;
   mod_datafusion_expr_common_interval_arithmetic -> mod_datafusion_expr_expr;
   mod_datafusion_expr_common_interval_arithmetic -> mod_datafusion_proto_common_generated;
   mod_datafusion_expr_common_statistics -> mod_datafusion_common_scalar;
@@ -349,13 +680,15 @@ digraph architecture {
   mod_datafusion_expr_common_statistics -> mod_datafusion_expr_expr;
   mod_datafusion_expr_common_statistics -> mod_datafusion_functions_unicode;
   mod_datafusion_expr_expr -> mod_datafusion_common_cse;
-  mod_datafusion_expr_expr -> mod_datafusion_expr_logical_plan [dir=both];
-  mod_datafusion_expr_expr_fn -> mod_datafusion_common_column;
+  mod_datafusion_expr_expr -> mod_datafusion_common_tree_node;
+  mod_datafusion_expr_expr -> mod_datafusion_expr_logical_plan;
+  mod_datafusion_expr_expr -> mod_datafusion_proto_generated;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_common_signature;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_common_type_coercion;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_logical_plan;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_ptr_eq;
   mod_datafusion_expr_expr_fn -> mod_datafusion_expr_select_expr;
+  mod_datafusion_expr_expr_fn -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_expr_expr_rewriter -> mod_datafusion_common_error;
   mod_datafusion_expr_expr_rewriter -> mod_datafusion_common_tree_node;
   mod_datafusion_expr_expr_rewriter -> mod_datafusion_expr_expr;
@@ -363,14 +696,13 @@ digraph architecture {
   mod_datafusion_expr_literal -> mod_datafusion_expr_expr;
   mod_datafusion_expr_logical_plan -> mod_datafusion_common_dfschema;
   mod_datafusion_expr_logical_plan -> mod_datafusion_common_functional_dependencies;
-  mod_datafusion_expr_logical_plan -> mod_datafusion_common_table_reference;
   mod_datafusion_expr_logical_plan -> mod_datafusion_common_tree_node;
   mod_datafusion_expr_logical_plan -> mod_datafusion_common_unnest;
-  mod_datafusion_expr_logical_plan -> mod_datafusion_expr_table_source [dir=both];
-  mod_datafusion_expr_logical_plan -> mod_datafusion_expr_utils [dir=both];
+  mod_datafusion_expr_logical_plan -> mod_datafusion_expr_table_source;
+  mod_datafusion_expr_logical_plan -> mod_datafusion_expr_utils;
   mod_datafusion_expr_logical_plan -> mod_datafusion_functions_unicode;
-  mod_datafusion_expr_logical_plan -> mod_datafusion_proto_common_generated;
-  mod_datafusion_expr_logical_plan -> mod_datafusion_proto_generated [dir=both];
+  mod_datafusion_expr_logical_plan -> mod_datafusion_physical_expr_expressions;
+  mod_datafusion_expr_logical_plan -> mod_datafusion_proto_generated;
   mod_datafusion_expr_planner -> mod_datafusion_expr_expr;
   mod_datafusion_expr_select_expr -> mod_datafusion_expr_expr;
   mod_datafusion_expr_type_coercion -> mod_datafusion_common_utils;
@@ -390,10 +722,10 @@ digraph architecture {
   mod_datafusion_ffi_physical_expr -> mod_datafusion_ffi_expr;
   mod_datafusion_ffi_physical_expr -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_ffi_plan_properties -> mod_datafusion_ffi_physical_expr;
-  mod_datafusion_ffi_plan_properties -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_ffi_plan_properties -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_ffi_proto -> mod_datafusion_ffi_execution;
   mod_datafusion_ffi_proto -> mod_datafusion_ffi_execution_plan;
-  mod_datafusion_ffi_proto -> mod_datafusion_ffi_table_provider [dir=both];
+  mod_datafusion_ffi_proto -> mod_datafusion_ffi_table_provider;
   mod_datafusion_ffi_proto -> mod_datafusion_ffi_udaf;
   mod_datafusion_ffi_proto -> mod_datafusion_ffi_udf;
   mod_datafusion_ffi_proto -> mod_datafusion_ffi_udwf;
@@ -404,8 +736,10 @@ digraph architecture {
   mod_datafusion_ffi_table_provider -> mod_datafusion_ffi_arrow_wrappers;
   mod_datafusion_ffi_table_provider -> mod_datafusion_ffi_execution_plan;
   mod_datafusion_ffi_table_provider -> mod_datafusion_ffi_table_source;
+  mod_datafusion_ffi_udaf -> mod_datafusion_expr_common_groups_accumulator;
   mod_datafusion_ffi_udaf -> mod_datafusion_expr_udaf;
   mod_datafusion_ffi_udaf -> mod_datafusion_ffi_arrow_wrappers;
+  mod_datafusion_ffi_udf -> mod_datafusion_expr_udf;
   mod_datafusion_ffi_udf -> mod_datafusion_ffi_arrow_wrappers;
   mod_datafusion_ffi_udtf -> mod_datafusion_ffi_table_provider;
   mod_datafusion_ffi_udwf -> mod_datafusion_expr_udwf;
@@ -414,18 +748,17 @@ digraph architecture {
   mod_datafusion_file_format -> mod_datafusion_proto_generated;
   mod_datafusion_functions_aggregate_approx_distinct -> mod_datafusion_expr_common_accumulator;
   mod_datafusion_functions_aggregate_approx_distinct -> mod_datafusion_functions_aggregate_hyperloglog;
-  mod_datafusion_functions_aggregate_approx_percentile_cont -> mod_datafusion_expr_expr;
   mod_datafusion_functions_aggregate_array_agg -> mod_datafusion_expr_common_accumulator;
   mod_datafusion_functions_aggregate_average -> mod_datafusion_expr_common_accumulator;
   mod_datafusion_functions_aggregate_bit_and_or_xor -> mod_datafusion_expr_common_accumulator;
   mod_datafusion_functions_aggregate_common_count_distinct -> mod_datafusion_expr_common_accumulator;
+  mod_datafusion_functions_aggregate_common_min_max -> mod_datafusion_common_scalar;
   mod_datafusion_functions_aggregate_common_min_max -> mod_datafusion_expr_expr;
-  mod_datafusion_functions_aggregate_common_min_max -> mod_datafusion_proto_common_generated;
   mod_datafusion_functions_aggregate_count -> mod_datafusion_expr_expr;
+  mod_datafusion_functions_aggregate_first_last -> mod_datafusion_common_scalar;
   mod_datafusion_functions_aggregate_first_last -> mod_datafusion_expr_common_accumulator;
   mod_datafusion_functions_aggregate_first_last -> mod_datafusion_expr_expr;
   mod_datafusion_functions_aggregate_first_last -> mod_datafusion_physical_expr_common_sort_expr;
-  mod_datafusion_functions_aggregate_first_last -> mod_datafusion_proto_common_generated;
   mod_datafusion_functions_aggregate_min_max -> mod_datafusion_expr_expr;
   mod_datafusion_functions_aggregate_nth_value -> mod_datafusion_expr_expr;
   mod_datafusion_functions_aggregate_percentile_cont -> mod_datafusion_expr_expr;
@@ -434,7 +767,6 @@ digraph architecture {
   mod_datafusion_functions_core -> mod_datafusion_common_cast;
   mod_datafusion_functions_core -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_functions_core -> mod_datafusion_expr_common_signature;
-  mod_datafusion_functions_core -> mod_datafusion_expr_expr;
   mod_datafusion_functions_core -> mod_datafusion_expr_udf;
   mod_datafusion_functions_crypto -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_functions_crypto -> mod_datafusion_expr_common_signature;
@@ -456,10 +788,10 @@ digraph architecture {
   mod_datafusion_functions_math -> mod_datafusion_expr_common_sort_properties;
   mod_datafusion_functions_math -> mod_datafusion_expr_udf;
   mod_datafusion_functions_math -> mod_datafusion_functions_utils;
-  mod_datafusion_functions_nested_array_has -> mod_datafusion_expr_common_signature;
+  mod_datafusion_functions_nested_array_has -> mod_datafusion_expr_common_type_coercion;
   mod_datafusion_functions_nested_array_has -> mod_datafusion_expr_udf;
   mod_datafusion_functions_nested_cardinality -> mod_datafusion_common_cast;
-  mod_datafusion_functions_nested_concat -> mod_datafusion_expr_common_signature;
+  mod_datafusion_functions_nested_concat -> mod_datafusion_expr_common_type_coercion;
   mod_datafusion_functions_nested_concat -> mod_datafusion_expr_udf;
   mod_datafusion_functions_nested_dimension -> mod_datafusion_common_cast;
   mod_datafusion_functions_nested_dimension -> mod_datafusion_common_utils;
@@ -468,11 +800,12 @@ digraph architecture {
   mod_datafusion_functions_nested_extract -> mod_datafusion_common_utils;
   mod_datafusion_functions_nested_extract -> mod_datafusion_expr_common_signature;
   mod_datafusion_functions_nested_extract -> mod_datafusion_expr_udf;
+  mod_datafusion_functions_nested_make_array -> mod_datafusion_expr_common_type_coercion;
   mod_datafusion_functions_nested_map -> mod_datafusion_common_utils;
   mod_datafusion_functions_nested_map -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_functions_nested_position -> mod_datafusion_common_cast;
   mod_datafusion_functions_nested_remove -> mod_datafusion_common_utils;
-  mod_datafusion_functions_nested_remove -> mod_datafusion_expr_common_signature;
+  mod_datafusion_functions_nested_remove -> mod_datafusion_expr_common_type_coercion;
   mod_datafusion_functions_nested_remove -> mod_datafusion_expr_udf;
   mod_datafusion_functions_nested_repeat -> mod_datafusion_common_cast;
   mod_datafusion_functions_nested_replace -> mod_datafusion_common_utils;
@@ -480,6 +813,7 @@ digraph architecture {
   mod_datafusion_functions_nested_replace -> mod_datafusion_expr_udf;
   mod_datafusion_functions_nested_resize -> mod_datafusion_common_cast;
   mod_datafusion_functions_nested_reverse -> mod_datafusion_common_cast;
+  mod_datafusion_functions_nested_reverse -> mod_datafusion_execution_memory_pool;
   mod_datafusion_functions_nested_set_ops -> mod_datafusion_common_cast;
   mod_datafusion_functions_nested_set_ops -> mod_datafusion_common_utils;
   mod_datafusion_functions_nested_set_ops -> mod_datafusion_expr_common_signature;
@@ -493,7 +827,6 @@ digraph architecture {
   mod_datafusion_functions_string -> mod_datafusion_common_cast;
   mod_datafusion_functions_string -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_functions_string -> mod_datafusion_expr_common_signature;
-  mod_datafusion_functions_string -> mod_datafusion_expr_common_type_coercion;
   mod_datafusion_functions_string -> mod_datafusion_expr_expr;
   mod_datafusion_functions_string -> mod_datafusion_expr_udf;
   mod_datafusion_functions_table_generate_series -> mod_datafusion_catalog_table;
@@ -523,6 +856,7 @@ digraph architecture {
   mod_datafusion_optimizer_eliminate_cross_join -> mod_datafusion_expr_logical_plan;
   mod_datafusion_optimizer_eliminate_cross_join -> mod_datafusion_optimizer_join_key_set;
   mod_datafusion_optimizer_eliminate_cross_join -> mod_datafusion_optimizer_optimizer;
+  mod_datafusion_optimizer_eliminate_outer_join -> mod_datafusion_proto_common_generated;
   mod_datafusion_optimizer_extract_equijoin_predicate -> mod_datafusion_common_dfschema;
   mod_datafusion_optimizer_extract_equijoin_predicate -> mod_datafusion_expr_expr;
   mod_datafusion_optimizer_extract_equijoin_predicate -> mod_datafusion_expr_utils;
@@ -530,14 +864,15 @@ digraph architecture {
   mod_datafusion_optimizer_optimize_projections -> mod_datafusion_expr_expr;
   mod_datafusion_optimizer_optimize_projections -> mod_datafusion_expr_logical_plan;
   mod_datafusion_optimizer_optimize_projections -> mod_datafusion_optimizer_optimizer;
+  mod_datafusion_optimizer_optimize_projections -> mod_datafusion_proto_common_generated;
   mod_datafusion_optimizer_optimize_unions -> mod_datafusion_expr_logical_plan;
   mod_datafusion_optimizer_propagate_empty_relation -> mod_datafusion_expr_logical_plan;
   mod_datafusion_optimizer_push_down_filter -> mod_datafusion_common_dfschema;
-  mod_datafusion_optimizer_push_down_filter -> mod_datafusion_common_join_type;
   mod_datafusion_optimizer_push_down_filter -> mod_datafusion_common_tree_node;
   mod_datafusion_optimizer_push_down_filter -> mod_datafusion_expr_expr;
   mod_datafusion_optimizer_push_down_filter -> mod_datafusion_expr_logical_plan;
   mod_datafusion_optimizer_push_down_filter -> mod_datafusion_physical_plan_sort_merge_join;
+  mod_datafusion_optimizer_push_down_filter -> mod_datafusion_proto_common_generated;
   mod_datafusion_optimizer_push_down_limit -> mod_datafusion_common_tree_node;
   mod_datafusion_optimizer_push_down_limit -> mod_datafusion_expr_logical_plan;
   mod_datafusion_optimizer_scalar_subquery_to_join -> mod_datafusion_expr_logical_plan;
@@ -547,6 +882,7 @@ digraph architecture {
   mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_expr_common_operator;
   mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_expr_expr;
   mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_expr_expr_fn;
+  mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_expr_simplify;
   mod_datafusion_optimizer_simplify_expressions -> mod_datafusion_functions_unicode;
   mod_datafusion_optimizer_utils -> mod_datafusion_expr_expr;
   mod_datafusion_optimizer_utils -> mod_datafusion_proto_common_generated;
@@ -554,24 +890,24 @@ digraph architecture {
   mod_datafusion_physical_expr_binary -> mod_datafusion_functions_unicode;
   mod_datafusion_physical_expr_common_datum -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_physical_expr_common_datum -> mod_datafusion_expr_common_operator;
-  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_expressions [dir=both];
-  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_planner [dir=both];
-  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_simplifier [dir=both];
-  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_utils [dir=both];
-  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_plan_joins [dir=both];
-  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_proto_physical_plan [dir=both];
-  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_pruning_pruning_predicate [dir=both];
+  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_expressions;
+  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_planner;
+  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_simplifier;
+  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_expr_utils;
+  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_physical_plan_joins;
+  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_proto_physical_plan;
+  mod_datafusion_physical_expr_common_physical_expr -> mod_datafusion_pruning_pruning_predicate;
   mod_datafusion_physical_expr_common_sort_expr -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_expr_equivalence -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_expr_equivalence -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_physical_expr_expressions -> mod_datafusion_expr_common_columnar_value;
   mod_datafusion_physical_expr_expressions -> mod_datafusion_expr_common_operator;
+  mod_datafusion_physical_expr_expressions -> mod_datafusion_expr_expr;
   mod_datafusion_physical_expr_expressions -> mod_datafusion_expr_type_coercion;
   mod_datafusion_physical_expr_expressions -> mod_datafusion_proto_common_generated;
-  mod_datafusion_physical_expr_expressions -> mod_datafusion_proto_generated;
   mod_datafusion_physical_expr_intervals -> mod_datafusion_expr_common_interval_arithmetic;
   mod_datafusion_physical_expr_intervals -> mod_datafusion_expr_common_operator;
-  mod_datafusion_physical_expr_intervals -> mod_datafusion_proto_generated;
+  mod_datafusion_physical_expr_intervals -> mod_datafusion_proto_common_generated;
   mod_datafusion_physical_expr_physical_expr -> mod_datafusion_common_dfschema;
   mod_datafusion_physical_expr_physical_expr -> mod_datafusion_expr_execution_props;
   mod_datafusion_physical_expr_physical_expr -> mod_datafusion_physical_expr_common_sort_expr;
@@ -584,38 +920,38 @@ digraph architecture {
   mod_datafusion_physical_expr_scalar_function -> mod_datafusion_common_config;
   mod_datafusion_physical_expr_simplifier -> mod_datafusion_common_tree_node;
   mod_datafusion_physical_expr_simplifier -> mod_datafusion_proto_common_generated;
-  mod_datafusion_physical_expr_utils -> mod_datafusion_proto_common_generated;
+  mod_datafusion_physical_expr_window -> mod_datafusion_common_scalar;
   mod_datafusion_physical_expr_window -> mod_datafusion_expr_window_frame;
   mod_datafusion_physical_expr_window -> mod_datafusion_expr_window_state;
   mod_datafusion_physical_expr_window -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_expr_window -> mod_datafusion_physical_expr_common_sort_expr;
-  mod_datafusion_physical_expr_window -> mod_datafusion_physical_plan_windows [dir=both];
-  mod_datafusion_physical_expr_window -> mod_datafusion_proto_common_generated;
+  mod_datafusion_physical_expr_window -> mod_datafusion_physical_plan_windows;
   mod_datafusion_physical_optimizer_enforce_distribution -> mod_datafusion_physical_optimizer_utils;
-  mod_datafusion_physical_optimizer_enforce_distribution -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_physical_optimizer_enforce_distribution -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_enforce_distribution -> mod_datafusion_physical_plan_tree_node;
   mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_common_tree_node;
   mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_optimizer_utils;
-  mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_physical_plan_tree_node;
-  mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_proto_generated;
+  mod_datafusion_physical_optimizer_enforce_sorting -> mod_datafusion_proto_common_generated;
   mod_datafusion_physical_optimizer_filter_pushdown -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_optimizer_filter_pushdown -> mod_datafusion_physical_plan_filter_pushdown;
   mod_datafusion_physical_optimizer_join_selection -> mod_datafusion_common_config;
-  mod_datafusion_physical_optimizer_join_selection -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_physical_optimizer_join_selection -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_join_selection -> mod_datafusion_physical_plan_hash_join;
-  mod_datafusion_physical_optimizer_limit_pushdown -> mod_datafusion_physical_plan_execution_plan [dir=both];
-  mod_datafusion_physical_optimizer_limit_pushdown_past_window -> mod_datafusion_physical_plan_execution_plan [dir=both];
-  mod_datafusion_physical_optimizer_output_requirements -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_physical_optimizer_limit_pushdown -> mod_datafusion_physical_plan_execution_plan;
+  mod_datafusion_physical_optimizer_limit_pushdown_past_window -> mod_datafusion_physical_plan_execution_plan;
+  mod_datafusion_physical_optimizer_output_requirements -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_projection_pushdown -> mod_datafusion_common_alias;
-  mod_datafusion_physical_optimizer_projection_pushdown -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_physical_optimizer_projection_pushdown -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_projection_pushdown -> mod_datafusion_physical_plan_joins;
   mod_datafusion_physical_optimizer_projection_pushdown -> mod_datafusion_proto_generated;
-  mod_datafusion_physical_optimizer_sanity_checker -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_physical_optimizer_sanity_checker -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_utils -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_physical_optimizer_utils -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_optimizer_utils -> mod_datafusion_physical_plan_tree_node;
+  mod_datafusion_physical_plan_aggregates -> mod_datafusion_common_scalar;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_execution_metrics;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_execution_stream;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_expr_expr;
@@ -623,31 +959,28 @@ digraph architecture {
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_aggregates -> mod_datafusion_physical_plan_group_values;
-  mod_datafusion_physical_plan_aggregates -> mod_datafusion_proto_common_generated;
   mod_datafusion_physical_plan_analyze -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_async_func -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_coalesce_batches -> mod_datafusion_physical_plan_execution_plan;
-  mod_datafusion_physical_plan_coalesce_partitions -> mod_datafusion_physical_plan_execution_plan [dir=both];
-  mod_datafusion_physical_plan_common -> mod_datafusion_proto_generated;
+  mod_datafusion_physical_plan_coalesce_partitions -> mod_datafusion_physical_plan_execution_plan;
+  mod_datafusion_physical_plan_common -> mod_datafusion_proto_common_generated;
   mod_datafusion_physical_plan_coop -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_display -> mod_datafusion_execution_metrics;
-  mod_datafusion_physical_plan_display -> mod_datafusion_physical_plan_execution_plan [dir=both];
+  mod_datafusion_physical_plan_display -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_display -> mod_datafusion_spark_string;
   mod_datafusion_physical_plan_execution_plan -> mod_datafusion_execution_task;
-  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_physical_plan_projection [dir=both];
-  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_physical_plan_sort_merge_join [dir=both];
-  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_physical_plan_test [dir=both];
-  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_proto_bytes [dir=both];
+  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_physical_plan_projection;
+  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_physical_plan_sort_merge_join;
+  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_physical_plan_test;
+  mod_datafusion_physical_plan_execution_plan -> mod_datafusion_proto_bytes;
   mod_datafusion_physical_plan_filter -> mod_datafusion_execution_metrics;
   mod_datafusion_physical_plan_filter -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_plan_filter -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_filter_pushdown -> mod_datafusion_physical_expr_common_physical_expr;
   mod_datafusion_physical_plan_hash_join -> mod_datafusion_execution_memory_pool;
   mod_datafusion_physical_plan_hash_join -> mod_datafusion_physical_plan_execution_plan;
-  mod_datafusion_physical_plan_hash_join -> mod_datafusion_physical_plan_joins [dir=both];
+  mod_datafusion_physical_plan_hash_join -> mod_datafusion_physical_plan_joins;
   mod_datafusion_physical_plan_hash_join -> mod_datafusion_proto_common_generated;
-  mod_datafusion_physical_plan_hash_join -> mod_datafusion_proto_generated;
-  mod_datafusion_physical_plan_joins -> mod_datafusion_common_join_type;
   mod_datafusion_physical_plan_joins -> mod_datafusion_execution_memory_pool;
   mod_datafusion_physical_plan_joins -> mod_datafusion_execution_metrics;
   mod_datafusion_physical_plan_joins -> mod_datafusion_execution_stream;
@@ -658,8 +991,9 @@ digraph architecture {
   mod_datafusion_physical_plan_joins -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_physical_plan_joins -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_physical_plan_joins -> mod_datafusion_physical_expr_intervals;
+  mod_datafusion_physical_plan_joins -> mod_datafusion_physical_expr_partitioning;
   mod_datafusion_physical_plan_joins -> mod_datafusion_physical_plan_display;
-  mod_datafusion_physical_plan_joins -> mod_datafusion_physical_plan_sort_merge_join [dir=both];
+  mod_datafusion_physical_plan_joins -> mod_datafusion_physical_plan_sort_merge_join;
   mod_datafusion_physical_plan_joins -> mod_datafusion_proto_common_generated;
   mod_datafusion_physical_plan_joins -> mod_datafusion_proto_generated;
   mod_datafusion_physical_plan_limit -> mod_datafusion_execution_metrics;
@@ -670,13 +1004,13 @@ digraph architecture {
   mod_datafusion_physical_plan_piecewise_merge_join -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_projection -> mod_datafusion_physical_expr_common_sort_expr;
   mod_datafusion_physical_plan_projection -> mod_datafusion_physical_expr_projection;
-  mod_datafusion_physical_plan_projection -> mod_datafusion_proto_generated;
   mod_datafusion_physical_plan_recursive_query -> mod_datafusion_physical_plan_work_table;
   mod_datafusion_physical_plan_render_tree -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_repartition -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_single_group_by -> mod_datafusion_physical_plan_group_values;
   mod_datafusion_physical_plan_sort_merge_join -> mod_datafusion_execution_metrics;
   mod_datafusion_physical_plan_sort_merge_join -> mod_datafusion_physical_plan_test;
+  mod_datafusion_physical_plan_sort_merge_join -> mod_datafusion_proto_common_generated;
   mod_datafusion_physical_plan_sort_merge_join -> mod_datafusion_proto_generated;
   mod_datafusion_physical_plan_sorts -> mod_datafusion_execution_memory_pool;
   mod_datafusion_physical_plan_sorts -> mod_datafusion_execution_metrics;
@@ -686,7 +1020,8 @@ digraph architecture {
   mod_datafusion_physical_plan_sorts -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_sorts -> mod_datafusion_physical_plan_spill;
   mod_datafusion_physical_plan_spill -> mod_datafusion_execution_disk_manager;
-  mod_datafusion_physical_plan_test -> mod_datafusion_proto_generated;
+  mod_datafusion_physical_plan_test -> mod_datafusion_proto_common_generated;
+  mod_datafusion_physical_plan_union -> mod_datafusion_common_stats;
   mod_datafusion_physical_plan_union -> mod_datafusion_physical_plan_execution_plan;
   mod_datafusion_physical_plan_unnest -> mod_datafusion_common_unnest;
   mod_datafusion_physical_plan_unnest -> mod_datafusion_physical_plan_execution_plan;
@@ -706,21 +1041,21 @@ digraph architecture {
   mod_datafusion_proto_bytes -> mod_datafusion_expr_logical_plan;
   mod_datafusion_proto_bytes -> mod_datafusion_proto_logical_plan;
   mod_datafusion_proto_common_from_proto -> mod_datafusion_proto_common_generated;
-  mod_datafusion_proto_common_generated -> mod_datafusion_common_config;
   mod_datafusion_proto_common_to_proto -> mod_datafusion_proto_common_from_proto;
   mod_datafusion_proto_generated -> mod_datafusion_proto_common_generated;
   mod_datafusion_proto_logical_plan -> mod_datafusion_expr_expr;
-  mod_datafusion_proto_logical_plan -> mod_datafusion_expr_expr_fn;
   mod_datafusion_proto_logical_plan -> mod_datafusion_expr_logical_plan;
   mod_datafusion_proto_logical_plan -> mod_datafusion_expr_registry;
-  mod_datafusion_proto_logical_plan -> mod_datafusion_proto_common_to_proto;
+  mod_datafusion_proto_logical_plan -> mod_datafusion_physical_expr_expressions;
+  mod_datafusion_proto_logical_plan -> mod_datafusion_proto_common_from_proto;
   mod_datafusion_proto_physical_plan -> mod_datafusion_datasource_file_scan_config;
   mod_datafusion_proto_physical_plan -> mod_datafusion_execution_task;
   mod_datafusion_proto_physical_plan -> mod_datafusion_physical_expr_common_sort_expr;
+  mod_datafusion_proto_physical_plan -> mod_datafusion_physical_expr_partitioning;
   mod_datafusion_proto_physical_plan -> mod_datafusion_proto_generated;
   mod_datafusion_pruning_pruning_predicate -> mod_datafusion_expr_common_operator;
   mod_datafusion_pruning_pruning_predicate -> mod_datafusion_expr_expr_fn;
-  mod_datafusion_pruning_pruning_predicate -> mod_datafusion_proto_common_generated;
+  mod_datafusion_pruning_pruning_predicate -> mod_datafusion_proto_generated;
   mod_datafusion_spark_aggregate -> mod_datafusion_expr_udaf;
   mod_datafusion_spark_array -> mod_datafusion_common_cast;
   mod_datafusion_spark_array -> mod_datafusion_expr_udf;
@@ -754,7 +1089,7 @@ digraph architecture {
   mod_datafusion_sql_utils -> mod_datafusion_expr_logical_plan;
   mod_datafusion_sql_utils -> mod_datafusion_proto_common_generated;
   mod_datafusion_sqllogictest_bin -> mod_datafusion_sqllogictest_engines;
-  mod_datafusion_sqllogictest_bin -> mod_datafusion_sqllogictest_regenerate [dir=both];
+  mod_datafusion_sqllogictest_bin -> mod_datafusion_sqllogictest_regenerate;
   mod_datafusion_sqllogictest_bin -> mod_datafusion_sqllogictest_test_context;
   mod_datafusion_sqllogictest_filters -> mod_datafusion_sql_parser;
   mod_datafusion_sqllogictest_regenerate -> mod_datafusion_sqllogictest_test_context;
@@ -763,13 +1098,14 @@ digraph architecture {
   mod_datafusion_sqllogictest_test_context -> mod_datafusion_expr_udf;
   mod_datafusion_sqllogictest_test_context -> mod_datafusion_proto_generated;
   mod_datafusion_substrait_consumer -> mod_datafusion_common_dfschema;
+  mod_datafusion_substrait_consumer -> mod_datafusion_expr_logical_plan;
   mod_datafusion_substrait_consumer -> mod_datafusion_proto_generated;
   mod_datafusion_substrait_expr -> mod_datafusion_common_dfschema;
   mod_datafusion_substrait_expr -> mod_datafusion_common_scalar;
   mod_datafusion_substrait_expr -> mod_datafusion_expr_common_operator;
   mod_datafusion_substrait_expr -> mod_datafusion_expr_expr;
+  mod_datafusion_substrait_expr -> mod_datafusion_expr_literal;
   mod_datafusion_substrait_expr -> mod_datafusion_expr_window_frame;
-  mod_datafusion_substrait_expr -> mod_datafusion_physical_expr_expressions;
   mod_datafusion_substrait_expr -> mod_datafusion_substrait_consumer;
   mod_datafusion_substrait_expr -> mod_datafusion_substrait_producer;
   mod_datafusion_substrait_physical_plan -> mod_datafusion_proto_generated;

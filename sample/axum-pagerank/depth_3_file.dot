@@ -1,480 +1,759 @@
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_axum {
-      label="axum";
-      subgraph cluster_boxed_rs {
-        label="boxed.rs";
-        n2303[label="BoxedIntoRoute", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/boxed.rs:12", sym_ty="Struct", shape=box];
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_axum {
+    label="axum";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_boxed_rs {
+      label="boxed.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4569[label="BoxedIntoRoute", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/boxed.rs:12", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_extension_rs {
+      label="extension.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3984[label="Extension", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extension.rs:72", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_extract {
+      label="extract";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_matched_path_rs {
+        label="matched_path.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2126[label="set_matched_path_for_request", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/matched_path.rs:101", sym_ty="Function"];
       }
 
-      subgraph cluster_extension_rs {
-        label="extension.rs";
-        n1619[label="Extension", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extension.rs:72", sym_ty="Struct", shape=box];
+      subgraph cluster_multipart_rs {
+        label="multipart.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1232[label="MultipartError", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/multipart.rs:235", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_extract {
-        label="extract";
-        subgraph cluster_matched_path_rs {
-          label="matched_path.rs";
-          n2213[label="set_matched_path_for_request", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/matched_path.rs:101", sym_ty="Function"];
-        }
+      subgraph cluster_state_rs {
+        label="state.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
 
-        subgraph cluster_multipart_rs {
-          label="multipart.rs";
-          n1363[label="MultipartError", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/multipart.rs:235", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_state_rs {
-          label="state.rs";
-          n2906[label="State", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/state.rs:296", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_ws_rs {
-          label="ws.rs";
-          n4561[label="WebSocketUpgrade", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/ws.rs:132", sym_ty="Struct", shape=box];
-          n6523[label="Utf8Bytes", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/ws.rs:584", sym_ty="Struct", shape=box];
-          n6996[label="Message", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/ws.rs:732", sym_ty="Enum", shape=box];
-        }
-
+        n1809[label="State", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/state.rs:296", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_handler {
-        label="handler";
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n115[label="Handler", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/handler/mod.rs:148", sym_ty="Trait", shape=box];
-          n805[label="Layered", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/handler/mod.rs:285", sym_ty="Struct", shape=box];
-        }
+      subgraph cluster_ws_rs {
+        label="ws.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
 
-      }
-
-      subgraph cluster_middleware {
-        label="middleware";
-        subgraph cluster_from_extractor_rs {
-          label="from_extractor.rs";
-          n1204[label="FromExtractorLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_extractor.rs:110", sym_ty="Struct", shape=box];
-          n1105[label="from_extractor", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_extractor.rs:89", sym_ty="Function"];
-        }
-
-        subgraph cluster_from_fn_rs {
-          label="from_fn.rs";
-          n2198[label="from_fn", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_fn.rs:114", sym_ty="Function"];
-          n2298[label="FromFnLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_fn.rs:178", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_map_request_rs {
-          label="map_request.rs";
-          n4033[label="map_request", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_request.rs:117", sym_ty="Function"];
-          n4146[label="MapRequestLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_request.rs:171", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_map_response_rs {
-          label="map_response.rs";
-          n3608[label="MapResponseLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_response.rs:153", sym_ty="Struct", shape=box];
-          n3490[label="map_response", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_response.rs:99", sym_ty="Function"];
-        }
-
-      }
-
-      subgraph cluster_path {
-        label="path";
-        subgraph cluster_de_rs {
-          label="de.rs";
-          n6475[label="ValueDeserializer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/de.rs:340", sym_ty="Struct", shape=box];
-          n7232[label="KeyOrIdx", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/de.rs:634", sym_ty="Enum", shape=box];
-        }
-
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n5511[label="Path", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:153", sym_ty="Struct", shape=box];
-          n6064[label="PathDeserializationError", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:218", sym_ty="Struct", shape=box];
-          n6469[label="ErrorKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:285", sym_ty="Enum", shape=box];
-          n6788[label="FailedToDeserializePathParams", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:407", sym_ty="Struct", shape=box];
-        }
-
-      }
-
-      subgraph cluster_response {
-        label="response";
-        subgraph cluster_redirect_rs {
-          label="redirect.rs";
-          n4360[label="Redirect", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/redirect.rs:22", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_sse_rs {
-          label="sse.rs";
-          n4128[label="Buffer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:147", sym_ty="Enum", shape=box];
-          n4280[label="Event", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:174", sym_ty="Struct", shape=box];
-          n4361[label="EventDataWriter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:191", sym_ty="Struct", shape=box];
-          n6261[label="EventFlags", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:489", sym_ty="Struct", shape=box];
-          n6494[label="KeepAlive", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:518", sym_ty="Struct", shape=box];
-          n3724[label="Sse", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:54", sym_ty="Struct", shape=box];
-        }
-
-      }
-
-      subgraph cluster_routing {
-        label="routing";
-        subgraph cluster_method_filter_rs {
-          label="method_filter.rs";
-          n3312[label="MethodFilter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_filter.rs:9", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_method_routing_rs {
-          label="method_routing.rs";
-          n5653[label="merge_inner", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:1042", sym_ty="Function"];
-          n6370[label="append_allow_header", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:1177", sym_ty="Function"];
-          n6596[label="MethodEndpoint", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:1224", sym_ty="Enum", shape=box];
-          n2981[label="MethodRouter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:547", sym_ty="Struct", shape=box];
-          n3228[label="AllowHeader", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:562", sym_ty="Enum", shape=box];
-          n4531[label="set_endpoint", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:825", sym_ty="Function"];
-        }
-
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n6785[label="RouterAsService", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:606", sym_ty="Struct", shape=box];
-          n4671[label="RouteId", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:61", sym_ty="Struct", shape=box];
-          n7014[label="RouterIntoService", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:645", sym_ty="Struct", shape=box];
-          n7215[label="Fallback", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:693", sym_ty="Enum", shape=box];
-          n4696[label="Router", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:71", sym_ty="Struct", shape=box];
-          n7331[label="Endpoint", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:766", sym_ty="Enum", shape=box];
-        }
-
-        subgraph cluster_path_router_rs {
-          label="path_router.rs";
-          n1202[label="PathRouter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/path_router.rs:16", sym_ty="Struct", shape=box];
-          n1250[label="validate_path", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/path_router.rs:22", sym_ty="Function"];
-          n1397[label="validate_v07_paths", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/path_router.rs:36", sym_ty="Function"];
-          n3879[label="Node", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/path_router.rs:406", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_route_rs {
-          label="route.rs";
-          n1854[label="Route", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/route.rs:31", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_strip_prefix_rs {
-          label="strip_prefix.rs";
-          n4431[label="segments", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/strip_prefix.rs:124", sym_ty="Function"];
-        }
-
-      }
-
-      subgraph cluster_serve {
-        label="serve";
-        subgraph cluster_listener_rs {
-          label="listener.rs";
-          n4780[label="Listener", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/serve/listener.rs:18", sym_ty="Trait", shape=box];
-          n6046[label="TapIo", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/serve/listener.rs:210", sym_ty="Struct", shape=box];
-          n5223[label="ListenerExt", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/serve/listener.rs:75", sym_ty="Trait", shape=box];
-        }
-
-      }
-
-      subgraph cluster_util_rs {
-        label="util.rs";
-        n811[label="PercentDecodedStr", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/util.rs:13", sym_ty="Struct", shape=box];
+        n3375[label="WebSocketUpgrade", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/ws.rs:132", sym_ty="Struct", shape=box];
+        n6130[label="Utf8Bytes", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/ws.rs:584", sym_ty="Struct", shape=box];
+        n6697[label="Message", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/ws.rs:732", sym_ty="Enum", shape=box];
       }
 
     }
 
-    subgraph cluster_axum_core {
-      label="axum-core";
-      subgraph cluster_body_rs {
-        label="body.rs";
-        n4749[label="Body", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/body.rs:39", sym_ty="Struct", shape=box];
-      }
+    subgraph cluster_handler {
+      label="handler";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
 
-      subgraph cluster_error_rs {
-        label="error.rs";
-        n49[label="Error", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/error.rs:6", sym_ty="Struct", shape=box];
-      }
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
 
-      subgraph cluster_extract {
-        label="extract";
-        subgraph cluster_default_body_limit_rs {
-          label="default_body_limit.rs";
-          n3546[label="DefaultBodyLimitService", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/default_body_limit.rs:205", sym_ty="Struct", shape=box];
-          n3213[label="DefaultBodyLimit", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/default_body_limit.rs:78", sym_ty="Struct", shape=box];
-          n3250[label="DefaultBodyLimitKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/default_body_limit.rs:83", sym_ty="Enum", shape=box];
-        }
-
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n2640[label="FromRequestParts", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/mod.rs:53", sym_ty="Trait", shape=box];
-          n2791[label="FromRequest", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/mod.rs:79", sym_ty="Trait", shape=box];
-        }
-
-        subgraph cluster_option_rs {
-          label="option.rs";
-          n1705[label="OptionalFromRequestParts", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/option.rs:11", sym_ty="Trait", shape=box];
-        }
-
-      }
-
-      subgraph cluster_response {
-        label="response";
-        subgraph cluster_into_response_rs {
-          label="into_response.rs";
-          n5241[label="IntoResponse", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response.rs:112", sym_ty="Trait", shape=box];
-        }
-
-        subgraph cluster_into_response_parts_rs {
-          label="into_response_parts.rs";
-          n4818[label="TryIntoHeaderError", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response_parts.rs:163", sym_ty="Struct", shape=box];
-          n5101[label="TryIntoHeaderErrorKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response_parts.rs:182", sym_ty="Enum", shape=box];
-          n4066[label="IntoResponseParts", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response_parts.rs:73", sym_ty="Trait", shape=box];
-        }
-
+        n1565[label="Handler", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/handler/mod.rs:148", sym_ty="Trait", shape=box];
+        n2127[label="Layered", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/handler/mod.rs:285", sym_ty="Struct", shape=box];
       }
 
     }
 
-    subgraph cluster_axum_extra {
-      label="axum-extra";
-      subgraph cluster_cookie {
-        label="cookie";
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n1617[label="CookieJar", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/cookie/mod.rs:89", sym_ty="Struct", shape=box];
-        }
+    subgraph cluster_middleware {
+      label="middleware";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
 
-        subgraph cluster_private_rs {
-          label="private.rs";
-          n63[label="PrivateCookieJar", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/cookie/private.rs:108", sym_ty="Struct", shape=box];
-        }
+      subgraph cluster_from_extractor_rs {
+        label="from_extractor.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
 
-        subgraph cluster_signed_rs {
-          label="signed.rs";
-          n2341[label="SignedCookieJar", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/cookie/signed.rs:125", sym_ty="Struct", shape=box];
-        }
-
+        n1277[label="FromExtractorLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_extractor.rs:110", sym_ty="Struct", shape=box];
+        n1201[label="from_extractor", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_extractor.rs:89", sym_ty="Function"];
       }
 
-      subgraph cluster_either_rs {
-        label="either.rs";
-        n1107[label="Either", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/either.rs:108", sym_ty="Enum", shape=box];
+      subgraph cluster_from_fn_rs {
+        label="from_fn.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2334[label="from_fn", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_fn.rs:114", sym_ty="Function"];
+        n2536[label="FromFnLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/from_fn.rs:178", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_extract {
-        label="extract";
-        subgraph cluster_multipart_rs {
-          label="multipart.rs";
-          n4025[label="MultipartError", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/multipart.rs:239", sym_ty="Struct", shape=box];
-        }
+      subgraph cluster_map_request_rs {
+        label="map_request.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
 
-        subgraph cluster_query_rs {
-          label="query.rs";
-          n3512[label="OptionalQuery", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/query.rs:131", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_with_rejection_rs {
-          label="with_rejection.rs";
-          n57[label="WithRejection", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/with_rejection.rs:60", sym_ty="Struct", shape=box];
-        }
-
+        n4744[label="map_request", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_request.rs:117", sym_ty="Function"];
+        n4857[label="MapRequestLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_request.rs:171", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_handler {
-        label="handler";
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n466[label="IntoHandler", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/handler/mod.rs:162", sym_ty="Struct", shape=box];
-          n62[label="HandlerCallWithExtractors", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/handler/mod.rs:25", sym_ty="Trait", shape=box];
-        }
+      subgraph cluster_map_response_rs {
+        label="map_response.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
 
-        subgraph cluster_or_rs {
-          label="or.rs";
-          n748[label="Or", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/handler/or.rs:17", sym_ty="Struct", shape=box];
-        }
-
-      }
-
-      subgraph cluster_response {
-        label="response";
-        subgraph cluster_attachment_rs {
-          label="attachment.rs";
-          n2593[label="Attachment", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/response/attachment.rs:38", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_file_stream_rs {
-          label="file_stream.rs";
-          n20[label="FileStream", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/response/file_stream.rs:49", sym_ty="Struct", shape=box];
-        }
-
-      }
-
-      subgraph cluster_routing {
-        label="routing";
-        subgraph cluster_resource_rs {
-          label="resource.rs";
-          n254[label="Resource", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/routing/resource.rs:36", sym_ty="Struct", shape=box];
-        }
-
-        subgraph cluster_typed_rs {
-          label="typed.rs";
-          n123[label="TypedPath", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/routing/typed.rs:217", sym_ty="Trait", shape=box];
-        }
-
-      }
-
-      subgraph cluster_typed_header_rs {
-        label="typed_header.rs";
-        n1514[label="TypedHeaderRejection", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/typed_header.rs:133", sym_ty="Struct", shape=box];
-        n1613[label="TypedHeaderRejectionReason", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/typed_header.rs:164", sym_ty="Enum", shape=box];
+        n3742[label="MapResponseLayer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_response.rs:153", sym_ty="Struct", shape=box];
+        n3612[label="map_response", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/middleware/map_response.rs:99", sym_ty="Function"];
       }
 
     }
 
-    subgraph cluster_axum_macros {
-      label="axum-macros";
-      subgraph cluster_attr_parsing_rs {
-        label="attr_parsing.rs";
-        n2044[label="parse_attrs", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/attr_parsing.rs:59", sym_ty="Function"];
+    subgraph cluster_path {
+      label="path";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_de_rs {
+        label="de.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3234[label="ValueDeserializer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/de.rs:340", sym_ty="Struct", shape=box];
+        n5767[label="KeyOrIdx", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/de.rs:634", sym_ty="Enum", shape=box];
       }
 
-      subgraph cluster_debug_handler_rs {
-        label="debug_handler.rs";
-        n2464[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/debug_handler.rs:11", sym_ty="Function"];
-        n2714[label="FunctionKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/debug_handler.rs:92", sym_ty="Enum", shape=box];
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5668[label="Path", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:153", sym_ty="Struct", shape=box];
+        n6105[label="PathDeserializationError", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:218", sym_ty="Struct", shape=box];
+        n6457[label="ErrorKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:285", sym_ty="Enum", shape=box];
+        n6797[label="FailedToDeserializePathParams", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/extract/path/mod.rs:407", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_from_request {
-        label="from_request";
-        subgraph cluster_mod_rs {
-          label="mod.rs";
-          n565[label="Trait", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:16", sym_ty="Enum", shape=box];
-          n2743[label="impl_struct_by_extracting_each_field", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:330", sym_ty="Function"];
-          n848[label="State", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:40", sym_ty="Enum", shape=box];
-          n3071[label="extract_fields", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:412", sym_ty="Function"];
-          n1319[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:93", sym_ty="Function"];
-        }
+    }
 
+    subgraph cluster_response {
+      label="response";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_redirect_rs {
+        label="redirect.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5507[label="Redirect", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/redirect.rs:22", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_lib_rs {
-        label="lib.rs";
-        n596[label="expand_with", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/lib.rs:718", sym_ty="Function"];
-        n667[label="expand_attr_with", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/lib.rs:727", sym_ty="Function"];
-        n759[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/lib.rs:742", sym_ty="Function"];
+      subgraph cluster_sse_rs {
+        label="sse.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5896[label="Buffer", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:147", sym_ty="Enum", shape=box];
+        n6099[label="Event", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:174", sym_ty="Struct", shape=box];
+        n6138[label="EventDataWriter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:191", sym_ty="Struct", shape=box];
+        n7143[label="EventFlags", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:489", sym_ty="Struct", shape=box];
+        n7237[label="KeepAlive", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:518", sym_ty="Struct", shape=box];
+        n5291[label="Sse", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/response/sse.rs:54", sym_ty="Struct", shape=box];
       }
 
-      subgraph cluster_typed_path_rs {
-        label="typed_path.rs";
-        n1518[label="expand_unnamed_fields", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/typed_path.rs:167", sym_ty="Function"];
-        n861[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/typed_path.rs:7", sym_ty="Function"];
+    }
+
+    subgraph cluster_routing {
+      label="routing";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_method_filter_rs {
+        label="method_filter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2754[label="MethodFilter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_filter.rs:9", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_method_routing_rs {
+        label="method_routing.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4584[label="merge_inner", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:1042", sym_ty="Function"];
+        n5415[label="append_allow_header", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:1177", sym_ty="Function"];
+        n5768[label="MethodEndpoint", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:1224", sym_ty="Enum", shape=box];
+        n2343[label="MethodRouter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:547", sym_ty="Struct", shape=box];
+        n2475[label="AllowHeader", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:562", sym_ty="Enum", shape=box];
+        n3534[label="set_endpoint", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/method_routing.rs:825", sym_ty="Function"];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5325[label="RouterAsService", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:606", sym_ty="Struct", shape=box];
+        n2314[label="RouteId", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:61", sym_ty="Struct", shape=box];
+        n5615[label="RouterIntoService", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:645", sym_ty="Struct", shape=box];
+        n6052[label="Fallback", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:693", sym_ty="Enum", shape=box];
+        n2328[label="Router", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:71", sym_ty="Struct", shape=box];
+        n6696[label="Endpoint", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/mod.rs:766", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_path_router_rs {
+        label="path_router.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1348[label="PathRouter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/path_router.rs:16", sym_ty="Struct", shape=box];
+        n1433[label="validate_path", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/path_router.rs:22", sym_ty="Function"];
+        n1568[label="validate_v07_paths", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/path_router.rs:36", sym_ty="Function"];
+      }
+
+      subgraph cluster_route_rs {
+        label="route.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1982[label="Route", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/route.rs:31", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_strip_prefix_rs {
+        label="strip_prefix.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3196[label="segments", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/routing/strip_prefix.rs:124", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_serve {
+      label="serve";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_listener_rs {
+        label="listener.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3271[label="ConnLimiter", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/serve/listener.rs:133", sym_ty="Struct", shape=box];
+        n2439[label="Listener", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/serve/listener.rs:18", sym_ty="Trait", shape=box];
+        n4190[label="TapIo", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/serve/listener.rs:210", sym_ty="Struct", shape=box];
+        n3045[label="ListenerExt", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/serve/listener.rs:75", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_util_rs {
+      label="util.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2664[label="PercentDecodedStr", full_path="/home/yibai/llmcc/sample/repos/axum/axum/src/util.rs:13", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_axum_core {
+    label="axum-core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_body_rs {
+      label="body.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5978[label="Body", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/body.rs:39", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1688[label="Error", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/error.rs:6", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_extract {
+      label="extract";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_default_body_limit_rs {
+        label="default_body_limit.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5062[label="DefaultBodyLimit", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/default_body_limit.rs:78", sym_ty="Struct", shape=box];
+        n5086[label="DefaultBodyLimitKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/default_body_limit.rs:83", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4370[label="FromRequestParts", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/mod.rs:53", sym_ty="Trait", shape=box];
+        n4417[label="FromRequest", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/mod.rs:79", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_option_rs {
+        label="option.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3574[label="OptionalFromRequestParts", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/extract/option.rs:11", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_response {
+      label="response";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_into_response_rs {
+        label="into_response.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5953[label="IntoResponse", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response.rs:112", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_into_response_parts_rs {
+        label="into_response_parts.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6245[label="TryIntoHeaderError", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response_parts.rs:163", sym_ty="Struct", shape=box];
+        n6322[label="TryIntoHeaderErrorKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response_parts.rs:182", sym_ty="Enum", shape=box];
+        n5723[label="IntoResponseParts", full_path="/home/yibai/llmcc/sample/repos/axum/axum-core/src/response/into_response_parts.rs:73", sym_ty="Trait", shape=box];
       }
 
     }
 
   }
 
-  n49 -> n1363 [from="trait", to="impl"];
-  n49 -> n1514 [from="trait", to="impl"];
-  n49 -> n4025 [from="trait", to="impl"];
-  n49 -> n4818 [from="trait", to="impl"];
-  n49 -> n6064 [from="trait", to="impl"];
-  n49 -> n6788 [from="trait", to="impl"];
-  n62 -> n748 [from="trait", to="impl"];
-  n115 -> n466 [from="trait", to="impl"];
-  n115 -> n748 [from="trait", to="impl"];
-  n115 -> n805 [from="trait", to="impl"];
-  n115 -> n2981 [from="trait", to="impl"];
-  n123 -> n57 [from="trait", to="impl"];
-  n565 -> n1319 [from="input", to="func"];
-  n565 -> n2743 [from="input", to="func"];
-  n565 -> n3071 [from="input", to="func"];
-  n596 -> n759 [from="caller", to="callee"];
-  n667 -> n759 [from="caller", to="callee"];
-  n811 -> n6475 [from="field_type", to="struct"];
-  n848 -> n2743 [from="input", to="func"];
-  n861 -> n1518 [from="caller", to="callee"];
-  n1105 -> n1204 [from="func", to="output"];
-  n1107 -> n748 [from="type_arg", to="impl"];
-  n1250 -> n1397 [from="caller", to="callee"];
-  n1319 -> n848 [from="func", to="type_dep"];
-  n1319 -> n2044 [from="caller", to="callee"];
-  n1319 -> n2743 [from="caller", to="callee"];
-  n1518 -> n4431 [from="caller", to="callee"];
-  n1613 -> n1514 [from="field_type", to="struct"];
-  n1705 -> n1619 [from="trait", to="impl"];
-  n1705 -> n5511 [from="trait", to="impl"];
-  n1854 -> n6596 [from="field_type", to="enum"];
-  n1854 -> n7215 [from="field_type", to="enum"];
-  n1854 -> n7331 [from="field_type", to="enum"];
-  n2198 -> n2298 [from="func", to="output"];
-  n2303 -> n6596 [from="field_type", to="enum"];
-  n2303 -> n7215 [from="field_type", to="enum"];
-  n2640 -> n57 [from="trait", to="impl"];
-  n2640 -> n63 [from="trait", to="impl"];
-  n2640 -> n1617 [from="trait", to="impl"];
-  n2640 -> n1619 [from="trait", to="impl"];
-  n2640 -> n2341 [from="trait", to="impl"];
-  n2640 -> n2906 [from="trait", to="impl"];
-  n2640 -> n3512 [from="trait", to="impl"];
-  n2640 -> n4561 [from="trait", to="impl"];
-  n2640 -> n5511 [from="trait", to="impl"];
-  n2714 -> n2464 [from="input", to="func"];
-  n2743 -> n3071 [from="caller", to="callee"];
-  n2791 -> n57 [from="trait", to="impl"];
-  n2981 -> n7331 [from="field_type", to="enum"];
-  n3071 -> n2044 [from="caller", to="callee"];
-  n3228 -> n2981 [from="field_type", to="struct"];
-  n3228 -> n4531 [from="input", to="func"];
-  n3228 -> n6370 [from="input", to="func"];
-  n3250 -> n3213 [from="field_type", to="struct"];
-  n3250 -> n3546 [from="field_type", to="struct"];
-  n3312 -> n4531 [from="input", to="func"];
-  n3490 -> n3608 [from="func", to="output"];
-  n3879 -> n1202 [from="type_dep", to="struct"];
-  n4033 -> n4146 [from="func", to="output"];
-  n4066 -> n63 [from="trait", to="impl"];
-  n4066 -> n1617 [from="trait", to="impl"];
-  n4066 -> n1619 [from="trait", to="impl"];
-  n4066 -> n2341 [from="trait", to="impl"];
-  n4128 -> n4280 [from="field_type", to="struct"];
-  n4280 -> n4361 [from="field_type", to="struct"];
-  n4280 -> n4361 [from="type_arg", to="generic"];
-  n4280 -> n6494 [from="type_arg", to="impl"];
-  n4531 -> n6370 [from="caller", to="callee"];
-  n4671 -> n2213 [from="input", to="func"];
-  n4671 -> n3879 [from="type_dep", to="struct"];
-  n4696 -> n254 [from="field_type", to="struct"];
-  n4696 -> n6785 [from="field_type", to="struct"];
-  n4696 -> n7014 [from="field_type", to="struct"];
-  n4780 -> n6046 [from="trait", to="impl"];
-  n5101 -> n4818 [from="field_type", to="struct"];
-  n5223 -> n4780 [from="trait", to="impl"];
-  n5241 -> n20 [from="trait", to="impl"];
-  n5241 -> n63 [from="trait", to="impl"];
-  n5241 -> n1363 [from="trait", to="impl"];
-  n5241 -> n1514 [from="trait", to="impl"];
-  n5241 -> n1617 [from="trait", to="impl"];
-  n5241 -> n1619 [from="trait", to="impl"];
-  n5241 -> n2341 [from="trait", to="impl"];
-  n5241 -> n2593 [from="trait", to="impl"];
-  n5241 -> n3724 [from="trait", to="impl"];
-  n5241 -> n4025 [from="trait", to="impl"];
-  n5241 -> n4360 [from="trait", to="impl"];
-  n5241 -> n4749 [from="trait", to="impl"];
-  n5241 -> n4818 [from="trait", to="impl"];
-  n5241 -> n6788 [from="trait", to="impl"];
-  n5653 -> n6596 [from="func", to="type_dep"];
-  n6064 -> n6788 [from="field_type", to="struct"];
-  n6261 -> n4280 [from="field_type", to="struct"];
-  n6370 -> n3228 [from="func", to="type_dep"];
-  n6469 -> n6064 [from="field_type", to="struct"];
-  n6469 -> n6064 [from="type_arg", to="generic"];
-  n6523 -> n6996 [from="field_type", to="enum"];
-  n6596 -> n2981 [from="field_type", to="struct"];
-  n6596 -> n4531 [from="input", to="func"];
-  n6596 -> n5653 [from="input", to="func"];
-  n7215 -> n2981 [from="type_arg", to="impl"];
-  n7215 -> n4696 [from="trait", to="impl"];
-  n7215 -> n6785 [from="trait", to="impl"];
-  n7215 -> n7014 [from="trait", to="impl"];
-  n7232 -> n6475 [from="type_dep", to="struct"];
-  n7331 -> n1202 [from="type_dep", to="struct"];
+  subgraph cluster_axum_extra {
+    label="axum-extra";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_cookie {
+      label="cookie";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n152[label="CookieJar", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/cookie/mod.rs:89", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_private_rs {
+        label="private.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11[label="PrivateCookieJar", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/cookie/private.rs:108", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_signed_rs {
+        label="signed.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n250[label="SignedCookieJar", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/cookie/signed.rs:125", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_either_rs {
+      label="either.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n882[label="Either", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/either.rs:108", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_extract {
+      label="extract";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_multipart_rs {
+        label="multipart.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1452[label="MultipartError", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/multipart.rs:239", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_query_rs {
+        label="query.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2302[label="OptionalQuery", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/query.rs:131", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_with_rejection_rs {
+        label="with_rejection.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n78[label="WithRejection", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/extract/with_rejection.rs:60", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_handler {
+      label="handler";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n628[label="IntoHandler", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/handler/mod.rs:162", sym_ty="Struct", shape=box];
+        n93[label="HandlerCallWithExtractors", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/handler/mod.rs:25", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_or_rs {
+        label="or.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n879[label="Or", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/handler/or.rs:17", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_response {
+      label="response";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_attachment_rs {
+        label="attachment.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n587[label="Attachment", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/response/attachment.rs:38", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_file_stream_rs {
+        label="file_stream.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1556[label="FileStream", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/response/file_stream.rs:49", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_routing {
+      label="routing";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_resource_rs {
+        label="resource.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4[label="Resource", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/routing/resource.rs:36", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_typed_rs {
+        label="typed.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n164[label="TypedPath", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/routing/typed.rs:217", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_typed_header_rs {
+      label="typed_header.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n779[label="TypedHeaderRejection", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/typed_header.rs:133", sym_ty="Struct", shape=box];
+      n1078[label="TypedHeaderRejectionReason", full_path="/home/yibai/llmcc/sample/repos/axum/axum-extra/src/typed_header.rs:164", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_axum_macros {
+    label="axum-macros";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_attr_parsing_rs {
+      label="attr_parsing.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4153[label="parse_attrs", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/attr_parsing.rs:59", sym_ty="Function"];
+    }
+
+    subgraph cluster_debug_handler_rs {
+      label="debug_handler.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3864[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/debug_handler.rs:11", sym_ty="Function"];
+      n4178[label="FunctionKind", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/debug_handler.rs:92", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_from_request {
+      label="from_request";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4503[label="Trait", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:16", sym_ty="Enum", shape=box];
+        n6357[label="impl_struct_by_extracting_each_field", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:330", sym_ty="Function"];
+        n4936[label="State", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:40", sym_ty="Enum", shape=box];
+        n6555[label="extract_fields", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:412", sym_ty="Function"];
+        n5380[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/from_request/mod.rs:93", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3340[label="expand_with", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/lib.rs:718", sym_ty="Function"];
+      n3474[label="expand_attr_with", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/lib.rs:727", sym_ty="Function"];
+      n3691[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/lib.rs:742", sym_ty="Function"];
+    }
+
+    subgraph cluster_typed_path_rs {
+      label="typed_path.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4574[label="expand_unnamed_fields", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/typed_path.rs:167", sym_ty="Function"];
+      n3819[label="expand", full_path="/home/yibai/llmcc/sample/repos/axum/axum-macros/src/typed_path.rs:7", sym_ty="Function"];
+    }
+
+  }
+
+
+  n93 -> n879;
+  n164 -> n78;
+  n882 -> n879;
+  n1078 -> n779;
+  n1201 -> n1277;
+  n1433 -> n1568;
+  n1565 -> n628;
+  n1565 -> n879;
+  n1565 -> n2127;
+  n1565 -> n2343;
+  n1688 -> n779;
+  n1688 -> n1232;
+  n1688 -> n1452;
+  n1688 -> n6105;
+  n1688 -> n6245;
+  n1688 -> n6797;
+  n1982 -> n5768;
+  n1982 -> n6052;
+  n1982 -> n6696;
+  n2314 -> n2126;
+  n2328 -> n4;
+  n2328 -> n5325;
+  n2328 -> n5615;
+  n2334 -> n2536;
+  n2343 -> n6696;
+  n2439 -> n3271;
+  n2439 -> n3271;
+  n2439 -> n4190;
+  n2475 -> n2343;
+  n2475 -> n3534;
+  n2475 -> n5415;
+  n2664 -> n3234;
+  n2754 -> n3534;
+  n3045 -> n2439;
+  n3340 -> n3691;
+  n3474 -> n3691;
+  n3534 -> n5415;
+  n3574 -> n3984;
+  n3574 -> n5668;
+  n3612 -> n3742;
+  n3819 -> n4574;
+  n4178 -> n3864;
+  n4370 -> n11;
+  n4370 -> n78;
+  n4370 -> n152;
+  n4370 -> n250;
+  n4370 -> n1809;
+  n4370 -> n2302;
+  n4370 -> n3375;
+  n4370 -> n3984;
+  n4370 -> n5668;
+  n4417 -> n78;
+  n4503 -> n5380;
+  n4503 -> n6357;
+  n4503 -> n6555;
+  n4569 -> n5768;
+  n4569 -> n6052;
+  n4574 -> n3196;
+  n4584 -> n5768;
+  n4744 -> n4857;
+  n4936 -> n6357;
+  n5086 -> n5062;
+  n5380 -> n4153;
+  n5380 -> n4936;
+  n5380 -> n6357;
+  n5415 -> n2475;
+  n5723 -> n11;
+  n5723 -> n152;
+  n5723 -> n250;
+  n5723 -> n3984;
+  n5767 -> n3234;
+  n5768 -> n2343;
+  n5768 -> n3534;
+  n5768 -> n4584;
+  n5896 -> n6099;
+  n5953 -> n11;
+  n5953 -> n152;
+  n5953 -> n250;
+  n5953 -> n587;
+  n5953 -> n779;
+  n5953 -> n1232;
+  n5953 -> n1452;
+  n5953 -> n1556;
+  n5953 -> n3984;
+  n5953 -> n5291;
+  n5953 -> n5507;
+  n5953 -> n5978;
+  n5953 -> n6245;
+  n5953 -> n6797;
+  n6052 -> n2328;
+  n6052 -> n2343;
+  n6052 -> n5325;
+  n6052 -> n5615;
+  n6099 -> n6138;
+  n6099 -> n6138;
+  n6099 -> n7237;
+  n6105 -> n6797;
+  n6130 -> n6697;
+  n6322 -> n6245;
+  n6357 -> n6555;
+  n6457 -> n6105;
+  n6457 -> n6105;
+  n6555 -> n4153;
+  n6696 -> n1348;
+  n7143 -> n6099;
 }
