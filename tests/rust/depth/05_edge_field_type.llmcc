@@ -1,0 +1,44 @@
+===============================================================================
+edge-field-type
+===============================================================================
+Test that field_type edges create correct dependency direction.
+When struct A has a field of type B, A depends on B.
+At crate level: crate_app -> crate_types (app depends on types)
+
+--- file: types/Cargo.toml ---
+[package]
+name = "types"
+
+--- file: types/src/lib.rs ---
+pub struct UserId(pub u64);
+
+pub struct UserName(pub String);
+
+--- file: app/Cargo.toml ---
+[package]
+name = "app"
+
+[dependencies]
+types = { path = "../types" }
+
+--- file: app/src/lib.rs ---
+use types::{UserId, UserName};
+
+/// User struct has fields of types from 'types' crate
+pub struct User {
+    pub id: UserId,
+    pub name: UserName,
+}
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  node [shape=box];
+
+  label="crate graph";
+  labelloc=t;
+
+  crate_app[label="app"];
+  crate_types[label="types"];
+
+  crate_app -> crate_types;
+}

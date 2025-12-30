@@ -5,7 +5,6 @@ pub mod context;
 pub mod file;
 pub mod graph;
 pub mod graph_builder;
-pub mod graph_render;
 pub mod interner;
 pub mod ir;
 pub mod ir_builder;

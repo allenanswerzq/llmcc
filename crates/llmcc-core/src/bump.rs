@@ -90,28 +90,43 @@ macro_rules! declare_arena {
                 // Calling it millions of times causes severe lock contention at high thread counts.
                 // We use thread_local to cache the Member per-thread.
                 //
-                // SAFETY: The Member borrows from Herd which lives in ArenaInner (Arc).
-                // By using 'static in the thread_local, we're telling Rust we'll manage
-                // the lifetime ourselves. The ArenaInner (and thus Herd) outlives all
-                // parallel processing phases where this is called.
+                // PROBLEM: Member::drop tries to lock the parent Herd's mutex. If the Herd is
+                // dropped before thread-local cleanup runs (e.g., at program exit), this causes
+                // a hang or segfault.
+                //
+                // SOLUTION: Use ManuallyDrop to prevent Member::drop from running. The Herd
+                // still owns all the memory and will free it when dropped. We also track the
+                // Herd pointer to invalidate the cache when a different Herd is used.
+                use std::mem::ManuallyDrop;
+
                 thread_local! {
-                    static CACHED_MEMBER: std::cell::RefCell<Option<bumpalo_herd::Member<'static>>> =
+                    static CACHED: std::cell::RefCell<Option<(usize, ManuallyDrop<bumpalo_herd::Member<'static>>)>> =
                         const { std::cell::RefCell::new(None) };
                 }
 
-                CACHED_MEMBER.with(|cell| {
+                let herd_ptr = &self.herd as *const _ as usize;
+
+                CACHED.with(|cell| {
                     let mut borrow = cell.borrow_mut();
-                    let member = borrow.get_or_insert_with(|| {
-                        // Get member once per thread and cache it
-                        // SAFETY: We transmute the lifetime to 'static for storage in thread_local.
-                        // This is safe because:
-                        // 1. The Herd lives in Arc<ArenaInner> which outlives parallel processing
-                        // 2. Member is only accessed from this thread
-                        // 3. The actual allocation lifetime is 'a from the outer function
+
+                    // Check if we have a cached member for THIS herd
+                    let need_new = match &*borrow {
+                        Some((cached_ptr, _)) => *cached_ptr != herd_ptr,
+                        None => true,
+                    };
+
+                    if need_new {
+                        // Get a new member and cache it (wrapped in ManuallyDrop)
                         let member = self.herd.get();
-                        unsafe { std::mem::transmute::<bumpalo_herd::Member<'_>, bumpalo_herd::Member<'static>>(member) }
-                    });
-                    // SAFETY: The returned reference has lifetime 'a, bound to ArenaInner
+                        // SAFETY: We use ManuallyDrop so Member::drop never runs.
+                        // The Herd owns the memory and will free it.
+                        let static_member = unsafe {
+                            std::mem::transmute::<bumpalo_herd::Member<'_>, bumpalo_herd::Member<'static>>(member)
+                        };
+                        *borrow = Some((herd_ptr, ManuallyDrop::new(static_member)));
+                    }
+
+                    let (_, member) = borrow.as_mut().unwrap();
                     member.alloc(value)
                 })
             }

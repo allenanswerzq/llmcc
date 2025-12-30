@@ -4,7 +4,7 @@
 //! (llmcc and llmcc-test) to ensure consistent behavior and reduce code duplication.
 
 use clap::Args;
-use llmcc_core::graph_render::ComponentDepth;
+use llmcc_dot::ComponentDepth;
 
 /// Common options for graph building and visualization.
 #[derive(Args, Debug, Clone, Default)]
@@ -26,6 +26,16 @@ pub struct GraphOptions {
     /// Architecture graph shows: param_type -> func -> return_type
     #[arg(long = "arch-graph")]
     pub architecture_graph: bool,
+
+    /// Cluster modules by their parent crate (for module-level graphs).
+    /// Creates visual subgraphs grouping related modules together.
+    #[arg(long = "cluster-by-crate")]
+    pub cluster_by_crate: bool,
+
+    /// Use shortened labels (module name only, without crate prefix).
+    /// Makes labels more compact for large graphs.
+    #[arg(long = "short-labels")]
+    pub short_labels: bool,
 }
 
 impl GraphOptions {
