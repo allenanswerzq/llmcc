@@ -65,10 +65,6 @@ pub fn render_dot(
     output.push_str("  node [shape=box, style=rounded];\n");
     output.push_str("  edge [arrowsize=0.7];\n\n");
 
-    // Add title
-    output.push_str("  label=\"architecture graph\";\n");
-    output.push_str("  labelloc=t;\n\n");
-
     // Render nodes grouped in clusters
     render_tree_recursive(&mut output, tree, nodes, 1);
 

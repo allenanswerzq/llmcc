@@ -9,7 +9,6 @@ digraph architecture {
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
   edge [color="#666666", arrowsize=0.7];
 
-  label="crate graph";
   labelloc=t;
   fontsize=16;
   fontname="Helvetica Bold";
@@ -48,7 +47,6 @@ digraph architecture {
   crate_datafusion -> crate_datafusion_catalog;
   crate_datafusion -> crate_datafusion_common;
   crate_datafusion -> crate_datafusion_expr;
-  crate_datafusion -> crate_datafusion_physical_expr;
   crate_datafusion -> crate_datafusion_proto;
   crate_datafusion_catalog -> crate_datafusion_physical_plan;
   crate_datafusion_cli -> crate_datafusion_catalog;
@@ -69,7 +67,6 @@ digraph architecture {
   crate_datafusion_datasource_parquet -> crate_datafusion_proto;
   crate_datafusion_expr -> crate_datafusion_expr_common;
   crate_datafusion_expr -> crate_datafusion_proto;
-  crate_datafusion_expr -> crate_datafusion_proto_common;
   crate_datafusion_expr_common -> crate_datafusion_common;
   crate_datafusion_expr_common -> crate_datafusion_functions;
   crate_datafusion_expr_common -> crate_datafusion_proto_common;
@@ -79,10 +76,11 @@ digraph architecture {
   crate_datafusion_functions -> crate_datafusion_common;
   crate_datafusion_functions_aggregate -> crate_datafusion_expr;
   crate_datafusion_functions_aggregate -> crate_datafusion_physical_expr_common;
+  crate_datafusion_functions_aggregate -> crate_datafusion_proto;
   crate_datafusion_functions_aggregate_common -> crate_datafusion_expr_common;
   crate_datafusion_functions_nested -> crate_datafusion_expr_common;
-  crate_datafusion_functions_window -> crate_datafusion_common;
   crate_datafusion_functions_window -> crate_datafusion_expr;
+  crate_datafusion_functions_window -> crate_datafusion_proto;
   crate_datafusion_optimizer -> crate_datafusion_common;
   crate_datafusion_optimizer -> crate_datafusion_expr;
   crate_datafusion_optimizer -> crate_datafusion_expr_common;
@@ -105,6 +103,5 @@ digraph architecture {
   crate_datafusion_sql -> crate_datafusion_expr;
   crate_datafusion_sqllogictest -> crate_datafusion;
   crate_datafusion_substrait -> crate_datafusion_common;
-  crate_datafusion_substrait -> crate_datafusion_expr;
   crate_datafusion_substrait -> crate_datafusion_proto;
 }

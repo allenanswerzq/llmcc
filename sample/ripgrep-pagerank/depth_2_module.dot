@@ -9,7 +9,6 @@ digraph architecture {
   node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
   edge [color="#666666", arrowsize=0.7];
 
-  label="module graph";
   labelloc=t;
   fontsize=16;
   fontname="Helvetica Bold";
@@ -24,9 +23,9 @@ digraph architecture {
   mod_grep_searcher_line_buffer[label="grep-searcher::line_buffer"];
   mod_grep_searcher_searcher[label="grep-searcher::searcher"];
   mod_grep_searcher_sink[label="grep-searcher::sink"];
-  mod_grep_searcher_testutil[label="grep-searcher::testutil"];
   mod_ignore_dir[label="ignore::dir"];
   mod_ignore_gitignore[label="ignore::gitignore"];
+  mod_ignore_lib[label="ignore::lib"];
   mod_ignore_walk[label="ignore::walk"];
   mod_ripgrep_core[label="ripgrep::core"];
   mod_ripgrep_flags[label="ripgrep::flags"];
@@ -36,10 +35,10 @@ digraph architecture {
   mod_grep_printer_standard -> mod_grep_printer_util;
   mod_grep_printer_util -> mod_grep_matcher_lib;
   mod_grep_printer_util -> mod_grep_searcher_searcher;
+  mod_grep_printer_util -> mod_ignore_lib;
   mod_grep_searcher_searcher -> mod_grep_matcher_lib;
   mod_grep_searcher_searcher -> mod_grep_searcher_line_buffer;
   mod_grep_searcher_searcher -> mod_grep_searcher_sink;
-  mod_grep_searcher_testutil -> mod_grep_matcher_lib;
   mod_ignore_dir -> mod_ignore_gitignore;
   mod_ignore_gitignore -> mod_globset_lib;
   mod_ignore_walk -> mod_globset_lib;
@@ -47,6 +46,7 @@ digraph architecture {
   mod_ignore_walk -> mod_ignore_dir;
   mod_ignore_walk -> mod_ripgrep_flags;
   mod_ripgrep_core -> mod_grep_cli_process;
+  mod_ripgrep_core -> mod_grep_matcher_lib;
   mod_ripgrep_flags -> mod_grep_printer_hyperlink;
   mod_ripgrep_main -> mod_ripgrep_flags;
 }
