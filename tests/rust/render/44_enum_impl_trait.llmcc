@@ -91,22 +91,39 @@ impl Displayable for Priority {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="Displayable", full_path="$TMP/sample/src/types.rs:1", sym_ty="Trait", shape=box];
-        n14[label="Priority", full_path="$TMP/sample/src/types.rs:15", sym_ty="Enum", shape=box];
-        n7[label="Processable", full_path="$TMP/sample/src/types.rs:5", sym_ty="Trait", shape=box];
-        n10[label="Status", full_path="$TMP/sample/src/types.rs:9", sym_ty="Enum", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Displayable", full_path="$TMP/sample/src/types.rs:1", sym_ty="Trait", shape=box];
+      n14[label="Priority", full_path="$TMP/sample/src/types.rs:15", sym_ty="Enum", shape=box];
+      n7[label="Processable", full_path="$TMP/sample/src/types.rs:5", sym_ty="Trait", shape=box];
+      n10[label="Status", full_path="$TMP/sample/src/types.rs:9", sym_ty="Enum", shape=box];
     }
 
   }
+
 
   n3 -> n10 [from="trait", to="impl"];
   n3 -> n14 [from="trait", to="impl"];

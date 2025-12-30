@@ -19,20 +19,37 @@ pub struct User {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_lib_rs {
-        label="lib.rs";
-        n2[label="Foo", full_path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
-        n3[label="User", full_path="$TMP/sample/src/lib.rs:4", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="Foo", full_path="$TMP/sample/src/lib.rs:2", sym_ty="Struct", shape=box];
+      n3[label="User", full_path="$TMP/sample/src/lib.rs:4", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n2 -> n3 [from="field_type", to="struct"];
 }

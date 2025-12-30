@@ -69,25 +69,46 @@ impl Clickable for Button {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_entity_rs {
-        label="entity.rs";
-        n10[label="Button", full_path="$TMP/sample/src/entity.rs:3", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_traits_rs {
-        label="traits.rs";
-        n3[label="Drawable", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
-        n6[label="Clickable", full_path="$TMP/sample/src/traits.rs:5", sym_ty="Trait", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_entity_rs {
+      label="entity.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n10[label="Button", full_path="$TMP/sample/src/entity.rs:3", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_traits_rs {
+      label="traits.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Drawable", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
+      n6[label="Clickable", full_path="$TMP/sample/src/traits.rs:5", sym_ty="Trait", shape=box];
     }
 
   }
+
 
   n3 -> n10 [from="trait", to="impl"];
   n6 -> n10 [from="trait", to="impl"];

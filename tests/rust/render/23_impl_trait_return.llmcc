@@ -62,25 +62,46 @@ pub fn make_counter() -> impl Iterator {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_factory_rs {
-        label="factory.rs";
-        n15[label="make_counter", full_path="$TMP/sample/src/factory.rs:13", sym_ty="Function"];
-        n8[label="Counter", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_iterator_rs {
-        label="iterator.rs";
-        n3[label="Iterator", full_path="$TMP/sample/src/iterator.rs:1", sym_ty="Trait", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_factory_rs {
+      label="factory.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15[label="make_counter", full_path="$TMP/sample/src/factory.rs:13", sym_ty="Function"];
+      n8[label="Counter", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_iterator_rs {
+      label="iterator.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Iterator", full_path="$TMP/sample/src/iterator.rs:1", sym_ty="Trait", shape=box];
     }
 
   }
+
 
   n3 -> n8 [from="trait", to="impl"];
   n15 -> n3 [from="func", to="output"];

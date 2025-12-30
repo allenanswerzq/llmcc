@@ -73,16 +73,6 @@ digraph architecture {
     mod_opendal_java_operator[label="operator"];
   }
 
-  subgraph cluster_opendal_layer_observe_metrics_common {
-    label="opendal-layer-observe-metrics-common";
-    style=rounded;
-    color="#888888";
-    bgcolor="#f0f0f0";
-    fontname="Helvetica Bold";
-
-    mod_opendal_layer_observe_metrics_common_lib[label="lib"];
-  }
-
   subgraph cluster_opendal_layer_tail_cut {
     label="opendal-layer-tail-cut";
     style=rounded;
@@ -111,6 +101,17 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_opendal_ocaml_operator[label="operator"];
+  }
+
+  subgraph cluster_opendal_python {
+    label="opendal-python";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_opendal_python_metadata[label="metadata"];
+    mod_opendal_python_operator[label="operator"];
   }
 
   subgraph cluster_opendal_service_aliyun_drive {
@@ -176,13 +177,14 @@ digraph architecture {
 
   mod_opendal_core_http_util -> mod_opendal_core_raw;
   mod_opendal_core_http_util -> mod_opendal_core_types;
-  mod_opendal_core_http_util -> mod_opendal_dart_api;
+  mod_opendal_core_http_util -> mod_opendal_python_metadata;
   mod_opendal_core_layers -> mod_opendal_core_http_util;
   mod_opendal_core_layers -> mod_opendal_core_raw;
+  mod_opendal_core_operator -> mod_opendal_python_operator;
   mod_opendal_core_raw -> mod_opendal_core_types;
   mod_opendal_core_raw -> mod_opendal_core_write;
-  mod_opendal_core_raw -> mod_opendal_dart_api;
-  mod_opendal_core_raw -> mod_opendal_nodejs_lib;
+  mod_opendal_core_raw -> mod_opendal_java_executor;
+  mod_opendal_core_raw -> mod_opendal_python_metadata;
   mod_opendal_core_read -> mod_opendal_core_raw;
   mod_opendal_core_read -> mod_opendal_core_types;
   mod_opendal_core_write -> mod_opendal_core_types;
@@ -191,22 +193,17 @@ digraph architecture {
   mod_opendal_cpp_lib -> mod_opendal_core_read;
   mod_opendal_cpp_lib -> mod_opendal_core_types;
   mod_opendal_hs_lib -> mod_opendal_ocaml_operator;
-  mod_opendal_java_async_operator -> mod_opendal_core_operator;
   mod_opendal_java_async_operator -> mod_opendal_dart_api;
   mod_opendal_java_async_operator -> mod_opendal_java_convert;
   mod_opendal_java_async_operator -> mod_opendal_java_executor;
-  mod_opendal_java_async_operator -> mod_opendal_nodejs_lib;
+  mod_opendal_java_async_operator -> mod_opendal_python_operator;
   mod_opendal_java_operator -> mod_opendal_java_convert;
-  mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_http_util;
-  mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_raw;
-  mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_types;
   mod_opendal_layer_tail_cut_lib -> mod_opendal_core_raw;
   mod_opendal_nodejs_lib -> mod_opendal_core_types;
   mod_opendal_ocaml_operator -> mod_opendal_core_operator;
   mod_opendal_ocaml_operator -> mod_opendal_core_read;
   mod_opendal_ocaml_operator -> mod_opendal_core_types;
-  mod_opendal_ocaml_operator -> mod_opendal_core_write;
-  mod_opendal_ocaml_operator -> mod_opendal_nodejs_lib;
+  mod_opendal_ocaml_operator -> mod_opendal_python_operator;
   mod_opendal_service_aliyun_drive_core -> mod_opendal_core_raw;
   mod_opendal_service_azure_common_lib -> mod_opendal_core_types;
   mod_opendal_service_b2_core -> mod_opendal_core_raw;

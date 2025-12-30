@@ -52,7 +52,7 @@ digraph architecture {
   crate_datafusion -> crate_datafusion_physical_expr;
   crate_datafusion -> crate_datafusion_proto;
   crate_datafusion_catalog -> crate_datafusion_physical_plan;
-  crate_datafusion_catalog_listing -> crate_datafusion_proto;
+  crate_datafusion_catalog_listing -> crate_datafusion_datasource;
   crate_datafusion_cli -> crate_datafusion_catalog;
   crate_datafusion_cli -> crate_datafusion_common;
   crate_datafusion_common -> crate_datafusion_expr;
@@ -80,7 +80,6 @@ digraph architecture {
   crate_datafusion_functions -> crate_datafusion_common;
   crate_datafusion_functions_aggregate -> crate_datafusion_expr;
   crate_datafusion_functions_aggregate -> crate_datafusion_physical_expr_common;
-  crate_datafusion_functions_aggregate -> crate_datafusion_proto;
   crate_datafusion_functions_aggregate_common -> crate_datafusion_expr_common;
   crate_datafusion_functions_nested -> crate_datafusion_expr_common;
   crate_datafusion_functions_window -> crate_datafusion_common;
@@ -89,8 +88,6 @@ digraph architecture {
   crate_datafusion_optimizer -> crate_datafusion_expr;
   crate_datafusion_optimizer -> crate_datafusion_expr_common;
   crate_datafusion_optimizer -> crate_datafusion_functions;
-  crate_datafusion_optimizer -> crate_datafusion_physical_expr;
-  crate_datafusion_optimizer -> crate_datafusion_proto;
   crate_datafusion_physical_expr -> crate_datafusion_physical_expr_common;
   crate_datafusion_physical_expr -> crate_datafusion_proto;
   crate_datafusion_physical_optimizer -> crate_datafusion_common;
@@ -100,6 +97,7 @@ digraph architecture {
   crate_datafusion_physical_plan -> crate_datafusion_functions;
   crate_datafusion_physical_plan -> crate_datafusion_functions_nested;
   crate_datafusion_physical_plan -> crate_datafusion_proto;
+  crate_datafusion_physical_plan -> crate_datafusion_proto_common;
   crate_datafusion_proto -> crate_datafusion_proto_common;
   crate_datafusion_spark -> crate_datafusion_common;
   crate_datafusion_spark -> crate_datafusion_expr_common;

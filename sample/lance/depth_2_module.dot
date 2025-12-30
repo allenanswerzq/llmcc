@@ -42,7 +42,6 @@ digraph architecture {
 
     mod_lance_core_cache[label="cache"];
     mod_lance_core_datatypes[label="datatypes"];
-    mod_lance_core_error[label="error"];
     mod_lance_core_traits[label="traits"];
     mod_lance_core_utils[label="utils"];
   }
@@ -86,6 +85,7 @@ digraph architecture {
     mod_lance_encoding_physical[label="physical"];
     mod_lance_encoding_previous[label="previous"];
     mod_lance_encoding_primitive[label="primitive"];
+    mod_lance_encoding_statistics[label="statistics"];
     mod_lance_encoding_testing[label="testing"];
     mod_lance_encoding_utils[label="utils"];
     mod_lance_encoding_version[label="version"];
@@ -155,6 +155,8 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_lance_jni_blocking_dataset[label="blocking_dataset"];
+    mod_lance_jni_error[label="error"];
+    mod_lance_jni_fragment[label="fragment"];
     mod_lance_jni_merge_insert[label="merge_insert"];
     mod_lance_jni_namespace[label="namespace"];
     mod_lance_jni_optimize[label="optimize"];
@@ -236,6 +238,7 @@ digraph architecture {
 
 
   mod_lance_commit -> mod_lance_dataset;
+  mod_lance_commit -> mod_lance_table_format;
   mod_lance_datafusion_projection -> mod_lance_core_datatypes;
   mod_lance_datafusion_spill -> mod_lance_core_datatypes;
   mod_lance_datagen_generator -> mod_lance_core_datatypes;
@@ -249,6 +252,7 @@ digraph architecture {
   mod_lance_dataset -> mod_lance_io_object_store;
   mod_lance_dataset -> mod_lance_jni_traits;
   mod_lance_dataset -> mod_lance_optimize;
+  mod_lance_dataset -> mod_lance_session;
   mod_lance_dataset -> mod_lance_table_format;
   mod_lance_dataset -> mod_lance_table_io;
   mod_lance_dataset -> mod_lance_table_rowids;
@@ -260,6 +264,7 @@ digraph architecture {
   mod_lance_encoding_compression -> mod_lance_encoding_physical;
   mod_lance_encoding_compression -> mod_lance_encoding_primitive;
   mod_lance_encoding_data -> mod_lance_encoding_buffer;
+  mod_lance_encoding_data -> mod_lance_encoding_statistics;
   mod_lance_encoding_decoder -> mod_lance_core_cache;
   mod_lance_encoding_decoder -> mod_lance_core_datatypes;
   mod_lance_encoding_decoder -> mod_lance_encoding_encodings;
@@ -296,6 +301,8 @@ digraph architecture {
   mod_lance_exec -> mod_lance_io_scheduler;
   mod_lance_exec -> mod_lance_io_stream;
   mod_lance_exec -> mod_lance_table_format;
+  mod_lance_exec -> mod_pylance_dataset;
+  mod_lance_exec -> mod_pylance_fragment;
   mod_lance_file_datatypes -> mod_lance_core_datatypes;
   mod_lance_file_previous -> mod_lance_core_datatypes;
   mod_lance_file_previous -> mod_lance_file_reader;
@@ -306,6 +313,7 @@ digraph architecture {
   mod_lance_file_writer -> mod_lance_encoding_encoder;
   mod_lance_index -> mod_lance_core_cache;
   mod_lance_index -> mod_lance_core_utils;
+  mod_lance_index -> mod_lance_dataset;
   mod_lance_index -> mod_lance_index_frag_reuse;
   mod_lance_index -> mod_lance_index_hnsw;
   mod_lance_index -> mod_lance_index_ivf;
@@ -316,6 +324,7 @@ digraph architecture {
   mod_lance_index -> mod_lance_io_utils;
   mod_lance_index -> mod_lance_table_format;
   mod_lance_index -> mod_lance_vector;
+  mod_lance_index -> mod_pylance_dataset;
   mod_lance_index_bq -> mod_lance_index_vector;
   mod_lance_index_flat -> mod_lance_index_vector;
   mod_lance_index_flat -> mod_lance_linalg_distance;
@@ -338,26 +347,29 @@ digraph architecture {
   mod_lance_io -> mod_lance_io_object_store;
   mod_lance_io -> mod_lance_table_format;
   mod_lance_io -> mod_lance_table_io;
+  mod_lance_io -> mod_pylance_dataset;
   mod_lance_io_encodings -> mod_lance_io_lib;
   mod_lance_io_encodings -> mod_lance_io_traits;
   mod_lance_io_providers -> mod_lance_io_object_store;
   mod_lance_ivf -> mod_lance_core_traits;
-  mod_lance_ivf -> mod_lance_dataset;
   mod_lance_ivf -> mod_lance_index_hnsw;
   mod_lance_ivf -> mod_lance_index_ivf;
   mod_lance_ivf -> mod_lance_index_vector;
   mod_lance_ivf -> mod_lance_linalg_distance;
   mod_lance_ivf -> mod_lance_table_io;
+  mod_lance_ivf -> mod_pylance_dataset;
   mod_lance_jni_blocking_dataset -> mod_lance_core_datatypes;
   mod_lance_jni_blocking_dataset -> mod_lance_dataset;
   mod_lance_jni_blocking_dataset -> mod_lance_index_lib;
   mod_lance_jni_blocking_dataset -> mod_lance_jni_traits;
   mod_lance_jni_blocking_dataset -> mod_lance_jni_utils;
+  mod_lance_jni_fragment -> mod_lance_jni_traits;
   mod_lance_jni_merge_insert -> mod_lance_write;
   mod_lance_jni_namespace -> mod_lance_jni_utils;
   mod_lance_jni_namespace -> mod_lance_namespace_impls_rest_adapter;
   mod_lance_jni_optimize -> mod_lance_jni_utils;
   mod_lance_jni_transaction -> mod_lance_dataset;
+  mod_lance_jni_transaction -> mod_lance_jni_traits;
   mod_lance_jni_transaction -> mod_lance_jni_utils;
   mod_lance_jni_utils -> mod_lance_dataset;
   mod_lance_linalg_kernels -> mod_lance_index_inverted;
@@ -366,10 +378,9 @@ digraph architecture {
   mod_lance_session -> mod_lance_core_cache;
   mod_lance_table_commit -> mod_lance_table_io;
   mod_lance_table_format -> mod_lance_jni_traits;
-  mod_lance_table_io -> mod_lance_index_lib;
   mod_lance_table_io -> mod_lance_io_object_store;
   mod_lance_table_io -> mod_lance_table_format;
-  mod_lance_table_rowids -> mod_lance_core_error;
+  mod_lance_table_rowids -> mod_lance_jni_error;
   mod_lance_test_macros_lib -> mod_lance_index_inverted;
   mod_lance_testing_datagen -> mod_lance_datagen_generator;
   mod_lance_vector -> mod_lance_core_datatypes;
@@ -380,18 +391,18 @@ digraph architecture {
   mod_lance_vector -> mod_lance_index_pq;
   mod_lance_vector -> mod_lance_index_v3;
   mod_lance_vector -> mod_lance_index_vector;
+  mod_lance_vector -> mod_pylance_dataset;
   mod_lance_write -> mod_lance_core_datatypes;
   mod_lance_write -> mod_lance_core_utils;
   mod_lance_write -> mod_lance_io_object_store;
   mod_lance_write -> mod_lance_table_format;
   mod_lance_write -> mod_lance_table_io;
-  mod_lance_write -> mod_pylance_dataset;
   mod_pylance_fragment -> mod_lance_table_format;
   mod_pylance_fragment -> mod_pylance_dataset;
-  mod_pylance_indices -> mod_lance_dataset;
   mod_pylance_indices -> mod_lance_index_ivf;
   mod_pylance_indices -> mod_lance_index_vector;
   mod_pylance_indices -> mod_lance_linalg_distance;
+  mod_pylance_indices -> mod_pylance_dataset;
   mod_pylance_indices -> mod_pylance_lib;
   mod_pylance_schema -> mod_lance_core_datatypes;
   mod_pylance_transaction -> mod_lance_dataset;

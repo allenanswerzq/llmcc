@@ -51,24 +51,45 @@ impl crate::animal::Animal for Dog {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_animal_rs {
-        label="animal.rs";
-        n3[label="Animal", full_path="$TMP/sample/src/animal.rs:1", sym_ty="Trait", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_dog_rs {
-        label="dog.rs";
-        n7[label="Dog", full_path="$TMP/sample/src/dog.rs:1", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_animal_rs {
+      label="animal.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Animal", full_path="$TMP/sample/src/animal.rs:1", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_dog_rs {
+      label="dog.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7[label="Dog", full_path="$TMP/sample/src/dog.rs:1", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n7 [from="trait", to="impl"];
 }

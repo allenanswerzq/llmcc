@@ -80,28 +80,49 @@ pub fn handle_response(response: Response) -> bool {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_handlers_rs {
-        label="handlers.rs";
-        n21[label="handle_response", full_path="$TMP/sample/src/handlers.rs:11", sym_ty="Function"];
-        n14[label="get_user_status", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Function"];
-        n17[label="process_status", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-        n8[label="Response", full_path="$TMP/sample/src/types.rs:10", sym_ty="Enum", shape=box];
-        n5[label="Status", full_path="$TMP/sample/src/types.rs:5", sym_ty="Enum", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_handlers_rs {
+      label="handlers.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n21[label="handle_response", full_path="$TMP/sample/src/handlers.rs:11", sym_ty="Function"];
+      n14[label="get_user_status", full_path="$TMP/sample/src/handlers.rs:3", sym_ty="Function"];
+      n17[label="process_status", full_path="$TMP/sample/src/handlers.rs:7", sym_ty="Function"];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n8[label="Response", full_path="$TMP/sample/src/types.rs:10", sym_ty="Enum", shape=box];
+      n5[label="Status", full_path="$TMP/sample/src/types.rs:5", sym_ty="Enum", shape=box];
     }
 
   }
+
 
   n3 -> n8 [from="field_type", to="enum"];
   n3 -> n14 [from="input", to="func"];

@@ -187,46 +187,83 @@ pub fn handle_order(order: Order) -> bool {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_api {
-      label="api";
-      subgraph cluster_handlers_rs {
-        label="handlers.rs";
-        n47[label="handle_get_user", full_path="$TMP/api/src/handlers.rs:10", sym_ty="Function"];
-        n52[label="handle_order", full_path="$TMP/api/src/handlers.rs:15", sym_ty="Function"];
-        n44[label="ApiResponse", full_path="$TMP/api/src/handlers.rs:5", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-    }
+  label="architecture graph";
+  labelloc=t;
 
-    subgraph cluster_domain {
-      label="domain";
-      subgraph cluster_models_rs {
-        label="models.rs";
-        n3[label="User", full_path="$TMP/domain/src/models.rs:1", sym_ty="Struct", shape=box];
-        n10[label="OrderStatus", full_path="$TMP/domain/src/models.rs:12", sym_ty="Enum", shape=box];
-        n6[label="Order", full_path="$TMP/domain/src/models.rs:6", sym_ty="Struct", shape=box];
-      }
+  subgraph cluster_api {
+    label="api";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
-    }
+    subgraph cluster_handlers_rs {
+      label="handlers.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
 
-    subgraph cluster_service {
-      label="service";
-      subgraph cluster_order_service_rs {
-        label="order_service.rs";
-        n39[label="process_order", full_path="$TMP/service/src/order_service.rs:8", sym_ty="Function"];
-      }
-
-      subgraph cluster_user_service_rs {
-        label="user_service.rs";
-        n26[label="get_user", full_path="$TMP/service/src/user_service.rs:8", sym_ty="Function"];
-      }
-
+      n47[label="handle_get_user", full_path="$TMP/api/src/handlers.rs:10", sym_ty="Function"];
+      n52[label="handle_order", full_path="$TMP/api/src/handlers.rs:15", sym_ty="Function"];
+      n44[label="ApiResponse", full_path="$TMP/api/src/handlers.rs:5", sym_ty="Struct", shape=box];
     }
 
   }
+
+  subgraph cluster_domain {
+    label="domain";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_models_rs {
+      label="models.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/domain/src/models.rs:1", sym_ty="Struct", shape=box];
+      n10[label="OrderStatus", full_path="$TMP/domain/src/models.rs:12", sym_ty="Enum", shape=box];
+      n6[label="Order", full_path="$TMP/domain/src/models.rs:6", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_service {
+    label="service";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_order_service_rs {
+      label="order_service.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n39[label="process_order", full_path="$TMP/service/src/order_service.rs:8", sym_ty="Function"];
+    }
+
+    subgraph cluster_user_service_rs {
+      label="user_service.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n26[label="get_user", full_path="$TMP/service/src/user_service.rs:8", sym_ty="Function"];
+    }
+
+  }
+
 
   n3 -> n44 [from="type_dep", to="struct"];
   n6 -> n39 [from="input", to="func"];
