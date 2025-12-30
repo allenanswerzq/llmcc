@@ -37,15 +37,6 @@ pub fn write_indent(output: &mut String, level: usize) {
     }
 }
 
-/// Convert byte offset to line number (1-indexed).
-pub fn byte_to_line(content: &[u8], byte_offset: usize) -> usize {
-    content[..byte_offset.min(content.len())]
-        .iter()
-        .filter(|&&b| b == b'\n')
-        .count()
-        + 1
-}
-
 /// A DOT graph builder for constructing valid DOT output.
 #[allow(dead_code)]
 pub struct DotBuilder {

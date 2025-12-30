@@ -171,43 +171,76 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_auth {
-      label="auth";
-      subgraph cluster_auth_rs {
-        label="auth.rs";
-        n28[label="validate_session", full_path="$TMP/auth/src/auth.rs:12", sym_ty="Function"];
-        n20[label="Session", full_path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
-        n23[label="authenticate", full_path="$TMP/auth/src/auth.rs:8", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-    }
+  label="architecture graph";
+  labelloc=t;
 
-    subgraph cluster_store {
-      label="store";
-      subgraph cluster_repository_rs {
-        label="repository.rs";
-        n47[label="find_user", full_path="$TMP/store/src/repository.rs:9", sym_ty="Function"];
-      }
+  subgraph cluster_auth {
+    label="auth";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
-    }
+    subgraph cluster_auth_rs {
+      label="auth.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
 
-    subgraph cluster_types {
-      label="types";
-      subgraph cluster_common_rs {
-        label="common.rs";
-        n3[label="UserId", full_path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
-        n10[label="AuthError", full_path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
-        n14[label="StoreError", full_path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
-        n5[label="Email", full_path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
-        n7[label="User", full_path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
-      }
-
+      n28[label="validate_session", full_path="$TMP/auth/src/auth.rs:12", sym_ty="Function"];
+      n20[label="Session", full_path="$TMP/auth/src/auth.rs:3", sym_ty="Struct", shape=box];
+      n23[label="authenticate", full_path="$TMP/auth/src/auth.rs:8", sym_ty="Function"];
     }
 
   }
+
+  subgraph cluster_store {
+    label="store";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_repository_rs {
+      label="repository.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n47[label="find_user", full_path="$TMP/store/src/repository.rs:9", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_types {
+    label="types";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_common_rs {
+      label="common.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="UserId", full_path="$TMP/types/src/common.rs:1", sym_ty="Struct", shape=box];
+      n10[label="AuthError", full_path="$TMP/types/src/common.rs:10", sym_ty="Enum", shape=box];
+      n14[label="StoreError", full_path="$TMP/types/src/common.rs:16", sym_ty="Enum", shape=box];
+      n5[label="Email", full_path="$TMP/types/src/common.rs:3", sym_ty="Struct", shape=box];
+      n7[label="User", full_path="$TMP/types/src/common.rs:5", sym_ty="Struct", shape=box];
+    }
+
+  }
+
 
   n3 -> n7 [from="field_type", to="struct"];
   n3 -> n23 [from="input", to="func"];

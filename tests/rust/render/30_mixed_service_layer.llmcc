@@ -157,40 +157,69 @@ impl<R: Repository<User>> UserService<R> {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_impl_repos_rs {
-        label="impl_repos.rs";
-        n21[label="UserRepo", full_path="$TMP/sample/src/impl_repos.rs:4", sym_ty="Struct", shape=box];
-        n23[label="OrderRepo", full_path="$TMP/sample/src/impl_repos.rs:8", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_models_rs {
-        label="models.rs";
-        n3[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
-        n6[label="Order", full_path="$TMP/sample/src/models.rs:6", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
-      subgraph cluster_repository_rs {
-        label="repository.rs";
-        n11[label="Repository", full_path="$TMP/sample/src/repository.rs:1", sym_ty="Trait", shape=box];
-      }
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
-      subgraph cluster_service_rs {
-        label="service.rs";
-        n44[label="UserService", full_path="$TMP/sample/src/service.rs:4", sym_ty="Struct", shape=box];
-      }
+    subgraph cluster_impl_repos_rs {
+      label="impl_repos.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
 
+      n21[label="UserRepo", full_path="$TMP/sample/src/impl_repos.rs:4", sym_ty="Struct", shape=box];
+      n23[label="OrderRepo", full_path="$TMP/sample/src/impl_repos.rs:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_models_rs {
+      label="models.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/sample/src/models.rs:1", sym_ty="Struct", shape=box];
+      n6[label="Order", full_path="$TMP/sample/src/models.rs:6", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_repository_rs {
+      label="repository.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11[label="Repository", full_path="$TMP/sample/src/repository.rs:1", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_service_rs {
+      label="service.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n44[label="UserService", full_path="$TMP/sample/src/service.rs:4", sym_ty="Struct", shape=box];
     }
 
   }
 
+
+  n3 -> n21 [from="type_arg", to="impl"];
+  n6 -> n23 [from="type_arg", to="impl"];
   n11 -> n21 [from="trait", to="impl"];
   n11 -> n23 [from="trait", to="impl"];
   n11 -> n44 [from="field_type", to="struct"];
-  n3 -> n21 [from="type_arg", to="impl"];
-  n6 -> n23 [from="type_arg", to="impl"];
 }

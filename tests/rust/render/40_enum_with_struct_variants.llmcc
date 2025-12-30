@@ -82,26 +82,47 @@ pub enum Event {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_events_rs {
-        label="events.rs";
-        n13[label="Event", full_path="$TMP/sample/src/events.rs:3", sym_ty="Enum", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-        n9[label="Error", full_path="$TMP/sample/src/types.rs:11", sym_ty="Struct", shape=box];
-        n6[label="Order", full_path="$TMP/sample/src/types.rs:6", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_events_rs {
+      label="events.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n13[label="Event", full_path="$TMP/sample/src/events.rs:3", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n9[label="Error", full_path="$TMP/sample/src/types.rs:11", sym_ty="Struct", shape=box];
+      n6[label="Order", full_path="$TMP/sample/src/types.rs:6", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n13 [from="field_type", to="enum"];
   n6 -> n13 [from="field_type", to="enum"];

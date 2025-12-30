@@ -170,40 +170,65 @@ impl Transition<Idle> for Machine<Stopped> {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_machine_rs {
-        label="machine.rs";
-        n23[label="Machine", full_path="$TMP/sample/src/machine.rs:3", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_states_rs {
-        label="states.rs";
-        n3[label="Idle", full_path="$TMP/sample/src/states.rs:1", sym_ty="Struct", shape=box];
-        n4[label="Running", full_path="$TMP/sample/src/states.rs:2", sym_ty="Struct", shape=box];
-        n5[label="Stopped", full_path="$TMP/sample/src/states.rs:3", sym_ty="Struct", shape=box];
-        n6[label="State", full_path="$TMP/sample/src/states.rs:5", sym_ty="Trait", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
-      subgraph cluster_transitions_rs {
-        label="transitions.rs";
-        n31[label="Transition", full_path="$TMP/sample/src/transitions.rs:4", sym_ty="Trait", shape=box];
-      }
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
+    subgraph cluster_machine_rs {
+      label="machine.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n23[label="Machine", full_path="$TMP/sample/src/machine.rs:3", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_states_rs {
+      label="states.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Idle", full_path="$TMP/sample/src/states.rs:1", sym_ty="Struct", shape=box];
+      n4[label="Running", full_path="$TMP/sample/src/states.rs:2", sym_ty="Struct", shape=box];
+      n5[label="Stopped", full_path="$TMP/sample/src/states.rs:3", sym_ty="Struct", shape=box];
+      n6[label="State", full_path="$TMP/sample/src/states.rs:5", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_transitions_rs {
+      label="transitions.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n31[label="Transition", full_path="$TMP/sample/src/transitions.rs:4", sym_ty="Trait", shape=box];
     }
 
   }
 
+
   n3 -> n23 [from="type_arg", to="impl"];
-  n31 -> n23 [from="trait", to="impl"];
   n4 -> n23 [from="type_arg", to="impl"];
   n5 -> n23 [from="type_arg", to="impl"];
-  n6 -> n23 [from="field_type", to="struct"];
   n6 -> n3 [from="trait", to="impl"];
-  n6 -> n31 [from="bound", to="generic"];
   n6 -> n4 [from="trait", to="impl"];
   n6 -> n5 [from="trait", to="impl"];
+  n6 -> n23 [from="field_type", to="struct"];
+  n6 -> n31 [from="bound", to="generic"];
+  n31 -> n23 [from="trait", to="impl"];
 }

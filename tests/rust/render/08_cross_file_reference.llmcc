@@ -53,25 +53,46 @@ pub fn get_user() -> User {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_services_rs {
-        label="services.rs";
-        n7[label="UserService", full_path="$TMP/sample/src/services.rs:3", sym_ty="Struct", shape=box];
-        n9[label="get_user", full_path="$TMP/sample/src/services.rs:7", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="User", full_path="$TMP/sample/src/types.rs:2", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_services_rs {
+      label="services.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7[label="UserService", full_path="$TMP/sample/src/services.rs:3", sym_ty="Struct", shape=box];
+      n9[label="get_user", full_path="$TMP/sample/src/services.rs:7", sym_ty="Function"];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/sample/src/types.rs:2", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n7 [from="field_type", to="struct"];
   n9 -> n3 [from="func", to="output"];

@@ -24,21 +24,38 @@ pub fn transform(input: Input) -> Output {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_lib_rs {
-        label="lib.rs";
-        n6[label="transform", full_path="$TMP/sample/src/lib.rs:11", sym_ty="Function"];
-        n2[label="Input", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Struct", shape=box];
-        n4[label="Output", full_path="$TMP/sample/src/lib.rs:7", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6[label="transform", full_path="$TMP/sample/src/lib.rs:11", sym_ty="Function"];
+      n2[label="Input", full_path="$TMP/sample/src/lib.rs:3", sym_ty="Struct", shape=box];
+      n4[label="Output", full_path="$TMP/sample/src/lib.rs:7", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n2 -> n6 [from="input", to="func"];
   n6 -> n4 [from="func", to="output"];

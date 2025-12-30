@@ -127,30 +127,55 @@ impl Middleware for LogMiddleware {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_impl {
-      label="impl";
-      subgraph cluster_handlers_rs {
-        label="handlers.rs";
-        n30[label="LogMiddleware", full_path="$TMP/impl/src/handlers.rs:11", sym_ty="Struct", shape=box];
-        n24[label="EchoHandler", full_path="$TMP/impl/src/handlers.rs:3", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-    }
+  label="architecture graph";
+  labelloc=t;
 
-    subgraph cluster_traits {
-      label="traits";
-      subgraph cluster_core_rs {
-        label="core.rs";
-        n8[label="Handler", full_path="$TMP/traits/src/core.rs:10", sym_ty="Trait", shape=box];
-        n13[label="Middleware", full_path="$TMP/traits/src/core.rs:14", sym_ty="Trait", shape=box];
-      }
+  subgraph cluster_impl {
+    label="impl";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
+    subgraph cluster_handlers_rs {
+      label="handlers.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n30[label="LogMiddleware", full_path="$TMP/impl/src/handlers.rs:11", sym_ty="Struct", shape=box];
+      n24[label="EchoHandler", full_path="$TMP/impl/src/handlers.rs:3", sym_ty="Struct", shape=box];
     }
 
   }
+
+  subgraph cluster_traits {
+    label="traits";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_core_rs {
+      label="core.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8[label="Handler", full_path="$TMP/traits/src/core.rs:10", sym_ty="Trait", shape=box];
+      n13[label="Middleware", full_path="$TMP/traits/src/core.rs:14", sym_ty="Trait", shape=box];
+    }
+
+  }
+
 
   n8 -> n24 [from="trait", to="impl"];
   n13 -> n30 [from="trait", to="impl"];

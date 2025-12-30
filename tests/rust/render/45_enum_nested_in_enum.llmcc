@@ -84,26 +84,47 @@ pub enum Notification {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_messages_rs {
-        label="messages.rs";
-        n20[label="Notification", full_path="$TMP/sample/src/messages.rs:12", sym_ty="Enum", shape=box];
-        n12[label="Message", full_path="$TMP/sample/src/messages.rs:3", sym_ty="Enum", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="Priority", full_path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
-        n7[label="Status", full_path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_messages_rs {
+      label="messages.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n20[label="Notification", full_path="$TMP/sample/src/messages.rs:12", sym_ty="Enum", shape=box];
+      n12[label="Message", full_path="$TMP/sample/src/messages.rs:3", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Priority", full_path="$TMP/sample/src/types.rs:1", sym_ty="Enum", shape=box];
+      n7[label="Status", full_path="$TMP/sample/src/types.rs:7", sym_ty="Enum", shape=box];
     }
 
   }
+
 
   n3 -> n12 [from="field_type", to="enum"];
   n3 -> n20 [from="field_type", to="enum"];

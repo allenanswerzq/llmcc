@@ -55,29 +55,54 @@ pub struct Session {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_auth_rs {
-        label="auth.rs";
-        n9[label="Session", full_path="$TMP/sample/src/auth.rs:4", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_role_rs {
-        label="role.rs";
-        n6[label="Role", full_path="$TMP/sample/src/role.rs:1", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
-      subgraph cluster_user_rs {
-        label="user.rs";
-        n3[label="User", full_path="$TMP/sample/src/user.rs:1", sym_ty="Struct", shape=box];
-      }
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
+    subgraph cluster_auth_rs {
+      label="auth.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9[label="Session", full_path="$TMP/sample/src/auth.rs:4", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_role_rs {
+      label="role.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6[label="Role", full_path="$TMP/sample/src/role.rs:1", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_user_rs {
+      label="user.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/sample/src/user.rs:1", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n9 [from="field_type", to="struct"];
   n6 -> n9 [from="field_type", to="struct"];

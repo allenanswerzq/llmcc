@@ -59,24 +59,45 @@ impl Container for StringHolder {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_container_rs {
-        label="container.rs";
-        n3[label="Container", full_path="$TMP/sample/src/container.rs:1", sym_ty="Trait", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_string_holder_rs {
-        label="string_holder.rs";
-        n9[label="StringHolder", full_path="$TMP/sample/src/string_holder.rs:3", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_container_rs {
+      label="container.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Container", full_path="$TMP/sample/src/container.rs:1", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_string_holder_rs {
+      label="string_holder.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9[label="StringHolder", full_path="$TMP/sample/src/string_holder.rs:3", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n3 -> n9 [from="trait", to="impl"];
 }

@@ -145,27 +145,48 @@ pub fn create_default_config() -> impl Configurable {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_builder_rs {
-        label="builder.rs";
-        n21[label="ConfigBuilder", full_path="$TMP/sample/src/builder.rs:3", sym_ty="Struct", shape=box];
-        n42[label="create_default_config", full_path="$TMP/sample/src/builder.rs:41", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_config_rs {
-        label="config.rs";
-        n3[label="Configurable", full_path="$TMP/sample/src/config.rs:1", sym_ty="Trait", shape=box];
-        n12[label="ServerConfig", full_path="$TMP/sample/src/config.rs:10", sym_ty="Struct", shape=box];
-        n7[label="Buildable", full_path="$TMP/sample/src/config.rs:5", sym_ty="Trait", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_builder_rs {
+      label="builder.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n21[label="ConfigBuilder", full_path="$TMP/sample/src/builder.rs:3", sym_ty="Struct", shape=box];
+      n42[label="create_default_config", full_path="$TMP/sample/src/builder.rs:41", sym_ty="Function"];
+    }
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Configurable", full_path="$TMP/sample/src/config.rs:1", sym_ty="Trait", shape=box];
+      n12[label="ServerConfig", full_path="$TMP/sample/src/config.rs:10", sym_ty="Struct", shape=box];
+      n7[label="Buildable", full_path="$TMP/sample/src/config.rs:5", sym_ty="Trait", shape=box];
     }
 
   }
+
 
   n3 -> n12 [from="trait", to="impl"];
   n7 -> n21 [from="trait", to="impl"];

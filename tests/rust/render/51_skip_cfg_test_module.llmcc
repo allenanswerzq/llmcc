@@ -48,20 +48,37 @@ mod tests {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_lib_rs {
-        label="lib.rs";
-        n2[label="User", full_path="$TMP/sample/src/lib.rs:1", sym_ty="Struct", shape=box];
-        n4[label="get_user", full_path="$TMP/sample/src/lib.rs:5", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
+  label="architecture graph";
+  labelloc=t;
+
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2[label="User", full_path="$TMP/sample/src/lib.rs:1", sym_ty="Struct", shape=box];
+      n4[label="get_user", full_path="$TMP/sample/src/lib.rs:5", sym_ty="Function"];
     }
 
   }
+
 
   n4 -> n2 [from="func", to="output"];
 }

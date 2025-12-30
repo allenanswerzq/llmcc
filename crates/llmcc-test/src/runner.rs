@@ -1126,11 +1126,37 @@ fn is_empty_relation(line: &str) -> bool {
 
 fn normalize_graph(text: &str) -> String {
     // Parse graph and sort edges for deterministic comparison
-    // Filter out empty lines for flexible whitespace comparison
+    // Filter out empty lines and cosmetic styling lines for flexible comparison
     let mut lines: Vec<&str> = text
         .trim()
         .lines()
-        .filter(|line| !line.trim().is_empty())
+        .filter(|line| {
+            let trimmed = line.trim();
+            // Skip empty lines
+            if trimmed.is_empty() {
+                return false;
+            }
+            // Skip cosmetic styling lines that don't affect graph semantics
+            if trimmed.starts_with("//")
+                || trimmed.starts_with("rankdir=")
+                || trimmed.starts_with("ranksep=")
+                || trimmed.starts_with("nodesep=")
+                || trimmed.starts_with("splines=")
+                || trimmed.starts_with("compound=")
+                || trimmed.starts_with("concentrate=")
+                || trimmed.starts_with("fontsize=")
+                || trimmed.starts_with("fontname=")
+                || trimmed.starts_with("labelloc=")
+                || trimmed.starts_with("node [")
+                || trimmed.starts_with("edge [")
+                || trimmed.starts_with("style=")
+                || trimmed.starts_with("color=")
+                || trimmed.starts_with("bgcolor=")
+            {
+                return false;
+            }
+            true
+        })
         .collect();
 
     // Find where edges start (after closing brace of last subgraph)

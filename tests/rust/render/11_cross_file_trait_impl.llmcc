@@ -55,24 +55,45 @@ impl Render for Html {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_impls_rs {
-        label="impls.rs";
-        n8[label="Html", full_path="$TMP/sample/src/impls.rs:3", sym_ty="Struct", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_traits_rs {
-        label="traits.rs";
-        n3[label="Render", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_impls_rs {
+      label="impls.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8[label="Html", full_path="$TMP/sample/src/impls.rs:3", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_traits_rs {
+      label="traits.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Render", full_path="$TMP/sample/src/traits.rs:1", sym_ty="Trait", shape=box];
     }
 
   }
+
 
   n3 -> n8 [from="trait", to="impl"];
 }

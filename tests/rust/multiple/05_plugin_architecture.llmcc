@@ -239,48 +239,89 @@ pub fn create_context(name: String) -> Context {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_core {
-      label="core";
-      subgraph cluster_plugin_rs {
-        label="plugin.rs";
-        n3[label="Context", full_path="$TMP/core/src/plugin.rs:1", sym_ty="Struct", shape=box];
-        n8[label="Plugin", full_path="$TMP/core/src/plugin.rs:10", sym_ty="Trait", shape=box];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-    }
+  label="architecture graph";
+  labelloc=t;
 
-    subgraph cluster_plugin_a {
-      label="plugin-a";
-      subgraph cluster_lib_rs {
-        label="lib.rs";
-        n20[label="PluginA", full_path="$TMP/plugin-a/src/lib.rs:3", sym_ty="Struct", shape=box];
-      }
+  subgraph cluster_core {
+    label="core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
 
-    }
+    subgraph cluster_plugin_rs {
+      label="plugin.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
 
-    subgraph cluster_plugin_b {
-      label="plugin-b";
-      subgraph cluster_lib_rs {
-        label="lib.rs";
-        n39[label="PluginB", full_path="$TMP/plugin-b/src/lib.rs:3", sym_ty="Struct", shape=box];
-      }
-
-    }
-
-    subgraph cluster_runtime {
-      label="runtime";
-      subgraph cluster_lib_rs {
-        label="lib.rs";
-        n70[label="create_context", full_path="$TMP/runtime/src/lib.rs:23", sym_ty="Function"];
-        n58[label="Runtime", full_path="$TMP/runtime/src/lib.rs:5", sym_ty="Struct", shape=box];
-      }
-
+      n3[label="Context", full_path="$TMP/core/src/plugin.rs:1", sym_ty="Struct", shape=box];
+      n8[label="Plugin", full_path="$TMP/core/src/plugin.rs:10", sym_ty="Trait", shape=box];
     }
 
   }
+
+  subgraph cluster_plugin_a {
+    label="plugin-a";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n20[label="PluginA", full_path="$TMP/plugin-a/src/lib.rs:3", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_plugin_b {
+    label="plugin-b";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n39[label="PluginB", full_path="$TMP/plugin-b/src/lib.rs:3", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_runtime {
+    label="runtime";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n70[label="create_context", full_path="$TMP/runtime/src/lib.rs:23", sym_ty="Function"];
+      n58[label="Runtime", full_path="$TMP/runtime/src/lib.rs:5", sym_ty="Struct", shape=box];
+    }
+
+  }
+
 
   n8 -> n20 [from="trait", to="impl"];
   n8 -> n39 [from="trait", to="impl"];

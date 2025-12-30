@@ -106,41 +106,62 @@ pub struct AllThree {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_services_rs {
-        label="services.rs";
-        n14[label="UserConfigMap", full_path="$TMP/sample/src/services.rs:10", sym_ty="Struct", shape=box];
-        n16[label="Pair", full_path="$TMP/sample/src/services.rs:15", sym_ty="Struct", shape=box];
-        n19[label="UserErrorPair", full_path="$TMP/sample/src/services.rs:21", sym_ty="Struct", shape=box];
-        n21[label="Triple", full_path="$TMP/sample/src/services.rs:26", sym_ty="Struct", shape=box];
-        n25[label="AllThree", full_path="$TMP/sample/src/services.rs:33", sym_ty="Struct", shape=box];
-        n11[label="get_user", full_path="$TMP/sample/src/services.rs:5", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-        n8[label="Config", full_path="$TMP/sample/src/types.rs:10", sym_ty="Struct", shape=box];
-        n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_services_rs {
+      label="services.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n14[label="UserConfigMap", full_path="$TMP/sample/src/services.rs:10", sym_ty="Struct", shape=box];
+      n16[label="Pair", full_path="$TMP/sample/src/services.rs:15", sym_ty="Struct", shape=box];
+      n19[label="UserErrorPair", full_path="$TMP/sample/src/services.rs:21", sym_ty="Struct", shape=box];
+      n21[label="Triple", full_path="$TMP/sample/src/services.rs:26", sym_ty="Struct", shape=box];
+      n25[label="AllThree", full_path="$TMP/sample/src/services.rs:33", sym_ty="Struct", shape=box];
+      n11[label="get_user", full_path="$TMP/sample/src/services.rs:5", sym_ty="Function"];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="User", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
+      n8[label="Config", full_path="$TMP/sample/src/types.rs:10", sym_ty="Struct", shape=box];
+      n5[label="Error", full_path="$TMP/sample/src/types.rs:5", sym_ty="Struct", shape=box];
     }
 
   }
 
-  n11 -> n3 [from="func", to="type_dep"];
-  n11 -> n5 [from="func", to="type_dep"];
-  n16 -> n19 [from="field_type", to="struct"];
-  n21 -> n25 [from="field_type", to="struct"];
+
   n3 -> n14 [from="type_dep", to="struct"];
-  n8 -> n14 [from="type_dep", to="struct"];
   n3 -> n16 [from="type_arg", to="generic"];
   n3 -> n21 [from="type_arg", to="generic"];
   n5 -> n16 [from="type_arg", to="generic"];
   n5 -> n21 [from="type_arg", to="generic"];
+  n8 -> n14 [from="type_dep", to="struct"];
   n8 -> n21 [from="type_arg", to="generic"];
+  n11 -> n3 [from="func", to="type_dep"];
+  n11 -> n5 [from="func", to="type_dep"];
+  n16 -> n19 [from="field_type", to="struct"];
+  n21 -> n25 [from="field_type", to="struct"];
 }

@@ -40,24 +40,45 @@ pub fn create_config() -> Config {
 
 --- expect:arch-graph ---
 digraph architecture {
-  subgraph cluster_project {
-    label="project";
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
 
-    subgraph cluster_sample {
-      label="sample";
-      subgraph cluster_factory_rs {
-        label="factory.rs";
-        n6[label="create_config", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Function"];
-      }
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
 
-      subgraph cluster_types_rs {
-        label="types.rs";
-        n3[label="Config", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
-      }
+  label="architecture graph";
+  labelloc=t;
 
+  subgraph cluster_sample {
+    label="sample";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_factory_rs {
+      label="factory.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6[label="create_config", full_path="$TMP/sample/src/factory.rs:3", sym_ty="Function"];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3[label="Config", full_path="$TMP/sample/src/types.rs:1", sym_ty="Struct", shape=box];
     }
 
   }
+
 
   n6 -> n3 [from="func", to="output"];
 }
