@@ -21,6 +21,11 @@ if [ ! -x "$LLMCC" ]; then
     exit 1
 fi
 
+# Fetch all sample repos if not already present
+echo "Checking sample repositories..."
+"$SCRIPT_DIR/fetch.sh"
+echo ""
+
 # Projects to benchmark: name -> source directory
 declare -A PROJECTS=(
     # Core ecosystem
@@ -49,7 +54,7 @@ mkdir -p "$BENCHMARK_DIR"
 get_machine_info() {
     echo "## Machine Info"
     echo ""
-    
+
     # CPU info
     if command -v lscpu &> /dev/null; then
         local cpu_model=$(lscpu | grep "Model name" | sed 's/Model name:\s*//')
@@ -64,7 +69,7 @@ get_machine_info() {
         echo "- $(uname -p)"
     fi
     echo ""
-    
+
     # Memory info
     if command -v free &> /dev/null; then
         local mem_total=$(free -h | awk '/^Mem:/ {print $2}')
@@ -74,7 +79,7 @@ get_machine_info() {
         echo "- **Available:** $mem_available"
     fi
     echo ""
-    
+
     # OS info
     echo "### OS"
     echo "- **Kernel:** $(uname -sr)"
