@@ -21,6 +21,11 @@ if [ ! -x "$LLMCC" ]; then
     exit 1
 fi
 
+# Fetch all sample repos if not already present
+echo "Checking sample repositories..."
+"$SCRIPT_DIR/fetch.sh"
+echo ""
+
 # Projects to benchmark: name -> source directory
 declare -A PROJECTS=(
     # Core ecosystem
@@ -45,14 +50,58 @@ declare -A PROJECTS=(
 # Create benchmark logs directory
 mkdir -p "$BENCHMARK_DIR"
 
+# Collect machine info
+get_machine_info() {
+    echo "## Machine Info"
+    echo ""
+
+    # CPU info
+    if command -v lscpu &> /dev/null; then
+        local cpu_model=$(lscpu | grep "Model name" | sed 's/Model name:\s*//')
+        local cpu_cores=$(lscpu | grep "^CPU(s):" | awk '{print $2}')
+        local cpu_threads=$(lscpu | grep "Thread(s) per core" | awk '{print $4}')
+        local cpu_cores_physical=$(lscpu | grep "Core(s) per socket" | awk '{print $4}')
+        echo "### CPU"
+        echo "- **Model:** $cpu_model"
+        echo "- **Cores:** $cpu_cores_physical physical, $cpu_cores logical (threads)"
+    else
+        echo "### CPU"
+        echo "- $(uname -p)"
+    fi
+    echo ""
+
+    # Memory info
+    if command -v free &> /dev/null; then
+        local mem_total=$(free -h | awk '/^Mem:/ {print $2}')
+        local mem_available=$(free -h | awk '/^Mem:/ {print $7}')
+        echo "### Memory"
+        echo "- **Total:** $mem_total"
+        echo "- **Available:** $mem_available"
+    fi
+    echo ""
+
+    # OS info
+    echo "### OS"
+    echo "- **Kernel:** $(uname -sr)"
+    if [ -f /etc/os-release ]; then
+        local os_name=$(grep "^PRETTY_NAME" /etc/os-release | cut -d'"' -f2)
+        echo "- **Distribution:** $os_name"
+    fi
+    echo ""
+}
+
 # Initialize benchmark file
 cat > "$BENCHMARK_FILE" << 'EOF'
 # LLMCC Benchmark Results
 
 Generated on: DATE_PLACEHOLDER
+
 EOF
 # Replace placeholder with actual date
 sed -i "s/DATE_PLACEHOLDER/$(date '+%Y-%m-%d %H:%M:%S')/" "$BENCHMARK_FILE"
+
+# Add machine info to benchmark file
+get_machine_info >> "$BENCHMARK_FILE"
 
 echo "=== LLMCC Benchmark ==="
 echo "Binary: $LLMCC"
@@ -219,8 +268,6 @@ done
 # Calculate summary statistics
 echo "" >> "$BENCHMARK_FILE"
 echo "## Summary" >> "$BENCHMARK_FILE"
-echo "" >> "$BENCHMARK_FILE"
-echo "Benchmarked on: $(uname -a)" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
 echo "Binary: $LLMCC" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
