@@ -1,0 +1,50 @@
+# Rust configuration for SWE-bench experiments
+name: rust
+description: SWE-bench Multilingual Rust subset (43 tasks)
+
+# Dataset configuration
+dataset:
+  name: SWE-bench/SWE-bench_Multilingual
+  split: test
+  # Filter for Rust repositories
+  repos:
+    - tokio-rs/tokio
+    - tokio-rs/axum
+    - astral-sh/ruff
+    - sharkdp/bat
+    - nushell/nushell
+    - uutils/coreutils
+    - burntsushi/ripgrep
+
+# llmcc configuration
+llmcc:
+  binary: ../target/release/llmcc
+  depth: 3
+  pagerank_top_k: 200
+  output_format: markdown  # dot, json, or markdown
+
+# Model configuration
+model:
+  provider: anthropic
+  name: claude-sonnet-4-20250514
+  max_tokens: 8192
+  temperature: 0.0
+
+# Agent configuration
+agent:
+  type: mini-swe-agent
+  max_steps: 30
+  cost_limit: 2.50  # USD per task
+
+# Experiment configuration
+experiment:
+  runs_per_task: 3  # For statistical significance
+  parallel_tasks: 4
+  timeout_per_task: 600  # seconds
+
+# Output configuration
+output:
+  results_dir: results/rust
+  logs_dir: logs/rust
+  save_trajectories: true
+  save_patches: true
