@@ -1,0 +1,59 @@
+===============================================================================
+type-bound-param
+===============================================================================
+Test generic type parameters with bounds.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/generic.py ---
+from typing import TypeVar, Generic, Protocol
+
+class Comparable(Protocol):
+    def __lt__(self, other) -> bool:
+        ...
+
+T = TypeVar('T')
+C = TypeVar('C', bound=Comparable)
+
+class Container(Generic[T]):
+    def __init__(self, value: T):
+        self.value = value
+
+    def get(self) -> T:
+        return self.value
+
+class SortedContainer(Generic[C]):
+    def __init__(self):
+        self.items: list[C] = []
+
+    def add(self, item: C) -> None:
+        self.items.append(item)
+        self.items.sort()
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 generic ($TMP/sample/generic.py)
+  (class:3 Comparable
+    (method:4 __lt__
+      (return:5 @type bool)
+    )
+  )
+  (class:8 Container
+    (method:9 __init__
+      (parameter:10 value @type T)
+    )
+    (method:11 get
+      (return:12 @type T)
+    )
+  )
+  (class:13 SortedContainer
+    (method:14 __init__)
+    (method:15 add
+      (parameter:16 item @type C)
+      (return:17 @type None)
+    )
+  )
+)

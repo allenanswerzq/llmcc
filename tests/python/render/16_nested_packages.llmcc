@@ -1,0 +1,81 @@
+===============================================================================
+nested-packages
+===============================================================================
+Test nested package structure.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models/__init__.py ---
+from .user import User
+from .product import Product
+
+--- file: sample/models/user.py ---
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+lang: python
+
+--- file: sample/models/product.py ---
+class Product:
+    def __init__(self, id: int, name: str, price: float):
+        self.id = id
+        self.name = name
+        self.price = price
+
+--- file: sample/services/__init__.py ---
+from .user_service import UserService
+
+lang: python
+
+--- file: sample/services/user_service.py ---
+from sample.models import User, Product
+
+class UserService:
+    def get_user(self, id: int) -> User:
+        return User(id, "Unknown")
+
+    def get_products(self, user: User) -> list[Product]:
+        return []
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 __init__ ($TMP/sample/models/__init__.py))
+
+(root:3 user ($TMP/sample/models/user.py)
+  (class:4 User
+    (method:5 __init__
+      (parameter:6 id @type int)
+      (parameter:7 name @type str)
+    )
+  )
+)
+
+(root:8 product ($TMP/sample/models/product.py)
+  (class:9 Product
+    (method:10 __init__
+      (parameter:11 id @type int)
+      (parameter:12 name @type str)
+      (parameter:13 price @type float)
+    )
+  )
+)
+
+(root:14 __init__ ($TMP/sample/services/__init__.py))
+
+(root:15 user_service ($TMP/sample/services/user_service.py)
+  (class:16 UserService
+    (method:17 get_user
+      (parameter:18 id @type int)
+      (return:19 @type:4 User)
+    )
+    (method:21 get_products
+      (parameter:22 user @type:4 User)
+      (return:23 @type list)
+    )
+  )
+)

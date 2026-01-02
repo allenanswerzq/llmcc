@@ -1,0 +1,53 @@
+===============================================================================
+union-optional
+===============================================================================
+Test union optional parsing.
+lang: python
+
+--- file: union_optional.py ---
+from typing import Union, Optional
+
+# Union types
+string_or_int: Union[str, int]
+number: Union[int, float]
+multi: Union[str, int, float, bool]
+
+# Optional (Union with None)
+maybe_string: Optional[str]
+maybe_int: Optional[int] = None
+
+# Python 3.10+ union syntax
+modern_union: str | int
+modern_optional: str | None
+complex_union: int | str | None
+
+# Nested unions
+nested: Union[str, List[int]]
+complex_optional: Optional[Dict[str, int]]
+
+# Function with optional
+def find_user(id: int) -> Optional[dict]:
+    return None
+
+def process(value: Union[str, int]) -> str:
+    return str(value)
+
+# Union with None in return
+def maybe_find(key: str) -> str | None:
+    return None
+
+--- expect:block-graph ---
+(root:1 union_optional ($TMP/union_optional.py)
+  (func:2 find_user
+    (parameter:3 id @type int)
+    (return:4 @type Optional)
+  )
+  (func:5 process
+    (parameter:6 value @type Union)
+    (return:7 @type str)
+  )
+  (func:9 maybe_find
+    (parameter:10 key @type str)
+    (return:11 @type str)
+  )
+)

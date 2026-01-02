@@ -1,0 +1,119 @@
+===============================================================================
+dataclass-basic
+===============================================================================
+Test basic dataclass declarations.
+lang: python
+
+--- file: src/lib.py ---
+
+from dataclasses import dataclass
+
+@dataclass
+class Point:
+    x: float
+    y: float
+
+@dataclass
+class Person:
+    name: str
+    age: int
+    email: str = ""
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Point)
+  (class:3 Person)
+)
+
+
+===============================================================================
+dataclass-frozen
+===============================================================================
+Test frozen dataclass (immutable).
+lang: python
+
+--- file: src/lib.py ---
+
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class ImmutablePoint:
+    x: float
+    y: float
+
+@dataclass(frozen=True, slots=True)
+class OptimizedRecord:
+    id: int
+    value: str
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:3 ImmutablePoint)
+  (class:5 OptimizedRecord)
+)
+
+
+===============================================================================
+dataclass-with-methods
+===============================================================================
+Test dataclass with custom methods.
+lang: python
+
+--- file: src/lib.py ---
+
+from dataclasses import dataclass, field
+from typing import List
+
+@dataclass
+class ShoppingCart:
+    items: List[str] = field(default_factory=list)
+    total: float = 0.0
+
+    def add_item(self, item: str, price: float) -> None:
+        self.items.append(item)
+        self.total += price
+
+    def clear(self) -> None:
+        self.items.clear()
+        self.total = 0.0
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 ShoppingCart
+    (method:4 add_item
+      (parameter:5 item @type str)
+      (parameter:6 price @type float)
+      (return:7 @type None)
+    )
+    (method:9 clear
+      (return:10 @type None)
+    )
+  )
+)
+
+
+===============================================================================
+namedtuple-basic
+===============================================================================
+Test NamedTuple declarations.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import NamedTuple
+
+class Coordinate(NamedTuple):
+    x: float
+    y: float
+    z: float = 0.0
+
+class Employee(NamedTuple):
+    name: str
+    department: str
+    salary: float
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Coordinate)
+  (class:3 Employee)
+)

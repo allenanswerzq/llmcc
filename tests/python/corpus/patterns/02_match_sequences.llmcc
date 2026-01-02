@@ -1,0 +1,43 @@
+===============================================================================
+match-sequences
+===============================================================================
+Test match sequences parsing.
+lang: python
+
+--- file: match_sequences.py ---
+def match_list(data):
+    match data:
+        case []:
+            return "empty"
+        case [x]:
+            return f"single: {x}"
+        case [x, y]:
+            return f"pair: {x}, {y}"
+        case [x, y, *rest]:
+            return f"many: {x}, {y}, and {len(rest)} more"
+
+def match_tuple(point):
+    match point:
+        case (0, 0):
+            return "origin"
+        case (x, 0):
+            return f"on x-axis at {x}"
+        case (0, y):
+            return f"on y-axis at {y}"
+        case (x, y):
+            return f"point at ({x}, {y})"
+
+def match_nested(data):
+    match data:
+        case [[a, b], [c, d]]:
+            return a + b + c + d
+        case [first, *middle, last]:
+            return first + last
+
+--- expect:block-graph ---
+(root:1 match_sequences ($TMP/match_sequences.py)
+  (func:2 match_list
+  )
+  (func:4 match_tuple)
+  (func:5 match_nested)
+)

@@ -1,0 +1,390 @@
+===============================================================================
+complex-return-generic-list
+===============================================================================
+Test function with generic List return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import List
+
+def get_numbers() -> List[int]:
+    return [1, 2, 3]
+
+def get_names() -> List[str]:
+    return ["alice", "bob"]
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_numbers
+    (return:3 @type List)
+  )
+  (func:4 get_names
+    (return:5 @type List)
+  )
+)
+
+
+===============================================================================
+complex-return-generic-dict
+===============================================================================
+Test function with generic Dict return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Dict
+
+def get_config() -> Dict[str, int]:
+    return {"port": 8080}
+
+def get_users() -> Dict[int, str]:
+    return {1: "alice", 2: "bob"}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_config
+    (return:3 @type Dict)
+  )
+  (func:4 get_users
+    (return:5 @type Dict)
+  )
+)
+
+
+===============================================================================
+complex-return-optional
+===============================================================================
+Test function with Optional return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Optional
+
+def find_user(id: int) -> Optional[str]:
+    return None
+
+def get_value(key: str) -> Optional[int]:
+    return 42
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 find_user
+    (parameter:3 id @type int)
+    (return:4 @type Optional)
+  )
+  (func:5 get_value
+    (parameter:6 key @type str)
+    (return:7 @type Optional)
+  )
+)
+
+
+===============================================================================
+complex-return-union-pipe
+===============================================================================
+Test function with union return type using | syntax.
+lang: python
+
+--- file: src/lib.py ---
+
+def parse_value(s: str) -> int | str:
+    return s
+
+def maybe_none(x: int) -> str | None:
+    return None
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 parse_value
+    (parameter:3 s @type str)
+    (return:4 @type int)
+  )
+  (func:5 maybe_none
+    (parameter:6 x @type int)
+    (return:7 @type str)
+  )
+)
+
+
+===============================================================================
+complex-return-nested-generic
+===============================================================================
+Test function with nested generic return types.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Dict, List, Optional
+
+def get_user_tags() -> Dict[str, List[str]]:
+    return {"alice": ["admin", "user"]}
+
+def get_matrix() -> List[List[int]]:
+    return [[1, 2], [3, 4]]
+
+def get_nested() -> Optional[Dict[str, List[int]]]:
+    return None
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_user_tags
+    (return:3 @type Dict)
+  )
+  (func:4 get_matrix
+    (return:5 @type List)
+  )
+  (func:6 get_nested
+    (return:7 @type Optional)
+  )
+)
+
+
+===============================================================================
+complex-param-and-return-custom-class
+===============================================================================
+Test function with custom class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+class User:
+    name: str
+
+class Order:
+    user: User
+
+def create_user(name: str) -> User:
+    return User()
+
+def get_order(user: User) -> Order:
+    return Order()
+
+def process(user: User, order: Order) -> User:
+    return user
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 User)
+  (class:3 Order)
+  (func:4 create_user
+    (parameter:5 name @type str)
+    (return:6 @type:2 User)
+    (@tdep:2 User)
+  )
+  (func:8 get_order
+    (parameter:9 user @type:2 User)
+    (return:10 @type:3 Order)
+    (@tdep:3 Order)
+  )
+  (func:12 process
+    (parameter:13 user @type:2 User)
+    (parameter:14 order @type:3 Order)
+    (return:15 @type:2 User)
+  )
+)
+
+
+===============================================================================
+complex-return-tuple
+===============================================================================
+Test function with tuple return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Tuple
+
+def get_point() -> Tuple[int, int]:
+    return (0, 0)
+
+def get_named() -> Tuple[str, int, bool]:
+    return ("alice", 30, True)
+
+def swap(a: int, b: str) -> Tuple[str, int]:
+    return (b, a)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_point
+    (return:3 @type Tuple)
+  )
+  (func:4 get_named
+    (return:5 @type Tuple)
+  )
+  (func:6 swap
+    (parameter:7 a @type int)
+    (parameter:8 b @type str)
+    (return:9 @type Tuple)
+  )
+)
+
+
+===============================================================================
+complex-return-callable
+===============================================================================
+Test function with Callable return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Callable
+
+def get_handler() -> Callable[[int], str]:
+    return str
+
+def make_adder(n: int) -> Callable[[int], int]:
+    return lambda x: x + n
+
+def get_processor() -> Callable[[str, int], bool]:
+    return lambda s, n: len(s) > n
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_handler
+    (return:3 @type Callable)
+  )
+  (func:4 make_adder
+    (parameter:5 n @type int)
+    (return:6 @type Callable)
+  )
+  (func:7 get_processor
+    (return:8 @type Callable)
+  )
+)
+
+
+===============================================================================
+complex-async-function-return
+===============================================================================
+Test async function with various return types.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import List, Optional
+
+async def fetch_data() -> str:
+    return "data"
+
+async def fetch_users() -> List[str]:
+    return ["alice", "bob"]
+
+async def find_item(id: int) -> Optional[str]:
+    return None
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 fetch_data
+    (return:3 @type str)
+  )
+  (func:4 fetch_users
+    (return:5 @type List)
+  )
+  (func:6 find_item
+    (parameter:7 id @type int)
+    (return:8 @type Optional)
+  )
+)
+
+
+===============================================================================
+complex-method-return-self
+===============================================================================
+Test method returning Self type (builder pattern).
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Self
+
+class Builder:
+    def with_name(self, name: str) -> Self:
+        return self
+
+    def with_value(self, value: int) -> Self:
+        return self
+
+    def build(self) -> str:
+        return ""
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Builder
+    (method:3 with_name
+      (parameter:4 name @type str)
+      (return:5 @type Self)
+    )
+    (method:6 with_value
+      (parameter:7 value @type int)
+      (return:8 @type Self)
+    )
+    (method:9 build
+      (return:10 @type str)
+    )
+  )
+)
+
+
+===============================================================================
+complex-generic-typevar
+===============================================================================
+Test function with TypeVar generics.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import TypeVar, List
+
+T = TypeVar('T')
+
+def first(items: List[T]) -> T:
+    return items[0]
+
+def identity(x: T) -> T:
+    return x
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:3 first
+    (parameter:4 items @type List)
+    (return:5 @type T)
+  )
+  (func:6 identity
+    (parameter:7 x @type T)
+    (return:8 @type T)
+  )
+)
+
+
+===============================================================================
+complex-mixed-annotations
+===============================================================================
+Test function with complex mixed type annotations.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Dict, List, Optional, Callable
+
+class Config:
+    data: Dict[str, int]
+
+def process_configs(
+    configs: List[Config],
+    handler: Callable[[Config], bool],
+    default: Optional[Config] = None
+) -> Dict[str, List[Config]]:
+    return {}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Config)
+  (func:3 process_configs
+    (parameter:4 configs @type List)
+    (parameter:5 handler @type Callable)
+    (parameter:6 default @type Optional)
+    (return:7 @type Dict)
+  )
+)

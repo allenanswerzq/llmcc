@@ -1,0 +1,89 @@
+===============================================================================
+asyncio-primitives
+===============================================================================
+Test asyncio primitives parsing.
+lang: python
+
+--- file: asyncio_primitives.py ---
+import asyncio
+
+# Task creation
+async def create_task_example():
+    task = asyncio.create_task(worker())
+    await task
+
+async def worker():
+    return "done"
+
+# Gather for concurrency
+async def run_concurrent():
+    results = await asyncio.gather(
+        fetch("a"),
+        fetch("b"),
+        fetch("c"),
+    )
+    return results
+
+async def fetch(name: str) -> str:
+    await asyncio.sleep(0.1)
+    return name
+
+# Wait with timeout
+async def with_timeout():
+    try:
+        result = await asyncio.wait_for(slow_operation(), timeout=1.0)
+        return result
+    except asyncio.TimeoutError:
+        return None
+
+async def slow_operation():
+    await asyncio.sleep(10)
+    return "slow"
+
+# Semaphore for limiting concurrency
+async def rate_limited():
+    semaphore = asyncio.Semaphore(3)
+
+    async def limited_fetch(url: str):
+        async with semaphore:
+            return await fetch(url)
+
+    return await asyncio.gather(*[limited_fetch(f"url{i}") for i in range(10)])
+
+# Lock for synchronization
+async def synchronized():
+    lock = asyncio.Lock()
+
+    async def critical_section():
+        async with lock:
+            await asyncio.sleep(0.1)
+
+    await asyncio.gather(critical_section(), critical_section())
+
+--- expect:block-graph ---
+(root:1 asyncio_primitives ($TMP/asyncio_primitives.py)
+  (func:2 create_task_example
+  )
+  (func:4 worker)
+  (func:5 run_concurrent
+  )
+  (func:7 fetch
+    (parameter:8 name @type str)
+    (return:9 @type str)
+  )
+  (func:11 with_timeout
+  )
+  (func:13 slow_operation
+  )
+  (func:15 rate_limited
+    (func:17 limited_fetch
+      (parameter:18 url @type str)
+      (@fdep:7 fetch)
+    )
+    (@fdep:7 fetch)
+  )
+  (func:21 synchronized
+    (func:23 critical_section
+    )
+  )
+)

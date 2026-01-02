@@ -1,0 +1,89 @@
+===============================================================================
+async-exceptions
+===============================================================================
+Test async exceptions parsing.
+lang: python
+
+--- file: async_exceptions.py ---
+import asyncio
+
+# Async try/except
+async def handle_error():
+    try:
+        await may_fail()
+    except ValueError as e:
+        return f"caught: {e}"
+
+async def may_fail():
+    raise ValueError("error")
+
+# Multiple exception handlers
+async def multi_handler():
+    try:
+        await risky_operation()
+    except ConnectionError:
+        return "connection failed"
+    except TimeoutError:
+        return "timed out"
+    except Exception as e:
+        return f"unknown: {e}"
+    finally:
+        await cleanup()
+
+async def risky_operation():
+    pass
+
+async def cleanup():
+    pass
+
+# Exception in gather
+async def gather_with_errors():
+    results = await asyncio.gather(
+        may_fail(),
+        worker(),
+        return_exceptions=True
+    )
+    return [r for r in results if not isinstance(r, Exception)]
+
+async def worker():
+    return "ok"
+
+# TaskGroup for structured concurrency (Python 3.11+)
+async def task_group_example():
+    try:
+        async with asyncio.TaskGroup() as tg:
+            task1 = tg.create_task(worker())
+            task2 = tg.create_task(may_fail())
+    except* ValueError as eg:
+        return "value error in group"
+
+# Cancel handling
+async def cancellable():
+    try:
+        await asyncio.sleep(100)
+    except asyncio.CancelledError:
+        await cleanup()
+        raise
+
+--- expect:block-graph ---
+(root:1 async_exceptions ($TMP/async_exceptions.py)
+  (func:2 handle_error
+    (@fdep:4 may_fail)
+  )
+  (func:4 may_fail
+  )
+  (func:6 multi_handler
+    (@fdep:9 risky_operation)
+    (@fdep:10 cleanup)
+  )
+  (func:9 risky_operation)
+  (func:10 cleanup)
+  (func:11 gather_with_errors
+  )
+  (func:14 worker)
+  (func:15 task_group_example
+  )
+  (func:19 cancellable
+    (@fdep:10 cleanup)
+  )
+)

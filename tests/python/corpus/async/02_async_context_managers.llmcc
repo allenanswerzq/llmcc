@@ -1,0 +1,78 @@
+===============================================================================
+async-context-managers
+===============================================================================
+Test async context managers parsing.
+lang: python
+
+--- file: async_context_managers.py ---
+# Async context manager class
+class AsyncResource:
+    async def __aenter__(self):
+        await self._connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._disconnect()
+        return False
+
+    async def _connect(self):
+        pass
+
+    async def _disconnect(self):
+        pass
+
+# Using async with
+async def use_resource():
+    async with AsyncResource() as resource:
+        return await resource.process()
+
+# Multiple async context managers
+async def multi_context():
+    async with AsyncResource() as r1, AsyncResource() as r2:
+        pass
+
+# Async context manager with contextlib
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def managed_resource():
+    resource = await create_resource()
+    try:
+        yield resource
+    finally:
+        await cleanup_resource(resource)
+
+async def create_resource():
+    return "resource"
+
+async def cleanup_resource(r):
+    pass
+
+# Using decorated context manager
+async def use_managed():
+    async with managed_resource() as r:
+        return r
+
+--- expect:block-graph ---
+(root:1 async_context_managers ($TMP/async_context_managers.py)
+  (class:2 AsyncResource
+    (method:3 __aenter__
+    )
+    (method:5 __aexit__
+    )
+    (method:7 _connect)
+    (method:8 _disconnect)
+  )
+  (func:9 use_resource
+  )
+  (func:12 multi_context
+  )
+  (func:15 managed_resource
+    (@fdep:18 create_resource)
+    (@fdep:19 cleanup_resource)
+  )
+  (func:18 create_resource)
+  (func:19 cleanup_resource)
+  (func:20 use_managed
+  )
+)

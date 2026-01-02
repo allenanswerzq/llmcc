@@ -1,0 +1,61 @@
+===============================================================================
+edge-combined-no-cycle
+===============================================================================
+Test that combined edges don't create artificial cycles.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/core.py ---
+class Entity:
+    pass
+
+class Repository:
+    pass
+
+lang: python
+
+--- file: sample/user.py ---
+from .core import Entity, Repository
+
+class User(Entity):
+    pass
+
+class UserRepository(Repository):
+    def get(self, id: int) -> User:
+        return User()
+
+    def save(self, user: User) -> None:
+        pass
+
+lang: python
+
+--- file: sample/service.py ---
+from .user import User, UserRepository
+
+class UserService:
+    def __init__(self, repo: UserRepository):
+        self.repo = repo
+
+    def get_user(self, id: int) -> User:
+        return self.repo.get(id)
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

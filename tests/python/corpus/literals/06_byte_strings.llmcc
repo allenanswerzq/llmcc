@@ -1,0 +1,32 @@
+===============================================================================
+byte-strings
+===============================================================================
+Test byte strings parsing.
+lang: python
+
+--- file: byte_strings.py ---
+# Byte strings
+bytes_single = b'hello'
+bytes_double = b"world"
+bytes_upper = B'BYTES'
+
+# Byte escape sequences
+bytes_hex = b'\x48\x65\x6c\x6c\x6f'
+bytes_octal = b'\110\145\154\154\157'
+bytes_newline = b'line1\nline2'
+
+# Raw byte strings
+raw_bytes = rb'no\escape'
+raw_bytes_upper = BR'also\raw'
+
+# Triple quoted bytes
+bytes_triple = b'''
+multiline
+bytes
+'''
+
+# Byte operations
+concat_bytes = b'hello' + b'world'
+
+--- expect:block-graph ---
+(root:1 byte_strings ($TMP/byte_strings.py))

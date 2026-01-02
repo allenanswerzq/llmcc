@@ -1,0 +1,87 @@
+===============================================================================
+abc-abstract-class
+===============================================================================
+Test abstract base class implementation.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/base.py ---
+from abc import ABC, abstractmethod
+
+class Shape(ABC):
+    @abstractmethod
+    def area(self) -> float:
+        pass
+
+    @abstractmethod
+    def perimeter(self) -> float:
+        pass
+
+lang: python
+
+--- file: sample/shapes.py ---
+from .base import Shape
+import math
+
+class Circle(Shape):
+    def __init__(self, radius: float):
+        self.radius = radius
+
+    def area(self) -> float:
+        return math.pi * self.radius ** 2
+
+    def perimeter(self) -> float:
+        return 2 * math.pi * self.radius
+
+class Rectangle(Shape):
+    def __init__(self, width: float, height: float):
+        self.width = width
+        self.height = height
+
+    def area(self) -> float:
+        return self.width * self.height
+
+    def perimeter(self) -> float:
+        return 2 * (self.width + self.height)
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 base ($TMP/sample/base.py)
+  (class:3 Shape
+    (method:4 area
+      (return:5 @type float)
+    )
+    (method:6 perimeter
+      (return:7 @type float)
+    )
+  )
+)
+
+(root:8 shapes ($TMP/sample/shapes.py)
+  (class:9 Circle
+    (method:10 __init__
+      (parameter:11 radius @type float)
+    )
+    (method:12 area
+      (return:13 @type float)
+    )
+    (method:14 perimeter
+      (return:15 @type float)
+    )
+  )
+  (class:16 Rectangle
+    (method:17 __init__
+      (parameter:18 width @type float)
+      (parameter:19 height @type float)
+    )
+    (method:20 area
+      (return:21 @type float)
+    )
+    (method:22 perimeter
+      (return:23 @type float)
+    )
+  )
+)

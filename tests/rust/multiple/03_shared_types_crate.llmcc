@@ -124,13 +124,13 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
   (func:23 authenticate
     (parameter:24 user_id @type:3 UserId)
     (parameter:25 password @type String)
-    (return:26)
+    (return:26 @type:20 Session)
     (@tdep:10 AuthError)
     (@tdep:20 Session)
   )
   (func:28 validate_session
     (parameter:29 session @type:20 Session)
-    (return:30)
+    (return:30 @type:7 User)
     (@tdep:7 User)
     (@tdep:10 AuthError)
   )
@@ -143,27 +143,27 @@ pub fn find_user(id: UserId) -> Result<User, StoreError> {
     (method:35 get
       (parameter:36 self @type:34 UserStore)
       (parameter:37 id @type:3 UserId)
-      (return:38)
+      (return:38 @type:7 User)
       (@tdep:7 User)
       (@tdep:14 StoreError)
     )
     (method:39 save
       (parameter:40 self @type:34 UserStore)
       (parameter:41 user @type:7 User)
-      (return:42)
+      (return:42 @type:7 User)
       (@tdep:7 User)
       (@tdep:14 StoreError)
     )
     (method:43 delete
       (parameter:44 self @type:34 UserStore)
       (parameter:45 id @type:3 UserId)
-      (return:46)
+      (return:46 @type:14 StoreError)
       (@tdep:14 StoreError)
     )
   )
   (func:47 find_user
     (parameter:48 id @type:3 UserId)
-    (return:49)
+    (return:49 @type:7 User)
     (@tdep:7 User)
     (@tdep:14 StoreError)
   )
@@ -180,9 +180,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_auth {
     label="auth";
@@ -249,9 +246,9 @@ digraph architecture {
   n7 -> n20 [from="field_type", to="struct"];
   n20 -> n28 [from="input", to="func"];
   n23 -> n10 [from="func", to="type_dep"];
-  n23 -> n20 [from="func", to="type_dep"];
-  n28 -> n7 [from="func", to="type_dep"];
+  n23 -> n20 [from="func", to="output"];
+  n28 -> n7 [from="func", to="output"];
   n28 -> n10 [from="func", to="type_dep"];
-  n47 -> n7 [from="func", to="type_dep"];
+  n47 -> n7 [from="func", to="output"];
   n47 -> n14 [from="func", to="type_dep"];
 }

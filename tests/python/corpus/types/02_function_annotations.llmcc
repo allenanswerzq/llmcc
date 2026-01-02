@@ -1,0 +1,74 @@
+===============================================================================
+function-annotations
+===============================================================================
+Test function annotations parsing.
+lang: python
+
+--- file: function_annotations.py ---
+# Return type annotations
+def greet() -> str:
+    return "hello"
+
+def get_count() -> int:
+    return 42
+
+# Parameter annotations
+def add(a: int, b: int) -> int:
+    return a + b
+
+def concat(s1: str, s2: str) -> str:
+    return s1 + s2
+
+# Default values with annotations
+def greet_name(name: str = "World") -> str:
+    return f"Hello, {name}"
+
+# *args and **kwargs annotations
+def variadic(*args: int, **kwargs: str) -> None:
+    pass
+
+# None return (void)
+def side_effect(x: int) -> None:
+    print(x)
+
+# NoReturn
+from typing import NoReturn
+
+def raise_error() -> NoReturn:
+    raise RuntimeError("error")
+
+--- expect:block-graph ---
+(root:1 function_annotations ($TMP/function_annotations.py)
+  (func:2 greet
+    (return:3 @type str)
+  )
+  (func:4 get_count
+    (return:5 @type int)
+  )
+  (func:6 add
+    (parameter:7 a @type int)
+    (parameter:8 b @type int)
+    (return:9 @type int)
+  )
+  (func:10 concat
+    (parameter:11 s1 @type str)
+    (parameter:12 s2 @type str)
+    (return:13 @type str)
+  )
+  (func:14 greet_name
+    (parameter:15 name @type str)
+    (return:16 @type str)
+  )
+  (func:17 variadic
+    (parameter:18 args)
+    (parameter:19 kwargs)
+    (return:20 @type None)
+  )
+  (func:21 side_effect
+    (parameter:22 x @type int)
+    (return:23 @type None)
+  )
+  (func:25 raise_error
+    (return:26 @type NoReturn)
+  )
+)

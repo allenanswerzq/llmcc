@@ -9,6 +9,7 @@ static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 use llmcc_cli::LlmccOptions;
 use llmcc_cli::run_main;
 use llmcc_dot::ComponentDepth;
+use llmcc_py::LangPython;
 use llmcc_rust::LangRust;
 
 #[derive(Parser, Debug)]
@@ -102,6 +103,7 @@ pub fn run(args: Cli) -> Result<()> {
 
     let result = match args.lang.as_str() {
         "rust" => run_main::<LangRust>(&opts),
+        "python" => run_main::<LangPython>(&opts),
         _ => Err(format!("Unknown language: {}", args.lang).into()),
     };
 

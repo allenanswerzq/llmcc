@@ -1,0 +1,127 @@
+===============================================================================
+plugin-architecture
+===============================================================================
+Test a plugin-based architecture with a core and plugin packages.
+lang: python
+
+--- file: core/__init__.py ---
+from .plugin import Plugin, PluginRegistry
+from .events import Event, EventBus
+
+--- file: core/plugin.py ---
+from abc import ABC, abstractmethod
+from typing import Dict, Type
+
+class Plugin(ABC):
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        pass
+
+    @abstractmethod
+    def initialize(self) -> None:
+        pass
+
+    @abstractmethod
+    def shutdown(self) -> None:
+        pass
+
+class PluginRegistry:
+    _plugins: Dict[str, Plugin] = {}
+
+    @classmethod
+    def register(cls, plugin: Plugin) -> None:
+        cls._plugins[plugin.name] = plugin
+
+    @classmethod
+    def get(cls, name: str) -> Plugin | None:
+        return cls._plugins.get(name)
+
+lang: python
+
+--- file: core/events.py ---
+from typing import Callable, List, Dict
+
+class Event:
+    name: str
+    data: dict
+
+class EventBus:
+    _handlers: Dict[str, List[Callable]] = {}
+
+    @classmethod
+    def subscribe(cls, event: str, handler: Callable) -> None:
+        if event not in cls._handlers:
+            cls._handlers[event] = []
+        cls._handlers[event].append(handler)
+
+    @classmethod
+    def publish(cls, event: Event) -> None:
+        for handler in cls._handlers.get(event.name, []):
+            handler(event)
+
+lang: python
+
+--- file: plugins/__init__.py ---
+# Plugins package
+
+--- file: plugins/logging/__init__.py ---
+from .plugin import LoggingPlugin
+
+--- file: plugins/logging/plugin.py ---
+from core import Plugin, Event, EventBus
+
+class LoggingPlugin(Plugin):
+    @property
+    def name(self) -> str:
+        return "logging"
+
+    def initialize(self) -> None:
+        EventBus.subscribe("*", self._log_event)
+
+    def shutdown(self) -> None:
+        pass
+
+    def _log_event(self, event: Event) -> None:
+        print(f"Event: {event.name}")
+
+lang: python
+
+--- file: plugins/metrics/__init__.py ---
+from .plugin import MetricsPlugin
+
+--- file: plugins/metrics/plugin.py ---
+from core import Plugin, Event, EventBus
+
+class MetricsPlugin(Plugin):
+    @property
+    def name(self) -> str:
+        return "metrics"
+
+    def initialize(self) -> None:
+        EventBus.subscribe("*", self._record_metric)
+
+    def shutdown(self) -> None:
+        pass
+
+    def _record_metric(self, event: Event) -> None:
+        pass
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

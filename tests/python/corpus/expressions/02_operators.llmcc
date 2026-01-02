@@ -1,0 +1,170 @@
+===============================================================================
+unary-operators
+===============================================================================
+Test unary operator expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+def negate(x: int) -> int:
+    return -x
+
+def logical_not(flag: bool) -> bool:
+    return not flag
+
+def bitwise_not(n: int) -> int:
+    return ~n
+
+def positive(x: int) -> int:
+    return +x
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 negate
+    (parameter:3 x @type int)
+    (return:4 @type int)
+  )
+  (func:5 logical_not
+    (parameter:6 flag @type bool)
+    (return:7 @type bool)
+  )
+  (func:8 bitwise_not
+    (parameter:9 n @type int)
+    (return:10 @type int)
+  )
+  (func:11 positive
+    (parameter:12 x @type int)
+    (return:13 @type int)
+  )
+)
+
+
+===============================================================================
+binary-operators-arithmetic
+===============================================================================
+Test arithmetic binary operators.
+lang: python
+
+--- file: src/lib.py ---
+
+def arithmetic(a: int, b: int) -> int:
+    add = a + b
+    sub = a - b
+    mul = a * b
+    div = a / b
+    floordiv = a // b
+    mod = a % b
+    power = a ** b
+    return add
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 arithmetic
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+    (return:5 @type int)
+  )
+)
+
+
+===============================================================================
+binary-operators-comparison
+===============================================================================
+Test comparison operators.
+lang: python
+
+--- file: src/lib.py ---
+
+def compare(a: int, b: int) -> bool:
+    eq = a == b
+    ne = a != b
+    lt = a < b
+    gt = a > b
+    le = a <= b
+    ge = a >= b
+    return eq
+
+def identity_check(a, b) -> bool:
+    same = a is b
+    diff = a is not b
+    return same
+
+def membership_check(item: int, items: list) -> bool:
+    found = item in items
+    missing = item not in items
+    return found
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 compare
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+    (return:5 @type bool)
+  )
+  (func:6 identity_check
+    (return:7 @type bool)
+  )
+  (func:8 membership_check
+    (parameter:9 item @type int)
+    (parameter:10 items @type list)
+    (return:11 @type bool)
+  )
+)
+
+
+===============================================================================
+binary-operators-logical
+===============================================================================
+Test logical binary operators.
+lang: python
+
+--- file: src/lib.py ---
+
+def logical(a: bool, b: bool) -> bool:
+    and_result = a and b
+    or_result = a or b
+    return and_result
+
+def short_circuit(x: int) -> int:
+    result = x > 0 and x < 100 and x % 2 == 0
+    fallback = x or 0
+    return fallback
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 logical
+    (parameter:3 a @type bool)
+    (parameter:4 b @type bool)
+    (return:5 @type bool)
+  )
+  (func:6 short_circuit
+    (parameter:7 x @type int)
+    (return:8 @type int)
+  )
+)
+
+
+===============================================================================
+binary-operators-bitwise
+===============================================================================
+Test bitwise binary operators.
+lang: python
+
+--- file: src/lib.py ---
+
+def bitwise(a: int, b: int) -> int:
+    band = a & b
+    bor = a | b
+    bxor = a ^ b
+    lshift = a << b
+    rshift = a >> b
+    return band
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 bitwise
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+    (return:5 @type int)
+  )
+)

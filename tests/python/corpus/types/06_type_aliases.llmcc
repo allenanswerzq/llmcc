@@ -1,0 +1,56 @@
+===============================================================================
+type-aliases
+===============================================================================
+Test type aliases parsing.
+lang: python
+
+--- file: type_aliases.py ---
+from typing import TypeAlias, List, Dict, Callable, Tuple
+
+# Simple aliases
+UserId: TypeAlias = int
+Username: TypeAlias = str
+
+# Complex aliases
+UserDict: TypeAlias = Dict[str, str]
+Matrix: TypeAlias = List[List[float]]
+Handler: TypeAlias = Callable[[str], None]
+Point: TypeAlias = Tuple[float, float]
+
+# Python 3.12+ type statement
+type Vector = list[float]
+type Callback = Callable[[int], str]
+type Result = tuple[bool, str | None]
+
+# Recursive type alias
+type JsonValue = str | int | float | bool | None | list[JsonValue] | dict[str, JsonValue]
+
+# Generic type alias
+type ListOf[T] = list[T]
+type Mapping[K, V] = dict[K, V]
+
+# Using aliases
+def process_user(id: UserId, name: Username) -> UserDict:
+    return {"id": str(id), "name": name}
+
+def transform(matrix: Matrix) -> Matrix:
+    return matrix
+
+--- expect:block-graph ---
+(root:1 type_aliases ($TMP/type_aliases.py)
+  (alias:2 Vector)
+  (alias:3 Callback)
+  (alias:4 Result)
+  (alias:5 JsonValue)
+  (alias:6 ListOf)
+  (alias:7 Mapping)
+  (func:8 process_user
+    (parameter:9 id @type UserId)
+    (parameter:10 name @type Username)
+    (return:11 @type UserDict)
+  )
+  (func:13 transform
+    (parameter:14 matrix @type Matrix)
+    (return:15 @type Matrix)
+  )
+)

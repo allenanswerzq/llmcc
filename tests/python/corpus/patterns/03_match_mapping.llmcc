@@ -1,0 +1,35 @@
+===============================================================================
+match-mapping
+===============================================================================
+Test match mapping parsing.
+lang: python
+
+--- file: match_mapping.py ---
+def match_dict(data):
+    match data:
+        case {}:
+            return "empty dict"
+        case {"type": "user"}:
+            return "user type"
+        case {"type": "admin", "level": level}:
+            return f"admin level {level}"
+        case {"name": name, **rest}:
+            return f"has name {name} and {len(rest)} other keys"
+
+def match_config(config):
+    match config:
+        case {"debug": True, "verbose": True}:
+            return "full logging"
+        case {"debug": True}:
+            return "debug mode"
+        case {"production": True}:
+            return "production mode"
+        case _:
+            return "default mode"
+
+--- expect:block-graph ---
+(root:1 match_mapping ($TMP/match_mapping.py)
+  (func:2 match_dict
+  )
+  (func:4 match_config)
+)

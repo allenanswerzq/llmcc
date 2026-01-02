@@ -1,0 +1,61 @@
+===============================================================================
+cross-file-reference
+===============================================================================
+Test cross-file type references create edges.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+class Error:
+    def __init__(self, code: int, message: str):
+        self.code = code
+        self.message = message
+
+lang: python
+
+--- file: sample/service.py ---
+from .models import User, Error
+
+def get_user(id: int) -> User:
+    return User(id, "Unknown")
+
+def validate_user(user: User) -> Error | None:
+    if not user.name:
+        return Error(1, "Name required")
+    return None
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 models ($TMP/sample/models.py)
+  (class:3 User
+    (method:4 __init__
+      (parameter:5 id @type int)
+      (parameter:6 name @type str)
+    )
+  )
+  (class:7 Error
+    (method:8 __init__
+      (parameter:9 code @type int)
+      (parameter:10 message @type str)
+    )
+  )
+)
+
+(root:11 service ($TMP/sample/service.py)
+  (func:12 get_user
+    (parameter:13 id @type int)
+    (return:14 @type:3 User)
+  )
+  (func:16 validate_user
+    (parameter:17 user @type:3 User)
+    (return:18 @type:7 Error)
+  )
+)

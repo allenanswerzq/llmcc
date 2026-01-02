@@ -1,0 +1,47 @@
+===============================================================================
+ellipsis
+===============================================================================
+Test ellipsis parsing.
+lang: python
+
+--- file: ellipsis.py ---
+from typing import Callable
+
+# Ellipsis literal
+ellipsis_val = ...
+
+# Common uses of ellipsis
+
+# Type stub placeholder
+def stub_function() -> None:
+    ...
+
+# Abstract method placeholder
+class AbstractBase:
+    def abstract_method(self) -> int:
+        ...
+
+# Type annotation with Callable
+callback: Callable[..., int]
+
+# Slice with ellipsis (numpy-style)
+def get_slice(arr):
+    return arr[..., 0]
+
+# Pass alternative
+class EmptyClass:
+    ...
+
+--- expect:block-graph ---
+(root:1 ellipsis ($TMP/ellipsis.py)
+  (func:2 stub_function
+    (return:3 @type None)
+  )
+  (class:4 AbstractBase
+    (method:5 abstract_method
+      (return:6 @type int)
+    )
+  )
+  (func:7 get_slice)
+  (class:8 EmptyClass)
+)

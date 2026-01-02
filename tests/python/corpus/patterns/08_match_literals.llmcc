@@ -1,0 +1,55 @@
+===============================================================================
+match-literals
+===============================================================================
+Test match literals parsing.
+lang: python
+
+--- file: match_literals.py ---
+import enum
+
+class Color(enum.Enum):
+    RED = 1
+    GREEN = 2
+    BLUE = 3
+
+class Status:
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+
+def match_enum(color):
+    match color:
+        case Color.RED:
+            return "#FF0000"
+        case Color.GREEN:
+            return "#00FF00"
+        case Color.BLUE:
+            return "#0000FF"
+
+def match_class_constant(status):
+    match status:
+        case Status.ACTIVE:
+            return "system is active"
+        case Status.INACTIVE:
+            return "system is inactive"
+
+def match_qualified_name(value):
+    match value:
+        case bool():
+            return "boolean"
+        case int():
+            return "integer"
+        case str():
+            return "string"
+        case list():
+            return "list"
+        case _:
+            return "unknown"
+
+--- expect:block-graph ---
+(root:1 match_literals ($TMP/match_literals.py)
+  (class:2 Color)
+  (class:3 Status)
+  (func:4 match_enum)
+  (func:5 match_class_constant)
+  (func:6 match_qualified_name)
+)

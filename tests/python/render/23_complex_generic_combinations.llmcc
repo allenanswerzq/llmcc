@@ -1,0 +1,125 @@
+===============================================================================
+complex-generic-combinations
+===============================================================================
+Test complex combinations of generic types.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/types.py ---
+from typing import TypeVar, Generic, Protocol
+
+class Entity(Protocol):
+    id: int
+
+T = TypeVar('T', bound=Entity)
+
+class Repository(Generic[T]):
+    def get(self, id: int) -> T | None:
+        ...
+
+    def save(self, entity: T) -> T:
+        ...
+
+    def delete(self, entity: T) -> None:
+        ...
+
+lang: python
+
+--- file: sample/models.py ---
+from dataclasses import dataclass
+
+@dataclass
+class User:
+    id: int
+    name: str
+
+@dataclass
+class Product:
+    id: int
+    title: str
+    price: float
+
+lang: python
+
+--- file: sample/repos.py ---
+from .types import Repository
+from .models import User, Product
+
+class UserRepository(Repository[User]):
+    def get(self, id: int) -> User | None:
+        return None
+
+    def save(self, entity: User) -> User:
+        return entity
+
+    def delete(self, entity: User) -> None:
+        pass
+
+class ProductRepository(Repository[Product]):
+    def get(self, id: int) -> Product | None:
+        return None
+
+    def save(self, entity: Product) -> Product:
+        return entity
+
+    def delete(self, entity: Product) -> None:
+        pass
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 types ($TMP/sample/types.py)
+  (class:3 Entity)
+  (class:5 Repository
+    (method:6 get
+      (parameter:7 id @type int)
+      (return:8 @type T)
+    )
+    (method:9 save
+      (parameter:10 entity @type T)
+      (return:11 @type T)
+    )
+    (method:12 delete
+      (parameter:13 entity @type T)
+      (return:14 @type None)
+    )
+  )
+)
+
+(root:15 models ($TMP/sample/models.py)
+  (class:16 User)
+  (class:17 Product)
+)
+
+(root:18 repos ($TMP/sample/repos.py)
+  (class:19 UserRepository
+    (method:20 get
+      (parameter:21 id @type int)
+      (return:22 @type:16 User)
+    )
+    (method:23 save
+      (parameter:24 entity @type:16 User)
+      (return:25 @type:16 User)
+    )
+    (method:26 delete
+      (parameter:27 entity @type:16 User)
+      (return:28 @type None)
+    )
+  )
+  (class:29 ProductRepository
+    (method:30 get
+      (parameter:31 id @type int)
+      (return:32 @type:17 Product)
+    )
+    (method:33 save
+      (parameter:34 entity @type:17 Product)
+      (return:35 @type:17 Product)
+    )
+    (method:36 delete
+      (parameter:37 entity @type:17 Product)
+      (return:38 @type None)
+    )
+  )
+)

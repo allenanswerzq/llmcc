@@ -1,0 +1,73 @@
+===============================================================================
+callable-types
+===============================================================================
+Test callable types parsing.
+lang: python
+
+--- file: callable_types.py ---
+from typing import Callable, Awaitable
+
+# Basic callable
+handler: Callable[[], None]
+converter: Callable[[str], int]
+processor: Callable[[int, int], int]
+
+# Callable with multiple args
+formatter: Callable[[str, int, bool], str]
+
+# Callable with any args
+any_func: Callable[..., int]
+
+# Callable returning None
+callback: Callable[[str], None]
+
+# Nested callable
+factory: Callable[[], Callable[[int], str]]
+
+# Async callable
+async_handler: Callable[[str], Awaitable[int]]
+
+# Callable as parameter
+def apply(func: Callable[[int], int], value: int) -> int:
+    return func(value)
+
+# Callable as return
+def create_adder(n: int) -> Callable[[int], int]:
+    def adder(x: int) -> int:
+        return x + n
+    return adder
+
+# Higher-order function
+def compose(
+    f: Callable[[int], int],
+    g: Callable[[int], int]
+) -> Callable[[int], int]:
+    def composed(x: int) -> int:
+        return f(g(x))
+    return composed
+
+--- expect:block-graph ---
+(root:1 callable_types ($TMP/callable_types.py)
+  (func:2 apply
+    (parameter:3 func @type Callable)
+    (parameter:4 value @type int)
+    (return:5 @type int)
+  )
+  (func:7 create_adder
+    (parameter:8 n @type int)
+    (return:9 @type Callable)
+    (func:10 adder
+      (parameter:11 x @type int)
+      (return:12 @type int)
+    )
+  )
+  (func:13 compose
+    (parameter:14 f @type Callable)
+    (parameter:15 g @type Callable)
+    (return:16 @type Callable)
+    (func:17 composed
+      (parameter:18 x @type int)
+      (return:19 @type int)
+    )
+  )
+)

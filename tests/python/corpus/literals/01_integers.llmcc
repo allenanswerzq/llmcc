@@ -1,0 +1,33 @@
+===============================================================================
+integers
+===============================================================================
+Test integers parsing.
+lang: python
+
+--- file: integers.py ---
+# Decimal integers
+decimal = 42
+large = 1_000_000
+negative = -123
+
+# Hexadecimal
+hex_lower = 0xdeadbeef
+hex_upper = 0XDEADBEEF
+hex_mixed = 0xDeAd_BeEf
+
+# Octal
+octal_zero = 0o755
+octal_upper = 0O644
+
+# Binary
+binary_lower = 0b10101010
+binary_upper = 0B11110000
+binary_sep = 0b1111_0000
+
+# Complex numbers
+complex_int = 5j
+complex_upper = 10J
+complex_expr = 3 + 4j
+
+--- expect:block-graph ---
+(root:1 integers ($TMP/integers.py))

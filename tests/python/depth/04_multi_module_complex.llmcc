@@ -1,0 +1,83 @@
+===============================================================================
+multi-module-complex
+===============================================================================
+Test complex multi-module dependencies at depth 2.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models/__init__.py ---
+from .user import User
+from .product import Product
+
+--- file: sample/models/user.py ---
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+lang: python
+
+--- file: sample/models/product.py ---
+class Product:
+    def __init__(self, id: int, name: str, price: float):
+        self.id = id
+        self.name = name
+        self.price = price
+
+--- file: sample/services/__init__.py ---
+from .user_service import UserService
+from .product_service import ProductService
+
+lang: python
+
+--- file: sample/services/user_service.py ---
+from sample.models import User
+
+class UserService:
+    def get(self, id: int) -> User:
+        return User(id, "Unknown")
+
+--- file: sample/services/product_service.py ---
+from sample.models import Product, User
+
+class ProductService:
+    def get_for_user(self, user: User) -> list[Product]:
+        return []
+
+lang: python
+
+--- file: sample/api/__init__.py ---
+# API package
+
+--- file: sample/api/handlers.py ---
+from sample.services import UserService, ProductService
+from sample.models import User, Product
+
+class UserHandler:
+    def __init__(self, service: UserService):
+        self.service = service
+
+class ProductHandler:
+    def __init__(self, service: ProductService):
+        self.service = service
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

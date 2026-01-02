@@ -1,0 +1,143 @@
+===============================================================================
+decorators-basic
+===============================================================================
+Test basic function decorators.
+lang: python
+
+--- file: src/lib.py ---
+
+def log(func):
+    def wrapper(*args, **kwargs):
+        print(f"Calling {func.__name__}")
+        return func(*args, **kwargs)
+    return wrapper
+
+@log
+def greet(name: str) -> str:
+    return f"Hello, {name}"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 log
+    (func:3 wrapper
+      (parameter:4 args @type args)
+      (parameter:5 kwargs @type kwargs)
+    )
+  )
+  (func:8 greet
+    (parameter:9 name @type str)
+    (return:10 @type str)
+  )
+)
+
+
+===============================================================================
+decorators-multiple
+===============================================================================
+Test multiple decorators stacked.
+lang: python
+
+--- file: src/lib.py ---
+
+def decorator_a(func):
+    return func
+
+def decorator_b(func):
+    return func
+
+@decorator_a
+@decorator_b
+def combined() -> None:
+    pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 decorator_a)
+  (func:3 decorator_b)
+  (func:4 combined
+    (return:5 @type None)
+  )
+)
+
+
+===============================================================================
+decorators-with-arguments
+===============================================================================
+Test decorators with arguments.
+lang: python
+
+--- file: src/lib.py ---
+
+def repeat(times: int):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for _ in range(times):
+                result = func(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
+
+@repeat(3)
+def say_hello() -> None:
+    print("Hello")
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 repeat
+    (parameter:3 times @type int)
+    (func:4 decorator
+      (func:5 wrapper
+        (parameter:6 args @type args)
+        (parameter:7 kwargs @type kwargs)
+      )
+    )
+  )
+  (func:11 say_hello
+    (return:12 @type None)
+  )
+)
+
+
+===============================================================================
+decorators-property
+===============================================================================
+Test property decorators.
+lang: python
+
+--- file: src/lib.py ---
+
+class Circle:
+    def __init__(self, radius: float) -> None:
+        self._radius = radius
+
+    @property
+    def radius(self) -> float:
+        return self._radius
+
+    @radius.setter
+    def radius(self, value: float) -> None:
+        self._radius = value
+
+    @property
+    def area(self) -> float:
+        return 3.14159 * self._radius ** 2
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Circle
+    (method:3 __init__
+      (parameter:4 radius @type float)
+      (return:5 @type None)
+    )
+    (method:6 radius
+      (return:7 @type None)
+    )
+    (method:8 radius
+      (parameter:9 value @type float)
+      (return:10 @type None)
+    )
+    (method:11 area
+      (return:12 @type float)
+    )
+  )
+)

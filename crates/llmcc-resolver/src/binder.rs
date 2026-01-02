@@ -76,12 +76,18 @@ impl<'a> BinderScopes<'a> {
     }
 
     /// Pushes the scope represented by a HirScope node.
-    pub fn push_scope_node(&mut self, sn: &'a HirScope<'a>) {
+    /// Returns true if the scope was pushed, false if the scope wasn't set.
+    pub fn push_scope_node(&mut self, sn: &'a HirScope<'a>) -> bool {
+        let Some(scope) = sn.opt_scope() else {
+            tracing::warn!("push_scope_node: scope not set for HirScope {}", sn.owner_name());
+            return false;
+        };
         if sn.opt_ident().is_some() {
-            self.push_scope_recursive(sn.scope().id());
+            self.push_scope_recursive(scope.id());
         } else {
-            self.push_scope(sn.scope().id());
+            self.push_scope(scope.id());
         }
+        true
     }
 
     /// Pops the current scope from the stack.

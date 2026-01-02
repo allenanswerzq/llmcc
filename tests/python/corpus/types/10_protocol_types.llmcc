@@ -1,0 +1,102 @@
+===============================================================================
+protocol-types
+===============================================================================
+Test protocol types parsing.
+lang: python
+
+--- file: protocol_types.py ---
+from typing import Protocol, runtime_checkable
+
+# Basic protocol
+class Printable(Protocol):
+    def __str__(self) -> str:
+        ...
+
+# Protocol with method
+class Closeable(Protocol):
+    def close(self) -> None:
+        ...
+
+# Protocol with property
+class Named(Protocol):
+    @property
+    def name(self) -> str:
+        ...
+
+# Runtime checkable protocol
+@runtime_checkable
+class Sized(Protocol):
+    def __len__(self) -> int:
+        ...
+
+# Combined protocol
+class Resource(Closeable, Named, Protocol):
+    def open(self) -> None:
+        ...
+
+# Generic protocol
+from typing import TypeVar
+T_co = TypeVar('T_co', covariant=True)
+
+class Iterable(Protocol[T_co]):
+    def __iter__(self) -> "Iterator[T_co]":
+        ...
+
+class Iterator(Protocol[T_co]):
+    def __next__(self) -> T_co:
+        ...
+
+# Using protocols
+def print_all(items: Iterable[Printable]) -> None:
+    for item in items:
+        print(item)
+
+def close_resource(r: Closeable) -> None:
+    r.close()
+
+--- expect:block-graph ---
+(root:1 protocol_types ($TMP/protocol_types.py)
+  (class:2 Printable
+    (method:3 __str__
+      (return:4 @type str)
+    )
+  )
+  (class:5 Closeable
+    (method:6 close
+      (return:7 @type None)
+    )
+  )
+  (class:8 Named
+    (method:9 name
+      (return:10 @type str)
+    )
+  )
+  (class:11 Sized
+    (method:12 __len__
+      (return:13 @type int)
+    )
+  )
+  (class:14 Resource
+    (method:15 open
+      (return:16 @type None)
+    )
+  )
+  (class:18 Iterable
+    (method:19 __iter__
+      (return:20 @type str)
+    )
+  )
+  (class:21 Iterator
+    (method:22 __next__
+      (return:23 @type T_co)
+    )
+  )
+  (func:24 print_all
+    (parameter:25 items @type:18 Iterable)
+    (return:26 @type None)
+  )
+  (func:28 close_resource
+    (parameter:29 r @type:5 Closeable)
+    (return:30 @type None)
+  )
+)

@@ -316,9 +316,23 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 BasicBlock::Parameter(block_ref)
             }
             BlockKind::Return => {
-                // Return blocks: symbol should already have type_of set during binding
+                // Return blocks: get type from parent function's type_of (set during binding)
+                // We navigate from the return type node to its parent function node
+                // to get the correct return type, avoiding issues with shared type identifiers
                 let mut block = BlockReturn::new_with_symbol(id, node, parent, children, symbol);
-                let (type_name, type_ref) = self.resolve_type_info(symbol);
+
+                // Try to get type from parent function's symbol via HIR parent
+                let (type_name, type_ref) = if let Some(parent_hir_id) = node.parent()
+                    && let Some(parent_hir_node) = self.unit.opt_hir_node(parent_hir_id)
+                    && let Some(scope) = parent_hir_node.as_scope()
+                    && let Some(fn_sym) = scope.opt_symbol()
+                {
+                    self.resolve_type_info(Some(fn_sym))
+                } else {
+                    // Fallback to node's symbol if parent not available
+                    self.resolve_type_info(symbol)
+                };
+
                 block.set_type_info(type_name, type_ref);
                 let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Return(block_ref)

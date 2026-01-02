@@ -1,0 +1,127 @@
+===============================================================================
+protocol-basic
+===============================================================================
+Test Protocol declarations (structural subtyping).
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Protocol
+
+class Readable(Protocol):
+    def read(self) -> str: ...
+
+class Writable(Protocol):
+    def write(self, data: str) -> None: ...
+
+class ReadWritable(Readable, Writable, Protocol):
+    pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Readable
+    (method:3 read
+      (return:4 @type str)
+    )
+  )
+  (class:5 Writable
+    (method:6 write
+      (parameter:7 data @type str)
+      (return:8 @type None)
+    )
+  )
+  (class:9 ReadWritable)
+)
+
+
+===============================================================================
+protocol-runtime-checkable
+===============================================================================
+Test runtime checkable Protocol.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class Closeable(Protocol):
+    def close(self) -> None: ...
+
+@runtime_checkable
+class ContextManager(Protocol):
+    def __enter__(self) -> "ContextManager": ...
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool: ...
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Closeable
+    (method:3 close
+      (return:4 @type None)
+    )
+  )
+  (class:5 ContextManager
+    (method:6 __enter__
+      (return:7 @type str)
+    )
+    (method:8 __exit__
+      (return:9 @type bool)
+    )
+  )
+)
+
+
+===============================================================================
+abc-abstract-base-class
+===============================================================================
+Test Abstract Base Class declarations.
+lang: python
+
+--- file: src/lib.py ---
+
+from abc import ABC, abstractmethod
+
+class Shape(ABC):
+    @abstractmethod
+    def area(self) -> float:
+        pass
+
+    @abstractmethod
+    def perimeter(self) -> float:
+        pass
+
+class Rectangle(Shape):
+    def __init__(self, width: float, height: float) -> None:
+        self.width = width
+        self.height = height
+
+    def area(self) -> float:
+        return self.width * self.height
+
+    def perimeter(self) -> float:
+        return 2 * (self.width + self.height)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Shape
+    (method:3 area
+      (return:4 @type float)
+    )
+    (method:5 perimeter
+      (return:6 @type float)
+    )
+  )
+  (class:7 Rectangle
+    (method:8 __init__
+      (parameter:9 width @type float)
+      (parameter:10 height @type float)
+      (return:11 @type None)
+    )
+    (method:12 area
+      (return:13 @type float)
+    )
+    (method:14 perimeter
+      (return:15 @type float)
+    )
+  )
+)

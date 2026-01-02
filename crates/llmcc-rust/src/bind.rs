@@ -64,7 +64,11 @@ impl<'tcx> BinderVisitor<'tcx> {
         }
 
         let child_parent = sn.opt_symbol().or(parent);
-        scopes.push_scope_node(sn);
+        if !scopes.push_scope_node(sn) {
+            // Scope wasn't set in collector, fall back to parent namespace
+            self.visit_children(unit, node, scopes, namespace, child_parent);
+            return;
+        }
         if let Some(scope_enter) = on_scope_enter {
             scope_enter(unit, sn, scopes);
         }
@@ -288,6 +292,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             return;
         };
 
+        // Try to get return type symbol directly
         if let Some(return_type) = node.ident_symbol_by_field(unit, LangRust::field_return_type) {
             tracing::trace!(
                 "binding function return type '{}' to '{}'",
@@ -300,6 +305,21 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         // Extract nested types from generic return types (e.g., Result<User, Error>)
         if let Some(return_type_node) = node.child_by_field(unit, LangRust::field_return_type) {
             extract_nested_types(unit, scopes, &return_type_node, fn_sym);
+
+            // If type_of is not set but we have nested types, use the first one
+            // This handles cases like Option<User> where Option is external but User is local
+            if fn_sym.type_of().is_none() {
+                if let Some(nested) = fn_sym.nested_types() {
+                    if let Some(first_nested_id) = nested.first() {
+                        tracing::trace!(
+                            "binding function return type from nested type {} to '{}'",
+                            first_nested_id,
+                            fn_sym.format(Some(unit.interner()))
+                        );
+                        fn_sym.set_type_of(*first_nested_id);
+                    }
+                }
+            }
         }
 
         if unit.resolve_name(fn_sym.name) == "main" {

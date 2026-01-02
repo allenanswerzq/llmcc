@@ -80,7 +80,7 @@ pub struct AllThree {
 
 (root:10 services ($TMP/sample/src/services.rs)
   (func:11 get_user
-    (return:12)
+    (return:12 @type:3 User)
     (@tdep:3 User)
     (@tdep:5 Error)
   )
@@ -115,9 +115,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_sample {
     label="sample";
@@ -160,7 +157,7 @@ digraph architecture {
   n5 -> n21 [from="type_arg", to="generic"];
   n8 -> n14 [from="type_dep", to="struct"];
   n8 -> n21 [from="type_arg", to="generic"];
-  n11 -> n3 [from="func", to="type_dep"];
+  n11 -> n3 [from="func", to="output"];
   n11 -> n5 [from="func", to="type_dep"];
   n16 -> n19 [from="field_type", to="struct"];
   n21 -> n25 [from="field_type", to="struct"];

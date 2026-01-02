@@ -1,0 +1,39 @@
+===============================================================================
+cross-file-class-field
+===============================================================================
+Test cross-file class field type references.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/address.py ---
+from dataclasses import dataclass
+
+@dataclass
+class Address:
+    street: str
+    city: str
+
+lang: python
+
+--- file: sample/person.py ---
+from dataclasses import dataclass
+from .address import Address
+
+@dataclass
+class Person:
+    name: str
+    home: Address
+    work: Address | None
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 address ($TMP/sample/address.py)
+  (class:3 Address)
+)
+
+(root:4 person ($TMP/sample/person.py)
+  (class:5 Person)
+)

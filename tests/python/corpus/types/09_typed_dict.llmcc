@@ -1,0 +1,64 @@
+===============================================================================
+typed-dict
+===============================================================================
+Test typed dict parsing.
+lang: python
+
+--- file: typed_dict.py ---
+from typing import TypedDict, Required, NotRequired
+
+# Basic TypedDict
+class Point(TypedDict):
+    x: int
+    y: int
+
+# Optional keys with total=False
+class PartialConfig(TypedDict, total=False):
+    debug: bool
+    verbose: bool
+    timeout: int
+
+# Mixed required and optional (Python 3.11+)
+class User(TypedDict):
+    id: Required[int]
+    name: Required[str]
+    email: NotRequired[str]
+    age: NotRequired[int]
+
+# Nested TypedDict
+class Address(TypedDict):
+    street: str
+    city: str
+    zip: str
+
+class Person(TypedDict):
+    name: str
+    address: Address
+
+# Functional syntax
+Movie = TypedDict('Movie', {'name': str, 'year': int})
+
+# Using TypedDict
+def create_point(x: int, y: int) -> Point:
+    return {"x": x, "y": y}
+
+def get_user(id: int) -> User:
+    return {"id": id, "name": "Alice"}
+
+--- expect:block-graph ---
+(root:1 typed_dict ($TMP/typed_dict.py)
+  (class:2 Point)
+  (class:3 PartialConfig)
+  (class:4 User)
+  (class:5 Address)
+  (class:6 Person)
+  (func:8 create_point
+    (parameter:9 x @type int)
+    (parameter:10 y @type int)
+    (return:11 @type:2 Point)
+  )
+  (func:12 get_user
+    (parameter:13 id @type int)
+    (return:14 @type:4 User)
+  )
+)

@@ -1,0 +1,95 @@
+===============================================================================
+mixed-builder-pattern
+===============================================================================
+Test builder pattern implementation.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/config.py ---
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class DatabaseConfig:
+    host: str
+    port: int
+    database: str
+    username: Optional[str] = None
+    password: Optional[str] = None
+    ssl: bool = False
+
+class DatabaseConfigBuilder:
+    def __init__(self):
+        self._host = "localhost"
+        self._port = 5432
+        self._database = "default"
+        self._username: Optional[str] = None
+        self._password: Optional[str] = None
+        self._ssl = False
+
+    def host(self, host: str) -> "DatabaseConfigBuilder":
+        self._host = host
+        return self
+
+    def port(self, port: int) -> "DatabaseConfigBuilder":
+        self._port = port
+        return self
+
+    def database(self, database: str) -> "DatabaseConfigBuilder":
+        self._database = database
+        return self
+
+    def credentials(self, username: str, password: str) -> "DatabaseConfigBuilder":
+        self._username = username
+        self._password = password
+        return self
+
+    def with_ssl(self) -> "DatabaseConfigBuilder":
+        self._ssl = True
+        return self
+
+    def build(self) -> DatabaseConfig:
+        return DatabaseConfig(
+            host=self._host,
+            port=self._port,
+            database=self._database,
+            username=self._username,
+            password=self._password,
+            ssl=self._ssl
+        )
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 config ($TMP/sample/config.py)
+  (class:3 DatabaseConfig)
+  (class:4 DatabaseConfigBuilder
+    (method:5 __init__)
+    (method:6 host
+      (parameter:7 host @type str)
+      (return:8 @type str)
+    )
+    (method:9 port
+      (parameter:10 port @type int)
+      (return:11 @type str)
+    )
+    (method:12 database
+      (parameter:13 database @type str)
+      (return:14 @type str)
+    )
+    (method:15 credentials
+      (parameter:16 username @type str)
+      (parameter:17 password @type str)
+      (return:18 @type str)
+    )
+    (method:19 with_ssl
+      (return:20 @type str)
+    )
+    (method:21 build
+      (return:22 @type:3 DatabaseConfig)
+      (@tdep:3 DatabaseConfig)
+    )
+  )
+)

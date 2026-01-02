@@ -1,0 +1,22 @@
+===============================================================================
+simple-class
+===============================================================================
+Test that a simple class appears in the architecture graph.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+
+class Foo:
+    pass
+
+class User:
+    def __init__(self, name: str, age: int):
+        self.name = name
+        self.age = age
+
+--- expect:arch-graph ---
+digraph G {
+}

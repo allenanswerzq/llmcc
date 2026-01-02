@@ -1,0 +1,23 @@
+===============================================================================
+public-function
+===============================================================================
+Test that module-level functions appear in the architecture graph.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/utils.py ---
+
+def helper():
+    return 42
+
+def process_data(data: list) -> list:
+    return [x * 2 for x in data]
+
+def _private_helper():
+    pass
+
+--- expect:arch-graph ---
+digraph G {
+}

@@ -1,0 +1,36 @@
+===============================================================================
+generic-types
+===============================================================================
+Test generic types parsing.
+lang: python
+
+--- file: generic_types.py ---
+from typing import List, Dict, Set, Tuple, FrozenSet
+
+# Basic generic collections
+names: List[str]
+ages: Dict[str, int]
+unique: Set[int]
+pair: Tuple[int, str]
+frozen: FrozenSet[str]
+
+# Nested generics
+matrix: List[List[int]]
+nested_dict: Dict[str, Dict[str, int]]
+complex_tuple: Tuple[List[int], Dict[str, str]]
+
+# Variable length tuples
+coords: Tuple[float, ...]
+any_tuple: Tuple[int, ...]
+
+# Python 3.9+ syntax
+modern_list: list[str]
+modern_dict: dict[str, int]
+modern_set: set[float]
+modern_tuple: tuple[int, str]
+
+# Mixed nesting
+deep: dict[str, list[tuple[int, int]]]
+
+--- expect:block-graph ---
+(root:1 generic_types ($TMP/generic_types.py))

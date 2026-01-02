@@ -1,0 +1,60 @@
+===============================================================================
+cross-file-multi-import
+===============================================================================
+Test multiple imports from the same module.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/core.py ---
+class Config:
+    pass
+
+class Logger:
+    pass
+
+class Database:
+    pass
+
+class Cache:
+    pass
+
+lang: python
+
+--- file: sample/app.py ---
+from .core import Config, Logger, Database, Cache
+
+class Application:
+    config: Config
+    logger: Logger
+    database: Database
+    cache: Cache
+
+    def setup(self, config: Config) -> None:
+        pass
+
+    def get_db(self) -> Database:
+        return self.database
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 core ($TMP/sample/core.py)
+  (class:3 Config)
+  (class:4 Logger)
+  (class:5 Database)
+  (class:6 Cache)
+)
+
+(root:7 app ($TMP/sample/app.py)
+  (class:8 Application
+    (method:9 setup
+      (parameter:10 config @type:3 Config)
+      (return:11 @type None)
+    )
+    (method:12 get_db
+      (return:13 @type:5 Database)
+    )
+  )
+)

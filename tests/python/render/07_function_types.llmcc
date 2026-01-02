@@ -1,0 +1,47 @@
+===============================================================================
+function-types
+===============================================================================
+Test function parameter and return type annotations.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/functions.py ---
+from typing import List, Dict, Optional
+
+def no_annotations(x, y):
+    return x + y
+
+def with_types(x: int, y: int) -> int:
+    return x + y
+
+def complex_types(
+    items: List[str],
+    mapping: Dict[str, int]
+) -> Optional[str]:
+    return items[0] if items else None
+
+def void_return(message: str) -> None:
+    print(message)
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 functions ($TMP/sample/functions.py)
+  (func:3 no_annotations)
+  (func:4 with_types
+    (parameter:5 x @type int)
+    (parameter:6 y @type int)
+    (return:7 @type int)
+  )
+  (func:8 complex_types
+    (parameter:9 items @type List)
+    (parameter:10 mapping @type Dict)
+    (return:11 @type Optional)
+  )
+  (func:12 void_return
+    (parameter:13 message @type str)
+    (return:14 @type None)
+  )
+)

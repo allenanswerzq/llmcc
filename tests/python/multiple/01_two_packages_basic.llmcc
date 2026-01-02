@@ -1,0 +1,83 @@
+===============================================================================
+two-packages-basic
+===============================================================================
+Basic test with two packages where one depends on the other.
+lang: python
+
+--- file: common/__init__.py ---
+from .types import User, Error
+
+--- file: common/types.py ---
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+class Error:
+    def __init__(self, code: int, message: str):
+        self.code = code
+        self.message = message
+
+lang: python
+
+--- file: app/__init__.py ---
+from .service import get_user, create_user
+
+--- file: app/service.py ---
+from common.types import User, Error
+
+def get_user(id: int) -> User | Error:
+    return User(id, "Unknown")
+
+def create_user(name: str) -> User:
+    return User(1, name)
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/common/__init__.py))
+
+(root:2 types ($TMP/common/types.py)
+  (class:3 User
+    (method:4 __init__
+      (parameter:5 id @type int)
+      (parameter:6 name @type str)
+    )
+  )
+  (class:7 Error
+    (method:8 __init__
+      (parameter:9 code @type int)
+      (parameter:10 message @type str)
+    )
+  )
+)
+
+(root:11 __init__ ($TMP/app/__init__.py))
+
+(root:12 service ($TMP/app/service.py)
+  (func:13 get_user
+    (parameter:14 id @type int)
+    (return:15 @type:3 User)
+  )
+  (func:17 create_user
+    (parameter:18 name @type str)
+    (return:19 @type:3 User)
+  )
+)
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

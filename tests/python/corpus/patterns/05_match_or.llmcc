@@ -1,0 +1,40 @@
+===============================================================================
+match-or
+===============================================================================
+Test match or parsing.
+lang: python
+
+--- file: match_or.py ---
+def match_or_patterns(value):
+    match value:
+        case 1 | 2 | 3:
+            return "small"
+        case 4 | 5 | 6:
+            return "medium"
+        case 7 | 8 | 9:
+            return "large"
+        case _:
+            return "out of range"
+
+def match_string_or(command):
+    match command:
+        case "quit" | "exit" | "q":
+            return "goodbye"
+        case "help" | "h" | "?":
+            return "showing help"
+        case "version" | "v":
+            return "1.0.0"
+
+def match_or_capture(data):
+    match data:
+        case [x] | (x,):
+            return f"single element: {x}"
+        case {"key": x} | {"value": x}:
+            return f"extracted: {x}"
+
+--- expect:block-graph ---
+(root:1 match_or ($TMP/match_or.py)
+  (func:2 match_or_patterns)
+  (func:3 match_string_or)
+  (func:4 match_or_capture)
+)

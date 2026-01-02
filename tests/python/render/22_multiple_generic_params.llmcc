@@ -1,0 +1,69 @@
+===============================================================================
+multiple-generic-params
+===============================================================================
+Test classes and functions with multiple generic parameters.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/generic.py ---
+from typing import TypeVar, Generic, Callable
+
+K = TypeVar('K')
+V = TypeVar('V')
+T = TypeVar('T')
+R = TypeVar('R')
+
+class BiMap(Generic[K, V]):
+    def __init__(self):
+        self.forward: dict[K, V] = {}
+        self.backward: dict[V, K] = {}
+
+    def put(self, key: K, value: V) -> None:
+        self.forward[key] = value
+        self.backward[value] = key
+
+    def get_by_key(self, key: K) -> V | None:
+        return self.forward.get(key)
+
+    def get_by_value(self, value: V) -> K | None:
+        return self.backward.get(value)
+
+def transform(items: list[T], func: Callable[[T], R]) -> list[R]:
+    return [func(item) for item in items]
+
+def combine(left: K, right: V) -> tuple[K, V]:
+    return (left, right)
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 generic ($TMP/sample/generic.py)
+  (class:7 BiMap
+    (method:8 __init__)
+    (method:9 put
+      (parameter:10 key @type K)
+      (parameter:11 value @type V)
+      (return:12 @type None)
+    )
+    (method:13 get_by_key
+      (parameter:14 key @type K)
+      (return:15 @type V)
+    )
+    (method:17 get_by_value
+      (parameter:18 value @type V)
+      (return:19 @type K)
+    )
+  )
+  (func:21 transform
+    (parameter:22 items @type list)
+    (parameter:23 func @type Callable)
+    (return:24 @type list)
+  )
+  (func:26 combine
+    (parameter:27 left @type K)
+    (parameter:28 right @type V)
+    (return:29 @type tuple)
+  )
+)

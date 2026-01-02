@@ -1,0 +1,62 @@
+===============================================================================
+match-class
+===============================================================================
+Test match class parsing.
+lang: python
+
+--- file: match_class.py ---
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class Circle:
+    def __init__(self, center, radius):
+        self.center = center
+        self.radius = radius
+
+def match_class(shape):
+    match shape:
+        case Point(x=0, y=0):
+            return "origin"
+        case Point(x=x, y=y):
+            return f"point at {x}, {y}"
+        case Circle(center=Point(x=0, y=0), radius=r):
+            return f"centered circle with radius {r}"
+        case Circle(center=c, radius=r):
+            return f"circle at {c} with radius {r}"
+        case _:
+            return "unknown shape"
+
+# Using positional patterns with __match_args__
+class Vector:
+    __match_args__ = ("x", "y", "z")
+
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+def match_vector(v):
+    match v:
+        case Vector(0, 0, 0):
+            return "zero vector"
+        case Vector(x, 0, 0):
+            return f"x-axis: {x}"
+        case Vector(x, y, z):
+            return f"vector: {x}, {y}, {z}"
+
+--- expect:block-graph ---
+(root:1 match_class ($TMP/match_class.py)
+  (class:2 Point
+    (method:3 __init__)
+  )
+  (class:4 Circle
+    (method:5 __init__)
+  )
+  (func:6 match_class)
+  (class:7 Vector
+    (method:8 __init__)
+  )
+  (func:9 match_vector)
+)
