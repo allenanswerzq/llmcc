@@ -389,11 +389,24 @@ fn render_to_dot(
 
     output.push('\n');
 
-    // Render edges
+    // Render edges - bidirectional pairs get dir=both
     for (from, to) in edges {
-        if bidirectional_pairs.contains(&(from.clone(), to.clone())) {
-            // let _ = writeln!(output, "  {} -> {} [dir=both, style=bold];", from, to);
-            let _ = writeln!(output, "  {} -> {};", from, to);
+        // Use canonical ordering to check for bidirectional pairs
+        let canonical = if from < to {
+            (from.clone(), to.clone())
+        } else {
+            (to.clone(), from.clone())
+        };
+
+        if bidirectional_pairs.contains(&canonical) {
+            if from < to {
+                let _ = writeln!(
+                    output,
+                    "  {} -> {} [dir=both]; // dir best-effort not accurate",
+                    from, to
+                );
+            }
+            // Skip the reverse direction
         } else {
             let _ = writeln!(output, "  {} -> {};", from, to);
         }

@@ -17,6 +17,7 @@ digraph architecture {
   crate_collection[label="collection"];
   crate_common[label="common"];
   crate_gridstore[label="gridstore"];
+  crate_memory[label="memory"];
   crate_qdrant[label="qdrant"];
   crate_qdrant_edge_py[label="qdrant-edge-py"];
   crate_segment[label="segment"];
@@ -24,19 +25,21 @@ digraph architecture {
   crate_sparse[label="sparse"];
   crate_storage[label="storage"];
 
-  crate_api -> crate_segment;
-  crate_collection -> crate_common;
-  crate_collection -> crate_segment;
-  crate_collection -> crate_shard;
+  crate_api -> crate_collection [dir=both]; // best-effort not accurate
+  crate_api -> crate_segment [dir=both]; // best-effort not accurate
+  crate_collection -> crate_common [dir=both]; // best-effort not accurate
+  crate_collection -> crate_segment [dir=both]; // best-effort not accurate
+  crate_collection -> crate_shard [dir=both]; // best-effort not accurate
+  crate_memory -> crate_segment [dir=both]; // best-effort not accurate
   crate_qdrant -> crate_api;
-  crate_qdrant -> crate_common;
-  crate_qdrant -> crate_segment;
-  crate_qdrant -> crate_shard;
-  crate_qdrant -> crate_storage;
+  crate_qdrant -> crate_segment [dir=both]; // best-effort not accurate
+  crate_qdrant -> crate_shard [dir=both]; // best-effort not accurate
+  crate_qdrant -> crate_storage [dir=both]; // best-effort not accurate
   crate_qdrant_edge_py -> crate_segment;
   crate_qdrant_edge_py -> crate_shard;
-  crate_segment -> crate_sparse;
-  crate_shard -> crate_api;
+  crate_segment -> crate_sparse [dir=both]; // best-effort not accurate
   crate_shard -> crate_common;
   crate_shard -> crate_gridstore;
+  crate_storage -> crate_api;
+  crate_storage -> crate_common;
 }

@@ -27,7 +27,6 @@ digraph architecture {
   crate_opendal_nodejs[label="opendal-nodejs"];
   crate_opendal_ocaml[label="opendal-ocaml"];
   crate_opendal_python[label="opendal-python"];
-  crate_opendal_ruby[label="opendal-ruby"];
   crate_opendal_service_aliyun_drive[label="opendal-service-aliyun-drive"];
   crate_opendal_service_alluxio[label="opendal-service-alluxio"];
   crate_opendal_service_azblob[label="opendal-service-azblob"];
@@ -41,6 +40,7 @@ digraph architecture {
   crate_opendal_service_dashmap[label="opendal-service-dashmap"];
   crate_opendal_service_dbfs[label="opendal-service-dbfs"];
   crate_opendal_service_dropbox[label="opendal-service-dropbox"];
+  crate_opendal_service_etcd[label="opendal-service-etcd"];
   crate_opendal_service_foundationdb[label="opendal-service-foundationdb"];
   crate_opendal_service_fs[label="opendal-service-fs"];
   crate_opendal_service_ftp[label="opendal-service-ftp"];
@@ -72,9 +72,7 @@ digraph architecture {
   crate_opendal_service_seafile[label="opendal-service-seafile"];
   crate_opendal_service_sftp[label="opendal-service-sftp"];
   crate_opendal_service_sled[label="opendal-service-sled"];
-  crate_opendal_service_surrealdb[label="opendal-service-surrealdb"];
   crate_opendal_service_swift[label="opendal-service-swift"];
-  crate_opendal_service_tikv[label="opendal-service-tikv"];
   crate_opendal_service_upyun[label="opendal-service-upyun"];
   crate_opendal_service_vercel_artifacts[label="opendal-service-vercel-artifacts"];
   crate_opendal_service_vercel_blob[label="opendal-service-vercel-blob"];
@@ -85,9 +83,10 @@ digraph architecture {
 
   crate_object_store_opendal -> crate_opendal_core;
   crate_odev -> crate_opendal_service_azdls;
-  crate_opendal_core -> crate_opendal_python;
+  crate_opendal_core -> crate_opendal_nodejs [dir=both]; // best-effort not accurate
+  crate_opendal_core -> crate_opendal_python [dir=both]; // best-effort not accurate
   crate_opendal_fuzz -> crate_opendal_testkit;
-  crate_opendal_java -> crate_opendal_ruby;
+  crate_opendal_java -> crate_opendal_ocaml;
   crate_opendal_layer_capability_check -> crate_opendal_core;
   crate_opendal_layer_logging -> crate_opendal_core;
   crate_opendal_layer_mime_guess -> crate_opendal_core;
@@ -96,7 +95,7 @@ digraph architecture {
   crate_opendal_lua -> crate_opendal_ocaml;
   crate_opendal_nodejs -> crate_opendal_lua;
   crate_opendal_ocaml -> crate_opendal_python;
-  crate_opendal_ocaml -> crate_opendal_ruby;
+  crate_opendal_ocaml -> crate_opendal_service_ipfs;
   crate_opendal_service_aliyun_drive -> crate_opendal_core;
   crate_opendal_service_alluxio -> crate_opendal_core;
   crate_opendal_service_azblob -> crate_opendal_core;
@@ -110,6 +109,7 @@ digraph architecture {
   crate_opendal_service_dashmap -> crate_opendal_core;
   crate_opendal_service_dbfs -> crate_opendal_core;
   crate_opendal_service_dropbox -> crate_opendal_core;
+  crate_opendal_service_etcd -> crate_opendal_core;
   crate_opendal_service_foundationdb -> crate_opendal_core;
   crate_opendal_service_fs -> crate_opendal_core;
   crate_opendal_service_ftp -> crate_opendal_core;
@@ -119,7 +119,6 @@ digraph architecture {
   crate_opendal_service_gridfs -> crate_opendal_core;
   crate_opendal_service_http -> crate_opendal_core;
   crate_opendal_service_huggingface -> crate_opendal_core;
-  crate_opendal_service_ipfs -> crate_opendal_core;
   crate_opendal_service_ipmfs -> crate_opendal_core;
   crate_opendal_service_koofr -> crate_opendal_core;
   crate_opendal_service_lakefs -> crate_opendal_core;
@@ -141,9 +140,7 @@ digraph architecture {
   crate_opendal_service_seafile -> crate_opendal_core;
   crate_opendal_service_sftp -> crate_opendal_core;
   crate_opendal_service_sled -> crate_opendal_core;
-  crate_opendal_service_surrealdb -> crate_opendal_core;
   crate_opendal_service_swift -> crate_opendal_core;
-  crate_opendal_service_tikv -> crate_opendal_core;
   crate_opendal_service_upyun -> crate_opendal_core;
   crate_opendal_service_vercel_artifacts -> crate_opendal_core;
   crate_opendal_service_vercel_blob -> crate_opendal_core;

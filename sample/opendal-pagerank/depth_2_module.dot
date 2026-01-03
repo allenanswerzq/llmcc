@@ -20,6 +20,7 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
+    mod_opendal_core_delete[label="delete"];
     mod_opendal_core_http_util[label="http_util"];
     mod_opendal_core_layers[label="layers"];
     mod_opendal_core_operator[label="operator"];
@@ -37,6 +38,7 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_opendal_cpp_async[label="async"];
+    mod_opendal_cpp_lib[label="lib"];
   }
 
   subgraph cluster_opendal_hs {
@@ -47,6 +49,7 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_opendal_hs_lib[label="lib"];
+    mod_opendal_hs_result[label="result"];
   }
 
   subgraph cluster_opendal_java {
@@ -107,7 +110,6 @@ digraph architecture {
     bgcolor="#f0f0f0";
     fontname="Helvetica Bold";
 
-    mod_opendal_python_metadata[label="metadata"];
     mod_opendal_python_operator[label="operator"];
     mod_opendal_python_utils[label="utils"];
   }
@@ -173,39 +175,42 @@ digraph architecture {
   }
 
 
-  mod_opendal_core_http_util -> mod_opendal_core_raw;
-  mod_opendal_core_http_util -> mod_opendal_core_types;
-  mod_opendal_core_http_util -> mod_opendal_ocaml_operator;
+  mod_opendal_core_http_util -> mod_opendal_core_raw [dir=both]; // best-effort not accurate
+  mod_opendal_core_http_util -> mod_opendal_core_types [dir=both]; // best-effort not accurate
+  mod_opendal_core_http_util -> mod_opendal_nodejs_lib;
+  mod_opendal_core_http_util -> mod_opendal_python_utils;
   mod_opendal_core_layers -> mod_opendal_core_http_util;
   mod_opendal_core_layers -> mod_opendal_core_raw;
   mod_opendal_core_layers -> mod_opendal_core_types;
   mod_opendal_core_operator -> mod_opendal_python_operator;
-  mod_opendal_core_raw -> mod_opendal_core_types;
-  mod_opendal_core_raw -> mod_opendal_core_write;
+  mod_opendal_core_raw -> mod_opendal_core_types [dir=both]; // best-effort not accurate
+  mod_opendal_core_raw -> mod_opendal_core_write [dir=both]; // best-effort not accurate
   mod_opendal_core_raw -> mod_opendal_ocaml_operator;
+  mod_opendal_core_raw -> mod_opendal_python_utils;
   mod_opendal_core_read -> mod_opendal_core_raw;
-  mod_opendal_core_read -> mod_opendal_core_types;
+  mod_opendal_core_read -> mod_opendal_core_types [dir=both]; // best-effort not accurate
   mod_opendal_core_read -> mod_opendal_python_utils;
-  mod_opendal_core_types -> mod_opendal_python_metadata;
+  mod_opendal_core_types -> mod_opendal_nodejs_lib [dir=both]; // best-effort not accurate
   mod_opendal_core_write -> mod_opendal_core_types;
+  mod_opendal_core_write -> mod_opendal_python_utils;
+  mod_opendal_cpp_lib -> mod_opendal_core_read;
+  mod_opendal_hs_lib -> mod_opendal_hs_result;
   mod_opendal_hs_lib -> mod_opendal_ocaml_operator;
   mod_opendal_java_async_operator -> mod_opendal_cpp_async;
   mod_opendal_java_async_operator -> mod_opendal_java_executor;
-  mod_opendal_java_async_operator -> mod_opendal_ocaml_operator;
+  mod_opendal_java_async_operator -> mod_opendal_python_operator;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_http_util;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_raw;
   mod_opendal_layer_observe_metrics_common_lib -> mod_opendal_core_types;
   mod_opendal_layer_tail_cut_lib -> mod_opendal_core_raw;
-  mod_opendal_nodejs_lib -> mod_opendal_core_types;
-  mod_opendal_ocaml_operator -> mod_opendal_core_operator;
+  mod_opendal_ocaml_operator -> mod_opendal_core_delete;
+  mod_opendal_ocaml_operator -> mod_opendal_core_types;
   mod_opendal_ocaml_operator -> mod_opendal_core_write;
   mod_opendal_ocaml_operator -> mod_opendal_nodejs_lib;
-  mod_opendal_ocaml_operator -> mod_opendal_python_metadata;
   mod_opendal_ocaml_operator -> mod_opendal_python_operator;
   mod_opendal_service_aliyun_drive_core -> mod_opendal_core_raw;
   mod_opendal_service_azure_common_lib -> mod_opendal_core_types;
   mod_opendal_service_b2_core -> mod_opendal_core_raw;
-  mod_opendal_service_b2_core -> mod_opendal_nodejs_lib;
   mod_opendal_service_dropbox_core -> mod_opendal_core_raw;
   mod_opendal_service_oss_core -> mod_opendal_core_raw;
   mod_opendal_service_s3_core -> mod_opendal_core_raw;

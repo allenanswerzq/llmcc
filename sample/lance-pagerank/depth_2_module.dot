@@ -155,13 +155,14 @@ digraph architecture {
   mod_lance_datagen_generator -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_datatypes;
   mod_lance_dataset -> mod_lance_core_utils;
-  mod_lance_dataset -> mod_lance_index_scalar;
+  mod_lance_dataset -> mod_lance_index_scalar [dir=both]; // best-effort not accurate
   mod_lance_dataset -> mod_lance_io_object_store;
   mod_lance_dataset -> mod_lance_table_format;
-  mod_lance_dataset -> mod_lance_table_io;
+  mod_lance_dataset -> mod_lance_table_io [dir=both]; // best-effort not accurate
   mod_lance_dataset -> mod_lance_table_rowids;
+  mod_lance_dataset -> mod_pylance_dataset [dir=both]; // best-effort not accurate
   mod_lance_encoding_decoder -> mod_lance_core_datatypes;
-  mod_lance_encoding_decoder -> mod_lance_encoding_logical;
+  mod_lance_encoding_decoder -> mod_lance_encoding_logical [dir=both]; // best-effort not accurate
   mod_lance_encoding_encoder -> mod_lance_core_datatypes;
   mod_lance_encoding_logical -> mod_lance_core_datatypes;
   mod_lance_encoding_logical -> mod_lance_encoding_data;
@@ -184,11 +185,11 @@ digraph architecture {
   mod_lance_file_writer -> mod_lance_core_datatypes;
   mod_lance_index -> mod_lance_core_utils;
   mod_lance_index -> mod_lance_dataset;
-  mod_lance_index -> mod_lance_index_scalar;
-  mod_lance_index -> mod_lance_index_vector;
+  mod_lance_index -> mod_lance_index_scalar [dir=both]; // best-effort not accurate
+  mod_lance_index -> mod_lance_index_vector [dir=both]; // best-effort not accurate
   mod_lance_index -> mod_lance_table_format;
-  mod_lance_index -> mod_lance_vector;
-  mod_lance_index_inverted -> mod_lance_index_scalar;
+  mod_lance_index -> mod_lance_vector [dir=both]; // best-effort not accurate
+  mod_lance_index_inverted -> mod_lance_index_scalar [dir=both]; // best-effort not accurate
   mod_lance_index_pq -> mod_lance_index_vector;
   mod_lance_index_scalar -> mod_lance_core_datatypes;
   mod_lance_index_scalar -> mod_lance_core_utils;
@@ -211,5 +212,4 @@ digraph architecture {
   mod_lance_write -> mod_lance_table_format;
   mod_lance_write -> mod_lance_table_io;
   mod_lance_write -> mod_pylance_dataset;
-  mod_pylance_dataset -> mod_lance_dataset;
 }

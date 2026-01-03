@@ -48,7 +48,6 @@ digraph architecture {
     fontname="Helvetica Bold";
 
     mod_clap_derive_derives[label="derives"];
-    mod_clap_derive_dummies[label="dummies"];
     mod_clap_derive_item[label="item"];
   }
 
@@ -64,7 +63,7 @@ digraph architecture {
 
 
   mod_clap_builder_error -> mod_clap_builder_builder;
-  mod_clap_builder_matches -> mod_clap_builder_util;
+  mod_clap_builder_matches -> mod_clap_builder_util [dir=both]; // best-effort not accurate
   mod_clap_builder_output -> mod_clap_builder_builder;
   mod_clap_builder_parser -> mod_clap_builder_builder;
   mod_clap_builder_parser -> mod_clap_builder_util;
@@ -72,7 +71,6 @@ digraph architecture {
   mod_clap_complete_generator -> mod_clap_builder_builder;
   mod_clap_complete_shells -> mod_clap_builder_builder;
   mod_clap_complete_shells -> mod_clap_complete_generator;
-  mod_clap_derive_derives -> mod_clap_derive_dummies;
   mod_clap_derive_derives -> mod_clap_derive_item;
   mod_clap_mangen_render -> mod_clap_builder_builder;
 }

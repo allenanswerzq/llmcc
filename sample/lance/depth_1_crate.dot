@@ -20,26 +20,28 @@ digraph architecture {
   crate_lance_file[label="lance-file"];
   crate_lance_index[label="lance-index"];
   crate_lance_io[label="lance-io"];
+  crate_lance_jni[label="lance-jni"];
   crate_lance_linalg[label="lance-linalg"];
   crate_lance_namespace_impls[label="lance-namespace-impls"];
   crate_lance_table[label="lance-table"];
   crate_pylance[label="pylance"];
 
-  crate_lance -> crate_lance_core;
+  crate_lance -> crate_lance_core [dir=both]; // best-effort not accurate
   crate_lance -> crate_lance_datafusion;
   crate_lance -> crate_lance_encoding;
-  crate_lance -> crate_lance_index;
-  crate_lance -> crate_lance_io;
+  crate_lance -> crate_lance_index [dir=both]; // best-effort not accurate
+  crate_lance -> crate_lance_io [dir=both]; // best-effort not accurate
   crate_lance -> crate_lance_linalg;
-  crate_lance -> crate_lance_table;
-  crate_lance -> crate_pylance;
+  crate_lance -> crate_lance_table [dir=both]; // best-effort not accurate
+  crate_lance -> crate_pylance [dir=both]; // best-effort not accurate
   crate_lance_datafusion -> crate_lance_core;
   crate_lance_encoding -> crate_lance_core;
-  crate_lance_encoding -> crate_lance_file;
+  crate_lance_encoding -> crate_lance_file [dir=both]; // best-effort not accurate
   crate_lance_file -> crate_lance_core;
   crate_lance_file -> crate_lance_io;
   crate_lance_index -> crate_lance_io;
-  crate_lance_index -> crate_lance_linalg;
+  crate_lance_index -> crate_lance_linalg [dir=both]; // best-effort not accurate
+  crate_lance_jni -> crate_lance_core;
   crate_lance_namespace_impls -> crate_lance_io;
   crate_lance_table -> crate_lance_io;
   crate_pylance -> crate_lance_core;
