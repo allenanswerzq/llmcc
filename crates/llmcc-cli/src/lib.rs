@@ -32,6 +32,15 @@ fn should_skip_dir(name: &str) -> bool {
             | "benches"
             | "benchmark"
             | "benchmarks"
+            // Build output directories
+            | "target"
+            | "build"
+            | "dist"
+            | "out"
+            // Vendor/dependency directories
+            | "vendor"
+            | "node_modules"
+            | "third_party"
     )
 }
 
@@ -82,8 +91,6 @@ pub fn run_main<L>(opts: &LlmccOptions) -> Result<Option<String>, DynError>
 where
     L: LanguageTraitImpl,
 {
-    let total_start = Instant::now();
-
     validate_options(opts)?;
 
     let requested_files = discover_requested_files::<L>(opts)?;
@@ -142,7 +149,6 @@ where
     }
 
     let output = generate_outputs(opts, &pg);
-    info!("Total time: {:.2}s", total_start.elapsed().as_secs_f64());
 
     Ok(output)
 }
