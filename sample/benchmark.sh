@@ -23,8 +23,22 @@ if [ -z "$LLMCC" ]; then
         exit 1
     fi
 fi
+
+# Get CPU core count
+get_cpu_cores() {
+    if command -v nproc &> /dev/null; then
+        nproc
+    elif command -v lscpu &> /dev/null; then
+        lscpu | grep "^CPU(s):" | awk '{print $2}'
+    else
+        echo "unknown"
+    fi
+}
+
+CPU_CORES=$(get_cpu_cores)
+
 TOP_K=200
-BENCHMARK_FILE="$SCRIPT_DIR/benchmark_results.md"
+BENCHMARK_FILE="$SCRIPT_DIR/benchmark_results_${CPU_CORES}.md"
 BENCHMARK_DIR="$SCRIPT_DIR/benchmark_logs"
 rm -rf "$BENCHMARK_FILE"
 rm -rf "$BENCHMARK_DIR"
@@ -301,7 +315,6 @@ for entry in "${SORTED_PROJECTS[@]}"; do
     extract_timing "$name" "$BENCHMARK_DIR/${name}_pagerank_depth3.log" "$src_dir"
 done
 
-# Calculate summary statistics
 echo "" >> "$BENCHMARK_FILE"
 echo "## Summary" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
@@ -427,14 +440,22 @@ echo ""
 echo "=== Thread Scaling Benchmark (databend) ==="
 
 echo "" >> "$BENCHMARK_FILE"
-echo "## Thread Scaling (databend, depth=3, top-$TOP_K)" >> "$BENCHMARK_FILE"
+echo "## Thread Scaling (databend, depth=3, top-$TOP_K, $CPU_CORES cores)" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
 echo "| Threads | Parse | IR Build | Symbols | Binding | Graph | Link | Total | Speedup |" >> "$BENCHMARK_FILE"
 echo "|---------|-------|----------|---------|---------|-------|------|-------|---------|" >> "$BENCHMARK_FILE"
 
 SCALING_PROJECT="databend"
 SCALING_SRC_DIR="${PROJECTS[$SCALING_PROJECT]}"
-THREAD_COUNTS=(1 2 4 8 16 24 32)
+
+# Build thread counts dynamically based on available CPU cores
+THREAD_COUNTS=(1)
+for t in 2 4 8 16 24 32 48 64; do
+    if [ "$t" -le "$CPU_CORES" ]; then
+        THREAD_COUNTS+=("$t")
+    fi
+done
+
 baseline_time=""
 
 for threads in "${THREAD_COUNTS[@]}"; do
