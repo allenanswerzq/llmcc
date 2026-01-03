@@ -454,7 +454,10 @@ impl BlockIndexMaps {
     ///
     /// Returns a vector of (unit_index, block_kind, block_id) tuples
     pub fn find_by_name(&self, name: &str) -> Vec<(usize, BlockKind, BlockId)> {
-        self.block_name_index.get(name).map(|v| v.clone()).unwrap_or_default()
+        self.block_name_index
+            .get(name)
+            .map(|v| v.clone())
+            .unwrap_or_default()
     }
 
     /// Find all blocks in a specific unit

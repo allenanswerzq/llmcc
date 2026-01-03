@@ -1,7 +1,7 @@
 use parking_lot::RwLock;
-use std::sync::atomic::{AtomicPtr, Ordering};
 use smallvec::SmallVec;
 use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicPtr, Ordering};
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
@@ -619,13 +619,18 @@ impl<'hir> HirIdent<'hir> {
     }
 
     pub fn set_symbol(&self, symbol: &'hir Symbol) {
-        self.symbol.store(symbol as *const _ as *mut _, Ordering::Release);
+        self.symbol
+            .store(symbol as *const _ as *mut _, Ordering::Release);
     }
 
     #[inline]
     pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
         let ptr = self.symbol.load(Ordering::Acquire);
-        if ptr.is_null() { None } else { unsafe { Some(&*ptr) } }
+        if ptr.is_null() {
+            None
+        } else {
+            unsafe { Some(&*ptr) }
+        }
     }
 }
 

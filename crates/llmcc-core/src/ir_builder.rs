@@ -160,7 +160,11 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 
     /// Collect all valid child nodes from a parse node.
     /// Filters out test code (items with #[test] or #[cfg(test)] attributes).
-    fn collect_children(&self, node: &dyn ParseNode, parent_id: HirId) -> SmallVec<[HirNode<'unit>; 8]> {
+    fn collect_children(
+        &self,
+        node: &dyn ParseNode,
+        parent_id: HirId,
+    ) -> SmallVec<[HirNode<'unit>; 8]> {
         let mut child_nodes = SmallVec::new();
         let mut skip_next = false;
 
@@ -229,7 +233,6 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
             ""
         }
     }
-
 }
 /// Build IR for a single file with language-specific handling.
 fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(

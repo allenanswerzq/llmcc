@@ -269,7 +269,7 @@ pub struct Symbol {
     pub defining: RwLock<Vec<HirId>>,
     /// The scope that this symbol belongs to.
     /// Used to quickly find the scope during binding and type resolution.
-    pub scope: AtomicUsize,  // 0 = None, n = Some(ScopeId(n-1))
+    pub scope: AtomicUsize, // 0 = None, n = Some(ScopeId(n-1))
     /// The parent scope of this symbol (for scope hierarchy).
     /// Enables upward traversal of the scope chain.
     pub parent_scope: RwLock<Option<ScopeId>>,
@@ -278,10 +278,10 @@ pub struct Symbol {
     pub kind: AtomicU8,
     /// Optional backing type for this symbol (e.g. variable type, alias target).
     /// Set during type analysis if applicable.
-    pub type_of: AtomicUsize,  // 0 = None, n = Some(SymId(n-1))
+    pub type_of: AtomicUsize, // 0 = None, n = Some(SymId(n-1))
     /// Optional block id associated with this symbol (for graph building).
     /// Links the symbol to its corresponding block in the code graph.
-    pub block_id: AtomicU32,  // 0 = None, n = Some(BlockId(n-1))
+    pub block_id: AtomicU32, // 0 = None, n = Some(BlockId(n-1))
     /// Whether the symbol is globally visible/exported.
     /// Used to distinguish public symbols from private ones.
     pub is_global: AtomicBool,
@@ -299,7 +299,7 @@ pub struct Symbol {
     /// Set to the symbol that contains/defines this field.
     /// Examples: enum variant's FieldOf is the enum; struct field's FieldOf is the struct;
     /// tuple field (by index) FieldOf is the tuple/value being accessed.
-    pub field_of: AtomicUsize,  // 0 = None, n = Some(SymId(n-1))
+    pub field_of: AtomicUsize, // 0 = None, n = Some(SymId(n-1))
 }
 
 impl Clone for Symbol {

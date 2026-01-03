@@ -133,7 +133,7 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
 
     // Collect edges in parallel for each block
     let node_vec: Vec<_> = node_set.iter().copied().collect();
-    
+
     let edges: Vec<BTreeSet<RenderEdge>> = node_vec
         .into_par_iter()
         .map(|block_id| {
@@ -142,7 +142,12 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
 
             // 1. Field types
             collect_field_edges(
-                project, block_id, block_kind, node_set, &mut local_edges, get_kind,
+                project,
+                block_id,
+                block_kind,
+                node_set,
+                &mut local_edges,
+                get_kind,
             );
 
             // 2. Function calls
@@ -169,9 +174,15 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
 
             // 8. Impl type arguments
             if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
-                collect_impl_type_arg_edges(project, block_id, node_set, &mut local_edges, get_kind);
+                collect_impl_type_arg_edges(
+                    project,
+                    block_id,
+                    node_set,
+                    &mut local_edges,
+                    get_kind,
+                );
             }
-            
+
             local_edges
         })
         .collect();

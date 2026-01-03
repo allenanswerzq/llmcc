@@ -35,7 +35,7 @@ pub fn infer_type<'tcx>(
                 }
             }
             // Try to look up by name in scopes (for unresolved types)
-            if let Some(sym) = scopes.lookup_symbol(&ident.name, SYM_KIND_TYPES) {
+            if let Some(sym) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
                 return Some(sym);
             }
             // Fall back to original symbol if lookup failed
@@ -285,7 +285,7 @@ fn infer_field_expression<'tcx>(
 
     // Look up field in object's scope
     scopes
-        .lookup_member_symbol(obj_type, &field_ident.name, Some(SymKind::Field))
+        .lookup_member_symbol(obj_type, field_ident.name, Some(SymKind::Field))
         .and_then(|field_sym| {
             if let Some(type_id) = field_sym.type_of() {
                 unit.opt_get_symbol(type_id)
@@ -389,7 +389,7 @@ fn infer_array_type<'tcx>(
     if let Some(sn) = node.as_scope()
         && let Some(array_ident) = sn.opt_ident()
         && let Some(array_symbol) = scopes.lookup_symbol(
-            &array_ident.name,
+            array_ident.name,
             SymKindSet::from_kind(SymKind::CompositeType),
         )
     {
@@ -411,7 +411,7 @@ fn infer_tuple_type<'tcx>(
     if let Some(sn) = node.as_scope()
         && let Some(tuple_ident) = sn.opt_ident()
         && let Some(tuple_symbol) = scopes.lookup_symbol(
-            &tuple_ident.name,
+            tuple_ident.name,
             SymKindSet::from_kind(SymKind::CompositeType),
         )
     {

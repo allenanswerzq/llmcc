@@ -52,7 +52,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
             .or_else(|| node.as_scope().and_then(|sn| sn.opt_ident()))?;
 
         tracing::trace!("declaring symbol '{}' of kind {:?}", ident.name, kind);
-        let sym = scopes.lookup_or_insert(&ident.name, node, kind)?;
+        let sym = scopes.lookup_or_insert(ident.name, node, kind)?;
         ident.set_symbol(sym);
 
         // Also set the ident on the scope so set_block_id can find it
@@ -253,7 +253,7 @@ impl<'tcx> CollectorVisitor<'tcx> {
                 kind,
                 ident.name
             );
-            if let Some(sym) = self.lookup_or_convert(unit, scopes, &ident.name, node, kind) {
+            if let Some(sym) = self.lookup_or_convert(unit, scopes, ident.name, node, kind) {
                 self.visit_with_scope(unit, node, scopes, sym, sn, ident, on_scope_enter);
             }
         } else {
@@ -466,7 +466,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // This happens after visit_scoped_named so the symbol already exists with its scope
         if !is_method
             && let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
-            && let Some(sym) = scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(kind))
+            && let Some(sym) = scopes.lookup_symbol(ident.name, SymKindSet::from_kind(kind))
         {
             scopes.globals().insert(sym);
         }
@@ -529,7 +529,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Also add struct to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
             && let Some(sym) =
-                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Struct))
+                scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Struct))
         {
             scopes.globals().insert(sym);
         }
@@ -560,7 +560,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Also add enum to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
             && let Some(sym) =
-                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Enum))
+                scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Enum))
         {
             scopes.globals().insert(sym);
         }
@@ -594,7 +594,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         // Also add trait to unit_globals for cross-crate type resolution
         if let Some((_, ident)) = node.scope_and_ident_by_field(unit, LangRust::field_name)
             && let Some(sym) =
-                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Trait))
+                scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Trait))
         {
             scopes.globals().insert(sym);
         }
@@ -615,13 +615,13 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(ti) = node.ident_by_field(unit, LangRust::field_trait) {
             // First try looking up as Trait (in-file case)
             let symbol = scopes
-                .lookup_symbol(&ti.name, SymKindSet::from_kind(SymKind::Trait))
+                .lookup_symbol(ti.name, SymKindSet::from_kind(SymKind::Trait))
                 // Then try looking up as UnresolvedType (existing placeholder)
                 .or_else(|| {
-                    scopes.lookup_symbol(&ti.name, SymKindSet::from_kind(SymKind::UnresolvedType))
+                    scopes.lookup_symbol(ti.name, SymKindSet::from_kind(SymKind::UnresolvedType))
                 })
                 // Finally create UnresolvedType placeholder for cross-file resolution during binding
-                .or_else(|| scopes.lookup_or_insert(&ti.name, node, SymKind::UnresolvedType));
+                .or_else(|| scopes.lookup_or_insert(ti.name, node, SymKind::UnresolvedType));
             if let Some(symbol) = symbol {
                 ti.set_symbol(symbol);
             }
@@ -629,7 +629,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
 
         if let Some((sn, ti)) = node.scope_and_ident_by_field(unit, LangRust::field_type)
             && let Some(symbol) =
-                self.lookup_or_convert(unit, scopes, &ti.name, node, SymKind::UnresolvedType)
+                self.lookup_or_convert(unit, scopes, ti.name, node, SymKind::UnresolvedType)
         {
             tracing::trace!(
                 "visiting impl for type '{}', {:?}",
@@ -888,7 +888,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(enum_sym) = parent_enum
             && let Some(ident) = node.ident_by_field(unit, LangRust::field_name)
             && let Some(variant_sym) =
-                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::EnumVariant))
+                scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::EnumVariant))
         {
             variant_sym.set_type_of(enum_sym.id);
         }
@@ -908,7 +908,7 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
         if let Some(ident) = node.ident_by_field(unit, LangRust::field_pattern)
             && ident.name == "self"
             && let Some(symbol) =
-                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Field))
+                scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Field))
         {
             // For 'self' parameters, try to resolve it as a Field in the current scope
             ident.set_symbol(symbol);

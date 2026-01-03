@@ -1,6 +1,6 @@
-use smallvec::SmallVec;
 use parking_lot::RwLock;
 use rayon::prelude::*;
+use smallvec::SmallVec;
 use std::cmp::Ordering as CmpOrdering;
 use std::fs;
 use std::io::Write;
@@ -504,7 +504,8 @@ impl<'tcx> CompileCtxt<'tcx> {
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
         // Use 256 shards for globals scope - heavily contended during parallel binding
-        let scope = Scope::new_with_shards(Self::GLOBAL_SCOPE_OWNER, None, Some(&self.interner), 256);
+        let scope =
+            Scope::new_with_shards(Self::GLOBAL_SCOPE_OWNER, None, Some(&self.interner), 256);
         let id = scope.id().0;
         self.arena.alloc_with_id(id, scope)
     }

@@ -1,12 +1,12 @@
 //! Thread-safe bumpalo wrapper with pre-allocation support.
-//! 
+//!
 //! Fork of bumpalo-herd with configurable initial chunk size to reduce malloc calls.
 
 use std::alloc::Layout;
 use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
 
 use bumpalo::Bump;
 
@@ -36,7 +36,7 @@ impl Herd {
             chunk_size: AtomicUsize::new(DEFAULT_CHUNK_SIZE),
         }
     }
-    
+
     /// Creates a new [`Herd`] with specified initial chunk size per thread.
     /// Larger chunks = fewer malloc calls but more memory usage.
     pub fn with_chunk_size(chunk_size: usize) -> Self {
@@ -110,7 +110,7 @@ impl<'h> Member<'h> {
     pub fn alloc_layout(&self, layout: Layout) -> NonNull<u8> {
         self.arena.as_ref().alloc_layout(layout)
     }
-    
+
     fn extend<'s, T: ?Sized>(&'s self, v: &'s mut T) -> &'h mut T {
         let result = v as *mut T;
         unsafe { &mut *result }
