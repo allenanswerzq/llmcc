@@ -14,7 +14,7 @@ use crate::symbol::Symbol;
 declare_arena!(Arena {
     hir_node: HirNode<'a>,
     hir_file: HirFile,
-    hir_text: HirText,
+    hir_text: HirText<'a>,
     hir_internal: HirInternal,
     hir_scope: HirScope<'a>,
     hir_ident: HirIdent<'a>,
@@ -43,7 +43,7 @@ pub enum HirNode<'hir> {
     #[default]
     Undefined,
     Root(&'hir HirRoot),
-    Text(&'hir HirText),
+    Text(&'hir HirText<'hir>),
     Internal(&'hir HirInternal),
     Scope(&'hir HirScope<'hir>),
     File(&'hir HirFile),
@@ -262,7 +262,7 @@ impl<'hir> HirNode<'hir> {
     }
 
     #[inline]
-    pub fn as_text(&self) -> Option<&'hir HirText> {
+    pub fn as_text(&self) -> Option<&'hir HirText<'hir>> {
         match self {
             HirNode::Text(r) => Some(r),
             _ => None,
@@ -493,19 +493,19 @@ impl HirRoot {
 
 #[derive(Debug, Clone)]
 /// Leaf node containing textual content (strings, comments, etc.)
-pub struct HirText {
+pub struct HirText<'hir> {
     pub base: HirBase,
-    pub text: String,
+    pub text: &'hir str,
 }
 
-impl HirText {
+impl<'hir> HirText<'hir> {
     /// Create new text node with given content
-    pub fn new(base: HirBase, text: String) -> Self {
+    pub fn new(base: HirBase, text: &'hir str) -> Self {
         Self { base, text }
     }
 
     pub fn text(&self) -> &str {
-        &self.text
+        self.text
     }
 }
 

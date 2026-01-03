@@ -117,7 +117,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
             }
             HirKind::Text => {
                 let text = self.get_text(&base);
-                let hir_text = HirText::new(base, text.to_string());
+                let hir_text = HirText::new(base, text);
                 let allocated = self.arena.alloc(hir_text);
                 HirNode::Text(allocated)
             }
