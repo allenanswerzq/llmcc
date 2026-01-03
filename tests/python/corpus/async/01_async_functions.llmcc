@@ -1,0 +1,74 @@
+===============================================================================
+async-functions
+===============================================================================
+Test async functions parsing.
+lang: python
+
+--- file: async_functions.py ---
+import asyncio
+
+# Basic async function
+async def simple_async():
+    return 42
+
+# Async with return type
+async def fetch_data() -> str:
+    return "data"
+
+# Async with parameters
+async def process(value: int, name: str) -> dict:
+    return {"value": value, "name": name}
+
+# Async with await
+async def caller():
+    result = await simple_async()
+    return result
+
+# Multiple awaits
+async def multi_await():
+    a = await fetch_data()
+    b = await simple_async()
+    return a, b
+
+# Async in class
+class AsyncService:
+    async def start(self) -> None:
+        pass
+
+    async def stop(self) -> None:
+        pass
+
+    async def process(self, data: str) -> str:
+        return data.upper()
+
+--- expect:block-graph ---
+(root:1 async_functions ($TMP/async_functions.py)
+  (func:2 simple_async)
+  (func:3 fetch_data
+    (return:4 @type str)
+  )
+  (func:5 process
+    (parameter:6 value @type int)
+    (parameter:7 name @type str)
+    (return:8 @type dict)
+  )
+  (func:9 caller
+    (@fdep:2 simple_async)
+  )
+  (func:11 multi_await
+    (@fdep:2 simple_async)
+    (@fdep:3 fetch_data)
+  )
+  (class:14 AsyncService
+    (method:15 start
+      (return:16 @type None)
+    )
+    (method:17 stop
+      (return:18 @type None)
+    )
+    (method:19 process
+      (parameter:20 data @type str)
+      (return:21 @type str)
+    )
+  )
+)

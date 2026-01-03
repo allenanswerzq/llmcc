@@ -1,0 +1,102 @@
+===============================================================================
+conditional-expression
+===============================================================================
+Test conditional (ternary) expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+def absolute(x: int) -> int:
+    return x if x >= 0 else -x
+
+def classify(n: int) -> str:
+    return "positive" if n > 0 else "negative" if n < 0 else "zero"
+
+def safe_divide(a: float, b: float) -> float:
+    return a / b if b != 0 else 0.0
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 absolute
+    (parameter:3 x @type int)
+    (return:4 @type int)
+  )
+  (func:5 classify
+    (parameter:6 n @type int)
+    (return:7 @type str)
+  )
+  (func:8 safe_divide
+    (parameter:9 a @type float)
+    (parameter:10 b @type float)
+    (return:11 @type float)
+  )
+)
+
+
+===============================================================================
+if-expressions
+===============================================================================
+Test if statements as expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+def get_status(code: int) -> str:
+    if code == 200:
+        return "OK"
+    elif code == 404:
+        return "Not Found"
+    elif code == 500:
+        return "Server Error"
+    else:
+        return "Unknown"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_status
+    (parameter:3 code @type int)
+    (return:4 @type str)
+  )
+)
+
+
+===============================================================================
+match-expressions
+===============================================================================
+Test match statement (Python 3.10+).
+lang: python
+
+--- file: src/lib.py ---
+
+def process_command(command: str) -> str:
+    match command.split():
+        case ["quit"]:
+            return "Goodbye"
+        case ["hello", name]:
+            return f"Hello, {name}"
+        case ["add", x, y]:
+            return str(int(x) + int(y))
+        case _:
+            return "Unknown command"
+
+def match_type(value) -> str:
+    match value:
+        case int():
+            return "integer"
+        case str():
+            return "string"
+        case list():
+            return "list"
+        case _:
+            return "other"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 process_command
+    (parameter:3 command @type str)
+    (return:4 @type str)
+  )
+  (func:7 match_type
+    (return:8 @type str)
+  )
+)

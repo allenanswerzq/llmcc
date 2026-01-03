@@ -1,0 +1,29 @@
+===============================================================================
+raw-strings
+===============================================================================
+Test raw strings parsing.
+lang: python
+
+--- file: raw_strings.py ---
+# Raw strings - no escape processing
+raw_single = r'hello\nworld'
+raw_double = r"hello\tworld"
+raw_upper = R'path\to\file'
+
+# Raw triple quoted
+raw_triple_single = r'''
+raw
+multiline
+'''
+raw_triple_double = r"""
+also
+raw
+"""
+
+# Regex patterns (common use case)
+pattern = r'\d+\.\d+'
+email_pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+path_pattern = r'C:\Users\.*\.txt'
+
+--- expect:block-graph ---
+(root:1 raw_strings ($TMP/raw_strings.py))

@@ -1,0 +1,52 @@
+===============================================================================
+edge-inheritance
+===============================================================================
+Test edges created by class inheritance.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/base.py ---
+from abc import ABC, abstractmethod
+
+class Entity(ABC):
+    @abstractmethod
+    def get_id(self) -> int:
+        pass
+
+class Auditable:
+    def get_audit_log(self) -> list:
+        return []
+
+lang: python
+
+--- file: sample/models.py ---
+from .base import Entity, Auditable
+
+class User(Entity, Auditable):
+    def get_id(self) -> int:
+        return 1
+
+class Product(Entity):
+    def get_id(self) -> int:
+        return 2
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

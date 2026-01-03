@@ -1,0 +1,45 @@
+===============================================================================
+match-guards
+===============================================================================
+Test match guards parsing.
+lang: python
+
+--- file: match_guards.py ---
+def match_with_guard(value):
+    match value:
+        case x if x < 0:
+            return "negative"
+        case x if x == 0:
+            return "zero"
+        case x if x > 0:
+            return "positive"
+
+def match_list_guard(items):
+    match items:
+        case [x, y] if x == y:
+            return "equal pair"
+        case [x, y] if x < y:
+            return "ascending pair"
+        case [x, y] if x > y:
+            return "descending pair"
+        case [*all] if len(all) > 10:
+            return "long list"
+        case _:
+            return "other"
+
+def match_complex_guard(data, threshold):
+    match data:
+        case {"value": v} if v > threshold:
+            return "above threshold"
+        case {"value": v, "priority": p} if p == "high" and v > 0:
+            return "high priority positive"
+        case _:
+            return "default"
+
+--- expect:block-graph ---
+(root:1 match_guards ($TMP/match_guards.py)
+  (func:2 match_with_guard)
+  (func:3 match_list_guard
+  )
+  (func:5 match_complex_guard)
+)

@@ -1,0 +1,26 @@
+===============================================================================
+file-detail
+===============================================================================
+Test that depth 3 (File) shows full file-level detail.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+    def display(self) -> str:
+        return f"{self.name} ({self.id})"
+
+class Admin(User):
+    def __init__(self, id: int, name: str, role: str):
+        super().__init__(id, name)
+        self.role = role
+
+--- expect:arch-graph-depth-3 ---
+digraph G {
+}

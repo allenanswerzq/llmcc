@@ -1,0 +1,57 @@
+===============================================================================
+cross-file-func-return
+===============================================================================
+Test function return types referencing types from other files.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+class User:
+    pass
+
+class Session:
+    pass
+
+class AuthToken:
+    pass
+
+lang: python
+
+--- file: sample/auth.py ---
+from .models import User, Session, AuthToken
+
+def authenticate(username: str, password: str) -> User | None:
+    return None
+
+def create_session(user: User) -> Session:
+    return Session()
+
+def generate_token(session: Session) -> AuthToken:
+    return AuthToken()
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 models ($TMP/sample/models.py)
+  (class:3 User)
+  (class:4 Session)
+  (class:5 AuthToken)
+)
+
+(root:6 auth ($TMP/sample/auth.py)
+  (func:7 authenticate
+    (parameter:8 username @type str)
+    (parameter:9 password @type str)
+    (return:10 @type:3 User)
+  )
+  (func:11 create_session
+    (parameter:12 user @type:3 User)
+    (return:13 @type:4 Session)
+  )
+  (func:15 generate_token
+    (parameter:16 session @type:4 Session)
+    (return:17 @type:5 AuthToken)
+  )
+)

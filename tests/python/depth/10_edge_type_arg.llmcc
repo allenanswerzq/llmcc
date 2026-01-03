@@ -1,0 +1,44 @@
+===============================================================================
+edge-type-arg
+===============================================================================
+Test edges created by generic type arguments.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/types.py ---
+class User:
+    pass
+
+class Error:
+    pass
+
+lang: python
+
+--- file: sample/result.py ---
+from typing import List, Dict, Optional
+from .types import User, Error
+
+users: List[User]
+errors: Dict[str, Error]
+current: Optional[User]
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

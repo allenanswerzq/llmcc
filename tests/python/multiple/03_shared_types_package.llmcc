@@ -1,0 +1,86 @@
+===============================================================================
+shared-types-package
+===============================================================================
+Test with a shared types package used by multiple packages.
+lang: python
+
+--- file: shared/__init__.py ---
+from .types import Result, Error
+from .config import Config
+
+--- file: shared/types.py ---
+from typing import TypeVar, Generic
+
+T = TypeVar('T')
+
+class Error:
+    def __init__(self, message: str):
+        self.message = message
+
+class Result(Generic[T]):
+    def __init__(self, value: T | None, error: Error | None):
+        self.value = value
+        self.error = error
+
+lang: python
+
+--- file: shared/config.py ---
+class Config:
+    debug: bool = False
+    log_level: str = "INFO"
+
+--- file: auth/__init__.py ---
+from .service import AuthService
+
+lang: python
+
+--- file: auth/service.py ---
+from shared import Result, Error, Config
+
+class AuthToken:
+    pass
+
+class AuthService:
+    def __init__(self, config: Config):
+        self.config = config
+
+    def login(self, username: str, password: str) -> Result[AuthToken]:
+        return Result(AuthToken(), None)
+
+lang: python
+
+--- file: users/__init__.py ---
+from .service import UserService
+
+--- file: users/service.py ---
+from shared import Result, Error, Config
+
+class User:
+    id: int
+    name: str
+
+class UserService:
+    def __init__(self, config: Config):
+        self.config = config
+
+    def get_user(self, id: int) -> Result[User]:
+        return Result(None, Error("Not found"))
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

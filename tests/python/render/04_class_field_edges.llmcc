@@ -1,0 +1,31 @@
+===============================================================================
+class-field-edges
+===============================================================================
+Test that class fields create edges to their types.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+from dataclasses import dataclass
+
+@dataclass
+class Address:
+    street: str
+    city: str
+    zip_code: str
+
+@dataclass
+class User:
+    name: str
+    age: int
+    address: Address
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 models ($TMP/sample/models.py)
+  (class:3 Address)
+  (class:4 User)
+)

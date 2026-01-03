@@ -1,0 +1,31 @@
+===============================================================================
+basic-annotations
+===============================================================================
+Test basic annotations parsing.
+lang: python
+
+--- file: basic_annotations.py ---
+# Variable annotations
+name: str
+age: int
+height: float
+active: bool
+
+# Annotated assignments
+name: str = "Alice"
+age: int = 30
+height: float = 5.5
+active: bool = True
+
+# None type
+nothing: None = None
+
+# Bytes
+data: bytes = b"hello"
+
+# Any type
+from typing import Any
+anything: Any = "whatever"
+
+--- expect:block-graph ---
+(root:1 basic_annotations ($TMP/basic_annotations.py))

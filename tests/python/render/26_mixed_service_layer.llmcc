@@ -1,0 +1,151 @@
+===============================================================================
+mixed-service-layer
+===============================================================================
+Test a typical service layer architecture.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class User:
+    id: int
+    email: str
+    name: str
+
+@dataclass
+class Order:
+    id: int
+    user_id: int
+    total: float
+
+lang: python
+
+--- file: sample/repository.py ---
+from typing import List, Optional
+from .models import User, Order
+
+class UserRepository:
+    def find_by_id(self, id: int) -> Optional[User]:
+        return None
+
+    def find_by_email(self, email: str) -> Optional[User]:
+        return None
+
+    def save(self, user: User) -> User:
+        return user
+
+class OrderRepository:
+    def find_by_id(self, id: int) -> Optional[Order]:
+        return None
+
+    def find_by_user(self, user_id: int) -> List[Order]:
+        return []
+
+    def save(self, order: Order) -> Order:
+        return order
+
+lang: python
+
+--- file: sample/service.py ---
+from typing import List, Optional
+from .models import User, Order
+from .repository import UserRepository, OrderRepository
+
+class UserService:
+    def __init__(self, repo: UserRepository):
+        self.repo = repo
+
+    def get_user(self, id: int) -> Optional[User]:
+        return self.repo.find_by_id(id)
+
+    def create_user(self, email: str, name: str) -> User:
+        user = User(id=0, email=email, name=name)
+        return self.repo.save(user)
+
+class OrderService:
+    def __init__(self, order_repo: OrderRepository, user_repo: UserRepository):
+        self.order_repo = order_repo
+        self.user_repo = user_repo
+
+    def get_orders_for_user(self, user_id: int) -> List[Order]:
+        return self.order_repo.find_by_user(user_id)
+
+    def create_order(self, user: User, total: float) -> Order:
+        order = Order(id=0, user_id=user.id, total=total)
+        return self.order_repo.save(order)
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 models ($TMP/sample/models.py)
+  (class:3 User)
+  (class:4 Order)
+)
+
+(root:5 repository ($TMP/sample/repository.py)
+  (class:6 UserRepository
+    (method:7 find_by_id
+      (parameter:8 id @type int)
+      (return:9 @type Optional)
+    )
+    (method:10 find_by_email
+      (parameter:11 email @type str)
+      (return:12 @type Optional)
+    )
+    (method:13 save
+      (parameter:14 user @type:3 User)
+      (return:15 @type:3 User)
+    )
+  )
+  (class:16 OrderRepository
+    (method:17 find_by_id
+      (parameter:18 id @type int)
+      (return:19 @type Optional)
+    )
+    (method:20 find_by_user
+      (parameter:21 user_id @type int)
+      (return:22 @type List)
+    )
+    (method:23 save
+      (parameter:24 order @type:4 Order)
+      (return:25 @type:4 Order)
+    )
+  )
+)
+
+(root:26 service ($TMP/sample/service.py)
+  (class:27 UserService
+    (method:28 __init__
+      (parameter:29 repo @type:6 UserRepository)
+    )
+    (method:30 get_user
+      (parameter:31 id @type int)
+      (return:32 @type Optional)
+    )
+    (method:34 create_user
+      (parameter:35 email @type str)
+      (parameter:36 name @type str)
+      (return:37 @type:3 User)
+    )
+  )
+  (class:40 OrderService
+    (method:41 __init__
+      (parameter:42 order_repo @type:16 OrderRepository)
+      (parameter:43 user_repo @type:6 UserRepository)
+    )
+    (method:44 get_orders_for_user
+      (parameter:45 user_id @type int)
+      (return:46 @type List)
+    )
+    (method:48 create_order
+      (parameter:49 user @type:3 User)
+      (parameter:50 total @type float)
+      (return:51 @type:4 Order)
+    )
+  )
+)

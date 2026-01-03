@@ -1,0 +1,72 @@
+===============================================================================
+enum-in-function-signatures
+===============================================================================
+Test enums in function parameter and return types.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/enums.py ---
+from enum import Enum
+
+class Color(Enum):
+    RED = "red"
+    GREEN = "green"
+    BLUE = "blue"
+
+class Direction(Enum):
+    NORTH = "N"
+    SOUTH = "S"
+    EAST = "E"
+    WEST = "W"
+
+lang: python
+
+--- file: sample/graphics.py ---
+from .enums import Color, Direction
+
+def set_background(color: Color) -> None:
+    pass
+
+def get_primary_color() -> Color:
+    return Color.RED
+
+def move(direction: Direction, steps: int) -> tuple[int, int]:
+    return (0, 0)
+
+def get_opposite(direction: Direction) -> Direction:
+    opposites = {
+        Direction.NORTH: Direction.SOUTH,
+        Direction.SOUTH: Direction.NORTH,
+        Direction.EAST: Direction.WEST,
+        Direction.WEST: Direction.EAST,
+    }
+    return opposites[direction]
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 enums ($TMP/sample/enums.py)
+  (class:3 Color)
+  (class:4 Direction)
+)
+
+(root:5 graphics ($TMP/sample/graphics.py)
+  (func:6 set_background
+    (parameter:7 color @type:3 Color)
+    (return:8 @type None)
+  )
+  (func:9 get_primary_color
+    (return:10 @type:3 Color)
+  )
+  (func:11 move
+    (parameter:12 direction @type:4 Direction)
+    (parameter:13 steps @type int)
+    (return:14 @type tuple)
+  )
+  (func:15 get_opposite
+    (parameter:16 direction @type:4 Direction)
+    (return:17 @type:4 Direction)
+  )
+)

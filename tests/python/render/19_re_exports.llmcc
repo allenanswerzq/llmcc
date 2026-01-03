@@ -1,0 +1,53 @@
+===============================================================================
+re-exports
+===============================================================================
+Test re-exports through __init__.py.
+lang: python
+
+--- file: sample/__init__.py ---
+from .models import User, Product
+from .services import UserService
+from .utils import helper
+
+__all__ = ["User", "Product", "UserService", "helper"]
+
+--- file: sample/models.py ---
+class User:
+    pass
+
+class Product:
+    pass
+
+lang: python
+
+--- file: sample/services.py ---
+from .models import User
+
+class UserService:
+    def get(self, id: int) -> User:
+        return User()
+
+--- file: sample/utils.py ---
+def helper():
+    return 42
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 models ($TMP/sample/models.py)
+  (class:3 User)
+  (class:4 Product)
+)
+
+(root:5 services ($TMP/sample/services.py)
+  (class:6 UserService
+    (method:7 get
+      (parameter:8 id @type int)
+      (return:9 @type:3 User)
+    )
+  )
+)
+
+(root:11 utils ($TMP/sample/utils.py)
+  (func:12 helper)
+)

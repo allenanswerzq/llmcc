@@ -84,7 +84,7 @@ pub fn get_user_sessions() -> Option<HashMap<User, Vec<Session>>> {
     (field:15 sessions @type:3 User)
   )
   (func:16 fetch_users
-    (return:17)
+    (return:17 @type:3 User)
     (@tdep:3 User)
     (@tdep:5 Error)
   )
@@ -92,7 +92,7 @@ pub fn get_user_sessions() -> Option<HashMap<User, Vec<Session>>> {
     (field:20 data @type:3 User)
   )
   (func:21 get_user_sessions
-    (return:22)
+    (return:22 @type:3 User)
     (@tdep:3 User)
     (@tdep:7 Session)
   )
@@ -109,9 +109,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_sample {
     label="sample";
@@ -154,8 +151,8 @@ digraph architecture {
   n5 -> n10 [from="type_dep", to="struct"];
   n7 -> n14 [from="type_dep", to="struct"];
   n7 -> n19 [from="type_dep", to="struct"];
-  n16 -> n3 [from="func", to="type_dep"];
+  n16 -> n3 [from="func", to="output"];
   n16 -> n5 [from="func", to="type_dep"];
-  n21 -> n3 [from="func", to="type_dep"];
+  n21 -> n3 [from="func", to="output"];
   n21 -> n7 [from="func", to="type_dep"];
 }

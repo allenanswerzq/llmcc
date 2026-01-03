@@ -1,0 +1,53 @@
+===============================================================================
+module-aggregation
+===============================================================================
+Test that depth 2 (Module) aggregates nodes into module-level components.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+class Profile:
+    def __init__(self, bio: str):
+        self.bio = bio
+
+lang: python
+
+--- file: sample/services.py ---
+from .models import User, Profile
+
+class UserService:
+    def __init__(self, user: User, profile: Profile):
+        self.user = user
+        self.profile = profile
+
+def create_user() -> User:
+    return User(1, "Alice")
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_unknown_models[label="unknown::models"];
+  mod_unknown_services[label="unknown::services"];
+
+  mod_unknown_services -> mod_unknown_models;
+}

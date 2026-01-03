@@ -1,0 +1,66 @@
+===============================================================================
+module-declarations-basic
+===============================================================================
+Test basic Python module declarations and imports.
+lang: python
+
+--- file: src/main.py ---
+
+import os
+import sys
+from pathlib import Path
+
+def main():
+    pass
+
+--- expect:block-graph ---
+(root:1 main ($TMP/src/main.py)
+  (func:2 main)
+)
+
+
+===============================================================================
+module-declarations-from-import
+===============================================================================
+Test from ... import statements.
+lang: python
+
+--- file: src/app.py ---
+
+from typing import List, Dict, Optional
+from collections import defaultdict
+
+def process(items: List[str]) -> Dict[str, int]:
+    pass
+
+--- expect:block-graph ---
+(root:1 app ($TMP/src/app.py)
+  (func:2 process
+    (parameter:3 items @type List)
+    (return:4 @type Dict)
+  )
+)
+
+
+===============================================================================
+module-declarations-aliased
+===============================================================================
+Test import aliases.
+lang: python
+
+--- file: src/utils.py ---
+
+import numpy as np
+import pandas as pd
+from typing import List as L
+
+def compute(data: L[int]) -> int:
+    pass
+
+--- expect:block-graph ---
+(root:1 utils ($TMP/src/utils.py)
+  (func:2 compute
+    (parameter:3 data @type L)
+    (return:4 @type int)
+  )
+)

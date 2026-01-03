@@ -1,0 +1,52 @@
+===============================================================================
+nested-generic-types
+===============================================================================
+Test nested generic type annotations.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/types.py ---
+class User:
+    pass
+
+class Product:
+    pass
+
+lang: python
+
+--- file: sample/complex.py ---
+from typing import Dict, List, Optional, Tuple
+from .types import User, Product
+
+# Nested generic fields
+user_products: Dict[User, List[Product]]
+optional_users: Optional[List[User]]
+product_tuple: Tuple[Product, Product, Product]
+
+# Function with nested generics
+def get_user_products(users: List[User]) -> Dict[User, List[Product]]:
+    return {}
+
+def find_users(criteria: Dict[str, List[str]]) -> Optional[List[User]]:
+    return None
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 types ($TMP/sample/types.py)
+  (class:3 User)
+  (class:4 Product)
+)
+
+(root:5 complex ($TMP/sample/complex.py)
+  (func:6 get_user_products
+    (parameter:7 users @type List)
+    (return:8 @type Dict)
+  )
+  (func:9 find_users
+    (parameter:10 criteria @type Dict)
+    (return:11 @type Optional)
+  )
+)

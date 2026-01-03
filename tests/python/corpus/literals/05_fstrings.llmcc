@@ -1,0 +1,41 @@
+===============================================================================
+fstrings
+===============================================================================
+Test fstrings parsing.
+lang: python
+
+--- file: fstrings.py ---
+name = "Alice"
+age = 30
+
+# Basic f-strings
+greeting = f"Hello, {name}!"
+intro = f"I am {age} years old"
+
+# Expressions in f-strings
+calculation = f"Next year: {age + 1}"
+method_call = f"Upper: {name.upper()}"
+
+# Format specifiers
+formatted_float = f"{3.14159:.2f}"
+padded = f"{42:05d}"
+aligned = f"{name:>10}"
+percentage = f"{0.85:.1%}"
+
+# Nested braces
+literal_brace = f"{{escaped}}"
+dict_access = f"{{'key': 'value'}}"
+
+# Multiline f-strings
+multiline = f"""
+Name: {name}
+Age: {age}
+"""
+
+# Combined prefixes
+raw_f = rf"Path: {name}\n"
+f_raw = fr"Also: {name}\t"
+
+--- expect:block-graph ---
+(root:1 fstrings ($TMP/fstrings.py)
+)

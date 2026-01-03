@@ -1,0 +1,73 @@
+===============================================================================
+constants-module-level
+===============================================================================
+Test module-level constants (by naming convention).
+lang: python
+
+--- file: src/config.py ---
+
+MAX_SIZE: int = 1000
+DEFAULT_TIMEOUT: float = 30.0
+API_VERSION: str = "v1"
+
+_PRIVATE_CONST: int = 42
+__REALLY_PRIVATE: str = "hidden"
+
+def get_config() -> dict:
+    return {"max_size": MAX_SIZE, "timeout": DEFAULT_TIMEOUT}
+
+--- expect:block-graph ---
+(root:1 config ($TMP/src/config.py)
+  (func:2 get_config
+    (return:3 @type dict)
+  )
+)
+
+
+===============================================================================
+constants-final-annotation
+===============================================================================
+Test Final type annotation for constants.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Final
+
+BUFFER_SIZE: Final[int] = 4096
+APP_NAME: Final[str] = "MyApp"
+VERSION: Final = "1.0.0"
+
+class Settings:
+    MAX_RETRIES: Final[int] = 3
+    BASE_URL: Final[str] = "https://api.example.com"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Settings)
+)
+
+
+===============================================================================
+constants-class-variables
+===============================================================================
+Test class-level constants.
+lang: python
+
+--- file: src/lib.py ---
+
+class MathConstants:
+    PI: float = 3.14159
+    E: float = 2.71828
+    GOLDEN_RATIO: float = 1.61803
+
+class HttpStatus:
+    OK: int = 200
+    NOT_FOUND: int = 404
+    SERVER_ERROR: int = 500
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 MathConstants)
+  (class:3 HttpStatus)
+)

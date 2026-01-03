@@ -1,0 +1,155 @@
+===============================================================================
+call-expressions-basic
+===============================================================================
+Test basic function call expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+def add(a: int, b: int) -> int:
+    return a + b
+
+def greet(name: str) -> str:
+    return f"Hello, {name}"
+
+def main() -> None:
+    result = add(1, 2)
+    message = greet("World")
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 add
+    (parameter:3 a @type int)
+    (parameter:4 b @type int)
+    (return:5 @type int)
+  )
+  (func:6 greet
+    (parameter:7 name @type str)
+    (return:8 @type str)
+  )
+  (func:9 main
+    (return:10 @type None)
+    (@fdep:2 add)
+    (@fdep:6 greet)
+  )
+)
+
+
+===============================================================================
+call-expressions-keyword-args
+===============================================================================
+Test function calls with keyword arguments.
+lang: python
+
+--- file: src/lib.py ---
+
+def connect(host: str, port: int = 80, timeout: float = 30.0) -> bool:
+    return True
+
+def main() -> None:
+    connect("localhost")
+    connect("localhost", port=8080)
+    connect(host="example.com", port=443, timeout=60.0)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 connect
+    (parameter:3 host @type str)
+    (parameter:4 port @type int)
+    (parameter:5 timeout @type float)
+    (return:6 @type bool)
+  )
+  (func:7 main
+    (return:8 @type None)
+    (@fdep:2 connect)
+  )
+)
+
+
+===============================================================================
+call-expressions-method-calls
+===============================================================================
+Test method call expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+class Calculator:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def add(self, x: int) -> int:
+        return self.value + x
+
+    def multiply(self, x: int) -> int:
+        return self.value * x
+
+def main() -> None:
+    calc = Calculator(10)
+    result1 = calc.add(5)
+    result2 = calc.multiply(3)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Calculator
+    (method:3 __init__
+      (parameter:4 value @type int)
+      (return:5 @type None)
+    )
+    (method:6 add
+      (parameter:7 x @type int)
+      (return:8 @type int)
+    )
+    (method:9 multiply
+      (parameter:10 x @type int)
+      (return:11 @type int)
+    )
+  )
+  (func:12 main
+    (return:13 @type None)
+    (@tdep:2 Calculator)
+  )
+)
+
+
+===============================================================================
+call-expressions-chained
+===============================================================================
+Test chained method calls.
+lang: python
+
+--- file: src/lib.py ---
+
+class Builder:
+    def __init__(self) -> None:
+        self.parts = []
+
+    def add_part(self, part: str) -> "Builder":
+        self.parts.append(part)
+        return self
+
+    def build(self) -> str:
+        return " ".join(self.parts)
+
+def main() -> str:
+    return Builder().add_part("Hello").add_part("World").build()
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Builder
+    (method:3 __init__
+      (return:4 @type None)
+    )
+    (method:5 add_part
+      (parameter:6 part @type str)
+      (return:7 @type str)
+    )
+    (method:9 build
+      (return:10 @type str)
+    )
+  )
+  (func:12 main
+    (return:13 @type str)
+    (@tdep:2 Builder)
+  )
+)

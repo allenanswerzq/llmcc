@@ -1,0 +1,45 @@
+===============================================================================
+edge-field-type
+===============================================================================
+Test edges created by field types at different depths.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/types.py ---
+class Address:
+    street: str
+    city: str
+
+lang: python
+
+--- file: sample/user.py ---
+from .types import Address
+
+class User:
+    name: str
+    address: Address
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}
+
+--- expect:arch-graph-depth-3 ---
+digraph G {
+}

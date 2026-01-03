@@ -1,0 +1,41 @@
+===============================================================================
+methods-excluded
+===============================================================================
+Test that class methods are included but shown as children of the class.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/service.py ---
+
+class UserService:
+    def __init__(self):
+        self.users = []
+
+    def add_user(self, name: str) -> None:
+        self.users.append(name)
+
+    def get_user(self, index: int) -> str:
+        return self.users[index]
+
+    def _internal_method(self):
+        pass
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 service ($TMP/sample/service.py)
+  (class:3 UserService
+    (method:4 __init__)
+    (method:5 add_user
+      (parameter:6 name @type str)
+      (return:7 @type None)
+    )
+    (method:9 get_user
+      (parameter:10 index @type int)
+      (return:11 @type str)
+    )
+    (method:12 _internal_method)
+  )
+)

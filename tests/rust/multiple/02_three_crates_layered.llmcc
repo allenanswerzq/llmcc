@@ -130,7 +130,7 @@ pub fn handle_order(order: Order) -> bool {
     (method:18 find_by_id
       (parameter:19 self @type:17 UserRepository)
       (parameter:20 id @type u64)
-      (return:21)
+      (return:21 @type:3 User)
       (@tdep:3 User)
     )
     (method:22 save
@@ -141,7 +141,7 @@ pub fn handle_order(order: Order) -> bool {
   )
   (func:26 get_user
     (parameter:27 id @type u64)
-    (return:28)
+    (return:28 @type:3 User)
     (@tdep:3 User)
   )
 )
@@ -151,7 +151,7 @@ pub fn handle_order(order: Order) -> bool {
     (method:31 find_by_id
       (parameter:32 self @type:30 OrderRepository)
       (parameter:33 id @type u64)
-      (return:34)
+      (return:34 @type:6 Order)
       (@tdep:6 Order)
     )
     (method:35 update_status
@@ -196,9 +196,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_api {
     label="api";
@@ -268,7 +265,7 @@ digraph architecture {
   n3 -> n44 [from="type_dep", to="struct"];
   n6 -> n39 [from="input", to="func"];
   n6 -> n52 [from="input", to="func"];
-  n26 -> n3 [from="func", to="type_dep"];
+  n26 -> n3 [from="func", to="output"];
   n39 -> n10 [from="func", to="output"];
   n47 -> n26 [from="caller", to="callee"];
   n47 -> n44 [from="func", to="output"];

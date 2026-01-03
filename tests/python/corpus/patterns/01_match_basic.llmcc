@@ -1,0 +1,30 @@
+===============================================================================
+match-basic
+===============================================================================
+Test match basic parsing.
+lang: python
+
+--- file: match_basic.py ---
+def process(value):
+    match value:
+        case 1:
+            return "one"
+        case 2:
+            return "two"
+        case _:
+            return "other"
+
+def match_string(text):
+    match text:
+        case "hello":
+            return "greeting"
+        case "bye":
+            return "farewell"
+        case _:
+            return "unknown"
+
+--- expect:block-graph ---
+(root:1 match_basic ($TMP/match_basic.py)
+  (func:2 process)
+  (func:3 match_string)
+)

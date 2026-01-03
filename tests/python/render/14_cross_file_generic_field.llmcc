@@ -1,0 +1,51 @@
+===============================================================================
+cross-file-generic-field
+===============================================================================
+Test generic types referencing types from other files.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/types.py ---
+class User:
+    pass
+
+class Error:
+    pass
+
+lang: python
+
+--- file: sample/repository.py ---
+from typing import List, Dict, Optional
+from .types import User, Error
+
+class UserRepository:
+    users: List[User]
+    errors: Dict[str, Error]
+    current: Optional[User]
+
+    def get_all(self) -> List[User]:
+        return self.users
+
+    def get_errors(self) -> Dict[str, Error]:
+        return self.errors
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 types ($TMP/sample/types.py)
+  (class:3 User)
+  (class:4 Error)
+)
+
+(root:5 repository ($TMP/sample/repository.py)
+  (class:6 UserRepository
+    (method:7 get_all
+      (return:8 @type List)
+    )
+    (method:9 get_errors
+      (return:10 @type Dict)
+    )
+  )
+)

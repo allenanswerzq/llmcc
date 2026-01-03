@@ -1,0 +1,940 @@
+===============================================================================
+simple-class-params-returns
+===============================================================================
+Test simple class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+class Point:
+    x: int
+    y: int
+
+class Circle:
+    center: Point
+    radius: float
+
+def create_point(x: int, y: int) -> Point:
+    return Point()
+
+def get_center(c: Circle) -> Point:
+    return c.center
+
+def move_point(p: Point, dx: int, dy: int) -> Point:
+    return p
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Point)
+  (class:3 Circle)
+  (func:4 create_point
+    (parameter:5 x @type int)
+    (parameter:6 y @type int)
+    (return:7 @type:2 Point)
+    (@tdep:2 Point)
+  )
+  (func:9 get_center
+    (parameter:10 c @type:3 Circle)
+    (return:11 @type:2 Point)
+  )
+  (func:12 move_point
+    (parameter:13 p @type:2 Point)
+    (parameter:14 dx @type int)
+    (parameter:15 dy @type int)
+    (return:16 @type:2 Point)
+  )
+)
+
+
+===============================================================================
+single-inheritance-params-returns
+===============================================================================
+Test single inheritance class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+class Animal:
+    name: str
+
+class Dog(Animal):
+    breed: str
+
+class Cat(Animal):
+    indoor: bool
+
+def create_dog(name: str, breed: str) -> Dog:
+    return Dog()
+
+def create_cat(name: str) -> Cat:
+    return Cat()
+
+def get_animal_name(animal: Animal) -> str:
+    return animal.name
+
+def adopt(dog: Dog, cat: Cat) -> Animal:
+    return dog
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Animal)
+  (class:3 Dog)
+  (class:4 Cat)
+  (func:5 create_dog
+    (parameter:6 name @type str)
+    (parameter:7 breed @type str)
+    (return:8 @type:3 Dog)
+    (@tdep:3 Dog)
+  )
+  (func:10 create_cat
+    (parameter:11 name @type str)
+    (return:12 @type:4 Cat)
+    (@tdep:4 Cat)
+  )
+  (func:14 get_animal_name
+    (parameter:15 animal @type:2 Animal)
+    (return:16 @type str)
+  )
+  (func:17 adopt
+    (parameter:18 dog @type:3 Dog)
+    (parameter:19 cat @type:4 Cat)
+    (return:20 @type:2 Animal)
+  )
+)
+
+
+===============================================================================
+multiple-inheritance-params-returns
+===============================================================================
+Test multiple inheritance class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+class Flyable:
+    def fly(self) -> None:
+        pass
+
+class Swimmable:
+    def swim(self) -> None:
+        pass
+
+class Walkable:
+    def walk(self) -> None:
+        pass
+
+class Duck(Flyable, Swimmable, Walkable):
+    name: str
+
+class Penguin(Swimmable, Walkable):
+    name: str
+
+def create_duck(name: str) -> Duck:
+    return Duck()
+
+def create_penguin(name: str) -> Penguin:
+    return Penguin()
+
+def make_fly(bird: Flyable) -> None:
+    bird.fly()
+
+def make_swim(creature: Swimmable) -> None:
+    creature.swim()
+
+def race(duck: Duck, penguin: Penguin) -> Walkable:
+    return duck
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Flyable
+    (method:3 fly
+      (return:4 @type None)
+    )
+  )
+  (class:5 Swimmable
+    (method:6 swim
+      (return:7 @type None)
+    )
+  )
+  (class:8 Walkable
+    (method:9 walk
+      (return:10 @type None)
+    )
+  )
+  (class:11 Duck)
+  (class:12 Penguin)
+  (func:13 create_duck
+    (parameter:14 name @type str)
+    (return:15 @type:11 Duck)
+    (@tdep:11 Duck)
+  )
+  (func:17 create_penguin
+    (parameter:18 name @type str)
+    (return:19 @type:12 Penguin)
+    (@tdep:12 Penguin)
+  )
+  (func:21 make_fly
+    (parameter:22 bird @type:2 Flyable)
+    (return:23 @type None)
+  )
+  (func:25 make_swim
+    (parameter:26 creature @type:5 Swimmable)
+    (return:27 @type None)
+  )
+  (func:29 race
+    (parameter:30 duck @type:11 Duck)
+    (parameter:31 penguin @type:12 Penguin)
+    (return:32 @type:8 Walkable)
+  )
+)
+
+
+===============================================================================
+abstract-base-class-params-returns
+===============================================================================
+Test abstract base class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from abc import ABC, abstractmethod
+
+class Shape(ABC):
+    @abstractmethod
+    def area(self) -> float:
+        pass
+
+class Rectangle(Shape):
+    width: float
+    height: float
+
+    def area(self) -> float:
+        return self.width * self.height
+
+class Circle(Shape):
+    radius: float
+
+    def area(self) -> float:
+        return 3.14 * self.radius * self.radius
+
+def total_area(shapes: list) -> float:
+    return sum(s.area() for s in shapes)
+
+def create_rectangle(w: float, h: float) -> Rectangle:
+    return Rectangle()
+
+def create_circle(r: float) -> Circle:
+    return Circle()
+
+def compare_shapes(a: Shape, b: Shape) -> Shape:
+    return a if a.area() > b.area() else b
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Shape
+    (method:3 area
+      (return:4 @type float)
+    )
+  )
+  (class:5 Rectangle
+    (method:6 area
+      (return:7 @type float)
+    )
+  )
+  (class:8 Circle
+    (method:9 area
+      (return:10 @type float)
+    )
+  )
+  (func:11 total_area
+    (parameter:12 shapes @type list)
+    (return:13 @type float)
+  )
+  (func:15 create_rectangle
+    (parameter:16 w @type float)
+    (parameter:17 h @type float)
+    (return:18 @type:5 Rectangle)
+    (@tdep:5 Rectangle)
+  )
+  (func:20 create_circle
+    (parameter:21 r @type float)
+    (return:22 @type:8 Circle)
+    (@tdep:8 Circle)
+  )
+  (func:24 compare_shapes
+    (parameter:25 a @type:2 Shape)
+    (parameter:26 b @type:2 Shape)
+    (return:27 @type:2 Shape)
+  )
+)
+
+
+===============================================================================
+dataclass-params-returns
+===============================================================================
+Test dataclass as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from dataclasses import dataclass
+
+@dataclass
+class Address:
+    street: str
+    city: str
+    zip_code: str
+
+@dataclass
+class Person:
+    name: str
+    age: int
+    address: Address
+
+@dataclass
+class Company:
+    name: str
+    employees: list
+
+def create_address(street: str, city: str, zip_code: str) -> Address:
+    return Address(street, city, zip_code)
+
+def create_person(name: str, age: int, addr: Address) -> Person:
+    return Person(name, age, addr)
+
+def get_person_address(person: Person) -> Address:
+    return person.address
+
+def hire(company: Company, person: Person) -> Company:
+    return company
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Address)
+  (class:3 Person)
+  (class:4 Company)
+  (func:5 create_address
+    (parameter:6 street @type str)
+    (parameter:7 city @type str)
+    (parameter:8 zip_code @type str)
+    (return:9 @type:2 Address)
+    (@tdep:2 Address)
+  )
+  (func:11 create_person
+    (parameter:12 name @type str)
+    (parameter:13 age @type int)
+    (parameter:14 addr @type:2 Address)
+    (return:15 @type:3 Person)
+    (@tdep:3 Person)
+  )
+  (func:17 get_person_address
+    (parameter:18 person @type:3 Person)
+    (return:19 @type:2 Address)
+  )
+  (func:20 hire
+    (parameter:21 company @type:4 Company)
+    (parameter:22 person @type:3 Person)
+    (return:23 @type:4 Company)
+  )
+)
+
+
+===============================================================================
+nested-class-params-returns
+===============================================================================
+Test nested class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+class Outer:
+    value: int
+
+    class Inner:
+        data: str
+
+    class DeepNested:
+        class VeryDeep:
+            x: int
+
+def create_outer() -> Outer:
+    return Outer()
+
+def create_inner() -> Outer.Inner:
+    return Outer.Inner()
+
+def process_outer(o: Outer) -> Outer:
+    return o
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Outer
+    (class:3 Inner)
+    (class:4 DeepNested
+      (class:5 VeryDeep)
+    )
+  )
+  (func:6 create_outer
+    (return:7 @type:2 Outer)
+    (@tdep:2 Outer)
+  )
+  (func:9 create_inner
+    (return:10 @type:2 Outer)
+    (@tdep:2 Outer)
+  )
+  (func:12 process_outer
+    (parameter:13 o @type:2 Outer)
+    (return:14 @type:2 Outer)
+  )
+)
+
+
+===============================================================================
+generic-class-params-returns
+===============================================================================
+Test generic class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Generic, TypeVar, List
+
+T = TypeVar('T')
+K = TypeVar('K')
+V = TypeVar('V')
+
+class Box(Generic[T]):
+    value: T
+
+class Pair(Generic[K, V]):
+    key: K
+    value: V
+
+class Stack(Generic[T]):
+    items: List[T]
+
+def create_int_box(value: int) -> Box:
+    return Box()
+
+def create_str_box(value: str) -> Box:
+    return Box()
+
+def create_pair(key: str, value: int) -> Pair:
+    return Pair()
+
+def push_to_stack(stack: Stack, item: int) -> Stack:
+    return stack
+
+def swap_pair(pair: Pair) -> Pair:
+    return pair
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:5 Box)
+  (class:6 Pair)
+  (class:7 Stack)
+  (func:8 create_int_box
+    (parameter:9 value @type int)
+    (return:10 @type:5 Box)
+    (@tdep:5 Box)
+  )
+  (func:12 create_str_box
+    (parameter:13 value @type str)
+    (return:14 @type:5 Box)
+    (@tdep:5 Box)
+  )
+  (func:16 create_pair
+    (parameter:17 key @type str)
+    (parameter:18 value @type int)
+    (return:19 @type:6 Pair)
+    (@tdep:6 Pair)
+  )
+  (func:21 push_to_stack
+    (parameter:22 stack @type:7 Stack)
+    (parameter:23 item @type int)
+    (return:24 @type:7 Stack)
+  )
+  (func:25 swap_pair
+    (parameter:26 pair @type:6 Pair)
+    (return:27 @type:6 Pair)
+  )
+)
+
+
+===============================================================================
+mixin-class-params-returns
+===============================================================================
+Test mixin class pattern as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+class JsonMixin:
+    def to_json(self) -> str:
+        return "{}"
+
+class XmlMixin:
+    def to_xml(self) -> str:
+        return "<root/>"
+
+class LoggableMixin:
+    def log(self) -> None:
+        pass
+
+class Entity:
+    id: int
+
+class User(Entity, JsonMixin, LoggableMixin):
+    name: str
+
+class Product(Entity, JsonMixin, XmlMixin):
+    price: float
+
+def serialize_user(user: User) -> str:
+    return user.to_json()
+
+def serialize_product(product: Product) -> str:
+    return product.to_json()
+
+def log_entity(entity: LoggableMixin) -> None:
+    entity.log()
+
+def convert_to_xml(item: XmlMixin) -> str:
+    return item.to_xml()
+
+def create_user(id: int, name: str) -> User:
+    return User()
+
+def create_product(id: int, price: float) -> Product:
+    return Product()
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 JsonMixin
+    (method:3 to_json
+      (return:4 @type str)
+    )
+  )
+  (class:5 XmlMixin
+    (method:6 to_xml
+      (return:7 @type str)
+    )
+  )
+  (class:8 LoggableMixin
+    (method:9 log
+      (return:10 @type None)
+    )
+  )
+  (class:11 Entity)
+  (class:12 User)
+  (class:13 Product)
+  (func:14 serialize_user
+    (parameter:15 user @type:12 User)
+    (return:16 @type str)
+  )
+  (func:18 serialize_product
+    (parameter:19 product @type:13 Product)
+    (return:20 @type str)
+  )
+  (func:22 log_entity
+    (parameter:23 entity @type:8 LoggableMixin)
+    (return:24 @type None)
+  )
+  (func:26 convert_to_xml
+    (parameter:27 item @type:5 XmlMixin)
+    (return:28 @type str)
+  )
+  (func:30 create_user
+    (parameter:31 id @type int)
+    (parameter:32 name @type str)
+    (return:33 @type:12 User)
+    (@tdep:12 User)
+  )
+  (func:35 create_product
+    (parameter:36 id @type int)
+    (parameter:37 price @type float)
+    (return:38 @type:13 Product)
+    (@tdep:13 Product)
+  )
+)
+
+
+===============================================================================
+enum-class-params-returns
+===============================================================================
+Test enum class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from enum import Enum, auto
+
+class Color(Enum):
+    RED = auto()
+    GREEN = auto()
+    BLUE = auto()
+
+class Status(Enum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+
+class Priority(Enum):
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
+
+class Task:
+    status: Status
+    priority: Priority
+
+def get_color_name(color: Color) -> str:
+    return color.name
+
+def parse_status(value: str) -> Status:
+    return Status(value)
+
+def create_task(status: Status, priority: Priority) -> Task:
+    return Task()
+
+def upgrade_priority(p: Priority) -> Priority:
+    return Priority.HIGH
+
+def compare_priorities(a: Priority, b: Priority) -> Priority:
+    return a if a.value > b.value else b
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Color
+  )
+  (class:6 Status)
+  (class:7 Priority)
+  (class:8 Task)
+  (func:9 get_color_name
+    (parameter:10 color @type:2 Color)
+    (return:11 @type str)
+  )
+  (func:12 parse_status
+    (parameter:13 value @type str)
+    (return:14 @type:6 Status)
+    (@tdep:6 Status)
+  )
+  (func:16 create_task
+    (parameter:17 status @type:6 Status)
+    (parameter:18 priority @type:7 Priority)
+    (return:19 @type:8 Task)
+    (@tdep:8 Task)
+  )
+  (func:21 upgrade_priority
+    (parameter:22 p @type:7 Priority)
+    (return:23 @type:7 Priority)
+  )
+  (func:24 compare_priorities
+    (parameter:25 a @type:7 Priority)
+    (parameter:26 b @type:7 Priority)
+    (return:27 @type:7 Priority)
+  )
+)
+
+
+===============================================================================
+protocol-class-params-returns
+===============================================================================
+Test Protocol class as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Protocol
+
+class Readable(Protocol):
+    def read(self) -> str:
+        ...
+
+class Writable(Protocol):
+    def write(self, data: str) -> None:
+        ...
+
+class Closable(Protocol):
+    def close(self) -> None:
+        ...
+
+class ReadWriteClosable(Readable, Writable, Closable, Protocol):
+    pass
+
+class FileHandle:
+    path: str
+
+    def read(self) -> str:
+        return ""
+
+    def write(self, data: str) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+def read_all(source: Readable) -> str:
+    return source.read()
+
+def write_data(dest: Writable, data: str) -> None:
+    dest.write(data)
+
+def copy_data(source: Readable, dest: Writable) -> None:
+    dest.write(source.read())
+
+def open_file(path: str) -> FileHandle:
+    return FileHandle()
+
+def process_stream(stream: ReadWriteClosable) -> str:
+    return stream.read()
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Readable
+    (method:3 read
+      (return:4 @type str)
+    )
+  )
+  (class:5 Writable
+    (method:6 write
+      (parameter:7 data @type str)
+      (return:8 @type None)
+    )
+  )
+  (class:9 Closable
+    (method:10 close
+      (return:11 @type None)
+    )
+  )
+  (class:12 ReadWriteClosable)
+  (class:13 FileHandle
+    (method:14 read
+      (return:15 @type str)
+    )
+    (method:16 write
+      (parameter:17 data @type str)
+      (return:18 @type None)
+    )
+    (method:19 close
+      (return:20 @type None)
+    )
+  )
+  (func:21 read_all
+    (parameter:22 source @type:2 Readable)
+    (return:23 @type str)
+  )
+  (func:25 write_data
+    (parameter:26 dest @type:5 Writable)
+    (parameter:27 data @type str)
+    (return:28 @type None)
+  )
+  (func:30 copy_data
+    (parameter:31 source @type:2 Readable)
+    (parameter:32 dest @type:5 Writable)
+    (return:33 @type None)
+  )
+  (func:35 open_file
+    (parameter:36 path @type str)
+    (return:37 @type:13 FileHandle)
+    (@tdep:13 FileHandle)
+  )
+  (func:39 process_stream
+    (parameter:40 stream @type:12 ReadWriteClosable)
+    (return:41 @type str)
+  )
+)
+
+
+===============================================================================
+metaclass-params-returns
+===============================================================================
+Test class with metaclass as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+class SingletonMeta(type):
+    def __call__(cls) -> object:
+        return super().__call__()
+
+class Singleton(metaclass=SingletonMeta):
+    value: int
+
+class RegistryMeta(type):
+    registry: dict
+
+class Plugin(metaclass=RegistryMeta):
+    name: str
+
+def get_singleton() -> Singleton:
+    return Singleton()
+
+def use_singleton(s: Singleton) -> int:
+    return s.value
+
+def create_plugin(name: str) -> Plugin:
+    return Plugin()
+
+def register_plugin(plugin: Plugin) -> None:
+    pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 SingletonMeta
+    (method:3 __call__
+      (return:4 @type object)
+    )
+  )
+  (class:6 Singleton)
+  (class:7 RegistryMeta)
+  (class:8 Plugin)
+  (func:9 get_singleton
+    (return:10 @type:6 Singleton)
+    (@tdep:6 Singleton)
+  )
+  (func:12 use_singleton
+    (parameter:13 s @type:6 Singleton)
+    (return:14 @type int)
+  )
+  (func:15 create_plugin
+    (parameter:16 name @type str)
+    (return:17 @type:8 Plugin)
+    (@tdep:8 Plugin)
+  )
+  (func:19 register_plugin
+    (parameter:20 plugin @type:8 Plugin)
+    (return:21 @type None)
+  )
+)
+
+
+===============================================================================
+complex-hierarchy-params-returns
+===============================================================================
+Test complex class hierarchy as parameter and return type.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import List, Optional
+
+class BaseEntity:
+    id: int
+    created_at: str
+
+class Auditable:
+    def audit(self) -> str:
+        return ""
+
+class Versioned:
+    version: int
+
+    def get_version(self) -> int:
+        return self.version
+
+class Document(BaseEntity, Auditable, Versioned):
+    title: str
+    content: str
+
+class Report(Document):
+    author: str
+    summary: str
+
+class Invoice(Document):
+    amount: float
+    paid: bool
+
+class ArchivedReport(Report):
+    archived_at: str
+    archived_by: str
+
+def create_document(title: str, content: str) -> Document:
+    return Document()
+
+def create_report(title: str, author: str) -> Report:
+    return Report()
+
+def create_invoice(title: str, amount: float) -> Invoice:
+    return Invoice()
+
+def archive_report(report: Report, by: str) -> ArchivedReport:
+    return ArchivedReport()
+
+def get_all_documents() -> List:
+    return []
+
+def find_document(id: int) -> Optional:
+    return None
+
+def audit_entity(entity: Auditable) -> str:
+    return entity.audit()
+
+def compare_versions(a: Versioned, b: Versioned) -> Versioned:
+    return a if a.get_version() > b.get_version() else b
+
+def process_entity(entity: BaseEntity) -> BaseEntity:
+    return entity
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 BaseEntity)
+  (class:3 Auditable
+    (method:4 audit
+      (return:5 @type str)
+    )
+  )
+  (class:6 Versioned
+    (method:7 get_version
+      (return:8 @type int)
+    )
+  )
+  (class:9 Document)
+  (class:10 Report)
+  (class:11 Invoice)
+  (class:12 ArchivedReport)
+  (func:13 create_document
+    (parameter:14 title @type str)
+    (parameter:15 content @type str)
+    (return:16 @type:9 Document)
+    (@tdep:9 Document)
+  )
+  (func:18 create_report
+    (parameter:19 title @type str)
+    (parameter:20 author @type str)
+    (return:21 @type:10 Report)
+    (@tdep:10 Report)
+  )
+  (func:23 create_invoice
+    (parameter:24 title @type str)
+    (parameter:25 amount @type float)
+    (return:26 @type:11 Invoice)
+    (@tdep:11 Invoice)
+  )
+  (func:28 archive_report
+    (parameter:29 report @type:10 Report)
+    (parameter:30 by @type str)
+    (return:31 @type:12 ArchivedReport)
+    (@tdep:12 ArchivedReport)
+  )
+  (func:33 get_all_documents
+    (return:34 @type List)
+  )
+  (func:35 find_document
+    (parameter:36 id @type int)
+    (return:37 @type Optional)
+  )
+  (func:38 audit_entity
+    (parameter:39 entity @type:3 Auditable)
+    (return:40 @type str)
+  )
+  (func:42 compare_versions
+    (parameter:43 a @type:6 Versioned)
+    (parameter:44 b @type:6 Versioned)
+    (return:45 @type:6 Versioned)
+  )
+  (func:48 process_entity
+    (parameter:49 entity @type:2 BaseEntity)
+    (return:50 @type:2 BaseEntity)
+  )
+)

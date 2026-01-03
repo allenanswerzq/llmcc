@@ -1,0 +1,39 @@
+===============================================================================
+collections
+===============================================================================
+Test collections parsing.
+lang: python
+
+--- file: collections.py ---
+# Lists
+empty_list = []
+numbers = [1, 2, 3]
+mixed = [1, "two", 3.0]
+nested = [[1, 2], [3, 4]]
+trailing_comma = [1, 2, 3,]
+
+# Tuples
+empty_tuple = ()
+single_element = (1,)
+pair = (1, 2)
+no_parens = 1, 2, 3
+trailing = (1, 2,)
+
+# Sets
+simple_set = {1, 2, 3}
+mixed_set = {1, "two", 3.0}
+single_set = {1}
+
+# Dictionaries
+empty_dict = {}
+simple_dict = {"a": 1, "b": 2}
+mixed_keys = {1: "one", "two": 2}
+nested_dict = {"outer": {"inner": 1}}
+trailing_dict = {"a": 1, "b": 2,}
+
+# Collection spread
+list_spread = [*numbers, 4, 5]
+dict_spread = {**simple_dict, "c": 3}
+
+--- expect:block-graph ---
+(root:1 collections ($TMP/collections.py))

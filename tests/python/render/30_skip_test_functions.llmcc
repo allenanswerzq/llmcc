@@ -1,0 +1,70 @@
+===============================================================================
+skip-test-functions
+===============================================================================
+Test that test functions are properly handled.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/calculator.py ---
+class Calculator:
+    def add(self, a: int, b: int) -> int:
+        return a + b
+
+    def subtract(self, a: int, b: int) -> int:
+        return a - b
+
+lang: python
+
+--- file: sample/test_calculator.py ---
+import pytest
+from .calculator import Calculator
+
+def test_add():
+    calc = Calculator()
+    assert calc.add(1, 2) == 3
+
+def test_subtract():
+    calc = Calculator()
+    assert calc.subtract(5, 3) == 2
+
+class TestCalculator:
+    def test_add_negative(self):
+        calc = Calculator()
+        assert calc.add(-1, -2) == -3
+
+    def test_subtract_negative(self):
+        calc = Calculator()
+        assert calc.subtract(-5, -3) == -2
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 calculator ($TMP/sample/calculator.py)
+  (class:3 Calculator
+    (method:4 add
+      (parameter:5 a @type int)
+      (parameter:6 b @type int)
+      (return:7 @type int)
+    )
+    (method:8 subtract
+      (parameter:9 a @type int)
+      (parameter:10 b @type int)
+      (return:11 @type int)
+    )
+  )
+)
+
+(root:12 test_calculator ($TMP/sample/test_calculator.py)
+  (func:13 test_add
+  )
+  (func:16 test_subtract
+  )
+  (class:19 TestCalculator
+    (method:20 test_add_negative
+    )
+    (method:23 test_subtract_negative
+    )
+  )
+)

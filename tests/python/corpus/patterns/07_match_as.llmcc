@@ -1,0 +1,35 @@
+===============================================================================
+match-as
+===============================================================================
+Test match as parsing.
+lang: python
+
+--- file: match_walrus.py ---
+def match_with_as(value):
+    match value:
+        case [first, *rest] as full_list:
+            return f"first: {first}, total: {len(full_list)}"
+        case {"key": v} as full_dict:
+            return f"value: {v}, keys: {full_dict.keys()}"
+
+def match_nested_as(data):
+    match data:
+        case {"user": {"name": name} as user_data}:
+            return f"user {name}: {user_data}"
+        case [first, second] as pair if first < second:
+            return f"ascending pair: {pair}"
+
+def match_complex_as(event):
+    match event:
+        case {"type": "click", "position": (x, y) as pos}:
+            return f"click at {pos}"
+        case {"type": "drag", "start": start, "end": end} as drag_event:
+            return f"drag: {drag_event}"
+
+--- expect:block-graph ---
+(root:1 match_walrus ($TMP/match_walrus.py)
+  (func:2 match_with_as
+  )
+  (func:5 match_nested_as)
+  (func:6 match_complex_as)
+)

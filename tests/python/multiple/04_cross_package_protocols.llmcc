@@ -1,0 +1,107 @@
+===============================================================================
+cross-package-protocols
+===============================================================================
+Test protocols defined in one package and implemented in others.
+lang: python
+
+--- file: interfaces/__init__.py ---
+from .repository import Repository
+from .service import Service
+from .handler import Handler
+
+--- file: interfaces/repository.py ---
+from typing import Protocol, TypeVar, Generic
+
+T = TypeVar('T')
+
+class Repository(Protocol[T]):
+    def get(self, id: int) -> T | None:
+        ...
+
+    def save(self, entity: T) -> T:
+        ...
+
+    def delete(self, id: int) -> bool:
+        ...
+
+lang: python
+
+--- file: interfaces/service.py ---
+from typing import Protocol
+
+class Service(Protocol):
+    def start(self) -> None:
+        ...
+
+    def stop(self) -> None:
+        ...
+
+lang: python
+
+--- file: interfaces/handler.py ---
+from typing import Protocol
+
+class Handler(Protocol):
+    def handle(self, request: dict) -> dict:
+        ...
+
+--- file: users/__init__.py ---
+from .models import User
+from .repository import UserRepository
+from .service import UserService
+
+lang: python
+
+--- file: users/models.py ---
+class User:
+    id: int
+    name: str
+
+--- file: users/repository.py ---
+from interfaces import Repository
+from .models import User
+
+class UserRepository:
+    def get(self, id: int) -> User | None:
+        return None
+
+    def save(self, entity: User) -> User:
+        return entity
+
+    def delete(self, id: int) -> bool:
+        return True
+
+lang: python
+
+--- file: users/service.py ---
+from interfaces import Service
+from .repository import UserRepository
+
+class UserService:
+    def __init__(self, repo: UserRepository):
+        self.repo = repo
+
+    def start(self) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

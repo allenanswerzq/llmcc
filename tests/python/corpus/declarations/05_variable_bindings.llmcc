@@ -1,0 +1,134 @@
+===============================================================================
+variable-bindings-basic
+===============================================================================
+Test basic variable assignments.
+lang: python
+
+--- file: src/lib.py ---
+
+x: int = 10
+y: str = "hello"
+z: float = 3.14
+
+def foo() -> None:
+    local_var: int = 42
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 foo
+    (return:3 @type None)
+  )
+)
+
+
+===============================================================================
+variable-bindings-tuple-unpacking
+===============================================================================
+Test tuple unpacking assignments.
+lang: python
+
+--- file: src/lib.py ---
+
+a, b = 1, 2
+x, y, z = (10, 20, 30)
+
+def swap() -> tuple:
+    first, second = 1, 2
+    second, first = first, second
+    return first, second
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 swap
+    (return:3 @type tuple)
+  )
+)
+
+
+===============================================================================
+variable-bindings-starred
+===============================================================================
+Test starred expressions in unpacking.
+lang: python
+
+--- file: src/lib.py ---
+
+first, *rest = [1, 2, 3, 4, 5]
+*head, last = [1, 2, 3, 4, 5]
+a, *middle, z = [1, 2, 3, 4, 5]
+
+def extract() -> list:
+    x, *remaining = [10, 20, 30]
+    return remaining
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (parameter:2 rest @type rest)
+  (parameter:3 head @type head)
+  (parameter:4 middle @type middle)
+  (func:5 extract
+    (return:6 @type list)
+    (parameter:7 remaining @type remaining)
+  )
+)
+
+
+===============================================================================
+variable-bindings-augmented-assignment
+===============================================================================
+Test augmented assignment operators.
+lang: python
+
+--- file: src/lib.py ---
+
+def increment(x: int) -> int:
+    x += 1
+    return x
+
+def compute() -> int:
+    value = 10
+    value *= 2
+    value //= 3
+    value **= 2
+    return value
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 increment
+    (parameter:3 x @type int)
+    (return:4 @type int)
+  )
+  (func:5 compute
+    (return:6 @type int)
+  )
+)
+
+
+===============================================================================
+variable-bindings-walrus
+===============================================================================
+Test walrus operator (named expressions).
+lang: python
+
+--- file: src/lib.py ---
+
+def find_match(items: list) -> bool:
+    if (n := len(items)) > 10:
+        return True
+    return False
+
+def process() -> int:
+    while (line := input()) != "quit":
+        pass
+    return 0
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 find_match
+    (parameter:3 items @type list)
+    (return:4 @type bool)
+  )
+  (func:6 process
+    (return:7 @type int)
+  )
+)

@@ -1,0 +1,78 @@
+===============================================================================
+async-comprehensions
+===============================================================================
+Test async comprehensions parsing.
+lang: python
+
+--- file: async_comprehensions.py ---
+import asyncio
+
+async def fetch_item(i: int) -> int:
+    await asyncio.sleep(0.01)
+    return i * 2
+
+async def async_range(n: int):
+    for i in range(n):
+        await asyncio.sleep(0.01)
+        yield i
+
+# Async list comprehension
+async def async_list_comp():
+    return [await fetch_item(i) for i in range(10)]
+
+# Async list comprehension with async for
+async def async_for_list_comp():
+    return [x async for x in async_range(10)]
+
+# Async set comprehension
+async def async_set_comp():
+    return {await fetch_item(i) for i in range(10)}
+
+# Async dict comprehension
+async def async_dict_comp():
+    return {i: await fetch_item(i) for i in range(10)}
+
+# Async generator expression
+async def async_gen_expr():
+    gen = (await fetch_item(i) for i in range(10))
+    return [x async for x in gen]
+
+# Filtered async comprehension
+async def filtered_async():
+    return [x async for x in async_range(20) if x % 2 == 0]
+
+# Nested async comprehension
+async def nested_async():
+    return [[y async for y in async_range(x)] async for x in async_range(3)]
+
+--- expect:block-graph ---
+(root:1 async_comprehensions ($TMP/async_comprehensions.py)
+  (func:2 fetch_item
+    (parameter:3 i @type int)
+    (return:4 @type int)
+  )
+  (func:6 async_range
+    (parameter:7 n @type int)
+  )
+  (func:10 async_list_comp
+    (@fdep:2 fetch_item)
+  )
+  (func:13 async_for_list_comp
+    (@fdep:6 async_range)
+  )
+  (func:15 async_set_comp
+    (@fdep:2 fetch_item)
+  )
+  (func:18 async_dict_comp
+    (@fdep:2 fetch_item)
+  )
+  (func:21 async_gen_expr
+    (@fdep:2 fetch_item)
+  )
+  (func:24 filtered_async
+    (@fdep:6 async_range)
+  )
+  (func:26 nested_async
+    (@fdep:6 async_range)
+  )
+)

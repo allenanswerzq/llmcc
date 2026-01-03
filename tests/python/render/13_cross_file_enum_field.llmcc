@@ -1,0 +1,41 @@
+===============================================================================
+cross-file-enum-field
+===============================================================================
+Test enum used as field type across files.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/status.py ---
+from enum import Enum, auto
+
+class TaskStatus(Enum):
+    PENDING = auto()
+    RUNNING = auto()
+    COMPLETED = auto()
+    FAILED = auto()
+
+lang: python
+
+--- file: sample/task.py ---
+from dataclasses import dataclass
+from .status import TaskStatus
+
+@dataclass
+class Task:
+    id: int
+    name: str
+    status: TaskStatus
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 status ($TMP/sample/status.py)
+  (class:3 TaskStatus
+  )
+)
+
+(root:8 task ($TMP/sample/task.py)
+  (class:9 Task)
+)

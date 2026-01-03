@@ -1,0 +1,71 @@
+===============================================================================
+inheritance
+===============================================================================
+Test that inheritance relationships create edges.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/base.py ---
+from abc import ABC, abstractmethod
+
+class Animal(ABC):
+    @abstractmethod
+    def speak(self) -> str:
+        pass
+
+class Mammal(Animal):
+    def breathe(self) -> None:
+        pass
+
+lang: python
+
+--- file: sample/animals.py ---
+from .base import Animal, Mammal
+
+class Dog(Mammal):
+    def speak(self) -> str:
+        return "woof"
+
+class Cat(Mammal):
+    def speak(self) -> str:
+        return "meow"
+
+class Bird(Animal):
+    def speak(self) -> str:
+        return "chirp"
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 base ($TMP/sample/base.py)
+  (class:3 Animal
+    (method:4 speak
+      (return:5 @type str)
+    )
+  )
+  (class:6 Mammal
+    (method:7 breathe
+      (return:8 @type None)
+    )
+  )
+)
+
+(root:9 animals ($TMP/sample/animals.py)
+  (class:10 Dog
+    (method:11 speak
+      (return:12 @type str)
+    )
+  )
+  (class:13 Cat
+    (method:14 speak
+      (return:15 @type str)
+    )
+  )
+  (class:16 Bird
+    (method:17 speak
+      (return:18 @type str)
+    )
+  )
+)

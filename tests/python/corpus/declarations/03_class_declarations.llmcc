@@ -1,0 +1,182 @@
+===============================================================================
+class-declarations-basic
+===============================================================================
+Test basic class declarations.
+lang: python
+
+--- file: src/lib.py ---
+
+class Foo:
+    pass
+
+class User:
+    name: str
+    age: int
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Foo)
+  (class:3 User)
+)
+
+
+===============================================================================
+class-declarations-with-methods
+===============================================================================
+Test class declarations with methods.
+lang: python
+
+--- file: src/lib.py ---
+
+class Calculator:
+    def __init__(self, value: int) -> None:
+        self.value = value
+
+    def add(self, x: int) -> int:
+        return self.value + x
+
+    def multiply(self, x: int) -> int:
+        return self.value * x
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Calculator
+    (method:3 __init__
+      (parameter:4 value @type int)
+      (return:5 @type None)
+    )
+    (method:6 add
+      (parameter:7 x @type int)
+      (return:8 @type int)
+    )
+    (method:9 multiply
+      (parameter:10 x @type int)
+      (return:11 @type int)
+    )
+  )
+)
+
+
+===============================================================================
+class-declarations-inheritance
+===============================================================================
+Test class inheritance.
+lang: python
+
+--- file: src/lib.py ---
+
+class Animal:
+    name: str
+
+    def speak(self) -> str:
+        pass
+
+class Dog(Animal):
+    breed: str
+
+    def speak(self) -> str:
+        return "Woof!"
+
+class Cat(Animal):
+    indoor: bool
+
+    def speak(self) -> str:
+        return "Meow!"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Animal
+    (method:3 speak
+      (return:4 @type str)
+    )
+  )
+  (class:5 Dog
+    (method:6 speak
+      (return:7 @type str)
+    )
+  )
+  (class:8 Cat
+    (method:9 speak
+      (return:10 @type str)
+    )
+  )
+)
+
+
+===============================================================================
+class-declarations-multiple-inheritance
+===============================================================================
+Test multiple inheritance.
+lang: python
+
+--- file: src/lib.py ---
+
+class Flyable:
+    def fly(self) -> None:
+        pass
+
+class Swimmable:
+    def swim(self) -> None:
+        pass
+
+class Duck(Flyable, Swimmable):
+    def quack(self) -> str:
+        return "Quack!"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Flyable
+    (method:3 fly
+      (return:4 @type None)
+    )
+  )
+  (class:5 Swimmable
+    (method:6 swim
+      (return:7 @type None)
+    )
+  )
+  (class:8 Duck
+    (method:9 quack
+      (return:10 @type str)
+    )
+  )
+)
+
+
+===============================================================================
+class-declarations-class-methods
+===============================================================================
+Test class methods and static methods.
+lang: python
+
+--- file: src/lib.py ---
+
+class Factory:
+    count: int = 0
+
+    @classmethod
+    def create(cls) -> "Factory":
+        cls.count += 1
+        return cls()
+
+    @staticmethod
+    def get_default_config() -> dict:
+        return {"timeout": 30}
+
+    def instance_method(self) -> None:
+        pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Factory
+    (method:3 create
+      (return:4 @type str)
+    )
+    (method:6 get_default_config
+      (return:7 @type dict)
+    )
+    (method:8 instance_method
+      (return:9 @type None)
+    )
+  )
+)

@@ -1,0 +1,114 @@
+===============================================================================
+generic-classes
+===============================================================================
+Test generic classes parsing.
+lang: python
+
+--- file: generic_classes.py ---
+from typing import Generic, TypeVar
+
+T = TypeVar('T')
+K = TypeVar('K')
+V = TypeVar('V')
+
+# Single type parameter
+class Box(Generic[T]):
+    def __init__(self, value: T) -> None:
+        self.value = value
+
+    def get(self) -> T:
+        return self.value
+
+    def set(self, value: T) -> None:
+        self.value = value
+
+# Multiple type parameters
+class Pair(Generic[K, V]):
+    def __init__(self, key: K, value: V) -> None:
+        self.key = key
+        self.value = value
+
+    def get_key(self) -> K:
+        return self.key
+
+    def get_value(self) -> V:
+        return self.value
+
+# Bounded type variable
+from typing import Comparable
+Num = TypeVar('Num', int, float)
+
+class MinMax(Generic[Num]):
+    def __init__(self, values: list[Num]) -> None:
+        self.values = values
+
+    def min(self) -> Num:
+        return min(self.values)
+
+    def max(self) -> Num:
+        return max(self.values)
+
+# Python 3.12+ syntax
+class Stack[T]:
+    def __init__(self) -> None:
+        self._items: list[T] = []
+
+    def push(self, item: T) -> None:
+        self._items.append(item)
+
+    def pop(self) -> T:
+        return self._items.pop()
+
+--- expect:block-graph ---
+(root:1 generic_classes ($TMP/generic_classes.py)
+  (class:5 Box
+    (method:6 __init__
+      (parameter:7 value @type T)
+      (return:8 @type None)
+    )
+    (method:9 get
+      (return:10 @type T)
+    )
+    (method:11 set
+      (parameter:12 value @type T)
+      (return:13 @type None)
+    )
+  )
+  (class:14 Pair
+    (method:15 __init__
+      (parameter:16 key @type K)
+      (parameter:17 value @type V)
+      (return:18 @type None)
+    )
+    (method:19 get_key
+      (return:20 @type K)
+    )
+    (method:21 get_value
+      (return:22 @type V)
+    )
+  )
+  (class:24 MinMax
+    (method:25 __init__
+      (parameter:26 values @type list)
+      (return:27 @type None)
+    )
+    (method:28 min
+      (return:29 @type Num)
+    )
+    (method:31 max
+      (return:32 @type Num)
+    )
+  )
+  (class:34 Stack
+    (method:35 __init__
+      (return:36 @type None)
+    )
+    (method:37 push
+      (parameter:38 item @type T)
+      (return:39 @type None)
+    )
+    (method:41 pop
+      (return:42 @type T)
+    )
+  )
+)

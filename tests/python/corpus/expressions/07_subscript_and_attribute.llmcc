@@ -1,0 +1,101 @@
+===============================================================================
+subscript-basic
+===============================================================================
+Test basic subscript/index expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+def get_first(items: list) -> int:
+    return items[0]
+
+def get_value(d: dict, key: str) -> int:
+    return d[key]
+
+def get_char(s: str, index: int) -> str:
+    return s[index]
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_first
+    (parameter:3 items @type list)
+    (return:4 @type int)
+  )
+  (func:5 get_value
+    (parameter:6 d @type dict)
+    (parameter:7 key @type str)
+    (return:8 @type int)
+  )
+  (func:9 get_char
+    (parameter:10 s @type str)
+    (parameter:11 index @type int)
+    (return:12 @type str)
+  )
+)
+
+
+===============================================================================
+subscript-slicing
+===============================================================================
+Test slice expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+def slice_list(items: list) -> list:
+    first_three = items[:3]
+    last_three = items[-3:]
+    middle = items[1:-1]
+    reversed_list = items[::-1]
+    every_other = items[::2]
+    return first_three
+
+def complex_slice(items: list) -> list:
+    return items[1:10:2]
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 slice_list
+    (parameter:3 items @type list)
+    (return:4 @type list)
+  )
+  (func:5 complex_slice
+    (parameter:6 items @type list)
+    (return:7 @type list)
+  )
+)
+
+
+===============================================================================
+attribute-access
+===============================================================================
+Test attribute access expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+class Point:
+    x: float
+    y: float
+
+def get_coords(p: Point) -> tuple:
+    return (p.x, p.y)
+
+def set_coords(p: Point, x: float, y: float) -> None:
+    p.x = x
+    p.y = y
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 Point)
+  (func:3 get_coords
+    (parameter:4 p @type:2 Point)
+    (return:5 @type tuple)
+  )
+  (func:6 set_coords
+    (parameter:7 p @type:2 Point)
+    (parameter:8 x @type float)
+    (parameter:9 y @type float)
+    (return:10 @type None)
+  )
+)

@@ -1,0 +1,82 @@
+===============================================================================
+multiple-inheritance
+===============================================================================
+Test multiple inheritance relationships.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/mixins.py ---
+class LoggingMixin:
+    def log(self, message: str) -> None:
+        print(message)
+
+class CachingMixin:
+    def cache(self, key: str, value: str) -> None:
+        pass
+
+    def get_cached(self, key: str) -> str | None:
+        return None
+
+lang: python
+
+--- file: sample/base.py ---
+class BaseService:
+    def start(self) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
+
+lang: python
+
+--- file: sample/service.py ---
+from .mixins import LoggingMixin, CachingMixin
+from .base import BaseService
+
+class MyService(BaseService, LoggingMixin, CachingMixin):
+    def process(self) -> None:
+        self.log("Processing")
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 mixins ($TMP/sample/mixins.py)
+  (class:3 LoggingMixin
+    (method:4 log
+      (parameter:5 message @type str)
+      (return:6 @type None)
+    )
+  )
+  (class:8 CachingMixin
+    (method:9 cache
+      (parameter:10 key @type str)
+      (parameter:11 value @type str)
+      (return:12 @type None)
+    )
+    (method:13 get_cached
+      (parameter:14 key @type str)
+      (return:15 @type str)
+    )
+  )
+)
+
+(root:16 base ($TMP/sample/base.py)
+  (class:17 BaseService
+    (method:18 start
+      (return:19 @type None)
+    )
+    (method:20 stop
+      (return:21 @type None)
+    )
+  )
+)
+
+(root:22 service ($TMP/sample/service.py)
+  (class:23 MyService
+    (method:24 process
+      (return:25 @type None)
+    )
+  )
+)

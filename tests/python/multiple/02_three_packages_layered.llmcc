@@ -1,0 +1,86 @@
+===============================================================================
+three-packages-layered
+===============================================================================
+Test with three packages in a layered architecture.
+lang: python
+
+--- file: core/__init__.py ---
+from .entity import Entity
+from .value import ValueObject
+
+--- file: core/entity.py ---
+from abc import ABC, abstractmethod
+
+class Entity(ABC):
+    @abstractmethod
+    def get_id(self) -> int:
+        pass
+
+lang: python
+
+--- file: core/value.py ---
+from abc import ABC
+
+class ValueObject(ABC):
+    pass
+
+--- file: domain/__init__.py ---
+from .user import User
+from .address import Address
+
+lang: python
+
+--- file: domain/user.py ---
+from core import Entity
+
+class User(Entity):
+    def __init__(self, id: int, name: str):
+        self._id = id
+        self.name = name
+
+    def get_id(self) -> int:
+        return self._id
+
+lang: python
+
+--- file: domain/address.py ---
+from core import ValueObject
+
+class Address(ValueObject):
+    def __init__(self, street: str, city: str):
+        self.street = street
+        self.city = city
+
+lang: python
+
+--- file: application/__init__.py ---
+from .user_service import UserService
+
+--- file: application/user_service.py ---
+from domain import User, Address
+
+class UserService:
+    def create_user(self, name: str) -> User:
+        return User(1, name)
+
+    def get_address(self, user: User) -> Address:
+        return Address("123 Main St", "City")
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

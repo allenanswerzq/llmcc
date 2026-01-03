@@ -1,0 +1,148 @@
+===============================================================================
+mixed-state-machine
+===============================================================================
+Test state machine pattern implementation.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/states.py ---
+from enum import Enum, auto
+from abc import ABC, abstractmethod
+
+class OrderState(Enum):
+    PENDING = auto()
+    CONFIRMED = auto()
+    SHIPPED = auto()
+    DELIVERED = auto()
+    CANCELLED = auto()
+
+class StateHandler(ABC):
+    @abstractmethod
+    def on_enter(self) -> None:
+        pass
+
+    @abstractmethod
+    def on_exit(self) -> None:
+        pass
+
+    @abstractmethod
+    def can_transition_to(self, state: OrderState) -> bool:
+        pass
+
+lang: python
+
+--- file: sample/handlers.py ---
+from .states import OrderState, StateHandler
+
+class PendingHandler(StateHandler):
+    def on_enter(self) -> None:
+        print("Order is pending")
+
+    def on_exit(self) -> None:
+        pass
+
+    def can_transition_to(self, state: OrderState) -> bool:
+        return state in (OrderState.CONFIRMED, OrderState.CANCELLED)
+
+class ConfirmedHandler(StateHandler):
+    def on_enter(self) -> None:
+        print("Order confirmed")
+
+    def on_exit(self) -> None:
+        pass
+
+    def can_transition_to(self, state: OrderState) -> bool:
+        return state in (OrderState.SHIPPED, OrderState.CANCELLED)
+
+lang: python
+
+--- file: sample/machine.py ---
+from typing import Dict, Type
+from .states import OrderState, StateHandler
+from .handlers import PendingHandler, ConfirmedHandler
+
+class OrderStateMachine:
+    def __init__(self):
+        self._state = OrderState.PENDING
+        self._handlers: Dict[OrderState, StateHandler] = {
+            OrderState.PENDING: PendingHandler(),
+            OrderState.CONFIRMED: ConfirmedHandler(),
+        }
+
+    @property
+    def current_state(self) -> OrderState:
+        return self._state
+
+    def transition(self, new_state: OrderState) -> bool:
+        handler = self._handlers.get(self._state)
+        if handler and handler.can_transition_to(new_state):
+            handler.on_exit()
+            self._state = new_state
+            new_handler = self._handlers.get(new_state)
+            if new_handler:
+                new_handler.on_enter()
+            return True
+        return False
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 states ($TMP/sample/states.py)
+  (class:3 OrderState
+  )
+  (class:9 StateHandler
+    (method:10 on_enter
+      (return:11 @type None)
+    )
+    (method:12 on_exit
+      (return:13 @type None)
+    )
+    (method:14 can_transition_to
+      (parameter:15 state @type:3 OrderState)
+      (return:16 @type bool)
+    )
+  )
+)
+
+(root:17 handlers ($TMP/sample/handlers.py)
+  (class:18 PendingHandler
+    (method:19 on_enter
+      (return:20 @type None)
+    )
+    (method:22 on_exit
+      (return:23 @type None)
+    )
+    (method:24 can_transition_to
+      (parameter:25 state @type:3 OrderState)
+      (return:26 @type bool)
+    )
+  )
+  (class:27 ConfirmedHandler
+    (method:28 on_enter
+      (return:29 @type None)
+    )
+    (method:31 on_exit
+      (return:32 @type None)
+    )
+    (method:33 can_transition_to
+      (parameter:34 state @type:3 OrderState)
+      (return:35 @type bool)
+    )
+  )
+)
+
+(root:36 machine ($TMP/sample/machine.py)
+  (class:37 OrderStateMachine
+    (method:38 __init__
+    )
+    (method:41 current_state
+      (return:42 @type:3 OrderState)
+    )
+    (method:43 transition
+      (parameter:44 new_state @type:3 OrderState)
+      (return:45 @type bool)
+    )
+  )
+)

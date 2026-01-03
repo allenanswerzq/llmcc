@@ -1,0 +1,45 @@
+===============================================================================
+edge-func-type-dep
+===============================================================================
+Test edges from function type dependencies (parameters and returns combined).
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/models.py ---
+class Request:
+    pass
+
+class Response:
+    pass
+
+lang: python
+
+--- file: sample/handler.py ---
+from .models import Request, Response
+
+def handle(request: Request) -> Response:
+    return Response()
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_unknown_handler[label="unknown::handler"];
+  mod_unknown_models[label="unknown::models"];
+
+  mod_unknown_handler -> mod_unknown_models;
+}

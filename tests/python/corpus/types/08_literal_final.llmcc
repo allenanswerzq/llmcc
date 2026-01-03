@@ -1,0 +1,61 @@
+===============================================================================
+literal-final
+===============================================================================
+Test literal final parsing.
+lang: python
+
+--- file: literal_final.py ---
+from typing import Literal, Final, ClassVar
+
+# Literal types
+mode: Literal["read", "write", "append"]
+status: Literal[200, 404, 500]
+flag: Literal[True]
+
+# Literal in function
+def open_file(path: str, mode: Literal["r", "w", "a"]) -> None:
+    pass
+
+def http_method(method: Literal["GET", "POST", "PUT", "DELETE"]) -> None:
+    pass
+
+# Final - cannot be reassigned
+MAX_SIZE: Final = 100
+API_VERSION: Final[str] = "1.0"
+
+# ClassVar - class-level variable
+class Config:
+    DEBUG: ClassVar[bool] = False
+    VERSION: ClassVar[str] = "1.0"
+    _instance: ClassVar[Optional["Config"]] = None
+
+    def __init__(self):
+        self.name: str = "default"
+
+# Combining types
+def process(
+    action: Literal["create", "update", "delete"],
+    id: int
+) -> Literal[True, False]:
+    return True
+
+--- expect:block-graph ---
+(root:1 literal_final ($TMP/literal_final.py)
+  (func:2 open_file
+    (parameter:3 path @type str)
+    (parameter:4 mode @type Literal)
+    (return:5 @type None)
+  )
+  (func:6 http_method
+    (parameter:7 method @type Literal)
+    (return:8 @type None)
+  )
+  (class:9 Config
+    (method:10 __init__)
+  )
+  (func:11 process
+    (parameter:12 action @type Literal)
+    (parameter:13 id @type int)
+    (return:14 @type Literal)
+  )
+)

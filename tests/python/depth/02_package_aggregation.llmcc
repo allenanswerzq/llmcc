@@ -1,0 +1,54 @@
+===============================================================================
+package-aggregation
+===============================================================================
+Test that depth 1 (Package) aggregates nodes into package-level components.
+lang: python
+
+--- file: core/__init__.py ---
+# Core package
+
+--- file: core/types.py ---
+class Entity:
+    pass
+
+class ValueObject:
+    pass
+
+lang: python
+
+--- file: app/__init__.py ---
+# App package
+
+--- file: app/models.py ---
+from core.types import Entity
+
+class User(Entity):
+    pass
+
+lang: python
+
+--- file: app/services.py ---
+from .models import User
+
+class UserService:
+    def get_user(self) -> User:
+        return User()
+
+--- expect:arch-graph-depth-1 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

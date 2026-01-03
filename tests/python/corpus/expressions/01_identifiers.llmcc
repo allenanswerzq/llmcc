@@ -1,0 +1,66 @@
+===============================================================================
+identifiers-basic
+===============================================================================
+Test basic identifier handling.
+lang: python
+
+--- file: src/lib.py ---
+
+x = 10
+my_variable = "hello"
+_private = 42
+__dunder__ = "special"
+
+def use_identifiers() -> int:
+    return x + _private
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 use_identifiers
+    (return:3 @type int)
+  )
+)
+
+
+===============================================================================
+identifiers-underscore-patterns
+===============================================================================
+Test Python underscore naming patterns.
+lang: python
+
+--- file: src/lib.py ---
+
+class MyClass:
+    public_var: int = 1
+    _protected_var: int = 2
+    __private_var: int = 3
+
+    def public_method(self) -> None:
+        pass
+
+    def _protected_method(self) -> None:
+        pass
+
+    def __private_method(self) -> None:
+        pass
+
+    def __dunder_method__(self) -> None:
+        pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:2 MyClass
+    (method:3 public_method
+      (return:4 @type None)
+    )
+    (method:5 _protected_method
+      (return:6 @type None)
+    )
+    (method:7 __private_method
+      (return:8 @type None)
+    )
+    (method:9 __dunder_method__
+      (return:10 @type None)
+    )
+  )
+)

@@ -1,0 +1,120 @@
+===============================================================================
+function-declarations-basic
+===============================================================================
+Test basic function declarations.
+lang: python
+
+--- file: src/lib.py ---
+
+def add(x: int, y: int) -> int:
+    return x + y
+
+def greet(name: str) -> str:
+    return f"Hello, {name}"
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 add
+    (parameter:3 x @type int)
+    (parameter:4 y @type int)
+    (return:5 @type int)
+  )
+  (func:6 greet
+    (parameter:7 name @type str)
+    (return:8 @type str)
+  )
+)
+
+
+===============================================================================
+function-declarations-default-args
+===============================================================================
+Test functions with default arguments.
+lang: python
+
+--- file: src/lib.py ---
+
+def connect(host: str, port: int = 8080, timeout: float = 30.0) -> bool:
+    pass
+
+def format_output(data: str, prefix: str = "", suffix: str = "") -> str:
+    return prefix + data + suffix
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 connect
+    (parameter:3 host @type str)
+    (parameter:4 port @type int)
+    (parameter:5 timeout @type float)
+    (return:6 @type bool)
+  )
+  (func:7 format_output
+    (parameter:8 data @type str)
+    (parameter:9 prefix @type str)
+    (parameter:10 suffix @type str)
+    (return:11 @type str)
+  )
+)
+
+
+===============================================================================
+function-declarations-args-kwargs
+===============================================================================
+Test functions with *args and **kwargs.
+lang: python
+
+--- file: src/lib.py ---
+
+def variadic(*args: int) -> int:
+    return sum(args)
+
+def keyword_only(**kwargs: str) -> dict:
+    return kwargs
+
+def mixed(x: int, *args: str, **kwargs: float) -> None:
+    pass
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 variadic
+    (parameter:3 args)
+    (return:4 @type int)
+  )
+  (func:6 keyword_only
+    (parameter:7 kwargs)
+    (return:8 @type dict)
+  )
+  (func:9 mixed
+    (parameter:10 x @type int)
+    (parameter:11 args)
+    (parameter:12 kwargs)
+    (return:13 @type None)
+  )
+)
+
+
+===============================================================================
+function-declarations-nested
+===============================================================================
+Test nested function declarations.
+lang: python
+
+--- file: src/lib.py ---
+
+def outer(x: int) -> int:
+    def inner(y: int) -> int:
+        return y * 2
+    return inner(x) + 1
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 outer
+    (parameter:3 x @type int)
+    (return:4 @type int)
+    (func:5 inner
+      (parameter:6 y @type int)
+      (return:7 @type int)
+    )
+    (@fdep:5 inner)
+  )
+)

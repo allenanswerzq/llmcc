@@ -1,0 +1,55 @@
+===============================================================================
+cross-file-func-param
+===============================================================================
+Test function parameter types referencing types from other files.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/config.py ---
+class DatabaseConfig:
+    host: str
+    port: int
+
+class CacheConfig:
+    url: str
+    ttl: int
+
+lang: python
+
+--- file: sample/database.py ---
+from .config import DatabaseConfig, CacheConfig
+
+def connect(config: DatabaseConfig) -> bool:
+    return True
+
+def setup_cache(cache: CacheConfig) -> None:
+    pass
+
+def migrate(db: DatabaseConfig, cache: CacheConfig) -> bool:
+    return True
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 config ($TMP/sample/config.py)
+  (class:3 DatabaseConfig)
+  (class:4 CacheConfig)
+)
+
+(root:5 database ($TMP/sample/database.py)
+  (func:6 connect
+    (parameter:7 config @type:3 DatabaseConfig)
+    (return:8 @type bool)
+  )
+  (func:9 setup_cache
+    (parameter:10 cache @type:4 CacheConfig)
+    (return:11 @type None)
+  )
+  (func:12 migrate
+    (parameter:13 db @type:3 DatabaseConfig)
+    (parameter:14 cache @type:4 CacheConfig)
+    (return:15 @type bool)
+  )
+)

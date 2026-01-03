@@ -1,0 +1,85 @@
+===============================================================================
+type-alias-basic
+===============================================================================
+Test basic type alias declarations.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import List, Dict, Tuple
+
+UserId = int
+UserName = str
+UserData = Dict[str, str]
+UserList = List[UserId]
+
+def get_users() -> UserList:
+    return [1, 2, 3]
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_users
+    (return:3 @type UserList)
+  )
+)
+
+
+===============================================================================
+type-alias-py312
+===============================================================================
+Test Python 3.12 type alias syntax.
+lang: python
+
+--- file: src/lib.py ---
+
+type Point = tuple[int, int]
+type Vector = list[float]
+type Callback = callable[[int], str]
+
+def create_point(x: int, y: int) -> Point:
+    return (x, y)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (alias:2 Point)
+  (alias:3 Vector)
+  (alias:4 Callback)
+  (func:5 create_point
+    (parameter:6 x @type int)
+    (parameter:7 y @type int)
+    (return:8 @type tuple)
+  )
+)
+
+
+===============================================================================
+type-alias-generic
+===============================================================================
+Test generic type aliases.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import TypeVar, Generic, List, Dict
+
+T = TypeVar('T')
+K = TypeVar('K')
+V = TypeVar('V')
+
+Pair = Tuple[T, T]
+Mapping = Dict[K, V]
+
+class Container(Generic[T]):
+    value: T
+
+    def get(self) -> T:
+        return self.value
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (class:5 Container
+    (method:6 get
+      (return:7 @type T)
+    )
+  )
+)

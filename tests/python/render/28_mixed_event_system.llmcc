@@ -1,0 +1,113 @@
+===============================================================================
+mixed-event-system
+===============================================================================
+Test event-driven architecture patterns.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/events.py ---
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+@dataclass
+class Event:
+    timestamp: datetime
+    source: str
+
+@dataclass
+class UserCreatedEvent(Event):
+    user_id: int
+    email: str
+
+@dataclass
+class OrderPlacedEvent(Event):
+    order_id: int
+    user_id: int
+    total: float
+
+lang: python
+
+--- file: sample/handlers.py ---
+from typing import Protocol, Callable
+from .events import Event, UserCreatedEvent, OrderPlacedEvent
+
+class EventHandler(Protocol):
+    def handle(self, event: Event) -> None:
+        ...
+
+class UserEventHandler:
+    def handle(self, event: UserCreatedEvent) -> None:
+        print(f"User created: {event.user_id}")
+
+class OrderEventHandler:
+    def handle(self, event: OrderPlacedEvent) -> None:
+        print(f"Order placed: {event.order_id}")
+
+lang: python
+
+--- file: sample/dispatcher.py ---
+from typing import Dict, List, Type, Callable
+from .events import Event
+from .handlers import EventHandler
+
+class EventDispatcher:
+    def __init__(self):
+        self._handlers: Dict[Type[Event], List[EventHandler]] = {}
+
+    def register(self, event_type: Type[Event], handler: EventHandler) -> None:
+        if event_type not in self._handlers:
+            self._handlers[event_type] = []
+        self._handlers[event_type].append(handler)
+
+    def dispatch(self, event: Event) -> None:
+        handlers = self._handlers.get(type(event), [])
+        for handler in handlers:
+            handler.handle(event)
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 events ($TMP/sample/events.py)
+  (class:3 Event)
+  (class:4 UserCreatedEvent)
+  (class:5 OrderPlacedEvent)
+)
+
+(root:6 handlers ($TMP/sample/handlers.py)
+  (class:7 EventHandler
+    (method:8 handle
+      (parameter:9 event @type:3 Event)
+      (return:10 @type None)
+    )
+  )
+  (class:11 UserEventHandler
+    (method:12 handle
+      (parameter:13 event @type:4 UserCreatedEvent)
+      (return:14 @type None)
+    )
+  )
+  (class:16 OrderEventHandler
+    (method:17 handle
+      (parameter:18 event @type:5 OrderPlacedEvent)
+      (return:19 @type None)
+    )
+  )
+)
+
+(root:21 dispatcher ($TMP/sample/dispatcher.py)
+  (class:22 EventDispatcher
+    (method:23 __init__)
+    (method:24 register
+      (parameter:25 event_type @type Type)
+      (parameter:26 handler @type:7 EventHandler)
+      (return:27 @type None)
+    )
+    (method:29 dispatch
+      (parameter:30 event @type:3 Event)
+      (return:31 @type None)
+    )
+  )
+)

@@ -1,0 +1,49 @@
+===============================================================================
+edge-input-param
+===============================================================================
+Test edges created by function input parameters.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/types.py ---
+class Config:
+    pass
+
+class Logger:
+    pass
+
+lang: python
+
+--- file: sample/service.py ---
+from .types import Config, Logger
+
+def initialize(config: Config, logger: Logger) -> None:
+    pass
+
+class Service:
+    def setup(self, config: Config) -> None:
+        pass
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  mod_unknown_service[label="unknown::service"];
+  mod_unknown_types[label="unknown::types"];
+
+  mod_unknown_service -> mod_unknown_types;
+}

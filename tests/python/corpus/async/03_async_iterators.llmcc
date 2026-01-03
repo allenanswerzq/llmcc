@@ -1,0 +1,77 @@
+===============================================================================
+async-iterators
+===============================================================================
+Test async iterators parsing.
+lang: python
+
+--- file: async_iterators.py ---
+# Async iterator class
+class AsyncCounter:
+    def __init__(self, limit: int):
+        self.limit = limit
+        self.count = 0
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if self.count >= self.limit:
+            raise StopAsyncIteration
+        self.count += 1
+        await asyncio.sleep(0.1)
+        return self.count
+
+# Async for loop
+async def iterate_counter():
+    async for num in AsyncCounter(5):
+        print(num)
+
+# Async generator
+async def async_range(start: int, end: int):
+    for i in range(start, end):
+        await asyncio.sleep(0.01)
+        yield i
+
+# Using async generator
+async def use_async_range():
+    async for i in async_range(0, 10):
+        print(i)
+
+# Async generator with send
+async def async_accumulator():
+    total = 0
+    while True:
+        value = yield total
+        if value is None:
+            break
+        total += value
+
+# Async comprehension with async for
+async def collect_all():
+    return [x async for x in async_range(0, 5)]
+
+--- expect:block-graph ---
+(root:1 async_iterators ($TMP/async_iterators.py)
+  (class:2 AsyncCounter
+    (method:3 __init__
+      (parameter:4 limit @type int)
+    )
+    (method:5 __aiter__)
+    (method:6 __anext__
+    )
+  )
+  (func:8 iterate_counter
+    (@tdep:2 AsyncCounter)
+  )
+  (func:11 async_range
+    (parameter:12 start @type int)
+    (parameter:13 end @type int)
+  )
+  (func:16 use_async_range
+    (@fdep:11 async_range)
+  )
+  (func:19 async_accumulator)
+  (func:20 collect_all
+    (@fdep:11 async_range)
+  )
+)

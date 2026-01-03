@@ -67,7 +67,7 @@ pub fn create_user(name: String) -> User {
 (root:10 service ($TMP/app/src/service.rs)
   (func:11 get_user
     (parameter:12 id @type u64)
-    (return:13)
+    (return:13 @type:3 User)
     (@tdep:3 User)
     (@tdep:6 Error)
   )
@@ -88,9 +88,6 @@ digraph architecture {
 
   node [shape=box, style=rounded];
   edge [arrowsize=0.7];
-
-  label="architecture graph";
-  labelloc=t;
 
   subgraph cluster_app {
     label="app";
@@ -129,7 +126,7 @@ digraph architecture {
   }
 
 
-  n11 -> n3 [from="func", to="type_dep"];
+  n11 -> n3 [from="func", to="output"];
   n11 -> n6 [from="func", to="type_dep"];
   n15 -> n3 [from="func", to="output"];
 }

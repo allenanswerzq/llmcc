@@ -1,0 +1,136 @@
+===============================================================================
+comprehension-list
+===============================================================================
+Test list comprehensions.
+lang: python
+
+--- file: src/lib.py ---
+
+def square_list(items: list) -> list:
+    return [x ** 2 for x in items]
+
+def filter_positive(items: list) -> list:
+    return [x for x in items if x > 0]
+
+def nested_comprehension() -> list:
+    return [[i * j for j in range(3)] for i in range(3)]
+
+def flattened(matrix: list) -> list:
+    return [elem for row in matrix for elem in row]
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 square_list
+    (parameter:3 items @type list)
+    (return:4 @type list)
+  )
+  (func:5 filter_positive
+    (parameter:6 items @type list)
+    (return:7 @type list)
+  )
+  (func:8 nested_comprehension
+    (return:9 @type list)
+  )
+  (func:12 flattened
+    (parameter:13 matrix @type list)
+    (return:14 @type list)
+  )
+)
+
+
+===============================================================================
+comprehension-dict
+===============================================================================
+Test dictionary comprehensions.
+lang: python
+
+--- file: src/lib.py ---
+
+def invert_dict(d: dict) -> dict:
+    return {v: k for k, v in d.items()}
+
+def filter_dict(d: dict) -> dict:
+    return {k: v for k, v in d.items() if v > 0}
+
+def create_mapping(keys: list, values: list) -> dict:
+    return {k: v for k, v in zip(keys, values)}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 invert_dict
+    (parameter:3 d @type dict)
+    (return:4 @type dict)
+  )
+  (func:6 filter_dict
+    (parameter:7 d @type dict)
+    (return:8 @type dict)
+  )
+  (func:10 create_mapping
+    (parameter:11 keys @type list)
+    (parameter:12 values @type list)
+    (return:13 @type dict)
+  )
+)
+
+
+===============================================================================
+comprehension-set
+===============================================================================
+Test set comprehensions.
+lang: python
+
+--- file: src/lib.py ---
+
+def unique_squares(items: list) -> set:
+    return {x ** 2 for x in items}
+
+def filter_unique(items: list) -> set:
+    return {x for x in items if x > 0}
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 unique_squares
+    (parameter:3 items @type list)
+    (return:4 @type set)
+  )
+  (func:5 filter_unique
+    (parameter:6 items @type list)
+    (return:7 @type set)
+  )
+)
+
+
+===============================================================================
+comprehension-generator
+===============================================================================
+Test generator expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Iterator
+
+def square_generator(items: list) -> Iterator:
+    return (x ** 2 for x in items)
+
+def filtered_generator(items: list) -> Iterator:
+    return (x for x in items if x > 0)
+
+def sum_of_squares(items: list) -> int:
+    return sum(x ** 2 for x in items)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 square_generator
+    (parameter:3 items @type list)
+    (return:4 @type Iterator)
+  )
+  (func:5 filtered_generator
+    (parameter:6 items @type list)
+    (return:7 @type Iterator)
+  )
+  (func:8 sum_of_squares
+    (parameter:9 items @type list)
+    (return:10 @type int)
+  )
+)

@@ -1,0 +1,37 @@
+===============================================================================
+strings
+===============================================================================
+Test strings parsing.
+lang: python
+
+--- file: strings.py ---
+# Single quotes
+single = 'hello'
+single_escaped = 'it\'s'
+
+# Double quotes
+double = "hello"
+double_escaped = "she said \"hi\""
+
+# Triple quotes
+triple_single = '''multi
+line'''
+triple_double = """also
+multi
+line"""
+
+# Escape sequences
+newline = "hello\nworld"
+tab = "column1\tcolumn2"
+carriage = "line\r"
+backslash = "path\\to\\file"
+unicode_escape = "\u0041\u0042\u0043"
+hex_escape = "\x41\x42\x43"
+octal_escape = "\101\102\103"
+
+# Adjacent string concatenation
+concat = "hello" "world"
+concat_mixed = 'hello' "world"
+
+--- expect:block-graph ---
+(root:1 strings ($TMP/strings.py))

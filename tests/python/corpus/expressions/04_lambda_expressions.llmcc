@@ -1,0 +1,85 @@
+===============================================================================
+lambda-basic
+===============================================================================
+Test basic lambda expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+add = lambda x, y: x + y
+square = lambda n: n ** 2
+identity = lambda x: x
+
+def apply(func, value: int) -> int:
+    return func(value)
+
+def main() -> int:
+    return apply(square, 5)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 apply
+    (parameter:3 value @type int)
+    (return:4 @type int)
+  )
+  (func:6 main
+    (return:7 @type int)
+    (@fdep:2 apply)
+  )
+)
+
+
+===============================================================================
+lambda-typed
+===============================================================================
+Test typed lambda expressions.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import Callable
+
+process: Callable[[int], int] = lambda x: x * 2
+combine: Callable[[str, str], str] = lambda a, b: a + b
+
+def get_processor() -> Callable[[int], int]:
+    return lambda x: x ** 2
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 get_processor
+    (return:3 @type Callable)
+  )
+)
+
+
+===============================================================================
+lambda-in-higher-order
+===============================================================================
+Test lambdas in higher-order function calls.
+lang: python
+
+--- file: src/lib.py ---
+
+from typing import List
+
+def process_list(items: List[int]) -> List[int]:
+    doubled = list(map(lambda x: x * 2, items))
+    filtered = list(filter(lambda x: x > 0, items))
+    return sorted(items, key=lambda x: -x)
+
+def reduce_example(items: List[int]) -> int:
+    from functools import reduce
+    return reduce(lambda acc, x: acc + x, items, 0)
+
+--- expect:block-graph ---
+(root:1 lib ($TMP/src/lib.py)
+  (func:2 process_list
+    (parameter:3 items @type List)
+    (return:4 @type List)
+  )
+  (func:8 reduce_example
+    (parameter:9 items @type List)
+    (return:10 @type int)
+  )
+)

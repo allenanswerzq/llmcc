@@ -1,0 +1,44 @@
+===============================================================================
+edge-caller-callee
+===============================================================================
+Test edges created by function calls.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/utils.py ---
+def helper() -> int:
+    return 42
+
+def compute(x: int) -> int:
+    return x * 2
+
+lang: python
+
+--- file: sample/main.py ---
+from .utils import helper, compute
+
+def run():
+    value = helper()
+    result = compute(value)
+    return result
+
+--- expect:arch-graph-depth-2 ---
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+
+}

@@ -1,0 +1,68 @@
+===============================================================================
+cross-file-protocol-impl
+===============================================================================
+Test protocol implementation references.
+lang: python
+
+--- file: sample/__init__.py ---
+# Sample package
+
+--- file: sample/protocols.py ---
+from typing import Protocol
+
+class Serializable(Protocol):
+    def to_dict(self) -> dict:
+        ...
+
+class Comparable(Protocol):
+    def compare(self, other: "Comparable") -> int:
+        ...
+
+lang: python
+
+--- file: sample/models.py ---
+from .protocols import Serializable, Comparable
+
+class User:
+    def __init__(self, id: int, name: str):
+        self.id = id
+        self.name = name
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, "name": self.name}
+
+    def compare(self, other: "User") -> int:
+        return self.id - other.id
+
+--- expect:block-graph ---
+(root:1 __init__ ($TMP/sample/__init__.py))
+
+(root:2 protocols ($TMP/sample/protocols.py)
+  (class:3 Serializable
+    (method:4 to_dict
+      (return:5 @type dict)
+    )
+  )
+  (class:6 Comparable
+    (method:7 compare
+      (parameter:8 other @type str)
+      (return:9 @type int)
+    )
+  )
+)
+
+(root:10 models ($TMP/sample/models.py)
+  (class:11 User
+    (method:12 __init__
+      (parameter:13 id @type int)
+      (parameter:14 name @type str)
+    )
+    (method:15 to_dict
+      (return:16 @type dict)
+    )
+    (method:17 compare
+      (parameter:18 other @type str)
+      (return:19 @type int)
+    )
+  )
+)
