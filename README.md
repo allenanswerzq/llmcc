@@ -53,9 +53,9 @@ Excerpt (PageRank timing, depth=3, top-200):
 
 | Project | Files | LoC | Total |
 |---------|-------|-----|-------|
-| codex | 617 | 224K | 0.86s |
-| ruff | 1661 | 418K | 3.71s |
-| databend | 3130 | 627K | 5.51s |
+| databend | 3130 | 627K | 3.03s |
+| ruff | 1661 | 418K | 2.23s |
+| codex | 617 | 224K | 0.60s |
 
 ## CLI: generate graphs
 

@@ -662,14 +662,17 @@ pub fn build_unit_graph<'tcx, L: LanguageTrait>(
     unit: CompileUnit<'tcx>,
     unit_index: usize,
     config: GraphBuildConfig,
-) -> Result<UnitGraph, DynError> {
+) -> Result<Option<UnitGraph>, DynError> {
     let root_hir = unit.file_root_id().ok_or("missing file start HIR id")?;
     let mut builder = GraphBuilder::<L>::new(unit, config);
     let root_node = unit.hir_node(root_hir);
     builder.visit_node(unit, root_node, BlockId::ROOT_PARENT);
 
-    let root_block = builder.root.ok_or("graph builder produced no root block")?;
-    Ok(UnitGraph::new(unit_index, root_block))
+    // Empty files or files with no blocks produce no root - this is OK, just skip them
+    match builder.root {
+        Some(root_block) => Ok(Some(UnitGraph::new(unit_index, root_block))),
+        None => Ok(None),
+    }
 }
 
 /// Build unit graphs for all compilation units in parallel.
@@ -684,6 +687,9 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
                 build_unit_graph::<L>(unit, index, GraphBuildConfig)
             })
             .collect::<Result<Vec<_>, DynError>>()?
+            .into_iter()
+            .flatten()
+            .collect()
     } else {
         (0..cc.get_files().len())
             .into_par_iter()
@@ -692,6 +698,9 @@ pub fn build_llmcc_graph<'tcx, L: LanguageTrait>(
                 build_unit_graph::<L>(unit, index, GraphBuildConfig)
             })
             .collect::<Result<Vec<_>, DynError>>()?
+            .into_iter()
+            .flatten()
+            .collect()
     };
 
     // No sorting needed: DashMap provides O(1) lookup by ID
