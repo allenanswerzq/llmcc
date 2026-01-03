@@ -9,7 +9,20 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-LLMCC="${LLMCC:-$PROJECT_ROOT/target/release/llmcc}"
+# Try default release path, fall back to x86_64 target path
+if [ -z "$LLMCC" ]; then
+    if [ -x "$PROJECT_ROOT/target/release/llmcc" ]; then
+        LLMCC="$PROJECT_ROOT/target/release/llmcc"
+    elif [ -x "$PROJECT_ROOT/target/x86_64-unknown-linux-gnu/release/llmcc" ]; then
+        LLMCC="$PROJECT_ROOT/target/x86_64-unknown-linux-gnu/release/llmcc"
+    else
+        echo "Error: llmcc not found"
+        echo "Tried: $PROJECT_ROOT/target/release/llmcc"
+        echo "Tried: $PROJECT_ROOT/target/x86_64-unknown-linux-gnu/release/llmcc"
+        echo "Build with: cargo build --release"
+        exit 1
+    fi
+fi
 TOP_K=200
 BENCHMARK_FILE="$SCRIPT_DIR/benchmark_results.md"
 BENCHMARK_DIR="$SCRIPT_DIR/benchmark_logs"

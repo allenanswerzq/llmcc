@@ -235,7 +235,9 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
     }
 }
 /// Build IR for a single file with language-specific handling.
-fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(
+/// Build IR for a single file (inner implementation).
+/// This is public for use by fused build+collect in the resolver.
+pub fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(
     file_path: Option<String>,
     file_bytes: &'unit [u8],
     parse_tree: &'unit dyn ParseTree,

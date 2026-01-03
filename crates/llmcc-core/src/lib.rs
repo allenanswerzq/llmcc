@@ -23,7 +23,10 @@ pub use context::{CompileCtxt, CompileUnit};
 pub use graph::{ProjectGraph, UnitGraph, UnitNode};
 pub use graph_builder::{BlockId, BlockRelation, GraphBuildConfig, build_llmcc_graph};
 pub use ir::HirId;
-pub use ir_builder::{IrBuildOption, build_llmcc_ir, next_hir_id};
+pub use ir_builder::{
+    IrBuildOption, build_llmcc_ir, build_llmcc_ir_inner, get_ir_build_cpu_time_ms, next_hir_id,
+    reset_ir_build_counters,
+};
 pub use lang_def::{LanguageTrait, LanguageTraitImpl};
 pub use paste;
 pub use printer::{PrintConfig, PrintFormat, print_llmcc_graph, print_llmcc_ir, render_llmcc_ir};

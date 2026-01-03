@@ -10,8 +10,8 @@ use std::sync::Mutex;
 
 use bumpalo::Bump;
 
-/// Default chunk size: 1MB per thread for reduced malloc pressure
-const DEFAULT_CHUNK_SIZE: usize = 1 << 20; // 1MB
+/// Default chunk size: 16MB per thread for reduced malloc pressure
+const DEFAULT_CHUNK_SIZE: usize = 1 << 24; // 16MB
 
 type HerdInner = Vec<Box<Bump>>;
 

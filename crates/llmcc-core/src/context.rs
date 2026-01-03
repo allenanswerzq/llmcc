@@ -354,7 +354,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             })
             .collect::<std::io::Result<Vec<_>>>()?;
 
-        files_with_index.sort_by_key(|(index, _)| *index);
+        // Sort files by size descending for better parallel load balancing (straggler mitigation)
+        files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()));
         let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
@@ -400,7 +401,8 @@ impl<'tcx> CompileCtxt<'tcx> {
             )
             .collect::<std::io::Result<Vec<_>>>()?;
 
-        files_with_index.sort_by_key(|(index, _)| *index);
+        // Sort files by size descending for better parallel load balancing (straggler mitigation)
+        files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()));
         let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();

@@ -11,7 +11,7 @@ use llmcc_core::graph_builder::{GraphBuildOption, build_llmcc_graph};
 use llmcc_core::lang_def::{LanguageTrait, LanguageTraitImpl};
 use llmcc_core::*;
 use llmcc_dot::{ComponentDepth, RenderOptions, render_graph_with_options};
-use llmcc_resolver::{ResolverOption, bind_symbols_with, collect_symbols_with};
+use llmcc_resolver::{ResolverOption, bind_symbols_with, build_and_collect_symbols};
 
 pub use options::{CommonTestOptions, GraphOptions, ProcessingOptions};
 
@@ -104,20 +104,17 @@ where
     );
     log_parse_metrics(&cc.build_metrics);
 
-    let ir_start = Instant::now();
-    profile_phase("ir_build", || {
-        build_llmcc_ir::<L>(&cc, IrBuildOption::default())
-    })?;
-    info!("IR building: {:.2}s", ir_start.elapsed().as_secs_f64());
-
-    let symbols_start = Instant::now();
+    // Fused IR build + symbol collection (eliminates gap between phases)
+    let build_collect_start = Instant::now();
     let resolver_option = ResolverOption::default()
         .with_print_ir(opts.print_ir)
         .with_sequential(false);
-    let globals = collect_symbols_with::<L>(&cc, &resolver_option);
+    let globals = profile_phase("build_and_collect", || {
+        build_and_collect_symbols::<L>(&cc, IrBuildOption::default(), &resolver_option)
+    })?;
     info!(
-        "Symbol collection: {:.2}s",
-        symbols_start.elapsed().as_secs_f64()
+        "IR build + Symbol collection: {:.2}s",
+        build_collect_start.elapsed().as_secs_f64()
     );
 
     let mut pg = ProjectGraph::new(&cc);
