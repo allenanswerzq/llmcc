@@ -183,8 +183,15 @@ impl<'tcx> Scope<'tcx> {
         name: InternedStr,
         options: LookupOptions,
     ) -> Option<Vec<&'tcx Symbol>> {
-        let symbols = self.symbols.get(&name)?.clone();
-
+        let guard = self.symbols.get(&name)?;
+        let symbols = guard.value();
+        
+        // Fast path: no filtering needed
+        if options.kind_filters.is_empty() && options.unit_filters.is_none() {
+            return Some(symbols.clone());
+        }
+        
+        // Filter inline without cloning first
         let filtered: Vec<&'tcx Symbol> = symbols
             .iter()
             .filter(|symbol| {

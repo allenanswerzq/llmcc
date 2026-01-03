@@ -258,7 +258,8 @@ pub struct Symbol {
     /// Which compile unit this symbol is defined in.
     /// May be updated during compilation if the symbol spans multiple files.
     /// NOTE: compile unit doesn't mean a single file, it can be multiple files combined.
-    pub unit_index: RwLock<Option<usize>>,
+    /// Unit index (usize::MAX = None)
+    pub unit_index: AtomicUsize,
     /// Owning HIR node that introduces the symbol (e.g. function def, struct def).
     /// Immutable once set; represents the primary definition location.
     pub owner: RwLock<HirId>,
@@ -307,7 +308,7 @@ impl Clone for Symbol {
             id: self.id,
             owner: RwLock::new(*self.owner.read()),
             name: self.name,
-            unit_index: RwLock::new(*self.unit_index.read()),
+            unit_index: AtomicUsize::new(self.unit_index.load(Ordering::Relaxed)),
             defining: RwLock::new(self.defining.read().clone()),
             scope: AtomicUsize::new(self.scope.load(Ordering::Relaxed)),
             parent_scope: RwLock::new(*self.parent_scope.read()),
@@ -338,7 +339,7 @@ impl Symbol {
             id: sym_id,
             owner: RwLock::new(owner),
             name: name_key,
-            unit_index: RwLock::new(None),
+            unit_index: AtomicUsize::new(usize::MAX),
             defining: RwLock::new(Vec::new()),
             scope: AtomicUsize::new(0),
             parent_scope: RwLock::new(None),
@@ -445,17 +446,23 @@ impl Symbol {
     /// Gets the compile unit index this symbol is defined in.
     #[inline]
     pub fn unit_index(&self) -> Option<usize> {
-        *self.unit_index.read()
+        match self.unit_index.load(Ordering::Relaxed) {
+            usize::MAX => None,
+            v => Some(v),
+        }
     }
 
     /// Sets the compile unit index, but only if not already set.
     /// Prevents overwriting the original definition location.
     #[inline]
     pub fn set_unit_index(&self, file: usize) {
-        let mut unit_index = self.unit_index.write();
-        if unit_index.is_none() {
-            *unit_index = Some(file);
-        }
+        // Only set if not already set (usize::MAX = None)
+        let _ = self.unit_index.compare_exchange(
+            usize::MAX,
+            file,
+            Ordering::Relaxed,
+            Ordering::Relaxed,
+        );
     }
 
     /// Checks if this symbol is globally visible/exported.
