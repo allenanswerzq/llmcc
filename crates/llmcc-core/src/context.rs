@@ -12,6 +12,16 @@ use uuid::Uuid;
 use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
+
+/// Controls how files are ordered after parallel reading.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum FileOrder {
+    /// Preserve the original input order (deterministic, good for tests).
+    #[default]
+    Original,
+    /// Sort by file size descending (better parallel load balancing for large projects).
+    BySizeDescending,
+}
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
 use crate::ir_builder::reset_hir_id_counter;
@@ -336,8 +346,16 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
-    /// Create a new CompileCtxt from files
+    /// Create a new CompileCtxt from files with default (original) ordering.
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
+        Self::from_files_with_order::<L>(paths, FileOrder::Original)
+    }
+
+    /// Create a new CompileCtxt from files with specified ordering.
+    pub fn from_files_with_order<L: LanguageTrait>(
+        paths: &[String],
+        order: FileOrder,
+    ) -> std::io::Result<Self> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
@@ -354,8 +372,13 @@ impl<'tcx> CompileCtxt<'tcx> {
             })
             .collect::<std::io::Result<Vec<_>>>()?;
 
-        // Sort files by size descending for better parallel load balancing (straggler mitigation)
-        files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()));
+        // Sort files based on ordering strategy
+        match order {
+            FileOrder::Original => files_with_index.sort_by_key(|(index, _)| *index),
+            FileOrder::BySizeDescending => {
+                files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()))
+            }
+        }
         let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
@@ -383,6 +406,14 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn from_files_with_logical<L: LanguageTrait>(
         paths: &[(String, String)],
     ) -> std::io::Result<Self> {
+        Self::from_files_with_logical_and_order::<L>(paths, FileOrder::Original)
+    }
+
+    /// Create a new CompileCtxt from files with separate physical and logical paths and specified ordering.
+    pub fn from_files_with_logical_and_order<L: LanguageTrait>(
+        paths: &[(String, String)],
+        order: FileOrder,
+    ) -> std::io::Result<Self> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
@@ -401,8 +432,13 @@ impl<'tcx> CompileCtxt<'tcx> {
             )
             .collect::<std::io::Result<Vec<_>>>()?;
 
-        // Sort files by size descending for better parallel load balancing (straggler mitigation)
-        files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()));
+        // Sort files based on ordering strategy
+        match order {
+            FileOrder::Original => files_with_index.sort_by_key(|(index, _)| *index),
+            FileOrder::BySizeDescending => {
+                files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()))
+            }
+        }
         let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();

@@ -97,7 +97,10 @@ where
 
     let parse_start = Instant::now();
     info!("Parsing total {} files", requested_files.len());
-    let cc = profile_phase("parsing", || CompileCtxt::from_files::<L>(&requested_files))?;
+    // Use size-based ordering for better parallel load balancing in production
+    let cc = profile_phase("parsing", || {
+        CompileCtxt::from_files_with_order::<L>(&requested_files, FileOrder::BySizeDescending)
+    })?;
     info!(
         "Parsing & tree-sitter: {:.2}s",
         parse_start.elapsed().as_secs_f64()
