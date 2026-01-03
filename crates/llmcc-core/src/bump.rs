@@ -48,7 +48,7 @@ macro_rules! declare_arena {
                 Self {
                     herd: bumpalo_herd::Herd::new(),
                     // Use 256 shards to reduce contention at high thread counts
-                    $( $field: dashmap::DashMap::new(), )*
+                    $( $field: dashmap::DashMap::with_hasher_and_shard_amount(std::hash::RandomState::new(), 256), )*
                 }
             }
 
@@ -57,7 +57,7 @@ macro_rules! declare_arena {
             pub fn new_with_capacity(cap: usize) -> Self {
                 Self {
                     herd: bumpalo_herd::Herd::new(),
-                    $( $field: dashmap::DashMap::with_capacity(cap), )*
+                    $( $field: dashmap::DashMap::with_capacity_and_hasher_and_shard_amount(cap, std::hash::RandomState::new(), 256), )*
                 }
             }
 

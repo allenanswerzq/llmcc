@@ -1,6 +1,7 @@
 use parking_lot::RwLock;
+use std::sync::atomic::{AtomicPtr, Ordering};
 use smallvec::SmallVec;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::AtomicUsize;
 use strum_macros::{Display, EnumIter, EnumString, FromRepr};
 
 use crate::context::CompileUnit;
@@ -598,7 +599,8 @@ impl<'hir> Clone for HirScope<'hir> {
 pub struct HirIdent<'hir> {
     pub base: HirBase,
     pub name: String,
-    pub symbol: RwLock<Option<&'hir Symbol>>,
+    pub symbol: AtomicPtr<Symbol>,
+    _phantom: std::marker::PhantomData<&'hir ()>,
 }
 
 impl<'hir> HirIdent<'hir> {
@@ -607,7 +609,8 @@ impl<'hir> HirIdent<'hir> {
         Self {
             base,
             name,
-            symbol: RwLock::new(None),
+            symbol: AtomicPtr::new(std::ptr::null_mut()),
+            _phantom: std::marker::PhantomData,
         }
     }
 
@@ -616,12 +619,13 @@ impl<'hir> HirIdent<'hir> {
     }
 
     pub fn set_symbol(&self, symbol: &'hir Symbol) {
-        *self.symbol.write() = Some(symbol);
+        self.symbol.store(symbol as *const _ as *mut _, Ordering::Release);
     }
 
     #[inline]
     pub fn opt_symbol(&self) -> Option<&'hir Symbol> {
-        *self.symbol.read()
+        let ptr = self.symbol.load(Ordering::Acquire);
+        if ptr.is_null() { None } else { unsafe { Some(&*ptr) } }
     }
 }
 

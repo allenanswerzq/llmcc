@@ -56,6 +56,29 @@ impl<'tcx> Scope<'tcx> {
         }
     }
 
+    /// Creates a new scope with specified shard count for the DashMap.
+    /// Use this for high-contention scopes like globals.
+    pub fn new_with_shards(
+        owner: HirId,
+        symbol: Option<&'tcx Symbol>,
+        interner: Option<&'tcx InternPool>,
+        shard_count: usize,
+    ) -> Self {
+        Self {
+            id: ScopeId(NEXT_SCOPE_ID.fetch_add(1, Ordering::Relaxed)),
+            symbols: DashMap::with_hasher_and_shard_amount(
+                std::hash::RandomState::new(),
+                shard_count,
+            ),
+            owner,
+            symbol: RwLock::new(symbol),
+            parents: RwLock::new(Vec::new()),
+            children: RwLock::new(Vec::new()),
+            redirect: RwLock::new(None),
+            interner,
+        }
+    }
+
     /// Merge existing scope into this scope.
     #[inline]
     pub fn merge_with(&self, other: &'tcx Scope<'tcx>, _arena: &'tcx Arena<'tcx>) {

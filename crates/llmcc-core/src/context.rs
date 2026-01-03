@@ -502,7 +502,10 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
+        // Use 256 shards for globals scope - heavily contended during parallel binding
+        let scope = Scope::new_with_shards(Self::GLOBAL_SCOPE_OWNER, None, Some(&self.interner), 256);
+        let id = scope.id().0;
+        self.arena.alloc_with_id(id, scope)
     }
 
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {

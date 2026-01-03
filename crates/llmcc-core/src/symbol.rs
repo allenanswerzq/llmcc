@@ -15,7 +15,7 @@ use strum_macros::EnumIter;
 use crate::graph_builder::BlockId;
 use crate::interner::InternedStr;
 use crate::ir::HirId;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicU32, AtomicUsize, Ordering};
 
 /// Global atomic counter for assigning unique symbol IDs.
 /// Incremented on each new symbol creation to ensure uniqueness.
@@ -268,22 +268,22 @@ pub struct Symbol {
     pub defining: RwLock<Vec<HirId>>,
     /// The scope that this symbol belongs to.
     /// Used to quickly find the scope during binding and type resolution.
-    pub scope: RwLock<Option<ScopeId>>,
+    pub scope: AtomicUsize,  // 0 = None, n = Some(ScopeId(n-1))
     /// The parent scope of this symbol (for scope hierarchy).
     /// Enables upward traversal of the scope chain.
     pub parent_scope: RwLock<Option<ScopeId>>,
     /// The kind of symbol this represents (function, struct, variable, etc.).
     /// Initially Unknown, updated as the symbol is processed.
-    pub kind: RwLock<SymKind>,
+    pub kind: AtomicU8,
     /// Optional backing type for this symbol (e.g. variable type, alias target).
     /// Set during type analysis if applicable.
-    pub type_of: RwLock<Option<SymId>>,
+    pub type_of: AtomicUsize,  // 0 = None, n = Some(SymId(n-1))
     /// Optional block id associated with this symbol (for graph building).
     /// Links the symbol to its corresponding block in the code graph.
-    pub block_id: RwLock<Option<BlockId>>,
+    pub block_id: AtomicU32,  // 0 = None, n = Some(BlockId(n-1))
     /// Whether the symbol is globally visible/exported.
     /// Used to distinguish public symbols from private ones.
-    pub is_global: RwLock<bool>,
+    pub is_global: AtomicBool,
     /// Previous version/definition of this symbol (for shadowing and multi-definition tracking).
     /// Used to chain multiple definitions of the same symbol in different scopes or contexts.
     /// Example: inner definition shadows outer definition in nested scope.
@@ -298,7 +298,7 @@ pub struct Symbol {
     /// Set to the symbol that contains/defines this field.
     /// Examples: enum variant's FieldOf is the enum; struct field's FieldOf is the struct;
     /// tuple field (by index) FieldOf is the tuple/value being accessed.
-    pub field_of: RwLock<Option<SymId>>,
+    pub field_of: AtomicUsize,  // 0 = None, n = Some(SymId(n-1))
 }
 
 impl Clone for Symbol {
@@ -309,15 +309,15 @@ impl Clone for Symbol {
             name: self.name,
             unit_index: RwLock::new(*self.unit_index.read()),
             defining: RwLock::new(self.defining.read().clone()),
-            scope: RwLock::new(*self.scope.read()),
+            scope: AtomicUsize::new(self.scope.load(Ordering::Relaxed)),
             parent_scope: RwLock::new(*self.parent_scope.read()),
-            kind: RwLock::new(*self.kind.read()),
-            type_of: RwLock::new(*self.type_of.read()),
-            block_id: RwLock::new(*self.block_id.read()),
-            is_global: RwLock::new(*self.is_global.read()),
+            kind: AtomicU8::new(self.kind.load(Ordering::Relaxed)),
+            type_of: AtomicUsize::new(self.type_of.load(Ordering::Relaxed)),
+            block_id: AtomicU32::new(self.block_id.load(Ordering::Relaxed)),
+            is_global: AtomicBool::new(self.is_global.load(Ordering::Relaxed)),
             previous: RwLock::new(*self.previous.read()),
             nested_types: RwLock::new(self.nested_types.read().clone()),
-            field_of: RwLock::new(*self.field_of.read()),
+            field_of: AtomicUsize::new(self.field_of.load(Ordering::Relaxed)),
         }
     }
 }
@@ -340,15 +340,15 @@ impl Symbol {
             name: name_key,
             unit_index: RwLock::new(None),
             defining: RwLock::new(Vec::new()),
-            scope: RwLock::new(None),
+            scope: AtomicUsize::new(0),
             parent_scope: RwLock::new(None),
-            kind: RwLock::new(SymKind::Unknown),
-            type_of: RwLock::new(None),
-            block_id: RwLock::new(None),
-            is_global: RwLock::new(false),
+            kind: AtomicU8::new(SymKind::Unknown as u8),
+            type_of: AtomicUsize::new(0),
+            block_id: AtomicU32::new(0),
+            is_global: AtomicBool::new(false),
             previous: RwLock::new(None),
             nested_types: RwLock::new(Vec::new()),
-            field_of: RwLock::new(None),
+            field_of: AtomicUsize::new(0),
         }
     }
 
@@ -386,18 +386,19 @@ impl Symbol {
     /// Gets the scope ID this symbol belongs to.
     #[inline]
     pub fn opt_scope(&self) -> Option<ScopeId> {
-        *self.scope.read()
+        let v = self.scope.load(Ordering::Relaxed);
+        if v == 0 { None } else { Some(ScopeId(v - 1)) }
     }
 
     #[inline]
     pub fn scope(&self) -> ScopeId {
-        self.scope.read().unwrap()
+        self.opt_scope().unwrap()
     }
 
     /// Sets the scope ID this symbol belongs to.
     #[inline]
     pub fn set_scope(&self, scope_id: ScopeId) {
-        *self.scope.write() = Some(scope_id);
+        self.scope.store(scope_id.0 + 1, Ordering::Relaxed);
     }
 
     /// Gets the parent scope ID in the scope hierarchy.
@@ -415,13 +416,14 @@ impl Symbol {
     /// Gets the symbol kind (function, struct, variable, etc.).
     #[inline]
     pub fn kind(&self) -> SymKind {
-        *self.kind.read()
+        // SAFETY: SymKind has repr(u8) implied by enum values 0-23
+        unsafe { std::mem::transmute(self.kind.load(Ordering::Relaxed)) }
     }
 
     /// Sets the symbol kind after analysis.
     #[inline]
     pub fn set_kind(&self, kind: SymKind) {
-        *self.kind.write() = kind;
+        self.kind.store(kind as u8, Ordering::Relaxed);
     }
 
     /// Gets the type of this symbol (if it has one).
@@ -429,14 +431,15 @@ impl Symbol {
     /// For type aliases, this is the target type.
     #[inline]
     pub fn type_of(&self) -> Option<SymId> {
-        *self.type_of.read()
+        let v = self.type_of.load(Ordering::Relaxed);
+        if v == 0 { None } else { Some(SymId(v - 1)) }
     }
 
     /// Sets the type of this symbol.
     #[inline]
     pub fn set_type_of(&self, ty: SymId) {
         tracing::trace!("setting type of symbol {} to symbol {}", self.id, ty,);
-        *self.type_of.write() = Some(ty);
+        self.type_of.store(ty.0 + 1, Ordering::Relaxed);
     }
 
     /// Gets the compile unit index this symbol is defined in.
@@ -458,13 +461,13 @@ impl Symbol {
     /// Checks if this symbol is globally visible/exported.
     #[inline]
     pub fn is_global(&self) -> bool {
-        *self.is_global.read()
+        self.is_global.load(Ordering::Relaxed)
     }
 
     /// Sets the global visibility flag.
     #[inline]
     pub fn set_is_global(&self, value: bool) {
-        *self.is_global.write() = value;
+        self.is_global.store(value, Ordering::Relaxed);
     }
 
     /// Adds a HIR node as an additional definition location.
@@ -484,13 +487,14 @@ impl Symbol {
     /// Gets the block ID associated with this symbol.
     #[inline]
     pub fn block_id(&self) -> Option<BlockId> {
-        *self.block_id.read()
+        let v = self.block_id.load(Ordering::Relaxed);
+        if v == 0 { None } else { Some(BlockId(v - 1)) }
     }
 
     /// Sets the block ID associated with this symbol.
     #[inline]
     pub fn set_block_id(&self, block_id: BlockId) {
-        *self.block_id.write() = Some(block_id);
+        self.block_id.store(block_id.0 + 1, Ordering::Relaxed);
     }
 
     /// Gets the previous definition of this symbol (for shadowing).
@@ -535,12 +539,13 @@ impl Symbol {
     /// Gets which symbol owns this field (parent struct, enum, or object being accessed).
     #[inline]
     pub fn field_of(&self) -> Option<SymId> {
-        *self.field_of.read()
+        let v = self.field_of.load(Ordering::Relaxed);
+        if v == 0 { None } else { Some(SymId(v - 1)) }
     }
 
     /// Sets which symbol owns this field.
     #[inline]
     pub fn set_field_of(&self, owner: SymId) {
-        *self.field_of.write() = Some(owner);
+        self.field_of.store(owner.0 + 1, Ordering::Relaxed);
     }
 }
