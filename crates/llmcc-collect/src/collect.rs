@@ -2,6 +2,8 @@
 
 use std::collections::{BTreeSet, HashSet};
 
+use rayon::prelude::*;
+
 use llmcc_core::BlockId;
 use llmcc_core::block::{BlockKind, BlockRelation};
 use llmcc_core::graph::ProjectGraph;
@@ -31,7 +33,7 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
     let all_blocks = project.cc.get_all_blocks();
 
     let mut nodes: Vec<RenderNode> = all_blocks
-        .into_iter()
+        .into_par_iter()
         .filter_map(|(block_id, unit_index, name_opt, kind)| {
             // Skip kinds not in architecture view
             if !ARCHITECTURE_KINDS.contains(&kind) {
@@ -121,8 +123,6 @@ pub fn collect_nodes(project: &ProjectGraph) -> Vec<RenderNode> {
 /// - type_arg → generic: Generic type arguments
 /// - type_dep → type: Type dependencies from impl blocks
 pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTreeSet<RenderEdge> {
-    let mut edges = BTreeSet::new();
-
     let get_kind = |id: BlockId| -> Option<BlockKind> {
         project
             .cc
@@ -131,43 +131,68 @@ pub fn collect_edges(project: &ProjectGraph, node_set: &HashSet<BlockId>) -> BTr
             .map(|b| b.kind())
     };
 
-    for &block_id in node_set {
-        let block_kind = get_kind(block_id);
+    // Collect edges in parallel for each block
+    let node_vec: Vec<_> = node_set.iter().copied().collect();
 
-        // 1. Field types
-        collect_field_edges(
-            project, block_id, block_kind, node_set, &mut edges, get_kind,
-        );
+    let edges: Vec<BTreeSet<RenderEdge>> = node_vec
+        .into_par_iter()
+        .map(|block_id| {
+            let mut local_edges = BTreeSet::new();
+            let block_kind = get_kind(block_id);
 
-        // 2. Function calls
-        collect_call_edges(project, block_id, node_set, &mut edges);
+            // 1. Field types
+            collect_field_edges(
+                project,
+                block_id,
+                block_kind,
+                node_set,
+                &mut local_edges,
+                get_kind,
+            );
 
-        // 3. Function parameters
-        collect_param_edges(project, block_id, node_set, &mut edges);
+            // 2. Function calls
+            collect_call_edges(project, block_id, node_set, &mut local_edges);
 
-        // 4. Function return types
-        collect_return_edges(project, block_id, node_set, &mut edges);
+            // 3. Function parameters
+            collect_param_edges(project, block_id, node_set, &mut local_edges);
 
-        // 5. Trait implementations
-        collect_impl_edges(project, block_id, node_set, &mut edges);
+            // 4. Function return types
+            collect_return_edges(project, block_id, node_set, &mut local_edges);
 
-        // 6. Trait bounds
-        if block_kind == Some(BlockKind::Trait) {
-            collect_bound_edges(project, block_id, node_set, &mut edges, get_kind);
-        }
+            // 5. Trait implementations
+            collect_impl_edges(project, block_id, node_set, &mut local_edges);
 
-        // 7. Type dependencies from function bodies
-        if block_kind == Some(BlockKind::Func) {
-            collect_type_dep_edges(project, block_id, node_set, &mut edges, get_kind);
-        }
+            // 6. Trait bounds
+            if block_kind == Some(BlockKind::Trait) {
+                collect_bound_edges(project, block_id, node_set, &mut local_edges, get_kind);
+            }
 
-        // 8. Impl type arguments
-        if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
-            collect_impl_type_arg_edges(project, block_id, node_set, &mut edges, get_kind);
-        }
+            // 7. Type dependencies from function bodies
+            if block_kind == Some(BlockKind::Func) {
+                collect_type_dep_edges(project, block_id, node_set, &mut local_edges, get_kind);
+            }
+
+            // 8. Impl type arguments
+            if block_kind == Some(BlockKind::Class) || block_kind == Some(BlockKind::Enum) {
+                collect_impl_type_arg_edges(
+                    project,
+                    block_id,
+                    node_set,
+                    &mut local_edges,
+                    get_kind,
+                );
+            }
+
+            local_edges
+        })
+        .collect();
+
+    // Merge all edge sets
+    let mut result = BTreeSet::new();
+    for edge_set in edges {
+        result.extend(edge_set);
     }
-
-    edges
+    result
 }
 
 // ============================================================================

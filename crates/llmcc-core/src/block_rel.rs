@@ -1,5 +1,5 @@
 use dashmap::DashMap;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 use crate::block::{BlockId, BlockKind, BlockRelation};
 
@@ -373,33 +373,41 @@ impl BlockRelationMap {
 /// Important: The "name" field is optional since Root blocks and some other blocks may not have names.
 ///
 /// Rationale for data structure choices:
-/// - BTreeMap is used for name and unit indexes for better iteration and range queries
-/// - HashMap is used for kind index since BlockKind doesn't implement Ord
-/// - HashMap is used for block_id_index (direct lookup by BlockId) for O(1) access
+/// - DashMap is used for all indexes to allow concurrent access during parallel graph building
 /// - Vec is used for values to handle multiple blocks with the same index (same name/kind/unit)
-#[derive(Debug, Default, Clone)]
 pub struct BlockIndexMaps {
     /// block_name -> Vec<(unit_index, block_kind, block_id)>
     /// Multiple blocks can share the same name across units or within the same unit
-    pub block_name_index: BTreeMap<String, Vec<(usize, BlockKind, BlockId)>>,
+    block_name_index: DashMap<String, Vec<(usize, BlockKind, BlockId)>>,
 
     /// unit_index -> Vec<(block_name, block_kind, block_id)>
     /// Allows retrieval of all blocks in a specific compilation unit
-    pub unit_index_map: BTreeMap<usize, Vec<(Option<String>, BlockKind, BlockId)>>,
+    unit_index_map: DashMap<usize, Vec<(Option<String>, BlockKind, BlockId)>>,
 
     /// block_kind -> Vec<(unit_index, block_name, block_id)>
     /// Allows retrieval of all blocks of a specific kind across all units
-    pub block_kind_index: HashMap<BlockKind, Vec<(usize, Option<String>, BlockId)>>,
+    block_kind_index: DashMap<BlockKind, Vec<(usize, Option<String>, BlockId)>>,
 
     /// block_id -> (unit_index, block_name, block_kind)
     /// Direct O(1) lookup of block metadata by ID
-    pub block_id_index: HashMap<BlockId, (usize, Option<String>, BlockKind)>,
+    block_id_index: DashMap<BlockId, (usize, Option<String>, BlockKind)>,
+}
+
+impl Default for BlockIndexMaps {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl BlockIndexMaps {
     /// Create a new empty BlockIndexMaps
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            block_name_index: DashMap::new(),
+            unit_index_map: DashMap::new(),
+            block_kind_index: DashMap::new(),
+            block_id_index: DashMap::new(),
+        }
     }
 
     /// Register a new block in all indexes
@@ -410,7 +418,7 @@ impl BlockIndexMaps {
     /// - `block_kind`: The kind of block (Func, Class, Stmt, etc.)
     /// - `unit_index`: The compilation unit index this block belongs to
     pub fn insert_block(
-        &mut self,
+        &self,
         block_id: BlockId,
         block_name: Option<String>,
         block_kind: BlockKind,
@@ -446,7 +454,10 @@ impl BlockIndexMaps {
     ///
     /// Returns a vector of (unit_index, block_kind, block_id) tuples
     pub fn find_by_name(&self, name: &str) -> Vec<(usize, BlockKind, BlockId)> {
-        self.block_name_index.get(name).cloned().unwrap_or_default()
+        self.block_name_index
+            .get(name)
+            .map(|v| v.clone())
+            .unwrap_or_default()
     }
 
     /// Find all blocks in a specific unit
@@ -455,7 +466,7 @@ impl BlockIndexMaps {
     pub fn find_by_unit(&self, unit_index: usize) -> Vec<(Option<String>, BlockKind, BlockId)> {
         self.unit_index_map
             .get(&unit_index)
-            .cloned()
+            .map(|v| v.clone())
             .unwrap_or_default()
     }
 
@@ -465,7 +476,7 @@ impl BlockIndexMaps {
     pub fn find_by_kind(&self, block_kind: BlockKind) -> Vec<(usize, Option<String>, BlockId)> {
         self.block_kind_index
             .get(&block_kind)
-            .cloned()
+            .map(|v| v.clone())
             .unwrap_or_default()
     }
 
@@ -485,7 +496,7 @@ impl BlockIndexMaps {
     ///
     /// Returns (unit_index, block_name, block_kind) if found
     pub fn get_block_info(&self, block_id: BlockId) -> Option<(usize, Option<String>, BlockKind)> {
-        self.block_id_index.get(&block_id).cloned()
+        self.block_id_index.get(&block_id).map(|v| v.clone())
     }
 
     /// Get total number of blocks indexed
@@ -508,14 +519,16 @@ impl BlockIndexMaps {
     pub fn iter_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, BlockKind)> {
         self.block_id_index
             .iter()
-            .map(|(&block_id, (unit_index, name, kind))| {
+            .map(|entry| {
+                let block_id = *entry.key();
+                let (unit_index, name, kind) = entry.value();
                 (block_id, *unit_index, name.clone(), *kind)
             })
             .collect()
     }
 
     /// Clear all indexes
-    pub fn clear(&mut self) {
+    pub fn clear(&self) {
         self.block_name_index.clear();
         self.unit_index_map.clear();
         self.block_kind_index.clear();

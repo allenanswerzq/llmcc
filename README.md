@@ -47,15 +47,15 @@ If you open those .dot/.svg files, youâ€™ll see the same system from different â
 
 llmcc is designed to be very fast, and we will try to make it faster.
 
-The repo contains benchmark for many famous project output here: [sample/benchmark_results.md](sample/benchmark_results.md).
+The repo contains benchmark for many famous project output here: [sample/benchmark_results_16.md](sample/benchmark_results_16.md).
 
 Excerpt (PageRank timing, depth=3, top-200):
 
 | Project | Files | LoC | Total |
 |---------|-------|-----|-------|
-| codex | 617 | 224K | 0.99s |
-| ruff | 1661 | 418K | 3.41s |
-| databend | 3130 | 627K | 6.40s |
+| codex | 617 | 224K | 0.86s |
+| ruff | 1661 | 418K | 3.71s |
+| databend | 3130 | 627K | 5.51s |
 
 ## CLI: generate graphs
 

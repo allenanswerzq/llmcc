@@ -1,5 +1,6 @@
 use parking_lot::RwLock;
 use rayon::prelude::*;
+use smallvec::SmallVec;
 use std::cmp::Ordering as CmpOrdering;
 use std::fs;
 use std::io::Write;
@@ -11,6 +12,16 @@ use uuid::Uuid;
 use crate::block::{BasicBlock, BlockArena, BlockId, reset_block_id_counter};
 use crate::block_rel::{BlockIndexMaps, BlockRelationMap};
 use crate::file::File;
+
+/// Controls how files are ordered after parallel reading.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum FileOrder {
+    /// Preserve the original input order (deterministic, good for tests).
+    #[default]
+    Original,
+    /// Sort by file size descending (better parallel load balancing for large projects).
+    BySizeDescending,
+}
 use crate::interner::{InternPool, InternedStr};
 use crate::ir::{Arena, HirBase, HirId, HirIdent, HirKind, HirNode};
 use crate::ir_builder::reset_hir_id_counter;
@@ -224,10 +235,9 @@ impl<'tcx> CompileUnit<'tcx> {
         // Allocate block into the Arena's DashMap using BlockId as key
         self.cc.block_arena.alloc_with_id(id.0 as usize, block);
 
-        // Register the block in the index maps
+        // Register the block in the index maps (now concurrent-safe)
         self.cc
             .block_indexes
-            .write()
             .insert_block(id, block_name, block_kind, self.index);
     }
 }
@@ -291,7 +301,8 @@ pub struct CompileCtxt<'tcx> {
     pub related_map: BlockRelationMap,
 
     /// Index maps for efficient block lookups by name, kind, unit, and id
-    pub block_indexes: RwLock<BlockIndexMaps>,
+    /// Uses DashMap internally for concurrent access
+    pub block_indexes: BlockIndexMaps,
 
     /// Metrics collected while building the compilation context
     pub build_metrics: BuildMetrics,
@@ -335,8 +346,16 @@ impl<'tcx> CompileCtxt<'tcx> {
         })
     }
 
-    /// Create a new CompileCtxt from files
+    /// Create a new CompileCtxt from files with default (original) ordering.
     pub fn from_files<L: LanguageTrait>(paths: &[String]) -> std::io::Result<Self> {
+        Self::from_files_with_order::<L>(paths, FileOrder::Original)
+    }
+
+    /// Create a new CompileCtxt from files with specified ordering.
+    pub fn from_files_with_order<L: LanguageTrait>(
+        paths: &[String],
+        order: FileOrder,
+    ) -> std::io::Result<Self> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
         reset_scope_id_counter();
@@ -353,7 +372,13 @@ impl<'tcx> CompileCtxt<'tcx> {
             })
             .collect::<std::io::Result<Vec<_>>>()?;
 
-        files_with_index.sort_by_key(|(index, _)| *index);
+        // Sort files based on ordering strategy
+        match order {
+            FileOrder::Original => files_with_index.sort_by_key(|(index, _)| *index),
+            FileOrder::BySizeDescending => {
+                files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()))
+            }
+        }
         let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
@@ -370,7 +395,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
             related_map: BlockRelationMap::default(),
-            block_indexes: RwLock::new(BlockIndexMaps::new()),
+            block_indexes: BlockIndexMaps::new(),
             build_metrics: metrics,
         })
     }
@@ -380,6 +405,14 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Each element is (physical_path, logical_path).
     pub fn from_files_with_logical<L: LanguageTrait>(
         paths: &[(String, String)],
+    ) -> std::io::Result<Self> {
+        Self::from_files_with_logical_and_order::<L>(paths, FileOrder::Original)
+    }
+
+    /// Create a new CompileCtxt from files with separate physical and logical paths and specified ordering.
+    pub fn from_files_with_logical_and_order<L: LanguageTrait>(
+        paths: &[(String, String)],
+        order: FileOrder,
     ) -> std::io::Result<Self> {
         reset_hir_id_counter();
         reset_symbol_id_counter();
@@ -399,7 +432,13 @@ impl<'tcx> CompileCtxt<'tcx> {
             )
             .collect::<std::io::Result<Vec<_>>>()?;
 
-        files_with_index.sort_by_key(|(index, _)| *index);
+        // Sort files based on ordering strategy
+        match order {
+            FileOrder::Original => files_with_index.sort_by_key(|(index, _)| *index),
+            FileOrder::BySizeDescending => {
+                files_with_index.sort_by_key(|(_, file)| std::cmp::Reverse(file.content().len()))
+            }
+        }
         let files: Vec<File> = files_with_index.into_iter().map(|(_, file)| file).collect();
 
         let file_read_seconds = read_start.elapsed().as_secs_f64();
@@ -416,7 +455,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
             related_map: BlockRelationMap::default(),
-            block_indexes: RwLock::new(BlockIndexMaps::new()),
+            block_indexes: BlockIndexMaps::new(),
             build_metrics: metrics,
         })
     }
@@ -502,7 +541,11 @@ impl<'tcx> CompileCtxt<'tcx> {
     }
 
     pub fn create_globals(&'tcx self) -> &'tcx Scope<'tcx> {
-        self.create_unit_globals(Self::GLOBAL_SCOPE_OWNER)
+        // Use 256 shards for globals scope - heavily contended during parallel binding
+        let scope =
+            Scope::new_with_shards(Self::GLOBAL_SCOPE_OWNER, None, Some(&self.interner), 256);
+        let id = scope.id().0;
+        self.arena.alloc_with_id(id, scope)
     }
 
     pub fn get_scope(&'tcx self, scope_id: ScopeId) -> &'tcx Scope<'tcx> {
@@ -548,7 +591,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn alloc_file_ident(
         &'tcx self,
         id: HirId,
-        name: &str,
+        name: &'tcx str,
         symbol: &'tcx Symbol,
     ) -> &'tcx HirIdent<'tcx> {
         let base = HirBase {
@@ -559,9 +602,9 @@ impl<'tcx> CompileCtxt<'tcx> {
             end_byte: 0,
             kind: HirKind::Identifier,
             field_id: u16::MAX,
-            children: Vec::new(),
+            children: SmallVec::new(),
         };
-        let ident = self.arena.alloc(HirIdent::new(base, name.to_string()));
+        let ident = self.arena.alloc(HirIdent::new(base, name));
         ident.set_symbol(symbol);
         ident
     }
@@ -638,9 +681,9 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Get all blocks by name
     pub fn find_blocks_by_name(
         &self,
-        name: &str,
+        name: &'tcx str,
     ) -> Vec<(usize, crate::block::BlockKind, BlockId)> {
-        self.block_indexes.read().find_by_name(name)
+        self.block_indexes.find_by_name(name)
     }
 
     /// Get all blocks by kind
@@ -648,7 +691,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self,
         kind: crate::block::BlockKind,
     ) -> Vec<(usize, Option<String>, BlockId)> {
-        self.block_indexes.read().find_by_kind(kind)
+        self.block_indexes.find_by_kind(kind)
     }
 
     /// Get blocks in a specific unit
@@ -656,7 +699,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self,
         unit_index: usize,
     ) -> Vec<(Option<String>, crate::block::BlockKind, BlockId)> {
-        self.block_indexes.read().find_by_unit(unit_index)
+        self.block_indexes.find_by_unit(unit_index)
     }
 
     /// Get blocks of a specific kind in a specific unit
@@ -665,9 +708,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         kind: crate::block::BlockKind,
         unit_index: usize,
     ) -> Vec<BlockId> {
-        self.block_indexes
-            .read()
-            .find_by_kind_and_unit(kind, unit_index)
+        self.block_indexes.find_by_kind_and_unit(kind, unit_index)
     }
 
     /// Get block info by ID
@@ -675,12 +716,12 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self,
         block_id: BlockId,
     ) -> Option<(usize, Option<String>, crate::block::BlockKind)> {
-        self.block_indexes.read().get_block_info(block_id)
+        self.block_indexes.get_block_info(block_id)
     }
 
     /// Get all blocks with their metadata
     pub fn get_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
-        self.block_indexes.read().iter_all_blocks()
+        self.block_indexes.iter_all_blocks()
     }
 
     // ========== Symbol Map APIs ==========

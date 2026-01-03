@@ -9,10 +9,39 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-LLMCC="${LLMCC:-$PROJECT_ROOT/target/release/llmcc}"
+# Try default release path, fall back to x86_64 target path
+if [ -z "$LLMCC" ]; then
+    if [ -x "$PROJECT_ROOT/target/release/llmcc" ]; then
+        LLMCC="$PROJECT_ROOT/target/release/llmcc"
+    elif [ -x "$PROJECT_ROOT/target/x86_64-unknown-linux-gnu/release/llmcc" ]; then
+        LLMCC="$PROJECT_ROOT/target/x86_64-unknown-linux-gnu/release/llmcc"
+    else
+        echo "Error: llmcc not found"
+        echo "Tried: $PROJECT_ROOT/target/release/llmcc"
+        echo "Tried: $PROJECT_ROOT/target/x86_64-unknown-linux-gnu/release/llmcc"
+        echo "Build with: cargo build --release"
+        exit 1
+    fi
+fi
+
+# Get CPU core count
+get_cpu_cores() {
+    if command -v nproc &> /dev/null; then
+        nproc
+    elif command -v lscpu &> /dev/null; then
+        lscpu | grep "^CPU(s):" | awk '{print $2}'
+    else
+        echo "unknown"
+    fi
+}
+
+CPU_CORES=$(get_cpu_cores)
+
 TOP_K=200
-BENCHMARK_FILE="$SCRIPT_DIR/benchmark_results.md"
+BENCHMARK_FILE="$SCRIPT_DIR/benchmark_results_${CPU_CORES}.md"
 BENCHMARK_DIR="$SCRIPT_DIR/benchmark_logs"
+rm -rf "$BENCHMARK_FILE"
+rm -rf "$BENCHMARK_DIR"
 
 # Check llmcc exists
 if [ ! -x "$LLMCC" ]; then
@@ -140,7 +169,7 @@ run_benchmark_pagerank() {
     grep -E "(Parsing total|Total time)" "$log_file" | tail -2 || true
 }
 
-# Count lines of code in a directory (Rust files only)
+# Count lines of code in a directory (Rust files only, excluding comments)
 count_loc() {
     local src_dir=$1
 
@@ -149,13 +178,19 @@ count_loc() {
         return
     fi
 
-    # Count non-empty, non-comment lines in .rs files
-    find "$src_dir" -name '*.rs' -type f -print0 2>/dev/null | \
-        xargs -0 cat 2>/dev/null | \
-        grep -v '^\s*$' | \
-        grep -v '^\s*//' | \
-        wc -l | \
-        tr -d ' '
+    # Use tokei for accurate LOC counting (excludes comments and blanks)
+    if command -v tokei &> /dev/null; then
+        tokei "$src_dir" -t Rust -o json 2>/dev/null | \
+            grep -oP '"code"\s*:\s*\K[0-9]+' | head -1 || echo "0"
+    else
+        # Fallback: count non-empty, non-comment lines in .rs files
+        find "$src_dir" -name '*.rs' -type f -print0 2>/dev/null | \
+            xargs -0 cat 2>/dev/null | \
+            grep -v '^\s*$' | \
+            grep -v '^\s*//' | \
+            wc -l | \
+            tr -d ' '
+    fi
 }
 
 # Count nodes and edges in a DOT file
@@ -176,11 +211,45 @@ count_graph_stats() {
     echo "$nodes $edges"
 }
 
+# Parse timing values from a log file, outputs space-separated values:
+# files parse ir symbols binding graph link total total_num
+parse_timing_from_log() {
+    local log_file=$1
+
+    if [ ! -f "$log_file" ]; then
+        echo "- - - - - - - - 0"
+        return
+    fi
+
+    # Extract timing values using grep directly on file (more efficient than reading entire file)
+    local parse=$(grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local ir=$(grep -oP 'IR building: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local symbols=$(grep -oP 'Symbol collection: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local binding=$(grep -oP 'Symbol binding: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local graph=$(grep -oP 'Graph building: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local link=$(grep -oP 'Linking units: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local total=$(grep -oP 'Total time: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local total_num=$(grep -oP 'Total time: \K[0-9.]+' "$log_file" 2>/dev/null | head -1)
+    local files=$(grep -oP 'Parsing total \K[0-9]+' "$log_file" 2>/dev/null | head -1)
+
+    # Ensure valid defaults
+    [ -z "$parse" ] && parse="-"
+    [ -z "$ir" ] && ir="-"
+    [ -z "$symbols" ] && symbols="-"
+    [ -z "$binding" ] && binding="-"
+    [ -z "$graph" ] && graph="-"
+    [ -z "$link" ] && link="-"
+    [ -z "$total" ] && total="-"
+    [ -z "$total_num" ] && total_num="0"
+    [ -z "$files" ] && files="-"
+
+    echo "$files $parse $ir $symbols $binding $graph $link $total $total_num"
+}
+
 # Extract timing from log file and append to benchmark
 extract_timing() {
     local name=$1
     local log_file=$2
-
     local src_dir=$3
 
     if [ ! -f "$log_file" ]; then
@@ -190,34 +259,15 @@ extract_timing() {
 
     # Count lines of code and format as K (e.g., 92K)
     local loc_raw=$(count_loc "$src_dir")
+    local loc
     if [ "$loc_raw" -ge 1000 ]; then
         loc=$(echo "scale=0; ($loc_raw + 500) / 1000" | bc)K
     else
         loc="$loc_raw"
     fi
-
-    # Join lines and extract timing (log output may have embedded newlines)
-    local log_content=$(tr -d '\n' < "$log_file")
-
-    local files=$(echo "$log_content" | grep -oP 'Parsing total \K[0-9]+' 2>/dev/null | head -1 || echo "")
-    local parse=$(echo "$log_content" | grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
-    local ir=$(echo "$log_content" | grep -oP 'IR building: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
-    local symbols=$(echo "$log_content" | grep -oP 'Symbol collection: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
-    local binding=$(echo "$log_content" | grep -oP 'Symbol binding: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
-    local graph=$(echo "$log_content" | grep -oP 'Graph building: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
-    local link=$(echo "$log_content" | grep -oP 'Linking units: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
-    local total=$(echo "$log_content" | grep -oP 'Total time: \K[0-9.]+s' 2>/dev/null | head -1 || echo "")
-
-    # Handle empty values
-    [ -z "$files" ] && files="-"
     [ -z "$loc" ] && loc="-"
-    [ -z "$parse" ] && parse="-"
-    [ -z "$ir" ] && ir="-"
-    [ -z "$symbols" ] && symbols="-"
-    [ -z "$binding" ] && binding="-"
-    [ -z "$graph" ] && graph="-"
-    [ -z "$link" ] && link="-"
-    [ -z "$total" ] && total="-"
+
+    read files parse ir symbols binding graph link total total_num <<< $(parse_timing_from_log "$log_file")
 
     echo "| $name | $files | $loc | $parse | $ir | $symbols | $binding | $graph | $link | $total |" >> "$BENCHMARK_FILE"
 }
@@ -265,7 +315,6 @@ for entry in "${SORTED_PROJECTS[@]}"; do
     extract_timing "$name" "$BENCHMARK_DIR/${name}_pagerank_depth3.log" "$src_dir"
 done
 
-# Calculate summary statistics
 echo "" >> "$BENCHMARK_FILE"
 echo "## Summary" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
@@ -331,6 +380,93 @@ for entry in "${SORTED_PROJECTS[@]}"; do
         echo "| $name | $full_nodes | $full_edges | $pr_nodes | $pr_edges | $node_reduction | $edge_reduction |" >> "$BENCHMARK_FILE"
     else
         echo "| $name | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+    fi
+done
+
+# Thread scaling benchmark on largest project (databend)
+run_scaling_benchmark() {
+    local name=$1
+    local src_dir=$2
+    local num_threads=$3
+    local log_file="$BENCHMARK_DIR/${name}_scaling_${num_threads}t.log"
+    local dot_file="$BENCHMARK_DIR/${name}_scaling_${num_threads}t.dot"
+
+    RAYON_NUM_THREADS=$num_threads RUST_LOG=info "$LLMCC" -d "$src_dir" \
+        --graph --depth 3 --pagerank-top-k $TOP_K -o "$dot_file" > "$log_file" 2>&1
+
+    echo "$log_file"
+}
+
+extract_scaling_timing() {
+    local num_threads=$1
+    local log_file=$2
+    local baseline_time=$3
+
+    if [ ! -f "$log_file" ]; then
+        echo "| $num_threads | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+        echo "0"
+        return
+    fi
+
+    read files parse ir symbols binding graph link total total_num <<< $(parse_timing_from_log "$log_file")
+
+    # Ensure total_num is a valid number for bc
+    if [ -z "$total_num" ] || ! [[ "$total_num" =~ ^[0-9.]+$ ]]; then
+        total_num="0"
+    fi
+
+    # Calculate speedup vs baseline (1 thread)
+    local speedup="-"
+    if [ -n "$baseline_time" ] && [[ "$baseline_time" =~ ^[0-9.]+$ ]] && [ "$total_num" != "0" ] && [ "$total_num" != "0.00" ]; then
+        speedup=$(echo "scale=2; $baseline_time / $total_num" | bc 2>/dev/null || echo "-")
+        if [ -n "$speedup" ] && [ "$speedup" != "-" ]; then
+            speedup="${speedup}x"
+        else
+            speedup="-"
+        fi
+    fi
+
+    # Print progress to stderr (visible in terminal)
+    echo "$total ($speedup)" >&2
+
+    # Append to benchmark file
+    echo "| $num_threads | $parse | $ir | $symbols | $binding | $graph | $link | $total | $speedup |" >> "$BENCHMARK_FILE"
+
+    # Return only total_num via stdout
+    echo "$total_num"
+}
+
+echo ""
+echo "=== Thread Scaling Benchmark (databend) ==="
+
+echo "" >> "$BENCHMARK_FILE"
+echo "## Thread Scaling (databend, depth=3, top-$TOP_K, $CPU_CORES cores)" >> "$BENCHMARK_FILE"
+echo "" >> "$BENCHMARK_FILE"
+echo "| Threads | Parse | IR Build | Symbols | Binding | Graph | Link | Total | Speedup |" >> "$BENCHMARK_FILE"
+echo "|---------|-------|----------|---------|---------|-------|------|-------|---------|" >> "$BENCHMARK_FILE"
+
+SCALING_PROJECT="databend"
+SCALING_SRC_DIR="${PROJECTS[$SCALING_PROJECT]}"
+
+# Build thread counts dynamically based on available CPU cores
+THREAD_COUNTS=(1)
+for t in 2 4 8 16 24 32 48 64; do
+    if [ "$t" -le "$CPU_CORES" ]; then
+        THREAD_COUNTS+=("$t")
+    fi
+done
+
+baseline_time=""
+
+for threads in "${THREAD_COUNTS[@]}"; do
+    echo -n "  Running with $threads thread(s)... "
+
+    log_file=$(run_scaling_benchmark "$SCALING_PROJECT" "$SCALING_SRC_DIR" "$threads")
+    total_num=$(extract_scaling_timing "$threads" "$log_file" "$baseline_time")
+
+    # Capture baseline time from first run
+    if [ "$threads" -eq 1 ]; then
+        baseline_time="$total_num"
     fi
 done
 

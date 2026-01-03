@@ -138,7 +138,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             return;
         }
 
-        if let Some(symbol) = scopes.lookup_symbol(&ident.name, SYM_KIND_ALL) {
+        if let Some(symbol) = scopes.lookup_symbol(ident.name, SYM_KIND_ALL) {
             ident.set_symbol(symbol);
         }
     }
@@ -160,7 +160,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             return;
         }
 
-        if let Some(symbol) = scopes.lookup_symbol(&ident.name, SYM_KIND_TYPES) {
+        if let Some(symbol) = scopes.lookup_symbol(ident.name, SYM_KIND_TYPES) {
             ident.set_symbol(symbol);
         }
     }
@@ -177,7 +177,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
     ) {
         let ident = node.as_ident().unwrap();
         if let Some(symbol) =
-            scopes.lookup_global(&ident.name, SymKindSet::from_kind(SymKind::Primitive))
+            scopes.lookup_global(ident.name, SymKindSet::from_kind(SymKind::Primitive))
         {
             ident.set_symbol(symbol);
         }
@@ -449,7 +449,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(target_sym) = target_ident.opt_symbol()
         {
             // Look up the impl target type (struct or enum that the trait is implemented for)
-            let target_resolved = scopes.lookup_symbol(&target_ident.name, SYM_KIND_IMPL_TARGETS);
+            let target_resolved = scopes.lookup_symbol(target_ident.name, SYM_KIND_IMPL_TARGETS);
 
             if target_sym.kind() == SymKind::UnresolvedType {
                 // Resolve the type for the impl type now
@@ -491,7 +491,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
                 // If not found here, keep the existing symbol (UnresolvedType from collection)
                 // and let graph phase handle cross-file resolution
                 let trait_sym =
-                    scopes.lookup_symbol(&trait_ident.name, SymKindSet::from_kind(SymKind::Trait));
+                    scopes.lookup_symbol(trait_ident.name, SymKindSet::from_kind(SymKind::Trait));
 
                 if let Some(trait_sym) = trait_sym {
                     // Update the trait identifier's symbol to point to the resolved trait
@@ -557,7 +557,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
         self.visit_children(unit, node, scopes, namespace, parent);
 
         if let Some(ident) = node.find_ident(unit)
-            && let Some(symbol) = scopes.lookup_symbol(&ident.name, SYM_KIND_CALLABLE)
+            && let Some(symbol) = scopes.lookup_symbol(ident.name, SYM_KIND_CALLABLE)
         {
             ident.set_symbol(symbol);
         }
@@ -677,7 +677,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         if let Some(ident) = sn.opt_ident()
             && let Some(symbol) =
-                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::CompositeType))
+                scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::CompositeType))
             && symbol.nested_types().is_none()
         {
             if let Some(array_type_sym) = node.ident_symbol_by_field(unit, LangRust::field_element)
@@ -701,7 +701,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
 
         if let Some(tuple_ident) = sn.opt_ident()
             && let Some(tuple_symbol) = scopes.lookup_symbol(
-                &tuple_ident.name,
+                tuple_ident.name,
                 SymKindSet::from_kind(SymKind::CompositeType),
             )
             && tuple_symbol.nested_types().is_none()
@@ -802,7 +802,7 @@ impl<'tcx> AstVisitorRust<'tcx, BinderScopes<'tcx>> for BinderVisitor<'tcx> {
             && let Some(path_ident) = node.ident_by_field(unit, LangRust::field_path)
             && let Some(path_sym) = path_ident.opt_symbol()
         {
-            if let Some(name_sym) = scopes.lookup_member_symbol(path_sym, &name_ident.name, None) {
+            if let Some(name_sym) = scopes.lookup_member_symbol(path_sym, name_ident.name, None) {
                 name_ident.set_symbol(name_sym);
             }
         }

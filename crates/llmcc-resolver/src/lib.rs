@@ -2,7 +2,7 @@ pub mod binder;
 pub mod collector;
 
 pub use binder::{BinderScopes, bind_symbols_with};
-pub use collector::{CollectorScopes, collect_symbols_with};
+pub use collector::{CollectorScopes, build_and_collect_symbols, collect_symbols_with};
 
 #[derive(Default, Clone, Debug)]
 pub struct ResolverOption {
