@@ -13,6 +13,8 @@ LLMCC="${LLMCC:-$PROJECT_ROOT/target/release/llmcc}"
 TOP_K=200
 BENCHMARK_FILE="$SCRIPT_DIR/benchmark_results.md"
 BENCHMARK_DIR="$SCRIPT_DIR/benchmark_logs"
+rm -rf "$BENCHMARK_FILE"
+rm -rf "$BENCHMARK_DIR"
 
 # Check llmcc exists
 if [ ! -x "$LLMCC" ]; then
@@ -140,7 +142,7 @@ run_benchmark_pagerank() {
     grep -E "(Parsing total|Total time)" "$log_file" | tail -2 || true
 }
 
-# Count lines of code in a directory (Rust files only)
+# Count lines of code in a directory (Rust files only, excluding comments)
 count_loc() {
     local src_dir=$1
 
@@ -149,13 +151,19 @@ count_loc() {
         return
     fi
 
-    # Count non-empty, non-comment lines in .rs files
-    find "$src_dir" -name '*.rs' -type f -print0 2>/dev/null | \
-        xargs -0 cat 2>/dev/null | \
-        grep -v '^\s*$' | \
-        grep -v '^\s*//' | \
-        wc -l | \
-        tr -d ' '
+    # Use tokei for accurate LOC counting (excludes comments and blanks)
+    if command -v tokei &> /dev/null; then
+        tokei "$src_dir" -t Rust -o json 2>/dev/null | \
+            grep -oP '"code"\s*:\s*\K[0-9]+' | head -1 || echo "0"
+    else
+        # Fallback: count non-empty, non-comment lines in .rs files
+        find "$src_dir" -name '*.rs' -type f -print0 2>/dev/null | \
+            xargs -0 cat 2>/dev/null | \
+            grep -v '^\s*$' | \
+            grep -v '^\s*//' | \
+            wc -l | \
+            tr -d ' '
+    fi
 }
 
 # Count nodes and edges in a DOT file
@@ -177,27 +185,31 @@ count_graph_stats() {
 }
 
 # Parse timing values from a log file, outputs space-separated values:
-# parse ir symbols binding graph link total total_num
+# files parse ir symbols binding graph link total total_num
 parse_timing_from_log() {
     local log_file=$1
 
     if [ ! -f "$log_file" ]; then
-        echo "- - - - - - - 0"
+        echo "- - - - - - - - 0"
         return
     fi
 
-    local log_content=$(tr -d '\n' < "$log_file")
+    # Use tail to get last 200 lines - timing info is at the end, avoids reading huge logs
+    local log_tail=$(tail -200 "$log_file" | tr -d '\n')
 
-    local parse=$(echo "$log_content" | grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' 2>/dev/null | head -1 || echo "-")
-    local ir=$(echo "$log_content" | grep -oP 'IR building: \K[0-9.]+s' 2>/dev/null | head -1 || echo "-")
-    local symbols=$(echo "$log_content" | grep -oP 'Symbol collection: \K[0-9.]+s' 2>/dev/null | head -1 || echo "-")
-    local binding=$(echo "$log_content" | grep -oP 'Symbol binding: \K[0-9.]+s' 2>/dev/null | head -1 || echo "-")
-    local graph=$(echo "$log_content" | grep -oP 'Graph building: \K[0-9.]+s' 2>/dev/null | head -1 || echo "-")
-    local link=$(echo "$log_content" | grep -oP 'Linking units: \K[0-9.]+s' 2>/dev/null | head -1 || echo "-")
-    local total=$(echo "$log_content" | grep -oP 'Total time: \K[0-9.]+s' 2>/dev/null | head -1 || echo "-")
-    local total_num=$(echo "$log_content" | grep -oP 'Total time: \K[0-9.]+' 2>/dev/null | head -1 || echo "0")
-    local files=$(echo "$log_content" | grep -oP 'Parsing total \K[0-9]+' 2>/dev/null | head -1 || echo "-")
+    local parse=$(echo "$log_tail" | grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' 2>/dev/null | head -1)
+    local ir=$(echo "$log_tail" | grep -oP 'IR building: \K[0-9.]+s' 2>/dev/null | head -1)
+    local symbols=$(echo "$log_tail" | grep -oP 'Symbol collection: \K[0-9.]+s' 2>/dev/null | head -1)
+    local binding=$(echo "$log_tail" | grep -oP 'Symbol binding: \K[0-9.]+s' 2>/dev/null | head -1)
+    local graph=$(echo "$log_tail" | grep -oP 'Graph building: \K[0-9.]+s' 2>/dev/null | head -1)
+    local link=$(echo "$log_tail" | grep -oP 'Linking units: \K[0-9.]+s' 2>/dev/null | head -1)
+    local total=$(echo "$log_tail" | grep -oP 'Total time: \K[0-9.]+s' 2>/dev/null | head -1)
+    local total_num=$(echo "$log_tail" | grep -oP 'Total time: \K[0-9.]+' 2>/dev/null | head -1)
 
+    # Files count is near the beginning, use head for that
+    local files=$(head -50 "$log_file" | grep -oP 'Parsing total \K[0-9]+' 2>/dev/null | head -1)
+
+    # Ensure valid defaults
     [ -z "$parse" ] && parse="-"
     [ -z "$ir" ] && ir="-"
     [ -z "$symbols" ] && symbols="-"
@@ -205,6 +217,8 @@ parse_timing_from_log() {
     [ -z "$graph" ] && graph="-"
     [ -z "$link" ] && link="-"
     [ -z "$total" ] && total="-"
+    [ -z "$total_num" ] && total_num="0"
+    [ -z "$files" ] && files="-"
 
     echo "$files $parse $ir $symbols $binding $graph $link $total $total_num"
 }
@@ -368,21 +382,35 @@ extract_scaling_timing() {
 
     if [ ! -f "$log_file" ]; then
         echo "| $num_threads | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+        echo "0"
         return
     fi
 
     read files parse ir symbols binding graph link total total_num <<< $(parse_timing_from_log "$log_file")
 
-    # Calculate speedup vs baseline (1 thread)
-    local speedup="-"
-    if [ -n "$baseline_time" ] && [ "$total_num" != "0" ]; then
-        speedup=$(echo "scale=2; $baseline_time / $total_num" | bc)x
+    # Ensure total_num is a valid number for bc
+    if [ -z "$total_num" ] || ! [[ "$total_num" =~ ^[0-9.]+$ ]]; then
+        total_num="0"
     fi
 
-    echo "$total ($speedup)"
+    # Calculate speedup vs baseline (1 thread)
+    local speedup="-"
+    if [ -n "$baseline_time" ] && [[ "$baseline_time" =~ ^[0-9.]+$ ]] && [ "$total_num" != "0" ] && [ "$total_num" != "0.00" ]; then
+        speedup=$(echo "scale=2; $baseline_time / $total_num" | bc 2>/dev/null || echo "-")
+        if [ -n "$speedup" ] && [ "$speedup" != "-" ]; then
+            speedup="${speedup}x"
+        else
+            speedup="-"
+        fi
+    fi
+
+    # Print progress to stderr (visible in terminal)
+    echo "$total ($speedup)" >&2
+
+    # Append to benchmark file
     echo "| $num_threads | $parse | $ir | $symbols | $binding | $graph | $link | $total | $speedup |" >> "$BENCHMARK_FILE"
 
-    # Return total_num for baseline capture
+    # Return only total_num via stdout
     echo "$total_num"
 }
 

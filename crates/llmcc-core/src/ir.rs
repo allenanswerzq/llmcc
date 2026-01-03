@@ -460,7 +460,7 @@ pub struct HirBase {
     pub end_byte: usize,
     pub kind: HirKind,
     pub field_id: u16,
-    pub children: Vec<HirId>,
+    pub children: SmallVec<[HirId; 4]>,
 }
 
 impl HirBase {
@@ -544,7 +544,7 @@ impl<'hir> HirScope<'hir> {
     /// Get human-readable name (identifier name or "unamed_scope")
     pub fn owner_name(&self) -> String {
         if let Some(id) = *self.ident.read() {
-            id.name.clone()
+            id.name.to_string()
         } else {
             "unamed_scope".to_string()
         }
@@ -598,14 +598,14 @@ impl<'hir> Clone for HirScope<'hir> {
 /// Identifiers are primary targets for symbol collection and resolution.
 pub struct HirIdent<'hir> {
     pub base: HirBase,
-    pub name: String,
+    pub name: &'hir str,
     pub symbol: AtomicPtr<Symbol>,
     _phantom: std::marker::PhantomData<&'hir ()>,
 }
 
 impl<'hir> HirIdent<'hir> {
     /// Create new identifier node with name
-    pub fn new(base: HirBase, name: String) -> Self {
+    pub fn new(base: HirBase, name: &'hir str) -> Self {
         Self {
             base,
             name,

@@ -348,7 +348,8 @@ impl<'tcx> AstVisitorRust<'tcx, CollectorScopes<'tcx>> for CollectorVisitor<'tcx
             && let Some(file_sym) = scopes.lookup_or_insert(&file_name, node, SymKind::File)
         {
             tracing::trace!("insert file symbol '{}' in current scope", file_name);
-            let ident = unit.cc.alloc_file_ident(next_hir_id(), &file_name, file_sym);
+            let arena_name = unit.cc.arena().alloc_str(&file_name);
+            let ident = unit.cc.alloc_file_ident(next_hir_id(), arena_name, file_sym);
             ident.set_symbol(file_sym);
             sn.set_ident(ident);
 

@@ -308,7 +308,7 @@ fn infer_scoped_identifier<'tcx>(
         return None;
     }
 
-    let qualified_names: Vec<&str> = idents.iter().map(|i| i.name.as_str()).collect();
+    let qualified_names: Vec<&str> = idents.iter().map(|i| i.name).collect();
 
     tracing::trace!("resolving scoped ident {:?}", qualified_names);
 

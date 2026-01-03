@@ -1,3 +1,4 @@
+use smallvec::SmallVec;
 use parking_lot::RwLock;
 use rayon::prelude::*;
 use std::cmp::Ordering as CmpOrdering;
@@ -551,7 +552,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     pub fn alloc_file_ident(
         &'tcx self,
         id: HirId,
-        name: &str,
+        name: &'tcx str,
         symbol: &'tcx Symbol,
     ) -> &'tcx HirIdent<'tcx> {
         let base = HirBase {
@@ -562,9 +563,9 @@ impl<'tcx> CompileCtxt<'tcx> {
             end_byte: 0,
             kind: HirKind::Identifier,
             field_id: u16::MAX,
-            children: Vec::new(),
+            children: SmallVec::new(),
         };
-        let ident = self.arena.alloc(HirIdent::new(base, name.to_string()));
+        let ident = self.arena.alloc(HirIdent::new(base, name));
         ident.set_symbol(symbol);
         ident
     }
@@ -641,7 +642,7 @@ impl<'tcx> CompileCtxt<'tcx> {
     /// Get all blocks by name
     pub fn find_blocks_by_name(
         &self,
-        name: &str,
+        name: &'tcx str,
     ) -> Vec<(usize, crate::block::BlockKind, BlockId)> {
         self.block_indexes.read().find_by_name(name)
     }
