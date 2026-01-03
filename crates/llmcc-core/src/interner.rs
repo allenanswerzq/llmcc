@@ -28,7 +28,15 @@ impl InternPoolInner {
     where
         S: AsRef<str>,
     {
-        self.interner.write().get_or_intern(value.as_ref())
+        {
+            let s = value.as_ref();
+            // Fast path: check if already interned with read lock
+            if let Some(symbol) = self.interner.read().get(s) {
+                return symbol;
+            }
+            // Slow path: take write lock and intern
+            self.interner.write().get_or_intern(s)
+        }
     }
 
     /// Intern multiple strings and return a vector of their symbols.

@@ -315,3 +315,131 @@ pub fn collect_symbols_with<'a, L: LanguageTrait>(
     tracing::info!("symbol collection complete");
     globals
 }
+
+/// Fused IR build + symbol collection for better parallel efficiency.
+///
+/// This eliminates the gap between IR build and collection phases by doing both
+/// in a single parallel pass. While the straggler file is still doing IR build,
+/// other threads can finish both IR build AND collection for their files.
+pub fn build_and_collect_symbols<'a, L: LanguageTrait>(
+    cc: &'a CompileCtxt<'a>,
+    ir_config: llmcc_core::ir_builder::IrBuildOption,
+    resolver_config: &ResolverOption,
+) -> Result<&'a Scope<'a>, llmcc_core::DynError> {
+    use llmcc_core::ir_builder::{build_llmcc_ir_inner, reset_ir_build_counters};
+    use std::sync::atomic::Ordering;
+
+    let total_start = Instant::now();
+    reset_ir_build_counters();
+
+    tracing::info!(
+        "starting fused IR build + symbol collection for {} units",
+        cc.files.len()
+    );
+
+    // Initialize scope stack for collection
+    let init_start = Instant::now();
+    let scope_stack = L::collect_init(cc);
+    let scope_stack_clone = scope_stack.clone();
+    let init_time = init_start.elapsed();
+
+    // Atomic counters for timing
+    let ir_build_ns = AtomicU64::new(0);
+    let collect_ns = AtomicU64::new(0);
+
+    // Fused per-file operation: IR build then collect
+    let build_and_collect_unit = |i: usize| -> Result<&'a Scope<'a>, llmcc_core::DynError> {
+        // Phase 1: IR Build
+        let ir_start = Instant::now();
+
+        let file_path = cc.file_path(i).map(|p| p.to_string());
+        let file_bytes = cc.files[i].content();
+        let parse_tree = cc
+            .get_parse_tree(i)
+            .ok_or_else(|| format!("No parse tree for unit {}", i))?;
+
+        let file_root_id =
+            build_llmcc_ir_inner::<L>(file_path, file_bytes, parse_tree, &cc.arena, ir_config)?;
+
+        // Register the file root ID immediately so collection can use it
+        cc.set_file_root_id(i, file_root_id);
+
+        ir_build_ns.fetch_add(ir_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
+        // Phase 2: Collection (immediately after IR build for this file)
+        let collect_start = Instant::now();
+
+        let unit_scope_stack = scope_stack_clone.clone();
+        let unit = cc.compile_unit(i);
+
+        tracing::debug!(
+            "fused build+collect for unit {} ({})",
+            i,
+            unit.file_path().unwrap_or("unknown")
+        );
+
+        let node = unit.hir_node(file_root_id);
+        let unit_globals = L::collect_symbols(unit, node, unit_scope_stack, resolver_config);
+
+        collect_ns.fetch_add(collect_start.elapsed().as_nanos() as u64, Ordering::Relaxed);
+
+        if resolver_config.print_ir {
+            use llmcc_core::printer::print_llmcc_ir;
+            tracing::debug!("=== IR for unit {} ===", i);
+            let _ = print_llmcc_ir(unit);
+        }
+
+        Ok(unit_globals)
+    };
+
+    // Run fused operation in parallel
+    let parallel_start = Instant::now();
+    let unit_globals_vec: Vec<Result<&'a Scope<'a>, llmcc_core::DynError>> =
+        if resolver_config.sequential {
+            tracing::debug!("running fused build+collect sequentially");
+            (0..cc.files.len()).map(build_and_collect_unit).collect()
+        } else {
+            tracing::debug!("running fused build+collect in parallel");
+            (0..cc.files.len())
+                .into_par_iter()
+                .map(build_and_collect_unit)
+                .collect()
+        };
+    let parallel_time = parallel_start.elapsed();
+
+    // Unwrap results
+    let unit_globals_vec: Vec<&'a Scope<'a>> = unit_globals_vec
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let globals = scope_stack.globals();
+
+    // Merge scopes (sequential, ~10-15ms)
+    let merge_start = Instant::now();
+    tracing::debug!(
+        "merging {} unit scopes into global scope",
+        unit_globals_vec.len()
+    );
+    for (i, unit_globals) in unit_globals_vec.iter().enumerate() {
+        tracing::trace!("merging unit {} global scope", i);
+        cc.merge_two_scopes(globals, unit_globals);
+    }
+    let merge_time = merge_start.elapsed();
+
+    let total_time = total_start.elapsed();
+    let ir_ms = ir_build_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+    let collect_ms = collect_ns.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+
+    tracing::info!(
+        "fused build+collect breakdown: init={:.2}ms, parallel={:.2}ms (ir_cpu={:.2}ms, collect_cpu={:.2}ms), merge={:.2}ms, total={:.2}ms",
+        init_time.as_secs_f64() * 1000.0,
+        parallel_time.as_secs_f64() * 1000.0,
+        ir_ms,
+        collect_ms,
+        merge_time.as_secs_f64() * 1000.0,
+        total_time.as_secs_f64() * 1000.0,
+    );
+
+    tracing::info!("fused build+collect complete");
+    Ok(globals)
+}

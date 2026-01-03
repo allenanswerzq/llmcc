@@ -1931,7 +1931,7 @@ fn find_first_ident_name<'a>(
     if node.is_kind(HirKind::Identifier)
         && let Some(ident) = node.as_ident()
     {
-        return Some(ident.name.clone());
+        return Some(ident.name.to_string());
     }
 
     // Search through children
@@ -1940,7 +1940,7 @@ fn find_first_ident_name<'a>(
             if child_node.is_kind(HirKind::Identifier)
                 && let Some(ident) = child_node.as_ident()
             {
-                return Some(ident.name.clone());
+                return Some(ident.name.to_string());
             }
             // Recurse into internal nodes
             if child_node.is_kind(HirKind::Internal)

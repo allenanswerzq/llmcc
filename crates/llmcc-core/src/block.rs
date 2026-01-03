@@ -404,7 +404,7 @@ impl<'blk> BlockBase<'blk> {
         self.node
             .as_scope()
             .and_then(|scope| *scope.ident.read())
-            .map(|ident| ident.name.as_str())
+            .map(|ident| ident.name)
     }
 
     pub fn add_child(&self, child_id: BlockId) {
@@ -1087,7 +1087,7 @@ impl<'blk> BlockField<'blk> {
                 // For field nodes, the identifier child has the name
                 node.as_scope()
                     .and_then(|scope| scope.opt_ident())
-                    .map(|ident| ident.name.clone())
+                    .map(|ident| ident.name.to_string())
             })
             .unwrap_or_default();
         Self {
@@ -1171,7 +1171,7 @@ impl<'blk> BlockParameter<'blk> {
                 // For parameter nodes, the identifier child has the name
                 node.as_scope()
                     .and_then(|scope| scope.opt_ident())
-                    .map(|ident| ident.name.clone())
+                    .map(|ident| ident.name.to_string())
             })
             .unwrap_or_default();
         Self {

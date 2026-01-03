@@ -2,6 +2,7 @@
 //!
 //! Uses per-unit arenas for parallel building, then merges results into global context.
 //! This avoids locks during parallel builds and ensures deterministic ID allocation.
+use smallvec::SmallVec;
 use std::marker::PhantomData;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::time::Instant;
@@ -104,7 +105,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         let kind_id = node.kind_id();
         let kind = Language::hir_kind(kind_id);
         let children = self.collect_children(node, id);
-        let child_ids: Vec<HirId> = children.iter().map(|n| n.id()).collect();
+        let child_ids: SmallVec<[HirId; 4]> = children.iter().map(|n| n.id()).collect();
         let base = self.make_base(id, parent, node, kind, child_ids);
 
         let hir_node = match kind {
@@ -159,8 +160,12 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
 
     /// Collect all valid child nodes from a parse node.
     /// Filters out test code (items with #[test] or #[cfg(test)] attributes).
-    fn collect_children(&self, node: &dyn ParseNode, parent_id: HirId) -> Vec<HirNode<'unit>> {
-        let mut child_nodes = Vec::new();
+    fn collect_children(
+        &self,
+        node: &dyn ParseNode,
+        parent_id: HirId,
+    ) -> SmallVec<[HirNode<'unit>; 8]> {
+        let mut child_nodes = SmallVec::new();
         let mut skip_next = false;
 
         for i in 0..node.child_count() {
@@ -193,7 +198,7 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
         parent: Option<HirId>,
         node: &dyn ParseNode,
         kind: HirKind,
-        children: Vec<HirId>,
+        children: SmallVec<[HirId; 4]>,
     ) -> HirBase {
         let kind_id = node.kind_id();
         let start_byte = node.start_byte();
@@ -212,24 +217,27 @@ impl<'unit, Language: LanguageTrait> HirBuilder<'unit, Language> {
     }
 
     /// Extract text content from source for a text-type node.
-    ///
-    /// Handles both valid UTF-8 and lossy conversions gracefully.
-    fn get_text(&self, base: &HirBase) -> String {
+    /// Allocates the string in the arena to avoid heap allocation.
+    fn get_text(&self, base: &HirBase) -> &'unit str {
         let start = base.start_byte;
         let end = base.end_byte;
         if end > start && end <= self.file_bytes.len() {
             match std::str::from_utf8(&self.file_bytes[start..end]) {
-                Ok(text) => text.to_owned(),
-                Err(_) => String::from_utf8_lossy(&self.file_bytes[start..end]).into_owned(),
+                Ok(text) => self.arena.alloc_str(text),
+                Err(_) => {
+                    let lossy = String::from_utf8_lossy(&self.file_bytes[start..end]);
+                    self.arena.alloc_str(&lossy)
+                }
             }
         } else {
-            String::new()
+            ""
         }
     }
 }
-
 /// Build IR for a single file with language-specific handling.
-fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(
+/// Build IR for a single file (inner implementation).
+/// This is public for use by fused build+collect in the resolver.
+pub fn build_llmcc_ir_inner<'unit, L: LanguageTrait>(
     file_path: Option<String>,
     file_bytes: &'unit [u8],
     parse_tree: &'unit dyn ParseTree,

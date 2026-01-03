@@ -48,7 +48,7 @@ macro_rules! declare_arena {
                 Self {
                     herd: bumpalo_herd::Herd::new(),
                     // Use 256 shards to reduce contention at high thread counts
-                    $( $field: dashmap::DashMap::new(), )*
+                    $( $field: dashmap::DashMap::with_hasher_and_shard_amount(std::hash::RandomState::new(), 256), )*
                 }
             }
 
@@ -57,7 +57,7 @@ macro_rules! declare_arena {
             pub fn new_with_capacity(cap: usize) -> Self {
                 Self {
                     herd: bumpalo_herd::Herd::new(),
-                    $( $field: dashmap::DashMap::with_capacity(cap), )*
+                    $( $field: dashmap::DashMap::with_capacity_and_hasher_and_shard_amount(cap, std::hash::RandomState::new(), 256), )*
                 }
             }
 
@@ -128,6 +128,40 @@ macro_rules! declare_arena {
 
                     let (_, member) = borrow.as_mut().unwrap();
                     member.alloc(value)
+                })
+            }
+
+            /// Allocate a string in the thread-local bump allocator.
+            /// Returns a reference to the arena-allocated string, avoiding heap allocation.
+            #[inline]
+            pub fn alloc_str(&self, src: &str) -> &str {
+                use std::mem::ManuallyDrop;
+
+                thread_local! {
+                    static CACHED_STR: std::cell::RefCell<Option<(usize, ManuallyDrop<bumpalo_herd::Member<'static>>)>> =
+                        const { std::cell::RefCell::new(None) };
+                }
+
+                let herd_ptr = &self.herd as *const _ as usize;
+
+                CACHED_STR.with(|cell| {
+                    let mut borrow = cell.borrow_mut();
+
+                    let need_new = match &*borrow {
+                        Some((cached_ptr, _)) => *cached_ptr != herd_ptr,
+                        None => true,
+                    };
+
+                    if need_new {
+                        let member = self.herd.get();
+                        let static_member = unsafe {
+                            std::mem::transmute::<bumpalo_herd::Member<'_>, bumpalo_herd::Member<'static>>(member)
+                        };
+                        *borrow = Some((herd_ptr, ManuallyDrop::new(static_member)));
+                    }
+
+                    let (_, member) = borrow.as_mut().unwrap();
+                    member.alloc_str(src)
                 })
             }
 

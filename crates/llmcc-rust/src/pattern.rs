@@ -81,7 +81,7 @@ fn assign_type_to_ident<'tcx>(
         Some(sym) => sym,
         None => {
             let resolved =
-                scopes.lookup_symbol(&ident.name, SymKindSet::from_kind(SymKind::Variable));
+                scopes.lookup_symbol(ident.name, SymKindSet::from_kind(SymKind::Variable));
             if let Some(sym) = resolved {
                 ident.set_symbol(sym);
                 sym
@@ -195,7 +195,7 @@ fn assign_type_to_struct_pattern<'tcx>(
                     // Try to find matching field in struct scope
                     if let Some(field_sym) = scopes.lookup_member_symbols(
                         struct_symbol,
-                        &field_name_ident.name,
+                        field_name_ident.name,
                         SymKindSet::from_kind(SymKind::Field),
                     ) {
                         let field_type = field_sym
@@ -215,7 +215,7 @@ fn assign_type_to_struct_pattern<'tcx>(
                                 if binding_sym.kind() == SymKind::Variable {
                                     binding_sym.set_type_of(field_type.id());
                                 } else if let Some(var_sym) = scopes.lookup_symbol(
-                                    &field_name_ident.name,
+                                    field_name_ident.name,
                                     SymKindSet::from_kind(SymKind::Variable),
                                 ) {
                                     field_name_ident.set_symbol(var_sym);
@@ -227,7 +227,7 @@ fn assign_type_to_struct_pattern<'tcx>(
                                     );
                                 }
                             } else if let Some(var_sym) = scopes.lookup_symbol(
-                                &field_name_ident.name,
+                                field_name_ident.name,
                                 SymKindSet::from_kind(SymKind::Variable),
                             ) {
                                 field_name_ident.set_symbol(var_sym);

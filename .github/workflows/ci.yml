@@ -65,3 +65,16 @@ jobs:
         run: cargo doc --no-deps --workspace
         env:
           PYO3_PYTHON: ${{ env.PYO3_PYTHON }}
+
+  llmcc-test:
+    name: LLMCC Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+
+      - name: Run llmcc-test suite
+        run: cargo run -p llmcc-test -- run-all

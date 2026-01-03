@@ -249,7 +249,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut stmt = BlockConst::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children
                 if let Some(ident) = node.find_ident(&self.unit) {
-                    stmt.name = ident.name.clone();
+                    stmt.name = ident.name.to_string();
                 }
                 // Resolve and set type info
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
@@ -293,7 +293,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockField::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children using ir.rs find_ident
                 if let Some(ident) = node.find_ident(&self.unit) {
-                    block.name = ident.name.clone();
+                    block.name = ident.name.to_string();
                 }
                 // Resolve and set type info
                 let (type_name, type_ref) = self.resolve_type_info(symbol);
@@ -305,7 +305,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockParameter::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children using ir.rs find_ident
                 if let Some(ident) = node.find_ident(&self.unit) {
-                    block.name = ident.name.clone();
+                    block.name = ident.name.to_string();
                 } else if let Some(text) = node.find_text(&self.unit) {
                     // Fallback: look for text nodes like "self" keyword
                     block.name = text.to_string();
@@ -327,7 +327,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 let mut block = BlockAlias::new_with_symbol(id, node, parent, children, symbol);
                 // Find identifier name from children
                 if let Some(ident) = node.find_ident(&self.unit) {
-                    block.name = ident.name.clone();
+                    block.name = ident.name.to_string();
                 }
                 let block_ref = self.unit.cc.block_arena.alloc_with_id(id.0 as usize, block);
                 BasicBlock::Alias(block_ref)
@@ -336,7 +336,7 @@ impl<'tcx, Language: LanguageTrait> GraphBuilder<'tcx, Language> {
                 // Get module name from identifier
                 let name = node
                     .find_ident(&self.unit)
-                    .map(|ident| ident.name.clone())
+                    .map(|ident| ident.name.to_string())
                     .unwrap_or_default();
                 // Inline modules have children (the module body), file modules don't
                 let is_inline = !children.is_empty();

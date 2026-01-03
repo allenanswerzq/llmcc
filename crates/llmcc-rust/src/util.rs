@@ -1,31 +1,67 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
+use std::sync::OnceLock;
+
+use parking_lot::RwLock;
 use toml::Table;
 
 // Note: Test attribute filtering is now done at the HIR building stage
 // in ir_builder.rs via LanguageTrait::is_test_attribute(), implemented
 // in token.rs for the Rust language.
 
+/// Global cache for Cargo.toml -> crate name mappings.
+/// Key: Cargo.toml directory path, Value: parsed crate name (or None if parsing failed)
+static CARGO_TOML_CACHE: OnceLock<RwLock<HashMap<PathBuf, Option<String>>>> = OnceLock::new();
+
+fn get_cache() -> &'static RwLock<HashMap<PathBuf, Option<String>>> {
+    CARGO_TOML_CACHE.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+/// Parse crate name from a Cargo.toml file at the given directory.
+/// Returns None if parsing fails or package.name is not found.
+fn parse_cargo_toml(cargo_dir: &Path) -> Option<String> {
+    let cargo_path = cargo_dir.join("Cargo.toml");
+    if let Ok(content) = fs::read_to_string(&cargo_path)
+        && let Ok(table) = content.parse::<Table>()
+    {
+        // Get the package name from [package] section
+        if let Some(package) = table.get("package")
+            && let Some(name) = package.get("name")
+            && let Some(name_str) = name.as_str()
+        {
+            return Some(name_str.to_string());
+        }
+    }
+    None
+}
+
 /// Parse the crate name from Cargo.toml by walking up the directory tree.
+/// Results are cached to avoid repeated file I/O and TOML parsing.
 pub fn parse_crate_name(file_path: &str) -> Option<String> {
     let mut dir = Path::new(file_path).parent();
+
     while let Some(current_dir) = dir {
         let cargo_path = current_dir.join("Cargo.toml");
         if cargo_path.exists() {
-            // Try to read and parse the Cargo.toml file using toml library
-            if let Ok(content) = fs::read_to_string(&cargo_path)
-                && let Ok(table) = content.parse::<Table>()
+            let dir_path = current_dir.to_path_buf();
+
+            // Fast path: check read lock first
             {
-                // Get the package name from [package] section
-                if let Some(package) = table.get("package")
-                    && let Some(name) = package.get("name")
-                    && let Some(name_str) = name.as_str()
-                {
-                    return Some(name_str.to_string());
+                let cache = get_cache().read();
+                if let Some(cached) = cache.get(&dir_path) {
+                    return cached.clone();
                 }
             }
-            // If we found Cargo.toml but couldn't parse the name, return None
-            return None;
+
+            // Slow path: parse and cache with write lock
+            let crate_name = parse_cargo_toml(current_dir);
+            {
+                let mut cache = get_cache().write();
+                cache.insert(dir_path, crate_name.clone());
+            }
+            return crate_name;
         }
         dir = current_dir.parent();
     }

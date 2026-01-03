@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use anyhow::Result;
 use clap::ArgGroup;
 use clap::Parser;
@@ -79,6 +81,8 @@ pub struct Cli {
 }
 
 pub fn run(args: Cli) -> Result<()> {
+    let total_start = Instant::now();
+
     // Initialize tracing subscriber for logging
     if std::env::var("RUST_LOG").is_ok() {
         tracing_subscriber::fmt()
@@ -113,6 +117,8 @@ pub fn run(args: Cli) -> Result<()> {
             println!("{output}");
         }
     }
+
+    tracing::info!("Total time: {:.2}s", total_start.elapsed().as_secs_f64());
     Ok(())
 }
 
