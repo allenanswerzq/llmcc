@@ -225,10 +225,9 @@ impl<'tcx> CompileUnit<'tcx> {
         // Allocate block into the Arena's DashMap using BlockId as key
         self.cc.block_arena.alloc_with_id(id.0 as usize, block);
 
-        // Register the block in the index maps
+        // Register the block in the index maps (now concurrent-safe)
         self.cc
             .block_indexes
-            .write()
             .insert_block(id, block_name, block_kind, self.index);
     }
 }
@@ -292,7 +291,8 @@ pub struct CompileCtxt<'tcx> {
     pub related_map: BlockRelationMap,
 
     /// Index maps for efficient block lookups by name, kind, unit, and id
-    pub block_indexes: RwLock<BlockIndexMaps>,
+    /// Uses DashMap internally for concurrent access
+    pub block_indexes: BlockIndexMaps,
 
     /// Metrics collected while building the compilation context
     pub build_metrics: BuildMetrics,
@@ -371,7 +371,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
             related_map: BlockRelationMap::default(),
-            block_indexes: RwLock::new(BlockIndexMaps::new()),
+            block_indexes: BlockIndexMaps::new(),
             build_metrics: metrics,
         })
     }
@@ -417,7 +417,7 @@ impl<'tcx> CompileCtxt<'tcx> {
             hir_root_ids: RwLock::new(vec![None; count]),
             block_arena: BlockArena::default(),
             related_map: BlockRelationMap::default(),
-            block_indexes: RwLock::new(BlockIndexMaps::new()),
+            block_indexes: BlockIndexMaps::new(),
             build_metrics: metrics,
         })
     }
@@ -644,7 +644,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self,
         name: &'tcx str,
     ) -> Vec<(usize, crate::block::BlockKind, BlockId)> {
-        self.block_indexes.read().find_by_name(name)
+        self.block_indexes.find_by_name(name)
     }
 
     /// Get all blocks by kind
@@ -652,7 +652,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self,
         kind: crate::block::BlockKind,
     ) -> Vec<(usize, Option<String>, BlockId)> {
-        self.block_indexes.read().find_by_kind(kind)
+        self.block_indexes.find_by_kind(kind)
     }
 
     /// Get blocks in a specific unit
@@ -660,7 +660,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self,
         unit_index: usize,
     ) -> Vec<(Option<String>, crate::block::BlockKind, BlockId)> {
-        self.block_indexes.read().find_by_unit(unit_index)
+        self.block_indexes.find_by_unit(unit_index)
     }
 
     /// Get blocks of a specific kind in a specific unit
@@ -669,9 +669,7 @@ impl<'tcx> CompileCtxt<'tcx> {
         kind: crate::block::BlockKind,
         unit_index: usize,
     ) -> Vec<BlockId> {
-        self.block_indexes
-            .read()
-            .find_by_kind_and_unit(kind, unit_index)
+        self.block_indexes.find_by_kind_and_unit(kind, unit_index)
     }
 
     /// Get block info by ID
@@ -679,12 +677,12 @@ impl<'tcx> CompileCtxt<'tcx> {
         &self,
         block_id: BlockId,
     ) -> Option<(usize, Option<String>, crate::block::BlockKind)> {
-        self.block_indexes.read().get_block_info(block_id)
+        self.block_indexes.get_block_info(block_id)
     }
 
     /// Get all blocks with their metadata
     pub fn get_all_blocks(&self) -> Vec<(BlockId, usize, Option<String>, crate::block::BlockKind)> {
-        self.block_indexes.read().iter_all_blocks()
+        self.block_indexes.iter_all_blocks()
     }
 
     // ========== Symbol Map APIs ==========

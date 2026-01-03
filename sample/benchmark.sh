@@ -194,20 +194,16 @@ parse_timing_from_log() {
         return
     fi
 
-    # Use tail to get last 200 lines - timing info is at the end, avoids reading huge logs
-    local log_tail=$(tail -200 "$log_file" | tr -d '\n')
-
-    local parse=$(echo "$log_tail" | grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' 2>/dev/null | head -1)
-    local ir=$(echo "$log_tail" | grep -oP 'IR building: \K[0-9.]+s' 2>/dev/null | head -1)
-    local symbols=$(echo "$log_tail" | grep -oP 'Symbol collection: \K[0-9.]+s' 2>/dev/null | head -1)
-    local binding=$(echo "$log_tail" | grep -oP 'Symbol binding: \K[0-9.]+s' 2>/dev/null | head -1)
-    local graph=$(echo "$log_tail" | grep -oP 'Graph building: \K[0-9.]+s' 2>/dev/null | head -1)
-    local link=$(echo "$log_tail" | grep -oP 'Linking units: \K[0-9.]+s' 2>/dev/null | head -1)
-    local total=$(echo "$log_tail" | grep -oP 'Total time: \K[0-9.]+s' 2>/dev/null | head -1)
-    local total_num=$(echo "$log_tail" | grep -oP 'Total time: \K[0-9.]+' 2>/dev/null | head -1)
-
-    # Files count is near the beginning, use head for that
-    local files=$(head -50 "$log_file" | grep -oP 'Parsing total \K[0-9]+' 2>/dev/null | head -1)
+    # Extract timing values using grep directly on file (more efficient than reading entire file)
+    local parse=$(grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local ir=$(grep -oP 'IR building: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local symbols=$(grep -oP 'Symbol collection: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local binding=$(grep -oP 'Symbol binding: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local graph=$(grep -oP 'Graph building: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local link=$(grep -oP 'Linking units: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local total=$(grep -oP 'Total time: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    local total_num=$(grep -oP 'Total time: \K[0-9.]+' "$log_file" 2>/dev/null | head -1)
+    local files=$(grep -oP 'Parsing total \K[0-9]+' "$log_file" 2>/dev/null | head -1)
 
     # Ensure valid defaults
     [ -z "$parse" ] && parse="-"
