@@ -55,26 +55,8 @@ echo "Checking sample repositories..."
 "$SCRIPT_DIR/fetch.sh"
 echo ""
 
-# Projects to benchmark: name -> source directory
-declare -A PROJECTS=(
-    # Core ecosystem
-    ["ripgrep"]="$SCRIPT_DIR/repos/ripgrep"
-    ["tokio"]="$SCRIPT_DIR/repos/tokio"
-    ["serde"]="$SCRIPT_DIR/repos/serde"
-    ["clap"]="$SCRIPT_DIR/repos/clap"
-    ["axum"]="$SCRIPT_DIR/repos/axum"
-    ["ruff"]="$SCRIPT_DIR/repos/ruff"
-    ["codex"]="$SCRIPT_DIR/repos/codex"
-    ["llmcc"]="$SCRIPT_DIR/repos/llmcc"
-    # Database & data infrastructure
-    ["lancedb"]="$SCRIPT_DIR/repos/lancedb"
-    ["lance"]="$SCRIPT_DIR/repos/lance"
-    ["opendal"]="$SCRIPT_DIR/repos/opendal"
-    ["risingwave"]="$SCRIPT_DIR/repos/risingwave"
-    ["databend"]="$SCRIPT_DIR/repos/databend"
-    ["datafusion"]="$SCRIPT_DIR/repos/datafusion"
-    ["qdrant"]="$SCRIPT_DIR/repos/qdrant"
-)
+# Load shared project definitions
+source "$SCRIPT_DIR/projects.sh"
 
 # Create benchmark logs directory
 mkdir -p "$BENCHMARK_DIR"
@@ -146,8 +128,8 @@ run_benchmark() {
 
     echo "  Running depth=3 benchmark..."
 
-    # Run with timing enabled (RUST_LOG=info captures timing info)
-    RUST_LOG=info "$LLMCC" -d "$src_dir" --graph --depth 3 -o "$dot_file" > "$log_file" 2>&1
+    # Run with timing enabled (suppress warnings to reduce noise)
+    RUST_LOG=info,llmcc_resolver=error "$LLMCC" -d "$src_dir" --graph --depth 3 -o "$dot_file" > "$log_file" 2>&1
 
     # Show summary on console
     grep -E "(Parsing total|Total time)" "$log_file" | tail -2 || true
@@ -163,7 +145,7 @@ run_benchmark_pagerank() {
     echo "  Running depth=3 benchmark with PageRank top-$TOP_K..."
 
     # Run with timing enabled and PageRank filtering
-    RUST_LOG=info "$LLMCC" -d "$src_dir" --graph --depth 3 --pagerank-top-k $TOP_K -o "$dot_file" > "$log_file" 2>&1
+    RUST_LOG=info,llmcc_resolver=error "$LLMCC" -d "$src_dir" --graph --depth 3 --pagerank-top-k $TOP_K -o "$dot_file" > "$log_file" 2>&1
 
     # Show summary on console
     grep -E "(Parsing total|Total time)" "$log_file" | tail -2 || true
@@ -212,19 +194,28 @@ count_graph_stats() {
 }
 
 # Parse timing values from a log file, outputs space-separated values:
-# files parse ir symbols binding graph link total total_num
+# files parse ir_symbols binding graph link total total_num
 parse_timing_from_log() {
     local log_file=$1
 
     if [ ! -f "$log_file" ]; then
-        echo "- - - - - - - - 0"
+        echo "- - - - - - - 0"
         return
     fi
 
     # Extract timing values using grep directly on file (more efficient than reading entire file)
     local parse=$(grep -oP 'Parsing & tree-sitter: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
-    local ir=$(grep -oP 'IR building: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
-    local symbols=$(grep -oP 'Symbol collection: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    # Try fused IR+symbols first, then fall back to separate timings and sum them
+    local ir_symbols=$(grep -oP 'IR build \+ Symbol collection: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
+    if [ -z "$ir_symbols" ]; then
+        # Fall back to separate timings (legacy format)
+        local ir=$(grep -oP 'IR building: \K[0-9.]+' "$log_file" 2>/dev/null | head -1)
+        local symbols=$(grep -oP 'Symbol collection: \K[0-9.]+' "$log_file" 2>/dev/null | head -1)
+        if [ -n "$ir" ] && [ -n "$symbols" ]; then
+            local sum=$(echo "$ir + $symbols" | bc)
+            ir_symbols="${sum}s"
+        fi
+    fi
     local binding=$(grep -oP 'Symbol binding: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
     local graph=$(grep -oP 'Graph building: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
     local link=$(grep -oP 'Linking units: \K[0-9.]+s' "$log_file" 2>/dev/null | head -1)
@@ -234,8 +225,7 @@ parse_timing_from_log() {
 
     # Ensure valid defaults
     [ -z "$parse" ] && parse="-"
-    [ -z "$ir" ] && ir="-"
-    [ -z "$symbols" ] && symbols="-"
+    [ -z "$ir_symbols" ] && ir_symbols="-"
     [ -z "$binding" ] && binding="-"
     [ -z "$graph" ] && graph="-"
     [ -z "$link" ] && link="-"
@@ -243,7 +233,7 @@ parse_timing_from_log() {
     [ -z "$total_num" ] && total_num="0"
     [ -z "$files" ] && files="-"
 
-    echo "$files $parse $ir $symbols $binding $graph $link $total $total_num"
+    echo "$files $parse $ir_symbols $binding $graph $link $total $total_num"
 }
 
 # Extract timing from log file and append to benchmark
@@ -253,7 +243,7 @@ extract_timing() {
     local src_dir=$3
 
     if [ ! -f "$log_file" ]; then
-        echo "| $name | - | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+        echo "| $name | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
         return
     fi
 
@@ -267,17 +257,17 @@ extract_timing() {
     fi
     [ -z "$loc" ] && loc="-"
 
-    read files parse ir symbols binding graph link total total_num <<< $(parse_timing_from_log "$log_file")
+    read files parse ir_symbols binding graph link total total_num <<< $(parse_timing_from_log "$log_file")
 
-    echo "| $name | $files | $loc | $parse | $ir | $symbols | $binding | $graph | $link | $total |" >> "$BENCHMARK_FILE"
+    echo "| $name | $files | $loc | $parse | $ir_symbols | $binding | $graph | $link | $total |" >> "$BENCHMARK_FILE"
 }
 
 # PageRank benchmark section
 echo "" >> "$BENCHMARK_FILE"
 echo "## PageRank Timing (depth=3, top-$TOP_K)" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
-echo "| Project | Files | LoC | Parse | IR Build | Symbols | Binding | Graph | Link | Total |" >> "$BENCHMARK_FILE"
-echo "|---------|-------|-----|-------|----------|---------|---------|-------|------|-------|" >> "$BENCHMARK_FILE"
+echo "| Project | Files | LoC | Parse | IR+Symbols | Binding | Graph | Link | Total |" >> "$BENCHMARK_FILE"
+echo "|---------|-------|-----|-------|------------|---------|-------|------|-------|" >> "$BENCHMARK_FILE"
 
 # Build array of (loc, name) pairs and sort by LOC descending
 declare -a PROJECT_LOC_PAIRS=()
@@ -391,7 +381,7 @@ run_scaling_benchmark() {
     local log_file="$BENCHMARK_DIR/${name}_scaling_${num_threads}t.log"
     local dot_file="$BENCHMARK_DIR/${name}_scaling_${num_threads}t.dot"
 
-    RAYON_NUM_THREADS=$num_threads RUST_LOG=info "$LLMCC" -d "$src_dir" \
+    RAYON_NUM_THREADS=$num_threads RUST_LOG=info,llmcc_resolver=error "$LLMCC" -d "$src_dir" \
         --graph --depth 3 --pagerank-top-k $TOP_K -o "$dot_file" > "$log_file" 2>&1
 
     echo "$log_file"
@@ -403,12 +393,12 @@ extract_scaling_timing() {
     local baseline_time=$3
 
     if [ ! -f "$log_file" ]; then
-        echo "| $num_threads | - | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
+        echo "| $num_threads | - | - | - | - | - | - | - |" >> "$BENCHMARK_FILE"
         echo "0"
         return
     fi
 
-    read files parse ir symbols binding graph link total total_num <<< $(parse_timing_from_log "$log_file")
+    read files parse ir_symbols binding graph link total total_num <<< $(parse_timing_from_log "$log_file")
 
     # Ensure total_num is a valid number for bc
     if [ -z "$total_num" ] || ! [[ "$total_num" =~ ^[0-9.]+$ ]]; then
@@ -430,7 +420,7 @@ extract_scaling_timing() {
     echo "$total ($speedup)" >&2
 
     # Append to benchmark file
-    echo "| $num_threads | $parse | $ir | $symbols | $binding | $graph | $link | $total | $speedup |" >> "$BENCHMARK_FILE"
+    echo "| $num_threads | $parse | $ir_symbols | $binding | $graph | $link | $total | $speedup |" >> "$BENCHMARK_FILE"
 
     # Return only total_num via stdout
     echo "$total_num"
@@ -442,8 +432,8 @@ echo "=== Thread Scaling Benchmark (databend) ==="
 echo "" >> "$BENCHMARK_FILE"
 echo "## Thread Scaling (databend, depth=3, top-$TOP_K, $CPU_CORES cores)" >> "$BENCHMARK_FILE"
 echo "" >> "$BENCHMARK_FILE"
-echo "| Threads | Parse | IR Build | Symbols | Binding | Graph | Link | Total | Speedup |" >> "$BENCHMARK_FILE"
-echo "|---------|-------|----------|---------|---------|-------|------|-------|---------|" >> "$BENCHMARK_FILE"
+echo "| Threads | Parse | IR+Symbols | Binding | Graph | Link | Total | Speedup |" >> "$BENCHMARK_FILE"
+echo "|---------|-------|------------|---------|-------|------|-------|---------|" >> "$BENCHMARK_FILE"
 
 SCALING_PROJECT="databend"
 SCALING_SRC_DIR="${PROJECTS[$SCALING_PROJECT]}"

@@ -1,0 +1,2381 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_base_db {
+    label="base-db";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_input_rs {
+      label="input.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n54951[label="CrateGraphBuilder", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/base-db/src/input.rs:125", sym_ty="Struct", shape=box];
+      n57772[label="Crate", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/base-db/src/input.rs:448", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_cfg {
+    label="cfg";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_cfg_expr_rs {
+      label="cfg_expr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15529[label="CfgExpr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/cfg/src/cfg_expr.rs:51", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n24[label="CfgOptions", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/cfg/src/lib.rs:33", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_edition {
+    label="edition";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2015[label="Edition", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/edition/src/lib.rs:7", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_hir {
+    label="hir";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n122663[label="Crate", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/lib.rs:204", sym_ty="Struct", shape=box];
+      n125193[label="GenericParam", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/lib.rs:4344", sym_ty="Enum", shape=box];
+      n125726[label="Type", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/lib.rs:5150", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_semantics {
+      label="semantics";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_source_to_def_rs {
+        label="source_to_def.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n84051[label="SourceToDefCtx", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/semantics/source_to_def.rs:171", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_semantics_rs {
+      label="semantics.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n57476[label="Semantics", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/semantics.rs:161", sym_ty="Struct", shape=box];
+      n57500[label="SemanticsImpl", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/semantics.rs:166", sym_ty="Struct", shape=box];
+      n74495[label="SemanticsScope", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/semantics.rs:2482", sym_ty="Struct", shape=box];
+      n56431[label="PathResolution", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/semantics.rs:69", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_source_analyzer_rs {
+      label="source_analyzer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n38771[label="SourceAnalyzer", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/source_analyzer.rs:70", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_term_search {
+      label="term_search";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_expr_rs {
+        label="expr.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n84328[label="Expr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir/src/term_search/expr.rs:62", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_hir_def {
+    label="hir-def";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_db_rs {
+      label="db.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n39019[label="DefDatabase", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/db.rs:91", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_expr_store {
+      label="expr_store";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_lower_rs {
+        label="lower.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n131151[label="ExprCollector", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/expr_store/lower.rs:408", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_path_rs {
+        label="path.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n66007[label="Path", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/expr_store/path.rs:16", sym_ty="Enum", shape=box];
+        n66246[label="GenericArgs", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/expr_store/path.rs:59", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_expr_store_rs {
+      label="expr_store.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n33506[label="ExpressionStore", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/expr_store.rs:119", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_hir {
+      label="hir";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_generics_rs {
+        label="generics.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n103643[label="GenericParams", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/hir/generics.rs:146", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_type_ref_rs {
+        label="type_ref.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n17971[label="TraitRef", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/hir/type_ref.rs:94", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_item_scope_rs {
+      label="item_scope.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n51554[label="ItemScope", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/item_scope.rs:148", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n68560[label="GenericParamId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/lib.rs:645", sym_ty="Enum", shape=box];
+      n69039[label="DefWithBodyId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/lib.rs:728", sym_ty="Enum", shape=box];
+      n69415[label="GenericDefId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/lib.rs:783", sym_ty="Enum", shape=box];
+      n70768[label="VariantId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/lib.rs:948", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_nameres_rs {
+      label="nameres.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n96940[label="DefMap", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/nameres.rs:171", sym_ty="Struct", shape=box];
+      n98466[label="block_def_map", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/nameres.rs:422", sym_ty="Function"];
+    }
+
+    subgraph cluster_per_ns_rs {
+      label="per_ns.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n51717[label="PerNs", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/per_ns.rs:44", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_resolver_rs {
+      label="resolver.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n42[label="Resolver", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/resolver.rs:45", sym_ty="Struct", shape=box];
+      n12660[label="TypeNs", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/resolver.rs:97", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_test_db_rs {
+      label="test_db.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9375[label="TestDB", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/test_db.rs:23", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_visibility_rs {
+      label="visibility.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n97306[label="Visibility", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-def/src/visibility.rs:20", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_hir_expand {
+    label="hir-expand";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_db_rs {
+      label="db.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n54798[label="ExpandDatabase", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src/db.rs:51", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n90501[label="MacroCallId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src/lib.rs:1074", sym_ty="Struct", shape=box];
+      n90647[label="HirFileId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src/lib.rs:1093", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_mod_path_rs {
+      label="mod_path.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n102430[label="ModPath", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src/mod_path.rs:22", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_name_rs {
+      label="name.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5348[label="Name", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src/name.rs:19", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_prettify_macro_expansion__rs {
+      label="prettify_macro_expansion_.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n28418[label="prettify_macro_expansion", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-expand/src/prettify_macro_expansion_.rs:12", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_hir_ty {
+    label="hir-ty";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_db_rs {
+      label="db.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n44955[label="HirDatabase", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/db.rs:31", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_display_rs {
+      label="display.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n78967[label="HirDisplay", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/display.rs:199", sym_ty="Trait", shape=box];
+      n80369[label="DisplayTarget", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/display.rs:465", sym_ty="Struct", shape=box];
+      n78252[label="HirFormatter", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/display.rs:80", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_dyn_compatibility_rs {
+      label="dyn_compatibility.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n114884[label="dyn_compatibility_of_trait_with_callback", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/dyn_compatibility.rs:87", sym_ty="Function"];
+    }
+
+    subgraph cluster_infer {
+      label="infer";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n31167[label="InferCtxt", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/infer/mod.rs:227", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_unify_rs {
+        label="unify.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n46942[label="InferenceTable", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/infer/unify.rs:130", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_infer_rs {
+      label="infer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n18407[label="InferenceResult", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/infer.rs:490", sym_ty="Struct", shape=box];
+      n20264[label="InferenceContext", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/infer.rs:755", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lower_rs {
+      label="lower.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n61067[label="TyLoweringContext", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/lower.rs:170", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_mir {
+      label="mir";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_eval_rs {
+        label="eval.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n129163[label="Evaluator", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/mir/eval.rs:169", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lower_rs {
+        label="lower.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n64721[label="MirLowerCtx", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/mir/lower.rs:78", sym_ty="Struct", shape=box];
+        n64855[label="MirLowerError", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/mir/lower.rs:96", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_mir_rs {
+      label="mir.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n74869[label="MirSpan", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/mir.rs:1201", sym_ty="Enum", shape=box];
+      n69621[label="Place", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/mir.rs:320", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_next_solver {
+      label="next_solver";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_consts_rs {
+        label="consts.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n93459[label="Const", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/consts.rs:28", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_def_id_rs {
+        label="def_id.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n90063[label="SolverDefId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/def_id.rs:22", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_interner_rs {
+        label="interner.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n69625[label="DbInterner", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/interner.rs:314", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_predicate_rs {
+        label="predicate.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n68771[label="Predicate", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/predicate.rs:187", sym_ty="Struct", shape=box];
+        n69191[label="Clauses", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/predicate.rs:264", sym_ty="Struct", shape=box];
+        n70761[label="Clause", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/predicate.rs:436", sym_ty="Struct", shape=box];
+        n70812[label="ParamEnv", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/predicate.rs:442", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_region_rs {
+        label="region.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n103753[label="Region", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/region.rs:26", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ty_rs {
+        label="ty.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n56556[label="Ty", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/next_solver/ty.rs:51", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_test_db_rs {
+      label="test_db.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n902[label="TestDB", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/test_db.rs:20", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tests_rs {
+      label="tests.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2540[label="infer", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/hir-ty/src/tests.rs:312", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_ide {
+    label="ide";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_expand_macro_rs {
+      label="expand_macro.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n52040[label="format", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/expand_macro.rs:206", sym_ty="Function"];
+      n52249[label="_format", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/expand_macro.rs:232", sym_ty="Function"];
+    }
+
+    subgraph cluster_extend_selection_rs {
+      label="extend_selection.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n52785[label="extend_selection", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/extend_selection.rs:25", sym_ty="Function"];
+      n52840[label="try_extend_selection", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/extend_selection.rs:31", sym_ty="Function"];
+    }
+
+    subgraph cluster_fetch_crates_rs {
+      label="fetch_crates.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n23379[label="crate_name", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/fetch_crates.rs:41", sym_ty="Function"];
+    }
+
+    subgraph cluster_fixture_rs {
+      label="fixture.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4405[label="range", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/fixture.rs:30", sym_ty="Function"];
+      n4320[label="file", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/fixture.rs:8", sym_ty="Function"];
+    }
+
+    subgraph cluster_goto_definition_rs {
+      label="goto_definition.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n22786[label="goto_definition", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/goto_definition.rs:43", sym_ty="Function"];
+    }
+
+    subgraph cluster_highlight_related_rs {
+      label="highlight_related.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n20560[label="highlight_related", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/highlight_related.rs:57", sym_ty="Function"];
+    }
+
+    subgraph cluster_hover {
+      label="hover";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_render_rs {
+        label="render.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n44502[label="path", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/hover/render.rs:438", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n58582[label="AnalysisHost", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/lib.rs:165", sym_ty="Struct", shape=box];
+      n58989[label="Analysis", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/lib.rs:229", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_navigation_target_rs {
+      label="navigation_target.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n76440[label="NavigationTarget", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/navigation_target.rs:32", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_syntax_highlighting {
+      label="syntax_highlighting";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_highlight_rs {
+        label="highlight.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n39940[label="name_like", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/syntax_highlighting/highlight.rs:64", sym_ty="Function"];
+      }
+
+      subgraph cluster_tags_rs {
+        label="tags.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n35714[label="HlTag", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/syntax_highlighting/tags.rs:21", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_syntax_highlighting_rs {
+      label="syntax_highlighting.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n99910[label="highlight", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/syntax_highlighting.rs:192", sym_ty="Function"];
+      n100175[label="traverse", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide/src/syntax_highlighting.rs:224", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_ide_assists {
+    label="ide-assists";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_assist_context_rs {
+      label="assist_context.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6973[label="Assists", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-assists/src/assist_context.rs:160", sym_ty="Struct", shape=box];
+      n6459[label="AssistContext", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-assists/src/assist_context.rs:48", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_handlers {
+      label="handlers";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_add_missing_impl_members_rs {
+        label="add_missing_impl_members.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n69095[label="try_gen_trait_body", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-assists/src/handlers/add_missing_impl_members.rs:222", sym_ty="Function"];
+      }
+
+      subgraph cluster_extract_function_rs {
+        label="extract_function.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n128849[label="format_function", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-assists/src/handlers/extract_function.rs:1568", sym_ty="Function"];
+        n128957[label="make_body", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-assists/src/handlers/extract_function.rs:1775", sym_ty="Function"];
+      }
+
+      subgraph cluster_generate_documentation_template_rs {
+        label="generate_documentation_template.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n75766[label="make_example_for_fn", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-assists/src/handlers/generate_documentation_template.rs:130", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_gen_trait_fn_body_rs {
+        label="gen_trait_fn_body.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n87223[label="gen_trait_fn_body", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-assists/src/utils/gen_trait_fn_body.rs:13", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_ide_completion {
+    label="ide-completion";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_completions {
+      label="completions";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_attribute_rs {
+        label="attribute.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n95450[label="attr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/completions/attribute.rs:223", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_completions_rs {
+      label="completions.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n77931[label="Completions", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/completions.rs:56", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_context {
+      label="context";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_analysis_rs {
+        label="analysis.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n61943[label="analyze", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/context/analysis.rs:439", sym_ty="Function"];
+        n63270[label="classify_name_ref", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/context/analysis.rs:905", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_context_rs {
+      label="context.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n16881[label="CompletionContext", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/context.rs:437", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_item_rs {
+      label="item.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n64238[label="CompletionItem", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/item.rs:29", sym_ty="Struct", shape=box];
+      n66583[label="Builder", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/item.rs:483", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_render {
+      label="render";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_function_rs {
+        label="function.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n37623[label="params", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/render/function.rs:370", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_render_rs {
+      label="render.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n77714[label="RenderContext", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-completion/src/render.rs:36", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ide_db {
+    label="ide-db";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_defs_rs {
+      label="defs.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n36944[label="Definition", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/defs.rs:33", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_famous_defs_rs {
+      label="famous_defs.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n35028[label="FamousDefs", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/famous_defs.rs:21", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n93546[label="SymbolKind", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/lib.rs:267", sym_ty="Enum", shape=box];
+      n92503[label="RootDatabase", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/lib.rs:85", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_search_rs {
+      label="search.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n30905[label="SearchScope", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/search.rs:151", sym_ty="Struct", shape=box];
+      n32964[label="FindUsages", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/search.rs:423", sym_ty="Struct", shape=box];
+      n34438[label="search", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/search.rs:800", sym_ty="Function"];
+    }
+
+    subgraph cluster_source_change_rs {
+      label="source_change.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n56450[label="SourceChangeBuilder", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/source_change.rs:220", sym_ty="Struct", shape=box];
+      n55230[label="SourceChange", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/source_change.rs:41", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_text_edit_rs {
+      label="text_edit.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n46832[label="TextEdit", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-db/src/text_edit.rs:25", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ide_diagnostics {
+    label="ide-diagnostics";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_handlers {
+      label="handlers";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mutability_errors_rs {
+        label="mutability_errors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n60409[label="token", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-diagnostics/src/handlers/mutability_errors.rs:103", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n101011[label="DiagnosticsContext", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-diagnostics/src/lib.rs:279", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ide_ssr {
+    label="ide-ssr";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_fragments_rs {
+      label="fragments.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11849[label="ty", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-ssr/src/fragments.rs:11", sym_ty="Function"];
+      n11874[label="item", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-ssr/src/fragments.rs:15", sym_ty="Function"];
+      n11895[label="pat", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-ssr/src/fragments.rs:19", sym_ty="Function"];
+      n12044[label="fragment", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/ide-ssr/src/fragments.rs:48", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_intern {
+    label="intern";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_symbol_rs {
+      label="symbol.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n62195[label="Symbol", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/intern/src/symbol.rs:116", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_la_arena {
+    label="la-arena";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n108074[label="Arena", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/la-arena/src/lib.rs:253", sym_ty="Struct", shape=box];
+      n106454[label="Idx", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/la-arena/src/lib.rs:60", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_map_rs {
+      label="map.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n40283[label="ArenaMap", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/la-arena/src/map.rs:9", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_parser {
+    label="parser";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_err {
+      label="err";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_method_call_missing_argument_list_rs {
+        label="method_call_missing_argument_list.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n43765[label="func", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/test_data/parser/inline/err/method_call_missing_argument_list.rs:1", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_expressions {
+      label="expressions";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_atom_rs {
+        label="atom.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n93596[label="atom_expr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/expressions/atom.rs:73", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_grammar {
+      label="grammar";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_attributes_rs {
+        label="attributes.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n13864[label="attr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/attributes.rs:17", sym_ty="Function"];
+      }
+
+      subgraph cluster_expressions_rs {
+        label="expressions.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11562[label="expr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/expressions.rs:19", sym_ty="Function"];
+        n13223[label="expr_bp", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/expressions.rs:246", sym_ty="Function"];
+        n13500[label="lhs", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/expressions.rs:329", sym_ty="Function"];
+        n13819[label="postfix_expr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/expressions.rs:412", sym_ty="Function"];
+      }
+
+      subgraph cluster_generic_params_rs {
+        label="generic_params.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n17146[label="bounds", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/generic_params.rs:126", sym_ty="Function"];
+      }
+
+      subgraph cluster_items_rs {
+        label="items.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n107479[label="item_or_macro", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/items.rs:48", sym_ty="Function"];
+      }
+
+      subgraph cluster_paths_rs {
+        label="paths.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n16598[label="path", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/paths.rs:54", sym_ty="Function"];
+      }
+
+      subgraph cluster_patterns_rs {
+        label="patterns.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n95362[label="atom_pat", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/patterns.rs:216", sym_ty="Function"];
+        n94975[label="pattern_single_r", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/patterns.rs:65", sym_ty="Function"];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n60885[label="type_", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/types.rs:35", sym_ty="Function"];
+        n60914[label="type_no_bounds", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/types.rs:39", sym_ty="Function"];
+        n60943[label="type_with_bounds_cond", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/types.rs:43", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_grammar_rs {
+      label="grammar.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n109666[label="name_r", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar.rs:306", sym_ty="Function"];
+      n111102[label="name", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar.rs:316", sym_ty="Function"];
+    }
+
+    subgraph cluster_items {
+      label="items";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_traits_rs {
+        label="traits.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8640[label="impl_", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/items/traits.rs:47", sym_ty="Function"];
+        n8736[label="assoc_item_list", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/grammar/items/traits.rs:84", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_ok {
+      label="ok";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_0012_visibility_rs {
+        label="0012_visibility.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n48386[label="e", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/test_data/parser/ok/0012_visibility.rs:6", sym_ty="Function"];
+      }
+
+      subgraph cluster_0035_weird_exprs_rs {
+        label="0035_weird_exprs.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18066[label="p", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/test_data/parser/ok/0035_weird_exprs.rs:66", sym_ty="Function"];
+      }
+
+      subgraph cluster_block_items_rs {
+        label="block_items.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n48240[label="a", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/test_data/parser/inline/ok/block_items.rs:1", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_parser_rs {
+      label="parser.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n107727[label="Parser", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/parser.rs:24", sym_ty="Struct", shape=box];
+      n114886[label="CompletedMarker", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/parser.rs:340", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_syntax_kind {
+      label="syntax_kind";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_generated_rs {
+        label="generated.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n79370[label="SyntaxKind", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/syntax_kind/generated.rs:8", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_token_set_rs {
+      label="token_set.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n19178[label="TokenSet", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/parser/src/token_set.rs:7", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_paths {
+    label="paths";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n12403[label="AbsPathBuf", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/paths/src/lib.rs:15", sym_ty="Struct", shape=box];
+      n13975[label="AbsPath", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/paths/src/lib.rs:159", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_proc_macro_srv {
+    label="proc-macro-srv";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_token_stream_rs {
+      label="token_stream.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n95935[label="TokenStream", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/proc-macro-srv/src/token_stream.rs:18", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_project_model {
+    label="project-model";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_manifest_path_rs {
+      label="manifest_path.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n10797[label="ManifestPath", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/project-model/src/manifest_path.rs:16", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_project_json_rs {
+      label="project_json.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n113964[label="Crate", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/project-model/src/project_json.rs:239", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_query_group_macro {
+    label="query-group-macro";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n110882[label="Option", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/query-group-macro/src/lib.rs:156", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_rust_analyzer {
+    label="rust-analyzer";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n126992[label="Config", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/rust-analyzer/src/config.rs:1026", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_global_state_rs {
+      label="global_state.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n77762[label="GlobalStateSnapshot", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/rust-analyzer/src/global_state.rs:207", sym_ty="Struct", shape=box];
+      n77054[label="GlobalState", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/rust-analyzer/src/global_state.rs:85", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lsp {
+      label="lsp";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_capabilities_rs {
+        label="capabilities.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n85216[label="ClientCapabilities", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/rust-analyzer/src/lsp/capabilities.rs:185", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_from_proto_rs {
+        label="from_proto.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n23657[label="file_id", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/rust-analyzer/src/lsp/from_proto.rs:66", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_smol_str {
+    label="smol_str";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n24982[label="SmolStr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/smol_str/src/lib.rs:34", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_span {
+    label="span";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_hygiene_rs {
+      label="hygiene.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n116074[label="SyntaxContext", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/span/src/hygiene.rs:450", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15631[label="EditionedFileId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/span/src/lib.rs:130", sym_ty="Struct", shape=box];
+      n15490[label="Span", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/span/src/lib.rs:72", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_syntax {
+    label="syntax";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_ast {
+      label="ast";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_edit_rs {
+        label="edit.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n13[label="IndentLevel", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/edit.rs:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_make_rs {
+        label="make.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n57849[label="name", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/make.rs:125", sym_ty="Function"];
+        n66331[label="ast_from_text", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/make.rs:1338", sym_ty="Function"];
+        n66372[label="ast_from_text_with_edition", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/make.rs:1343", sym_ty="Function"];
+        n57955[label="raw_ident_esc", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/make.rs:144", sym_ty="Function"];
+        n58046[label="ty", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/make.rs:164", sym_ty="Function"];
+        n58202[label="ty_from_text", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/make.rs:188", sym_ty="Function"];
+      }
+
+      subgraph cluster_syntax_factory_rs {
+        label="syntax_factory.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n20242[label="SyntaxFactory", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/syntax_factory.rs:15", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_ast_rs {
+      label="ast.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n26329[label="token", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast.rs:175", sym_ty="Function"];
+      n25600[label="AstNode", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast.rs:47", sym_ty="Trait", shape=box];
+      n25860[label="AstChildren", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast.rs:98", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_fuzz_failures {
+      label="fuzz-failures";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_0000_rs {
+        label="0000.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8061[label="ast", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/test_data/parser/fuzz-failures/0000.rs:38", sym_ty="Function"];
+        n8092[label="syntax", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/test_data/parser/fuzz-failures/0000.rs:41", sym_ty="Function"];
+        n7872[label="parse", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/test_data/parser/fuzz-failures/0000.rs:6", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_generated {
+      label="generated";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_nodes_rs {
+        label="nodes.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n57790[label="Name", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:1063", sym_ty="Struct", shape=box];
+        n65619[label="Path", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:1209", sym_ty="Struct", shape=box];
+        n69457[label="SourceFile", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:1524", sym_ty="Struct", shape=box];
+        n76267[label="Expr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:2015", sym_ty="Enum", shape=box];
+        n77041[label="Item", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:2087", sym_ty="Enum", shape=box];
+        n77302[label="Pat", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:2109", sym_ty="Enum", shape=box];
+        n77627[label="Type", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:2136", sym_ty="Enum", shape=box];
+        n78406[label="AnyHasAttrs", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:2178", sym_ty="Struct", shape=box];
+        n37872[label="ArrayExpr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:28", sym_ty="Struct", shape=box];
+        n48359[label="Const", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:402", sym_ty="Struct", shape=box];
+        n51057[label="Fn", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/nodes.rs:558", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_tokens_rs {
+        label="tokens.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n54518[label="String", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ast/generated/tokens.rs:249", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_ptr_rs {
+      label="ptr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n20600[label="AstPtr", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ptr.rs:25", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_syntax_editor_rs {
+      label="syntax_editor.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5307[label="SyntaxEditor", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/syntax_editor.rs:27", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_ted_rs {
+      label="ted.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n31747[label="Position", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/ted.rs:43", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_utils_rs {
+      label="utils.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n39524[label="is_raw_identifier", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/syntax/src/utils.rs:6", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_test_fixture {
+    label="test-fixture";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n94473[label="ChangeFixture", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-fixture/src/lib.rs:127", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_test_utils {
+    label="test-utils";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_minicore_rs {
+      label="minicore.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n42640[label="PartialEq", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1136", sym_ty="Trait", shape=box];
+      n42724[label="Eq", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1143", sym_ty="Trait", shape=box];
+      n43105[label="Formatter", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1191", sym_ty="Struct", shape=box];
+      n43361[label="Debug", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1224", sym_ty="Trait", shape=box];
+      n43395[label="Display", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1227", sym_ty="Trait", shape=box];
+      n35930[label="Copy", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:136", sym_ty="Trait", shape=box];
+      n44846[label="Option", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1458", sym_ty="Enum", shape=box];
+      n45370[label="Result", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1534", sym_ty="Enum", shape=box];
+      n46468[label="Iterator", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1689", sym_ty="Trait", shape=box];
+      n36024[label="Tuple", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:169", sym_ty="Trait", shape=box];
+      n46679[label="IntoIterator", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1734", sym_ty="Trait", shape=box];
+      n47507[label="panic_fmt", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1862", sym_ty="Function"];
+      n47536[label="panic", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:1867", sym_ty="Namespace"];
+      n36148[label="Default", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:207", sym_ty="Trait", shape=box];
+      n36517[label="Clone", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:308", sym_ty="Trait", shape=box];
+      n36718[label="From", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:366", sym_ty="Trait", shape=box];
+      n39354[label="Fn", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:746", sym_ty="Trait", shape=box];
+      n39425[label="FnMut", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:753", sym_ty="Trait", shape=box];
+      n39500[label="FnOnce", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:760", sym_ty="Trait", shape=box];
+      n35754[label="PointeeSized", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:91", sym_ty="Trait", shape=box];
+      n41207[label="ControlFlow", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/test-utils/src/minicore.rs:943", sym_ty="Enum", shape=box];
+    }
+
+  }
+
+  subgraph cluster_text_size {
+    label="text-size";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_range_rs {
+      label="range.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n94643[label="TextRange", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/text-size/src/range.rs:15", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_size_rs {
+      label="size.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3001[label="TextSize", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/text-size/src/size.rs:24", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_tt {
+    label="tt";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_iter_rs {
+      label="iter.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9209[label="TtIter", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/tt/src/iter.rs:16", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ungrammar {
+    label="ungrammar";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lexer_rs {
+      label="lexer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n24491[label="tokenize", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src/lexer.rs:41", sym_ty="Function"];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n27955[label="Rule", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src/lib.rs:99", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_parser_rs {
+      label="parser.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n22245[label="rule", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src/parser.rs:104", sym_ty="Function"];
+      n22398[label="seq_rule", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src/parser.rs:127", sym_ty="Function"];
+      n21462[label="parse", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src/parser.rs:19", sym_ty="Function"];
+      n21531[label="Parser", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src/parser.rs:28", sym_ty="Struct", shape=box];
+      n22133[label="node", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/lib/ungrammar/src/parser.rs:88", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_vfs {
+    label="vfs";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n23051[label="FileId", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/vfs/src/lib.rs:66", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_vfs_path_rs {
+      label="vfs_path.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n108282[label="VfsPath", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/crates/vfs/src/vfs_path.rs:13", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_xtask {
+    label="xtask";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_codegen {
+      label="codegen";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_diagnostics_docs_rs {
+        label="diagnostics_docs.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3293[label="Diagnostic", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/xtask/src/codegen/diagnostics_docs.rs:25", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_grammar {
+      label="grammar";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ast_src_rs {
+        label="ast_src.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n14519[label="Edition", full_path="/home/yibai/llmcc/sample/repos/rust-analyzer/xtask/src/codegen/grammar/ast_src.rs:21", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+
+  n13 -> n128849 [from="input", to="func"];
+  n13 -> n128957 [from="input", to="func", dir=both];
+  n24 -> n57772 [from="field_type", to="struct"];
+  n24 -> n110882 [from="type_arg", to="generic"];
+  n24 -> n131151 [from="field_type", to="struct"];
+  n42 -> n20264 [from="field_type", to="struct"];
+  n42 -> n38771 [from="field_type", to="struct"];
+  n42 -> n61067 [from="field_type", to="struct"];
+  n42 -> n64721 [from="field_type", to="struct"];
+  n42 -> n74495 [from="field_type", to="struct"];
+  n2015 -> n20264 [from="field_type", to="struct"];
+  n2015 -> n44502 [from="input", to="func"];
+  n2015 -> n80369 [from="field_type", to="struct"];
+  n2015 -> n80369 [from="type_arg", to="generic"];
+  n2015 -> n110882 [from="type_arg", to="generic"];
+  n2540 -> n54518 [from="func", to="output"];
+  n3001 -> n63270 [from="input", to="func"];
+  n3001 -> n94643 [from="field_type", to="struct"];
+  n3001 -> n94643 [from="type_arg", to="generic"];
+  n3001 -> n110882 [from="type_arg", to="generic"];
+  n4320 -> n58582 [from="func", to="type_dep"];
+  n4320 -> n58989 [from="func", to="output"];
+  n4320 -> n94473 [from="func", to="type_dep"];
+  n4405 -> n23657 [from="caller", to="callee"];
+  n4405 -> n58582 [from="func", to="type_dep"];
+  n4405 -> n58989 [from="func", to="output"];
+  n4405 -> n94473 [from="func", to="type_dep"];
+  n5307 -> n56450 [from="type_dep", to="struct"];
+  n5348 -> n16881 [from="type_dep", to="struct"];
+  n5348 -> n64855 [from="field_type", to="enum"];
+  n5348 -> n66007 [from="type_arg", to="impl"];
+  n6459 -> n69095 [from="input", to="func"];
+  n6459 -> n75766 [from="input", to="func"];
+  n6459 -> n128849 [from="input", to="func"];
+  n6459 -> n128957 [from="input", to="func"];
+  n7872 -> n24491 [from="caller", to="callee"];
+  n8640 -> n8736 [from="caller", to="callee"];
+  n8640 -> n18066 [from="caller", to="callee"];
+  n8736 -> n13975 [from="func", to="type_dep"];
+  n8736 -> n18066 [from="caller", to="callee"];
+  n8736 -> n107479 [from="caller", to="callee"];
+  n10797 -> n44846 [from="type_arg", to="generic"];
+  n10797 -> n77054 [from="type_dep", to="struct"];
+  n11562 -> n13223 [from="caller", to="callee"];
+  n11562 -> n110882 [from="func", to="output"];
+  n11562 -> n114886 [from="func", to="type_dep"];
+  n11849 -> n12044 [from="caller", to="callee"];
+  n11849 -> n45370 [from="func", to="output"];
+  n11874 -> n12044 [from="caller", to="callee"];
+  n11874 -> n45370 [from="func", to="output"];
+  n11895 -> n12044 [from="caller", to="callee"];
+  n11895 -> n45370 [from="func", to="output"];
+  n12044 -> n7872 [from="caller", to="callee"];
+  n12044 -> n8092 [from="caller", to="callee"];
+  n12044 -> n22133 [from="caller", to="callee"];
+  n12044 -> n45370 [from="func", to="output"];
+  n12403 -> n10797 [from="field_type", to="struct"];
+  n12403 -> n44846 [from="type_arg", to="generic"];
+  n12403 -> n108282 [from="type_arg", to="impl"];
+  n12403 -> n110882 [from="type_arg", to="generic"];
+  n12403 -> n113964 [from="type_arg", to="generic"];
+  n12403 -> n113964 [from="type_dep", to="struct"];
+  n12403 -> n126992 [from="type_dep", to="struct"];
+  n13223 -> n13500 [from="caller", to="callee", dir=both];
+  n13223 -> n18066 [from="caller", to="callee"];
+  n13223 -> n110882 [from="func", to="output", dir=both];
+  n13500 -> n13819 [from="caller", to="callee"];
+  n13500 -> n18066 [from="caller", to="callee"];
+  n13500 -> n110882 [from="func", to="output"];
+  n13819 -> n18066 [from="caller", to="callee"];
+  n13819 -> n114886 [from="func", to="output", dir=both];
+  n13864 -> n13975 [from="func", to="type_dep"];
+  n13864 -> n18066 [from="caller", to="callee"];
+  n13975 -> n10797 [from="type_arg", to="impl"];
+  n13975 -> n12403 [from="type_arg", to="impl"];
+  n13975 -> n108282 [from="type_arg", to="impl", dir=both];
+  n13975 -> n110882 [from="type_arg", to="generic"];
+  n14519 -> n16881 [from="field_type", to="struct"];
+  n14519 -> n39940 [from="input", to="func"];
+  n14519 -> n44846 [from="type_arg", to="generic"];
+  n14519 -> n66372 [from="input", to="func"];
+  n14519 -> n66583 [from="field_type", to="struct"];
+  n14519 -> n69095 [from="input", to="func"];
+  n14519 -> n101011 [from="field_type", to="struct"];
+  n14519 -> n113964 [from="field_type", to="struct"];
+  n14519 -> n113964 [from="type_arg", to="generic"];
+  n15490 -> n44846 [from="type_arg", to="generic"];
+  n15529 -> n110882 [from="type_arg", to="generic"];
+  n15631 -> n30905 [from="type_dep", to="struct"];
+  n15631 -> n90647 [from="field_type", to="enum", dir=both];
+  n16598 -> n18066 [from="caller", to="callee"];
+  n16598 -> n110882 [from="func", to="output"];
+  n16598 -> n114886 [from="func", to="type_dep"];
+  n16881 -> n37623 [from="input", to="func"];
+  n16881 -> n77714 [from="field_type", to="struct"];
+  n17146 -> n18066 [from="caller", to="callee"];
+  n17971 -> n110882 [from="type_arg", to="generic"];
+  n18407 -> n20264 [from="field_type", to="struct"];
+  n18407 -> n64721 [from="field_type", to="struct"];
+  n19178 -> n94975 [from="input", to="func"];
+  n19178 -> n95362 [from="input", to="func"];
+  n19178 -> n109666 [from="input", to="func"];
+  n20560 -> n110882 [from="func", to="output"];
+  n20600 -> n44846 [from="type_arg", to="generic"];
+  n20600 -> n110882 [from="type_arg", to="generic"];
+  n21462 -> n18066 [from="caller", to="callee"];
+  n21462 -> n21531 [from="func", to="type_dep"];
+  n21462 -> n22133 [from="caller", to="callee"];
+  n21462 -> n45370 [from="func", to="output"];
+  n21531 -> n8640 [from="input", to="func"];
+  n21531 -> n8736 [from="input", to="func"];
+  n21531 -> n11562 [from="input", to="func"];
+  n21531 -> n13223 [from="input", to="func"];
+  n21531 -> n13500 [from="input", to="func"];
+  n21531 -> n13819 [from="input", to="func"];
+  n21531 -> n13864 [from="input", to="func"];
+  n21531 -> n16598 [from="input", to="func"];
+  n21531 -> n17146 [from="input", to="func"];
+  n21531 -> n22133 [from="input", to="func"];
+  n21531 -> n22245 [from="input", to="func"];
+  n21531 -> n22398 [from="input", to="func"];
+  n21531 -> n60885 [from="input", to="func"];
+  n21531 -> n60914 [from="input", to="func"];
+  n21531 -> n60943 [from="input", to="func"];
+  n21531 -> n93596 [from="input", to="func"];
+  n21531 -> n94975 [from="input", to="func"];
+  n21531 -> n95362 [from="input", to="func"];
+  n22133 -> n18066 [from="caller", to="callee"];
+  n22133 -> n22245 [from="caller", to="callee"];
+  n22133 -> n45370 [from="func", to="output"];
+  n22245 -> n18066 [from="caller", to="callee"];
+  n22245 -> n22398 [from="caller", to="callee"];
+  n22245 -> n27955 [from="func", to="type_dep"];
+  n22245 -> n45370 [from="func", to="output"];
+  n22398 -> n27955 [from="func", to="type_dep"];
+  n22398 -> n45370 [from="func", to="output"];
+  n22786 -> n8061 [from="caller", to="callee"];
+  n22786 -> n57476 [from="func", to="type_dep"];
+  n22786 -> n58989 [from="func", to="type_dep"];
+  n22786 -> n76440 [from="func", to="type_dep"];
+  n22786 -> n110882 [from="func", to="output"];
+  n23051 -> n6973 [from="field_type", to="struct"];
+  n23051 -> n52040 [from="input", to="func"];
+  n23051 -> n52249 [from="input", to="func"];
+  n23051 -> n55230 [from="type_dep", to="struct"];
+  n23051 -> n56450 [from="type_dep", to="struct"];
+  n23051 -> n76440 [from="field_type", to="struct"];
+  n23051 -> n94473 [from="type_dep", to="struct"];
+  n23051 -> n99910 [from="input", to="func"];
+  n23051 -> n110882 [from="type_arg", to="generic"];
+  n23379 -> n54518 [from="func", to="type_dep"];
+  n23379 -> n110882 [from="func", to="output"];
+  n23657 -> n23051 [from="func", to="type_dep"];
+  n23657 -> n110882 [from="func", to="type_dep"];
+  n24491 -> n45370 [from="func", to="output"];
+  n24982 -> n64238 [from="type_arg", to="impl"];
+  n24982 -> n66583 [from="type_arg", to="impl"];
+  n24982 -> n77714 [from="type_arg", to="impl"];
+  n24982 -> n110882 [from="type_arg", to="generic"];
+  n25600 -> n37872 [from="trait", to="impl"];
+  n25600 -> n48359 [from="trait", to="impl"];
+  n25600 -> n51057 [from="trait", to="impl"];
+  n25600 -> n56431 [from="trait", to="impl"];
+  n25600 -> n57790 [from="trait", to="impl"];
+  n25600 -> n65619 [from="trait", to="impl"];
+  n25600 -> n69457 [from="trait", to="impl"];
+  n25600 -> n76267 [from="trait", to="impl"];
+  n25600 -> n77041 [from="trait", to="impl"];
+  n25600 -> n77302 [from="trait", to="impl"];
+  n25600 -> n77627 [from="trait", to="impl"];
+  n25600 -> n78406 [from="trait", to="impl"];
+  n26329 -> n110882 [from="func", to="output"];
+  n30905 -> n44846 [from="type_arg", to="generic", dir=both];
+  n30905 -> n110882 [from="type_arg", to="generic"];
+  n31167 -> n46942 [from="field_type", to="struct"];
+  n31167 -> n64721 [from="field_type", to="struct"];
+  n31167 -> n129163 [from="field_type", to="struct"];
+  n31747 -> n44846 [from="type_arg", to="generic"];
+  n32964 -> n34438 [from="input", to="func", dir=both];
+  n33506 -> n61067 [from="field_type", to="struct"];
+  n35754 -> n42640 [from="bound", to="generic"];
+  n35930 -> n20600 [from="trait", to="impl"];
+  n35930 -> n44846 [from="field_type", to="enum"];
+  n35930 -> n44846 [from="trait", to="impl"];
+  n35930 -> n79370 [from="trait", to="impl"];
+  n35930 -> n106454 [from="trait", to="impl"];
+  n36024 -> n39354 [from="bound", to="generic"];
+  n36024 -> n39425 [from="bound", to="generic"];
+  n36024 -> n39500 [from="bound", to="generic"];
+  n36148 -> n24 [from="trait", to="impl"];
+  n36148 -> n902 [from="trait", to="impl"];
+  n36148 -> n9375 [from="trait", to="impl"];
+  n36148 -> n20242 [from="trait", to="impl"];
+  n36148 -> n24982 [from="trait", to="impl"];
+  n36148 -> n40283 [from="trait", to="impl"];
+  n36148 -> n58582 [from="trait", to="impl"];
+  n36148 -> n69191 [from="trait", to="impl"];
+  n36148 -> n92503 [from="trait", to="impl"];
+  n36148 -> n95935 [from="trait", to="impl"];
+  n36148 -> n108074 [from="trait", to="impl"];
+  n36517 -> n902 [from="trait", to="impl"];
+  n36517 -> n9375 [from="trait", to="impl"];
+  n36517 -> n20600 [from="trait", to="impl"];
+  n36517 -> n24982 [from="trait", to="impl"];
+  n36517 -> n37872 [from="trait", to="impl"];
+  n36517 -> n48359 [from="trait", to="impl"];
+  n36517 -> n51057 [from="trait", to="impl"];
+  n36517 -> n54518 [from="trait", to="impl"];
+  n36517 -> n56431 [from="trait", to="impl"];
+  n36517 -> n57790 [from="trait", to="impl"];
+  n36517 -> n62195 [from="trait", to="impl"];
+  n36517 -> n65619 [from="trait", to="impl"];
+  n36517 -> n69457 [from="trait", to="impl"];
+  n36517 -> n78406 [from="trait", to="impl"];
+  n36517 -> n79370 [from="trait", to="impl"];
+  n36517 -> n92503 [from="trait", to="impl"];
+  n36517 -> n106454 [from="trait", to="impl"];
+  n36718 -> n13 [from="trait", to="impl"];
+  n36718 -> n3001 [from="trait", to="impl"];
+  n36718 -> n14519 [from="trait", to="impl"];
+  n36718 -> n15529 [from="trait", to="impl"];
+  n36718 -> n24982 [from="trait", to="impl"];
+  n36718 -> n36944 [from="trait", to="impl"];
+  n36718 -> n55230 [from="trait", to="impl"];
+  n36718 -> n56431 [from="trait", to="impl"];
+  n36718 -> n64855 [from="trait", to="impl"];
+  n36718 -> n66007 [from="trait", to="impl"];
+  n36718 -> n69039 [from="trait", to="impl"];
+  n36718 -> n69415 [from="trait", to="impl"];
+  n36718 -> n69621 [from="trait", to="impl"];
+  n36718 -> n74869 [from="trait", to="impl"];
+  n36718 -> n76267 [from="trait", to="impl"];
+  n36718 -> n77041 [from="trait", to="impl"];
+  n36718 -> n77302 [from="trait", to="impl"];
+  n36718 -> n77627 [from="trait", to="impl"];
+  n36718 -> n78406 [from="trait", to="impl"];
+  n36718 -> n90063 [from="trait", to="impl"];
+  n36718 -> n90501 [from="trait", to="impl"];
+  n36718 -> n90647 [from="trait", to="impl"];
+  n36718 -> n93546 [from="trait", to="impl"];
+  n36718 -> n102430 [from="trait", to="impl"];
+  n36718 -> n108282 [from="trait", to="impl"];
+  n36944 -> n32964 [from="type_arg", to="impl"];
+  n37623 -> n43765 [from="caller", to="callee"];
+  n37623 -> n110882 [from="func", to="output"];
+  n37872 -> n76267 [from="field_type", to="enum"];
+  n37872 -> n78406 [from="type_arg", to="impl"];
+  n39019 -> n98466 [from="input", to="func"];
+  n39019 -> n131151 [from="field_type", to="struct"];
+  n39425 -> n34438 [from="input", to="func"];
+  n39524 -> n79370 [from="func", to="type_dep"];
+  n39940 -> n93546 [from="func", to="type_dep"];
+  n39940 -> n110882 [from="func", to="output", dir=both];
+  n40283 -> n18407 [from="field_type", to="struct"];
+  n42640 -> n5348 [from="trait", to="impl"];
+  n42640 -> n12403 [from="trait", to="impl"];
+  n42640 -> n13975 [from="trait", to="impl"];
+  n42640 -> n15631 [from="trait", to="impl"];
+  n42640 -> n20600 [from="trait", to="impl"];
+  n42640 -> n24982 [from="trait", to="impl"];
+  n42640 -> n37872 [from="trait", to="impl"];
+  n42640 -> n48359 [from="trait", to="impl"];
+  n42640 -> n51057 [from="trait", to="impl"];
+  n42640 -> n54518 [from="trait", to="impl"];
+  n42640 -> n56431 [from="trait", to="impl"];
+  n42640 -> n57790 [from="trait", to="impl"];
+  n42640 -> n65619 [from="trait", to="impl"];
+  n42640 -> n69457 [from="trait", to="impl"];
+  n42640 -> n78406 [from="trait", to="impl"];
+  n42640 -> n79370 [from="trait", to="impl"];
+  n42640 -> n90647 [from="trait", to="impl"];
+  n42640 -> n106454 [from="trait", to="impl"];
+  n42640 -> n108282 [from="trait", to="impl"];
+  n42724 -> n20600 [from="trait", to="impl"];
+  n42724 -> n24982 [from="trait", to="impl"];
+  n42724 -> n37872 [from="trait", to="impl"];
+  n42724 -> n48359 [from="trait", to="impl"];
+  n42724 -> n51057 [from="trait", to="impl"];
+  n42724 -> n54518 [from="trait", to="impl"];
+  n42724 -> n56431 [from="trait", to="impl"];
+  n42724 -> n57790 [from="trait", to="impl"];
+  n42724 -> n65619 [from="trait", to="impl"];
+  n42724 -> n69457 [from="trait", to="impl"];
+  n42724 -> n78406 [from="trait", to="impl"];
+  n42724 -> n79370 [from="trait", to="impl"];
+  n42724 -> n106454 [from="trait", to="impl"];
+  n43361 -> n20600 [from="trait", to="impl"];
+  n43361 -> n56556 [from="trait", to="impl"];
+  n43361 -> n68771 [from="trait", to="impl"];
+  n43361 -> n69191 [from="trait", to="impl"];
+  n43361 -> n90063 [from="trait", to="impl"];
+  n43361 -> n93459 [from="trait", to="impl"];
+  n43361 -> n103753 [from="trait", to="impl"];
+  n43361 -> n116074 [from="trait", to="impl"];
+  n43395 -> n37872 [from="trait", to="impl"];
+  n43395 -> n48359 [from="trait", to="impl"];
+  n43395 -> n51057 [from="trait", to="impl"];
+  n43395 -> n56431 [from="trait", to="impl"];
+  n43395 -> n57790 [from="trait", to="impl"];
+  n43395 -> n65619 [from="trait", to="impl"];
+  n43395 -> n69457 [from="trait", to="impl"];
+  n43395 -> n76267 [from="trait", to="impl"];
+  n43395 -> n77041 [from="trait", to="impl"];
+  n43395 -> n77302 [from="trait", to="impl"];
+  n43395 -> n77627 [from="trait", to="impl"];
+  n44502 -> n23379 [from="caller", to="callee"];
+  n44502 -> n54518 [from="func", to="output"];
+  n44846 -> n32964 [from="field_type", to="struct"];
+  n44846 -> n77054 [from="field_type", to="struct"];
+  n44846 -> n87223 [from="input", to="func", dir=both];
+  n44846 -> n94473 [from="field_type", to="struct"];
+  n44846 -> n95450 [from="input", to="func"];
+  n44846 -> n96940 [from="field_type", to="struct"];
+  n44846 -> n99910 [from="input", to="func"];
+  n44846 -> n100175 [from="input", to="func"];
+  n44846 -> n113964 [from="field_type", to="struct"];
+  n44846 -> n113964 [from="type_arg", to="generic"];
+  n44846 -> n126992 [from="field_type", to="struct"];
+  n44846 -> n129163 [from="field_type", to="struct"];
+  n44846 -> n131151 [from="field_type", to="struct"];
+  n44955 -> n20264 [from="field_type", to="struct"];
+  n44955 -> n46942 [from="field_type", to="struct"];
+  n44955 -> n57476 [from="field_type", to="struct"];
+  n44955 -> n57500 [from="field_type", to="struct"];
+  n44955 -> n61067 [from="field_type", to="struct"];
+  n44955 -> n64721 [from="field_type", to="struct"];
+  n44955 -> n74495 [from="field_type", to="struct"];
+  n44955 -> n78252 [from="field_type", to="struct"];
+  n44955 -> n84051 [from="field_type", to="struct"];
+  n44955 -> n110882 [from="type_arg", to="generic"];
+  n44955 -> n114884 [from="input", to="func"];
+  n44955 -> n129163 [from="field_type", to="struct"];
+  n45370 -> n24982 [from="trait", to="impl"];
+  n46468 -> n42 [from="field_type", to="struct"];
+  n46468 -> n9209 [from="trait", to="impl"];
+  n46468 -> n18407 [from="field_type", to="struct"];
+  n46468 -> n25860 [from="trait", to="impl"];
+  n46468 -> n34438 [from="input", to="func"];
+  n46468 -> n51554 [from="field_type", to="struct"];
+  n46468 -> n96940 [from="field_type", to="struct"];
+  n46679 -> n24 [from="trait", to="impl"];
+  n46679 -> n30905 [from="trait", to="impl"];
+  n46679 -> n40283 [from="trait", to="impl"];
+  n46679 -> n46832 [from="trait", to="impl"];
+  n46679 -> n69191 [from="trait", to="impl"];
+  n46679 -> n108074 [from="trait", to="impl"];
+  n46832 -> n64238 [from="field_type", to="struct"];
+  n46832 -> n110882 [from="type_arg", to="generic", dir=both];
+  n46942 -> n20264 [from="field_type", to="struct"];
+  n47536 -> n47507 [from="caller", to="callee"];
+  n48240 -> n35028 [from="field_type", to="struct"];
+  n48240 -> n43105 [from="field_type", to="struct"];
+  n48359 -> n77041 [from="field_type", to="enum"];
+  n48359 -> n78406 [from="type_arg", to="impl"];
+  n48359 -> n84328 [from="field_type", to="enum"];
+  n51057 -> n39940 [from="input", to="func"];
+  n51057 -> n77041 [from="field_type", to="enum"];
+  n51057 -> n78406 [from="type_arg", to="impl"];
+  n51057 -> n110882 [from="type_arg", to="generic"];
+  n52040 -> n28418 [from="caller", to="callee"];
+  n52040 -> n52249 [from="caller", to="callee", dir=both];
+  n52040 -> n54518 [from="func", to="output"];
+  n52249 -> n54518 [from="func", to="type_dep"];
+  n52249 -> n110882 [from="func", to="output"];
+  n52785 -> n52840 [from="caller", to="callee"];
+  n52785 -> n57476 [from="func", to="type_dep"];
+  n52785 -> n94643 [from="func", to="output"];
+  n52840 -> n4405 [from="caller", to="callee"];
+  n52840 -> n8061 [from="caller", to="callee"];
+  n52840 -> n22133 [from="caller", to="callee"];
+  n52840 -> n94643 [from="func", to="type_dep"];
+  n52840 -> n110882 [from="func", to="output"];
+  n54518 -> n3293 [from="field_type", to="struct"];
+  n54518 -> n21531 [from="type_dep", to="struct"];
+  n54518 -> n24982 [from="type_arg", to="impl"];
+  n54518 -> n27955 [from="field_type", to="enum"];
+  n54518 -> n44846 [from="type_arg", to="generic"];
+  n54518 -> n64855 [from="field_type", to="enum"];
+  n54518 -> n78252 [from="type_arg", to="impl"];
+  n54518 -> n110882 [from="type_arg", to="generic"];
+  n54518 -> n113964 [from="type_arg", to="generic"];
+  n54518 -> n113964 [from="type_dep", to="struct"];
+  n54798 -> n28418 [from="input", to="func"];
+  n54951 -> n110882 [from="type_arg", to="generic"];
+  n55230 -> n56450 [from="field_type", to="struct"];
+  n55230 -> n110882 [from="type_arg", to="generic"];
+  n56431 -> n36944 [from="field_type", to="enum"];
+  n56431 -> n77041 [from="field_type", to="enum"];
+  n56431 -> n78406 [from="type_arg", to="impl"];
+  n56431 -> n84328 [from="field_type", to="enum"];
+  n56431 -> n110882 [from="type_arg", to="generic"];
+  n56556 -> n20264 [from="field_type", to="struct"];
+  n56556 -> n44846 [from="type_arg", to="generic"];
+  n56556 -> n46942 [from="type_dep", to="struct"];
+  n56556 -> n61067 [from="type_dep", to="struct"];
+  n56556 -> n110882 [from="type_arg", to="generic"];
+  n56556 -> n125726 [from="field_type", to="struct"];
+  n56556 -> n129163 [from="type_dep", to="struct"];
+  n57476 -> n6459 [from="field_type", to="struct"];
+  n57476 -> n16881 [from="field_type", to="struct"];
+  n57476 -> n20560 [from="input", to="func"];
+  n57476 -> n32964 [from="field_type", to="struct"];
+  n57476 -> n39940 [from="input", to="func"];
+  n57476 -> n52840 [from="input", to="func"];
+  n57476 -> n61943 [from="input", to="func"];
+  n57476 -> n63270 [from="input", to="func"];
+  n57476 -> n100175 [from="input", to="func"];
+  n57476 -> n101011 [from="field_type", to="struct"];
+  n57500 -> n57476 [from="field_type", to="struct"];
+  n57790 -> n44846 [from="type_arg", to="generic"];
+  n57790 -> n45370 [from="type_arg", to="generic"];
+  n57790 -> n51554 [from="type_dep", to="struct"];
+  n57790 -> n96940 [from="type_dep", to="struct"];
+  n57790 -> n102430 [from="type_arg", to="impl"];
+  n57790 -> n110882 [from="type_arg", to="generic"];
+  n57790 -> n131151 [from="type_dep", to="struct"];
+  n57849 -> n57955 [from="caller", to="callee"];
+  n57849 -> n66331 [from="caller", to="callee"];
+  n57955 -> n39524 [from="caller", to="callee"];
+  n58046 -> n58202 [from="caller", to="callee"];
+  n58202 -> n66331 [from="caller", to="callee"];
+  n58582 -> n77054 [from="field_type", to="struct"];
+  n58989 -> n77762 [from="field_type", to="struct"];
+  n60409 -> n44846 [from="func", to="output"];
+  n60885 -> n60943 [from="caller", to="callee"];
+  n60914 -> n60943 [from="caller", to="callee"];
+  n60943 -> n18066 [from="caller", to="callee"];
+  n61943 -> n8061 [from="caller", to="callee"];
+  n61943 -> n8092 [from="caller", to="callee"];
+  n61943 -> n18066 [from="caller", to="callee"];
+  n61943 -> n26329 [from="caller", to="callee"];
+  n61943 -> n63270 [from="caller", to="callee"];
+  n61943 -> n79370 [from="func", to="type_dep"];
+  n61943 -> n110882 [from="func", to="output"];
+  n62195 -> n5348 [from="type_arg", to="impl"];
+  n62195 -> n44846 [from="type_arg", to="generic"];
+  n62195 -> n76440 [from="field_type", to="struct"];
+  n62195 -> n110882 [from="type_arg", to="generic"];
+  n63270 -> n8061 [from="caller", to="callee"];
+  n63270 -> n8092 [from="caller", to="callee"];
+  n63270 -> n11562 [from="caller", to="callee"];
+  n63270 -> n13864 [from="caller", to="callee"];
+  n63270 -> n22133 [from="caller", to="callee"];
+  n63270 -> n26329 [from="caller", to="callee"];
+  n63270 -> n44502 [from="caller", to="callee"];
+  n63270 -> n110882 [from="func", to="output"];
+  n64238 -> n77931 [from="type_dep", to="struct"];
+  n65619 -> n110882 [from="field_type", to="struct"];
+  n65619 -> n110882 [from="type_arg", to="generic"];
+  n66007 -> n12403 [from="type_arg", to="impl"];
+  n66007 -> n13975 [from="type_arg", to="impl"];
+  n66007 -> n110882 [from="type_arg", to="generic", dir=both];
+  n66246 -> n110882 [from="type_arg", to="generic"];
+  n66331 -> n25600 [from="func", to="output"];
+  n66331 -> n66372 [from="caller", to="callee"];
+  n66372 -> n21462 [from="caller", to="callee"];
+  n66372 -> n22133 [from="caller", to="callee"];
+  n66372 -> n25600 [from="func", to="output"];
+  n66372 -> n69457 [from="func", to="type_dep"];
+  n68560 -> n64855 [from="field_type", to="enum"];
+  n68771 -> n70761 [from="field_type", to="struct", dir=both];
+  n69039 -> n20264 [from="field_type", to="struct"];
+  n69039 -> n64721 [from="field_type", to="struct"];
+  n69039 -> n64855 [from="field_type", to="enum"];
+  n69039 -> n90063 [from="field_type", to="enum", dir=both];
+  n69039 -> n129163 [from="type_dep", to="struct"];
+  n69095 -> n87223 [from="caller", to="callee"];
+  n69095 -> n110882 [from="func", to="output"];
+  n69191 -> n70812 [from="field_type", to="struct"];
+  n69415 -> n20264 [from="field_type", to="struct"];
+  n69415 -> n61067 [from="field_type", to="struct"];
+  n69415 -> n90063 [from="type_arg", to="impl", dir=both];
+  n69415 -> n110882 [from="type_arg", to="generic"];
+  n69457 -> n6459 [from="field_type", to="struct"];
+  n69457 -> n78406 [from="type_arg", to="impl"];
+  n69621 -> n64855 [from="field_type", to="enum"];
+  n69621 -> n110882 [from="type_arg", to="generic"];
+  n69625 -> n31167 [from="field_type", to="struct"];
+  n69625 -> n31167 [from="type_arg", to="generic"];
+  n69625 -> n56556 [from="type_arg", to="impl"];
+  n69625 -> n61067 [from="field_type", to="struct"];
+  n69625 -> n68771 [from="type_arg", to="generic"];
+  n69625 -> n68771 [from="type_arg", to="impl"];
+  n69625 -> n69191 [from="type_arg", to="impl"];
+  n69625 -> n70761 [from="type_arg", to="impl"];
+  n69625 -> n70812 [from="type_arg", to="impl"];
+  n69625 -> n78252 [from="field_type", to="struct"];
+  n69625 -> n90063 [from="type_arg", to="impl"];
+  n69625 -> n93459 [from="type_arg", to="impl"];
+  n69625 -> n103753 [from="type_arg", to="impl"];
+  n70768 -> n18407 [from="type_dep", to="struct"];
+  n70812 -> n46942 [from="field_type", to="struct"];
+  n70812 -> n64721 [from="field_type", to="struct"];
+  n74495 -> n16881 [from="field_type", to="struct"];
+  n74869 -> n20264 [from="type_dep", to="struct"];
+  n74869 -> n110882 [from="type_arg", to="generic"];
+  n75766 -> n44846 [from="func", to="output"];
+  n75766 -> n54518 [from="func", to="type_dep"];
+  n77627 -> n44846 [from="type_arg", to="generic"];
+  n77627 -> n84328 [from="field_type", to="enum"];
+  n77762 -> n23657 [from="input", to="func"];
+  n78967 -> n12660 [from="trait", to="impl"];
+  n78967 -> n17971 [from="trait", to="impl"];
+  n78967 -> n48359 [from="trait", to="impl"];
+  n78967 -> n56556 [from="trait", to="impl"];
+  n79370 -> n26329 [from="input", to="func"];
+  n79370 -> n52040 [from="input", to="func"];
+  n79370 -> n52249 [from="input", to="func"];
+  n79370 -> n60409 [from="input", to="func"];
+  n79370 -> n110882 [from="type_arg", to="generic"];
+  n79370 -> n114886 [from="field_type", to="struct"];
+  n80369 -> n16881 [from="field_type", to="struct"];
+  n80369 -> n78252 [from="field_type", to="struct"];
+  n80369 -> n101011 [from="field_type", to="struct"];
+  n84328 -> n108074 [from="type_arg", to="generic"];
+  n85216 -> n126992 [from="field_type", to="struct"];
+  n87223 -> n43765 [from="caller", to="callee"];
+  n90063 -> n44846 [from="type_arg", to="generic"];
+  n90501 -> n44846 [from="type_arg", to="generic"];
+  n90501 -> n90647 [from="field_type", to="enum"];
+  n92503 -> n16881 [from="field_type", to="struct"];
+  n92503 -> n22786 [from="input", to="func"];
+  n92503 -> n44502 [from="input", to="func"];
+  n92503 -> n52040 [from="input", to="func"];
+  n92503 -> n52249 [from="input", to="func"];
+  n92503 -> n52785 [from="input", to="func"];
+  n92503 -> n57476 [from="type_arg", to="generic"];
+  n92503 -> n58582 [from="field_type", to="struct"];
+  n92503 -> n58989 [from="field_type", to="struct"];
+  n92503 -> n99910 [from="input", to="func"];
+  n93459 -> n36944 [from="field_type", to="enum"];
+  n93546 -> n35714 [from="field_type", to="enum"];
+  n93546 -> n110882 [from="type_arg", to="generic"];
+  n93596 -> n18066 [from="caller", to="callee"];
+  n93596 -> n110882 [from="func", to="output"];
+  n94643 -> n6459 [from="field_type", to="struct"];
+  n94643 -> n15490 [from="field_type", to="struct"];
+  n94643 -> n30905 [from="type_dep", to="struct"];
+  n94643 -> n44846 [from="type_arg", to="generic"];
+  n94643 -> n54518 [from="type_arg", to="impl"];
+  n94643 -> n64238 [from="field_type", to="struct"];
+  n94643 -> n66583 [from="field_type", to="struct"];
+  n94643 -> n76440 [from="field_type", to="struct"];
+  n94643 -> n100175 [from="input", to="func"];
+  n94643 -> n110882 [from="type_arg", to="generic"];
+  n94975 -> n13500 [from="caller", to="callee"];
+  n94975 -> n18066 [from="caller", to="callee"];
+  n94975 -> n95362 [from="caller", to="callee"];
+  n95362 -> n18066 [from="caller", to="callee"];
+  n95362 -> n44846 [from="func", to="output"];
+  n95362 -> n114886 [from="func", to="type_dep"];
+  n96940 -> n131151 [from="field_type", to="struct"];
+  n98466 -> n96940 [from="func", to="output"];
+  n98466 -> n97306 [from="func", to="type_dep"];
+  n99910 -> n4320 [from="caller", to="callee"];
+  n99910 -> n57476 [from="func", to="type_dep"];
+  n99910 -> n100175 [from="caller", to="callee", dir=both];
+  n100175 -> n8061 [from="caller", to="callee"];
+  n106454 -> n40283 [from="type_arg", to="generic"];
+  n106454 -> n40283 [from="type_arg", to="impl"];
+  n106454 -> n44846 [from="type_arg", to="generic"];
+  n106454 -> n54951 [from="type_arg", to="impl"];
+  n106454 -> n69621 [from="type_arg", to="impl"];
+  n106454 -> n103643 [from="type_arg", to="impl"];
+  n106454 -> n108074 [from="type_arg", to="impl"];
+  n106454 -> n110882 [from="type_arg", to="generic"];
+  n107479 -> n18066 [from="caller", to="callee"];
+  n107479 -> n48386 [from="caller", to="callee"];
+  n107727 -> n107479 [from="input", to="func"];
+  n107727 -> n109666 [from="input", to="func"];
+  n107727 -> n111102 [from="input", to="func"];
+  n108074 -> n33506 [from="field_type", to="struct"];
+  n108074 -> n54951 [from="field_type", to="struct"];
+  n108074 -> n103643 [from="field_type", to="struct"];
+  n109666 -> n18066 [from="caller", to="callee"];
+  n110882 -> n902 [from="type_dep", to="struct"];
+  n110882 -> n6973 [from="field_type", to="struct"];
+  n110882 -> n9375 [from="type_dep", to="struct"];
+  n110882 -> n16881 [from="field_type", to="struct"];
+  n110882 -> n18407 [from="field_type", to="struct"];
+  n110882 -> n20242 [from="field_type", to="struct"];
+  n110882 -> n20264 [from="field_type", to="struct"];
+  n110882 -> n31167 [from="type_dep", to="struct"];
+  n110882 -> n33506 [from="field_type", to="struct"];
+  n110882 -> n38771 [from="field_type", to="struct"];
+  n110882 -> n40283 [from="type_dep", to="struct"];
+  n110882 -> n44502 [from="input", to="func"];
+  n110882 -> n51717 [from="type_arg", to="impl"];
+  n110882 -> n56450 [from="field_type", to="struct"];
+  n110882 -> n61067 [from="field_type", to="struct"];
+  n110882 -> n64238 [from="field_type", to="struct"];
+  n110882 -> n64721 [from="field_type", to="struct"];
+  n110882 -> n66583 [from="field_type", to="struct"];
+  n110882 -> n69625 [from="field_type", to="struct"];
+  n110882 -> n76440 [from="field_type", to="struct"];
+  n110882 -> n77714 [from="type_arg", to="impl"];
+  n110882 -> n78252 [from="field_type", to="struct"];
+  n111102 -> n109666 [from="caller", to="callee"];
+  n113964 -> n28418 [from="input", to="func"];
+  n113964 -> n35028 [from="field_type", to="struct"];
+  n113964 -> n36944 [from="field_type", to="enum"];
+  n113964 -> n52040 [from="input", to="func"];
+  n113964 -> n80369 [from="field_type", to="struct"];
+  n113964 -> n80369 [from="type_arg", to="generic"];
+  n113964 -> n96940 [from="field_type", to="struct"];
+  n113964 -> n97306 [from="field_type", to="enum"];
+  n113964 -> n110882 [from="type_arg", to="generic"];
+  n114884 -> n41207 [from="func", to="output"];
+  n116074 -> n15490 [from="field_type", to="struct"];
+  n122663 -> n129163 [from="field_type", to="struct"];
+  n125193 -> n36944 [from="field_type", to="enum"];
+  n125726 -> n110882 [from="type_arg", to="generic"];
+  n128849 -> n128957 [from="caller", to="callee"];
+  n128957 -> n8061 [from="caller", to="callee"];
+}

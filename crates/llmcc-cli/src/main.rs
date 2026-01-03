@@ -109,12 +109,20 @@ pub fn run(args: Cli) -> Result<()> {
         _ => Err(format!("Unknown language: {}", args.lang).into()),
     };
 
-    if let Ok(Some(output)) = result {
-        if let Some(ref path) = args.output {
-            std::fs::write(path, &output)?;
-            tracing::info!("output written to: {}", path);
-        } else {
-            println!("{output}");
+    match result {
+        Ok(Some(output)) => {
+            if let Some(ref path) = args.output {
+                std::fs::write(path, &output)?;
+                tracing::info!("output written to: {}", path);
+            } else {
+                println!("{output}");
+            }
+        }
+        Ok(None) => {
+            // No output requested (e.g., print-ir or print-block mode)
+        }
+        Err(e) => {
+            tracing::error!("Error: {}", e);
         }
     }
 

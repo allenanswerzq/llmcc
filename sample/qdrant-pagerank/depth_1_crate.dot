@@ -21,21 +21,22 @@ digraph architecture {
   crate_qdrant_edge_py[label="qdrant-edge-py"];
   crate_segment[label="segment"];
   crate_shard[label="shard"];
+  crate_sparse[label="sparse"];
   crate_storage[label="storage"];
 
   crate_api -> crate_segment;
   crate_collection -> crate_common;
   crate_collection -> crate_segment;
   crate_collection -> crate_shard;
-  crate_collection -> crate_storage;
   crate_qdrant -> crate_api;
+  crate_qdrant -> crate_common;
   crate_qdrant -> crate_segment;
   crate_qdrant -> crate_shard;
   crate_qdrant -> crate_storage;
   crate_qdrant_edge_py -> crate_segment;
   crate_qdrant_edge_py -> crate_shard;
+  crate_segment -> crate_sparse;
   crate_shard -> crate_api;
   crate_shard -> crate_common;
   crate_shard -> crate_gridstore;
-  crate_storage -> crate_api;
 }

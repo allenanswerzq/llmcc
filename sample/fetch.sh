@@ -22,6 +22,10 @@ REPOS=(
     "openai/codex"
     "allenanswerzq/llmcc"
     "astral-sh/ruff"
+    # ML & AI
+    "huggingface/candle"
+    # Developer tools
+    "rust-lang/rust-analyzer"
     # Database & data infrastructure
     "lancedb/lancedb"
     "lance-format/lance"

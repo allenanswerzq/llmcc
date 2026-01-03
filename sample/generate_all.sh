@@ -33,26 +33,8 @@ echo ""
 echo "=== Fetching repositories ==="
 "$SCRIPT_DIR/fetch.sh"
 
-# Projects to process: name -> source directory
-declare -A PROJECTS=(
-    # Core ecosystem
-    ["ripgrep"]="$SCRIPT_DIR/repos/ripgrep"
-    ["tokio"]="$SCRIPT_DIR/repos/tokio"
-    ["serde"]="$SCRIPT_DIR/repos/serde"
-    ["clap"]="$SCRIPT_DIR/repos/clap"
-    ["axum"]="$SCRIPT_DIR/repos/axum"
-    ["ruff"]="$SCRIPT_DIR/repos/ruff"
-    ["codex"]="$SCRIPT_DIR/repos/codex"
-    ["llmcc"]="$SCRIPT_DIR/repos/llmcc"
-    # Database & data infrastructure
-    ["lancedb"]="$SCRIPT_DIR/repos/lancedb"
-    ["lance"]="$SCRIPT_DIR/repos/lance"
-    ["opendal"]="$SCRIPT_DIR/repos/opendal"
-    ["risingwave"]="$SCRIPT_DIR/repos/risingwave"
-    ["databend"]="$SCRIPT_DIR/repos/databend"
-    ["datafusion"]="$SCRIPT_DIR/repos/datafusion"
-    ["qdrant"]="$SCRIPT_DIR/repos/qdrant"
-)
+# Load shared project definitions
+source "$SCRIPT_DIR/projects.sh"
 
 # Depth level names
 declare -A DEPTH_NAMES=(

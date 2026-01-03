@@ -15,6 +15,7 @@ digraph architecture {
 
   crate_datafusion[label="datafusion"];
   crate_datafusion_catalog[label="datafusion-catalog"];
+  crate_datafusion_catalog_listing[label="datafusion-catalog-listing"];
   crate_datafusion_cli[label="datafusion-cli"];
   crate_datafusion_common[label="datafusion-common"];
   crate_datafusion_datasource[label="datafusion-datasource"];
@@ -47,8 +48,10 @@ digraph architecture {
   crate_datafusion -> crate_datafusion_catalog;
   crate_datafusion -> crate_datafusion_common;
   crate_datafusion -> crate_datafusion_expr;
+  crate_datafusion -> crate_datafusion_physical_expr;
   crate_datafusion -> crate_datafusion_proto;
   crate_datafusion_catalog -> crate_datafusion_physical_plan;
+  crate_datafusion_catalog_listing -> crate_datafusion_datasource;
   crate_datafusion_cli -> crate_datafusion_catalog;
   crate_datafusion_cli -> crate_datafusion_common;
   crate_datafusion_common -> crate_datafusion_expr;
@@ -66,12 +69,12 @@ digraph architecture {
   crate_datafusion_datasource_parquet -> crate_datafusion_physical_expr_common;
   crate_datafusion_datasource_parquet -> crate_datafusion_proto;
   crate_datafusion_expr -> crate_datafusion_expr_common;
+  crate_datafusion_expr -> crate_datafusion_functions;
   crate_datafusion_expr -> crate_datafusion_proto;
   crate_datafusion_expr_common -> crate_datafusion_common;
   crate_datafusion_expr_common -> crate_datafusion_functions;
-  crate_datafusion_expr_common -> crate_datafusion_proto_common;
+  crate_datafusion_expr_common -> crate_datafusion_proto;
   crate_datafusion_ffi -> crate_datafusion_catalog;
-  crate_datafusion_ffi -> crate_datafusion_expr_common;
   crate_datafusion_ffi -> crate_datafusion_proto;
   crate_datafusion_functions -> crate_datafusion_common;
   crate_datafusion_functions_aggregate -> crate_datafusion_expr;
@@ -87,20 +90,20 @@ digraph architecture {
   crate_datafusion_optimizer -> crate_datafusion_functions;
   crate_datafusion_optimizer -> crate_datafusion_physical_expr;
   crate_datafusion_optimizer -> crate_datafusion_proto;
+  crate_datafusion_physical_expr -> crate_datafusion_common;
   crate_datafusion_physical_expr -> crate_datafusion_physical_expr_common;
   crate_datafusion_physical_expr -> crate_datafusion_proto;
   crate_datafusion_physical_optimizer -> crate_datafusion_common;
   crate_datafusion_physical_optimizer -> crate_datafusion_physical_expr;
   crate_datafusion_physical_optimizer -> crate_datafusion_physical_plan;
   crate_datafusion_physical_plan -> crate_datafusion_execution;
-  crate_datafusion_physical_plan -> crate_datafusion_functions;
   crate_datafusion_physical_plan -> crate_datafusion_functions_nested;
   crate_datafusion_physical_plan -> crate_datafusion_proto;
-  crate_datafusion_physical_plan -> crate_datafusion_proto_common;
   crate_datafusion_proto -> crate_datafusion_proto_common;
+  crate_datafusion_proto_common -> crate_datafusion_cli;
   crate_datafusion_spark -> crate_datafusion_common;
   crate_datafusion_spark -> crate_datafusion_expr_common;
-  crate_datafusion_sql -> crate_datafusion_expr;
+  crate_datafusion_sql -> crate_datafusion_common;
   crate_datafusion_sqllogictest -> crate_datafusion;
   crate_datafusion_substrait -> crate_datafusion_common;
   crate_datafusion_substrait -> crate_datafusion_proto;
