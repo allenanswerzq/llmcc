@@ -1,0 +1,315 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  subgraph cluster_candle_core {
+    label="candle-core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_core_conv[label="conv"];
+    mod_candle_core_cpu_backend[label="cpu_backend"];
+    mod_candle_core_cuda_backend[label="cuda_backend"];
+    mod_candle_core_device[label="device"];
+    mod_candle_core_dtype[label="dtype"];
+    mod_candle_core_dummy_cuda_backend[label="dummy_cuda_backend"];
+    mod_candle_core_dummy_metal_backend[label="dummy_metal_backend"];
+    mod_candle_core_layout[label="layout"];
+    mod_candle_core_lib[label="lib"];
+    mod_candle_core_metal_backend[label="metal_backend"];
+    mod_candle_core_quantized[label="quantized"];
+    mod_candle_core_safetensors[label="safetensors"];
+    mod_candle_core_shape[label="shape"];
+    mod_candle_core_streaming[label="streaming"];
+    mod_candle_core_tensor[label="tensor"];
+    mod_candle_core_test_utils[label="test_utils"];
+  }
+
+  subgraph cluster_candle_datasets {
+    label="candle-datasets";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_datasets_vision[label="vision"];
+  }
+
+  subgraph cluster_candle_examples {
+    label="candle-examples";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_examples_imagenet[label="imagenet"];
+    mod_candle_examples_lib[label="lib"];
+  }
+
+  subgraph cluster_candle_flash_attn {
+    label="candle-flash-attn";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_flash_attn_lib[label="lib"];
+  }
+
+  subgraph cluster_candle_flash_attn_v3 {
+    label="candle-flash-attn-v3";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_flash_attn_v3_lib[label="lib"];
+  }
+
+  subgraph cluster_candle_metal_kernels {
+    label="candle-metal-kernels";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_metal_kernels_kernel[label="kernel"];
+    mod_candle_metal_kernels_kernels[label="kernels"];
+    mod_candle_metal_kernels_lib[label="lib"];
+    mod_candle_metal_kernels_metal[label="metal"];
+    mod_candle_metal_kernels_tests[label="tests"];
+    mod_candle_metal_kernels_utils[label="utils"];
+  }
+
+  subgraph cluster_candle_nn {
+    label="candle-nn";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_nn_activation[label="activation"];
+    mod_candle_nn_batch_norm[label="batch_norm"];
+    mod_candle_nn_conv[label="conv"];
+    mod_candle_nn_cpu_flash_attention[label="cpu_flash_attention"];
+    mod_candle_nn_func[label="func"];
+    mod_candle_nn_group_norm[label="group_norm"];
+    mod_candle_nn_kv_cache[label="kv_cache"];
+    mod_candle_nn_linear[label="linear"];
+    mod_candle_nn_loss[label="loss"];
+    mod_candle_nn_moe[label="moe"];
+    mod_candle_nn_ops[label="ops"];
+    mod_candle_nn_rnn[label="rnn"];
+    mod_candle_nn_rotary_emb[label="rotary_emb"];
+  }
+
+  subgraph cluster_candle_onnx {
+    label="candle-onnx";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_onnx_eval[label="eval"];
+  }
+
+  subgraph cluster_candle_pyo3 {
+    label="candle-pyo3";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_pyo3_lib[label="lib"];
+    mod_candle_pyo3_shape[label="shape"];
+  }
+
+  subgraph cluster_candle_transformers {
+    label="candle-transformers";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_transformers_chinese_clip[label="chinese_clip"];
+    mod_candle_transformers_clip[label="clip"];
+    mod_candle_transformers_flux[label="flux"];
+    mod_candle_transformers_mimi[label="mimi"];
+    mod_candle_transformers_mmdit[label="mmdit"];
+    mod_candle_transformers_models[label="models"];
+    mod_candle_transformers_nvembed_v2[label="nvembed_v2"];
+    mod_candle_transformers_pixtral[label="pixtral"];
+    mod_candle_transformers_quantized_nn[label="quantized_nn"];
+    mod_candle_transformers_quantized_var_builder[label="quantized_var_builder"];
+    mod_candle_transformers_qwen3_vl[label="qwen3_vl"];
+    mod_candle_transformers_segment_anything[label="segment_anything"];
+    mod_candle_transformers_stable_diffusion[label="stable_diffusion"];
+    mod_candle_transformers_utils[label="utils"];
+    mod_candle_transformers_voxtral[label="voxtral"];
+    mod_candle_transformers_whisper[label="whisper"];
+    mod_candle_transformers_wuerstchen[label="wuerstchen"];
+    mod_candle_transformers_z_image[label="z_image"];
+  }
+
+  subgraph cluster_candle_wasm_example_llama2 {
+    label="candle-wasm-example-llama2";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_wasm_example_llama2_model[label="model"];
+    mod_candle_wasm_example_llama2_worker[label="worker"];
+  }
+
+  subgraph cluster_candle_wasm_example_t5 {
+    label="candle-wasm-example-t5";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_wasm_example_t5_bin[label="bin"];
+  }
+
+  subgraph cluster_candle_wasm_example_yolo {
+    label="candle-wasm-example-yolo";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_candle_wasm_example_yolo_model[label="model"];
+  }
+
+  subgraph cluster_tensor_tools {
+    label="tensor-tools";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_tensor_tools_main[label="main"];
+  }
+
+
+  mod_candle_core_cpu_backend -> mod_candle_core_conv;
+  mod_candle_core_cpu_backend -> mod_candle_core_cuda_backend [dir=both]; // dir best-effort not accurate
+  mod_candle_core_cpu_backend -> mod_candle_core_dtype [dir=both]; // dir best-effort not accurate
+  mod_candle_core_cpu_backend -> mod_candle_core_layout;
+  mod_candle_core_cuda_backend -> mod_candle_core_layout;
+  mod_candle_core_dtype -> mod_candle_nn_rotary_emb [dir=both]; // dir best-effort not accurate
+  mod_candle_core_metal_backend -> mod_candle_core_dtype;
+  mod_candle_core_metal_backend -> mod_candle_metal_kernels_metal;
+  mod_candle_core_quantized -> mod_candle_core_dummy_cuda_backend;
+  mod_candle_core_quantized -> mod_candle_core_dummy_metal_backend;
+  mod_candle_core_quantized -> mod_candle_core_shape;
+  mod_candle_core_quantized -> mod_candle_metal_kernels_metal;
+  mod_candle_core_quantized -> mod_candle_nn_func;
+  mod_candle_core_quantized -> mod_candle_onnx_eval;
+  mod_candle_core_safetensors -> mod_candle_core_device;
+  mod_candle_core_safetensors -> mod_candle_core_tensor;
+  mod_candle_core_tensor -> mod_candle_transformers_models [dir=both]; // dir best-effort not accurate
+  mod_candle_core_test_utils -> mod_candle_core_tensor;
+  mod_candle_datasets_vision -> mod_candle_core_tensor;
+  mod_candle_examples_imagenet -> mod_candle_core_tensor;
+  mod_candle_examples_lib -> mod_candle_core_tensor;
+  mod_candle_examples_lib -> mod_candle_pyo3_lib [dir=both]; // dir best-effort not accurate
+  mod_candle_flash_attn_lib -> mod_candle_core_tensor;
+  mod_candle_flash_attn_v3_lib -> mod_candle_core_tensor;
+  mod_candle_metal_kernels_kernels -> mod_candle_core_device;
+  mod_candle_metal_kernels_kernels -> mod_candle_metal_kernels_kernel;
+  mod_candle_metal_kernels_kernels -> mod_candle_metal_kernels_lib;
+  mod_candle_metal_kernels_kernels -> mod_candle_metal_kernels_metal;
+  mod_candle_metal_kernels_kernels -> mod_candle_metal_kernels_utils;
+  mod_candle_metal_kernels_tests -> mod_candle_core_cuda_backend;
+  mod_candle_metal_kernels_tests -> mod_candle_metal_kernels_kernel;
+  mod_candle_metal_kernels_tests -> mod_candle_metal_kernels_kernels;
+  mod_candle_metal_kernels_tests -> mod_candle_metal_kernels_metal;
+  mod_candle_nn_conv -> mod_candle_core_tensor;
+  mod_candle_nn_conv -> mod_candle_transformers_quantized_var_builder;
+  mod_candle_nn_cpu_flash_attention -> mod_candle_core_tensor;
+  mod_candle_nn_kv_cache -> mod_candle_core_tensor;
+  mod_candle_nn_loss -> mod_candle_core_tensor;
+  mod_candle_nn_moe -> mod_candle_core_tensor;
+  mod_candle_nn_moe -> mod_candle_pyo3_lib;
+  mod_candle_nn_ops -> mod_candle_core_tensor;
+  mod_candle_nn_ops -> mod_candle_pyo3_lib;
+  mod_candle_nn_rnn -> mod_candle_core_tensor;
+  mod_candle_nn_rotary_emb -> mod_candle_core_layout;
+  mod_candle_nn_rotary_emb -> mod_candle_core_tensor;
+  mod_candle_pyo3_lib -> mod_candle_core_tensor;
+  mod_candle_pyo3_lib -> mod_candle_pyo3_shape;
+  mod_candle_transformers_chinese_clip -> mod_candle_core_lib;
+  mod_candle_transformers_chinese_clip -> mod_candle_core_tensor;
+  mod_candle_transformers_clip -> mod_candle_core_lib;
+  mod_candle_transformers_clip -> mod_candle_core_tensor;
+  mod_candle_transformers_flux -> mod_candle_core_tensor;
+  mod_candle_transformers_flux -> mod_candle_nn_group_norm;
+  mod_candle_transformers_flux -> mod_candle_pyo3_lib;
+  mod_candle_transformers_flux -> mod_candle_transformers_models;
+  mod_candle_transformers_mimi -> mod_candle_core_lib;
+  mod_candle_transformers_mimi -> mod_candle_core_streaming;
+  mod_candle_transformers_mimi -> mod_candle_core_tensor;
+  mod_candle_transformers_mimi -> mod_candle_transformers_models [dir=both]; // dir best-effort not accurate
+  mod_candle_transformers_mmdit -> mod_candle_core_lib;
+  mod_candle_transformers_mmdit -> mod_candle_core_tensor;
+  mod_candle_transformers_models -> mod_candle_core_device;
+  mod_candle_transformers_models -> mod_candle_core_dtype;
+  mod_candle_transformers_models -> mod_candle_core_lib;
+  mod_candle_transformers_models -> mod_candle_core_quantized;
+  mod_candle_transformers_models -> mod_candle_metal_kernels_lib;
+  mod_candle_transformers_models -> mod_candle_metal_kernels_metal;
+  mod_candle_transformers_models -> mod_candle_nn_activation;
+  mod_candle_transformers_models -> mod_candle_nn_batch_norm;
+  mod_candle_transformers_models -> mod_candle_nn_conv;
+  mod_candle_transformers_models -> mod_candle_nn_func;
+  mod_candle_transformers_models -> mod_candle_nn_kv_cache;
+  mod_candle_transformers_models -> mod_candle_nn_linear;
+  mod_candle_transformers_models -> mod_candle_transformers_quantized_nn [dir=both]; // dir best-effort not accurate
+  mod_candle_transformers_models -> mod_candle_transformers_quantized_var_builder;
+  mod_candle_transformers_models -> mod_candle_transformers_stable_diffusion [dir=both]; // dir best-effort not accurate
+  mod_candle_transformers_nvembed_v2 -> mod_candle_core_tensor;
+  mod_candle_transformers_pixtral -> mod_candle_transformers_models;
+  mod_candle_transformers_quantized_nn -> mod_candle_transformers_quantized_var_builder;
+  mod_candle_transformers_qwen3_vl -> mod_candle_core_tensor;
+  mod_candle_transformers_segment_anything -> mod_candle_core_lib;
+  mod_candle_transformers_segment_anything -> mod_candle_core_tensor;
+  mod_candle_transformers_stable_diffusion -> mod_candle_core_lib;
+  mod_candle_transformers_stable_diffusion -> mod_candle_core_tensor;
+  mod_candle_transformers_utils -> mod_candle_core_tensor;
+  mod_candle_transformers_voxtral -> mod_candle_core_device;
+  mod_candle_transformers_voxtral -> mod_candle_core_tensor;
+  mod_candle_transformers_voxtral -> mod_candle_transformers_models;
+  mod_candle_transformers_whisper -> mod_candle_core_tensor;
+  mod_candle_transformers_whisper -> mod_candle_nn_conv;
+  mod_candle_transformers_whisper -> mod_candle_transformers_models;
+  mod_candle_transformers_wuerstchen -> mod_candle_core_lib;
+  mod_candle_transformers_wuerstchen -> mod_candle_core_tensor;
+  mod_candle_transformers_z_image -> mod_candle_core_device;
+  mod_candle_transformers_z_image -> mod_candle_core_lib;
+  mod_candle_transformers_z_image -> mod_candle_core_tensor;
+  mod_candle_transformers_z_image -> mod_candle_nn_group_norm;
+  mod_candle_transformers_z_image -> mod_candle_transformers_models;
+  mod_candle_wasm_example_llama2_model -> mod_candle_core_tensor;
+  mod_candle_wasm_example_llama2_model -> mod_candle_transformers_models;
+  mod_candle_wasm_example_llama2_worker -> mod_candle_transformers_models;
+  mod_candle_wasm_example_t5_bin -> mod_candle_transformers_models;
+  mod_candle_wasm_example_yolo_model -> mod_candle_core_lib;
+  mod_candle_wasm_example_yolo_model -> mod_candle_core_tensor;
+  mod_tensor_tools_main -> mod_candle_metal_kernels_metal;
+  mod_tensor_tools_main -> mod_candle_pyo3_lib;
+}

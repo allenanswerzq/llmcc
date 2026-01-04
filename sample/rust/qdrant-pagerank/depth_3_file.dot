@@ -1,0 +1,1700 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_api {
+    label="api";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_grpc {
+      label="grpc";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_qdrant_rs {
+        label="qdrant.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7629[label="StrictModeConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:1021", sym_ty="Struct", shape=box];
+        n80563[label="PeerId", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:13264", sym_ty="Struct", shape=box];
+        n1262[label="Filter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:136", sym_ty="Struct", shape=box];
+        n1449[label="Condition", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:169", sym_ty="Struct", shape=box];
+        n13192[label="ShardKey", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:1711", sym_ty="Struct", shape=box];
+        n17196[label="Distance", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:2142", sym_ty="Enum", shape=box];
+        n2049[label="FieldCondition", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:240", sym_ty="Struct", shape=box];
+        n635[label="Value", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:27", sym_ty="Struct", shape=box];
+        n2682[label="Range", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:333", sym_ty="Struct", shape=box];
+        n35550[label="ReadConsistency", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:4658", sym_ty="Struct", shape=box];
+        n36635[label="DenseVector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:4807", sym_ty="Struct", shape=box];
+        n37144[label="ShardKeySelector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:4863", sym_ty="Struct", shape=box];
+        n37228[label="UpsertPoints", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:4874", sym_ty="Struct", shape=box];
+        n41904[label="Value", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:5562", sym_ty="Enum", shape=box];
+        n4235[label="MultiVectorConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:564", sym_ty="Struct", shape=box];
+        n54280[label="ScoredPoint", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:6853", sym_ty="Struct", shape=box];
+        n65690[label="Points", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:8329", sym_ty="Trait", shape=box];
+        n7188[label="QuantizationConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:968", sym_ty="Struct", shape=box];
+        n78266[label="UpsertPointsInternal", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\grpc\\qdrant.rs:9990", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_rest {
+      label="rest";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_models_rs {
+        label="models.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n12599[label="Usage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\rest\\models.rs:58", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_schema_rs {
+        label="schema.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n76340[label="ScoredPoint", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\api\\src\\rest\\schema.rs:444", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_collection {
+    label="collection";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_collection {
+      label="collection";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n44914[label="Collection", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\collection\\mod.rs:62", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15791[label="CollectionConfigInternal", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\config.rs:220", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_generalizer {
+      label="generalizer";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n9919[label="Generalizer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\operations\\generalizer\\mod.rs:14", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_local_shard {
+      label="local_shard";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n67421[label="LocalShard", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\local_shard\\mod.rs:100", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_operations {
+      label="operations";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_shard_selector_internal_rs {
+        label="shard_selector_internal.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n17967[label="ShardSelectorInternal", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\operations\\shard_selector_internal.rs:7", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_types_rs {
+        label="types.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n72345[label="UpdateResult", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\operations\\types.rs:392", sym_ty="Struct", shape=box];
+        n74897[label="CollectionError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\operations\\types.rs:898", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_replica_set {
+      label="replica_set";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n74724[label="ShardReplicaSet", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\replica_set\\mod.rs:93", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_shard_holder {
+      label="shard_holder";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n72341[label="ShardHolder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\shard_holder\\mod.rs:61", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_shards {
+      label="shards";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_channel_service_rs {
+        label="channel_service.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n69863[label="ChannelService", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\channel_service.rs:20", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_forward_proxy_shard_rs {
+        label="forward_proxy_shard.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n33190[label="ForwardProxyShard", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\forward_proxy_shard.rs:50", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_remote_shard_rs {
+        label="remote_shard.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n64708[label="RemoteShard", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\remote_shard.rs:81", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_resharding_rs {
+        label="resharding.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n23481[label="ReshardKey", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\resharding.rs:74", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_transfer {
+      label="transfer";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_driver_rs {
+        label="driver.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n34792[label="transfer_shard", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\transfer\\driver.rs:35", sym_ty="Function"];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n10809[label="ShardTransferConsensus", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\transfer\\mod.rs:186", sym_ty="Trait", shape=box];
+        n9821[label="ShardTransfer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\shards\\transfer\\mod.rs:34", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_verification {
+      label="verification";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n28280[label="StrictModeVerification", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\collection\\src\\operations\\verification\\mod.rs:38", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_common {
+    label="common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_budget_rs {
+      label="budget.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n50397[label="ResourceBudget", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\budget.rs:26", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_counter {
+      label="counter";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_counter_cell_rs {
+        label="counter_cell.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n61273[label="CounterCell", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\counter\\counter_cell.rs:7", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_hardware_accumulator_rs {
+        label="hardware_accumulator.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n65866[label="HwMeasurementAcc", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\counter\\hardware_accumulator.rs:102", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_hardware_counter_rs {
+        label="hardware_counter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n49431[label="HardwareCounterCell", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\counter\\hardware_counter.rs:11", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_fixed_length_priority_queue_rs {
+      label="fixed_length_priority_queue.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9619[label="FixedLengthPriorityQueue", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\fixed_length_priority_queue.rs:20", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_save_on_disk_rs {
+      label="save_on_disk.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n48053[label="SaveOnDisk", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\save_on_disk.rs:17", sym_ty="Struct", shape=box];
+      n48317[label="Error", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\save_on_disk.rs:25", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n20419[label="ScoredPointOffset", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\common\\src\\types.rs:14", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_gridstore {
+    label="gridstore";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_fixtures_rs {
+      label="fixtures.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n51795[label="Payload", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\gridstore\\src\\fixtures.rs:11", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_gridstore_rs {
+      label="gridstore.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n71175[label="Gridstore", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\gridstore\\src\\gridstore.rs:31", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_issues {
+    label="issues";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_solution_rs {
+      label="solution.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7360[label="Uri", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\issues\\src\\solution.rs:63", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_memory {
+    label="memory";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_fadvise_rs {
+      label="fadvise.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8886[label="fadvise", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\memory\\src\\fadvise.rs:11", sym_ty="Function"];
+      n8946[label="clear_disk_cache", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\memory\\src\\fadvise.rs:20", sym_ty="Function"];
+    }
+
+    subgraph cluster_mmap_type_rs {
+      label="mmap_type.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n13497[label="MmapSlice", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\common\\memory\\src\\mmap_type.rs:223", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_qdrant {
+    label="qdrant";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_actix {
+      label="actix";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_helpers_rs {
+        label="helpers.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51987[label="process_response_error", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\actix\\helpers.rs:119", sym_ty="Function"];
+        n52465[label="HttpError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\actix\\helpers.rs:204", sym_ty="Struct", shape=box];
+        n51754[label="process_response_with_inference_usage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\actix\\helpers.rs:52", sym_ty="Function"];
+        n51835[label="process_response", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\actix\\helpers.rs:80", sym_ty="Function"];
+        n51869[label="process_response_error_with_inference_usage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\actix\\helpers.rs:91", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_api {
+      label="api";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21756[label="validate", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\tonic\\api\\mod.rs:19", sym_ty="Function"];
+      }
+
+      subgraph cluster_points_api_rs {
+        label="points_api.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8084[label="PointsService", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\tonic\\api\\points_api.rs:35", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_points_internal_api_rs {
+        label="points_internal_api.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n323[label="PointsInternalService", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\tonic\\api\\points_internal_api.rs:44", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_query_common_rs {
+        label="query_common.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n36004[label="query", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\tonic\\api\\query_common.rs:776", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_common {
+      label="common";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_strict_mode_rs {
+        label="strict_mode.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n429[label="CheckedTocProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\common\\strict_mode.rs:13", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_update_rs {
+        label="update.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n52207[label="InternalUpdateParams", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\common\\update.rs:65", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_inference {
+      label="inference";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_params_rs {
+        label="params.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11802[label="InferenceParams", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\common\\inference\\params.rs:4", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_main_rs {
+      label="main.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n13213[label="main", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\main.rs:141", sym_ty="Function"];
+    }
+
+    subgraph cluster_settings_rs {
+      label="settings.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11820[label="ServiceConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\settings.rs:24", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tonic {
+      label="tonic";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_auth_rs {
+        label="auth.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3571[label="extract_access", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\src\\tonic\\auth.rs:111", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_qdrant_edge_py {
+    label="qdrant-edge-py";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_filter {
+      label="filter";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_condition_rs {
+        label="condition.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51154[label="PyCondition", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\edge\\python\\src\\types\\filter\\condition.rs:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11324[label="PyFilter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\edge\\python\\src\\types\\filter\\mod.rs:28", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_formula {
+      label="formula";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_expression_interface_rs {
+        label="expression_interface.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2440[label="Boxed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\edge\\python\\src\\types\\formula\\expression_interface.rs:156", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_repr_rs {
+      label="repr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n63029[label="Repr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\edge\\python\\src\\repr.rs:7", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_types {
+      label="types";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_json_path_rs {
+        label="json_path.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n28429[label="PyJsonPath", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\edge\\python\\src\\types\\json_path.rs:16", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_point_id_rs {
+        label="point_id.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7654[label="PyPointId", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\edge\\python\\src\\types\\point_id.rs:15", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_vector_internal_rs {
+        label="vector_internal.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n70299[label="PyNamedVectorInternal", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\edge\\python\\src\\types\\vector_internal.rs:92", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_segment {
+    label="segment";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_common {
+      label="common";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n58983[label="check_vector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\common\\mod.rs:48", sym_ty="Function"];
+      }
+
+      subgraph cluster_operation_error_rs {
+        label="operation_error.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n32660[label="OperationError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\common\\operation_error.rs:21", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_operation_time_statistics_rs {
+        label="operation_time_statistics.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n30288[label="OperationDurationsAggregator", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\common\\operation_time_statistics.rs:76", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_data_types {
+      label="data_types";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_facets_rs {
+        label="facets.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n10362[label="FacetParams", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\facets.rs:13", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_named_vectors_rs {
+        label="named_vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4727[label="CowMultiVector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\named_vectors.rs:18", sym_ty="Enum", shape=box];
+        n4869[label="CowVector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\named_vectors.rs:40", sym_ty="Enum", shape=box];
+        n5130[label="NamedVectors", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\named_vectors.rs:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_primitive_rs {
+        label="primitive.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n61424[label="PrimitiveVectorElement", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\primitive.rs:13", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_vectors_rs {
+        label="vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2388[label="TypedMultiDenseVector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\vectors.rs:267", sym_ty="Struct", shape=box];
+        n224[label="VectorInternal", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\vectors.rs:28", sym_ty="Enum", shape=box];
+        n3164[label="TypedMultiDenseVectorRef", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\vectors.rs:417", sym_ty="Struct", shape=box];
+        n6717[label="QueryVector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\vectors.rs:820", sym_ty="Enum", shape=box];
+        n780[label="VectorRef", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\data_types\\vectors.rs:95", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_entry {
+      label="entry";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_entry_point_rs {
+        label="entry_point.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n33754[label="SegmentEntry", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\entry\\entry_point.rs:31", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_field_index {
+      label="field_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_field_index_base_rs {
+        label="field_index_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n38364[label="FieldIndex", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\field_index_base.rs:131", sym_ty="Enum", shape=box];
+        n37809[label="PayloadFieldIndex", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\field_index_base.rs:39", sym_ty="Trait", shape=box];
+        n38052[label="ValueIndexer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\field_index_base.rs:78", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_histogram_rs {
+        label="histogram.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11798[label="Point", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\histogram.rs:29", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_gpu_vector_storage {
+      label="gpu_vector_storage";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_tests_rs {
+        label="tests.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n22380[label="create_vector_storage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\hnsw_index\\gpu\\gpu_vector_storage\\tests.rs:523", sym_ty="Function"];
+        n23332[label="test_gpu_vector_storage_impl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\hnsw_index\\gpu\\gpu_vector_storage\\tests.rs:720", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_hnsw_index {
+      label="hnsw_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_point_scorer_rs {
+        label="point_scorer.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21422[label="FilteredScorer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\hnsw_index\\point_scorer.rs:52", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_id_tracker {
+      label="id_tracker";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_id_tracker_base_rs {
+        label="id_tracker_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n33743[label="IdTracker", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\id_tracker\\id_tracker_base.rs:34", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_simple_id_tracker_rs {
+        label="simple_id_tracker.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n273[label="SimpleIdTracker", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\id_tracker\\simple_id_tracker.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_index {
+      label="index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_struct_payload_index_rs {
+        label="struct_payload_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n62912[label="StructPayloadIndex", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\struct_payload_index.rs:81", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_inverted_index {
+      label="inverted_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7058[label="TokenSet", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\full_text_index\\inverted_index\\mod.rs:29", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mutable_inverted_index_rs {
+        label="mutable_inverted_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n72123[label="MutableInvertedIndex", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\full_text_index\\inverted_index\\mutable_inverted_index.rs:13", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_json_path {
+      label="json_path";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n69186[label="JsonPath", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\json_path\\mod.rs:19", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_map_index {
+      label="map_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n39349[label="MapIndex", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\map_index\\mod.rs:98", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_multi_dense {
+      label="multi_dense";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_simple_multi_dense_vector_storage_rs {
+        label="simple_multi_dense_vector_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n31220[label="SimpleMultiDenseVectorStorage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\multi_dense\\simple_multi_dense_vector_storage.rs:40", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_numeric_index {
+      label="numeric_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n76487[label="NumericIndex", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\field_index\\numeric_index\\mod.rs:506", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_payload_storage {
+      label="payload_storage";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_payload_storage_base_rs {
+        label="payload_storage_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n52335[label="PayloadStorage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\payload_storage\\payload_storage_base.rs:13", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_payload_storage_enum_rs {
+        label="payload_storage_enum.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n32173[label="PayloadStorageEnum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\payload_storage\\payload_storage_enum.rs:21", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_query_checker_rs {
+        label="query_checker.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n15282[label="check_payload", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\payload_storage\\query_checker.rs:115", sym_ty="Function"];
+        n14962[label="check_filter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\payload_storage\\query_checker.rs:34", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_quantized {
+      label="quantized";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_quantized_multivector_storage_rs {
+        label="quantized_multivector_storage.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2582[label="QuantizedMultivectorStorage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\quantized\\quantized_multivector_storage.rs:269", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_quantized_vectors_rs {
+        label="quantized_vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n84639[label="QuantizedVectors", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\quantized\\quantized_vectors.rs:181", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_query_optimization {
+      label="query_optimization";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_condition_converter_rs {
+        label="condition_converter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n37460[label="field_condition_index", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\query_optimization\\condition_converter.rs:200", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_rescore_formula {
+      label="rescore_formula";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_parsed_formula_rs {
+        label="parsed_formula.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n46569[label="ParsedExpression", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\query_optimization\\rescore_formula\\parsed_formula.rs:55", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_segment {
+      label="segment";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n57977[label="Segment", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\segment\\mod.rs:64", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_segment_constructor {
+      label="segment_constructor";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_segment_constructor_base_rs {
+        label="segment_constructor_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n56662[label="open_vector_storage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\segment_constructor\\segment_constructor_base.rs:102", sym_ty="Function"];
+        n60658[label="load_segment", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\segment_constructor\\segment_constructor_base.rs:691", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_sparse_index {
+      label="sparse_index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_sparse_vector_index_rs {
+        label="sparse_vector_index.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8198[label="SparseVectorIndex", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\index\\sparse_index\\sparse_vector_index.rs:45", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n82133[label="SegmentConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:1361", sym_ty="Struct", shape=box];
+      n82185[label="VectorStorageDatatype", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:1523", sym_ty="Enum", shape=box];
+      n81677[label="ExtendedPointId", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:158", sym_ty="Enum", shape=box];
+      n82327[label="Payload", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:1884", sym_ty="Struct", shape=box];
+      n83039[label="Condition", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:3210", sym_ty="Enum", shape=box];
+      n83119[label="WithPayloadInterface", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:3335", sym_ty="Enum", shape=box];
+      n83135[label="WithVector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:3361", sym_ty="Enum", shape=box];
+      n83235[label="Filter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:3565", sym_ty="Struct", shape=box];
+      n81874[label="SearchParams", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\types.rs:566", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_vector_storage {
+      label="vector_storage";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_chunked_mmap_vectors_rs {
+        label="chunked_mmap_vectors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n37441[label="Status", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\chunked_mmap_vectors.rs:31", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_raw_scorer_rs {
+        label="raw_scorer.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3481[label="RawScorer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\raw_scorer.rs:33", sym_ty="Trait", shape=box];
+        n3649[label="new_raw_scorer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\raw_scorer.rs:54", sym_ty="Function"];
+      }
+
+      subgraph cluster_vector_storage_base_rs {
+        label="vector_storage_base.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n85441[label="VectorStorageEnum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\vector_storage_base.rs:217", sym_ty="Enum", shape=box];
+        n85312[label="VectorStorage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\segment\\src\\vector_storage\\vector_storage_base.rs:63", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_shard {
+    label="shard";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_locked_segment_rs {
+      label="locked_segment.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7846[label="LockedSegment", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\locked_segment.rs:18", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_operations {
+      label="operations";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n45656[label="ClockTag", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\operations\\mod.rs:128", sym_ty="Struct", shape=box];
+        n44808[label="CollectionUpdateOperations", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\operations\\mod.rs:18", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_proxy_segment {
+      label="proxy_segment";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n52771[label="ProxySegment", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\proxy_segment\\mod.rs:24", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_query {
+      label="query";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_formula_rs {
+        label="formula.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n22361[label="ExpressionInternal", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\query\\formula.rs:54", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n15218[label="ScoringQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\query\\mod.rs:115", sym_ty="Enum", shape=box];
+        n14895[label="ShardQueryRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\query\\mod.rs:39", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_query_enum_rs {
+        label="query_enum.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51001[label="QueryEnum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\query\\query_enum.rs:10", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_retrieve {
+      label="retrieve";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_record_internal_rs {
+        label="record_internal.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n17019[label="RecordInternal", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\retrieve\\record_internal.rs:11", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_segment_holder {
+      label="segment_holder";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n73927[label="SegmentHolder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\segment_holder\\mod.rs:54", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_update_rs {
+      label="update.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n56733[label="process_payload_operation", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\shard\\src\\update.rs:94", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_sparse {
+    label="sparse";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_common {
+      label="common";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_sparse_vector_rs {
+        label="sparse_vector.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n41850[label="SparseVector", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\sparse\\src\\common\\sparse_vector.rs:17", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_storage {
+    label="storage";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_consensus {
+      label="consensus";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_persistent_rs {
+        label="persistent.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n34305[label="Persistent", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\content_manager\\consensus\\persistent.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_content_manager {
+      label="content_manager";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_consensus_manager_rs {
+        label="consensus_manager.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n53581[label="ConsensusStateRef", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\content_manager\\consensus_manager.rs:1079", sym_ty="Struct", shape=box];
+        n48277[label="ConsensusManager", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\content_manager\\consensus_manager.rs:77", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_errors_rs {
+        label="errors.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n45497[label="StorageError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\content_manager\\errors.rs:15", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n70201[label="ConsensusOperations", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\content_manager\\mod.rs:40", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_dispatcher_rs {
+      label="dispatcher.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n55644[label="Dispatcher", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\dispatcher.rs:25", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_rbac {
+      label="rbac";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51805[label="Access", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\rbac\\mod.rs:15", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_toc {
+      label="toc";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4546[label="TableOfContent", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\content_manager\\toc\\mod.rs:60", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_request_hw_counter_rs {
+        label="request_hw_counter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21304[label="RequestHwCounter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\qdrant\\lib\\storage\\src\\content_manager\\toc\\request_hw_counter.rs:15", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+
+  n224 -> n780 [from="type_arg", to="impl"];
+  n224 -> n2388 [from="type_arg", to="impl"];
+  n224 -> n4869 [from="type_arg", to="impl"];
+  n224 -> n6717 [from="field_type", to="enum"];
+  n224 -> n70299 [from="field_type", to="struct"];
+  n429 -> n36004 [from="input", to="func"];
+  n635 -> n54280 [from="type_arg", to="generic"];
+  n635 -> n54280 [from="type_dep", to="struct"];
+  n780 -> n3164 [from="type_arg", to="impl", dir=both];
+  n780 -> n4869 [from="type_arg", to="impl"];
+  n780 -> n6717 [from="type_arg", to="impl"];
+  n1262 -> n9821 [from="type_dep", to="struct"];
+  n1262 -> n10362 [from="type_dep", to="struct"];
+  n1262 -> n11324 [from="field_type", to="struct"];
+  n1262 -> n14895 [from="type_arg", to="generic"];
+  n1262 -> n14895 [from="type_dep", to="struct"];
+  n1262 -> n14962 [from="input", to="func"];
+  n1262 -> n15282 [from="input", to="func"];
+  n1262 -> n33190 [from="type_dep", to="struct"];
+  n1262 -> n37228 [from="type_dep", to="struct"];
+  n1449 -> n1262 [from="type_arg", to="generic"];
+  n1449 -> n1262 [from="type_dep", to="struct"];
+  n1449 -> n15282 [from="input", to="func"];
+  n1449 -> n51154 [from="field_type", to="struct"];
+  n2049 -> n37460 [from="input", to="func"];
+  n2388 -> n3164 [from="type_arg", to="impl"];
+  n2388 -> n4727 [from="field_type", to="enum"];
+  n2682 -> n2049 [from="type_arg", to="generic"];
+  n2682 -> n2049 [from="type_dep", to="struct"];
+  n3164 -> n4727 [from="field_type", to="enum"];
+  n3481 -> n3649 [from="bound", to="generic", dir=both];
+  n3481 -> n21422 [from="field_type", to="struct"];
+  n3571 -> n51805 [from="func", to="output"];
+  n4235 -> n2582 [from="field_type", to="struct"];
+  n4235 -> n31220 [from="field_type", to="struct"];
+  n4546 -> n323 [from="type_dep", to="struct"];
+  n4546 -> n55644 [from="type_dep", to="struct"];
+  n4727 -> n4869 [from="field_type", to="enum"];
+  n5130 -> n17019 [from="field_type", to="struct"];
+  n6717 -> n3649 [from="input", to="func"];
+  n6717 -> n58983 [from="input", to="func"];
+  n7058 -> n72123 [from="type_dep", to="struct"];
+  n7188 -> n15791 [from="type_dep", to="struct"];
+  n7188 -> n23332 [from="input", to="func"];
+  n7360 -> n69863 [from="type_dep", to="struct"];
+  n7629 -> n15791 [from="type_dep", to="struct"];
+  n7846 -> n52771 [from="field_type", to="struct", dir=both];
+  n7846 -> n73927 [from="type_dep", to="struct"];
+  n8946 -> n8886 [from="caller", to="callee"];
+  n9821 -> n34792 [from="input", to="func"];
+  n9821 -> n48053 [from="type_arg", to="generic"];
+  n9919 -> n224 [from="trait", to="impl"];
+  n9919 -> n14895 [from="trait", to="impl"];
+  n9919 -> n15218 [from="trait", to="impl"];
+  n9919 -> n44808 [from="trait", to="impl"];
+  n9919 -> n51795 [from="trait", to="impl"];
+  n10809 -> n34792 [from="input", to="func"];
+  n11798 -> n13497 [from="type_arg", to="generic"];
+  n11802 -> n36004 [from="input", to="func"];
+  n11820 -> n323 [from="field_type", to="struct"];
+  n11820 -> n8084 [from="field_type", to="struct"];
+  n13192 -> n17019 [from="type_arg", to="generic"];
+  n13192 -> n17019 [from="type_dep", to="struct"];
+  n13192 -> n17967 [from="field_type", to="enum"];
+  n13192 -> n23481 [from="type_dep", to="struct"];
+  n13192 -> n37144 [from="type_dep", to="struct"];
+  n13192 -> n54280 [from="type_arg", to="generic"];
+  n13192 -> n54280 [from="type_dep", to="struct"];
+  n13192 -> n72341 [from="type_dep", to="struct"];
+  n13192 -> n74724 [from="type_arg", to="impl"];
+  n13192 -> n76340 [from="type_dep", to="struct"];
+  n13213 -> n4546 [from="func", to="type_dep"];
+  n13213 -> n34305 [from="func", to="type_dep"];
+  n13213 -> n48277 [from="func", to="type_dep"];
+  n13213 -> n50397 [from="func", to="type_dep"];
+  n13213 -> n55644 [from="func", to="type_dep"];
+  n13213 -> n69863 [from="func", to="type_dep"];
+  n15218 -> n14895 [from="type_arg", to="generic"];
+  n15218 -> n14895 [from="type_dep", to="struct"];
+  n15282 -> n14962 [from="caller", to="callee"];
+  n15791 -> n44914 [from="type_dep", to="struct"];
+  n15791 -> n67421 [from="type_dep", to="struct"];
+  n15791 -> n74724 [from="type_dep", to="struct"];
+  n17196 -> n22380 [from="input", to="func"];
+  n17196 -> n23332 [from="input", to="func"];
+  n17196 -> n31220 [from="field_type", to="struct"];
+  n20419 -> n9619 [from="type_arg", to="generic"];
+  n21304 -> n36004 [from="input", to="func"];
+  n21756 -> n37441 [from="func", to="type_dep"];
+  n22380 -> n85441 [from="func", to="output"];
+  n23332 -> n6717 [from="func", to="type_dep"];
+  n23332 -> n22380 [from="caller", to="callee"];
+  n23332 -> n49431 [from="func", to="type_dep"];
+  n28280 -> n10362 [from="trait", to="impl"];
+  n30288 -> n64708 [from="type_dep", to="struct"];
+  n31220 -> n85441 [from="field_type", to="enum"];
+  n32173 -> n57977 [from="type_dep", to="struct"];
+  n32173 -> n62912 [from="type_dep", to="struct"];
+  n32660 -> n74897 [from="type_arg", to="impl"];
+  n33743 -> n273 [from="trait", to="impl"];
+  n33754 -> n57977 [from="trait", to="impl"];
+  n34305 -> n48277 [from="type_dep", to="struct"];
+  n34792 -> n64708 [from="func", to="type_dep"];
+  n36004 -> n12599 [from="func", to="type_dep"];
+  n36004 -> n37441 [from="func", to="type_dep"];
+  n36635 -> n224 [from="field_type", to="enum"];
+  n36635 -> n4869 [from="type_arg", to="impl"];
+  n36635 -> n51001 [from="type_arg", to="impl"];
+  n37144 -> n37228 [from="type_dep", to="struct"];
+  n37228 -> n78266 [from="type_dep", to="struct"];
+  n37809 -> n39349 [from="trait", to="impl"];
+  n38052 -> n39349 [from="trait", to="impl"];
+  n38052 -> n76487 [from="trait", to="impl"];
+  n38364 -> n37460 [from="input", to="func"];
+  n39349 -> n38364 [from="field_type", to="enum"];
+  n41850 -> n224 [from="field_type", to="enum"];
+  n41850 -> n224 [from="type_arg", to="generic"];
+  n41850 -> n780 [from="field_type", to="enum"];
+  n41850 -> n4869 [from="type_arg", to="impl"];
+  n41850 -> n6717 [from="type_arg", to="impl"];
+  n41904 -> n35550 [from="type_dep", to="struct"];
+  n41904 -> n82327 [from="type_arg", to="generic"];
+  n41904 -> n82327 [from="type_arg", to="impl"];
+  n45497 -> n48277 [from="type_dep", to="struct"];
+  n45497 -> n51754 [from="input", to="func"];
+  n45497 -> n51835 [from="input", to="func"];
+  n45497 -> n51869 [from="input", to="func"];
+  n45497 -> n51987 [from="input", to="func"];
+  n45497 -> n52465 [from="field_type", to="struct"];
+  n45656 -> n52207 [from="type_dep", to="struct"];
+  n45656 -> n72345 [from="type_dep", to="struct"];
+  n48053 -> n44914 [from="type_dep", to="struct"];
+  n48053 -> n67421 [from="type_dep", to="struct"];
+  n48053 -> n72341 [from="field_type", to="struct"];
+  n48053 -> n74724 [from="type_dep", to="struct"];
+  n48317 -> n74897 [from="type_arg", to="impl"];
+  n49431 -> n3649 [from="input", to="func"];
+  n49431 -> n15282 [from="input", to="func"];
+  n49431 -> n56733 [from="input", to="func"];
+  n50397 -> n4546 [from="field_type", to="struct"];
+  n50397 -> n44914 [from="field_type", to="struct"];
+  n50397 -> n74724 [from="field_type", to="struct"];
+  n51001 -> n6717 [from="type_arg", to="impl"];
+  n51001 -> n15218 [from="field_type", to="enum"];
+  n51754 -> n51869 [from="caller", to="callee"];
+  n51795 -> n15791 [from="type_dep", to="struct"];
+  n51795 -> n17019 [from="type_arg", to="generic"];
+  n51795 -> n17019 [from="type_dep", to="struct"];
+  n51795 -> n71175 [from="type_arg", to="generic"];
+  n51805 -> n36004 [from="input", to="func"];
+  n51835 -> n51754 [from="caller", to="callee"];
+  n51869 -> n52465 [from="func", to="type_dep"];
+  n51987 -> n51869 [from="caller", to="callee"];
+  n52335 -> n32173 [from="trait", to="impl"];
+  n53581 -> n55644 [from="type_dep", to="struct"];
+  n55644 -> n8084 [from="type_dep", to="struct"];
+  n56662 -> n85441 [from="func", to="type_dep"];
+  n57977 -> n7846 [from="type_arg", to="impl"];
+  n60658 -> n57977 [from="func", to="type_dep"];
+  n61273 -> n49431 [from="field_type", to="struct"];
+  n61273 -> n49431 [from="type_arg", to="generic"];
+  n61424 -> n2388 [from="type_arg", to="generic"];
+  n62912 -> n8198 [from="type_dep", to="struct"];
+  n62912 -> n57977 [from="type_dep", to="struct"];
+  n63029 -> n2440 [from="trait", to="impl"];
+  n63029 -> n7654 [from="trait", to="impl"];
+  n63029 -> n28429 [from="trait", to="impl"];
+  n63029 -> n51154 [from="trait", to="impl"];
+  n63029 -> n70299 [from="trait", to="impl"];
+  n64708 -> n33190 [from="field_type", to="struct"];
+  n64708 -> n74724 [from="type_dep", to="struct"];
+  n65690 -> n8084 [from="trait", to="impl"];
+  n65866 -> n21304 [from="field_type", to="struct"];
+  n65866 -> n37460 [from="input", to="func"];
+  n65866 -> n49431 [from="type_arg", to="generic"];
+  n65866 -> n49431 [from="type_dep", to="struct"];
+  n67421 -> n33190 [from="field_type", to="struct"];
+  n69186 -> n10362 [from="field_type", to="struct"];
+  n69186 -> n22361 [from="field_type", to="enum"];
+  n69186 -> n28429 [from="field_type", to="struct"];
+  n69186 -> n46569 [from="field_type", to="enum"];
+  n69863 -> n4546 [from="field_type", to="struct"];
+  n69863 -> n34792 [from="input", to="func"];
+  n69863 -> n44914 [from="field_type", to="struct"];
+  n69863 -> n64708 [from="field_type", to="struct"];
+  n69863 -> n74724 [from="field_type", to="struct"];
+  n70201 -> n48277 [from="type_dep", to="struct"];
+  n73927 -> n56733 [from="input", to="func"];
+  n74724 -> n72341 [from="type_dep", to="struct"];
+  n74897 -> n45497 [from="type_arg", to="generic"];
+  n74897 -> n45497 [from="type_arg", to="impl"];
+  n74897 -> n52465 [from="type_arg", to="impl"];
+  n76340 -> n9619 [from="type_arg", to="generic"];
+  n76487 -> n38364 [from="field_type", to="enum"];
+  n80563 -> n4546 [from="field_type", to="struct"];
+  n80563 -> n9821 [from="field_type", to="struct"];
+  n80563 -> n23481 [from="field_type", to="struct"];
+  n80563 -> n34305 [from="field_type", to="struct"];
+  n80563 -> n34305 [from="type_dep", to="struct"];
+  n80563 -> n44914 [from="field_type", to="struct"];
+  n80563 -> n45656 [from="field_type", to="struct"];
+  n80563 -> n64708 [from="field_type", to="struct"];
+  n80563 -> n69863 [from="type_dep", to="struct"];
+  n80563 -> n70201 [from="field_type", to="enum"];
+  n80563 -> n74897 [from="field_type", to="enum"];
+  n81677 -> n7654 [from="field_type", to="struct"];
+  n81874 -> n14895 [from="type_arg", to="generic"];
+  n81874 -> n14895 [from="type_dep", to="struct"];
+  n82133 -> n52771 [from="field_type", to="struct"];
+  n82133 -> n57977 [from="field_type", to="struct"];
+  n82133 -> n58983 [from="input", to="func"];
+  n82185 -> n84639 [from="field_type", to="struct"];
+  n82327 -> n76340 [from="type_dep", to="struct"];
+  n83039 -> n83235 [from="type_dep", to="struct", dir=both];
+  n83119 -> n14895 [from="field_type", to="struct"];
+  n83119 -> n14895 [from="type_arg", to="generic"];
+  n83135 -> n14895 [from="field_type", to="struct"];
+  n83135 -> n14895 [from="type_arg", to="generic"];
+  n85312 -> n31220 [from="trait", to="impl"];
+  n85312 -> n85441 [from="trait", to="impl"];
+  n85441 -> n3649 [from="input", to="func"];
+  n85441 -> n8198 [from="type_dep", to="struct"];
+  n85441 -> n15282 [from="input", to="func"];
+  n85441 -> n62912 [from="type_dep", to="struct"];
+}

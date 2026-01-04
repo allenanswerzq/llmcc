@@ -1,0 +1,95 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_ruff[label="ruff"];
+  crate_ruff_db[label="ruff_db"];
+  crate_ruff_dev[label="ruff_dev"];
+  crate_ruff_formatter[label="ruff_formatter"];
+  crate_ruff_linter[label="ruff_linter"];
+  crate_ruff_python_ast[label="ruff_python_ast"];
+  crate_ruff_python_formatter[label="ruff_python_formatter"];
+  crate_ruff_python_literal[label="ruff_python_literal"];
+  crate_ruff_python_parser[label="ruff_python_parser"];
+  crate_ruff_python_semantic[label="ruff_python_semantic"];
+  crate_ruff_python_trivia[label="ruff_python_trivia"];
+  crate_ruff_server[label="ruff_server"];
+  crate_ruff_text_size[label="ruff_text_size"];
+  crate_ruff_workspace[label="ruff_workspace"];
+  crate_ty_ide[label="ty_ide"];
+  crate_ty_module_resolver[label="ty_module_resolver"];
+  crate_ty_project[label="ty_project"];
+  crate_ty_python_semantic[label="ty_python_semantic"];
+  crate_ty_server[label="ty_server"];
+  crate_ty_test[label="ty_test"];
+
+  crate_ruff -> crate_ruff_db [dir=both]; // dir best-effort not accurate
+  crate_ruff -> crate_ruff_linter [dir=both]; // dir best-effort not accurate
+  crate_ruff -> crate_ruff_python_formatter [dir=both]; // dir best-effort not accurate
+  crate_ruff -> crate_ruff_server [dir=both]; // dir best-effort not accurate
+  crate_ruff -> crate_ruff_workspace [dir=both]; // dir best-effort not accurate
+  crate_ruff_db -> crate_ruff_text_size;
+  crate_ruff_db -> crate_ty_module_resolver [dir=both]; // dir best-effort not accurate
+  crate_ruff_db -> crate_ty_test [dir=both]; // dir best-effort not accurate
+  crate_ruff_dev -> crate_ruff_formatter;
+  crate_ruff_dev -> crate_ruff_linter [dir=both]; // dir best-effort not accurate
+  crate_ruff_formatter -> crate_ruff_linter [dir=both]; // dir best-effort not accurate
+  crate_ruff_formatter -> crate_ruff_text_size;
+  crate_ruff_formatter -> crate_ty_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ruff_formatter -> crate_ty_test [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ruff_python_ast [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ruff_python_formatter [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ruff_python_literal;
+  crate_ruff_linter -> crate_ruff_python_parser [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ruff_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ruff_python_trivia [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ruff_server [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ruff_text_size;
+  crate_ruff_linter -> crate_ty_ide [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ty_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ruff_linter -> crate_ty_test [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_ast -> crate_ruff_python_formatter [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_ast -> crate_ruff_python_trivia [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_ast -> crate_ruff_text_size;
+  crate_ruff_python_ast -> crate_ty_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_ast -> crate_ty_test [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_formatter -> crate_ruff_python_trivia;
+  crate_ruff_python_formatter -> crate_ruff_text_size;
+  crate_ruff_python_formatter -> crate_ty_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_literal -> crate_ruff_formatter;
+  crate_ruff_python_literal -> crate_ruff_python_ast;
+  crate_ruff_python_parser -> crate_ruff_text_size;
+  crate_ruff_python_parser -> crate_ty_test [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_semantic -> crate_ruff_text_size;
+  crate_ruff_python_semantic -> crate_ty_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ruff_python_semantic -> crate_ty_test;
+  crate_ruff_python_trivia -> crate_ruff_text_size;
+  crate_ruff_server -> crate_ruff_workspace;
+  crate_ruff_server -> crate_ty_server [dir=both]; // dir best-effort not accurate
+  crate_ruff_workspace -> crate_ruff_linter;
+  crate_ty_ide -> crate_ruff_db;
+  crate_ty_ide -> crate_ruff_formatter;
+  crate_ty_ide -> crate_ruff_python_ast;
+  crate_ty_ide -> crate_ruff_python_formatter;
+  crate_ty_ide -> crate_ty_module_resolver;
+  crate_ty_ide -> crate_ty_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ty_ide -> crate_ty_test;
+  crate_ty_module_resolver -> crate_ruff_python_formatter;
+  crate_ty_project -> crate_ty_python_semantic [dir=both]; // dir best-effort not accurate
+  crate_ty_project -> crate_ty_test [dir=both]; // dir best-effort not accurate
+  crate_ty_python_semantic -> crate_ruff_text_size;
+  crate_ty_python_semantic -> crate_ty_module_resolver;
+  crate_ty_python_semantic -> crate_ty_test [dir=both]; // dir best-effort not accurate
+  crate_ty_server -> crate_ty_test;
+}

@@ -1,0 +1,30 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_tests_integration[label="tests-integration"];
+  crate_tokio[label="tokio"];
+  crate_tokio_macros[label="tokio-macros"];
+  crate_tokio_stream[label="tokio-stream"];
+  crate_tokio_test[label="tokio-test"];
+  crate_tokio_util[label="tokio-util"];
+
+  crate_tests_integration -> crate_tokio;
+  crate_tokio -> crate_tokio_macros [dir=both]; // dir best-effort not accurate
+  crate_tokio -> crate_tokio_stream [dir=both]; // dir best-effort not accurate
+  crate_tokio -> crate_tokio_util [dir=both]; // dir best-effort not accurate
+  crate_tokio_stream -> crate_tokio_test [dir=both]; // dir best-effort not accurate
+  crate_tokio_stream -> crate_tokio_util;
+  crate_tokio_test -> crate_tokio;
+}

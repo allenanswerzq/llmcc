@@ -1,0 +1,162 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_base_db[label="base-db"];
+  crate_cfg[label="cfg"];
+  crate_edition[label="edition"];
+  crate_hir[label="hir"];
+  crate_hir_def[label="hir-def"];
+  crate_hir_expand[label="hir-expand"];
+  crate_hir_ty[label="hir-ty"];
+  crate_ide[label="ide"];
+  crate_ide_assists[label="ide-assists"];
+  crate_ide_completion[label="ide-completion"];
+  crate_ide_db[label="ide-db"];
+  crate_ide_diagnostics[label="ide-diagnostics"];
+  crate_ide_ssr[label="ide-ssr"];
+  crate_intern[label="intern"];
+  crate_la_arena[label="la-arena"];
+  crate_line_index[label="line-index"];
+  crate_lsp_server[label="lsp-server"];
+  crate_mbe[label="mbe"];
+  crate_parser[label="parser"];
+  crate_paths[label="paths"];
+  crate_proc_macro_api[label="proc-macro-api"];
+  crate_proc_macro_srv[label="proc-macro-srv"];
+  crate_proc_macro_test_impl[label="proc-macro-test-impl"];
+  crate_project_model[label="project-model"];
+  crate_query_group_macro[label="query-group-macro"];
+  crate_rust_analyzer[label="rust-analyzer"];
+  crate_smol_str[label="smol_str"];
+  crate_span[label="span"];
+  crate_stdx[label="stdx"];
+  crate_syntax[label="syntax"];
+  crate_test_utils[label="test-utils"];
+  crate_text_size[label="text-size"];
+  crate_tt[label="tt"];
+  crate_ungrammar[label="ungrammar"];
+  crate_vfs[label="vfs"];
+  crate_xtask[label="xtask"];
+
+  crate_base_db -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_hir -> crate_hir_def [dir=both]; // dir best-effort not accurate
+  crate_hir -> crate_hir_expand [dir=both]; // dir best-effort not accurate
+  crate_hir -> crate_hir_ty [dir=both]; // dir best-effort not accurate
+  crate_hir -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_hir -> crate_span;
+  crate_hir -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_hir -> crate_test_utils;
+  crate_hir_def -> crate_hir_expand [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_ide [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_intern [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_la_arena [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_parser [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_project_model [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_span;
+  crate_hir_def -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_hir_def -> crate_xtask [dir=both]; // dir best-effort not accurate
+  crate_hir_expand -> crate_parser [dir=both]; // dir best-effort not accurate
+  crate_hir_expand -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_hir_expand -> crate_span;
+  crate_hir_expand -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_hir_expand -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_hir_ty -> crate_ide_ssr [dir=both]; // dir best-effort not accurate
+  crate_hir_ty -> crate_la_arena [dir=both]; // dir best-effort not accurate
+  crate_hir_ty -> crate_parser;
+  crate_hir_ty -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_hir_ty -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_hir_ty -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_edition;
+  crate_ide -> crate_ide_completion [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_ide_db [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_ide_ssr [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_parser [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_rust_analyzer [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_span;
+  crate_ide -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_ide -> crate_text_size;
+  crate_ide -> crate_ungrammar;
+  crate_ide -> crate_vfs;
+  crate_ide -> crate_xtask [dir=both]; // dir best-effort not accurate
+  crate_ide_assists -> crate_hir;
+  crate_ide_assists -> crate_hir_def;
+  crate_ide_assists -> crate_hir_ty;
+  crate_ide_assists -> crate_ide_db [dir=both]; // dir best-effort not accurate
+  crate_ide_assists -> crate_ide_ssr;
+  crate_ide_assists -> crate_parser;
+  crate_ide_assists -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_ide_assists -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_ide_assists -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_ide_assists -> crate_text_size;
+  crate_ide_assists -> crate_ungrammar;
+  crate_ide_completion -> crate_ide_db [dir=both]; // dir best-effort not accurate
+  crate_ide_completion -> crate_ide_ssr;
+  crate_ide_completion -> crate_parser [dir=both]; // dir best-effort not accurate
+  crate_ide_completion -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_ide_completion -> crate_smol_str;
+  crate_ide_completion -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_ide_completion -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_ide_completion -> crate_text_size;
+  crate_ide_db -> crate_parser;
+  crate_ide_db -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_ide_db -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_ide_db -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_ide_db -> crate_text_size;
+  crate_ide_diagnostics -> crate_hir;
+  crate_ide_diagnostics -> crate_ide_db;
+  crate_ide_diagnostics -> crate_parser;
+  crate_ide_diagnostics -> crate_query_group_macro;
+  crate_ide_diagnostics -> crate_syntax;
+  crate_ide_diagnostics -> crate_xtask [dir=both]; // dir best-effort not accurate
+  crate_ide_ssr -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_ide_ssr -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_intern -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_la_arena -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_mbe -> crate_test_utils;
+  crate_mbe -> crate_tt;
+  crate_parser -> crate_paths [dir=both]; // dir best-effort not accurate
+  crate_parser -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_parser -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_parser -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_parser -> crate_ungrammar [dir=both]; // dir best-effort not accurate
+  crate_proc_macro_api -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_proc_macro_api -> crate_syntax;
+  crate_proc_macro_api -> crate_test_utils;
+  crate_proc_macro_test_impl -> crate_proc_macro_srv;
+  crate_project_model -> crate_cfg;
+  crate_project_model -> crate_query_group_macro [dir=both]; // dir best-effort not accurate
+  crate_project_model -> crate_syntax;
+  crate_project_model -> crate_test_utils;
+  crate_query_group_macro -> crate_syntax [dir=both]; // dir best-effort not accurate
+  crate_rust_analyzer -> crate_line_index;
+  crate_rust_analyzer -> crate_lsp_server;
+  crate_rust_analyzer -> crate_parser;
+  crate_rust_analyzer -> crate_paths;
+  crate_rust_analyzer -> crate_proc_macro_api;
+  crate_rust_analyzer -> crate_syntax;
+  crate_rust_analyzer -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_rust_analyzer -> crate_text_size;
+  crate_rust_analyzer -> crate_vfs;
+  crate_smol_str -> crate_test_utils;
+  crate_span -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_stdx -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_syntax -> crate_test_utils [dir=both]; // dir best-effort not accurate
+  crate_syntax -> crate_text_size;
+  crate_syntax -> crate_ungrammar [dir=both]; // dir best-effort not accurate
+}

@@ -1,81 +1,80 @@
 # LLMCC Benchmark Results
 
-Generated on: 2026-01-03 12:06:00
+Generated on: 2026-01-04 15:17:36
 
 ## Machine Info
 
 ### CPU
 - **Model:** AMD Ryzen 9 8945HS w/ Radeon 780M Graphics
-- **Cores:** 8 physical, 16 logical (threads)
+- **Cores:** 16 physical, 16 logical (threads)
 
 ### Memory
-- **Total:** 30Gi
-- **Available:** 25Gi
+- **Total:** Unknown
+- **Available:** Unknown
 
 ### OS
-- **Kernel:** Linux 5.15.167.4-microsoft-standard-WSL2
-- **Distribution:** Ubuntu 24.04.3 LTS
-
+- **Kernel:** Windows 10.0.26200
+- **Distribution:** Microsoft Windows 11 Enterprise
 
 ## PageRank Timing (depth=3, top-200)
 
-| Project | Files | LoC | Parse | IR+Symbols | Binding | Graph | Link | Total |
-|---------|-------|-----|-------|------------|---------|-------|------|-------|
-| databend | 3130 | 627K | 0.31s | 1.45s | 0.39s | 0.18s | 0.09s | 3.03s |
-| risingwave | 2382 | 578K | 0.25s | 0.77s | 0.25s | 0.12s | 0.05s | 1.93s |
-| datafusion | 980 | 498K | 0.29s | 0.99s | 0.39s | 0.11s | 0.05s | 2.17s |
-| ruff | 1661 | 418K | 0.23s | 1.12s | 0.26s | 0.15s | 0.07s | 2.23s |
-| rust-analyzer | 1362 | 392K | 0.20s | 1.12s | 0.21s | 0.12s | 0.06s | 2.03s |
-| lance | 442 | 246K | 0.10s | 0.24s | 0.08s | 0.04s | 0.02s | 0.68s |
-| qdrant | 864 | 237K | 0.12s | 0.62s | 0.12s | 0.08s | 0.03s | 1.17s |
-| codex | 617 | 224K | 0.08s | 0.21s | 0.07s | 0.05s | 0.02s | 0.60s |
-| candle | 382 | 159K | 0.07s | 0.23s | 0.06s | 0.03s | 0.02s | 0.56s |
-| opendal | 715 | 94K | 0.04s | 0.16s | 0.04s | 0.02s | 0.01s | 0.38s |
-| tokio | 456 | 92K | 0.04s | 0.14s | 0.03s | 0.02s | 0.01s | 0.31s |
-| clap | 118 | 59K | 0.02s | 0.09s | 0.01s | 0.01s | 0.00s | 0.17s |
-| ripgrep | 77 | 38K | 0.03s | 0.06s | 0.01s | 0.01s | 0.00s | 0.16s |
-| serde | 58 | 33K | 0.02s | 0.05s | 0.01s | 0.01s | 0.00s | 0.13s |
-| lancedb | 78 | 30K | 0.03s | 0.05s | 0.01s | 0.01s | 0.00s | 0.14s |
-| axum | 109 | 29K | 0.02s | 0.03s | 0.01s | 0.01s | 0.00s | 0.09s |
-| llmcc | 45 | 18K | 0.02s | 0.03s | 0.01s | 0.01s | 0.00s | 0.08s |
+| Project | Language | Files | LoC | Parse | IR+Symbols | Binding | Graph | Link | Total |
+|---------|----------|-------|-----|-------|------------|---------|-------|------|-------|
+| databend | rust | 3147 | ~744K | 0.46s | 4.68s | 0.53s | 0.18s | 0.07s | 7.24s |
+| ruff | rust | 1663 | ~347K | 0.37s | 2.78s | 0.39s | 0.21s | 0.06s | 4.61s |
+| rust-analyzer | rust | 1362 | ~286K | 0.27s | 3.10s | 0.30s | 0.14s | 0.05s | 4.50s |
+| datafusion | rust | 985 | ~269K | 0.41s | 2.34s | 0.48s | 0.13s | 0.05s | 4.15s |
+| qdrant | rust | 864 | ~200K | 0.18s | 1.99s | 0.14s | 0.08s | 0.03s | 2.84s |
+| codex | rust | 619 | ~158K | 0.12s | 0.50s | 0.09s | 0.04s | 0.02s | 1.16s |
+| opendal | rust | 715 | ~152K | 0.06s | 0.45s | 0.05s | 0.02s | 0.01s | 0.84s |
+| tokio | rust | 456 | ~152K | 0.05s | 0.51s | 0.04s | 0.02s | 0.01s | 0.78s |
+| candle | rust | 383 | ~113K | 0.08s | 0.63s | 0.10s | 0.04s | 0.02s | 1.16s |
+| lance | rust | 447 | ~102K | 0.15s | 0.66s | 0.11s | 0.04s | 0.02s | 1.42s |
+| clap | rust | 118 | ~66K | 0.03s | 0.33s | 0.02s | 0.01s | - | 0.45s |
+| axum | rust | 109 | ~58K | 0.02s | 0.07s | 0.01s | - | - | 0.15s |
+| serde | rust | 58 | ~42K | 0.02s | 0.21s | 0.02s | 0.01s | - | 0.30s |
+| ripgrep | rust | 77 | ~20K | 0.04s | 0.14s | 0.02s | 0.01s | 0.01s | 0.28s |
+| lancedb | rust | 78 | ~17K | 0.03s | 0.15s | 0.01s | 0.01s | - | 0.27s |
+| llmcc | rust | 52 | ~12K | 0.02s | 0.06s | 0.01s | - | - | 0.14s |
+| risingwave | rust | 0 | - | - | - | - | - | - | - |
 
 ## Summary
 
-Binary: /home/yibai/llmcc/target/release/llmcc
+Binary: C:\Users\zhangqiang\llmcc\target\release\llmcc.exe
 
 ### Project Sizes
-- Small (<50 files): 1 projects
-- Medium (50-500 files): 8 projects
-- Large (>500 files): 8 projects
+- Small (<50 files): 0 projects
+- Medium (50-500 files): 9 projects
+- Large (>500 files): 7 projects
 
 ## PageRank Graph Reduction (depth=3)
 
-| Project | Full Nodes | Full Edges | PR Nodes | PR Edges | Node Reduction | Edge Reduction |
-|---------|------------|------------|----------|----------|----------------|----------------|
-| databend | 7059 | 14744 | 155 | 217 | 100.0% | 100.0% |
-| risingwave | 6638 | 13426 | 161 | 224 | 100.0% | 100.0% |
-| datafusion | 4889 | 8493 | 151 | 259 | 100.0% | 100.0% |
-| ruff | 7104 | 16871 | 171 | 286 | 100.0% | 100.0% |
-| rust-analyzer | 5826 | 18610 | 179 | 474 | 100.0% | 100.0% |
-| lance | 2220 | 3646 | 137 | 191 | 100.0% | 100.0% |
-| qdrant | 3101 | 6747 | 153 | 221 | 100.0% | 100.0% |
-| codex | 3178 | 5152 | 150 | 228 | 100.0% | 100.0% |
-| candle | 2203 | 4600 | 144 | 209 | 100.0% | 100.0% |
-| opendal | 1398 | 1720 | 133 | 126 | 100.0% | 100.0% |
-| tokio | 837 | 1121 | 152 | 192 | 90.0% | 90.0% |
-| clap | 330 | 483 | 170 | 238 | 50.0% | 60.0% |
-| ripgrep | 441 | 538 | 163 | 184 | 70.0% | 70.0% |
-| serde | 328 | 615 | 168 | 286 | 50.0% | 60.0% |
-| lancedb | 247 | 256 | 137 | 152 | 50.0% | 50.0% |
-| axum | 230 | 282 | 140 | 159 | 40.0% | 50.0% |
-| llmcc | 255 | 562 | 185 | 438 | 30.0% | 30.0% |
+| Project | Language | Full Nodes | Full Edges | PR Nodes | PR Edges | Node Reduction | Edge Reduction |
+|---------|----------|------------|------------|----------|----------|----------------|----------------|
+| databend | rust | 7090 | 14771 | 151 | 219 | 97.9% | 98.5% |
+| ruff | rust | 7120 | 16938 | 170 | 288 | 97.6% | 98.3% |
+| rust-analyzer | rust | 5827 | 18578 | 176 | 474 | 97.0% | 97.4% |
+| datafusion | rust | 4929 | 8518 | 149 | 264 | 97.0% | 96.9% |
+| qdrant | rust | 3104 | 6778 | 151 | 226 | 95.1% | 96.7% |
+| codex | rust | 3193 | 5168 | 153 | 226 | 95.2% | 95.6% |
+| opendal | rust | 1393 | 1718 | 134 | 127 | 90.4% | 92.6% |
+| tokio | rust | 836 | 1118 | 154 | 190 | 81.6% | 83.0% |
+| candle | rust | 2213 | 4609 | 149 | 216 | 93.3% | 95.3% |
+| lance | rust | 2228 | 3700 | 139 | 197 | 93.8% | 94.7% |
+| clap | rust | 330 | 483 | 171 | 235 | 48.2% | 51.3% |
+| axum | rust | 231 | 284 | 138 | 159 | 40.3% | 44.0% |
+| serde | rust | 327 | 613 | 168 | 285 | 48.6% | 53.5% |
+| ripgrep | rust | 446 | 541 | 161 | 180 | 63.9% | 66.7% |
+| lancedb | rust | 246 | 258 | 138 | 156 | 43.9% | 39.5% |
+| llmcc | rust | 293 | 638 | 187 | 418 | 36.2% | 34.5% |
+| risingwave | rust | - | - | - | - | - | - |
 
 ## Thread Scaling (databend, depth=3, top-200, 16 cores)
 
 | Threads | Parse | IR+Symbols | Binding | Graph | Link | Total | Speedup |
 |---------|-------|------------|---------|-------|------|-------|---------|
-| 1 | 1.65s | 7.93s | 2.18s | 1.02s | 0.36s | 14.02s | - |
-| 2 | 0.90s | 4.71s | 1.25s | 0.57s | 0.21s | 8.33s | 1.68x |
-| 4 | 0.49s | 2.39s | 0.64s | 0.42s | 0.14s | 4.73s | 2.96x |
-| 8 | 0.42s | 1.92s | 0.48s | 0.22s | 0.10s | 3.76s | 3.72x |
-| 16 | 0.47s | 1.60s | 0.43s | 0.21s | 0.10s | 3.42s | 4.09x |
+| 1 | 3.09s | 24.4s | 3.17s | 1.18s | 0.44s | 34.3s | - |
+| 2 | 1.68s | 15.0s | 1.54s | 0.59s | 0.22s | 20.8s | 1.65x |
+| 4 | 0.92s | 7.81s | 0.83s | 0.31s | 0.13s | 11.4s | 3.00x |
+| 8 | 0.65s | 5.16s | 0.52s | 0.19s | 0.09s | 7.97s | 4.31x |
+| 16 | 0.64s | 4.85s | 0.58s | 0.23s | 0.07s | 7.68s | 4.47x |

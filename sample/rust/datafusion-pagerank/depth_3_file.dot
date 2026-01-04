@@ -1,0 +1,2260 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_datafusion {
+    label="datafusion";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_context {
+      label="context";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n100543[label="SessionContext", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\core\\src\\execution\\context\\mod.rs:291", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_dataframe {
+      label="dataframe";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n846[label="DataFrame", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\core\\src\\dataframe\\mod.rs:215", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_execution {
+      label="execution";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_session_state_rs {
+        label="session_state.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n42291[label="SessionState", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\core\\src\\execution\\session_state.rs:135", sym_ty="Struct", shape=box];
+        n47988[label="SessionStateBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\core\\src\\execution\\session_state.rs:972", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_file_format {
+      label="file_format";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_options_rs {
+        label="options.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n88281[label="CsvReadOptions", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\core\\src\\datasource\\file_format\\options.rs:54", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_catalog {
+    label="datafusion-catalog";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_catalog_rs {
+      label="catalog.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n45117[label="CatalogProviderList", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\catalog\\src\\catalog.rs:159", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_memory {
+      label="memory";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_table_rs {
+        label="table.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n88185[label="MemTable", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\catalog\\src\\memory\\table.rs:67", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_table_rs {
+      label="table.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3797[label="TableProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\catalog\\src\\table.rs:51", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_catalog_listing {
+    label="datafusion-catalog-listing";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n32820[label="ListingTableConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\catalog-listing\\src\\config.rs:55", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_options_rs {
+      label="options.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n68010[label="ListingOptions", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\catalog-listing\\src\\options.rs:32", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_table_rs {
+      label="table.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n92953[label="ListingTable", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\catalog-listing\\src\\table.rs:172", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_common {
+    label="datafusion-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_cast_rs {
+      label="cast.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n79365[label="as_string_view_array", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\cast.rs:142", sym_ty="Function"];
+      n80762[label="as_generic_string_array", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\cast.rs:322", sym_ty="Function"];
+      n79086[label="as_int64_array", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\cast.rs:92", sym_ty="Function"];
+    }
+
+    subgraph cluster_column_rs {
+      label="column.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n29289[label="Column", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\column.rs:30", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n33881[label="ConfigOptions", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\config.rs:1248", sym_ty="Struct", shape=box];
+      n38091[label="TableOptions", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\config.rs:1982", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_dfschema_rs {
+      label="dfschema.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n57036[label="DFSchema", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\dfschema.rs:112", sym_ty="Struct", shape=box];
+      n63105[label="ExprSchema", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\dfschema.rs:1206", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n10275[label="DataFusionError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\error.rs:71", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_functional_dependencies_rs {
+      label="functional_dependencies.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n80710[label="FunctionalDependencies", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\functional_dependencies.rs:182", sym_ty="Struct", shape=box];
+      n80094[label="Constraints", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\functional_dependencies.rs:40", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_join_type_rs {
+      label="join_type.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n52677[label="JoinType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\join_type.rs:30", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_metadata_rs {
+      label="metadata.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n37343[label="FieldMetadata", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\metadata.rs:175", sym_ty="Struct", shape=box];
+      n36782[label="ScalarAndMetadata", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\metadata.rs:27", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_scalar {
+      label="scalar";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n127310[label="ScalarValue", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\scalar\\mod.rs:324", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_spans_rs {
+      label="spans.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n64536[label="Spans", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\spans.rs:147", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_stats_rs {
+      label="stats.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n110439[label="Precision", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\stats.rs:30", sym_ty="Enum", shape=box];
+      n114414[label="ColumnStatistics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\stats.rs:721", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_table_reference_rs {
+      label="table_reference.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n72170[label="TableReference", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\table_reference.rs:78", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_tree_node_rs {
+      label="tree_node.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n35881[label="TreeNodeRecursion", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\tree_node.rs:517", sym_ty="Enum", shape=box];
+      n36392[label="Transformed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\tree_node.rs:658", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_types {
+      label="types";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_logical_rs {
+        label="logical.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n20153[label="LogicalType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\types\\logical.rs:78", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_native_rs {
+        label="native.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n38962[label="NativeType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\types\\native.rs:33", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_utils {
+      label="utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n58054[label="get_row_at_idx", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\utils\\mod.rs:100", sym_ty="Function"];
+        n62738[label="take_function_args", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\common\\src\\utils\\mod.rs:955", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_datasource {
+    label="datafusion-datasource";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_file_rs {
+      label="file.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n76262[label="FileSource", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\file.rs:57", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_file_compression_type_rs {
+      label="file_compression_type.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n103209[label="FileCompressionType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\file_compression_type.rs:57", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_file_format_rs {
+      label="file_format.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n63411[label="FileFormatFactory", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\file_format.rs:123", sym_ty="Trait", shape=box];
+      n62998[label="FileFormat", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\file_format.rs:50", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_file_groups_rs {
+      label="file_groups.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6513[label="FileGroup", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\file_groups.rs:380", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_file_scan_config_rs {
+      label="file_scan_config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n25634[label="FileScanConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\file_scan_config.rs:127", sym_ty="Struct", shape=box];
+      n26008[label="FileScanConfigBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\file_scan_config.rs:239", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_memory_rs {
+      label="memory.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n50[label="MemorySourceConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\memory.rs:58", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_mod_rs {
+      label="mod.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n114666[label="PartitionedFile", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\mod.rs:111", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_source_rs {
+      label="source.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n47753[label="DataSource", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\source.rs:122", sym_ty="Trait", shape=box];
+      n48463[label="DataSourceExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\source.rs:228", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_table_schema_rs {
+      label="table_schema.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n90427[label="TableSchema", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\table_schema.rs:59", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_url_rs {
+      label="url.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n66644[label="ListingTableUrl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\url.rs:37", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_write {
+      label="write";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_demux_rs {
+        label="demux.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n112573[label="hive_style_partitions_demuxer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource\\src\\write\\demux.rs:294", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_datasource_csv {
+    label="datafusion-datasource-csv";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_source_rs {
+      label="source.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n104046[label="CsvSource", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource-csv\\src\\source.rs:88", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_datasource_parquet {
+    label="datafusion-datasource-parquet";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_source_rs {
+      label="source.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n40452[label="ParquetSource", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\datasource-parquet\\src\\source.rs:270", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_execution {
+    label="datafusion-execution";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n46522[label="SessionConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\execution\\src\\config.rs:96", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_memory_pool {
+      label="memory_pool";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n96671[label="MemoryReservation", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\execution\\src\\memory_pool\\mod.rs:352", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_runtime_env_rs {
+      label="runtime_env.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n12520[label="RuntimeEnv", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\execution\\src\\runtime_env.rs:74", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_task_rs {
+      label="task.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n81676[label="TaskContext", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\execution\\src\\task.rs:36", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_expr {
+    label="datafusion-expr";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_execution_props_rs {
+      label="execution_props.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3849[label="ExecutionProps", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\execution_props.rs:35", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_expr_rs {
+      label="expr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n49943[label="WindowFunction", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\expr.rs:1038", sym_ty="Struct", shape=box];
+      n45164[label="Expr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\expr.rs:313", sym_ty="Enum", shape=box];
+      n48272[label="Sort", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\expr.rs:827", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_expr_fn_rs {
+      label="expr_fn.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n61142[label="binary_expr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\expr_fn.rs:173", sym_ty="Function"];
+      n64769[label="ExprFuncBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\expr_fn.rs:804", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_logical_plan {
+      label="logical_plan";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_builder_rs {
+        label="builder.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n59686[label="LogicalPlanBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\logical_plan\\builder.rs:128", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_plan_rs {
+        label="plan.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n128854[label="LogicalPlan", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\logical_plan\\plan.rs:206", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_planner_rs {
+      label="planner.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n56830[label="ExprPlanner", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\planner.rs:142", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_registry_rs {
+      label="registry.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n49899[label="FunctionRegistry", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\registry.rs:29", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_type_coercion {
+      label="type_coercion";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_functions_rs {
+        label="functions.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n9567[label="data_types", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\type_coercion\\functions.rs:211", sym_ty="Function"];
+        n9915[label="try_coerce_types", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\type_coercion\\functions.rs:272", sym_ty="Function"];
+        n10322[label="get_valid_types", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\type_coercion\\functions.rs:358", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_udaf_rs {
+      label="udaf.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n12602[label="AliasedAggregateUDFImpl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udaf.rs:1120", sym_ty="Struct", shape=box];
+      n9636[label="AggregateUDFImpl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udaf.rs:430", sym_ty="Trait", shape=box];
+      n6721[label="AggregateUDF", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udaf.rs:80", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_udf_rs {
+      label="udf.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n49564[label="ScalarFunctionArgs", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udf.rs:365", sym_ty="Struct", shape=box];
+      n51039[label="ScalarUDFImpl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udf.rs:477", sym_ty="Trait", shape=box];
+      n47294[label="ScalarUDF", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udf.rs:62", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_udwf_rs {
+      label="udwf.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n62500[label="WindowUDFImpl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udwf.rs:317", sym_ty="Trait", shape=box];
+      n61186[label="WindowUDF", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\udwf.rs:72", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_window_frame_rs {
+      label="window_frame.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n49984[label="WindowFrame", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr\\src\\window_frame.rs:39", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_expr_common {
+    label="datafusion-expr-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_columnar_value_rs {
+      label="columnar_value.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n31942[label="ColumnarValue", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\columnar_value.rs:96", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_groups_accumulator_rs {
+      label="groups_accumulator.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n58897[label="GroupsAccumulator", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\groups_accumulator.rs:108", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_interval_arithmetic_rs {
+      label="interval_arithmetic.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n130704[label="Interval", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\interval_arithmetic.rs:182", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_operator_rs {
+      label="operator.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n62017[label="Operator", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\operator.rs:22", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_signature_rs {
+      label="signature.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n115474[label="Signature", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\signature.rs:1151", sym_ty="Struct", shape=box];
+      n110400[label="TypeSignature", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\signature.rs:158", sym_ty="Enum", shape=box];
+      n108408[label="Volatility", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\signature.rs:57", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_type_coercion {
+      label="type_coercion";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_binary_rs {
+        label="binary.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n108185[label="binary_numeric_coercion", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\type_coercion\\binary.rs:974", sym_ty="Function"];
+        n108295[label="decimal_coercion", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\expr-common\\src\\type_coercion\\binary.rs:995", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_ffi {
+    label="datafusion-ffi";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_arrow_wrappers_rs {
+      label="arrow_wrappers.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n36454[label="WrappedSchema", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\arrow_wrappers.rs:32", sym_ty="Struct", shape=box];
+      n36721[label="WrappedArray", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\arrow_wrappers.rs:74", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_execution_plan_rs {
+      label="execution_plan.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n79425[label="FFI_ExecutionPlan", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\execution_plan.rs:40", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_physical_expr {
+      label="physical_expr";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n43416[label="FFI_PhysicalExpr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\physical_expr\\mod.rs:54", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_proto {
+      label="proto";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_logical_extension_codec_rs {
+        label="logical_extension_codec.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n109220[label="FFI_LogicalExtensionCodec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\proto\\logical_extension_codec.rs:50", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_schema_provider_rs {
+      label="schema_provider.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n31247[label="FFI_SchemaProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\schema_provider.rs:42", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_table_provider_rs {
+      label="table_provider.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n85639[label="FFI_TableProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\table_provider.rs:93", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_udaf {
+      label="udaf";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n76281[label="FFI_AggregateUDF", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\udaf\\mod.rs:58", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_udf {
+      label="udf";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n68940[label="FFI_ScalarUDF", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\udf\\mod.rs:52", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_udwf {
+      label="udwf";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n49007[label="FFI_WindowUDF", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\ffi\\src\\udwf\\mod.rs:54", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_functions {
+    label="datafusion-functions";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_datetime {
+      label="datetime";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_date_bin_rs {
+        label="date_bin.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n29033[label="Interval", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions\\src\\datetime\\date_bin.rs:299", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_unicode {
+      label="unicode";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_left_rs {
+        label="left.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1733[label="left", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions\\src\\unicode\\left.rs:125", sym_ty="Function"];
+        n1830[label="left_impl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions\\src\\unicode\\left.rs:137", sym_ty="Function"];
+      }
+
+      subgraph cluster_right_rs {
+        label="right.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n106017[label="right", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions\\src\\unicode\\right.rs:125", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_functions_aggregate {
+    label="datafusion-functions-aggregate";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_count_rs {
+      label="count.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n47654[label="Count", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions-aggregate\\src\\count.rs:151", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_first_last_rs {
+      label="first_last.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n69551[label="create_accumulator", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions-aggregate\\src\\first_last.rs:1202", sym_ty="Function"];
+      n63095[label="create_accumulator", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions-aggregate\\src\\first_last.rs:226", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_datafusion_functions_aggregate_common {
+    label="datafusion-functions-aggregate-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_accumulator_rs {
+      label="accumulator.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n39221[label="AccumulatorArgs", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions-aggregate-common\\src\\accumulator.rs:29", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_functions_nested {
+    label="datafusion-functions-nested";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_map_rs {
+      label="map.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n61048[label="map", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions-nested\\src\\map.rs:39", sym_ty="Function"];
+      n61165[label="make_map_batch", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions-nested\\src\\map.rs:59", sym_ty="Function"];
+    }
+
+    subgraph cluster_range_rs {
+      label="range.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1674[label="Range", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\functions-nested\\src\\range.rs:142", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_optimizer {
+    label="datafusion-optimizer";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_optimize_projections {
+      label="optimize_projections";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n77157[label="optimize_projections", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\optimizer\\src\\optimize_projections\\mod.rs:130", sym_ty="Function"];
+      }
+
+      subgraph cluster_required_indices_rs {
+        label="required_indices.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n56645[label="RequiredIndices", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\optimizer\\src\\optimize_projections\\required_indices.rs:38", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_optimizer_rs {
+      label="optimizer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n65652[label="OptimizerConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\optimizer\\src\\optimizer.rs:101", sym_ty="Trait", shape=box];
+      n65443[label="OptimizerRule", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\optimizer\\src\\optimizer.rs:71", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_push_down_filter_rs {
+      label="push_down_filter.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n27898[label="push_down_join", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\optimizer\\src\\push_down_filter.rs:529", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_datafusion_physical_expr {
+    label="datafusion-physical-expr";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_aggregate_rs {
+      label="aggregate.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n114473[label="AggregateFunctionExpr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\aggregate.rs:312", sym_ty="Struct", shape=box];
+      n113655[label="AggregateExprBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\aggregate.rs:63", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_equivalence {
+      label="equivalence";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_class_rs {
+        label="class.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n14819[label="EquivalenceClass", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\equivalence\\class.rs:176", sym_ty="Struct", shape=box];
+        n15722[label="EquivalenceGroup", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\equivalence\\class.rs:304", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ordering_rs {
+        label="ordering.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n51708[label="OrderingEquivalenceClass", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\equivalence\\ordering.rs:55", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_expressions {
+      label="expressions";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_binary_rs {
+        label="binary.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4808[label="binary", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\expressions\\binary.rs:866", sym_ty="Function"];
+      }
+
+      subgraph cluster_cast_rs {
+        label="cast.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n94140[label="cast", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\expressions\\cast.rs:249", sym_ty="Function"];
+      }
+
+      subgraph cluster_column_rs {
+        label="column.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n107626[label="Column", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\expressions\\column.rs:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_dynamic_filters_rs {
+        label="dynamic_filters.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n66220[label="DynamicFilterPhysicalExpr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\expressions\\dynamic_filters.rs:55", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_intervals {
+      label="intervals";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_cp_solver_rs {
+        label="cp_solver.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n59459[label="propagate_arithmetic", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\intervals\\cp_solver.rs:252", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_planner_rs {
+      label="planner.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n78308[label="create_physical_expr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\planner.rs:109", sym_ty="Function"];
+    }
+
+    subgraph cluster_projection_rs {
+      label="projection.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n54635[label="ProjectionExprs", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\projection.rs:127", sym_ty="Struct", shape=box];
+      n58238[label="ProjectionMapping", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\projection.rs:907", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_properties {
+      label="properties";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n113437[label="EquivalenceProperties", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\equivalence\\properties\\mod.rs:136", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_scalar_function_rs {
+      label="scalar_function.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n91688[label="ScalarFunctionExpr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr\\src\\scalar_function.rs:53", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_physical_expr_common {
+    label="datafusion-physical-expr-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_metrics {
+      label="metrics";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_baseline_rs {
+        label="baseline.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n103153[label="BaselineMetrics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\metrics\\baseline.rs:49", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_builder_rs {
+        label="builder.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n63382[label="MetricBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\metrics\\builder.rs:50", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n107524[label="MetricsSet", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\metrics\\mod.rs:208", sym_ty="Struct", shape=box];
+        n108585[label="ExecutionPlanMetricsSet", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\metrics\\mod.rs:410", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_value_rs {
+        label="value.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n30225[label="Time", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\metrics\\value.rs:154", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_physical_expr_rs {
+      label="physical_expr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n10620[label="PhysicalExpr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\physical_expr.rs:73", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_sort_expr_rs {
+      label="sort_expr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n86393[label="LexOrdering", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\sort_expr.rs:357", sym_ty="Struct", shape=box];
+      n87982[label="LexRequirement", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\sort_expr.rs:595", sym_ty="Struct", shape=box];
+      n88672[label="OrderingRequirements", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\sort_expr.rs:705", sym_ty="Enum", shape=box];
+      n84685[label="PhysicalSortExpr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-expr-common\\src\\sort_expr.rs:81", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_physical_optimizer {
+    label="datafusion-physical-optimizer";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_enforce_distribution_rs {
+      label="enforce_distribution.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n109778[label="adjust_input_keys_ordering", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-optimizer\\src\\enforce_distribution.rs:284", sym_ty="Function"];
+    }
+
+    subgraph cluster_enforce_sorting {
+      label="enforce_sorting";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n44631[label="ensure_sorting", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-optimizer\\src\\enforce_sorting\\mod.rs:475", sym_ty="Function"];
+      }
+
+      subgraph cluster_sort_pushdown_rs {
+        label="sort_pushdown.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n52597[label="pushdown_requirement_to_children", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-optimizer\\src\\enforce_sorting\\sort_pushdown.rs:218", sym_ty="Function"];
+        n52116[label="pushdown_sorts_helper", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-optimizer\\src\\enforce_sorting\\sort_pushdown.rs:94", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_limit_pushdown_rs {
+      label="limit_pushdown.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n49912[label="pushdown_limit_helper", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-optimizer\\src\\limit_pushdown.rs:132", sym_ty="Function"];
+    }
+
+    subgraph cluster_optimizer_rs {
+      label="optimizer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n88432[label="PhysicalOptimizerRule", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-optimizer\\src\\optimizer.rs:52", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_physical_plan {
+    label="datafusion-physical-plan";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_aggregates {
+      label="aggregates";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n32694[label="PhysicalGroupBy", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\aggregates\\mod.rs:169", sym_ty="Struct", shape=box];
+        n36094[label="AggregateExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\aggregates\\mod.rs:494", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_coalesce_partitions_rs {
+      label="coalesce_partitions.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n86350[label="CoalescePartitionsExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\coalesce_partitions.rs:45", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_display_rs {
+      label="display.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n49901[label="DisplayAs", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\display.rs:1056", sym_ty="Trait", shape=box];
+      n45149[label="DisplayableExecutionPlan", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\display.rs:116", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_execution_plan_rs {
+      label="execution_plan.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n107663[label="PlanProperties", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\execution_plan.rs:1007", sym_ty="Struct", shape=box];
+      n101933[label="ExecutionPlan", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\execution_plan.rs:92", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_filter_rs {
+      label="filter.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n105372[label="FilterExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\filter.rs:77", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_hash_join {
+      label="hash_join";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_exec_rs {
+        label="exec.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6191[label="HashJoinExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\joins\\hash_join\\exec.rs:318", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_joins {
+      label="joins";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_join_filter_rs {
+        label="join_filter.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18678[label="JoinFilter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\joins\\join_filter.rs:27", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_nested_loop_join_rs {
+        label="nested_loop_join.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n70438[label="NestedLoopJoinExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\joins\\nested_loop_join.rs:173", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_symmetric_hash_join_rs {
+        label="symmetric_hash_join.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n86395[label="SymmetricHashJoinExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\joins\\symmetric_hash_join.rs:174", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_projection_rs {
+      label="projection.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n123[label="ProjectionExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\projection.rs:71", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_repartition {
+      label="repartition";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n36120[label="RepartitionExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\repartition\\mod.rs:678", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_sort_merge_join {
+      label="sort_merge_join";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_exec_rs {
+        label="exec.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n100197[label="SortMergeJoinExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\joins\\sort_merge_join\\exec.rs:106", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_tests_rs {
+        label="tests.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n99342[label="columns", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\joins\\sort_merge_join\\tests.rs:3108", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_sorts {
+      label="sorts";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_sort_rs {
+        label="sort.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n83100[label="SortExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\sorts\\sort.rs:939", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_sort_preserving_merge_rs {
+        label="sort_preserving_merge.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n24229[label="SortPreservingMergeExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\sorts\\sort_preserving_merge.rs:86", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_streaming_merge_rs {
+        label="streaming_merge.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n101128[label="StreamingMergeBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\sorts\\streaming_merge.rs:80", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_spill {
+      label="spill";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_spill_manager_rs {
+        label="spill_manager.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n96262[label="SpillManager", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\spill\\spill_manager.rs:40", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_test_rs {
+      label="test.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n100832[label="TestMemoryExec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\test.rs:62", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_tree_node_rs {
+      label="tree_node.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n33907[label="PlanContext", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\physical-plan\\src\\tree_node.rs:54", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_proto {
+    label="datafusion-proto";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_generated {
+      label="generated";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_datafusion_proto_common_rs {
+        label="datafusion_proto_common.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11875[label="ScalarValue", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\generated\\datafusion_proto_common.rs:311", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_prost_rs {
+        label="prost.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n104763[label="PhysicalPlanNode", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\generated\\prost.rs:1076", sym_ty="Struct", shape=box];
+        n104810[label="PhysicalPlanType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\generated\\prost.rs:1086", sym_ty="Enum", shape=box];
+        n107897[label="ExprType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\generated\\prost.rs:1286", sym_ty="Enum", shape=box];
+        n93419[label="LogicalPlanType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\generated\\prost.rs:15", sym_ty="Enum", shape=box];
+        n93359[label="LogicalPlanNode", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\generated\\prost.rs:5", sym_ty="Struct", shape=box];
+        n99912[label="LogicalExprNode", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\generated\\prost.rs:566", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_logical_plan {
+      label="logical_plan";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_from_proto_rs {
+        label="from_proto.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n91212[label="parse_expr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\logical_plan\\from_proto.rs:255", sym_ty="Function"];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n93622[label="LogicalExtensionCodec", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto\\src\\logical_plan\\mod.rs:107", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_proto_common {
+    label="datafusion-proto-common";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_generated {
+      label="generated";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_prost_rs {
+        label="prost.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n30271[label="TimeUnit", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:1046", sym_ty="Enum", shape=box];
+        n23838[label="ScalarValue", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:311", sym_ty="Struct", shape=box];
+        n23895[label="Value", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:321", sym_ty="Enum", shape=box];
+        n25211[label="ArrowTypeEnum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:459", sym_ty="Enum", shape=box];
+        n26169[label="EmptyMessage", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:553", sym_ty="Struct", shape=box];
+        n21754[label="Constraints", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:76", sym_ty="Struct", shape=box];
+        n21831[label="Schema", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:85", sym_ty="Struct", shape=box];
+        n29310[label="Precision", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:912", sym_ty="Struct", shape=box];
+        n29376[label="Statistics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:919", sym_ty="Struct", shape=box];
+        n29585[label="JoinType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:944", sym_ty="Enum", shape=box];
+        n21878[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\proto-common\\src\\generated\\prost.rs:95", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_pruning {
+    label="datafusion-pruning";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_pruning_predicate_rs {
+      label="pruning_predicate.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n130541[label="build_predicate_expression", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\pruning\\src\\pruning_predicate.rs:1432", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_datafusion_session {
+    label="datafusion-session";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_session_rs {
+      label="session.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n77356[label="Session", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\session\\src\\session.rs:72", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_datafusion_spark {
+    label="datafusion-spark";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_function {
+      label="function";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_functions_nested_utils_rs {
+        label="functions_nested_utils.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n31834[label="make_scalar_function", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\spark\\src\\function\\functions_nested_utils.rs:23", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_sql {
+    label="datafusion-sql";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_planner_rs {
+      label="planner.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n54020[label="PlannerContext", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\sql\\src\\planner.rs:257", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_unparser {
+      label="unparser";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_dialect_rs {
+        label="dialect.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n18377[label="Dialect", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\sql\\src\\unparser\\dialect.rs:50", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8630[label="Unparser", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\sql\\src\\unparser\\mod.rs:57", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_sqllogictest {
+    label="datafusion-sqllogictest";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_datafusion_substrait_roundtrip_engine {
+      label="datafusion_substrait_roundtrip_engine";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_runner_rs {
+        label="runner.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n97140[label="run_query_substrait_round_trip", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\sqllogictest\\src\\engines\\datafusion_substrait_roundtrip_engine\\runner.rs:141", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_postgres_engine {
+      label="postgres_engine";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n94021[label="Error", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\sqllogictest\\src\\engines\\postgres_engine\\mod.rs:47", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_datafusion_substrait {
+    label="datafusion-substrait";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_consumer {
+      label="consumer";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_substrait_consumer_rs {
+        label="substrait_consumer.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n91502[label="SubstraitConsumer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\substrait\\src\\logical_plan\\consumer\\substrait_consumer.rs:153", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_rel {
+      label="rel";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_read_rel_rs {
+        label="read_rel.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n28982[label="from_read_rel", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\datafusion\\datafusion\\substrait\\src\\logical_plan\\consumer\\rel\\read_rel.rs:39", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+
+  n1733 -> n1830 [from="caller", to="callee"];
+  n1733 -> n79086 [from="caller", to="callee"];
+  n1733 -> n79365 [from="caller", to="callee"];
+  n1733 -> n80762 [from="caller", to="callee"];
+  n3797 -> n88185 [from="trait", to="impl"];
+  n3797 -> n92953 [from="trait", to="impl"];
+  n3849 -> n42291 [from="field_type", to="struct"];
+  n3849 -> n47988 [from="type_dep", to="struct"];
+  n3849 -> n78308 [from="input", to="func"];
+  n4808 -> n10620 [from="func", to="type_dep", dir=both];
+  n6513 -> n25634 [from="type_dep", to="struct"];
+  n6513 -> n26008 [from="type_dep", to="struct"];
+  n6721 -> n42291 [from="type_dep", to="struct"];
+  n6721 -> n47988 [from="type_dep", to="struct"];
+  n6721 -> n76281 [from="type_arg", to="impl"];
+  n6721 -> n81676 [from="type_dep", to="struct"];
+  n6721 -> n113655 [from="type_dep", to="struct"];
+  n6721 -> n114473 [from="field_type", to="struct"];
+  n9567 -> n9915 [from="caller", to="callee"];
+  n9567 -> n10322 [from="caller", to="callee"];
+  n9636 -> n6721 [from="field_type", to="struct"];
+  n9636 -> n12602 [from="trait", to="impl"];
+  n9636 -> n47654 [from="trait", to="impl"];
+  n10322 -> n108185 [from="caller", to="callee"];
+  n10620 -> n14819 [from="field_type", to="struct"];
+  n10620 -> n15722 [from="field_type", to="struct"];
+  n10620 -> n18678 [from="field_type", to="struct"];
+  n10620 -> n36094 [from="field_type", to="struct"];
+  n10620 -> n40452 [from="field_type", to="struct"];
+  n10620 -> n49943 [from="trait", to="impl"];
+  n10620 -> n49943 [from="type_arg", to="generic"];
+  n10620 -> n58238 [from="field_type", to="struct"];
+  n10620 -> n66220 [from="field_type", to="struct"];
+  n10620 -> n66220 [from="trait", to="impl"];
+  n10620 -> n78308 [from="bound", to="generic", dir=both];
+  n10620 -> n84685 [from="field_type", to="struct"];
+  n10620 -> n86393 [from="field_type", to="struct"];
+  n10620 -> n91688 [from="field_type", to="struct"];
+  n10620 -> n91688 [from="trait", to="impl"];
+  n10620 -> n94140 [from="bound", to="generic", dir=both];
+  n10620 -> n94140 [from="input", to="func", dir=both];
+  n10620 -> n105372 [from="field_type", to="struct"];
+  n10620 -> n113655 [from="field_type", to="struct"];
+  n10620 -> n114473 [from="field_type", to="struct"];
+  n10620 -> n130541 [from="bound", to="generic", dir=both];
+  n10620 -> n130541 [from="input", to="func", dir=both];
+  n12520 -> n42291 [from="type_dep", to="struct"];
+  n12520 -> n47988 [from="type_dep", to="struct"];
+  n12520 -> n81676 [from="type_dep", to="struct"];
+  n12520 -> n96262 [from="type_dep", to="struct"];
+  n14819 -> n15722 [from="type_dep", to="struct"];
+  n15722 -> n113437 [from="field_type", to="struct"];
+  n18377 -> n8630 [from="field_type", to="struct"];
+  n18678 -> n6191 [from="type_dep", to="struct"];
+  n18678 -> n70438 [from="type_dep", to="struct"];
+  n18678 -> n86395 [from="type_dep", to="struct"];
+  n18678 -> n100197 [from="type_dep", to="struct"];
+  n20153 -> n38962 [from="trait", to="impl"];
+  n21754 -> n92953 [from="type_dep", to="struct"];
+  n21754 -> n113437 [from="field_type", to="struct"];
+  n21831 -> n4808 [from="input", to="func"];
+  n21831 -> n39221 [from="field_type", to="struct"];
+  n21831 -> n57036 [from="type_arg", to="impl"];
+  n21831 -> n88281 [from="type_arg", to="impl"];
+  n21831 -> n94140 [from="input", to="func"];
+  n21831 -> n99342 [from="input", to="func"];
+  n21831 -> n114473 [from="field_type", to="struct"];
+  n21878 -> n21831 [from="type_arg", to="generic"];
+  n21878 -> n21831 [from="type_dep", to="struct"];
+  n21878 -> n37343 [from="type_arg", to="impl"];
+  n23838 -> n29310 [from="field_type", to="struct"];
+  n23838 -> n36782 [from="field_type", to="struct"];
+  n23838 -> n114666 [from="field_type", to="struct"];
+  n25634 -> n26008 [from="type_arg", to="impl"];
+  n26169 -> n25211 [from="field_type", to="enum"];
+  n27898 -> n36392 [from="func", to="type_dep"];
+  n27898 -> n128854 [from="func", to="type_dep"];
+  n28982 -> n59686 [from="func", to="type_dep"];
+  n28982 -> n128854 [from="func", to="type_dep"];
+  n29033 -> n59459 [from="input", to="func"];
+  n29310 -> n29376 [from="type_dep", to="struct"];
+  n29376 -> n6513 [from="type_arg", to="generic"];
+  n29376 -> n6513 [from="type_dep", to="struct"];
+  n29376 -> n25634 [from="field_type", to="struct"];
+  n29376 -> n26008 [from="type_dep", to="struct"];
+  n29376 -> n114666 [from="type_dep", to="struct"];
+  n29585 -> n86395 [from="field_type", to="struct"];
+  n30225 -> n103153 [from="field_type", to="struct"];
+  n30271 -> n38962 [from="field_type", to="enum"];
+  n31834 -> n31942 [from="func", to="type_dep"];
+  n31942 -> n49564 [from="type_dep", to="struct"];
+  n32694 -> n36094 [from="field_type", to="struct"];
+  n33881 -> n3849 [from="type_dep", to="struct"];
+  n33881 -> n46522 [from="type_dep", to="struct"];
+  n33881 -> n49564 [from="type_dep", to="struct"];
+  n33881 -> n91688 [from="type_dep", to="struct"];
+  n35881 -> n36392 [from="field_type", to="struct"];
+  n36454 -> n36721 [from="field_type", to="struct"];
+  n36454 -> n43416 [from="field_type", to="struct"];
+  n36454 -> n49007 [from="field_type", to="struct"];
+  n36454 -> n68940 [from="field_type", to="struct"];
+  n36454 -> n76281 [from="field_type", to="struct"];
+  n36454 -> n85639 [from="field_type", to="struct"];
+  n36721 -> n23838 [from="type_arg", to="impl"];
+  n36721 -> n68940 [from="field_type", to="struct"];
+  n36782 -> n6191 [from="field_type", to="struct"];
+  n36782 -> n23895 [from="field_type", to="enum"];
+  n36782 -> n45164 [from="type_arg", to="impl"];
+  n36782 -> n86395 [from="field_type", to="struct"];
+  n36782 -> n127310 [from="field_type", to="enum"];
+  n37343 -> n36782 [from="type_arg", to="impl"];
+  n38091 -> n42291 [from="field_type", to="struct"];
+  n38091 -> n47988 [from="type_dep", to="struct"];
+  n39221 -> n63095 [from="input", to="func"];
+  n39221 -> n69551 [from="input", to="func"];
+  n42291 -> n846 [from="type_dep", to="struct"];
+  n42291 -> n47988 [from="type_arg", to="impl"];
+  n42291 -> n100543 [from="type_dep", to="struct"];
+  n44631 -> n33907 [from="func", to="type_dep"];
+  n44631 -> n36392 [from="func", to="type_dep"];
+  n45117 -> n42291 [from="field_type", to="struct"];
+  n45117 -> n47988 [from="field_type", to="struct"];
+  n45164 -> n27898 [from="input", to="func"];
+  n45164 -> n48272 [from="field_type", to="struct"];
+  n45164 -> n49943 [from="type_arg", to="impl", dir=both];
+  n45164 -> n61048 [from="input", to="func", dir=both];
+  n45164 -> n61142 [from="input", to="func", dir=both];
+  n45164 -> n64769 [from="type_arg", to="impl"];
+  n45164 -> n78308 [from="input", to="func"];
+  n45164 -> n88185 [from="type_dep", to="struct"];
+  n45164 -> n92953 [from="type_dep", to="struct"];
+  n46522 -> n42291 [from="field_type", to="struct"];
+  n46522 -> n47988 [from="type_dep", to="struct"];
+  n46522 -> n81676 [from="field_type", to="struct"];
+  n47294 -> n42291 [from="type_dep", to="struct"];
+  n47294 -> n47988 [from="type_dep", to="struct"];
+  n47294 -> n68940 [from="type_arg", to="impl"];
+  n47294 -> n81676 [from="type_dep", to="struct"];
+  n47294 -> n91688 [from="type_dep", to="struct"];
+  n47654 -> n103153 [from="field_type", to="struct"];
+  n47753 -> n50 [from="trait", to="impl"];
+  n47753 -> n25634 [from="trait", to="impl"];
+  n47753 -> n48463 [from="field_type", to="struct"];
+  n48272 -> n64769 [from="type_arg", to="impl"];
+  n49007 -> n109220 [from="field_type", to="struct"];
+  n49899 -> n42291 [from="trait", to="impl"];
+  n49899 -> n81676 [from="trait", to="impl"];
+  n49899 -> n91212 [from="input", to="func"];
+  n49899 -> n100543 [from="trait", to="impl"];
+  n49901 -> n123 [from="trait", to="impl"];
+  n49901 -> n6191 [from="trait", to="impl"];
+  n49901 -> n24229 [from="trait", to="impl"];
+  n49901 -> n25634 [from="trait", to="impl"];
+  n49901 -> n36094 [from="trait", to="impl"];
+  n49901 -> n36120 [from="trait", to="impl"];
+  n49901 -> n48463 [from="trait", to="impl"];
+  n49901 -> n70438 [from="trait", to="impl"];
+  n49901 -> n83100 [from="trait", to="impl"];
+  n49901 -> n86350 [from="trait", to="impl"];
+  n49901 -> n86395 [from="trait", to="impl"];
+  n49901 -> n100197 [from="trait", to="impl"];
+  n49901 -> n100832 [from="trait", to="impl"];
+  n49901 -> n105372 [from="trait", to="impl"];
+  n49943 -> n11875 [from="type_arg", to="generic"];
+  n49943 -> n23838 [from="type_arg", to="generic"];
+  n49943 -> n31942 [from="field_type", to="enum"];
+  n49943 -> n36721 [from="type_arg", to="impl"];
+  n49943 -> n36782 [from="type_arg", to="impl"];
+  n49943 -> n47294 [from="field_type", to="struct"];
+  n49943 -> n107626 [from="type_arg", to="generic"];
+  n49943 -> n107897 [from="field_type", to="enum"];
+  n49943 -> n110439 [from="type_arg", to="generic"];
+  n49943 -> n113655 [from="field_type", to="struct"];
+  n49943 -> n114666 [from="type_arg", to="impl"];
+  n49943 -> n128854 [from="field_type", to="enum", dir=both];
+  n49943 -> n130704 [from="type_arg", to="impl"];
+  n49984 -> n64769 [from="type_arg", to="impl"];
+  n51039 -> n1674 [from="trait", to="impl"];
+  n51039 -> n49943 [from="type_arg", to="generic"];
+  n51708 -> n113437 [from="field_type", to="struct", dir=both];
+  n52116 -> n33907 [from="func", to="type_dep"];
+  n52116 -> n36392 [from="func", to="type_dep"];
+  n52116 -> n52597 [from="caller", to="callee"];
+  n52597 -> n86393 [from="func", to="type_dep"];
+  n52597 -> n88672 [from="func", to="type_dep", dir=both];
+  n52677 -> n6191 [from="field_type", to="struct"];
+  n52677 -> n70438 [from="field_type", to="struct"];
+  n52677 -> n100197 [from="field_type", to="struct"];
+  n54635 -> n40452 [from="type_dep", to="struct"];
+  n56645 -> n77157 [from="input", to="func", dir=both];
+  n56830 -> n42291 [from="field_type", to="struct"];
+  n56830 -> n47988 [from="field_type", to="struct"];
+  n57036 -> n78308 [from="input", to="func"];
+  n58054 -> n49943 [from="func", to="type_dep"];
+  n58054 -> n99342 [from="caller", to="callee"];
+  n58897 -> n63095 [from="bound", to="generic", dir=both];
+  n58897 -> n69551 [from="bound", to="generic", dir=both];
+  n61165 -> n31942 [from="func", to="type_dep"];
+  n61165 -> n62738 [from="caller", to="callee"];
+  n61186 -> n42291 [from="type_dep", to="struct"];
+  n61186 -> n47988 [from="type_dep", to="struct"];
+  n61186 -> n49007 [from="type_arg", to="impl"];
+  n61186 -> n49943 [from="type_arg", to="generic"];
+  n61186 -> n81676 [from="type_dep", to="struct"];
+  n62017 -> n4808 [from="input", to="func"];
+  n62017 -> n59459 [from="input", to="func"];
+  n62017 -> n61142 [from="input", to="func"];
+  n62500 -> n61186 [from="field_type", to="struct"];
+  n62998 -> n68010 [from="field_type", to="struct"];
+  n63095 -> n86393 [from="func", to="type_dep"];
+  n63105 -> n57036 [from="trait", to="impl"];
+  n63411 -> n42291 [from="field_type", to="struct"];
+  n63411 -> n47988 [from="field_type", to="struct"];
+  n64536 -> n29289 [from="field_type", to="struct"];
+  n64536 -> n49943 [from="type_arg", to="impl"];
+  n65443 -> n47988 [from="field_type", to="struct"];
+  n65652 -> n42291 [from="trait", to="impl"];
+  n65652 -> n77157 [from="input", to="func"];
+  n66220 -> n49943 [from="type_arg", to="generic"];
+  n66644 -> n32820 [from="type_dep", to="struct"];
+  n66644 -> n92953 [from="type_dep", to="struct"];
+  n66644 -> n112573 [from="input", to="func"];
+  n68010 -> n32820 [from="type_dep", to="struct"];
+  n68010 -> n92953 [from="field_type", to="struct"];
+  n68940 -> n109220 [from="field_type", to="struct"];
+  n69551 -> n86393 [from="func", to="type_dep"];
+  n72170 -> n29289 [from="type_dep", to="struct"];
+  n72170 -> n45164 [from="field_type", to="enum"];
+  n72170 -> n57036 [from="type_dep", to="struct"];
+  n76262 -> n25634 [from="field_type", to="struct"];
+  n76262 -> n26008 [from="field_type", to="struct"];
+  n76262 -> n40452 [from="trait", to="impl"];
+  n76262 -> n104046 [from="trait", to="impl"];
+  n76281 -> n109220 [from="field_type", to="struct"];
+  n77157 -> n36392 [from="func", to="type_dep"];
+  n77157 -> n128854 [from="func", to="type_dep", dir=both];
+  n77356 -> n42291 [from="trait", to="impl"];
+  n78308 -> n4808 [from="caller", to="callee"];
+  n78308 -> n37343 [from="func", to="type_dep"];
+  n78308 -> n61142 [from="caller", to="callee"];
+  n79425 -> n85639 [from="field_type", to="struct"];
+  n80094 -> n25634 [from="field_type", to="struct"];
+  n80094 -> n26008 [from="type_dep", to="struct"];
+  n80094 -> n88185 [from="type_dep", to="struct"];
+  n80710 -> n57036 [from="field_type", to="struct"];
+  n81676 -> n112573 [from="input", to="func"];
+  n84685 -> n83100 [from="type_dep", to="struct"];
+  n84685 -> n86393 [from="type_dep", to="struct"];
+  n84685 -> n113655 [from="type_dep", to="struct"];
+  n84685 -> n114473 [from="type_dep", to="struct"];
+  n85639 -> n31247 [from="field_type", to="struct"];
+  n85639 -> n109220 [from="field_type", to="struct", dir=both];
+  n86393 -> n50 [from="type_dep", to="struct"];
+  n86393 -> n24229 [from="field_type", to="struct"];
+  n86393 -> n25634 [from="type_dep", to="struct"];
+  n86393 -> n26008 [from="type_dep", to="struct"];
+  n86393 -> n51708 [from="type_dep", to="struct"];
+  n86393 -> n83100 [from="field_type", to="struct"];
+  n86393 -> n86395 [from="type_dep", to="struct"];
+  n86393 -> n87982 [from="type_arg", to="impl", dir=both];
+  n86393 -> n88672 [from="type_arg", to="impl"];
+  n86393 -> n100197 [from="field_type", to="struct"];
+  n86393 -> n100832 [from="type_dep", to="struct"];
+  n86393 -> n101128 [from="type_dep", to="struct"];
+  n86393 -> n107663 [from="type_dep", to="struct"];
+  n87982 -> n88672 [from="type_arg", to="impl"];
+  n88432 -> n47988 [from="field_type", to="struct"];
+  n88672 -> n36094 [from="type_dep", to="struct"];
+  n90427 -> n40452 [from="field_type", to="struct"];
+  n90427 -> n104046 [from="field_type", to="struct"];
+  n91212 -> n21878 [from="func", to="type_dep"];
+  n91212 -> n45164 [from="func", to="type_dep"];
+  n91212 -> n94021 [from="func", to="type_dep"];
+  n91212 -> n94140 [from="caller", to="callee"];
+  n91502 -> n28982 [from="input", to="func"];
+  n93419 -> n93359 [from="type_dep", to="struct"];
+  n93622 -> n91212 [from="input", to="func"];
+  n94021 -> n10275 [from="trait", to="impl"];
+  n96262 -> n101128 [from="type_dep", to="struct"];
+  n96671 -> n101128 [from="type_dep", to="struct"];
+  n100543 -> n47988 [from="type_arg", to="impl"];
+  n100543 -> n81676 [from="type_arg", to="impl"];
+  n100543 -> n97140 [from="input", to="func"];
+  n101933 -> n123 [from="field_type", to="struct"];
+  n101933 -> n123 [from="trait", to="impl"];
+  n101933 -> n6191 [from="field_type", to="struct"];
+  n101933 -> n6191 [from="trait", to="impl"];
+  n101933 -> n24229 [from="field_type", to="struct"];
+  n101933 -> n24229 [from="trait", to="impl"];
+  n101933 -> n33907 [from="field_type", to="struct"];
+  n101933 -> n36094 [from="field_type", to="struct"];
+  n101933 -> n36094 [from="trait", to="impl"];
+  n101933 -> n36120 [from="field_type", to="struct"];
+  n101933 -> n36120 [from="trait", to="impl"];
+  n101933 -> n36782 [from="type_arg", to="generic"];
+  n101933 -> n45149 [from="field_type", to="struct"];
+  n101933 -> n48463 [from="trait", to="impl"];
+  n101933 -> n49912 [from="input", to="func"];
+  n101933 -> n52597 [from="input", to="func"];
+  n101933 -> n70438 [from="field_type", to="struct"];
+  n101933 -> n70438 [from="trait", to="impl"];
+  n101933 -> n83100 [from="field_type", to="struct"];
+  n101933 -> n83100 [from="trait", to="impl"];
+  n101933 -> n86350 [from="field_type", to="struct"];
+  n101933 -> n86350 [from="trait", to="impl"];
+  n101933 -> n86395 [from="field_type", to="struct"];
+  n101933 -> n86395 [from="trait", to="impl"];
+  n101933 -> n100197 [from="field_type", to="struct"];
+  n101933 -> n100197 [from="trait", to="impl"];
+  n101933 -> n100832 [from="trait", to="impl"];
+  n101933 -> n105372 [from="field_type", to="struct"];
+  n101933 -> n105372 [from="trait", to="impl"];
+  n103153 -> n101128 [from="type_dep", to="struct"];
+  n103209 -> n25634 [from="field_type", to="struct"];
+  n103209 -> n26008 [from="type_dep", to="struct"];
+  n103209 -> n88281 [from="type_arg", to="impl"];
+  n104810 -> n104763 [from="type_dep", to="struct"];
+  n106017 -> n79086 [from="caller", to="callee"];
+  n106017 -> n79365 [from="caller", to="callee"];
+  n106017 -> n80762 [from="caller", to="callee"];
+  n107524 -> n108585 [from="type_arg", to="generic"];
+  n107524 -> n108585 [from="type_dep", to="struct"];
+  n107663 -> n123 [from="field_type", to="struct"];
+  n107663 -> n6191 [from="field_type", to="struct"];
+  n107663 -> n24229 [from="field_type", to="struct"];
+  n107663 -> n36094 [from="field_type", to="struct"];
+  n107663 -> n36120 [from="field_type", to="struct"];
+  n107663 -> n48463 [from="field_type", to="struct"];
+  n107663 -> n70438 [from="field_type", to="struct"];
+  n107663 -> n83100 [from="field_type", to="struct"];
+  n107663 -> n86350 [from="field_type", to="struct"];
+  n107663 -> n86395 [from="field_type", to="struct"];
+  n107663 -> n100197 [from="field_type", to="struct"];
+  n107663 -> n100832 [from="field_type", to="struct"];
+  n107663 -> n105372 [from="field_type", to="struct"];
+  n107897 -> n99912 [from="type_dep", to="struct"];
+  n108185 -> n108295 [from="caller", to="callee"];
+  n108408 -> n115474 [from="field_type", to="struct"];
+  n108585 -> n123 [from="field_type", to="struct"];
+  n108585 -> n6191 [from="field_type", to="struct"];
+  n108585 -> n24229 [from="field_type", to="struct"];
+  n108585 -> n36094 [from="field_type", to="struct"];
+  n108585 -> n36120 [from="field_type", to="struct"];
+  n108585 -> n40452 [from="field_type", to="struct"];
+  n108585 -> n63382 [from="field_type", to="struct"];
+  n108585 -> n70438 [from="field_type", to="struct"];
+  n108585 -> n83100 [from="field_type", to="struct"];
+  n108585 -> n86350 [from="field_type", to="struct"];
+  n108585 -> n86395 [from="field_type", to="struct"];
+  n108585 -> n100197 [from="field_type", to="struct"];
+  n108585 -> n104046 [from="field_type", to="struct"];
+  n108585 -> n105372 [from="field_type", to="struct"];
+  n109220 -> n31247 [from="field_type", to="struct"];
+  n109778 -> n1733 [from="caller", to="callee"];
+  n109778 -> n6191 [from="func", to="type_dep"];
+  n109778 -> n33907 [from="func", to="type_dep"];
+  n109778 -> n36392 [from="func", to="type_dep"];
+  n109778 -> n100197 [from="func", to="type_dep"];
+  n110400 -> n115474 [from="field_type", to="struct"];
+  n110439 -> n114414 [from="field_type", to="struct"];
+  n113437 -> n107663 [from="field_type", to="struct"];
+  n114473 -> n36094 [from="type_dep", to="struct"];
+  n114666 -> n6513 [from="type_arg", to="generic"];
+  n114666 -> n6513 [from="type_dep", to="struct"];
+  n115474 -> n1674 [from="field_type", to="struct"];
+  n115474 -> n9567 [from="input", to="func"];
+  n115474 -> n47654 [from="field_type", to="struct"];
+  n127310 -> n130704 [from="field_type", to="struct"];
+  n128854 -> n846 [from="field_type", to="struct"];
+  n128854 -> n54020 [from="type_dep", to="struct"];
+  n128854 -> n59686 [from="type_dep", to="struct"];
+}

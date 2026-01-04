@@ -1,0 +1,26 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_llmcc_collect[label="llmcc-collect"];
+  crate_llmcc_core[label="llmcc-core"];
+  crate_llmcc_dot[label="llmcc-dot"];
+  crate_llmcc_resolver[label="llmcc-resolver"];
+  crate_llmcc_rust[label="llmcc-rust"];
+
+  crate_llmcc_collect -> crate_llmcc_core;
+  crate_llmcc_dot -> crate_llmcc_collect;
+  crate_llmcc_rust -> crate_llmcc_core;
+  crate_llmcc_rust -> crate_llmcc_resolver;
+}

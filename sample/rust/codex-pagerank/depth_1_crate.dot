@@ -1,0 +1,52 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_codex_api[label="codex-api"];
+  crate_codex_app_server[label="codex-app-server"];
+  crate_codex_app_server_protocol[label="codex-app-server-protocol"];
+  crate_codex_cli[label="codex-cli"];
+  crate_codex_cloud_tasks[label="codex-cloud-tasks"];
+  crate_codex_core[label="codex-core"];
+  crate_codex_git[label="codex-git"];
+  crate_codex_protocol[label="codex-protocol"];
+  crate_codex_rmcp_client[label="codex-rmcp-client"];
+  crate_codex_tui[label="codex-tui"];
+  crate_codex_tui2[label="codex-tui2"];
+  crate_codex_windows_sandbox[label="codex-windows-sandbox"];
+  crate_mcp_types[label="mcp-types"];
+
+  crate_codex_api -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
+  crate_codex_app_server -> crate_codex_app_server_protocol;
+  crate_codex_app_server -> crate_codex_core;
+  crate_codex_app_server -> crate_codex_protocol;
+  crate_codex_app_server_protocol -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
+  crate_codex_cli -> crate_codex_app_server_protocol;
+  crate_codex_cli -> crate_codex_core [dir=both]; // dir best-effort not accurate
+  crate_codex_cli -> crate_codex_rmcp_client;
+  crate_codex_cloud_tasks -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
+  crate_codex_core -> crate_codex_app_server_protocol;
+  crate_codex_core -> crate_codex_git;
+  crate_codex_core -> crate_codex_protocol [dir=both]; // dir best-effort not accurate
+  crate_codex_core -> crate_codex_rmcp_client;
+  crate_codex_core -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
+  crate_codex_core -> crate_mcp_types;
+  crate_codex_rmcp_client -> crate_mcp_types;
+  crate_codex_tui -> crate_codex_app_server_protocol;
+  crate_codex_tui -> crate_codex_cloud_tasks;
+  crate_codex_tui -> crate_codex_core;
+  crate_codex_tui -> crate_codex_protocol;
+  crate_codex_tui -> crate_codex_tui2 [dir=both]; // dir best-effort not accurate
+  crate_codex_windows_sandbox -> crate_codex_app_server_protocol;
+}

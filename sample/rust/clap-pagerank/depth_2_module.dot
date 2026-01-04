@@ -1,0 +1,78 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  subgraph cluster_clap_builder {
+    label="clap_builder";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_clap_builder_builder[label="builder"];
+    mod_clap_builder_error[label="error"];
+    mod_clap_builder_matches[label="matches"];
+    mod_clap_builder_output[label="output"];
+    mod_clap_builder_parser[label="parser"];
+    mod_clap_builder_util[label="util"];
+  }
+
+  subgraph cluster_clap_complete {
+    label="clap_complete";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_clap_complete_engine[label="engine"];
+    mod_clap_complete_generator[label="generator"];
+    mod_clap_complete_shells[label="shells"];
+  }
+
+  subgraph cluster_clap_derive {
+    label="clap_derive";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_clap_derive_derives[label="derives"];
+    mod_clap_derive_dummies[label="dummies"];
+    mod_clap_derive_item[label="item"];
+  }
+
+  subgraph cluster_clap_mangen {
+    label="clap_mangen";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+    fontname="Helvetica Bold";
+
+    mod_clap_mangen_render[label="render"];
+  }
+
+
+  mod_clap_builder_error -> mod_clap_builder_builder;
+  mod_clap_builder_matches -> mod_clap_builder_util [dir=both]; // dir best-effort not accurate
+  mod_clap_builder_output -> mod_clap_builder_builder;
+  mod_clap_builder_parser -> mod_clap_builder_builder;
+  mod_clap_builder_parser -> mod_clap_builder_util;
+  mod_clap_complete_engine -> mod_clap_builder_builder;
+  mod_clap_complete_generator -> mod_clap_builder_builder;
+  mod_clap_complete_shells -> mod_clap_builder_builder;
+  mod_clap_complete_shells -> mod_clap_complete_generator;
+  mod_clap_derive_derives -> mod_clap_derive_dummies;
+  mod_clap_derive_derives -> mod_clap_derive_item;
+  mod_clap_mangen_render -> mod_clap_builder_builder;
+}

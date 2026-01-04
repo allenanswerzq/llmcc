@@ -1,0 +1,657 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_globset {
+    label="globset";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_glob_rs {
+      label="glob.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2224[label="Glob", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\globset\\src\\glob.rs:76", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8211[label="Error", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\globset\\src\\lib.rs:157", sym_ty="Struct", shape=box];
+      n8261[label="ErrorKind", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\globset\\src\\lib.rs:167", sym_ty="Enum", shape=box];
+      n9081[label="GlobSet", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\globset\\src\\lib.rs:309", sym_ty="Struct", shape=box];
+      n10319[label="GlobSetBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\globset\\src\\lib.rs:566", sym_ty="Struct", shape=box];
+      n10499[label="Candidate", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\globset\\src\\lib.rs:599", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_grep_cli {
+    label="grep-cli";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_decompress_rs {
+      label="decompress.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6769[label="DecompressionMatcher", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\decompress.rs:147", sym_ty="Struct", shape=box];
+      n7173[label="DecompressionReaderBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\decompress.rs:198", sym_ty="Struct", shape=box];
+      n8433[label="resolve_binary", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\decompress.rs:420", sym_ty="Function"];
+      n8539[label="try_resolve_binary", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\decompress.rs:448", sym_ty="Function"];
+      n9104[label="add", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\decompress.rs:500", sym_ty="Function"];
+    }
+
+    subgraph cluster_process_rs {
+      label="process.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n19[label="CommandError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\process.rs:11", sym_ty="Struct", shape=box];
+      n35[label="CommandErrorKind", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\process.rs:16", sym_ty="Enum", shape=box];
+      n287[label="CommandReaderBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\process.rs:84", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_wtr_rs {
+      label="wtr.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5949[label="stdout", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\wtr.rs:23", sym_ty="Function"];
+      n5894[label="StandardStream", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\cli\\src\\wtr.rs:7", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_grep_matcher {
+    label="grep-matcher";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5423[label="LineTerminator", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\matcher\\src\\lib.rs:195", sym_ty="Struct", shape=box];
+      n6005[label="ByteSet", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\matcher\\src\\lib.rs:288", sym_ty="Struct", shape=box];
+      n7521[label="NoError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\matcher\\src\\lib.rs:497", sym_ty="Struct", shape=box];
+      n7854[label="Matcher", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\matcher\\src\\lib.rs:546", sym_ty="Trait", shape=box];
+    }
+
+  }
+
+  subgraph cluster_grep_pcre2 {
+    label="grep-pcre2";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4480[label="Error", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\pcre2\\src\\error.rs:7", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_grep_printer {
+    label="grep-printer";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_color_rs {
+      label="color.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n354[label="ColorError", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\color.rs:24", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_counter_rs {
+      label="counter.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2910[label="CounterWriter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\counter.rs:8", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_hyperlink {
+      label="hyperlink";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n11749[label="Values", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\hyperlink\\mod.rs:581", sym_ty="Struct", shape=box];
+        n9186[label="HyperlinkFormat", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\hyperlink\\mod.rs:71", sym_ty="Struct", shape=box];
+        n12009[label="HyperlinkPath", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\hyperlink\\mod.rs:710", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_json_rs {
+      label="json.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9656[label="JSON", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\json.rs:487", sym_ty="Struct", shape=box];
+      n10398[label="JSONSink", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\json.rs:596", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_jsont_rs {
+      label="jsont.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2298[label="Match", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\jsont.rs:86", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_standard_rs {
+      label="standard.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n11017[label="PreludeWriter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\standard.rs:1594", sym_ty="Struct", shape=box];
+      n2903[label="Standard", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\standard.rs:480", sym_ty="Struct", shape=box];
+      n3765[label="StandardSink", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\standard.rs:639", sym_ty="Struct", shape=box];
+      n5333[label="StandardImpl", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\standard.rs:876", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_stats_rs {
+      label="stats.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n12[label="Stats", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\stats.rs:13", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_summary_rs {
+      label="summary.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8191[label="Summary", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\summary.rs:349", sym_ty="Struct", shape=box];
+      n9043[label="SummarySink", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\summary.rs:484", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_util_rs {
+      label="util.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5803[label="Replacer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\util.rs:14", sym_ty="Struct", shape=box];
+      n6490[label="Sunk", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\util.rs:169", sym_ty="Struct", shape=box];
+      n7382[label="PrinterPath", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\printer\\src\\util.rs:283", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_grep_regex {
+    label="grep-regex";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_config_rs {
+      label="config.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n664[label="ConfiguredHIR", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\regex\\src\\config.rs:158", sym_ty="Struct", shape=box];
+      n17[label="Config", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\regex\\src\\config.rs:25", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_error_rs {
+      label="error.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n138[label="ErrorKind", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\regex\\src\\error.rs:42", sym_ty="Enum", shape=box];
+      n29[label="Error", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\regex\\src\\error.rs:7", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_matcher_rs {
+      label="matcher.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7402[label="RegexMatcherBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\regex\\src\\matcher.rs:24", sym_ty="Struct", shape=box];
+      n9341[label="RegexMatcher", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\regex\\src\\matcher.rs:367", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_grep_searcher {
+    label="grep-searcher";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_line_buffer_rs {
+      label="line_buffer.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1120[label="LineBufferReader", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\line_buffer.rs:208", sym_ty="Struct", shape=box];
+      n1520[label="LineBuffer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\line_buffer.rs:294", sym_ty="Struct", shape=box];
+      n454[label="BinaryDetection", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\line_buffer.rs:51", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_lines_rs {
+      label="lines.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n15[label="LineIter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\lines.rs:17", sym_ty="Struct", shape=box];
+      n206[label="LineStep", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\lines.rs:49", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_searcher {
+      label="searcher";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_core_rs {
+        label="core.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3898[label="Core", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\searcher\\core.rs:21", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_glue_rs {
+        label="glue.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8889[label="MultiLine", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\searcher\\glue.rs:142", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3109[label="Searcher", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\searcher\\mod.rs:597", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_sink_rs {
+      label="sink.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n767[label="Sink", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\sink.rs:102", sym_ty="Trait", shape=box];
+      n2404[label="SinkMatch", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\sink.rs:366", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_testutil_rs {
+      label="testutil.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3639[label="KitchenSink", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\testutil.rs:113", sym_ty="Struct", shape=box];
+      n4291[label="SearcherTester", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\testutil.rs:204", sym_ty="Struct", shape=box];
+      n3116[label="RegexMatcher", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\searcher\\src\\testutil.rs:24", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ignore {
+    label="ignore";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_dir_rs {
+      label="dir.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n9881[label="IgnoreBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\dir.rs:591", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_gitignore_rs {
+      label="gitignore.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5382[label="GitignoreBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\gitignore.rs:309", sym_ty="Struct", shape=box];
+      n3118[label="Glob", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\gitignore.rs:32", sym_ty="Struct", shape=box];
+      n3812[label="Gitignore", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\gitignore.rs:81", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5899[label="Match", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\lib.rs:411", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_overrides_rs {
+      label="overrides.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1896[label="Override", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\overrides.rs:47", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_types_rs {
+      label="types.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n741[label="Types", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\types.rs:165", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_walk_rs {
+      label="walk.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1567[label="DirEntryRaw", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\walk.rs:235", sym_ty="Struct", shape=box];
+      n33[label="DirEntry", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\walk.rs:30", sym_ty="Struct", shape=box];
+      n3020[label="WalkBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\ignore\\src\\walk.rs:483", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+  subgraph cluster_ripgrep {
+    label="ripgrep";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_core {
+      label="core";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_search_rs {
+        label="search.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2569[label="Printer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\search.rs:203", sym_ty="Enum", shape=box];
+        n2720[label="SearchWorker", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\search.rs:230", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_flags {
+      label="flags";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_config_rs {
+        label="config.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1427[label="args", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\config.rs:16", sym_ty="Function"];
+        n1701[label="parse", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\config.rs:57", sym_ty="Function"];
+        n1812[label="parse_reader", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\config.rs:78", sym_ty="Function"];
+      }
+
+      subgraph cluster_defs_rs {
+        label="defs.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5278[label="Debug", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:1456", sym_ty="Struct", shape=box];
+        n5761[label="Encoding", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:1582", sym_ty="Struct", shape=box];
+        n7152[label="File", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:1987", sym_ty="Struct", shape=box];
+        n10709[label="Hidden", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:2770", sym_ty="Struct", shape=box];
+        n12399[label="MaxDepth", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:3938", sym_ty="Struct", shape=box];
+        n944[label="Binary", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:427", sym_ty="Struct", shape=box];
+        n12575[label="NoIgnore", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:4321", sym_ty="Struct", shape=box];
+        n13136[label="Pre", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:5453", sym_ty="Struct", shape=box];
+        n13684[label="Type", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:6862", sym_ty="Struct", shape=box];
+        n2502[label="Color", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:691", sym_ty="Struct", shape=box];
+        n13775[label="TypeNot", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:7087", sym_ty="Struct", shape=box];
+        n14014[label="str", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:7576", sym_ty="Function"];
+        n14026[label="usize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\defs.rs:7590", sym_ty="Function"];
+      }
+
+      subgraph cluster_hiargs_rs {
+        label="hiargs.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6439[label="stats", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\hiargs.rs:1250", sym_ty="Function"];
+        n6591[label="take_hyperlink_config", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\hiargs.rs:1272", sym_ty="Function"];
+        n40[label="HiArgs", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\hiargs.rs:36", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_lowargs_rs {
+        label="lowargs.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8173[label="Mode", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\lowargs.rs:153", sym_ty="Enum", shape=box];
+        n8571[label="SearchMode", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\lowargs.rs:194", sym_ty="Enum", shape=box];
+        n7181[label="LowArgs", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\lowargs.rs:33", sym_ty="Struct", shape=box];
+        n9328[label="ContextMode", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\lowargs.rs:340", sym_ty="Enum", shape=box];
+        n9971[label="ContextSeparator", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\lowargs.rs:472", sym_ty="Struct", shape=box];
+        n10470[label="EngineChoice", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\lowargs.rs:529", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n38[label="Flag", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\mod.rs:71", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_parse_rs {
+        label="parse.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n8664[label="ParseResult", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\parse.rs:27", sym_ty="Enum", shape=box];
+        n10912[label="suggest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\parse.rs:404", sym_ty="Function"];
+        n10995[label="find_similar_names", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\parse.rs:418", sym_ty="Function"];
+        n8845[label="parse", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\flags\\parse.rs:49", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_main_rs {
+      label="main.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4070[label="main", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\main.rs:43", sym_ty="Function"];
+      n4229[label="run", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\ripgrep\\crates\\core\\main.rs:77", sym_ty="Function"];
+    }
+
+  }
+
+
+  n12 -> n3765 [from="type_dep", to="struct"];
+  n12 -> n9043 [from="type_dep", to="struct"];
+  n12 -> n10398 [from="field_type", to="struct"];
+  n17 -> n664 [from="field_type", to="struct"];
+  n17 -> n7402 [from="field_type", to="struct"];
+  n17 -> n8889 [from="field_type", to="struct"];
+  n17 -> n9341 [from="field_type", to="struct"];
+  n29 -> n19 [from="trait", to="impl"];
+  n29 -> n33 [from="type_dep", to="struct"];
+  n35 -> n19 [from="field_type", to="struct"];
+  n38 -> n944 [from="trait", to="impl"];
+  n38 -> n2502 [from="trait", to="impl"];
+  n38 -> n5278 [from="trait", to="impl"];
+  n38 -> n5761 [from="trait", to="impl"];
+  n38 -> n7152 [from="trait", to="impl"];
+  n38 -> n10709 [from="trait", to="impl"];
+  n38 -> n12399 [from="trait", to="impl"];
+  n38 -> n12575 [from="trait", to="impl"];
+  n38 -> n13136 [from="trait", to="impl"];
+  n38 -> n13684 [from="trait", to="impl"];
+  n38 -> n13775 [from="trait", to="impl"];
+  n40 -> n4229 [from="input", to="func"];
+  n138 -> n29 [from="field_type", to="struct"];
+  n206 -> n15 [from="field_type", to="struct"];
+  n287 -> n7173 [from="field_type", to="struct"];
+  n454 -> n4291 [from="field_type", to="struct"];
+  n741 -> n40 [from="type_arg", to="impl"];
+  n741 -> n9881 [from="type_arg", to="impl"];
+  n767 -> n3639 [from="trait", to="impl"];
+  n767 -> n3765 [from="trait", to="impl"];
+  n767 -> n3898 [from="field_type", to="struct"];
+  n767 -> n3898 [from="type_arg", to="generic"];
+  n767 -> n9043 [from="trait", to="impl"];
+  n767 -> n10398 [from="trait", to="impl"];
+  n1427 -> n1701 [from="caller", to="callee"];
+  n1520 -> n1120 [from="field_type", to="struct"];
+  n1520 -> n3109 [from="type_dep", to="struct"];
+  n1701 -> n1812 [from="caller", to="callee"];
+  n1896 -> n40 [from="field_type", to="struct"];
+  n1896 -> n9881 [from="type_arg", to="impl"];
+  n2224 -> n10319 [from="type_dep", to="struct"];
+  n2298 -> n2903 [from="type_dep", to="struct"];
+  n2569 -> n2720 [from="field_type", to="struct"];
+  n2903 -> n3765 [from="field_type", to="struct"];
+  n2910 -> n2903 [from="type_dep", to="struct"];
+  n2910 -> n8191 [from="type_dep", to="struct"];
+  n2910 -> n9656 [from="field_type", to="struct"];
+  n3109 -> n3898 [from="field_type", to="struct"];
+  n3109 -> n5333 [from="field_type", to="struct"];
+  n3118 -> n3812 [from="type_arg", to="generic"];
+  n3118 -> n3812 [from="type_dep", to="struct"];
+  n3118 -> n5382 [from="type_dep", to="struct"];
+  n3765 -> n5333 [from="type_arg", to="impl"];
+  n3812 -> n1896 [from="field_type", to="struct"];
+  n3812 -> n9881 [from="type_dep", to="struct"];
+  n3898 -> n8889 [from="field_type", to="struct"];
+  n4070 -> n4229 [from="caller", to="callee"];
+  n4229 -> n1427 [from="caller", to="callee"];
+  n4480 -> n354 [from="trait", to="impl"];
+  n4480 -> n7521 [from="trait", to="impl", dir=both];
+  n4480 -> n8664 [from="field_type", to="enum"];
+  n5278 -> n1567 [from="trait", to="impl"];
+  n5278 -> n2224 [from="trait", to="impl"];
+  n5278 -> n3020 [from="trait", to="impl"];
+  n5278 -> n10499 [from="trait", to="impl"];
+  n5333 -> n11017 [from="field_type", to="struct"];
+  n5423 -> n17 [from="type_dep", to="struct"];
+  n5423 -> n2404 [from="field_type", to="struct"];
+  n5423 -> n3116 [from="type_dep", to="struct"];
+  n5803 -> n3765 [from="field_type", to="struct"];
+  n5803 -> n10398 [from="field_type", to="struct"];
+  n5899 -> n9656 [from="type_dep", to="struct"];
+  n5949 -> n5894 [from="func", to="output"];
+  n6005 -> n9341 [from="type_dep", to="struct"];
+  n6490 -> n5333 [from="field_type", to="struct"];
+  n6769 -> n7173 [from="type_arg", to="impl"];
+  n7181 -> n6439 [from="input", to="func"];
+  n7181 -> n6591 [from="input", to="func"];
+  n7382 -> n3765 [from="type_dep", to="struct"];
+  n7382 -> n9043 [from="type_dep", to="struct"];
+  n7854 -> n3116 [from="trait", to="impl"];
+  n7854 -> n3898 [from="type_arg", to="generic"];
+  n7854 -> n5803 [from="type_arg", to="generic"];
+  n7854 -> n9043 [from="field_type", to="struct"];
+  n7854 -> n9341 [from="trait", to="impl"];
+  n7854 -> n10398 [from="field_type", to="struct"];
+  n8173 -> n40 [from="field_type", to="struct"];
+  n8173 -> n7181 [from="field_type", to="struct"];
+  n8191 -> n9043 [from="field_type", to="struct"];
+  n8261 -> n8211 [from="field_type", to="struct"];
+  n8433 -> n19 [from="func", to="type_dep"];
+  n8433 -> n8539 [from="caller", to="callee"];
+  n8539 -> n19 [from="func", to="type_dep"];
+  n8571 -> n8173 [from="field_type", to="enum"];
+  n8845 -> n40 [from="func", to="type_dep"];
+  n8845 -> n8664 [from="func", to="output"];
+  n9081 -> n741 [from="field_type", to="struct"];
+  n9081 -> n3812 [from="field_type", to="struct"];
+  n9081 -> n3812 [from="type_arg", to="generic"];
+  n9081 -> n6769 [from="field_type", to="struct"];
+  n9104 -> n8433 [from="caller", to="callee"];
+  n9186 -> n7181 [from="field_type", to="struct"];
+  n9328 -> n40 [from="field_type", to="struct"];
+  n9328 -> n7181 [from="field_type", to="struct"];
+  n9656 -> n10398 [from="field_type", to="struct"];
+  n9881 -> n3020 [from="field_type", to="struct"];
+  n9971 -> n40 [from="field_type", to="struct"];
+  n9971 -> n7181 [from="field_type", to="struct"];
+  n10319 -> n5382 [from="field_type", to="struct"];
+  n10470 -> n40 [from="field_type", to="struct"];
+  n10470 -> n7181 [from="field_type", to="struct"];
+  n10470 -> n8173 [from="trait", to="impl"];
+  n10470 -> n9328 [from="trait", to="impl"];
+  n10470 -> n9971 [from="trait", to="impl"];
+  n10912 -> n10995 [from="caller", to="callee"];
+  n12009 -> n7382 [from="type_dep", to="struct"];
+  n12009 -> n11749 [from="field_type", to="struct"];
+  n14026 -> n14014 [from="caller", to="callee"];
+}

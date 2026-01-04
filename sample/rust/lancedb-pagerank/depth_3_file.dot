@@ -1,0 +1,578 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_lancedb {
+    label="lancedb";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_arrow_rs {
+      label="arrow.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3374[label="RecordBatchReader", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\arrow.rs:18", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_connection_rs {
+      label="connection.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6028[label="CreateTableBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\connection.rs:104", sym_ty="Struct", shape=box];
+      n7596[label="OpenTableBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\connection.rs:396", sym_ty="Struct", shape=box];
+      n5645[label="TableNamesBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\connection.rs:45", sym_ty="Struct", shape=box];
+      n8163[label="CloneTableBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\connection.rs:538", sym_ty="Struct", shape=box];
+      n8476[label="Connection", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\connection.rs:588", sym_ty="Struct", shape=box];
+      n5965[label="CreateTableBuilderInitialData", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\connection.rs:97", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_data {
+      label="data";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_inspect_rs {
+        label="inspect.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2027[label="infer_dimension", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\data\\inspect.rs:18", sym_ty="Function"];
+      }
+
+      subgraph cluster_sanitize_rs {
+        label="sanitize.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n175[label="cast_float_array", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\data\\sanitize.rs:33", sym_ty="Function"];
+        n371[label="coerce_array", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\data\\sanitize.rs:52", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_database {
+      label="database";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_listing_rs {
+        label="listing.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5365[label="ListingDatabaseOptionsBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database\\listing.rs:152", sym_ty="Struct", shape=box];
+        n5708[label="ListingDatabase", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database\\listing.rs:234", sym_ty="Struct", shape=box];
+        n5055[label="ListingDatabaseOptions", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database\\listing.rs:67", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_namespace_rs {
+        label="namespace.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n22[label="LanceNamespaceDatabase", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database\\namespace.rs:31", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_database_rs {
+      label="database.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1584[label="CreateTableData", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database.rs:119", sym_ty="Enum", shape=box];
+      n1806[label="CreateTableRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database.rs:156", sym_ty="Struct", shape=box];
+      n2010[label="CloneTableRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database.rs:196", sym_ty="Struct", shape=box];
+      n2227[label="Database", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database.rs:243", sym_ty="Trait", shape=box];
+      n1230[label="TableNamesRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database.rs:47", sym_ty="Struct", shape=box];
+      n1273[label="OpenTableRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database.rs:62", sym_ty="Struct", shape=box];
+      n1453[label="CreateTableMode", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\database.rs:93", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_embeddings {
+      label="embeddings";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_bedrock_rs {
+        label="bedrock.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n21[label="BedrockEmbeddingModel", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings\\bedrock.rs:20", sym_ty="Enum", shape=box];
+        n401[label="BedrockEmbeddingFunction", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings\\bedrock.rs:55", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_openai_rs {
+        label="openai.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2292[label="EmbeddingModel", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings\\openai.rs:22", sym_ty="Enum", shape=box];
+        n3173[label="OpenAIEmbeddingFunction", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings\\openai.rs:71", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_sentence_transformers_rs {
+        label="sentence_transformers.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n256[label="SentenceTransformersEmbeddings", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings\\sentence_transformers.rs:47", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_embeddings_rs {
+      label="embeddings.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1090[label="WithEmbeddings", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings.rs:125", sym_ty="Struct", shape=box];
+      n35[label="EmbeddingFunction", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings.rs:45", sym_ty="Trait", shape=box];
+      n427[label="EmbeddingRegistry", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings.rs:81", sym_ty="Trait", shape=box];
+      n658[label="MemoryRegistry", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\embeddings.rs:93", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_index {
+      label="index";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_vector_rs {
+        label="vector.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2800[label="IvfRqIndexBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\index\\vector.rs:327", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_index_rs {
+      label="index.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1720[label="IndexBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\index.rs:155", sym_ty="Struct", shape=box];
+      n1371[label="Index", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\index.rs:25", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_ipc_rs {
+      label="ipc.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4791[label="ipc_file_to_batches", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\ipc.rs:15", sym_ty="Function"];
+    }
+
+    subgraph cluster_lib_rs {
+      label="lib.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n168[label="DistanceType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\lib.rs:226", sym_ty="Enum", shape=box];
+    }
+
+    subgraph cluster_permutation {
+      label="permutation";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_builder_rs {
+        label="builder.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n354[label="PermutationBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\dataloader\\permutation\\builder.rs:96", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_reader_rs {
+        label="reader.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3387[label="PermutationReader", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\dataloader\\permutation\\reader.rs:35", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_split_rs {
+        label="split.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4093[label="Splitter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\dataloader\\permutation\\split.rs:119", sym_ty="Struct", shape=box];
+        n3659[label="SplitStrategy", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\dataloader\\permutation\\split.rs:32", sym_ty="Enum", shape=box];
+        n6078[label="SplitSizes", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\dataloader\\permutation\\split.rs:394", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_util_rs {
+        label="util.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4344[label="TemporaryDirectory", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\dataloader\\permutation\\util.rs:20", sym_ty="Enum", shape=box];
+      }
+
+    }
+
+    subgraph cluster_query_rs {
+      label="query.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n7810[label="TakeQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:1251", sym_ty="Struct", shape=box];
+      n185[label="Select", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:36", sym_ty="Enum", shape=box];
+      n3314[label="ExecutableQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:544", sym_ty="Trait", shape=box];
+      n3901[label="QueryFilter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:621", sym_ty="Enum", shape=box];
+      n3979[label="QueryRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:634", sym_ty="Struct", shape=box];
+      n4405[label="Query", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:709", sym_ty="Struct", shape=box];
+      n5178[label="VectorQueryRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:819", sym_ty="Struct", shape=box];
+      n5487[label="VectorQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\query.rs:884", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_remote {
+      label="remote";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_client_rs {
+        label="client.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7496[label="RestfulLanceDbClient", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\client.rs:190", sym_ty="Struct", shape=box];
+        n6759[label="HeaderProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\client.rs:33", sym_ty="Trait", shape=box];
+        n6813[label="ClientConfig", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\client.rs:40", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_db_rs {
+        label="db.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1121[label="RemoteDatabaseOptionsBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\db.rs:145", sym_ty="Struct", shape=box];
+        n1439[label="RemoteDatabase", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\db.rs:188", sym_ty="Struct", shape=box];
+        n649[label="ServerVersion", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\db.rs:51", sym_ty="Struct", shape=box];
+        n849[label="RemoteDatabaseOptions", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\db.rs:85", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_table_rs {
+        label="table.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1009[label="RemoteTable", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\table.rs:198", sym_ty="Struct", shape=box];
+        n213[label="RemoteTags", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\table.rs:63", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_util_rs {
+        label="util.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2797[label="parse_server_version", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\remote\\util.rs:29", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_rerankers_rs {
+      label="rerankers.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4210[label="NormalizeMethod", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\rerankers.rs:22", sym_ty="Enum", shape=box];
+      n4407[label="Reranker", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\rerankers.rs:54", sym_ty="Trait", shape=box];
+    }
+
+    subgraph cluster_table {
+      label="table";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_datafusion_rs {
+        label="datafusion.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3993[label="BaseTableAdapter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table\\datafusion.rs:140", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_merge_rs {
+        label="merge.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7215[label="MergeInsertBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table\\merge.rs:16", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_table_rs {
+      label="table.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n432[label="TableDefinition", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:112", sym_ty="Struct", shape=box];
+      n8274[label="NativeTags", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:1443", sym_ty="Struct", shape=box];
+      n8557[label="NativeTable", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:1490", sym_ty="Struct", shape=box];
+      n1363[label="WriteOptions", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:265", sym_ty="Struct", shape=box];
+      n1431[label="AddDataBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:287", sym_ty="Struct", shape=box];
+      n1706[label="UpdateBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:332", sym_ty="Struct", shape=box];
+      n2051[label="AnyQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:406", sym_ty="Enum", shape=box];
+      n2095[label="Tags", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:412", sym_ty="Trait", shape=box];
+      n2652[label="BaseTable", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:515", sym_ty="Trait", shape=box];
+      n4527[label="Table", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\table.rs:630", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_test_utils {
+      label="test_utils";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_connection_rs {
+        label="connection.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n7097[label="new_local_connection", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\test_utils\\connection.rs:150", sym_ty="Function"];
+        n6575[label="new_test_connection", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\test_utils\\connection.rs:36", sym_ty="Function"];
+        n6664[label="new_remote_connection", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\rust\\lancedb\\src\\test_utils\\connection.rs:93", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_lancedb_nodejs {
+    label="lancedb-nodejs";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_header_rs {
+      label="header.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n663[label="JsHeaderProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\nodejs\\src\\header.rs:16", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_merge_rs {
+      label="merge.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1106[label="NativeMergeInsertBuilder", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\nodejs\\src\\merge.rs:15", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_table_rs {
+      label="table.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8156[label="Version", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\nodejs\\src\\table.rs:690", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_util_rs {
+      label="util.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2926[label="parse_distance_type", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\nodejs\\src\\util.rs:9", sym_ty="Function"];
+    }
+
+  }
+
+  subgraph cluster_lancedb_python {
+    label="lancedb-python";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_header_rs {
+      label="header.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n5820[label="PyHeaderProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\header.rs:9", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_index_rs {
+      label="index.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3225[label="extract_index_params", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\index.rs:33", sym_ty="Function"];
+    }
+
+    subgraph cluster_query_rs {
+      label="query.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n8006[label="PyQueryRequest", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\query.rs:227", sym_ty="Struct", shape=box];
+      n9421[label="FTSQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\query.rs:586", sym_ty="Struct", shape=box];
+      n9609[label="VectorQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\query.rs:705", sym_ty="Struct", shape=box];
+      n9878[label="HybridQuery", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\query.rs:868", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_storage_options_rs {
+      label="storage_options.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n4004[label="py_object_to_storage_options_provider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\storage_options.rs:145", sym_ty="Function"];
+      n3635[label="PyStorageOptionsProvider", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\lancedb\\python\\src\\storage_options.rs:18", sym_ty="Struct", shape=box];
+    }
+
+  }
+
+
+  n21 -> n401 [from="field_type", to="struct"];
+  n35 -> n256 [from="trait", to="impl"];
+  n35 -> n401 [from="trait", to="impl"];
+  n35 -> n658 [from="field_type", to="struct"];
+  n35 -> n3173 [from="trait", to="impl"];
+  n168 -> n2800 [from="field_type", to="struct"];
+  n168 -> n5178 [from="type_dep", to="struct"];
+  n185 -> n3979 [from="field_type", to="struct"];
+  n371 -> n175 [from="caller", to="callee"];
+  n371 -> n2027 [from="caller", to="callee"];
+  n427 -> n658 [from="trait", to="impl"];
+  n427 -> n1431 [from="field_type", to="struct"];
+  n427 -> n4527 [from="field_type", to="struct"];
+  n427 -> n6028 [from="field_type", to="struct"];
+  n427 -> n7596 [from="field_type", to="struct"];
+  n427 -> n8476 [from="field_type", to="struct"];
+  n432 -> n1584 [from="field_type", to="enum"];
+  n649 -> n1009 [from="field_type", to="struct"];
+  n849 -> n1121 [from="field_type", to="struct"];
+  n1009 -> n213 [from="field_type", to="struct"];
+  n1009 -> n1439 [from="type_dep", to="struct"];
+  n1230 -> n5645 [from="field_type", to="struct"];
+  n1273 -> n7596 [from="field_type", to="struct"];
+  n1363 -> n1431 [from="type_arg", to="impl"];
+  n1363 -> n1806 [from="field_type", to="struct"];
+  n1371 -> n1720 [from="field_type", to="struct"];
+  n1453 -> n1806 [from="field_type", to="struct"];
+  n1584 -> n1806 [from="field_type", to="struct"];
+  n1806 -> n6028 [from="field_type", to="struct"];
+  n2010 -> n8163 [from="field_type", to="struct"];
+  n2051 -> n8006 [from="type_arg", to="impl"];
+  n2095 -> n213 [from="trait", to="impl"];
+  n2095 -> n8274 [from="trait", to="impl"];
+  n2227 -> n22 [from="trait", to="impl"];
+  n2227 -> n1439 [from="trait", to="impl"];
+  n2227 -> n4527 [from="field_type", to="struct"];
+  n2227 -> n5645 [from="field_type", to="struct"];
+  n2227 -> n5708 [from="trait", to="impl"];
+  n2227 -> n6028 [from="field_type", to="struct"];
+  n2227 -> n7596 [from="field_type", to="struct"];
+  n2227 -> n8163 [from="field_type", to="struct"];
+  n2227 -> n8476 [from="field_type", to="struct"];
+  n2292 -> n3173 [from="field_type", to="struct"];
+  n2652 -> n1009 [from="trait", to="impl"];
+  n2652 -> n1431 [from="field_type", to="struct"];
+  n2652 -> n1706 [from="field_type", to="struct"];
+  n2652 -> n1720 [from="field_type", to="struct"];
+  n2652 -> n3387 [from="field_type", to="struct"];
+  n2652 -> n3993 [from="field_type", to="struct"];
+  n2652 -> n4405 [from="field_type", to="struct"];
+  n2652 -> n4527 [from="field_type", to="struct"];
+  n2652 -> n5487 [from="field_type", to="struct"];
+  n2652 -> n7215 [from="field_type", to="struct"];
+  n2652 -> n7810 [from="field_type", to="struct"];
+  n2652 -> n8557 [from="trait", to="impl"];
+  n2797 -> n649 [from="func", to="type_dep"];
+  n2800 -> n1371 [from="field_type", to="enum"];
+  n2926 -> n168 [from="func", to="type_dep"];
+  n3225 -> n2800 [from="func", to="type_dep"];
+  n3225 -> n2926 [from="caller", to="callee"];
+  n3314 -> n4405 [from="trait", to="impl"];
+  n3314 -> n5487 [from="trait", to="impl"];
+  n3314 -> n7810 [from="trait", to="impl"];
+  n3374 -> n1090 [from="trait", to="impl"];
+  n3374 -> n4791 [from="bound", to="generic", dir=both];
+  n3659 -> n4093 [from="field_type", to="struct"];
+  n3901 -> n3979 [from="type_dep", to="struct"];
+  n3979 -> n2051 [from="field_type", to="enum"];
+  n3979 -> n4405 [from="field_type", to="struct"];
+  n3979 -> n5178 [from="field_type", to="struct"];
+  n3979 -> n7810 [from="field_type", to="struct"];
+  n4004 -> n3635 [from="func", to="type_dep"];
+  n4210 -> n3979 [from="type_dep", to="struct"];
+  n4344 -> n4093 [from="field_type", to="struct"];
+  n4407 -> n3979 [from="field_type", to="struct"];
+  n4527 -> n354 [from="field_type", to="struct"];
+  n5055 -> n5365 [from="field_type", to="struct"];
+  n5178 -> n2051 [from="field_type", to="enum"];
+  n5178 -> n5487 [from="field_type", to="struct"];
+  n5965 -> n6028 [from="field_type", to="struct"];
+  n6078 -> n3659 [from="field_type", to="enum"];
+  n6575 -> n6664 [from="caller", to="callee"];
+  n6575 -> n7097 [from="caller", to="callee"];
+  n6759 -> n663 [from="trait", to="impl"];
+  n6759 -> n5820 [from="trait", to="impl"];
+  n6759 -> n6813 [from="field_type", to="struct"];
+  n6759 -> n7496 [from="field_type", to="struct"];
+  n7215 -> n1106 [from="field_type", to="struct"];
+  n7496 -> n1009 [from="field_type", to="struct"];
+  n7496 -> n1439 [from="field_type", to="struct"];
+  n8156 -> n649 [from="field_type", to="struct"];
+  n9421 -> n9878 [from="field_type", to="struct"];
+  n9609 -> n9878 [from="field_type", to="struct"];
+}

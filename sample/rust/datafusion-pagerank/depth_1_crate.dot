@@ -1,0 +1,85 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.8;
+  nodesep=0.4;
+  splines=ortho;
+  concentrate=true;
+
+  node [shape=box, style="rounded,filled", fillcolor="#f0f0f0", fontname="Helvetica"];
+  edge [color="#666666", arrowsize=0.7];
+
+  labelloc=t;
+  fontsize=16;
+  fontname="Helvetica Bold";
+
+  crate_datafusion[label="datafusion"];
+  crate_datafusion_cli[label="datafusion-cli"];
+  crate_datafusion_common[label="datafusion-common"];
+  crate_datafusion_datasource[label="datafusion-datasource"];
+  crate_datafusion_expr[label="datafusion-expr"];
+  crate_datafusion_expr_common[label="datafusion-expr-common"];
+  crate_datafusion_ffi[label="datafusion-ffi"];
+  crate_datafusion_functions[label="datafusion-functions"];
+  crate_datafusion_functions_aggregate[label="datafusion-functions-aggregate"];
+  crate_datafusion_functions_nested[label="datafusion-functions-nested"];
+  crate_datafusion_optimizer[label="datafusion-optimizer"];
+  crate_datafusion_physical_expr[label="datafusion-physical-expr"];
+  crate_datafusion_physical_expr_common[label="datafusion-physical-expr-common"];
+  crate_datafusion_physical_optimizer[label="datafusion-physical-optimizer"];
+  crate_datafusion_physical_plan[label="datafusion-physical-plan"];
+  crate_datafusion_proto[label="datafusion-proto"];
+  crate_datafusion_proto_common[label="datafusion-proto-common"];
+  crate_datafusion_spark[label="datafusion-spark"];
+  crate_datafusion_substrait[label="datafusion-substrait"];
+
+  crate_datafusion -> crate_datafusion_common;
+  crate_datafusion -> crate_datafusion_expr;
+  crate_datafusion -> crate_datafusion_physical_expr [dir=both]; // dir best-effort not accurate
+  crate_datafusion -> crate_datafusion_proto_common;
+  crate_datafusion_cli -> crate_datafusion_common;
+  crate_datafusion_common -> crate_datafusion_expr [dir=both]; // dir best-effort not accurate
+  crate_datafusion_common -> crate_datafusion_proto_common [dir=both]; // dir best-effort not accurate
+  crate_datafusion_datasource -> crate_datafusion_physical_expr_common [dir=both]; // dir best-effort not accurate
+  crate_datafusion_datasource -> crate_datafusion_physical_plan;
+  crate_datafusion_datasource -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
+  crate_datafusion_expr -> crate_datafusion_expr_common [dir=both]; // dir best-effort not accurate
+  crate_datafusion_expr -> crate_datafusion_functions [dir=both]; // dir best-effort not accurate
+  crate_datafusion_expr -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
+  crate_datafusion_expr -> crate_datafusion_proto_common [dir=both]; // dir best-effort not accurate
+  crate_datafusion_expr_common -> crate_datafusion_common;
+  crate_datafusion_expr_common -> crate_datafusion_functions [dir=both]; // dir best-effort not accurate
+  crate_datafusion_expr_common -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
+  crate_datafusion_expr_common -> crate_datafusion_proto_common;
+  crate_datafusion_ffi -> crate_datafusion_physical_plan;
+  crate_datafusion_ffi -> crate_datafusion_proto;
+  crate_datafusion_functions -> crate_datafusion_common;
+  crate_datafusion_functions -> crate_datafusion_proto_common;
+  crate_datafusion_functions_aggregate -> crate_datafusion_expr;
+  crate_datafusion_functions_aggregate -> crate_datafusion_physical_expr_common;
+  crate_datafusion_functions_aggregate -> crate_datafusion_proto_common;
+  crate_datafusion_functions_nested -> crate_datafusion_expr_common;
+  crate_datafusion_optimizer -> crate_datafusion_common;
+  crate_datafusion_optimizer -> crate_datafusion_expr;
+  crate_datafusion_optimizer -> crate_datafusion_expr_common;
+  crate_datafusion_optimizer -> crate_datafusion_functions;
+  crate_datafusion_physical_expr -> crate_datafusion_physical_expr_common [dir=both]; // dir best-effort not accurate
+  crate_datafusion_physical_expr -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
+  crate_datafusion_physical_expr -> crate_datafusion_proto_common;
+  crate_datafusion_physical_expr_common -> crate_datafusion_expr_common;
+  crate_datafusion_physical_optimizer -> crate_datafusion_common;
+  crate_datafusion_physical_optimizer -> crate_datafusion_physical_expr;
+  crate_datafusion_physical_optimizer -> crate_datafusion_physical_plan [dir=both]; // dir best-effort not accurate
+  crate_datafusion_physical_optimizer -> crate_datafusion_proto;
+  crate_datafusion_physical_plan -> crate_datafusion_functions;
+  crate_datafusion_physical_plan -> crate_datafusion_functions_nested;
+  crate_datafusion_physical_plan -> crate_datafusion_proto [dir=both]; // dir best-effort not accurate
+  crate_datafusion_physical_plan -> crate_datafusion_proto_common;
+  crate_datafusion_proto -> crate_datafusion_cli;
+  crate_datafusion_proto -> crate_datafusion_proto_common [dir=both]; // dir best-effort not accurate
+  crate_datafusion_spark -> crate_datafusion_common;
+  crate_datafusion_spark -> crate_datafusion_expr_common;
+  crate_datafusion_substrait -> crate_datafusion_common;
+  crate_datafusion_substrait -> crate_datafusion_proto;
+  crate_datafusion_substrait -> crate_datafusion_proto_common;
+}

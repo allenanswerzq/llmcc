@@ -1,0 +1,1345 @@
+digraph architecture {
+  // Layout settings
+  rankdir=TB;
+  ranksep=0.6;
+  nodesep=0.3;
+  splines=ortho;
+  compound=true;
+
+  node [shape=box, style=rounded];
+  edge [arrowsize=0.7];
+
+  subgraph cluster_serde {
+    label="serde";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_private {
+      label="private";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_de_rs {
+        label="de.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6001[label="ContentDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1041", sym_ty="Struct", shape=box];
+        n6363[label="visit_content_seq", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1092", sym_ty="Function"];
+        n6427[label="visit_content_map", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1103", sym_ty="Function"];
+        n808[label="CowBytesVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:143", sym_ty="Struct", shape=box];
+        n7791[label="SeqDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1504", sym_ty="Struct", shape=box];
+        n7967[label="ExpectedInSeq", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1587", sym_ty="Struct", shape=box];
+        n7997[label="MapDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1600", sym_ty="Struct", shape=box];
+        n8276[label="PairDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1769", sym_ty="Struct", shape=box];
+        n8352[label="PairVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1821", sym_ty="Struct", shape=box];
+        n8418[label="ExpectedInMap", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1854", sym_ty="Struct", shape=box];
+        n8441[label="EnumDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1867", sym_ty="Struct", shape=box];
+        n8509[label="VariantDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1910", sym_ty="Struct", shape=box];
+        n8618[label="ContentRefDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:1992", sym_ty="Struct", shape=box];
+        n8697[label="visit_content_seq_ref", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2043", sym_ty="Function"];
+        n8709[label="visit_content_map_ref", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2057", sym_ty="Function"];
+        n1285[label="content_as_str", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:222", sym_ty="Function"];
+        n1389[label="content_clone", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:232", sym_ty="Function"];
+        n19[label="missing_field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:24", sym_ty="Function"];
+        n8985[label="SeqRefDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2462", sym_ty="Struct", shape=box];
+        n9024[label="MapRefDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2546", sym_ty="Struct", shape=box];
+        n1757[label="content_unexpected", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:264", sym_ty="Function"];
+        n9115[label="PairRefDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2715", sym_ty="Struct", shape=box];
+        n9144[label="PairRefVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2767", sym_ty="Struct", shape=box];
+        n9167[label="EnumRefDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2804", sym_ty="Struct", shape=box];
+        n9179[label="VariantRefDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2834", sym_ty="Struct", shape=box];
+        n61[label="MissingFieldDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:29", sym_ty="Struct", shape=box];
+        n1991[label="ContentVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:290", sym_ty="Struct", shape=box];
+        n9222[label="InternallyTaggedUnitVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:2956", sym_ty="Struct", shape=box];
+        n9248[label="UntaggedUnitVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3002", sym_ty="Struct", shape=box];
+        n9271[label="IdentifierDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3057", sym_ty="Trait", shape=box];
+        n9276[label="Borrowed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3063", sym_ty="Struct", shape=box];
+        n9284[label="StrDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3077", sym_ty="Struct", shape=box];
+        n9295[label="BorrowedStrDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3103", sym_ty="Struct", shape=box];
+        n9328[label="FlatMapDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3184", sym_ty="Struct", shape=box];
+        n9394[label="FlatMapAccess", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3344", sym_ty="Struct", shape=box];
+        n9414[label="FlatStructAccess", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3388", sym_ty="Struct", shape=box];
+        n9437[label="flat_map_take_entry", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3430", sym_ty="Function"];
+        n9443[label="AdjacentlyTaggedEnumVariantSeed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3449", sym_ty="Struct", shape=box];
+        n9447[label="AdjacentlyTaggedEnumVariantVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:3455", sym_ty="Struct", shape=box];
+        n3598[label="TagOrContent", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:517", sym_ty="Enum", shape=box];
+        n3637[label="TagOrContentVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:524", sym_ty="Struct", shape=box];
+        n169[label="CowStrVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:69", sym_ty="Struct", shape=box];
+        n4876[label="TaggedContentVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:816", sym_ty="Struct", shape=box];
+        n5180[label="TagOrContentFieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:898", sym_ty="Struct", shape=box];
+        n5665[label="TagContentOtherFieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\de.rs:977", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_ser_rs {
+        label="ser.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6646[label="FlatMapSerializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:1003", sym_ty="Struct", shape=box];
+        n7422[label="FlatMapSerializeTupleVariantAsMapValue", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:1263", sym_ty="Struct", shape=box];
+        n7622[label="AdjacentlyTaggedEnumVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:1354", sym_ty="Struct", shape=box];
+        n3165[label="SerializeTupleVariantAsMapValue", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:344", sym_ty="Struct", shape=box];
+        n400[label="TaggedSerializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:38", sym_ty="Struct", shape=box];
+        n3882[label="Content", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:426", sym_ty="Enum", shape=box];
+        n4947[label="ContentSerializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:552", sym_ty="Struct", shape=box];
+        n5880[label="SerializeSeq", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:769", sym_ty="Struct", shape=box];
+        n5985[label="SerializeTuple", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:796", sym_ty="Struct", shape=box];
+        n6083[label="SerializeTupleStruct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:823", sym_ty="Struct", shape=box];
+        n6173[label="SerializeTupleVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:851", sym_ty="Struct", shape=box];
+        n6272[label="SerializeMap", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\src\\private\\ser.rs:886", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_serde {
+      label="serde";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_build_rs {
+        label="build.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n118[label="main", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\build.rs:19", sym_ty="Function"];
+        n322[label="rustc_minor_version", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde\\build.rs:60", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_serde_core {
+    label="serde_core";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_de {
+      label="de";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ignored_any_rs {
+        label="ignored_any.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1198[label="IgnoredAny", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\ignored_any.rs:111", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_impls_rs {
+        label="impls.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5969[label="VecVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:1143", sym_ty="Struct", shape=box];
+        n6115[label="VecInPlaceVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:1182", sym_ty="Struct", shape=box];
+        n6261[label="ArrayVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:1228", sym_ty="Struct", shape=box];
+        n34[label="UnitVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:14", sym_ty="Struct", shape=box];
+        n7010[label="PathVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:1785", sym_ty="Struct", shape=box];
+        n7133[label="PathBufVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:1824", sym_ty="Struct", shape=box];
+        n7267[label="OsStringVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:1898", sym_ty="Struct", shape=box];
+        n7580[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2138", sym_ty="Enum", shape=box];
+        n7604[label="FieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2148", sym_ty="Struct", shape=box];
+        n7729[label="DurationVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2198", sym_ty="Struct", shape=box];
+        n7857[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2277", sym_ty="Enum", shape=box];
+        n7874[label="FieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2287", sym_ty="Struct", shape=box];
+        n7963[label="DurationVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2337", sym_ty="Struct", shape=box];
+        n8081[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2475", sym_ty="Enum", shape=box];
+        n8099[label="FieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2485", sym_ty="Struct", shape=box];
+        n8150[label="RangeVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2524", sym_ty="Struct", shape=box];
+        n8241[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2634", sym_ty="Enum", shape=box];
+        n8251[label="FieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2643", sym_ty="Struct", shape=box];
+        n8288[label="RangeFromVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2680", sym_ty="Struct", shape=box];
+        n8367[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2773", sym_ty="Enum", shape=box];
+        n8378[label="FieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2782", sym_ty="Struct", shape=box];
+        n8419[label="RangeToVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2819", sym_ty="Struct", shape=box];
+        n8488[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2881", sym_ty="Enum", shape=box];
+        n8504[label="FieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2893", sym_ty="Struct", shape=box];
+        n8580[label="BoundVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2948", sym_ty="Struct", shape=box];
+        n8630[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:2995", sym_ty="Enum", shape=box];
+        n8642[label="FieldVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:3006", sym_ty="Struct", shape=box];
+        n8702[label="ResultVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:3058", sym_ty="Struct", shape=box];
+        n8767[label="FromStrVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:3140", sym_ty="Struct", shape=box];
+        n848[label="BoolVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:53", sym_ty="Struct", shape=box];
+        n2522[label="CharVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:537", sym_ty="Struct", shape=box];
+        n3034[label="StringVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:580", sym_ty="Struct", shape=box];
+        n3052[label="StringInPlaceVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:582", sym_ty="Struct", shape=box];
+        n3886[label="StrVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:706", sym_ty="Struct", shape=box];
+        n4137[label="BytesVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:741", sym_ty="Struct", shape=box];
+        n4530[label="CStringVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:777", sym_ty="Struct", shape=box];
+        n5066[label="OptionVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:870", sym_ty="Struct", shape=box];
+        n5453[label="PhantomDataVisitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\impls.rs:938", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n6648[label="Visitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:1317", sym_ty="Trait", shape=box];
+        n7730[label="SeqAccess", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:1749", sym_ty="Trait", shape=box];
+        n7903[label="MapAccess", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:1837", sym_ty="Trait", shape=box];
+        n8252[label="VariantAccess", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:2088", sym_ty="Trait", shape=box];
+        n8436[label="IntoDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:2316", sym_ty="Trait", shape=box];
+        n3169[label="Unexpected", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:338", sym_ty="Enum", shape=box];
+        n3888[label="Expected", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:484", sym_ty="Trait", shape=box];
+        n4156[label="Deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:554", sym_ty="Trait", shape=box];
+        n4583[label="DeserializeSeed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:803", sym_ty="Trait", shape=box];
+        n4932[label="Deserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\mod.rs:945", sym_ty="Trait", shape=box];
+      }
+
+      subgraph cluster_value_rs {
+        label="value.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5681[label="SeqDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1003", sym_ty="Struct", shape=box];
+        n6013[label="ExpectedInSeq", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1108", sym_ty="Struct", shape=box];
+        n6278[label="SeqAccessDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1182", sym_ty="Struct", shape=box];
+        n6410[label="MapDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1227", sym_ty="Struct", shape=box];
+        n864[label="UnitDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:137", sym_ty="Struct", shape=box];
+        n7316[label="ExpectedInMap", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1562", sym_ty="Struct", shape=box];
+        n7418[label="MapAccessDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1611", sym_ty="Struct", shape=box];
+        n7571[label="EnumAccessDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1687", sym_ty="Struct", shape=box];
+        n7765[label="MapAsEnum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1796", sym_ty="Struct", shape=box];
+        n7772[label="map_as_enum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1800", sym_ty="Function"];
+        n7847[label="SeedTupleVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1840", sym_ty="Struct", shape=box];
+        n7881[label="SeedStructVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:1859", sym_ty="Struct", shape=box];
+        n1321[label="NeverDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:201", sym_ty="Struct", shape=box];
+        n1956[label="U32Deserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:345", sym_ty="Struct", shape=box];
+        n2700[label="StrDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:445", sym_ty="Struct", shape=box];
+        n3330[label="BorrowedStrDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:546", sym_ty="Struct", shape=box];
+        n3873[label="StringDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:637", sym_ty="Struct", shape=box];
+        n4595[label="CowStrDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:754", sym_ty="Struct", shape=box];
+        n5139[label="BytesDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:872", sym_ty="Struct", shape=box];
+        n5437[label="BorrowedBytesDeserializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\de\\value.rs:942", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_private {
+      label="private";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_content_rs {
+        label="content.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n121[label="Content", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\private\\content.rs:10", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_seed_rs {
+        label="seed.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1666[label="InPlaceSeed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\private\\seed.rs:6", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_size_hint_rs {
+        label="size_hint.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1549[label="helper", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\private\\size_hint.rs:25", sym_ty="Function"];
+        n1390[label="from_bounds", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\private\\size_hint.rs:4", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_ser {
+      label="ser";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_impossible_rs {
+        label="impossible.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n33[label="Impossible", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\impossible.rs:60", sym_ty="Struct", shape=box];
+        n235[label="Void", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\impossible.rs:66", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n4427[label="SerializeSeq", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:1518", sym_ty="Trait", shape=box];
+        n4596[label="SerializeTuple", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:1624", sym_ty="Trait", shape=box];
+        n4761[label="SerializeTupleStruct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:1675", sym_ty="Trait", shape=box];
+        n4973[label="SerializeTupleVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:1739", sym_ty="Trait", shape=box];
+        n5144[label="SerializeMap", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:1811", sym_ty="Trait", shape=box];
+        n5482[label="SerializeStruct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:1907", sym_ty="Trait", shape=box];
+        n5624[label="SerializeStructVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:1977", sym_ty="Trait", shape=box];
+        n301[label="Serialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:234", sym_ty="Trait", shape=box];
+        n518[label="Serializer", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\src\\ser\\mod.rs:355", sym_ty="Trait", shape=box];
+      }
+
+    }
+
+    subgraph cluster_serde_core {
+      label="serde_core";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_build_rs {
+        label="build.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n260[label="rustc_minor_version", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\build.rs:104", sym_ty="Function"];
+        n75[label="main", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_core\\build.rs:18", sym_ty="Function"];
+      }
+
+    }
+
+  }
+
+  subgraph cluster_serde_derive {
+    label="serde_derive";
+    style=rounded;
+    color="#888888";
+    bgcolor="#f0f0f0";
+
+    subgraph cluster_bound_rs {
+      label="bound.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n3914[label="with_self_bound", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\bound.rs:312", sym_ty="Function"];
+      n4072[label="type_of_item", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\bound.rs:372", sym_ty="Function"];
+      n2484[label="with_where_predicates_from_fields", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\bound.rs:41", sym_ty="Function"];
+      n2583[label="with_where_predicates_from_variants", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\bound.rs:57", sym_ty="Function"];
+      n2707[label="with_bound", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\bound.rs:91", sym_ty="Function"];
+    }
+
+    subgraph cluster_de {
+      label="de";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_enum__rs {
+        label="enum_.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n418[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_.rs:15", sym_ty="Function"];
+        n604[label="deserialize_homogeneous_enum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_.rs:39", sym_ty="Function"];
+        n688[label="prepare_enum_variant_enum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_.rs:56", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_adjacently_rs {
+        label="enum_adjacently.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n24[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_adjacently.rs:19", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_externally_rs {
+        label="enum_externally.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2520[label="deserialize_externally_tagged_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_externally.rs:118", sym_ty="Function"];
+        n2708[label="wrap_deserialize_variant_with", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_externally.rs:163", sym_ty="Function"];
+        n2800[label="deserialize_externally_tagged_newtype_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_externally.rs:177", sym_ty="Function"];
+        n2298[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_externally.rs:23", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_internally_rs {
+        label="enum_internally.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n20[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_internally.rs:21", sym_ty="Function"];
+        n403[label="deserialize_internally_tagged_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_internally.rs:67", sym_ty="Function"];
+      }
+
+      subgraph cluster_enum_untagged_rs {
+        label="enum_untagged.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2825[label="deserialize_newtype_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_untagged.rs:113", sym_ty="Function"];
+        n2447[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_untagged.rs:22", sym_ty="Function"];
+        n2585[label="deserialize_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\enum_untagged.rs:62", sym_ty="Function"];
+      }
+
+      subgraph cluster_identifier_rs {
+        label="identifier.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1776[label="deserialize_generated", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\identifier.rs:125", sym_ty="Function"];
+        n1453[label="deserialize_custom", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\identifier.rs:14", sym_ty="Function"];
+        n1878[label="deserialize_identifier", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\identifier.rs:185", sym_ty="Function"];
+      }
+
+      subgraph cluster_struct__rs {
+        label="struct_.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1015[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\struct_.rs:17", sym_ty="Function"];
+        n1386[label="deserialize_map", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\struct_.rs:199", sym_ty="Function"];
+        n1744[label="deserialize_in_place", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\struct_.rs:423", sym_ty="Function"];
+        n2009[label="deserialize_map_in_place", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\struct_.rs:513", sym_ty="Function"];
+        n2308[label="deserialize_field_identifier", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\struct_.rs:673", sym_ty="Function"];
+      }
+
+      subgraph cluster_tuple_rs {
+        label="tuple.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n25[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\tuple.rs:13", sym_ty="Function"];
+        n650[label="deserialize_newtype_struct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\tuple.rs:135", sym_ty="Function"];
+        n795[label="deserialize_in_place", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\tuple.rs:186", sym_ty="Function"];
+      }
+
+      subgraph cluster_unit_rs {
+        label="unit.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1518[label="deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de\\unit.rs:8", sym_ty="Function"];
+      }
+
+    }
+
+    subgraph cluster_de_rs {
+      label="de.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1882[label="precondition_no_de_lifetime", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:102", sym_ty="Function"];
+      n1964[label="Parameters", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:116", sym_ty="Struct", shape=box];
+      n2340[label="build_generics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:192", sym_ty="Function"];
+      n2516[label="needs_deserialize_bound", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:236", sym_ty="Function"];
+      n2603[label="requires_default", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:249", sym_ty="Function"];
+      n1353[label="expand_derive_deserialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:25", sym_ty="Function"];
+      n2678[label="BorrowedLifetimes", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:257", sym_ty="Enum", shape=box];
+      n2963[label="borrowed_lifetimes", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:292", sym_ty="Function"];
+      n3012[label="deserialize_body", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:306", sym_ty="Function"];
+      n3204[label="deserialize_in_place_body", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:333", sym_ty="Function"];
+      n3395[label="deserialize_in_place_body", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:378", sym_ty="Function"];
+      n3438[label="deserialize_transparent", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:383", sym_ty="Function"];
+      n3595[label="deserialize_from", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:426", sym_ty="Function"];
+      n3627[label="deserialize_try_from", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:435", sym_ty="Function"];
+      n3652[label="TupleForm", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:443", sym_ty="Enum", shape=box];
+      n3774[label="deserialize_seq", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:451", sym_ty="Function"];
+      n4073[label="deserialize_seq_in_place", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:555", sym_ty="Function"];
+      n4166[label="StructForm", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:643", sym_ty="Enum", shape=box];
+      n4186[label="FieldWithAliases", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:653", sym_ty="Struct", shape=box];
+      n4241[label="wrap_deserialize_with", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:664", sym_ty="Function"];
+      n4364[label="wrap_deserialize_field_with", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:710", sym_ty="Function"];
+      n4402[label="unwrap_to_variant_closure", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:719", sym_ty="Function"];
+      n4554[label="expr_is_missing", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:766", sym_ty="Function"];
+      n4746[label="expr_is_missing_seq", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:808", sym_ty="Function"];
+      n1714[label="precondition", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:84", sym_ty="Function"];
+      n4865[label="effective_style", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:841", sym_ty="Function"];
+      n4899[label="has_flatten", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:850", sym_ty="Function"];
+      n4918[label="DeImplGenerics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:856", sym_ty="Struct", shape=box];
+      n4942[label="InPlaceImplGenerics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:858", sym_ty="Struct", shape=box];
+      n1769[label="precondition_sized", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:89", sym_ty="Function"];
+      n5357[label="DeTypeGenerics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:916", sym_ty="Struct", shape=box];
+      n5399[label="InPlaceTypeGenerics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:918", sym_ty="Struct", shape=box];
+      n5428[label="de_type_generics_to_tokens", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:920", sym_ty="Function"];
+      n5713[label="place_lifetime", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\de.rs:969", sym_ty="Function"];
+    }
+
+    subgraph cluster_deprecated_rs {
+      label="deprecated.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n1782[label="should_allow_deprecated", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\deprecated.rs:18", sym_ty="Function"];
+      n1847[label="contains_deprecated", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\deprecated.rs:35", sym_ty="Function"];
+      n1725[label="allow_deprecated", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\deprecated.rs:4", sym_ty="Function"];
+    }
+
+    subgraph cluster_fragment_rs {
+      label="fragment.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n644[label="Expr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\fragment.rs:27", sym_ty="Struct", shape=box];
+      n789[label="Stmts", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\fragment.rs:40", sym_ty="Struct", shape=box];
+      n514[label="Fragment", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\fragment.rs:5", sym_ty="Enum", shape=box];
+      n850[label="Match", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\fragment.rs:52", sym_ty="Struct", shape=box];
+    }
+
+    subgraph cluster_internals {
+      label="internals";
+      style=rounded;
+      color="#999999";
+      bgcolor="#f5f5f5";
+
+      subgraph cluster_ast_rs {
+        label="ast.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n449[label="Container", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:10", sym_ty="Struct", shape=box];
+        n1118[label="enum_from_ast", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:133", sym_ty="Function"];
+        n1205[label="struct_from_ast", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:174", sym_ty="Function"];
+        n1304[label="fields_from_ast", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:198", sym_ty="Function"];
+        n505[label="Data", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:26", sym_ty="Enum", shape=box];
+        n621[label="Variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:32", sym_ty="Struct", shape=box];
+        n653[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:41", sym_ty="Struct", shape=box];
+        n679[label="Style", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ast.rs:49", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_attr_rs {
+        label="attr.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n5792[label="get_ser_and_de", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1341", sym_ty="Function"];
+        n1133[label="RenameAllRules", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:138", sym_ty="Struct", shape=box];
+        n5937[label="get_renames", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1386", sym_ty="Function"];
+        n5984[label="get_multiple_renames", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1395", sym_ty="Function"];
+        n6030[label="get_where_predicates", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1403", sym_ty="Function"];
+        n6071[label="get_lit_str", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1411", sym_ty="Function"];
+        n6103[label="get_lit_str2", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1419", sym_ty="Function"];
+        n6222[label="parse_lit_into_path", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1455", sym_ty="Function"];
+        n6274[label="parse_lit_into_expr_path", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1476", sym_ty="Function"];
+        n6318[label="parse_lit_into_where", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1497", sym_ty="Function"];
+        n6376[label="parse_lit_into_ty", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1518", sym_ty="Function"];
+        n6429[label="parse_lit_into_lifetimes", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1541", sym_ty="Function"];
+        n1300[label="Container", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:155", sym_ty="Struct", shape=box];
+        n6477[label="is_implicitly_borrowed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1579", sym_ty="Function"];
+        n6493[label="is_implicitly_borrowed_reference", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1583", sym_ty="Function"];
+        n6518[label="is_cow", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1609", sym_ty="Function"];
+        n6608[label="is_option", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1633", sym_ty="Function"];
+        n6674[label="is_reference", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1677", sym_ty="Function"];
+        n6695[label="is_str", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1684", sym_ty="Function"];
+        n6705[label="is_slice_u8", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1688", sym_ty="Function"];
+        n6720[label="is_primitive_type", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1695", sym_ty="Function"];
+        n6751[label="is_primitive_path", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1702", sym_ty="Function"];
+        n6774[label="borrowable_lifetimes", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1716", sym_ty="Function"];
+        n6822[label="collect_lifetimes", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1732", sym_ty="Function"];
+        n1459[label="TagType", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:178", sym_ty="Enum", shape=box];
+        n6967[label="collect_lifetimes_from_tokens", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:1799", sym_ty="Function"];
+        n1591[label="Identifier", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:211", sym_ty="Enum", shape=box];
+        n38[label="Attr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:24", sym_ty="Struct", shape=box];
+        n2975[label="decide_tag", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:622", sym_ty="Function"];
+        n3321[label="decide_identifier", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:683", sym_ty="Function"];
+        n3563[label="Variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:728", sym_ty="Struct", shape=box];
+        n3628[label="BorrowAttribute", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:742", sym_ty="Struct", shape=box];
+        n542[label="BoolAttr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:77", sym_ty="Struct", shape=box];
+        n793[label="VecAttr", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:93", sym_ty="Struct", shape=box];
+        n4374[label="Field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:978", sym_ty="Struct", shape=box];
+        n4436[label="Default", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\attr.rs:995", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_case_rs {
+        label="case.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3114[label="RenameRule", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\case.rs:9", sym_ty="Enum", shape=box];
+      }
+
+      subgraph cluster_check_rs {
+        label="check.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n3029[label="check_flatten", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:100", sym_ty="Function"];
+        n3089[label="check_flatten_field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:117", sym_ty="Function"];
+        n3182[label="check_identifier", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:144", sym_ty="Function"];
+        n3422[label="check_variant_skip_attrs", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:226", sym_ty="Function"];
+        n2687[label="check_default_on_tuple", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:27", sym_ty="Function"];
+        n3576[label="check_internal_tag_field_name_conflict", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:300", sym_ty="Function"];
+        n3797[label="check_adjacent_tag_conflict", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:352", sym_ty="Function"];
+        n3899[label="check_transparent", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:370", sym_ty="Function"];
+        n4220[label="member_message", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:448", sym_ty="Function"];
+        n4287[label="allow_transparent", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:455", sym_ty="Function"];
+        n4410[label="check_from_and_try_from", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:470", sym_ty="Function"];
+        n2931[label="check_remote_generic", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:66", sym_ty="Function"];
+        n2977[label="check_getter", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:78", sym_ty="Function"];
+        n2517[label="check", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\check.rs:8", sym_ty="Function"];
+      }
+
+      subgraph cluster_ctxt_rs {
+        label="ctxt.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1075[label="Ctxt", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\ctxt.rs:12", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_mod_rs {
+        label="mod.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n2174[label="Derive", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\mod.rs:18", sym_ty="Enum", shape=box];
+        n2192[label="ungroup", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\mod.rs:23", sym_ty="Function"];
+      }
+
+      subgraph cluster_name_rs {
+        label="name.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n730[label="Name", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\name.rs:60", sym_ty="Struct", shape=box];
+        n35[label="MultiName", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\name.rs:9", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_receiver_rs {
+        label="receiver.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1019[label="replace_receiver", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\receiver.rs:10", sym_ty="Function"];
+        n1099[label="ReplaceReceiver", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\receiver.rs:21", sym_ty="Struct", shape=box];
+      }
+
+      subgraph cluster_symbol_rs {
+        label="symbol.rs";
+        style=rounded;
+        color="#aaaaaa";
+        bgcolor="#fafafa";
+
+        n1301[label="Symbol", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\internals\\symbol.rs:5", sym_ty="Struct", shape=box];
+      }
+
+    }
+
+    subgraph cluster_pretend_rs {
+      label="pretend.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n2709[label="pretend_fields_used_enum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\pretend.rs:113", sym_ty="Function"];
+      n2806[label="pretend_variants_used", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\pretend.rs:150", sym_ty="Function"];
+      n2354[label="pretend_used", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\pretend.rs:23", sym_ty="Function"];
+      n2408[label="pretend_fields_used", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\pretend.rs:65", sym_ty="Function"];
+      n2493[label="pretend_fields_used_struct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\pretend.rs:79", sym_ty="Function"];
+      n2599[label="pretend_fields_used_struct_packed", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\pretend.rs:94", sym_ty="Function"];
+    }
+
+    subgraph cluster_ser_rs {
+      label="ser.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n6033[label="serialize_tuple_struct_visitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1056", sym_ty="Function"];
+      n6092[label="serialize_struct_visitor", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1104", sym_ty="Function"];
+      n6132[label="wrap_serialize_field_with", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1170", sym_ty="Function"];
+      n6165[label="wrap_serialize_variant_with", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1179", sym_ty="Function"];
+      n2854[label="expand_derive_serialize", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:12", sym_ty="Function"];
+      n6227[label="wrap_serialize_with", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1206", sym_ty="Function"];
+      n6358[label="mut_if", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1270", sym_ty="Function"];
+      n6396[label="get_member", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1278", sym_ty="Function"];
+      n6470[label="effective_style", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1307", sym_ty="Function"];
+      n6492[label="StructTrait", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1314", sym_ty="Enum", shape=box];
+      n3612[label="build_generics", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:134", sym_ty="Function"];
+      n6579[label="TupleTrait", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:1348", sym_ty="Enum", shape=box];
+      n3764[label="needs_serialize_bound", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:159", sym_ty="Function"];
+      n3824[label="serialize_body", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:170", sym_ty="Function"];
+      n3990[label="serialize_transparent", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:190", sym_ty="Function"];
+      n4126[label="serialize_into", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:213", sym_ty="Function"];
+      n4222[label="serialize_unit_struct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:222", sym_ty="Function"];
+      n4246[label="serialize_newtype_struct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:230", sym_ty="Function"];
+      n4336[label="serialize_tuple_struct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:256", sym_ty="Function"];
+      n4416[label="serialize_struct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:295", sym_ty="Function"];
+      n4504[label="serialize_struct_tag_field", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:314", sym_ty="Function"];
+      n4549[label="serialize_struct_as_struct", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:327", sym_ty="Function"];
+      n4643[label="serialize_struct_as_map", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:368", sym_ty="Function"];
+      n4700[label="serialize_enum", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:394", sym_ty="Function"];
+      n4764[label="serialize_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:420", sym_ty="Function"];
+      n4877[label="serialize_externally_tagged_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:502", sym_ty="Function"];
+      n4999[label="serialize_internally_tagged_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:575", sym_ty="Function"];
+      n5145[label="serialize_adjacently_tagged_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:641", sym_ty="Function"];
+      n3250[label="precondition", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:65", sym_ty="Function"];
+      n5378[label="serialize_untagged_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:765", sym_ty="Function"];
+      n3324[label="Parameters", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:77", sym_ty="Struct", shape=box];
+      n5510[label="TupleVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:804", sym_ty="Enum", shape=box];
+      n5546[label="serialize_tuple_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:813", sym_ty="Function"];
+      n5672[label="StructVariant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:872", sym_ty="Enum", shape=box];
+      n5729[label="serialize_struct_variant", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:884", sym_ty="Function"];
+      n5865[label="serialize_struct_variant_with_flatten", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\ser.rs:968", sym_ty="Function"];
+    }
+
+    subgraph cluster_this_rs {
+      label="this.rs";
+      style=rounded;
+      color="#aaaaaa";
+      bgcolor="#fafafa";
+
+      n48[label="this_value", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\this.rs:18", sym_ty="Function"];
+      n11[label="this_type", full_path="C:\\Users\\zhangqiang\\llmcc\\sample\\repos\\serde\\serde_derive\\src\\this.rs:4", sym_ty="Function"];
+    }
+
+  }
+
+
+  n19 -> n61 [from="func", to="type_dep"];
+  n20 -> n514 [from="func", to="output"];
+  n24 -> n514 [from="func", to="output"];
+  n25 -> n514 [from="func", to="output"];
+  n25 -> n789 [from="func", to="type_dep"];
+  n35 -> n1300 [from="field_type", to="struct"];
+  n35 -> n3563 [from="field_type", to="struct"];
+  n35 -> n4374 [from="field_type", to="struct"];
+  n38 -> n542 [from="field_type", to="struct"];
+  n38 -> n2975 [from="input", to="func"];
+  n75 -> n260 [from="caller", to="callee"];
+  n118 -> n322 [from="caller", to="callee"];
+  n121 -> n1285 [from="input", to="func"];
+  n121 -> n1389 [from="input", to="func", dir=both];
+  n121 -> n1757 [from="input", to="func"];
+  n121 -> n1991 [from="type_dep", to="struct"];
+  n235 -> n33 [from="field_type", to="struct"];
+  n301 -> n3882 [from="trait", to="impl"];
+  n301 -> n7622 [from="trait", to="impl"];
+  n403 -> n514 [from="func", to="output"];
+  n403 -> n4402 [from="caller", to="callee"];
+  n403 -> n4865 [from="caller", to="callee"];
+  n418 -> n514 [from="func", to="output"];
+  n418 -> n604 [from="caller", to="callee"];
+  n418 -> n644 [from="func", to="type_dep"];
+  n449 -> n11 [from="input", to="func"];
+  n449 -> n48 [from="input", to="func"];
+  n449 -> n1714 [from="input", to="func"];
+  n449 -> n1769 [from="input", to="func"];
+  n449 -> n1882 [from="input", to="func"];
+  n449 -> n2354 [from="input", to="func"];
+  n449 -> n2408 [from="input", to="func"];
+  n449 -> n2484 [from="input", to="func"];
+  n449 -> n2493 [from="input", to="func"];
+  n449 -> n2517 [from="input", to="func"];
+  n449 -> n2583 [from="input", to="func"];
+  n449 -> n2599 [from="input", to="func"];
+  n449 -> n2687 [from="input", to="func"];
+  n449 -> n2709 [from="input", to="func"];
+  n449 -> n2806 [from="input", to="func"];
+  n449 -> n2931 [from="input", to="func"];
+  n449 -> n2977 [from="input", to="func"];
+  n449 -> n3029 [from="input", to="func"];
+  n449 -> n3182 [from="input", to="func"];
+  n505 -> n449 [from="field_type", to="struct"];
+  n514 -> n644 [from="field_type", to="struct"];
+  n514 -> n789 [from="field_type", to="struct"];
+  n514 -> n850 [from="field_type", to="struct"];
+  n518 -> n400 [from="trait", to="impl"];
+  n518 -> n4947 [from="trait", to="impl"];
+  n518 -> n6646 [from="trait", to="impl"];
+  n542 -> n2975 [from="input", to="func"];
+  n542 -> n3321 [from="input", to="func"];
+  n604 -> n514 [from="func", to="output"];
+  n621 -> n403 [from="input", to="func"];
+  n621 -> n2520 [from="input", to="func"];
+  n621 -> n2585 [from="input", to="func"];
+  n621 -> n2708 [from="input", to="func"];
+  n621 -> n4402 [from="input", to="func"];
+  n621 -> n4764 [from="input", to="func"];
+  n621 -> n4877 [from="input", to="func"];
+  n621 -> n4999 [from="input", to="func"];
+  n621 -> n5145 [from="input", to="func"];
+  n653 -> n621 [from="type_dep", to="struct"];
+  n653 -> n650 [from="input", to="func"];
+  n653 -> n2800 [from="input", to="func"];
+  n653 -> n2825 [from="input", to="func"];
+  n653 -> n3089 [from="input", to="func"];
+  n653 -> n4246 [from="input", to="func"];
+  n653 -> n4287 [from="input", to="func"];
+  n653 -> n4554 [from="input", to="func"];
+  n653 -> n4746 [from="input", to="func"];
+  n679 -> n505 [from="field_type", to="enum"];
+  n679 -> n621 [from="field_type", to="struct"];
+  n679 -> n3089 [from="input", to="func"];
+  n688 -> n789 [from="func", to="output"];
+  n730 -> n35 [from="type_dep", to="struct"];
+  n730 -> n4186 [from="field_type", to="struct"];
+  n730 -> n5510 [from="field_type", to="enum"];
+  n730 -> n5672 [from="field_type", to="enum"];
+  n730 -> n5729 [from="input", to="func"];
+  n730 -> n5865 [from="input", to="func"];
+  n730 -> n6774 [from="input", to="func"];
+  n795 -> n514 [from="func", to="output"];
+  n795 -> n789 [from="func", to="type_dep"];
+  n795 -> n5713 [from="caller", to="callee"];
+  n1015 -> n514 [from="func", to="output"];
+  n1015 -> n789 [from="func", to="type_dep"];
+  n1015 -> n2308 [from="caller", to="callee"];
+  n1015 -> n4899 [from="caller", to="callee"];
+  n1019 -> n1099 [from="func", to="type_dep"];
+  n1075 -> n38 [from="field_type", to="struct"];
+  n1075 -> n38 [from="type_arg", to="generic"];
+  n1075 -> n793 [from="field_type", to="struct"];
+  n1075 -> n1118 [from="input", to="func"];
+  n1075 -> n1205 [from="input", to="func"];
+  n1075 -> n1304 [from="input", to="func"];
+  n1075 -> n1714 [from="input", to="func"];
+  n1075 -> n1769 [from="input", to="func"];
+  n1075 -> n1882 [from="input", to="func"];
+  n1075 -> n2517 [from="input", to="func"];
+  n1075 -> n2687 [from="input", to="func"];
+  n1075 -> n2931 [from="input", to="func"];
+  n1075 -> n2975 [from="input", to="func"];
+  n1075 -> n2977 [from="input", to="func"];
+  n1075 -> n3029 [from="input", to="func"];
+  n1075 -> n3089 [from="input", to="func"];
+  n1075 -> n3182 [from="input", to="func"];
+  n1075 -> n3250 [from="input", to="func"];
+  n1075 -> n3321 [from="input", to="func"];
+  n1075 -> n3422 [from="input", to="func"];
+  n1075 -> n3576 [from="input", to="func"];
+  n1075 -> n3797 [from="input", to="func"];
+  n1075 -> n3899 [from="input", to="func"];
+  n1075 -> n4410 [from="input", to="func"];
+  n1075 -> n5792 [from="input", to="func"];
+  n1075 -> n5937 [from="input", to="func"];
+  n1075 -> n5984 [from="input", to="func"];
+  n1075 -> n6030 [from="input", to="func"];
+  n1075 -> n6071 [from="input", to="func"];
+  n1075 -> n6103 [from="input", to="func"];
+  n1075 -> n6222 [from="input", to="func"];
+  n1075 -> n6274 [from="input", to="func"];
+  n1075 -> n6318 [from="input", to="func"];
+  n1075 -> n6376 [from="input", to="func"];
+  n1075 -> n6429 [from="input", to="func"];
+  n1075 -> n6774 [from="input", to="func"];
+  n1118 -> n621 [from="func", to="type_dep"];
+  n1133 -> n1300 [from="field_type", to="struct"];
+  n1133 -> n3563 [from="field_type", to="struct"];
+  n1205 -> n679 [from="func", to="output"];
+  n1205 -> n1304 [from="caller", to="callee"];
+  n1300 -> n20 [from="input", to="func"];
+  n1300 -> n24 [from="input", to="func"];
+  n1300 -> n25 [from="input", to="func"];
+  n1300 -> n403 [from="input", to="func"];
+  n1300 -> n418 [from="input", to="func"];
+  n1300 -> n449 [from="field_type", to="struct"];
+  n1300 -> n604 [from="input", to="func"];
+  n1300 -> n795 [from="input", to="func"];
+  n1300 -> n1015 [from="input", to="func"];
+  n1300 -> n1386 [from="input", to="func"];
+  n1300 -> n1453 [from="input", to="func"];
+  n1300 -> n1518 [from="input", to="func"];
+  n1300 -> n1744 [from="input", to="func"];
+  n1300 -> n2009 [from="input", to="func"];
+  n1300 -> n2298 [from="input", to="func"];
+  n1300 -> n2308 [from="input", to="func"];
+  n1300 -> n2340 [from="input", to="func"];
+  n1300 -> n2447 [from="input", to="func"];
+  n1300 -> n2520 [from="input", to="func"];
+  n1300 -> n2585 [from="input", to="func"];
+  n1300 -> n2707 [from="input", to="func"];
+  n1300 -> n2800 [from="input", to="func"];
+  n1300 -> n2963 [from="input", to="func"];
+  n1300 -> n3012 [from="input", to="func"];
+  n1300 -> n3204 [from="input", to="func"];
+  n1300 -> n3250 [from="input", to="func"];
+  n1300 -> n3395 [from="input", to="func"];
+  n1300 -> n3422 [from="input", to="func"];
+  n1300 -> n3438 [from="input", to="func"];
+  n1300 -> n3576 [from="input", to="func"];
+  n1300 -> n3612 [from="input", to="func"];
+  n1300 -> n3774 [from="input", to="func"];
+  n1300 -> n3797 [from="input", to="func"];
+  n1300 -> n3824 [from="input", to="func"];
+  n1300 -> n3899 [from="input", to="func"];
+  n1300 -> n3914 [from="input", to="func"];
+  n1300 -> n3990 [from="input", to="func"];
+  n1300 -> n4072 [from="input", to="func"];
+  n1300 -> n4073 [from="input", to="func"];
+  n1300 -> n4222 [from="input", to="func"];
+  n1300 -> n4246 [from="input", to="func"];
+  n1300 -> n4336 [from="input", to="func"];
+  n1300 -> n4410 [from="input", to="func"];
+  n1300 -> n4416 [from="input", to="func"];
+  n1300 -> n4504 [from="input", to="func"];
+  n1300 -> n4549 [from="input", to="func"];
+  n1300 -> n4554 [from="input", to="func"];
+  n1300 -> n4643 [from="input", to="func"];
+  n1300 -> n4700 [from="input", to="func"];
+  n1300 -> n4746 [from="input", to="func"];
+  n1300 -> n4764 [from="input", to="func"];
+  n1300 -> n4877 [from="input", to="func"];
+  n1300 -> n4999 [from="input", to="func"];
+  n1300 -> n5145 [from="input", to="func"];
+  n1300 -> n5378 [from="input", to="func"];
+  n1301 -> n38 [from="field_type", to="struct"];
+  n1301 -> n38 [from="type_arg", to="generic"];
+  n1301 -> n793 [from="field_type", to="struct"];
+  n1301 -> n5792 [from="input", to="func"];
+  n1301 -> n5937 [from="input", to="func"];
+  n1301 -> n6071 [from="input", to="func"];
+  n1301 -> n6103 [from="input", to="func"];
+  n1301 -> n6222 [from="input", to="func"];
+  n1301 -> n6274 [from="input", to="func"];
+  n1301 -> n6318 [from="input", to="func"];
+  n1301 -> n6376 [from="input", to="func"];
+  n1304 -> n653 [from="func", to="type_dep"];
+  n1353 -> n449 [from="func", to="type_dep"];
+  n1353 -> n789 [from="func", to="type_dep"];
+  n1353 -> n1019 [from="caller", to="callee"];
+  n1353 -> n1075 [from="func", to="type_dep"];
+  n1353 -> n1714 [from="caller", to="callee"];
+  n1353 -> n1725 [from="caller", to="callee"];
+  n1353 -> n1964 [from="func", to="type_dep"];
+  n1353 -> n3395 [from="caller", to="callee"];
+  n1386 -> n514 [from="func", to="output"];
+  n1390 -> n1549 [from="caller", to="callee"];
+  n1453 -> n514 [from="func", to="output"];
+  n1453 -> n789 [from="func", to="type_dep"];
+  n1459 -> n1300 [from="field_type", to="struct"];
+  n1518 -> n514 [from="func", to="output"];
+  n1591 -> n1300 [from="field_type", to="struct"];
+  n1714 -> n1769 [from="caller", to="callee"];
+  n1714 -> n1882 [from="caller", to="callee"];
+  n1725 -> n1782 [from="caller", to="callee"];
+  n1744 -> n514 [from="func", to="type_dep"];
+  n1744 -> n789 [from="func", to="type_dep"];
+  n1744 -> n2308 [from="caller", to="callee"];
+  n1744 -> n4899 [from="caller", to="callee"];
+  n1744 -> n5713 [from="caller", to="callee"];
+  n1757 -> n3169 [from="func", to="output"];
+  n1769 -> n2192 [from="caller", to="callee"];
+  n1776 -> n514 [from="func", to="output"];
+  n1776 -> n789 [from="func", to="type_dep"];
+  n1782 -> n1847 [from="caller", to="callee"];
+  n1878 -> n514 [from="func", to="output"];
+  n1882 -> n2963 [from="caller", to="callee"];
+  n1964 -> n20 [from="input", to="func"];
+  n1964 -> n24 [from="input", to="func"];
+  n1964 -> n25 [from="input", to="func"];
+  n1964 -> n403 [from="input", to="func"];
+  n1964 -> n418 [from="input", to="func"];
+  n1964 -> n604 [from="input", to="func"];
+  n1964 -> n650 [from="input", to="func"];
+  n1964 -> n795 [from="input", to="func"];
+  n1964 -> n1015 [from="input", to="func"];
+  n1964 -> n1386 [from="input", to="func"];
+  n1964 -> n1453 [from="input", to="func"];
+  n1964 -> n1518 [from="input", to="func"];
+  n1964 -> n1744 [from="input", to="func"];
+  n1964 -> n2009 [from="input", to="func"];
+  n1964 -> n2298 [from="input", to="func"];
+  n1964 -> n2447 [from="input", to="func"];
+  n1964 -> n2520 [from="input", to="func"];
+  n1964 -> n2585 [from="input", to="func"];
+  n1964 -> n2708 [from="input", to="func"];
+  n1964 -> n2800 [from="input", to="func"];
+  n1964 -> n2825 [from="input", to="func"];
+  n1964 -> n3012 [from="input", to="func"];
+  n1964 -> n3204 [from="input", to="func"];
+  n1964 -> n3395 [from="input", to="func"];
+  n1964 -> n3438 [from="input", to="func"];
+  n1964 -> n3774 [from="input", to="func"];
+  n1964 -> n4073 [from="input", to="func"];
+  n1964 -> n4241 [from="input", to="func"];
+  n1964 -> n4364 [from="input", to="func"];
+  n1964 -> n4402 [from="input", to="func"];
+  n1964 -> n4918 [from="field_type", to="struct"];
+  n1964 -> n4942 [from="field_type", to="struct"];
+  n1964 -> n5357 [from="field_type", to="struct"];
+  n1964 -> n5399 [from="field_type", to="struct"];
+  n2009 -> n514 [from="func", to="output"];
+  n2174 -> n2517 [from="input", to="func"];
+  n2174 -> n3899 [from="input", to="func"];
+  n2174 -> n4287 [from="input", to="func"];
+  n2298 -> n514 [from="func", to="output"];
+  n2308 -> n789 [from="func", to="output"];
+  n2354 -> n2408 [from="caller", to="callee"];
+  n2354 -> n2806 [from="caller", to="callee"];
+  n2408 -> n2493 [from="caller", to="callee"];
+  n2408 -> n2599 [from="caller", to="callee"];
+  n2408 -> n2709 [from="caller", to="callee"];
+  n2447 -> n514 [from="func", to="output"];
+  n2517 -> n2687 [from="caller", to="callee"];
+  n2517 -> n2931 [from="caller", to="callee"];
+  n2517 -> n2977 [from="caller", to="callee"];
+  n2517 -> n3029 [from="caller", to="callee"];
+  n2517 -> n3182 [from="caller", to="callee"];
+  n2517 -> n3422 [from="caller", to="callee"];
+  n2517 -> n3576 [from="caller", to="callee"];
+  n2517 -> n3797 [from="caller", to="callee"];
+  n2517 -> n3899 [from="caller", to="callee"];
+  n2517 -> n4410 [from="caller", to="callee"];
+  n2520 -> n514 [from="func", to="output"];
+  n2520 -> n2708 [from="caller", to="callee"];
+  n2520 -> n2800 [from="caller", to="callee"];
+  n2585 -> n514 [from="func", to="output"];
+  n2585 -> n2825 [from="caller", to="callee"];
+  n2585 -> n4402 [from="caller", to="callee"];
+  n2585 -> n4865 [from="caller", to="callee"];
+  n2678 -> n1964 [from="field_type", to="struct"];
+  n2678 -> n1964 [from="type_arg", to="generic"];
+  n2678 -> n2340 [from="input", to="func"];
+  n2678 -> n5428 [from="input", to="func"];
+  n2707 -> n2192 [from="caller", to="callee"];
+  n2708 -> n4241 [from="caller", to="callee"];
+  n2708 -> n4402 [from="caller", to="callee"];
+  n2800 -> n514 [from="func", to="output"];
+  n2800 -> n644 [from="func", to="type_dep"];
+  n2800 -> n4364 [from="caller", to="callee"];
+  n2825 -> n514 [from="func", to="output"];
+  n2854 -> n789 [from="func", to="type_dep"];
+  n2854 -> n1019 [from="caller", to="callee"];
+  n2854 -> n1075 [from="func", to="type_dep"];
+  n2854 -> n1300 [from="func", to="type_dep"];
+  n2854 -> n1725 [from="caller", to="callee"];
+  n2854 -> n3250 [from="caller", to="callee"];
+  n2854 -> n3324 [from="func", to="type_dep"];
+  n2963 -> n2678 [from="func", to="output"];
+  n2975 -> n1459 [from="func", to="output"];
+  n3012 -> n514 [from="func", to="output"];
+  n3012 -> n3438 [from="caller", to="callee"];
+  n3012 -> n3595 [from="caller", to="callee"];
+  n3012 -> n3627 [from="caller", to="callee"];
+  n3029 -> n3089 [from="caller", to="callee"];
+  n3114 -> n1133 [from="field_type", to="struct"];
+  n3204 -> n789 [from="func", to="type_dep"];
+  n3321 -> n1591 [from="func", to="output"];
+  n3324 -> n3824 [from="input", to="func"];
+  n3324 -> n3990 [from="input", to="func"];
+  n3324 -> n4126 [from="input", to="func"];
+  n3324 -> n4246 [from="input", to="func"];
+  n3324 -> n4336 [from="input", to="func"];
+  n3324 -> n4416 [from="input", to="func"];
+  n3324 -> n4549 [from="input", to="func"];
+  n3324 -> n4643 [from="input", to="func"];
+  n3324 -> n4700 [from="input", to="func"];
+  n3324 -> n4764 [from="input", to="func"];
+  n3324 -> n4877 [from="input", to="func"];
+  n3324 -> n4999 [from="input", to="func"];
+  n3324 -> n5145 [from="input", to="func"];
+  n3324 -> n5378 [from="input", to="func"];
+  n3324 -> n5546 [from="input", to="func"];
+  n3324 -> n5729 [from="input", to="func"];
+  n3324 -> n5865 [from="input", to="func"];
+  n3324 -> n6033 [from="input", to="func"];
+  n3324 -> n6092 [from="input", to="func"];
+  n3324 -> n6132 [from="input", to="func"];
+  n3324 -> n6165 [from="input", to="func"];
+  n3324 -> n6227 [from="input", to="func"];
+  n3324 -> n6396 [from="input", to="func"];
+  n3395 -> n789 [from="func", to="type_dep"];
+  n3422 -> n4220 [from="caller", to="callee"];
+  n3438 -> n514 [from="func", to="output"];
+  n3563 -> n621 [from="field_type", to="struct"];
+  n3563 -> n1205 [from="input", to="func"];
+  n3563 -> n1304 [from="input", to="func"];
+  n3563 -> n2516 [from="input", to="func"];
+  n3563 -> n2583 [from="input", to="func"];
+  n3563 -> n2603 [from="input", to="func"];
+  n3563 -> n3764 [from="input", to="func"];
+  n3563 -> n4865 [from="input", to="func"];
+  n3563 -> n5378 [from="input", to="func"];
+  n3563 -> n6165 [from="input", to="func"];
+  n3563 -> n6470 [from="input", to="func"];
+  n3595 -> n514 [from="func", to="output"];
+  n3598 -> n3637 [from="type_dep", to="struct"];
+  n3627 -> n514 [from="func", to="output"];
+  n3628 -> n3563 [from="type_dep", to="struct"];
+  n3652 -> n25 [from="input", to="func"];
+  n3774 -> n514 [from="func", to="output"];
+  n3824 -> n514 [from="func", to="output"];
+  n3824 -> n3990 [from="caller", to="callee"];
+  n3824 -> n4126 [from="caller", to="callee"];
+  n3824 -> n4222 [from="caller", to="callee"];
+  n3824 -> n4246 [from="caller", to="callee"];
+  n3824 -> n4336 [from="caller", to="callee"];
+  n3824 -> n4416 [from="caller", to="callee"];
+  n3824 -> n4700 [from="caller", to="callee"];
+  n3882 -> n3165 [from="type_dep", to="struct"];
+  n3882 -> n3598 [from="field_type", to="enum"];
+  n3882 -> n5880 [from="type_dep", to="struct"];
+  n3882 -> n5985 [from="type_dep", to="struct"];
+  n3882 -> n6001 [from="field_type", to="struct"];
+  n3882 -> n6083 [from="type_dep", to="struct"];
+  n3882 -> n6173 [from="type_dep", to="struct"];
+  n3882 -> n6272 [from="type_dep", to="struct"];
+  n3882 -> n6363 [from="input", to="func"];
+  n3882 -> n7422 [from="type_dep", to="struct"];
+  n3882 -> n7997 [from="type_dep", to="struct"];
+  n3882 -> n8276 [from="field_type", to="struct"];
+  n3882 -> n8441 [from="type_dep", to="struct"];
+  n3882 -> n8509 [from="type_dep", to="struct"];
+  n3882 -> n8618 [from="field_type", to="struct"];
+  n3882 -> n9024 [from="type_dep", to="struct"];
+  n3882 -> n9167 [from="type_dep", to="struct"];
+  n3882 -> n9179 [from="type_dep", to="struct"];
+  n3882 -> n9394 [from="type_dep", to="struct"];
+  n3882 -> n9414 [from="type_dep", to="struct"];
+  n3888 -> n6013 [from="trait", to="impl"];
+  n3888 -> n7316 [from="trait", to="impl"];
+  n3888 -> n7967 [from="trait", to="impl"];
+  n3888 -> n8418 [from="trait", to="impl"];
+  n3899 -> n4287 [from="caller", to="callee"];
+  n3990 -> n514 [from="func", to="output"];
+  n4073 -> n514 [from="func", to="output"];
+  n4126 -> n514 [from="func", to="output"];
+  n4156 -> n1198 [from="trait", to="impl"];
+  n4156 -> n7580 [from="trait", to="impl"];
+  n4156 -> n7857 [from="trait", to="impl"];
+  n4156 -> n8081 [from="trait", to="impl"];
+  n4156 -> n8241 [from="trait", to="impl"];
+  n4156 -> n8367 [from="trait", to="impl"];
+  n4156 -> n8488 [from="trait", to="impl"];
+  n4156 -> n8630 [from="trait", to="impl"];
+  n4166 -> n1015 [from="input", to="func"];
+  n4222 -> n514 [from="func", to="output"];
+  n4246 -> n514 [from="func", to="output"];
+  n4246 -> n6132 [from="caller", to="callee"];
+  n4246 -> n6396 [from="caller", to="callee"];
+  n4287 -> n2192 [from="caller", to="callee"];
+  n4336 -> n514 [from="func", to="output"];
+  n4336 -> n6033 [from="caller", to="callee"];
+  n4336 -> n6358 [from="caller", to="callee"];
+  n4364 -> n4241 [from="caller", to="callee"];
+  n4374 -> n653 [from="field_type", to="struct"];
+  n4374 -> n2484 [from="input", to="func"];
+  n4374 -> n2516 [from="input", to="func"];
+  n4374 -> n2603 [from="input", to="func"];
+  n4374 -> n3764 [from="input", to="func"];
+  n4374 -> n6396 [from="input", to="func"];
+  n4416 -> n514 [from="func", to="output"];
+  n4416 -> n4549 [from="caller", to="callee"];
+  n4416 -> n4643 [from="caller", to="callee"];
+  n4427 -> n33 [from="trait", to="impl"];
+  n4436 -> n1118 [from="input", to="func"];
+  n4436 -> n1205 [from="input", to="func"];
+  n4436 -> n1300 [from="field_type", to="struct"];
+  n4436 -> n1304 [from="input", to="func"];
+  n4436 -> n4374 [from="field_type", to="struct"];
+  n4549 -> n514 [from="func", to="output"];
+  n4549 -> n4504 [from="caller", to="callee"];
+  n4549 -> n6092 [from="caller", to="callee"];
+  n4549 -> n6358 [from="caller", to="callee"];
+  n4554 -> n514 [from="func", to="output"];
+  n4583 -> n1666 [from="trait", to="impl"];
+  n4583 -> n1991 [from="trait", to="impl"];
+  n4583 -> n3637 [from="trait", to="impl"];
+  n4583 -> n5180 [from="trait", to="impl"];
+  n4583 -> n5665 [from="trait", to="impl"];
+  n4583 -> n7847 [from="trait", to="impl"];
+  n4583 -> n7881 [from="trait", to="impl"];
+  n4583 -> n9443 [from="trait", to="impl"];
+  n4596 -> n33 [from="trait", to="impl"];
+  n4643 -> n514 [from="func", to="output"];
+  n4643 -> n4504 [from="caller", to="callee"];
+  n4643 -> n6092 [from="caller", to="callee"];
+  n4643 -> n6358 [from="caller", to="callee"];
+  n4700 -> n514 [from="func", to="output"];
+  n4761 -> n33 [from="trait", to="impl"];
+  n4764 -> n850 [from="func", to="type_dep"];
+  n4865 -> n679 [from="func", to="output"];
+  n4877 -> n514 [from="func", to="output"];
+  n4877 -> n5546 [from="caller", to="callee"];
+  n4877 -> n5729 [from="caller", to="callee"];
+  n4877 -> n6132 [from="caller", to="callee"];
+  n4877 -> n6165 [from="caller", to="callee"];
+  n4877 -> n6470 [from="caller", to="callee"];
+  n4932 -> n61 [from="trait", to="impl"];
+  n4932 -> n5139 [from="trait", to="impl"];
+  n4932 -> n5437 [from="trait", to="impl"];
+  n4932 -> n6001 [from="trait", to="impl"];
+  n4932 -> n7791 [from="trait", to="impl"];
+  n4932 -> n7997 [from="trait", to="impl"];
+  n4932 -> n8276 [from="trait", to="impl"];
+  n4932 -> n8618 [from="trait", to="impl"];
+  n4932 -> n8985 [from="trait", to="impl"];
+  n4932 -> n9024 [from="trait", to="impl"];
+  n4932 -> n9115 [from="trait", to="impl"];
+  n4932 -> n9284 [from="trait", to="impl"];
+  n4932 -> n9295 [from="trait", to="impl"];
+  n4932 -> n9328 [from="trait", to="impl"];
+  n4973 -> n33 [from="trait", to="impl"];
+  n4999 -> n514 [from="func", to="output"];
+  n4999 -> n5729 [from="caller", to="callee"];
+  n4999 -> n6132 [from="caller", to="callee"];
+  n4999 -> n6165 [from="caller", to="callee"];
+  n4999 -> n6470 [from="caller", to="callee"];
+  n5144 -> n33 [from="trait", to="impl"];
+  n5145 -> n514 [from="func", to="output"];
+  n5145 -> n789 [from="func", to="type_dep"];
+  n5378 -> n514 [from="func", to="output"];
+  n5378 -> n5546 [from="caller", to="callee"];
+  n5378 -> n5729 [from="caller", to="callee"];
+  n5378 -> n6132 [from="caller", to="callee"];
+  n5378 -> n6165 [from="caller", to="callee"];
+  n5378 -> n6470 [from="caller", to="callee"];
+  n5482 -> n33 [from="trait", to="impl"];
+  n5510 -> n5546 [from="input", to="func"];
+  n5546 -> n514 [from="func", to="output"];
+  n5546 -> n6033 [from="caller", to="callee"];
+  n5546 -> n6358 [from="caller", to="callee"];
+  n5624 -> n33 [from="trait", to="impl"];
+  n5672 -> n5729 [from="input", to="func"];
+  n5672 -> n5865 [from="input", to="func"];
+  n5729 -> n514 [from="func", to="output"];
+  n5729 -> n5865 [from="caller", to="callee"];
+  n5729 -> n6092 [from="caller", to="callee"];
+  n5729 -> n6358 [from="caller", to="callee"];
+  n5792 -> n793 [from="func", to="type_dep"];
+  n5865 -> n514 [from="func", to="output"];
+  n5865 -> n6092 [from="caller", to="callee"];
+  n5865 -> n6358 [from="caller", to="callee"];
+  n5937 -> n5792 [from="caller", to="callee"];
+  n5984 -> n5792 [from="caller", to="callee"];
+  n6030 -> n5792 [from="caller", to="callee"];
+  n6071 -> n6103 [from="caller", to="callee"];
+  n6132 -> n6227 [from="caller", to="callee"];
+  n6165 -> n6227 [from="caller", to="callee"];
+  n6222 -> n6071 [from="caller", to="callee"];
+  n6274 -> n6071 [from="caller", to="callee"];
+  n6318 -> n6103 [from="caller", to="callee"];
+  n6363 -> n7791 [from="func", to="type_dep"];
+  n6376 -> n6071 [from="caller", to="callee"];
+  n6427 -> n7997 [from="func", to="type_dep"];
+  n6429 -> n6071 [from="caller", to="callee"];
+  n6470 -> n679 [from="func", to="output"];
+  n6477 -> n6493 [from="caller", to="callee"];
+  n6477 -> n6608 [from="caller", to="callee"];
+  n6492 -> n4504 [from="input", to="func"];
+  n6492 -> n6092 [from="input", to="func"];
+  n6493 -> n6674 [from="caller", to="callee"];
+  n6518 -> n2192 [from="caller", to="callee"];
+  n6579 -> n6033 [from="input", to="func"];
+  n6608 -> n2192 [from="caller", to="callee"];
+  n6648 -> n34 [from="trait", to="impl"];
+  n6648 -> n169 [from="trait", to="impl"];
+  n6648 -> n808 [from="trait", to="impl"];
+  n6648 -> n848 [from="trait", to="impl"];
+  n6648 -> n1198 [from="trait", to="impl"];
+  n6648 -> n1991 [from="trait", to="impl"];
+  n6648 -> n2522 [from="trait", to="impl"];
+  n6648 -> n3034 [from="trait", to="impl"];
+  n6648 -> n3052 [from="trait", to="impl"];
+  n6648 -> n3637 [from="trait", to="impl"];
+  n6648 -> n3886 [from="trait", to="impl"];
+  n6648 -> n4137 [from="trait", to="impl"];
+  n6648 -> n4530 [from="trait", to="impl"];
+  n6648 -> n4876 [from="trait", to="impl"];
+  n6648 -> n5066 [from="trait", to="impl"];
+  n6648 -> n5180 [from="trait", to="impl"];
+  n6648 -> n5453 [from="trait", to="impl"];
+  n6648 -> n5665 [from="trait", to="impl"];
+  n6648 -> n5969 [from="trait", to="impl"];
+  n6648 -> n6115 [from="trait", to="impl"];
+  n6648 -> n6261 [from="trait", to="impl"];
+  n6648 -> n7010 [from="trait", to="impl"];
+  n6648 -> n7133 [from="trait", to="impl"];
+  n6648 -> n7267 [from="trait", to="impl"];
+  n6648 -> n7604 [from="trait", to="impl"];
+  n6648 -> n7729 [from="trait", to="impl"];
+  n6648 -> n7874 [from="trait", to="impl"];
+  n6648 -> n7963 [from="trait", to="impl"];
+  n6648 -> n8099 [from="trait", to="impl"];
+  n6648 -> n8150 [from="trait", to="impl"];
+  n6648 -> n8251 [from="trait", to="impl"];
+  n6648 -> n8288 [from="trait", to="impl"];
+  n6648 -> n8378 [from="trait", to="impl"];
+  n6648 -> n8419 [from="trait", to="impl"];
+  n6648 -> n8504 [from="trait", to="impl"];
+  n6648 -> n8580 [from="trait", to="impl"];
+  n6648 -> n8642 [from="trait", to="impl"];
+  n6648 -> n8702 [from="trait", to="impl"];
+  n6648 -> n8767 [from="trait", to="impl"];
+  n6648 -> n9222 [from="trait", to="impl"];
+  n6648 -> n9248 [from="trait", to="impl"];
+  n6648 -> n9447 [from="trait", to="impl"];
+  n6674 -> n2192 [from="caller", to="callee"];
+  n6695 -> n6720 [from="caller", to="callee"];
+  n6705 -> n2192 [from="caller", to="callee"];
+  n6705 -> n6720 [from="caller", to="callee"];
+  n6720 -> n2192 [from="caller", to="callee"];
+  n6720 -> n6751 [from="caller", to="callee"];
+  n6774 -> n6822 [from="caller", to="callee"];
+  n6822 -> n6967 [from="caller", to="callee"];
+  n7730 -> n7791 [from="trait", to="impl"];
+  n7730 -> n7997 [from="trait", to="impl"];
+  n7730 -> n8352 [from="trait", to="impl"];
+  n7730 -> n8985 [from="trait", to="impl"];
+  n7730 -> n9024 [from="trait", to="impl"];
+  n7730 -> n9144 [from="trait", to="impl"];
+  n7772 -> n7765 [from="func", to="output"];
+  n7903 -> n7997 [from="trait", to="impl"];
+  n7903 -> n9024 [from="trait", to="impl"];
+  n7903 -> n9394 [from="trait", to="impl"];
+  n7903 -> n9414 [from="trait", to="impl"];
+  n8252 -> n7765 [from="trait", to="impl"];
+  n8436 -> n864 [from="trait", to="impl"];
+  n8436 -> n1321 [from="trait", to="impl"];
+  n8436 -> n1956 [from="trait", to="impl"];
+  n8436 -> n2700 [from="trait", to="impl"];
+  n8436 -> n3330 [from="trait", to="impl"];
+  n8436 -> n3873 [from="trait", to="impl"];
+  n8436 -> n4595 [from="trait", to="impl"];
+  n8436 -> n5139 [from="trait", to="impl"];
+  n8436 -> n5437 [from="trait", to="impl"];
+  n8436 -> n5681 [from="trait", to="impl"];
+  n8436 -> n6278 [from="trait", to="impl"];
+  n8436 -> n6410 [from="trait", to="impl"];
+  n8436 -> n7418 [from="trait", to="impl"];
+  n8436 -> n7571 [from="trait", to="impl"];
+  n8630 -> n7580 [from="field_type", to="enum"];
+  n8630 -> n7857 [from="field_type", to="enum"];
+  n8630 -> n8081 [from="field_type", to="enum"];
+  n8630 -> n8241 [from="field_type", to="enum"];
+  n8630 -> n8367 [from="field_type", to="enum"];
+  n8630 -> n8488 [from="field_type", to="enum"];
+  n8697 -> n8985 [from="func", to="type_dep"];
+  n8709 -> n9024 [from="func", to="type_dep"];
+  n9271 -> n9276 [from="trait", to="impl"];
+  n9437 -> n1285 [from="caller", to="callee"];
+}
